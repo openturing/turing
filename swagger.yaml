@@ -1,0 +1,1313 @@
+swagger: "2.0"
+
+################################################################################
+#                              API Information                                 #
+################################################################################
+info:
+  version: "1.1"
+  title: Viglet Turing REST API
+# during dev, should point to your local machine
+host: api.viglet.com
+# basePath prefixes all resource paths
+basePath: /api
+#
+schemes:
+  # tip: remove http to make production-grade
+  - http
+  - https
+# format of bodies a client can send (Content-Type)
+consumes:
+  - application/json
+# format of the responses to the client (Accepts)
+produces:
+  - application/json
+
+################################################################################
+#                                  Security                                    #
+################################################################################
+securityDefinitions:
+  oauth:
+    type: oauth2
+    flow: implicit
+    authorizationUrl: https://api.viglet.com/oauth/authorize/?client_id=CLIENT-ID&redirect_uri=REDIRECT-URI&response_type=token
+    scopes:
+      basic: |
+       to read any and all data related to twitter
+security:
+  - oauth:
+    - basic
+
+################################################################################
+#                                           Paths                              #
+################################################################################
+paths:
+  /entity:
+    get:
+      description: Returns the entities
+      security:
+       - oauth:
+         - basic
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Entity'
+
+  /entity/{id}:
+    get:
+      description: Return an entity
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired entity
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+    delete:
+      description: Delete an entity
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired status
+          required: true
+          type: string
+        - name: trim_user
+          in: query
+          description: When set to either true, t or 1, each tweet returned in a timeline will include a user object
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+            
+  /entity/terms:
+    get:
+      description: Returns entire terms
+      security:
+       - oauth:
+         - basic
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  
+  /entity/terms/{id}:
+    get:
+      description: Return the NLP
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired NLP
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  
+  /ml/{id}/data:
+    get:
+      description: Return data set from specific Data Group
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired NLP
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+              
+  /ml/data/{id}:
+    get:
+      description: Return a data set
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired dataset
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+    delete:
+      description: Delete a data set
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired data set
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'            
+  
+  /ml/data/group:
+    get:
+      description: Returns the data groups
+      security:
+       - oauth:
+         - basic
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  
+  /ml/data/import:
+    post:
+      description: Import a data set
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: count
+          in: query
+          description: Specifies the number of tweets to try and retrieve
+          required: false
+          type: string
+        - name: since_id
+          in: query
+          description: Returns result with an ID greater than the specified ID
+          required: false
+          type: string
+        - name: max_id
+          in: query
+          description: Returns results with an ID less than or equal to the specified ID
+          required: false
+          type: string
+        - name: trim_user
+          in: query
+          description: When set to either true, t or 1, each tweet returned in a timeline will include a user object
+          required: false
+          type: string
+        - name: contributor_details
+          in: query
+          description: This parameter enhances the contributors element of the status response
+          required: false
+          type: string
+        - name: include_entities
+          in: query
+          description: The entities node will be disincluded when set to false
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  
+  
+  /ml/data/group/{id}:
+    get:
+      description: Returns a specific data group
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired data group
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  
+
+  /ml/model:
+    get:
+      description: Returns all models
+      security:
+       - oauth:
+         - basic
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+
+  /ml/model/{id}/evaluation:
+    get:
+      description: Test the Model
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired model
+          required: true
+          type: string
+   
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  
+
+  /ml/model/{id}/generate:
+    get:
+      description: Generate a model
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired model
+          required: true
+          type: string
+ 
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Lists'
+
+  /nlp:
+    get:
+      description: Returns a timeline of tweets authored by memebers of the specified list
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: list_id
+          in: query
+          description: The numerical id of the list
+          required: true
+          type: string
+        - name: slug
+          in: query
+          description: You can identify a list by its slug instead of its numerical id
+          required: true
+          type: string
+        - name: owner_screen_name
+          in: query
+          description: The screen name of the user who owns the list being requested by a slug
+          required: false
+          type: string
+        - name: owner_id
+          in: query
+          description: The user ID of the user who owns the list being requested by a slug
+          required: false
+          type: string
+        - name: since_id
+          in: query
+          description: Returns results with an ID greater than the sepcified ID
+          required: false
+          type: string
+        - name: max_id
+          in: query
+          description: Returns results with an ID less than or equal to the specified ID
+          required: false
+          type: string
+        - name: count
+          in: query
+          description: Specifies the number of results to retrieve per page
+          required: false
+          type: string
+        - name: include_entities
+          in: query
+          description: Entities are ON by default
+          required: false
+          type: string
+        - name: include_rts
+          in: query
+          description: When set to either true, t or 1, the list timeline will contain native retweets in addition to the standard stream of tweets
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  
+              
+  /nlp/{id}:
+    post:
+      description: Destroys the status specified by the required ID parameter
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired status
+          required: true
+          type: string
+        - name: trim_user
+          in: query
+          description: When set to either true, t or 1, each tweet returned in a timeline will include a user object
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  
+            
+  /api/nlp/solution:
+    get:
+      description: Returns the list of memebers destroy
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: list_id
+          in: query
+          description: The numerical id of the list
+          required: true
+          type: string
+        - name: slug
+          in: query
+          description: You can identify a list by its slug instrad of its numerical id
+          required: true
+          type: string
+        - name: owner_screen_name
+          in: query
+          description: The screen name of the user who owns the list being requested by a slug
+          required: false
+          type: string
+        - name: user_id
+          in: query
+          description: The id of the user for whom to remove from the list
+          required: false
+          type: string
+        - name: screen_name
+          in: query
+          description: The screen name of the user for whom to remove from the list
+          required: false
+          type: string
+        - name: owner_id
+          in: query
+          description: The is of the user who wons the list being requested by a slug
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          
+  /nlp/solution/{id}:
+    post:
+      description: Destroys the status specified by the required ID parameter
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired status
+          required: true
+          type: string
+        - name: trim_user
+          in: query
+          description: When set to either true, t or 1, each tweet returned in a timeline will include a user object
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  
+            
+  /otca/af:
+    get:
+      description: Returns the lists of the specified user has been added to
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: user_id
+          in: query
+          description: The id of the user for whom to return results for
+          required: false
+          type: string
+        - name: screen_name
+          in: query
+          description: The screen name of the user for whom to return results for
+          required: false
+          type: string
+        - name: cursor
+          in: query
+          description: Breaks the results into pages
+          required: false
+          type: string
+        - name: filter_to_owned_lists
+          in: query
+          description: When set to true, t or 1, will return just lists the authenticating user owns
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Cursor_lists'
+
+  /api/otsn/broker:
+    get:
+      description: Returns the subscribers of the specified list
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: list_id
+          in: query
+          description: The numerical id of the list
+          required: true
+          type: string
+        - name: slug
+          in: query
+          description: You can identify a list by its slug insted of its numerical id
+          required: true
+          type: string
+        - name: owner_screen_name
+          in: query
+          description: the screen name of the user who owns the list being requested by a slug
+          required: false
+          type: string
+        - name: owner_id
+          in: query
+          description: The user ID of the user who owns the list being requested by a slug
+          required: false
+          type: string
+        - name: cursor
+          in: query
+          description: Breaks the results into pages
+          required: false
+          type: string
+        - name: include_entities
+          in: query
+          description: Wehn set to either true, t or 1
+          required: false
+          type: string
+        - name: skip_status
+          in: query
+          description: When set to either true, t or 1
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Cursor_lists'
+
+  /otsn/search/theme/json:
+    post:
+      description: Subscribes the authenticated user to the specified list
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: list_id
+          in: query
+          description: The numerical id of the list
+          required: true
+          type: string
+        - name: slug
+          in: query
+          description: You can identify a list being requested by a slug
+          required: true
+          type: string
+        - name: owner_screen_name
+          in: query
+          description: the screen name of the user who owns the list being requested by a slug
+          required: false
+          type: string
+        - name: owner_id
+          in: query
+          description: The user ID of the user who owns the list being requested by a slug
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Lists'
+
+  /se:
+    get:
+      description: Check if the specified user is a subscriber of the specified list
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: list_id
+          in: query
+          description: The numerical id of the list
+          required: true
+          type: string
+        - name: slug
+          in: query
+          description: You can identify a list being requested by a slug
+          required: true
+          type: string
+        - name: owner_screen_name
+          in: query
+          description: The screen name of the user who owns the list being requested by a slug
+          required: false
+          type: string
+        - name: user_id
+          in: query
+          description: The id of the user for whom to remove from the list
+          required: false
+          type: string
+        - name: screen_name
+          in: query
+          description: The screen name of the user for whom to remove from the list
+          required: false
+          type: string
+        - name: owner_id
+          in: query
+          description: The is of the user who wons the list being requested by a slug
+          required: false
+          type: string
+        - name: include_entities
+          in: query
+          description: Wehn set to either true, t or 1
+          required: false
+          type: string
+        - name: skip_status
+          in: query
+          description: When set to either true, t or 1
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  /se/select:
+    get:
+      description: Check if the specified user is a subscriber of the specified list
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: list_id
+          in: query
+          description: The numerical id of the list
+          required: true
+          type: string
+        - name: slug
+          in: query
+          description: You can identify a list being requested by a slug
+          required: true
+          type: string
+        - name: owner_screen_name
+          in: query
+          description: The screen name of the user who owns the list being requested by a slug
+          required: false
+          type: string
+        - name: user_id
+          in: query
+          description: The id of the user for whom to remove from the list
+          required: false
+          type: string
+        - name: screen_name
+          in: query
+          description: The screen name of the user for whom to remove from the list
+          required: false
+          type: string
+        - name: owner_id
+          in: query
+          description: The is of the user who wons the list being requested by a slug
+          required: false
+          type: string
+        - name: include_entities
+          in: query
+          description: Wehn set to either true, t or 1
+          required: false
+          type: string
+        - name: skip_status
+          in: query
+          description: When set to either true, t or 1
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  /se/update:
+    get:
+      description: Check if the specified user is a subscriber of the specified list
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: list_id
+          in: query
+          description: The numerical id of the list
+          required: true
+          type: string
+        - name: slug
+          in: query
+          description: You can identify a list being requested by a slug
+          required: true
+          type: string
+        - name: owner_screen_name
+          in: query
+          description: The screen name of the user who owns the list being requested by a slug
+          required: false
+          type: string
+        - name: user_id
+          in: query
+          description: The id of the user for whom to remove from the list
+          required: false
+          type: string
+        - name: screen_name
+          in: query
+          description: The screen name of the user for whom to remove from the list
+          required: false
+          type: string
+        - name: owner_id
+          in: query
+          description: The is of the user who wons the list being requested by a slug
+          required: false
+          type: string
+        - name: include_entities
+          in: query
+          description: Wehn set to either true, t or 1
+          required: false
+          type: string
+        - name: skip_status
+          in: query
+          description: When set to either true, t or 1
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  /api/se/{id}:
+    post:
+      description: Destroys the status specified by the required ID parameter
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired status
+          required: true
+          type: string
+        - name: trim_user
+          in: query
+          description: When set to either true, t or 1, each tweet returned in a timeline will include a user object
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+            
+  
+
+################################################################################
+#                                 Definitions                                  #
+################################################################################
+definitions:
+  Entities:
+    type: object
+    properties:
+      contributors:
+        type: array
+        items:
+          $ref: '#/definitions/Entity'
+
+  Entity:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      description:
+        type: string
+
+  Coordinates:
+    type: object
+    properties:
+      coordinates:
+        type: array
+        items:
+          type: number
+      type:
+        type: string
+
+  Users:
+    type: object
+    properties:
+      contributors_enabled:
+        type: boolean
+      created_at:
+        type: string
+      default_profile:
+        type: boolean
+      default_profile_image:
+        type: boolean
+      description:
+        type: string
+      entities:
+        $ref: '#/definitions/Entities'
+      favorites_count:
+        type: integer
+      follow_request_sent:
+        type: boolean
+      following:
+        type: boolean
+      followers_count:
+        type: integer
+      friends_count:
+        type: integer
+      geo_enabled:
+        type: boolean
+      id:
+        type: integer
+      id_str:
+        type: string
+      is_translator:
+        type: boolean
+      lang:
+        type: string
+      listed_count:
+        type: integer
+      location:
+        type: string
+      name:
+        type: string
+      notifications:
+        type: boolean
+      profile_background_color:
+        type: string
+      profile_background_image_url:
+        type: string
+      profile_background_image_url_https:
+        type: string
+      profile_background_tile:
+        type: string
+      profile_banner_url:
+        type: string
+      profile_image_url:
+        type: string
+      profile_image_url_https:
+        type: string
+      profile_link_color:
+        type: string
+      profile_sidebar_border_color:
+        type: string
+      profile_sidebar_fill_color:
+        type: string
+      profile_text_color:
+        type: string
+      profile_use_background_image:
+        type: boolean
+      protected:
+        type: boolean
+      screen_name:
+        type: string
+      show_all_inline_media:
+        type: boolean
+      statuses_count:
+        type: integer
+      time_zone:
+        type: string
+      url:
+        type: string
+      utc_offset:
+        type: integer
+      verified:
+        type: boolean
+      withheld_in_countries:
+        type: string
+      withheld_scope:
+        type: string
+
+  Hashtags:
+    type: object
+    properties:
+      indices:
+        type: array
+        items:
+          type: integer
+      text:
+        type: string
+
+  Media:
+    type: object
+    properties:
+      display_url:
+        type: string
+      expanded_url:
+        type: string
+      id:
+        type: integer
+      id_str:
+        type: string
+      indices:
+        type: array
+        items:
+          type: integer
+      media_url:
+        type: string
+      media_url_https:
+        type: string
+      sizes:
+        $ref: '#/definitions/Sizes'
+      source_status_id:
+        type: integer
+      source_status_id_str:
+        type: integer
+      type:
+        type: string
+      url:
+        type: string
+
+  Size:
+    type: object
+    properties:
+      h:
+        type: integer
+      resize:
+        type: string
+      w:
+        type: integer
+
+
+  Sizes:
+    type: object
+    properties:
+      thumb:
+        $ref: '#/definitions/Size'
+      large:
+        $ref: '#/definitions/Size'
+      medium:
+        $ref: '#/definitions/Size'
+      small:
+        $ref: '#/definitions/Size'
+
+  URL:
+    type: object
+    properties:
+      display_url:
+        type: string
+      expanded_url:
+        type: string
+      indices:
+        type: string
+      url:
+        type: string
+
+  User_Mention:
+    type: object
+    properties:
+      id:
+        type: integer
+      id_str:
+        type: string
+      indices:
+        type: array
+        items:
+          type: integer
+      name:
+        type: string
+      screen_name:
+        type: string
+
+  Places:
+    type: object
+    properties:
+      attributes:
+        type: object
+        additionalProperties: {}
+      bounding_box:
+        $ref: '#/definitions/Bounding_box'
+      country:
+        type: string
+      country_code:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      place_type:
+        type: string
+      url:
+        type: string
+
+  Bounding_box:
+    type: object
+    properties:
+      coordinates:
+        type: array
+        items:
+          type: array
+          items:
+            type: number
+      type:
+        type: string
+
+  Lists:
+    type: object
+    properties:
+      created_at:
+        type: string
+      slug:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+      mode:
+        type: string
+      following:
+        type: boolean
+      user:
+        $ref: '#/definitions/Users'
+      member_count:
+        type: integer
+      id_str:
+        type: string
+      subscriber_count:
+        type: integer
+      id:
+        type: integer
+      uri:
+        type: string
+
+  Cursor_lists:
+    type: object
+    properties:
+      previous_cursor:
+        type: integer
+      lists:
+        type: array
+        items:
+          $ref: '#/definitions/Lists'
+      previous_cursor_str:
+        type: string
+      next_cursor:
+        type: integer
+      next_cursor_str:
+        type: string
+
+  Cursor_users:
+    type: object
+    properties:
+      previous_cursor:
+        type: integer
+      users:
+        type: array
+        items:
+          $ref: '#/definitions/Users'
+      previous_cursor_str:
+        type: string
+      next_cursor:
+        type: integer
+      next_cursor_str:
+        type: string
+
+  Cursor_ids:
+    type: object
+    properties:
+      previous_cursor:
+        type: integer
+      users:
+        type: array
+        items:
+          type: integer
+      previous_cursor_str:
+        type: string
+      next_cursor:
+        type: integer
+      next_cursor_str:
+        type: string
+
+  Messages:
+    type: object
+    properties:
+      created_at:
+        type: string
+      entities:
+        $ref: '#/definitions/Entities'
+      id:
+        type: integer
+      id_string:
+        type: string
+      recipient:
+        $ref: '#/definitions/Users'
+      recipient_id:
+        type: integer
+      recipient_screen_name:
+        type: string
+      sender:
+        $ref: '#/definitions/Users'
+      sender_id:
+        type: integer
+      sender_screen_name:
+        type: string
+      text:
+        type: string
+
+  Query:
+    type: object
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      id_str:
+        type: string
+      name:
+        type: string
+      position:
+        type: string
+      query:
+        type: string
+
+  Friendship:
+    type: object
+    properties:
+      relationship:
+        $ref: '#/definitions/Targets'
+      source:
+        $ref: '#/definitions/Source'
+
+  Targets:
+    type: object
+    properties:
+      target:
+        $ref: '#/definitions/Target'
+
+  Target:
+    type: object
+    properties:
+      id_str:
+        type: string
+      id:
+        type: integer
+      followed_by:
+        type: boolean
+      screen_name:
+        type: string
+      following:
+        type: boolean
+
+  Source:
+    type: object
+    properties:
+      can_dm:
+        type: boolean
+      blocking:
+        type: boolean
+      id_str:
+        type: boolean
+      all_replies:
+        type: boolean
+      want_retweets:
+        type: boolean
+      id:
+        type: integer
+      marked_spam:
+        type: boolean
+      followed_by:
+        type: boolean
+      notifications_enable:
+        type: boolean
+      screen_name:
+        type: string
+      following:
+        type: boolean
+
+  Settings:
+    type: object
+    properties:
+      sleep_time:
+        $ref: '#/definitions/Sleep'
+      use_cookie_personalization:
+        type: boolean
+      trend_location:
+        type: array
+        items:
+          $ref: '#/definitions/Location'
+      language:
+        type: string
+      discoverable_by_email:
+        type: boolean
+      always_use_https:
+        type: boolean
+      protected:
+        type: boolean
+      geo_enabled:
+        type: boolean
+      show_all_inline_media:
+        type: boolean
+      screen_name:
+        type: string
+
+  Sleep:
+    type: object
+    properties:
+      end_time:
+        type: string
+      enabled:
+        type: boolean
+      start_time:
+        type: string
+
+  Location:
+    type: object
+    properties:
+      name:
+        type: string
+      placeType:
+        $ref: '#/definitions/PlaceType'
+      woeid:
+        type: integer
+      country:
+        type: string
+      url:
+        type: string
+      countryCode:
+        type: string
+      parentid:
+        type: integer
+
+  PlaceType:
+    type: object
+    properties:
+      name:
+        type: string
+      code:
+        type: integer
+
+  TrendInfo:
+    type: object
+    properties:
+      as_of:
+        type: string
+      created_at:
+        type: string
+      locations:
+        type: array
+        items:
+          $ref: '#/definitions/Location'
+      trends:
+        type: array
+        items:
+          $ref: '#/definitions/Trends'
+
+  Trends:
+    type: object
+    properties:
+      events:
+        type: string
+      name:
+        type: string
+      promoted_content:
+        type: string
+      query:
+        type: string
+      url:
+        type: string
+
+  Help_Config:
+    type: object
+    properties:
+      dm_text_character_limit:
+        type: integer
+      characters_reserved_per_media:
+        type: integer
+      max_media_per_upload:
+        type: integer
+      non_username_paths:
+        type: array
+        items:
+          type: string
+      photo_size_limit:
+        type: integer
+      photo_sizes:
+        $ref: '#/definitions/Sizes'
+
+  Help_Language:
+    type: object
+    properties:
+      code:
+        type: string
+      status:
+        type: string
+      name:
+        type: string
+
+  Help_Privacy:
+    type: object
+    properties:
+      privacy:
+        type: string
+
+  Help_Tos:
+    type: object
+    properties:
+      Tos:
+        type: string
