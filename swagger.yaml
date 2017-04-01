@@ -14,7 +14,6 @@ basePath: /api
 schemes:
   # tip: remove http to make production-grade
   - http
-  - https
 # format of bodies a client can send (Content-Type)
 consumes:
   - application/json
@@ -248,7 +247,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: The numerical ID of the desired data group
+          description: The numerical ID of the desired data group.
           required: true
           type: string
       responses:
@@ -261,7 +260,7 @@ paths:
 
   /ml/model:
     get:
-      description: Returns all models
+      description: Returns all models.
       security:
        - oauth:
          - basic
@@ -273,7 +272,7 @@ paths:
 
   /ml/model/{id}/evaluation:
     get:
-      description: Test the Model
+      description: Test the model.
       security:
        - oauth:
          - basic
@@ -294,7 +293,7 @@ paths:
 
   /ml/model/{id}/generate:
     get:
-      description: Generate a model
+      description: Generate a model.
       security:
        - oauth:
          - basic
@@ -465,32 +464,22 @@ paths:
   
             
   /otca/af:
-    get:
-      description: Returns the lists of the specified user has been added to
+    post:
+      description: Imports the OTCA Autority File XML to Viglet Turing as Entity.
       security:
        - oauth:
          - basic
+      operationId: uploadFile
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json         
       parameters:
-        - name: user_id
-          in: query
-          description: The id of the user for whom to return results for
-          required: false
-          type: string
-        - name: screen_name
-          in: query
-          description: The screen name of the user for whom to return results for
-          required: false
-          type: string
-        - name: cursor
-          in: query
-          description: Breaks the results into pages
-          required: false
-          type: string
-        - name: filter_to_owned_lists
-          in: query
-          description: When set to true, t or 1, will return just lists the authenticating user owns
-          required: false
-          type: string
+        - name: file
+          in: formData
+          description: OTCA AF XML file
+          required: true
+          type: file
       responses:
         "200":
           description: Success
@@ -499,44 +488,24 @@ paths:
 
   /api/otsn/broker:
     get:
-      description: Returns the subscribers of the specified list
+      description: Simulate the OTSN Broker
       security:
        - oauth:
          - basic
       parameters:
-        - name: list_id
-          in: query
-          description: The numerical id of the list
-          required: true
-          type: string
-        - name: slug
-          in: query
-          description: You can identify a list by its slug insted of its numerical id
-          required: true
-          type: string
-        - name: owner_screen_name
-          in: query
-          description: the screen name of the user who owns the list being requested by a slug
+        - name: data
+          in: formData
+          description: XML with atributes
           required: false
           type: string
-        - name: owner_id
-          in: query
-          description: The user ID of the user who owns the list being requested by a slug
+        - name: index
+          in: formData
+          description: Name of core Index of Search Engine
           required: false
           type: string
-        - name: cursor
-          in: query
-          description: Breaks the results into pages
-          required: false
-          type: string
-        - name: include_entities
-          in: query
-          description: Wehn set to either true, t or 1
-          required: false
-          type: string
-        - name: skip_status
-          in: query
-          description: When set to either true, t or 1
+        - name: config
+          in: formData
+          description: Config file name
           required: false
           type: string
       responses:
@@ -547,29 +516,34 @@ paths:
 
   /otsn/search/theme/json:
     post:
-      description: Subscribes the authenticated user to the specified list
+      description: Returns JSON of Semantic Navigation.
       security:
        - oauth:
          - basic
       parameters:
-        - name: list_id
+        - name: q
           in: query
-          description: The numerical id of the list
-          required: true
-          type: string
-        - name: slug
-          in: query
-          description: You can identify a list being requested by a slug
-          required: true
-          type: string
-        - name: owner_screen_name
-          in: query
-          description: the screen name of the user who owns the list being requested by a slug
+          description: Term to search
           required: false
           type: string
-        - name: owner_id
+        - name: p
           in: query
-          description: The user ID of the user who owns the list being requested by a slug
+          description: Number of page
+          required: false
+          type: integer
+        - name: fq[]
+          in: query
+          description: Filter Query, normaly is used to facets
+          required: false
+          type: string
+        - name: _setlocale
+          in: query
+          description: Locale
+          required: false
+          type: string
+        - name: sort
+          in: query
+          description: Search Sort
           required: false
           type: string
       responses:
@@ -580,51 +554,10 @@ paths:
 
   /se:
     get:
-      description: Check if the specified user is a subscriber of the specified list
+      description: Returns all search engines
       security:
        - oauth:
          - basic
-      parameters:
-        - name: list_id
-          in: query
-          description: The numerical id of the list
-          required: true
-          type: string
-        - name: slug
-          in: query
-          description: You can identify a list being requested by a slug
-          required: true
-          type: string
-        - name: owner_screen_name
-          in: query
-          description: The screen name of the user who owns the list being requested by a slug
-          required: false
-          type: string
-        - name: user_id
-          in: query
-          description: The id of the user for whom to remove from the list
-          required: false
-          type: string
-        - name: screen_name
-          in: query
-          description: The screen name of the user for whom to remove from the list
-          required: false
-          type: string
-        - name: owner_id
-          in: query
-          description: The is of the user who wons the list being requested by a slug
-          required: false
-          type: string
-        - name: include_entities
-          in: query
-          description: Wehn set to either true, t or 1
-          required: false
-          type: string
-        - name: skip_status
-          in: query
-          description: When set to either true, t or 1
-          required: false
-          type: string
       responses:
         "200":
           description: Success
@@ -633,49 +566,34 @@ paths:
             
   /se/select:
     get:
-      description: Check if the specified user is a subscriber of the specified list
+      description: Search into default search engine.
       security:
        - oauth:
          - basic
       parameters:
-        - name: list_id
+        - name: q
           in: query
-          description: The numerical id of the list
-          required: true
-          type: string
-        - name: slug
-          in: query
-          description: You can identify a list being requested by a slug
-          required: true
-          type: string
-        - name: owner_screen_name
-          in: query
-          description: The screen name of the user who owns the list being requested by a slug
+          description: Term to search
           required: false
           type: string
-        - name: user_id
+        - name: p
           in: query
-          description: The id of the user for whom to remove from the list
+          description: Number of page
+          required: false
+          type: integer
+        - name: fq[]
+          in: query
+          description: Filter Query, normaly is used to facets
           required: false
           type: string
-        - name: screen_name
+        - name: _setlocale
           in: query
-          description: The screen name of the user for whom to remove from the list
+          description: Locale
           required: false
           type: string
-        - name: owner_id
+        - name: sort
           in: query
-          description: The is of the user who wons the list being requested by a slug
-          required: false
-          type: string
-        - name: include_entities
-          in: query
-          description: Wehn set to either true, t or 1
-          required: false
-          type: string
-        - name: skip_status
-          in: query
-          description: When set to either true, t or 1
+          description: Search Sort
           required: false
           type: string
       responses:
@@ -686,51 +604,26 @@ paths:
             
   /se/update:
     get:
-      description: Check if the specified user is a subscriber of the specified list
+      description: Index content into specific search engine.
       security:
        - oauth:
          - basic
       parameters:
-        - name: list_id
+        - name: vigText
           in: query
-          description: The numerical id of the list
+          description: Text 
           required: true
           type: string
-        - name: slug
+        - name: vigNLP
           in: query
-          description: You can identify a list being requested by a slug
+          description: NLP Id
           required: true
-          type: string
-        - name: owner_screen_name
+          type: integer
+        - name: vigSE
           in: query
-          description: The screen name of the user who owns the list being requested by a slug
-          required: false
-          type: string
-        - name: user_id
-          in: query
-          description: The id of the user for whom to remove from the list
-          required: false
-          type: string
-        - name: screen_name
-          in: query
-          description: The screen name of the user for whom to remove from the list
-          required: false
-          type: string
-        - name: owner_id
-          in: query
-          description: The is of the user who wons the list being requested by a slug
-          required: false
-          type: string
-        - name: include_entities
-          in: query
-          description: Wehn set to either true, t or 1
-          required: false
-          type: string
-        - name: skip_status
-          in: query
-          description: When set to either true, t or 1
-          required: false
-          type: string
+          description: Search Engine Id
+          required: true
+          type: integer
       responses:
         "200":
           description: Success
@@ -739,20 +632,15 @@ paths:
             
   /api/se/{id}:
     post:
-      description: Destroys the status specified by the required ID parameter
+      description: Returns a specific search engine
       security:
        - oauth:
          - basic
       parameters:
         - name: id
           in: path
-          description: The numerical ID of the desired status
+          description: The numerical ID of the desired search engine
           required: true
-          type: string
-        - name: trim_user
-          in: query
-          description: When set to either true, t or 1, each tweet returned in a timeline will include a user object
-          required: false
           type: string
       responses:
         "200":
