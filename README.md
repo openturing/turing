@@ -7,6 +7,6 @@ Platform that uses natural language processing (NLP) and machine learning to pro
 * [API Documentation](http://docs.viglet.apiary.io)
 * [Viglet Turing for WordPress](https://github.com/openviglet/turing4wp)
 
-#For more information
+# For more information
 
 * [Viglet website](http://www.viglet.ai)
