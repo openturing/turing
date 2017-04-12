@@ -4,7 +4,7 @@ swagger: "2.0"
 #                              API Information                                 #
 ################################################################################
 info:
-  version: "1.1"
+  version: "0.9"
   title: Viglet Turing REST API
 # during dev, should point to your local machine
 host: api.viglet.ai
@@ -96,22 +96,9 @@ paths:
             $ref: '#/definitions/Users'
             
             
-  /entity/terms:
+  /entity/{id}/terms:
     get:
-      description: Returns entire terms
-      security:
-       - oauth:
-         - basic
-      responses:
-        "200":
-          description: Success
-          schema:
-            $ref: '#/definitions/Users'
-            
-  
-  /entity/terms/{id}:
-    get:
-      description: Return the NLP
+      description: Returns entire terms per entity
       security:
        - oauth:
          - basic
@@ -127,26 +114,50 @@ paths:
           schema:
             $ref: '#/definitions/Users'
             
-  
-  /ml/{id}/data:
+  /ml:
     get:
-      description: Return data set from specific Data Group
+      description: Returns entire machine learnings
+      security:
+       - oauth:
+         - basic
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users' 
+  /ml/{id}:
+    get:
+      description: Returns an machine learning
       security:
        - oauth:
          - basic
       parameters:
         - name: id
           in: path
-          description: The numerical ID of the desired NLP
+          description: The numerical ID of the desired ML
           required: true
-          type: string
+          type: string         
       responses:
         "200":
           description: Success
           schema:
-            $ref: '#/definitions/Users'
-            
-              
+            $ref: '#/definitions/Users'   
+    delete:
+      description: Delete an machine learning
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired ML
+          required: true
+          type: string         
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'                
   /ml/data/{id}:
     get:
       description: Return a data set
