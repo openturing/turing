@@ -9,8 +9,10 @@ info:
 # during dev, should point to your local machine
 host: api.viglet.ai
 # basePath prefixes all resource paths
-basePath: /turing
+
 # basePath: 
+basePath: /turing
+
 #
 schemes:
   # tip: remove http to make production-grade
@@ -29,14 +31,13 @@ securityDefinitions:
   oauth:
     type: oauth2
     flow: implicit
-    authorizationUrl: https://api.viglet.com/oauth/authorize/?client_id=CLIENT-ID&redirect_uri=REDIRECT-URI&response_type=token
+    authorizationUrl: https://api.viglet.ai/oauth/authorize/?client_id=CLIENT-ID&redirect_uri=REDIRECT-URI&response_type=token
     scopes:
       basic: |
        to read any and all data related to twitter
 security:
   - oauth:
     - basic
-
 ################################################################################
 #                                           Paths                              #
 ################################################################################
@@ -47,6 +48,8 @@ paths:
       security:
        - oauth:
          - basic
+      tags: 
+        - Entities     
       responses:
         "200":
           description: Success
@@ -67,6 +70,8 @@ paths:
           description: The numerical ID of the desired entity
           required: true
           type: string
+      tags: 
+        - Entities  
       responses:
         "200":
           description: Success
@@ -152,6 +157,8 @@ paths:
       security:
        - oauth:
          - basic
+      tags: 
+        - Machine Learning  
       responses:
         "200":
           description: Success
@@ -249,6 +256,8 @@ paths:
           description: The numerical ID of the desired dataset
           required: true
           type: string
+      tags: 
+        - Datas     
       responses:
         "200":
           description: Success
@@ -371,6 +380,8 @@ paths:
       security:
        - oauth:
          - basic
+      tags: 
+        - Models         
       responses:
         "200":
           description: Success
@@ -389,7 +400,8 @@ paths:
           description: The numerical ID of the desired model
           required: true
           type: string
-   
+      tags: 
+        - Models 
       responses:
         "200":
           description: Success
@@ -410,7 +422,8 @@ paths:
           description: The numerical ID of the desired model
           required: true
           type: string
- 
+      tags: 
+        - Models
       responses:
         "200":
           description: Success
@@ -471,6 +484,8 @@ paths:
           description: When set to either true, t or 1, the list timeline will contain native retweets in addition to the standard stream of tweets
           required: false
           type: string
+      tags: 
+        - NLPs
       responses:
         "200":
           description: Success
@@ -586,6 +601,8 @@ paths:
           description: OTCA AF XML file
           required: true
           type: file
+      tags: 
+        - Integrations          
       responses:
         "200":
           description: Success
@@ -614,6 +631,8 @@ paths:
           description: Config file name
           required: false
           type: string
+      tags: 
+        - Integrations          
       responses:
         "200":
           description: Success
@@ -652,6 +671,8 @@ paths:
           description: Search Sort
           required: false
           type: string
+      tags: 
+        - Integrations          
       responses:
         "200":
           description: Success
@@ -664,6 +685,8 @@ paths:
       security:
        - oauth:
          - basic
+      tags: 
+        - Search Engines     
       responses:
         "200":
           description: Success
@@ -682,6 +705,8 @@ paths:
           description: The numerical ID of the desired search engine
           required: true
           type: string
+      tags: 
+        - Search Engines          
       responses:
         "200":
           description: Success
