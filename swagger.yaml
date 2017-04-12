@@ -191,7 +191,23 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Users'            
-  
+    post:
+      description: Update a data set
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired data set
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'  
+            
   /ml/data/group:
     get:
       description: Returns the data groups
