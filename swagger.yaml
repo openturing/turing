@@ -7,9 +7,10 @@ info:
   version: "1.1"
   title: Viglet Turing REST API
 # during dev, should point to your local machine
-host: api.viglet.com
+host: api.viglet.ai
 # basePath prefixes all resource paths
-basePath: /api
+basePath: /turing
+# basePath: 
 #
 schemes:
   # tip: remove http to make production-grade
