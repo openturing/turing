@@ -16,7 +16,7 @@ basePath: /turing
 #
 schemes:
   # tip: remove http to make production-grade
-  - http
+  - https
 # format of bodies a client can send (Content-Type)
 consumes:
   - application/json
@@ -41,6 +41,9 @@ security:
 ################################################################################
 #                                           Paths                              #
 ################################################################################
+################################################################################
+#                                         Entities                             #
+################################################################################
 paths:
   /entity:
     get:
@@ -58,14 +61,14 @@ paths:
             items:
               $ref: '#/definitions/Entity'
 
-  /entity/{id}:
+  /entity/{entityId}:
     get:
       description: Return an entity
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: entityId
           in: path
           description: The numerical ID of the desired entity
           required: true
@@ -84,7 +87,7 @@ paths:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: entityId
           in: path
           description: The numerical ID of the desired status
           required: true
@@ -103,14 +106,14 @@ paths:
             $ref: '#/definitions/Users'
             
             
-  /entity/{id}/term:
+  /entity/{entityId}/term:
     get:
       description: Returns entire terms per entity
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: entityId
           in: path
           description: The numerical ID of the desired NLP
           required: true
@@ -122,14 +125,14 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Users'
-  /entity/term/{id}:
+  /entity/term/{termId}:
     get:
       description: Return a term
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: termId
           in: path
           description: The numerical ID of the desired term
           required: true
@@ -147,7 +150,7 @@ paths:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: termId
           in: path
           description: The numerical ID of the desired term
           required: true
@@ -173,14 +176,14 @@ paths:
           schema:
             $ref: '#/definitions/Users' 
          
-  /ml/{id}:
+  /ml/{mlId}:
     get:
       description: Returns an machine learning
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: mlId
           in: path
           description: The numerical ID of the desired ML
           required: true
@@ -198,7 +201,7 @@ paths:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: mlId
           in: path
           description: The numerical ID of the desired ML
           required: true
@@ -225,14 +228,14 @@ paths:
           schema:
             $ref: '#/definitions/Users'   
 
-  /ml/type/{id}:
+  /ml/type/{mlTypeId}:
     get:
       description: Returns a machine learning type
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: mlTypeId
           in: path
           description: The numerical ID of the desired ML
           required: true
@@ -250,7 +253,7 @@ paths:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: mlTypeId
           in: path
           description: The numerical ID of the desired ML
           required: true
@@ -262,14 +265,14 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Users'                     
-  /ml/data/{id}:
+  /ml/data/{dataId}:
     get:
       description: Return a data set
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: dataId
           in: path
           description: The numerical ID of the desired dataset
           required: true
@@ -287,7 +290,7 @@ paths:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: dataId
           in: path
           description: The numerical ID of the desired data set
           required: true
@@ -305,7 +308,7 @@ paths:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: dataId
           in: path
           description: The numerical ID of the desired data set
           required: true
@@ -380,14 +383,14 @@ paths:
             
   
   
-  /ml/data/group/{id}:
+  /ml/data/group/{dataGroupId}:
     get:
       description: Returns a specific data group
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: dataGroupId
           in: path
           description: The numerical ID of the desired data group.
           required: true
@@ -416,14 +419,14 @@ paths:
           schema:
             $ref: '#/definitions/Users'
 
-  /ml/model/{id}/evaluation:
+  /ml/model/{modelId}/evaluation:
     get:
       description: Test the model.
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: modelId
           in: path
           description: The numerical ID of the desired model
           required: true
@@ -438,14 +441,14 @@ paths:
             
   
 
-  /ml/model/{id}/generate:
+  /ml/model/{modelId}/generate:
     get:
       description: Generate a model.
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: modelId
           in: path
           description: The numerical ID of the desired model
           required: true
@@ -521,14 +524,14 @@ paths:
             $ref: '#/definitions/Users'
             
   
-  /nlp/type/{id}:
+  /nlp/type/{nlpTypeId}:
     post:
       description: Destroys the status specified by the required ID parameter
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: nlpTypeId
           in: path
           description: The numerical ID of the desired status
           required: true
@@ -591,14 +594,14 @@ paths:
         "200":
           description: Success
           
-  /nlp/{id}:
+  /nlp/{nlpId}:
     post:
       description: Destroys the status specified by the required ID parameter
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: nlpId
           in: path
           description: The numerical ID of the desired status
           required: true
@@ -727,14 +730,14 @@ paths:
           schema:
             $ref: '#/definitions/Users'
  
-  /se/{id}:
+  /se/{seId}:
     post:
       description: Returns a specific search engine
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: seId
           in: path
           description: The numerical ID of the desired search engine
           required: true
@@ -747,14 +750,14 @@ paths:
           schema:
             $ref: '#/definitions/Users'
                         
-  /se/{id}/select:
+  /se/{seId}/select:
     get:
       description: Search into default search engine.
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: seId
           in: path
           description: The numerical ID of the desired search engine
           required: true
@@ -792,14 +795,14 @@ paths:
           schema:
             $ref: '#/definitions/Users'
             
-  /se/{id}/update:
+  /se/{seId}/update:
     get:
       description: Index content into specific search engine.
       security:
        - oauth:
          - basic
       parameters:
-        - name: id
+        - name: seId
           in: path
           description: The numerical ID of the desired search engine
           required: true
