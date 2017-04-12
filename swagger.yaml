@@ -94,6 +94,8 @@ paths:
           description: When set to either true, t or 1, each tweet returned in a timeline will include a user object
           required: false
           type: string
+      tags: 
+        - Entities          
       responses:
         "200":
           description: Success
@@ -113,6 +115,8 @@ paths:
           description: The numerical ID of the desired NLP
           required: true
           type: string
+      tags: 
+        - Entities          
       responses:
         "200":
           description: Success
@@ -130,6 +134,8 @@ paths:
           description: The numerical ID of the desired term
           required: true
           type: string
+      tags: 
+        - Entities            
       responses:
         "200":
           description: Success
@@ -146,6 +152,8 @@ paths:
           description: The numerical ID of the desired term
           required: true
           type: string
+      tags: 
+        - Entities            
       responses:
         "200":
           description: Success
@@ -176,7 +184,9 @@ paths:
           in: path
           description: The numerical ID of the desired ML
           required: true
-          type: string         
+          type: string  
+      tags: 
+        - Machine Learning            
       responses:
         "200":
           description: Success
@@ -192,7 +202,9 @@ paths:
           in: path
           description: The numerical ID of the desired ML
           required: true
-          type: string         
+          type: string   
+      tags: 
+        - Machine Learning            
       responses:
         "200":
           description: Success
@@ -205,6 +217,8 @@ paths:
       security:
        - oauth:
          - basic
+      tags: 
+        - Machine Learning           
       responses:
         "200":
           description: Success
@@ -223,6 +237,8 @@ paths:
           description: The numerical ID of the desired ML
           required: true
           type: string         
+      tags: 
+        - Machine Learning  
       responses:
         "200":
           description: Success
@@ -238,7 +254,9 @@ paths:
           in: path
           description: The numerical ID of the desired ML
           required: true
-          type: string         
+          type: string  
+      tags: 
+        - Machine Learning            
       responses:
         "200":
           description: Success
@@ -257,7 +275,7 @@ paths:
           required: true
           type: string
       tags: 
-        - Datas     
+        - Datasets    
       responses:
         "200":
           description: Success
@@ -274,6 +292,8 @@ paths:
           description: The numerical ID of the desired data set
           required: true
           type: string
+      tags: 
+        - Datasets            
       responses:
         "200":
           description: Success
@@ -290,6 +310,8 @@ paths:
           description: The numerical ID of the desired data set
           required: true
           type: string
+      tags: 
+        - Datasets            
       responses:
         "200":
           description: Success
@@ -302,6 +324,8 @@ paths:
       security:
        - oauth:
          - basic
+      tags: 
+        - Datasets           
       responses:
         "200":
           description: Success
@@ -346,6 +370,8 @@ paths:
           description: The entities node will be disincluded when set to false
           required: false
           type: string
+      tags: 
+        - Datasets            
       responses:
         "200":
           description: Success
@@ -366,6 +392,8 @@ paths:
           description: The numerical ID of the desired data group.
           required: true
           type: string
+      tags: 
+        - Datasets            
       responses:
         "200":
           description: Success
@@ -510,6 +538,8 @@ paths:
           description: When set to either true, t or 1, each tweet returned in a timeline will include a user object
           required: false
           type: string
+      tags: 
+        - NLPs          
       responses:
         "200":
           description: Success
@@ -555,6 +585,8 @@ paths:
           description: The is of the user who wons the list being requested by a slug
           required: false
           type: string
+      tags: 
+        - NLPs          
       responses:
         "200":
           description: Success
@@ -576,6 +608,8 @@ paths:
           description: When set to either true, t or 1, each tweet returned in a timeline will include a user object
           required: false
           type: string
+      tags: 
+        - NLPs          
       responses:
         "200":
           description: Success
@@ -750,6 +784,8 @@ paths:
           description: Search Sort
           required: false
           type: string
+      tags: 
+        - Search Engines             
       responses:
         "200":
           description: Success
@@ -783,6 +819,8 @@ paths:
           description: Search Engine Id
           required: true
           type: integer
+      tags: 
+        - Search Engines             
       responses:
         "200":
           description: Success
