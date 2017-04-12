@@ -96,7 +96,7 @@ paths:
             $ref: '#/definitions/Users'
             
             
-  /entity/{id}/terms:
+  /entity/{id}/term:
     get:
       description: Returns entire terms per entity
       security:
@@ -113,10 +113,42 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Users'
-            
+  /entity/term/{id}:
+    get:
+      description: Return a term
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired term
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'         
+    delete:
+      description: Delete a term
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired term
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'                   
   /ml:
     get:
-      description: Returns entire machine learnings
+      description: Returns entire machine learning
       security:
        - oauth:
          - basic
@@ -125,6 +157,7 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Users' 
+         
   /ml/{id}:
     get:
       description: Returns an machine learning
@@ -157,7 +190,53 @@ paths:
         "200":
           description: Success
           schema:
-            $ref: '#/definitions/Users'                
+            $ref: '#/definitions/Users'  
+  
+  /ml/type:
+    get:
+      description: Returns an entire machine learning types
+      security:
+       - oauth:
+         - basic
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'   
+
+  /ml/type/{id}:
+    get:
+      description: Returns a machine learning type
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired ML
+          required: true
+          type: string         
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'   
+    delete:
+      description: Delete an machine learning
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired ML
+          required: true
+          type: string         
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'                     
   /ml/data/{id}:
     get:
       description: Return a data set
@@ -340,7 +419,7 @@ paths:
             items:
               $ref: '#/definitions/Lists'
 
-  /nlp:
+  /nlp/type:
     get:
       description: Returns a timeline of tweets authored by memebers of the specified list
       security:
@@ -399,8 +478,7 @@ paths:
             $ref: '#/definitions/Users'
             
   
-              
-  /nlp/{id}:
+  /nlp/type/{id}:
     post:
       description: Destroys the status specified by the required ID parameter
       security:
@@ -425,7 +503,7 @@ paths:
             
   
             
-  /api/nlp/solution:
+  /nlp:
     get:
       description: Returns the list of memebers destroy
       security:
@@ -466,7 +544,7 @@ paths:
         "200":
           description: Success
           
-  /nlp/solution/{id}:
+  /nlp/{id}:
     post:
       description: Destroys the status specified by the required ID parameter
       security:
@@ -514,7 +592,7 @@ paths:
           schema:
             $ref: '#/definitions/Cursor_lists'
 
-  /api/otsn/broker:
+  /otsn/broker:
     get:
       description: Simulate the OTSN Broker
       security:
@@ -591,14 +669,37 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Users'
-            
-  /se/select:
+ 
+  /se/{id}:
+    post:
+      description: Returns a specific search engine
+      security:
+       - oauth:
+         - basic
+      parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired search engine
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Users'
+                        
+  /se/{id}/select:
     get:
       description: Search into default search engine.
       security:
        - oauth:
          - basic
       parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired search engine
+          required: true
+          type: string     
         - name: q
           in: query
           description: Term to search
@@ -630,13 +731,18 @@ paths:
           schema:
             $ref: '#/definitions/Users'
             
-  /se/update:
+  /se/{id}/update:
     get:
       description: Index content into specific search engine.
       security:
        - oauth:
          - basic
       parameters:
+        - name: id
+          in: path
+          description: The numerical ID of the desired search engine
+          required: true
+          type: string      
         - name: vigText
           in: query
           description: Text 
@@ -652,24 +758,6 @@ paths:
           description: Search Engine Id
           required: true
           type: integer
-      responses:
-        "200":
-          description: Success
-          schema:
-            $ref: '#/definitions/Users'
-            
-  /api/se/{id}:
-    post:
-      description: Returns a specific search engine
-      security:
-       - oauth:
-         - basic
-      parameters:
-        - name: id
-          in: path
-          description: The numerical ID of the desired search engine
-          required: true
-          type: string
       responses:
         "200":
           description: Success
