@@ -1,0 +1,29 @@
+<div ng-controller="MLDataGroupCtrl"
+	class="demo-cards mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid ">
+	<div
+		class="demo-entity-import mdl-card mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--3-col-desktop">
+		<div class="mdl-card__title mdl-card--expand mdl-color--light-blue-300">
+			<h2 class="mdl-card__title-text">Create a Data Group</h2>
+		</div>
+		<div class="mdl-card__supporting-text mdl-color-text--grey-600">
+			Create a Data Group</div>
+		<div class="mdl-card__actions mdl-card--border">
+			<a ng-href="#data/group/create"
+				class="mdl-button mdl-js-button mdl-js-ripple-effect">Create</a>
+
+		</div>
+	</div>
+	<div ng-repeat="vigDataGroup in vigDataGroups"
+		class="demo-entity mdl-card mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--3-col-desktop">
+		<div class="mdl-card__title mdl-card--expand mdl-color--light-blue-300">
+			<h2 class="mdl-card__title-text">{{vigDataGroup.name}}</h2>
+		</div>
+		<div class="mdl-card__supporting-text mdl-color-text--grey-600">
+			{{vigDataGroup.description}}</div>
+		<div class="mdl-card__actions mdl-card--border">
+			<a ng-href="#data/group/{{vigDataGroup.id}}"
+				class="mdl-button mdl-js-button mdl-js-ripple-effect">Configure</a>
+
+		</div>
+	</div>
+</div>

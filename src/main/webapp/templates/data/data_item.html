@@ -1,0 +1,59 @@
+<div ng-controller="MLDataItemCtrl"
+	class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
+	<div class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
+		<div
+			class="demo-options mdl-card mdl-card--expand  mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-cell--12-col-desktop"
+			style="width: 100%;">
+			<div class="mdl-card__supporting-text mdl-card--expand"
+				style="width: 100%;">
+				<div
+					class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-cell--12-col-desktop">
+					<div
+						class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+						style="width: calc(100% - 20px)">
+						<input class="mdl-textfield__input" type="text" id="title"
+							style="font-size: 40px" value="{{vigData.data.name}}"> <label
+							class="mdl-textfield__label" for="title">File</label>
+					</div>
+				</div>
+				<div
+					class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-cell--12-col-desktop">
+					<div
+						class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+						style="width: calc(100% - 20px);">
+						<input class="mdl-textfield__input" type="text" id="description"
+							value="{{vigData.data.name}}"> <label
+							class="mdl-textfield__label" for="description">Description</label>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
+		<div
+			class="demo-options mdl-card mdl-card--expand  mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-cell-12-col-tablet mdl-cell--12-col-desktop">
+			<div class="mdl-card__supporting-text mdl-card--expand ">
+				<h3>Sentences</h3>
+				<div ng-repeat="vigDataSentence in vigData.data.sentence">
+					<div class="mdl-grid">
+						<div
+							class="mdl-cell mdl-cell--4-col mdl-cell-4-col-tablet mdl-cell--4-col-desktop">
+							<div class="mdl-selectfield mdl-js-selectfield">
+								<select id="category" class="mdl-selectfield__select">
+									<option value=""></option>
+									<option ng-repeat="vigCategory in vigData.category"
+										value="{{vigCategory.id}}">{{vigCategory.name}}</option>
+								</select>
+
+							</div>
+						</div>
+						<div
+							class="mdl-cell mdl-cell--8-col mdl-cell-8-col-tablet mdl-cell--8-col-desktop">
+							<pre>{{vigDataSentence.sentence}}</pre>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

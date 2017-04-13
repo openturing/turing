@@ -1,0 +1,106 @@
+<div class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
+	<div class="mdl-cell mdl-cell--8-col mdl-cell--8-col-tablet mdl-grid">
+		<div
+			class="demo-options mdl-card mdl-card--expand  mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
+			<div class="mdl-card__supporting-text mdl-card--expand ">
+				<h3>Indexing</h3>
+				<div class="mdl-textfield mdl-js-textfield" style="width: 100%">
+					<textarea class="mdl-textfield__input" type="text" rows="10"
+						cols="100" id="vigText" name="vigText" ng-model="vigText"></textarea>
+					<label class="mdl-textfield__label" for="vigText">Type the
+						text to indexing...</label>
+				</div>
+				<div>
+					<button
+						class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
+						ng-click="changeView('preview')">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-grid">
+		<div
+			class="demo-options  mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop"
+			style="background-color: white">
+			<div class="mdl-card__supporting-text mdl-card--expand ">
+				<h3>NLP</h3>
+				<ul>
+					<li ng-repeat="vigNLPService in vigNLPServices"><label
+						class="mdl-radio mdl-js-radio mdl-js-ripple-effect"
+						for="{{vigNLPService.id}}"> <input type="radio"
+							id="{{vigNLPService.id}}" class="mdl-radio__button" name="npl"
+							ng-model="$parent.nlpmodel" ng-value="vigNLPService.id"
+							ng-checked="vigNLPService.enabled"> <span
+							class="mdl-radio__label">{{vigNLPService.title}}</span>
+					</label></li>
+				</ul>
+			</div>
+		</div>
+		<div
+			class="demo-options mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop"
+			style="background-color: white">
+			<div class="mdl-card__supporting-text mdl-card--expand ">
+				<h3>Search Engine</h3>
+				<ul>
+					<li ng-repeat="vigSEService in vigSEServices"><label
+						class="mdl-radio mdl-js-radio mdl-js-ripple-effect"
+						for="{{vigSEService.id}}"> <input type="radio"
+							id="{{vigSEService.id}}" class="mdl-radio__button" name="se"
+							ng-model="$parent.semodel" ng-value="vigSEService.id"
+							ng-checked="vigSEService.enabled"> <span
+							class="mdl-radio__label">{{vigSEService.title}} </span>
+					</label></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+	<div ng-if="vigResults != null"
+		class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
+		<h3>Results using {{vigResults.nlp}}</h3>
+		<div
+			class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
+			<div
+				class="demo-options mdl-card mdl-card--expand  mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--4-col-desktop">
+				<div class="mdl-card__supporting-text mdl-card--expand ">
+					<h2>Person</h2>
+					<div class="demo-list-action mdl-list">
+						<div ng-repeat="vperson in vigResults.persons"
+							class="mdl-list__item">
+							<span class="mdl-list__item-primary-content"> <i
+								class="material-icons mdl-list__item-avatar">person</i> <span>{{vperson}}</span>
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div
+				class="demo-options mdl-card mdl-card--expand  mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--4-col-desktop">
+				<div class="mdl-card__supporting-text mdl-card--expand ">
+					<h2>Organization</h2>
+					<div class="demo-list-action mdl-list">
+						<div ng-repeat="vorganization in vigResults.organizations"
+							class="mdl-list__item">
+							<span class="mdl-list__item-primary-content"> <i
+								class="material-icons mdl-list__item-avatar">business</i> <span>{{vorganization}}</span>
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div
+				class="demo-options mdl-card mdl-card--expand  mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--4-col-desktop">
+				<div class="mdl-card__supporting-text mdl-card--expand ">
+					<h2>Location</h2>
+					<div class="demo-list-action mdl-list">
+						<div ng-repeat="vlocation in vigResults.locations"
+							class="mdl-list__item">
+							<span class="mdl-list__item-primary-content"> <i
+								class="material-icons mdl-list__item-avatar">place</i> <span>{{vlocation}}</span>
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

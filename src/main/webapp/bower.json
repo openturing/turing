@@ -1,0 +1,38 @@
+{
+  "name": "viglet.com",
+  "version": "0.4",
+  "description": "Semantics",
+  "authors": [
+    "Alexandre Oliveira"
+  ],
+  "license": "MIT",
+  "homepage": "http://www.viglet.com",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "thirdparty",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular-moment": "*",
+    "jquery": "*",
+    "moment": "*",
+    "angular-sanitize": "1.5.8",
+    "ngInfiniteScroll": "*",
+    "moment-timezone": "*",
+    "angular-translate": "*",
+    "Autolinker.js": "*",
+    "angular-animate": "1.5.8",
+    "angular-aside": "*",
+    "angular-route": "1.5.8",
+    "angular": "1.5.8",
+    "material-design-lite": "*",
+    "angular-directive.g-signin": "^0.1.2",
+    "mdl-selectfield": "*"
+  },
+  "resolutions": {
+    "angular": "^1.4.10"
+  }
+}

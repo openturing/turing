@@ -1,0 +1,37 @@
+<div ng-controller="EntityCtrl" class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
+    <div class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
+        <div class="demo-options mdl-card mdl-card--expand  mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-cell--12-col-desktop" style="width: 100%;">
+            <div class="mdl-card__supporting-text mdl-card--expand" style="width: 100%;">     
+                <div class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-cell--12-col-desktop" >
+                    <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: calc(100% - 20px)">
+                        <input class="mdl-textfield__input" type="text" id="title" style="font-size:40px" value="{{vigEntity.entity.name}}">
+                        <label class="mdl-textfield__label" for="title">Name</label>
+                    </div>
+                </div>
+                <div class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-cell--12-col-desktop">
+                      <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: calc(100% - 20px);">
+                        <input class="mdl-textfield__input" type="text" id="description" value="{{vigEntity.entity.description}}">
+                        <label class="mdl-textfield__label" for="description">Description</label>
+                    </div>        
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
+        <div class="demo-options mdl-card mdl-card--expand  mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-cell--12-col-desktop">
+            <div class="mdl-card__supporting-text mdl-card--expand ">
+                <h3>Terms</h3>
+                <ul>
+                    <li ng-repeat="vigTerm in vigEntity.entity.terms">
+                        <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="{{vigTerm.id}}">
+                            <input type="radio" id="{{vigTerm.id}}" class="mdl-radio__button" name="options" value="{{vigTerm.id}}"> <span class="mdl-radio__label">{{vigTerm.name}} <a ng-href="{{vigNLPSolution.website}}" target="_blank"><i class="material-icons" style="font-size: 15px;">launch</i></a></span> </label>
+                    </li>
+                </ul>
+            </div>
+     		<div class="mdl-card__actions mdl-card--border"> <a href="#" class="mdl-button mdl-js-button mdl-js-ripple-effect ">Language</a>
+                <div class="mdl-layout-spacer"></div>
+                <div> pt_BR </div>
+            </div>
+        </div>
+    </div>
+</div>
