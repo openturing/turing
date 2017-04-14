@@ -152,11 +152,9 @@ CREATE TABLE `vigServices` (
 
 INSERT INTO `vigServices` (`id`, `type`, `sub-type`, `title`, `description`, `host`, `port`, `language`, `enabled`, `selected`) VALUES
 (0, 2, 9, 'embedded', 'Viglet Turing NLP Embedded', '', 0, 'pt_BR', 1, 0),
-(1, 2, 2, 'otcadev01a', 'OTCA do Ambiente de Desenvolvimento do Sebrae', '172.16.32.135', 40000, 'pt_BR', 0, 0),
-(2, 2, 1, 'corenlplx01a', 'CoreNLP do Ambiente de Produção da DBMaster', 'localhost', 32768, 'en_US', 1, 0),
-(3, 3, 1, 'solrlnx02a', 'Solr', 'dbmaster.viglet.com', 80, '', 1, 1),
-(4, 2, 3, 'opennlp01a', 'OpenNLP do Ambiente de Homologação do SebraePR', '', 0, 'en_US', 1, 1),
-(5, 3, 1, 'solrlocal', 'Solr Local', 'localhost', 32769, '', 0, 0);
+(2, 2, 1, 'corenlplx01a', 'CoreNLP', 'localhost', 9000, 'en_US', 1, 0),
+(4, 2, 3, 'opennlp01a', 'OpenNLP', '', 0, 'en_US', 1, 1),
+(5, 3, 1, 'solrlocal', 'Solr', 'localhost', 8983, '', 0, 0);
 
 -- --------------------------------------------------------
 

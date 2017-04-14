@@ -19,27 +19,27 @@ tracking requests and bugs.**
 
 ```shell
 $ docker pull mysql
-$ docker start mysql
+$ docker run -d --name mysql mysql
 ```
 
 * To use the Tomcat 8 with JDK 8, install this Docker with command:
 
 ```shell
 $ docker pull ventura24/tomcat-8-jdk8
-$ docker start ventura24/tomcat-8-jdk8
+$ docker run -d -p 8080:8080 --name tomcat-8-jdk8 ventura24/tomcat-8-jdk8 
 ```
 * To use CoreNLP, install and start this Docker with command:
 
 ```shell
 $ docker pull motiz88/corenlp
-$ docker start motiz88/corenlp
+$ docker run -d -p 9000:9000 --name corenlp motiz88/corenlp
 ```
 
 * To use Solr, install and start this Docker with command:
 
 ```shell
 $ docker pull solr
-$ docker start solr
+$ docker run -d -p 8983:8983 --name solr solr
 ```
 ## Solr
 ### Create Core
