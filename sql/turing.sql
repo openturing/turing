@@ -5,29 +5,220 @@ SET time_zone = "+00:00";
 -- Database: `viglet`
 --
 
+--
+-- Table structure for table `vigCategory`
+--
+
+CREATE TABLE `vigCategory` (
+`id` int(11) NOT NULL,
+  `internal_name` varchar(50) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `description` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `vigCategory`
+--
+
+INSERT INTO `vigCategory` (`id`, `internal_name`, `name`, `description`) VALUES
+(1, 'cat01', 'categoria 01', 'descricao da categoria 01'),
+(2, 'cat02', 'categoria 02', 'descricao da categoria 02');
+
 -- --------------------------------------------------------
 
 --
--- Table structure for table `users`
+-- Table structure for table `vigData`
 --
 
-CREATE TABLE `users` (
-  `user_name` varchar(100) NOT NULL,
-  `user_pass` varchar(100) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+CREATE TABLE `vigData` (
+`id` int(11) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `type` varchar(50) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `vigData`
+--
+
+INSERT INTO `vigData` (`id`, `name`, `type`) VALUES
+(2, 'apache-solr-ref-guide-4.10.pdf', 'pdf');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `user_roles`
+-- Table structure for table `vigDataGroup`
 --
 
-CREATE TABLE `user_roles` (
-  `user_name` varchar(15) NOT NULL,
-  `role_name` varchar(15) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+CREATE TABLE `vigDataGroup` (
+`id` int(11) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `description` varchar(250) DEFAULT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+
 
 -- --------------------------------------------------------
+
+--
+-- Table structure for table `vigDataGroupCategory`
+--
+
+CREATE TABLE `vigDataGroupCategory` (
+`id` int(11) NOT NULL,
+  `data_group_id` int(11) NOT NULL,
+  `category_id` int(11) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `vigDataGroupData`
+--
+
+CREATE TABLE `vigDataGroupData` (
+`id` int(11) NOT NULL,
+  `data_group_id` int(11) NOT NULL,
+  `data_id` int(11) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+
+
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `vigDataSentence`
+--
+
+CREATE TABLE `vigDataSentence` (
+`id` int(11) NOT NULL,
+  `data_id` int(11) NOT NULL,
+  `sentence` text NOT NULL,
+  `category_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=8352 DEFAULT CHARSET=latin1;
+
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `vigMLModel`
+--
+
+CREATE TABLE `vigMLModel` (
+`id` int(11) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `internal_name` varchar(50) NOT NULL,
+  `description` varchar(255) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `vigCategory`
+--
+ALTER TABLE `vigCategory`
+ ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `vigData`
+--
+ALTER TABLE `vigData`
+ ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `vigDataGroup`
+--
+ALTER TABLE `vigDataGroup`
+ ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `vigDataGroupCategory`
+--
+ALTER TABLE `vigDataGroupCategory`
+ ADD PRIMARY KEY (`id`), ADD KEY `vigdatagroupcategory_ibfk_1` (`data_group_id`), ADD KEY `vigdatagroupcategory_ibfk_2` (`category_id`);
+
+--
+-- Indexes for table `vigDataGroupData`
+--
+ALTER TABLE `vigDataGroupData`
+ ADD PRIMARY KEY (`id`), ADD KEY `data_group_id` (`data_group_id`), ADD KEY `data_id` (`data_id`);
+
+--
+-- Indexes for table `vigDataSentence`
+--
+ALTER TABLE `vigDataSentence`
+ ADD PRIMARY KEY (`id`), ADD KEY `category_id` (`category_id`), ADD KEY `data_id` (`data_id`);
+
+--
+-- Indexes for table `vigMLModel`
+--
+ALTER TABLE `vigMLModel`
+ ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `vigCategory`
+--
+ALTER TABLE `vigCategory`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=3;
+--
+-- AUTO_INCREMENT for table `vigData`
+--
+ALTER TABLE `vigData`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=3;
+--
+-- AUTO_INCREMENT for table `vigDataGroup`
+--
+ALTER TABLE `vigDataGroup`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=4;
+--
+-- AUTO_INCREMENT for table `vigDataGroupCategory`
+--
+ALTER TABLE `vigDataGroupCategory`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=3;
+--
+-- AUTO_INCREMENT for table `vigDataGroupData`
+--
+ALTER TABLE `vigDataGroupData`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=2;
+--
+-- AUTO_INCREMENT for table `vigDataSentence`
+--
+ALTER TABLE `vigDataSentence`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=8352;
+--
+-- AUTO_INCREMENT for table `vigMLModel`
+--
+ALTER TABLE `vigMLModel`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=2;
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `vigDataGroupCategory`
+--
+ALTER TABLE `vigDataGroupCategory`
+ADD CONSTRAINT `vigdatagroupcategory_ibfk_1` FOREIGN KEY (`data_group_id`) REFERENCES `vigDataGroup` (`id`),
+ADD CONSTRAINT `vigdatagroupcategory_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `vigCategory` (`id`);
+
+--
+-- Constraints for table `vigDataGroupData`
+--
+ALTER TABLE `vigDataGroupData`
+ADD CONSTRAINT `vigdatagroupdata_ibfk_1` FOREIGN KEY (`data_group_id`) REFERENCES `vigDataGroup` (`id`),
+ADD CONSTRAINT `vigdatagroupdata_ibfk_2` FOREIGN KEY (`data_id`) REFERENCES `vigData` (`id`);
+
+--
+-- Constraints for table `vigDataSentence`
+--
+ALTER TABLE `vigDataSentence`
+ADD CONSTRAINT `vigdatasentence_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `vigCategory` (`id`),
+ADD CONSTRAINT `vigdatasentence_ibfk_3` FOREIGN KEY (`data_id`) REFERENCES `vigData` (`id`);
 
 --
 -- Table structure for table `vigEntities`
