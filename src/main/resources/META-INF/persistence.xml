@@ -22,6 +22,15 @@
 		<class>com.viglet.turing.persistence.model.VigTermVariationLanguage</class>
 		<class>com.viglet.turing.persistence.model.VigDataGroupCategory</class>
 		<class>com.viglet.turing.persistence.model.VigDataGroupData</class>
+		<class>com.viglet.turing.persistence.model.VigOAuthAccessToken</class>
+		<class>com.viglet.turing.persistence.model.VigOAuthAccessTokenPK</class>
+		<class>com.viglet.turing.persistence.model.VigOAuthAuthorizationCode</class>
+		<class>com.viglet.turing.persistence.model.VigOAuthAuthorizationCodePK</class>
+		<class>com.viglet.turing.persistence.model.VigOAuthClient</class>
+		<class>com.viglet.turing.persistence.model.VigOAuthPublicKey</class>
+		<class>com.viglet.turing.persistence.model.VigOAuthRefreshToken</class>
+		<class>com.viglet.turing.persistence.model.VigOAuthRefreshTokenPK</class>
+		<class>com.viglet.turing.persistence.model.VigOAuthScope</class>
 		<properties>
 			<property name="openjpa.DynamicEnhancementAgent" value="false"/>
 		</properties>	
