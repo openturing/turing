@@ -116,12 +116,6 @@ $ npm install -g bower
 
 Bower requires node, npm and git.
 
-Access the Viglet Turing Git repository and install the Javacript packages
-
-```shell
-$ cp <VIGLET_TURING_REPOSITORY>/src/main/webapp
-$ bower install
-```
 More details: [https://bower.io/#install-bower](https://bower.io/#install-bower)
 
 ### Viglet Turing Deploy

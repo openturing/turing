@@ -32,15 +32,7 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
-		<plugins>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<configuration>
-					<outputDirectory>/Applications/MAMP/htdocs/viglet-turing/tomcat/webapps/</outputDirectory>
-				</configuration>
-			</plugin>
+		<plugins>			
 			<plugin>
 				<groupId>org.apache.openjpa</groupId>
 				<artifactId>openjpa-maven-plugin</artifactId>
@@ -67,6 +59,26 @@
 						<version>${version.openjpa}</version>
 					</dependency>
 				</dependencies>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.6.0</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<executable>bower</executable>
+					<arguments>
+						<argument>install</argument>
+					</arguments>
+					<workingDirectory>${basedir}/src/main/webapp</workingDirectory>
+				</configuration>
 			</plugin>
 		</plugins>
 		<finalName>turing</finalName>
