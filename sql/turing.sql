@@ -5,6 +5,154 @@ SET time_zone = "+00:00";
 -- Database: `viglet`
 --
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `VigOAuthAccessTokens`
+--
+
+CREATE TABLE `VigOAuthAccessTokens` (
+  `access_token` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+  `client_id` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `user_id` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `expires` datetime NOT NULL,
+  `scope` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `VigOAuthAuthorizationCodes`
+--
+
+CREATE TABLE `VigOAuthAuthorizationCodes` (
+  `authorization_code` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+  `client_id` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `user_id` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `expires` datetime NOT NULL,
+  `redirect_uri` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
+  `scope` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `id_token` varchar(255) COLLATE utf8_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `VigOAuthClients`
+--
+
+CREATE TABLE `VigOAuthClients` (
+  `client_id` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `client_secret` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `redirect_uri` varchar(255) COLLATE utf8_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `VigOAuthPublicKeys`
+--
+
+CREATE TABLE `VigOAuthPublicKeys` (
+  `client_id` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `public_key` varchar(8000) COLLATE utf8_unicode_ci NOT NULL,
+  `private_key` varchar(8000) COLLATE utf8_unicode_ci NOT NULL,
+  `encryption_algorithm` varchar(80) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'RS256'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `VigOAuthRefreshTokens`
+--
+
+CREATE TABLE `VigOAuthRefreshTokens` (
+  `refresh_token` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+  `client_id` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `user_id` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `expires` datetime NOT NULL,
+  `scope` varchar(50) COLLATE utf8_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `VigOAuthScopes`
+--
+
+CREATE TABLE `VigOAuthScopes` (
+  `scope` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `is_default` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `VigOAuthAccessTokens`
+--
+ALTER TABLE `VigOAuthAccessTokens`
+ ADD PRIMARY KEY (`access_token`,`client_id`), ADD UNIQUE KEY `UNIQ_CA42527CB6A2DD68` (`access_token`), ADD KEY `IDX_CA42527C19EB6921` (`client_id`);
+
+--
+-- Indexes for table `VigOAuthAuthorizationCodes`
+--
+ALTER TABLE `VigOAuthAuthorizationCodes`
+ ADD PRIMARY KEY (`authorization_code`,`client_id`), ADD UNIQUE KEY `UNIQ_98A471C42F33E8B8` (`authorization_code`), ADD UNIQUE KEY `UNIQ_98A471C4AF55D3` (`scope`), ADD KEY `IDX_98A471C419EB6921` (`client_id`);
+
+--
+-- Indexes for table `VigOAuthClients`
+--
+ALTER TABLE `VigOAuthClients`
+ ADD PRIMARY KEY (`client_id`), ADD UNIQUE KEY `UNIQ_13CE8101904A356` (`client_secret`), ADD UNIQUE KEY `UNIQ_13CE810119EB6921` (`client_id`);
+
+--
+-- Indexes for table `VigOAuthPublicKeys`
+--
+ALTER TABLE `VigOAuthPublicKeys`
+ ADD PRIMARY KEY (`client_id`);
+
+--
+-- Indexes for table `VigOAuthRefreshTokens`
+--
+ALTER TABLE `VigOAuthRefreshTokens`
+ ADD PRIMARY KEY (`refresh_token`,`client_id`), ADD UNIQUE KEY `UNIQ_5AB687C74F2195` (`refresh_token`), ADD UNIQUE KEY `UNIQ_5AB687AF55D3` (`scope`), ADD KEY `IDX_5AB68719EB6921` (`client_id`);
+
+--
+-- Indexes for table `VigOAuthScopes`
+--
+ALTER TABLE `VigOAuthScopes`
+ ADD PRIMARY KEY (`scope`);
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `VigOAuthAccessTokens`
+--
+ALTER TABLE `VigOAuthAccessTokens`
+ADD CONSTRAINT `FK_CA42527C19EB6921` FOREIGN KEY (`client_id`) REFERENCES `vigoauthclients` (`client_id`);
+
+--
+-- Constraints for table `VigOAuthAuthorizationCodes`
+--
+ALTER TABLE `VigOAuthAuthorizationCodes`
+ADD CONSTRAINT `FK_98A471C419EB6921` FOREIGN KEY (`client_id`) REFERENCES `vigoauthclients` (`client_id`);
+
+--
+-- Constraints for table `VigOAuthPublicKeys`
+--
+ALTER TABLE `VigOAuthPublicKeys`
+ADD CONSTRAINT `FK_93F2AA9619EB6921` FOREIGN KEY (`client_id`) REFERENCES `vigoauthclients` (`client_id`);
+
+--
+-- Constraints for table `VigOAuthRefreshTokens`
+--
+ALTER TABLE `VigOAuthRefreshTokens`
+ADD CONSTRAINT `FK_5AB68719EB6921` FOREIGN KEY (`client_id`) REFERENCES `vigoauthclients` (`client_id`);
+
 --
 -- Table structure for table `vigCategory`
 --
@@ -16,13 +164,6 @@ CREATE TABLE `vigCategory` (
   `description` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
 
---
--- Dumping data for table `vigCategory`
---
-
-INSERT INTO `vigCategory` (`id`, `internal_name`, `name`, `description`) VALUES
-(1, 'cat01', 'categoria 01', 'descricao da categoria 01'),
-(2, 'cat02', 'categoria 02', 'descricao da categoria 02');
 
 -- --------------------------------------------------------
 
@@ -36,12 +177,6 @@ CREATE TABLE `vigData` (
   `type` varchar(50) NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
 
---
--- Dumping data for table `vigData`
---
-
-INSERT INTO `vigData` (`id`, `name`, `type`) VALUES
-(2, 'apache-solr-ref-guide-4.10.pdf', 'pdf');
 
 -- --------------------------------------------------------
 
