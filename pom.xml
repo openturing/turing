@@ -33,7 +33,7 @@
 			</plugins>
 		</pluginManagement>
 		<plugins>
-			<plugin>
+<!--		<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>wagon-maven-plugin</artifactId>
 				<version>1.0</version>
@@ -64,6 +64,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			-->
 			<plugin>
 				<groupId>org.apache.openjpa</groupId>
 				<artifactId>openjpa-maven-plugin</artifactId>
