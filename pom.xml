@@ -34,257 +34,32 @@
 		</pluginManagement>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-antrun-plugin</artifactId>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>wagon-maven-plugin</artifactId>
+				<version>1.0</version>
 				<executions>
 					<execution>
-						<id>en-ner-person.bin</id>
-						<phase>prepare-package</phase>
+						<id>en</id>
+						<phase>validate</phase>
 						<goals>
-							<goal>run</goal>
+							<goal>download</goal>
 						</goals>
 						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get
-									src="http://opennlp.sourceforge.net/models-1.5/en-ner-person.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-ner-person.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
+							<url>http://opennlp.sourceforge.net/models-1.5</url>
+							<includes>en-ner-date.bin,en-ner-person.bin,en-ner-location.bin,en-ner-money.bin,en-ner-organization.bin,en-ner-percentage.bin,en-ner-time.bin,en-parser-chunking.bin,en-pos-maxent.bi,nen-pos-perceptron.bin,en-sent.bin,en-token.bin</includes>
+							<toDir>${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en</toDir>
 						</configuration>
 					</execution>
 					<execution>
-						<id>en-ner-date.bin</id>
-						<phase>prepare-package</phase>
+						<id>pt</id>
+						<phase>validate</phase>
 						<goals>
-							<goal>run</goal>
+							<goal>download</goal>
 						</goals>
 						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get src="http://opennlp.sourceforge.net/models-1.5/en-ner-date.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-ner-date.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>en-ner-location.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get
-									src="http://opennlp.sourceforge.net/models-1.5/en-ner-location.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-ner-location.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>en-ner-money.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get
-									src="http://opennlp.sourceforge.net/models-1.5/en-ner-money.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-ner-money.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>en-ner-organization.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get
-									src="http://opennlp.sourceforge.net/models-1.5/en-ner-organization.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-ner-organization.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>en-ner-percentage.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get
-									src="http://opennlp.sourceforge.net/models-1.5/en-ner-percentage.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-ner-percentage.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>en-ner-time.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get src="http://opennlp.sourceforge.net/models-1.5/en-ner-time.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-ner-time.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>en-parser-chunking.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get
-									src="http://opennlp.sourceforge.net/models-1.5/en-parser-chunking.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-parser-chunking.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>en-pos-maxent.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get
-									src="http://opennlp.sourceforge.net/models-1.5/en-pos-maxent.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-pos-maxent.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>en-pos-perceptron.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get
-									src="http://opennlp.sourceforge.net/models-1.5/en-pos-perceptron.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-pos-perceptron.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>en-sent.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get src="http://opennlp.sourceforge.net/models-1.5/en-sent.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-sent.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>en-token.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get src="http://opennlp.sourceforge.net/models-1.5/en-token.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/en/en-token.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>pt-pos-maxent.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get
-									src="http://opennlp.sourceforge.net/models-1.5/pt-pos-maxent.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/pt/pt-pos-maxent.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>pt-pos-perceptron.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get
-									src="http://opennlp.sourceforge.net/models-1.5/pt-pos-perceptron.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/pt/pt-pos-perceptron.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>pt-sent.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get src="http://opennlp.sourceforge.net/models-1.5/pt-sent.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/pt/pt-sent.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
-						</configuration>
-					</execution>
-					<execution>
-						<id>pt-token.bin</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<tasks>
-								<!-- download file -->
-								<get src="http://opennlp.sourceforge.net/models-1.5/pt-token.bin"
-									dest="${project.build.directory}/turing/WEB-INF/classes/models/opennlp/pt/pt-token.bin"
-									verbose="true" usetimestamp="true" />
-							</tasks>
+							<url>http://opennlp.sourceforge.net/models-1.5</url>
+							<includes>pt-pos-maxent.bin,pt-pos-perceptron.bin,pt-sent.bin,pt-token.bin</includes>
+							<toDir>${project.build.directory}/turing/WEB-INF/classes/models/opennlp/pt</toDir>
 						</configuration>
 					</execution>
 				</executions>
