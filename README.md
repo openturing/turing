@@ -52,6 +52,49 @@ $ cd /opt/solr/bin
 $ ./solr create -c turing
 ```
 
+### Create Fields
+
+Create the default fields into Solr with command:
+
+```shell
+$ curl -X POST -H 'Content-type:application/json' --data-binary '{
+  "add-field":{
+     "name":"turing_entity_PN",
+     "type":"text_general",
+     "indexed":true,
+     "stored":true }
+}' http://localhost:8983/solr/turing/schema
+
+$ curl -X POST -H 'Content-type:application/json' --data-binary '{
+  "add-field":{
+     "name":"turing_entity_ON",
+     "type":"text_general",
+     "indexed":true,
+     "stored":true }
+}' http://localhost:8983/solr/turing/schema
+
+$ curl -X POST -H 'Content-type:application/json' --data-binary '{
+  "add-field":{
+     "name":"turing_entity_GL",
+     "type":"text_general",
+     "indexed":true,
+     "stored":true }
+}' http://localhost:8983/solr/turing/schema
+$ curl -X POST -H 'Content-type:application/json' --data-binary '{
+  "add-field":{
+     "name":"turing_entity_IPTC",
+     "type":"text_general",
+     "indexed":true,
+     "stored":true }
+}' http://localhost:8983/solr/turing/schema
+$ curl -X POST -H 'Content-type:application/json' --data-binary '{
+  "add-field":{
+     "name":"turing_entity_ComplexConcepts",
+     "type":"text_general",
+     "indexed":true,
+     "stored":true }
+}' http://localhost:8983/solr/turing/schema
+```
 ### Highlighting
 
 **Solr Highlighting** to work requires that the fields that use this feature be **text_general** type. So add or modify the following fields in `/opt/solr/server/solr/turing/conf/managed-schema` file.
