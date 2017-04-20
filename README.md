@@ -162,12 +162,12 @@ Bower requires node, npm and git.
 More details: [https://bower.io/#install-bower](https://bower.io/#install-bower)
 
 ### Viglet Turing Deploy
-* Access the Viglet Turing Git repository and run:
+* Access Viglet Turing Git repository and run:
 
 ```shell
 $ mvn package
 ```
-* Copy the turing to Tomcat with command:
+* Copy Viglet Turing to Tomcat with command:
 
 ```shell
 $ docker cp <VIGLET_TURING_REPOSITORY>/target/turing tomcat-8-jdk8:/usr/local/tomcat/webapps
@@ -196,3 +196,5 @@ More details: [https://developers.google.com/identity/protocols/OpenIDConnect](h
 * [Compatibility Matrix](https://github.com/openviglet/turing/wiki/Compatibility-Matrix)
 * [API Documentation](https://developers.viglet.ai)
 * [Viglet Turing for WordPress](https://github.com/openviglet/turing4wp)
+* [Viglet Turing Listener for WEM (OpenText Web Experience Management)](https://github.com/openviglet/turing-wem)
+* [Viglet Turing SDK for PHP (Under development)](https://github.com/openviglet/turing-php-sdk)
