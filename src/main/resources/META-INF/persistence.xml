@@ -4,24 +4,16 @@
 	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
 	<persistence-unit name="semantics-app" transaction-type="RESOURCE_LOCAL">
 		<provider>org.apache.openjpa.persistence.PersistenceProviderImpl</provider>
-		<non-jta-data-source>java:comp/env/jdbc/VigletDS</non-jta-data-source>
+		<non-jta-data-source>jdbc/VigletDS</non-jta-data-source>
 		<class>com.viglet.turing.persistence.model.VigCategory</class>
 		<class>com.viglet.turing.persistence.model.VigData</class>
 		<class>com.viglet.turing.persistence.model.VigDataGroup</class>
+		<class>com.viglet.turing.persistence.model.VigDataGroupCategory</class>
+		<class>com.viglet.turing.persistence.model.VigDataGroupData</class>
 		<class>com.viglet.turing.persistence.model.VigDataSentence</class>
 		<class>com.viglet.turing.persistence.model.VigEntity</class>
 		<class>com.viglet.turing.persistence.model.VigMLModel</class>
 		<class>com.viglet.turing.persistence.model.VigNLPSolution</class>
-		<class>com.viglet.turing.persistence.model.VigService</class>
-		<class>com.viglet.turing.persistence.model.VigServicesNLPEntity</class>
-		<class>com.viglet.turing.persistence.model.VigTerm</class>
-		<class>com.viglet.turing.persistence.model.VigTermAttribute</class>
-		<class>com.viglet.turing.persistence.model.VigTermRelationFrom</class>
-		<class>com.viglet.turing.persistence.model.VigTermRelationTo</class>
-		<class>com.viglet.turing.persistence.model.VigTermVariation</class>
-		<class>com.viglet.turing.persistence.model.VigTermVariationLanguage</class>
-		<class>com.viglet.turing.persistence.model.VigDataGroupCategory</class>
-		<class>com.viglet.turing.persistence.model.VigDataGroupData</class>
 		<class>com.viglet.turing.persistence.model.VigOAuthAccessToken</class>
 		<class>com.viglet.turing.persistence.model.VigOAuthAccessTokenPK</class>
 		<class>com.viglet.turing.persistence.model.VigOAuthAuthorizationCode</class>
@@ -31,6 +23,14 @@
 		<class>com.viglet.turing.persistence.model.VigOAuthRefreshToken</class>
 		<class>com.viglet.turing.persistence.model.VigOAuthRefreshTokenPK</class>
 		<class>com.viglet.turing.persistence.model.VigOAuthScope</class>
+		<class>com.viglet.turing.persistence.model.VigService</class>
+		<class>com.viglet.turing.persistence.model.VigServicesNLPEntity</class>
+		<class>com.viglet.turing.persistence.model.VigTerm</class>
+		<class>com.viglet.turing.persistence.model.VigTermAttribute</class>
+		<class>com.viglet.turing.persistence.model.VigTermRelationFrom</class>
+		<class>com.viglet.turing.persistence.model.VigTermRelationTo</class>
+		<class>com.viglet.turing.persistence.model.VigTermVariation</class>
+		<class>com.viglet.turing.persistence.model.VigTermVariationLanguage</class>
 		<properties>
 			<property name="openjpa.DynamicEnhancementAgent" value="false"/>
 		</properties>	

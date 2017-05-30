@@ -112,11 +112,13 @@ $ curl -X POST -H 'Content-type:application/json' --data-binary '{
 * Edit the rows of `vigServices` table and change the `host` and `port` column to access your services.
 * Eedit the rows of `vigServicesNLPEntities` table and change the `name` column with correct OpenNLP Models path.
 
-## Tomcat
+## Application Server
+Viglet Turing works on Jetty Embedded or Tomcat.
 ### Host and Port
-Configure the Tomcat to use `localhost` host and `8080` port, because the Google OAuth2 has permission to this domain and port.
+Configure Jetty or Tomcat to use `localhost` host and `8080` port, because the Google OAuth2 has permission to this domain and port.
 
-### MySQL Connection
+### Tomcat
+#### MySQL Connection
 * Copy the MySQL JDBC to `<TOMCAT_DIR>/lib`. [https://dev.mysql.com/downloads/connector/j/5.0.html](https://dev.mysql.com/downloads/connector/j/5.0.html)
 * Configure `<TOMCAT_DIR>/conf/context.xml` to use `jdbc/VigletDS` Datasource, adding the following lines:
 
@@ -128,7 +130,7 @@ driverClassName="com.mysql.jdbc.Driver"
 url="jdbc:mysql://localhost:3306/viglet" />
 ```
 
-### Static Resource Cache
+#### Static Resource Cache
 The Resources element represents all the resources available to the web application. This includes classes, JAR files, HTML, JSPs and any other files that contribute to the web application. 
 
 Configure `<TOMCAT_DIR>/conf/context.xml` to increase the size of static resource cache, adding the following line:
@@ -141,36 +143,13 @@ Configure `<TOMCAT_DIR>/conf/context.xml` to increase the size of static resourc
 ```
 More details: [http://tomcat.apache.org/tomcat-8.0-doc/config/resources.html](http://tomcat.apache.org/tomcat-8.0-doc/config/resources.html)
 
-### OpenNLP Models
+## OpenNLP Models
 Copy the OpenNLP Models to Viglet Turing Web Application, access http://opennlp.sourceforge.net/models-1.5/ and copy the following models to `<VIGLET_TURING_REPOSITORY>/target/turing/WEB-INF/classes/models/opennlp/<LANGUAGE>/`. For example:
 
 ```shell
 $ mkdir -p <VIGLET_TURING_REPOSITORY>/target/turing/WEB-INF/classes/models/opennlp/en
 $ cd <VIGLET_TURING_REPOSITORY>/target/turing/WEB-INF/classes/models/opennlp/en
 $ curl http://opennlp.sourceforge.net/models-1.5/en-ner-person.bin -o en-ner-person.bin
-```
-
-### Bower
-Bower is a command line utility. Install it with npm.
-
-```shell
-$ npm install -g bower
-```
-
-Bower requires node, npm and git.
-
-More details: [https://bower.io/#install-bower](https://bower.io/#install-bower)
-
-### Viglet Turing Deploy
-* Access Viglet Turing Git repository and run:
-
-```shell
-$ mvn package
-```
-* Copy Viglet Turing to Tomcat with command:
-
-```shell
-$ docker cp <VIGLET_TURING_REPOSITORY>/target/turing tomcat-8-jdk8:/usr/local/tomcat/webapps
 ```
 ## Authentication
 ### Obtain OAuth 2.0 credentials
@@ -184,6 +163,41 @@ To find your project's client ID and client secret, do the following:
 1. Look for the **Client ID** in the **OAuth 2.0 client IDs** section. For details, click the client ID.
 
 More details: [https://developers.google.com/identity/protocols/OpenIDConnect](https://developers.google.com/identity/protocols/OpenIDConnect)
+
+## Deploy 
+### Bower
+Bower is a command line utility. Install it with npm.
+
+```shell
+$ npm install -g bower
+```
+
+Bower requires node, npm and git.
+
+More details: [https://bower.io/#install-bower](https://bower.io/#install-bower)
+
+### Viglet Turing
+
+You can to choose Jetty or Tomcat to start the Viglet Turing:
+
+#### A. Jetty
+To run Jetty 9 embedded, just execute the following line:
+
+```shell
+$ mvn jetty:run
+```
+
+#### B. Tomcat
+* Access Viglet Turing Git repository and run:
+
+```shell
+$ mvn package
+```
+* Copy Viglet Turing to Tomcat with command:
+
+```shell
+$ docker cp <VIGLET_TURING_REPOSITORY>/target/turing tomcat-8-jdk8:/usr/local/tomcat/webapps
+```
 
 ## Viglet Turing
 * Administration Console [http://localhost:8080/turing](http://localhost:8080/turing).
