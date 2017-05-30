@@ -22,19 +22,6 @@ $ docker pull mysql
 $ docker run -d --name mysql mysql
 ```
 
-* To use the Tomcat 8 with JDK 8, install this Docker with command:
-
-```shell
-$ docker pull ventura24/tomcat-8-jdk8
-$ docker run -d -p 8080:8080 --name tomcat-8-jdk8 ventura24/tomcat-8-jdk8 
-```
-* To use CoreNLP, install and start this Docker with command:
-
-```shell
-$ docker pull motiz88/corenlp
-$ docker run -d -p 9000:9000 --name corenlp motiz88/corenlp
-```
-
 * To use Solr, install and start this Docker with command:
 
 ```shell
@@ -110,59 +97,18 @@ $ curl -X POST -H 'Content-type:application/json' --data-binary '{
 * Create the **viglet** user and **viglet** database into MySQL.
 * Execute the script `<VIGLET_TURING_REPOSITORY>/sql/turing.sql` into viglet database.
 * Edit the rows of `vigServices` table and change the `host` and `port` column to access your services.
-* Eedit the rows of `vigServicesNLPEntities` table and change the `name` column with correct OpenNLP Models path.
-
-## Application Server
-Viglet Turing works on Jetty Embedded or Tomcat.
-### Host and Port
-Configure Jetty or Tomcat to use `localhost` host and `8080` port, because the Google OAuth2 has permission to this domain and port.
-
-### Tomcat
-#### MySQL Connection
-* Copy the MySQL JDBC to `<TOMCAT_DIR>/lib`. [https://dev.mysql.com/downloads/connector/j/5.0.html](https://dev.mysql.com/downloads/connector/j/5.0.html)
-* Configure `<TOMCAT_DIR>/conf/context.xml` to use `jdbc/VigletDS` Datasource, adding the following lines:
-
-```xml
-<Resource name="jdbc/VigletDS" auth="Container" 
-type="javax.sql.DataSource" maxTotal="100" maxIdle="30" 
-maxWaitMillis="10000" username="viglet" password="viglet" 
-driverClassName="com.mysql.jdbc.Driver" 
-url="jdbc:mysql://localhost:3306/viglet" />
-```
-
-#### Static Resource Cache
-The Resources element represents all the resources available to the web application. This includes classes, JAR files, HTML, JSPs and any other files that contribute to the web application. 
-
-Configure `<TOMCAT_DIR>/conf/context.xml` to increase the size of static resource cache, adding the following line:
-
-> **cacheMaxSize**	
-> The maximum size of the static resource cache in kilobytes. If not specified, the default value is 10240 (10 megabytes). This value may be changed while the web application is running (e.g. via JMX). If the cache is using more memory than the new limit the cache will attempt to reduce in size over time to meet the new limit. 
-
-```xml
-<Resources cachingAllowed="true" cacheMaxSize="100000" />
-```
-More details: [http://tomcat.apache.org/tomcat-8.0-doc/config/resources.html](http://tomcat.apache.org/tomcat-8.0-doc/config/resources.html)
+* Edit the rows of `vigServicesNLPEntities` table and change the `name` column with correct OpenNLP Models path.
 
 ## OpenNLP Models
-Copy the OpenNLP Models to Viglet Turing Web Application, access http://opennlp.sourceforge.net/models-1.5/ and copy the following models to `<VIGLET_TURING_REPOSITORY>/target/turing/WEB-INF/classes/models/opennlp/<LANGUAGE>/`. For example:
+
+Copy the OpenNLP Models to Viglet Turing Web Application, access http://
+opennlp.sourceforge.net/models-1.5/ and copy the following models to `<VIGLET_TURING_REPOSITORY>/target/turing/WEB-INF/classes/models/opennlp/<LANGUAGE>/`. For example:
 
 ```shell
 $ mkdir -p <VIGLET_TURING_REPOSITORY>/target/turing/WEB-INF/classes/models/opennlp/en
 $ cd <VIGLET_TURING_REPOSITORY>/target/turing/WEB-INF/classes/models/opennlp/en
 $ curl http://opennlp.sourceforge.net/models-1.5/en-ner-person.bin -o en-ner-person.bin
 ```
-## Authentication
-### Obtain OAuth 2.0 credentials
-
-You need OAuth 2.0 credentials, including a client ID and client secret, to authenticate users and gain access to Google's APIs.
-
-To find your project's client ID and client secret, do the following:
-
-1. Open the [Credentials page](https://console.developers.google.com/apis/credentials).
-1. If you haven't done so already, create your project's OAuth 2.0 credentials by clicking **Create credentials > OAuth client ID**, and providing the information needed to create the credentials.
-1. Look for the **Client ID** in the **OAuth 2.0 client IDs** section. For details, click the client ID.
-
-More details: [https://developers.google.com/identity/protocols/OpenIDConnect](https://developers.google.com/identity/protocols/OpenIDConnect)
 
 ## Deploy 
 ### Bower
@@ -176,27 +122,12 @@ Bower requires node, npm and git.
 
 More details: [https://bower.io/#install-bower](https://bower.io/#install-bower)
 
-### Viglet Turing
+## Run
 
-You can to choose Jetty or Tomcat to start the Viglet Turing:
-
-#### A. Jetty
-To run Jetty 9 embedded, just execute the following line:
+To run Viglet Turing with Jetty 9 embedded, just execute the following line:
 
 ```shell
 $ mvn jetty:run
-```
-
-#### B. Tomcat
-* Access Viglet Turing Git repository and run:
-
-```shell
-$ mvn package
-```
-* Copy Viglet Turing to Tomcat with command:
-
-```shell
-$ docker cp <VIGLET_TURING_REPOSITORY>/target/turing tomcat-8-jdk8:/usr/local/tomcat/webapps
 ```
 
 ## Viglet Turing
@@ -206,6 +137,7 @@ $ docker cp <VIGLET_TURING_REPOSITORY>/target/turing tomcat-8-jdk8:/usr/local/to
 # For more information
 
 * [Viglet website](https://viglet.ai)
+* [Installation Guide](https://github.com/openviglet/turing/wiki/Installation)
 * [Features](https://github.com/openviglet/turing/wiki/Features)
 * [Compatibility Matrix](https://github.com/openviglet/turing/wiki/Compatibility-Matrix)
 * [API Documentation](https://developers.viglet.ai)
