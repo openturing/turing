@@ -11,16 +11,10 @@ tracking requests and bugs.**
 # Installation
 
 ## Maven
-* Install the Apache Maven. [https://maven.apache.org/install.html](https://maven.apache.org/install.html)
+* Install Apache Maven. [https://maven.apache.org/install.html](https://maven.apache.org/install.html)
 
 ## Docker
-* Install the Docker. [https://docs.docker.com/engine/installation](https://docs.docker.com/engine/installation)
-* To use the MySQL, install and start this Docker with command:
-
-```shell
-$ docker pull mysql
-$ docker run -d --name mysql mysql
-```
+* Install Docker. [https://docs.docker.com/engine/installation](https://docs.docker.com/engine/installation)
 
 * To use Solr, install and start this Docker with command:
 
@@ -91,13 +85,6 @@ $ curl -X POST -H 'Content-type:application/json' --data-binary '{
 <field name="title" type="text_general" indexed="true" stored="true"/>
 
 ```
-
-## MySQL
-
-* Create the **viglet** user and **viglet** database into MySQL.
-* Execute the script `<VIGLET_TURING_REPOSITORY>/sql/turing.sql` into viglet database.
-* Edit the rows of `vigServices` table and change the `host` and `port` column to access your services.
-* Edit the rows of `vigServicesNLPEntities` table and change the `name` column with correct OpenNLP Models path.
 
 ## OpenNLP Models
 
