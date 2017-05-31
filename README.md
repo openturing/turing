@@ -124,7 +124,7 @@ $ mvn jetty:run
 # For more information
 
 * [Viglet website](https://viglet.ai)
-* [Installation Guide](https://github.com/openviglet/turing/wiki/Installation)
+* [Installation Guide](https://github.com/openviglet/turing/wiki/Installation-Guide)
 * [Features](https://github.com/openviglet/turing/wiki/Features)
 * [Compatibility Matrix](https://github.com/openviglet/turing/wiki/Compatibility-Matrix)
 * [API Documentation](https://developers.viglet.ai)
