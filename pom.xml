@@ -101,6 +101,12 @@
 					<webApp>
 						<contextPath>/turing</contextPath>
 					</webApp>
+				<!-- 	<webApp>
+						<contextPath>/</contextPath>
+						<baseResource implementation="org.eclipse.jetty.util.resource.ResourceCollection">
+							<resourcesAsCSV>../../viglet-vecchio/src/main/webapp</resourcesAsCSV>
+						</baseResource>
+					</webApp> -->
 				</configuration>
 			</plugin>
 		</plugins>

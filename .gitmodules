@@ -1,0 +1,3 @@
+[submodule "vecchio"]
+	path = vecchio
+	url = https://github.com/openviglet/vecchio
