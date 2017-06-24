@@ -45,7 +45,15 @@
 		<description>
 		JAX-RS Tools Generated - Do not modify</description>
 		<servlet-name>JAX-RS Servlet</servlet-name>
-		<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
+		<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>		
+		<init-param>
+			<param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
+			<param-value>com.viglet.turing.api.filter.CORSFilter</param-value>
+		</init-param>
+		<init-param>
+			<param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>
+			<param-value>com.viglet.turing.api.filter.VecchioFilter</param-value>
+		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>
