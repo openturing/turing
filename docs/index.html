@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="vigletApp">
 
 <head>
     <meta charset="utf-8">
@@ -19,8 +19,8 @@
     <meta name="twitter:description" content="Platform that uses natural language processing (NLP) and machine learning to provide more intelligent data.">
     <meta name="twitter:image" content="https://viglet.ai/img/viglet_logo_hd.jpg">
     <!-- Bootstrap -->
-    <link href="https://viglet.ai/thirdparty/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://viglet.ai/thirdparty/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://viglet.ai/ui/thirdparty/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://viglet.ai/ui/thirdparty/font-awesome/css/font-awesome.min.css" rel="stylesheet">
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -30,7 +30,7 @@
     <link href="https://viglet.ai/css/viglet.css" rel="stylesheet">
     <link href="https://viglet.ai/favicon.ico" rel="shortcut icon" type="image/x-icon" /> </head>
 
-<body data-spy="scroll" data-target=".navbar-default">
+<body data-spy="scroll" data-target=".navbar-default" ng-controller="VigHomeCtrl">
     <div id="wrap" style="margin-bottom: 15px;">
         <nav class="navbar navbar-default navbar-fixed-top row  row-centered" role="navigation">
             <div class="container-fluid col-centered col-lg-9 col-md-9 col-sm-10 col-xs-10">
@@ -49,17 +49,7 @@
                     </ul>
                     <ul class="nav navbar-nav navbar-right">
                       <li style="padding-top: 12px;">
-                            <div clas="row" style="margin:0px">
-                                <div class="col-lg-1 col-md-1 col-sm-1 col-xs-1" style="padding:0px;width:40px"> <a title="GitHub" style="color:#f0ad4e" href="https://github.com/openviglet" target="_blank"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a> </div>
-                                <div class="col-lg-1 col-md-1 col-sm-1 col-xs-1" style="padding:0px;width:40px"> <a title="Twitter"  style="color:#f0ad4e" href="https://twitter.com/openviglet" target="_blank"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a> </div>
-                                <div class="col-lg-1 col-md-1 hidden-sm col-xs-1" style="padding:0px;width:40px"> <a title="Facebook" style="color:#f0ad4e" href="https://www.facebook.com/viglet" target="_blank"><i class="fa fa-facebook-official fa-2x" aria-hidden="true"></i></a></div>
-                                 <div class="col-lg-1 col-md-1 col-sm-1 col-xs-1" style="padding:0px;width:40px"> <a title="YouTube"  style="color:#f0ad4e" href="https://www.youtube.com/channel/UCMOUMnOecpTV05LpLytawuw" target="_blank"><i class="fa fa-youtube fa-2x" aria-hidden="true"></i></a></div>
-                                <div class="col-lg-1 col-md-1 col-sm-1 col-xs-1" style="padding:0px;width:40px"> <a title="Google Plus" style="color:#f0ad4e" href="https://plus.google.com/u/0/104481169096193307763" target="_blank"><i class="fa fa-google-plus-official fa-2x" aria-hidden="true"></i></a> </div>
-                                <div class="col-lg-1 col-md-1 hidden-sm col-xs-1" style="padding:0px;width:40px"> <a title="Instagram"  style="color:#f0ad4e" href="https://www.instagram.com/openviglet" target="_blank"><i class="fa fa-instagram fa-2x" aria-hidden="true"></i></a></div>
-                                  <div class="col-lg-1 col-md-1 hidden-sm col-xs-1" style="padding:0px;width:40px"> <a title="Linkedin"  style="color:#f0ad4e" href="https://www.linkedin.com/company/viglet" target="_blank"><i class="fa fa-linkedin-square fa-2x" aria-hidden="true"></i></a></div>
-                                
-                                
-                            </div>
+                            <div ng-include="social_buttons" />
                         </li>
                     </ul>
                 </nav>
@@ -93,12 +83,13 @@
         </div>
     </div>
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://viglet.ai/thirdparty/jquery/dist/jquery.min.js"></script>
+    <script src="https://viglet.ai/ui/thirdparty/jquery/dist/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="https://viglet.ai/thirdparty/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="https://viglet.ai/thirdparty/moment/min/moment-with-locales.min.js"></script>
-    <script src="https://viglet.ai/js/viglet.js"></script>
-    <script async defer src="https://buttons.github.io/buttons.js"></script>
+    <script src="https://viglet.ai/ui/thirdparty/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="https://viglet.ai/ui/thirdparty/moment/min/moment-with-locales.min.js"></script>
+    <script src="https://viglet.ai/ui/thirdparty/angular/angular.min.js"></script>
+    <script src="https://viglet.ai/ui/js/viglet.js"></script>
+    <script src="https://viglet.ai/ui/js/viglet-app.js"></script>
 </body>
 
 </html>
