@@ -15,15 +15,6 @@
 		<class>com.viglet.turing.persistence.model.VigEntity</class>
 		<class>com.viglet.turing.persistence.model.VigMLModel</class>
 		<class>com.viglet.turing.persistence.model.VigNLPSolution</class>
-		<class>com.viglet.turing.persistence.model.VigOAuthAccessToken</class>
-		<class>com.viglet.turing.persistence.model.VigOAuthAccessTokenPK</class>
-		<class>com.viglet.turing.persistence.model.VigOAuthAuthorizationCode</class>
-		<class>com.viglet.turing.persistence.model.VigOAuthAuthorizationCodePK</class>
-		<class>com.viglet.turing.persistence.model.VigOAuthClient</class>
-		<class>com.viglet.turing.persistence.model.VigOAuthPublicKey</class>
-		<class>com.viglet.turing.persistence.model.VigOAuthRefreshToken</class>
-		<class>com.viglet.turing.persistence.model.VigOAuthRefreshTokenPK</class>
-		<class>com.viglet.turing.persistence.model.VigOAuthScope</class>
 		<class>com.viglet.turing.persistence.model.VigService</class>
 		<class>com.viglet.turing.persistence.model.VigServicesNLPEntity</class>
 		<class>com.viglet.turing.persistence.model.VigTerm</class>
