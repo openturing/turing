@@ -118,7 +118,7 @@ public class CoreNLPConnector implements NLPImpl {
 		JSONObject jsonObject = new JSONObject();
 		this.getEntities();
 		for (VigServicesNLPEntity entity : nlpEntities) {
-			jsonObject.put(entity.getVigEntity().getCollectionName(), this.getEntity(entity.getName()));
+			jsonObject.put(entity.getTurEntity().getCollectionName(), this.getEntity(entity.getName()));
 		}
 		jsonObject.put("nlp", "CoreNLP");
 

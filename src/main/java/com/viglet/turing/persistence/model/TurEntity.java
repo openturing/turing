@@ -10,9 +10,9 @@ import java.util.List;
  * 
  */
 @Entity
-@Table(name="vigEntities")
-@NamedQuery(name="VigEntity.findAll", query="SELECT v FROM VigEntity v")
-public class VigEntity implements Serializable {
+@Table(name="turEntity")
+@NamedQuery(name="TurEntity.findAll", query="SELECT e FROM TurEntity e")
+public class TurEntity implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -36,14 +36,14 @@ public class VigEntity implements Serializable {
 	private String name;
 
 	//bi-directional many-to-one association to VigServicesNLPEntity
-	@OneToMany(mappedBy="vigEntity")
+	@OneToMany(mappedBy="turEntity")
 	private List<VigServicesNLPEntity> vigServicesNlpentities;
 
 	//bi-directional many-to-one association to VigTerm
-	@OneToMany(mappedBy="vigEntity")
+	@OneToMany(mappedBy="turEntity")
 	private List<VigTerm> vigTerms;
 
-	public VigEntity() {
+	public TurEntity() {
 	}
 
 	public int getId() {
@@ -104,14 +104,14 @@ public class VigEntity implements Serializable {
 
 	public VigServicesNLPEntity addVigServicesNlpentity(VigServicesNLPEntity vigServicesNlpentity) {
 		getVigServicesNlpentities().add(vigServicesNlpentity);
-		vigServicesNlpentity.setVigEntity(this);
+		vigServicesNlpentity.setTurEntity(this);
 
 		return vigServicesNlpentity;
 	}
 
 	public VigServicesNLPEntity removeVigServicesNlpentity(VigServicesNLPEntity vigServicesNlpentity) {
 		getVigServicesNlpentities().remove(vigServicesNlpentity);
-		vigServicesNlpentity.setVigEntity(null);
+		vigServicesNlpentity.setTurEntity(null);
 
 		return vigServicesNlpentity;
 	}
@@ -126,14 +126,14 @@ public class VigEntity implements Serializable {
 
 	public VigTerm addVigTerm(VigTerm vigTerm) {
 		getVigTerms().add(vigTerm);
-		vigTerm.setVigEntity(this);
+		vigTerm.setTurEntity(this);
 
 		return vigTerm;
 	}
 
 	public VigTerm removeVigTerm(VigTerm vigTerm) {
 		getVigTerms().remove(vigTerm);
-		vigTerm.setVigEntity(null);
+		vigTerm.setTurEntity(null);
 
 		return vigTerm;
 	}

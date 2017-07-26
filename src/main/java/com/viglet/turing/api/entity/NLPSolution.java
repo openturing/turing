@@ -16,7 +16,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.viglet.turing.persistence.model.VigNLPSolution;
+import com.viglet.turing.persistence.model.TurNLPSolution;
 import com.viglet.turing.persistence.model.VigService;
 
 @Path("/entity/terms")
@@ -32,9 +32,9 @@ public class NLPSolution {
 		// Read the existing entries and write to console
 		Query q = em.createQuery("SELECT s FROM VigTerm s");
 
-		List<VigNLPSolution> vigSolutionList = q.getResultList();
+		List<TurNLPSolution> vigSolutionList = q.getResultList();
 		JSONArray vigSolutions = new JSONArray();
-		for (VigNLPSolution vigSolution : vigSolutionList) {
+		for (TurNLPSolution vigSolution : vigSolutionList) {
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", vigSolution.getId());
 			jsonObject.put("title", vigSolution.getTitle());
@@ -57,7 +57,7 @@ public class NLPSolution {
 		EntityManager em = factory.createEntityManager();
 		// Read the existing entries and write to console
 		Query q = em.createQuery("SELECT s FROM VigNLPSolution s where s.id = :id ").setParameter("id", id);
-		VigNLPSolution vigSolution = (VigNLPSolution) q.getSingleResult();
+		TurNLPSolution vigSolution = (TurNLPSolution) q.getSingleResult();
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("id", vigSolution.getId());
 		jsonObject.put("title", vigSolution.getTitle());

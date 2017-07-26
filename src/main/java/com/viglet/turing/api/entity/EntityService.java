@@ -17,7 +17,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.viglet.turing.persistence.model.VigEntity;
+import com.viglet.turing.persistence.model.TurEntity;
 import com.viglet.turing.persistence.model.VigTerm;
 import com.viglet.turing.persistence.model.VigTermRelationFrom;
 import com.viglet.turing.persistence.model.VigTermRelationTo;
@@ -36,15 +36,15 @@ public class EntityService {
 		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
 		EntityManager em = factory.createEntityManager();
 		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT e FROM VigEntity e ");
+		Query q = em.createQuery("SELECT e FROM TurEntity e ");
 
-		List<VigEntity> vigEntityList = q.getResultList();
+		List<TurEntity> turEntityList = q.getResultList();
 		JSONArray vigEntities = new JSONArray();
-		for (VigEntity vigEntity : vigEntityList) {
+		for (TurEntity turEntity : turEntityList) {
 			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", vigEntity.getId());
-			jsonObject.put("name", vigEntity.getName());
-			jsonObject.put("description", vigEntity.getDescription());
+			jsonObject.put("id", turEntity.getId());
+			jsonObject.put("name", turEntity.getName());
+			jsonObject.put("description", turEntity.getDescription());
 			vigEntities.put(jsonObject);
 
 		}
@@ -61,16 +61,16 @@ public class EntityService {
 		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
 		EntityManager em = factory.createEntityManager();
 		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT e FROM VigEntity e where e.id = :id ").setParameter("id", id);
-		VigEntity vigEntity = (VigEntity) q.getSingleResult();
+		Query q = em.createQuery("SELECT e FROM TurEntity e where e.id = :id ").setParameter("id", id);
+		TurEntity turEntity = (TurEntity) q.getSingleResult();
 		JSONObject vigEntityJSON = new JSONObject();
 		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("id", vigEntity.getId());
-		jsonObject.put("name", vigEntity.getName());
-		jsonObject.put("description", vigEntity.getDescription());
+		jsonObject.put("id", turEntity.getId());
+		jsonObject.put("name", turEntity.getName());
+		jsonObject.put("description", turEntity.getDescription());
 
-		Query qTerms = em.createQuery("SELECT t FROM VigTerm t where t.vigEntity = :vigEntity")
-				.setParameter("vigEntity", vigEntity);
+		Query qTerms = em.createQuery("SELECT t FROM VigTerm t where t.turEntity = :turEntity")
+				.setParameter("turEntity", turEntity);
 
 		List<VigTerm> vigTermList = qTerms.getResultList();
 		JSONArray vigTerms = new JSONArray();
@@ -103,17 +103,17 @@ public class EntityService {
 
 			// Read the existing entries and write to console
 			Query q = em.createQuery("SELECT e FROM VigEntity e where e.id = :id ").setParameter("id", id);
-			VigEntity vigEntity = (VigEntity) q.getSingleResult();
+			TurEntity turEntity = (TurEntity) q.getSingleResult();
 
 			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", vigEntity.getId());
-			jsonObject.put("name", vigEntity.getName());
-			jsonObject.put("description", vigEntity.getDescription());
+			jsonObject.put("id", turEntity.getId());
+			jsonObject.put("name", turEntity.getName());
+			jsonObject.put("description", turEntity.getDescription());
 
 			vigEntityJSON.put("entity", jsonObject);
 
-			Query qTerms = em.createQuery("SELECT t FROM VigTerm t where t.vigEntity = :vigEntity ")
-					.setParameter("vigEntity", vigEntity);
+			Query qTerms = em.createQuery("SELECT t FROM VigTerm t where t.turEntity = :turEntity ")
+					.setParameter("turEntity", turEntity);
 			List<?> terms = qTerms.getResultList();
 
 			for (Object termObject : terms) {
@@ -142,7 +142,7 @@ public class EntityService {
 				em.getTransaction().commit();
 			}
 			em.getTransaction().begin();
-			em.remove(vigEntity);
+			em.remove(turEntity);
 			em.getTransaction().commit();
 		} catch (Exception e) {
 			e.printStackTrace();

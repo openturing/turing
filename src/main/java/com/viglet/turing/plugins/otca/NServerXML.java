@@ -58,7 +58,7 @@ public class NServerXML {
 	public JSONObject getJSON() {
 		JSONObject jsonObject =  new JSONObject();;
 		for (VigServicesNLPEntity entity : nlpEntities) {
-			jsonObject.put(entity.getVigEntity().getCollectionName(), this.getEntity(entity.getName()));
+			jsonObject.put(entity.getTurEntity().getCollectionName(), this.getEntity(entity.getName()));
 		}
 		jsonObject.put("nlp","OTCA");
 		return jsonObject;

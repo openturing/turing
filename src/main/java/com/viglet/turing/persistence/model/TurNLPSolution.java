@@ -9,9 +9,9 @@ import javax.persistence.*;
  * 
  */
 @Entity
-@Table(name="vigNLPSolutions")
-@NamedQuery(name="VigNLPSolution.findAll", query="SELECT v FROM VigNLPSolution v")
-public class VigNLPSolution implements Serializable {
+@Table(name="turNLPSolutions")
+@NamedQuery(name="TurNLPSolution.findAll", query="SELECT v FROM TurNLPSolution v")
+public class TurNLPSolution implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -19,19 +19,19 @@ public class VigNLPSolution implements Serializable {
 	@Column(unique=true, nullable=false)
 	private int id;
 
-	@Column(nullable=false, length=255)
+	@Column(nullable=true, length=255)
 	private String description;
 
-	@Column(nullable=false, length=255)
+	@Column(nullable=true, length=255)
 	private String plugin;
 
 	@Column(nullable=false, length=100)
 	private String title;
 
-	@Column(nullable=false, length=255)
+	@Column(nullable=true, length=255)
 	private String website;
 
-	public VigNLPSolution() {
+	public TurNLPSolution() {
 	}
 
 	public int getId() {

@@ -42,7 +42,7 @@ import org.json.JSONObject;
 import com.viglet.turing.entity.VigEntityProcessor;
 import com.viglet.turing.nlp.VigNLP;
 import com.viglet.turing.nlp.VigNLPResults;
-import com.viglet.turing.persistence.model.VigNLPSolution;
+import com.viglet.turing.persistence.model.TurNLPSolution;
 import com.viglet.turing.persistence.model.VigService;
 import com.viglet.turing.persistence.model.VigServicesNLPEntity;
 import com.viglet.turing.se.facet.VigSEFacetMap;
@@ -68,7 +68,7 @@ public class VigSolr {
 	String currText = null;
 	VigService vigServiceSE = null;
 	VigService vigServiceNLP = null;
-	VigNLPSolution vigNLPSolution = null;
+	TurNLPSolution vigNLPSolution = null;
 	SolrServer solrServer = null;
 
 	public JSONObject getJsonAttributes() {
@@ -181,12 +181,12 @@ public class VigSolr {
 		}
 
 		for (VigServicesNLPEntity vigNLPEntity : vigNLPResults.getVigNLPServicesEntity()) {
-			if (jsonNLP.has(vigNLPEntity.getVigEntity().getCollectionName())) {
-				JSONArray jsonEntity = jsonNLP.getJSONArray(vigNLPEntity.getVigEntity().getCollectionName());
+			if (jsonNLP.has(vigNLPEntity.getTurEntity().getCollectionName())) {
+				JSONArray jsonEntity = jsonNLP.getJSONArray(vigNLPEntity.getTurEntity().getCollectionName());
 
 				if (jsonEntity.length() > 0) {
 					for (int i = 0; i < jsonEntity.length(); i++) {
-						document.addField("turing_entity_" + vigNLPEntity.getVigEntity().getInternalName(),
+						document.addField("turing_entity_" + vigNLPEntity.getTurEntity().getInternalName(),
 								jsonEntity.getString(i));
 					}
 				}

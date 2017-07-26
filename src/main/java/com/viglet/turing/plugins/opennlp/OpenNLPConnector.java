@@ -104,7 +104,7 @@ public class OpenNLPConnector implements NLPImpl {
 		for (VigServicesNLPEntity entity : nlpEntities) {
 			JSONArray entityTerms = this.getEntity(entity.getName());
 			if (entityTerms.length() > 0) {
-				jsonObject.put(entity.getVigEntity().getCollectionName(), this.getEntity(entity.getName()));
+				jsonObject.put(entity.getTurEntity().getCollectionName(), this.getEntity(entity.getName()));
 			}
 		}
 		jsonObject.put("nlp", "OpenNLP");

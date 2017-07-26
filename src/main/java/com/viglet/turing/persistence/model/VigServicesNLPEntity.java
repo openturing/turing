@@ -28,7 +28,7 @@ public class VigServicesNLPEntity implements Serializable {
 	//bi-directional many-to-one association to VigEntity
 	@ManyToOne
 	@JoinColumn(name="id_entity", nullable=false)
-	private VigEntity vigEntity;
+	private TurEntity turEntity;
 
 	//bi-directional many-to-one association to VigService
 	@ManyToOne
@@ -62,12 +62,12 @@ public class VigServicesNLPEntity implements Serializable {
 		this.name = name;
 	}
 
-	public VigEntity getVigEntity() {
-		return this.vigEntity;
+	public TurEntity getTurEntity() {
+		return this.turEntity;
 	}
 
-	public void setVigEntity(VigEntity vigEntity) {
-		this.vigEntity = vigEntity;
+	public void setTurEntity(TurEntity turEntity) {
+		this.turEntity = turEntity;
 	}
 
 	public VigService getVigService() {

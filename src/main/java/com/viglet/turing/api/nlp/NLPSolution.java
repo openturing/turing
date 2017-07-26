@@ -16,8 +16,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.viglet.turing.persistence.model.VigNLPSolution;
-import com.viglet.turing.persistence.model.VigService;
+import com.viglet.turing.persistence.model.TurNLPSolution;
 
 @Path("/nlp/solution")
 public class NLPSolution {
@@ -30,11 +29,11 @@ public class NLPSolution {
 		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
 		EntityManager em = factory.createEntityManager();
 		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT s FROM VigNLPSolution s");
+		Query q = em.createQuery("SELECT s FROM TurNLPSolution s");
 
-		List<VigNLPSolution> vigSolutionList = q.getResultList();
+		List<TurNLPSolution> vigSolutionList = q.getResultList();
 		JSONArray vigSolutions = new JSONArray();
-		for (VigNLPSolution vigSolution : vigSolutionList) {
+		for (TurNLPSolution vigSolution : vigSolutionList) {
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", vigSolution.getId());
 			jsonObject.put("title", vigSolution.getTitle());
@@ -56,8 +55,8 @@ public class NLPSolution {
 		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
 		EntityManager em = factory.createEntityManager();
 		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT s FROM VigNLPSolution s where s.id = :id ").setParameter("id", id);
-		VigNLPSolution vigSolution = (VigNLPSolution) q.getSingleResult();
+		Query q = em.createQuery("SELECT s FROM TurNLPSolution s where s.id = :id ").setParameter("id", id);
+		TurNLPSolution vigSolution = (TurNLPSolution) q.getSingleResult();
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("id", vigSolution.getId());
 		jsonObject.put("title", vigSolution.getTitle());

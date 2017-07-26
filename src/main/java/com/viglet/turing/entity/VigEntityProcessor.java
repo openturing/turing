@@ -23,7 +23,7 @@ import com.viglet.turing.nlp.VigNLPSentence;
 import com.viglet.turing.nlp.VigNLPTermAccent;
 import com.viglet.turing.nlp.VigNLPTermCase;
 import com.viglet.turing.nlp.VigNLPWord;
-import com.viglet.turing.persistence.model.VigEntity;
+import com.viglet.turing.persistence.model.TurEntity;
 import com.viglet.turing.persistence.model.VigTerm;
 import com.viglet.turing.persistence.model.VigTermRelationFrom;
 import com.viglet.turing.persistence.model.VigTermRelationTo;
@@ -103,14 +103,14 @@ public class VigEntityProcessor {
 					// Validate single word
 					if (this.validateTerm(vigNLPWord.getWord(), variation)) {
 						logger.debug("Single Term was validaded: " + vigNLPWord.getWord());
-						VigEntity vigEntity = this.getEntity(variation);
-						if (vigEntity != null) {
-							if (!entityResults.containsKey(vigEntity.getCollectionName())) {
+						TurEntity turEntity = this.getEntity(variation);
+						if (turEntity != null) {
+							if (!entityResults.containsKey(turEntity.getCollectionName())) {
 								List<String> lstTerm = new ArrayList<String>();
 								lstTerm.add(variation.getName());
-								entityResults.put(vigEntity.getCollectionName(), lstTerm);
+								entityResults.put(turEntity.getCollectionName(), lstTerm);
 							} else {
-								entityResults.get(vigEntity.getCollectionName()).add(variation.getName());
+								entityResults.get(turEntity.getCollectionName()).add(variation.getName());
 							}
 							this.getParentTerm(variation.getVigTerm());
 						}
@@ -126,14 +126,14 @@ public class VigEntityProcessor {
 
 						// Validate 2 or more words
 						if (this.validateTerm(wordVariaton, variation)) {
-							VigEntity vigEntity = this.getEntity(variation);
-							if (vigEntity != null) {
-								if (!entityResults.containsKey(vigEntity.getCollectionName())) {
+							TurEntity turEntity = this.getEntity(variation);
+							if (turEntity != null) {
+								if (!entityResults.containsKey(turEntity.getCollectionName())) {
 									List<String> lstTerm = new ArrayList<String>();
 									lstTerm.add(variation.getName());
-									entityResults.put(vigEntity.getCollectionName(), lstTerm);
+									entityResults.put(turEntity.getCollectionName(), lstTerm);
 								} else {
-									entityResults.get(vigEntity.getCollectionName()).add(variation.getName());
+									entityResults.get(turEntity.getCollectionName()).add(variation.getName());
 								}
 								this.getParentTerm(variation.getVigTerm());
 							}
@@ -259,7 +259,7 @@ public class VigEntityProcessor {
 		return null;
 	}
 
-	public VigEntity getEntity(VigTermVariation variation) {
+	public TurEntity getEntity(VigTermVariation variation) {
 		logger.debug("Entity is " + variation.getVigTerm().getVigEntity().getName());
 		return variation.getVigTerm().getVigEntity();
 	}

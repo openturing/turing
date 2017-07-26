@@ -29,7 +29,7 @@ public class VigTerm implements Serializable {
 	//bi-directional many-to-one association to VigEntity
 	@ManyToOne
 	@JoinColumn(name="entity_id", nullable=false)
-	private VigEntity vigEntity;
+	private TurEntity turEntity;
 
 	//bi-directional many-to-one association to VigTermAttribute
 	@OneToMany(mappedBy="vigTerm")
@@ -78,12 +78,12 @@ public class VigTerm implements Serializable {
 		this.name = name;
 	}
 
-	public VigEntity getVigEntity() {
-		return this.vigEntity;
+	public TurEntity getVigEntity() {
+		return this.turEntity;
 	}
 
-	public void setVigEntity(VigEntity vigEntity) {
-		this.vigEntity = vigEntity;
+	public void setTurEntity(TurEntity vigEntity) {
+		this.turEntity = vigEntity;
 	}
 
 	public List<VigTermAttribute> getVigTermAttributes() {

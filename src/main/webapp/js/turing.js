@@ -3,7 +3,7 @@ var vigletApp = angular.module('vigletApp', [ "ngRoute" ]);
 vigletApp.config([ '$routeProvider', function($routeProvider) {
 	$routeProvider.when('/home', {
 		templateUrl : 'templates/home.html',
-		controller : 'AddOrderController'
+		controller : 'TurHomeCtrl'
 	}).when('/entity', {
 		templateUrl : 'templates/entity.html',
 		controller : 'ShowOrdersController'
@@ -57,6 +57,14 @@ vigletApp.config([ '$routeProvider', function($routeProvider) {
 	});
 } ]);
 
+vigletApp.controller('TurHomeCtrl', function($scope) {
+
+	$scope.title = 'Home';
+	componentHandler.upgradeAllRegistered();
+
+});
+
+	
 vigletApp.controller('IndexingCtrl', function($scope, $http, $routeParams,
 		$location) {
 	$scope.vigResults = null;

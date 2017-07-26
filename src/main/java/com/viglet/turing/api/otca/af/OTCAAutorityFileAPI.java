@@ -40,7 +40,7 @@ import org.json.JSONException;
 import com.viglet.turing.nlp.VigNLPRelationType;
 import com.viglet.turing.nlp.VigNLPTermAccent;
 import com.viglet.turing.nlp.VigNLPTermCase;
-import com.viglet.turing.persistence.model.VigEntity;
+import com.viglet.turing.persistence.model.TurEntity;
 import com.viglet.turing.persistence.model.VigTerm;
 import com.viglet.turing.persistence.model.VigTermAttribute;
 import com.viglet.turing.persistence.model.VigTermRelationFrom;
@@ -84,27 +84,27 @@ public class OTCAAutorityFileAPI {
 		return s;
 	}
 
-	public VigEntity setEntity(String name, String description) {
-		VigEntity vigEntity = null;
+	public TurEntity setEntity(String name, String description) {
+		TurEntity turEntity = null;
 		try {
-			Query q = em.createQuery("SELECT e FROM VigEntity e where e.name = :name ").setParameter("name", name);
+			Query q = em.createQuery("SELECT e FROM TurEntity e where e.name = :name ").setParameter("name", name);
 			if (q.getResultList().size() > 0) {
-				vigEntity = (VigEntity) q.getSingleResult();
+				turEntity = (TurEntity) q.getSingleResult();
 			} else {
-				if (vigEntity == null) {
-					vigEntity = new VigEntity();
-					vigEntity.setName(name);
+				if (turEntity == null) {
+					turEntity = new TurEntity();
+					turEntity.setName(name);
 					if (description != null) {
-						vigEntity.setDescription(description);
+						turEntity.setDescription(description);
 					} else {
-						vigEntity.setDescription("");
+						turEntity.setDescription("");
 					}
-					vigEntity.setInternalName(normalizeEntity(name));
-					vigEntity.setLocal(1);
-					vigEntity.setCollectionName(normalizeEntity(name));
+					turEntity.setInternalName(normalizeEntity(name));
+					turEntity.setLocal(1);
+					turEntity.setCollectionName(normalizeEntity(name));
 
 					em.getTransaction().begin();
-					em.persist(vigEntity);
+					em.persist(turEntity);
 					em.getTransaction().commit();
 				}
 			}
@@ -112,7 +112,7 @@ public class OTCAAutorityFileAPI {
 			e.printStackTrace();
 		}
 
-		return vigEntity;
+		return turEntity;
 	}
 
 	public void setTermAttribute(VigTerm vigTerm, Attributes attributes) {
@@ -171,7 +171,7 @@ public class OTCAAutorityFileAPI {
 
 						vigTermTo.setIdCustom(afTermRelationType.getId());
 						vigTermTo.setName(EMPTY_TERM_NAME);
-						vigTermTo.setVigEntity(vigTermRelationFrom.getVigTerm().getVigEntity());
+						vigTermTo.setTurEntity(vigTermRelationFrom.getVigTerm().getVigEntity());
 						em.getTransaction().begin();
 						em.persist(vigTermTo);
 						em.getTransaction().commit();
@@ -239,7 +239,7 @@ public class OTCAAutorityFileAPI {
 		}
 	}
 
-	public void setTerms(VigEntity vigEntity, Terms terms) {
+	public void setTerms(TurEntity turEntity, Terms terms) {
 		boolean overwrite = false;
 		try {
 			for (AFTermType afTermType : terms.getTerm()) {
@@ -261,7 +261,7 @@ public class OTCAAutorityFileAPI {
 				if (overwrite) {
 					vigTerm.setIdCustom(termId);
 					vigTerm.setName(afTermType.getName());
-					vigTerm.setVigEntity(vigEntity);
+					vigTerm.setTurEntity(turEntity);
 
 					em.getTransaction().begin();
 					em.persist(vigTerm);
@@ -297,8 +297,8 @@ public class OTCAAutorityFileAPI {
 			AFType documentType = ((JAXBElement<AFType>) jaxbContext.createUnmarshaller().unmarshal(inputStream))
 					.getValue();
 
-			VigEntity vigEntity = this.setEntity(documentType.getName(), documentType.getDescription());
-			this.setTerms(vigEntity, documentType.getTerms());
+			TurEntity turEntity = this.setEntity(documentType.getName(), documentType.getDescription());
+			this.setTerms(turEntity, documentType.getTerms());
 
 		} catch (JAXBException ejaxb) {
 			ejaxb.printStackTrace();

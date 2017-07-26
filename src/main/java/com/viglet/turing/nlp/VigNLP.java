@@ -20,7 +20,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.viglet.turing.entity.VigEntityProcessor;
-import com.viglet.turing.persistence.model.VigNLPSolution;
+import com.viglet.turing.persistence.model.TurNLPSolution;
 import com.viglet.turing.persistence.model.VigService;
 import com.viglet.turing.persistence.model.VigServicesNLPEntity;
 import com.viglet.turing.plugins.nlp.NLPImpl;
@@ -36,7 +36,7 @@ public class VigNLP {
 	VigService vigServiceSE = null;
 
 	VigService vigServiceNLP = null;
-	VigNLPSolution vigNLPSolution = null;
+	TurNLPSolution vigNLPSolution = null;
 	VigNLPResults vigNLPResults = null;
 	SolrServer solrServer = null;
 	EntityManager em = null;
@@ -58,7 +58,7 @@ public class VigNLP {
 		Query queryNLP = em.createQuery("SELECT s FROM VigNLPSolution s where s.id = :id ").setParameter("id",
 				vigServiceNLP.getSub_type());
 
-		vigNLPSolution = (VigNLPSolution) queryNLP.getSingleResult();
+		vigNLPSolution = (TurNLPSolution) queryNLP.getSingleResult();
 
 		this.vigNLPResults = new VigNLPResults();
 	}
@@ -163,8 +163,8 @@ public class VigNLP {
 		JSONObject jsonNLP = this.vigNLPResults.getJsonResult();
 		for (VigServicesNLPEntity vigNLPEntity : vigNLPResults.getVigNLPServicesEntity()) {
 
-			if (jsonNLP.has(vigNLPEntity.getVigEntity().getCollectionName())) {
-				JSONArray jsonEntity = jsonNLP.getJSONArray(vigNLPEntity.getVigEntity().getCollectionName());
+			if (jsonNLP.has(vigNLPEntity.getTurEntity().getCollectionName())) {
+				JSONArray jsonEntity = jsonNLP.getJSONArray(vigNLPEntity.getTurEntity().getCollectionName());
 
 				if (jsonEntity.length() > 0) {
 					List<String> list = new ArrayList<String>();
@@ -173,8 +173,8 @@ public class VigNLP {
 					}				
 					Set<String> termsUnique = new HashSet<String>(list);
 					
-					jsonNLP.remove(vigNLPEntity.getVigEntity().getCollectionName());
-					jsonNLP.put(vigNLPEntity.getVigEntity().getCollectionName(), new JSONArray(termsUnique.toArray()));
+					jsonNLP.remove(vigNLPEntity.getTurEntity().getCollectionName());
+					jsonNLP.put(vigNLPEntity.getTurEntity().getCollectionName(), new JSONArray(termsUnique.toArray()));
 				}
 			}
 		}
