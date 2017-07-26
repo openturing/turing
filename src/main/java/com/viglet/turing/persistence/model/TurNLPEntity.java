@@ -9,9 +9,9 @@ import javax.persistence.*;
  * 
  */
 @Entity
-@Table(name="vigServicesNLPEntities")
-@NamedQuery(name="VigServicesNLPEntity.findAll", query="SELECT v FROM VigServicesNLPEntity v")
-public class VigServicesNLPEntity implements Serializable {
+@Table(name="turNLPEntity")
+@NamedQuery(name="TurNLPEntity.findAll", query="SELECT ne FROM TurNLPEntity ne")
+public class TurNLPEntity implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -27,15 +27,14 @@ public class VigServicesNLPEntity implements Serializable {
 
 	//bi-directional many-to-one association to VigEntity
 	@ManyToOne
-	@JoinColumn(name="id_entity", nullable=false)
+	@JoinColumn(name="entity_id", nullable=false)
 	private TurEntity turEntity;
 
-	//bi-directional many-to-one association to VigService
 	@ManyToOne
-	@JoinColumn(name="id_service", nullable=false)
-	private VigService vigService;
+	@JoinColumn(name="nlp_id", nullable=false)
+	private TurNLP turNLP;
 
-	public VigServicesNLPEntity() {
+	public TurNLPEntity() {
 	}
 
 	public int getId() {
@@ -70,12 +69,11 @@ public class VigServicesNLPEntity implements Serializable {
 		this.turEntity = turEntity;
 	}
 
-	public VigService getVigService() {
-		return this.vigService;
+	public TurNLP getTurNLP() {
+		return this.turNLP;
 	}
 
-	public void setVigService(VigService vigService) {
-		this.vigService = vigService;
+	public void setTurNLP(TurNLP turNLP) {
+		this.turNLP = turNLP;
 	}
-
 }

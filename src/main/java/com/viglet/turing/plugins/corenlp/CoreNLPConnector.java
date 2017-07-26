@@ -34,7 +34,7 @@ import org.json.JSONObject;
 
 import com.viglet.turing.nlp.VigNLPResults;
 import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.model.VigServicesNLPEntity;
+import com.viglet.turing.persistence.model.TurNLPEntity;
 import com.viglet.turing.plugins.nlp.NLPImpl;
 
 import java.util.*;
@@ -43,7 +43,7 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLPClient;
 
 public class CoreNLPConnector implements NLPImpl {
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
-	List<VigServicesNLPEntity> nlpEntities = null;
+	List<TurNLPEntity> nlpEntities = null;
 	Map<String, JSONArray> entityList = new HashMap<String, JSONArray>();
 	public JSONObject json;
 	VigService vigService = null;
@@ -108,7 +108,7 @@ public class CoreNLPConnector implements NLPImpl {
 
 		VigNLPResults vigNLPResults = new VigNLPResults();
 		vigNLPResults.setJsonResult(this.getJSON());
-		vigNLPResults.setVigNLPServicesEntity(nlpEntities);
+		vigNLPResults.setTurNLPEntities(nlpEntities);
 
 		return vigNLPResults;
 
@@ -117,7 +117,7 @@ public class CoreNLPConnector implements NLPImpl {
 	public JSONObject getJSON() {
 		JSONObject jsonObject = new JSONObject();
 		this.getEntities();
-		for (VigServicesNLPEntity entity : nlpEntities) {
+		for (TurNLPEntity entity : nlpEntities) {
 			jsonObject.put(entity.getTurEntity().getCollectionName(), this.getEntity(entity.getName()));
 		}
 		jsonObject.put("nlp", "CoreNLP");

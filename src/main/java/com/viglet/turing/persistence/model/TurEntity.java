@@ -37,7 +37,7 @@ public class TurEntity implements Serializable {
 
 	//bi-directional many-to-one association to VigServicesNLPEntity
 	@OneToMany(mappedBy="turEntity")
-	private List<VigServicesNLPEntity> vigServicesNlpentities;
+	private List<TurNLPEntity> turNLPEntities;
 
 	//bi-directional many-to-one association to VigTerm
 	@OneToMany(mappedBy="turEntity")
@@ -94,26 +94,26 @@ public class TurEntity implements Serializable {
 		this.name = name;
 	}
 
-	public List<VigServicesNLPEntity> getVigServicesNlpentities() {
-		return this.vigServicesNlpentities;
+	public List<TurNLPEntity> getTurNLPEntities() {
+		return this.turNLPEntities;
 	}
 
-	public void setVigServicesNlpentities(List<VigServicesNLPEntity> vigServicesNlpentities) {
-		this.vigServicesNlpentities = vigServicesNlpentities;
+	public void setTurNLPEntities(List<TurNLPEntity> turNLPEntities) {
+		this.turNLPEntities = turNLPEntities;
 	}
 
-	public VigServicesNLPEntity addVigServicesNlpentity(VigServicesNLPEntity vigServicesNlpentity) {
-		getVigServicesNlpentities().add(vigServicesNlpentity);
-		vigServicesNlpentity.setTurEntity(this);
+	public TurNLPEntity addVigServicesNlpentity(TurNLPEntity turNLPEntity) {
+		getTurNLPEntities().add(turNLPEntity);
+		turNLPEntity.setTurEntity(this);
 
-		return vigServicesNlpentity;
+		return turNLPEntity;
 	}
 
-	public VigServicesNLPEntity removeVigServicesNlpentity(VigServicesNLPEntity vigServicesNlpentity) {
-		getVigServicesNlpentities().remove(vigServicesNlpentity);
-		vigServicesNlpentity.setTurEntity(null);
+	public TurNLPEntity removeVigServicesNlpentity(TurNLPEntity turNLPEntity) {
+		getTurNLPEntities().remove(turNLPEntity);
+		turNLPEntity.setTurEntity(null);
 
-		return vigServicesNlpentity;
+		return turNLPEntity;
 	}
 
 	public List<VigTerm> getVigTerms() {

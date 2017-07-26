@@ -14,13 +14,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.model.VigServicesNLPEntity;
+import com.viglet.turing.persistence.model.TurNLPEntity;
 
 import org.w3c.dom.Node;
 import org.w3c.dom.Element;
 
 public class NServerXML {
-	List<VigServicesNLPEntity> nlpEntities = null;
+	List<TurNLPEntity> nlpEntities = null;
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
 	public JSONObject json;
 	VigService vigService = null;
@@ -57,7 +57,7 @@ public class NServerXML {
 
 	public JSONObject getJSON() {
 		JSONObject jsonObject =  new JSONObject();;
-		for (VigServicesNLPEntity entity : nlpEntities) {
+		for (TurNLPEntity entity : nlpEntities) {
 			jsonObject.put(entity.getTurEntity().getCollectionName(), this.getEntity(entity.getName()));
 		}
 		jsonObject.put("nlp","OTCA");

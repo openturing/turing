@@ -7,6 +7,8 @@
 		<provider>org.apache.openjpa.persistence.PersistenceProviderImpl</provider>
 		 <!-- <non-jta-data-source>jdbc/VigletDS</non-jta-data-source> --> 
 		<class>com.viglet.turing.persistence.model.TurEntity</class>
+		<class>com.viglet.turing.persistence.model.TurNLP</class>
+		<class>com.viglet.turing.persistence.model.TurNLPEntity</class>
 		<class>com.viglet.turing.persistence.model.TurNLPSolution</class>
 		<class>com.viglet.turing.persistence.model.VigCategory</class>
 		<class>com.viglet.turing.persistence.model.VigData</class>
@@ -16,7 +18,6 @@
 		<class>com.viglet.turing.persistence.model.VigDataSentence</class>
 		<class>com.viglet.turing.persistence.model.VigMLModel</class>
 		<class>com.viglet.turing.persistence.model.VigService</class>
-		<class>com.viglet.turing.persistence.model.VigServicesNLPEntity</class>
 		<class>com.viglet.turing.persistence.model.VigTerm</class>
 		<class>com.viglet.turing.persistence.model.VigTermAttribute</class>
 		<class>com.viglet.turing.persistence.model.VigTermRelationFrom</class>

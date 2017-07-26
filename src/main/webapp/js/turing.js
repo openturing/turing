@@ -15,10 +15,13 @@ vigletApp.config([ '$routeProvider', function($routeProvider) {
 		controller : 'ShowOrdersController'
 	}).when('/nlp', {
 		templateUrl : 'templates/nlp.html',
-		controller : 'ShowOrdersController'
+		controller : 'TurNLPCtrl'
+	}).when('/nlp/add', {
+		templateUrl : 'templates/nlp_item.html',
+		controller : 'TurNLPNewCtrl'
 	}).when('/nlp/:id', {
 		templateUrl : 'templates/nlp_item.html',
-		controller : 'ShowOrdersController'
+		controller : 'TurNLPItemCtrl'
 	}).when('/ml', {
 		templateUrl : 'templates/ml.html',
 		controller : 'ShowOrdersController'
@@ -59,12 +62,32 @@ vigletApp.config([ '$routeProvider', function($routeProvider) {
 
 vigletApp.controller('TurHomeCtrl', function($scope) {
 
-	$scope.title = 'Home';
+	$scope.$parent.title = 'Home';
 	componentHandler.upgradeAllRegistered();
 
 });
 
-	
+vigletApp.controller('TurNLPCtrl', function($scope, $sce) {
+
+	$scope.$parent.title =  'NLP';
+	componentHandler.upgradeAllRegistered();
+
+});
+
+vigletApp.controller('TurNLPItemCtrl', function($scope, $sce) {
+
+	$scope.$parent.title =  'Edit NLP';
+	componentHandler.upgradeAllRegistered();
+
+});
+
+vigletApp.controller('TurNLPNewCtrl', function($scope, $sce) {
+
+	$scope.$parent.title =  'New NLP';
+	componentHandler.upgradeAllRegistered();
+
+});
+
 vigletApp.controller('IndexingCtrl', function($scope, $http, $routeParams,
 		$location) {
 	$scope.vigResults = null;

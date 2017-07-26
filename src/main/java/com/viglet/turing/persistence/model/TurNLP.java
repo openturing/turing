@@ -4,50 +4,54 @@ import java.io.Serializable;
 import javax.persistence.*;
 import java.util.List;
 
-
 /**
  * The persistent class for the vigServices database table.
  * 
  */
 @Entity
-@Table(name="vigServices")
-@NamedQuery(name="VigService.findAll", query="SELECT v FROM VigService v")
-public class VigService implements Serializable {
+@Table(name = "turNLP")
+@NamedQuery(name = "TurNLP.findAll", query = "SELECT n FROM TurNLP n")
+public class TurNLP implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(unique=true, nullable=false)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(unique = true, nullable = false)
 	private int id;
-
-	@Column(nullable=false, length=100)
+	
+	@Column(nullable = false, length = 100)
+	private String title;
+	
+	@Column(nullable = false, length = 100)
 	private String description;
 
-	@Column(nullable=false)
+	@Column(nullable = false)
 	private int enabled;
 
-	@Column(nullable=false, length=255)
+	@Column(nullable = false, length = 255)
 	private String host;
 
-	@Column(nullable=false, length=5)
+	@Column(nullable = false, length = 5)
 	private String language;
 
-	@Column(nullable=false)
+	@Column(nullable = false)
 	private int port;
 
-	@Column(nullable=false)
+	@Column(nullable = false)
 	private int selected;
 
-	@Column(name="`sub-type`", nullable=false)
-	private int sub_type;
+	// bi-directional many-to-one association to VigService
+	@ManyToOne
+	@JoinColumn(name = "nlp_solution_id", nullable = false)
+	private TurNLPSolution turNLPSolution ;
 
-	@Column(nullable=false, length=100)
-	private String title;
 
-	@Column(nullable=false)
-	private int type;
 
-	public VigService() {
+	// bi-directional many-to-one association to VigServicesNLPEntity
+	@OneToMany(mappedBy = "turNLP")
+	private List<TurNLPEntity> turNLPEntities;
+
+	public TurNLP() {
 	}
 
 	public int getId() {
@@ -106,14 +110,6 @@ public class VigService implements Serializable {
 		this.selected = selected;
 	}
 
-	public int getSub_type() {
-		return this.sub_type;
-	}
-
-	public void setSub_type(int sub_type) {
-		this.sub_type = sub_type;
-	}
-
 	public String getTitle() {
 		return this.title;
 	}
@@ -122,12 +118,26 @@ public class VigService implements Serializable {
 		this.title = title;
 	}
 
-	public int getType() {
-		return this.type;
+	public List<TurNLPEntity> getTurNLPEntities() {
+		return this.turNLPEntities;
 	}
 
-	public void setType(int type) {
-		this.type = type;
+	public void setVigNLPEntities(List<TurNLPEntity> turNLPEntities) {
+		this.turNLPEntities = turNLPEntities;
+	}
+
+	public TurNLPEntity addVigServicesNLPEntity(TurNLPEntity turNLPEntity) {
+		getTurNLPEntities().add(turNLPEntity);
+		turNLPEntity.setTurNLP(this);
+
+		return turNLPEntity;
+	}
+
+	public TurNLPEntity removeVigServicesNlPEntity(TurNLPEntity turNLPEntity) {
+		getTurNLPEntities().remove(turNLPEntity);
+		turNLPEntity.setTurNLP(null);
+
+		return turNLPEntity;
 	}
 
 }

@@ -113,7 +113,7 @@
 		</div>
 
 		<div class="mdl-layout__header-row mdl-color--grey-100 mdl-color-text--grey-600">
-			<span class="mdl-layout-title">Home</span>
+			<span class="mdl-layout-title" ng-bind="title"></span>
 			<div class="mdl-layout-spacer"></div>
 				<button
 				class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--icon"

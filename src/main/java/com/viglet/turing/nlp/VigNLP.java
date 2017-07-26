@@ -22,7 +22,7 @@ import org.json.JSONObject;
 import com.viglet.turing.entity.VigEntityProcessor;
 import com.viglet.turing.persistence.model.TurNLPSolution;
 import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.model.VigServicesNLPEntity;
+import com.viglet.turing.persistence.model.TurNLPEntity;
 import com.viglet.turing.plugins.nlp.NLPImpl;
 import com.viglet.turing.plugins.opennlp.OpenNLPConnector;
 import com.viglet.turing.service.VigServiceUtil;
@@ -161,10 +161,10 @@ public class VigNLP {
 
 	public void removeDuplicateTerms() {
 		JSONObject jsonNLP = this.vigNLPResults.getJsonResult();
-		for (VigServicesNLPEntity vigNLPEntity : vigNLPResults.getVigNLPServicesEntity()) {
+		for (TurNLPEntity turNLPEntity : vigNLPResults.getTurNLPEntities()) {
 
-			if (jsonNLP.has(vigNLPEntity.getTurEntity().getCollectionName())) {
-				JSONArray jsonEntity = jsonNLP.getJSONArray(vigNLPEntity.getTurEntity().getCollectionName());
+			if (jsonNLP.has(turNLPEntity.getTurEntity().getCollectionName())) {
+				JSONArray jsonEntity = jsonNLP.getJSONArray(turNLPEntity.getTurEntity().getCollectionName());
 
 				if (jsonEntity.length() > 0) {
 					List<String> list = new ArrayList<String>();
@@ -173,8 +173,8 @@ public class VigNLP {
 					}				
 					Set<String> termsUnique = new HashSet<String>(list);
 					
-					jsonNLP.remove(vigNLPEntity.getTurEntity().getCollectionName());
-					jsonNLP.put(vigNLPEntity.getTurEntity().getCollectionName(), new JSONArray(termsUnique.toArray()));
+					jsonNLP.remove(turNLPEntity.getTurEntity().getCollectionName());
+					jsonNLP.put(turNLPEntity.getTurEntity().getCollectionName(), new JSONArray(termsUnique.toArray()));
 				}
 			}
 		}
