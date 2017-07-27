@@ -4,43 +4,46 @@ import java.io.Serializable;
 import javax.persistence.*;
 import java.util.List;
 
-
 /**
  * The persistent class for the vigEntities database table.
  * 
  */
 @Entity
-@Table(name="turEntity")
-@NamedQuery(name="TurEntity.findAll", query="SELECT e FROM TurEntity e")
+@Table(name = "turEntity")
+@NamedQuery(name = "TurEntity.findAll", query = "SELECT e FROM TurEntity e")
 public class TurEntity implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(unique=true, nullable=false)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(unique = true, nullable = false)
 	private int id;
 
-	@Column(name="collection_name", nullable=false, length=50)
+	@Column(name = "collection_name", nullable = false, length = 50)
 	private String collectionName;
 
-	@Column(nullable=false, length=255)
+	@Column(nullable = false, length = 255)
 	private String description;
 
-	@Column(name="internal_name", nullable=false, length=50)
+	@Column(name = "internal_name", nullable = false, length = 50)
 	private String internalName;
 
-	@Column(nullable=false)
+	@Column(nullable = false)
 	private int local;
 
-	@Column(nullable=false, length=50)
+	@Column(nullable = false, length = 50)
 	private String name;
 
-	//bi-directional many-to-one association to VigServicesNLPEntity
-	@OneToMany(mappedBy="turEntity")
+	// bi-directional many-to-one association to VigServicesNLPEntity
+	@OneToMany(mappedBy = "turEntity")
 	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
 
-	//bi-directional many-to-one association to VigTerm
-	@OneToMany(mappedBy="turEntity")
+	// bi-directional many-to-one association to VigServicesNLPEntity
+	@OneToMany(mappedBy = "turEntity")
+	private List<TurNLPVendorEntity> turNLPVendorEntities;
+
+	// bi-directional many-to-one association to VigTerm
+	@OneToMany(mappedBy = "turEntity")
 	private List<VigTerm> vigTerms;
 
 	public TurEntity() {
@@ -116,6 +119,29 @@ public class TurEntity implements Serializable {
 		return turNLPInstanceEntity;
 	}
 
+	
+	
+	public List<TurNLPVendorEntity> getTurNLPVendorEntities() {
+		return this.turNLPVendorEntities;
+	}
+
+	public void setTurNLPVendorEntities(List<TurNLPVendorEntity> turNLPVendorEntities) {
+		this.turNLPVendorEntities = turNLPVendorEntities;
+	}
+
+	public TurNLPVendorEntity addTurNLPVendorEntity(TurNLPVendorEntity turNLPVendorEntity) {
+		getTurNLPVendorEntities().add(turNLPVendorEntity);
+		turNLPVendorEntity.setTurEntity(this);
+
+		return turNLPVendorEntity;
+	}
+
+	public TurNLPVendorEntity removeTurNLPVendorEntity(TurNLPVendorEntity turNLPVendorEntity) {
+		getTurNLPVendorEntities().remove(turNLPVendorEntity);
+		turNLPVendorEntity.setTurEntity(null);
+
+		return turNLPVendorEntity;
+	}
 	public List<VigTerm> getVigTerms() {
 		return this.vigTerms;
 	}
