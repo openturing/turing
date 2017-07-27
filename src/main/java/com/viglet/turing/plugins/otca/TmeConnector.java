@@ -27,7 +27,7 @@ import org.json.XML;
 
 import com.viglet.turing.nlp.VigNLPResults;
 import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.model.TurNLPEntity;
+import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
 import com.viglet.turing.plugins.nlp.NLPImpl;
 import com.viglet.turing.plugins.otca.af.xml.AFType;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseCategorizerResultCategoryType;
@@ -46,7 +46,7 @@ import com.viglet.turing.plugins.otca.response.xml.ServerResponseEntityExtractor
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseType;
 
 public class TmeConnector implements NLPImpl {
-	List<TurNLPEntity> nlpEntities = null;
+	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> hmEntities = new HashMap<String, JSONArray>();
 	VigService vigService = null;
 	public JSONObject json;
@@ -69,7 +69,7 @@ public class TmeConnector implements NLPImpl {
 						"SELECT sne FROM TurNLPEntity sne, VigService s where s.id = :id_service and sne.vigService = s and sne.enabled = :enabled ")
 				.setParameter("id_service", vigService.getId()).setParameter("enabled", 1);
 
-		nlpEntities = queryNLPEntity.getResultList();
+		nlpInstanceEntities = queryNLPEntity.getResultList();
 	}
 
 	/**
@@ -154,7 +154,7 @@ public class TmeConnector implements NLPImpl {
 		sb.append("<nfExtract>");
 		sb.append("<Cartridges>");
 
-		for (TurNLPEntity entity : nlpEntities) {
+		for (TurNLPInstanceEntity entity : nlpInstanceEntities) {
 			sb.append("<Cartridge>" + entity.getName() + "</Cartridge>");
 		}
 
@@ -228,7 +228,7 @@ public class TmeConnector implements NLPImpl {
 
 		VigNLPResults vigNLPResults = new VigNLPResults();
 		vigNLPResults.setJsonResult(this.getJSON());
-		vigNLPResults.setTurNLPEntities(nlpEntities);
+		vigNLPResults.setTurNLPInstanceEntities(nlpInstanceEntities);
 
 		return vigNLPResults;
 
@@ -439,8 +439,8 @@ public class TmeConnector implements NLPImpl {
 	public JSONObject getJSON() {
 		JSONObject jsonObject = new JSONObject();
 
-		for (TurNLPEntity entity : nlpEntities) {
-			jsonObject.put(entity.getTurEntity().getCollectionName(), hmEntities.get(entity.getName()));
+		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
+			jsonObject.put(nlpInstanceEntity.getTurEntity().getCollectionName(), hmEntities.get(nlpInstanceEntity.getName()));
 		}
 		jsonObject.put("nlp", "OTCA");
 		return jsonObject;

@@ -1,7 +1,6 @@
 package com.viglet.turing.nlp;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -20,11 +19,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.viglet.turing.entity.VigEntityProcessor;
-import com.viglet.turing.persistence.model.TurNLPSolution;
+import com.viglet.turing.persistence.model.TurNLPVendor;
 import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.model.TurNLPEntity;
+import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
 import com.viglet.turing.plugins.nlp.NLPImpl;
-import com.viglet.turing.plugins.opennlp.OpenNLPConnector;
 import com.viglet.turing.service.VigServiceUtil;
 
 public class VigNLP {
@@ -36,7 +34,7 @@ public class VigNLP {
 	VigService vigServiceSE = null;
 
 	VigService vigServiceNLP = null;
-	TurNLPSolution vigNLPSolution = null;
+	TurNLPVendor turNLPVendor = null;
 	VigNLPResults vigNLPResults = null;
 	SolrServer solrServer = null;
 	EntityManager em = null;
@@ -58,7 +56,7 @@ public class VigNLP {
 		Query queryNLP = em.createQuery("SELECT s FROM VigNLPSolution s where s.id = :id ").setParameter("id",
 				vigServiceNLP.getSub_type());
 
-		vigNLPSolution = (TurNLPSolution) queryNLP.getSingleResult();
+		turNLPVendor = (TurNLPVendor) queryNLP.getSingleResult();
 
 		this.vigNLPResults = new VigNLPResults();
 	}
@@ -129,7 +127,7 @@ public class VigNLP {
 		VigEntityProcessor vigEntityProcessor = new VigEntityProcessor();
 
 		try {
-			nlpService = (NLPImpl) Class.forName(vigNLPSolution.getPlugin())
+			nlpService = (NLPImpl) Class.forName(turNLPVendor.getPlugin())
 					.getConstructor(new Class[] { VigService.class }).newInstance(new Object[] { vigServiceNLP });
 			vigNLPResults = nlpService.retrieve(this.getCurrText());
 		} catch (Exception e) {
@@ -161,7 +159,7 @@ public class VigNLP {
 
 	public void removeDuplicateTerms() {
 		JSONObject jsonNLP = this.vigNLPResults.getJsonResult();
-		for (TurNLPEntity turNLPEntity : vigNLPResults.getTurNLPEntities()) {
+		for (TurNLPInstanceEntity turNLPEntity : vigNLPResults.getTurNLPInstanceEntities()) {
 
 			if (jsonNLP.has(turNLPEntity.getTurEntity().getCollectionName())) {
 				JSONArray jsonEntity = jsonNLP.getJSONArray(turNLPEntity.getTurEntity().getCollectionName());

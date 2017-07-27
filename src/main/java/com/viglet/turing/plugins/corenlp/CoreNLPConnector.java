@@ -34,7 +34,7 @@ import org.json.JSONObject;
 
 import com.viglet.turing.nlp.VigNLPResults;
 import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.model.TurNLPEntity;
+import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
 import com.viglet.turing.plugins.nlp.NLPImpl;
 
 import java.util.*;
@@ -43,7 +43,7 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLPClient;
 
 public class CoreNLPConnector implements NLPImpl {
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
-	List<TurNLPEntity> nlpEntities = null;
+	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> entityList = new HashMap<String, JSONArray>();
 	public JSONObject json;
 	VigService vigService = null;
@@ -60,10 +60,10 @@ public class CoreNLPConnector implements NLPImpl {
 
 		Query queryNLPEntity = em
 				.createQuery(
-						"SELECT sne FROM VigServicesNLPEntity sne, VigService s where s.id = :id_service and sne.vigService = s and sne.enabled = :enabled ")
+						"SELECT sne FROM TurNLPInstanceEntity sne, VigService s where s.id = :id_service and sne.vigService = s and sne.enabled = :enabled ")
 				.setParameter("id_service", vigService.getId()).setParameter("enabled", 1);
 
-		nlpEntities = queryNLPEntity.getResultList();
+		nlpInstanceEntities = queryNLPEntity.getResultList();
 	}
 
 	private static String readAll(Reader rd) throws IOException {
@@ -108,7 +108,7 @@ public class CoreNLPConnector implements NLPImpl {
 
 		VigNLPResults vigNLPResults = new VigNLPResults();
 		vigNLPResults.setJsonResult(this.getJSON());
-		vigNLPResults.setTurNLPEntities(nlpEntities);
+		vigNLPResults.setTurNLPInstanceEntities(nlpInstanceEntities);
 
 		return vigNLPResults;
 
@@ -117,8 +117,8 @@ public class CoreNLPConnector implements NLPImpl {
 	public JSONObject getJSON() {
 		JSONObject jsonObject = new JSONObject();
 		this.getEntities();
-		for (TurNLPEntity entity : nlpEntities) {
-			jsonObject.put(entity.getTurEntity().getCollectionName(), this.getEntity(entity.getName()));
+		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
+			jsonObject.put(nlpInstanceEntity.getTurEntity().getCollectionName(), this.getEntity(nlpInstanceEntity.getName()));
 		}
 		jsonObject.put("nlp", "CoreNLP");
 

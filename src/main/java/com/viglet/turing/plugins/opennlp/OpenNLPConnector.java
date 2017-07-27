@@ -23,7 +23,7 @@ import org.json.JSONObject;
 import com.viglet.turing.entity.VigEntityProcessor;
 import com.viglet.turing.nlp.VigNLPResults;
 import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.model.TurNLPEntity;
+import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
 import com.viglet.turing.plugins.nlp.NLPImpl;
 
 import opennlp.tools.namefind.NameFinderME;
@@ -38,7 +38,7 @@ import opennlp.tools.util.Span;
 public class OpenNLPConnector implements NLPImpl {
 	static final Logger logger = LogManager.getLogger(OpenNLPConnector.class.getName());
 
-	List<TurNLPEntity> nlpEntities = null;
+	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> entityList = new HashMap<String, JSONArray>();
 	public JSONObject json;
 	OpenNLPModelManager openNLPModelManager = null;
@@ -73,7 +73,7 @@ public class OpenNLPConnector implements NLPImpl {
 						"SELECT sne FROM VigServicesNLPEntity sne, VigService s where s.id = :id_service and sne.vigService = s and sne.enabled = :enabled ")
 				.setParameter("id_service", vigService.getId()).setParameter("enabled", 1);
 
-		nlpEntities = queryNLPEntity.getResultList();
+		nlpInstanceEntities = queryNLPEntity.getResultList();
 	}
 
 	public void setText(String text) {
@@ -94,17 +94,17 @@ public class OpenNLPConnector implements NLPImpl {
 		VigNLPResults vigNLPResults = new VigNLPResults();
 		vigNLPResults.setJsonResult(this.getJSON());
 
-		vigNLPResults.setTurNLPEntities(nlpEntities);
+		vigNLPResults.setTurNLPInstanceEntities(nlpInstanceEntities);
 
 		return vigNLPResults;
 	}
 
 	public JSONObject getJSON() {
 		JSONObject jsonObject = new JSONObject();
-		for (TurNLPEntity entity : nlpEntities) {
-			JSONArray entityTerms = this.getEntity(entity.getName());
+		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
+			JSONArray entityTerms = this.getEntity(nlpInstanceEntity.getName());
 			if (entityTerms.length() > 0) {
-				jsonObject.put(entity.getTurEntity().getCollectionName(), this.getEntity(entity.getName()));
+				jsonObject.put(nlpInstanceEntity.getTurEntity().getCollectionName(), this.getEntity(nlpInstanceEntity.getName()));
 			}
 		}
 		jsonObject.put("nlp", "OpenNLP");

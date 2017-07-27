@@ -9,9 +9,9 @@ import java.util.List;
  * 
  */
 @Entity
-@Table(name = "turNLP")
-@NamedQuery(name = "TurNLP.findAll", query = "SELECT n FROM TurNLP n")
-public class TurNLP implements Serializable {
+@Table(name = "turNLPInstance")
+@NamedQuery(name = "TurNLPInstance.findAll", query = "SELECT n FROM TurNLPInstance n")
+public class TurNLPInstance implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -42,16 +42,16 @@ public class TurNLP implements Serializable {
 
 	// bi-directional many-to-one association to VigService
 	@ManyToOne
-	@JoinColumn(name = "nlp_solution_id", nullable = false)
-	private TurNLPSolution turNLPSolution ;
+	@JoinColumn(name = "nlp_vendor_id", nullable = false)
+	private TurNLPVendor turNLPVendor ;
 
 
 
 	// bi-directional many-to-one association to VigServicesNLPEntity
-	@OneToMany(mappedBy = "turNLP")
-	private List<TurNLPEntity> turNLPEntities;
+	@OneToMany(mappedBy = "turNLPInstance")
+	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
 
-	public TurNLP() {
+	public TurNLPInstance() {
 	}
 
 	public int getId() {
@@ -118,26 +118,26 @@ public class TurNLP implements Serializable {
 		this.title = title;
 	}
 
-	public List<TurNLPEntity> getTurNLPEntities() {
-		return this.turNLPEntities;
+	public List<TurNLPInstanceEntity> getTurNLPInstanceEntities() {
+		return this.turNLPInstanceEntities;
 	}
 
-	public void setVigNLPEntities(List<TurNLPEntity> turNLPEntities) {
-		this.turNLPEntities = turNLPEntities;
+	public void setVigNLPInstanecEntities(List<TurNLPInstanceEntity> turNLPInstanceEntities) {
+		this.turNLPInstanceEntities = turNLPInstanceEntities;
 	}
 
-	public TurNLPEntity addVigServicesNLPEntity(TurNLPEntity turNLPEntity) {
-		getTurNLPEntities().add(turNLPEntity);
-		turNLPEntity.setTurNLP(this);
+	public TurNLPInstanceEntity addVigServicesNLPEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
+		getTurNLPInstanceEntities().add(turNLPInstanceEntity);
+		turNLPInstanceEntity.setTurNLPInstance(this);
 
-		return turNLPEntity;
+		return turNLPInstanceEntity;
 	}
 
-	public TurNLPEntity removeVigServicesNlPEntity(TurNLPEntity turNLPEntity) {
-		getTurNLPEntities().remove(turNLPEntity);
-		turNLPEntity.setTurNLP(null);
+	public TurNLPInstanceEntity removeVigServicesNlPEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
+		getTurNLPInstanceEntities().remove(turNLPInstanceEntity);
+		turNLPInstanceEntity.setTurNLPInstance(null);
 
-		return turNLPEntity;
+		return turNLPInstanceEntity;
 	}
 
 }

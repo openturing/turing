@@ -1,15 +1,8 @@
 package com.viglet.turing.solr;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -39,12 +32,11 @@ import org.apache.solr.common.util.SimpleOrderedMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.viglet.turing.entity.VigEntityProcessor;
 import com.viglet.turing.nlp.VigNLP;
 import com.viglet.turing.nlp.VigNLPResults;
-import com.viglet.turing.persistence.model.TurNLPSolution;
+import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.TurNLPVendor;
 import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.model.TurNLPEntity;
 import com.viglet.turing.se.facet.VigSEFacetMap;
 import com.viglet.turing.se.facet.VigSEFacetMaps;
 import com.viglet.turing.se.facet.VigSEFacetResult;
@@ -68,7 +60,7 @@ public class VigSolr {
 	String currText = null;
 	VigService vigServiceSE = null;
 	VigService vigServiceNLP = null;
-	TurNLPSolution vigNLPSolution = null;
+	TurNLPVendor turNLPVendor = null;
 	SolrServer solrServer = null;
 
 	public JSONObject getJsonAttributes() {
@@ -180,7 +172,7 @@ public class VigSolr {
 			document.addField("text", currText);
 		}
 
-		for (TurNLPEntity turNLPEntity : vigNLPResults.getTurNLPEntities()) {
+		for (TurNLPInstanceEntity turNLPEntity : vigNLPResults.getTurNLPInstanceEntities()) {
 			if (jsonNLP.has(turNLPEntity.getTurEntity().getCollectionName())) {
 				JSONArray jsonEntity = jsonNLP.getJSONArray(turNLPEntity.getTurEntity().getCollectionName());
 

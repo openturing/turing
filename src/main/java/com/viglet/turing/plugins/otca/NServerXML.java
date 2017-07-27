@@ -14,13 +14,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.model.TurNLPEntity;
+import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
 
 import org.w3c.dom.Node;
 import org.w3c.dom.Element;
 
 public class NServerXML {
-	List<TurNLPEntity> nlpEntities = null;
+	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
 	public JSONObject json;
 	VigService vigService = null;
@@ -36,10 +36,10 @@ public class NServerXML {
 
 		Query queryNLPEntity = em
 				.createQuery(
-						"SELECT sne FROM VigServicesNLPEntity sne, VigService s where s.id = :id_service and sne.vigService = s and sne.enabled = :enabled ")
+						"SELECT sne FROM TurNLPInstanceEntity sne, VigService s where s.id = :id_service and sne.vigService = s and sne.enabled = :enabled ")
 				.setParameter("id_service", vigService.getId()).setParameter("enabled", 1);
 
-		nlpEntities = queryNLPEntity.getResultList();
+		nlpInstanceEntities = queryNLPEntity.getResultList();
 	}
 	public String toJSON(String xml) {
 		String jsonResult = null;
@@ -57,7 +57,7 @@ public class NServerXML {
 
 	public JSONObject getJSON() {
 		JSONObject jsonObject =  new JSONObject();;
-		for (TurNLPEntity entity : nlpEntities) {
+		for (TurNLPInstanceEntity entity : nlpInstanceEntities) {
 			jsonObject.put(entity.getTurEntity().getCollectionName(), this.getEntity(entity.getName()));
 		}
 		jsonObject.put("nlp","OTCA");

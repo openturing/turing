@@ -9,9 +9,9 @@ import javax.persistence.*;
  * 
  */
 @Entity
-@Table(name="turNLPEntity")
-@NamedQuery(name="TurNLPEntity.findAll", query="SELECT ne FROM TurNLPEntity ne")
-public class TurNLPEntity implements Serializable {
+@Table(name="turNLPInstanceEntity")
+@NamedQuery(name="TurNLPInstanceEntity.findAll", query="SELECT ne FROM TurNLPInstanceEntity ne")
+public class TurNLPInstanceEntity implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -31,10 +31,10 @@ public class TurNLPEntity implements Serializable {
 	private TurEntity turEntity;
 
 	@ManyToOne
-	@JoinColumn(name="nlp_id", nullable=false)
-	private TurNLP turNLP;
+	@JoinColumn(name="nlp_instance_id", nullable=false)
+	private TurNLPInstance turNLPInstance;
 
-	public TurNLPEntity() {
+	public TurNLPInstanceEntity() {
 	}
 
 	public int getId() {
@@ -69,11 +69,11 @@ public class TurNLPEntity implements Serializable {
 		this.turEntity = turEntity;
 	}
 
-	public TurNLP getTurNLP() {
-		return this.turNLP;
+	public TurNLPInstance getTurNLPInstance() {
+		return this.turNLPInstance;
 	}
 
-	public void setTurNLP(TurNLP turNLP) {
-		this.turNLP = turNLP;
+	public void setTurNLPInstance(TurNLPInstance turNLPInstance) {
+		this.turNLPInstance = turNLPInstance;
 	}
 }

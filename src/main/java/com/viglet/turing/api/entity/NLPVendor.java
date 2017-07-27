@@ -16,11 +16,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.viglet.turing.persistence.model.TurNLPSolution;
-import com.viglet.turing.persistence.model.VigService;
+import com.viglet.turing.persistence.model.TurNLPVendor;
 
 @Path("/entity/terms")
-public class NLPSolution {
+public class NLPVendor {
 	@GET
 	@Produces("application/json")
 	public Response nlpSolution() throws JSONException {
@@ -32,14 +31,14 @@ public class NLPSolution {
 		// Read the existing entries and write to console
 		Query q = em.createQuery("SELECT s FROM VigTerm s");
 
-		List<TurNLPSolution> vigSolutionList = q.getResultList();
+		List<TurNLPVendor> vigNLPVednorList = q.getResultList();
 		JSONArray vigSolutions = new JSONArray();
-		for (TurNLPSolution vigSolution : vigSolutionList) {
+		for (TurNLPVendor turNLPVendor : vigNLPVednorList) {
 			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", vigSolution.getId());
-			jsonObject.put("title", vigSolution.getTitle());
-			jsonObject.put("description", vigSolution.getDescription());
-			jsonObject.put("website", vigSolution.getWebsite());
+			jsonObject.put("id", turNLPVendor.getId());
+			jsonObject.put("title", turNLPVendor.getTitle());
+			jsonObject.put("description", turNLPVendor.getDescription());
+			jsonObject.put("website", turNLPVendor.getWebsite());
 			vigSolutions.put(jsonObject);
 
 		}
@@ -56,13 +55,13 @@ public class NLPSolution {
 		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
 		EntityManager em = factory.createEntityManager();
 		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT s FROM VigNLPSolution s where s.id = :id ").setParameter("id", id);
-		TurNLPSolution vigSolution = (TurNLPSolution) q.getSingleResult();
+		Query q = em.createQuery("SELECT s FROM VigNLPVendor s where s.id = :id ").setParameter("id", id);
+		TurNLPVendor turNLPVendor = (TurNLPVendor) q.getSingleResult();
 		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("id", vigSolution.getId());
-		jsonObject.put("title", vigSolution.getTitle());
-		jsonObject.put("description", vigSolution.getDescription());
-		jsonObject.put("website", vigSolution.getWebsite());
+		jsonObject.put("id", turNLPVendor.getId());
+		jsonObject.put("title", turNLPVendor.getTitle());
+		jsonObject.put("description", turNLPVendor.getDescription());
+		jsonObject.put("website", turNLPVendor.getWebsite());
 		return Response.status(200).entity(jsonObject.toString()).build();
 	}
 }

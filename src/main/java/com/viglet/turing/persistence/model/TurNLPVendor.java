@@ -9,9 +9,9 @@ import javax.persistence.*;
  * 
  */
 @Entity
-@Table(name="turNLPSolutions")
-@NamedQuery(name="TurNLPSolution.findAll", query="SELECT v FROM TurNLPSolution v")
-public class TurNLPSolution implements Serializable {
+@Table(name="turNLPVendor")
+@NamedQuery(name="TurNLPVendor.findAll", query="SELECT v FROM TurNLPVendor v")
+public class TurNLPVendor implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -31,7 +31,7 @@ public class TurNLPSolution implements Serializable {
 	@Column(nullable=true, length=255)
 	private String website;
 
-	public TurNLPSolution() {
+	public TurNLPVendor() {
 	}
 
 	public int getId() {
