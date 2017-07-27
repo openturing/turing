@@ -7,6 +7,7 @@
 		<provider>org.apache.openjpa.persistence.PersistenceProviderImpl</provider>
 		 <!-- <non-jta-data-source>jdbc/VigletDS</non-jta-data-source> --> 
 		<class>com.viglet.turing.persistence.model.TurEntity</class>
+		<class>com.viglet.turing.persistence.model.TurNLPFeature</class>
 		<class>com.viglet.turing.persistence.model.TurNLPInstance</class>
 		<class>com.viglet.turing.persistence.model.TurNLPInstanceEntity</class>
 		<class>com.viglet.turing.persistence.model.TurNLPVendor</class>

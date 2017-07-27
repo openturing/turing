@@ -3,6 +3,7 @@ package com.viglet.turing.listener;
 import javax.servlet.http.*;
 
 import com.viglet.turing.listener.onstartup.TurEntityOnStartup;
+import com.viglet.turing.listener.onstartup.TurNLPFeatureOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPVendorOnStartup;
 
 import javax.servlet.*;
@@ -20,6 +21,7 @@ public class TurListener implements ServletContextListener, HttpSessionListener 
 		System.out.println("Inicializado ");
 		TurNLPVendorOnStartup.createDefaultRows();
 		TurEntityOnStartup.createDefaultRows();
+		TurNLPFeatureOnStartup.createDefaultRows();
 	}
 
 	public void contextDestroyed(ServletContextEvent sce) {
