@@ -8,6 +8,9 @@ import com.viglet.turing.persistence.model.TurNLPInstance;
 
 public class TurNLPInstanceService extends TurBaseService {
 	public void save(TurNLPInstance turNLPInstance) {
+		if (turNLPInstance.getTurNLPVendor() != null) {
+			turNLPInstance.setTurNLPVendor(em.merge(turNLPInstance.getTurNLPVendor()));
+		}
 		em.getTransaction().begin();
 		em.persist(turNLPInstance);
 		em.getTransaction().commit();

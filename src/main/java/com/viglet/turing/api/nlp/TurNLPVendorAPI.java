@@ -16,22 +16,20 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.viglet.turing.persistence.model.TurNLPInstance;
 import com.viglet.turing.persistence.model.TurNLPVendor;
+import com.viglet.turing.persistence.service.TurNLPInstanceService;
+import com.viglet.turing.persistence.service.TurNLPVendorService;
 
 @Path("/nlp/vendor")
-public class turNLPVendorAPI {
+public class TurNLPVendorAPI {
+	TurNLPVendorService turNLPVendorService = new TurNLPVendorService();
+	
 	@GET
 	@Produces("application/json")
-	public Response nlpSolution() throws JSONException {
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
-
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
-		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT s FROM TurNLPSolution s");
-
-		List<TurNLPVendor> turNLPVendorList = q.getResultList();
+	public Response listInstances() throws JSONException {
+		List<TurNLPVendor> turNLPVendorList = turNLPVendorService.listAll();
+	
 		JSONArray vigSolutions = new JSONArray();
 		for (TurNLPVendor turNLPVendor : turNLPVendorList) {
 			JSONObject jsonObject = new JSONObject();
@@ -48,15 +46,8 @@ public class turNLPVendorAPI {
 	@Path("{id}")
 	@GET
 	@Produces("application/json")
-	public Response nlpSolution(@PathParam("id") int id) throws JSONException {
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
-
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
-		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT s FROM TurNLPSolution s where s.id = :id ").setParameter("id", id);
-		TurNLPVendor turNLPVendor = (TurNLPVendor) q.getSingleResult();
+	public Response nlpSolution(@PathParam("id") String id) throws JSONException {
+		TurNLPVendor turNLPVendor = turNLPVendorService.get(id);
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("id", turNLPVendor.getId());
 		jsonObject.put("title", turNLPVendor.getTitle());

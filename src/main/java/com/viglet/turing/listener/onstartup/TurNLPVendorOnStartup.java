@@ -12,6 +12,7 @@ public class TurNLPVendorOnStartup {
 		if (turNLPVendorService.listAll().isEmpty()) {
 			
 			TurNLPVendor turNLPVendor = new TurNLPVendor();
+			turNLPVendor.setId("CORENLP");
 			turNLPVendor.setDescription("Stanford CoreNLP");
 			turNLPVendor.setPlugin("com.viglet.turing.plugins.corenlp.CoreNLPConnector");
 			turNLPVendor.setTitle("Stanford CoreNLP");
@@ -19,6 +20,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendorService.save(turNLPVendor);
 
 			turNLPVendor = new TurNLPVendor();
+			turNLPVendor.setId("OTCA");
 			turNLPVendor.setDescription("OpenText OTCA");
 			turNLPVendor.setPlugin("com.viglet.turing.plugins.otca.TmeConnector");
 			turNLPVendor.setTitle("OpenText OTCA");
@@ -26,6 +28,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendorService.save(turNLPVendor);
 
 			turNLPVendor = new TurNLPVendor();
+			turNLPVendor.setId("OPENNLP");
 			turNLPVendor.setDescription("Apache OpenNLP");
 			turNLPVendor.setPlugin("com.viglet.turing.plugins.opennlp.OpenNLPConnector");
 			turNLPVendor.setTitle("Apache OpenNLP");
@@ -33,6 +36,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendorService.save(turNLPVendor);
 			
 			turNLPVendor = new TurNLPVendor();
+			turNLPVendor.setId("SPACY");
 			turNLPVendor.setTitle("SpaCy");
 			turNLPVendor.setPlugin(null);
 			turNLPVendor.setDescription("SpaCy");
@@ -40,6 +44,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendorService.save(turNLPVendor);
 			
 			turNLPVendor = new TurNLPVendor();
+			turNLPVendor.setId("NTLK");
 			turNLPVendor.setTitle("NTLK");
 			turNLPVendor.setPlugin(null);
 			turNLPVendor.setDescription("NTLK");
@@ -47,6 +52,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendorService.save(turNLPVendor);
 			
 			turNLPVendor = new TurNLPVendor();
+			turNLPVendor.setId("SYNTAXNET");
 			turNLPVendor.setTitle("Google SyntaxNet");
 			turNLPVendor.setPlugin(null);
 			turNLPVendor.setDescription("Google SyntaxNet");
@@ -54,6 +60,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendorService.save(turNLPVendor);
 			
 			turNLPVendor = new TurNLPVendor();
+			turNLPVendor.setId("MALLET");
 			turNLPVendor.setTitle("MALLET");
 			turNLPVendor.setPlugin(null);
 			turNLPVendor.setDescription("MALLET");
@@ -61,6 +68,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendorService.save(turNLPVendor);
 			
 			turNLPVendor = new TurNLPVendor();
+			turNLPVendor.setId("CLEARNLP");
 			turNLPVendor.setTitle("ClearNLP");
 			turNLPVendor.setPlugin(null);
 			turNLPVendor.setDescription("ClearNLP");
@@ -68,6 +76,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendorService.save(turNLPVendor);
 			
 			turNLPVendor = new TurNLPVendor();
+			turNLPVendor.setId("VIGLETNLP");
 			turNLPVendor.setTitle("VigletNLP");
 			turNLPVendor.setPlugin(null);
 			turNLPVendor.setDescription("VigletNLP");

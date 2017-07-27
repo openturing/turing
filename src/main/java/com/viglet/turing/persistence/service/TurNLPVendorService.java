@@ -18,7 +18,7 @@ public class TurNLPVendorService extends TurBaseService {
 		return q.getResultList();
 	}
 
-	public TurNLPVendor get(int nlpVendorId) {
+	public TurNLPVendor get(String nlpVendorId) {
 		return em.find(TurNLPVendor.class, nlpVendorId);
 	}
 

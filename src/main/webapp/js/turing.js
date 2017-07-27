@@ -69,21 +69,28 @@ vigletApp.controller('TurHomeCtrl', function($scope) {
 
 vigletApp.controller('TurNLPCtrl', function($scope, $sce) {
 
-	$scope.$parent.title =  'NLP';
+	$scope.$parent.title = 'NLP';
 	componentHandler.upgradeAllRegistered();
 
 });
 
-vigletApp.controller('TurNLPItemCtrl', function($scope, $sce) {
+vigletApp.controller('TurNLPItemCtrl', function($scope, $http, $routeParams) {
 
-	$scope.$parent.title =  'Edit NLP';
+	$scope.$parent.title = 'Edit NLP';
+
+	$http.get("/turing/api/nlp/" + $routeParams.id).success(function(data) {
+		$scope.turNLPInstance = data;
+	});
+	$http.get("/turing/api/nlp/vendor").success(function(data) {
+		$scope.turNLPVendors = data;
+	});
 	componentHandler.upgradeAllRegistered();
 
 });
 
 vigletApp.controller('TurNLPNewCtrl', function($scope, $sce) {
 
-	$scope.$parent.title =  'New NLP';
+	$scope.$parent.title = 'New NLP';
 	componentHandler.upgradeAllRegistered();
 
 });
@@ -201,7 +208,7 @@ vigletApp.controller('MLDataGroupItemCtrl', function($scope, $http,
 			$scope.vigResults = data;
 
 		});
-		
+
 		// $window.location.href = '/turing/#/data/group';
 		return $scope.vigResults;
 	}
@@ -232,18 +239,6 @@ vigletApp.controller('NLPServicesCtrl', function($scope, $http) {
 	$http.get("/turing/api/nlp").then(function(response) {
 		console.log(response.data)
 		$scope.vigNLPServices = response.data;
-	});
-	componentHandler.upgradeAllRegistered();
-
-});
-
-vigletApp.controller('NLPServiceCtrl', function($scope, $http, $routeParams) {
-
-	$http.get("/turing/api/nlp/" + $routeParams.id).success(function(data) {
-		$scope.vigNLPService = data;
-	});
-	$http.get("/turing/api/nlp/solution").success(function(data) {
-		$scope.vigNLPSolutions = data;
 	});
 	componentHandler.upgradeAllRegistered();
 

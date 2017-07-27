@@ -118,11 +118,19 @@ public class TurNLPInstance implements Serializable {
 		this.title = title;
 	}
 
+	public TurNLPVendor getTurNLPVendor() {
+		return turNLPVendor;
+	}
+
+	public void setTurNLPVendor(TurNLPVendor turNLPVendor) {
+		this.turNLPVendor = turNLPVendor;
+	}
+
 	public List<TurNLPInstanceEntity> getTurNLPInstanceEntities() {
 		return this.turNLPInstanceEntities;
 	}
 
-	public void setVigNLPInstanecEntities(List<TurNLPInstanceEntity> turNLPInstanceEntities) {
+	public void setVigNLPInstanceEntities(List<TurNLPInstanceEntity> turNLPInstanceEntities) {
 		this.turNLPInstanceEntities = turNLPInstanceEntities;
 	}
 

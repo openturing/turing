@@ -3,42 +3,40 @@ package com.viglet.turing.persistence.model;
 import java.io.Serializable;
 import javax.persistence.*;
 
-
 /**
  * The persistent class for the vigNLPSolutions database table.
  * 
  */
 @Entity
-@Table(name="turNLPVendor")
-@NamedQuery(name="TurNLPVendor.findAll", query="SELECT v FROM TurNLPVendor v")
+@Table(name = "turNLPVendor")
+@NamedQuery(name = "TurNLPVendor.findAll", query = "SELECT v FROM TurNLPVendor v")
 public class TurNLPVendor implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(unique=true, nullable=false)
-	private int id;
+	@Column(unique = true, nullable = false, length = 10)
+	private String id;
 
-	@Column(nullable=true, length=255)
+	@Column(nullable = true, length = 255)
 	private String description;
 
-	@Column(nullable=true, length=255)
+	@Column(nullable = true, length = 255)
 	private String plugin;
 
-	@Column(nullable=false, length=100)
+	@Column(nullable = false, length = 100)
 	private String title;
 
-	@Column(nullable=true, length=255)
+	@Column(nullable = true, length = 255)
 	private String website;
 
 	public TurNLPVendor() {
 	}
 
-	public int getId() {
+	public String getId() {
 		return this.id;
 	}
 
-	public void setId(int id) {
+	public void setId(String id) {
 		this.id = id;
 	}
 

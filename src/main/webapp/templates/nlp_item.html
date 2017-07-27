@@ -1,16 +1,16 @@
-<div ng-controller="NLPServiceCtrl" class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
+<div class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
     <div class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-grid">
         <div class="demo-options mdl-card mdl-card--expand  mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-cell--12-col-desktop" style="width: 100%;">
             <div class="mdl-card__supporting-text mdl-card--expand" style="width: 100%;">     
                 <div class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-cell--12-col-desktop" >
                     <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: calc(100% - 20px)">
-                        <input class="mdl-textfield__input" type="text" id="title" style="font-size:40px" value="{{vigNLPService.nlp.title}}">
+                        <input class="mdl-textfield__input" type="text" id="title" style="font-size:40px" value="{{turNLPInstance.nlp.title}}">
                         <label class="mdl-textfield__label" for="title">Title</label>
                     </div>
                 </div>
                 <div class="mdl-cell mdl-cell--12-col mdl-cell--12-col-tablet mdl-cell--12-col-desktop">
                       <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: calc(100% - 20px);">
-                        <input class="mdl-textfield__input" type="text" id="description" value="{{vigNLPService.nlp.description}}">
+                        <input class="mdl-textfield__input" type="text" id="description" value="{{turNLPInstance.nlp.description}}">
                         <label class="mdl-textfield__label" for="description">Description</label>
                     </div>        
                 </div>
@@ -22,9 +22,9 @@
             <div class="mdl-card__supporting-text mdl-card--expand ">
                 <h3>NLP</h3>
                 <ul>
-                    <li ng-repeat="vigNLPSolution in vigNLPSolutions">
-                        <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="{{vigNLPSolution.id}}">
-                            <input type="radio" id="{{vigNLPSolution.id}}" class="mdl-radio__button" name="options" value="{{vigNLPSolution.id}}" ng-checked="vigNLPSolution.id === vigNLPService.nlp.solution"> <span class="mdl-radio__label">{{vigNLPSolution.title}} <a ng-href="{{vigNLPSolution.website}}" target="_blank"><i class="material-icons" style="font-size: 15px;">launch</i></a></span> </label>
+                    <li ng-repeat="turNLPVendor in turNLPVendors">
+                        <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="{{turNLPVendor.id}}">
+                            <input type="radio" id="{{turNLPVendor.id}}" class="mdl-radio__button" name="options" value="{{turNLPVendor.id}}" ng-checked="turNLPVendor.id === turNLPInstance.nlp.vendor"> <span class="mdl-radio__label">{{turNLPVendor.title}} <a ng-href="{{turNLPVendor.website}}" target="_blank"><i class="material-icons" style="font-size: 15px;">launch</i></a></span> </label>
                     </li>
                 </ul>
             </div>
@@ -41,11 +41,11 @@
                 <h3>Service</h3>
                 <form action="#">
                     <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                        <input class="mdl-textfield__input" type="text" id="sample3" value="{{vigNLPService.nlp.host}}">
+                        <input class="mdl-textfield__input" type="text" id="sample3" value="{{turNLPInstance.nlp.host}}">
                         <label class="mdl-textfield__label" for="sample3">Host</label>
                     </div>
                     <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                        <input class="mdl-textfield__input" type="text" id="sample4" value="{{vigNLPService.nlp.port}}">
+                        <input class="mdl-textfield__input" type="text" id="sample4" value="{{turNLPInstance.nlp.port}}">
                         <label class="mdl-textfield__label" for="sample4">Port</label>
                     </div>
                 </form>
