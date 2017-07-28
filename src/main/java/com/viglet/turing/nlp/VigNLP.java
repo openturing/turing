@@ -21,6 +21,9 @@ import org.json.JSONObject;
 import com.viglet.turing.entity.VigEntityProcessor;
 import com.viglet.turing.persistence.model.TurNLPVendor;
 import com.viglet.turing.persistence.model.VigService;
+import com.viglet.turing.persistence.service.TurNLPInstanceService;
+import com.viglet.turing.persistence.service.TurNLPVendorService;
+import com.viglet.turing.persistence.model.TurNLPInstance;
 import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
 import com.viglet.turing.plugins.nlp.NLPImpl;
 import com.viglet.turing.service.VigServiceUtil;
@@ -33,38 +36,26 @@ public class VigNLP {
 	private JSONObject jsonAttributes = null;
 	VigService vigServiceSE = null;
 
-	VigService vigServiceNLP = null;
+	TurNLPInstance turNLPInstance = null;
 	TurNLPVendor turNLPVendor = null;
 	VigNLPResults vigNLPResults = null;
 	SolrServer solrServer = null;
 	EntityManager em = null;
 
+	TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
 	public void init(int nlp) {
 
 		this.setCurrNLP(nlp);
 
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
-
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		this.em = factory.createEntityManager();
-		Query queryServiceNLP = em.createQuery("SELECT s FROM VigService s where s.type = :type and s.id = :id ")
-				.setParameter("type", 2).setParameter("id", currNLP);
-
-		vigServiceNLP = (VigService) queryServiceNLP.getSingleResult();
-
-		Query queryNLP = em.createQuery("SELECT s FROM VigNLPSolution s where s.id = :id ").setParameter("id",
-				vigServiceNLP.getSub_type());
-
-		turNLPVendor = (TurNLPVendor) queryNLP.getSingleResult();
-
+		this.turNLPInstance = turNLPInstanceService.get(this.getCurrNLP());
+		this.turNLPVendor = turNLPInstance.getTurNLPVendor();
 		this.vigNLPResults = new VigNLPResults();
 	}
 
 	public VigNLP() {
 		super();
-		VigServiceUtil vigServiceUtil = new VigServiceUtil();
-		init(vigServiceUtil.getNLPDefault());
+		
+		init(turNLPInstanceService.getNLPDefault().getId());
 		this.setCurrText(null);
 
 	}
@@ -128,7 +119,7 @@ public class VigNLP {
 
 		try {
 			nlpService = (NLPImpl) Class.forName(turNLPVendor.getPlugin())
-					.getConstructor(new Class[] { VigService.class }).newInstance(new Object[] { vigServiceNLP });
+					.getConstructor(new Class[] { TurNLPInstance.class }).newInstance(new Object[] { turNLPInstance });
 			vigNLPResults = nlpService.retrieve(this.getCurrText());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

@@ -6,19 +6,19 @@ import com.viglet.turing.persistence.service.TurNLPInstanceService;
 import com.viglet.turing.persistence.service.TurNLPVendorService;
 
 public class TurNLPInstanceOnStartup {
-
 	public static void createDefaultRows() {
 
 		TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
 		TurNLPVendorService turNLPVendorService = new TurNLPVendorService();
+
 		if (turNLPInstanceService.listAll().isEmpty()) {
 
-			TurNLPVendor turNLPVendor = turNLPVendorService.get("OPENNLP");
-			if (turNLPVendor != null) {
+			TurNLPVendor turNLPVendorOpenNLP = turNLPVendorService.get("OPENNLP");
+			if (turNLPVendorOpenNLP != null) {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("OpenNLP");
 				turNLPInstance.setDescription("OpenNLP Production");
-				turNLPInstance.setTurNLPVendor(turNLPVendor);
+				turNLPInstance.setTurNLPVendor(turNLPVendorOpenNLP);
 				turNLPInstance.setHost("");
 				turNLPInstance.setPort(0);
 				turNLPInstance.setLanguage("pt-BR");
@@ -27,14 +27,14 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstanceService.save(turNLPInstance);
 			}
 
-			turNLPVendor = turNLPVendorService.get("CORENLP");
-			if (turNLPVendor != null) {
+			TurNLPVendor turNLPVendorCoreNLP = turNLPVendorService.get("CORENLP");
+			if (turNLPVendorCoreNLP != null) {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("CoreNLP");
 				turNLPInstance.setDescription("CoreNLP Production");
-				turNLPInstance.setTurNLPVendor(turNLPVendor);
+				turNLPInstance.setTurNLPVendor(turNLPVendorCoreNLP);
 				turNLPInstance.setHost("localhost");
-				turNLPInstance.setPort(9000);
+				turNLPInstance.setPort(9001);
 				turNLPInstance.setLanguage("en-US");
 				turNLPInstance.setSelected(1);
 				turNLPInstance.setEnabled(1);
@@ -42,6 +42,8 @@ public class TurNLPInstanceOnStartup {
 			}
 
 		}
-	}
 
+	}
+	
+	
 }

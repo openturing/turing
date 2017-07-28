@@ -3,35 +3,34 @@ package com.viglet.turing.persistence.model;
 import java.io.Serializable;
 import javax.persistence.*;
 
-
 /**
  * The persistent class for the vigServicesNLPEntities database table.
  * 
  */
 @Entity
-@Table(name="turNLPInstanceEntity")
-@NamedQuery(name="TurNLPInstanceEntity.findAll", query="SELECT ne FROM TurNLPInstanceEntity ne")
+@Table(name = "turNLPInstanceEntity")
+@NamedQuery(name = "TurNLPInstanceEntity.findAll", query = "SELECT ne FROM TurNLPInstanceEntity ne")
 public class TurNLPInstanceEntity implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(unique=true, nullable=false)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(unique = true, nullable = false)
 	private int id;
 
-	@Column(nullable=false)
+	@Column(nullable = false)
 	private int enabled;
 
-	@Column(nullable=false, length=255)
+	@Column(nullable = false, length = 255)
 	private String name;
 
-	//bi-directional many-to-one association to VigEntity
-	@ManyToOne
-	@JoinColumn(name="entity_id", nullable=false)
+	// bi-directional many-to-one association to VigEntity
+	@ManyToOne(cascade = { CascadeType.REMOVE }, fetch = FetchType.LAZY)
+	@JoinColumn(name = "entity_id", nullable = false)
 	private TurEntity turEntity;
 
-	@ManyToOne
-	@JoinColumn(name="nlp_instance_id", nullable=false)
+	@ManyToOne(cascade = { CascadeType.REMOVE }, fetch = FetchType.LAZY)
+	@JoinColumn(name = "nlp_instance_id", nullable = false)
 	private TurNLPInstance turNLPInstance;
 
 	public TurNLPInstanceEntity() {

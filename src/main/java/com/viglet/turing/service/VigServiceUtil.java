@@ -25,15 +25,6 @@ public class VigServiceUtil {
 
 		
 	}
-	public int getNLPDefault(){
-		Query queryService = em
-				.createQuery(
-						"SELECT s FROM VigService s WHERE s.type = :type and s.selected = :selected ")
-				.setParameter("type", NLP_TYPE).setParameter("selected", TRUE);
-
-		VigService vigService = (VigService) queryService.getSingleResult();
-		return vigService.getId();
-	}
 	
 	public int getSEDefault(){
 		Query queryService = em

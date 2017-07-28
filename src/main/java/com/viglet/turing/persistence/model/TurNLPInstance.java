@@ -18,10 +18,10 @@ public class TurNLPInstance implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(unique = true, nullable = false)
 	private int id;
-	
+
 	@Column(nullable = false, length = 100)
 	private String title;
-	
+
 	@Column(nullable = false, length = 100)
 	private String description;
 
@@ -41,11 +41,9 @@ public class TurNLPInstance implements Serializable {
 	private int selected;
 
 	// bi-directional many-to-one association to VigService
-	@ManyToOne
+	@ManyToOne(cascade = { CascadeType.REMOVE }, fetch = FetchType.LAZY)
 	@JoinColumn(name = "nlp_vendor_id", nullable = false)
-	private TurNLPVendor turNLPVendor ;
-
-
+	private TurNLPVendor turNLPVendor;
 
 	// bi-directional many-to-one association to VigServicesNLPEntity
 	@OneToMany(mappedBy = "turNLPInstance")

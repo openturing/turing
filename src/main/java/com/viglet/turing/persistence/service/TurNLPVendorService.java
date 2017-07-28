@@ -2,9 +2,11 @@ package com.viglet.turing.persistence.service;
 
 import java.util.List;
 
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import com.viglet.turing.persistence.model.TurNLPVendor;
+import com.viglet.turing.persistence.model.VigService;
 
 public class TurNLPVendorService extends TurBaseService {
 	public void save(TurNLPVendor turNLPVendor) {
@@ -29,4 +31,5 @@ public class TurNLPVendorService extends TurBaseService {
 		em.getTransaction().commit();
 		return true;
 	}
+	
 }

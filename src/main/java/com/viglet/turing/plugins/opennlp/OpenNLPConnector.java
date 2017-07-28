@@ -23,6 +23,8 @@ import org.json.JSONObject;
 import com.viglet.turing.entity.VigEntityProcessor;
 import com.viglet.turing.nlp.VigNLPResults;
 import com.viglet.turing.persistence.model.VigService;
+import com.viglet.turing.persistence.service.TurNLPInstanceEntityService;
+import com.viglet.turing.persistence.model.TurNLPInstance;
 import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
 import com.viglet.turing.plugins.nlp.NLPImpl;
 
@@ -42,7 +44,7 @@ public class OpenNLPConnector implements NLPImpl {
 	Map<String, JSONArray> entityList = new HashMap<String, JSONArray>();
 	public JSONObject json;
 	OpenNLPModelManager openNLPModelManager = null;
-	VigService vigService = null;
+	TurNLPInstance turNLPInstance = null;
 	private String text = null;
 	private String[] sentencesTokens = {};
 
@@ -58,22 +60,13 @@ public class OpenNLPConnector implements NLPImpl {
 		return text;
 	}
 
-	public OpenNLPConnector(VigService vigService) {
+	public OpenNLPConnector(TurNLPInstance turNLPInstance) {
+		
 		openNLPModelManager = OpenNLPModelManager.getInstance();
-		this.vigService = vigService;
+		this.turNLPInstance = turNLPInstance;
 
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
-
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
-
-		Query queryNLPEntity = em
-				.createQuery(
-						"SELECT sne FROM VigServicesNLPEntity sne, VigService s where s.id = :id_service and sne.vigService = s and sne.enabled = :enabled ")
-				.setParameter("id_service", vigService.getId()).setParameter("enabled", 1);
-
-		nlpInstanceEntities = queryNLPEntity.getResultList();
+		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();
+		nlpInstanceEntities = turNLPInstanceEntityService.findByNLPInstance(turNLPInstance);
 	}
 
 	public void setText(String text) {

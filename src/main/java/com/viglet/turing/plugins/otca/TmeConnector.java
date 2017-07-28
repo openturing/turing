@@ -27,6 +27,8 @@ import org.json.XML;
 
 import com.viglet.turing.nlp.VigNLPResults;
 import com.viglet.turing.persistence.model.VigService;
+import com.viglet.turing.persistence.service.TurNLPInstanceEntityService;
+import com.viglet.turing.persistence.model.TurNLPInstance;
 import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
 import com.viglet.turing.plugins.nlp.NLPImpl;
 import com.viglet.turing.plugins.otca.af.xml.AFType;
@@ -48,28 +50,18 @@ import com.viglet.turing.plugins.otca.response.xml.ServerResponseType;
 public class TmeConnector implements NLPImpl {
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> hmEntities = new HashMap<String, JSONArray>();
-	VigService vigService = null;
+	TurNLPInstance turNLPInstance = null;
 	public JSONObject json;
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
 
 	private static String request = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<Nserver>" + "       <Methods>"
 			+ "               <Ping/>" + "       </Methods>" + "</Nserver>";
 
-	@SuppressWarnings("unchecked")
-	public TmeConnector(VigService vigService) {
-		this.vigService = vigService;
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
+	public TmeConnector(TurNLPInstance turNLPInstance) {
+		this.turNLPInstance = turNLPInstance;
 
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
-
-		Query queryNLPEntity = em
-				.createQuery(
-						"SELECT sne FROM TurNLPEntity sne, VigService s where s.id = :id_service and sne.vigService = s and sne.enabled = :enabled ")
-				.setParameter("id_service", vigService.getId()).setParameter("enabled", 1);
-
-		nlpInstanceEntities = queryNLPEntity.getResultList();
+		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();
+		nlpInstanceEntities = turNLPInstanceEntityService.findByNLPInstance(turNLPInstance);
 	}
 
 	/**
@@ -79,7 +71,7 @@ public class TmeConnector implements NLPImpl {
 	 *            XML request
 	 * @return XML response
 	 */
-	public String request(VigService vigService, String request) {
+	public String request(TurNLPInstance turNLPInstance, String request) {
 		try {
 			if (request == null) {
 				return null;
@@ -89,7 +81,7 @@ public class TmeConnector implements NLPImpl {
 			if (length == 0) {
 				return null;
 			}
-			Socket socket = new Socket(vigService.getHost(), vigService.getPort());
+			Socket socket = new Socket(turNLPInstance.getHost(), turNLPInstance.getPort());
 			OutputStream output = socket.getOutputStream();
 			InputStream input = socket.getInputStream();
 			try {
@@ -224,7 +216,7 @@ public class TmeConnector implements NLPImpl {
 		sb.append("</Texts>");
 		sb.append("</Nserver>");
 
-		this.toJSON(this.request(vigService, sb.toString()));
+		this.toJSON(this.request(turNLPInstance, sb.toString()));
 
 		VigNLPResults vigNLPResults = new VigNLPResults();
 		vigNLPResults.setJsonResult(this.getJSON());

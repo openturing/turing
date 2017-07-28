@@ -34,6 +34,8 @@ import org.json.JSONObject;
 
 import com.viglet.turing.nlp.VigNLPResults;
 import com.viglet.turing.persistence.model.VigService;
+import com.viglet.turing.persistence.service.TurNLPInstanceEntityService;
+import com.viglet.turing.persistence.model.TurNLPInstance;
 import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
 import com.viglet.turing.plugins.nlp.NLPImpl;
 
@@ -46,24 +48,13 @@ public class CoreNLPConnector implements NLPImpl {
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> entityList = new HashMap<String, JSONArray>();
 	public JSONObject json;
-	VigService vigService = null;
+	TurNLPInstance turNLPInstance = null;
 
-	@SuppressWarnings("unchecked")
-	public CoreNLPConnector(VigService vigService) {
-		this.vigService = vigService;
+	public CoreNLPConnector(TurNLPInstance turNLPInstance) {
+		this.turNLPInstance = turNLPInstance;
 
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
-
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
-
-		Query queryNLPEntity = em
-				.createQuery(
-						"SELECT sne FROM TurNLPInstanceEntity sne, VigService s where s.id = :id_service and sne.vigService = s and sne.enabled = :enabled ")
-				.setParameter("id_service", vigService.getId()).setParameter("enabled", 1);
-
-		nlpInstanceEntities = queryNLPEntity.getResultList();
+		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();
+		nlpInstanceEntities = turNLPInstanceEntityService.findByNLPInstance(turNLPInstance);
 	}
 
 	private static String readAll(Reader rd) throws IOException {
@@ -75,13 +66,13 @@ public class CoreNLPConnector implements NLPImpl {
 		return sb.toString();
 	}
 
-	public VigNLPResults request(VigService vigService, String request) throws MalformedURLException, IOException {
+	public VigNLPResults request(TurNLPInstance turNLPInstance, String request) throws MalformedURLException, IOException {
 
 		String props = "{\"tokenize.whitespace\":\"true\",\"annotators\":\"tokenize,ssplit,pos,ner\",\"outputFormat\":\"json\"}";
 
 		String queryParams = String.format("properties=%s", URLEncoder.encode(props, "utf-8"));
 
-		URL serverURL = new URL("http", vigService.getHost(), vigService.getPort(), "/?" + queryParams);
+		URL serverURL = new URL("http", turNLPInstance.getHost(), turNLPInstance.getPort(), "/?" + queryParams);
 
 		System.out.println("URL:" + serverURL.toString());
 
@@ -197,7 +188,7 @@ public class CoreNLPConnector implements NLPImpl {
 	}
 
 	public VigNLPResults retrieve(String text) throws TransformerException, Exception {
-		return this.request(this.vigService, text);
+		return this.request(this.turNLPInstance, text);
 	}
 
 	private void handleEntity(String inKey, StringBuilder inSb, List inTokens) {

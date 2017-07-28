@@ -14,6 +14,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 import com.viglet.turing.persistence.model.VigService;
+import com.viglet.turing.persistence.service.TurNLPInstanceEntityService;
+import com.viglet.turing.persistence.model.TurNLPInstance;
 import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
 
 import org.w3c.dom.Node;
@@ -23,23 +25,13 @@ public class NServerXML {
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
 	public JSONObject json;
-	VigService vigService = null;
+	TurNLPInstance turNLPInstance = null;
 	
-	@SuppressWarnings("unchecked")
-	public NServerXML(VigService vigService) {
-		this.vigService = vigService;
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
+	public NServerXML(TurNLPInstance turNLPInstance) {
+		this.turNLPInstance = turNLPInstance;
 
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
-
-		Query queryNLPEntity = em
-				.createQuery(
-						"SELECT sne FROM TurNLPInstanceEntity sne, VigService s where s.id = :id_service and sne.vigService = s and sne.enabled = :enabled ")
-				.setParameter("id_service", vigService.getId()).setParameter("enabled", 1);
-
-		nlpInstanceEntities = queryNLPEntity.getResultList();
+		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();
+		nlpInstanceEntities = turNLPInstanceEntityService.findByNLPInstance(turNLPInstance);
 	}
 	public String toJSON(String xml) {
 		String jsonResult = null;

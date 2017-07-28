@@ -5,6 +5,7 @@ import javax.servlet.http.*;
 import com.viglet.turing.listener.onstartup.TurEntityOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPFeatureOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPInstanceOnStartup;
+import com.viglet.turing.listener.onstartup.TurNLPVendorEntityOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPVendorOnStartup;
 
 import javax.servlet.*;
@@ -19,11 +20,14 @@ public class TurListener implements ServletContextListener, HttpSessionListener 
 	/* Methods from the ServletContextListener */
 	public void contextInitialized(ServletContextEvent sce) {
 		servletContext = sce.getServletContext();
-		System.out.println("Inicializado ");
+		System.out.println("Checking tables ...");
 		TurNLPVendorOnStartup.createDefaultRows();
 		TurEntityOnStartup.createDefaultRows();
+		TurNLPVendorEntityOnStartup.createDefaultRows();
 		TurNLPFeatureOnStartup.createDefaultRows();
 		TurNLPInstanceOnStartup.createDefaultRows();
+
+		System.out.println("Tables checked.");
 	}
 
 	public void contextDestroyed(ServletContextEvent sce) {

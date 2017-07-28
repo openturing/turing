@@ -1,6 +1,5 @@
 package com.viglet.turing.solr;
 
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +10,7 @@ import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 
@@ -37,6 +37,7 @@ import com.viglet.turing.nlp.VigNLPResults;
 import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.model.TurNLPVendor;
 import com.viglet.turing.persistence.model.VigService;
+import com.viglet.turing.persistence.service.TurNLPInstanceService;
 import com.viglet.turing.se.facet.VigSEFacetMap;
 import com.viglet.turing.se.facet.VigSEFacetMaps;
 import com.viglet.turing.se.facet.VigSEFacetResult;
@@ -52,7 +53,7 @@ import com.viglet.turing.service.VigServiceUtil;
 
 public class VigSolr {
 	static final Logger logger = LogManager.getLogger(VigSolr.class.getName());
-	
+
 	private int currNLP = 0;
 	private int currSE = 0;
 	private JSONObject jsonAttributes = null;
@@ -95,8 +96,8 @@ public class VigSolr {
 		this.currText = currText;
 	}
 
-	public void init(int nlp, int se) {
-		this.setCurrNLP(nlp);
+	public void init(int nlpInstanceId, int se) {
+		this.setCurrNLP(nlpInstanceId);
 
 		this.setCurrSE(se);
 		String PERSISTENCE_UNIT_NAME = "semantics-app";
@@ -105,38 +106,46 @@ public class VigSolr {
 		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
 		EntityManager em = factory.createEntityManager();
 
-		Query queryServiceSE = em.createQuery("SELECT s FROM VigService s where s.type = :type and s.id = :id ")
-				.setParameter("type", 3).setParameter("id", currSE);
+		Query queryServiceSE = null;
 
-		vigServiceSE = (VigService) queryServiceSE.getSingleResult();
+		try {
+			queryServiceSE = em.createQuery("SELECT s FROM VigService s where s.type = :type and s.id = :id ")
+					.setParameter("type", 3).setParameter("id", currSE);
+			vigServiceSE = (VigService) queryServiceSE.getSingleResult();
+		} catch (NoResultException e) {
+			vigServiceSE = null;
+			solrServer = null;
+		}
 
-		solrServer = new HttpSolrServer(
-				"http://" + vigServiceSE.getHost() + ":" + vigServiceSE.getPort() + "/solr/turing");
-
+		if (vigServiceSE != null) {
+			solrServer = new HttpSolrServer(
+					"http://" + vigServiceSE.getHost() + ":" + vigServiceSE.getPort() + "/solr/turing");
+		}
 	}
 
-	public VigSolr(int nlp, int se, String text) {
+	public VigSolr(int nlpInstanceId, int se, String text) {
 		super();
-		init(nlp, se);
+		init(nlpInstanceId, se);
 		this.setCurrText(text);
 	}
 
-	public VigSolr(int nlp, int se, JSONObject jsonAttributes) {
+	public VigSolr(int nlpInstanceId, int se, JSONObject jsonAttributes) {
 		super();
-		init(nlp, se);
+		init(nlpInstanceId, se);
 		this.setJsonAttributes(jsonAttributes);
 		this.setCurrText(null);
 	}
 
 	public VigSolr() {
 		super();
+		TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
 		VigServiceUtil vigServiceUtil = new VigServiceUtil();
-		init(vigServiceUtil.getNLPDefault(), vigServiceUtil.getSEDefault());
+		init(turNLPInstanceService.getNLPDefault().getId(), vigServiceUtil.getSEDefault());
 
 	}
 
 	public String indexing() {
-		logger.debug("Executing indexing ...");	
+		logger.debug("Executing indexing ...");
 		VigNLP vigNLP = null;
 
 		if (this.getJsonAttributes() != null) {
@@ -146,8 +155,9 @@ public class VigSolr {
 		}
 
 		VigNLPResults vigNLPResults = vigNLP.retrieveNLP();
-
-		this.addDocument(vigNLPResults);
+		if (solrServer != null) {
+			this.addDocument(vigNLPResults);
+		}
 
 		return vigNLPResults.getJsonResult().toString();
 	}
@@ -220,7 +230,7 @@ public class VigSolr {
 		SolrQuery query = new SolrQuery();
 		query.setQuery(txtQuery);
 		query.setRows(rows);
-		query.setStart((currentPage*rows)-rows);
+		query.setStart((currentPage * rows) - rows);
 
 		query.setFacet(true);
 		query.setFacetLimit(30);

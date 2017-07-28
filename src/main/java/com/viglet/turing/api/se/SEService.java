@@ -85,7 +85,8 @@ public class SEService {
 	@GET
 	@Path("select")
 	@Produces("application/json")
-	public Response select(@QueryParam("q") String q, @QueryParam("p") int p, @QueryParam("fq[]") List<String> fq) throws JSONException {
+	public Response select(@QueryParam("q") String q, @QueryParam("p") int p, @QueryParam("fq[]") List<String> fq)
+			throws JSONException {
 		String result = null;
 		VigSolr vigSolr = new VigSolr();
 		try {
@@ -100,14 +101,16 @@ public class SEService {
 	@POST
 	@Path("update")
 	@Produces("application/json")
-	public Response update(@FormParam("vigText") String vigText, @FormParam("vigNLP") String vigNLP,
+	public Response update(@FormParam("vigText") String vigText, @FormParam("vigNLP") int turNLPInstanceId,
 			@FormParam("vigSE") String vigSE) throws JSONException {
 
 		String text = vigText;
-		int nlp = Integer.parseInt(vigNLP);
-		int se = Integer.parseInt(vigSE);
 		String result = null;
-		VigSolr vigSolr = new VigSolr(nlp, se, text);
+		int se = 0;
+		if (this.isNumeric(vigSE)) {
+			se = Integer.parseInt(vigSE);
+		}
+		VigSolr vigSolr = new VigSolr(turNLPInstanceId, se, text);
 		try {
 			result = vigSolr.indexing();
 		} catch (Exception e) {
@@ -116,4 +119,8 @@ public class SEService {
 		return Response.status(200).entity(result).build();
 	}
 
+	public boolean isNumeric(String str) {
+		return str.matches("-?\\d+(\\.\\d+)?"); // match a number with optional
+												// '-' and decimal.
+	}
 }
