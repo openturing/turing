@@ -123,7 +123,7 @@ public class VigMLDataAPI {
 		BodyContentHandler handler = new BodyContentHandler(-1);
 		Metadata metadata = new Metadata();
 		FileInputStream inputstream = new FileInputStream(
-				new File("/Users/alexandreoliveira/Desktop/apache-solr-ref-guide-4.10.pdf"));
+				new File("/Users/alexandreoliveira/Desktop/The-Problems-of-Philosophy-LewisTheme.pdf"));
 		ParseContext pcontext = new ParseContext();
 
 		// parsing the document using PDF parser
@@ -143,7 +143,7 @@ public class VigMLDataAPI {
 		EntityManager em = factory.createEntityManager();
 
 		VigData vigData = new VigData();
-		vigData.setName("apache-solr-ref-guide-4.10.pdf");
+		vigData.setName("The-Problems-of-Philosophy-LewisTheme.pdf");
 		vigData.setType("pdf");
 
 		em.getTransaction().begin();
