@@ -7,8 +7,12 @@ import com.viglet.turing.persistence.service.TurEntityService;
 import com.viglet.turing.persistence.service.TurNLPVendorEntityService;
 import com.viglet.turing.persistence.service.TurNLPVendorService;
 
-public class TurNLPVendorEntityOnStartup {
 
+public class TurNLPVendorEntityOnStartup {
+	private static final String CORENLP = "CORENLP";
+	private static final String OPENNLP = "OPENNLP";
+	private static final String OTCA = "OTCA";
+	
 	TurEntityService turNLPEntityService = new TurEntityService();
 	TurNLPVendorEntityService turNLPVendorEntityService = new TurNLPVendorEntityService();
 
@@ -18,7 +22,7 @@ public class TurNLPVendorEntityOnStartup {
 		TurNLPVendorEntityOnStartup turNLPVendorEntityOnStartup = new TurNLPVendorEntityOnStartup();
 
 		if (turNLPVendorEntityService.listAll().isEmpty()) {
-			TurNLPVendor turNLPVendor = turNLPVendorService.get("CORENLP");
+			TurNLPVendor turNLPVendor = turNLPVendorService.get(CORENLP);
 
 			if (turNLPVendor != null) {
 				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "PN", "PERSON");
@@ -31,7 +35,7 @@ public class TurNLPVendorEntityOnStartup {
 				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "TIME", "TIME");
 			}
 
-			turNLPVendor = turNLPVendorService.get("OPENNLP");
+			turNLPVendor = turNLPVendorService.get(OPENNLP);
 
 			if (turNLPVendor != null) {
 				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "PN", "/models/opennlp/en/en-ner-person.bin");
@@ -43,6 +47,14 @@ public class TurNLPVendorEntityOnStartup {
 				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "PERCENTAGE",
 						"/models/opennlp/en/en-ner-percentage.bin");
 				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "TIME", "/models/opennlp/en/en-ner-time.bin");
+			}
+
+			turNLPVendor = turNLPVendorService.get(OTCA);
+
+			if (turNLPVendor != null) {
+				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "PN", "PN");
+				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "GL", "GL");
+				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "ON", "ON");
 			}
 
 		}
