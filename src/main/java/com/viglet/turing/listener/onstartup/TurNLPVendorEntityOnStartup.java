@@ -38,6 +38,7 @@ public class TurNLPVendorEntityOnStartup {
 			turNLPVendor = turNLPVendorService.get(OPENNLP);
 
 			if (turNLPVendor != null) {
+				TurOpenNLPModelsOnStartup.downloadModels();
 				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "PN", "/models/opennlp/en/en-ner-person.bin");
 				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "GL", "/models/opennlp/en/en-ner-location.bin");
 				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "ON",

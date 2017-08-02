@@ -7,6 +7,7 @@ import com.viglet.turing.listener.onstartup.TurNLPFeatureOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPInstanceOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPVendorEntityOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPVendorOnStartup;
+import com.viglet.turing.listener.onstartup.TurOpenNLPModelsOnStartup;
 
 import javax.servlet.*;
 
@@ -26,8 +27,8 @@ public class TurListener implements ServletContextListener, HttpSessionListener 
 		TurNLPVendorEntityOnStartup.createDefaultRows();
 		TurNLPFeatureOnStartup.createDefaultRows();
 		TurNLPInstanceOnStartup.createDefaultRows();
-
 		System.out.println("Tables checked.");
+		
 	}
 
 	public void contextDestroyed(ServletContextEvent sce) {

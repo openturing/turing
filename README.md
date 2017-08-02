@@ -86,17 +86,6 @@ $ curl -X POST -H 'Content-type:application/json' --data-binary '{
 
 ```
 
-## OpenNLP Models
-
-Copy the OpenNLP Models to Viglet Turing Web Application, access http://
-opennlp.sourceforge.net/models-1.5/ and copy the following models to `<VIGLET_TURING_REPOSITORY>/target/turing/WEB-INF/classes/models/opennlp/<LANGUAGE>/`. For example:
-
-```shell
-$ mkdir -p <VIGLET_TURING_REPOSITORY>/target/turing/WEB-INF/classes/models/opennlp/en
-$ cd <VIGLET_TURING_REPOSITORY>/target/turing/WEB-INF/classes/models/opennlp/en
-$ curl http://opennlp.sourceforge.net/models-1.5/en-ner-person.bin -o en-ner-person.bin
-```
-
 ## Deploy 
 ### Bower
 Bower is a command line utility. Install it with npm.

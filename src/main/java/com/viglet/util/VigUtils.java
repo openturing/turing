@@ -12,4 +12,6 @@ public class VigUtils {
 	public static String removeDuplicateWhiteSpaces(String s) {
 		return s.replaceAll("\\s+", " ").trim();
 	}
+	
+	
 }
