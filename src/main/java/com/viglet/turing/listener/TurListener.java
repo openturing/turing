@@ -7,7 +7,6 @@ import com.viglet.turing.listener.onstartup.TurNLPFeatureOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPInstanceOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPVendorEntityOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPVendorOnStartup;
-import com.viglet.turing.listener.onstartup.TurOpenNLPModelsOnStartup;
 
 import javax.servlet.*;
 
