@@ -16,6 +16,7 @@
     "tests"
   ],
   "dependencies": {
+  	"bootstrap": "*",
     "angular-moment": "*",
     "jquery": "*",
     "moment": "*",
@@ -27,6 +28,7 @@
     "angular-animate": "1.5.8",
     "angular-aside": "*",
     "angular-route": "1.5.8",
+	"angular-ui-router": "*",
     "angular": "1.5.8",
     "material-design-lite": "*",
     "angular-directive.g-signin": "^0.1.2",

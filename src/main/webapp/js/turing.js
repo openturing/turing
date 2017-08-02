@@ -1,245 +1,632 @@
-var vigletApp = angular.module('vigletApp', [ "ngRoute" ]);
+var turingApp = angular.module('turingApp', ['ui.router', 'pascalprecht.translate']);
 
-vigletApp.config([ '$routeProvider', function($routeProvider) {
-	$routeProvider.when('/home', {
-		templateUrl : 'templates/home.html',
-		controller : 'TurHomeCtrl'
-	}).when('/entity', {
-		templateUrl : 'templates/entity.html',
-		controller : 'ShowOrdersController'
-	}).when('/entity/import', {
-		templateUrl : 'templates/entity/entity_import.html',
-		controller : 'ShowOrdersController'
-	}).when('/entity/:id', {
-		templateUrl : 'templates/entity_item.html',
-		controller : 'ShowOrdersController'
-	}).when('/nlp', {
-		templateUrl : 'templates/nlp.html',
-		controller : 'TurNLPCtrl'
-	}).when('/nlp/add', {
-		templateUrl : 'templates/nlp_item.html',
-		controller : 'TurNLPNewCtrl'
-	}).when('/nlp/:id', {
-		templateUrl : 'templates/nlp_item.html',
-		controller : 'TurNLPItemCtrl'
-	}).when('/ml', {
-		templateUrl : 'templates/ml.html',
-		controller : 'ShowOrdersController'
-	}).when('/search-engine', {
-		templateUrl : 'templates/search-engine.html',
-		controller : 'ShowOrdersController'
-	}).when('/database', {
-		templateUrl : 'templates/database.html',
-		controller : 'ShowOrdersController'
-	}).when('/indexing', {
-		templateUrl : 'templates/indexing.html',
-		controller : 'IndexingCtrl'
-	}).when('/indexingDocument', {
-		templateUrl : 'templates/indexingResult.html',
-		controller : 'IndexingCtrl'
-	}).when('/model', {
-		templateUrl : 'templates/model/model.html',
-		controller : 'MLModelCtrl'
-	}).when('/data/group', {
-		templateUrl : 'templates/data/group/datagroup.html',
-		controller : 'MLDataGroupCtrl'
-	}).when('/data/group/create', {
-		templateUrl : 'templates/data/group/datagroup_create.html',
-		controller : 'MLDataGroupItemCtrl'
-	}).when('/data/group/:id', {
-		templateUrl : 'templates/data/group/datagroup_item.html',
-		controller : 'MLDataGroupItemCtrl'
-	}).when('/data/import', {
-		templateUrl : 'templates/data/data_import.html',
-		controller : 'MLDataGroupCtrl'
-	}).when('/data/:id', {
-		templateUrl : 'templates/data/data_item.html',
-		controller : 'MLDataItemCtrl'
-	}).otherwise({
-		redirectTo : '/home'
-	});
-} ]);
+turingApp.factory('vigLocale', ['$window', function ($window) {
+    return {
+        getLocale: function () {
+            var nav = $window.navigator;
+            if (angular.isArray(nav.languages)) {
+                if (nav.languages.length > 0) {
+                    return nav.languages[0].split('-').join('_');
+                }
+            }
+            return ((nav.language ||
+                nav.browserLanguage ||
+                nav.systemLanguage ||
+                nav.userLanguage
+            ) || '').split('-').join('_');
+        }
+    }
+}]);
 
-vigletApp.controller('TurHomeCtrl', function($scope) {
-
-	$scope.$parent.title = 'Home';
-	componentHandler.upgradeAllRegistered();
-
-});
-
-vigletApp.controller('TurNLPCtrl', function($scope, $sce) {
-
-	$scope.$parent.title = 'NLP';
-	componentHandler.upgradeAllRegistered();
-
-});
-
-vigletApp.controller('TurNLPItemCtrl', function($scope, $http, $routeParams) {
-
-	$scope.$parent.title = 'Edit NLP';
-
-	$http.get("/turing/api/nlp/" + $routeParams.id).success(function(data) {
-		$scope.turNLPInstance = data;
-	});
-	$http.get("/turing/api/nlp/vendor").success(function(data) {
-		$scope.turNLPVendors = data;
-	});
-	componentHandler.upgradeAllRegistered();
-
-});
-
-vigletApp.controller('TurNLPNewCtrl', function($scope, $sce) {
-
-	$scope.$parent.title = 'New NLP';
-	componentHandler.upgradeAllRegistered();
-
-});
-
-vigletApp.controller('IndexingCtrl', function($scope, $http, $routeParams,
-		$location) {
-	$scope.vigResults = null;
-	$scope.isArray = angular.isArray;
-	$scope.vigText = null;
-	$scope.nlpmodel = null;
-	$scope.semodel = null;
-	$http.get("/turing/api/nlp/").success(function(data) {
-		$scope.vigNLPServices = data;
-		angular.forEach(data, function(value, key) {
-			if (value.enabled == true) {
-				$scope.nlpmodel = value.id;
-			}
+turingApp.config(function ($stateProvider, $urlRouterProvider,$locationProvider, $translateProvider) {
+	$translateProvider.useSanitizeValueStrategy('escaped');
+	$translateProvider
+			.translations(
+					'en',
+					{
+						
+						NLP_EDIT: "Edit NLP",
+						NLP_EDIT_SUBTITLE: "Change the NLP Settings",
+						NAME: "Name",
+						DESCRIPTION: "Description",
+						NLP_VENDORS : "Vendors",
+						HOST : "Host",
+						PORT : "Port",
+						SETTINGS_SAVE_CHANGES : "Save Changes"						
+					});
+	$translateProvider
+			.translations(
+					'pt',
+					{
+						NLP_EDIT: "Editar o NLP",
+						NLP_EDIT_SUBTITLE: "Altere as configurações do NLP",
+						NAME: "Nome",
+						DESCRIPTION: "Descrição",		
+						NLP_VENDORS : "Produtos",
+						HOST : "Host",
+						PORT : "Porta",
+						SETTINGS_SAVE_CHANGES : "Salvar Alterações"
+					});
+	$translateProvider.fallbackLanguage('en');
+	
+	$urlRouterProvider.otherwise('/home');
+	$stateProvider
+		.state('home', {
+			url: '/home',
+			templateUrl: 'templates/home.html',
+			controller: 'TurHomeCtrl',
+			data : { pageTitle: 'Home | Viglet Turing' }
+		})
+		.state('nlp', {
+			url: '/nlp',
+			templateUrl: 'templates/nlp/nlp.html',			
+			data : { pageTitle: 'NLP | Viglet Turing' }
+		})
+		.state('nlp.instance', {
+			url: '/instance',
+			templateUrl: 'templates/nlp/nlp-instance.html',
+			controller: 'TurNLPInstanceCtrl',
+			data : { pageTitle: 'NLPs | Viglet Turing' }
+		})
+		.state('nlp.instance-edit', {
+			url: '/instance/:nlpInstanceId',
+			templateUrl: 'templates/nlp/nlp-instance-edit.html',
+			controller: 'TurNLPInstanceEditCtrl',
+			data : { pageTitle: 'Edit NLP | Viglet Turing' }
+		})
+		.state('nlp.entity', {
+			url: '/entity',
+			templateUrl: 'templates/nlp/nlp-entity.html',
+			controller: 'TurNLPEntityCtrl',
+			data : { pageTitle: 'NLP Entities | Viglet Turing' }
+		})
+		.state('mapping-edit', {
+			url: '/mapping/:mappingId',
+			templateUrl: 'mapping-item.html',
+			controller: 'TurMappingEditCtrl',
+			data : { pageTitle: 'Edit Mapping | Viglet Turing' }
+		})
+		.state('organization.user', {
+			url: '/user',
+			templateUrl: 'user.html',
+			controller: 'TurUserCtrl',
+			data : { pageTitle: 'Users | Viglet Turing' }
+		})
+		.state('organization.user-new', {
+			url: '/user/new',
+			templateUrl: 'user-item.html',
+			controller: 'TurUserNewCtrl',
+			data : { pageTitle: 'New User | Viglet Turing' }
+		})
+		.state('organization.user-edit', {
+			url: '/user/:userId',
+			templateUrl: 'user-item.html',
+			controller: 'TurUserEditCtrl',
+			data : { pageTitle: 'Edit User | Viglet Turing' }
+		})
+		.state('organization.role', {
+			url: '/role',
+			templateUrl: 'role.html',
+			controller: 'TurRoleCtrl',
+			data : { pageTitle: 'Roles | Viglet Turing' }
+		})
+		.state('organization.role-new', {
+			url: '/role/new',
+			templateUrl: 'role-item.html',
+			controller: 'TurRoleNewCtrl',
+			data : { pageTitle: 'New Role | Viglet Turing' }
+		})
+		.state('organization.role-edit', {
+			url: '/role/:roleId',
+			templateUrl: 'role-item.html',
+			controller: 'TurRoleEditCtrl',
+			data : { pageTitle: 'Edit Role | Viglet Turing' }
+		})
+		.state('organization.group', {
+			url: '/group',
+			templateUrl: 'group.html',
+			controller: 'TurGroupCtrl',
+			data : { pageTitle: 'Groups | Viglet Turing' }
+		})
+		.state('organization.group-new', {
+			url: '/group/new',
+			templateUrl: 'group-item.html',
+			controller: 'TurGroupNewCtrl',
+			data : { pageTitle: 'New Group | Viglet Turing' }
+		})
+		.state('organization.group-edit', {
+			url: '/group/:groupId',
+			templateUrl: 'group-item.html',
+			controller: 'TurGroupEditCtrl',
+			data : { pageTitle: 'Edit Group | Viglet Turing' }
+		})
+		.state('app', {
+			url: '/app',
+			templateUrl: 'app.html',
+			controller: 'TurAppCtrl',
+			data : { pageTitle: 'Apps | Viglet Turing'}
+		})
+		.state('app-new', {
+			url: '/app/new',
+			templateUrl: 'app-item.html',
+			controller: 'TurAppNewCtrl',
+			data : { pageTitle: 'New App | Viglet Turing', saveButton: 'Save'}
+		})
+		.state('app-edit', {
+			url: '/app/:appId',
+			templateUrl: 'app-item.html',
+			controller: 'TurAppEditCtrl',
+			data : { pageTitle: 'Edit App | Viglet Turing', saveButton: 'Update Settings' }
+		})	
+		.state('app-edit.keys', {
+			url: '/keys',
+			templateUrl: 'app-item-keys.html',
+			controller: 'TurAppEditCtrl',
+			data : { pageTitle: 'Edit App Keys | Viglet Turing' }
 		});
-	});
-
-	$http.get("/turing/api/se/").success(function(data) {
-		$scope.vigSEServices = data;
-		angular.forEach(data, function(value, key) {
-			if (value.enabled == true) {
-
-				$scope.semodel = value.id;
-			}
-		});
-	});
-	componentHandler.upgradeAllRegistered();
-
-	$scope.changeView = function(view) {
-		$scope.vigResults = null;
-		postData = 'vigText=' + $scope.vigText + "&vigNLP=" + $scope.nlpmodel
-				+ "&vigSE=" + $scope.semodel;
-		$http({
-			method : 'POST',
-			url : '/turing/api/se/update',
-			data : postData, // forms user object
-			headers : {
-				'Content-Type' : 'application/x-www-form-urlencoded'
-			}
-		}).success(function(data, status, headers, config) {
-			$scope.vigResults = data;
-
-		});
-
-	};
-
-	componentHandler.upgradeAllRegistered();
 
 });
 
-vigletApp.controller('AddOrderController', function($scope) {
+turingApp.controller('TurHomeCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$scope.accesses = null;
+		$rootScope.$state = $state;
+		$scope.$evalAsync($http.get(
+			"../api/access/").then(
+			function (response) {
+				$scope.accesses = response.data;
+			}));
+	}]);
 
-	$scope.message = 'This is Add new order screen';
-	componentHandler.upgradeAllRegistered();
+turingApp.controller('TurNLPInstanceCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$scope.nlps = null;
+		$rootScope.$state = $state;
+		$scope.$evalAsync($http.get(
+			"/turing/api/nlp/").then(
+			function (response) {
+				$scope.nlps = response.data;
+			}));
+	}]);
 
-});
+turingApp.controller('TurNLPEntityCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$scope.entities = null;
+		$rootScope.$state = $state;
+		$scope.$evalAsync($http.get(
+			"/turing/api/entity/").then(
+			function (response) {
+				$scope.entities = response.data;
+			}));
+	}]);
 
-vigletApp.controller('ShowOrdersController', function($scope) {
-
-	$scope.message = 'This is Show orders screen';
-	componentHandler.upgradeAllRegistered();
-
-});
-vigletApp.controller('MLModelCtrl', function($scope, $http) {
-	$scope.vigMLModels = null;
-	$http.get("/turing/api/ml/model").then(function(response) {
-		$scope.vigMLModels = response.data;
-	});
-	componentHandler.upgradeAllRegistered();
-
-});
-
-vigletApp.controller('MLDataItemCtrl', function($scope, $http, $routeParams) {
-	$scope.vigData = null;
-	$http.get("/turing/api/ml/data/" + $routeParams.id).success(function(data) {
-		$scope.vigData = data;
-	});
-	componentHandler.upgradeAllRegistered();
-
-});
-
-vigletApp.controller('MLDataGroupCtrl', function($scope, $http) {
-	$scope.vigDataGroups = null;
-	$http.get("/turing/api/ml/data/group").then(function(response) {
-		$scope.vigDataGroups = response.data;
-	});
-	componentHandler.upgradeAllRegistered();
-
-});
-
-vigletApp.controller('MLDataGroupItemCtrl', function($scope, $http,
-		$routeParams) {
-	$scope.vigDataGroup = null;
-	if ($routeParams.id != null) {
-		$http.get("/turing/api/ml/data/group/" + $routeParams.id).success(
-				function(data) {
-					$scope.vigDataGroup = data;
+turingApp.controller('TurNLPInstanceEditCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$stateParams",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate, vigLocale) {
+		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+		$translate.use($scope.vigLanguage);
+		$rootScope.$state = $state;
+		$scope.nlp = null;
+		$scope.nlpVendors = null;
+		$scope.nlpInstanceId = $stateParams.nlpInstanceId;
+		$scope.$evalAsync($http.get(
+		"/turing/api/nlp/vendor").then(
+		function (response) {
+			$scope.nlpVendors = response.data;
+		}));
+		$scope.$evalAsync($http.get(
+			"/turing/api/nlp/" + $scope.nlpInstanceId).then(
+			function (response) {
+				$scope.nlp = response.data.nlp;
+			}));
+	
+		$scope.mappingSave = function () {
+			$scope.mappings = null;
+			var parameter = JSON.stringify($scope.mapping);
+			$http.put("../api/mapping/" + $scope.mappingId,
+				parameter).then(
+				function (data, status, headers, config) {
+					   $state.go('mapping');
+				}, function (data, status, headers, config) {
+					   $state.go('mapping');
 				});
+		}
 	}
-	$scope.create = function($dataGroup, $window) {
+]);
+turingApp.controller('TurMappingNewCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.mapping = {};
+		$scope.mappingSave = function () {
+			var parameter = JSON.stringify($scope.mapping);
+			$http.post("../api/mapping/",
+				parameter).then(
+				function (data, status, headers, config) {
+					$state.go('mapping');
+				}, function (data, status, headers, config) {
+					$state.go('mapping');
 
-		postData = 'name=' + $dataGroup.name + "&description="
-				+ $dataGroup.description;
-		$http({
-			method : 'POST',
-			url : '/turing/api/ml/data/group/create',
-			data : postData, // forms user object
-			headers : {
-				'Content-Type' : 'application/x-www-form-urlencoded'
-			}
-		}).success(function(data, status, headers, config) {
-			$scope.vigResults = data;
-
-		});
-
-		// $window.location.href = '/turing/#/data/group';
-		return $scope.vigResults;
+				});
+		}
 	}
+]);
 
-	componentHandler.upgradeAllRegistered();
 
-});
 
-vigletApp.controller('EntityServicesCtrl', function($scope, $http) {
-	$scope.vigEntityServices = null;
-	$http.get("/turing/api/entity").then(function(response) {
-		console.log(response.data)
-		$scope.vigEntityServices = response.data;
-	});
-	componentHandler.upgradeAllRegistered();
+turingApp.controller('TurUserCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.users = null;
 
-});
-vigletApp.controller('EntityCtrl', function($scope, $http, $routeParams) {
+		$scope.$evalAsync($http.get(
+			"../api/user/").then(
+			function (response) {
+				$scope.users = response.data;
+			}));
 
-	$http.get("/turing/api/entity/" + $routeParams.id).success(function(data) {
-		$scope.vigEntity = data;
-	});
-	componentHandler.upgradeAllRegistered();
+		$scope.userDelete = function (userId) {
+			$http.delete("../api/user/" + userId).then(
+				function (data, status, headers, config) {
+					$http.get(
+						"../api/user/").then(
+						function (response) {
+							$scope.users = response.data;
+						});
+				}, function (data, status, headers, config) {
+					// called asynchronously if an error occurs
+					// or server returns response with an error
+					// status.
+				});
+		}
+	}]);
 
-});
-vigletApp.controller('NLPServicesCtrl', function($scope, $http) {
-	$scope.vigNLPServices = null;
-	$http.get("/turing/api/nlp").then(function(response) {
-		console.log(response.data)
-		$scope.vigNLPServices = response.data;
-	});
-	componentHandler.upgradeAllRegistered();
+turingApp.controller('TurUserNewCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.user = {};
+		$scope.userSave = function () {
+			var parameter = JSON.stringify($scope.user);
+			$http.post("../api/user/",
+				parameter).then(
+				function (data, status, headers, config) {					
+			          $state.go('organization.user');
+				}, function (data, status, headers, config) {
+			          $state.go('organization.user');
+				});
+		}
+	}
+]);
 
-});
+turingApp.controller('TurUserEditCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$stateParams",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate, vigLocale) {
+		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+		$translate.use($scope.vigLanguage);
+		$rootScope.$state = $state;
+		$scope.userId = $stateParams.userId;
+		$scope.$evalAsync($http.get(
+			"../api/user/" + $scope.userId).then(
+			function (response) {
+				$scope.user = response.data;
+			}));
+		$scope.userSave = function () {
+			$scope.users = null;
+			var parameter = JSON.stringify($scope.user);
+			$http.put("../api/user/" + $scope.userId,
+				parameter).then(
+				function (data, status, headers, config) {
+					  $state.go('organization.user');
+				}, function (data, status, headers, config) {
+					  $state.go('organization.user');
+				});
+		}
+	}
+]);
+
+turingApp.controller('TurRoleCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.roles = null;
+
+		$scope.$evalAsync($http.get(
+			"../api/role/").then(
+			function (response) {
+				$scope.roles = response.data;
+			}));
+
+		$scope.roleDelete = function (roleId) {
+			$http.delete("../api/role/" + roleId).then(
+				function (data, status, headers, config) {
+					$http.get(
+						"../api/role/").then(
+						function (response) {
+							$scope.roles = response.data;
+						});
+				}, function (data, status, headers, config) {
+					// called asynchronously if an error occurs
+					// or server returns response with an error
+					// status.
+				});
+		}
+	}]);
+
+turingApp.controller('TurRoleNewCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.role = {};
+		$scope.roleSave = function () {
+			var parameter = JSON.stringify($scope.role);
+			$http.post("../api/role/",
+				parameter).then(
+				function (data, status, headers, config) {
+					  $state.go('organization.role');
+				}, function (data, status, headers, config) {
+					  $state.go('organization.role');
+				});
+		}
+	}
+]);
+
+turingApp.controller('TurRoleEditCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$stateParams",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.roleId = $stateParams.roleId;
+		$scope.$evalAsync($http.get(
+			"../api/role/" + $scope.roleId).then(
+			function (response) {
+				$scope.role = response.data;
+			}));
+		$scope.roleSave = function () {
+			$scope.roles = null;
+			var parameter = JSON.stringify($scope.role);
+			$http.put("../api/role/" + $scope.roleId,
+				parameter).then(
+				function (data, status, headers, config) {
+					  $state.go('organization.role');
+				}, function (data, status, headers, config) {
+					  $state.go('organization.role');
+				});
+		}
+	}
+]);
+
+turingApp.controller('TurGroupCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.groups = null;
+
+		$scope.$evalAsync($http.get(
+			"../api/group/").then(
+			function (response) {
+				$scope.groups = response.data;
+			}));
+
+		$scope.groupDelete = function (groupId) {
+			$http.delete("../api/group/" + groupId).then(
+				function (data, status, headers, config) {
+					$http.get(
+						"../api/group/").then(
+						function (response) {
+							$scope.groups = response.data;
+						});
+				}, function (data, status, headers, config) {
+					// called asynchronously if an error occurs
+					// or server returns response with an error
+					// status.
+				});
+		}
+	}]);
+
+turingApp.controller('TurGroupNewCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.group = {};
+		$scope.groupSave = function () {
+			var parameter = JSON.stringify($scope.group);
+			$http.post("../api/group/",
+				parameter).then(
+				function (data, status, headers, config) {
+					$state.go('organization.group');
+				}, function (data, status, headers, config) {
+					$state.go('organization.group');
+				});
+		}
+	}
+]);
+
+turingApp.controller('TurGroupEditCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$stateParams",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.groupId = $stateParams.groupId;
+		$scope.$evalAsync($http.get(
+			"../api/group/" + $scope.groupId).then(
+			function (response) {
+				$scope.group = response.data;
+			}));
+		$scope.groupSave = function () {
+			$scope.groups = null;
+			var parameter = JSON.stringify($scope.group);
+			$http.put("../api/group/" + $scope.groupId,
+				parameter).then(
+				function (data, status, headers, config) {
+					$state.go('organization.group');
+				}, function (data, status, headers, config) {
+					$state.go('organization.group');
+				});
+		}
+	}
+]);
+
+turingApp.controller('TurAppCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.apps = null;
+
+		$scope.$evalAsync($http.get(
+			"../api/app/").then(
+			function (response) {
+				$scope.apps = response.data;
+			}));
+
+		$scope.appDelete = function (appId) {
+			$http.delete("../api/app/" + appId).then(
+				function (data, status, headers, config) {
+					$http.get(
+						"../api/app/").then(
+						function (response) {
+							$scope.apps = response.data;
+						});
+				}, function (data, status, headers, config) {
+					// called asynchronously if an error occurs
+					// or server returns response with an error
+					// status.
+				});
+		}
+	}]);
+
+turingApp.controller('TurAppNewCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.app = {};
+		$scope.appSave = function () {
+			var parameter = JSON.stringify($scope.app);
+			$http.post("../api/app/",
+				parameter).then(
+				function (data, status, headers, config) {
+					$state.go('app');
+				}, function (data, status, headers, config) {
+					$state.go('app');
+				});
+		}
+	}
+]);
+
+turingApp.controller('TurAppEditCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$stateParams",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+		$scope.appId = $stateParams.appId;
+		$scope.$evalAsync($http.get(
+			"../api/app/" + $scope.appId).then(
+			function (response) {
+				$scope.app = response.data;
+			}));
+		$scope.appSave = function () {
+			$scope.apps = null;
+			var parameter = JSON.stringify($scope.app);
+			$http.put("../api/app/" + $scope.appId,
+				parameter).then(
+				function (data, status, headers, config) {
+					$state.go('app');
+				}, function (data, status, headers, config) {
+					$state.go('app');
+				});
+		}
+	}
+]);

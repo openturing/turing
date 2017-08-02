@@ -78,7 +78,7 @@
 						<argument>install</argument>
 						<argument>--allow-root</argument>
 					</arguments>
-					<workingDirectory>${basedir}/src/main/webapp</workingDirectory>
+					<workingDirectory>${basedir}</workingDirectory>
 				</configuration>
 			</plugin>
 <!-- 			<plugin>

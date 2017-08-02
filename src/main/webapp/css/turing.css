@@ -1,0 +1,98 @@
+.video-container {
+position: relative;
+padding-bottom: 56.25%;
+padding-top: 30px; height: 0; overflow: hidden;
+}
+ 
+.video-container iframe,
+.video-container object,
+.video-container embed {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+}
+
+@font-face {
+    font-family: 'ProximaNovaLight';
+    src: url('../fonts/proximanova-light-webfont.eot');
+    src: url('../fonts/proximanova-light-webfont.eot?#iefix') format('embedded-opentype'),
+        url('../fonts/proximanova-light-webfont.woff') format('woff'),
+        url('../fonts/proximanova-light-webfont.ttf') format('truetype'),
+        url('../fonts/proximanova-light-webfont.svg#ProximaNovaLight') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'ProximaNovaReg';
+    src: url('../fonts/proximanova-reg-webfont.eot');
+    src: url('../fonts/proximanova-reg-webfont.eot?#iefix') format('embedded-opentype'),
+        url('../fonts/proximanova-reg-webfont.woff') format('woff'),
+        url('../fonts/proximanova-reg-webfont.ttf') format('truetype'),
+        url('../fonts/proximanova-reg-webfont.svg#ProximaNovaReg') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* Wrapper for page content to push down footer */
+#wrap {
+    min-height: 100%;
+    height: auto;
+    /* Negative indent footer by its height */
+    margin: 0 auto -60px;
+    /* Pad bottom by footer height */
+    padding: 0 0 60px;
+}
+
+/* Set the fixed height of the footer here */
+#footer {
+    height: 60px;
+    background-color: #f5f5f5;
+}
+/* centered columns styles */
+.row-centered {
+    text-align:center;
+}
+.col-centered {
+    display:inline-block;
+    float:none;
+    /* reset the text-align */
+    text-align:left;
+    /* inline-block space fix */
+    margin-right:-4px;
+    vertical-align:text-top;
+}
+
+body{
+    font-family: "ProximaNovaLight","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-weight: normal;
+    line-height: 22px;
+    color: #444;
+    position: relative;
+}
+
+html {
+    font-size: 15px;
+}
+
+p {
+    display: block;
+    -webkit-margin-before: 1em;
+    -webkit-margin-after: 1em;
+    -webkit-margin-start: 0px;
+    -webkit-margin-end: 0px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 0 0 15px 0;
+    font-family: "ProximaNovaLight","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-weight: normal;
+    color: #444;
+    text-transform: none;
+}
+
+.container {
+    width: 100%;
+}
