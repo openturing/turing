@@ -1,0 +1,29 @@
+<div>
+<div class="row">
+ <div class="col-sm-6 col-md-4">
+    <div class="thumbnail">
+    <div style="background-color:#FF874B;text-align:right;height:200px" >
+      <img src="images/import.png" alt="nlp" style="padding:15px">
+      <h3 style="color:white;position: absolute;left: 30px;top:170px;z-index:10">Import Entity</h3>
+      </div>
+      <div class="caption">
+        <p>Import an Entity from XML file</p>
+         <p><a ui-sref="nlp.entity-import" class="btn btn-viglet btn-lg btn-block" role="button">Import</a></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-4" ng-repeat="entity in entities">
+    <div class="thumbnail">
+    <div style="background-color:#FF874B;text-align:right;height:200px" >
+      <img src="images/entity.png" alt="nlp" style="padding:15px">
+      <h3 style="color:white;position: absolute;left: 30px;top:170px;z-index:10">{{entity.name}}</h3>
+      </div>
+      <div class="caption">
+        <p>{{entity.description}}</p>
+         <p><a ui-sref="nlp.entity-edit({nlpEntityId:entity.id})" class="btn btn-viglet btn-lg btn-block" role="button">Configure</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>

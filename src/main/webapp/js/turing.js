@@ -76,15 +76,25 @@ turingApp.config(function ($stateProvider, $urlRouterProvider,$locationProvider,
 		})
 		.state('nlp.entity', {
 			url: '/entity',
-			templateUrl: 'templates/nlp/nlp-entity.html',
+			templateUrl: 'templates/nlp/entity/nlp-entity.html',
 			controller: 'TurNLPEntityCtrl',
 			data : { pageTitle: 'NLP Entities | Viglet Turing' }
 		})
-		.state('mapping-edit', {
-			url: '/mapping/:mappingId',
-			templateUrl: 'mapping-item.html',
-			controller: 'TurMappingEditCtrl',
-			data : { pageTitle: 'Edit Mapping | Viglet Turing' }
+		.state('nlp.entity-import', {
+			url: '/entity/import',
+			templateUrl: 'templates/nlp/entity/nlp-entity-import.html',			
+			data : { pageTitle: 'Import Entity | Viglet Turing' }
+		})
+		.state('nlp.entity-edit', {
+			url: '/entity/:nlpEntityId',
+			templateUrl: 'templates/nlp/entity/nlp-entity-edit.html',
+			controller: 'TurNLPEntityEditCtrl',
+			data : { pageTitle: 'Edit Entity | Viglet Turing' }
+		})
+		.state('nlp.entity-edit.term', {
+			url: '/term',
+			templateUrl: 'templates/nlp/entity/nlp-entity-term.html',			
+			data : { pageTitle: 'Entity Terms | Viglet Turing' }
 		})
 		.state('organization.user', {
 			url: '/user',
@@ -258,6 +268,42 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 		}
 	}
 ]);
+
+turingApp.controller('TurNLPEntityEditCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$stateParams",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate, vigLocale) {
+		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+		$translate.use($scope.vigLanguage);
+		$rootScope.$state = $state;
+		$scope.entity = null;
+		$scope.nlpEntityId = $stateParams.nlpEntityId;		
+		$scope.$evalAsync($http.get(
+			"/turing/api/entity/" + $scope.nlpEntityId).then(
+			function (response) {
+				$scope.entity = response.data.entity;
+			}));
+	
+		$scope.mappingSave = function () {
+			$scope.mappings = null;
+			var parameter = JSON.stringify($scope.mapping);
+			$http.put("../api/mapping/" + $scope.mappingId,
+				parameter).then(
+				function (data, status, headers, config) {
+					   $state.go('mapping');
+				}, function (data, status, headers, config) {
+					   $state.go('mapping');
+				});
+		}
+	}
+]);
+
 turingApp.controller('TurMappingNewCtrl', [
 	"$scope",
 	"$http",
