@@ -3,21 +3,21 @@
 	<div class="col-lg-3 col-md-3 col-sm-3 col-xs-3 col-centered">
 		<div class="list-group" style="margin-bottom: 10px">
 			<a
-				ng-class="{'disabled':$state.current.name.indexOf('nlp.instance') == 0}"
-				ui-sref="nlp.instance" class="list-group-item ng-binding"
-				style="color: rgb(51, 51, 51)">NLPs<span
+				ng-class="{'disabled':$state.current.name.indexOf('ml.instance') == 0}"
+				ui-sref="ml.instance" class="list-group-item ng-binding"
+				style="color: rgb(51, 51, 51)">Machine Learnings<span
 				class="glyphicon glyphicon-chevron-right" aria-hidden="true"
 				style="float: right; position: relative; color: gray"></span>
 			</a> <a
-				ng-class="{'disabled':$state.current.name.indexOf('nlp.entity') == 0}"
-				ui-sref="nlp.entity" class="list-group-item ng-binding"
-				style="color: rgb(51, 51, 51)">Entities<span
+				ng-class="{'disabled':$state.current.name.indexOf('ml.datagroup') == 0}"
+				ui-sref="ml.datagroup" class="list-group-item ng-binding"
+				style="color: rgb(51, 51, 51)">Data Groups<span
 				class="glyphicon glyphicon-chevron-right" aria-hidden="true"
 				style="float: right; position: relative; color: gray"></span>
 			</a> <a
-				ng-class="{'disabled':$state.current.name.indexOf('nlp.validation') == 0}"
-				ui-sref="nlp.validation" class="list-group-item ng-binding"
-				style="color: rgb(51, 51, 51)">NLP Validation<span
+				ng-class="{'disabled':$state.current.name.indexOf('ml.model') == 0}"
+				ui-sref="ml.model" class="list-group-item ng-binding"
+				style="color: rgb(51, 51, 51)">Models<span
 				class="glyphicon glyphicon-chevron-right" aria-hidden="true"
 				style="float: right; position: relative; color: gray"></span>
 			</a>
@@ -25,7 +25,7 @@
 	</div>
 	<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 col-centered">
 		<div ui-view>
-			<h1>Your NLP</h1>
+			<h1>Your Machine Learning</h1>
 		</div>
 	</div>
 </div>

@@ -57,6 +57,34 @@ turingApp.config(function ($stateProvider, $urlRouterProvider,$locationProvider,
 			controller: 'TurHomeCtrl',
 			data : { pageTitle: 'Home | Viglet Turing' }
 		})
+		.state('ml', {
+			url: '/ml',
+			templateUrl: 'templates/ml/ml.html',			
+			data : { pageTitle: 'Machine Learning | Viglet Turing' }
+		})
+		.state('ml.instance', {
+			url: '/instance',
+			templateUrl: 'templates/ml/ml-instance.html',	
+			controller: 'TurMLInstanceCtrl',
+			data : { pageTitle: 'Machine Learnings | Viglet Turing' }
+		})
+		.state('ml.model', {
+			url: '/model',
+			templateUrl: 'templates/ml/model/ml-model.html',	
+			controller: 'TurMLModelCtrl',
+			data : { pageTitle: 'Machine Learning Models | Viglet Turing' }
+		})
+		.state('ml.datagroup', {
+			url: '/datagroup',
+			templateUrl: 'templates/ml/data/group/ml-datagroup.html',	
+			controller: 'TurMLDataGroupCtrl',
+			data : { pageTitle: 'Machine Learning Data Groups | Viglet Turing' }
+		})
+		.state('se', {
+			url: '/se',
+			templateUrl: 'templates/se/se.html',			
+			data : { pageTitle: 'Search Engine | Viglet Turing' }
+		})
 		.state('nlp', {
 			url: '/nlp',
 			templateUrl: 'templates/nlp/nlp.html',			
@@ -237,6 +265,56 @@ turingApp.controller('TurNLPValidationCtrl', [
 		};
 	}]);
 
+turingApp.controller('TurMLInstanceCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$scope.mls = null;
+		$rootScope.$state = $state;
+		$scope.$evalAsync($http.get(
+			"/turing/api/ml").then(
+			function (response) {
+				$scope.mls = response.data;
+			}));
+	}]);
+
+turingApp.controller('TurMLModelCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$scope.mlModels = null;
+		$rootScope.$state = $state;
+		$scope.$evalAsync($http.get(
+			"/turing/api/ml/model").then(
+			function (response) {
+				$scope.mlModels = response.data;
+			}));
+	}]);
+
+turingApp.controller('TurMLDataGroupCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$scope.mlDataGroups = null;
+		$rootScope.$state = $state;
+		$scope.$evalAsync($http.get(
+			"/turing/api/ml/data/group").then(
+			function (response) {
+				$scope.mlDataGroups = response.data;
+			}));
+	}]);
 turingApp.controller('TurNLPInstanceCtrl', [
 	"$scope",
 	"$http",
