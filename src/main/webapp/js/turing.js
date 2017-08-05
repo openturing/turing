@@ -85,6 +85,18 @@ turingApp.config(function ($stateProvider, $urlRouterProvider,$locationProvider,
 			templateUrl: 'templates/se/se.html',			
 			data : { pageTitle: 'Search Engine | Viglet Turing' }
 		})
+		.state('se.instance', {
+			url: '/instance',
+			templateUrl: 'templates/se/se-instance.html',	
+			controller: 'TurSEInstanceCtrl',
+			data : { pageTitle: 'Search Engines | Viglet Turing' }
+		})
+		.state('se.sn', {
+			url: '/sn',
+			templateUrl: 'templates/se/sn/se-sn.html',	
+			controller: 'TurSESNCtrl',
+			data : { pageTitle: 'Semantic Navigation | Viglet Turing' }
+		})
 		.state('nlp', {
 			url: '/nlp',
 			templateUrl: 'templates/nlp/nlp.html',			
@@ -265,7 +277,7 @@ turingApp.controller('TurNLPValidationCtrl', [
 		};
 	}]);
 
-turingApp.controller('TurMLInstanceCtrl', [
+turingApp.controller('TurSEInstanceCtrl', [
 	"$scope",
 	"$http",
 	"$window",
@@ -273,12 +285,29 @@ turingApp.controller('TurMLInstanceCtrl', [
 	"$rootScope",
 	"$translate",
 	function ($scope, $http, $window, $state, $rootScope, $translate) {
-		$scope.mls = null;
+		$scope.ses = null;
 		$rootScope.$state = $state;
 		$scope.$evalAsync($http.get(
-			"/turing/api/ml").then(
+			"/turing/api/se").then(
 			function (response) {
-				$scope.mls = response.data;
+				$scope.ses = response.data;
+			}));
+	}]);
+
+turingApp.controller('TurSESNCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$scope.seSNs = null;
+		$rootScope.$state = $state;
+		$scope.$evalAsync($http.get(
+			"/turing/api/se/sn").then(
+			function (response) {
+				$scope.seSNs = response.data;
 			}));
 	}]);
 
