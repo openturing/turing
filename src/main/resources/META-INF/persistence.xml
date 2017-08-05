@@ -26,6 +26,8 @@
 		<class>com.viglet.turing.persistence.model.VigTermRelationTo</class>
 		<class>com.viglet.turing.persistence.model.VigTermVariation</class>
 		<class>com.viglet.turing.persistence.model.VigTermVariationLanguage</class>
+		<class>com.viglet.turing.persistence.model.ml.TurMLInstance</class>
+		<class>com.viglet.turing.persistence.model.ml.TurMLVendor</class>
 		<properties>
 		 	<property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema" />
 			<property name="openjpa.ConnectionURL" value="jdbc:hsqldb:store/turingDB" />
