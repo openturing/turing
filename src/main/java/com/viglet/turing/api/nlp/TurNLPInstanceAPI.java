@@ -33,6 +33,7 @@ public class TurNLPInstanceAPI {
 			jsonObject.put("host", turNLPInstance.getHost());
 			jsonObject.put("port", turNLPInstance.getPort());
 			jsonObject.put("enabled", turNLPInstance.getEnabled() == 1 ? true : false);
+			jsonObject.put("selected", turNLPInstance.getSelected() == 1 ? true : false);
 			vigServices.put(jsonObject);
 
 		}
@@ -53,6 +54,7 @@ public class TurNLPInstanceAPI {
 		jsonObject.put("host", turNLPInstance.getHost());
 		jsonObject.put("port", turNLPInstance.getPort());
 		jsonObject.put("enabled", turNLPInstance.getEnabled() == 1 ? true : false);
+		jsonObject.put("selected", turNLPInstance.getSelected() == 1 ? true : false);
 		vigServiceJSON.put("nlp", jsonObject);
 		return Response.status(200).entity(vigServiceJSON.toString()).build();
 	}

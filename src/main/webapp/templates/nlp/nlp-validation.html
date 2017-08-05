@@ -20,9 +20,12 @@
 			<div class="panel-body">
 				<div class="input-group">
 					<div class="radio" ng-repeat="nlp in nlps">
-						<label><input type="radio" id="{{nlp.id}}"
-							ng-model="$parent.nlpmodel" ng-value="nlp.id" name="nlp"
-							ng-checked="nlp.selected">{{nlp.title}}</label>
+						<label>
+						
+						<input type="radio" id="{{nlp.id}}"
+							ng-model="$parent.nlpmodel" ng-value="nlp.id" name="nlp">
+							{{nlp.title}}
+						</label>
 					</div>
 				</div>
 			</div>

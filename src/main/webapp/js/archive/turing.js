@@ -105,7 +105,7 @@ vigletApp.controller('IndexingCtrl', function($scope, $http, $routeParams,
 	$http.get("/turing/api/nlp/").success(function(data) {
 		$scope.vigNLPServices = data;
 		angular.forEach(data, function(value, key) {
-			if (value.enabled == true) {
+			if (value.selected == true) {
 				$scope.nlpmodel = value.id;
 			}
 		});
@@ -114,8 +114,7 @@ vigletApp.controller('IndexingCtrl', function($scope, $http, $routeParams,
 	$http.get("/turing/api/se/").success(function(data) {
 		$scope.vigSEServices = data;
 		angular.forEach(data, function(value, key) {
-			if (value.enabled == true) {
-
+			if (value.selected == true) {
 				$scope.semodel = value.id;
 			}
 		});

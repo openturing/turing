@@ -213,7 +213,7 @@ turingApp.controller('TurNLPValidationCtrl', [
 			function (response) {
 				$scope.nlps = response.data;
 				angular.forEach(response.data, function(value, key) {
-					if (value.enabled == true) {
+					if (value.selected == true) {
 						$scope.nlpmodel = value.id;
 					}
 				});

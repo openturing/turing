@@ -61,7 +61,7 @@ public class OpenNLPConnector implements NLPImpl {
 	}
 
 	public OpenNLPConnector(TurNLPInstance turNLPInstance) {
-		
+
 		openNLPModelManager = OpenNLPModelManager.getInstance();
 		this.turNLPInstance = turNLPInstance;
 
@@ -97,7 +97,8 @@ public class OpenNLPConnector implements NLPImpl {
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
 			JSONArray entityTerms = this.getEntity(nlpInstanceEntity.getName());
 			if (entityTerms.length() > 0) {
-				jsonObject.put(nlpInstanceEntity.getTurEntity().getCollectionName(), this.getEntity(nlpInstanceEntity.getName()));
+				jsonObject.put(nlpInstanceEntity.getTurEntity().getCollectionName(),
+						this.getEntity(nlpInstanceEntity.getName()));
 			}
 		}
 		jsonObject.put("nlp", "OpenNLP");
@@ -133,19 +134,24 @@ public class OpenNLPConnector implements NLPImpl {
 		}
 
 		String tokens[] = this.getSentencesTokens();
-		Span nameSpans[] = nameFinder.find(tokens);
+		if (tokens != null) {
+			Span nameSpans[] = nameFinder.find(tokens);
 
-		for (Span nameSpan : nameSpans) {
-			String name = "";
-			for (int i = nameSpan.getStart(); i < nameSpan.getEnd(); i++) {
-				name += tokens[i];
-				if (i < nameSpan.getEnd() - 1)
-					name += " ";
+			for (Span nameSpan : nameSpans) {
+				String name = "";
+				for (int i = nameSpan.getStart(); i < nameSpan.getEnd(); i++) {
+					name += tokens[i];
+					if (i < nameSpan.getEnd() - 1)
+						name += " ";
+				}
+				jsonEntity.put(name);
 			}
-			jsonEntity.put(name);
-		}
 
-		return jsonEntity;
+			return jsonEntity;
+		} else {
+			logger.debug("Sentences returns null of OpenNLP Entity " + entityPath);
+			return null;
+		}
 	}
 
 	public static String[] sentenceDetect(String text) {
