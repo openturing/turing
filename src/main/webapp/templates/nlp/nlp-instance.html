@@ -1,16 +1,39 @@
 <div>
-<div class="row">
-  <div class="col-sm-6 col-md-4" ng-repeat="nlp in nlps">
-    <div class="thumbnail">
-    <div style="background-color:#FF874B;text-align:right;height:200px" >
-      <img src="images/nlp.png" alt="nlp" style="padding:15px">
-      <h3 style="color:white;position: absolute;left: 30px;top:170px;z-index:10">{{nlp.title}}</h3>
-      </div>
-      <div class="caption">
-        <p>{{nlp.description}}</p>
-         <p><a ui-sref="nlp.instance-edit({nlpInstanceId:nlp.id})" class="btn btn-viglet btn-lg btn-block" role="button">Configure</a></p>
-      </div>
-    </div>
-  </div>
-</div>
+	<div class="row">
+		<div class="col-sm-6 col-md-4">
+			<div class="thumbnail">
+				<div
+					style="background-color: #3399ff; text-align: center; height: 200px">
+					<img src="images/add.png" alt="nlp" style="padding: 15px">
+					<h3
+						style="color: white; position: absolute; left: 30px; top: 170px; z-index: 10">Add
+						NLP</h3>
+				</div>
+				<div class="caption">
+					<p>Create a New NLP Instance</p>
+					<p>
+						<a ui-sref="nlp.entity-import"
+							class="btn btn-primary btn-lg btn-block" role="button">Create</a>
+					</p>
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-6 col-md-4" ng-repeat="nlp in nlps">
+			<div class="thumbnail">
+				<div
+					style="background-color: #FF874B; text-align: right; height: 200px">
+					<img src="images/nlp.png" alt="nlp" style="padding: 15px">
+					<h3
+						style="color: white; position: absolute; left: 30px; top: 170px; z-index: 10">{{nlp.title}}</h3>
+				</div>
+				<div class="caption">
+					<p>{{nlp.description}}&nbsp;</p>
+					<p>
+						<a ui-sref="nlp.instance-edit({nlpInstanceId:nlp.id})"
+							class="btn btn-viglet btn-lg btn-block" role="button">Configure</a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>

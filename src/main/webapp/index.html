@@ -10,6 +10,9 @@
 <!-- Bootstrap -->
 <link href="thirdparty/bootstrap/dist/css/bootstrap.min.css"
 	rel="stylesheet">
+<link
+	href="https://viglet.ai/ui/thirdparty/font-awesome/css/font-awesome.min.css"
+	rel="stylesheet">
 <link href="https://viglet.ai/ui/css/viglet.css" rel="stylesheet">
 <link href="https://viglet.ai/ui/favicon.ico" rel="shortcut icon"
 	type="image/x-icon" />
@@ -36,8 +39,7 @@
 					<ul class="nav navbar-nav navbar-left">
 						<li ng-class="{'active':$state.current.name == 'home'}"><a
 							ui-sref="home" data-target="#dummy">Home</a></li>
-						<li
-							ng-class="{'active':$state.current.name.indexOf('nlp') == 0}"><a
+						<li ng-class="{'active':$state.current.name.indexOf('nlp') == 0}"><a
 							ui-sref="nlp.instance" data-target="#dummy">NLP</a></li>
 						<li
 							ng-class="{'active':$state.current.name.indexOf('organization') == 0}"><a

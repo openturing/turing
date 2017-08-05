@@ -74,6 +74,12 @@ turingApp.config(function ($stateProvider, $urlRouterProvider,$locationProvider,
 			controller: 'TurNLPInstanceEditCtrl',
 			data : { pageTitle: 'Edit NLP | Viglet Turing' }
 		})
+		.state('nlp.validation', {
+			url: '/validation',
+			templateUrl: 'templates/nlp/nlp-validation.html',
+			controller: 'TurNLPValidationCtrl',
+			data : { pageTitle: 'NLP Validation | Viglet Turing' }
+		})
 		.state('nlp.entity', {
 			url: '/entity',
 			templateUrl: 'templates/nlp/entity/nlp-entity.html',
@@ -186,12 +192,49 @@ turingApp.controller('TurHomeCtrl', [
 	"$translate",
 	function ($scope, $http, $window, $state, $rootScope, $translate) {
 		$scope.accesses = null;
+		$rootScope.$state = $state;		
+	}]);
+
+turingApp.controller('TurNLPValidationCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$scope.nlps = null;
+		$scope.results = null;
+		$scope.text = null;
+		$scope.nlpmodel = null;
 		$rootScope.$state = $state;
 		$scope.$evalAsync($http.get(
-			"../api/access/").then(
+			"/turing/api/nlp/").then(
 			function (response) {
-				$scope.accesses = response.data;
+				$scope.nlps = response.data;
+				angular.forEach(response.data, function(value, key) {
+					if (value.enabled == true) {
+						$scope.nlpmodel = value.id;
+					}
+				});
 			}));
+		$scope.changeView = function(view) {
+			
+			postData = 'vigText=' + $scope.text + "&vigNLP=" + $scope.nlpmodel
+					+ "&vigSE=" + 0;
+			$http({
+				method : 'POST',
+				url : '/turing/api/se/update',
+				data : postData, // forms user object
+				headers : {
+					'Content-Type' : 'application/x-www-form-urlencoded'
+				}
+			}).success(function(data, status, headers, config) {
+				$scope.results = data;
+
+			});
+
+		};
 	}]);
 
 turingApp.controller('TurNLPInstanceCtrl', [
