@@ -29,10 +29,10 @@ turingApp.config(function ($stateProvider, $urlRouterProvider,$locationProvider,
 						NLP_EDIT_SUBTITLE: "Change the NLP Settings",
 						NAME: "Name",
 						DESCRIPTION: "Description",
-						NLP_VENDORS : "Vendors",
-						HOST : "Host",
-						PORT : "Port",
-						SETTINGS_SAVE_CHANGES : "Save Changes"						
+						VENDORS: "Vendors",
+						HOST: "Host",
+						PORT: "Port",
+						SETTINGS_SAVE_CHANGES: "Save Changes"						
 					});
 	$translateProvider
 			.translations(
@@ -42,10 +42,10 @@ turingApp.config(function ($stateProvider, $urlRouterProvider,$locationProvider,
 						NLP_EDIT_SUBTITLE: "Altere as configurações do NLP",
 						NAME: "Nome",
 						DESCRIPTION: "Descrição",		
-						NLP_VENDORS : "Produtos",
-						HOST : "Host",
-						PORT : "Porta",
-						SETTINGS_SAVE_CHANGES : "Salvar Alterações"
+						VENDORS: "Produtos",
+						HOST: "Host",
+						PORT: "Porta",
+						SETTINGS_SAVE_CHANGES: "Salvar Alterações"
 					});
 	$translateProvider.fallbackLanguage('en');
 	
@@ -67,6 +67,12 @@ turingApp.config(function ($stateProvider, $urlRouterProvider,$locationProvider,
 			templateUrl: 'templates/ml/ml-instance.html',	
 			controller: 'TurMLInstanceCtrl',
 			data : { pageTitle: 'Machine Learnings | Viglet Turing' }
+		})
+		.state('ml.instance-edit', {
+			url: '/instance/:mlInstanceId',
+			templateUrl: 'templates/ml/ml-instance-edit.html',
+			controller: 'TurMLInstanceEditCtrl',
+			data : { pageTitle: 'Edit Machine Learning | Viglet Turing' }
 		})
 		.state('ml.model', {
 			url: '/model',
@@ -90,6 +96,12 @@ turingApp.config(function ($stateProvider, $urlRouterProvider,$locationProvider,
 			templateUrl: 'templates/se/se-instance.html',	
 			controller: 'TurSEInstanceCtrl',
 			data : { pageTitle: 'Search Engines | Viglet Turing' }
+		})
+		.state('se.instance-edit', {
+			url: '/instance/:seInstanceId',
+			templateUrl: 'templates/se/se-instance-edit.html',
+			controller: 'TurSEInstanceEditCtrl',
+			data : { pageTitle: 'Edit Search Engine | Viglet Turing' }
 		})
 		.state('se.sn', {
 			url: '/sn',
@@ -294,6 +306,34 @@ turingApp.controller('TurSEInstanceCtrl', [
 			}));
 	}]);
 
+turingApp.controller('TurSEInstanceEditCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$stateParams",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate, vigLocale) {
+		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+		$translate.use($scope.vigLanguage);
+		$rootScope.$state = $state;
+		$scope.se = null;
+		$scope.seVendors = null;
+		$scope.seInstanceId = $stateParams.seInstanceId;
+		$scope.$evalAsync($http.get(
+		"/turing/api/se/vendor").then(
+		function (response) {
+			$scope.seVendors = response.data;
+		}));
+		$scope.$evalAsync($http.get(
+			"/turing/api/se/" + $scope.seInstanceId).then(
+			function (response) {
+				$scope.se = response.data.se;
+			}));
+	}
+]);
 turingApp.controller('TurSESNCtrl', [
 	"$scope",
 	"$http",
@@ -344,6 +384,53 @@ turingApp.controller('TurMLDataGroupCtrl', [
 				$scope.mlDataGroups = response.data;
 			}));
 	}]);
+
+turingApp.controller('TurMLInstanceCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function ($scope, $http, $window, $state, $rootScope, $translate) {
+		$scope.mls = null;
+		$rootScope.$state = $state;
+		$scope.$evalAsync($http.get(
+			"/turing/api/ml/").then(
+			function (response) {
+				$scope.mls = response.data;
+			}));
+	}]);
+
+turingApp.controller('TurMLInstanceEditCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$stateParams",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate, vigLocale) {
+		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+		$translate.use($scope.vigLanguage);
+		$rootScope.$state = $state;
+		$scope.ml = null;
+		$scope.mlVendors = null;
+		$scope.mlInstanceId = $stateParams.mlInstanceId;
+		$scope.$evalAsync($http.get(
+		"/turing/api/ml/vendor").then(
+		function (response) {
+			$scope.mlVendors = response.data;
+		}));
+		$scope.$evalAsync($http.get(
+			"/turing/api/ml/" + $scope.mlInstanceId).then(
+			function (response) {
+				$scope.ml = response.data.ml;
+			}));
+	}
+]);
+
 turingApp.controller('TurNLPInstanceCtrl', [
 	"$scope",
 	"$http",

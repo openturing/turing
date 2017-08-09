@@ -22,7 +22,7 @@ import org.json.JSONObject;
 import com.viglet.turing.persistence.model.VigService;
 import com.viglet.turing.solr.VigSolr;
 
-@Path("/se")
+@Path("/se1")
 public class SEService {
 
 	@GET

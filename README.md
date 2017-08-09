@@ -107,8 +107,8 @@ $ mvn jetty:run
 ```
 
 ## Viglet Turing
-* Administration Console [http://localhost:8080/turing](http://localhost:8080/turing).
-* Semantic Navigation [http://localhost:8080/turing/sn](http://localhost:8080/turing/sn).
+* Administration Console [http://localhost:2700/turing](http://localhost:2700/turing).
+* Semantic Navigation [http://localhost:2700/turing/sn](http://localhost:2700/turing/sn).
 
 # For more information
 

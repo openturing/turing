@@ -81,44 +81,29 @@
 					<workingDirectory>${basedir}</workingDirectory>
 				</configuration>
 			</plugin>
-<!-- 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.6.0</version>
-				<executions>
-					<execution>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<executable>mvn </executable>
-					<arguments>
-						<argument>package</argument>
-					</arguments>
-					<workingDirectory>${basedir}/vecchio</workingDirectory>
-				</configuration>
-			</plugin>	 -->		
+			<!-- <plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>exec-maven-plugin</artifactId> 
+				<version>1.6.0</version> <executions> <execution> <phase>generate-sources</phase> 
+				<goals> <goal>exec</goal> </goals> </execution> </executions> <configuration> 
+				<executable>mvn </executable> <arguments> <argument>package</argument> </arguments> 
+				<workingDirectory>${basedir}/vecchio</workingDirectory> </configuration> 
+				</plugin> -->
 			<plugin>
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-maven-plugin</artifactId>
 				<version>9.4.5.v20170502</version>
 				<configuration>
 					<scanIntervalSeconds>10</scanIntervalSeconds>
+					<httpConnector>
+						<port>2700</port>
+					</httpConnector>
 					<webApp>
 						<webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
 						<containerIncludeJarPattern>^$</containerIncludeJarPattern>
 						<contextPath>/turing</contextPath>
 					</webApp>
-<!-- 					<contextHandlers>
-						<contextHandler
-							implementation="org.eclipse.jetty.maven.plugin.JettyWebAppContext">
-							<war>${basedir}/vecchio/target/vecchio-0.0.1-SNAPSHOT.war</war>
-							<contextPath>/vecchio</contextPath>
-						</contextHandler>
-					</contextHandlers> -->
+					<!-- <contextHandlers> <contextHandler implementation="org.eclipse.jetty.maven.plugin.JettyWebAppContext"> 
+						<war>${basedir}/vecchio/target/vecchio-0.0.1-SNAPSHOT.war</war> <contextPath>/vecchio</contextPath> 
+						</contextHandler> </contextHandlers> -->
 				</configuration>
 			</plugin>
 		</plugins>
@@ -133,6 +118,7 @@
 		<slf4j-log4j2-version>2.0.1</slf4j-log4j2-version>
 	</properties>
 	<dependencies>
+
 		<dependency>
 			<groupId>hsqldb</groupId>
 			<artifactId>hsqldb</artifactId>

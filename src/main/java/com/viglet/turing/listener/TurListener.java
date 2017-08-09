@@ -8,6 +8,8 @@ import com.viglet.turing.listener.onstartup.TurNLPInstanceOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPVendorEntityOnStartup;
 import com.viglet.turing.listener.onstartup.TurNLPVendorOnStartup;
 import com.viglet.turing.listener.onstartup.ml.TurMLVendorOnStartup;
+import com.viglet.turing.listener.onstartup.se.TurSEInstanceOnStartup;
+import com.viglet.turing.listener.onstartup.se.TurSEVendorOnStartup;
 import com.viglet.turing.listener.onstartup.ml.TurMLInstanceOnStartup;
 import javax.servlet.*;
 
@@ -29,6 +31,8 @@ public class TurListener implements ServletContextListener, HttpSessionListener 
 		TurNLPInstanceOnStartup.createDefaultRows();
 		TurMLVendorOnStartup.createDefaultRows();
 		TurMLInstanceOnStartup.createDefaultRows();
+		TurSEVendorOnStartup.createDefaultRows();
+		TurSEInstanceOnStartup.createDefaultRows();
 		System.out.println("Tables checked.");
 		
 	}
