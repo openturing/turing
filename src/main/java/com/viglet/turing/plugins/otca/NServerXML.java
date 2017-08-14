@@ -2,24 +2,11 @@ package com.viglet.turing.plugins.otca;
 
 import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.json.*;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 
-import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.service.TurNLPInstanceEntityService;
-import com.viglet.turing.persistence.model.TurNLPInstance;
-import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
-
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
 
 public class NServerXML {
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;

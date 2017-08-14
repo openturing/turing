@@ -12,8 +12,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.viglet.turing.persistence.model.TurNLPInstance;
-import com.viglet.turing.persistence.service.TurNLPInstanceService;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
 
 @Path("/nlp")
 public class TurNLPInstanceAPI {

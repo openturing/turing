@@ -8,6 +8,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
 import org.json.JSONArray;
@@ -60,6 +61,22 @@ public class TurSEInstanceAPI {
 		jsonObject.put("selected", turSEInstance.getSelected() == 1 ? true : false);
 		vigServiceJSON.put("se", jsonObject);
 		return Response.status(200).entity(vigServiceJSON.toString()).build();
+	}
+	
+	@GET
+	@Path("select")
+	@Produces("application/json")
+	public Response select(@QueryParam("q") String q, @QueryParam("p") int p, @QueryParam("fq[]") List<String> fq)
+			throws JSONException {
+		String result = null;
+		VigSolr vigSolr = new VigSolr();
+		try {
+			result = vigSolr.retrieveSolr(q, fq, p).toString();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return Response.status(200).entity(result).build();
 	}
 	
 	@POST

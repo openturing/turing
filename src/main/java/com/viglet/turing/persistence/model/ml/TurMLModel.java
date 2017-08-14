@@ -1,17 +1,17 @@
-package com.viglet.turing.persistence.model;
+package com.viglet.turing.persistence.model.ml;
 
 import java.io.Serializable;
 import javax.persistence.*;
 
 
 /**
- * The persistent class for the vigMLModel database table.
+ * The persistent class for the turMLModel database table.
  * 
  */
 @Entity
-@Table(name="vigMLModel")
-@NamedQuery(name="VigMLModel.findAll", query="SELECT v FROM VigMLModel v")
-public class VigMLModel implements Serializable {
+@Table(name="turMLModel")
+@NamedQuery(name="TurMLModel.findAll", query="SELECT mlm FROM TurMLModel mlm")
+public class TurMLModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -28,7 +28,7 @@ public class VigMLModel implements Serializable {
 	@Column(nullable=false, length=50)
 	private String name;
 
-	public VigMLModel() {
+	public TurMLModel() {
 	}
 
 	public int getId() {

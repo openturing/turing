@@ -1,12 +1,11 @@
-package com.viglet.turing.persistence.service;
+package com.viglet.turing.persistence.service.nlp;
 
 import java.util.List;
 
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
-import com.viglet.turing.persistence.model.TurNLPVendor;
-import com.viglet.turing.persistence.model.VigService;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
+import com.viglet.turing.persistence.service.TurBaseService;
 
 public class TurNLPVendorService extends TurBaseService {
 	public void save(TurNLPVendor turNLPVendor) {

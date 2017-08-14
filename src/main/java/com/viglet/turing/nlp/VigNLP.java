@@ -7,11 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrServer;
@@ -19,14 +14,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.viglet.turing.entity.VigEntityProcessor;
-import com.viglet.turing.persistence.model.TurNLPVendor;
-import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.service.TurNLPInstanceService;
-import com.viglet.turing.persistence.service.TurNLPVendorService;
-import com.viglet.turing.persistence.model.TurNLPInstance;
-import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
+import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
 import com.viglet.turing.plugins.nlp.NLPImpl;
-import com.viglet.turing.service.VigServiceUtil;
 
 public class VigNLP {
 	static final Logger logger = LogManager.getLogger(VigNLP.class.getName());
@@ -34,13 +26,11 @@ public class VigNLP {
 	private int currNLP = 0;
 	private String currText = null;
 	private JSONObject jsonAttributes = null;
-	VigService vigServiceSE = null;
 
 	TurNLPInstance turNLPInstance = null;
 	TurNLPVendor turNLPVendor = null;
 	VigNLPResults vigNLPResults = null;
 	SolrServer solrServer = null;
-	EntityManager em = null;
 
 	TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
 	public void init(int nlp) {

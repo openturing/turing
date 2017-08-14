@@ -13,35 +13,24 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
 import javax.xml.transform.TransformerException;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.viglet.turing.nlp.VigNLPResults;
-import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.service.TurNLPInstanceEntityService;
-import com.viglet.turing.persistence.model.TurNLPInstance;
-import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
 import com.viglet.turing.plugins.nlp.NLPImpl;
 
 import java.util.*;
-import edu.stanford.nlp.pipeline.Annotation;
-import edu.stanford.nlp.pipeline.StanfordCoreNLPClient;
 
 public class CoreNLPConnector implements NLPImpl {
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;

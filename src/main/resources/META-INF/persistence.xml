@@ -7,13 +7,11 @@
 		<provider>org.apache.openjpa.persistence.PersistenceProviderImpl</provider>
 		 <!-- <non-jta-data-source>jdbc/VigletDS</non-jta-data-source> -->
 		<class>com.viglet.turing.persistence.model.TurEntity</class>
-		<class>com.viglet.turing.persistence.model.TurNLPFeature</class>
-		<class>com.viglet.turing.persistence.model.TurNLPInstance</class>
-		<class>com.viglet.turing.persistence.model.TurNLPInstanceEntity</class>
-		<class>com.viglet.turing.persistence.model.TurNLPVendor</class>
-		<class>com.viglet.turing.persistence.model.TurNLPVendorEntity</class>
-		<class>com.viglet.turing.persistence.model.VigMLModel</class>
-		<class>com.viglet.turing.persistence.model.VigService</class>
+		<class>com.viglet.turing.persistence.model.nlp.TurNLPFeature</class>
+		<class>com.viglet.turing.persistence.model.nlp.TurNLPInstance</class>
+		<class>com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity</class>
+		<class>com.viglet.turing.persistence.model.nlp.TurNLPVendor</class>
+		<class>com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity</class>
 		<class>com.viglet.turing.persistence.model.VigTerm</class>
 		<class>com.viglet.turing.persistence.model.VigTermAttribute</class>
 		<class>com.viglet.turing.persistence.model.VigTermRelationFrom</class>
@@ -22,6 +20,7 @@
 		<class>com.viglet.turing.persistence.model.VigTermVariationLanguage</class>
 		<class>com.viglet.turing.persistence.model.ml.TurMLCategory</class>
 		<class>com.viglet.turing.persistence.model.ml.TurMLInstance</class>
+		<class>com.viglet.turing.persistence.model.ml.TurMLModel</class>
 		<class>com.viglet.turing.persistence.model.ml.TurMLVendor</class>
 		<class>com.viglet.turing.persistence.model.se.TurSEInstance</class>
 		<class>com.viglet.turing.persistence.model.se.TurSEVendor</class>

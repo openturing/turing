@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.json.JSONObject;
 
-import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 
 public class VigNLPResults {
 	

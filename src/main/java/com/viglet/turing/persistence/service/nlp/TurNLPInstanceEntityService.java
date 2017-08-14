@@ -1,4 +1,4 @@
-package com.viglet.turing.persistence.service;
+package com.viglet.turing.persistence.service.nlp;
 
 import java.util.List;
 
@@ -6,8 +6,9 @@ import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
 import com.viglet.turing.persistence.model.TurEntity;
-import com.viglet.turing.persistence.model.TurNLPInstance;
-import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.service.TurBaseService;
 
 public class TurNLPInstanceEntityService extends TurBaseService {
 	public void save(TurNLPInstanceEntity turNLPInstanceEntity) {

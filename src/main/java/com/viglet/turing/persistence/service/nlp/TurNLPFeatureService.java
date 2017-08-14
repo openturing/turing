@@ -1,10 +1,11 @@
-package com.viglet.turing.persistence.service;
+package com.viglet.turing.persistence.service.nlp;
 
 import java.util.List;
 
 import javax.persistence.TypedQuery;
 
-import com.viglet.turing.persistence.model.TurNLPFeature;
+import com.viglet.turing.persistence.model.nlp.TurNLPFeature;
+import com.viglet.turing.persistence.service.TurBaseService;
 
 public class TurNLPFeatureService extends TurBaseService {
 	public void save(TurNLPFeature turNLPFeature) {

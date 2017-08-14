@@ -1,11 +1,11 @@
 package com.viglet.turing.listener.onstartup;
 
 import com.viglet.turing.persistence.model.TurEntity;
-import com.viglet.turing.persistence.model.TurNLPVendor;
-import com.viglet.turing.persistence.model.TurNLPVendorEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.persistence.service.TurEntityService;
-import com.viglet.turing.persistence.service.TurNLPVendorEntityService;
-import com.viglet.turing.persistence.service.TurNLPVendorService;
+import com.viglet.turing.persistence.service.nlp.TurNLPVendorEntityService;
+import com.viglet.turing.persistence.service.nlp.TurNLPVendorService;
 
 
 public class TurNLPVendorEntityOnStartup {

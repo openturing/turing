@@ -1,17 +1,11 @@
 package com.viglet.turing.plugins.opennlp;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
 import javax.xml.transform.TransformerException;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -20,12 +14,10 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.viglet.turing.entity.VigEntityProcessor;
 import com.viglet.turing.nlp.VigNLPResults;
-import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.service.TurNLPInstanceEntityService;
-import com.viglet.turing.persistence.model.TurNLPInstance;
-import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
 import com.viglet.turing.plugins.nlp.NLPImpl;
 
 import opennlp.tools.namefind.NameFinderME;

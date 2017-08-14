@@ -1,4 +1,4 @@
-package com.viglet.turing.persistence.model;
+package com.viglet.turing.persistence.model.nlp;
 
 import java.io.Serializable;
 import javax.persistence.*;

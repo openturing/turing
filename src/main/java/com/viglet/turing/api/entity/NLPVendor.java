@@ -16,7 +16,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.viglet.turing.persistence.model.TurNLPVendor;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 
 @Path("/entity/terms")
 public class NLPVendor {

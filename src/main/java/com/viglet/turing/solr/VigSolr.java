@@ -8,12 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.NoResultException;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -34,10 +28,11 @@ import org.json.JSONObject;
 
 import com.viglet.turing.nlp.VigNLP;
 import com.viglet.turing.nlp.VigNLPResults;
-import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
-import com.viglet.turing.persistence.model.TurNLPVendor;
-import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.service.TurNLPInstanceService;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
+import com.viglet.turing.persistence.service.se.TurSEInstanceService;
 import com.viglet.turing.se.facet.VigSEFacetMap;
 import com.viglet.turing.se.facet.VigSEFacetMaps;
 import com.viglet.turing.se.facet.VigSEFacetResult;
@@ -49,9 +44,9 @@ import com.viglet.turing.se.result.VigSEResultAttr;
 import com.viglet.turing.se.result.VigSEResults;
 import com.viglet.turing.se.similar.VigSESimilarResult;
 import com.viglet.turing.se.similar.VigSESimilarResultAttr;
-import com.viglet.turing.service.VigServiceUtil;
 
 public class VigSolr {
+	TurSEInstanceService turSEInstanceService = new TurSEInstanceService();
 	static final Logger logger = LogManager.getLogger(VigSolr.class.getName());
 
 	private int currNLP = 0;
@@ -59,8 +54,6 @@ public class VigSolr {
 	private JSONObject jsonAttributes = null;
 
 	String currText = null;
-	VigService vigServiceSE = null;
-	VigService vigServiceNLP = null;
 	TurNLPVendor turNLPVendor = null;
 	SolrServer solrServer = null;
 
@@ -100,26 +93,12 @@ public class VigSolr {
 		this.setCurrNLP(nlpInstanceId);
 
 		this.setCurrSE(se);
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
 
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
+		TurSEInstance turSEInstance = turSEInstanceService.get(se);
 
-		Query queryServiceSE = null;
-
-		try {
-			queryServiceSE = em.createQuery("SELECT s FROM VigService s where s.type = :type and s.id = :id ")
-					.setParameter("type", 3).setParameter("id", currSE);
-			vigServiceSE = (VigService) queryServiceSE.getSingleResult();
-		} catch (NoResultException e) {
-			vigServiceSE = null;
-			solrServer = null;
-		}
-
-		if (vigServiceSE != null) {
+		if (turSEInstance != null) {
 			solrServer = new HttpSolrServer(
-					"http://" + vigServiceSE.getHost() + ":" + vigServiceSE.getPort() + "/solr/turing");
+					"http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort() + "/solr/turing");
 		}
 	}
 
@@ -139,8 +118,8 @@ public class VigSolr {
 	public VigSolr() {
 		super();
 		TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
-		VigServiceUtil vigServiceUtil = new VigServiceUtil();
-		init(turNLPInstanceService.getNLPDefault().getId(), vigServiceUtil.getSEDefault());
+		TurSEInstanceService turSEInstanceService = new TurSEInstanceService();
+		init(turNLPInstanceService.getNLPDefault().getId(), turSEInstanceService.getSEDefault().getId());
 
 	}
 

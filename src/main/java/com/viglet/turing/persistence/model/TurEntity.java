@@ -2,6 +2,10 @@ package com.viglet.turing.persistence.model;
 
 import java.io.Serializable;
 import javax.persistence.*;
+
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
+
 import java.util.List;
 
 /**

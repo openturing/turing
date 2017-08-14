@@ -16,10 +16,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.viglet.turing.persistence.model.TurNLPInstance;
-import com.viglet.turing.persistence.model.TurNLPVendor;
-import com.viglet.turing.persistence.service.TurNLPInstanceService;
-import com.viglet.turing.persistence.service.TurNLPVendorService;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
+import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
+import com.viglet.turing.persistence.service.nlp.TurNLPVendorService;
 
 @Path("/nlp/vendor")
 public class TurNLPVendorAPI {

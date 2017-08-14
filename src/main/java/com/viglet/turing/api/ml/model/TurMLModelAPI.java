@@ -13,23 +13,19 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
 import org.apache.tika.exception.TikaException;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xml.sax.SAXException;
 
-import com.viglet.turing.persistence.model.VigMLModel;
+import com.viglet.turing.persistence.model.ml.TurMLModel;
 import com.viglet.turing.persistence.model.storage.TurDataSentence;
+import com.viglet.turing.persistence.service.ml.TurMLModelService;
 import com.viglet.turing.persistence.service.storage.TurDataSentenceService;
 
 import opennlp.tools.doccat.DoccatFactory;
@@ -46,30 +42,12 @@ import opennlp.tools.util.TrainingParameters;
 @Path("/ml/model")
 public class TurMLModelAPI {
 	TurDataSentenceService turDataSentenceService = new TurDataSentenceService();
-	protected EntityManager entityManager;
-
+	TurMLModelService turMLModelService = new TurMLModelService();
+	
 	@GET	
 	@Produces("application/json")
-	public Response list() throws JSONException {
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
-
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		entityManager = factory.createEntityManager();
-		Query q = entityManager.createQuery("SELECT m FROM VigMLModel m ");
-
-		List<VigMLModel> vigMLModelList = q.getResultList();
-		JSONArray vigMLModels = new JSONArray();
-		for (VigMLModel vigMLModel : vigMLModelList) {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", vigMLModel.getId());
-			jsonObject.put("name", vigMLModel.getName());
-			jsonObject.put("internal_name", vigMLModel.getInternalName());
-			jsonObject.put("description", vigMLModel.getDescription());
-			vigMLModels.put(jsonObject);
-
-		}
-		return Response.status(200).entity(vigMLModels.toString()).build();
+	public List<TurMLModel> list() throws JSONException {
+		return turMLModelService.listAll();
 	}
 	
 	@GET

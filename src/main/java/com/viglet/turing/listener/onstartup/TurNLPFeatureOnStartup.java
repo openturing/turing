@@ -1,7 +1,7 @@
 package com.viglet.turing.listener.onstartup;
 
-import com.viglet.turing.persistence.model.TurNLPFeature;
-import com.viglet.turing.persistence.service.TurNLPFeatureService;
+import com.viglet.turing.persistence.model.nlp.TurNLPFeature;
+import com.viglet.turing.persistence.service.nlp.TurNLPFeatureService;
 
 public class TurNLPFeatureOnStartup {
 

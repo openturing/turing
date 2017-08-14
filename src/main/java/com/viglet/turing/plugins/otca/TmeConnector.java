@@ -1,7 +1,6 @@
 package com.viglet.turing.plugins.otca;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -11,10 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -26,12 +21,10 @@ import org.json.JSONObject;
 import org.json.XML;
 
 import com.viglet.turing.nlp.VigNLPResults;
-import com.viglet.turing.persistence.model.VigService;
-import com.viglet.turing.persistence.service.TurNLPInstanceEntityService;
-import com.viglet.turing.persistence.model.TurNLPInstance;
-import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
 import com.viglet.turing.plugins.nlp.NLPImpl;
-import com.viglet.turing.plugins.otca.af.xml.AFType;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseCategorizerResultCategoryType;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseCategorizerResultKnowledgeBaseType;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseCategorizerResultType;

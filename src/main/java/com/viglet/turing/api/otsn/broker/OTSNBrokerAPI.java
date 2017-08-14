@@ -14,8 +14,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.xml.sax.InputSource;
 
-import com.viglet.turing.persistence.service.TurNLPInstanceService;
-import com.viglet.turing.service.VigServiceUtil;
+import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
+import com.viglet.turing.persistence.service.se.TurSEInstanceService;
 import com.viglet.turing.solr.VigSolr;
 
 import org.w3c.dom.Document;
@@ -54,10 +54,10 @@ public class OTSNBrokerAPI {
 
 		}
 		
-		VigServiceUtil vigServiceUtil = new VigServiceUtil(); 
 		TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
+		TurSEInstanceService turSEInstanceService = new TurSEInstanceService();
 		try {
-			VigSolr vigSolr = new VigSolr(turNLPInstanceService.getNLPDefault().getId(), vigServiceUtil.getSEDefault(), jsonAttributes);
+			VigSolr vigSolr = new VigSolr(turNLPInstanceService.getNLPDefault().getId(), turSEInstanceService.getSEDefault().getId(), jsonAttributes);
 			vigSolr.indexing();
 		} catch (Exception e) {
 			e.printStackTrace();

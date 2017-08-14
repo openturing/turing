@@ -1,12 +1,13 @@
-package com.viglet.turing.persistence.service;
+package com.viglet.turing.persistence.service.nlp;
 
 import java.util.List;
 
 import javax.persistence.TypedQuery;
 
-import com.viglet.turing.persistence.model.TurNLPInstance;
-import com.viglet.turing.persistence.model.TurNLPInstanceEntity;
-import com.viglet.turing.persistence.model.TurNLPVendorEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
+import com.viglet.turing.persistence.service.TurBaseService;
 
 public class TurNLPInstanceService extends TurBaseService {
 

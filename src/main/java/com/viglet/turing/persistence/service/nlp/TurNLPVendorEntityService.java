@@ -1,12 +1,13 @@
-package com.viglet.turing.persistence.service;
+package com.viglet.turing.persistence.service.nlp;
 
 import java.util.List;
 
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
-import com.viglet.turing.persistence.model.TurNLPVendor;
-import com.viglet.turing.persistence.model.TurNLPVendorEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
+import com.viglet.turing.persistence.service.TurBaseService;
 
 public class TurNLPVendorEntityService extends TurBaseService {
 	public void save(TurNLPVendorEntity turNLPVendorEntity) {
