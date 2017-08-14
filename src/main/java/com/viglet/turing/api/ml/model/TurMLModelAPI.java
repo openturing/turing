@@ -16,9 +16,7 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -30,8 +28,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.xml.sax.SAXException;
 
-import com.viglet.turing.persistence.model.VigDataSentence;
 import com.viglet.turing.persistence.model.VigMLModel;
+import com.viglet.turing.persistence.model.storage.TurDataSentence;
+import com.viglet.turing.persistence.service.storage.TurDataSentenceService;
 
 import opennlp.tools.doccat.DoccatFactory;
 import opennlp.tools.doccat.DoccatModel;
@@ -45,8 +44,8 @@ import opennlp.tools.util.PlainTextByLineStream;
 import opennlp.tools.util.TrainingParameters;
 
 @Path("/ml/model")
-public class VigMLModelAPI {
-
+public class TurMLModelAPI {
+	TurDataSentenceService turDataSentenceService = new TurDataSentenceService();
 	protected EntityManager entityManager;
 
 	@GET	
@@ -103,21 +102,13 @@ public class VigMLModelAPI {
 	@Path("generate")
 	@Produces("application/json")
 	public Response generate() throws JSONException, IOException, SAXException, TikaException {
-		// JPA
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factoryEM;
-
-		factoryEM = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factoryEM.createEntityManager();
-
-		TypedQuery<VigDataSentence> query = em.createNamedQuery("VigDataSentence.findAll",
-				VigDataSentence.class);
-		List<VigDataSentence> results = query.getResultList();
-
+		
+		List<TurDataSentence> turDataSentences = turDataSentenceService.listAll();
+		
 		StringBuffer trainSB = new StringBuffer();
 
 		boolean catVariables = true;
-		for (VigDataSentence vigTrainDocSentence : results) {
+		for (TurDataSentence vigTrainDocSentence : turDataSentences) {
 			if (catVariables) {
 				trainSB.append("Cat01 ");
 				catVariables = false;

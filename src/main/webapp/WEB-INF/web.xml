@@ -48,7 +48,11 @@
 		<description>
 		JAX-RS Tools Generated - Do not modify</description>
 		<servlet-name>JAX-RS Servlet</servlet-name>
-		<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>		
+		<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>	
+		<init-param>
+			<param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>
+			<param-value>true</param-value>
+		</init-param>	
 		<init-param>
 			<param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
 			<param-value>com.viglet.turing.api.filter.CORSFilter</param-value>
