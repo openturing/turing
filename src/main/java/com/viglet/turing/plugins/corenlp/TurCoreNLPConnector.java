@@ -27,18 +27,18 @@ import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
-import com.viglet.turing.plugins.nlp.NLPImpl;
+import com.viglet.turing.plugins.nlp.TurNLPImpl;
 
 import java.util.*;
 
-public class CoreNLPConnector implements NLPImpl {
+public class TurCoreNLPConnector implements TurNLPImpl {
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> entityList = new HashMap<String, JSONArray>();
 	public JSONObject json;
 	TurNLPInstance turNLPInstance = null;
 
-	public CoreNLPConnector(TurNLPInstance turNLPInstance) {
+	public TurCoreNLPConnector(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
 
 		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();

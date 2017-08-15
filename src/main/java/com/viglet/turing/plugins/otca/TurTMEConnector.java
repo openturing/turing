@@ -24,7 +24,7 @@ import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
-import com.viglet.turing.plugins.nlp.NLPImpl;
+import com.viglet.turing.plugins.nlp.TurNLPImpl;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseCategorizerResultCategoryType;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseCategorizerResultKnowledgeBaseType;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseCategorizerResultType;
@@ -40,7 +40,7 @@ import com.viglet.turing.plugins.otca.response.xml.ServerResponseEntityExtractor
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseEntityExtractorResultType;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseType;
 
-public class TmeConnector implements NLPImpl {
+public class TurTMEConnector implements TurNLPImpl {
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> hmEntities = new HashMap<String, JSONArray>();
 	TurNLPInstance turNLPInstance = null;
@@ -50,7 +50,7 @@ public class TmeConnector implements NLPImpl {
 	private static String request = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<Nserver>" + "       <Methods>"
 			+ "               <Ping/>" + "       </Methods>" + "</Nserver>";
 
-	public TmeConnector(TurNLPInstance turNLPInstance) {
+	public TurTMEConnector(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
 
 		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();

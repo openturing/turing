@@ -8,13 +8,13 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
 
-public class NServerXML {
+public class TurNServerXML {
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
 	public JSONObject json;
 	TurNLPInstance turNLPInstance = null;
 	
-	public NServerXML(TurNLPInstance turNLPInstance) {
+	public TurNServerXML(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
 
 		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();

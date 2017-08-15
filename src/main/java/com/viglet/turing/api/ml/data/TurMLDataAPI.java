@@ -31,7 +31,7 @@ import com.viglet.turing.persistence.model.storage.TurData;
 import com.viglet.turing.persistence.model.storage.TurDataSentence;
 import com.viglet.turing.persistence.service.storage.TurDataSentenceService;
 import com.viglet.turing.persistence.service.storage.TurDataService;
-import com.viglet.turing.plugins.opennlp.OpenNLPConnector;
+import com.viglet.turing.plugins.opennlp.TurOpenNLPConnector;
 
 @Path("/ml/data")
 public class TurMLDataAPI {
@@ -95,7 +95,7 @@ public class TurMLDataAPI {
 		// getting the content of the document
 		System.out.println("Contents of the PDF :" + handler.toString());
 
-		String sentences[] = OpenNLPConnector.sentenceDetect(handler.toString());
+		String sentences[] = TurOpenNLPConnector.sentenceDetect(handler.toString());
 
 		TurData turData = new TurData();
 		turData.setName("The-Problems-of-Philosophy-LewisTheme.pdf");

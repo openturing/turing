@@ -16,7 +16,7 @@ import javax.persistence.Query;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-import com.viglet.turing.nlp.ListKey;
+import com.viglet.turing.nlp.TurNLPListKey;
 import com.viglet.turing.nlp.TurNLPRelationType;
 import com.viglet.turing.nlp.TurNLPSentence;
 import com.viglet.turing.nlp.TurNLPTermAccent;
@@ -78,7 +78,7 @@ public class TurNLPEntityProcessor {
 			lhWords.put(wordLowerCase, hmResults);
 		}
 
-		LinkedHashMap<ListKey<Integer>, List<Integer>> matches = new LinkedHashMap<ListKey<Integer>, List<Integer>>();
+		LinkedHashMap<TurNLPListKey<Integer>, List<Integer>> matches = new LinkedHashMap<TurNLPListKey<Integer>, List<Integer>>();
 		TurNLPWord turNLPWordPrev = null;
 		LinkedHashMap<Integer, TurTermVariation> prevVariations = null;
 		for (Object wordObject : turNLPSentence.getWords().values().toArray()) {
@@ -136,7 +136,7 @@ public class TurNLPEntityProcessor {
 						positionArr.add(turNLPWordPrev.getPosition());
 						positionArr.add(turNLPWord.getPosition());
 
-						ListKey<Integer> positions = new ListKey<Integer>(positionArr);
+						TurNLPListKey<Integer> positions = new TurNLPListKey<Integer>(positionArr);
 
 						if (!matches.containsKey(positions)) {
 							List<Integer> matchArray = new ArrayList<Integer>();
@@ -164,7 +164,7 @@ public class TurNLPEntityProcessor {
 		while (it.hasNext()) {
 			Map.Entry pair = (Map.Entry) it.next();
 
-			ArrayList<Integer> positions = ((ListKey<Integer>) pair.getKey()).getList();
+			ArrayList<Integer> positions = ((TurNLPListKey<Integer>) pair.getKey()).getList();
 			List<Integer> ids = (List<Integer>) pair.getValue();
 			returnList.addAll(this.checkTermIdBetweenPositions(turNLPSentence, positions, ids, matches));
 
@@ -174,7 +174,7 @@ public class TurNLPEntityProcessor {
 	}
 
 	public List<String> checkTermIdBetweenPositions(TurNLPSentence turNLPSentence, ArrayList<Integer> positions,
-			List<Integer> ids, LinkedHashMap<ListKey<Integer>, List<Integer>> matches) {
+			List<Integer> ids, LinkedHashMap<TurNLPListKey<Integer>, List<Integer>> matches) {
 		List<String> returnList = new ArrayList<String>();
 		logger.debug("Current Positions: " + positions.toString());
 		if ((positions.get(0).intValue() > 0) && (ids.size() > 0)) {
@@ -185,7 +185,7 @@ public class TurNLPEntityProcessor {
 
 			logger.debug(positions.toString() + " = " + ids.toString());
 
-			ListKey<Integer> positionsPrev = new ListKey<Integer>(positionPrevArr);
+			TurNLPListKey<Integer> positionsPrev = new TurNLPListKey<Integer>(positionPrevArr);
 			logger.debug("PositionPrev ... " + positionsPrev.toString());
 			if (matches.containsKey(positionsPrev)) {
 				List<Integer> filteredIds = new ArrayList<Integer>();

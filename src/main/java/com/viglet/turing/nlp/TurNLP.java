@@ -18,7 +18,7 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
-import com.viglet.turing.plugins.nlp.NLPImpl;
+import com.viglet.turing.plugins.nlp.TurNLPImpl;
 
 public class TurNLP {
 	static final Logger logger = LogManager.getLogger(TurNLP.class.getName());
@@ -103,12 +103,12 @@ public class TurNLP {
 
 	public TurNLPResults retrieveNLP() {
 		logger.debug("Executing retrieveNLP...");
-		NLPImpl nlpService;
+		TurNLPImpl nlpService;
 
 		TurNLPEntityProcessor turNLPEntityProcessor = new TurNLPEntityProcessor();
 
 		try {
-			nlpService = (NLPImpl) Class.forName(turNLPVendor.getPlugin())
+			nlpService = (TurNLPImpl) Class.forName(turNLPVendor.getPlugin())
 					.getConstructor(new Class[] { TurNLPInstance.class }).newInstance(new Object[] { turNLPInstance });
 			turNLPResults = nlpService.retrieve(this.getCurrText());
 		} catch (Exception e) {

@@ -18,7 +18,7 @@ import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
-import com.viglet.turing.plugins.nlp.NLPImpl;
+import com.viglet.turing.plugins.nlp.TurNLPImpl;
 
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinderModel;
@@ -29,13 +29,13 @@ import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
 import opennlp.tools.util.Span;
 
-public class OpenNLPConnector implements NLPImpl {
-	static final Logger logger = LogManager.getLogger(OpenNLPConnector.class.getName());
+public class TurOpenNLPConnector implements TurNLPImpl {
+	static final Logger logger = LogManager.getLogger(TurOpenNLPConnector.class.getName());
 
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> entityList = new HashMap<String, JSONArray>();
 	public JSONObject json;
-	OpenNLPModelManager openNLPModelManager = null;
+	TurOpenNLPModelManager openNLPModelManager = null;
 	TurNLPInstance turNLPInstance = null;
 	private String text = null;
 	private String[] sentencesTokens = {};
@@ -52,9 +52,9 @@ public class OpenNLPConnector implements NLPImpl {
 		return text;
 	}
 
-	public OpenNLPConnector(TurNLPInstance turNLPInstance) {
+	public TurOpenNLPConnector(TurNLPInstance turNLPInstance) {
 
-		openNLPModelManager = OpenNLPModelManager.getInstance();
+		openNLPModelManager = TurOpenNLPModelManager.getInstance();
 		this.turNLPInstance = turNLPInstance;
 
 		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();
@@ -149,7 +149,7 @@ public class OpenNLPConnector implements NLPImpl {
 	public static String[] sentenceDetect(String text) {
 		InputStream modelIn;
 		String sentences[] = null;
-		modelIn = OpenNLPConnector.class.getClassLoader().getResourceAsStream("/models/opennlp/en/en-sent.bin");
+		modelIn = TurOpenNLPConnector.class.getClassLoader().getResourceAsStream("/models/opennlp/en/en-sent.bin");
 
 		try {
 			SentenceModel model = new SentenceModel(modelIn);

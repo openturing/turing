@@ -6,13 +6,13 @@ import java.util.Map;
 
 import opennlp.tools.namefind.NameFinderME;
 
-public class OpenNLPModelManager {
+public class TurOpenNLPModelManager {
 
-	private static OpenNLPModelManager instance;
+	private static TurOpenNLPModelManager instance;
 	private static Object monitor = new Object();
 	private Map<String, NameFinderME> cache = Collections.synchronizedMap(new HashMap<String, NameFinderME>());
 
-	private OpenNLPModelManager() {
+	private TurOpenNLPModelManager() {
 	}
 
 	public void put(String modelPath, NameFinderME value) {
@@ -36,11 +36,11 @@ public class OpenNLPModelManager {
 
 	}
 
-	public static OpenNLPModelManager getInstance() {
+	public static TurOpenNLPModelManager getInstance() {
 		if (instance == null) {
 			synchronized (monitor) {
 				if (instance == null) {
-					instance = new OpenNLPModelManager();
+					instance = new TurOpenNLPModelManager();
 				}
 			}
 		}

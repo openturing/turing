@@ -2,7 +2,7 @@ package com.viglet.turing.nlp;
 
 import java.util.ArrayList;
 
-public class ListKey<T> {
+public class TurNLPListKey<T> {
 	private ArrayList<T> list;
 	StringBuffer hashCodeSb = new StringBuffer();
 
@@ -15,7 +15,7 @@ public class ListKey<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	public ListKey(ArrayList<T> list) {
+	public TurNLPListKey(ArrayList<T> list) {
 		this.list = (ArrayList<T>) list.clone();
 		for (int i = 0; i < this.list.size(); i++) {
 			T item = this.list.get(i);
@@ -32,7 +32,7 @@ public class ListKey<T> {
 	@Override
 	public boolean equals(Object obj) {
 		StringBuffer hashCodeObjectSb = new StringBuffer();
-		ListKey<T> objList = (ListKey<T>) obj;
+		TurNLPListKey<T> objList = (TurNLPListKey<T>) obj;
 		for (int i = 0; i < objList.list.size(); i++) {
 			T item = objList.list.get(i);
 			hashCodeObjectSb.append(item);
