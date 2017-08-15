@@ -2,6 +2,9 @@ package com.viglet.turing.persistence.model.nlp;
 
 import java.io.Serializable;
 import javax.persistence.*;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
 /**
@@ -11,6 +14,7 @@ import java.util.List;
 @Entity
 @Table(name = "turNLPInstance")
 @NamedQuery(name = "TurNLPInstance.findAll", query = "SELECT n FROM TurNLPInstance n")
+@JsonIgnoreProperties({ "turNLPInstanceEntities" } )
 public class TurNLPInstance implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -40,12 +44,12 @@ public class TurNLPInstance implements Serializable {
 	@Column(nullable = false)
 	private int selected;
 
-	// bi-directional many-to-one association to VigService
-	@ManyToOne(cascade = { CascadeType.REMOVE }, fetch = FetchType.LAZY)
+	// bi-directional many-to-one association to TurNLPVendor
+	@ManyToOne
 	@JoinColumn(name = "nlp_vendor_id", nullable = false)
 	private TurNLPVendor turNLPVendor;
 
-	// bi-directional many-to-one association to VigServicesNLPEntity
+	// bi-directional many-to-one association to TurNLPInstanceEntity
 	@OneToMany(mappedBy = "turNLPInstance")
 	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
 

@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.nlp;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+
 /**
  * The persistent class for the vigNLPSolutions database table.
  * 
