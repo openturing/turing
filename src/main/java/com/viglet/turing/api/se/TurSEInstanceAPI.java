@@ -85,29 +85,5 @@ public class TurSEInstanceAPI {
 		return Response.status(200).entity(result).build();
 	}
 	
-	@POST
-	@Path("update")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response update(@FormParam("turText") String turText, @FormParam("turSE") int turSEInstanceId,
-			@FormParam("turSE") String turSE) throws JSONException {
-
-		String text = turText;
-		String result = null;
-		int se = 0;
-		if (this.isNumeric(turSE)) {
-			se = Integer.parseInt(turSE);
-		}
-		TurSolr turSolr = new TurSolr(turSEInstanceId, se, text);
-		try {
-			result = turSolr.indexing();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return Response.status(200).entity(result).build();
-	}
-
-	public boolean isNumeric(String str) {
-		return str.matches("-?\\d+(\\.\\d+)?"); // match a number with optional
-												// '-' and decimal.
-	}
+	
 }

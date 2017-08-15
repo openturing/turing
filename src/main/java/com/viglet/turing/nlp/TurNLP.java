@@ -76,7 +76,11 @@ public class TurNLP {
 		this.setJsonAttributes(jsonAttributes);
 
 	}
-
+	public String validate() {
+		TurNLPResults turNLPResults = this.retrieveNLP();
+		return turNLPResults.getJsonResult().toString();
+	}
+	
 	public JSONObject getJsonAttributes() {
 		return jsonAttributes;
 	}

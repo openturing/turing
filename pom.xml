@@ -30,9 +30,80 @@
 					<artifactId>openjpa-maven-plugin</artifactId>
 					<version>${version.openjpa}</version>
 				</plugin>
+				<plugin>
+					<groupId>net.alchim31.maven</groupId>
+					<artifactId>yuicompressor-maven-plugin</artifactId>
+					<version>1.5.1</version>
+				</plugin>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											net.alchim31.maven
+										</groupId>
+										<artifactId>
+											yuicompressor-maven-plugin
+										</artifactId>
+										<versionRange>
+											[1.5.1,)
+										</versionRange>
+										<goals>
+											<goal>compress</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 		<plugins>
+			<plugin>
+				<groupId>net.alchim31.maven</groupId>
+				<artifactId>yuicompressor-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>compressyui</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>compress</goal>
+						</goals>
+						<configuration>
+							<preProcessAggregates>true</preProcessAggregates>
+							<aggregations>
+								<aggregation>
+									<insertNewLine>true</insertNewLine>
+									<output>${basedir}/src/main/webapp/js/build/aggregate/turing.js</output>
+									<inputDir>${basedir}/src/main/webapp/js/build/extract</inputDir>
+									<includes>
+										<include>**/*.js</include>
+									</includes>
+								</aggregation>
+							</aggregations>
+							<nosuffix>false</nosuffix>
+							<warSourceDirectory>${basedir}/src/main/webapp/js/build/aggregate</warSourceDirectory>
+							<webappDirectory>${basedir}/src/main/webapp/js/dist</webappDirectory>
+							<jswarn>false</jswarn>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+
+
+
 			<plugin>
 				<groupId>org.apache.openjpa</groupId>
 				<artifactId>openjpa-maven-plugin</artifactId>
