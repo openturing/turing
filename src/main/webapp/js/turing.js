@@ -330,7 +330,7 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 		$scope.$evalAsync($http.get(
 			"/turing/api/se/" + $scope.seInstanceId).then(
 			function (response) {
-				$scope.se = response.data.se;
+				$scope.se = response.data;
 			}));
 	}
 ]);
@@ -426,7 +426,7 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 		$scope.$evalAsync($http.get(
 			"/turing/api/ml/" + $scope.mlInstanceId).then(
 			function (response) {
-				$scope.ml = response.data.ml;
+				$scope.ml = response.data;
 			}));
 	}
 ]);
@@ -489,7 +489,7 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 		$scope.$evalAsync($http.get(
 			"/turing/api/nlp/" + $scope.nlpInstanceId).then(
 			function (response) {
-				$scope.nlp = response.data.nlp;
+				$scope.nlp = response.data;
 			}));
 	
 		$scope.mappingSave = function () {
@@ -524,7 +524,7 @@ turingApp.controller('TurNLPEntityEditCtrl', [
 		$scope.$evalAsync($http.get(
 			"/turing/api/entity/" + $scope.nlpEntityId).then(
 			function (response) {
-				$scope.entity = response.data.entity;
+				$scope.entity = response.data;
 			}));
 	
 		$scope.mappingSave = function () {

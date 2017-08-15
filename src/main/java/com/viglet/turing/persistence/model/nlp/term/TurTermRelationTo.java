@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.nlp.term;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 
 /**
  * The persistent class for the turTermRelationTo database table.
@@ -11,6 +13,7 @@ import javax.persistence.*;
 @Entity
 @Table(name="turTermRelationTo")
 @NamedQuery(name="TurTermRelationTo.findAll", query="SELECT trt FROM TurTermRelationTo trt")
+@JsonIgnoreProperties({ "turTerm", "turTermRelationFrom" } )
 public class TurTermRelationTo implements Serializable {
 	private static final long serialVersionUID = 1L;
 

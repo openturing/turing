@@ -2,6 +2,9 @@ package com.viglet.turing.persistence.model.nlp.term;
 
 import java.io.Serializable;
 import javax.persistence.*;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
 
@@ -12,6 +15,7 @@ import java.util.List;
 @Entity
 @Table(name="turTermVariation")
 @NamedQuery(name="TurTermVariation.findAll", query="SELECT tv FROM TurTermVariation tv")
+@JsonIgnoreProperties({ "turTerm" } )
 public class TurTermVariation implements Serializable {
 	private static final long serialVersionUID = 1L;
 

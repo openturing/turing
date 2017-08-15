@@ -11,6 +11,9 @@ import com.viglet.turing.persistence.service.TurBaseService;
 
 public class TurTermService extends TurBaseService {
 	public void save(TurTerm turTerm) {
+		if (turTerm.getTurNLPEntity() != null) {
+			turTerm.setTurNLPEntity(em.merge(turTerm.getTurNLPEntity()));
+		}
 		em.getTransaction().begin();
 		em.persist(turTerm);
 		em.getTransaction().commit();

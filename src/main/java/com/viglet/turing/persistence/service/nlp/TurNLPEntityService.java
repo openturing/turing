@@ -44,7 +44,7 @@ public class TurNLPEntityService extends TurBaseService {
 	public TurNLPEntity findByName(String name) {
 		try {
 			TypedQuery<TurNLPEntity> q = em
-					.createQuery("SELECT e FROM TurNLPEntity e where t.name = :name", TurNLPEntity.class)
+					.createQuery("SELECT e FROM TurNLPEntity e where e.name = :name", TurNLPEntity.class)
 					.setParameter("name", name);
 			return q.getSingleResult();
 		} catch (NoResultException e) {

@@ -3,6 +3,7 @@ package com.viglet.turing.persistence.model.nlp.term;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
 @Entity
 @Table(name="turTerm")
 @NamedQuery(name="TurTerm.findAll", query="SELECT t FROM TurTerm t")
+@JsonIgnoreProperties({ "turNLPEntity" } )
 public class TurTerm implements Serializable {
 	private static final long serialVersionUID = 1L;
 

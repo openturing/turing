@@ -9,6 +9,14 @@ import com.viglet.turing.persistence.service.TurBaseService;
 
 public class TurTermRelationFromService extends TurBaseService {
 	public void save(TurTermRelationFrom turTermRelationFrom) {
+		if (turTermRelationFrom.getTurTerm() != null) {
+			turTermRelationFrom.setTurTerm(em.merge(turTermRelationFrom.getTurTerm()));
+		}
+		if (turTermRelationFrom.getTurTerm().getTurNLPEntity() != null) {
+			turTermRelationFrom.getTurTerm()
+					.setTurNLPEntity(em.merge(turTermRelationFrom.getTurTerm().getTurNLPEntity()));
+		}
+		
 		em.getTransaction().begin();
 		em.persist(turTermRelationFrom);
 		em.getTransaction().commit();

@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.nlp.term;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 
 /**
  * The persistent class for the turTermVariationLanguage database table.
@@ -11,6 +13,7 @@ import javax.persistence.*;
 @Entity
 @Table(name="turTermVariationLanguage")
 @NamedQuery(name="TurTermVariationLanguage.findAll", query="SELECT tvl FROM TurTermVariationLanguage tvl")
+@JsonIgnoreProperties({ "turTerm", "turTermVariation" } )
 public class TurTermVariationLanguage implements Serializable {
 	private static final long serialVersionUID = 1L;
 

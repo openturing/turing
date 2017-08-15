@@ -9,6 +9,13 @@ import com.viglet.turing.persistence.service.TurBaseService;
 
 public class TurTermVariationService extends TurBaseService {
 	public void save(TurTermVariation turTermVariation) {
+		if (turTermVariation.getTurTerm() != null) {
+			turTermVariation.setTurTerm(em.merge(turTermVariation.getTurTerm()));
+		}
+		if (turTermVariation.getTurTerm().getTurNLPEntity() != null) {
+			turTermVariation.getTurTerm().setTurNLPEntity(em.merge(turTermVariation.getTurTerm().getTurNLPEntity()));
+		}
+
 		em.getTransaction().begin();
 		em.persist(turTermVariation);
 		em.getTransaction().commit();
@@ -30,5 +37,5 @@ public class TurTermVariationService extends TurBaseService {
 		em.getTransaction().commit();
 		return true;
 	}
-	
+
 }
