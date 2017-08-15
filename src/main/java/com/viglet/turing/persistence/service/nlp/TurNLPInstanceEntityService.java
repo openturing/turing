@@ -5,7 +5,6 @@ import java.util.List;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
-import com.viglet.turing.persistence.model.nlp.TurEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.service.TurBaseService;
@@ -21,8 +20,8 @@ public class TurNLPInstanceEntityService extends TurBaseService {
 			turNLPInstanceEntity.getTurNLPInstance()
 					.setTurNLPVendor(em.merge(turNLPInstanceEntity.getTurNLPInstance().getTurNLPVendor()));
 		}
-		if (turNLPInstanceEntity.getTurEntity() != null) {
-			turNLPInstanceEntity.setTurEntity(em.merge(turNLPInstanceEntity.getTurEntity()));
+		if (turNLPInstanceEntity.getTurNLPEntity() != null) {
+			turNLPInstanceEntity.setTurNLPEntity(em.merge(turNLPInstanceEntity.getTurNLPEntity()));
 		}
 
 		em.getTransaction().begin();

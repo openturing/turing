@@ -27,7 +27,7 @@ public class TurNLPInstanceEntity implements Serializable {
 	// bi-directional many-to-one association to VigEntity
 	@ManyToOne(cascade = { CascadeType.REMOVE }, fetch = FetchType.LAZY)
 	@JoinColumn(name = "entity_id", nullable = false)
-	private TurEntity turEntity;
+	private TurNLPEntity turNLPEntity;
 
 	@ManyToOne(cascade = { CascadeType.REMOVE }, fetch = FetchType.LAZY)
 	@JoinColumn(name = "nlp_instance_id", nullable = false)
@@ -60,12 +60,12 @@ public class TurNLPInstanceEntity implements Serializable {
 		this.name = name;
 	}
 
-	public TurEntity getTurEntity() {
-		return this.turEntity;
+	public TurNLPEntity getTurNLPEntity() {
+		return this.turNLPEntity;
 	}
 
-	public void setTurEntity(TurEntity turEntity) {
-		this.turEntity = turEntity;
+	public void setTurNLPEntity(TurNLPEntity turNLPEntity) {
+		this.turNLPEntity = turNLPEntity;
 	}
 
 	public TurNLPInstance getTurNLPInstance() {

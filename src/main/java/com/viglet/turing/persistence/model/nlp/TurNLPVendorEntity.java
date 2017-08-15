@@ -25,7 +25,7 @@ public class TurNLPVendorEntity implements Serializable {
 	//bi-directional many-to-one association to VigEntity
 	@ManyToOne
 	@JoinColumn(name="entity_id", nullable=false)
-	private TurEntity turEntity;
+	private TurNLPEntity turNLPEntity;
 
 	@ManyToOne
 	@JoinColumn(name="nlp_vendor_id", nullable=false)
@@ -50,12 +50,12 @@ public class TurNLPVendorEntity implements Serializable {
 		this.name = name;
 	}
 
-	public TurEntity getTurEntity() {
-		return this.turEntity;
+	public TurNLPEntity getTurNLPEntity() {
+		return this.turNLPEntity;
 	}
 
-	public void setTurEntity(TurEntity turEntity) {
-		this.turEntity = turEntity;
+	public void setTurNLPEntity(TurNLPEntity turNLPEntity) {
+		this.turNLPEntity = turNLPEntity;
 	}
 
 	public TurNLPVendor getTurNLPVendor() {

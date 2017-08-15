@@ -1,10 +1,6 @@
 package com.viglet.turing.api.filter;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Response;
@@ -14,7 +10,7 @@ import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerResponse;
 import com.sun.jersey.spi.container.ContainerResponseFilter;
 
-public class CORSFilter implements ContainerResponseFilter {
+public class TurCORSFilter implements ContainerResponseFilter {
 	@javax.ws.rs.core.Context
 	ServletContext context;
 	URL vecchioURL = null;

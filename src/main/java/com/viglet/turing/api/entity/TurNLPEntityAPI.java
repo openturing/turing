@@ -22,10 +22,10 @@ import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariationLanguage;
-import com.viglet.turing.persistence.model.nlp.TurEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 
 @Path("/entity")
-public class TurEntityAPI {
+public class TurNLPEntityAPI {
 
 	@GET
 	@Produces("application/json")
@@ -36,15 +36,15 @@ public class TurEntityAPI {
 		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
 		EntityManager em = factory.createEntityManager();
 		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT e FROM TurEntity e ");
+		Query q = em.createQuery("SELECT e FROM TurNLPEntity e ");
 
-		List<TurEntity> turEntityList = q.getResultList();
+		List<TurNLPEntity> turNLPEntityList = q.getResultList();
 		JSONArray turEntities = new JSONArray();
-		for (TurEntity turEntity : turEntityList) {
+		for (TurNLPEntity turNLPEntity : turNLPEntityList) {
 			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", turEntity.getId());
-			jsonObject.put("name", turEntity.getName());
-			jsonObject.put("description", turEntity.getDescription());
+			jsonObject.put("id", turNLPEntity.getId());
+			jsonObject.put("name", turNLPEntity.getName());
+			jsonObject.put("description", turNLPEntity.getDescription());
 			turEntities.put(jsonObject);
 
 		}
@@ -61,16 +61,16 @@ public class TurEntityAPI {
 		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
 		EntityManager em = factory.createEntityManager();
 		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT e FROM TurEntity e where e.id = :id ").setParameter("id", id);
-		TurEntity turEntity = (TurEntity) q.getSingleResult();
-		JSONObject turEntityJSON = new JSONObject();
+		Query q = em.createQuery("SELECT e FROM TurNLPEntity e where e.id = :id ").setParameter("id", id);
+		TurNLPEntity turNLPEntity = (TurNLPEntity) q.getSingleResult();
+		JSONObject turNLPEntityJSON = new JSONObject();
 		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("id", turEntity.getId());
-		jsonObject.put("name", turEntity.getName());
-		jsonObject.put("description", turEntity.getDescription());
+		jsonObject.put("id", turNLPEntity.getId());
+		jsonObject.put("name", turNLPEntity.getName());
+		jsonObject.put("description", turNLPEntity.getDescription());
 
-		Query qTerms = em.createQuery("SELECT t FROM TurTerm t where t.turEntity = :turEntity")
-				.setParameter("turEntity", turEntity);
+		Query qTerms = em.createQuery("SELECT t FROM TurTerm t where t.turNLPEntity = :turNLPEntity")
+				.setParameter("turNLPEntity", turNLPEntity);
 
 		List<TurTerm> turTermList = qTerms.getResultList();
 		JSONArray turTerms = new JSONArray();
@@ -83,16 +83,16 @@ public class TurEntityAPI {
 		}
 
 		jsonObject.put("terms", turTerms);
-		turEntityJSON.put("entity", jsonObject);
+		turNLPEntityJSON.put("entity", jsonObject);
 
-		return Response.status(200).entity(turEntityJSON.toString()).build();
+		return Response.status(200).entity(turNLPEntityJSON.toString()).build();
 	}
 
 	@Path("{id}")
 	@DELETE
 	@Produces("application/json")
 	public Response deleteEntity(@PathParam("id") int id) {
-		JSONObject turEntityJSON = new JSONObject();
+		JSONObject turNLPEntityJSON = new JSONObject();
 
 		try {
 			String PERSISTENCE_UNIT_NAME = "semantics-app";
@@ -102,18 +102,18 @@ public class TurEntityAPI {
 			EntityManager em = factory.createEntityManager();
 
 			// Read the existing entries and write to console
-			Query q = em.createQuery("SELECT e FROM TurEntity e where e.id = :id ").setParameter("id", id);
-			TurEntity turEntity = (TurEntity) q.getSingleResult();
+			Query q = em.createQuery("SELECT e FROM TurNLPEntity e where e.id = :id ").setParameter("id", id);
+			TurNLPEntity turNLPEntity = (TurNLPEntity) q.getSingleResult();
 
 			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", turEntity.getId());
-			jsonObject.put("name", turEntity.getName());
-			jsonObject.put("description", turEntity.getDescription());
+			jsonObject.put("id", turNLPEntity.getId());
+			jsonObject.put("name", turNLPEntity.getName());
+			jsonObject.put("description", turNLPEntity.getDescription());
 
-			turEntityJSON.put("entity", jsonObject);
+			turNLPEntityJSON.put("entity", jsonObject);
 
-			Query qTerms = em.createQuery("SELECT t FROM TurTerm t where t.turEntity = :turEntity ")
-					.setParameter("turEntity", turEntity);
+			Query qTerms = em.createQuery("SELECT t FROM TurTerm t where t.turNLPEntity = :turNLPEntity ")
+					.setParameter("turNLPEntity", turNLPEntity);
 			List<?> terms = qTerms.getResultList();
 
 			for (Object termObject : terms) {
@@ -142,11 +142,11 @@ public class TurEntityAPI {
 				em.getTransaction().commit();
 			}
 			em.getTransaction().begin();
-			em.remove(turEntity);
+			em.remove(turNLPEntity);
 			em.getTransaction().commit();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return Response.status(200).entity(turEntityJSON.toString()).build();
+		return Response.status(200).entity(turNLPEntityJSON.toString()).build();
 	}
 }

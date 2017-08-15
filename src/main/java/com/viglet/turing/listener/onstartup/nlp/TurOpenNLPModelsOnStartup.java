@@ -1,4 +1,4 @@
-package com.viglet.turing.listener.onstartup;
+package com.viglet.turing.listener.onstartup.nlp;
 
 import java.io.File;
 import java.io.IOException;

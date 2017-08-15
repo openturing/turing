@@ -37,7 +37,7 @@ public class NServerXML {
 	public JSONObject getJSON() {
 		JSONObject jsonObject =  new JSONObject();;
 		for (TurNLPInstanceEntity entity : nlpInstanceEntities) {
-			jsonObject.put(entity.getTurEntity().getCollectionName(), this.getEntity(entity.getName()));
+			jsonObject.put(entity.getTurNLPEntity().getCollectionName(), this.getEntity(entity.getName()));
 		}
 		jsonObject.put("nlp","OTCA");
 		return jsonObject;

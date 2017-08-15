@@ -19,7 +19,7 @@ import org.json.JSONObject;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 
 @Path("/entity/terms")
-public class TurEntityTermAPI {
+public class TurNLPEntityTermAPI {
 	@GET
 	@Produces("application/json")
 	public Response nlpSolution() throws JSONException {

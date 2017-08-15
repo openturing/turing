@@ -162,12 +162,12 @@ public class TurSolr {
 		}
 
 		for (TurNLPInstanceEntity turNLPEntity : turNLPResults.getTurNLPInstanceEntities()) {
-			if (jsonNLP.has(turNLPEntity.getTurEntity().getCollectionName())) {
-				JSONArray jsonEntity = jsonNLP.getJSONArray(turNLPEntity.getTurEntity().getCollectionName());
+			if (jsonNLP.has(turNLPEntity.getTurNLPEntity().getCollectionName())) {
+				JSONArray jsonEntity = jsonNLP.getJSONArray(turNLPEntity.getTurNLPEntity().getCollectionName());
 
 				if (jsonEntity.length() > 0) {
 					for (int i = 0; i < jsonEntity.length(); i++) {
-						document.addField("turing_entity_" + turNLPEntity.getTurEntity().getInternalName(),
+						document.addField("turing_entity_" + turNLPEntity.getTurNLPEntity().getInternalName(),
 								jsonEntity.getString(i));
 					}
 				}

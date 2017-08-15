@@ -97,7 +97,7 @@ public class CoreNLPConnector implements NLPImpl {
 		JSONObject jsonObject = new JSONObject();
 		this.getEntities();
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
-			jsonObject.put(nlpInstanceEntity.getTurEntity().getCollectionName(), this.getEntity(nlpInstanceEntity.getName()));
+			jsonObject.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(), this.getEntity(nlpInstanceEntity.getName()));
 		}
 		jsonObject.put("nlp", "CoreNLP");
 

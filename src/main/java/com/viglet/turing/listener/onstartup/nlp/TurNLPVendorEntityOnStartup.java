@@ -1,9 +1,9 @@
-package com.viglet.turing.listener.onstartup;
+package com.viglet.turing.listener.onstartup.nlp;
 
-import com.viglet.turing.persistence.model.nlp.TurEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
-import com.viglet.turing.persistence.service.TurEntityService;
+import com.viglet.turing.persistence.service.nlp.TurNLPEntityService;
 import com.viglet.turing.persistence.service.nlp.TurNLPVendorEntityService;
 import com.viglet.turing.persistence.service.nlp.TurNLPVendorService;
 
@@ -13,7 +13,7 @@ public class TurNLPVendorEntityOnStartup {
 	private static final String OPENNLP = "OPENNLP";
 	private static final String OTCA = "OTCA";
 	
-	TurEntityService turNLPEntityService = new TurEntityService();
+	TurNLPEntityService turNLPEntityService = new TurNLPEntityService();
 	TurNLPVendorEntityService turNLPVendorEntityService = new TurNLPVendorEntityService();
 
 	public static void createDefaultRows() {
@@ -63,11 +63,11 @@ public class TurNLPVendorEntityOnStartup {
 
 	public void addNLPVendor(TurNLPVendor turNLPVendor, String internalName, String name) {
 
-		TurEntity turEntity = turNLPEntityService.findByInternalName(internalName);
-		if (turEntity != null) {
+		TurNLPEntity turNLPEntity = turNLPEntityService.findByInternalName(internalName);
+		if (turNLPEntity != null) {
 			TurNLPVendorEntity turNLPVendorEntity = new TurNLPVendorEntity();
 			turNLPVendorEntity.setName(name);
-			turNLPVendorEntity.setTurEntity(turEntity);
+			turNLPVendorEntity.setTurNLPEntity(turNLPEntity);
 			turNLPVendorEntity.setTurNLPVendor(turNLPVendor);
 			turNLPVendorEntityService.save(turNLPVendorEntity);
 		}

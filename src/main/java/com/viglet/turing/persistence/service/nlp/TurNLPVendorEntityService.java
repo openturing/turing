@@ -11,8 +11,8 @@ import com.viglet.turing.persistence.service.TurBaseService;
 
 public class TurNLPVendorEntityService extends TurBaseService {
 	public void save(TurNLPVendorEntity turNLPVendorEntity) {
-		if (turNLPVendorEntity.getTurEntity() != null) {
-			turNLPVendorEntity.setTurEntity(em.merge(turNLPVendorEntity.getTurEntity()));
+		if (turNLPVendorEntity.getTurNLPEntity() != null) {
+			turNLPVendorEntity.setTurNLPEntity(em.merge(turNLPVendorEntity.getTurNLPEntity()));
 		}
 		if (turNLPVendorEntity.getTurNLPVendor() != null) {
 			turNLPVendorEntity.setTurNLPVendor(em.merge(turNLPVendorEntity.getTurNLPVendor()));

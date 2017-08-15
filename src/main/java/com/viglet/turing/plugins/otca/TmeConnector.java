@@ -425,7 +425,7 @@ public class TmeConnector implements NLPImpl {
 		JSONObject jsonObject = new JSONObject();
 
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
-			jsonObject.put(nlpInstanceEntity.getTurEntity().getCollectionName(), hmEntities.get(nlpInstanceEntity.getName()));
+			jsonObject.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(), hmEntities.get(nlpInstanceEntity.getName()));
 		}
 		jsonObject.put("nlp", "OTCA");
 		return jsonObject;

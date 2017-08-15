@@ -58,7 +58,7 @@ public class TurNLPInstanceService extends TurBaseService {
 			for (TurNLPVendorEntity turNLPVendorEntity : turNLPVendorEntities) {
 				TurNLPInstanceEntity turNLPInstanceEntity = new TurNLPInstanceEntity();
 				turNLPInstanceEntity.setName(turNLPVendorEntity.getName());
-				turNLPInstanceEntity.setTurEntity(turNLPVendorEntity.getTurEntity());
+				turNLPInstanceEntity.setTurNLPEntity(turNLPVendorEntity.getTurNLPEntity());
 				turNLPInstanceEntity.setTurNLPInstance(turNLPInstance);
 				turNLPInstanceEntity.setEnabled(1);
 				turNLPInstanceEntityService.save(turNLPInstanceEntity);

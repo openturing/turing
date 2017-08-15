@@ -13,7 +13,7 @@ import org.apache.solr.client.solrj.SolrServer;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.viglet.turing.entity.TurEntityProcessor;
+import com.viglet.turing.nlp.entity.TurNLPEntityProcessor;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
@@ -105,7 +105,7 @@ public class TurNLP {
 		logger.debug("Executing retrieveNLP...");
 		NLPImpl nlpService;
 
-		TurEntityProcessor turEntityProcessor = new TurEntityProcessor();
+		TurNLPEntityProcessor turNLPEntityProcessor = new TurNLPEntityProcessor();
 
 		try {
 			nlpService = (NLPImpl) Class.forName(turNLPVendor.getPlugin())
@@ -119,7 +119,7 @@ public class TurNLP {
 		this.turNLPResults.setJsonAttributes(this.getJsonAttributes());
 		
 		// TurNLP Entities
-		LinkedHashMap<String, List<String>> entityResults = turEntityProcessor.detectTerms(currText);
+		LinkedHashMap<String, List<String>> entityResults = turNLPEntityProcessor.detectTerms(currText);
 		
 		
 		for (String entity : entityResults.keySet()) {
@@ -142,8 +142,8 @@ public class TurNLP {
 		JSONObject jsonNLP = this.turNLPResults.getJsonResult();
 		for (TurNLPInstanceEntity turNLPEntity : turNLPResults.getTurNLPInstanceEntities()) {
 
-			if (jsonNLP.has(turNLPEntity.getTurEntity().getCollectionName())) {
-				JSONArray jsonEntity = jsonNLP.getJSONArray(turNLPEntity.getTurEntity().getCollectionName());
+			if (jsonNLP.has(turNLPEntity.getTurNLPEntity().getCollectionName())) {
+				JSONArray jsonEntity = jsonNLP.getJSONArray(turNLPEntity.getTurNLPEntity().getCollectionName());
 
 				if (jsonEntity.length() > 0) {
 					List<String> list = new ArrayList<String>();
@@ -152,8 +152,8 @@ public class TurNLP {
 					}				
 					Set<String> termsUnique = new HashSet<String>(list);
 					
-					jsonNLP.remove(turNLPEntity.getTurEntity().getCollectionName());
-					jsonNLP.put(turNLPEntity.getTurEntity().getCollectionName(), new JSONArray(termsUnique.toArray()));
+					jsonNLP.remove(turNLPEntity.getTurNLPEntity().getCollectionName());
+					jsonNLP.put(turNLPEntity.getTurNLPEntity().getCollectionName(), new JSONArray(termsUnique.toArray()));
 				}
 			}
 		}

@@ -1,16 +1,8 @@
 package com.viglet.turing.api.otca.af;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.Normalizer;
-import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -18,8 +10,6 @@ import javax.persistence.Persistence;
 import javax.persistence.Query;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -30,12 +20,9 @@ import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
-
-import org.json.JSONException;
 
 import com.viglet.turing.nlp.TurNLPRelationType;
 import com.viglet.turing.nlp.TurNLPTermAccent;
@@ -46,8 +33,7 @@ import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariationLanguage;
-import com.viglet.turing.persistence.model.nlp.TurEntity;
-import com.viglet.turing.plugins.otca.af.xml.AFAttributeDefType;
+import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.plugins.otca.af.xml.AFAttributeType;
 import com.viglet.turing.plugins.otca.af.xml.AFTermRelationType;
 import com.viglet.turing.plugins.otca.af.xml.AFTermRelationTypeEnum;
@@ -63,7 +49,7 @@ import com.viglet.turing.plugins.otca.af.xml.AFType.Terms;
 import com.viglet.util.TurUtils;
 
 @Path("/otca/af")
-public class OTCAAutorityFileAPI {
+public class TurOTCAAutorityFileAPI {
 	EntityManager em = null;
 	final String EMPTY_TERM_NAME = "<EMPTY>";
 
@@ -84,27 +70,27 @@ public class OTCAAutorityFileAPI {
 		return s;
 	}
 
-	public TurEntity setEntity(String name, String description) {
-		TurEntity turEntity = null;
+	public TurNLPEntity setEntity(String name, String description) {
+		TurNLPEntity turNLPEntity = null;
 		try {
-			Query q = em.createQuery("SELECT e FROM TurEntity e where e.name = :name ").setParameter("name", name);
+			Query q = em.createQuery("SELECT e FROM TurNLPEntity e where e.name = :name ").setParameter("name", name);
 			if (q.getResultList().size() > 0) {
-				turEntity = (TurEntity) q.getSingleResult();
+				turNLPEntity = (TurNLPEntity) q.getSingleResult();
 			} else {
-				if (turEntity == null) {
-					turEntity = new TurEntity();
-					turEntity.setName(name);
+				if (turNLPEntity == null) {
+					turNLPEntity = new TurNLPEntity();
+					turNLPEntity.setName(name);
 					if (description != null) {
-						turEntity.setDescription(description);
+						turNLPEntity.setDescription(description);
 					} else {
-						turEntity.setDescription("");
+						turNLPEntity.setDescription("");
 					}
-					turEntity.setInternalName(normalizeEntity(name));
-					turEntity.setLocal(1);
-					turEntity.setCollectionName(normalizeEntity(name));
+					turNLPEntity.setInternalName(normalizeEntity(name));
+					turNLPEntity.setLocal(1);
+					turNLPEntity.setCollectionName(normalizeEntity(name));
 
 					em.getTransaction().begin();
-					em.persist(turEntity);
+					em.persist(turNLPEntity);
 					em.getTransaction().commit();
 				}
 			}
@@ -112,7 +98,7 @@ public class OTCAAutorityFileAPI {
 			e.printStackTrace();
 		}
 
-		return turEntity;
+		return turNLPEntity;
 	}
 
 	public void setTermAttribute(TurTerm turTerm, Attributes attributes) {
@@ -171,7 +157,7 @@ public class OTCAAutorityFileAPI {
 
 						turTermTo.setIdCustom(afTermRelationType.getId());
 						turTermTo.setName(EMPTY_TERM_NAME);
-						turTermTo.setTurEntity(turTermRelationFrom.getTurTerm().getTurEntity());
+						turTermTo.setTurNLPEntity(turTermRelationFrom.getTurTerm().getTurNLPEntity());
 						em.getTransaction().begin();
 						em.persist(turTermTo);
 						em.getTransaction().commit();
@@ -239,7 +225,7 @@ public class OTCAAutorityFileAPI {
 		}
 	}
 
-	public void setTerms(TurEntity turEntity, Terms terms) {
+	public void setTerms(TurNLPEntity turNLPEntity, Terms terms) {
 		boolean overwrite = false;
 		try {
 			for (AFTermType afTermType : terms.getTerm()) {
@@ -261,7 +247,7 @@ public class OTCAAutorityFileAPI {
 				if (overwrite) {
 					turTerm.setIdCustom(termId);
 					turTerm.setName(afTermType.getName());
-					turTerm.setTurEntity(turEntity);
+					turTerm.setTurNLPEntity(turNLPEntity);
 
 					em.getTransaction().begin();
 					em.persist(turTerm);
@@ -297,8 +283,8 @@ public class OTCAAutorityFileAPI {
 			AFType documentType = ((JAXBElement<AFType>) jaxbContext.createUnmarshaller().unmarshal(inputStream))
 					.getValue();
 
-			TurEntity turEntity = this.setEntity(documentType.getName(), documentType.getDescription());
-			this.setTerms(turEntity, documentType.getTerms());
+			TurNLPEntity turNLPEntity = this.setEntity(documentType.getName(), documentType.getDescription());
+			this.setTerms(turNLPEntity, documentType.getTerms());
 
 		} catch (JAXBException ejaxb) {
 			ejaxb.printStackTrace();

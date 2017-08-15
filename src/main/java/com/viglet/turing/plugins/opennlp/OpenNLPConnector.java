@@ -89,7 +89,7 @@ public class OpenNLPConnector implements NLPImpl {
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
 			JSONArray entityTerms = this.getEntity(nlpInstanceEntity.getName());
 			if (entityTerms.length() > 0) {
-				jsonObject.put(nlpInstanceEntity.getTurEntity().getCollectionName(),
+				jsonObject.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(),
 						this.getEntity(nlpInstanceEntity.getName()));
 			}
 		}

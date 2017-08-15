@@ -3,7 +3,7 @@ package com.viglet.turing.persistence.model.nlp.term;
 import java.io.Serializable;
 import javax.persistence.*;
 
-import com.viglet.turing.persistence.model.nlp.TurEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 
 import java.util.List;
 
@@ -29,10 +29,10 @@ public class TurTerm implements Serializable {
 	@Column(nullable=false, length=255)
 	private String name;
 
-	//bi-directional many-to-one association to TurEntity
+	//bi-directional many-to-one association to TurNLPEntity
 	@ManyToOne
 	@JoinColumn(name="entity_id", nullable=false)
-	private TurEntity turEntity;
+	private TurNLPEntity turNLPEntity;
 
 	//bi-directional many-to-one association to TurTermAttribute
 	@OneToMany(mappedBy="turTerm")
@@ -81,12 +81,12 @@ public class TurTerm implements Serializable {
 		this.name = name;
 	}
 
-	public TurEntity getTurEntity() {
-		return this.turEntity;
+	public TurNLPEntity getTurNLPEntity() {
+		return this.turNLPEntity;
 	}
 
-	public void setTurEntity(TurEntity turEntity) {
-		this.turEntity = turEntity;
+	public void setTurNLPEntity(TurNLPEntity turNLPEntity) {
+		this.turNLPEntity = turNLPEntity;
 	}
 
 	public List<TurTermAttribute> getTurTermAttributes() {

@@ -23,7 +23,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 @Path("/otsn/broker")
-public class OTSNBrokerAPI {
+public class TurOTSNBrokerAPI {
 
 	@POST
 	@Produces("application/json")

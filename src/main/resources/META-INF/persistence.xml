@@ -6,22 +6,22 @@
 		transaction-type="RESOURCE_LOCAL">
 		<provider>org.apache.openjpa.persistence.PersistenceProviderImpl</provider>
 		 <!-- <non-jta-data-source>jdbc/VigletDS</non-jta-data-source> -->
-		<class>com.viglet.turing.persistence.model.nlp.TurEntity</class>
+		<class>com.viglet.turing.persistence.model.ml.TurMLCategory</class>
+		<class>com.viglet.turing.persistence.model.ml.TurMLInstance</class>
+		<class>com.viglet.turing.persistence.model.ml.TurMLModel</class>
+		<class>com.viglet.turing.persistence.model.ml.TurMLVendor</class>
+		<class>com.viglet.turing.persistence.model.nlp.TurNLPEntity</class>
+		<class>com.viglet.turing.persistence.model.nlp.TurNLPFeature</class>
+		<class>com.viglet.turing.persistence.model.nlp.TurNLPInstance</class>
+		<class>com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity</class>
+		<class>com.viglet.turing.persistence.model.nlp.TurNLPVendor</class>
+		<class>com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity</class>
 		<class>com.viglet.turing.persistence.model.nlp.term.TurTerm</class>
 		<class>com.viglet.turing.persistence.model.nlp.term.TurTermAttribute</class>
 		<class>com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom</class>
 		<class>com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo</class>
 		<class>com.viglet.turing.persistence.model.nlp.term.TurTermVariation</class>
 		<class>com.viglet.turing.persistence.model.nlp.term.TurTermVariationLanguage</class>
-		<class>com.viglet.turing.persistence.model.ml.TurMLCategory</class>
-		<class>com.viglet.turing.persistence.model.ml.TurMLInstance</class>
-		<class>com.viglet.turing.persistence.model.ml.TurMLModel</class>
-		<class>com.viglet.turing.persistence.model.ml.TurMLVendor</class>
-		<class>com.viglet.turing.persistence.model.nlp.TurNLPFeature</class>
-		<class>com.viglet.turing.persistence.model.nlp.TurNLPInstance</class>
-		<class>com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity</class>
-		<class>com.viglet.turing.persistence.model.nlp.TurNLPVendor</class>
-		<class>com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity</class>
 		<class>com.viglet.turing.persistence.model.se.TurSEInstance</class>
 		<class>com.viglet.turing.persistence.model.se.TurSEVendor</class>
 		<class>com.viglet.turing.persistence.model.storage.TurData</class>

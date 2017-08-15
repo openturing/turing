@@ -1,4 +1,4 @@
-package com.viglet.turing.entity;
+package com.viglet.turing.nlp.entity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,17 +26,17 @@ import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
-import com.viglet.turing.persistence.model.nlp.TurEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.util.TurUtils;
 
-public class TurEntityProcessor {
-	static final Logger logger = LogManager.getLogger(TurEntityProcessor.class.getName());
+public class TurNLPEntityProcessor {
+	static final Logger logger = LogManager.getLogger(TurNLPEntityProcessor.class.getName());
 	LinkedHashMap<String, List<String>> entityResults = new LinkedHashMap<String, List<String>>();
 
 	LinkedHashMap<Integer, TurTermVariation> terms = new LinkedHashMap<Integer, TurTermVariation>();
 
 	@SuppressWarnings("unchecked")
-	public TurEntityProcessor() {
+	public TurNLPEntityProcessor() {
 		String PERSISTENCE_UNIT_NAME = "semantics-app";
 		EntityManagerFactory factory;
 
@@ -96,14 +96,14 @@ public class TurEntityProcessor {
 					// Validate single word
 					if (this.validateTerm(turNLPWord.getWord(), variation)) {
 						logger.debug("Single Term was validaded: " + turNLPWord.getWord());
-						TurEntity turEntity = this.getEntity(variation);
-						if (turEntity != null) {
-							if (!entityResults.containsKey(turEntity.getCollectionName())) {
+						TurNLPEntity turNLPEntity = this.getEntity(variation);
+						if (turNLPEntity != null) {
+							if (!entityResults.containsKey(turNLPEntity.getCollectionName())) {
 								List<String> lstTerm = new ArrayList<String>();
 								lstTerm.add(variation.getName());
-								entityResults.put(turEntity.getCollectionName(), lstTerm);
+								entityResults.put(turNLPEntity.getCollectionName(), lstTerm);
 							} else {
-								entityResults.get(turEntity.getCollectionName()).add(variation.getName());
+								entityResults.get(turNLPEntity.getCollectionName()).add(variation.getName());
 							}
 							this.getParentTerm(variation.getTurTerm());
 						}
@@ -119,14 +119,14 @@ public class TurEntityProcessor {
 
 						// Validate 2 or more words
 						if (this.validateTerm(wordVariaton, variation)) {
-							TurEntity turEntity = this.getEntity(variation);
-							if (turEntity != null) {
-								if (!entityResults.containsKey(turEntity.getCollectionName())) {
+							TurNLPEntity turNLPEntity = this.getEntity(variation);
+							if (turNLPEntity != null) {
+								if (!entityResults.containsKey(turNLPEntity.getCollectionName())) {
 									List<String> lstTerm = new ArrayList<String>();
 									lstTerm.add(variation.getName());
-									entityResults.put(turEntity.getCollectionName(), lstTerm);
+									entityResults.put(turNLPEntity.getCollectionName(), lstTerm);
 								} else {
-									entityResults.get(turEntity.getCollectionName()).add(variation.getName());
+									entityResults.get(turNLPEntity.getCollectionName()).add(variation.getName());
 								}
 								this.getParentTerm(variation.getTurTerm());
 							}
@@ -235,12 +235,12 @@ public class TurEntityProcessor {
 					logger.debug("getParentTerm() relationTo Id" + relationTo.getId());
 					TurTerm parentTerm = relationTo.getTurTerm();
 					logger.debug("Parent Term is " + parentTerm.getName());
-					if (entityResults.containsKey(parentTerm.getTurEntity().getCollectionName())) {
-						entityResults.get(parentTerm.getTurEntity().getCollectionName()).add(parentTerm.getName());
+					if (entityResults.containsKey(parentTerm.getTurNLPEntity().getCollectionName())) {
+						entityResults.get(parentTerm.getTurNLPEntity().getCollectionName()).add(parentTerm.getName());
 					} else {
 						List<String> lstTerm = new ArrayList<String>();
 						lstTerm.add(parentTerm.getName());
-						entityResults.put(parentTerm.getTurEntity().getCollectionName(), lstTerm);
+						entityResults.put(parentTerm.getTurNLPEntity().getCollectionName(), lstTerm);
 					}
 
 					this.getParentTerm(relationTo.getTurTerm());
@@ -252,9 +252,9 @@ public class TurEntityProcessor {
 		return null;
 	}
 
-	public TurEntity getEntity(TurTermVariation variation) {
-		logger.debug("Entity is " + variation.getTurTerm().getTurEntity().getName());
-		return variation.getTurTerm().getTurEntity();
+	public TurNLPEntity getEntity(TurTermVariation variation) {
+		logger.debug("Entity is " + variation.getTurTerm().getTurNLPEntity().getName());
+		return variation.getTurTerm().getTurNLPEntity();
 	}
 
 	public String getWordsByPosition(TurNLPSentence turNLPSentence, Integer position) {

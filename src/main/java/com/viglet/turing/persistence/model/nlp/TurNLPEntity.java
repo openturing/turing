@@ -12,9 +12,9 @@ import java.util.List;
  * 
  */
 @Entity
-@Table(name = "turEntity")
-@NamedQuery(name = "TurEntity.findAll", query = "SELECT e FROM TurEntity e")
-public class TurEntity implements Serializable {
+@Table(name = "turNLPEntity")
+@NamedQuery(name = "TurNLPEntity.findAll", query = "SELECT ne FROM TurNLPEntity ne")
+public class TurNLPEntity implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -38,18 +38,18 @@ public class TurEntity implements Serializable {
 	private String name;
 
 	// bi-directional many-to-one association to TurServicesNLPEntity
-	@OneToMany(mappedBy = "turEntity")
+	@OneToMany(mappedBy = "turNLPEntity")
 	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
 
 	// bi-directional many-to-one association to TurServicesNLPEntity
-	@OneToMany(mappedBy = "turEntity")
+	@OneToMany(mappedBy = "turNLPEntity")
 	private List<TurNLPVendorEntity> turNLPVendorEntities;
 
 	// bi-directional many-to-one association to TurTerm
-	@OneToMany(mappedBy = "turEntity")
+	@OneToMany(mappedBy = "turNLPEntity")
 	private List<TurTerm> turTerms;
 
-	public TurEntity() {
+	public TurNLPEntity() {
 	}
 
 	public int getId() {
@@ -110,14 +110,14 @@ public class TurEntity implements Serializable {
 
 	public TurNLPInstanceEntity addTurNLPInstanceEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
 		getTurNLPInstanceEntities().add(turNLPInstanceEntity);
-		turNLPInstanceEntity.setTurEntity(this);
+		turNLPInstanceEntity.setTurNLPEntity(this);
 
 		return turNLPInstanceEntity;
 	}
 
 	public TurNLPInstanceEntity removeTurNLPInstanceEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
 		getTurNLPInstanceEntities().remove(turNLPInstanceEntity);
-		turNLPInstanceEntity.setTurEntity(null);
+		turNLPInstanceEntity.setTurNLPEntity(null);
 
 		return turNLPInstanceEntity;
 	}
@@ -134,14 +134,14 @@ public class TurEntity implements Serializable {
 
 	public TurNLPVendorEntity addTurNLPVendorEntity(TurNLPVendorEntity turNLPVendorEntity) {
 		getTurNLPVendorEntities().add(turNLPVendorEntity);
-		turNLPVendorEntity.setTurEntity(this);
+		turNLPVendorEntity.setTurNLPEntity(this);
 
 		return turNLPVendorEntity;
 	}
 
 	public TurNLPVendorEntity removeTurNLPVendorEntity(TurNLPVendorEntity turNLPVendorEntity) {
 		getTurNLPVendorEntities().remove(turNLPVendorEntity);
-		turNLPVendorEntity.setTurEntity(null);
+		turNLPVendorEntity.setTurNLPEntity(null);
 
 		return turNLPVendorEntity;
 	}
@@ -155,14 +155,14 @@ public class TurEntity implements Serializable {
 
 	public TurTerm addTurTerm(TurTerm turTerm) {
 		getTurTerms().add(turTerm);
-		turTerm.setTurEntity(this);
+		turTerm.setTurNLPEntity(this);
 
 		return turTerm;
 	}
 
 	public TurTerm removeTurTerm(TurTerm turTerm) {
 		getTurTerms().remove(turTerm);
-		turTerm.setTurEntity(null);
+		turTerm.setTurNLPEntity(null);
 
 		return turTerm;
 	}

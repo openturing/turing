@@ -34,7 +34,7 @@ import com.viglet.turing.se.similar.TurSESimilarResult;
 import com.viglet.turing.se.similar.TurSESimilarResultAttr;
 
 @Path("/otsn/search")
-public class OTSNSearchAPI {
+public class TurOTSNSearchAPI {
 
 	public String addOrReplaceParameter(UriInfo uriInfo, String paramName, String paramValue) {
 		StringBuffer sbQueryString = new StringBuffer();

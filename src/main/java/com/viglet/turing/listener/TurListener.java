@@ -2,12 +2,12 @@ package com.viglet.turing.listener;
 
 import javax.servlet.http.*;
 
-import com.viglet.turing.listener.onstartup.TurEntityOnStartup;
-import com.viglet.turing.listener.onstartup.TurNLPFeatureOnStartup;
-import com.viglet.turing.listener.onstartup.TurNLPInstanceOnStartup;
-import com.viglet.turing.listener.onstartup.TurNLPVendorEntityOnStartup;
-import com.viglet.turing.listener.onstartup.TurNLPVendorOnStartup;
 import com.viglet.turing.listener.onstartup.ml.TurMLVendorOnStartup;
+import com.viglet.turing.listener.onstartup.nlp.TurNLPEntityOnStartup;
+import com.viglet.turing.listener.onstartup.nlp.TurNLPFeatureOnStartup;
+import com.viglet.turing.listener.onstartup.nlp.TurNLPInstanceOnStartup;
+import com.viglet.turing.listener.onstartup.nlp.TurNLPVendorEntityOnStartup;
+import com.viglet.turing.listener.onstartup.nlp.TurNLPVendorOnStartup;
 import com.viglet.turing.listener.onstartup.se.TurSEInstanceOnStartup;
 import com.viglet.turing.listener.onstartup.se.TurSEVendorOnStartup;
 import com.viglet.turing.listener.onstartup.storage.TurDataGroupStartup;
@@ -26,7 +26,7 @@ public class TurListener implements ServletContextListener, HttpSessionListener 
 		servletContext = sce.getServletContext();
 		System.out.println("Checking tables ...");
 		TurNLPVendorOnStartup.createDefaultRows();
-		TurEntityOnStartup.createDefaultRows();
+		TurNLPEntityOnStartup.createDefaultRows();
 		TurNLPVendorEntityOnStartup.createDefaultRows();
 		TurNLPFeatureOnStartup.createDefaultRows();
 		TurNLPInstanceOnStartup.createDefaultRows();

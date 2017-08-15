@@ -1,4 +1,4 @@
-package com.viglet.turing.listener.onstartup;
+package com.viglet.turing.listener.onstartup.nlp;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.service.nlp.TurNLPVendorService;
