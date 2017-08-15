@@ -8,11 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
-
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -26,29 +21,23 @@ import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
+import com.viglet.turing.persistence.service.nlp.term.TurTermVariationService;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.util.TurUtils;
 
 public class TurNLPEntityProcessor {
 	static final Logger logger = LogManager.getLogger(TurNLPEntityProcessor.class.getName());
+
+	TurTermVariationService turTermVariationService = new TurTermVariationService();
 	LinkedHashMap<String, List<String>> entityResults = new LinkedHashMap<String, List<String>>();
 
 	LinkedHashMap<Integer, TurTermVariation> terms = new LinkedHashMap<Integer, TurTermVariation>();
 
-	@SuppressWarnings("unchecked")
 	public TurNLPEntityProcessor() {
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
+		List<TurTermVariation> turTermVariations = turTermVariationService.listAll();
 
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
-
-		Query queryTerms = em.createQuery("SELECT t FROM TurTermVariation t");
-
-		List<?> turTerms = (List<?>) queryTerms.getResultList();
 		logger.debug("Carregando termos..");
-		for (Object turTermVariationObject : turTerms) {
-			TurTermVariation turTermVariation = (TurTermVariation) turTermVariationObject;
+		for (TurTermVariation turTermVariation : turTermVariations) {
 			terms.put(turTermVariation.getId(), turTermVariation);
 		}
 		logger.debug("Fim Carregando termos..");
@@ -108,8 +97,7 @@ public class TurNLPEntityProcessor {
 							this.getParentTerm(variation.getTurTerm());
 						}
 
-					}
-					else {
+					} else {
 						logger.debug("Single Term wasn't validaded: " + turNLPWord.getWord());
 					}
 					if (prevVariations.containsKey(variation.getId())) {
@@ -278,11 +266,10 @@ public class TurNLPEntityProcessor {
 		String wordNoAccent = TurUtils.stripAccents(word);
 		String wordLowerCaseNoAccent = wordNoAccent.toLowerCase();
 		String wordLowerCaseWithAccent = word.toLowerCase();
-		
+
 		String termName = terms.get(variation.getId()).getName();
 		String termNameNoAccent = TurUtils.stripAccents(termName);
 		String termNameLower = terms.get(variation.getId()).getNameLower();
-		
 
 		logger.debug("Validating..");
 		if (terms.containsKey(variation.getId())) {
@@ -297,12 +284,13 @@ public class TurNLPEntityProcessor {
 						logger.debug("Variation is CI and AI = true");
 						return true;
 					} else {
-						logger.debug("Variation is CI and AS = " + termName.toLowerCase().equals(wordLowerCaseWithAccent));
+						logger.debug(
+								"Variation is CI and AS = " + termName.toLowerCase().equals(wordLowerCaseWithAccent));
 						return termName.toLowerCase().equals(wordLowerCaseWithAccent);
 					}
 
 				} else if (variation.getRuleCase() == TurNLPTermCase.CS.id()) {
-					
+
 					if (termNameNoAccent.equals(wordNoAccent)) {
 						logger.debug("Variation is CS");
 						if (variation.getRuleAccent() == TurNLPTermAccent.AI.id()) {
@@ -323,7 +311,7 @@ public class TurNLPEntityProcessor {
 							logger.debug("Variation is UCS and AI = true");
 							return true;
 						} else {
-							logger.debug("Variation is UCS and AS = " + termName.toUpperCase().equals(word) );
+							logger.debug("Variation is UCS and AS = " + termName.toUpperCase().equals(word));
 							return termName.toUpperCase().equals(word);
 						}
 					} else {

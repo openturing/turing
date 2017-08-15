@@ -36,7 +36,16 @@ public class TurTermService extends TurBaseService {
 			return null;
 		}
 	}
-
+	public TurTerm findByIdCustom(String idCustom) {
+		try {
+			TypedQuery<TurTerm> q = em
+					.createQuery("SELECT t FROM TurTerm t where t.idCustom = :idCustom ", TurTerm.class)
+					.setParameter("idCustom", idCustom);
+			return q.getSingleResult();
+		} catch (NoResultException e) {
+			return null;
+		}
+	}
 	public boolean delete(int turTermId) {
 		TurTerm turTerm = em.find(TurTerm.class, turTermId);
 		em.getTransaction().begin();

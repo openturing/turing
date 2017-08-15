@@ -41,7 +41,16 @@ public class TurNLPEntityService extends TurBaseService {
 			return null;
 		}
 	}
-
+	public TurNLPEntity findByName(String name) {
+		try {
+			TypedQuery<TurNLPEntity> q = em
+					.createQuery("SELECT e FROM TurNLPEntity e where t.name = :name", TurNLPEntity.class)
+					.setParameter("name", name);
+			return q.getSingleResult();
+		} catch (NoResultException e) {
+			return null;
+		}
+	}
 	public boolean delete(int turNLPEntityId) {
 		TurNLPEntity turNLPEntity = em.find(TurNLPEntity.class, turNLPEntityId);
 		TurTermService turTermService = new TurTermService();

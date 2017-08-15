@@ -6,7 +6,7 @@ import javax.persistence.Persistence;
 
 public class TurBaseService {
 
-	EntityManagerFactory factory = Persistence.createEntityManagerFactory("semantics-app");
+	EntityManagerFactory factory = Persistence.createEntityManagerFactory("turing-app");
 	protected EntityManager em = factory.createEntityManager();
 
 }
