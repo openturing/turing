@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.viglet.turing.nlp.VigNLPResults;
+import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
@@ -66,7 +66,7 @@ public class OpenNLPConnector implements NLPImpl {
 	}
 
 	@Override
-	public VigNLPResults retrieve(String text) throws TransformerException, Exception {
+	public TurNLPResults retrieve(String text) throws TransformerException, Exception {
 		this.setText(text);
 
 		String sentences[] = this.sentenceDetect(text);
@@ -76,12 +76,12 @@ public class OpenNLPConnector implements NLPImpl {
 			this.setSentencesTokens((String[]) ArrayUtils.addAll(this.getSentencesTokens(), tokens));
 		}
 
-		VigNLPResults vigNLPResults = new VigNLPResults();
-		vigNLPResults.setJsonResult(this.getJSON());
+		TurNLPResults turNLPResults = new TurNLPResults();
+		turNLPResults.setJsonResult(this.getJSON());
 
-		vigNLPResults.setTurNLPInstanceEntities(nlpInstanceEntities);
+		turNLPResults.setTurNLPInstanceEntities(nlpInstanceEntities);
 
-		return vigNLPResults;
+		return turNLPResults;
 	}
 
 	public JSONObject getJSON() {

@@ -37,16 +37,16 @@ import com.sun.jersey.multipart.FormDataParam;
 
 import org.json.JSONException;
 
-import com.viglet.turing.nlp.VigNLPRelationType;
-import com.viglet.turing.nlp.VigNLPTermAccent;
-import com.viglet.turing.nlp.VigNLPTermCase;
-import com.viglet.turing.persistence.model.TurEntity;
-import com.viglet.turing.persistence.model.VigTerm;
-import com.viglet.turing.persistence.model.VigTermAttribute;
-import com.viglet.turing.persistence.model.VigTermRelationFrom;
-import com.viglet.turing.persistence.model.VigTermRelationTo;
-import com.viglet.turing.persistence.model.VigTermVariation;
-import com.viglet.turing.persistence.model.VigTermVariationLanguage;
+import com.viglet.turing.nlp.TurNLPRelationType;
+import com.viglet.turing.nlp.TurNLPTermAccent;
+import com.viglet.turing.nlp.TurNLPTermCase;
+import com.viglet.turing.persistence.model.nlp.term.TurTerm;
+import com.viglet.turing.persistence.model.nlp.term.TurTermAttribute;
+import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
+import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
+import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
+import com.viglet.turing.persistence.model.nlp.term.TurTermVariationLanguage;
+import com.viglet.turing.persistence.model.nlp.TurEntity;
 import com.viglet.turing.plugins.otca.af.xml.AFAttributeDefType;
 import com.viglet.turing.plugins.otca.af.xml.AFAttributeType;
 import com.viglet.turing.plugins.otca.af.xml.AFTermRelationType;
@@ -60,7 +60,7 @@ import com.viglet.turing.plugins.otca.af.xml.AFTermVariationCaseEnum;
 import com.viglet.turing.plugins.otca.af.xml.AFTermVariationType;
 import com.viglet.turing.plugins.otca.af.xml.AFType;
 import com.viglet.turing.plugins.otca.af.xml.AFType.Terms;
-import com.viglet.util.VigUtils;
+import com.viglet.util.TurUtils;
 
 @Path("/otca/af")
 public class OTCAAutorityFileAPI {
@@ -80,7 +80,7 @@ public class OTCAAutorityFileAPI {
 	}
 
 	public static String normalizeEntity(String s) {
-		s = VigUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "").replaceAll(" ", "_");
+		s = TurUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "").replaceAll(" ", "_");
 		return s;
 	}
 
@@ -115,17 +115,17 @@ public class OTCAAutorityFileAPI {
 		return turEntity;
 	}
 
-	public void setTermAttribute(VigTerm vigTerm, Attributes attributes) {
+	public void setTermAttribute(TurTerm turTerm, Attributes attributes) {
 		try {
 			if (attributes != null) {
 				for (AFAttributeType afAttributeType : attributes.getAttribute()) {
 					for (String value : afAttributeType.getValues().getValue()) {
-						VigTermAttribute vigTermAttribute = new VigTermAttribute();					
-						vigTermAttribute.setValue(value);
-						vigTermAttribute.setVigTerm(vigTerm);
+						TurTermAttribute turTermAttribute = new TurTermAttribute();					
+						turTermAttribute.setValue(value);
+						turTermAttribute.setTurTerm(turTerm);
 
 						em.getTransaction().begin();
-						em.persist(vigTermAttribute);
+						em.persist(turTermAttribute);
 						em.getTransaction().commit();
 
 					}
@@ -136,49 +136,49 @@ public class OTCAAutorityFileAPI {
 		}
 	}
 
-	public void setTermRelation(VigTerm vigTerm, Relations relations) {
+	public void setTermRelation(TurTerm turTerm, Relations relations) {
 		try {
 			if (relations != null) {
 				for (AFTermRelationType afTermRelationType : relations.getRelation()) {
-					VigTermRelationFrom vigTermRelationFrom = new VigTermRelationFrom();
+					TurTermRelationFrom turTermRelationFrom = new TurTermRelationFrom();
 					if (afTermRelationType.getType().equals(AFTermRelationTypeEnum.BT)) {
-						vigTermRelationFrom.setRelationType(VigNLPRelationType.BT.id());
+						turTermRelationFrom.setRelationType(TurNLPRelationType.BT.id());
 					} else if (afTermRelationType.getType().equals(AFTermRelationTypeEnum.NT)) {
-						vigTermRelationFrom.setRelationType(VigNLPRelationType.NT.id());
+						turTermRelationFrom.setRelationType(TurNLPRelationType.NT.id());
 					} else if (afTermRelationType.getType().equals(AFTermRelationTypeEnum.RT)) {
-						vigTermRelationFrom.setRelationType(VigNLPRelationType.RT.id());
+						turTermRelationFrom.setRelationType(TurNLPRelationType.RT.id());
 					} else if (afTermRelationType.getType().equals(AFTermRelationTypeEnum.U)) {
-						vigTermRelationFrom.setRelationType(VigNLPRelationType.U.id());
+						turTermRelationFrom.setRelationType(TurNLPRelationType.U.id());
 					} else if (afTermRelationType.getType().equals(AFTermRelationTypeEnum.UF)) {
-						vigTermRelationFrom.setRelationType(VigNLPRelationType.UF.id());
+						turTermRelationFrom.setRelationType(TurNLPRelationType.UF.id());
 					}
-					vigTermRelationFrom.setVigTerm(vigTerm);
+					turTermRelationFrom.setTurTerm(turTerm);
 
 					em.getTransaction().begin();
-					em.persist(vigTermRelationFrom);
+					em.persist(turTermRelationFrom);
 					em.getTransaction().commit();
 
-					VigTermRelationTo vigTermRelationTo = new VigTermRelationTo();
-					vigTermRelationTo.setVigTermRelationFrom(vigTermRelationFrom);
+					TurTermRelationTo turTermRelationTo = new TurTermRelationTo();
+					turTermRelationTo.setTurTermRelationFrom(turTermRelationFrom);
 
-					Query q = em.createQuery("SELECT t FROM VigTerm t where t.idCustom = :idCustom")
+					Query q = em.createQuery("SELECT t FROM TurTerm t where t.idCustom = :idCustom")
 							.setParameter("idCustom", afTermRelationType.getId());
-					VigTerm vigTermTo = null;
+					TurTerm turTermTo = null;
 					if (q.getResultList().size() > 0) {
-						vigTermTo = (VigTerm) q.getSingleResult();
+						turTermTo = (TurTerm) q.getSingleResult();
 					} else {
-						vigTermTo = new VigTerm();
+						turTermTo = new TurTerm();
 
-						vigTermTo.setIdCustom(afTermRelationType.getId());
-						vigTermTo.setName(EMPTY_TERM_NAME);
-						vigTermTo.setTurEntity(vigTermRelationFrom.getVigTerm().getVigEntity());
+						turTermTo.setIdCustom(afTermRelationType.getId());
+						turTermTo.setName(EMPTY_TERM_NAME);
+						turTermTo.setTurEntity(turTermRelationFrom.getTurTerm().getTurEntity());
 						em.getTransaction().begin();
-						em.persist(vigTermTo);
+						em.persist(turTermTo);
 						em.getTransaction().commit();
 					}
-					vigTermRelationTo.setVigTerm(vigTermTo);
+					turTermRelationTo.setTurTerm(turTermTo);
 					em.getTransaction().begin();
-					em.persist(vigTermRelationTo);
+					em.persist(turTermRelationTo);
 					em.getTransaction().commit();
 
 				}
@@ -189,46 +189,46 @@ public class OTCAAutorityFileAPI {
 
 	}
 
-	public void setTermVariation(VigTerm vigTerm, Variations variations) {
+	public void setTermVariation(TurTerm turTerm, Variations variations) {
 		try {
 			for (AFTermVariationType afTermVariationType : variations.getVariation()) {
-				VigTermVariation vigTermVariation = new VigTermVariation();
-				vigTermVariation.setName(VigUtils.removeDuplicateWhiteSpaces(afTermVariationType.getName()));
-				vigTermVariation.setNameLower(VigUtils.stripAccents(vigTermVariation.getName()).toLowerCase());				
+				TurTermVariation turTermVariation = new TurTermVariation();
+				turTermVariation.setName(TurUtils.removeDuplicateWhiteSpaces(afTermVariationType.getName()));
+				turTermVariation.setNameLower(TurUtils.stripAccents(turTermVariation.getName()).toLowerCase());				
 				if (afTermVariationType.getAccent().equals(AFTermVariationAccentEnum.AI))
-					vigTermVariation.setRuleAccent(VigNLPTermAccent.AI.id());
+					turTermVariation.setRuleAccent(TurNLPTermAccent.AI.id());
 				else
-					vigTermVariation.setRuleAccent(VigNLPTermAccent.AS.id());
+					turTermVariation.setRuleAccent(TurNLPTermAccent.AS.id());
 
 				if (afTermVariationType.getCase().equals(AFTermVariationCaseEnum.CI))
-					vigTermVariation.setRuleCase(VigNLPTermCase.CI.id());
+					turTermVariation.setRuleCase(TurNLPTermCase.CI.id());
 				else if (afTermVariationType.getCase().equals(AFTermVariationCaseEnum.CS))
-					vigTermVariation.setRuleCase(VigNLPTermCase.CS.id());
+					turTermVariation.setRuleCase(TurNLPTermCase.CS.id());
 				else if (afTermVariationType.getCase().equals(AFTermVariationCaseEnum.UCS))
-					vigTermVariation.setRuleCase(VigNLPTermCase.UCS.id());
+					turTermVariation.setRuleCase(TurNLPTermCase.UCS.id());
 
 				if (afTermVariationType.getPrefix() != null) {
-					vigTermVariation.setRulePrefix(afTermVariationType.getPrefix().getValue());
-					vigTermVariation.setRulePrefixRequired(afTermVariationType.getPrefix().isRequired() ? 1 : 0);
+					turTermVariation.setRulePrefix(afTermVariationType.getPrefix().getValue());
+					turTermVariation.setRulePrefixRequired(afTermVariationType.getPrefix().isRequired() ? 1 : 0);
 				}
 				if (afTermVariationType.getSuffix() != null) {
-					vigTermVariation.setRuleSuffix(afTermVariationType.getSuffix().getValue());
-					vigTermVariation.setRuleSuffixRequired(afTermVariationType.getSuffix().isRequired() ? 1 : 0);
+					turTermVariation.setRuleSuffix(afTermVariationType.getSuffix().getValue());
+					turTermVariation.setRuleSuffixRequired(afTermVariationType.getSuffix().isRequired() ? 1 : 0);
 				}
-				vigTermVariation.setWeight(afTermVariationType.getWeight());
-				vigTermVariation.setVigTerm(vigTerm);
+				turTermVariation.setWeight(afTermVariationType.getWeight());
+				turTermVariation.setTurTerm(turTerm);
 
 				em.getTransaction().begin();
-				em.persist(vigTermVariation);
+				em.persist(turTermVariation);
 				em.getTransaction().commit();
 
 				for (String language : afTermVariationType.getLanguages().getLanguage()) {
-					VigTermVariationLanguage vigTermVariationLanguage = new VigTermVariationLanguage();
-					vigTermVariationLanguage.setLanguage(language);
-					vigTermVariationLanguage.setVigTerm(vigTerm);
-					vigTermVariationLanguage.setVigTermVariation(vigTermVariation);
+					TurTermVariationLanguage turTermVariationLanguage = new TurTermVariationLanguage();
+					turTermVariationLanguage.setLanguage(language);
+					turTermVariationLanguage.setTurTerm(turTerm);
+					turTermVariationLanguage.setTurTermVariation(turTermVariation);
 					em.getTransaction().begin();
-					em.persist(vigTermVariationLanguage);
+					em.persist(turTermVariationLanguage);
 					em.getTransaction().commit();
 
 				}
@@ -244,32 +244,32 @@ public class OTCAAutorityFileAPI {
 		try {
 			for (AFTermType afTermType : terms.getTerm()) {
 				String termId = afTermType.getId();
-				Query q = em.createQuery("SELECT t FROM VigTerm t where t.idCustom = :idCustom")
+				Query q = em.createQuery("SELECT t FROM TurTerm t where t.idCustom = :idCustom")
 						.setParameter("idCustom", termId);
-				VigTerm vigTerm = null;
+				TurTerm turTerm = null;
 
 				if (q.getResultList().size() == 1) {
-					vigTerm = (VigTerm) q.getSingleResult();
+					turTerm = (TurTerm) q.getSingleResult();
 					// Term that was created during relation but the parent
 					// wasn't created yet
-					overwrite = vigTerm.getName().equals(EMPTY_TERM_NAME) ? true : false;
+					overwrite = turTerm.getName().equals(EMPTY_TERM_NAME) ? true : false;
 				} else {
-					vigTerm = new VigTerm();
+					turTerm = new TurTerm();
 					overwrite = true;
 				}
 
 				if (overwrite) {
-					vigTerm.setIdCustom(termId);
-					vigTerm.setName(afTermType.getName());
-					vigTerm.setTurEntity(turEntity);
+					turTerm.setIdCustom(termId);
+					turTerm.setName(afTermType.getName());
+					turTerm.setTurEntity(turEntity);
 
 					em.getTransaction().begin();
-					em.persist(vigTerm);
+					em.persist(turTerm);
 					em.getTransaction().commit();
 
-					this.setTermVariation(vigTerm, afTermType.getVariations());
-					this.setTermRelation(vigTerm, afTermType.getRelations());
-					this.setTermAttribute(vigTerm, afTermType.getAttributes());
+					this.setTermVariation(turTerm, afTermType.getVariations());
+					this.setTermRelation(turTerm, afTermType.getRelations());
+					this.setTermAttribute(turTerm, afTermType.getAttributes());
 				}
 			}
 		} catch (Exception e) {

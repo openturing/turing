@@ -3,7 +3,6 @@ package com.viglet.turing.api.otsn.search;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,19 +20,18 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.viglet.turing.solr.VigSolr;
-import com.viglet.turing.se.facet.VigSEFacetMap;
-import com.viglet.turing.se.facet.VigSEFacetMaps;
-import com.viglet.turing.se.facet.VigSEFacetResult;
-import com.viglet.turing.se.facet.VigSEFacetResultAttr;
-import com.viglet.turing.se.field.VigSEFieldMap;
-import com.viglet.turing.se.field.VigSEFieldMaps;
-import com.viglet.turing.se.field.VigSEFieldType;
-import com.viglet.turing.se.result.VigSEResult;
-import com.viglet.turing.se.result.VigSEResultAttr;
-import com.viglet.turing.se.result.VigSEResults;
-import com.viglet.turing.se.similar.VigSESimilarResult;
-import com.viglet.turing.se.similar.VigSESimilarResultAttr;
+import com.viglet.turing.solr.TurSolr;
+import com.viglet.turing.se.facet.TurSEFacetMap;
+import com.viglet.turing.se.facet.TurSEFacetMaps;
+import com.viglet.turing.se.facet.TurSEFacetResult;
+import com.viglet.turing.se.facet.TurSEFacetResultAttr;
+import com.viglet.turing.se.field.TurSEFieldMap;
+import com.viglet.turing.se.field.TurSEFieldMaps;
+import com.viglet.turing.se.result.TurSEResult;
+import com.viglet.turing.se.result.TurSEResultAttr;
+import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.se.similar.TurSESimilarResult;
+import com.viglet.turing.se.similar.TurSESimilarResultAttr;
 
 @Path("/otsn/search")
 public class OTSNSearchAPI {
@@ -167,31 +165,31 @@ public class OTSNSearchAPI {
 		String[] filterQueryModifiedArr = new String[filterQueryModified.size()];
 		filterQueryModifiedArr = filterQueryModified.toArray(filterQueryModifiedArr);
 
-		Map<String, VigSEFieldMap> fieldMap = new VigSEFieldMaps().getFieldMaps();
-		Map<String, VigSEFacetMap> facetMap = new VigSEFacetMaps().getFacetMaps();
+		Map<String, TurSEFieldMap> fieldMap = new TurSEFieldMaps().getFieldMaps();
+		Map<String, TurSEFacetMap> facetMap = new TurSEFacetMaps().getFacetMaps();
 
-		VigSEResults vigSEResults = null;
+		TurSEResults turSEResults = null;
 		JSONArray otsnResults = new JSONArray();
 
-		VigSolr vigSolr = new VigSolr();
+		TurSolr turSolr = new TurSolr();
 		try {
-			vigSEResults = vigSolr.retrieveSolr(q, filterQueryModified, currentPage);
-			List<VigSEResult> seResults = vigSEResults.getResults();
-			System.out.println("getResults size:" + vigSEResults.getResults().size());
-			for (VigSEResult result : seResults) {
+			turSEResults = turSolr.retrieveSolr(q, filterQueryModified, currentPage);
+			List<TurSEResult> seResults = turSEResults.getResults();
+			System.out.println("getResults size:" + turSEResults.getResults().size());
+			for (TurSEResult result : seResults) {
 				JSONObject otsnResult = new JSONObject();
-				Map<String, VigSEResultAttr> vigSEResultAttr = result.getVigSEResultAttr();
-				Set<String> attribs = vigSEResultAttr.keySet();
+				Map<String, TurSEResultAttr> turSEResultAttr = result.getTurSEResultAttr();
+				Set<String> attribs = turSEResultAttr.keySet();
 
 				otsnResult.put("otsn:elevate", false);
 
 				JSONArray otsnMetadata = new JSONArray();
 				for (Object facetObject : facetMap.keySet().toArray()) {
 					String facet = (String) facetObject;
-					if (vigSEResultAttr.containsKey(facet)) {
+					if (turSEResultAttr.containsKey(facet)) {
 						JSONObject otsnMetadataItem = new JSONObject();
-						if (vigSEResultAttr.get(facet).getAttrJSON().get(facet) instanceof ArrayList) {
-							for (Object facetValueObject : (ArrayList) vigSEResultAttr.get(facet).getAttrJSON()
+						if (turSEResultAttr.get(facet).getAttrJSON().get(facet) instanceof ArrayList) {
+							for (Object facetValueObject : (ArrayList) turSEResultAttr.get(facet).getAttrJSON()
 									.get(facet)) {
 								String facetValue = (String) facetValueObject;
 								otsnMetadataItem.put("href", this.addFilterQuery(uriInfo, facet + ":" + facetValue));
@@ -199,27 +197,27 @@ public class OTSNSearchAPI {
 							}
 						} else {
 							otsnMetadataItem.put("href", this.addFilterQuery(uriInfo,
-									facet + ":" + vigSEResultAttr.get(facet).getAttrJSON().get(facet)));
-							otsnMetadataItem.put("text", vigSEResultAttr.get(facet).getAttrJSON().get(facet));
+									facet + ":" + turSEResultAttr.get(facet).getAttrJSON().get(facet)));
+							otsnMetadataItem.put("text", turSEResultAttr.get(facet).getAttrJSON().get(facet));
 						}
 						otsnMetadata.put(otsnMetadataItem);
 					}
 				}
 
 				otsnResult.put("dc:metadata", otsnMetadata);
-				if (vigSEResultAttr.containsKey("url")) {
+				if (turSEResultAttr.containsKey("url")) {
 					otsnResult.put("dc:source", new JSONObject().put("rdf:resource",
-							vigSEResultAttr.get("url").getAttrJSON().getString("url")));
+							turSEResultAttr.get("url").getAttrJSON().getString("url")));
 				}
 				for (String attribute : attribs) {
 					// System.out.println("attribs: " + attribute);
 					if (!attribute.startsWith("turing_entity")) {
 						if (fieldMap.containsKey(attribute)) {
-							VigSEFieldMap vigSEFieldMap = fieldMap.get(attribute);
-							otsnResult.put(vigSEFieldMap.getAlias(),
-									vigSEResultAttr.get(attribute).getAttrJSON().get(attribute));
+							TurSEFieldMap turSEFieldMap = fieldMap.get(attribute);
+							otsnResult.put(turSEFieldMap.getAlias(),
+									turSEResultAttr.get(attribute).getAttrJSON().get(attribute));
 						} else {
-							otsnResult.put(attribute, vigSEResultAttr.get(attribute).getAttrJSON().get(attribute));
+							otsnResult.put(attribute, turSEResultAttr.get(attribute).getAttrJSON().get(attribute));
 						}
 					}
 				}
@@ -241,40 +239,40 @@ public class OTSNSearchAPI {
 		JSONObject jsonOTSNPaginationPage = new JSONObject();
 		// BEGIN Pagination
 		int firstPagination = 1;
-		int lastPagination = vigSEResults.getPageCount();
+		int lastPagination = turSEResults.getPageCount();
 
-		if (vigSEResults.getCurrentPage() - 3 > 0) {
-			firstPagination = vigSEResults.getCurrentPage() - 3;
-		} else if (vigSEResults.getCurrentPage() - 3 <= 0) {
+		if (turSEResults.getCurrentPage() - 3 > 0) {
+			firstPagination = turSEResults.getCurrentPage() - 3;
+		} else if (turSEResults.getCurrentPage() - 3 <= 0) {
 			firstPagination = 1;
 		}
-		if (vigSEResults.getCurrentPage() + 3 <= vigSEResults.getPageCount()) {
-			lastPagination = vigSEResults.getCurrentPage() + 3;
-		} else if (vigSEResults.getCurrentPage() + 3 > vigSEResults.getPageCount()) {
-			lastPagination = vigSEResults.getPageCount();
+		if (turSEResults.getCurrentPage() + 3 <= turSEResults.getPageCount()) {
+			lastPagination = turSEResults.getCurrentPage() + 3;
+		} else if (turSEResults.getCurrentPage() + 3 > turSEResults.getPageCount()) {
+			lastPagination = turSEResults.getPageCount();
 		}
 
-		if (vigSEResults.getCurrentPage() > vigSEResults.getPageCount()) {
-			lastPagination = vigSEResults.getPageCount();
-			if (vigSEResults.getPageCount() - 3 > 0) {
-				firstPagination = vigSEResults.getPageCount() - 3;
-			} else if (vigSEResults.getPageCount() - 3 <= 0) {
+		if (turSEResults.getCurrentPage() > turSEResults.getPageCount()) {
+			lastPagination = turSEResults.getPageCount();
+			if (turSEResults.getPageCount() - 3 > 0) {
+				firstPagination = turSEResults.getPageCount() - 3;
+			} else if (turSEResults.getPageCount() - 3 <= 0) {
 				firstPagination = 1;
 			}
 		}
 
-		if (vigSEResults.getCurrentPage() > 1) {
+		if (turSEResults.getCurrentPage() > 1) {
 			jsonOTSNPaginationPage = new JSONObject();
 			jsonOTSNPaginationPage.put("class", "first");
 			jsonOTSNPaginationPage.put("href", this.addOrReplaceParameter(uriInfo, "p", Integer.toString(1)));
 			jsonOTSNPaginationPage.put("text", "Primeira");
 			jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
 
-			if (vigSEResults.getCurrentPage() <= vigSEResults.getPageCount()) {
+			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
 				jsonOTSNPaginationPage = new JSONObject();
 				jsonOTSNPaginationPage.put("class", "previous");
 				jsonOTSNPaginationPage.put("href",
-						this.addOrReplaceParameter(uriInfo, "p", Integer.toString(vigSEResults.getCurrentPage() - 1)));
+						this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getCurrentPage() - 1)));
 				jsonOTSNPaginationPage.put("text", "Anterior");
 				jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
 			}
@@ -283,7 +281,7 @@ public class OTSNSearchAPI {
 
 		for (int page = firstPagination; page <= lastPagination; page++) {
 
-			if (page == vigSEResults.getCurrentPage()) {
+			if (page == turSEResults.getCurrentPage()) {
 				jsonOTSNPaginationPage = new JSONObject();
 				jsonOTSNPaginationPage.put("class", "current");
 				jsonOTSNPaginationPage.put("text", Integer.toString(page));
@@ -296,12 +294,12 @@ public class OTSNSearchAPI {
 
 			}
 		}
-		if (vigSEResults.getCurrentPage() != vigSEResults.getPageCount() && vigSEResults.getPageCount() > 1) {
-			if (vigSEResults.getCurrentPage() <= vigSEResults.getPageCount()) {
+		if (turSEResults.getCurrentPage() != turSEResults.getPageCount() && turSEResults.getPageCount() > 1) {
+			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
 				jsonOTSNPaginationPage = new JSONObject();
 				jsonOTSNPaginationPage.put("class", "next");
 				jsonOTSNPaginationPage.put("href",
-						this.addOrReplaceParameter(uriInfo, "p", Integer.toString(vigSEResults.getCurrentPage() + 1)));
+						this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getCurrentPage() + 1)));
 				jsonOTSNPaginationPage.put("text", "Próxima");
 				jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
 			}
@@ -309,7 +307,7 @@ public class OTSNSearchAPI {
 			jsonOTSNPaginationPage = new JSONObject();
 			jsonOTSNPaginationPage.put("class", "last");
 			jsonOTSNPaginationPage.put("href",
-					this.addOrReplaceParameter(uriInfo, "p", Integer.toString(vigSEResults.getPageCount())));
+					this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getPageCount())));
 			jsonOTSNPaginationPage.put("text", "Última");
 			jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
 		}
@@ -322,26 +320,26 @@ public class OTSNSearchAPI {
 
 		jsonOTSNQuery.put("rdf:Description",
 				(new JSONObject()).put("rdf:resource", "http://semantic.opentext.com/otsn/query"));
-		jsonOTSNQuery.put("otsn:query-string", vigSEResults.getQueryString());
-		jsonOTSNQuery.put("otsn:sort", vigSEResults.getSort());
+		jsonOTSNQuery.put("otsn:query-string", turSEResults.getQueryString());
+		jsonOTSNQuery.put("otsn:sort", turSEResults.getSort());
 
 		// BEGIN Facet
 		JSONObject jsonOTSNFacetWidget = new JSONObject();
-		for (VigSEFacetResult facet : vigSEResults.getFacetResults()) {
+		for (TurSEFacetResult facet : turSEResults.getFacetResults()) {
 
 			if (facetMap.containsKey(facet.getFacet()) && !hiddenFilterQuery.contains(facet.getFacet())
-					&& facet.getVigSEFacetResultAttr().size() > 0) {
-				VigSEFacetMap vigSEFacetdMap = facetMap.get(facet.getFacet());
+					&& facet.getTurSEFacetResultAttr().size() > 0) {
+				TurSEFacetMap turSEFacetdMap = facetMap.get(facet.getFacet());
 
 				JSONObject jsonOTSNFacetWidgetEntityLabel = new JSONObject();
 				JSONArray jsonOTSNFacetWidgetEntityItems = new JSONArray();
 				JSONObject jsonOTSNFacetWidgetEntity = new JSONObject();
 
-				for (Object facetItemObject : facet.getVigSEFacetResultAttr().values().toArray()) {
+				for (Object facetItemObject : facet.getTurSEFacetResultAttr().values().toArray()) {
 
 					JSONObject jsonOTSNFacetWidgetEntityItem = new JSONObject();
 
-					VigSEFacetResultAttr facetItem = (VigSEFacetResultAttr) facetItemObject;
+					TurSEFacetResultAttr facetItem = (TurSEFacetResultAttr) facetItemObject;
 					jsonOTSNFacetWidgetEntityItem.put("facet-link",
 							this.addFilterQuery(uriInfo, facet.getFacet() + ":" + facetItem.getAttribute()));
 					jsonOTSNFacetWidgetEntityItem.put("label", facetItem.getAttribute());
@@ -350,14 +348,14 @@ public class OTSNSearchAPI {
 				}
 
 				jsonOTSNFacetWidgetEntityLabel.put("xml:lang", "en");
-				jsonOTSNFacetWidgetEntityLabel.put("text", vigSEFacetdMap.getAlias());
+				jsonOTSNFacetWidgetEntityLabel.put("text", turSEFacetdMap.getAlias());
 				jsonOTSNFacetWidgetEntity.put("rdf:Description",
-						(new JSONObject()).put("rdf:resource", vigSEFacetdMap.getRdf()));
+						(new JSONObject()).put("rdf:resource", turSEFacetdMap.getRdf()));
 				jsonOTSNFacetWidgetEntity.put("rdfs:label", jsonOTSNFacetWidgetEntityLabel);
 				jsonOTSNFacetWidgetEntity.put("otsn-facet",
 						(new JSONObject()).put("facet", jsonOTSNFacetWidgetEntityItems));
 
-				jsonOTSNFacetWidget.put(vigSEFacetdMap.getInternal(), jsonOTSNFacetWidgetEntity);
+				jsonOTSNFacetWidget.put(turSEFacetdMap.getInternal(), jsonOTSNFacetWidgetEntity);
 
 			}
 		}
@@ -398,10 +396,10 @@ public class OTSNSearchAPI {
 
 		// BEGIN Similar
 		JSONArray jsonOTSNSimilarWidgetItems = new JSONArray();
-		for (VigSESimilarResult similar : vigSEResults.getSimilarResults()) {
+		for (TurSESimilarResult similar : turSEResults.getSimilarResults()) {
 			JSONObject jsonOTSNSimilarWidgetItem = new JSONObject();
-			for (Object similarItemObject : similar.getVigSESimilarResultAttr().values().toArray()) {
-				VigSESimilarResultAttr similarItem = (VigSESimilarResultAttr) similarItemObject;
+			for (Object similarItemObject : similar.getTurSESimilarResultAttr().values().toArray()) {
+				TurSESimilarResultAttr similarItem = (TurSESimilarResultAttr) similarItemObject;
 				jsonOTSNSimilarWidgetItem.put(similarItem.getAttribute(), similarItem.getValue());
 			}
 			jsonOTSNSimilarWidgetItems.put(jsonOTSNSimilarWidgetItem);
@@ -411,13 +409,13 @@ public class OTSNSearchAPI {
 
 		// END Similar
 		jsonOTSNQueryContext.put("otsn:pageEnd", 7);
-		jsonOTSNQueryContext.put("otsn:pageStart", vigSEResults.getStart());
-		jsonOTSNQueryContext.put("otsn:pageCount", vigSEResults.getPageCount());
-		jsonOTSNQueryContext.put("otsn:page", vigSEResults.getCurrentPage());
-		jsonOTSNQueryContext.put("otsn:count", vigSEResults.getNumFound());
-		jsonOTSNQueryContext.put("otsn:limit", vigSEResults.getLimit());
+		jsonOTSNQueryContext.put("otsn:pageStart", turSEResults.getStart());
+		jsonOTSNQueryContext.put("otsn:pageCount", turSEResults.getPageCount());
+		jsonOTSNQueryContext.put("otsn:page", turSEResults.getCurrentPage());
+		jsonOTSNQueryContext.put("otsn:count", turSEResults.getNumFound());
+		jsonOTSNQueryContext.put("otsn:limit", turSEResults.getLimit());
 		jsonOTSNQueryContext.put("otsn:offset", 0);
-		jsonOTSNQueryContext.put("otsn:response-time", vigSEResults.getElapsedTime());
+		jsonOTSNQueryContext.put("otsn:response-time", turSEResults.getElapsedTime());
 		jsonOTSNQueryContext.put("otsn:query", jsonOTSNQuery);
 		jsonOTSNQueryContext.put("otsn:index", "SebraeNA");
 		jsonOTSNQueryContext.put("rdf:Description",

@@ -1,7 +1,6 @@
 package com.viglet.turing.plugins.corenlp;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -24,7 +23,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.viglet.turing.nlp.VigNLPResults;
+import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
@@ -55,7 +54,7 @@ public class CoreNLPConnector implements NLPImpl {
 		return sb.toString();
 	}
 
-	public VigNLPResults request(TurNLPInstance turNLPInstance, String request) throws MalformedURLException, IOException {
+	public TurNLPResults request(TurNLPInstance turNLPInstance, String request) throws MalformedURLException, IOException {
 
 		String props = "{\"tokenize.whitespace\":\"true\",\"annotators\":\"tokenize,ssplit,pos,ner\",\"outputFormat\":\"json\"}";
 
@@ -86,11 +85,11 @@ public class CoreNLPConnector implements NLPImpl {
 			}
 		}
 
-		VigNLPResults vigNLPResults = new VigNLPResults();
-		vigNLPResults.setJsonResult(this.getJSON());
-		vigNLPResults.setTurNLPInstanceEntities(nlpInstanceEntities);
+		TurNLPResults turNLPResults = new TurNLPResults();
+		turNLPResults.setJsonResult(this.getJSON());
+		turNLPResults.setTurNLPInstanceEntities(nlpInstanceEntities);
 
-		return vigNLPResults;
+		return turNLPResults;
 
 	}
 
@@ -176,7 +175,7 @@ public class CoreNLPConnector implements NLPImpl {
 		return entityList.get(entity);
 	}
 
-	public VigNLPResults retrieve(String text) throws TransformerException, Exception {
+	public TurNLPResults retrieve(String text) throws TransformerException, Exception {
 		return this.request(this.turNLPInstance, text);
 	}
 

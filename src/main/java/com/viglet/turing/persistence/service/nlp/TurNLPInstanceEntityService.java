@@ -5,7 +5,7 @@ import java.util.List;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
-import com.viglet.turing.persistence.model.TurEntity;
+import com.viglet.turing.persistence.model.nlp.TurEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.service.TurBaseService;

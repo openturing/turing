@@ -16,7 +16,7 @@ import org.xml.sax.InputSource;
 
 import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
 import com.viglet.turing.persistence.service.se.TurSEInstanceService;
-import com.viglet.turing.solr.VigSolr;
+import com.viglet.turing.solr.TurSolr;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -34,8 +34,8 @@ public class OTSNBrokerAPI {
 		jsonObject.put("index", index);
 		jsonObject.put("config", config);
 		jsonObject.put("data", data);
-		JSONObject vigOTSNBrokerJSON = new JSONObject();
-		vigOTSNBrokerJSON.put("otsn-broker", jsonObject);
+		JSONObject turOTSNBrokerJSON = new JSONObject();
+		turOTSNBrokerJSON.put("otsn-broker", jsonObject);
 
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder builder;
@@ -57,8 +57,8 @@ public class OTSNBrokerAPI {
 		TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
 		TurSEInstanceService turSEInstanceService = new TurSEInstanceService();
 		try {
-			VigSolr vigSolr = new VigSolr(turNLPInstanceService.getNLPDefault().getId(), turSEInstanceService.getSEDefault().getId(), jsonAttributes);
-			vigSolr.indexing();
+			TurSolr turSolr = new TurSolr(turNLPInstanceService.getNLPDefault().getId(), turSEInstanceService.getSEDefault().getId(), jsonAttributes);
+			turSolr.indexing();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

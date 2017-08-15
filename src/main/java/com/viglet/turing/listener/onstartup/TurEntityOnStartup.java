@@ -1,6 +1,6 @@
 package com.viglet.turing.listener.onstartup;
 
-import com.viglet.turing.persistence.model.TurEntity;
+import com.viglet.turing.persistence.model.nlp.TurEntity;
 import com.viglet.turing.persistence.service.TurEntityService;
 
 public class TurEntityOnStartup {

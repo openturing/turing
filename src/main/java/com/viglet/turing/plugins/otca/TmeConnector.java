@@ -20,7 +20,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.XML;
 
-import com.viglet.turing.nlp.VigNLPResults;
+import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
@@ -119,7 +119,7 @@ public class TmeConnector implements NLPImpl {
 		}
 	}
 
-	public VigNLPResults retrieve(String text) throws TransformerException, Exception {
+	public TurNLPResults retrieve(String text) throws TransformerException, Exception {
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("<Nserver>");
@@ -211,11 +211,11 @@ public class TmeConnector implements NLPImpl {
 
 		this.toJSON(this.request(turNLPInstance, sb.toString()));
 
-		VigNLPResults vigNLPResults = new VigNLPResults();
-		vigNLPResults.setJsonResult(this.getJSON());
-		vigNLPResults.setTurNLPInstanceEntities(nlpInstanceEntities);
+		TurNLPResults turNLPResults = new TurNLPResults();
+		turNLPResults.setJsonResult(this.getJSON());
+		turNLPResults.setTurNLPInstanceEntities(nlpInstanceEntities);
 
-		return vigNLPResults;
+		return turNLPResults;
 
 	}
 

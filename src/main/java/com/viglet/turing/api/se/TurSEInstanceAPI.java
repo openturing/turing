@@ -17,7 +17,7 @@ import org.json.JSONObject;
 
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.service.se.TurSEInstanceService;
-import com.viglet.turing.solr.VigSolr;
+import com.viglet.turing.solr.TurSolr;
 
 @Path("/se")
 public class TurSEInstanceAPI {
@@ -27,7 +27,7 @@ public class TurSEInstanceAPI {
 	@Produces("application/json")
 	public Response listInstances() throws JSONException {
 		List<TurSEInstance> turSEInstanceList = turSEInstanceService.listAll();
-		JSONArray vigServices = new JSONArray();
+		JSONArray turServices = new JSONArray();
 		for (TurSEInstance turSEInstance : turSEInstanceList) {
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", turSEInstance.getId());
@@ -38,10 +38,10 @@ public class TurSEInstanceAPI {
 			jsonObject.put("port", turSEInstance.getPort());
 			jsonObject.put("enabled", turSEInstance.getEnabled() == 1 ? true : false);
 			jsonObject.put("selected", turSEInstance.getSelected() == 1 ? true : false);
-			vigServices.put(jsonObject);
+			turServices.put(jsonObject);
 
 		}
-		return Response.status(200).entity(vigServices.toString()).build();
+		return Response.status(200).entity(turServices.toString()).build();
 	}
 
 	@Path("{id}")
@@ -49,7 +49,7 @@ public class TurSEInstanceAPI {
 	@Produces("application/json")
 	public Response detailService(@PathParam("id") int id) throws JSONException {
 		TurSEInstance turSEInstance = turSEInstanceService.get(id);
-		JSONObject vigServiceJSON = new JSONObject();
+		JSONObject turServiceJSON = new JSONObject();
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("id", turSEInstance.getId());
 		jsonObject.put("title", turSEInstance.getTitle());
@@ -59,8 +59,8 @@ public class TurSEInstanceAPI {
 		jsonObject.put("port", turSEInstance.getPort());
 		jsonObject.put("enabled", turSEInstance.getEnabled() == 1 ? true : false);
 		jsonObject.put("selected", turSEInstance.getSelected() == 1 ? true : false);
-		vigServiceJSON.put("se", jsonObject);
-		return Response.status(200).entity(vigServiceJSON.toString()).build();
+		turServiceJSON.put("se", jsonObject);
+		return Response.status(200).entity(turServiceJSON.toString()).build();
 	}
 	
 	@GET
@@ -69,9 +69,9 @@ public class TurSEInstanceAPI {
 	public Response select(@QueryParam("q") String q, @QueryParam("p") int p, @QueryParam("fq[]") List<String> fq)
 			throws JSONException {
 		String result = null;
-		VigSolr vigSolr = new VigSolr();
+		TurSolr turSolr = new TurSolr();
 		try {
-			result = vigSolr.retrieveSolr(q, fq, p).toString();
+			result = turSolr.retrieveSolr(q, fq, p).toString();
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -82,18 +82,18 @@ public class TurSEInstanceAPI {
 	@POST
 	@Path("update")
 	@Produces("application/json")
-	public Response update(@FormParam("vigText") String vigText, @FormParam("vigNLP") int turNLPInstanceId,
-			@FormParam("vigSE") String vigSE) throws JSONException {
+	public Response update(@FormParam("turText") String turText, @FormParam("turNLP") int turNLPInstanceId,
+			@FormParam("turSE") String turSE) throws JSONException {
 
-		String text = vigText;
+		String text = turText;
 		String result = null;
 		int se = 0;
-		if (this.isNumeric(vigSE)) {
-			se = Integer.parseInt(vigSE);
+		if (this.isNumeric(turSE)) {
+			se = Integer.parseInt(turSE);
 		}
-		VigSolr vigSolr = new VigSolr(turNLPInstanceId, se, text);
+		TurSolr turSolr = new TurSolr(turNLPInstanceId, se, text);
 		try {
-			result = vigSolr.indexing();
+			result = turSolr.indexing();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

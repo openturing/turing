@@ -3,8 +3,6 @@ package com.viglet.turing.persistence.model.nlp;
 import java.io.Serializable;
 import javax.persistence.*;
 
-import com.viglet.turing.persistence.model.TurEntity;
-
 /**
  * The persistent class for the vigServicesNLPEntities database table.
  * 
