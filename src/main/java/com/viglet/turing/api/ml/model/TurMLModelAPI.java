@@ -13,9 +13,15 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.tika.exception.TikaException;
@@ -43,13 +49,47 @@ import opennlp.tools.util.TrainingParameters;
 public class TurMLModelAPI {
 	TurDataSentenceService turDataSentenceService = new TurDataSentenceService();
 	TurMLModelService turMLModelService = new TurMLModelService();
-	
-	@GET	
+
+	@GET
 	@Produces("application/json")
 	public List<TurMLModel> list() throws JSONException {
 		return turMLModelService.listAll();
 	}
-	
+
+	@GET
+	@Path("{mlModelId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurMLModel dataGroup(@PathParam("mlModelId") int id) throws JSONException {
+		return turMLModelService.get(id);
+	}
+
+	@Path("/{mlModelId}")
+	@PUT
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurMLModel update(@PathParam("mlModelId") int id, TurMLModel turMLModel) throws Exception {
+		TurMLModel turMLModelEdit = turMLModelService.get(id);
+		turMLModelEdit.setInternalName(turMLModel.getInternalName());
+		turMLModelEdit.setName(turMLModel.getName());
+		turMLModelEdit.setDescription(turMLModel.getDescription());
+		turMLModelService.save(turMLModelEdit);
+		return turMLModelEdit;
+	}
+
+	@Path("/{mlModelId}")
+	@DELETE
+	@Produces(MediaType.APPLICATION_JSON)
+	public boolean delete(@PathParam("mlModelId") int id) throws Exception {
+		return turMLModelService.delete(id);
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	public TurMLModel add(TurMLModel turMLModel) throws Exception {
+		turMLModelService.save(turMLModel);
+		return turMLModel;
+
+	}
+
 	@GET
 	@Path("evaluation")
 	@Produces("application/json")
@@ -64,25 +104,24 @@ public class TurMLModelAPI {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		String[] inputText = {"Republicans in Congress will start this week on an obstacle course even more arduous than health care: the first overhaul of the tax code in three decades."};
+		String[] inputText = {
+				"Republicans in Congress will start this week on an obstacle course even more arduous than health care: the first overhaul of the tax code in three decades." };
 		DocumentCategorizerME myCategorizer = new DocumentCategorizerME(m);
-		double[] outcomes = myCategorizer.categorize(inputText);	
+		double[] outcomes = myCategorizer.categorize(inputText);
 		String category = myCategorizer.getBestCategory(outcomes);
-		
-		 JSONObject json = new JSONObject()
-				 .put("text",inputText)
-				 .put("category",category);
-		 
-		return  Response.status(200).entity(json.toString()).build();
+
+		JSONObject json = new JSONObject().put("text", inputText).put("category", category);
+
+		return Response.status(200).entity(json.toString()).build();
 	}
 
 	@GET
 	@Path("generate")
 	@Produces("application/json")
 	public Response generate() throws JSONException, IOException, SAXException, TikaException {
-		
+
 		List<TurDataSentence> turDataSentences = turDataSentenceService.listAll();
-		
+
 		StringBuffer trainSB = new StringBuffer();
 
 		boolean catVariables = true;

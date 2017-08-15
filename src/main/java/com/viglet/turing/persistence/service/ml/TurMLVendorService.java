@@ -23,7 +23,7 @@ public class TurMLVendorService extends TurBaseService {
 		return em.find(TurMLVendor.class, mlVendorId);
 	}
 
-	public boolean delete(int mlVendorId) {
+	public boolean delete(String mlVendorId) {
 		TurMLVendor turMLVendor = em.find(TurMLVendor.class, mlVendorId);
 		em.getTransaction().begin();
 		em.remove(turMLVendor);

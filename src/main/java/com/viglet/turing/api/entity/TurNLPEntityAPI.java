@@ -2,151 +2,61 @@ package com.viglet.turing.api.entity;
 
 import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.MediaType;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import com.viglet.turing.persistence.model.nlp.term.TurTerm;
-import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
-import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
-import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
-import com.viglet.turing.persistence.model.nlp.term.TurTermVariationLanguage;
+import com.viglet.turing.persistence.service.nlp.TurNLPEntityService;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 
 @Path("/entity")
 public class TurNLPEntityAPI {
+	TurNLPEntityService turNLPEntityService = new TurNLPEntityService();
 
 	@GET
-	@Produces("application/json")
-	public Response list() throws JSONException {
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
-
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
-		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT e FROM TurNLPEntity e ");
-
-		List<TurNLPEntity> turNLPEntityList = q.getResultList();
-		JSONArray turEntities = new JSONArray();
-		for (TurNLPEntity turNLPEntity : turNLPEntityList) {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", turNLPEntity.getId());
-			jsonObject.put("name", turNLPEntity.getName());
-			jsonObject.put("description", turNLPEntity.getDescription());
-			turEntities.put(jsonObject);
-
-		}
-		return Response.status(200).entity(turEntities.toString()).build();
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<TurNLPEntity> list() throws JSONException {
+		return turNLPEntityService.listAll();
 	}
 
-	@Path("{id}")
+	@Path("{entityId}")
 	@GET
-	@Produces("application/json")
-	public Response detail(@PathParam("id") int id) throws JSONException {
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurNLPEntity detail(@PathParam("entityId") int id) throws JSONException {
+		return turNLPEntityService.get(id);
+	}
 
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
-		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT e FROM TurNLPEntity e where e.id = :id ").setParameter("id", id);
-		TurNLPEntity turNLPEntity = (TurNLPEntity) q.getSingleResult();
-		JSONObject turNLPEntityJSON = new JSONObject();
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("id", turNLPEntity.getId());
-		jsonObject.put("name", turNLPEntity.getName());
-		jsonObject.put("description", turNLPEntity.getDescription());
-
-		Query qTerms = em.createQuery("SELECT t FROM TurTerm t where t.turNLPEntity = :turNLPEntity")
-				.setParameter("turNLPEntity", turNLPEntity);
-
-		List<TurTerm> turTermList = qTerms.getResultList();
-		JSONArray turTerms = new JSONArray();
-		for (TurTerm turTerm : turTermList) {
-			JSONObject jsonTerm = new JSONObject();
-			jsonTerm.put("id", turTerm.getId());
-			jsonTerm.put("name", turTerm.getName());
-			turTerms.put(jsonTerm);
-
-		}
-
-		jsonObject.put("terms", turTerms);
-		turNLPEntityJSON.put("entity", jsonObject);
-
-		return Response.status(200).entity(turNLPEntityJSON.toString()).build();
+	@Path("/{entityId}")
+	@PUT
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurNLPEntity update(@PathParam("entityId") int id, TurNLPEntity turNLPEntity) throws Exception {
+		TurNLPEntity turNLPEntityEdit = turNLPEntityService.get(id);
+		turNLPEntityEdit.setName(turNLPEntity.getName());
+		turNLPEntityEdit.setDescription(turNLPEntity.getDescription());
+		turNLPEntityService.save(turNLPEntityEdit);
+		return turNLPEntityEdit;
 	}
 
 	@Path("{id}")
 	@DELETE
 	@Produces("application/json")
-	public Response deleteEntity(@PathParam("id") int id) {
-		JSONObject turNLPEntityJSON = new JSONObject();
+	public boolean deleteEntity(@PathParam("id") int id) {
+		return turNLPEntityService.delete(id);
+	}
 
-		try {
-			String PERSISTENCE_UNIT_NAME = "semantics-app";
-			EntityManagerFactory factory;
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	public TurNLPEntity add(TurNLPEntity turNLPEntity) throws Exception {
+		turNLPEntityService.save(turNLPEntity);
+		return turNLPEntity;
 
-			factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-			EntityManager em = factory.createEntityManager();
-
-			// Read the existing entries and write to console
-			Query q = em.createQuery("SELECT e FROM TurNLPEntity e where e.id = :id ").setParameter("id", id);
-			TurNLPEntity turNLPEntity = (TurNLPEntity) q.getSingleResult();
-
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", turNLPEntity.getId());
-			jsonObject.put("name", turNLPEntity.getName());
-			jsonObject.put("description", turNLPEntity.getDescription());
-
-			turNLPEntityJSON.put("entity", jsonObject);
-
-			Query qTerms = em.createQuery("SELECT t FROM TurTerm t where t.turNLPEntity = :turNLPEntity ")
-					.setParameter("turNLPEntity", turNLPEntity);
-			List<?> terms = qTerms.getResultList();
-
-			for (Object termObject : terms) {
-				TurTerm turTerm = (TurTerm) termObject;
-				em.getTransaction().begin();
-				for (TurTermRelationFrom turTermRelationFrom : turTerm.getTurTermRelationFroms()) {
-					for (TurTermRelationTo turTermRelationTo : turTermRelationFrom.getTurTermRelationTos()) {
-						em.remove(turTermRelationTo);
-					}
-					em.remove(turTermRelationFrom);
-				}
-				em.getTransaction().commit();
-				em.getTransaction().begin();
-				for (TurTermVariation turTermVariation : turTerm.getTurTermVariations()) {
-					for (TurTermVariationLanguage turTermVariationLanguage : turTermVariation
-							.getTurTermVariationLanguages()) {
-						em.remove(turTermVariationLanguage);
-					}
-					em.remove(turTermVariation);
-				}
-
-				em.getTransaction().commit();
-
-				em.getTransaction().begin();
-				em.remove(turTerm);
-				em.getTransaction().commit();
-			}
-			em.getTransaction().begin();
-			em.remove(turNLPEntity);
-			em.getTransaction().commit();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return Response.status(200).entity(turNLPEntityJSON.toString()).build();
 	}
 }

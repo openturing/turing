@@ -23,7 +23,7 @@ public class TurNLPVendorService extends TurBaseService {
 		return em.find(TurNLPVendor.class, nlpVendorId);
 	}
 
-	public boolean delete(int nlpVendorId) {
+	public boolean delete(String nlpVendorId) {
 		TurNLPVendor turNLPVendor = em.find(TurNLPVendor.class, nlpVendorId);
 		em.getTransaction().begin();
 		em.remove(turNLPVendor);

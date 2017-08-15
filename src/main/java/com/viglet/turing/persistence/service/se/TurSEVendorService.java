@@ -23,7 +23,7 @@ public class TurSEVendorService extends TurBaseService {
 		return em.find(TurSEVendor.class, seVendorId);
 	}
 
-	public boolean delete(int seVendorId) {
+	public boolean delete(String seVendorId) {
 		TurSEVendor turSEVendor = em.find(TurSEVendor.class, seVendorId);
 		em.getTransaction().begin();
 		em.remove(turSEVendor);

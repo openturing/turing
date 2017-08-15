@@ -2,18 +2,20 @@ package com.viglet.turing.api.se;
 
 import java.util.List;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.service.se.TurSEInstanceService;
@@ -24,48 +26,52 @@ public class TurSEInstanceAPI {
 	TurSEInstanceService turSEInstanceService = new TurSEInstanceService();
 
 	@GET
-	@Produces("application/json")
-	public Response listInstances() throws JSONException {
-		List<TurSEInstance> turSEInstanceList = turSEInstanceService.listAll();
-		JSONArray turServices = new JSONArray();
-		for (TurSEInstance turSEInstance : turSEInstanceList) {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", turSEInstance.getId());
-			jsonObject.put("title", turSEInstance.getTitle());
-			jsonObject.put("description", turSEInstance.getDescription());
-			jsonObject.put("vendor", turSEInstance.getTurSEVendor().getId());
-			jsonObject.put("host", turSEInstance.getHost());
-			jsonObject.put("port", turSEInstance.getPort());
-			jsonObject.put("enabled", turSEInstance.getEnabled() == 1 ? true : false);
-			jsonObject.put("selected", turSEInstance.getSelected() == 1 ? true : false);
-			turServices.put(jsonObject);
-
-		}
-		return Response.status(200).entity(turServices.toString()).build();
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<TurSEInstance> list() throws JSONException {
+		 return turSEInstanceService.listAll();
 	}
 
-	@Path("{id}")
 	@GET
-	@Produces("application/json")
-	public Response detailService(@PathParam("id") int id) throws JSONException {
-		TurSEInstance turSEInstance = turSEInstanceService.get(id);
-		JSONObject turServiceJSON = new JSONObject();
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("id", turSEInstance.getId());
-		jsonObject.put("title", turSEInstance.getTitle());
-		jsonObject.put("description", turSEInstance.getDescription());
-		jsonObject.put("vendor", turSEInstance.getTurSEVendor().getId());
-		jsonObject.put("host", turSEInstance.getHost());
-		jsonObject.put("port", turSEInstance.getPort());
-		jsonObject.put("enabled", turSEInstance.getEnabled() == 1 ? true : false);
-		jsonObject.put("selected", turSEInstance.getSelected() == 1 ? true : false);
-		turServiceJSON.put("se", jsonObject);
-		return Response.status(200).entity(turServiceJSON.toString()).build();
+	@Path("{seInstanceId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurSEInstance dataGroup(@PathParam("seInstanceId") int id) throws JSONException {
+		 return turSEInstanceService.get(id);
+	}
+	
+	@Path("/{seInstanceId}")
+	@PUT
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurSEInstance update(@PathParam("seInstanceId") int id, TurSEInstance turSEInstance) throws Exception {
+		TurSEInstance turSEInstanceEdit = turSEInstanceService.get(id);
+		turSEInstanceEdit.setTitle(turSEInstance.getTitle());
+		turSEInstanceEdit.setDescription(turSEInstance.getDescription());
+		turSEInstanceEdit.setTurSEVendor(turSEInstance.getTurSEVendor());
+		turSEInstanceEdit.setHost(turSEInstance.getHost());
+		turSEInstanceEdit.setPort(turSEInstance.getPort());
+		turSEInstanceEdit.setEnabled(turSEInstance.getEnabled());
+		turSEInstanceEdit.setSelected(turSEInstance.getSelected());
+		turSEInstanceService.save(turSEInstanceEdit);
+		return turSEInstanceEdit;
+	}
+
+	@Path("/{seInstanceId}")
+	@DELETE
+	@Produces(MediaType.APPLICATION_JSON)
+	public boolean delete(@PathParam("seInstanceId") int id) throws Exception {
+		return turSEInstanceService.delete(id);
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	public TurSEInstance add(TurSEInstance turSEInstance) throws Exception {
+		turSEInstanceService.save(turSEInstance);
+		return turSEInstance;
+
 	}
 	
 	@GET
 	@Path("select")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response select(@QueryParam("q") String q, @QueryParam("p") int p, @QueryParam("fq[]") List<String> fq)
 			throws JSONException {
 		String result = null;
@@ -81,8 +87,8 @@ public class TurSEInstanceAPI {
 	
 	@POST
 	@Path("update")
-	@Produces("application/json")
-	public Response update(@FormParam("turText") String turText, @FormParam("turNLP") int turNLPInstanceId,
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response update(@FormParam("turText") String turText, @FormParam("turSE") int turSEInstanceId,
 			@FormParam("turSE") String turSE) throws JSONException {
 
 		String text = turText;
@@ -91,7 +97,7 @@ public class TurSEInstanceAPI {
 		if (this.isNumeric(turSE)) {
 			se = Integer.parseInt(turSE);
 		}
-		TurSolr turSolr = new TurSolr(turNLPInstanceId, se, text);
+		TurSolr turSolr = new TurSolr(turSEInstanceId, se, text);
 		try {
 			result = turSolr.indexing();
 		} catch (Exception e) {

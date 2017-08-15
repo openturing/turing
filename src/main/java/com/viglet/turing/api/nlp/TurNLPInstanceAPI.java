@@ -2,15 +2,17 @@ package com.viglet.turing.api.nlp;
 
 import java.util.List;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.MediaType;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
@@ -18,44 +20,48 @@ import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
 @Path("/nlp")
 public class TurNLPInstanceAPI {
 	TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
-
+	
 	@GET
-	@Produces("application/json")
-	public Response listInstances() throws JSONException {
-		List<TurNLPInstance> turNLPInstanceList = turNLPInstanceService.listAll();
-		JSONArray vigServices = new JSONArray();
-		for (TurNLPInstance turNLPInstance : turNLPInstanceList) {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", turNLPInstance.getId());
-			jsonObject.put("title", turNLPInstance.getTitle());
-			jsonObject.put("description", turNLPInstance.getDescription());
-			jsonObject.put("vendor", turNLPInstance.getTurNLPVendor().getId());
-			jsonObject.put("host", turNLPInstance.getHost());
-			jsonObject.put("port", turNLPInstance.getPort());
-			jsonObject.put("enabled", turNLPInstance.getEnabled() == 1 ? true : false);
-			jsonObject.put("selected", turNLPInstance.getSelected() == 1 ? true : false);
-			vigServices.put(jsonObject);
-
-		}
-		return Response.status(200).entity(vigServices.toString()).build();
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<TurNLPInstance> list() throws JSONException {
+		 return turNLPInstanceService.listAll();
 	}
 
-	@Path("{id}")
 	@GET
-	@Produces("application/json")
-	public Response detailService(@PathParam("id") int id) throws JSONException {
-		TurNLPInstance turNLPInstance = turNLPInstanceService.get(id);
-		JSONObject vigServiceJSON = new JSONObject();
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("id", turNLPInstance.getId());
-		jsonObject.put("title", turNLPInstance.getTitle());
-		jsonObject.put("description", turNLPInstance.getDescription());
-		jsonObject.put("vendor", turNLPInstance.getTurNLPVendor().getId());
-		jsonObject.put("host", turNLPInstance.getHost());
-		jsonObject.put("port", turNLPInstance.getPort());
-		jsonObject.put("enabled", turNLPInstance.getEnabled() == 1 ? true : false);
-		jsonObject.put("selected", turNLPInstance.getSelected() == 1 ? true : false);
-		vigServiceJSON.put("nlp", jsonObject);
-		return Response.status(200).entity(vigServiceJSON.toString()).build();
+	@Path("{nlpInstanceId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurNLPInstance dataGroup(@PathParam("nlpInstanceId") int id) throws JSONException {
+		 return turNLPInstanceService.get(id);
+	}
+	
+	@Path("/{nlpInstanceId}")
+	@PUT
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurNLPInstance update(@PathParam("nlpInstanceId") int id, TurNLPInstance turNLPInstance) throws Exception {
+		TurNLPInstance turNLPInstanceEdit = turNLPInstanceService.get(id);
+		turNLPInstanceEdit.setTitle(turNLPInstance.getTitle());
+		turNLPInstanceEdit.setDescription(turNLPInstance.getDescription());
+		turNLPInstanceEdit.setTurNLPVendor(turNLPInstance.getTurNLPVendor());
+		turNLPInstanceEdit.setHost(turNLPInstance.getHost());
+		turNLPInstanceEdit.setPort(turNLPInstance.getPort());
+		turNLPInstanceEdit.setEnabled(turNLPInstance.getEnabled());
+		turNLPInstanceEdit.setSelected(turNLPInstance.getSelected());
+		turNLPInstanceService.save(turNLPInstanceEdit);
+		return turNLPInstanceEdit;
+	}
+
+	@Path("/{nlpInstanceId}")
+	@DELETE
+	@Produces(MediaType.APPLICATION_JSON)
+	public boolean delete(@PathParam("nlpInstanceId") int id) throws Exception {
+		return turNLPInstanceService.delete(id);
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	public TurNLPInstance add(TurNLPInstance turNLPInstance) throws Exception {
+		turNLPInstanceService.save(turNLPInstance);
+		return turNLPInstance;
+
 	}
 }

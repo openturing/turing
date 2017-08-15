@@ -2,15 +2,17 @@ package com.viglet.turing.api.ml;
 
 import java.util.List;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.MediaType;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.viglet.turing.persistence.model.ml.TurMLVendor;
 import com.viglet.turing.persistence.service.ml.TurMLVendorService;
@@ -21,32 +23,43 @@ public class TurMLVendorAPI {
 	
 	@GET
 	@Produces("application/json")
-	public Response listInstances() throws JSONException {
-		List<TurMLVendor> turMLVendorList = turMLVendorService.listAll();
-	
-		JSONArray vigSolutions = new JSONArray();
-		for (TurMLVendor turMLVendor : turMLVendorList) {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", turMLVendor.getId());
-			jsonObject.put("title", turMLVendor.getTitle());
-			jsonObject.put("description", turMLVendor.getDescription());
-			jsonObject.put("website", turMLVendor.getWebsite());
-			vigSolutions.put(jsonObject);
-
-		}
-		return Response.status(200).entity(vigSolutions.toString()).build();
+	public List<TurMLVendor> list() throws JSONException {
+		return turMLVendorService.listAll();
 	}
 
-	@Path("{id}")
+	@Path("{mlVendorId}")
 	@GET
 	@Produces("application/json")
-	public Response mlSolution(@PathParam("id") String id) throws JSONException {
-		TurMLVendor turMLVendor = turMLVendorService.get(id);
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("id", turMLVendor.getId());
-		jsonObject.put("title", turMLVendor.getTitle());
-		jsonObject.put("description", turMLVendor.getDescription());
-		jsonObject.put("website", turMLVendor.getWebsite());
-		return Response.status(200).entity(jsonObject.toString()).build();
+	public TurMLVendor mlSolution(@PathParam("mlVendorId") String id) throws JSONException {
+		return turMLVendorService.get(id);
+	}
+	
+
+	@Path("/{mlVendorId}")
+	@PUT
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurMLVendor update(@PathParam("mlVendorId") String id, TurMLVendor turMLVendor) throws Exception {
+		TurMLVendor turMLVendorEdit = turMLVendorService.get(id);
+		turMLVendorEdit.setDescription(turMLVendor.getDescription());
+		turMLVendorEdit.setPlugin(turMLVendor.getPlugin());
+		turMLVendorEdit.setTitle(turMLVendor.getTitle());
+		turMLVendorEdit.setWebsite(turMLVendor.getWebsite());		
+		turMLVendorService.save(turMLVendorEdit);
+		return turMLVendorEdit;
+	}
+
+	@Path("{mlVendorId}")
+	@DELETE
+	@Produces("application/json")
+	public boolean deleteEntity(@PathParam("mlVendorId") String id) {
+		return turMLVendorService.delete(id);
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	public TurMLVendor add(TurMLVendor turMLVendor) throws Exception {
+		turMLVendorService.save(turMLVendor);
+		return turMLVendor;
+
 	}
 }

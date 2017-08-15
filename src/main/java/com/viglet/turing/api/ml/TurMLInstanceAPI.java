@@ -2,15 +2,17 @@ package com.viglet.turing.api.ml;
 
 import java.util.List;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.MediaType;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.viglet.turing.persistence.model.ml.TurMLInstance;
 import com.viglet.turing.persistence.service.ml.TurMLInstanceService;
@@ -20,42 +22,46 @@ public class TurMLInstanceAPI {
 	TurMLInstanceService turMLInstanceService = new TurMLInstanceService();
 
 	@GET
-	@Produces("application/json")
-	public Response listInstances() throws JSONException {
-		List<TurMLInstance> turMLInstanceList = turMLInstanceService.listAll();
-		JSONArray vigServices = new JSONArray();
-		for (TurMLInstance turMLInstance : turMLInstanceList) {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", turMLInstance.getId());
-			jsonObject.put("title", turMLInstance.getTitle());
-			jsonObject.put("description", turMLInstance.getDescription());
-			jsonObject.put("vendor", turMLInstance.getTurMLVendor().getId());
-			jsonObject.put("host", turMLInstance.getHost());
-			jsonObject.put("port", turMLInstance.getPort());
-			jsonObject.put("enabled", turMLInstance.getEnabled() == 1 ? true : false);
-			jsonObject.put("selected", turMLInstance.getSelected() == 1 ? true : false);
-			vigServices.put(jsonObject);
-
-		}
-		return Response.status(200).entity(vigServices.toString()).build();
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<TurMLInstance> list() throws JSONException {
+		return turMLInstanceService.listAll();
 	}
 
-	@Path("{id}")
+	@Path("{mlInstanceId}")
 	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurMLInstance detailService(@PathParam("mlInstanceId") int id) throws JSONException {
+		return turMLInstanceService.get(id);
+	}
+
+	@Path("/{mlInstanceId}")
+	@PUT
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurMLInstance update(@PathParam("mlInstanceId") int id, TurMLInstance turMLInstance) throws Exception {
+		TurMLInstance turMLInstanceEdit = turMLInstanceService.get(id);
+		turMLInstanceEdit.setTitle(turMLInstance.getTitle());
+		turMLInstanceEdit.setDescription(turMLInstance.getDescription());
+		turMLInstanceEdit.setTurMLVendor(turMLInstance.getTurMLVendor());
+		turMLInstanceEdit.setHost(turMLInstance.getHost());
+		turMLInstanceEdit.setPort(turMLInstance.getPort());
+		turMLInstanceEdit.setEnabled(turMLInstance.getEnabled());
+		turMLInstanceEdit.setSelected(turMLInstance.getSelected());
+		turMLInstanceService.save(turMLInstanceEdit);
+		return turMLInstanceEdit;
+	}
+
+	@Path("{mlInstanceId}")
+	@DELETE
 	@Produces("application/json")
-	public Response detailService(@PathParam("id") int id) throws JSONException {
-		TurMLInstance turMLInstance = turMLInstanceService.get(id);
-		JSONObject vigServiceJSON = new JSONObject();
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("id", turMLInstance.getId());
-		jsonObject.put("title", turMLInstance.getTitle());
-		jsonObject.put("description", turMLInstance.getDescription());
-		jsonObject.put("vendor", turMLInstance.getTurMLVendor().getId());
-		jsonObject.put("host", turMLInstance.getHost());
-		jsonObject.put("port", turMLInstance.getPort());
-		jsonObject.put("enabled", turMLInstance.getEnabled() == 1 ? true : false);
-		jsonObject.put("selected", turMLInstance.getSelected() == 1 ? true : false);
-		vigServiceJSON.put("ml", jsonObject);
-		return Response.status(200).entity(vigServiceJSON.toString()).build();
+	public boolean deleteEntity(@PathParam("mlInstanceId") int id) {
+		return turMLInstanceService.delete(id);
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	public TurMLInstance add(TurMLInstance turMLInstance) throws Exception {
+		turMLInstanceService.save(turMLInstance);
+		return turMLInstance;
+
 	}
 }

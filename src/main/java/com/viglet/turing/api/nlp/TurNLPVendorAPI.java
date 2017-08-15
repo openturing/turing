@@ -2,23 +2,19 @@ package com.viglet.turing.api.nlp;
 
 import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.MediaType;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
-import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
 import com.viglet.turing.persistence.service.nlp.TurNLPVendorService;
 
 @Path("/nlp/vendor")
@@ -27,32 +23,43 @@ public class TurNLPVendorAPI {
 	
 	@GET
 	@Produces("application/json")
-	public Response listInstances() throws JSONException {
-		List<TurNLPVendor> turNLPVendorList = turNLPVendorService.listAll();
-	
-		JSONArray vigSolutions = new JSONArray();
-		for (TurNLPVendor turNLPVendor : turNLPVendorList) {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", turNLPVendor.getId());
-			jsonObject.put("title", turNLPVendor.getTitle());
-			jsonObject.put("description", turNLPVendor.getDescription());
-			jsonObject.put("website", turNLPVendor.getWebsite());
-			vigSolutions.put(jsonObject);
-
-		}
-		return Response.status(200).entity(vigSolutions.toString()).build();
+	public List<TurNLPVendor> list() throws JSONException {
+		return turNLPVendorService.listAll();
 	}
 
-	@Path("{id}")
+	@Path("{nlpVendorId}")
 	@GET
 	@Produces("application/json")
-	public Response nlpSolution(@PathParam("id") String id) throws JSONException {
-		TurNLPVendor turNLPVendor = turNLPVendorService.get(id);
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("id", turNLPVendor.getId());
-		jsonObject.put("title", turNLPVendor.getTitle());
-		jsonObject.put("description", turNLPVendor.getDescription());
-		jsonObject.put("website", turNLPVendor.getWebsite());
-		return Response.status(200).entity(jsonObject.toString()).build();
+	public TurNLPVendor nlpSolution(@PathParam("nlpVendorId") String id) throws JSONException {
+		return turNLPVendorService.get(id);
+	}
+	
+
+	@Path("/{nlpVendorId}")
+	@PUT
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurNLPVendor update(@PathParam("nlpVendorId") String id, TurNLPVendor turNLPVendor) throws Exception {
+		TurNLPVendor turNLPVendorEdit = turNLPVendorService.get(id);
+		turNLPVendorEdit.setDescription(turNLPVendor.getDescription());
+		turNLPVendorEdit.setPlugin(turNLPVendor.getPlugin());
+		turNLPVendorEdit.setTitle(turNLPVendor.getTitle());
+		turNLPVendorEdit.setWebsite(turNLPVendor.getWebsite());		
+		turNLPVendorService.save(turNLPVendorEdit);
+		return turNLPVendorEdit;
+	}
+
+	@Path("{nlpVendorId}")
+	@DELETE
+	@Produces("application/json")
+	public boolean deleteEntity(@PathParam("nlpVendorId") String id) {
+		return turNLPVendorService.delete(id);
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	public TurNLPVendor add(TurNLPVendor turNLPVendor) throws Exception {
+		turNLPVendorService.save(turNLPVendor);
+		return turNLPVendor;
+
 	}
 }

@@ -2,66 +2,61 @@ package com.viglet.turing.api.entity;
 
 import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.MediaType;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
+import com.viglet.turing.persistence.model.nlp.term.TurTerm;
+import com.viglet.turing.persistence.service.nlp.term.TurTermService;
 
 @Path("/entity/terms")
 public class TurNLPEntityTermAPI {
+	TurTermService turTermService = new TurTermService();
+	
 	@GET
-	@Produces("application/json")
-	public Response nlpSolution() throws JSONException {
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
-
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
-		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT s FROM VigTerm s");
-
-		List<TurNLPVendor> vigNLPVednorList = q.getResultList();
-		JSONArray vigSolutions = new JSONArray();
-		for (TurNLPVendor turNLPVendor : vigNLPVednorList) {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", turNLPVendor.getId());
-			jsonObject.put("title", turNLPVendor.getTitle());
-			jsonObject.put("description", turNLPVendor.getDescription());
-			jsonObject.put("website", turNLPVendor.getWebsite());
-			vigSolutions.put(jsonObject);
-
-		}
-		return Response.status(200).entity(vigSolutions.toString()).build();
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<TurTerm> list() throws JSONException {
+		return turTermService.listAll();
 	}
 
-	@Path("{id}")
+	@Path("{termId}")
 	@GET
-	@Produces("application/json")
-	public Response nlpSolution(@PathParam("id") int id) throws JSONException {
-		String PERSISTENCE_UNIT_NAME = "semantics-app";
-		EntityManagerFactory factory;
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurTerm detail(@PathParam("termId") int id) throws JSONException {
+		return turTermService.get(id);
+	}
 
-		factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
-		EntityManager em = factory.createEntityManager();
-		// Read the existing entries and write to console
-		Query q = em.createQuery("SELECT s FROM VigNLPVendor s where s.id = :id ").setParameter("id", id);
-		TurNLPVendor turNLPVendor = (TurNLPVendor) q.getSingleResult();
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("id", turNLPVendor.getId());
-		jsonObject.put("title", turNLPVendor.getTitle());
-		jsonObject.put("description", turNLPVendor.getDescription());
-		jsonObject.put("website", turNLPVendor.getWebsite());
-		return Response.status(200).entity(jsonObject.toString()).build();
+	@Path("/{termId}")
+	@PUT
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurTerm update(@PathParam("termId") int id, TurTerm turTerm) throws Exception {
+		TurTerm turTermEdit = turTermService.get(id);
+		turTermEdit.setName(turTerm.getName());
+		turTermEdit.setIdCustom(turTerm.getIdCustom());
+		turTermService.save(turTermEdit);
+		return turTermEdit;
+	}
+
+	@Path("{termId}")
+	@DELETE
+	@Produces("application/json")
+	public boolean deleteEntity(@PathParam("id") int id) {
+		return turTermService.delete(id);
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	public TurTerm add(TurTerm turTerm) throws Exception {
+		turTermService.save(turTerm);
+		return turTerm;
+
 	}
 }
