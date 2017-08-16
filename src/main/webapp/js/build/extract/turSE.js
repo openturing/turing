@@ -1,61 +1,62 @@
+turingApp.factory('turSEInstanceResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/se/:id');
+} ]);
+
+turingApp.factory('turSEVendorResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/se/vendor/:id');
+} ]);
+
+turingApp.factory('turSESNResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/se/sn/:id');
+} ]);
+
 turingApp.controller('TurSEInstanceCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$state",
-	"$rootScope",
-	"$translate",
-	function ($scope, $http, $window, $state, $rootScope, $translate) {
-		$scope.ses = null;
-		$rootScope.$state = $state;
-		$scope.$evalAsync($http.get(
-			"/turing/api/se").then(
-			function (response) {
-				$scope.ses = response.data;
-			}));
-	}]);
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turSEInstanceResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turSEInstanceResource) {
+			$rootScope.$state = $state;
+			$scope.ses = turSEInstanceResource.query();
+		} ]);
 
 turingApp.controller('TurSEInstanceEditCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$stateParams",
-	"$state",
-	"$rootScope",
-	"$translate",
-	"vigLocale",
-	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate, vigLocale) {
-		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-		$translate.use($scope.vigLanguage);
-		$rootScope.$state = $state;
-		$scope.se = null;
-		$scope.seVendors = null;
-		$scope.seInstanceId = $stateParams.seInstanceId;
-		$scope.$evalAsync($http.get(
-		"/turing/api/se/vendor").then(
-		function (response) {
-			$scope.seVendors = response.data;
-		}));
-		$scope.$evalAsync($http.get(
-			"/turing/api/se/" + $scope.seInstanceId).then(
-			function (response) {
-				$scope.se = response.data;
-			}));
-	}
-]);
+		"$scope",
+		"$http",
+		"$window",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turSEInstanceResource",
+		"turSEVendorResource",
+		function($scope, $http, $window, $stateParams, $state, $rootScope,
+				$translate, vigLocale, turSEInstanceResource,
+				turSEVendorResource) {
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+			$scope.seInstanceId = $stateParams.seInstanceId;
+			$scope.seVendors = turSEVendorResource.query();
+			$scope.se = turSEInstanceResource.get({
+				id : $scope.seInstanceId
+			});
+		} ]);
 turingApp.controller('TurSESNCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$state",
-	"$rootScope",
-	"$translate",
-	function ($scope, $http, $window, $state, $rootScope, $translate) {
-		$scope.seSNs = null;
-		$rootScope.$state = $state;
-		$scope.$evalAsync($http.get(
-			"/turing/api/se/sn").then(
-			function (response) {
-				$scope.seSNs = response.data;
-			}));
-	}]);
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turSESNResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turSESNResource) {
+			$rootScope.$state = $state;
+			$scope.seSNs = turSESNResource.query();
+		} ]);

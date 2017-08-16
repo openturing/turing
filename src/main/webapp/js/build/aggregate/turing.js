@@ -1,22 +1,25 @@
-var turingApp = angular.module('turingApp', ['ui.router', 'pascalprecht.translate']);
+var turingApp = angular.module('turingApp', [ 'ngResource', 'ui.router',
+		'pascalprecht.translate' ]);
 
-turingApp.factory('vigLocale', ['$window', function ($window) {
-    return {
-        getLocale: function () {
-            var nav = $window.navigator;
-            if (angular.isArray(nav.languages)) {
-                if (nav.languages.length > 0) {
-                    return nav.languages[0].split('-').join('_');
-                }
-            }
-            return ((nav.language ||
-                nav.browserLanguage ||
-                nav.systemLanguage ||
-                nav.userLanguage
-            ) || '').split('-').join('_');
-        }
-    }
-}]);
+turingApp.factory('vigLocale', [
+		'$window',
+		function($window) {
+			return {
+				getLocale : function() {
+					var nav = $window.navigator;
+					if (angular.isArray(nav.languages)) {
+						if (nav.languages.length > 0) {
+							return nav.languages[0].split('-').join('_');
+						}
+					}
+					return ((nav.language || nav.browserLanguage
+							|| nav.systemLanguage || nav.userLanguage) || '')
+							.split('-').join('_');
+				}
+			}
+		} ]);
+
+
 turingApp.config([
 		'$stateProvider',
 		'$urlRouterProvider',
@@ -111,7 +114,7 @@ turingApp.config([
 					pageTitle : 'Data Group Categories | Viglet Turing'
 				}
 			}).state('ml.datagroup-edit.data', {
-				url : '/documents',
+				url : '/document',
 				templateUrl : 'templates/ml/data/group/ml-datagroup-data.html',
 				data : {
 					pageTitle : 'Data Group Documents | Viglet Turing'
@@ -210,6 +213,28 @@ turingApp.controller('TurHomeCtrl', [
 		$scope.accesses = null;
 		$rootScope.$state = $state;		
 	}]);
+turingApp.factory('turMLInstanceResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/ml/:id');
+} ]);
+
+turingApp.factory('turMLVendorResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/ml/vendor/:id');
+} ]);
+
+turingApp.factory('turMLDataGroupResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/ml/data/group/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
+
+turingApp.factory('turMLModelResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/ml/model/:id');
+} ]);
+
 turingApp.controller('TurMLModelCtrl', [
 		"$scope",
 		"$http",
@@ -217,13 +242,11 @@ turingApp.controller('TurMLModelCtrl', [
 		"$state",
 		"$rootScope",
 		"$translate",
-		function($scope, $http, $window, $state, $rootScope, $translate) {
-			$scope.mlModels = null;
+		"turMLModelResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turMLModelResource) {
 			$rootScope.$state = $state;
-			$scope.$evalAsync($http.get("/turing/api/ml/model").then(
-					function(response) {
-						$scope.mlModels = response.data;
-					}));
+			$scope.mlModels = turMLModelResource.query();
 		} ]);
 
 turingApp.controller('TurMLDataGroupCtrl', [
@@ -233,13 +256,11 @@ turingApp.controller('TurMLDataGroupCtrl', [
 		"$state",
 		"$rootScope",
 		"$translate",
-		function($scope, $http, $window, $state, $rootScope, $translate) {
-			$scope.mlDataGroups = null;
+		"turMLDataGroupResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turMLDataGroupResource) {
 			$rootScope.$state = $state;
-			$scope.$evalAsync($http.get("/turing/api/ml/data/group").then(
-					function(response) {
-						$scope.mlDataGroups = response.data;
-					}));
+			$scope.mlDataGroups = turMLDataGroupResource.query();
 		} ]);
 
 turingApp.controller('TurMLDataGroupNewCtrl', [
@@ -251,21 +272,18 @@ turingApp.controller('TurMLDataGroupNewCtrl', [
 		"$rootScope",
 		"$translate",
 		"vigLocale",
+		"turMLDataGroupResource",
 		function($scope, $http, $window, $stateParams, $state, $rootScope,
-				$translate, vigLocale) {
+				$translate, vigLocale, turMLDataGroupResource) {
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 			$scope.mlDataGroupId = $stateParams.mlDataGroupId;
 			$scope.dataGroup = {};
 			$scope.dataGroupSave = function() {
-				var parameter = JSON.stringify($scope.dataGroup);
-				$http.post("/turing/api/ml/data/group/", parameter).then(
-						function(data, status, headers, config) {
-							$state.go('ml.datagroup');
-						}, function(data, status, headers, config) {
-							//
-						});
+				turMLDataGroupResource.save($scope.dataGroup, function() {
+					$state.go('ml.datagroup');
+				});
 			}
 		} ]);
 
@@ -278,36 +296,25 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 		"$rootScope",
 		"$translate",
 		"vigLocale",
+		"turMLDataGroupResource",
 		function($scope, $http, $window, $stateParams, $state, $rootScope,
-				$translate, vigLocale) {
+				$translate, vigLocale, turMLDataGroupResource) {
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			$scope.dataGroup = null;
 			$scope.mlDataGroupId = $stateParams.mlDataGroupId;
-			$scope.$evalAsync($http.get(
-					"/turing/api/ml/data/group/" + $scope.mlDataGroupId).then(
-					function(response) {
-						$scope.dataGroup = response.data;
-					}));
+			$scope.dataGroup = turMLDataGroupResource.get({
+				id : $scope.mlDataGroupId
+			});
 			$scope.dataGroupSave = function() {
-				var parameter = JSON.stringify($scope.dataGroup);
-				$http.put("/turing/api/ml/data/group/" + $scope.mlDataGroupId,
-						parameter).then(
-						function(data, status, headers, config) {
-							$state.go('ml.datagroup');
-						}, function(data, status, headers, config) {
-							//
-						});
+				$scope.dataGroup.$update(function() {
+					$state.go('ml.datagroup');
+				});
 			}
 			$scope.dataGroupDelete = function() {
-				$http['delete'](
-						"/turing/api/ml/data/group/" + $scope.mlDataGroupId)
-						.then(function(data, status, headers, config) {
-							$state.go('ml.datagroup');
-						}, function(data, status, headers, config) {
-							$state.go('ml.datagroup');
-						});
+				$scope.dataGroup.$delete(function() {
+					$state.go('ml.datagroup');
+				});
 			}
 		} ]);
 turingApp.controller('TurMLInstanceCtrl', [
@@ -317,13 +324,11 @@ turingApp.controller('TurMLInstanceCtrl', [
 		"$state",
 		"$rootScope",
 		"$translate",
-		function($scope, $http, $window, $state, $rootScope, $translate) {
-			$scope.mls = null;
+		"turMLInstanceResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turMLInstanceResource) {
 			$rootScope.$state = $state;
-			$scope.$evalAsync($http.get("/turing/api/ml/").then(
-					function(response) {
-						$scope.mls = response.data;
-					}));
+			$scope.mls = turMLInstanceResource.query();
 		} ]);
 
 turingApp.controller('TurMLInstanceEditCtrl', [
@@ -335,233 +340,204 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 		"$rootScope",
 		"$translate",
 		"vigLocale",
+		"turMLInstanceResource",
+		"turMLVendorResource",
 		function($scope, $http, $window, $stateParams, $state, $rootScope,
-				$translate, vigLocale) {
+				$translate, vigLocale, turMLInstanceResource,
+				turMLVendorResource) {
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			$scope.ml = null;
-			$scope.mlVendors = null;
 			$scope.mlInstanceId = $stateParams.mlInstanceId;
-			$scope.$evalAsync($http.get("/turing/api/ml/vendor").then(
-					function(response) {
-						$scope.mlVendors = response.data;
-					}));
-			$scope.$evalAsync($http
-					.get("/turing/api/ml/" + $scope.mlInstanceId).then(
-							function(response) {
-								$scope.ml = response.data;
-							}));
-		} ]);
-turingApp.controller('TurNLPValidationCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$state",
-	"$rootScope",
-	"$translate",
-	function ($scope, $http, $window, $state, $rootScope, $translate) {
-		$scope.nlps = null;
-		$scope.results = null;
-		$scope.text = null;
-		$scope.nlpmodel = null;
-		$rootScope.$state = $state;
-		$scope.$evalAsync($http.get(
-			"/turing/api/nlp/").then(
-			function (response) {
-				$scope.nlps = response.data;
-				angular.forEach(response.data, function(value, key) {
-					if (value.selected == true) {
-						$scope.nlpmodel = value.id;
-					}
-				});
-			}));
-		$scope.changeView = function(view) {
-			
-			postData = 'turText=' + $scope.text + "&turNLP=" + $scope.nlpmodel;
-			$http({
-				method : 'POST',
-				url : '/turing/api/nlp/validate',
-				data : postData, // forms user object
-				headers : {
-					'Content-Type' : 'application/x-www-form-urlencoded'
-				}
-			}).success(function(data, status, headers, config) {
-				$scope.results = data;
-
+			$scope.mlVendors = turMLVendorResource.query();
+			$scope.ml = turMLInstanceResource.get({
+				id : $scope.mlInstanceId
 			});
+		} ]);
+turingApp.factory('turNLPInstanceResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/nlp/:id');
+} ]);
 
-		};
-	}]);
+turingApp.factory('turNLPVendorResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/nlp/vendor/:id');
+} ]);
+
+turingApp.factory('turNLPEntityResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/entity/:id');
+} ]);
+
+turingApp.controller('TurNLPValidationCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$scope.nlps = null;
+			$scope.results = null;
+			$scope.text = null;
+			$scope.nlpmodel = null;
+			$rootScope.$state = $state;
+			$scope.$evalAsync($http.get("/turing/api/nlp/").then(
+					function(response) {
+						$scope.nlps = response.data;
+						angular.forEach(response.data, function(value, key) {
+							if (value.selected == true) {
+								$scope.nlpmodel = value.id;
+							}
+						});
+					}));
+			$scope.changeView = function(view) {
+
+				postData = 'turText=' + $scope.text + "&turNLP="
+						+ $scope.nlpmodel;
+				$http({
+					method : 'POST',
+					url : '/turing/api/nlp/validate',
+					data : postData, // forms user object
+					headers : {
+						'Content-Type' : 'application/x-www-form-urlencoded'
+					}
+				}).success(function(data, status, headers, config) {
+					$scope.results = data;
+
+				});
+
+			};
+		} ]);
 
 turingApp.controller('TurNLPInstanceCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$state",
-	"$rootScope",
-	"$translate",
-	function ($scope, $http, $window, $state, $rootScope, $translate) {
-		$scope.nlps = null;
-		$rootScope.$state = $state;
-		$scope.$evalAsync($http.get(
-			"/turing/api/nlp/").then(
-			function (response) {
-				$scope.nlps = response.data;
-			}));
-	}]);
-
-turingApp.controller('TurNLPEntityCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$state",
-	"$rootScope",
-	"$translate",
-	function ($scope, $http, $window, $state, $rootScope, $translate) {
-		$scope.entities = null;
-		$rootScope.$state = $state;
-		$scope.$evalAsync($http.get(
-			"/turing/api/entity/").then(
-			function (response) {
-				$scope.entities = response.data;
-			}));
-	}]);
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turNLPInstanceResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turNLPInstanceResource) {
+			$rootScope.$state = $state;
+			$scope.nlps = turNLPInstanceResource.query();
+		} ]);
 
 turingApp.controller('TurNLPInstanceEditCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$stateParams",
-	"$state",
-	"$rootScope",
-	"$translate",
-	"vigLocale",
-	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate, vigLocale) {
-		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-		$translate.use($scope.vigLanguage);
-		$rootScope.$state = $state;
-		$scope.nlp = null;
-		$scope.nlpVendors = null;
-		$scope.nlpInstanceId = $stateParams.nlpInstanceId;
-		$scope.$evalAsync($http.get(
-		"/turing/api/nlp/vendor").then(
-		function (response) {
-			$scope.nlpVendors = response.data;
-		}));
-		$scope.$evalAsync($http.get(
-			"/turing/api/nlp/" + $scope.nlpInstanceId).then(
-			function (response) {
-				$scope.nlp = response.data;
-			}));
-	
-		$scope.mappingSave = function () {
-			$scope.mappings = null;
-			var parameter = JSON.stringify($scope.mapping);
-			$http.put("../api/mapping/" + $scope.mappingId,
-				parameter).then(
-				function (data, status, headers, config) {
-					   $state.go('mapping');
-				}, function (data, status, headers, config) {
-					   $state.go('mapping');
-				});
-		}
-	}
-]);
+		"$scope",
+		"$http",
+		"$window",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turNLPInstanceResource",
+		"turNLPVendorResource",
+		function($scope, $http, $window, $stateParams, $state, $rootScope,
+				$translate, vigLocale, turNLPInstanceResource,
+				turNLPVendorResource) {
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+			$scope.nlpInstanceId = $stateParams.nlpInstanceId;
+			$scope.nlpVendors = turNLPVendorResource.query();
+			$scope.nlp = turNLPInstanceResource.get({
+				id : $scope.nlpInstanceId
+			});
+		} ]);
+turingApp.controller('TurNLPEntityCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turNLPEntityResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turNLPEntityResource) {
+			$rootScope.$state = $state;
+			$scope.entities = turNLPEntityResource.query();
+		} ]);
 
 turingApp.controller('TurNLPEntityEditCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$stateParams",
-	"$state",
-	"$rootScope",
-	"$translate",
-	"vigLocale",
-	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate, vigLocale) {
-		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-		$translate.use($scope.vigLanguage);
-		$rootScope.$state = $state;
-		$scope.entity = null;
-		$scope.nlpEntityId = $stateParams.nlpEntityId;		
-		$scope.$evalAsync($http.get(
-			"/turing/api/entity/" + $scope.nlpEntityId).then(
-			function (response) {
-				$scope.entity = response.data;
-			}));
-	
-		$scope.mappingSave = function () {
-			$scope.mappings = null;
-			var parameter = JSON.stringify($scope.mapping);
-			$http.put("../api/mapping/" + $scope.mappingId,
-				parameter).then(
-				function (data, status, headers, config) {
-					   $state.go('mapping');
-				}, function (data, status, headers, config) {
-					   $state.go('mapping');
-				});
-		}
-	}
-]);
+		"$scope",
+		"$http",
+		"$window",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turNLPEntityResource",
+		function($scope, $http, $window, $stateParams, $state, $rootScope,
+				$translate, vigLocale, turNLPEntityResource) {
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+			$scope.nlpEntityId = $stateParams.nlpEntityId;
+			$scope.entity = turNLPEntityResource.get({
+				id : $scope.nlpEntityId
+			});
+		} ]);
+turingApp.factory('turSEInstanceResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/se/:id');
+} ]);
+
+turingApp.factory('turSEVendorResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/se/vendor/:id');
+} ]);
+
+turingApp.factory('turSESNResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/se/sn/:id');
+} ]);
+
 turingApp.controller('TurSEInstanceCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$state",
-	"$rootScope",
-	"$translate",
-	function ($scope, $http, $window, $state, $rootScope, $translate) {
-		$scope.ses = null;
-		$rootScope.$state = $state;
-		$scope.$evalAsync($http.get(
-			"/turing/api/se").then(
-			function (response) {
-				$scope.ses = response.data;
-			}));
-	}]);
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turSEInstanceResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turSEInstanceResource) {
+			$rootScope.$state = $state;
+			$scope.ses = turSEInstanceResource.query();
+		} ]);
 
 turingApp.controller('TurSEInstanceEditCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$stateParams",
-	"$state",
-	"$rootScope",
-	"$translate",
-	"vigLocale",
-	function ($scope, $http, $window, $stateParams, $state, $rootScope, $translate, vigLocale) {
-		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-		$translate.use($scope.vigLanguage);
-		$rootScope.$state = $state;
-		$scope.se = null;
-		$scope.seVendors = null;
-		$scope.seInstanceId = $stateParams.seInstanceId;
-		$scope.$evalAsync($http.get(
-		"/turing/api/se/vendor").then(
-		function (response) {
-			$scope.seVendors = response.data;
-		}));
-		$scope.$evalAsync($http.get(
-			"/turing/api/se/" + $scope.seInstanceId).then(
-			function (response) {
-				$scope.se = response.data;
-			}));
-	}
-]);
+		"$scope",
+		"$http",
+		"$window",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turSEInstanceResource",
+		"turSEVendorResource",
+		function($scope, $http, $window, $stateParams, $state, $rootScope,
+				$translate, vigLocale, turSEInstanceResource,
+				turSEVendorResource) {
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+			$scope.seInstanceId = $stateParams.seInstanceId;
+			$scope.seVendors = turSEVendorResource.query();
+			$scope.se = turSEInstanceResource.get({
+				id : $scope.seInstanceId
+			});
+		} ]);
 turingApp.controller('TurSESNCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$state",
-	"$rootScope",
-	"$translate",
-	function ($scope, $http, $window, $state, $rootScope, $translate) {
-		$scope.seSNs = null;
-		$rootScope.$state = $state;
-		$scope.$evalAsync($http.get(
-			"/turing/api/se/sn").then(
-			function (response) {
-				$scope.seSNs = response.data;
-			}));
-	}]);
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turSESNResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turSESNResource) {
+			$rootScope.$state = $state;
+			$scope.seSNs = turSESNResource.query();
+		} ]);
 
