@@ -70,11 +70,11 @@ public class TurNLPInstanceAPI {
 	}
 
 	@POST
-	@Path("validate")
+	@Path("{nlpInstanceId}/validate")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response update(@FormParam("turText") String turText, @FormParam("turNLP") int turNLPInstanceId) throws JSONException {
-	
-		TurNLP turNLP = new TurNLP(turNLPInstanceId, turText);
+	public Response update(@PathParam("nlpInstanceId") int id, TurNLPTextValidate textValidate) throws JSONException {
+
+		TurNLP turNLP = new TurNLP(id, textValidate.getText());
 
 		return Response.status(200).entity(turNLP.validate()).build();
 	}
@@ -82,5 +82,20 @@ public class TurNLPInstanceAPI {
 	public boolean isNumeric(String str) {
 		return str.matches("-?\\d+(\\.\\d+)?"); // match a number with optional
 												// '-' and decimal.
+	}
+
+	public static class TurNLPTextValidate {
+		String text;
+
+		public TurNLPTextValidate() {
+		}
+
+		public String getText() {
+			return text;
+		}
+
+		public void setText(String text) {
+			this.text = text;
+		}
 	}
 }

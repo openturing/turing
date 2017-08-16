@@ -17,37 +17,32 @@ turingApp.controller('TurNLPValidationCtrl', [
 		"$state",
 		"$rootScope",
 		"$translate",
-		function($scope, $http, $window, $state, $rootScope, $translate) {
-			$scope.nlps = null;
+		"turNLPInstanceResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turNLPInstanceResource) {
 			$scope.results = null;
 			$scope.text = null;
 			$scope.nlpmodel = null;
 			$rootScope.$state = $state;
-			$scope.$evalAsync($http.get("/turing/api/nlp/").then(
-					function(response) {
-						$scope.nlps = response.data;
-						angular.forEach(response.data, function(value, key) {
-							if (value.selected == true) {
-								$scope.nlpmodel = value.id;
-							}
-						});
-					}));
+			$scope.nlps = turNLPInstanceResource.query();
+			angular.forEach($scope.nlps, function(value, key) {
+				if (value.selected == true) {
+					$scope.nlpmodel = value.id;
+				}
+			});
 			$scope.changeView = function(view) {
-
-				postData = 'turText=' + $scope.text + "&turNLP="
-						+ $scope.nlpmodel;
-				$http({
-					method : 'POST',
-					url : '/turing/api/nlp/validate',
-					data : postData, // forms user object
-					headers : {
-						'Content-Type' : 'application/x-www-form-urlencoded'
-					}
-				}).success(function(data, status, headers, config) {
-					$scope.results = data;
-
-				});
-
+				postData = 'turText=' + $scope.text;
+				text = {
+					'text' : $scope.text
+				};
+				var parameter = JSON.stringify(text);
+				$http.post('/turing/api/nlp/' + $scope.nlpmodel + '/validate',
+						parameter).then(
+						function(response) {
+							$scope.results = response.data;
+						}, function(response) {
+							//
+						});
 			};
 		} ]);
 
