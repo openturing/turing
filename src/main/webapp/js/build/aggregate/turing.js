@@ -104,6 +104,18 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Data Group | Viglet Turing'
 				}
+			}).state('ml.datagroup-edit.category', {
+				url : '/category',
+				templateUrl : 'templates/ml/data/group/ml-datagroup-category.html',
+				data : {
+					pageTitle : 'Data Group Categories | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.data', {
+				url : '/documents',
+				templateUrl : 'templates/ml/data/group/ml-datagroup-data.html',
+				data : {
+					pageTitle : 'Data Group Documents | Viglet Turing'
+				}
 			}).state('se', {
 				url : '/se',
 				templateUrl : 'templates/se/se.html',
@@ -244,13 +256,7 @@ turingApp.controller('TurMLDataGroupNewCtrl', [
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			$scope.dataGroup = null;
 			$scope.mlDataGroupId = $stateParams.mlDataGroupId;
-			$scope.$evalAsync($http.get(
-					"/turing/api/ml/data/group/" + $scope.mlDataGroupId).then(
-					function(response) {
-						$scope.dataGroup = response.data;
-					}));
 			$scope.dataGroup = {};
 			$scope.dataGroupSave = function() {
 				var parameter = JSON.stringify($scope.dataGroup);

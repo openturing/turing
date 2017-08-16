@@ -1,0 +1,12 @@
+<div style="padding: 15px">
+	<div class="pull-right">
+		<button ng-click="newCategory()" type="button" class="btn btn-viglet">New
+			Category</button>
+	</div>
+	<h1>Categories</h1>
+
+	<ul class="list-group">
+		<li class="list-group-item"
+			ng-repeat="turMLCategory in dataGroup.turMLCategories">{{turMLCategory.name}}</li>
+	</ul>
+</div>

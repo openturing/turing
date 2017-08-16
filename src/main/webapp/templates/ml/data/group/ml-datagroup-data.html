@@ -1,0 +1,10 @@
+<div style="padding: 15px">
+	<div class="pull-right">
+		<button ng-click="newCategory()" type="button" class="btn btn-viglet">New
+			Document</button>
+	</div>
+	<h1>Documents</h1>
+	<ul class="list-group">
+		<li class="list-group-item" ng-repeat="turData in dataGroup.turDatas">{{turData.name}}</li>
+	</ul>
+</div>
