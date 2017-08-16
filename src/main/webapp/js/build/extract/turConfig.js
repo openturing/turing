@@ -71,6 +71,20 @@ turingApp.config([
 				data : {
 					pageTitle : 'Machine Learning Data Groups | Viglet Turing'
 				}
+			}).state('ml.datagroup-new', {
+				url : '/datagroup/new',
+				templateUrl : 'templates/ml/data/group/ml-datagroup-new.html',
+				controller : 'TurMLDataGroupNewCtrl',
+				data : {
+					pageTitle : 'Edit Data Group | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit', {
+				url : '/datagroup/:mlDataGroupId',
+				templateUrl : 'templates/ml/data/group/ml-datagroup-edit.html',
+				controller : 'TurMLDataGroupEditCtrl',
+				data : {
+					pageTitle : 'Edit Data Group | Viglet Turing'
+				}
 			}).state('se', {
 				url : '/se',
 				templateUrl : 'templates/se/se.html',
@@ -150,99 +164,6 @@ turingApp.config([
 				templateUrl : 'templates/nlp/entity/nlp-entity-term.html',
 				data : {
 					pageTitle : 'Entity Terms | Viglet Turing'
-				}
-			}).state('organization.user', {
-				url : '/user',
-				templateUrl : 'user.html',
-				controller : 'TurUserCtrl',
-				data : {
-					pageTitle : 'Users | Viglet Turing'
-				}
-			}).state('organization.user-new', {
-				url : '/user/new',
-				templateUrl : 'user-item.html',
-				controller : 'TurUserNewCtrl',
-				data : {
-					pageTitle : 'New User | Viglet Turing'
-				}
-			}).state('organization.user-edit', {
-				url : '/user/:userId',
-				templateUrl : 'user-item.html',
-				controller : 'TurUserEditCtrl',
-				data : {
-					pageTitle : 'Edit User | Viglet Turing'
-				}
-			}).state('organization.role', {
-				url : '/role',
-				templateUrl : 'role.html',
-				controller : 'TurRoleCtrl',
-				data : {
-					pageTitle : 'Roles | Viglet Turing'
-				}
-			}).state('organization.role-new', {
-				url : '/role/new',
-				templateUrl : 'role-item.html',
-				controller : 'TurRoleNewCtrl',
-				data : {
-					pageTitle : 'New Role | Viglet Turing'
-				}
-			}).state('organization.role-edit', {
-				url : '/role/:roleId',
-				templateUrl : 'role-item.html',
-				controller : 'TurRoleEditCtrl',
-				data : {
-					pageTitle : 'Edit Role | Viglet Turing'
-				}
-			}).state('organization.group', {
-				url : '/group',
-				templateUrl : 'group.html',
-				controller : 'TurGroupCtrl',
-				data : {
-					pageTitle : 'Groups | Viglet Turing'
-				}
-			}).state('organization.group-new', {
-				url : '/group/new',
-				templateUrl : 'group-item.html',
-				controller : 'TurGroupNewCtrl',
-				data : {
-					pageTitle : 'New Group | Viglet Turing'
-				}
-			}).state('organization.group-edit', {
-				url : '/group/:groupId',
-				templateUrl : 'group-item.html',
-				controller : 'TurGroupEditCtrl',
-				data : {
-					pageTitle : 'Edit Group | Viglet Turing'
-				}
-			}).state('app', {
-				url : '/app',
-				templateUrl : 'app.html',
-				controller : 'TurAppCtrl',
-				data : {
-					pageTitle : 'Apps | Viglet Turing'
-				}
-			}).state('app-new', {
-				url : '/app/new',
-				templateUrl : 'app-item.html',
-				controller : 'TurAppNewCtrl',
-				data : {
-					pageTitle : 'New App | Viglet Turing',
-					saveButton : 'Save'
-				}
-			}).state('app-edit', {
-				url : '/app/:appId',
-				templateUrl : 'app-item.html',
-				controller : 'TurAppEditCtrl',
-				data : {
-					pageTitle : 'Edit App | Viglet Turing',
-					saveButton : 'Update Settings'
-				}
-			}).state('app-edit.keys', {
-				url : '/keys',
-				templateUrl : 'app-item-keys.html',
-				controller : 'TurAppEditCtrl',
-				data : {
-					pageTitle : 'Edit App Keys | Viglet Turing'
 				}
 			});
 

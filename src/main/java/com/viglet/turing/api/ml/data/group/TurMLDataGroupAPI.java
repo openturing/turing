@@ -29,7 +29,7 @@ public class TurMLDataGroupAPI {
 	}
 
 	@GET
-	@Path("{dataGroupId}")
+	@Path("/{dataGroupId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurDataGroup dataGroup(@PathParam("dataGroupId") int id) throws JSONException {
 		 return turDataGroupService.get(id);
