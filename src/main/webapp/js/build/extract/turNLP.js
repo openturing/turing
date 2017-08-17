@@ -93,7 +93,10 @@ turingApp.controller('TurNLPInstanceNewCtrl', [
 
 			$rootScope.$state = $state;
 			$scope.nlpVendors = turNLPVendorResource.query();
-			$scope.nlp = {'enabled': 0, 'selected': 0};
+			$scope.nlp = {
+				'enabled' : 0,
+				'selected' : 0
+			};
 			$scope.nlpInstanceSave = function() {
 				turNLPInstanceResource.save($scope.nlp, function() {
 					$state.go('nlp.instance');
@@ -110,8 +113,10 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 		"vigLocale",
 		"turNLPInstanceResource",
 		"turNLPVendorResource",
+		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turNLPInstanceResource, turNLPVendorResource) {
+				vigLocale, turNLPInstanceResource, turNLPVendorResource,
+				$uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -128,8 +133,32 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 				});
 			}
 			$scope.nlpInstanceDelete = function() {
-				$scope.nlp.$delete(function() {
-					$state.go('nlp.instance');
+
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.nlp.title;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.nlp.$delete(function() {
+						$state.go('nlp.instance');
+					});
+				}, function() {
+					// Selected NO
 				});
 			}
 

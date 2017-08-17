@@ -1,5 +1,5 @@
-var turingApp = angular.module('turingApp', [ 'ngResource', 'ui.router',
-		'pascalprecht.translate' ]);
+var turingApp = angular.module('turingApp', [ 'ngResource', 'ngAnimate',
+		'ngSanitize', 'ui.router', 'ui.bootstrap', 'pascalprecht.translate' ]);
 
 turingApp.directive('convertToNumber', function() {
 	return {
@@ -340,20 +340,21 @@ turingApp.controller('TurMLDataGroupNewCtrl', [
 		} ]);
 
 turingApp.controller('TurMLDataGroupEditCtrl', [
-		"$scope",	
+		"$scope",
 		"$stateParams",
 		"$state",
 		"$rootScope",
 		"$translate",
 		"vigLocale",
 		"turMLDataGroupResource",
-		function($scope, $stateParams, $state, $rootScope,
-				$translate, vigLocale, turMLDataGroupResource) {
-			
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupResource, $uibModal) {
+
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			
+
 			$scope.dataGroup = turMLDataGroupResource.get({
 				id : $stateParams.mlDataGroupId
 			});
@@ -362,51 +363,82 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 					$state.go('ml.datagroup');
 				});
 			}
+
 			$scope.dataGroupDelete = function() {
-				$scope.dataGroup.$delete(function() {
-					$state.go('ml.datagroup');
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.dataGroup.name;
+						}
+					}
 				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.dataGroup.$delete(function() {
+						$state.go('ml.datagroup');
+					});
+				}, function() {
+					// Selected NO
+				});
+
 			}
+
 		} ]);
-turingApp.controller('TurMLInstanceCtrl', [
+
+turingApp.controller('TurMLInstanceCtrl',
+		[
+				"$scope",
+				"$state",
+				"$rootScope",
+				"$translate",
+				"turMLInstanceResource",
+				function($scope, $state, $rootScope, $translate,
+						turMLInstanceResource) {
+
+					$rootScope.$state = $state;
+					$scope.mls = turMLInstanceResource.query();
+				} ]);
+
+turingApp.controller('TurMLInstanceNewCtrl', [
 		"$scope",
 		"$state",
 		"$rootScope",
 		"$translate",
+		"vigLocale",
 		"turMLInstanceResource",
-		function($scope, $state, $rootScope, $translate,
-				turMLInstanceResource) {
-			
+		"turMLVendorResource",
+		function($scope, $state, $rootScope, $translate, vigLocale,
+				turMLInstanceResource, turMLVendorResource) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+
 			$rootScope.$state = $state;
-			$scope.mls = turMLInstanceResource.query();
+			$scope.mlVendors = turMLVendorResource.query();
+			$scope.ml = {
+				'enabled' : 0,
+				'selected' : 0
+			};
+			$scope.mlInstanceSave = function() {
+				turMLInstanceResource.save($scope.ml, function() {
+					$state.go('ml.instance');
+				});
+			}
 		} ]);
 
-turingApp.controller('TurMLInstanceNewCtrl', [
-	"$scope",
-	"$state",
-	"$rootScope",
-	"$translate",
-	"vigLocale",
-	"turMLInstanceResource",
-	"turMLVendorResource",
-	function($scope, $state, $rootScope, $translate, vigLocale,
-			turMLInstanceResource, turMLVendorResource) {
-
-		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-		$translate.use($scope.vigLanguage);
-
-		$rootScope.$state = $state;
-		$scope.mlVendors = turMLVendorResource.query();
-		$scope.ml = {'enabled': 0, 'selected': 0};
-		$scope.mlInstanceSave = function() {
-			turMLInstanceResource.save($scope.ml, function() {
-				$state.go('ml.instance');
-			});
-		}
-	} ]);
-
 turingApp.controller('TurMLInstanceEditCtrl', [
-		"$scope",		
+		"$scope",
 		"$stateParams",
 		"$state",
 		"$rootScope",
@@ -414,29 +446,74 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 		"vigLocale",
 		"turMLInstanceResource",
 		"turMLVendorResource",
-		function($scope, $stateParams, $state, $rootScope,
-				$translate, vigLocale, turMLInstanceResource,
-				turMLVendorResource) {
-			
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLInstanceResource, turMLVendorResource, $uibModal) {
+
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			
+
 			$scope.mlVendors = turMLVendorResource.query();
 			$scope.ml = turMLInstanceResource.get({
 				id : $stateParams.mlInstanceId
 			});
-			
+
 			$scope.mlInstanceUpdate = function() {
 				$scope.ml.$update(function() {
 					$state.go('ml.instance');
 				});
 			}
 			$scope.mlInstanceDelete = function() {
-				$scope.ml.$delete(function() {
-					$state.go('ml.instance');
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.ml.title;
+						}
+					}
 				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.ml.$delete(function() {
+						$state.go('ml.instance');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+				
+				
+				
+				
+				
+			
 			}
+		} ]);
+turingApp.controller('ModalDeleteInstanceCtrl', [ "$uibModalInstance",
+		"instanceName", function($uibModalInstance, instanceName) {
+			var $ctrl = this;
+			$ctrl.removeInstance = false;
+			$ctrl.instanceName = instanceName;
+			$ctrl.ok = function() {
+				$ctrl.removeInstance = true;
+				$uibModalInstance.close($ctrl.removeInstance);
+			};
+
+			$ctrl.cancel = function() {
+				$ctrl.removeInstance = false;
+				$uibModalInstance.dismiss('cancel');
+			};
 		} ]);
 turingApp.factory('turNLPInstanceResource', [ '$resource', function($resource) {
 	return $resource('/turing/api/nlp/:id', {
@@ -533,7 +610,10 @@ turingApp.controller('TurNLPInstanceNewCtrl', [
 
 			$rootScope.$state = $state;
 			$scope.nlpVendors = turNLPVendorResource.query();
-			$scope.nlp = {'enabled': 0, 'selected': 0};
+			$scope.nlp = {
+				'enabled' : 0,
+				'selected' : 0
+			};
 			$scope.nlpInstanceSave = function() {
 				turNLPInstanceResource.save($scope.nlp, function() {
 					$state.go('nlp.instance');
@@ -550,8 +630,10 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 		"vigLocale",
 		"turNLPInstanceResource",
 		"turNLPVendorResource",
+		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turNLPInstanceResource, turNLPVendorResource) {
+				vigLocale, turNLPInstanceResource, turNLPVendorResource,
+				$uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -568,8 +650,32 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 				});
 			}
 			$scope.nlpInstanceDelete = function() {
-				$scope.nlp.$delete(function() {
-					$state.go('nlp.instance');
+
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.nlp.title;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.nlp.$delete(function() {
+						$state.go('nlp.instance');
+					});
+				}, function() {
+					// Selected NO
 				});
 			}
 
@@ -653,28 +759,31 @@ turingApp.controller('TurSEInstanceCtrl', [
 		} ]);
 
 turingApp.controller('TurSEInstanceNewCtrl', [
-	"$scope",
-	"$state",
-	"$rootScope",
-	"$translate",
-	"vigLocale",
-	"turSEInstanceResource",
-	"turSEVendorResource",
-	function($scope, $state, $rootScope, $translate, vigLocale,
-			turSEInstanceResource, turSEVendorResource) {
+		"$scope",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turSEInstanceResource",
+		"turSEVendorResource",
+		function($scope, $state, $rootScope, $translate, vigLocale,
+				turSEInstanceResource, turSEVendorResource) {
 
-		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-		$translate.use($scope.vigLanguage);
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
 
-		$rootScope.$state = $state;
-		$scope.seVendors = turSEVendorResource.query();
-		$scope.se = {'enabled': 0, 'selected': 0};
-		$scope.seInstanceSave = function() {
-			turSEInstanceResource.save($scope.se, function() {
-				$state.go('se.instance');
-			});
-		}
-	} ]);
+			$rootScope.$state = $state;
+			$scope.seVendors = turSEVendorResource.query();
+			$scope.se = {
+				'enabled' : 0,
+				'selected' : 0
+			};
+			$scope.seInstanceSave = function() {
+				turSEInstanceResource.save($scope.se, function() {
+					$state.go('se.instance');
+				});
+			}
+		} ]);
 
 turingApp.controller('TurSEInstanceEditCtrl', [
 		"$scope",
@@ -685,10 +794,10 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 		"vigLocale",
 		"turSEInstanceResource",
 		"turSEVendorResource",
-		function($scope, $stateParams, $state, $rootScope,
-				$translate, vigLocale, turSEInstanceResource,
-				turSEVendorResource) {
-			
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turSEInstanceResource, turSEVendorResource, $uibModal) {
+
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
@@ -697,18 +806,42 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 			$scope.se = turSEInstanceResource.get({
 				id : $stateParams.seInstanceId
 			});
-			
+
 			$scope.seInstanceUpdate = function() {
 				$scope.se.$update(function() {
 					$state.go('se.instance');
 				});
 			}
 			$scope.seInstanceDelete = function() {
-				$scope.se.$delete(function() {
-					$state.go('se.instance');
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.se.title;
+						}
+					}
 				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.se.$delete(function() {
+						$state.go('se.instance');
+					});
+				}, function() {
+					// Selected NO
+				});
+
 			}
-			
+
 		} ]);
 turingApp.controller('TurSESNCtrl', [
 		"$scope",

@@ -1,5 +1,5 @@
-var turingApp = angular.module('turingApp', [ 'ngResource', 'ui.router',
-		'pascalprecht.translate' ]);
+var turingApp = angular.module('turingApp', [ 'ngResource', 'ngAnimate',
+		'ngSanitize', 'ui.router', 'ui.bootstrap', 'pascalprecht.translate' ]);
 
 turingApp.directive('convertToNumber', function() {
 	return {
