@@ -1,6 +1,20 @@
 var turingApp = angular.module('turingApp', [ 'ngResource', 'ui.router',
 		'pascalprecht.translate' ]);
 
+turingApp.directive('convertToNumber', function() {
+	return {
+		require : 'ngModel',
+		link : function(scope, element, attrs, ngModel) {
+			ngModel.$parsers.push(function(val) {
+				return parseInt(val, 10);
+			});
+			ngModel.$formatters.push(function(val) {
+				return '' + val;
+			});
+		}
+	};
+});
+
 turingApp.factory('vigLocale', [
 		'$window',
 		function($window) {
@@ -18,7 +32,6 @@ turingApp.factory('vigLocale', [
 				}
 			}
 		} ]);
-
 
 turingApp.config([
 		'$stateProvider',
@@ -72,6 +85,13 @@ turingApp.config([
 				data : {
 					pageTitle : 'Machine Learnings | Viglet Turing'
 				}
+			}).state('ml.instance-new', {
+				url : '/instance/new',
+				templateUrl : 'templates/ml/ml-instance-new.html',
+				controller : 'TurMLInstanceNewCtrl',
+				data : {
+					pageTitle : 'New Machine Learning Instance | Viglet Turing'
+				}
 			}).state('ml.instance-edit', {
 				url : '/instance/:mlInstanceId',
 				templateUrl : 'templates/ml/ml-instance-edit.html',
@@ -98,7 +118,7 @@ turingApp.config([
 				templateUrl : 'templates/ml/data/group/ml-datagroup-new.html',
 				controller : 'TurMLDataGroupNewCtrl',
 				data : {
-					pageTitle : 'Edit Data Group | Viglet Turing'
+					pageTitle : 'New Data Group | Viglet Turing'
 				}
 			}).state('ml.datagroup-edit', {
 				url : '/datagroup/:mlDataGroupId',
@@ -132,6 +152,13 @@ turingApp.config([
 				data : {
 					pageTitle : 'Search Engines | Viglet Turing'
 				}
+			}).state('se.instance-new', {
+				url : '/instance/new',
+				templateUrl : 'templates/se/se-instance-new.html',
+				controller : 'TurSEInstanceNewCtrl',
+				data : {
+					pageTitle : 'New Search Engine Instance | Viglet Turing'
+				}
 			}).state('se.instance-edit', {
 				url : '/instance/:seInstanceId',
 				templateUrl : 'templates/se/se-instance-edit.html',
@@ -158,6 +185,13 @@ turingApp.config([
 				controller : 'TurNLPInstanceCtrl',
 				data : {
 					pageTitle : 'NLPs | Viglet Turing'
+				}
+			}).state('nlp.instance-new', {
+				url : '/instance/new',
+				templateUrl : 'templates/nlp/nlp-instance-new.html',
+				controller : 'TurNLPInstanceNewCtrl',
+				data : {
+					pageTitle : 'New NLP Instance | Viglet Turing'
 				}
 			}).state('nlp.instance-edit', {
 				url : '/instance/:nlpInstanceId',
@@ -214,11 +248,23 @@ turingApp.controller('TurHomeCtrl', [
 		$rootScope.$state = $state;		
 	}]);
 turingApp.factory('turMLInstanceResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/:id');
+	return $resource('/turing/api/ml/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.factory('turMLVendorResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/vendor/:id');
+	return $resource('/turing/api/ml/vendor/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.factory('turMLDataGroupResource', [ '$resource', function($resource) {
@@ -232,7 +278,13 @@ turingApp.factory('turMLDataGroupResource', [ '$resource', function($resource) {
 } ]);
 
 turingApp.factory('turMLModelResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/model/:id');
+	return $resource('/turing/api/ml/model/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.controller('TurMLModelCtrl', [
@@ -288,23 +340,22 @@ turingApp.controller('TurMLDataGroupNewCtrl', [
 		} ]);
 
 turingApp.controller('TurMLDataGroupEditCtrl', [
-		"$scope",
-		"$http",
-		"$window",
+		"$scope",	
 		"$stateParams",
 		"$state",
 		"$rootScope",
 		"$translate",
 		"vigLocale",
 		"turMLDataGroupResource",
-		function($scope, $http, $window, $stateParams, $state, $rootScope,
+		function($scope, $stateParams, $state, $rootScope,
 				$translate, vigLocale, turMLDataGroupResource) {
+			
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			$scope.mlDataGroupId = $stateParams.mlDataGroupId;
+			
 			$scope.dataGroup = turMLDataGroupResource.get({
-				id : $scope.mlDataGroupId
+				id : $stateParams.mlDataGroupId
 			});
 			$scope.dataGroupSave = function() {
 				$scope.dataGroup.$update(function() {
@@ -319,22 +370,43 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 		} ]);
 turingApp.controller('TurMLInstanceCtrl', [
 		"$scope",
-		"$http",
-		"$window",
 		"$state",
 		"$rootScope",
 		"$translate",
 		"turMLInstanceResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
+		function($scope, $state, $rootScope, $translate,
 				turMLInstanceResource) {
+			
 			$rootScope.$state = $state;
 			$scope.mls = turMLInstanceResource.query();
 		} ]);
 
+turingApp.controller('TurMLInstanceNewCtrl', [
+	"$scope",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	"turMLInstanceResource",
+	"turMLVendorResource",
+	function($scope, $state, $rootScope, $translate, vigLocale,
+			turMLInstanceResource, turMLVendorResource) {
+
+		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+		$translate.use($scope.vigLanguage);
+
+		$rootScope.$state = $state;
+		$scope.mlVendors = turMLVendorResource.query();
+		$scope.ml = {'enabled': 0, 'selected': 0};
+		$scope.mlInstanceSave = function() {
+			turMLInstanceResource.save($scope.ml, function() {
+				$state.go('ml.instance');
+			});
+		}
+	} ]);
+
 turingApp.controller('TurMLInstanceEditCtrl', [
-		"$scope",
-		"$http",
-		"$window",
+		"$scope",		
 		"$stateParams",
 		"$state",
 		"$rootScope",
@@ -342,28 +414,58 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 		"vigLocale",
 		"turMLInstanceResource",
 		"turMLVendorResource",
-		function($scope, $http, $window, $stateParams, $state, $rootScope,
+		function($scope, $stateParams, $state, $rootScope,
 				$translate, vigLocale, turMLInstanceResource,
 				turMLVendorResource) {
+			
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			$scope.mlInstanceId = $stateParams.mlInstanceId;
+			
 			$scope.mlVendors = turMLVendorResource.query();
 			$scope.ml = turMLInstanceResource.get({
-				id : $scope.mlInstanceId
+				id : $stateParams.mlInstanceId
 			});
+			
+			$scope.mlInstanceUpdate = function() {
+				$scope.ml.$update(function() {
+					$state.go('ml.instance');
+				});
+			}
+			$scope.mlInstanceDelete = function() {
+				$scope.ml.$delete(function() {
+					$state.go('ml.instance');
+				});
+			}
 		} ]);
 turingApp.factory('turNLPInstanceResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/nlp/:id');
+	return $resource('/turing/api/nlp/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.factory('turNLPVendorResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/nlp/vendor/:id');
+	return $resource('/turing/api/nlp/vendor/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.factory('turNLPEntityResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/entity/:id');
+	return $resource('/turing/api/entity/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.controller('TurNLPValidationCtrl', [
@@ -380,37 +482,24 @@ turingApp.controller('TurNLPValidationCtrl', [
 			$scope.text = null;
 			$scope.nlpmodel = null;
 			$rootScope.$state = $state;
-			$scope.nlps = turNLPInstanceResource.query();
-			angular.forEach($scope.nlps, function(value, key) {
-				if (value.selected == true) {
-					$scope.nlpmodel = value.id;
-				}
+			$scope.nlps = turNLPInstanceResource.query({}, function() {
+				angular.forEach($scope.nlps, function(value, key) {
+					if (value.selected == true) {
+						$scope.nlpmodel = value.id;
+					}
+				})
 			});
 			$scope.changeView = function(view) {
-				postData = 'turText=' + $scope.text;
 				text = {
 					'text' : $scope.text
 				};
 				var parameter = JSON.stringify(text);
 				$http.post('/turing/api/nlp/' + $scope.nlpmodel + '/validate',
-						parameter).then(
-						function(response) {
-							$scope.results = response.data;
-						}, function(response) {
-							//
-						});
-
-				/*
-				 * $http({ method : 'POST', url : '/turing/api/nlp/' +
-				 * $scope.nlpmodel + '/validate', data : postData, // forms user
-				 * object headers : { 'Content-Type' :
-				 * 'application/x-www-form-urlencoded' }
-				 * }).success(function(data, status, headers, config) {
-				 * $scope.results = data;
-				 * 
-				 * });
-				 */
-
+						parameter).then(function(response) {
+					$scope.results = response.data;
+				}, function(response) {
+					//
+				});
 			};
 		} ]);
 
@@ -428,10 +517,32 @@ turingApp.controller('TurNLPInstanceCtrl', [
 			$scope.nlps = turNLPInstanceResource.query();
 		} ]);
 
+turingApp.controller('TurNLPInstanceNewCtrl', [
+		"$scope",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turNLPInstanceResource",
+		"turNLPVendorResource",
+		function($scope, $state, $rootScope, $translate, vigLocale,
+				turNLPInstanceResource, turNLPVendorResource) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+
+			$rootScope.$state = $state;
+			$scope.nlpVendors = turNLPVendorResource.query();
+			$scope.nlp = {'enabled': 0, 'selected': 0};
+			$scope.nlpInstanceSave = function() {
+				turNLPInstanceResource.save($scope.nlp, function() {
+					$state.go('nlp.instance');
+				});
+			}
+		} ]);
+
 turingApp.controller('TurNLPInstanceEditCtrl', [
 		"$scope",
-		"$http",
-		"$window",
 		"$stateParams",
 		"$state",
 		"$rootScope",
@@ -439,17 +550,29 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 		"vigLocale",
 		"turNLPInstanceResource",
 		"turNLPVendorResource",
-		function($scope, $http, $window, $stateParams, $state, $rootScope,
-				$translate, vigLocale, turNLPInstanceResource,
-				turNLPVendorResource) {
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turNLPInstanceResource, turNLPVendorResource) {
+
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
+
 			$rootScope.$state = $state;
-			$scope.nlpInstanceId = $stateParams.nlpInstanceId;
 			$scope.nlpVendors = turNLPVendorResource.query();
 			$scope.nlp = turNLPInstanceResource.get({
-				id : $scope.nlpInstanceId
+				id : $stateParams.nlpInstanceId
 			});
+
+			$scope.nlpInstanceUpdate = function() {
+				$scope.nlp.$update(function() {
+					$state.go('nlp.instance');
+				});
+			}
+			$scope.nlpInstanceDelete = function() {
+				$scope.nlp.$delete(function() {
+					$state.go('nlp.instance');
+				});
+			}
+
 		} ]);
 turingApp.controller('TurNLPEntityCtrl', [
 		"$scope",
@@ -486,15 +609,33 @@ turingApp.controller('TurNLPEntityEditCtrl', [
 			});
 		} ]);
 turingApp.factory('turSEInstanceResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/se/:id');
+	return $resource('/turing/api/se/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.factory('turSEVendorResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/se/vendor/:id');
+	return $resource('/turing/api/se/vendor/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.factory('turSESNResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/se/sn/:id');
+	return $resource('/turing/api/se/sn/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.controller('TurSEInstanceCtrl', [
@@ -511,10 +652,32 @@ turingApp.controller('TurSEInstanceCtrl', [
 			$scope.ses = turSEInstanceResource.query();
 		} ]);
 
+turingApp.controller('TurSEInstanceNewCtrl', [
+	"$scope",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	"turSEInstanceResource",
+	"turSEVendorResource",
+	function($scope, $state, $rootScope, $translate, vigLocale,
+			turSEInstanceResource, turSEVendorResource) {
+
+		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+		$translate.use($scope.vigLanguage);
+
+		$rootScope.$state = $state;
+		$scope.seVendors = turSEVendorResource.query();
+		$scope.se = {'enabled': 0, 'selected': 0};
+		$scope.seInstanceSave = function() {
+			turSEInstanceResource.save($scope.se, function() {
+				$state.go('se.instance');
+			});
+		}
+	} ]);
+
 turingApp.controller('TurSEInstanceEditCtrl', [
 		"$scope",
-		"$http",
-		"$window",
 		"$stateParams",
 		"$state",
 		"$rootScope",
@@ -522,17 +685,30 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 		"vigLocale",
 		"turSEInstanceResource",
 		"turSEVendorResource",
-		function($scope, $http, $window, $stateParams, $state, $rootScope,
+		function($scope, $stateParams, $state, $rootScope,
 				$translate, vigLocale, turSEInstanceResource,
 				turSEVendorResource) {
+			
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			$scope.seInstanceId = $stateParams.seInstanceId;
+
 			$scope.seVendors = turSEVendorResource.query();
 			$scope.se = turSEInstanceResource.get({
-				id : $scope.seInstanceId
+				id : $stateParams.seInstanceId
 			});
+			
+			$scope.seInstanceUpdate = function() {
+				$scope.se.$update(function() {
+					$state.go('se.instance');
+				});
+			}
+			$scope.seInstanceDelete = function() {
+				$scope.se.$delete(function() {
+					$state.go('se.instance');
+				});
+			}
+			
 		} ]);
 turingApp.controller('TurSESNCtrl', [
 		"$scope",

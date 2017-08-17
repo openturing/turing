@@ -2,8 +2,10 @@
 	style='font-family: "Raleway", sans-serif; font-weight: 400; min-height: 175px; width: 544px; margin-bottom: 0px; padding-bottom: 0px;'>
 	<div class="panel-title"
 		style="padding: 10px; border-bottom-color: rgb(217, 217, 217); border-bottom-style: solid; border-bottom-width: thin;">
-		<p style="font-size: 18px; color: #FF874B; margin: 0px;">{{nlp.title}}</p>
-		<p style="font-size: 14px; color: rgb(182, 182, 182); margin: 0px;">{{nlp.description}}</p>
+		<p style="font-size: 18px; color: #FF874B; margin: 0px;">New
+			Machine Learning</p>
+		<p style="font-size: 14px; color: rgb(182, 182, 182); margin: 0px;">Add
+			a Machine Learning Instance</p>
 	</div>
 	<div class="panel-body" style="padding: 0px;">
 		<div class="row"
@@ -12,7 +14,7 @@
 				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 				{{'NAME' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-				<input ng-model="nlp.title"  type="text" class="form-control">
+				<input ng-model="ml.title" type="text" class="form-control">
 
 			</div>
 		</div>
@@ -23,7 +25,7 @@
 				{{'DESCRIPTION' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-				<input ng-model="nlp.description" type="text" class="form-control">
+				<input ng-model="ml.description" type="text" class="form-control">
 			</div>
 		</div>
 		<div class="row"
@@ -32,13 +34,13 @@
 				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 				{{'VENDORS' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-				<select class="form-control" ng-model="nlp.turNLPVendor"
-					ng-options="nlpVendor as nlpVendor.title for nlpVendor in nlpVendors track by nlpVendor.id">
+				<select class="form-control" ng-model="ml.turMLVendor"
+					ng-options="mlVendor as mlVendor.title for mlVendor in mlVendors track by mlVendor.id">
 					<option value="">- Pick One -</option>
 				</select>
+
 			</div>
 		</div>
-
 		<div class="row"
 			style="margin: 0px; padding: 10px; padding-bottom: 0px">
 			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
@@ -46,7 +48,7 @@
 				{{'HOST' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-				<input maxlength="15" ng-model="nlp.host" type="text"
+				<input maxlength="15" ng-model="ml.host" type="text"
 					class="form-control">
 
 			</div>
@@ -58,7 +60,7 @@
 				{{'PORT' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-				<input maxlength="15" ng-model="nlp.port" type="text"
+				<input maxlength="15" ng-model="ml.port" type="text"
 					class="form-control">
 
 			</div>
@@ -70,7 +72,7 @@
 				{{'LANGUAGE' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-				<input maxlength="15" ng-model="nlp.language" type="text"
+				<input maxlength="15" ng-model="ml.language" type="text"
 					class="form-control">
 
 			</div>
@@ -81,8 +83,7 @@
 				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 				{{'ENABLED' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-				<select class="form-control" ng-model="nlp.enabled"
-					convert-to-number>
+				<select class="form-control" ng-model="ml.enabled" convert-to-number>
 					<option value="0">No</option>
 					<option value="1">Yes</option>
 				</select>
@@ -94,7 +95,7 @@
 				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 				{{'SELECTED' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-				<select class="form-control" ng-model="nlp.selected"
+				<select class="form-control" ng-model="ml.selected"
 					convert-to-number>
 					<option value="0">No</option>
 					<option value="1">Yes</option>
@@ -107,17 +108,9 @@
 				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
 					style="padding: 0px; padding-top: 20px; padding-bottom: 20px;">
 					<div class="btn-group">
-						<button ng-click="nlpInstanceUpdate()" type="button"
+						<button ng-click="mlInstanceSave()" type="button"
 							class="btn btn-viglet">{{'SETTINGS_SAVE_CHANGES' |
 							translate }}</button>
-						<button type="button" class="btn btn-viglet dropdown-toggle"
-							data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-							<span class="caret"></span> <span class="sr-only">Toggle
-								Dropdown</span>
-						</button>
-						<ul class="dropdown-menu">
-							<li><a ng-click="nlpInstanceDelete()">Delete</a></li>
-						</ul>
 					</div>
 				</div>
 			</div>

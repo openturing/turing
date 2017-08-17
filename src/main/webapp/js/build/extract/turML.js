@@ -1,9 +1,21 @@
 turingApp.factory('turMLInstanceResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/:id');
+	return $resource('/turing/api/ml/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.factory('turMLVendorResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/vendor/:id');
+	return $resource('/turing/api/ml/vendor/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.factory('turMLDataGroupResource', [ '$resource', function($resource) {
@@ -17,7 +29,13 @@ turingApp.factory('turMLDataGroupResource', [ '$resource', function($resource) {
 } ]);
 
 turingApp.factory('turMLModelResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/model/:id');
+	return $resource('/turing/api/ml/model/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
 
 turingApp.controller('TurMLModelCtrl', [
@@ -73,23 +91,22 @@ turingApp.controller('TurMLDataGroupNewCtrl', [
 		} ]);
 
 turingApp.controller('TurMLDataGroupEditCtrl', [
-		"$scope",
-		"$http",
-		"$window",
+		"$scope",	
 		"$stateParams",
 		"$state",
 		"$rootScope",
 		"$translate",
 		"vigLocale",
 		"turMLDataGroupResource",
-		function($scope, $http, $window, $stateParams, $state, $rootScope,
+		function($scope, $stateParams, $state, $rootScope,
 				$translate, vigLocale, turMLDataGroupResource) {
+			
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			$scope.mlDataGroupId = $stateParams.mlDataGroupId;
+			
 			$scope.dataGroup = turMLDataGroupResource.get({
-				id : $scope.mlDataGroupId
+				id : $stateParams.mlDataGroupId
 			});
 			$scope.dataGroupSave = function() {
 				$scope.dataGroup.$update(function() {
@@ -104,22 +121,43 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 		} ]);
 turingApp.controller('TurMLInstanceCtrl', [
 		"$scope",
-		"$http",
-		"$window",
 		"$state",
 		"$rootScope",
 		"$translate",
 		"turMLInstanceResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
+		function($scope, $state, $rootScope, $translate,
 				turMLInstanceResource) {
+			
 			$rootScope.$state = $state;
 			$scope.mls = turMLInstanceResource.query();
 		} ]);
 
+turingApp.controller('TurMLInstanceNewCtrl', [
+	"$scope",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	"turMLInstanceResource",
+	"turMLVendorResource",
+	function($scope, $state, $rootScope, $translate, vigLocale,
+			turMLInstanceResource, turMLVendorResource) {
+
+		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+		$translate.use($scope.vigLanguage);
+
+		$rootScope.$state = $state;
+		$scope.mlVendors = turMLVendorResource.query();
+		$scope.ml = {'enabled': 0, 'selected': 0};
+		$scope.mlInstanceSave = function() {
+			turMLInstanceResource.save($scope.ml, function() {
+				$state.go('ml.instance');
+			});
+		}
+	} ]);
+
 turingApp.controller('TurMLInstanceEditCtrl', [
-		"$scope",
-		"$http",
-		"$window",
+		"$scope",		
 		"$stateParams",
 		"$state",
 		"$rootScope",
@@ -127,15 +165,27 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 		"vigLocale",
 		"turMLInstanceResource",
 		"turMLVendorResource",
-		function($scope, $http, $window, $stateParams, $state, $rootScope,
+		function($scope, $stateParams, $state, $rootScope,
 				$translate, vigLocale, turMLInstanceResource,
 				turMLVendorResource) {
+			
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			$scope.mlInstanceId = $stateParams.mlInstanceId;
+			
 			$scope.mlVendors = turMLVendorResource.query();
 			$scope.ml = turMLInstanceResource.get({
-				id : $scope.mlInstanceId
+				id : $stateParams.mlInstanceId
 			});
+			
+			$scope.mlInstanceUpdate = function() {
+				$scope.ml.$update(function() {
+					$state.go('ml.instance');
+				});
+			}
+			$scope.mlInstanceDelete = function() {
+				$scope.ml.$delete(function() {
+					$state.go('ml.instance');
+				});
+			}
 		} ]);

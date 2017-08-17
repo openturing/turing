@@ -12,8 +12,7 @@
 				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 				{{'NAME' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-				<input ng-model="se.title" maxlength="50" class="form-control"
-					style="width: 210px; font-size: 12px; padding-left: 5px">
+				<input ng-model="se.title" maxlength="50" class="form-control">
 
 			</div>
 		</div>
@@ -25,8 +24,7 @@
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
 				<input maxlength="50" ng-model="se.description" type="text"
-					class="form-control"
-					style="width: 210px; font-size: 12px; padding-left: 5px">
+					class="form-control">
 			</div>
 		</div>
 		<div class="row"
@@ -36,47 +34,93 @@
 				{{'VENDORS' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-				<div class="radio" ng-repeat="seVendor in seVendors">
-					<label><input type="radio" name="seVendor">{{seVendor.title}}</label>
-				</div>
+				<select class="form-control" ng-model="se.turSEVendor"
+					ng-options="seVendor as seVendor.title for seVendor in seVendors track by seVendor.id">
+					<option value="">- Pick One -</option>
+				</select>
 
 			</div>
-		</div>	
+		</div>
+
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'HOST' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+				<input maxlength="15" ng-model="se.host" type="text"
+					class="form-control">
+
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'PORT' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+				<input maxlength="15" ng-model="se.port" type="text"
+					class="form-control">
+
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'LANGUAGE' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+				<input maxlength="15" ng-model="se.language" type="text"
+					class="form-control">
+
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'ENABLED' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+				<select class="form-control" ng-model="se.enabled" convert-to-number>
+					<option value="0">No</option>
+					<option value="1">Yes</option>
+				</select>
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'SELECTED' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+				<select class="form-control" ng-model="se.selected"
+					convert-to-number>
+					<option value="0">No</option>
+					<option value="1">Yes</option>
+				</select>
+			</div>
+		</div>
 		<div style="padding: 10px;">
-			<div class="row"
-				style="margin: 0px; padding: 10px; padding-bottom: 0px">
-				<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-					style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-					{{'HOST' | translate }}</div>
-				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
-					style="padding: 0px">
-
-					<input maxlength="15" ng-model="se.host" type="text"
-						class="form-control"
-						style="width: 210px; font-size: 12px; padding-left: 5px">
-
-				</div>
-			</div>
-			<div class="row"
-				style="margin: 0px; padding: 10px; padding-bottom: 0px">
-				<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-					style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-					{{'PORT' | translate }}</div>
-				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
-					style="padding: 0px">
-
-					<input maxlength="15" ng-model="se.port" type="text"
-						class="form-control"
-						style="width: 210px; font-size: 12px; padding-left: 5px">
-
-				</div>
-			</div>
 			<div class="row">
 				<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"></div>
 				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
 					style="padding: 0px; padding-top: 20px; padding-bottom: 20px;">
-					<button type="submit" ng-click="userSave()" class="btn btn-viglet">{{'SETTINGS_SAVE_CHANGES'
-						| translate }}</button>
+					<div class="btn-group">
+						<button ng-click="seInstanceUpdate()" type="button"
+							class="btn btn-viglet">{{'SETTINGS_SAVE_CHANGES' |
+							translate }}</button>
+						<button type="button" class="btn btn-viglet dropdown-toggle"
+							data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							<span class="caret"></span> <span class="sr-only">Toggle
+								Dropdown</span>
+						</button>
+						<ul class="dropdown-menu">
+							<li><a ng-click="seInstanceDelete()">Delete</a></li>
+						</ul>
+					</div>
 				</div>
 			</div>
 		</div>

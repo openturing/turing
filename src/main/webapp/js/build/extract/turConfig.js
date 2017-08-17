@@ -50,6 +50,13 @@ turingApp.config([
 				data : {
 					pageTitle : 'Machine Learnings | Viglet Turing'
 				}
+			}).state('ml.instance-new', {
+				url : '/instance/new',
+				templateUrl : 'templates/ml/ml-instance-new.html',
+				controller : 'TurMLInstanceNewCtrl',
+				data : {
+					pageTitle : 'New Machine Learning Instance | Viglet Turing'
+				}
 			}).state('ml.instance-edit', {
 				url : '/instance/:mlInstanceId',
 				templateUrl : 'templates/ml/ml-instance-edit.html',
@@ -76,7 +83,7 @@ turingApp.config([
 				templateUrl : 'templates/ml/data/group/ml-datagroup-new.html',
 				controller : 'TurMLDataGroupNewCtrl',
 				data : {
-					pageTitle : 'Edit Data Group | Viglet Turing'
+					pageTitle : 'New Data Group | Viglet Turing'
 				}
 			}).state('ml.datagroup-edit', {
 				url : '/datagroup/:mlDataGroupId',
@@ -110,6 +117,13 @@ turingApp.config([
 				data : {
 					pageTitle : 'Search Engines | Viglet Turing'
 				}
+			}).state('se.instance-new', {
+				url : '/instance/new',
+				templateUrl : 'templates/se/se-instance-new.html',
+				controller : 'TurSEInstanceNewCtrl',
+				data : {
+					pageTitle : 'New Search Engine Instance | Viglet Turing'
+				}
 			}).state('se.instance-edit', {
 				url : '/instance/:seInstanceId',
 				templateUrl : 'templates/se/se-instance-edit.html',
@@ -136,6 +150,13 @@ turingApp.config([
 				controller : 'TurNLPInstanceCtrl',
 				data : {
 					pageTitle : 'NLPs | Viglet Turing'
+				}
+			}).state('nlp.instance-new', {
+				url : '/instance/new',
+				templateUrl : 'templates/nlp/nlp-instance-new.html',
+				controller : 'TurNLPInstanceNewCtrl',
+				data : {
+					pageTitle : 'New NLP Instance | Viglet Turing'
 				}
 			}).state('nlp.instance-edit', {
 				url : '/instance/:nlpInstanceId',
