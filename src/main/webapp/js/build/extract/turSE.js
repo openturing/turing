@@ -18,15 +18,6 @@ turingApp.factory('turSEVendorResource', [ '$resource', function($resource) {
 	});
 } ]);
 
-turingApp.factory('turSESNResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/se/sn/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
 
 turingApp.controller('TurSEInstanceCtrl', [
 		"$scope",
@@ -127,16 +118,4 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 			}
 
 		} ]);
-turingApp.controller('TurSESNCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"turSESNResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
-				turSESNResource) {
-			$rootScope.$state = $state;
-			$scope.seSNs = turSESNResource.query();
-		} ]);
+

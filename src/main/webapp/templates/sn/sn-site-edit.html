@@ -1,0 +1,92 @@
+<div class="panel panel-default"
+	style='font-family: "Raleway", sans-serif; font-weight: 400; min-height: 175px; width: 544px; margin-bottom: 0px; padding-bottom: 0px;'>
+	<div class="panel-title"
+		style="padding: 10px; border-bottom-color: rgb(217, 217, 217); border-bottom-style: solid; border-bottom-width: thin;">
+		<p style="font-size: 18px; color: #FF874B; margin: 0px;">{{snSite.name}}</p>
+		<p style="font-size: 14px; color: rgb(182, 182, 182); margin: 0px;">{{snSite.description}}</p>
+	</div>
+	<div class="panel-body" style="padding: 0px;">
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'NAME' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+				<input ng-model="snSite.name" maxlength="50" class="form-control">
+
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'DESCRIPTION' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+				<input maxlength="50" ng-model="snSite.description" type="text"
+					class="form-control">
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'SE' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+				<select class="form-control" ng-model="snSite.turSEInstance"
+					ng-options="seInstance as seInstance.title for seInstance in seInstances track by seInstance.id">
+					<option value="">- Pick One -</option>
+				</select>
+
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'NLP' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+				<select class="form-control" ng-model="snSite.turNLPInstance"
+					ng-options="nlpInstance as nlpInstance.title for nlpInstance in nlpInstances track by nlpInstance.id">
+					<option value="">- Pick One -</option>
+				</select>
+
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'LANGUAGE' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+				<input maxlength="15" ng-model="snSite.language" type="text"
+					class="form-control">
+
+			</div>
+		</div>
+		<div style="padding: 10px;">
+			<div class="row">
+				<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"></div>
+				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
+					style="padding: 0px; padding-top: 20px; padding-bottom: 20px;">
+										<div class="btn-group">
+						<button ng-click="snSiteUpdate()" type="button"
+							class="btn btn-viglet">{{'SETTINGS_SAVE_CHANGES' |
+							translate }}</button>
+						<button type="button" class="btn btn-viglet dropdown-toggle"
+							data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							<span class="caret"></span> <span class="sr-only">Toggle
+								Dropdown</span>
+						</button>
+						<ul class="dropdown-menu">
+							<li><a ng-click="snSiteDelete()">Delete</a></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

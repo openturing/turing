@@ -2,7 +2,6 @@ package com.viglet.turing.listener;
 
 import javax.servlet.http.*;
 
-import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.service.system.TurConfigVarService;
 
 import com.viglet.turing.listener.onstartup.ml.TurMLVendorOnStartup;
@@ -14,6 +13,7 @@ import com.viglet.turing.listener.onstartup.nlp.TurNLPVendorOnStartup;
 import com.viglet.turing.listener.onstartup.se.TurSEInstanceOnStartup;
 import com.viglet.turing.listener.onstartup.se.TurSEVendorOnStartup;
 import com.viglet.turing.listener.onstartup.storage.TurDataGroupStartup;
+import com.viglet.turing.listener.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.listener.onstartup.ml.TurMLInstanceOnStartup;
 import javax.servlet.*;
 
@@ -21,7 +21,6 @@ public class TurListener implements ServletContextListener, HttpSessionListener 
 	final String FIRST_TIME = "FIRST_TIME";
 	ServletContext servletContext;
 	TurConfigVarService turConfigVarService = new TurConfigVarService();
-	TurConfigVar turConfigVar = new TurConfigVar();
 
 	/* A listener class must have a zero-argument constructor: */
 	public TurListener() {
@@ -31,7 +30,7 @@ public class TurListener implements ServletContextListener, HttpSessionListener 
 	public void contextInitialized(ServletContextEvent sce) {
 		if (turConfigVarService.get(FIRST_TIME) == null) {
 			servletContext = sce.getServletContext();
-			System.out.println("Checking tables ...");
+			System.out.println("First Time Configuration ...");
 			TurNLPVendorOnStartup.createDefaultRows();
 			TurNLPEntityOnStartup.createDefaultRows();
 			TurNLPVendorEntityOnStartup.createDefaultRows();
@@ -42,12 +41,8 @@ public class TurListener implements ServletContextListener, HttpSessionListener 
 			TurSEVendorOnStartup.createDefaultRows();
 			TurSEInstanceOnStartup.createDefaultRows();
 			TurDataGroupStartup.createDefaultRows();
-			System.out.println("Tables checked.");
-
-			turConfigVar.setId(FIRST_TIME);
-			turConfigVar.setPath("/system");
-			turConfigVar.setValue("true");
-			turConfigVarService.save(turConfigVar);
+			TurConfigVarOnStartup.createDefaultRows();
+			System.out.println("Configuration finished.");
 		}
 
 	}

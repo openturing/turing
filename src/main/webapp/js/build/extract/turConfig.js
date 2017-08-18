@@ -131,12 +131,32 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Search Engine | Viglet Turing'
 				}
-			}).state('se.sn', {
+			}).state('sn', {
 				url : '/sn',
-				templateUrl : 'templates/se/sn/se-sn.html',
-				controller : 'TurSESNCtrl',
+				templateUrl : 'templates/sn/sn.html',
 				data : {
 					pageTitle : 'Semantic Navigation | Viglet Turing'
+				}
+			}).state('sn.site', {
+				url : '/site',
+				templateUrl : 'templates/sn/sn-site.html',
+				controller : 'TurSNSiteCtrl',
+				data : {
+					pageTitle : 'Semantic Navigation Sites | Viglet Turing'
+				}
+			}).state('sn.site-new', {
+				url : '/site/new',
+				templateUrl : 'templates/sn/sn-site-new.html',
+				controller : 'TurSNSiteNewCtrl',
+				data : {
+					pageTitle : 'New Semantic Navigation Site | Viglet Turing'
+				}
+			}).state('sn.site-edit', {
+				url : '/site/:snSiteId',
+				templateUrl : 'templates/sn/sn-site-edit.html',
+				controller : 'TurSNSiteEditCtrl',
+				data : {
+					pageTitle : 'Edit Semantic Navigation Site | Viglet Turing'
 				}
 			}).state('nlp', {
 				url : '/nlp',

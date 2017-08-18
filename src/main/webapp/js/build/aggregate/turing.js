@@ -166,12 +166,32 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Search Engine | Viglet Turing'
 				}
-			}).state('se.sn', {
+			}).state('sn', {
 				url : '/sn',
-				templateUrl : 'templates/se/sn/se-sn.html',
-				controller : 'TurSESNCtrl',
+				templateUrl : 'templates/sn/sn.html',
 				data : {
 					pageTitle : 'Semantic Navigation | Viglet Turing'
+				}
+			}).state('sn.site', {
+				url : '/site',
+				templateUrl : 'templates/sn/sn-site.html',
+				controller : 'TurSNSiteCtrl',
+				data : {
+					pageTitle : 'Semantic Navigation Sites | Viglet Turing'
+				}
+			}).state('sn.site-new', {
+				url : '/site/new',
+				templateUrl : 'templates/sn/sn-site-new.html',
+				controller : 'TurSNSiteNewCtrl',
+				data : {
+					pageTitle : 'New Semantic Navigation Site | Viglet Turing'
+				}
+			}).state('sn.site-edit', {
+				url : '/site/:snSiteId',
+				templateUrl : 'templates/sn/sn-site-edit.html',
+				controller : 'TurSNSiteEditCtrl',
+				data : {
+					pageTitle : 'Edit Semantic Navigation Site | Viglet Turing'
 				}
 			}).state('nlp', {
 				url : '/nlp',
@@ -734,15 +754,6 @@ turingApp.factory('turSEVendorResource', [ '$resource', function($resource) {
 	});
 } ]);
 
-turingApp.factory('turSESNResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/se/sn/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
 
 turingApp.controller('TurSEInstanceCtrl', [
 		"$scope",
@@ -843,17 +854,117 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 			}
 
 		} ]);
-turingApp.controller('TurSESNCtrl', [
+
+
+turingApp.factory('turSNSiteResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/sn/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
+
+turingApp.controller('TurSNSiteCtrl', [
 		"$scope",
 		"$http",
 		"$window",
 		"$state",
 		"$rootScope",
 		"$translate",
-		"turSESNResource",
+		"turSNSiteResource",
 		function($scope, $http, $window, $state, $rootScope, $translate,
-				turSESNResource) {
+				turSNSiteResource) {
 			$rootScope.$state = $state;
-			$scope.seSNs = turSESNResource.query();
+			$scope.snSites = turSNSiteResource.query();
 		} ]);
+
+turingApp.controller('TurSNSiteNewCtrl', [
+	"$scope",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	"turSNSiteResource",
+	"turSEInstanceResource",
+	"turNLPInstanceResource",
+	function($scope, $state, $rootScope, $translate, vigLocale,
+			turSNSiteResource, turSEInstanceResource, turNLPInstanceResource) {
+
+		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+		$translate.use($scope.vigLanguage);
+
+		$rootScope.$state = $state;
+		$scope.seInstances = turSEInstanceResource.query();
+		$scope.nlpInstances = turNLPInstanceResource.query();
+		
+		$scope.snSite = { };
+		$scope.snSiteSave = function() {
+			turSNSiteResource.save($scope.snSite, function() {
+				$state.go('sn.site');
+			});
+		}
+	} ]);
+
+turingApp.controller('TurSNSiteEditCtrl', [
+	"$scope",
+	"$stateParams",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	"turSNSiteResource",
+	"turSEInstanceResource",
+	"turNLPInstanceResource",
+	"$uibModal",
+	function($scope, $stateParams, $state, $rootScope, $translate,
+			vigLocale, turSNSiteResource, turSEInstanceResource, turNLPInstanceResource, $uibModal) {
+
+		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+		$translate.use($scope.vigLanguage);
+		$rootScope.$state = $state;
+
+		$scope.seInstances = turSEInstanceResource.query();
+		$scope.nlpInstances = turNLPInstanceResource.query();
+		$scope.snSite = turSNSiteResource.get({
+			id : $stateParams.snSiteId
+		});
+
+		$scope.snSiteUpdate = function() {
+			$scope.snSite.$update(function() {
+				$state.go('sn.site');
+			});
+		}
+		$scope.snSiteDelete = function() {
+			var $ctrl = this;
+
+			var modalInstance = $uibModal.open({
+				animation : true,
+				ariaLabelledBy : 'modal-title',
+				ariaDescribedBy : 'modal-body',
+				templateUrl : 'templates/modal/turDeleteInstance.html',
+				controller : 'ModalDeleteInstanceCtrl',
+				controllerAs : '$ctrl',
+				size : null,
+				appendTo : undefined,
+				resolve : {
+					instanceName : function() {
+						return $scope.snSite.name;
+					}
+				}
+			});
+
+			modalInstance.result.then(function(removeInstance) {
+				$scope.removeInstance = removeInstance;
+				$scope.snSite.$delete(function() {
+					$state.go('sn.site');
+				});
+			}, function() {
+				// Selected NO
+			});
+
+		}
+
+	} ]);
 

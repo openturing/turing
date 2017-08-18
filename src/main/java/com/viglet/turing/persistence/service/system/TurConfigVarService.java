@@ -19,12 +19,12 @@ public class TurConfigVarService extends TurBaseService {
 		return q.getResultList();
 	}
 
-	public TurConfigVar get(String seVendorId) {
-		return em.find(TurConfigVar.class, seVendorId);
+	public TurConfigVar get(String turConfigVarId) {
+		return em.find(TurConfigVar.class, turConfigVarId);
 	}
 
-	public boolean delete(String seVendorId) {
-		TurConfigVar turConfigVar = em.find(TurConfigVar.class, seVendorId);
+	public boolean delete(String turConfigVarId) {
+		TurConfigVar turConfigVar = em.find(TurConfigVar.class, turConfigVarId);
 		em.getTransaction().begin();
 		em.remove(turConfigVar);
 		em.getTransaction().commit();

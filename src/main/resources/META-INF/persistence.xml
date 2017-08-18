@@ -24,6 +24,7 @@
 		<class>com.viglet.turing.persistence.model.nlp.term.TurTermVariationLanguage</class>
 		<class>com.viglet.turing.persistence.model.se.TurSEInstance</class>
 		<class>com.viglet.turing.persistence.model.se.TurSEVendor</class>
+		<class>com.viglet.turing.persistence.model.sn.TurSNSite</class>
 		<class>com.viglet.turing.persistence.model.storage.TurData</class>
 		<class>com.viglet.turing.persistence.model.storage.TurDataGroup</class>
 		<class>com.viglet.turing.persistence.model.storage.TurDataGroupCategory</class>

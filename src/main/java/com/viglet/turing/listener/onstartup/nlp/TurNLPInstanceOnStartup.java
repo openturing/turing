@@ -2,14 +2,18 @@ package com.viglet.turing.listener.onstartup.nlp;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
+import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
 import com.viglet.turing.persistence.service.nlp.TurNLPVendorService;
+import com.viglet.turing.persistence.service.system.TurConfigVarService;
 
 public class TurNLPInstanceOnStartup {
 	public static void createDefaultRows() {
 
 		TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
 		TurNLPVendorService turNLPVendorService = new TurNLPVendorService();
+		TurConfigVarService turConfigVarService = new TurConfigVarService();
+		TurConfigVar turConfigVar = new TurConfigVar();
 
 		if (turNLPInstanceService.listAll().isEmpty()) {
 
@@ -25,6 +29,13 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setSelected(1);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceService.save(turNLPInstance);
+				
+				turConfigVar.setId("DEFAULT_NLP");
+				turConfigVar.setPath("/nlp");
+				turConfigVar.setValue(Integer.toString(turNLPInstance.getId()));
+				turConfigVarService.save(turConfigVar);
+				
+
 			}
 
 			TurNLPVendor turNLPVendorCoreNLP = turNLPVendorService.get("CORENLP");
@@ -39,7 +50,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setSelected(0);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceService.save(turNLPInstance);
-			}
+			}			
 
 		}
 
