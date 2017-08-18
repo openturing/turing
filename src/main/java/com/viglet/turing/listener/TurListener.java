@@ -2,6 +2,9 @@ package com.viglet.turing.listener;
 
 import javax.servlet.http.*;
 
+import com.viglet.turing.persistence.model.system.TurConfigVar;
+import com.viglet.turing.persistence.service.system.TurConfigVarService;
+
 import com.viglet.turing.listener.onstartup.ml.TurMLVendorOnStartup;
 import com.viglet.turing.listener.onstartup.nlp.TurNLPEntityOnStartup;
 import com.viglet.turing.listener.onstartup.nlp.TurNLPFeatureOnStartup;
@@ -15,28 +18,38 @@ import com.viglet.turing.listener.onstartup.ml.TurMLInstanceOnStartup;
 import javax.servlet.*;
 
 public class TurListener implements ServletContextListener, HttpSessionListener {
+	final String FIRST_TIME = "FIRST_TIME";
+	ServletContext servletContext;
+	TurConfigVarService turConfigVarService = new TurConfigVarService();
+	TurConfigVar turConfigVar = new TurConfigVar();
+
 	/* A listener class must have a zero-argument constructor: */
 	public TurListener() {
 	}
 
-	ServletContext servletContext;
-
 	/* Methods from the ServletContextListener */
 	public void contextInitialized(ServletContextEvent sce) {
-		servletContext = sce.getServletContext();
-		System.out.println("Checking tables ...");
-		TurNLPVendorOnStartup.createDefaultRows();
-		TurNLPEntityOnStartup.createDefaultRows();
-		TurNLPVendorEntityOnStartup.createDefaultRows();
-		TurNLPFeatureOnStartup.createDefaultRows();
-		TurNLPInstanceOnStartup.createDefaultRows();
-		TurMLVendorOnStartup.createDefaultRows();
-		TurMLInstanceOnStartup.createDefaultRows();
-		TurSEVendorOnStartup.createDefaultRows();
-		TurSEInstanceOnStartup.createDefaultRows();
-		TurDataGroupStartup.createDefaultRows();
-		System.out.println("Tables checked.");
-		
+		if (turConfigVarService.get(FIRST_TIME) == null) {
+			servletContext = sce.getServletContext();
+			System.out.println("Checking tables ...");
+			TurNLPVendorOnStartup.createDefaultRows();
+			TurNLPEntityOnStartup.createDefaultRows();
+			TurNLPVendorEntityOnStartup.createDefaultRows();
+			TurNLPFeatureOnStartup.createDefaultRows();
+			TurNLPInstanceOnStartup.createDefaultRows();
+			TurMLVendorOnStartup.createDefaultRows();
+			TurMLInstanceOnStartup.createDefaultRows();
+			TurSEVendorOnStartup.createDefaultRows();
+			TurSEInstanceOnStartup.createDefaultRows();
+			TurDataGroupStartup.createDefaultRows();
+			System.out.println("Tables checked.");
+
+			turConfigVar.setId(FIRST_TIME);
+			turConfigVar.setPath("/system");
+			turConfigVar.setValue("true");
+			turConfigVarService.save(turConfigVar);
+		}
+
 	}
 
 	public void contextDestroyed(ServletContextEvent sce) {
