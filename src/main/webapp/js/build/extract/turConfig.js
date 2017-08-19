@@ -158,6 +158,13 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Semantic Navigation Site | Viglet Turing'
 				}
+			}).state('sn.ad', {
+				url : '/ad',
+				templateUrl : 'templates/sn/sn-ad.html',
+				controller : 'TurSNAdvertisingCtrl',
+				data : {
+					pageTitle : 'Semantic Navigation Advertising | Viglet Turing'
+				}
 			}).state('nlp', {
 				url : '/nlp',
 				templateUrl : 'templates/nlp/nlp.html',
