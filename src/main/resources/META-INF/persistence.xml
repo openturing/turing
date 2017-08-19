@@ -31,6 +31,7 @@
 		<class>com.viglet.turing.persistence.model.storage.TurDataGroupData</class>
 		<class>com.viglet.turing.persistence.model.storage.TurDataSentence</class>
 		<class>com.viglet.turing.persistence.model.system.TurConfigVar</class>
+		<class>com.viglet.turing.persistence.model.system.TurLocale</class>
 		<properties>
 		 	<property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema" />
 			<property name="openjpa.ConnectionURL" value="jdbc:hsqldb:store/turingDB" />

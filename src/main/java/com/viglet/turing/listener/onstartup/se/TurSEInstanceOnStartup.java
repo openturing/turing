@@ -25,7 +25,7 @@ public class TurSEInstanceOnStartup {
 				turSEInstance.setTurSEVendor(turSEVendor);
 				turSEInstance.setHost("localhost");
 				turSEInstance.setPort(8983);
-				turSEInstance.setLanguage("pt-BR");
+				turSEInstance.setLanguage("pt-br");
 				turSEInstance.setEnabled(1);
 				turSEInstanceService.save(turSEInstance);
 				

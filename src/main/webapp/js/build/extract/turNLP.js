@@ -85,17 +85,18 @@ turingApp.controller('TurNLPInstanceNewCtrl', [
 		"vigLocale",
 		"turNLPInstanceResource",
 		"turNLPVendorResource",
+		"turLocaleResource",
 		function($scope, $state, $rootScope, $translate, vigLocale,
-				turNLPInstanceResource, turNLPVendorResource) {
+				turNLPInstanceResource, turNLPVendorResource, turLocaleResource) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 
 			$rootScope.$state = $state;
+			$scope.locales = turLocaleResource.query();
 			$scope.nlpVendors = turNLPVendorResource.query();
 			$scope.nlp = {
-				'enabled' : 0,
-				'selected' : 0
+				'enabled' : 0				
 			};
 			$scope.nlpInstanceSave = function() {
 				turNLPInstanceResource.save($scope.nlp, function() {
@@ -113,15 +114,17 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 		"vigLocale",
 		"turNLPInstanceResource",
 		"turNLPVendorResource",
+		"turLocaleResource",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turNLPInstanceResource, turNLPVendorResource,
+				vigLocale, turNLPInstanceResource, turNLPVendorResource,turLocaleResource,
 				$uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 
 			$rootScope.$state = $state;
+			$scope.locales = turLocaleResource.query();
 			$scope.nlpVendors = turNLPVendorResource.query();
 			$scope.nlp = turNLPInstanceResource.get({
 				id : $stateParams.nlpInstanceId

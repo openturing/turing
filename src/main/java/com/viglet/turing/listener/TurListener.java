@@ -14,6 +14,7 @@ import com.viglet.turing.listener.onstartup.se.TurSEInstanceOnStartup;
 import com.viglet.turing.listener.onstartup.se.TurSEVendorOnStartup;
 import com.viglet.turing.listener.onstartup.storage.TurDataGroupStartup;
 import com.viglet.turing.listener.onstartup.system.TurConfigVarOnStartup;
+import com.viglet.turing.listener.onstartup.system.TurLocaleOnStartup;
 import com.viglet.turing.listener.onstartup.ml.TurMLInstanceOnStartup;
 import javax.servlet.*;
 
@@ -31,6 +32,7 @@ public class TurListener implements ServletContextListener, HttpSessionListener 
 		if (turConfigVarService.get(FIRST_TIME) == null) {
 			servletContext = sce.getServletContext();
 			System.out.println("First Time Configuration ...");
+			TurLocaleOnStartup.createDefaultRows();
 			TurNLPVendorOnStartup.createDefaultRows();
 			TurNLPEntityOnStartup.createDefaultRows();
 			TurNLPVendorEntityOnStartup.createDefaultRows();

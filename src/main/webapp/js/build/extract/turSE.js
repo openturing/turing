@@ -41,17 +41,18 @@ turingApp.controller('TurSEInstanceNewCtrl', [
 		"vigLocale",
 		"turSEInstanceResource",
 		"turSEVendorResource",
+		"turLocaleResource",
 		function($scope, $state, $rootScope, $translate, vigLocale,
-				turSEInstanceResource, turSEVendorResource) {
+				turSEInstanceResource, turSEVendorResource, turLocaleResource) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 
 			$rootScope.$state = $state;
+			$scope.locales = turLocaleResource.query();
 			$scope.seVendors = turSEVendorResource.query();
 			$scope.se = {
-				'enabled' : 0,
-				'selected' : 0
+				'enabled' : 0
 			};
 			$scope.seInstanceSave = function() {
 				turSEInstanceResource.save($scope.se, function() {
@@ -69,14 +70,16 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 		"vigLocale",
 		"turSEInstanceResource",
 		"turSEVendorResource",
+		"turLocaleResource",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turSEInstanceResource, turSEVendorResource, $uibModal) {
+				vigLocale, turSEInstanceResource, turSEVendorResource, turLocaleResource, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
+			$scope.locales = turLocaleResource.query();
 			$scope.seVendors = turSEVendorResource.query();
 			$scope.se = turSEInstanceResource.get({
 				id : $stateParams.seInstanceId

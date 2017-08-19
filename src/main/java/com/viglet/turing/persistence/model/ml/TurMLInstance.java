@@ -59,6 +59,10 @@ public class TurMLInstance implements Serializable {
 		return isSelected;
 	}
 
+	public void setSelected(boolean isSelected) {
+		this.isSelected = isSelected;
+	}
+
 	public int getId() {
 		return this.id;
 	}

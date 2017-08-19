@@ -169,17 +169,18 @@ turingApp.controller('TurMLInstanceNewCtrl', [
 		"vigLocale",
 		"turMLInstanceResource",
 		"turMLVendorResource",
+		"turLocaleResource",
 		function($scope, $state, $rootScope, $translate, vigLocale,
-				turMLInstanceResource, turMLVendorResource) {
+				turMLInstanceResource, turMLVendorResource, turLocaleResource) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 
 			$rootScope.$state = $state;
+			$scope.locales = turLocaleResource.query();
 			$scope.mlVendors = turMLVendorResource.query();
 			$scope.ml = {
-				'enabled' : 0,
-				'selected' : 0
+				'enabled' : 0
 			};
 			$scope.mlInstanceSave = function() {
 				turMLInstanceResource.save($scope.ml, function() {
@@ -197,14 +198,17 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 		"vigLocale",
 		"turMLInstanceResource",
 		"turMLVendorResource",
+		"turLocaleResource",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLInstanceResource, turMLVendorResource, $uibModal) {
+				vigLocale, turMLInstanceResource, turMLVendorResource,
+				turLocaleResource, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
+			$scope.locales = turLocaleResource.query();
 			$scope.mlVendors = turMLVendorResource.query();
 			$scope.ml = turMLInstanceResource.get({
 				id : $stateParams.mlInstanceId
@@ -243,11 +247,5 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 					// Selected NO
 				});
 
-				
-				
-				
-				
-				
-			
 			}
 		} ]);

@@ -25,7 +25,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTurNLPVendor(turNLPVendorOpenNLP);
 				turNLPInstance.setHost("");
 				turNLPInstance.setPort(0);
-				turNLPInstance.setLanguage("pt-BR");
+				turNLPInstance.setLanguage("pt-br");
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceService.save(turNLPInstance);
 				
@@ -45,7 +45,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTurNLPVendor(turNLPVendorCoreNLP);
 				turNLPInstance.setHost("localhost");
 				turNLPInstance.setPort(9001);
-				turNLPInstance.setLanguage("en-US");
+				turNLPInstance.setLanguage("en");
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceService.save(turNLPInstance);
 			}			

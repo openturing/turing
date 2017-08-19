@@ -73,8 +73,10 @@
 				{{'LANGUAGE' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-				<input maxlength="15" ng-model="se.language" type="text"
-					class="form-control">
+				<select class="form-control" ng-model="se.language"
+					ng-options="locale.initials as locale.en for locale in locales track by locale.initials">
+					<option value="">- Pick One -</option>
+				</select>
 
 			</div>
 		</div>
