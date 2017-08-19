@@ -1,0 +1,25 @@
+<div class="modal-header">
+	<h3 class="modal-title" id="modal-title">Upload Document</h3>
+</div>
+<div class="modal-body">
+		<div class="row"
+			style="margin: 0px; padding: 30px; padding-bottom: 0px">
+			<form class="form-inline" action="/turing/api/otca/af/import"
+				method="post" enctype="multipart/form-data">
+				<div class="form-group">
+					<input type="text" maxlength="50" disabled
+						style="width: 210px; font-size: 12px; padding-left: 5px"
+						class="form-control" id="upload-file-info"> <label
+						class="btn btn-viglet" for="file"> <input name="file"
+						id="file" type="file" file-model="$ctrl.myFile" style="display: none"
+						onchange="$('#upload-file-info').val(this.files[0].name)">
+						Upload
+					</label>
+				</div>
+			</form>
+		</div>
+</div>
+<div class="modal-footer">
+	<button class="btn btn-default" type="button" ng-click="$ctrl.cancel()">Cancel</button>
+	<button class="btn btn-viglet" type="button" ng-click="$ctrl.ok()">Import</button>
+</div>

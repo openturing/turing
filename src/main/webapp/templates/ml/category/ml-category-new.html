@@ -1,4 +1,3 @@
-
 <div class="modal-header">
 	<h3 class="modal-title" id="modal-title">New Category</h3>
 </div>
@@ -9,7 +8,8 @@
 			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 			{{'NAME' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-			<input ng-model="$ctrl.category.name" maxlength="50" class="form-control"
+			<input ng-model="$ctrl.category.name" maxlength="50"
+				class="form-control"
 				style="width: 210px; font-size: 12px; padding-left: 5px">
 
 		</div>
@@ -21,8 +21,8 @@
 			{{'DESCRIPTION' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-			<input maxlength="50" ng-model="$ctrl.category.description" type="text"
-				class="form-control"
+			<input maxlength="50" ng-model="$ctrl.category.description"
+				type="text" class="form-control"
 				style="width: 210px; font-size: 12px; padding-left: 5px">
 		</div>
 	</div>
@@ -30,6 +30,6 @@
 <div class="modal-footer">
 
 	<button class="btn btn-default" type="button" ng-click="$ctrl.cancel()">Cancel</button>
-		<button class="btn btn-viglet" type="button" ng-click="$ctrl.ok()">{{'SETTINGS_SAVE_CHANGES'
+	<button class="btn btn-viglet" type="button" ng-click="$ctrl.ok()">{{'SETTINGS_SAVE_CHANGES'
 		| translate }}</button>
 </div>

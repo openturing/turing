@@ -1,21 +1,22 @@
 package com.viglet.turing.api.ml.data;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-
+import java.io.InputStream;
 import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -27,6 +28,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.xml.sax.SAXException;
 
+import com.sun.jersey.core.header.FormDataContentDisposition;
+import com.sun.jersey.multipart.FormDataParam;
 import com.viglet.turing.persistence.model.storage.TurData;
 import com.viglet.turing.persistence.model.storage.TurDataSentence;
 import com.viglet.turing.persistence.service.storage.TurDataSentenceService;
@@ -77,20 +80,23 @@ public class TurMLDataAPI {
 
 	}
 
-	@GET
+	@POST
 	@Path("import")
-	@Produces("application/json")
-	public Response importData() throws JSONException, IOException, SAXException, TikaException {
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response importData(@DefaultValue("true") @FormDataParam("enabled") boolean enabled,
+			@FormDataParam("file") InputStream inputStream,
+			@FormDataParam("file") FormDataContentDisposition fileDetail, @Context UriInfo uriInfo) throws JSONException, IOException, SAXException, TikaException {
 
 		BodyContentHandler handler = new BodyContentHandler(-1);
 		Metadata metadata = new Metadata();
-		FileInputStream inputstream = new FileInputStream(
-				new File("/Users/alexandreoliveira/Desktop/The-Problems-of-Philosophy-LewisTheme.pdf"));
+		/*FileInputStream inputstream = new FileInputStream(
+				new File("/Users/alexandreoliveira/Desktop/The-Problems-of-Philosophy-LewisTheme.pdf"));*/
 		ParseContext pcontext = new ParseContext();
 
 		// parsing the document using PDF parser
 		PDFParser pdfparser = new PDFParser();
-		pdfparser.parse(inputstream, handler, metadata, pcontext);
+		pdfparser.parse(inputStream, handler, metadata, pcontext);
 
 		// getting the content of the document
 		System.out.println("Contents of the PDF :" + handler.toString());

@@ -220,8 +220,6 @@ public class TurOTCAAutorityFileAPI {
 			@FormDataParam("file") FormDataContentDisposition fileDetail, @Context UriInfo uriInfo)
 			throws URISyntaxException {
 
-		System.out.println("Importando Entidade...");
-
 		try {
 			JAXBContext jaxbContext = JAXBContext
 					.newInstance(com.viglet.turing.plugins.otca.af.xml.ObjectFactory.class);

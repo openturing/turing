@@ -4,7 +4,6 @@ turingApp.controller('TurMLCategoryNewCtrl', [ "$uibModalInstance",
 		$ctrl.removeInstance = false;
 		$ctrl.category = category;
 		$ctrl.ok = function() {
-			$ctrl.removeInstance = true;
 			$uibModalInstance.close(category);
 		};
 

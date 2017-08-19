@@ -14,6 +14,34 @@ turingApp.directive('convertToNumber', function() {
 		}
 	};
 });
+turingApp.directive('fileModel', [ '$parse', function($parse) {
+	return {
+		restrict : 'A',
+		link : function(scope, element, attrs) {
+			var model = $parse(attrs.fileModel);
+			var modelSetter = model.assign;
+
+			element.bind('change', function() {
+				scope.$apply(function() {
+					modelSetter(scope, element[0].files[0]);
+				});
+			});
+		}
+	};
+} ]);
+
+turingApp.service('fileUpload', [ '$http', function($http) {
+	this.uploadFileToUrl = function(file, uploadUrl) {
+		var fd = new FormData();
+		fd.append('file', file);
+		$http.post(uploadUrl, fd, {
+			transformRequest : angular.identity,
+			headers : {
+				'Content-Type' : undefined
+			}
+		});
+	}
+} ]);
 
 turingApp.factory('vigLocale', [
 		'$window',
@@ -71,10 +99,7 @@ turingApp.controller('TurMLCategoryEditCtrl', [
 
 			$scope.categoryNew = function() {
 				var $ctrl = this;
-				$scope.category = {
-					'name' : 'cat01',
-					'description' : 'description1'
-				};
+				$scope.category = {}
 				var modalInstance = $uibModal.open({
 					animation : true,
 					ariaLabelledBy : 'modal-title',
@@ -107,8 +132,79 @@ turingApp.controller('TurMLCategoryNewCtrl', [ "$uibModalInstance",
 		$ctrl.removeInstance = false;
 		$ctrl.category = category;
 		$ctrl.ok = function() {
-			$ctrl.removeInstance = true;
 			$uibModalInstance.close(category);
+		};
+
+		$ctrl.cancel = function() {
+			$ctrl.removeInstance = false;
+			$uibModalInstance.dismiss('cancel');
+		};
+	} ]);
+turingApp.controller('TurMLDataEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupResource",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupResource, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.dataGroup = turMLDataGroupResource.get({
+				id : $stateParams.mlDataGroupId
+			});
+			$scope.dataGroupSave = function() {
+				$scope.dataGroup.$update(function() {
+					$state.go('ml.datagroup');
+				});
+			}
+
+			$scope.uploadDocument = function() {
+				var $ctrl = this;
+				$scope.data = {}
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/ml/data/ml-document-upload.html',
+					controller : 'TurMLDataNewCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						data : function() {
+							return $scope.data;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(data) {
+					console.log(data.name);
+					console.log(data.description);
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+turingApp.controller('TurMLDataNewCtrl', [ "$uibModalInstance",
+	"data", 'fileUpload', function($uibModalInstance, data, fileUpload) {
+		var $ctrl = this;
+		$ctrl.myFile = null;
+		$ctrl.removeInstance = false;
+		$ctrl.data = data;
+		$ctrl.ok = function() {
+			var file = $ctrl.myFile;
+			var uploadUrl = '/turing/api/ml/data/import';
+			fileUpload.uploadFileToUrl(file, uploadUrl);
+			$uibModalInstance.close(data);
 		};
 
 		$ctrl.cancel = function() {
@@ -941,6 +1037,7 @@ turingApp.config([
 			}).state('ml.datagroup-edit.data', {
 				url : '/document',
 				templateUrl : 'templates/ml/data/group/ml-datagroup-data.html',
+				controller : 'TurMLDataEditCtrl',
 				data : {
 					pageTitle : 'Data Group Documents | Viglet Turing'
 				}

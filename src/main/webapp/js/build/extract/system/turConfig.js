@@ -102,6 +102,7 @@ turingApp.config([
 			}).state('ml.datagroup-edit.data', {
 				url : '/document',
 				templateUrl : 'templates/ml/data/group/ml-datagroup-data.html',
+				controller : 'TurMLDataEditCtrl',
 				data : {
 					pageTitle : 'Data Group Documents | Viglet Turing'
 				}

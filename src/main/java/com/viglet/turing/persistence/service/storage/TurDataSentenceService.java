@@ -9,6 +9,12 @@ import com.viglet.turing.persistence.service.TurBaseService;
 
 public class TurDataSentenceService extends TurBaseService {
 	public void save(TurDataSentence turDataSentence) {
+		if (turDataSentence.getTurData() != null) {
+			turDataSentence.setTurData(em.merge(turDataSentence.getTurData()));
+		}
+		if (turDataSentence.getTurMLCategory() != null) {
+			turDataSentence.setTurMLCategory(em.merge(turDataSentence.getTurMLCategory()));
+		}
 		em.getTransaction().begin();
 		em.persist(turDataSentence);
 		em.getTransaction().commit();
