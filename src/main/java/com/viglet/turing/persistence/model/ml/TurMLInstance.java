@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.ml;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import com.viglet.turing.persistence.service.system.TurConfigVarService;
+
 /**
  * The persistent class for the vigServices database table.
  * 
@@ -35,16 +37,26 @@ public class TurMLInstance implements Serializable {
 
 	@Column(nullable = false)
 	private int port;
-
-	@Column(nullable = false)
-	private int selected;
-
+	
 	// bi-directional many-to-one association to VigService
 	@ManyToOne(cascade = { CascadeType.REMOVE }, fetch = FetchType.LAZY)
 	@JoinColumn(name = "ml_vendor_id", nullable = false)
 	private TurMLVendor turMLVendor;
 
+	@Transient
+	private boolean isSelected;
+
 	public TurMLInstance() {
+	}
+
+	public boolean isSelected() {
+		TurConfigVarService turConfigVarService = new TurConfigVarService();
+		if (Integer.parseInt(turConfigVarService.get("DEFAULT_ML").getValue()) == this.getId()) {
+			isSelected = true;
+		} else {
+			isSelected = false;
+		}
+		return isSelected;
 	}
 
 	public int getId() {
@@ -93,14 +105,6 @@ public class TurMLInstance implements Serializable {
 
 	public void setPort(int port) {
 		this.port = port;
-	}
-
-	public int getSelected() {
-		return this.selected;
-	}
-
-	public void setSelected(int selected) {
-		this.selected = selected;
 	}
 
 	public String getTitle() {

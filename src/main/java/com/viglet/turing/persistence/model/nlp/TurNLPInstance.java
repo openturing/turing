@@ -4,6 +4,7 @@ import java.io.Serializable;
 import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.viglet.turing.persistence.service.system.TurConfigVarService;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ import java.util.List;
 @Entity
 @Table(name = "turNLPInstance")
 @NamedQuery(name = "TurNLPInstance.findAll", query = "SELECT n FROM TurNLPInstance n")
-@JsonIgnoreProperties({ "turNLPInstanceEntities" } )
+@JsonIgnoreProperties({ "turNLPInstanceEntities" })
 public class TurNLPInstance implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -41,9 +42,6 @@ public class TurNLPInstance implements Serializable {
 	@Column(nullable = false)
 	private int port;
 
-	@Column(nullable = false)
-	private int selected;
-
 	// bi-directional many-to-one association to TurNLPVendor
 	@ManyToOne
 	@JoinColumn(name = "nlp_vendor_id", nullable = false)
@@ -53,7 +51,20 @@ public class TurNLPInstance implements Serializable {
 	@OneToMany(mappedBy = "turNLPInstance")
 	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
 
+	@Transient
+	private boolean isSelected;
+
 	public TurNLPInstance() {
+	}
+
+	public boolean isSelected() {
+		TurConfigVarService turConfigVarService = new TurConfigVarService();
+		if (Integer.parseInt(turConfigVarService.get("DEFAULT_NLP").getValue()) == this.getId()) {
+			isSelected = true;
+		} else {
+			isSelected = false;
+		}
+		return isSelected;
 	}
 
 	public int getId() {
@@ -103,15 +114,7 @@ public class TurNLPInstance implements Serializable {
 	public void setPort(int port) {
 		this.port = port;
 	}
-
-	public int getSelected() {
-		return this.selected;
-	}
-
-	public void setSelected(int selected) {
-		this.selected = selected;
-	}
-
+	
 	public String getTitle() {
 		return this.title;
 	}

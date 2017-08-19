@@ -26,7 +26,6 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setHost("");
 				turNLPInstance.setPort(0);
 				turNLPInstance.setLanguage("pt-BR");
-				turNLPInstance.setSelected(1);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceService.save(turNLPInstance);
 				
@@ -47,7 +46,6 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setHost("localhost");
 				turNLPInstance.setPort(9001);
 				turNLPInstance.setLanguage("en-US");
-				turNLPInstance.setSelected(0);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceService.save(turNLPInstance);
 			}			

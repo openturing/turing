@@ -49,7 +49,6 @@ public class TurSEInstanceAPI {
 		turSEInstanceEdit.setHost(turSEInstance.getHost());
 		turSEInstanceEdit.setPort(turSEInstance.getPort());
 		turSEInstanceEdit.setEnabled(turSEInstance.getEnabled());
-		turSEInstanceEdit.setSelected(turSEInstance.getSelected());
 		turSEInstanceService.save(turSEInstanceEdit);
 		return turSEInstanceEdit;
 	}

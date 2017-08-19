@@ -26,7 +26,6 @@ public class TurMLInstanceOnStartup {
 				turMLInstance.setHost("");
 				turMLInstance.setPort(0);
 				turMLInstance.setLanguage("pt-BR");
-				turMLInstance.setSelected(1);
 				turMLInstance.setEnabled(1);
 				turMLInstanceService.save(turMLInstance);
 				

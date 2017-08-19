@@ -45,7 +45,6 @@ public class TurMLInstanceAPI {
 		turMLInstanceEdit.setHost(turMLInstance.getHost());
 		turMLInstanceEdit.setPort(turMLInstance.getPort());
 		turMLInstanceEdit.setEnabled(turMLInstance.getEnabled());
-		turMLInstanceEdit.setSelected(turMLInstance.getSelected());
 		turMLInstanceService.save(turMLInstanceEdit);
 		return turMLInstanceEdit;
 	}
