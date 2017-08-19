@@ -95,6 +95,7 @@ turingApp.config([
 			}).state('ml.datagroup-edit.category', {
 				url : '/category',
 				templateUrl : 'templates/ml/data/group/ml-datagroup-category.html',
+				controller : 'TurMLCategoryEditCtrl',
 				data : {
 					pageTitle : 'Data Group Categories | Viglet Turing'
 				}

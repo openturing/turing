@@ -1,66 +1,3 @@
-turingApp.factory('turSEInstanceResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/se/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
-
-turingApp.factory('turSEVendorResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/se/vendor/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
-
-
-turingApp.controller('TurSEInstanceCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"turSEInstanceResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
-				turSEInstanceResource) {
-			$rootScope.$state = $state;
-			$scope.ses = turSEInstanceResource.query();
-		} ]);
-
-turingApp.controller('TurSEInstanceNewCtrl', [
-		"$scope",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turSEInstanceResource",
-		"turSEVendorResource",
-		"turLocaleResource",
-		function($scope, $state, $rootScope, $translate, vigLocale,
-				turSEInstanceResource, turSEVendorResource, turLocaleResource) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-
-			$rootScope.$state = $state;
-			$scope.locales = turLocaleResource.query();
-			$scope.seVendors = turSEVendorResource.query();
-			$scope.se = {
-				'enabled' : 0
-			};
-			$scope.seInstanceSave = function() {
-				turSEInstanceResource.save($scope.se, function() {
-					$state.go('se.instance');
-				});
-			}
-		} ]);
-
 turingApp.controller('TurSEInstanceEditCtrl', [
 		"$scope",
 		"$stateParams",
@@ -121,4 +58,3 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 			}
 
 		} ]);
-

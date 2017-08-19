@@ -60,4 +60,11 @@ public class TurMLDataGroupAPI {
 		return turDataGroup;
 
 	}
+	
+	@GET
+	@Path("/{dataGroupId}/category")
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurDataGroup dataGroupCategory(@PathParam("dataGroupId") int id) throws JSONException {
+		 return turDataGroupService.get(id);
+	}
 }
