@@ -3,6 +3,7 @@ package com.viglet.turing.persistence.model.storage;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
 
 
@@ -12,7 +13,8 @@ import com.viglet.turing.persistence.model.ml.TurMLCategory;
  */
 @Entity
 @Table(name="turDataSentence")
-@NamedQuery(name="TurDataSentence.findAll", query="SELECT v FROM TurDataSentence v")
+@NamedQuery(name="TurDataSentence.findAll", query="SELECT ds FROM TurDataSentence ds")
+@JsonIgnoreProperties({ "turData" } )
 public class TurDataSentence implements Serializable {
 	private static final long serialVersionUID = 1L;
 

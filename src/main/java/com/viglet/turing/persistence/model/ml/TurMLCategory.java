@@ -3,6 +3,7 @@ package com.viglet.turing.persistence.model.ml;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
 import com.viglet.turing.persistence.model.storage.TurDataSentence;
 
@@ -16,6 +17,7 @@ import java.util.List;
 @Entity
 @Table(name="turMLCategory")
 @NamedQuery(name="TurMLCategory.findAll", query="SELECT mlc FROM TurMLCategory mlc")
+@JsonIgnoreProperties({ "turDataGroupCategories", "turDataSentences" } )
 public class TurMLCategory implements Serializable {
 	private static final long serialVersionUID = 1L;
 

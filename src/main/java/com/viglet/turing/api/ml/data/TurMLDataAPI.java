@@ -18,6 +18,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -87,7 +88,7 @@ public class TurMLDataAPI {
 	public Response importData(@DefaultValue("true") @FormDataParam("enabled") boolean enabled,
 			@FormDataParam("file") InputStream inputStream,
 			@FormDataParam("file") FormDataContentDisposition fileDetail, @Context UriInfo uriInfo) throws JSONException, IOException, SAXException, TikaException {
-
+		
 		BodyContentHandler handler = new BodyContentHandler(-1);
 		Metadata metadata = new Metadata();
 		/*FileInputStream inputstream = new FileInputStream(
@@ -104,8 +105,9 @@ public class TurMLDataAPI {
 		String sentences[] = TurOpenNLPConnector.sentenceDetect(handler.toString());
 
 		TurData turData = new TurData();
-		turData.setName("The-Problems-of-Philosophy-LewisTheme.pdf");
-		turData.setType("pdf");
+		
+		turData.setName(fileDetail.getFileName());
+		turData.setType(FilenameUtils.getExtension(fileDetail.getFileName()));
 		turDataService.save(turData);
 
 		for (String sentence : sentences) {
