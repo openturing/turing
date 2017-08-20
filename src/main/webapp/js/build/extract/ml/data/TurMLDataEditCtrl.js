@@ -5,46 +5,51 @@ turingApp.controller('TurMLDataEditCtrl', [
 		"$rootScope",
 		"$translate",
 		"vigLocale",
-		"turMLDataGroupResource",
+		"turMLDataResource",
+		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupResource, $uibModal) {
+				vigLocale, turMLDataResource, turNotificationService, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.dataGroup = turMLDataGroupResource.get({
-				id : $stateParams.mlDataGroupId
+			$scope.data = turMLDataResource.get({
+				id : $stateParams.mlDataId
 			});
-			$scope.dataGroupSave = function() {
-				$scope.dataGroup.$update(function() {
-					$state.go('ml.datagroup');
+			$scope.dataSave = function() {
+				$scope.data.$update(function() {
+					turNotificationService.addNotification("Data \"" + $scope.data.name + "\" was saved.");
 				});
 			}
 
-			$scope.uploadDocument = function() {
+			$scope.dataDelete = function() {
 				var $ctrl = this;
-				$scope.data = {}
+
 				var modalInstance = $uibModal.open({
 					animation : true,
 					ariaLabelledBy : 'modal-title',
 					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/ml/data/ml-document-upload.html',
-					controller : 'TurMLDataNewCtrl',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
 					controllerAs : '$ctrl',
 					size : null,
 					appendTo : undefined,
 					resolve : {
-						data : function() {
-							return $scope.data;
+						instanceName : function() {
+							return $scope.data.name;
 						}
 					}
 				});
 
-				modalInstance.result.then(function(data) {
-					console.log(data.name);
-					console.log(data.description);
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Data \"" + $scope.data.name  + "\" was deleted.";
+					$scope.data.$delete(function() {
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('ml.datagroup');
+					});
 				}, function() {
 					// Selected NO
 				});

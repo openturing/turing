@@ -8,10 +8,11 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 		"turMLInstanceResource",
 		"turMLVendorResource",
 		"turLocaleResource",
+		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
 				vigLocale, turMLInstanceResource, turMLVendorResource,
-				turLocaleResource, $uibModal) {
+				turLocaleResource, turNotificationService, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -25,7 +26,7 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 
 			$scope.mlInstanceUpdate = function() {
 				$scope.ml.$update(function() {
-					$state.go('ml.instance');
+					turNotificationService.addNotification("Machine Learning Instance \"" + $scope.ml.title + "\" was saved.");
 				});
 			}
 			$scope.mlInstanceDelete = function() {
@@ -49,7 +50,9 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 
 				modalInstance.result.then(function(removeInstance) {
 					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Machine Learning Instance \"" + $scope.ml.title + "\" was deleted.";
 					$scope.ml.$delete(function() {
+						turNotificationService.addNotification($scope.deletedMessage);
 						$state.go('ml.instance');
 					});
 				}, function() {

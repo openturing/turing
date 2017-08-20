@@ -7,8 +7,9 @@ turingApp.controller('TurSEInstanceNewCtrl', [
 		"turSEInstanceResource",
 		"turSEVendorResource",
 		"turLocaleResource",
+		"turNotificationService",
 		function($scope, $state, $rootScope, $translate, vigLocale,
-				turSEInstanceResource, turSEVendorResource, turLocaleResource) {
+				turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -21,6 +22,7 @@ turingApp.controller('TurSEInstanceNewCtrl', [
 			};
 			$scope.seInstanceSave = function() {
 				turSEInstanceResource.save($scope.se, function() {
+					turNotificationService.addNotification( "Search Engine Instance \"" + $scope.se.title + "\" was created.");
 					$state.go('se.instance');
 				});
 			}

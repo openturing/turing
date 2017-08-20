@@ -8,9 +8,10 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 		"turNLPInstanceResource",
 		"turNLPVendorResource",
 		"turLocaleResource",
+		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turNLPInstanceResource, turNLPVendorResource,turLocaleResource,
+				vigLocale, turNLPInstanceResource, turNLPVendorResource,turLocaleResource, turNotificationService,
 				$uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
@@ -25,7 +26,7 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 
 			$scope.nlpInstanceUpdate = function() {
 				$scope.nlp.$update(function() {
-					$state.go('nlp.instance');
+					turNotificationService.addNotification("NLP Instance \"" + $scope.nlp.title + "\" was saved.");
 				});
 			}
 			$scope.nlpInstanceDelete = function() {
@@ -50,8 +51,10 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 
 				modalInstance.result.then(function(removeInstance) {
 					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "NLP Instance \"" + $scope.nlp.title + "\" was deleted.";
 					$scope.nlp.$delete(function() {
-						$state.go('nlp.instance');
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('nlp.instance');						
 					});
 				}, function() {
 					// Selected NO

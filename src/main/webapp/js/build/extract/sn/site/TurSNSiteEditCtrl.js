@@ -8,10 +8,11 @@ turingApp.controller('TurSNSiteEditCtrl', [
 		"turSNSiteResource",
 		"turSEInstanceResource",
 		"turNLPInstanceResource",
+		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
 				vigLocale, turSNSiteResource, turSEInstanceResource,
-				turNLPInstanceResource, $uibModal) {
+				turNLPInstanceResource, turNotificationService, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -25,7 +26,7 @@ turingApp.controller('TurSNSiteEditCtrl', [
 
 			$scope.snSiteUpdate = function() {
 				$scope.snSite.$update(function() {
-					$state.go('sn.site');
+					turNotificationService.addNotification("Semantic Navigation Site \"" + $scope.snSite.name + "\" was saved.");
 				});
 			}
 			$scope.snSiteDelete = function() {
@@ -42,6 +43,7 @@ turingApp.controller('TurSNSiteEditCtrl', [
 					appendTo : undefined,
 					resolve : {
 						instanceName : function() {
+							turNotificationService.addNotification("Semantic Navigation Site \"" + $scope.snSite.name + "\" was deleted.");
 							return $scope.snSite.name;
 						}
 					}

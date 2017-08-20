@@ -6,9 +6,10 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 		"$translate",
 		"vigLocale",
 		"turMLDataGroupResource",
+		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupResource, $uibModal) {
+				vigLocale, turMLDataGroupResource, turNotificationService, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -19,7 +20,7 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 			});
 			$scope.dataGroupSave = function() {
 				$scope.dataGroup.$update(function() {
-					$state.go('ml.datagroup');
+					turNotificationService.addNotification("Data Group \"" + $scope.dataGroup.name + "\" was saved.");
 				});
 			}
 
@@ -44,7 +45,9 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 
 				modalInstance.result.then(function(removeInstance) {
 					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Data Group \"" + $scope.dataGroup.name + "\" was deleted.";
 					$scope.dataGroup.$delete(function() {
+						turNotificationService.addNotification($scope.deletedMessage);
 						$state.go('ml.datagroup');
 					});
 				}, function() {

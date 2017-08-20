@@ -2,8 +2,8 @@
 	<div class="pull-right">
 		<button ng-click="uploadDocument()" type="button" class="btn btn-viglet">Upload</button>
 	</div>
-	<h1>Documents</h1>
+	<h3>Documents</h3>
 	<ul class="list-group">
-		<li class="list-group-item" ng-repeat="turData in dataGroup.turDatas">{{turData.name}}</li>
+		<li class="list-group-item" ng-repeat="data in datas"><a ui-sref="ml.data-edit({mlDataId:data.id})">{{data.name}}</a></li>
 	</ul>
 </div>

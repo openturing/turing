@@ -43,6 +43,16 @@ turingApp.service('fileUpload', [ '$http', function($http) {
 	}
 } ]);
 
+turingApp.service('turNotificationService', [ '$http', function($http) {
+	this.notifications = [];
+	this.addNotification = function(msgString) {
+		this.notifications.push({
+			msg : msgString
+		});
+	};
+	
+} ]);
+
 turingApp.factory('vigLocale', [
 		'$window',
 		function($window) {

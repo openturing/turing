@@ -8,9 +8,10 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 		"turSEInstanceResource",
 		"turSEVendorResource",
 		"turLocaleResource",
+		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turSEInstanceResource, turSEVendorResource, turLocaleResource, $uibModal) {
+				vigLocale, turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -24,7 +25,7 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 
 			$scope.seInstanceUpdate = function() {
 				$scope.se.$update(function() {
-					$state.go('se.instance');
+					turNotificationService.addNotification("Search Engine Instance \"" + $scope.se.title + "\" was saved.");
 				});
 			}
 			$scope.seInstanceDelete = function() {
@@ -48,8 +49,10 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 
 				modalInstance.result.then(function(removeInstance) {
 					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Search Engine Instance \"" + $scope.se.title + "\" was deleted.";
 					$scope.se.$delete(function() {
-						$state.go('se.instance');
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('se.instance');						
 					});
 				}, function() {
 					// Selected NO

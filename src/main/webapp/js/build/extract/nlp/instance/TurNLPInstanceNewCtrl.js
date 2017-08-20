@@ -7,8 +7,9 @@ turingApp.controller('TurNLPInstanceNewCtrl', [
 		"turNLPInstanceResource",
 		"turNLPVendorResource",
 		"turLocaleResource",
+		"turNotificationService",
 		function($scope, $state, $rootScope, $translate, vigLocale,
-				turNLPInstanceResource, turNLPVendorResource, turLocaleResource) {
+				turNLPInstanceResource, turNLPVendorResource, turLocaleResource, turNotificationService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -21,6 +22,7 @@ turingApp.controller('TurNLPInstanceNewCtrl', [
 			};
 			$scope.nlpInstanceSave = function() {
 				turNLPInstanceResource.save($scope.nlp, function() {
+					turNotificationService.addNotification("NLP Instance \"" + $scope.nlp.title + "\" was created.");
 					$state.go('nlp.instance');
 				});
 			}

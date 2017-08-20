@@ -43,6 +43,16 @@ turingApp.service('fileUpload', [ '$http', function($http) {
 	}
 } ]);
 
+turingApp.service('turNotificationService', [ '$http', function($http) {
+	this.notifications = [];
+	this.addNotification = function(msgString) {
+		this.notifications.push({
+			msg : msgString
+		});
+	};
+	
+} ]);
+
 turingApp.factory('vigLocale', [
 		'$window',
 		function($window) {
@@ -72,7 +82,124 @@ turingApp.controller('TurHomeCtrl', [
 		$scope.accesses = null;
 		$rootScope.$state = $state;		
 	}]);
-turingApp.controller('TurMLCategoryEditCtrl', [
+turingApp.controller('TurMLCategoryNewCtrl', [ "$uibModalInstance",
+	"category", function($uibModalInstance, category) {
+		var $ctrl = this;
+		$ctrl.removeInstance = false;
+		$ctrl.category = category;
+		$ctrl.ok = function() {
+			$uibModalInstance.close(category);
+		};
+
+		$ctrl.cancel = function() {
+			$ctrl.removeInstance = false;
+			$uibModalInstance.dismiss('cancel');
+		};
+	} ]);
+turingApp.controller('TurMLDataEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataResource",
+		"turNotificationService",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataResource, turNotificationService, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.data = turMLDataResource.get({
+				id : $stateParams.mlDataId
+			});
+			$scope.dataSave = function() {
+				$scope.data.$update(function() {
+					turNotificationService.addNotification("Data \"" + $scope.data.name + "\" was saved.");
+				});
+			}
+
+			$scope.dataDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.data.name;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Data \"" + $scope.data.name  + "\" was deleted.";
+					$scope.data.$delete(function() {
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('ml.datagroup');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+
+turingApp.controller('TurMLDataNewCtrl', [ "$uibModalInstance",
+	"data", 'fileUpload', function($uibModalInstance, data, fileUpload) {
+		var $ctrl = this;
+		$ctrl.myFile = null;
+		$ctrl.removeInstance = false;
+		$ctrl.data = data;
+		$ctrl.ok = function() {
+			var file = $ctrl.myFile;
+			var uploadUrl = '/turing/api/ml/data/import';
+			fileUpload.uploadFileToUrl(file, uploadUrl);
+			$uibModalInstance.close(data);
+		};
+
+		$ctrl.cancel = function() {
+			$ctrl.removeInstance = false;
+			$uibModalInstance.dismiss('cancel');
+		};
+	} ]);
+turingApp.controller('TurMLDataSentenceCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+		} ]);
+turingApp.factory('turMLDataResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/ml/data/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
+turingApp.controller('TurMLDataGroupCategoryCtrl', [
 		"$scope",
 		"$stateParams",
 		"$state",
@@ -126,44 +253,36 @@ turingApp.controller('TurMLCategoryEditCtrl', [
 			}
 
 		} ]);
-turingApp.controller('TurMLCategoryNewCtrl', [ "$uibModalInstance",
-	"category", function($uibModalInstance, category) {
-		var $ctrl = this;
-		$ctrl.removeInstance = false;
-		$ctrl.category = category;
-		$ctrl.ok = function() {
-			$uibModalInstance.close(category);
-		};
-
-		$ctrl.cancel = function() {
-			$ctrl.removeInstance = false;
-			$uibModalInstance.dismiss('cancel');
-		};
-	} ]);
-turingApp.controller('TurMLDataEditCtrl', [
+turingApp.controller('TurMLDataGroupCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turMLDataGroupResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turMLDataGroupResource) {
+			$rootScope.$state = $state;
+			$scope.mlDataGroups = turMLDataGroupResource.query();
+		} ]);
+turingApp.controller('TurMLDataGroupDataCtrl', [
 		"$scope",
 		"$stateParams",
 		"$state",
 		"$rootScope",
 		"$translate",
 		"vigLocale",
-		"turMLDataGroupResource",
+		"turMLDataResource",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupResource, $uibModal) {
+				vigLocale, turMLDataResource, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.dataGroup = turMLDataGroupResource.get({
-				id : $stateParams.mlDataGroupId
-			});
-			$scope.dataGroupSave = function() {
-				$scope.dataGroup.$update(function() {
-					$state.go('ml.datagroup');
-				});
-			}
+			$scope.datas = turMLDataResource.query();
 
 			$scope.uploadDocument = function() {
 				var $ctrl = this;
@@ -194,37 +313,6 @@ turingApp.controller('TurMLDataEditCtrl', [
 			}
 
 		} ]);
-turingApp.controller('TurMLDataNewCtrl', [ "$uibModalInstance",
-	"data", 'fileUpload', function($uibModalInstance, data, fileUpload) {
-		var $ctrl = this;
-		$ctrl.myFile = null;
-		$ctrl.removeInstance = false;
-		$ctrl.data = data;
-		$ctrl.ok = function() {
-			var file = $ctrl.myFile;
-			var uploadUrl = '/turing/api/ml/data/import';
-			fileUpload.uploadFileToUrl(file, uploadUrl);
-			$uibModalInstance.close(data);
-		};
-
-		$ctrl.cancel = function() {
-			$ctrl.removeInstance = false;
-			$uibModalInstance.dismiss('cancel');
-		};
-	} ]);
-turingApp.controller('TurMLDataGroupCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"turMLDataGroupResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
-				turMLDataGroupResource) {
-			$rootScope.$state = $state;
-			$scope.mlDataGroups = turMLDataGroupResource.query();
-		} ]);
 turingApp.controller('TurMLDataGroupEditCtrl', [
 		"$scope",
 		"$stateParams",
@@ -233,9 +321,10 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 		"$translate",
 		"vigLocale",
 		"turMLDataGroupResource",
+		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupResource, $uibModal) {
+				vigLocale, turMLDataGroupResource, turNotificationService, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -246,7 +335,7 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 			});
 			$scope.dataGroupSave = function() {
 				$scope.dataGroup.$update(function() {
-					$state.go('ml.datagroup');
+					turNotificationService.addNotification("Data Group \"" + $scope.dataGroup.name + "\" was saved.");
 				});
 			}
 
@@ -271,7 +360,9 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 
 				modalInstance.result.then(function(removeInstance) {
 					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Data Group \"" + $scope.dataGroup.name + "\" was deleted.";
 					$scope.dataGroup.$delete(function() {
+						turNotificationService.addNotification($scope.deletedMessage);
 						$state.go('ml.datagroup');
 					});
 				}, function() {
@@ -292,8 +383,9 @@ turingApp.controller('TurMLDataGroupNewCtrl', [
 		"$translate",
 		"vigLocale",
 		"turMLDataGroupResource",
+		"turNotificationService",
 		function($scope, $http, $window, $stateParams, $state, $rootScope,
-				$translate, vigLocale, turMLDataGroupResource) {
+				$translate, vigLocale, turMLDataGroupResource, turNotificationService) {
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
@@ -301,6 +393,7 @@ turingApp.controller('TurMLDataGroupNewCtrl', [
 			$scope.dataGroup = {};
 			$scope.dataGroupSave = function() {
 				turMLDataGroupResource.save($scope.dataGroup, function() {
+					turNotificationService.addNotification("Data Group \"" + $scope.dataGroup.name + "\" was created.");
 					$state.go('ml.datagroup');
 				});
 			}
@@ -337,10 +430,11 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 		"turMLInstanceResource",
 		"turMLVendorResource",
 		"turLocaleResource",
+		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
 				vigLocale, turMLInstanceResource, turMLVendorResource,
-				turLocaleResource, $uibModal) {
+				turLocaleResource, turNotificationService, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -354,7 +448,7 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 
 			$scope.mlInstanceUpdate = function() {
 				$scope.ml.$update(function() {
-					$state.go('ml.instance');
+					turNotificationService.addNotification("Machine Learning Instance \"" + $scope.ml.title + "\" was saved.");
 				});
 			}
 			$scope.mlInstanceDelete = function() {
@@ -378,7 +472,9 @@ turingApp.controller('TurMLInstanceEditCtrl', [
 
 				modalInstance.result.then(function(removeInstance) {
 					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Machine Learning Instance \"" + $scope.ml.title + "\" was deleted.";
 					$scope.ml.$delete(function() {
+						turNotificationService.addNotification($scope.deletedMessage);
 						$state.go('ml.instance');
 					});
 				}, function() {
@@ -397,8 +493,9 @@ turingApp.controller('TurMLInstanceNewCtrl', [
 		"turMLInstanceResource",
 		"turMLVendorResource",
 		"turLocaleResource",
+		"turNotificationService",
 		function($scope, $state, $rootScope, $translate, vigLocale,
-				turMLInstanceResource, turMLVendorResource, turLocaleResource) {
+				turMLInstanceResource, turMLVendorResource, turLocaleResource, turNotificationService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -411,6 +508,7 @@ turingApp.controller('TurMLInstanceNewCtrl', [
 			};
 			$scope.mlInstanceSave = function() {
 				turMLInstanceResource.save($scope.ml, function() {
+					turNotificationService.addNotification("Machine Learning Instance \"" + $scope.ml.title + "\" was created.");
 					$state.go('ml.instance');
 				});
 			}
@@ -521,9 +619,10 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 		"turNLPInstanceResource",
 		"turNLPVendorResource",
 		"turLocaleResource",
+		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turNLPInstanceResource, turNLPVendorResource,turLocaleResource,
+				vigLocale, turNLPInstanceResource, turNLPVendorResource,turLocaleResource, turNotificationService,
 				$uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
@@ -538,7 +637,7 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 
 			$scope.nlpInstanceUpdate = function() {
 				$scope.nlp.$update(function() {
-					$state.go('nlp.instance');
+					turNotificationService.addNotification("NLP Instance \"" + $scope.nlp.title + "\" was saved.");
 				});
 			}
 			$scope.nlpInstanceDelete = function() {
@@ -563,8 +662,10 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 
 				modalInstance.result.then(function(removeInstance) {
 					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "NLP Instance \"" + $scope.nlp.title + "\" was deleted.";
 					$scope.nlp.$delete(function() {
-						$state.go('nlp.instance');
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('nlp.instance');						
 					});
 				}, function() {
 					// Selected NO
@@ -581,8 +682,9 @@ turingApp.controller('TurNLPInstanceNewCtrl', [
 		"turNLPInstanceResource",
 		"turNLPVendorResource",
 		"turLocaleResource",
+		"turNotificationService",
 		function($scope, $state, $rootScope, $translate, vigLocale,
-				turNLPInstanceResource, turNLPVendorResource, turLocaleResource) {
+				turNLPInstanceResource, turNLPVendorResource, turLocaleResource, turNotificationService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -595,6 +697,7 @@ turingApp.controller('TurNLPInstanceNewCtrl', [
 			};
 			$scope.nlpInstanceSave = function() {
 				turNLPInstanceResource.save($scope.nlp, function() {
+					turNotificationService.addNotification("NLP Instance \"" + $scope.nlp.title + "\" was created.");
 					$state.go('nlp.instance');
 				});
 			}
@@ -675,9 +778,10 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 		"turSEInstanceResource",
 		"turSEVendorResource",
 		"turLocaleResource",
+		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turSEInstanceResource, turSEVendorResource, turLocaleResource, $uibModal) {
+				vigLocale, turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -691,7 +795,7 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 
 			$scope.seInstanceUpdate = function() {
 				$scope.se.$update(function() {
-					$state.go('se.instance');
+					turNotificationService.addNotification("Search Engine Instance \"" + $scope.se.title + "\" was saved.");
 				});
 			}
 			$scope.seInstanceDelete = function() {
@@ -715,8 +819,10 @@ turingApp.controller('TurSEInstanceEditCtrl', [
 
 				modalInstance.result.then(function(removeInstance) {
 					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Search Engine Instance \"" + $scope.se.title + "\" was deleted.";
 					$scope.se.$delete(function() {
-						$state.go('se.instance');
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('se.instance');						
 					});
 				}, function() {
 					// Selected NO
@@ -735,8 +841,9 @@ turingApp.controller('TurSEInstanceNewCtrl', [
 		"turSEInstanceResource",
 		"turSEVendorResource",
 		"turLocaleResource",
+		"turNotificationService",
 		function($scope, $state, $rootScope, $translate, vigLocale,
-				turSEInstanceResource, turSEVendorResource, turLocaleResource) {
+				turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -749,6 +856,7 @@ turingApp.controller('TurSEInstanceNewCtrl', [
 			};
 			$scope.seInstanceSave = function() {
 				turSEInstanceResource.save($scope.se, function() {
+					turNotificationService.addNotification( "Search Engine Instance \"" + $scope.se.title + "\" was created.");
 					$state.go('se.instance');
 				});
 			}
@@ -804,10 +912,11 @@ turingApp.controller('TurSNSiteEditCtrl', [
 		"turSNSiteResource",
 		"turSEInstanceResource",
 		"turNLPInstanceResource",
+		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
 				vigLocale, turSNSiteResource, turSEInstanceResource,
-				turNLPInstanceResource, $uibModal) {
+				turNLPInstanceResource, turNotificationService, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -821,7 +930,7 @@ turingApp.controller('TurSNSiteEditCtrl', [
 
 			$scope.snSiteUpdate = function() {
 				$scope.snSite.$update(function() {
-					$state.go('sn.site');
+					turNotificationService.addNotification("Semantic Navigation Site \"" + $scope.snSite.name + "\" was saved.");
 				});
 			}
 			$scope.snSiteDelete = function() {
@@ -838,6 +947,7 @@ turingApp.controller('TurSNSiteEditCtrl', [
 					appendTo : undefined,
 					resolve : {
 						instanceName : function() {
+							turNotificationService.addNotification("Semantic Navigation Site \"" + $scope.snSite.name + "\" was deleted.");
 							return $scope.snSite.name;
 						}
 					}
@@ -865,9 +975,10 @@ turingApp.controller('TurSNSiteNewCtrl', [
 		"turSNSiteResource",
 		"turSEInstanceResource",
 		"turNLPInstanceResource",
+		"turNotificationService",
 		function($scope, $state, $rootScope, $translate, vigLocale,
 				turSNSiteResource, turSEInstanceResource,
-				turNLPInstanceResource) {
+				turNLPInstanceResource, turNotificationService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -895,6 +1006,7 @@ turingApp.controller('TurSNSiteNewCtrl', [
 
 			$scope.snSiteSave = function() {
 				turSNSiteResource.save($scope.snSite, function() {
+					turNotificationService.addNotification("Semantic Navigation Site \"" + $scope.snSite.name + "\" was created.");
 					$state.go('sn.site');
 				});
 			}
@@ -922,6 +1034,14 @@ turingApp.controller('ModalDeleteInstanceCtrl', [ "$uibModalInstance",
 			$ctrl.cancel = function() {
 				$ctrl.removeInstance = false;
 				$uibModalInstance.dismiss('cancel');
+			};
+		} ]);
+turingApp.controller('TurAlertCtrl', [ "$scope", "turNotificationService",
+		function($scope, turNotificationService) {
+		$scope.alerts = turNotificationService.notifications;
+
+			$scope.closeAlert = function(index) {
+				turNotificationService.notifications.splice(index, 1);
 			};
 		} ]);
 turingApp.factory('turLocaleResource', [ '$resource', function($resource) {
@@ -1006,6 +1126,20 @@ turingApp.config([
 				data : {
 					pageTitle : 'Machine Learning Models | Viglet Turing'
 				}
+			}).state('ml.data-edit', {
+				url : '/data/:mlDataId',
+				templateUrl : 'templates/ml/data/ml-data-edit.html',
+				controller : 'TurMLDataEditCtrl',
+				data : {
+					pageTitle : 'Edit Data | Viglet Turing'
+				}
+			}).state('ml.data-edit.sentence', {
+				url : '/sentence',
+				templateUrl : 'templates/ml/data/ml-data-sentence.html',
+				controller : 'TurMLDataSentenceCtrl',
+				data : {
+					pageTitle : 'Edit Data | Viglet Turing'
+				}
 			}).state('ml.datagroup', {
 				url : '/datagroup',
 				templateUrl : 'templates/ml/data/group/ml-datagroup.html',
@@ -1030,14 +1164,14 @@ turingApp.config([
 			}).state('ml.datagroup-edit.category', {
 				url : '/category',
 				templateUrl : 'templates/ml/data/group/ml-datagroup-category.html',
-				controller : 'TurMLCategoryEditCtrl',
+				controller : 'TurMLDataGroupCategoryCtrl',
 				data : {
 					pageTitle : 'Data Group Categories | Viglet Turing'
 				}
 			}).state('ml.datagroup-edit.data', {
 				url : '/document',
 				templateUrl : 'templates/ml/data/group/ml-datagroup-data.html',
-				controller : 'TurMLDataEditCtrl',
+				controller : 'TurMLDataGroupDataCtrl',
 				data : {
 					pageTitle : 'Data Group Documents | Viglet Turing'
 				}

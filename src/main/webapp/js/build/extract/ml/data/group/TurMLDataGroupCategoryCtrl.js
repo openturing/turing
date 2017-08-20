@@ -1,4 +1,4 @@
-turingApp.controller('TurMLCategoryEditCtrl', [
+turingApp.controller('TurMLDataGroupCategoryCtrl', [
 		"$scope",
 		"$stateParams",
 		"$state",
