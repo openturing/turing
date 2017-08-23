@@ -2,10 +2,10 @@
 	<div class="pull-right">
 		<button ng-click="categoryNew()" type="button" class="btn btn-viglet">New</button>
 	</div>
-	<h1>Categories</h1>
+	<h3>Categories</h3>
 
 	<ul class="list-group">
-		<li class="list-group-item"
-			ng-repeat="turMLCategory in dataGroup.turMLCategories">{{turMLCategory.name}}</li>
+		<li class="list-group-item" ng-repeat="category in categories"><a
+			ui-sref="ml.category-edit({mlCategoryId:category.id})">{{category.name}}</a></li>
 	</ul>
 </div>

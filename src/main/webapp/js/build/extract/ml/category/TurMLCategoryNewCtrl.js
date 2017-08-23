@@ -1,14 +1,23 @@
-turingApp.controller('TurMLCategoryNewCtrl', [ "$uibModalInstance",
-	"category", function($uibModalInstance, category) {
-		var $ctrl = this;
-		$ctrl.removeInstance = false;
-		$ctrl.category = category;
-		$ctrl.ok = function() {
-			$uibModalInstance.close(category);
-		};
-
-		$ctrl.cancel = function() {
+turingApp.controller('TurMLCategoryNewCtrl', [
+		"$uibModalInstance",
+		"category",
+		"turMLCategoryResource",
+		"turNotificationService",
+		function($uibModalInstance, category, turMLCategoryResource,
+				turNotificationService) {
+			var $ctrl = this;
 			$ctrl.removeInstance = false;
-			$uibModalInstance.dismiss('cancel');
-		};
-	} ]);
+			$ctrl.category = category;
+			$ctrl.ok = function() {
+				turMLCategoryResource.save($ctrl.category, function() {
+					turNotificationService.addNotification("Category \""
+							+ $ctrl.category.name + "\" was created.");
+					$uibModalInstance.close(category);
+				});
+
+			};
+
+			$ctrl.cancel = function() {
+				$uibModalInstance.dismiss('cancel');
+			};
+		} ]);

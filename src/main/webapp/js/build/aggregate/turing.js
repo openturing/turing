@@ -82,20 +82,98 @@ turingApp.controller('TurHomeCtrl', [
 		$scope.accesses = null;
 		$rootScope.$state = $state;		
 	}]);
-turingApp.controller('TurMLCategoryNewCtrl', [ "$uibModalInstance",
-	"category", function($uibModalInstance, category) {
-		var $ctrl = this;
-		$ctrl.removeInstance = false;
-		$ctrl.category = category;
-		$ctrl.ok = function() {
-			$uibModalInstance.close(category);
-		};
+turingApp.controller('TurMLCategoryEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLCategoryResource",
+		"turNotificationService",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLCategoryResource, turNotificationService, $uibModal) {
 
-		$ctrl.cancel = function() {
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.category = turMLCategoryResource.get({
+				id : $stateParams.mlCategoryId
+			});
+			$scope.mlCategoryUpdate = function() {
+				$scope.category.$update(function() {
+					turNotificationService.addNotification("Category \"" + $scope.category.name + "\" was saved.");
+				});
+			}
+
+			$scope.mlCategoryDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.category.name;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Category \"" + $scope.category.name  + "\" was deleted.";
+					$scope.category.$delete(function() {
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('ml.datagroup');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+
+turingApp.controller('TurMLCategoryNewCtrl', [
+		"$uibModalInstance",
+		"category",
+		"turMLCategoryResource",
+		"turNotificationService",
+		function($uibModalInstance, category, turMLCategoryResource,
+				turNotificationService) {
+			var $ctrl = this;
 			$ctrl.removeInstance = false;
-			$uibModalInstance.dismiss('cancel');
-		};
-	} ]);
+			$ctrl.category = category;
+			$ctrl.ok = function() {
+				turMLCategoryResource.save($ctrl.category, function() {
+					turNotificationService.addNotification("Category \""
+							+ $ctrl.category.name + "\" was created.");
+					$uibModalInstance.close(category);
+				});
+
+			};
+
+			$ctrl.cancel = function() {
+				$uibModalInstance.dismiss('cancel');
+			};
+		} ]);
+turingApp.factory('turMLCategoryResource', [ '$resource', function($resource) {
+	return $resource('/turing/api/ml/category/:id', {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
 turingApp.controller('TurMLDataEditCtrl', [
 		"$scope",
 		"$stateParams",
@@ -182,13 +260,14 @@ turingApp.controller('TurMLDataSentenceCtrl', [
 		"$translate",
 		"vigLocale",
 		"$uibModal",
+		"turMLCategoryResource",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, $uibModal) {
+				vigLocale, $uibModal, turMLCategoryResource) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-
+			$scope.categories = turMLCategoryResource.query();
 		} ]);
 turingApp.factory('turMLDataResource', [ '$resource', function($resource) {
 	return $resource('/turing/api/ml/data/:id', {
@@ -206,23 +285,16 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 		"$rootScope",
 		"$translate",
 		"vigLocale",
-		"turMLDataGroupResource",
+		"turMLCategoryResource",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupResource, $uibModal) {
+				vigLocale, turMLCategoryResource, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.dataGroup = turMLDataGroupResource.get({
-				id : $stateParams.mlDataGroupId
-			});
-			$scope.dataGroupSave = function() {
-				$scope.dataGroup.$update(function() {
-					$state.go('ml.datagroup');
-				});
-			}
+			$scope.categories = turMLCategoryResource.query();
 
 			$scope.categoryNew = function() {
 				var $ctrl = this;
@@ -244,8 +316,7 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 				});
 
 				modalInstance.result.then(function(category) {
-					console.log(category.name);
-					console.log(category.description);
+					//
 				}, function() {
 					// Selected NO
 				});
@@ -989,7 +1060,7 @@ turingApp.controller('TurSNSiteNewCtrl', [
 			$scope.seInstances = turSEInstanceResource.query({}, function() {
 				angular.forEach($scope.seInstances, function(value, key) {
 					if (value.selected == true) {
-						value.title = value.title + " (Default)";
+						value.title = value.title;
 						$scope.snSite.turSEInstance = value;
 					}
 				})
@@ -998,7 +1069,7 @@ turingApp.controller('TurSNSiteNewCtrl', [
 			$scope.nlpInstances = turNLPInstanceResource.query({}, function() {
 				angular.forEach($scope.nlpInstances, function(value, key) {
 					if (value.selected == true) {
-						value.title = value.title + " (Default)";
+						value.title = value.title;
 						$scope.snSite.turNLPInstance = value;
 					}
 				})
@@ -1070,7 +1141,8 @@ turingApp.config([
 				VENDORS : "Vendors",
 				HOST : "Host",
 				PORT : "Port",
-				SETTINGS_SAVE_CHANGES : "Save Changes"
+				SETTINGS_SAVE_CHANGES : "Save Changes",
+				INTERNAL_NAME :  "Internal Name"
 			});
 			$translateProvider.translations('pt', {
 				NLP_EDIT : "Editar o NLP",
@@ -1080,7 +1152,8 @@ turingApp.config([
 				VENDORS : "Produtos",
 				HOST : "Host",
 				PORT : "Porta",
-				SETTINGS_SAVE_CHANGES : "Salvar Alterações"
+				SETTINGS_SAVE_CHANGES : "Salvar Alterações",
+				INTERNAL_NAME :  "Nome Interno"
 			});
 			$translateProvider.fallbackLanguage('en');
 
@@ -1119,7 +1192,15 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Machine Learning | Viglet Turing'
 				}
-			}).state('ml.model', {
+			}).state('ml.category-edit', {
+				url : '/category/:mlCategoryId',
+				templateUrl : 'templates/ml/category/ml-category-edit.html',
+				controller : 'TurMLCategoryEditCtrl',
+				data : {
+					pageTitle : 'Edit Category | Viglet Turing'
+				}
+			})
+			.state('ml.model', {
 				url : '/model',
 				templateUrl : 'templates/ml/model/ml-model.html',
 				controller : 'TurMLModelCtrl',

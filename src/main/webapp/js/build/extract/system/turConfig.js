@@ -15,7 +15,8 @@ turingApp.config([
 				VENDORS : "Vendors",
 				HOST : "Host",
 				PORT : "Port",
-				SETTINGS_SAVE_CHANGES : "Save Changes"
+				SETTINGS_SAVE_CHANGES : "Save Changes",
+				INTERNAL_NAME :  "Internal Name"
 			});
 			$translateProvider.translations('pt', {
 				NLP_EDIT : "Editar o NLP",
@@ -25,7 +26,8 @@ turingApp.config([
 				VENDORS : "Produtos",
 				HOST : "Host",
 				PORT : "Porta",
-				SETTINGS_SAVE_CHANGES : "Salvar Alterações"
+				SETTINGS_SAVE_CHANGES : "Salvar Alterações",
+				INTERNAL_NAME :  "Nome Interno"
 			});
 			$translateProvider.fallbackLanguage('en');
 
@@ -64,7 +66,15 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Machine Learning | Viglet Turing'
 				}
-			}).state('ml.model', {
+			}).state('ml.category-edit', {
+				url : '/category/:mlCategoryId',
+				templateUrl : 'templates/ml/category/ml-category-edit.html',
+				controller : 'TurMLCategoryEditCtrl',
+				data : {
+					pageTitle : 'Edit Category | Viglet Turing'
+				}
+			})
+			.state('ml.model', {
 				url : '/model',
 				templateUrl : 'templates/ml/model/ml-model.html',
 				controller : 'TurMLModelCtrl',

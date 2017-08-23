@@ -5,23 +5,16 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 		"$rootScope",
 		"$translate",
 		"vigLocale",
-		"turMLDataGroupResource",
+		"turMLCategoryResource",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupResource, $uibModal) {
+				vigLocale, turMLCategoryResource, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.dataGroup = turMLDataGroupResource.get({
-				id : $stateParams.mlDataGroupId
-			});
-			$scope.dataGroupSave = function() {
-				$scope.dataGroup.$update(function() {
-					$state.go('ml.datagroup');
-				});
-			}
+			$scope.categories = turMLCategoryResource.query();
 
 			$scope.categoryNew = function() {
 				var $ctrl = this;
@@ -43,8 +36,7 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 				});
 
 				modalInstance.result.then(function(category) {
-					console.log(category.name);
-					console.log(category.description);
+					//
 				}, function() {
 					// Selected NO
 				});
