@@ -87,25 +87,23 @@ public class TurMLDataAPI {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response importData(@DefaultValue("true") @FormDataParam("enabled") boolean enabled,
 			@FormDataParam("file") InputStream inputStream,
-			@FormDataParam("file") FormDataContentDisposition fileDetail, @Context UriInfo uriInfo) throws JSONException, IOException, SAXException, TikaException {
-		
+			@FormDataParam("file") FormDataContentDisposition fileDetail, @Context UriInfo uriInfo)
+			throws JSONException, IOException, SAXException, TikaException {
+
 		BodyContentHandler handler = new BodyContentHandler(-1);
 		Metadata metadata = new Metadata();
-		/*FileInputStream inputstream = new FileInputStream(
-				new File("/Users/alexandreoliveira/Desktop/The-Problems-of-Philosophy-LewisTheme.pdf"));*/
+
 		ParseContext pcontext = new ParseContext();
 
 		// parsing the document using PDF parser
 		PDFParser pdfparser = new PDFParser();
 		pdfparser.parse(inputStream, handler, metadata, pcontext);
 
-		// getting the content of the document
-		System.out.println("Contents of the PDF :" + handler.toString());
 
 		String sentences[] = TurOpenNLPConnector.sentenceDetect(handler.toString());
 
 		TurData turData = new TurData();
-		
+
 		turData.setName(fileDetail.getFileName());
 		turData.setType(FilenameUtils.getExtension(fileDetail.getFileName()));
 		turDataService.save(turData);
@@ -116,14 +114,7 @@ public class TurMLDataAPI {
 			turDataSentence.setSentence(sentence);
 			turDataSentenceService.save(turDataSentence);
 		}
-
-		// getting metadata of the document
-		System.out.println("Metadata of the PDF:");
-		String[] metadataNames = metadata.names();
-
-		for (String name : metadataNames) {
-			System.out.println(name + " : " + metadata.get(name));
-		}
+		
 		JSONObject jsonTraining = new JSONObject();
 		jsonTraining.put("sentences", sentences);
 		return Response.status(200).entity(jsonTraining.toString()).build();

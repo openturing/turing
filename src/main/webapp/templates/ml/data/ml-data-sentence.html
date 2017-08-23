@@ -3,7 +3,7 @@
 		<li class="list-group-item" ng-repeat="turDataSentence in data.turDataSentences">
 		<div class="row">
 		<div class="col-lg-3 col-md-3 col-sm-2 col-xs-2">
-			<select class="form-control" ng-model="turDataSentence.turMLCategory"
+			<select class="form-control" ng-model="turDataSentence.turMLCategory" ng-change="sentenceUpdate(turDataSentence)"
 					ng-options="turMLCategory as turMLCategory.name for turMLCategory in categories track by turMLCategory.id">
 					<option value="">- Pick One -</option>
 				</select>

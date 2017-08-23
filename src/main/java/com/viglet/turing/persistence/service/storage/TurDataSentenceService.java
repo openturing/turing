@@ -25,7 +25,7 @@ public class TurDataSentenceService extends TurBaseService {
 		return q.getResultList();
 	}
 
-	public TurDataSentence get(String dataId) {
+	public TurDataSentence get(int dataId) {
 		return em.find(TurDataSentence.class, dataId);
 	}
 

@@ -94,7 +94,7 @@ public class TurMLModelAPI {
 	@Path("evaluation")
 	@Produces("application/json")
 	public Response evaluation() throws JSONException {
-		File modelFile = new File("/Users/alexandreoliveira/Desktop/mymodel.bin");
+		File modelFile = new File("store/ml/model/generate.bin");
 		InputStream modelStream;
 		DoccatModel m = null;
 		try {
@@ -124,27 +124,21 @@ public class TurMLModelAPI {
 
 		StringBuffer trainSB = new StringBuffer();
 
-		boolean catVariables = true;
 		for (TurDataSentence vigTrainDocSentence : turDataSentences) {
-			if (catVariables) {
-				trainSB.append("Cat01 ");
-				catVariables = false;
-			} else {
-				trainSB.append("Cat02 ");
-				catVariables = true;
+			if (vigTrainDocSentence.getTurMLCategory() != null) {
+				trainSB.append(vigTrainDocSentence.getTurMLCategory().getInternalName() + " ");
+				trainSB.append(vigTrainDocSentence.getSentence().toString().replaceAll("[\\t\\n\\r]", " ").trim());
+				trainSB.append("\n");
 			}
-			trainSB.append(vigTrainDocSentence.getSentence().toString().replaceAll("[\\t\\n\\r]", " ").trim());
-			trainSB.append("\n");
 		}
-		PrintWriter out = new PrintWriter("/Users/alexandreoliveira/Desktop/en-sentiment.train");
+		PrintWriter out = new PrintWriter("store/ml/train/generate.train");
 		out.println(trainSB.toString().trim());
 		out.close();
 
 		///////////////
 		try (BufferedReader br = new BufferedReader(
-				new FileReader("/Users/alexandreoliveira/Desktop/en-sentiment.train"))) {
+				new FileReader("store/ml/train/generate.train"))) {
 			String line;
-			System.out.println("Testando arquivo");
 			while ((line = br.readLine()) != null) {
 
 				// Whitespace tokenize entire string
@@ -154,19 +148,18 @@ public class TurMLModelAPI {
 				if (tokens.length > 1) {
 					///
 				} else {
-					System.out.println("Empty lines: " + tokens.toString());
+					//Empty lines: " + tokens.toString());
 				}
 			}
-			System.out.println("Fim do teste");
 		}
-		////////
+
 		DoccatModel model = null;
 
 		InputStream dataIn = null;
 		try {
 			InputStreamFactory isf = new InputStreamFactory() {
 				public InputStream createInputStream() throws IOException {
-					return new FileInputStream("/Users/alexandreoliveira/Desktop/en-sentiment.train");
+					return new FileInputStream("store/ml/train/generate.train");
 					// return new
 					// ByteArrayInputStream(trainSB.toString().getBytes(StandardCharsets.UTF_8));
 				}
@@ -197,7 +190,7 @@ public class TurMLModelAPI {
 		}
 		OutputStream modelOut = null;
 		try {
-			String modelFile = "/Users/alexandreoliveira/Desktop/mymodel.bin";
+			String modelFile = "store/ml/model/generate.bin";
 			modelOut = new BufferedOutputStream(new FileOutputStream(modelFile));
 			model.serialize(modelOut);
 		} catch (IOException e) {
