@@ -153,10 +153,10 @@ turingApp.controller('TurMLCategoryNewCtrl', [
 			$ctrl.removeInstance = false;
 			$ctrl.category = category;
 			$ctrl.ok = function() {
-				turMLCategoryResource.save($ctrl.category, function() {
+				turMLCategoryResource.save($ctrl.category, function(response) {
 					turNotificationService.addNotification("Category \""
-							+ $ctrl.category.name + "\" was created.");
-					$uibModalInstance.close(category);
+							+ response.name + "\" was created.");
+					$uibModalInstance.close(response);
 				});
 
 			};
@@ -322,20 +322,22 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 		"$rootScope",
 		"$translate",
 		"vigLocale",
-		"turMLCategoryResource",
+		"turMLDataGroupCategoryResource",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLCategoryResource, $uibModal) {
+				vigLocale, turMLDataGroupCategoryResource, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.categories = turMLCategoryResource.query();
+			$scope.mlDataGroupCategories = turMLDataGroupCategoryResource.query({
+				dataGroupId : $stateParams.mlDataGroupId
+			});
 
 			$scope.categoryNew = function() {
 				var $ctrl = this;
-				$scope.category = {}
+				$scope.category = {};
 				var modalInstance = $uibModal.open({
 					animation : true,
 					ariaLabelledBy : 'modal-title',
@@ -352,7 +354,17 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 					}
 				});
 
-				modalInstance.result.then(function(category) {
+				modalInstance.result.then(function(response) {
+					delete response.turDataGroupCategories;
+					delete response.turDataSentences;
+					turMLDataGroupCategory = {};
+					turMLDataGroupCategory.turMLCategory =  response;
+					console.log("id: " + response.id);
+					console.log("name: " + response.name);
+					turMLDataGroupCategoryResource.save({
+						dataGroupId : $stateParams.mlDataGroupId
+					}, turMLDataGroupCategory);
+					
 					//
 				}, function() {
 					// Selected NO
@@ -505,6 +517,19 @@ turingApp.controller('TurMLDataGroupNewCtrl', [
 					$state.go('ml.datagroup');
 				});
 			}
+		} ]);
+turingApp.factory('turMLDataGroupCategoryResource', [
+		'$resource',
+		function($resource) {
+			return $resource(
+					'/turing/api/ml/data/group/:dataGroupId/category/:id', {
+						id : '@id',
+						dataGroupId : '@dataGroupId'
+					}, {
+						update : {
+							method : 'PUT'
+						}
+					});
 		} ]);
 turingApp.factory('turMLDataGroupResource', [ '$resource', function($resource) {
 	return $resource('/turing/api/ml/data/group/:id', {
@@ -1238,20 +1263,6 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Machine Learning | Viglet Turing'
 				}
-			}).state('ml.category-edit', {
-				url : '/category/:mlCategoryId',
-				templateUrl : 'templates/ml/category/ml-category-edit.html',
-				controller : 'TurMLCategoryEditCtrl',
-				data : {
-					pageTitle : 'Edit Category | Viglet Turing'
-				}
-			}).state('ml.category-edit.sentence', {
-				url : '/sentence',
-				templateUrl : 'templates/ml/category/ml-category-sentence.html',
-				controller : 'TurMLCategorySentenceCtrl',
-				data : {
-					pageTitle : 'Edit Category | Viglet Turing'
-				}
 			}).state('ml.model', {
 				url : '/model',
 				templateUrl : 'templates/ml/model/ml-model.html',
@@ -1300,6 +1311,20 @@ turingApp.config([
 				controller : 'TurMLDataGroupCategoryCtrl',
 				data : {
 					pageTitle : 'Data Group Categories | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.category-edit', {
+				url : '/category/:mlCategoryId',
+				templateUrl : 'templates/ml/category/ml-category-edit.html',
+				controller : 'TurMLCategoryEditCtrl',
+				data : {
+					pageTitle : 'Edit Category | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.category-edit.sentence', {
+				url : '/sentence',
+				templateUrl : 'templates/ml/category/ml-category-sentence.html',
+				controller : 'TurMLCategorySentenceCtrl',
+				data : {
+					pageTitle : 'Edit Category | Viglet Turing'
 				}
 			}).state('ml.datagroup-edit.data', {
 				url : '/document',

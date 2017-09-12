@@ -25,7 +25,6 @@ public class TurDataGroupCategory implements Serializable {
 	//bi-directional many-to-one association to TurCategory
 	@ManyToOne
 	@JoinColumn(name="ml_category_id", nullable=false)
-	@JsonBackReference (value="turDataGroupCategory-turMLCategory")
 	private TurMLCategory turMLCategory;
 
 	//bi-directional many-to-one association to TurDataGroup

@@ -11,6 +11,13 @@ import com.viglet.turing.persistence.service.TurBaseService;
 
 public class TurDataGroupCategoryService extends TurBaseService {
 	public void save(TurDataGroupCategory turDataGroupCategory) {
+		if (turDataGroupCategory.getTurDataGroup() != null) {
+			turDataGroupCategory.setTurDataGroup(em.merge(turDataGroupCategory.getTurDataGroup()));
+		}
+		
+		if (turDataGroupCategory.getTurMLCategory() != null) {
+			turDataGroupCategory.setTurMLCategory(em.merge(turDataGroupCategory.getTurMLCategory()));
+		}
 		em.getTransaction().begin();
 		em.persist(turDataGroupCategory);
 		em.getTransaction().commit();

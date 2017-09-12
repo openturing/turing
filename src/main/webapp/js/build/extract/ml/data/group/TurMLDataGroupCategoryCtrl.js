@@ -5,20 +5,22 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 		"$rootScope",
 		"$translate",
 		"vigLocale",
-		"turMLCategoryResource",
+		"turMLDataGroupCategoryResource",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLCategoryResource, $uibModal) {
+				vigLocale, turMLDataGroupCategoryResource, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.categories = turMLCategoryResource.query();
+			$scope.mlDataGroupCategories = turMLDataGroupCategoryResource.query({
+				dataGroupId : $stateParams.mlDataGroupId
+			});
 
 			$scope.categoryNew = function() {
 				var $ctrl = this;
-				$scope.category = {}
+				$scope.category = {};
 				var modalInstance = $uibModal.open({
 					animation : true,
 					ariaLabelledBy : 'modal-title',
@@ -35,7 +37,17 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 					}
 				});
 
-				modalInstance.result.then(function(category) {
+				modalInstance.result.then(function(response) {
+					delete response.turDataGroupCategories;
+					delete response.turDataSentences;
+					turMLDataGroupCategory = {};
+					turMLDataGroupCategory.turMLCategory =  response;
+					console.log("id: " + response.id);
+					console.log("name: " + response.name);
+					turMLDataGroupCategoryResource.save({
+						dataGroupId : $stateParams.mlDataGroupId
+					}, turMLDataGroupCategory);
+					
 					//
 				}, function() {
 					// Selected NO

@@ -17,7 +17,6 @@ import org.json.JSONException;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
 import com.viglet.turing.persistence.model.storage.TurDataGroup;
 import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
-import com.viglet.turing.persistence.service.ml.TurMLCategoryService;
 import com.viglet.turing.persistence.service.storage.TurDataGroupCategoryService;
 import com.viglet.turing.persistence.service.storage.TurDataGroupService;
 
@@ -36,19 +35,18 @@ public class TurMLDataGroupCategoryAPI {
 	@Path("{dataGroupCategoryId}")
 	@GET
 	@Produces("application/json")
-	public TurDataGroupCategory mlSolution(@PathParam("dataGroupId") int dataGroupId, @PathParam("dataGroupCategoryId") int id)
-			throws JSONException {
+	public TurDataGroupCategory mlSolution(@PathParam("dataGroupId") int dataGroupId,
+			@PathParam("dataGroupCategoryId") int id) throws JSONException {
 		return turDataGroupCategoryService.get(id);
 	}
 
 	@Path("/{dataGroupCategoryId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
-	public TurDataGroupCategory update(@PathParam("dataGroupId") int dataGroupId, @PathParam("dataGroupCategoryId") int id,
-			TurDataGroupCategory turDataGroupCategory) throws Exception {
+	public TurDataGroupCategory update(@PathParam("dataGroupId") int dataGroupId,
+			@PathParam("dataGroupCategoryId") int id, TurMLCategory turMLCategory) throws Exception {
 		TurDataGroupCategory turDataGroupCategoryEdit = turDataGroupCategoryService.get(id);
-		turDataGroupCategoryEdit.setTurDataGroup(turDataGroupCategory.getTurDataGroup());
-		turDataGroupCategoryEdit.setTurMLCategory(turDataGroupCategory.getTurMLCategory());
+		turDataGroupCategoryEdit.setTurMLCategory(turMLCategory);
 		turDataGroupCategoryService.save(turDataGroupCategoryEdit);
 		return turDataGroupCategoryEdit;
 	}
@@ -62,7 +60,10 @@ public class TurMLDataGroupCategoryAPI {
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
-	public TurDataGroupCategory add(@PathParam("dataGroupId") int dataGroupId, TurDataGroupCategory turDataGroupCategory) throws Exception {
+	public TurDataGroupCategory add(@PathParam("dataGroupId") int dataGroupId, TurDataGroupCategory turDataGroupCategory)
+			throws Exception {
+		TurDataGroup turDataGroup = turDataGroupService.get(dataGroupId);
+		turDataGroupCategory.setTurDataGroup(turDataGroup);
 		turDataGroupCategoryService.save(turDataGroupCategory);
 		return turDataGroupCategory;
 

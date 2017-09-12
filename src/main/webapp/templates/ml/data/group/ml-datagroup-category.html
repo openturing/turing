@@ -5,7 +5,7 @@
 	<h3>Categories</h3>
 
 	<ul class="list-group">
-		<li class="list-group-item" ng-repeat="category in categories"><a
-			ui-sref="ml.category-edit({mlCategoryId:category.id})">{{category.name}}</a></li>
+		<li class="list-group-item" ng-repeat="mlDataGroupCategory in mlDataGroupCategories"><a
+			ui-sref="ml.datagroup-edit.category-edit ({mlCategoryId:mlDataGroupCategory.turMLCategory.id})">{{mlDataGroupCategory.turMLCategory.name}}</a></li>
 	</ul>
 </div>

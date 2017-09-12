@@ -66,20 +66,6 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Machine Learning | Viglet Turing'
 				}
-			}).state('ml.category-edit', {
-				url : '/category/:mlCategoryId',
-				templateUrl : 'templates/ml/category/ml-category-edit.html',
-				controller : 'TurMLCategoryEditCtrl',
-				data : {
-					pageTitle : 'Edit Category | Viglet Turing'
-				}
-			}).state('ml.category-edit.sentence', {
-				url : '/sentence',
-				templateUrl : 'templates/ml/category/ml-category-sentence.html',
-				controller : 'TurMLCategorySentenceCtrl',
-				data : {
-					pageTitle : 'Edit Category | Viglet Turing'
-				}
 			}).state('ml.model', {
 				url : '/model',
 				templateUrl : 'templates/ml/model/ml-model.html',
@@ -128,6 +114,20 @@ turingApp.config([
 				controller : 'TurMLDataGroupCategoryCtrl',
 				data : {
 					pageTitle : 'Data Group Categories | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.category-edit', {
+				url : '/category/:mlCategoryId',
+				templateUrl : 'templates/ml/category/ml-category-edit.html',
+				controller : 'TurMLCategoryEditCtrl',
+				data : {
+					pageTitle : 'Edit Category | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.category-edit.sentence', {
+				url : '/sentence',
+				templateUrl : 'templates/ml/category/ml-category-sentence.html',
+				controller : 'TurMLCategorySentenceCtrl',
+				data : {
+					pageTitle : 'Edit Category | Viglet Turing'
 				}
 			}).state('ml.datagroup-edit.data', {
 				url : '/document',

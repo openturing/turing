@@ -9,10 +9,10 @@ turingApp.controller('TurMLCategoryNewCtrl', [
 			$ctrl.removeInstance = false;
 			$ctrl.category = category;
 			$ctrl.ok = function() {
-				turMLCategoryResource.save($ctrl.category, function() {
+				turMLCategoryResource.save($ctrl.category, function(response) {
 					turNotificationService.addNotification("Category \""
-							+ $ctrl.category.name + "\" was created.");
-					$uibModalInstance.close(category);
+							+ response.name + "\" was created.");
+					$uibModalInstance.close(response);
 				});
 
 			};
