@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.storage;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 
 /**
  * The persistent class for the turDataGroupData database table.
@@ -22,11 +24,13 @@ public class TurDataGroupData implements Serializable {
 	//bi-directional many-to-one association to TurData
 	@ManyToOne
 	@JoinColumn(name="data_id", nullable=false)
+	@JsonBackReference (value="turDataGroupData-turData")
 	private TurData turData;
 
 	//bi-directional many-to-one association to TurDataGroup
 	@ManyToOne
 	@JoinColumn(name="data_group_id", nullable=false)
+	@JsonBackReference (value="turDataGroupData-turDataGroup")
 	private TurDataGroup turDataGroup;
 
 	public TurDataGroupData() {

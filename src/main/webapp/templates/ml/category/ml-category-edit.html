@@ -1,58 +1,78 @@
 <div class="panel panel-default"
-	style='font-family: "Raleway", sans-serif; font-weight: 400; min-height: 175px; width: 544px; margin-bottom: 0px; padding-bottom: 0px;'>
+	style='font-family: "Raleway", sans-serif; font-weight: 400; margin-bottom: 0px; padding-bottom: 0px;'>
 	<div class="panel-title"
 		style="padding: 10px; border-bottom-color: rgb(217, 217, 217); border-bottom-style: solid; border-bottom-width: thin;">
 		<p style="font-size: 18px; color: #FF874B; margin: 0px;">{{category.name}}</p>
 		<p style="font-size: 14px; color: rgb(182, 182, 182); margin: 0px;">{{category.description}}</p>
 	</div>
 	<div class="panel-body" style="padding: 0px;">
-		<div class="row"
-			style="margin: 0px; padding: 10px; padding-bottom: 0px">
-			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-				{{'INTERNAL_NAME' | translate }}</div>
-			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-				<input ng-model="category.internalName" type="text" class="form-control">
-
-			</div>
-		</div>
-		<div class="row"
-			style="margin: 0px; padding: 10px; padding-bottom: 0px">
-			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-				{{'NAME' | translate }}</div>
-			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-				<input ng-model="category.name" type="text" class="form-control">
-
-			</div>
-		</div>
-		<div class="row"
-			style="margin: 0px; padding: 10px; padding-bottom: 0px">
-			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-				{{'DESCRIPTION' | translate }}</div>
-			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-
-				<input ng-model="category.description" type="text" class="form-control">
-			</div>
-		</div>		
-		<div style="padding: 10px;">
-			<div class="row">
-				<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"></div>
+		<ul class="nav nav-tabs" role="tablist" style="padding-top: 10px">
+			<li role="presentation"
+				ng-class="{'active':$state.current.name == 'ml.category-edit'}"><a
+				ui-sref="ml.category-edit" data-target="#dummy" aria-controls="home"
+				role="tab" data-toggle="tab">Details</a></li>
+			<li role="presentation"
+				ng-class="{'active':$state.current.name.indexOf('ml.category-edit.sentence') == 0}"><a
+				ui-sref="ml.category-edit.sentence" data-target="#dummy"
+				aria-controls="messages" role="tab" data-toggle="tab">Sentences
+					<span class="badge">{{category.turDataSentences.length}}</span>
+			</a></li>
+		</ul>
+		<div ui-view>
+			<div class="row"
+				style="margin: 0px; padding: 10px; padding-bottom: 0px">
+				<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+					style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+					{{'INTERNAL_NAME' | translate }}</div>
 				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
-					style="padding: 0px; padding-top: 20px; padding-bottom: 20px;">
-					<div class="btn-group">
-						<button ng-click="mlCategoryUpdate()" type="button"
-							class="btn btn-viglet">{{'SETTINGS_SAVE_CHANGES' |
-							translate }}</button>
-						<button type="button" class="btn btn-viglet dropdown-toggle"
-							data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-							<span class="caret"></span> <span class="sr-only">Toggle
-								Dropdown</span>
-						</button>
-						<ul class="dropdown-menu">
-							<li><a ng-click="mlCategoryDelete()">Delete</a></li>
-						</ul>
+					style="padding: 0px">
+					<input ng-model="category.internalName" type="text"
+						class="form-control">
+
+				</div>
+			</div>
+			<div class="row"
+				style="margin: 0px; padding: 10px; padding-bottom: 0px">
+				<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+					style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+					{{'NAME' | translate }}</div>
+				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
+					style="padding: 0px">
+					<input ng-model="category.name" type="text" class="form-control">
+
+				</div>
+			</div>
+			<div class="row"
+				style="margin: 0px; padding: 10px; padding-bottom: 0px">
+				<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+					style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+					{{'DESCRIPTION' | translate }}</div>
+				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
+					style="padding: 0px">
+
+					<input ng-model="category.description" type="text"
+						class="form-control">
+				</div>
+			</div>
+			<div style="padding: 10px;">
+				<div class="row">
+					<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"></div>
+					<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
+						style="padding: 0px; padding-top: 20px; padding-bottom: 20px;">
+						<div class="btn-group">
+							<button ng-click="mlCategoryUpdate()" type="button"
+								class="btn btn-viglet">{{'SETTINGS_SAVE_CHANGES' |
+								translate }}</button>
+							<button type="button" class="btn btn-viglet dropdown-toggle"
+								data-toggle="dropdown" aria-haspopup="true"
+								aria-expanded="false">
+								<span class="caret"></span> <span class="sr-only">Toggle
+									Dropdown</span>
+							</button>
+							<ul class="dropdown-menu">
+								<li><a ng-click="mlCategoryDelete()">Delete</a></li>
+							</ul>
+						</div>
 					</div>
 				</div>
 			</div>

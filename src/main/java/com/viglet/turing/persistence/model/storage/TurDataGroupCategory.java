@@ -3,6 +3,7 @@ package com.viglet.turing.persistence.model.storage;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
 
 
@@ -24,11 +25,13 @@ public class TurDataGroupCategory implements Serializable {
 	//bi-directional many-to-one association to TurCategory
 	@ManyToOne
 	@JoinColumn(name="ml_category_id", nullable=false)
+	@JsonBackReference (value="turDataGroupCategory-turMLCategory")
 	private TurMLCategory turMLCategory;
 
 	//bi-directional many-to-one association to TurDataGroup
 	@ManyToOne
 	@JoinColumn(name="data_group_id", nullable=false)
+	@JsonBackReference (value="turDataGroupCategory-turDataGroup")
 	private TurDataGroup turDataGroup;
 
 	public TurDataGroupCategory() {

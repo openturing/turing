@@ -24,6 +24,34 @@
 		</div>
 	</div>
 	<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 col-centered">
+		<div class="row" style="margin-bottom: 10px;">
+			<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 col-centered">
+				<div class="btn-group btn-group-justified" role="group"
+					aria-label="...">
+					<div class="btn-group" role="group">
+						<button type="button"
+							ng-class="{'btn-viglet':$state.current.name.indexOf('ml.datagroup') == 0}"
+							ui-sref="ml.datagroup" class="btn btn-default">Detail</button>
+					</div>
+					<div class="btn-group" role="group">
+						<button type="button"
+							ng-class="{'btn-viglet':$state.current.name.indexOf('ml.data-') == 0}"
+							ui-sref="ml.datagroup-edit.data" class="btn btn-default">Documents <span class="badge">{{dataGroup.turDatas.length}}</span></button>
+					</div>
+					<div class="btn-group" role="group">
+						<button type="button"
+							ng-class="{'btn-viglet':$state.current.name.indexOf('ml.category') == 0}"
+							ui-sref="ml.datagroup-edit.category" class="btn btn-default">Categories <span class="badge">{{dataGroup.turMLCategories.length}}</span></button>
+					</div>
+					<div class="btn-group" role="group">
+						<button type="button"
+							ng-class="{'btn-viglet':$state.current.name.indexOf('ml.sentence') == 0}"
+							ui-sref="ml.sentence" class="btn btn-default">Sentences</button>
+					</div>
+
+				</div>
+			</div>
+		</div>
 		<div ui-view>
 			<h1>Your Machine Learning</h1>
 		</div>

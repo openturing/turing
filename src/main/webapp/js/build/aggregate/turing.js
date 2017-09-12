@@ -165,6 +165,32 @@ turingApp.controller('TurMLCategoryNewCtrl', [
 				$uibModalInstance.dismiss('cancel');
 			};
 		} ]);
+turingApp.controller('TurMLCategorySentenceCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"$uibModal",
+		"turMLDataSentenceResource",
+		"turNotificationService",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, $uibModal,
+				turMLDataSentenceResource, turNotificationService) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+			$scope.sentenceUpdate = function(turDataSentence) {
+				turMLDataSentenceResource.update({
+					id : turDataSentence.id
+				}, turDataSentence, function() {
+					turNotificationService.addNotification("Sentence \""
+							+ turDataSentence.sentence.substring(0,20) + "...\" was saved.");
+				});
+			}
+		} ]);
 turingApp.factory('turMLCategoryResource', [ '$resource', function($resource) {
 	return $resource('/turing/api/ml/category/:id', {
 		id : '@id'
@@ -1219,8 +1245,14 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Category | Viglet Turing'
 				}
-			})
-			.state('ml.model', {
+			}).state('ml.category-edit.sentence', {
+				url : '/sentence',
+				templateUrl : 'templates/ml/category/ml-category-sentence.html',
+				controller : 'TurMLCategorySentenceCtrl',
+				data : {
+					pageTitle : 'Edit Category | Viglet Turing'
+				}
+			}).state('ml.model', {
 				url : '/model',
 				templateUrl : 'templates/ml/model/ml-model.html',
 				controller : 'TurMLModelCtrl',

@@ -2,36 +2,45 @@ package com.viglet.turing.persistence.model.storage;
 
 import java.io.Serializable;
 import javax.persistence.*;
-import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import java.util.List;
 
 /**
  * The persistent class for the turData database table.
  * 
  */
 @Entity
-@Table(name="turData")
-@NamedQuery(name="TurData.findAll", query="SELECT d FROM TurData d")
-public class TurData implements Serializable {
+@Table(name = "turData")
+@NamedQuery(name = "TurData.findAll", query = "SELECT d FROM TurData d")
+public class TurData 
+
+implements Serializable 
+
+{
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(unique=true, nullable=false)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(unique = true, nullable = false)
 	private int id;
 
-	@Column(nullable=false, length=50)
+	@Column(nullable = false, length = 50)
 	private String name;
 
-	@Column(nullable=false, length=50)
+	@Column(nullable = false, length = 50)
 	private String type;
 
-	//bi-directional many-to-one association to TurDataGroupData
-	@OneToMany(mappedBy="turData")
+	// bi-directional many-to-one association to TurDataGroupData
+	@OneToMany(mappedBy = "turData")
+	@JsonManagedReference (value="turDataGroupData-turData")
 	private List<TurDataGroupData> turDataGroupData;
 
-	//bi-directional many-to-one association to TurDataSentence
-	@OneToMany(mappedBy="turData")
+	// bi-directional many-to-one association to TurDataSentence
+	@OneToMany(mappedBy = "turData")
+	@JsonManagedReference (value="turDataSentence-turData")
 	private List<TurDataSentence> turDataSentences;
 
 	public TurData() {

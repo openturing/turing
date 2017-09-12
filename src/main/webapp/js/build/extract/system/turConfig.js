@@ -73,8 +73,14 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Category | Viglet Turing'
 				}
-			})
-			.state('ml.model', {
+			}).state('ml.category-edit.sentence', {
+				url : '/sentence',
+				templateUrl : 'templates/ml/category/ml-category-sentence.html',
+				controller : 'TurMLCategorySentenceCtrl',
+				data : {
+					pageTitle : 'Edit Category | Viglet Turing'
+				}
+			}).state('ml.model', {
 				url : '/model',
 				templateUrl : 'templates/ml/model/ml-model.html',
 				controller : 'TurMLModelCtrl',

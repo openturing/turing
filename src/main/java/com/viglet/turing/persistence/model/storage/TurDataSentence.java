@@ -3,38 +3,40 @@ package com.viglet.turing.persistence.model.storage;
 import java.io.Serializable;
 import javax.persistence.*;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
-
 
 /**
  * The persistent class for the turDataSentence database table.
  * 
  */
 @Entity
-@Table(name="turDataSentence")
-@NamedQuery(name="TurDataSentence.findAll", query="SELECT ds FROM TurDataSentence ds")
-@JsonIgnoreProperties({ "turData" } )
+@Table(name = "turDataSentence")
+@NamedQuery(name = "TurDataSentence.findAll", query = "SELECT ds FROM TurDataSentence ds")
 public class TurDataSentence implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(unique=true, nullable=false)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(unique = true, nullable = false)
 	private int id;
 
 	@Lob
-	@Column(nullable=false)
+	@Column(nullable = false)
 	private String sentence;
 
-	//bi-directional many-to-one association to TurCategory
+	// bi-directional many-to-one association to TurCategory
 	@ManyToOne
-	@JoinColumn(name="ml_category_id")
+	@JoinColumn(name = "ml_category_id")
+	@JsonBackReference (value="turDataSentence-turMLCategory")
 	private TurMLCategory turMLCategory;
 
-	//bi-directional many-to-one association to TurData
+	// bi-directional many-to-one association to TurData
 	@ManyToOne
-	@JoinColumn(name="data_id", nullable=false)
+	@JoinColumn(name = "data_id", nullable = false)
+	@JsonBackReference  (value="turDataSentence-turData")
 	private TurData turData;
 
 	public TurDataSentence() {

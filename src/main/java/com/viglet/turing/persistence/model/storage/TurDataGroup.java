@@ -2,6 +2,9 @@ package com.viglet.turing.persistence.model.storage;
 
 import java.io.Serializable;
 import javax.persistence.*;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import java.util.List;
 
 
@@ -28,10 +31,12 @@ public class TurDataGroup implements Serializable {
 
 	//bi-directional many-to-one association to TurDataGroupCategory
 	@OneToMany(mappedBy="turDataGroup")
+	@JsonManagedReference (value="turDataGroupCategory-turDataGroup")
 	private List<TurDataGroupCategory> turDataGroupCategories;
 
 	//bi-directional many-to-one association to TurDataGroupData
 	@OneToMany(mappedBy="turDataGroup")
+	@JsonManagedReference (value="turDataGroupData-turDataGroup")
 	private List<TurDataGroupData> turDataGroupData;
 
 	public TurDataGroup() {

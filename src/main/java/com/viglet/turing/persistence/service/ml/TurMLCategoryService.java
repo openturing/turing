@@ -30,5 +30,5 @@ public class TurMLCategoryService extends TurBaseService {
 		em.getTransaction().commit();
 		return true;
 	}
-	
+
 }

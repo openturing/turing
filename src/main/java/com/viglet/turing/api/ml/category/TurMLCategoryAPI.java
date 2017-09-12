@@ -20,10 +20,10 @@ import com.viglet.turing.persistence.service.ml.TurMLCategoryService;
 @Path("/ml/category")
 public class TurMLCategoryAPI {
 	TurMLCategoryService turMLCategoryService = new TurMLCategoryService();
-	
+
 	@GET
 	@Produces("application/json")
-	public List<TurMLCategory> list() throws JSONException {
+	public List<TurMLCategory> list(int dataGroupId) throws JSONException {
 		return turMLCategoryService.listAll();
 	}
 
@@ -33,7 +33,6 @@ public class TurMLCategoryAPI {
 	public TurMLCategory mlSolution(@PathParam("mlCategoryId") String id) throws JSONException {
 		return turMLCategoryService.get(id);
 	}
-	
 
 	@Path("/{mlCategoryId}")
 	@PUT
