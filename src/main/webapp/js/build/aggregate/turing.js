@@ -1270,20 +1270,6 @@ turingApp.config([
 				data : {
 					pageTitle : 'Machine Learning Models | Viglet Turing'
 				}
-			}).state('ml.data-edit', {
-				url : '/data/:mlDataId',
-				templateUrl : 'templates/ml/data/ml-data-edit.html',
-				controller : 'TurMLDataEditCtrl',
-				data : {
-					pageTitle : 'Edit Data | Viglet Turing'
-				}
-			}).state('ml.data-edit.sentence', {
-				url : '/sentence',
-				templateUrl : 'templates/ml/data/ml-data-sentence.html',
-				controller : 'TurMLDataSentenceCtrl',
-				data : {
-					pageTitle : 'Edit Data | Viglet Turing'
-				}
 			}).state('ml.datagroup', {
 				url : '/datagroup',
 				templateUrl : 'templates/ml/data/group/ml-datagroup.html',
@@ -1332,6 +1318,20 @@ turingApp.config([
 				controller : 'TurMLDataGroupDataCtrl',
 				data : {
 					pageTitle : 'Data Group Documents | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.data-edit', {
+				url : '/data/:mlDataId',
+				templateUrl : 'templates/ml/data/ml-data-edit.html',
+				controller : 'TurMLDataEditCtrl',
+				data : {
+					pageTitle : 'Edit Data | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.data-edit.sentence', {
+				url : '/sentence',
+				templateUrl : 'templates/ml/data/ml-data-sentence.html',
+				controller : 'TurMLDataSentenceCtrl',
+				data : {
+					pageTitle : 'Edit Data | Viglet Turing'
 				}
 			}).state('se', {
 				url : '/se',

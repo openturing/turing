@@ -8,12 +8,12 @@
 	<div class="panel-body" style="padding: 0px;">
 		<ul class="nav nav-tabs" role="tablist" style="padding-top: 10px">
 			<li role="presentation"
-				ng-class="{'active':$state.current.name == 'ml.category-edit'}"><a
-				ui-sref="ml.category-edit" data-target="#dummy" aria-controls="home"
+				ng-class="{'active':$state.current.name == 'ml.datagroup-edit.category-edit'}"><a
+				ui-sref="ml.datagroup-edit.category-edit" data-target="#dummy" aria-controls="home"
 				role="tab" data-toggle="tab">Details</a></li>
 			<li role="presentation"
-				ng-class="{'active':$state.current.name.indexOf('ml.category-edit.sentence') == 0}"><a
-				ui-sref="ml.category-edit.sentence" data-target="#dummy"
+				ng-class="{'active':$state.current.name.indexOf('ml.datagroup-edit.category-edit.sentence') == 0}"><a
+				ui-sref="ml.datagroup-edit.category-edit.sentence" data-target="#dummy"
 				aria-controls="messages" role="tab" data-toggle="tab">Sentences
 					<span class="badge">{{category.turDataSentences.length}}</span>
 			</a></li>
