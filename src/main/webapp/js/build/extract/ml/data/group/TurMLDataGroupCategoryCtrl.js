@@ -14,9 +14,10 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.mlDataGroupCategories = turMLDataGroupCategoryResource.query({
-				dataGroupId : $stateParams.mlDataGroupId
-			});
+			$scope.mlDataGroupCategories = turMLDataGroupCategoryResource
+					.query({
+						dataGroupId : $stateParams.mlDataGroupId
+					});
 
 			$scope.categoryNew = function() {
 				var $ctrl = this;
@@ -41,13 +42,11 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 					delete response.turDataGroupCategories;
 					delete response.turDataSentences;
 					turMLDataGroupCategory = {};
-					turMLDataGroupCategory.turMLCategory =  response;
-					console.log("id: " + response.id);
-					console.log("name: " + response.name);
+					turMLDataGroupCategory.turMLCategory = response;
 					turMLDataGroupCategoryResource.save({
 						dataGroupId : $stateParams.mlDataGroupId
 					}, turMLDataGroupCategory);
-					
+
 					//
 				}, function() {
 					// Selected NO

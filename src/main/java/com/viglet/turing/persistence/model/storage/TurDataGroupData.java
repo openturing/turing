@@ -24,7 +24,6 @@ public class TurDataGroupData implements Serializable {
 	//bi-directional many-to-one association to TurData
 	@ManyToOne
 	@JoinColumn(name="data_id", nullable=false)
-	@JsonBackReference (value="turDataGroupData-turData")
 	private TurData turData;
 
 	//bi-directional many-to-one association to TurDataGroup

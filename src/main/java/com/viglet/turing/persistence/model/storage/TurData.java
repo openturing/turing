@@ -4,6 +4,7 @@ import java.io.Serializable;
 import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
 @Entity
 @Table(name = "turData")
 @NamedQuery(name = "TurData.findAll", query = "SELECT d FROM TurData d")
+@JsonIgnoreProperties({ "turDataGroupData" })
 public class TurData 
 
 implements Serializable 
@@ -35,7 +37,6 @@ implements Serializable
 
 	// bi-directional many-to-one association to TurDataGroupData
 	@OneToMany(mappedBy = "turData")
-	@JsonManagedReference (value="turDataGroupData-turData")
 	private List<TurDataGroupData> turDataGroupData;
 
 	// bi-directional many-to-one association to TurDataSentence

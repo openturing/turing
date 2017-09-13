@@ -31,10 +31,11 @@ turingApp.directive('fileModel', [ '$parse', function($parse) {
 } ]);
 
 turingApp.service('fileUpload', [ '$http', function($http) {
+
 	this.uploadFileToUrl = function(file, uploadUrl) {
 		var fd = new FormData();
 		fd.append('file', file);
-		$http.post(uploadUrl, fd, {
+		return $http.post(uploadUrl, fd, {
 			transformRequest : angular.identity,
 			headers : {
 				'Content-Type' : undefined
@@ -50,7 +51,7 @@ turingApp.service('turNotificationService', [ '$http', function($http) {
 			msg : msgString
 		});
 	};
-	
+
 } ]);
 
 turingApp.factory('vigLocale', [

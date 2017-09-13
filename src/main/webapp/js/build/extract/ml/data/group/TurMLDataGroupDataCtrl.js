@@ -5,20 +5,23 @@ turingApp.controller('TurMLDataGroupDataCtrl', [
 		"$rootScope",
 		"$translate",
 		"vigLocale",
-		"turMLDataResource",
+		"turMLDataGroupDataResource",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataResource, $uibModal) {
+				vigLocale, turMLDataGroupDataResource, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.datas = turMLDataResource.query();
+			$scope.mlDataGroupDatas = turMLDataGroupDataResource.query({
+				dataGroupId : $stateParams.mlDataGroupId
+			});
 
 			$scope.uploadDocument = function() {
 				var $ctrl = this;
-				$scope.data = {}
+				$scope.data = {};
+				$scope.data.datagroupId = $stateParams.mlDataGroupId;
 				var modalInstance = $uibModal.open({
 					animation : true,
 					ariaLabelledBy : 'modal-title',
@@ -35,9 +38,8 @@ turingApp.controller('TurMLDataGroupDataCtrl', [
 					}
 				});
 
-				modalInstance.result.then(function(data) {
-					console.log(data.name);
-					console.log(data.description);
+				modalInstance.result.then(function(response) {
+					//
 				}, function() {
 					// Selected NO
 				});

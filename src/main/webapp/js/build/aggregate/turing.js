@@ -31,10 +31,11 @@ turingApp.directive('fileModel', [ '$parse', function($parse) {
 } ]);
 
 turingApp.service('fileUpload', [ '$http', function($http) {
+
 	this.uploadFileToUrl = function(file, uploadUrl) {
 		var fd = new FormData();
 		fd.append('file', file);
-		$http.post(uploadUrl, fd, {
+		return $http.post(uploadUrl, fd, {
 			transformRequest : angular.identity,
 			headers : {
 				'Content-Type' : undefined
@@ -50,7 +51,7 @@ turingApp.service('turNotificationService', [ '$http', function($http) {
 			msg : msgString
 		});
 	};
-	
+
 } ]);
 
 turingApp.factory('vigLocale', [
@@ -261,16 +262,22 @@ turingApp.controller('TurMLDataEditCtrl', [
 		} ]);
 
 turingApp.controller('TurMLDataNewCtrl', [ "$uibModalInstance",
-	"data", 'fileUpload', function($uibModalInstance, data, fileUpload) {
+	"data", 'fileUpload', 'turNotificationService', function($uibModalInstance, data, fileUpload, turNotificationService) {
 		var $ctrl = this;
 		$ctrl.myFile = null;
 		$ctrl.removeInstance = false;
 		$ctrl.data = data;
 		$ctrl.ok = function() {
 			var file = $ctrl.myFile;
-			var uploadUrl = '/turing/api/ml/data/import';
-			fileUpload.uploadFileToUrl(file, uploadUrl);
-			$uibModalInstance.close(data);
+			var uploadUrl = '/turing/api/ml/data/group/' + data.datagroupId + '/data/import';
+			var response = null;
+			fileUpload.uploadFileToUrl(file, uploadUrl).then( function(response){
+				turNotificationService.addNotification("Document \""
+						+ response.data.turData.name + "\" was uploaded.");
+				$uibModalInstance.close(response);
+			});
+			
+			
 		};
 
 		$ctrl.cancel = function() {
@@ -331,9 +338,10 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.mlDataGroupCategories = turMLDataGroupCategoryResource.query({
-				dataGroupId : $stateParams.mlDataGroupId
-			});
+			$scope.mlDataGroupCategories = turMLDataGroupCategoryResource
+					.query({
+						dataGroupId : $stateParams.mlDataGroupId
+					});
 
 			$scope.categoryNew = function() {
 				var $ctrl = this;
@@ -358,13 +366,11 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 					delete response.turDataGroupCategories;
 					delete response.turDataSentences;
 					turMLDataGroupCategory = {};
-					turMLDataGroupCategory.turMLCategory =  response;
-					console.log("id: " + response.id);
-					console.log("name: " + response.name);
+					turMLDataGroupCategory.turMLCategory = response;
 					turMLDataGroupCategoryResource.save({
 						dataGroupId : $stateParams.mlDataGroupId
 					}, turMLDataGroupCategory);
-					
+
 					//
 				}, function() {
 					// Selected NO
@@ -393,20 +399,23 @@ turingApp.controller('TurMLDataGroupDataCtrl', [
 		"$rootScope",
 		"$translate",
 		"vigLocale",
-		"turMLDataResource",
+		"turMLDataGroupDataResource",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataResource, $uibModal) {
+				vigLocale, turMLDataGroupDataResource, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.datas = turMLDataResource.query();
+			$scope.mlDataGroupDatas = turMLDataGroupDataResource.query({
+				dataGroupId : $stateParams.mlDataGroupId
+			});
 
 			$scope.uploadDocument = function() {
 				var $ctrl = this;
-				$scope.data = {}
+				$scope.data = {};
+				$scope.data.datagroupId = $stateParams.mlDataGroupId;
 				var modalInstance = $uibModal.open({
 					animation : true,
 					ariaLabelledBy : 'modal-title',
@@ -423,9 +432,8 @@ turingApp.controller('TurMLDataGroupDataCtrl', [
 					}
 				});
 
-				modalInstance.result.then(function(data) {
-					console.log(data.name);
-					console.log(data.description);
+				modalInstance.result.then(function(response) {
+					//
 				}, function() {
 					// Selected NO
 				});
@@ -523,6 +531,19 @@ turingApp.factory('turMLDataGroupCategoryResource', [
 		function($resource) {
 			return $resource(
 					'/turing/api/ml/data/group/:dataGroupId/category/:id', {
+						id : '@id',
+						dataGroupId : '@dataGroupId'
+					}, {
+						update : {
+							method : 'PUT'
+						}
+					});
+		} ]);
+turingApp.factory('turMLDataGroupDataResource', [
+		'$resource',
+		function($resource) {
+			return $resource(
+					'/turing/api/ml/data/group/:dataGroupId/data/:id', {
 						id : '@id',
 						dataGroupId : '@dataGroupId'
 					}, {

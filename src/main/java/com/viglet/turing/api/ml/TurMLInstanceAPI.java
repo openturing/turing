@@ -19,6 +19,7 @@ import com.viglet.turing.persistence.service.ml.TurMLInstanceService;
 
 @Path("/ml")
 public class TurMLInstanceAPI {
+
 	TurMLInstanceService turMLInstanceService = new TurMLInstanceService();
 
 	@GET
