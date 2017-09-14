@@ -272,8 +272,7 @@ turingApp.controller('TurMLDataNewCtrl', [ "$uibModalInstance",
 			var uploadUrl = '/turing/api/ml/data/group/' + data.datagroupId + '/data/import';
 			var response = null;
 			fileUpload.uploadFileToUrl(file, uploadUrl).then( function(response){
-				turNotificationService.addNotification("Document \""
-						+ response.data.turData.name + "\" was uploaded.");
+				turNotificationService.addNotification(response.data.turData.name + "\" file was uploaded.");
 				$uibModalInstance.close(response);
 			});
 			
@@ -322,63 +321,6 @@ turingApp.factory('turMLDataResource', [ '$resource', function($resource) {
 		}
 	});
 } ]);
-turingApp.controller('TurMLDataGroupCategoryCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turMLDataGroupCategoryResource",
-		"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupCategoryResource, $uibModal) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.mlDataGroupCategories = turMLDataGroupCategoryResource
-					.query({
-						dataGroupId : $stateParams.mlDataGroupId
-					});
-
-			$scope.categoryNew = function() {
-				var $ctrl = this;
-				$scope.category = {};
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/ml/category/ml-category-new.html',
-					controller : 'TurMLCategoryNewCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						category : function() {
-							return $scope.category;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(response) {
-					delete response.turDataGroupCategories;
-					delete response.turDataSentences;
-					turMLDataGroupCategory = {};
-					turMLDataGroupCategory.turMLCategory = response;
-					turMLDataGroupCategoryResource.save({
-						dataGroupId : $stateParams.mlDataGroupId
-					}, turMLDataGroupCategory);
-
-					//
-				}, function() {
-					// Selected NO
-				});
-
-			}
-
-		} ]);
 turingApp.controller('TurMLDataGroupCtrl', [
 		"$scope",
 		"$http",
@@ -391,55 +333,6 @@ turingApp.controller('TurMLDataGroupCtrl', [
 				turMLDataGroupResource) {
 			$rootScope.$state = $state;
 			$scope.mlDataGroups = turMLDataGroupResource.query();
-		} ]);
-turingApp.controller('TurMLDataGroupDataCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turMLDataGroupDataResource",
-		"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupDataResource, $uibModal) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.mlDataGroupDatas = turMLDataGroupDataResource.query({
-				dataGroupId : $stateParams.mlDataGroupId
-			});
-
-			$scope.uploadDocument = function() {
-				var $ctrl = this;
-				$scope.data = {};
-				$scope.data.datagroupId = $stateParams.mlDataGroupId;
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/ml/data/ml-document-upload.html',
-					controller : 'TurMLDataNewCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						data : function() {
-							return $scope.data;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(response) {
-					//
-				}, function() {
-					// Selected NO
-				});
-
-			}
-
 		} ]);
 turingApp.controller('TurMLDataGroupEditCtrl', [
 		"$scope",
@@ -526,6 +419,112 @@ turingApp.controller('TurMLDataGroupNewCtrl', [
 				});
 			}
 		} ]);
+turingApp.controller('TurMLDataGroupCategoryCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupCategoryResource",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupCategoryResource, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.mlDataGroupCategories = turMLDataGroupCategoryResource
+					.query({
+						dataGroupId : $stateParams.mlDataGroupId
+					});
+
+			$scope.categoryNew = function() {
+				var $ctrl = this;
+				$scope.category = {};
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/ml/category/ml-category-new.html',
+					controller : 'TurMLCategoryNewCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						category : function() {
+							return $scope.category;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(response) {
+					delete response.turDataGroupCategories;
+					delete response.turDataSentences;
+					turMLDataGroupCategory = {};
+					turMLDataGroupCategory.turMLCategory = response;
+					turMLDataGroupCategoryResource.save({
+						dataGroupId : $stateParams.mlDataGroupId
+					}, turMLDataGroupCategory);
+
+					//
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+turingApp.controller('TurMLDataGroupDataCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupDataResource",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupDataResource, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.mlDataGroupDatas = turMLDataGroupDataResource.query({
+				dataGroupId : $stateParams.mlDataGroupId
+			});
+
+			$scope.uploadDocument = function() {
+				var $ctrl = this;
+				$scope.data = {};
+				$scope.data.datagroupId = $stateParams.mlDataGroupId;
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/ml/data/ml-document-upload.html',
+					controller : 'TurMLDataNewCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						data : function() {
+							return $scope.data;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(response) {
+					//
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
 turingApp.factory('turMLDataGroupCategoryResource', [
 		'$resource',
 		function($resource) {
@@ -561,6 +560,136 @@ turingApp.factory('turMLDataGroupResource', [ '$resource', function($resource) {
 		}
 	});
 } ]);
+turingApp.factory('turMLDataGroupSentenceResource', [
+		'$resource',
+		function($resource) {
+			return $resource(
+					'/turing/api/ml/data/group/:dataGroupId/sentence/:id', {
+						id : '@id',
+						dataGroupId : '@dataGroupId'
+					}, {
+						update : {
+							method : 'PUT'
+						}
+					});
+		} ]);
+turingApp.controller('TurMLDataGroupSentenceCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupSentenceResource",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupSentenceResource, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.mlDataGroupSentences = turMLDataGroupSentenceResource
+					.query({
+						dataGroupId : $stateParams.mlDataGroupId
+					});
+
+			$scope.sentenceNew = function() {
+				var $ctrl = this;
+				$scope.sentence = {
+					dataGroupId : $stateParams.mlDataGroupId
+				};
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/ml/sentence/ml-sentence-new.html',
+					controller : 'TurMLSentenceNewCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						sentence : function() {
+							return $scope.sentence;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(response) {					
+					//
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+turingApp.controller('TurMLDataGroupSentenceEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupSentenceResource",
+		"turNotificationService",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupSentenceResource,
+				turNotificationService, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.sentence = turMLDataGroupSentenceResource.get({
+				dataGroupId : $stateParams.mlDataGroupId,
+				id : $stateParams.mlSentenceId
+			});
+			$scope.mlSentenceUpdate = function() {
+				$scope.sentence.$update({
+					dataGroupId : $stateParams.mlDataGroupId}, function() {
+					turNotificationService.addNotification("Sentence \""
+							+ $scope.sentence.sentence + "\" was saved.");
+				});
+			}
+
+			$scope.mlSentenceDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.sentence.sentence;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Sentence \""
+							+ $scope.sentence.sentence + "\" was deleted.";
+					$scope.sentence.$delete(function() {
+						turNotificationService
+								.addNotification($scope.deletedMessage);
+						$state.go('ml.datagroup');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+
 turingApp.factory('turMLDataSentenceResource', [ '$resource', function($resource) {
 	return $resource('/turing/api/ml/data/sentence/:id', {
 		id : '@id'
@@ -707,6 +836,34 @@ turingApp.factory('turMLModelResource', [ '$resource', function($resource) {
 		}
 	});
 } ]);
+turingApp.controller('TurMLSentenceNewCtrl', [
+		"$uibModalInstance",
+		"sentence",
+		"turMLDataGroupSentenceResource",
+		"turNotificationService",
+		function($uibModalInstance, sentence, turMLDataGroupSentenceResource,
+				turNotificationService) {
+			var $ctrl = this;
+			$ctrl.removeInstance = false;
+			$ctrl.dataGroupId = sentence.dataGroupId;
+			$ctrl.sentence = sentence;
+			$ctrl.ok = function() {
+				delete sentence.dataGroupId;
+
+				turMLDataGroupSentenceResource.save({
+					dataGroupId : $ctrl.dataGroupId
+				}, $ctrl.sentence, function(response) {
+					turNotificationService.addNotification("Sentence \""
+							+ response.sentence + "\" was created.");
+					$uibModalInstance.close(response);
+				});
+
+			};
+
+			$ctrl.cancel = function() {
+				$uibModalInstance.dismiss('cancel');
+			};
+		} ]);
 turingApp.factory('turMLVendorResource', [ '$resource', function($resource) {
 	return $resource('/turing/api/ml/vendor/:id', {
 		id : '@id'
@@ -1334,7 +1491,7 @@ turingApp.config([
 					pageTitle : 'Edit Category | Viglet Turing'
 				}
 			}).state('ml.datagroup-edit.data', {
-				url : '/document',
+				url : '/data',
 				templateUrl : 'templates/ml/data/group/ml-datagroup-data.html',
 				controller : 'TurMLDataGroupDataCtrl',
 				data : {
@@ -1346,6 +1503,20 @@ turingApp.config([
 				controller : 'TurMLDataEditCtrl',
 				data : {
 					pageTitle : 'Edit Data | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.sentence', {
+				url : '/sentence',
+				templateUrl : 'templates/ml/data/group/ml-datagroup-sentence.html',
+				controller : 'TurMLDataGroupSentenceCtrl',
+				data : {
+					pageTitle : 'Data Group Sentences | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.sentence-edit', {
+				url : '/sentence/:mlSentenceId',
+				templateUrl : 'templates/ml/sentence/ml-sentence-edit.html',
+				controller : 'TurMLDataGroupSentenceEditCtrl',
+				data : {
+					pageTitle : 'Edit Sentence | Viglet Turing'
 				}
 			}).state('ml.datagroup-edit.data-edit.sentence', {
 				url : '/sentence',

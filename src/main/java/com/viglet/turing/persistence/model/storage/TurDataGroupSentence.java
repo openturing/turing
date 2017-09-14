@@ -4,8 +4,6 @@ import java.io.Serializable;
 import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
 
 /**
@@ -13,9 +11,9 @@ import com.viglet.turing.persistence.model.ml.TurMLCategory;
  * 
  */
 @Entity
-@Table(name = "turDataSentence")
-@NamedQuery(name = "TurDataSentence.findAll", query = "SELECT ds FROM TurDataSentence ds")
-public class TurDataSentence implements Serializable {
+@Table(name = "turDataGroupSentence")
+@NamedQuery(name = "TurDataGroupSentence.findAll", query = "SELECT ds FROM TurDataGroupSentence ds")
+public class TurDataGroupSentence implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -30,16 +28,22 @@ public class TurDataSentence implements Serializable {
 	// bi-directional many-to-one association to TurCategory
 	@ManyToOne
 	@JoinColumn(name = "ml_category_id")
-	@JsonBackReference (value="turDataSentence-turMLCategory")
+	@JsonBackReference(value = "turDataGroupSentence-turMLCategory")
 	private TurMLCategory turMLCategory;
 
 	// bi-directional many-to-one association to TurData
 	@ManyToOne
-	@JoinColumn(name = "data_id", nullable = false)
-	@JsonBackReference  (value="turDataSentence-turData")
+	@JoinColumn(name = "datagroup_id", nullable = false)
+	@JsonBackReference(value = "turDataGroupSentence-turDataGroup")
+	private TurDataGroup turDataGroup;
+
+	// bi-directional many-to-one association to TurData
+	@ManyToOne
+	@JoinColumn(name = "data_id")
+	@JsonBackReference(value = "turDataSentence-turData")
 	private TurData turData;
 
-	public TurDataSentence() {
+	public TurDataGroupSentence() {
 	}
 
 	public int getId() {
@@ -72,6 +76,14 @@ public class TurDataSentence implements Serializable {
 
 	public void setTurData(TurData turData) {
 		this.turData = turData;
+	}
+
+	public TurDataGroup getTurDataGroup() {
+		return turDataGroup;
+	}
+
+	public void setTurDataGroup(TurDataGroup turDataGroup) {
+		this.turDataGroup = turDataGroup;
 	}
 
 }

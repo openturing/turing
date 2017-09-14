@@ -3,41 +3,43 @@ package com.viglet.turing.persistence.model.storage;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import java.util.List;
-
 
 /**
  * The persistent class for the turDataGroup database table.
  * 
  */
 @Entity
-@Table(name="turDataGroup")
-@NamedQuery(name="TurDataGroup.findAll", query="SELECT dg FROM TurDataGroup dg")
+@Table(name = "turDataGroup")
+@NamedQuery(name = "TurDataGroup.findAll", query = "SELECT dg FROM TurDataGroup dg")
 public class TurDataGroup implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(unique=true, nullable=false)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(unique = true, nullable = false)
 	private int id;
 
-	@Column(length=250)
+	@Column(length = 250)
 	private String description;
 
-	@Column(nullable=false, length=50)
+	@Column(nullable = false, length = 50)
 	private String name;
 
-	//bi-directional many-to-one association to TurDataGroupCategory
-	@OneToMany(mappedBy="turDataGroup")
-	@JsonManagedReference (value="turDataGroupCategory-turDataGroup")
+	// bi-directional many-to-one association to TurDataGroupCategory
+	@OneToMany(mappedBy = "turDataGroup")
 	private List<TurDataGroupCategory> turDataGroupCategories;
 
-	//bi-directional many-to-one association to TurDataGroupData
-	@OneToMany(mappedBy="turDataGroup")
-	@JsonManagedReference (value="turDataGroupData-turDataGroup")
+	// bi-directional many-to-one association to TurDataGroupData
+	@OneToMany(mappedBy = "turDataGroup")
 	private List<TurDataGroupData> turDataGroupData;
+
+	// bi-directional many-to-one association to TurDataGroupData
+	@OneToMany(mappedBy = "turDataGroup")
+	private List<TurDataGroupSentence> turDataGroupSentence;
 
 	public TurDataGroup() {
 	}

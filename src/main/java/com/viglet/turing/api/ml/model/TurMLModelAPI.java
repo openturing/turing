@@ -30,9 +30,9 @@ import org.json.JSONObject;
 import org.xml.sax.SAXException;
 
 import com.viglet.turing.persistence.model.ml.TurMLModel;
-import com.viglet.turing.persistence.model.storage.TurDataSentence;
+import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.service.ml.TurMLModelService;
-import com.viglet.turing.persistence.service.storage.TurDataSentenceService;
+import com.viglet.turing.persistence.service.storage.TurDataGroupSentenceService;
 
 import opennlp.tools.doccat.DoccatFactory;
 import opennlp.tools.doccat.DoccatModel;
@@ -47,7 +47,7 @@ import opennlp.tools.util.TrainingParameters;
 
 @Path("/ml/model")
 public class TurMLModelAPI {
-	TurDataSentenceService turDataSentenceService = new TurDataSentenceService();
+	TurDataGroupSentenceService turDataGroupSentenceService = new TurDataGroupSentenceService();
 	TurMLModelService turMLModelService = new TurMLModelService();
 
 	@GET
@@ -120,11 +120,11 @@ public class TurMLModelAPI {
 	@Produces("application/json")
 	public Response generate() throws JSONException, IOException, SAXException, TikaException {
 
-		List<TurDataSentence> turDataSentences = turDataSentenceService.listAll();
+		List<TurDataGroupSentence> turDataSentences = turDataGroupSentenceService.listAll();
 
 		StringBuffer trainSB = new StringBuffer();
 
-		for (TurDataSentence vigTrainDocSentence : turDataSentences) {
+		for (TurDataGroupSentence vigTrainDocSentence : turDataSentences) {
 			if (vigTrainDocSentence.getTurMLCategory() != null) {
 				trainSB.append(vigTrainDocSentence.getTurMLCategory().getInternalName() + " ");
 				trainSB.append(vigTrainDocSentence.getSentence().toString().replaceAll("[\\t\\n\\r]", " ").trim());

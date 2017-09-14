@@ -34,8 +34,8 @@
 			</div>
 			<div class="btn-group" role="group">
 				<button type="button"
-					ng-class="{'btn-viglet':$state.current.name.indexOf('ml.sentence') == 0, 'btn-default':$state.current.name.indexOf('ml.sentence') != 0}"
-					ui-sref="ml.sentence" class="btn btn-default">Sentences</button>
+					ng-class="{'btn-viglet':$state.current.name.indexOf('ml.datagroup-edit.sentence') == 0, 'btn-default':$state.current.name.indexOf('ml.datagroup-edit.sentence') != 0}"
+					ui-sref="ml.datagroup-edit.sentence" class="btn btn-default">Sentences <span class="badge">{{dataGroup.turDataGroupSentences.length}}</span></button>
 			</div>
 
 		</div>

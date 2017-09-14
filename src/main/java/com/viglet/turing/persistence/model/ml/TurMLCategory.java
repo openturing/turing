@@ -4,9 +4,10 @@ import java.io.Serializable;
 import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
-import com.viglet.turing.persistence.model.storage.TurDataSentence;
+import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 
 import java.util.List;
 
@@ -42,8 +43,7 @@ public class TurMLCategory implements Serializable {
 
 	//bi-directional many-to-one association to TurDataSentence
 	@OneToMany(mappedBy="turMLCategory")
-	@JsonManagedReference (value="turDataSentence-turMLCategory")
-	private List<TurDataSentence> turDataSentences;
+	private List<TurDataGroupSentence> turDataGroupSentences;
 
 	public TurMLCategory() {
 	}
@@ -102,23 +102,23 @@ public class TurMLCategory implements Serializable {
 		return turDataGroupCategory;
 	}
 
-	public List<TurDataSentence> getTurDataSentences() {
-		return this.turDataSentences;
+	public List<TurDataGroupSentence> getTurDataGroupSentences() {
+		return this.turDataGroupSentences;
 	}
 
-	public void setTurDataSentences(List<TurDataSentence> turDataSentences) {
-		this.turDataSentences = turDataSentences;
+	public void setTurDataSentences(List<TurDataGroupSentence> turDataSentences) {
+		this.turDataGroupSentences = turDataSentences;
 	}
 
-	public TurDataSentence addTurDataSentence(TurDataSentence turDataSentence) {
-		getTurDataSentences().add(turDataSentence);
+	public TurDataGroupSentence addTurDataSentence(TurDataGroupSentence turDataSentence) {
+		getTurDataGroupSentences().add(turDataSentence);
 		turDataSentence.setTurMLCategory(this);
 
 		return turDataSentence;
 	}
 
-	public TurDataSentence removeTurDataSentence(TurDataSentence turDataSentence) {
-		getTurDataSentences().remove(turDataSentence);
+	public TurDataGroupSentence removeTurDataSentence(TurDataGroupSentence turDataSentence) {
+		getTurDataGroupSentences().remove(turDataSentence);
 		turDataSentence.setTurMLCategory(null);
 
 		return turDataSentence;

@@ -116,7 +116,7 @@ turingApp.config([
 					pageTitle : 'Edit Category | Viglet Turing'
 				}
 			}).state('ml.datagroup-edit.data', {
-				url : '/document',
+				url : '/data',
 				templateUrl : 'templates/ml/data/group/ml-datagroup-data.html',
 				controller : 'TurMLDataGroupDataCtrl',
 				data : {
@@ -128,6 +128,20 @@ turingApp.config([
 				controller : 'TurMLDataEditCtrl',
 				data : {
 					pageTitle : 'Edit Data | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.sentence', {
+				url : '/sentence',
+				templateUrl : 'templates/ml/data/group/ml-datagroup-sentence.html',
+				controller : 'TurMLDataGroupSentenceCtrl',
+				data : {
+					pageTitle : 'Data Group Sentences | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.sentence-edit', {
+				url : '/sentence/:mlSentenceId',
+				templateUrl : 'templates/ml/sentence/ml-sentence-edit.html',
+				controller : 'TurMLDataGroupSentenceEditCtrl',
+				data : {
+					pageTitle : 'Edit Sentence | Viglet Turing'
 				}
 			}).state('ml.datagroup-edit.data-edit.sentence', {
 				url : '/sentence',

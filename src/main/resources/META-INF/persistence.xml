@@ -29,7 +29,7 @@
 		<class>com.viglet.turing.persistence.model.storage.TurDataGroup</class>
 		<class>com.viglet.turing.persistence.model.storage.TurDataGroupCategory</class>
 		<class>com.viglet.turing.persistence.model.storage.TurDataGroupData</class>
-		<class>com.viglet.turing.persistence.model.storage.TurDataSentence</class>
+		<class>com.viglet.turing.persistence.model.storage.TurDataGroupSentence</class>
 		<class>com.viglet.turing.persistence.model.system.TurConfigVar</class>
 		<class>com.viglet.turing.persistence.model.system.TurLocale</class>
 		<properties>

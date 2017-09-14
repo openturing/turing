@@ -14,7 +14,7 @@ public class TurDataGroupCategoryService extends TurBaseService {
 		if (turDataGroupCategory.getTurDataGroup() != null) {
 			turDataGroupCategory.setTurDataGroup(em.merge(turDataGroupCategory.getTurDataGroup()));
 		}
-		
+
 		if (turDataGroupCategory.getTurMLCategory() != null) {
 			turDataGroupCategory.setTurMLCategory(em.merge(turDataGroupCategory.getTurMLCategory()));
 		}
@@ -24,10 +24,11 @@ public class TurDataGroupCategoryService extends TurBaseService {
 	}
 
 	public List<TurDataGroupCategory> listAll() {
-		TypedQuery<TurDataGroupCategory> q = em.createNamedQuery("TurDataGroupCategory.findAll", TurDataGroupCategory.class);
+		TypedQuery<TurDataGroupCategory> q = em.createNamedQuery("TurDataGroupCategory.findAll",
+				TurDataGroupCategory.class);
 		return q.getResultList();
 	}
-	
+
 	public List<TurDataGroupCategory> findByDataGroup(TurDataGroup turDataGroup) {
 		try {
 			TypedQuery<TurDataGroupCategory> q = em
@@ -39,6 +40,7 @@ public class TurDataGroupCategoryService extends TurBaseService {
 			return null;
 		}
 	}
+
 	public TurDataGroupCategory get(int dataGroupCategoryId) {
 		return em.find(TurDataGroupCategory.class, dataGroupCategoryId);
 	}
@@ -50,5 +52,5 @@ public class TurDataGroupCategoryService extends TurBaseService {
 		em.getTransaction().commit();
 		return true;
 	}
-	
+
 }

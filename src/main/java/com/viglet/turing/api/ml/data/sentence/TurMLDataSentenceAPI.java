@@ -15,49 +15,49 @@ import javax.ws.rs.core.MediaType;
 
 import org.json.JSONException;
 
-import com.viglet.turing.persistence.model.storage.TurDataSentence;
-import com.viglet.turing.persistence.service.storage.TurDataSentenceService;
+import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
+import com.viglet.turing.persistence.service.storage.TurDataGroupSentenceService;
 
 @Path("/ml/data/sentence")
 public class TurMLDataSentenceAPI {
-	TurDataSentenceService turDataSentenceService = new TurDataSentenceService();
+	TurDataGroupSentenceService turDataGroupSentenceService = new TurDataGroupSentenceService();
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<TurDataSentence> list() throws JSONException {
-		return turDataSentenceService.listAll();
+	public List<TurDataGroupSentence> list() throws JSONException {
+		return turDataGroupSentenceService.listAll();
 	}
 
 	@Path("{sentenceId}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public TurDataSentence detail(@PathParam("sentenceId") int id) throws JSONException {
-		return turDataSentenceService.get(id);
+	public TurDataGroupSentence detail(@PathParam("sentenceId") int id) throws JSONException {
+		return turDataGroupSentenceService.get(id);
 	}
 
 	@Path("/{sentenceId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
-	public TurDataSentence update(@PathParam("sentenceId") int id, TurDataSentence turDataSentence) throws Exception {
-		TurDataSentence turDataSentenceEdit = turDataSentenceService.get(id);
-		turDataSentenceEdit.setSentence(turDataSentence.getSentence());
-		turDataSentenceEdit.setTurData(turDataSentence.getTurData());
-		turDataSentenceEdit.setTurMLCategory(turDataSentence.getTurMLCategory());
-		turDataSentenceService.save(turDataSentenceEdit);
-		return turDataSentenceEdit;
+	public TurDataGroupSentence update(@PathParam("sentenceId") int id, TurDataGroupSentence turDataSentence) throws Exception {
+		TurDataGroupSentence turDataGroupSentenceEdit = turDataGroupSentenceService.get(id);
+		turDataGroupSentenceEdit.setSentence(turDataSentence.getSentence());
+		turDataGroupSentenceEdit.setTurData(turDataSentence.getTurData());
+		turDataGroupSentenceEdit.setTurMLCategory(turDataSentence.getTurMLCategory());
+		turDataGroupSentenceService.save(turDataGroupSentenceEdit);
+		return turDataGroupSentenceEdit;
 	}
 
 	@Path("/{sentenceId}")
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
 	public boolean delete(@PathParam("sentenceId") int id) throws Exception {
-		return turDataSentenceService.delete(id);
+		return turDataGroupSentenceService.delete(id);
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
-	public TurDataSentence add(TurDataSentence turDataSentence) throws Exception {
-		turDataSentenceService.save(turDataSentence);
+	public TurDataGroupSentence add(TurDataGroupSentence turDataSentence) throws Exception {
+		turDataGroupSentenceService.save(turDataSentence);
 		return turDataSentence;
 
 	}

@@ -32,15 +32,15 @@ import org.xml.sax.SAXException;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import com.viglet.turing.persistence.model.storage.TurData;
-import com.viglet.turing.persistence.model.storage.TurDataSentence;
-import com.viglet.turing.persistence.service.storage.TurDataSentenceService;
+import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
+import com.viglet.turing.persistence.service.storage.TurDataGroupSentenceService;
 import com.viglet.turing.persistence.service.storage.TurDataService;
 import com.viglet.turing.plugins.opennlp.TurOpenNLPConnector;
 
 @Path("/ml/data")
 public class TurMLDataAPI {
 	TurDataService turDataService = new TurDataService();
-	TurDataSentenceService turDataSentenceService = new TurDataSentenceService();
+	TurDataGroupSentenceService turDataGroupSentenceService = new TurDataGroupSentenceService();
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -109,10 +109,10 @@ public class TurMLDataAPI {
 		turDataService.save(turData);
 
 		for (String sentence : sentences) {
-			TurDataSentence turDataSentence = new TurDataSentence();
-			turDataSentence.setTurData(turData);
-			turDataSentence.setSentence(sentence);
-			turDataSentenceService.save(turDataSentence);
+			TurDataGroupSentence turDataGroupSentence = new TurDataGroupSentence();
+			turDataGroupSentence.setTurData(turData);
+			turDataGroupSentence.setSentence(sentence);
+			turDataGroupSentenceService.save(turDataGroupSentence);
 		}
 		
 		JSONObject jsonTraining = new JSONObject();
