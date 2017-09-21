@@ -37,9 +37,7 @@ import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
 import opennlp.tools.util.Span;
 
-@ComponentScan
 @Component
-@Transactional
 public class TurOpenNLPConnector implements TurNLPImpl {
 	static final Logger logger = LogManager.getLogger(TurOpenNLPConnector.class.getName());
 
