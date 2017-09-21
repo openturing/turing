@@ -19,11 +19,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.XML;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
-import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
+import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
 import com.viglet.turing.plugins.nlp.TurNLPImpl;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseCategorizerResultCategoryType;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseCategorizerResultKnowledgeBaseType;
@@ -40,7 +44,14 @@ import com.viglet.turing.plugins.otca.response.xml.ServerResponseEntityExtractor
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseEntityExtractorResultType;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseType;
 
+@ComponentScan
+@Component
+@Transactional
 public class TurTMEConnector implements TurNLPImpl {
+
+	@Autowired
+	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
+
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> hmEntities = new HashMap<String, JSONArray>();
 	TurNLPInstance turNLPInstance = null;
@@ -50,11 +61,10 @@ public class TurTMEConnector implements TurNLPImpl {
 	private static String request = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<Nserver>" + "       <Methods>"
 			+ "               <Ping/>" + "       </Methods>" + "</Nserver>";
 
-	public TurTMEConnector(TurNLPInstance turNLPInstance) {
+	public void startup(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
 
-		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();
-		nlpInstanceEntities = turNLPInstanceEntityService.findByNLPInstance(turNLPInstance);
+		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstance(turNLPInstance);
 	}
 
 	/**
@@ -256,15 +266,16 @@ public class TurTMEConnector implements TurNLPImpl {
 		return jsonResult;
 	}
 
-	public  void getParentTerms(Parents parents, Map<String, JSONArray> hmEntities, String cartridgeID) {
+	public void getParentTerms(Parents parents, Map<String, JSONArray> hmEntities, String cartridgeID) {
 		if (parents != null) {
 			for (ServerResponseEntityExtractorResultTermParentType parent : parents.getParent()) {
-				hmEntities.get(cartridgeID).put(parent.getTerm());	
+				hmEntities.get(cartridgeID).put(parent.getTerm());
 				this.getParentTerms(parent.getParents(), hmEntities, cartridgeID);
 			}
 		}
-		
+
 	}
+
 	public void getResult(Object result) {
 
 		System.out.println("iterateResults... " + result.toString());
@@ -359,10 +370,10 @@ public class TurTMEConnector implements TurNLPImpl {
 						}
 						if (term.getHierarchy() != null && term.getHierarchy().getBase() != null
 								&& term.getHierarchy().getBase().getParents() != null) {
-							
+
 							for (ServerResponseEntityExtractorResultTermParentType parent : term.getHierarchy()
 									.getBase().getParents().getParent()) {
-								hmEntities.get(term.getCartridgeID()).put(parent.getTerm());					
+								hmEntities.get(term.getCartridgeID()).put(parent.getTerm());
 								this.getParentTerms(parent.getParents(), hmEntities, term.getCartridgeID());
 							}
 						}
@@ -421,11 +432,12 @@ public class TurTMEConnector implements TurNLPImpl {
 
 	}
 
-	public JSONObject getJSON() {
+	public JSONObject getJSON() throws JSONException {
 		JSONObject jsonObject = new JSONObject();
 
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
-			jsonObject.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(), hmEntities.get(nlpInstanceEntity.getName()));
+			jsonObject.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(),
+					hmEntities.get(nlpInstanceEntity.getName()));
 		}
 		jsonObject.put("nlp", "OTCA");
 		return jsonObject;

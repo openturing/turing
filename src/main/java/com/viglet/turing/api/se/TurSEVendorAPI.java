@@ -13,25 +13,30 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.se.TurSEVendor;
-import com.viglet.turing.persistence.service.se.TurSEVendorService;
+import com.viglet.turing.persistence.repository.se.TurSEVendorRepository;
 
-@Path("/se/vendor")
+@Component
+@Path("se/vendor")
 public class TurSEVendorAPI {
-	TurSEVendorService turSEVendorService = new TurSEVendorService();
+	
+	@Autowired
+	TurSEVendorRepository turSEVendorRepository;
 	
 	@GET
 	@Produces("application/json")
 	public List<TurSEVendor> list() throws JSONException {
-		return turSEVendorService.listAll();
+		return this.turSEVendorRepository.findAll();
 	}
 
 	@Path("{seVendorId}")
 	@GET
 	@Produces("application/json")
 	public TurSEVendor seSolution(@PathParam("seVendorId") String id) throws JSONException {
-		return turSEVendorService.get(id);
+		return this.turSEVendorRepository.findOne(id);
 	}
 	
 
@@ -39,12 +44,12 @@ public class TurSEVendorAPI {
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurSEVendor update(@PathParam("seVendorId") String id, TurSEVendor turSEVendor) throws Exception {
-		TurSEVendor turSEVendorEdit = turSEVendorService.get(id);
+		TurSEVendor turSEVendorEdit = this.turSEVendorRepository.findOne(id);
 		turSEVendorEdit.setDescription(turSEVendor.getDescription());
 		turSEVendorEdit.setPlugin(turSEVendor.getPlugin());
 		turSEVendorEdit.setTitle(turSEVendor.getTitle());
 		turSEVendorEdit.setWebsite(turSEVendor.getWebsite());		
-		turSEVendorService.save(turSEVendorEdit);
+		this.turSEVendorRepository.save(turSEVendorEdit);
 		return turSEVendorEdit;
 	}
 
@@ -52,13 +57,14 @@ public class TurSEVendorAPI {
 	@DELETE
 	@Produces("application/json")
 	public boolean deleteEntity(@PathParam("seVendorId") String id) {
-		return turSEVendorService.delete(id);
+		this.turSEVendorRepository.delete(id);
+		return true;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurSEVendor add(TurSEVendor turSEVendor) throws Exception {
-		turSEVendorService.save(turSEVendor);
+		this.turSEVendorRepository.save(turSEVendor);
 		return turSEVendor;
 
 	}

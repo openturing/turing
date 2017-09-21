@@ -5,7 +5,11 @@ import java.io.IOException;
 import java.net.URL;
 
 import org.apache.commons.io.FileUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+@Component
+@Transactional
 public class TurOpenNLPModelsOnStartup {
 	private static final String LOCALE_EN = "en";
 	private static final String LOCALE_PT = "pt";

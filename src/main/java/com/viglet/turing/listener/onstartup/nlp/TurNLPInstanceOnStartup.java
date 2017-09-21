@@ -1,23 +1,35 @@
 package com.viglet.turing.listener.onstartup.nlp;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
-import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
-import com.viglet.turing.persistence.service.nlp.TurNLPVendorService;
-import com.viglet.turing.persistence.service.system.TurConfigVarService;
+import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
+import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
+import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 
+@Component
+@Transactional
 public class TurNLPInstanceOnStartup {
-	public static void createDefaultRows() {
+	
+	@Autowired
+	private TurNLPInstanceRepository turNLPInstanceRepository;
+	@Autowired
+	private TurNLPVendorRepository turNLPVendorRepository;
+	@Autowired
+	private TurConfigVarRepository turConfigVarRepository;
+	
+	public void createDefaultRows() {
 
-		TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
-		TurNLPVendorService turNLPVendorService = new TurNLPVendorService();
-		TurConfigVarService turConfigVarService = new TurConfigVarService();
+
 		TurConfigVar turConfigVar = new TurConfigVar();
 
-		if (turNLPInstanceService.listAll().isEmpty()) {
+		if (turNLPInstanceRepository.findAll().isEmpty()) {
 
-			TurNLPVendor turNLPVendorOpenNLP = turNLPVendorService.get("OPENNLP");
+			TurNLPVendor turNLPVendorOpenNLP = turNLPVendorRepository.findOne("OPENNLP");
 			if (turNLPVendorOpenNLP != null) {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("OpenNLP");
@@ -27,17 +39,17 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setPort(0);
 				turNLPInstance.setLanguage("pt-br");
 				turNLPInstance.setEnabled(1);
-				turNLPInstanceService.save(turNLPInstance);
+				turNLPInstanceRepository.save(turNLPInstance);
 				
 				turConfigVar.setId("DEFAULT_NLP");
 				turConfigVar.setPath("/nlp");
 				turConfigVar.setValue(Integer.toString(turNLPInstance.getId()));
-				turConfigVarService.save(turConfigVar);
+				turConfigVarRepository.save(turConfigVar);
 				
 
 			}
 
-			TurNLPVendor turNLPVendorCoreNLP = turNLPVendorService.get("CORENLP");
+			TurNLPVendor turNLPVendorCoreNLP = turNLPVendorRepository.findOne("CORENLP");
 			if (turNLPVendorCoreNLP != null) {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("CoreNLP");
@@ -47,7 +59,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setPort(9001);
 				turNLPInstance.setLanguage("en");
 				turNLPInstance.setEnabled(1);
-				turNLPInstanceService.save(turNLPInstance);
+				turNLPInstanceRepository.save(turNLPInstance);
 			}			
 
 		}

@@ -19,6 +19,7 @@ import javax.ws.rs.core.UriInfo;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.stereotype.Component;
 
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.se.facet.TurSEFacetMap;
@@ -33,7 +34,8 @@ import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.se.similar.TurSESimilarResult;
 import com.viglet.turing.se.similar.TurSESimilarResultAttr;
 
-@Path("/otsn/search")
+@Component
+@Path("otsn/search")
 public class TurOTSNSearchAPI {
 
 	public String addOrReplaceParameter(UriInfo uriInfo, String paramName, String paramValue) {

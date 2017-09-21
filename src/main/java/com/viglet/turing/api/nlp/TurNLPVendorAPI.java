@@ -13,25 +13,30 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
-import com.viglet.turing.persistence.service.nlp.TurNLPVendorService;
+import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
 
-@Path("/nlp/vendor")
+@Component
+@Path("nlp/vendor")
 public class TurNLPVendorAPI {
-	TurNLPVendorService turNLPVendorService = new TurNLPVendorService();
+	
+	@Autowired
+	TurNLPVendorRepository turNLPVendorRepository;
 	
 	@GET
 	@Produces("application/json")
 	public List<TurNLPVendor> list() throws JSONException {
-		return turNLPVendorService.listAll();
+		return this.turNLPVendorRepository.findAll();
 	}
 
 	@Path("{nlpVendorId}")
 	@GET
 	@Produces("application/json")
 	public TurNLPVendor nlpSolution(@PathParam("nlpVendorId") String id) throws JSONException {
-		return turNLPVendorService.get(id);
+		return this.turNLPVendorRepository.findOne(id);
 	}
 	
 
@@ -39,12 +44,12 @@ public class TurNLPVendorAPI {
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurNLPVendor update(@PathParam("nlpVendorId") String id, TurNLPVendor turNLPVendor) throws Exception {
-		TurNLPVendor turNLPVendorEdit = turNLPVendorService.get(id);
+		TurNLPVendor turNLPVendorEdit = this.turNLPVendorRepository.findOne(id);
 		turNLPVendorEdit.setDescription(turNLPVendor.getDescription());
 		turNLPVendorEdit.setPlugin(turNLPVendor.getPlugin());
 		turNLPVendorEdit.setTitle(turNLPVendor.getTitle());
 		turNLPVendorEdit.setWebsite(turNLPVendor.getWebsite());		
-		turNLPVendorService.save(turNLPVendorEdit);
+		this.turNLPVendorRepository.save(turNLPVendorEdit);
 		return turNLPVendorEdit;
 	}
 
@@ -52,13 +57,14 @@ public class TurNLPVendorAPI {
 	@DELETE
 	@Produces("application/json")
 	public boolean deleteEntity(@PathParam("nlpVendorId") String id) {
-		return turNLPVendorService.delete(id);
+		this.turNLPVendorRepository.delete(id);
+		return true;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurNLPVendor add(TurNLPVendor turNLPVendor) throws Exception {
-		turNLPVendorService.save(turNLPVendor);
+		this.turNLPVendorRepository.save(turNLPVendor);
 		return turNLPVendor;
 
 	}

@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.nlp;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import org.hibernate.annotations.Fetch;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 
@@ -40,15 +42,18 @@ public class TurNLPEntity implements Serializable {
 	private String name;
 
 	// bi-directional many-to-one association to TurServicesNLPEntity
-	@OneToMany(mappedBy = "turNLPEntity")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turNLPEntity", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
 
 	// bi-directional many-to-one association to TurServicesNLPEntity
-	@OneToMany(mappedBy = "turNLPEntity")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turNLPEntity", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurNLPVendorEntity> turNLPVendorEntities;
 
 	// bi-directional many-to-one association to TurTerm
-	@OneToMany(mappedBy = "turNLPEntity")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turNLPEntity", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurTerm> turTerms;
 
 	public TurNLPEntity() {

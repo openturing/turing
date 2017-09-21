@@ -4,7 +4,6 @@ import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -16,40 +15,45 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.se.TurSEInstance;
-import com.viglet.turing.persistence.service.se.TurSEInstanceService;
+import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.solr.TurSolr;
 
-@Path("/se")
+@Component
+@Path("se")
 public class TurSEInstanceAPI {
-	TurSEInstanceService turSEInstanceService = new TurSEInstanceService();
+	
+	@Autowired
+	TurSEInstanceRepository turSEInstanceRepository;
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<TurSEInstance> list() throws JSONException {
-		 return turSEInstanceService.listAll();
+		 return this.turSEInstanceRepository.findAll();
 	}
 
 	@GET
 	@Path("{seInstanceId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurSEInstance dataGroup(@PathParam("seInstanceId") int id) throws JSONException {
-		 return turSEInstanceService.get(id);
+		 return this.turSEInstanceRepository.findOne(id);
 	}
 	
 	@Path("/{seInstanceId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurSEInstance update(@PathParam("seInstanceId") int id, TurSEInstance turSEInstance) throws Exception {
-		TurSEInstance turSEInstanceEdit = turSEInstanceService.get(id);
+		TurSEInstance turSEInstanceEdit = turSEInstanceRepository.findOne(id);
 		turSEInstanceEdit.setTitle(turSEInstance.getTitle());
 		turSEInstanceEdit.setDescription(turSEInstance.getDescription());
 		turSEInstanceEdit.setTurSEVendor(turSEInstance.getTurSEVendor());
 		turSEInstanceEdit.setHost(turSEInstance.getHost());
 		turSEInstanceEdit.setPort(turSEInstance.getPort());
 		turSEInstanceEdit.setEnabled(turSEInstance.getEnabled());
-		turSEInstanceService.save(turSEInstanceEdit);
+		this.turSEInstanceRepository.save(turSEInstanceEdit);
 		return turSEInstanceEdit;
 	}
 
@@ -57,13 +61,14 @@ public class TurSEInstanceAPI {
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
 	public boolean delete(@PathParam("seInstanceId") int id) throws Exception {
-		return turSEInstanceService.delete(id);
+		this.turSEInstanceRepository.delete(id);
+		return true;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurSEInstance add(TurSEInstance turSEInstance) throws Exception {
-		turSEInstanceService.save(turSEInstance);
+		this.turSEInstanceRepository.save(turSEInstance);
 		return turSEInstance;
 
 	}

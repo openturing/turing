@@ -3,8 +3,10 @@ package com.viglet.turing.persistence.model.nlp;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import org.hibernate.annotations.Fetch;
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.viglet.turing.persistence.service.system.TurConfigVarService;
 
 import java.util.List;
 
@@ -12,13 +14,14 @@ import java.util.List;
  * The persistent class for the vigServices database table.
  * 
  */
+@Component
 @Entity
 @Table(name = "turNLPInstance")
 @NamedQuery(name = "TurNLPInstance.findAll", query = "SELECT n FROM TurNLPInstance n")
 @JsonIgnoreProperties({ "turNLPInstanceEntities" })
 public class TurNLPInstance implements Serializable {
 	private static final long serialVersionUID = 1L;
-
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(unique = true, nullable = false)
@@ -48,18 +51,20 @@ public class TurNLPInstance implements Serializable {
 	private TurNLPVendor turNLPVendor;
 
 	// bi-directional many-to-one association to TurNLPInstanceEntity
-	@OneToMany(mappedBy = "turNLPInstance")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turNLPInstance", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
 
-	@Transient
-	private boolean isSelected;
+	/*@Transient
+	private boolean isSelected;*/
 
 	public TurNLPInstance() {
 	}
 
-	public boolean isSelected() {
-		TurConfigVarService turConfigVarService = new TurConfigVarService();
-		if (Integer.parseInt(turConfigVarService.get("DEFAULT_NLP").getValue()) == this.getId()) {
+
+	/*public boolean isSelected() {
+
+		if (Integer.parseInt(turConfigVarRepository.getOne("DEFAULT_NLP").getValue()) == this.getId()) {
 			isSelected = true;
 		} else {
 			isSelected = false;
@@ -69,7 +74,7 @@ public class TurNLPInstance implements Serializable {
 
 	public void setSelected(boolean isSelected) {
 		this.isSelected = isSelected;
-	}
+	}*/
 
 	public int getId() {
 		return this.id;

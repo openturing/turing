@@ -24,15 +24,20 @@ import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.MoreLikeThisParams;
 import org.apache.solr.common.util.SimpleOrderedMap;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
-import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
-import com.viglet.turing.persistence.service.se.TurSEInstanceService;
+import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
+import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.se.facet.TurSEFacetMap;
 import com.viglet.turing.se.facet.TurSEFacetMaps;
 import com.viglet.turing.se.facet.TurSEFacetResult;
@@ -45,10 +50,18 @@ import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.se.similar.TurSESimilarResult;
 import com.viglet.turing.se.similar.TurSESimilarResultAttr;
 
+@ComponentScan
+@Transactional
 public class TurSolr {
-	TurSEInstanceService turSEInstanceService = new TurSEInstanceService();
-	static final Logger logger = LogManager.getLogger(TurSolr.class.getName());
 
+	@Autowired
+	TurSEInstanceRepository turSEInstanceRepository;
+	@Autowired
+	TurConfigVarRepository turConfigVarRepository;
+	static final Logger logger = LogManager.getLogger(TurSolr.class.getName());
+	@Autowired
+	TurNLP turNLP;
+	
 	private int currNLP = 0;
 	private int currSE = 0;
 	private JSONObject jsonAttributes = null;
@@ -94,7 +107,7 @@ public class TurSolr {
 
 		this.setCurrSE(se);
 
-		TurSEInstance turSEInstance = turSEInstanceService.get(se);
+		TurSEInstance turSEInstance = turSEInstanceRepository.findOne(se);
 
 		if (turSEInstance != null) {
 			solrServer = new HttpSolrServer(
@@ -117,20 +130,17 @@ public class TurSolr {
 
 	public TurSolr() {
 		super();
-		TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
-		TurSEInstanceService turSEInstanceService = new TurSEInstanceService();
-		init(turNLPInstanceService.getNLPDefault().getId(), turSEInstanceService.getSEDefault().getId());
+		init(Integer.parseInt(turConfigVarRepository.getOne("DEFAULT_NLP").getValue()),
+				Integer.parseInt(turConfigVarRepository.getOne("DEFAULT_SE").getValue()));
 
 	}
 
-	public String indexing() {
+	public String indexing() throws JSONException {
 		logger.debug("Executing indexing ...");
-		TurNLP turNLP = null;
-
 		if (this.getJsonAttributes() != null) {
-			turNLP = new TurNLP(currNLP, this.getJsonAttributes());
+			turNLP.startup(currNLP, this.getJsonAttributes());
 		} else {
-			turNLP = new TurNLP(currNLP, currText);
+			turNLP.startup(currNLP, currText);
 		}
 
 		TurNLPResults turNLPResults = turNLP.retrieveNLP();
@@ -141,7 +151,7 @@ public class TurSolr {
 		return turNLPResults.getJsonResult().toString();
 	}
 
-	public void addDocument(TurNLPResults turNLPResults) {
+	public void addDocument(TurNLPResults turNLPResults) throws JSONException {
 
 		SolrInputDocument document = new SolrInputDocument();
 
@@ -186,7 +196,8 @@ public class TurSolr {
 		}
 	}
 
-	public TurSEResults retrieveSolr(String txtQuery, List<String> fq, int currentPage) throws SolrServerException {
+	public TurSEResults retrieveSolr(String txtQuery, List<String> fq, int currentPage)
+			throws SolrServerException, NumberFormatException, JSONException {
 		// 20:44:41 INFO - [mgmt] webapp=/solr path=/querydispatcher
 		// params={facet=true&facet.offset=0&facet.limit=30&rows=0&
 		// facet.filter=true&facet.filter.limit=10&q=empreender&

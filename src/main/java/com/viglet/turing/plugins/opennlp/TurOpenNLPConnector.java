@@ -1,23 +1,31 @@
 package com.viglet.turing.plugins.opennlp;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.ServletContext;
 import javax.xml.transform.TransformerException;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
-import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
+import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
 import com.viglet.turing.plugins.nlp.TurNLPImpl;
 
 import opennlp.tools.namefind.NameFinderME;
@@ -29,8 +37,16 @@ import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
 import opennlp.tools.util.Span;
 
+@ComponentScan
+@Component
+@Transactional
 public class TurOpenNLPConnector implements TurNLPImpl {
 	static final Logger logger = LogManager.getLogger(TurOpenNLPConnector.class.getName());
+
+	@Autowired
+	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
+	@Autowired
+	ServletContext context;
 
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> entityList = new HashMap<String, JSONArray>();
@@ -52,13 +68,12 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 		return text;
 	}
 
-	public TurOpenNLPConnector(TurNLPInstance turNLPInstance) {
+	public void startup(TurNLPInstance turNLPInstance) {
 
 		openNLPModelManager = TurOpenNLPModelManager.getInstance();
 		this.turNLPInstance = turNLPInstance;
 
-		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();
-		nlpInstanceEntities = turNLPInstanceEntityService.findByNLPInstance(turNLPInstance);
+		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstance(turNLPInstance);
 	}
 
 	public void setText(String text) {
@@ -84,7 +99,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 		return turNLPResults;
 	}
 
-	public JSONObject getJSON() {
+	public JSONObject getJSON() throws JSONException {
 		JSONObject jsonObject = new JSONObject();
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
 			JSONArray entityTerms = this.getEntity(nlpInstanceEntity.getName());
@@ -106,22 +121,16 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 			logger.debug("Loading OpenNLP Entity: " + entityPath);
 			nameFinder = openNLPModelManager.get(entityPath);
 		} else {
-			InputStream modelIn = getClass().getClassLoader().getResourceAsStream(entityPath);
-			logger.debug("Creating OpenNLP Entity: " + entityPath);
 			try {
+				File modelIn = new ClassPathResource(entityPath).getFile();
+				logger.debug("Creating OpenNLP Entity: " + entityPath);
+
 				TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
 				nameFinder = new NameFinderME(model);
 				openNLPModelManager.put(entityPath, nameFinder);
 
 			} catch (Exception e) {
 				e.printStackTrace();
-			} finally {
-				if (modelIn != null) {
-					try {
-						modelIn.close();
-					} catch (IOException e) {
-					}
-				}
 			}
 		}
 
@@ -146,49 +155,31 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 		}
 	}
 
-	public static String[] sentenceDetect(String text) {
-		InputStream modelIn;
+	public String[] sentenceDetect(String text) {
+		File modelIn;
 		String sentences[] = null;
-		modelIn = TurOpenNLPConnector.class.getClassLoader().getResourceAsStream("/models/opennlp/en/en-sent.bin");
-
 		try {
+			modelIn = new ClassPathResource("/models/opennlp/en/en-sent.bin").getFile();
 			SentenceModel model = new SentenceModel(modelIn);
 			SentenceDetectorME sentenceDetector = new SentenceDetectorME(model);
 			sentences = sentenceDetector.sentDetect(text);
 		} catch (IOException e) {
 			e.printStackTrace();
-		} finally {
-			if (modelIn != null) {
-				try {
-					modelIn.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
 		}
-
 		return sentences;
 	}
 
 	public String[] tokenDetect(String sentence) {
-		InputStream modelIn = null;
+		File modelIn = null;
 		String tokens[] = null;
 		try {
-			modelIn = getClass().getClassLoader().getResourceAsStream("/models/opennlp/en/en-token.bin");
+			modelIn = new ClassPathResource("/models/opennlp/en/en-token.bin").getFile();
 
 			TokenizerModel model = new TokenizerModel(modelIn);
 			Tokenizer tokenizer = new TokenizerME(model);
 			tokens = tokenizer.tokenize(sentence);
 		} catch (IOException e) {
 			e.printStackTrace();
-		} finally {
-			if (modelIn != null) {
-				try {
-					modelIn.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
 		}
 		return tokens;
 	}

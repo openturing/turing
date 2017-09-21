@@ -3,12 +3,22 @@ package com.viglet.turing.plugins.otca;
 import java.util.List;
 
 import org.json.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
-import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
+import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
 
+@ComponentScan
+@Transactional
 public class TurNServerXML {
+	
+	@Autowired
+	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
+	
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
 	public JSONObject json;
@@ -17,8 +27,8 @@ public class TurNServerXML {
 	public TurNServerXML(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
 
-		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();
-		nlpInstanceEntities = turNLPInstanceEntityService.findByNLPInstance(turNLPInstance);
+		
+		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstance(turNLPInstance);
 	}
 	public String toJSON(String xml) {
 		String jsonResult = null;
@@ -34,7 +44,7 @@ public class TurNServerXML {
 		return jsonResult;
 	}
 
-	public JSONObject getJSON() {
+	public JSONObject getJSON() throws JSONException {
 		JSONObject jsonObject =  new JSONObject();;
 		for (TurNLPInstanceEntity entity : nlpInstanceEntities) {
 			jsonObject.put(entity.getTurNLPEntity().getCollectionName(), this.getEntity(entity.getName()));
@@ -42,7 +52,7 @@ public class TurNServerXML {
 		jsonObject.put("nlp","OTCA");
 		return jsonObject;
 	}
-	public JSONArray getEntity(String entity) {
+	public JSONArray getEntity(String entity) throws JSONException {
 		JSONArray jsonEntity = new JSONArray();
 
 		Object extractedTerm = this.json.getJSONObject("Nserver").getJSONObject("Results").getJSONObject("nfinder")

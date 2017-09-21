@@ -13,38 +13,42 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.ml.TurMLVendor;
-import com.viglet.turing.persistence.service.ml.TurMLVendorService;
+import com.viglet.turing.persistence.repository.ml.TurMLVendorRepository;
 
-@Path("/ml/vendor")
+@Component
+@Path("ml/vendor")
 public class TurMLVendorAPI {
-	TurMLVendorService turMLVendorService = new TurMLVendorService();
-	
+
+	@Autowired
+	TurMLVendorRepository turMLVendorRepository;
+
 	@GET
 	@Produces("application/json")
 	public List<TurMLVendor> list() throws JSONException {
-		return turMLVendorService.listAll();
+		return this.turMLVendorRepository.findAll();
 	}
 
 	@Path("{mlVendorId}")
 	@GET
 	@Produces("application/json")
 	public TurMLVendor mlSolution(@PathParam("mlVendorId") String id) throws JSONException {
-		return turMLVendorService.get(id);
+		return this.turMLVendorRepository.findOne(id);
 	}
-	
 
 	@Path("/{mlVendorId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurMLVendor update(@PathParam("mlVendorId") String id, TurMLVendor turMLVendor) throws Exception {
-		TurMLVendor turMLVendorEdit = turMLVendorService.get(id);
+		TurMLVendor turMLVendorEdit = this.turMLVendorRepository.findOne(id);
 		turMLVendorEdit.setDescription(turMLVendor.getDescription());
 		turMLVendorEdit.setPlugin(turMLVendor.getPlugin());
 		turMLVendorEdit.setTitle(turMLVendor.getTitle());
-		turMLVendorEdit.setWebsite(turMLVendor.getWebsite());		
-		turMLVendorService.save(turMLVendorEdit);
+		turMLVendorEdit.setWebsite(turMLVendor.getWebsite());
+		this.turMLVendorRepository.save(turMLVendorEdit);
 		return turMLVendorEdit;
 	}
 
@@ -52,13 +56,14 @@ public class TurMLVendorAPI {
 	@DELETE
 	@Produces("application/json")
 	public boolean deleteEntity(@PathParam("mlVendorId") String id) {
-		return turMLVendorService.delete(id);
+		this.turMLVendorRepository.delete(id);
+		return true;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurMLVendor add(TurMLVendor turMLVendor) throws Exception {
-		turMLVendorService.save(turMLVendor);
+		this.turMLVendorRepository.save(turMLVendor);
 		return turMLVendor;
 
 	}

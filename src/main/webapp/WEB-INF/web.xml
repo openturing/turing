@@ -21,9 +21,9 @@
 		<welcome-file>index.htm</welcome-file>
 		<welcome-file>index.jsp</welcome-file>
 	</welcome-file-list>
-	   <listener>
-      <listener-class>com.viglet.turing.listener.TurListener</listener-class> 
-   </listener>
+	<listener>
+		<listener-class>com.viglet.turing.listener.TurListener</listener-class>
+	</listener>
 	<servlet>
 		<servlet-name>people</servlet-name>
 		<servlet-class>com.viglet.turing.auth.google.PeopleServlet</servlet-class>
@@ -48,15 +48,15 @@
 		<description>
 		JAX-RS Tools Generated - Do not modify</description>
 		<servlet-name>JAX-RS Servlet</servlet-name>
-		<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>	
+		<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
 		<init-param>
 			<param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>
 			<param-value>true</param-value>
-		</init-param>	
+		</init-param>
 		<init-param>
 			<param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
 			<param-value>com.viglet.turing.api.filter.TurCORSFilter</param-value>
-		</init-param>	
+		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>
@@ -66,5 +66,5 @@
 	<servlet-mapping>
 		<servlet-name>JAX-RS Servlet</servlet-name>
 		<url-pattern>/api/*</url-pattern>
-	</servlet-mapping>	
+	</servlet-mapping>
 </web-app>

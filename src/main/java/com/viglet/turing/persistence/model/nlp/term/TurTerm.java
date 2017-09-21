@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.nlp.term;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import org.hibernate.annotations.Fetch;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 
@@ -37,23 +39,28 @@ public class TurTerm implements Serializable {
 	private TurNLPEntity turNLPEntity;
 
 	//bi-directional many-to-one association to TurTermAttribute
-	@OneToMany(mappedBy="turTerm")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTerm", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurTermAttribute> turTermAttributes;
 
 	//bi-directional many-to-one association to TurTermRelationFrom
-	@OneToMany(mappedBy="turTerm")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTerm", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurTermRelationFrom> turTermRelationFroms;
 
 	//bi-directional many-to-one association to TurTermRelationTo
-	@OneToMany(mappedBy="turTerm")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTerm", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurTermRelationTo> turTermRelationTos;
 
 	//bi-directional many-to-one association to TurTermVariation
-	@OneToMany(mappedBy="turTerm")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTerm", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurTermVariation> turTermVariations;
 
 	//bi-directional many-to-one association to TurTermVariationLanguage
-	@OneToMany(mappedBy="turTerm")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTerm", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurTermVariationLanguage> turTermVariationLanguages;
 
 	public TurTerm() {

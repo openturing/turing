@@ -14,7 +14,7 @@ public class TurConfigVar implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@Column(unique = true, nullable = false, length = 10)
+	@Column(unique = true, nullable = false, length = 25)
 	private String id;
 
 	@Column(nullable = true, length = 255)

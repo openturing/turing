@@ -9,6 +9,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.apache.logging.log4j.LogManager;
 
 import com.viglet.turing.nlp.TurNLPListKey;
@@ -21,20 +25,27 @@ import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
-import com.viglet.turing.persistence.service.nlp.term.TurTermVariationService;
+import com.viglet.turing.persistence.repository.nlp.term.TurTermVariationRepository;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.util.TurUtils;
 
+
+@Component
+@ComponentScan
+@Transactional
 public class TurNLPEntityProcessor {
 	static final Logger logger = LogManager.getLogger(TurNLPEntityProcessor.class.getName());
 
-	TurTermVariationService turTermVariationService = new TurTermVariationService();
+	@Autowired
+	TurTermVariationRepository turTermVariationRepository;
+	
 	LinkedHashMap<String, List<String>> entityResults = new LinkedHashMap<String, List<String>>();
 
 	LinkedHashMap<Integer, TurTermVariation> terms = new LinkedHashMap<Integer, TurTermVariation>();
 
-	public TurNLPEntityProcessor() {
-		List<TurTermVariation> turTermVariations = turTermVariationService.listAll();
+	
+	public void startup() {
+		List<TurTermVariation> turTermVariations = turTermVariationRepository.findAll();
 
 		logger.debug("Carregando termos..");
 		for (TurTermVariation turTermVariation : turTermVariations) {

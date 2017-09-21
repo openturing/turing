@@ -13,35 +13,39 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import com.viglet.turing.persistence.service.nlp.TurNLPEntityService;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
+import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 
-@Path("/entity")
+@Component
+@Path("entity")
 public class TurNLPEntityAPI {
-	TurNLPEntityService turNLPEntityService = new TurNLPEntityService();
+	@Autowired
+	private TurNLPEntityRepository turNLPEntityRepository;
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<TurNLPEntity> list() throws JSONException {
-		return turNLPEntityService.listAll();
+		return this.turNLPEntityRepository.findAll();
 	}
 
 	@Path("{entityId}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurNLPEntity detail(@PathParam("entityId") int id) throws JSONException {
-		return turNLPEntityService.get(id);
+		return this.turNLPEntityRepository.findById(id);
 	}
 
 	@Path("/{entityId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurNLPEntity update(@PathParam("entityId") int id, TurNLPEntity turNLPEntity) throws Exception {
-		TurNLPEntity turNLPEntityEdit = turNLPEntityService.get(id);
+		TurNLPEntity turNLPEntityEdit =  this.turNLPEntityRepository.findById(id);
 		turNLPEntityEdit.setName(turNLPEntity.getName());
 		turNLPEntityEdit.setDescription(turNLPEntity.getDescription());
-		turNLPEntityService.save(turNLPEntityEdit);
+		this.turNLPEntityRepository.save(turNLPEntityEdit);
 		return turNLPEntityEdit;
 	}
 
@@ -49,13 +53,15 @@ public class TurNLPEntityAPI {
 	@DELETE
 	@Produces("application/json")
 	public boolean deleteEntity(@PathParam("id") int id) {
-		return turNLPEntityService.delete(id);
+		TurNLPEntity turNLPEntity =  this.turNLPEntityRepository.findById(id);
+		this.turNLPEntityRepository.delete(turNLPEntity);
+		return true;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurNLPEntity add(TurNLPEntity turNLPEntity) throws Exception {
-		turNLPEntityService.save(turNLPEntity);
+		this.turNLPEntityRepository.save(turNLPEntity);
 		return turNLPEntity;
 
 	}

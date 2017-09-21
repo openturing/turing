@@ -4,6 +4,9 @@ import java.io.Serializable;
 import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
 
 /**
@@ -28,19 +31,20 @@ public class TurDataGroupSentence implements Serializable {
 	// bi-directional many-to-one association to TurCategory
 	@ManyToOne
 	@JoinColumn(name = "ml_category_id")
-	@JsonBackReference(value = "turDataGroupSentence-turMLCategory")
 	private TurMLCategory turMLCategory;
 
 	// bi-directional many-to-one association to TurData
 	@ManyToOne
 	@JoinColumn(name = "datagroup_id", nullable = false)
-	@JsonBackReference(value = "turDataGroupSentence-turDataGroup")
+	@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+	@JsonIdentityReference(alwaysAsId = true)
 	private TurDataGroup turDataGroup;
 
 	// bi-directional many-to-one association to TurData
 	@ManyToOne
 	@JoinColumn(name = "data_id")
-	@JsonBackReference(value = "turDataSentence-turData")
+	@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+	@JsonIdentityReference(alwaysAsId = true)
 	private TurData turData;
 
 	public TurDataGroupSentence() {
@@ -61,7 +65,9 @@ public class TurDataGroupSentence implements Serializable {
 	public void setSentence(String sentence) {
 		this.sentence = sentence;
 	}
-
+	
+	@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+	@JsonIdentityReference(alwaysAsId = true)
 	public TurMLCategory getTurMLCategory() {
 		return this.turMLCategory;
 	}

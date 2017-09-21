@@ -13,36 +13,40 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.json.JSONException;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.storage.TurDataGroup;
-import com.viglet.turing.persistence.service.storage.TurDataGroupService;
+import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 
-@Path("/ml/data/group")
+@Component
+@Path("ml/data/group")
 public class TurMLDataGroupAPI {
-	TurDataGroupService turDataGroupService = new TurDataGroupService();
-	
+
+	@Autowired
+	TurDataGroupRepository turDataGroupRepository;
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<TurDataGroup> list() throws JSONException {
-		 return turDataGroupService.listAll();
+		return this.turDataGroupRepository.findAll();
 	}
 
 	@GET
 	@Path("/{dataGroupId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurDataGroup dataGroup(@PathParam("dataGroupId") int id) throws JSONException {
-		 return turDataGroupService.get(id);
+		return this.turDataGroupRepository.findById(id);
 	}
-	
+
 	@Path("/{dataGroupId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurDataGroup update(@PathParam("dataGroupId") int id, TurDataGroup turDataGroup) throws Exception {
-		TurDataGroup turDataGroupEdit = turDataGroupService.get(id);
+		TurDataGroup turDataGroupEdit = this.turDataGroupRepository.getOne(id);
 		turDataGroupEdit.setName(turDataGroup.getName());
 		turDataGroupEdit.setDescription(turDataGroup.getDescription());
-		turDataGroupService.save(turDataGroupEdit);
+		this.turDataGroupRepository.save(turDataGroupEdit);
 		return turDataGroupEdit;
 	}
 
@@ -50,13 +54,15 @@ public class TurMLDataGroupAPI {
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
 	public boolean delete(@PathParam("dataGroupId") int id) throws Exception {
-		return turDataGroupService.delete(id);
+		this.turDataGroupRepository.delete(id);
+		return true;
+
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurDataGroup add(TurDataGroup turDataGroup) throws Exception {
-		turDataGroupService.save(turDataGroup);
+		this.turDataGroupRepository.save(turDataGroup);
 		return turDataGroup;
 
 	}

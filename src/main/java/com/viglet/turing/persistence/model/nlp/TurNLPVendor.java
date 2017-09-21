@@ -3,7 +3,6 @@ package com.viglet.turing.persistence.model.nlp;
 import java.io.Serializable;
 import javax.persistence.*;
 
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
  * The persistent class for the vigNLPSolutions database table.
@@ -16,7 +15,7 @@ public class TurNLPVendor implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@Column(unique = true, nullable = false, length = 10)
+	@Column(unique = true, nullable = false, length = 25)
 	private String id;
 
 	@Column(nullable = true, length = 255)

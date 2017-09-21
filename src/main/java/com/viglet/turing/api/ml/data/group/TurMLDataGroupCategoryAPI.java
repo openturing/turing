@@ -13,23 +13,29 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
 import com.viglet.turing.persistence.model.storage.TurDataGroup;
 import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
-import com.viglet.turing.persistence.service.storage.TurDataGroupCategoryService;
-import com.viglet.turing.persistence.service.storage.TurDataGroupService;
+import com.viglet.turing.persistence.repository.storage.TurDataGroupCategoryRepository;
+import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 
-@Path("/ml/data/group/{dataGroupId}/category")
+@Component
+@Path("ml/data/group/{dataGroupId}/category")
 public class TurMLDataGroupCategoryAPI {
-	TurDataGroupService turDataGroupService = new TurDataGroupService();
-	TurDataGroupCategoryService turDataGroupCategoryService = new TurDataGroupCategoryService();
+
+	@Autowired
+	TurDataGroupRepository turDataGroupRepository;
+	@Autowired
+	TurDataGroupCategoryRepository turDataGroupCategoryRepository;
 
 	@GET
 	@Produces("application/json")
 	public List<TurDataGroupCategory> list(@PathParam("dataGroupId") int dataGroupId) throws JSONException {
-		TurDataGroup turDataGroup = turDataGroupService.get(dataGroupId);
-		return turDataGroupCategoryService.findByDataGroup(turDataGroup);
+		TurDataGroup turDataGroup = turDataGroupRepository.getOne(dataGroupId);
+		return this.turDataGroupCategoryRepository.findByTurDataGroup(turDataGroup);
 	}
 
 	@Path("{dataGroupCategoryId}")
@@ -37,7 +43,7 @@ public class TurMLDataGroupCategoryAPI {
 	@Produces("application/json")
 	public TurDataGroupCategory mlSolution(@PathParam("dataGroupId") int dataGroupId,
 			@PathParam("dataGroupCategoryId") int id) throws JSONException {
-		return turDataGroupCategoryService.get(id);
+		return this.turDataGroupCategoryRepository.getOne(id);
 	}
 
 	@Path("/{dataGroupCategoryId}")
@@ -45,9 +51,9 @@ public class TurMLDataGroupCategoryAPI {
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurDataGroupCategory update(@PathParam("dataGroupId") int dataGroupId,
 			@PathParam("dataGroupCategoryId") int id, TurMLCategory turMLCategory) throws Exception {
-		TurDataGroupCategory turDataGroupCategoryEdit = turDataGroupCategoryService.get(id);
+		TurDataGroupCategory turDataGroupCategoryEdit = this.turDataGroupCategoryRepository.getOne(id);
 		turDataGroupCategoryEdit.setTurMLCategory(turMLCategory);
-		turDataGroupCategoryService.save(turDataGroupCategoryEdit);
+		this.turDataGroupCategoryRepository.save(turDataGroupCategoryEdit);
 		return turDataGroupCategoryEdit;
 	}
 
@@ -55,16 +61,17 @@ public class TurMLDataGroupCategoryAPI {
 	@DELETE
 	@Produces("application/json")
 	public boolean deleteEntity(@PathParam("dataGroupId") int dataGroupId, @PathParam("dataGroupCategoryId") int id) {
-		return turDataGroupCategoryService.delete(id);
+		this.turDataGroupCategoryRepository.delete(id);
+		return true;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
-	public TurDataGroupCategory add(@PathParam("dataGroupId") int dataGroupId, TurDataGroupCategory turDataGroupCategory)
-			throws Exception {
-		TurDataGroup turDataGroup = turDataGroupService.get(dataGroupId);
+	public TurDataGroupCategory add(@PathParam("dataGroupId") int dataGroupId,
+			TurDataGroupCategory turDataGroupCategory) throws Exception {
+		TurDataGroup turDataGroup = turDataGroupRepository.getOne(dataGroupId);
 		turDataGroupCategory.setTurDataGroup(turDataGroup);
-		turDataGroupCategoryService.save(turDataGroupCategory);
+		this.turDataGroupCategoryRepository.save(turDataGroupCategory);
 		return turDataGroupCategory;
 
 	}

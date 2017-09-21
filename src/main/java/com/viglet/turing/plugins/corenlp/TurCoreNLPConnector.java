@@ -21,28 +21,39 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
-import com.viglet.turing.persistence.service.nlp.TurNLPInstanceEntityService;
+import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
 import com.viglet.turing.plugins.nlp.TurNLPImpl;
 
 import java.util.*;
 
+@ComponentScan
+@Component
+@Transactional
 public class TurCoreNLPConnector implements TurNLPImpl {
+
+	@Autowired
+	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
+
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> entityList = new HashMap<String, JSONArray>();
 	public JSONObject json;
 	TurNLPInstance turNLPInstance = null;
-
-	public TurCoreNLPConnector(TurNLPInstance turNLPInstance) {
+	
+	public void startup(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
 
-		TurNLPInstanceEntityService turNLPInstanceEntityService = new TurNLPInstanceEntityService();
-		nlpInstanceEntities = turNLPInstanceEntityService.findByNLPInstance(turNLPInstance);
+		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstance(turNLPInstance);
 	}
 
 	private static String readAll(Reader rd) throws IOException {
@@ -54,7 +65,8 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 		return sb.toString();
 	}
 
-	public TurNLPResults request(TurNLPInstance turNLPInstance, String request) throws MalformedURLException, IOException {
+	public TurNLPResults request(TurNLPInstance turNLPInstance, String request)
+			throws MalformedURLException, IOException, JSONException {
 
 		String props = "{\"tokenize.whitespace\":\"true\",\"annotators\":\"tokenize,ssplit,pos,ner\",\"outputFormat\":\"json\"}";
 
@@ -93,11 +105,12 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 
 	}
 
-	public JSONObject getJSON() {
+	public JSONObject getJSON() throws JSONException {
 		JSONObject jsonObject = new JSONObject();
 		this.getEntities();
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
-			jsonObject.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(), this.getEntity(nlpInstanceEntity.getName()));
+			jsonObject.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(),
+					this.getEntity(nlpInstanceEntity.getName()));
 		}
 		jsonObject.put("nlp", "CoreNLP");
 
@@ -105,7 +118,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 		return jsonObject;
 	}
 
-	public JSONArray getEntities() {
+	public JSONArray getEntities() throws JSONException {
 		JSONArray jsonEntity = new JSONArray();
 		JSONArray sentences = this.json.getJSONArray("sentences");
 

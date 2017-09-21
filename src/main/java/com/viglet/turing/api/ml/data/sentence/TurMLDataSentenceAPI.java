@@ -12,38 +12,43 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
-import com.viglet.turing.persistence.service.storage.TurDataGroupSentenceService;
+import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 
-@Path("/ml/data/sentence")
+@Component
+@Path("ml/data/sentence")
 public class TurMLDataSentenceAPI {
-	TurDataGroupSentenceService turDataGroupSentenceService = new TurDataGroupSentenceService();
+
+	@Autowired
+	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<TurDataGroupSentence> list() throws JSONException {
-		return turDataGroupSentenceService.listAll();
+		return this.turDataGroupSentenceRepository.findAll();
 	}
 
 	@Path("{sentenceId}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurDataGroupSentence detail(@PathParam("sentenceId") int id) throws JSONException {
-		return turDataGroupSentenceService.get(id);
+		return turDataGroupSentenceRepository.findOne(id);
 	}
 
 	@Path("/{sentenceId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
-	public TurDataGroupSentence update(@PathParam("sentenceId") int id, TurDataGroupSentence turDataSentence) throws Exception {
-		TurDataGroupSentence turDataGroupSentenceEdit = turDataGroupSentenceService.get(id);
+	public TurDataGroupSentence update(@PathParam("sentenceId") int id, TurDataGroupSentence turDataSentence)
+			throws Exception {
+		TurDataGroupSentence turDataGroupSentenceEdit = turDataGroupSentenceRepository.findOne(id);
 		turDataGroupSentenceEdit.setSentence(turDataSentence.getSentence());
 		turDataGroupSentenceEdit.setTurData(turDataSentence.getTurData());
 		turDataGroupSentenceEdit.setTurMLCategory(turDataSentence.getTurMLCategory());
-		turDataGroupSentenceService.save(turDataGroupSentenceEdit);
+		this.turDataGroupSentenceRepository.save(turDataGroupSentenceEdit);
 		return turDataGroupSentenceEdit;
 	}
 
@@ -51,13 +56,14 @@ public class TurMLDataSentenceAPI {
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
 	public boolean delete(@PathParam("sentenceId") int id) throws Exception {
-		return turDataGroupSentenceService.delete(id);
+		this.turDataGroupSentenceRepository.delete(id);
+		return true;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurDataGroupSentence add(TurDataGroupSentence turDataSentence) throws Exception {
-		turDataGroupSentenceService.save(turDataSentence);
+		this.turDataGroupSentenceRepository.save(turDataSentence);
 		return turDataSentence;
 
 	}

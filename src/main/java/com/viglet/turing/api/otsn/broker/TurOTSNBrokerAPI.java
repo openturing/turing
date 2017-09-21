@@ -12,18 +12,28 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.xml.sax.InputSource;
 
-import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
-import com.viglet.turing.persistence.service.se.TurSEInstanceService;
+import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
+import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
+import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.solr.TurSolr;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-@Path("/otsn/broker")
+@Component
+@Path("otsn/broker")
 public class TurOTSNBrokerAPI {
+	@Autowired
+	TurNLPInstanceRepository turNLPInstanceRepository;
+	@Autowired
+	TurSEInstanceRepository turSEInstanceRepository;
+	@Autowired
+	TurConfigVarRepository turConfigVarRepository;
 
 	@POST
 	@Produces("application/json")
@@ -53,11 +63,11 @@ public class TurOTSNBrokerAPI {
 			jsonAttributes.put(nodes.item(i).getNodeName(), nodes.item(i).getTextContent());
 
 		}
-		
-		TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
-		TurSEInstanceService turSEInstanceService = new TurSEInstanceService();
+
 		try {
-			TurSolr turSolr = new TurSolr(turNLPInstanceService.getNLPDefault().getId(), turSEInstanceService.getSEDefault().getId(), jsonAttributes);
+			TurSolr turSolr = new TurSolr(
+					Integer.parseInt(this.turConfigVarRepository.getOne("DEFAULT_NLP").getValue()),
+					Integer.parseInt(this.turConfigVarRepository.getOne("DEFAULT_SE").getValue()), jsonAttributes);
 			turSolr.indexing();
 		} catch (Exception e) {
 			e.printStackTrace();

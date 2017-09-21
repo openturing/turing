@@ -27,12 +27,14 @@ import javax.ws.rs.core.Response;
 import org.apache.tika.exception.TikaException;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
 import com.viglet.turing.persistence.model.ml.TurMLModel;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
-import com.viglet.turing.persistence.service.ml.TurMLModelService;
-import com.viglet.turing.persistence.service.storage.TurDataGroupSentenceService;
+import com.viglet.turing.persistence.repository.ml.TurMLModelRepository;
+import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 
 import opennlp.tools.doccat.DoccatFactory;
 import opennlp.tools.doccat.DoccatModel;
@@ -45,33 +47,37 @@ import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
 import opennlp.tools.util.TrainingParameters;
 
-@Path("/ml/model")
+@Component
+@Path("ml/model")
 public class TurMLModelAPI {
-	TurDataGroupSentenceService turDataGroupSentenceService = new TurDataGroupSentenceService();
-	TurMLModelService turMLModelService = new TurMLModelService();
+	
+	@Autowired
+	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	@Autowired
+	TurMLModelRepository turMLModelRepository; 
 
 	@GET
 	@Produces("application/json")
 	public List<TurMLModel> list() throws JSONException {
-		return turMLModelService.listAll();
+		return this.turMLModelRepository.findAll();
 	}
 
 	@GET
 	@Path("{mlModelId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurMLModel dataGroup(@PathParam("mlModelId") int id) throws JSONException {
-		return turMLModelService.get(id);
+		return this.turMLModelRepository.findOne(id);
 	}
 
 	@Path("/{mlModelId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurMLModel update(@PathParam("mlModelId") int id, TurMLModel turMLModel) throws Exception {
-		TurMLModel turMLModelEdit = turMLModelService.get(id);
+		TurMLModel turMLModelEdit = this.turMLModelRepository.findOne(id);
 		turMLModelEdit.setInternalName(turMLModel.getInternalName());
 		turMLModelEdit.setName(turMLModel.getName());
 		turMLModelEdit.setDescription(turMLModel.getDescription());
-		turMLModelService.save(turMLModelEdit);
+		this.turMLModelRepository.save(turMLModelEdit);
 		return turMLModelEdit;
 	}
 
@@ -79,13 +85,14 @@ public class TurMLModelAPI {
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
 	public boolean delete(@PathParam("mlModelId") int id) throws Exception {
-		return turMLModelService.delete(id);
+		this.turMLModelRepository.delete(id);
+		return true;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurMLModel add(TurMLModel turMLModel) throws Exception {
-		turMLModelService.save(turMLModel);
+		this.turMLModelRepository.save(turMLModel);
 		return turMLModel;
 
 	}
@@ -120,7 +127,7 @@ public class TurMLModelAPI {
 	@Produces("application/json")
 	public Response generate() throws JSONException, IOException, SAXException, TikaException {
 
-		List<TurDataGroupSentence> turDataSentences = turDataGroupSentenceService.listAll();
+		List<TurDataGroupSentence> turDataSentences = turDataGroupSentenceRepository.findAll();
 
 		StringBuffer trainSB = new StringBuffer();
 

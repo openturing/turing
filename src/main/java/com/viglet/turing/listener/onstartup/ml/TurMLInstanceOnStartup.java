@@ -1,23 +1,33 @@
 package com.viglet.turing.listener.onstartup.ml;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.viglet.turing.persistence.model.ml.TurMLInstance;
 import com.viglet.turing.persistence.model.ml.TurMLVendor;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
-import com.viglet.turing.persistence.service.ml.TurMLInstanceService;
-import com.viglet.turing.persistence.service.ml.TurMLVendorService;
-import com.viglet.turing.persistence.service.system.TurConfigVarService;
+import com.viglet.turing.persistence.repository.ml.TurMLInstanceRepository;
+import com.viglet.turing.persistence.repository.ml.TurMLVendorRepository;
+import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 
+@Component
+@Transactional
 public class TurMLInstanceOnStartup {
-	public static void createDefaultRows() {
+	@Autowired
+	private TurMLInstanceRepository turMLInstanceRepository;
+	@Autowired
+	private TurMLVendorRepository turMLVendorRepository;
+	@Autowired
+	private TurConfigVarRepository turConfigVarRepository;
 
-		TurMLInstanceService turMLInstanceService = new TurMLInstanceService();
-		TurMLVendorService turMLVendorService = new TurMLVendorService();
-		TurConfigVarService turConfigVarService = new TurConfigVarService();
+	public void createDefaultRows() {
+
 		TurConfigVar turConfigVar = new TurConfigVar();
-		
-		if (turMLInstanceService.listAll().isEmpty()) {
 
-			TurMLVendor turMLVendor = turMLVendorService.get("OPENNLP");
+		if (turMLInstanceRepository.findAll().isEmpty()) {
+
+			TurMLVendor turMLVendor = turMLVendorRepository.getOne("OPENNLP");
 			if (turMLVendor != null) {
 				TurMLInstance turMLInstance = new TurMLInstance();
 				turMLInstance.setTitle("OpenNLP");
@@ -27,16 +37,15 @@ public class TurMLInstanceOnStartup {
 				turMLInstance.setPort(0);
 				turMLInstance.setLanguage("en");
 				turMLInstance.setEnabled(1);
-				turMLInstanceService.save(turMLInstance);
-				
+				turMLInstanceRepository.save(turMLInstance);
+
 				turConfigVar.setId("DEFAULT_ML");
 				turConfigVar.setPath("/ml");
 				turConfigVar.setValue(Integer.toString(turMLInstance.getId()));
-				turConfigVarService.save(turConfigVar);
+				turConfigVarRepository.save(turConfigVar);
 			}
 		}
 
 	}
-	
-	
+
 }

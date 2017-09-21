@@ -4,7 +4,10 @@ import java.io.Serializable;
 import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
@@ -20,6 +23,8 @@ import java.util.List;
 @Table(name="turMLCategory")
 @NamedQuery(name="TurMLCategory.findAll", query="SELECT mlc FROM TurMLCategory mlc")
 @JsonIgnoreProperties({ "turDataGroupCategories" })
+@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property="@id")
+@JsonIdentityReference(alwaysAsId = true)
 public class TurMLCategory implements Serializable {
 	private static final long serialVersionUID = 1L;
 

@@ -17,8 +17,11 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
-import com.sun.jersey.core.header.FormDataContentDisposition;
-import com.sun.jersey.multipart.FormDataParam;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.nlp.TurNLPRelationType;
 import com.viglet.turing.nlp.TurNLPTermAccent;
@@ -29,13 +32,13 @@ import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariationLanguage;
-import com.viglet.turing.persistence.service.nlp.TurNLPEntityService;
-import com.viglet.turing.persistence.service.nlp.term.TurTermAttributeService;
-import com.viglet.turing.persistence.service.nlp.term.TurTermRelationFromService;
-import com.viglet.turing.persistence.service.nlp.term.TurTermRelationToService;
-import com.viglet.turing.persistence.service.nlp.term.TurTermService;
-import com.viglet.turing.persistence.service.nlp.term.TurTermVariationLanguageService;
-import com.viglet.turing.persistence.service.nlp.term.TurTermVariationService;
+import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
+import com.viglet.turing.persistence.repository.nlp.term.TurTermAttributeRepository;
+import com.viglet.turing.persistence.repository.nlp.term.TurTermRelationFromRepository;
+import com.viglet.turing.persistence.repository.nlp.term.TurTermRelationToRepository;
+import com.viglet.turing.persistence.repository.nlp.term.TurTermRepository;
+import com.viglet.turing.persistence.repository.nlp.term.TurTermVariationLanguageRepository;
+import com.viglet.turing.persistence.repository.nlp.term.TurTermVariationRepository;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.plugins.otca.af.xml.AFAttributeType;
 import com.viglet.turing.plugins.otca.af.xml.AFTermRelationType;
@@ -51,15 +54,24 @@ import com.viglet.turing.plugins.otca.af.xml.AFType;
 import com.viglet.turing.plugins.otca.af.xml.AFType.Terms;
 import com.viglet.util.TurUtils;
 
-@Path("/otca/af")
+@Component
+@Path("otca/af")
 public class TurOTCAAutorityFileAPI {
-	TurNLPEntityService turNLPEntityService = new TurNLPEntityService();
-	TurTermService turTermService = new TurTermService();
-	TurTermAttributeService turTermAttributeService = new TurTermAttributeService();
-	TurTermRelationFromService turTermRelationFromService = new TurTermRelationFromService();
-	TurTermRelationToService turTermRelationToService = new TurTermRelationToService();
-	TurTermVariationService turTermVariationService = new TurTermVariationService();
-	TurTermVariationLanguageService turTermVariationLanguageService = new TurTermVariationLanguageService();
+	@Autowired
+	private TurNLPEntityRepository turNLPEntityRepository;
+	@Autowired
+	private TurTermRepository  turTermRepository;
+	@Autowired
+	private TurTermAttributeRepository turTermAttributeRepository;
+	@Autowired
+	private TurTermRelationFromRepository turTermRelationFromRepository;
+	@Autowired
+	private TurTermRelationToRepository turTermRelationToRepository;
+	@Autowired
+	private TurTermVariationRepository turTermVariationRepository;
+	@Autowired
+	private TurTermVariationLanguageRepository turTermVariationLanguageRepository;
+	
 	final String EMPTY_TERM_NAME = "<EMPTY>";
 
 	public static String normalizeEntity(String s) {
@@ -69,7 +81,7 @@ public class TurOTCAAutorityFileAPI {
 
 	public TurNLPEntity setEntity(String name, String description) {
 
-		TurNLPEntity turNLPEntity = turNLPEntityService.findByName(name);
+		TurNLPEntity turNLPEntity = this.turNLPEntityRepository.findByName(name);
 		if (turNLPEntity == null) {
 			turNLPEntity = new TurNLPEntity();
 			turNLPEntity.setName(name);
@@ -81,7 +93,7 @@ public class TurOTCAAutorityFileAPI {
 			turNLPEntity.setInternalName(normalizeEntity(name));
 			turNLPEntity.setLocal(1);
 			turNLPEntity.setCollectionName(normalizeEntity(name));
-			turNLPEntityService.save(turNLPEntity);
+			this.turNLPEntityRepository.save(turNLPEntity);
 		}
 		return turNLPEntity;
 	}
@@ -94,7 +106,7 @@ public class TurOTCAAutorityFileAPI {
 					TurTermAttribute turTermAttribute = new TurTermAttribute();
 					turTermAttribute.setValue(value);
 					turTermAttribute.setTurTerm(turTerm);
-					turTermAttributeService.save(turTermAttribute);
+					this.turTermAttributeRepository.save(turTermAttribute);
 				}
 			}
 		}
@@ -118,22 +130,22 @@ public class TurOTCAAutorityFileAPI {
 					turTermRelationFrom.setRelationType(TurNLPRelationType.UF.id());
 				}
 				turTermRelationFrom.setTurTerm(turTerm);
-				turTermRelationFromService.save(turTermRelationFrom);
+				this.turTermRelationFromRepository.save(turTermRelationFrom);
 
 				TurTermRelationTo turTermRelationTo = new TurTermRelationTo();
 				turTermRelationTo.setTurTermRelationFrom(turTermRelationFrom);
-				TurTerm turTermTo = turTermService.findByIdCustom(afTermRelationType.getId());
+				TurTerm turTermTo = this.turTermRepository.findOneByIdCustom(afTermRelationType.getId());
 
 				if (turTermTo == null) {
 					turTermTo = new TurTerm();
 					turTermTo.setIdCustom(afTermRelationType.getId());
 					turTermTo.setName(EMPTY_TERM_NAME);
 					turTermTo.setTurNLPEntity(turTermRelationFrom.getTurTerm().getTurNLPEntity());
-					turTermService.save(turTermTo);
+					this.turTermRepository.save(turTermTo);
 
 				}
 				turTermRelationTo.setTurTerm(turTermTo);
-				turTermRelationToService.save(turTermRelationTo);
+				this.turTermRelationToRepository.save(turTermRelationTo);
 			}
 		}
 
@@ -167,14 +179,14 @@ public class TurOTCAAutorityFileAPI {
 			}
 			turTermVariation.setWeight(afTermVariationType.getWeight());
 			turTermVariation.setTurTerm(turTerm);
-			turTermVariationService.save(turTermVariation);
+			this.turTermVariationRepository.save(turTermVariation);
 
 			for (String language : afTermVariationType.getLanguages().getLanguage()) {
 				TurTermVariationLanguage turTermVariationLanguage = new TurTermVariationLanguage();
 				turTermVariationLanguage.setLanguage(language);
 				turTermVariationLanguage.setTurTerm(turTerm);
 				turTermVariationLanguage.setTurTermVariation(turTermVariation);
-				turTermVariationLanguageService.save(turTermVariationLanguage);
+				this.turTermVariationLanguageRepository.save(turTermVariationLanguage);
 			}
 
 		}
@@ -185,7 +197,7 @@ public class TurOTCAAutorityFileAPI {
 
 		for (AFTermType afTermType : terms.getTerm()) {
 			String termId = afTermType.getId();
-			TurTerm turTerm = turTermService.findByIdCustom(termId);
+			TurTerm turTerm = this.turTermRepository.findOneByIdCustom(termId);
 
 			if (turTerm != null) {
 				// Term that was created during relation but the parent
@@ -200,7 +212,7 @@ public class TurOTCAAutorityFileAPI {
 				turTerm.setIdCustom(termId);
 				turTerm.setName(afTermType.getName());
 				turTerm.setTurNLPEntity(turNLPEntity);
-				turTermService.save(turTerm);
+				this.turTermRepository.save(turTerm);
 
 				this.setTermVariation(turTerm, afTermType.getVariations());
 				this.setTermRelation(turTerm, afTermType.getRelations());

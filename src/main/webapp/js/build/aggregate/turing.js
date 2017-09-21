@@ -292,23 +292,27 @@ turingApp.controller('TurMLDataSentenceCtrl', [
 		"$translate",
 		"vigLocale",
 		"$uibModal",
-		"turMLCategoryResource",
-		"turMLDataSentenceResource",
+		"turMLDataGroupCategoryResource",
+		"turMLDataGroupSentenceResource",
 		"turNotificationService",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, $uibModal, turMLCategoryResource,
-				turMLDataSentenceResource, turNotificationService) {
+				vigLocale, $uibModal, turMLDataGroupCategoryResource,
+				turMLDataGroupSentenceResource, turNotificationService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			$scope.categories = turMLCategoryResource.query();
-			$scope.sentenceUpdate = function(turDataSentence) {
-				turMLDataSentenceResource.update({
-					id : turDataSentence.id
-				}, turDataSentence, function() {
+			$scope.categories = turMLDataGroupCategoryResource.query({
+				dataGroupId : $stateParams.mlDataGroupId
+			});
+			$scope.sentenceUpdate = function(turDataGroupSentence) {
+				turMLDataGroupSentenceResource.update({
+					dataGroupId : $stateParams.mlDataGroupId,
+					id : turDataGroupSentence.id
+				}, turDataGroupSentence, function() {
 					turNotificationService.addNotification("Sentence \""
-							+ turDataSentence.sentence.substring(0,20) + "...\" was saved.");
+							+ turDataGroupSentence.sentence.substring(0, 20)
+							+ "...\" was saved.");
 				});
 			}
 		} ]);

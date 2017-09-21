@@ -13,36 +13,38 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.json.JSONException;
+import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
-import com.viglet.turing.persistence.service.ml.TurMLCategoryService;
+import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
 
-@Path("/ml/category")
+@Component
+@Path("ml/category")
 public class TurMLCategoryAPI {
-	TurMLCategoryService turMLCategoryService = new TurMLCategoryService();
+	TurMLCategoryRepository turMLCategoryRepository;
 
 	@GET
-	@Produces("application/json")
-	public List<TurMLCategory> list(int dataGroupId) throws JSONException {
-		return turMLCategoryService.listAll();
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<TurMLCategory> list() throws JSONException {
+		return this.turMLCategoryRepository.findAll();
 	}
 
 	@Path("{mlCategoryId}")
 	@GET
-	@Produces("application/json")
-	public TurMLCategory mlSolution(@PathParam("mlCategoryId") String id) throws JSONException {
-		return turMLCategoryService.get(id);
+	@Produces(MediaType.APPLICATION_JSON)
+	public TurMLCategory mlSolution(@PathParam("mlCategoryId") int id) throws JSONException {
+		return this.turMLCategoryRepository.findOne(id);
 	}
 
 	@Path("/{mlCategoryId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
-	public TurMLCategory update(@PathParam("mlCategoryId") String id, TurMLCategory turMLCategory) throws Exception {
-		TurMLCategory turMLCategoryEdit = turMLCategoryService.get(id);
+	public TurMLCategory update(@PathParam("mlCategoryId") int id, TurMLCategory turMLCategory) throws Exception {
+		TurMLCategory turMLCategoryEdit = this.turMLCategoryRepository.findOne(id);
 		turMLCategoryEdit.setInternalName(turMLCategory.getInternalName());
 		turMLCategoryEdit.setName(turMLCategory.getName());
 		turMLCategoryEdit.setDescription(turMLCategory.getDescription());
-		turMLCategoryService.save(turMLCategoryEdit);
+		this.turMLCategoryRepository.save(turMLCategoryEdit);
 		return turMLCategoryEdit;
 	}
 
@@ -50,13 +52,14 @@ public class TurMLCategoryAPI {
 	@DELETE
 	@Produces("application/json")
 	public boolean deleteEntity(@PathParam("mlCategoryId") int id) {
-		return turMLCategoryService.delete(id);
+		this.turMLCategoryRepository.delete(id);
+		return true;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurMLCategory add(TurMLCategory turMLCategory) throws Exception {
-		turMLCategoryService.save(turMLCategory);
+		this.turMLCategoryRepository.save(turMLCategory);
 		return turMLCategory;
 
 	}

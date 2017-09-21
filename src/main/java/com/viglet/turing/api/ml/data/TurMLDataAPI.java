@@ -27,42 +27,50 @@ import org.apache.tika.sax.BodyContentHandler;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
-import com.sun.jersey.core.header.FormDataContentDisposition;
-import com.sun.jersey.multipart.FormDataParam;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+
 import com.viglet.turing.persistence.model.storage.TurData;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
-import com.viglet.turing.persistence.service.storage.TurDataGroupSentenceService;
-import com.viglet.turing.persistence.service.storage.TurDataService;
+
+import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
+import com.viglet.turing.persistence.repository.storage.TurDataRepository;
 import com.viglet.turing.plugins.opennlp.TurOpenNLPConnector;
 
-@Path("/ml/data")
+@Component
+@Path("ml/data")
 public class TurMLDataAPI {
-	TurDataService turDataService = new TurDataService();
-	TurDataGroupSentenceService turDataGroupSentenceService = new TurDataGroupSentenceService();
+	
+	@Autowired
+	TurDataRepository turDataRepository;
+	@Autowired
+	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<TurData> list() throws JSONException {
-		return turDataService.listAll();
+		return this.turDataRepository.findAll();
 	}
 
 	@Path("{dataId}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurData detail(@PathParam("dataId") int id) throws JSONException {
-		return turDataService.get(id);
+		return this.turDataRepository.getOne(id);
 	}
 
 	@Path("/{dataId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurData update(@PathParam("dataId") int id, TurData turData) throws Exception {
-		TurData turDataEdit = turDataService.get(id);
+		TurData turDataEdit = this.turDataRepository.getOne(id);
 		turDataEdit.setName(turData.getName());
 		turDataEdit.setType(turData.getType());
-		turDataService.save(turDataEdit);
+		this.turDataRepository.save(turDataEdit);
 		return turDataEdit;
 	}
 
@@ -70,13 +78,14 @@ public class TurMLDataAPI {
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
 	public boolean delete(@PathParam("dataId") int id) throws Exception {
-		return turDataService.delete(id);
+		this.turDataRepository.delete(id);
+		return true;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurData add(TurData turData) throws Exception {
-		turDataService.save(turData);
+		this.turDataRepository.save(turData);
 		return turData;
 
 	}
@@ -106,13 +115,13 @@ public class TurMLDataAPI {
 
 		turData.setName(fileDetail.getFileName());
 		turData.setType(FilenameUtils.getExtension(fileDetail.getFileName()));
-		turDataService.save(turData);
+		this.turDataRepository.save(turData);
 
 		for (String sentence : sentences) {
 			TurDataGroupSentence turDataGroupSentence = new TurDataGroupSentence();
 			turDataGroupSentence.setTurData(turData);
 			turDataGroupSentence.setSentence(sentence);
-			turDataGroupSentenceService.save(turDataGroupSentence);
+			this.turDataGroupSentenceRepository.save(turDataGroupSentence);
 		}
 		
 		JSONObject jsonTraining = new JSONObject();

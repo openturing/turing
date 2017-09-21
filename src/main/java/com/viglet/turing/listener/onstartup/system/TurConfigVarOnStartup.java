@@ -1,22 +1,30 @@
 package com.viglet.turing.listener.onstartup.system;
 
-import com.viglet.turing.persistence.model.system.TurConfigVar;
-import com.viglet.turing.persistence.service.system.TurConfigVarService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.persistence.model.system.TurConfigVar;
+import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
+
+@Component
+@Transactional
 public class TurConfigVarOnStartup {
 
-	public static void createDefaultRows() {
+	@Autowired
+	private TurConfigVarRepository turConfigVarRepository;
+	public void createDefaultRows() {
 
 		final String FIRST_TIME = "FIRST_TIME";
-		TurConfigVarService turConfigVarService = new TurConfigVarService();
+		
 		TurConfigVar turConfigVar = new TurConfigVar();
 
-		if (turConfigVarService.get(FIRST_TIME) == null) {
+		if (turConfigVarRepository.getOne(FIRST_TIME) == null) {
 			
 			turConfigVar.setId(FIRST_TIME);
 			turConfigVar.setPath("/system");
 			turConfigVar.setValue("true");
-			turConfigVarService.save(turConfigVar);
+			turConfigVarRepository.save(turConfigVar);
 		}
 	}
 

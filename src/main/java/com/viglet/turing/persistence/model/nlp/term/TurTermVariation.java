@@ -57,7 +57,7 @@ public class TurTermVariation implements Serializable {
 	private TurTerm turTerm;
 
 	//bi-directional many-to-one association to TurTermVariationLanguage
-	@OneToMany(mappedBy="turTermVariation")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTermVariation", cascade = CascadeType.ALL)
 	private List<TurTermVariationLanguage> turTermVariationLanguages;
 
 	public TurTermVariation() {

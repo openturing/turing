@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.storage;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import org.hibernate.annotations.Fetch;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -36,11 +38,13 @@ implements Serializable
 	private String type;
 
 	// bi-directional many-to-one association to TurDataGroupData
-	@OneToMany(mappedBy = "turData")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turData", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupData> turDataGroupData;
 
 	// bi-directional many-to-one association to TurDataSentence
-	@OneToMany(mappedBy = "turData")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turData", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentences;
 
 	public TurData() {

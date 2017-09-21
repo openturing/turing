@@ -3,8 +3,7 @@ package com.viglet.turing.persistence.model.storage;
 import java.io.Serializable;
 import javax.persistence.*;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import org.hibernate.annotations.Fetch;
 
 import java.util.List;
 
@@ -30,15 +29,18 @@ public class TurDataGroup implements Serializable {
 	private String name;
 
 	// bi-directional many-to-one association to TurDataGroupCategory
-	@OneToMany(mappedBy = "turDataGroup")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turDataGroup", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupCategory> turDataGroupCategories;
 
 	// bi-directional many-to-one association to TurDataGroupData
-	@OneToMany(mappedBy = "turDataGroup")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turDataGroup", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupData> turDataGroupData;
 
 	// bi-directional many-to-one association to TurDataGroupData
-	@OneToMany(mappedBy = "turDataGroup")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turDataGroup", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentence;
 
 	public TurDataGroup() {

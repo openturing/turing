@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.nlp.term;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import org.hibernate.annotations.Fetch;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
@@ -33,7 +35,7 @@ public class TurTermRelationFrom implements Serializable {
 	private TurTerm turTerm;
 
 	//bi-directional many-to-one association to TurTermRelationTo
-	@OneToMany(mappedBy="turTermRelationFrom")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTermRelationFrom", cascade = CascadeType.ALL)
 	private List<TurTermRelationTo> turTermRelationTos;
 
 	public TurTermRelationFrom() {

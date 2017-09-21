@@ -7,22 +7,45 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
+import javax.servlet.ServletContext;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrServer;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.viglet.turing.nlp.entity.TurNLPEntityProcessor;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
-import com.viglet.turing.persistence.service.nlp.TurNLPInstanceService;
+import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
+import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.plugins.nlp.TurNLPImpl;
 
+@ComponentScan
+@Component
 public class TurNLP {
-	static final Logger logger = LogManager.getLogger(TurNLP.class.getName());
+
+	@Autowired
+	private TurNLPInstanceRepository turNLPInstanceRepository;
+	@Autowired
+	private TurConfigVarRepository turConfigVarRepository;
+	@Autowired
+	TurNLPEntityProcessor turNLPEntityProcessor;
+	@Autowired
+	ServletContext context; 
 	
+	static final Logger logger = LogManager.getLogger(TurNLP.class.getName());
+
 	private int currNLP = 0;
 	private String currText = null;
 	private JSONObject jsonAttributes = null;
@@ -32,34 +55,34 @@ public class TurNLP {
 	TurNLPResults turNLPResults = null;
 	SolrServer solrServer = null;
 
-	TurNLPInstanceService turNLPInstanceService = new TurNLPInstanceService();
+	
+
+	public void init() {
+
+		this.init(Integer.parseInt(turConfigVarRepository.findOne("DEFAULT_NLP").getValue()));
+	}
+
 	public void init(int nlp) {
 
 		this.setCurrNLP(nlp);
 
-		this.turNLPInstance = turNLPInstanceService.get(this.getCurrNLP());
+		this.turNLPInstance = turNLPInstanceRepository.findOne(this.getCurrNLP());
 		this.turNLPVendor = turNLPInstance.getTurNLPVendor();
 		this.turNLPResults = new TurNLPResults();
 	}
 
-	public TurNLP() {
-		super();
-		
-		init(turNLPInstanceService.getNLPDefault().getId());
+	public void startup() {
+		this.init();
 		this.setCurrText(null);
-
 	}
 
-	public TurNLP(int nlp, String text) {
-		super();
-		init(nlp);
+	public void startup(int nlp, String text) {
+		this.init(nlp);
 		this.setCurrText(text);
-
 	}
 
-	public TurNLP(int nlp, JSONObject jsonAttributes) {
-		super();
-		init(nlp);
+	public void startup(int nlp, JSONObject jsonAttributes) throws JSONException {
+		this.init(nlp);
 
 		StringBuffer sbText = new StringBuffer();
 
@@ -76,11 +99,12 @@ public class TurNLP {
 		this.setJsonAttributes(jsonAttributes);
 
 	}
-	public String validate() {
+
+	public String validate() throws JSONException {
 		TurNLPResults turNLPResults = this.retrieveNLP();
 		return turNLPResults.getJsonResult().toString();
 	}
-	
+
 	public JSONObject getJsonAttributes() {
 		return jsonAttributes;
 	}
@@ -105,15 +129,15 @@ public class TurNLP {
 		this.currText = currText;
 	}
 
-	public TurNLPResults retrieveNLP() {
+	public TurNLPResults retrieveNLP() throws JSONException {
 		logger.debug("Executing retrieveNLP...");
 		TurNLPImpl nlpService;
 
-		TurNLPEntityProcessor turNLPEntityProcessor = new TurNLPEntityProcessor();
-
 		try {
-			nlpService = (TurNLPImpl) Class.forName(turNLPVendor.getPlugin())
-					.getConstructor(new Class[] { TurNLPInstance.class }).newInstance(new Object[] { turNLPInstance });
+			nlpService = (TurNLPImpl) Class.forName(turNLPVendor.getPlugin()).newInstance();
+			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(context);
+			applicationContext.getAutowireCapableBeanFactory().autowireBean(nlpService);
+			nlpService.startup(turNLPInstance);
 			turNLPResults = nlpService.retrieve(this.getCurrText());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -121,28 +145,32 @@ public class TurNLP {
 		}
 
 		this.turNLPResults.setJsonAttributes(this.getJsonAttributes());
-		
+
 		// TurNLP Entities
+		turNLPEntityProcessor.startup();
 		LinkedHashMap<String, List<String>> entityResults = turNLPEntityProcessor.detectTerms(currText);
-		
-		
+
 		for (String entity : entityResults.keySet()) {
 			JSONArray jsonEntity = new JSONArray();
 			logger.debug("entity from retrieveNLP: " + entity);
 			List<String> lstTerm = entityResults.get(entity);
-			for (String resultTerm : lstTerm) {		
+			for (String resultTerm : lstTerm) {
 				jsonEntity.put(resultTerm);
 			}
-			this.turNLPResults.getJsonResult().put(entity, jsonEntity);			
+			try {
+				this.turNLPResults.getJsonResult().put(entity, jsonEntity);
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		
-		
+
 		this.removeDuplicateTerms();
 
 		return turNLPResults;
 	}
 
-	public void removeDuplicateTerms() {
+	public void removeDuplicateTerms() throws JSONException {
 		JSONObject jsonNLP = this.turNLPResults.getJsonResult();
 		for (TurNLPInstanceEntity turNLPEntity : turNLPResults.getTurNLPInstanceEntities()) {
 
@@ -151,13 +179,14 @@ public class TurNLP {
 
 				if (jsonEntity.length() > 0) {
 					List<String> list = new ArrayList<String>();
-					for(int i = 0; i < jsonEntity.length(); i++){
-					    list.add(jsonEntity.getString(i));
-					}				
+					for (int i = 0; i < jsonEntity.length(); i++) {
+						list.add(jsonEntity.getString(i));
+					}
 					Set<String> termsUnique = new HashSet<String>(list);
-					
+
 					jsonNLP.remove(turNLPEntity.getTurNLPEntity().getCollectionName());
-					jsonNLP.put(turNLPEntity.getTurNLPEntity().getCollectionName(), new JSONArray(termsUnique.toArray()));
+					jsonNLP.put(turNLPEntity.getTurNLPEntity().getCollectionName(),
+							new JSONArray(termsUnique.toArray()));
 				}
 			}
 		}

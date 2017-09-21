@@ -13,35 +13,39 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.nlp.term.TurTerm;
-import com.viglet.turing.persistence.service.nlp.term.TurTermService;
+import com.viglet.turing.persistence.repository.nlp.term.TurTermRepository;
 
-@Path("/entity/terms")
+@Component
+@Path("entity/terms")
 public class TurNLPEntityTermAPI {
-	TurTermService turTermService = new TurTermService();
+	@Autowired
+	private TurTermRepository turTermRepository;
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<TurTerm> list() throws JSONException {
-		return turTermService.listAll();
+		return this.turTermRepository.findAll();
 	}
 
 	@Path("{termId}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurTerm detail(@PathParam("termId") int id) throws JSONException {
-		return turTermService.get(id);
+		return this.turTermRepository.getOne(id);
 	}
 
 	@Path("/{termId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurTerm update(@PathParam("termId") int id, TurTerm turTerm) throws Exception {
-		TurTerm turTermEdit = turTermService.get(id);
+		TurTerm turTermEdit = this.turTermRepository.getOne(id);
 		turTermEdit.setName(turTerm.getName());
 		turTermEdit.setIdCustom(turTerm.getIdCustom());
-		turTermService.save(turTermEdit);
+		this.turTermRepository.save(turTermEdit);
 		return turTermEdit;
 	}
 
@@ -49,13 +53,14 @@ public class TurNLPEntityTermAPI {
 	@DELETE
 	@Produces("application/json")
 	public boolean deleteEntity(@PathParam("id") int id) {
-		return turTermService.delete(id);
+		this.turTermRepository.delete(id);
+		return true;
 	}
 
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurTerm add(TurTerm turTerm) throws Exception {
-		turTermService.save(turTerm);
+		this.turTermRepository.save(turTerm);
 		return turTerm;
 
 	}

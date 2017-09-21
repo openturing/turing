@@ -1,75 +1,77 @@
 package com.viglet.turing.listener.onstartup.nlp;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
-import com.viglet.turing.persistence.service.nlp.TurNLPEntityService;
-import com.viglet.turing.persistence.service.nlp.TurNLPVendorEntityService;
-import com.viglet.turing.persistence.service.nlp.TurNLPVendorService;
+import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
+import com.viglet.turing.persistence.repository.nlp.TurNLPVendorEntityRepository;
+import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
 
-
+@Component
+@Transactional
 public class TurNLPVendorEntityOnStartup {
 	private static final String CORENLP = "CORENLP";
 	private static final String OPENNLP = "OPENNLP";
 	private static final String OTCA = "OTCA";
-	
-	TurNLPEntityService turNLPEntityService = new TurNLPEntityService();
-	TurNLPVendorEntityService turNLPVendorEntityService = new TurNLPVendorEntityService();
 
-	public static void createDefaultRows() {
-		TurNLPVendorService turNLPVendorService = new TurNLPVendorService();
-		TurNLPVendorEntityService turNLPVendorEntityService = new TurNLPVendorEntityService();
-		TurNLPVendorEntityOnStartup turNLPVendorEntityOnStartup = new TurNLPVendorEntityOnStartup();
+	@Autowired
+	private TurNLPEntityRepository turNLPEntityRepository;
+	@Autowired
+	private TurNLPVendorRepository turNLPVendorRepository;
+	@Autowired
+	private TurNLPVendorEntityRepository turNLPVendorEntityRepository;
 
-		if (turNLPVendorEntityService.listAll().isEmpty()) {
-			TurNLPVendor turNLPVendor = turNLPVendorService.get(CORENLP);
+	public void createDefaultRows() {
 
+		if (turNLPVendorEntityRepository.findAll().isEmpty()) {
+			TurNLPVendor turNLPVendor = turNLPVendorRepository.findOne(CORENLP);
 			if (turNLPVendor != null) {
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "PN", "PERSON");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "GL", "LOCATION");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "ON", "ORGANIZATION");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "DURATION", "DURATION");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "DATE", "DATE");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "MISC", "MISC");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "ORDINAL", "ORDINAL");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "TIME", "TIME");
+				this.addNLPVendor(turNLPVendor, "PN", "PERSON");
+				this.addNLPVendor(turNLPVendor, "GL", "LOCATION");
+				this.addNLPVendor(turNLPVendor, "ON", "ORGANIZATION");
+				this.addNLPVendor(turNLPVendor, "DURATION", "DURATION");
+				this.addNLPVendor(turNLPVendor, "DATE", "DATE");
+				this.addNLPVendor(turNLPVendor, "MISC", "MISC");
+				this.addNLPVendor(turNLPVendor, "ORDINAL", "ORDINAL");
+				this.addNLPVendor(turNLPVendor, "TIME", "TIME");
 			}
-
-			turNLPVendor = turNLPVendorService.get(OPENNLP);
+			
+			turNLPVendor = turNLPVendorRepository.findOne(OPENNLP);
 
 			if (turNLPVendor != null) {
 				TurOpenNLPModelsOnStartup.downloadModels();
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "PN", "/models/opennlp/en/en-ner-person.bin");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "GL", "/models/opennlp/en/en-ner-location.bin");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "ON",
-						"/models/opennlp/en/en-ner-organization.bin");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "MONEY", "/models/opennlp/en/en-ner-money.bin");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "DATE", "/models/opennlp/en/en-ner-date.bin");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "PERCENTAGE",
-						"/models/opennlp/en/en-ner-percentage.bin");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "TIME", "/models/opennlp/en/en-ner-time.bin");
+				this.addNLPVendor(turNLPVendor, "PN", "/models/opennlp/en/en-ner-person.bin");
+				this.addNLPVendor(turNLPVendor, "GL", "/models/opennlp/en/en-ner-location.bin");
+				this.addNLPVendor(turNLPVendor, "ON", "/models/opennlp/en/en-ner-organization.bin");
+				this.addNLPVendor(turNLPVendor, "MONEY", "/models/opennlp/en/en-ner-money.bin");
+				this.addNLPVendor(turNLPVendor, "DATE", "/models/opennlp/en/en-ner-date.bin");
+				this.addNLPVendor(turNLPVendor, "PERCENTAGE", "/models/opennlp/en/en-ner-percentage.bin");
+				this.addNLPVendor(turNLPVendor, "TIME", "/models/opennlp/en/en-ner-time.bin");
 			}
 
-			turNLPVendor = turNLPVendorService.get(OTCA);
+			turNLPVendor = turNLPVendorRepository.findOne(OTCA);
 
 			if (turNLPVendor != null) {
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "PN", "PN");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "GL", "GL");
-				turNLPVendorEntityOnStartup.addNLPVendor(turNLPVendor, "ON", "ON");
+				this.addNLPVendor(turNLPVendor, "PN", "PN");
+				this.addNLPVendor(turNLPVendor, "GL", "GL");
+				this.addNLPVendor(turNLPVendor, "ON", "ON");
 			}
 
 		}
 	}
 
 	public void addNLPVendor(TurNLPVendor turNLPVendor, String internalName, String name) {
-
-		TurNLPEntity turNLPEntity = turNLPEntityService.findByInternalName(internalName);
+		TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(internalName);
 		if (turNLPEntity != null) {
 			TurNLPVendorEntity turNLPVendorEntity = new TurNLPVendorEntity();
 			turNLPVendorEntity.setName(name);
 			turNLPVendorEntity.setTurNLPEntity(turNLPEntity);
 			turNLPVendorEntity.setTurNLPVendor(turNLPVendor);
-			turNLPVendorEntityService.save(turNLPVendorEntity);
+			turNLPVendorEntityRepository.save(turNLPVendorEntity);
 		}
 	}
 }
