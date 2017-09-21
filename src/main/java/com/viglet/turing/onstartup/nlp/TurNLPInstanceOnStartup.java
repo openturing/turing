@@ -1,4 +1,4 @@
-package com.viglet.turing.listener.onstartup.nlp;
+package com.viglet.turing.onstartup.nlp;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -14,16 +14,15 @@ import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 @Component
 @Transactional
 public class TurNLPInstanceOnStartup {
-	
+
 	@Autowired
 	private TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
 	private TurNLPVendorRepository turNLPVendorRepository;
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
-	
-	public void createDefaultRows() {
 
+	public void createDefaultRows() {
 
 		TurConfigVar turConfigVar = new TurConfigVar();
 
@@ -39,13 +38,12 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setPort(0);
 				turNLPInstance.setLanguage("pt-br");
 				turNLPInstance.setEnabled(1);
-				turNLPInstanceRepository.save(turNLPInstance);
-				
+				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+
 				turConfigVar.setId("DEFAULT_NLP");
 				turConfigVar.setPath("/nlp");
 				turConfigVar.setValue(Integer.toString(turNLPInstance.getId()));
 				turConfigVarRepository.save(turConfigVar);
-				
 
 			}
 
@@ -59,12 +57,11 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setPort(9001);
 				turNLPInstance.setLanguage("en");
 				turNLPInstance.setEnabled(1);
-				turNLPInstanceRepository.save(turNLPInstance);
-			}			
+				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+
+			}
 
 		}
 
 	}
-	
-	
 }

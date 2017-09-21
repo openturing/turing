@@ -1,4 +1,4 @@
-package com.viglet.turing.listener.onstartup.system;
+package com.viglet.turing.onstartup.system;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -13,14 +13,14 @@ public class TurConfigVarOnStartup {
 
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
+	
 	public void createDefaultRows() {
 
 		final String FIRST_TIME = "FIRST_TIME";
-		
-		TurConfigVar turConfigVar = new TurConfigVar();
 
-		if (turConfigVarRepository.getOne(FIRST_TIME) == null) {
-			
+		if (turConfigVarRepository.findById(FIRST_TIME) == null) {
+
+			TurConfigVar turConfigVar = new TurConfigVar();
 			turConfigVar.setId(FIRST_TIME);
 			turConfigVar.setPath("/system");
 			turConfigVar.setValue("true");

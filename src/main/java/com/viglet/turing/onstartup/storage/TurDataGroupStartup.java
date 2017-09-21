@@ -1,4 +1,4 @@
-package com.viglet.turing.listener.onstartup.storage;
+package com.viglet.turing.onstartup.storage;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

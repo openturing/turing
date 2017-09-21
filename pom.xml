@@ -30,8 +30,6 @@
 					<artifactId>maven-war-plugin</artifactId>
 					<version>2.6</version>
 				</plugin>
-				<!-- <plugin> <groupId>org.apache.openjpa</groupId> <artifactId>openjpa-maven-plugin</artifactId> 
-					<version>${version.openjpa}</version> </plugin> -->
 				<plugin>
 					<groupId>net.alchim31.maven</groupId>
 					<artifactId>yuicompressor-maven-plugin</artifactId>
@@ -102,15 +100,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- <plugin> <groupId>org.apache.openjpa</groupId> <artifactId>openjpa-maven-plugin</artifactId> 
-				<configuration> <includes>**/entities/*.class</includes> <excludes>**/entities/XML*.class</excludes> 
-				<addDefaultConstructor>true</addDefaultConstructor> <enforcePropertyRestrictions>true</enforcePropertyRestrictions> 
-				</configuration> <executions> <execution> <id>enhancer</id> <phase>process-classes</phase> 
-				<goals> <goal>enhance</goal> </goals> </execution> </executions> <dependencies> 
-				<dependency> <groupId>org.apache.openjpa</groupId> <artifactId>openjpa</artifactId> 
-				Set this version to be the same as the version used in your runtime <version>${version.openjpa}</version> 
-				</dependency> </dependencies> </plugin> -->
-
 			<plugin>
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-maven-plugin</artifactId>
@@ -313,18 +302,6 @@
 			<artifactId>stanford-corenlp</artifactId>
 			<version>3.7.0</version>
 		</dependency>
-
-		<!-- <dependency> <groupId>com.google.oauth-client</groupId> <artifactId>google-oauth-client</artifactId> 
-			<version>1.20.0</version> </dependency> <dependency> <groupId>com.google.api-client</groupId> 
-			<artifactId>google-api-client</artifactId> <version>1.20.0</version> </dependency> 
-			<dependency> <groupId>com.google.http-client</groupId> <artifactId>google-http-client</artifactId> 
-			<version>1.20.0</version> </dependency> <dependency> <groupId>com.google.http-client</groupId> 
-			<artifactId>google-http-client-jackson</artifactId> <version>1.20.0</version> 
-			</dependency> <dependency> <groupId>com.google.apis</groupId> <artifactId>google-api-services-plus</artifactId> 
-			<version>v1-rev217-1.20.0</version> </dependency> <dependency> <groupId>com.google.code.gson</groupId> 
-			<artifactId>gson</artifactId> </dependency> -->
-		<!-- <dependency> <groupId>mysql</groupId> <artifactId>mysql-connector-java</artifactId> 
-			<version>5.1.39</version> </dependency> -->
 		<dependency>
 			<groupId>com.sun.jersey</groupId>
 			<artifactId>jersey-server</artifactId>
@@ -380,36 +357,9 @@
 			<artifactId>tika-parsers</artifactId>
 			<version>1.5</version>
 		</dependency>
-		<!-- <dependency> <groupId>org.apache.openjpa</groupId> <artifactId>openjpa</artifactId> 
-			<version>2.4.2</version> </dependency> -->
 		<dependency>
 			<groupId>org.apache.oltu.oauth2</groupId>
 			<artifactId>org.apache.oltu.oauth2.authzserver</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.oltu.oauth2</groupId>
-			<artifactId>org.apache.oltu.oauth2.resourceserver</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.oltu.oauth2</groupId>
-			<artifactId>org.apache.oltu.oauth2.common</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.oltu.oauth2</groupId>
-			<artifactId>org.apache.oltu.oauth2.dynamicreg.server</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.oltu.oauth2</groupId>
-			<artifactId>org.apache.oltu.oauth2.client</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.oltu.oauth2</groupId>
-			<artifactId>org.apache.oltu.oauth2.dynamicreg.client</artifactId>
 			<version>1.0.0</version>
 		</dependency>
 	</dependencies>

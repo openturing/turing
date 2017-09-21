@@ -6,7 +6,8 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface TurNLPInstanceRepository extends JpaRepository<TurNLPInstance, Integer> {
+public interface TurNLPInstanceRepository
+		extends JpaRepository<TurNLPInstance, Integer>, TurNLPInstanceRepositoryCustom {
 
 	List<TurNLPInstance> findAll();
 

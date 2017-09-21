@@ -1,4 +1,4 @@
-package com.viglet.turing.listener.onstartup.nlp;
+package com.viglet.turing.onstartup.nlp;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

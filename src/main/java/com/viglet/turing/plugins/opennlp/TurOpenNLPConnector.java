@@ -2,7 +2,6 @@ package com.viglet.turing.plugins.opennlp;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,10 +16,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
@@ -83,10 +80,12 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 		this.setText(text);
 
 		String sentences[] = this.sentenceDetect(text);
-
+	
 		for (String sentence : sentences) {
+			logger.debug("OpenNLP Sentence : " + sentence);
 			String tokens[] = this.tokenDetect(sentence);
 			this.setSentencesTokens((String[]) ArrayUtils.addAll(this.getSentencesTokens(), tokens));
+			
 		}
 
 		TurNLPResults turNLPResults = new TurNLPResults();
@@ -100,6 +99,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 	public JSONObject getJSON() throws JSONException {
 		JSONObject jsonObject = new JSONObject();
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
+			logger.debug("TurNLPInstanceEntity : " + nlpInstanceEntity.getName());
 			JSONArray entityTerms = this.getEntity(nlpInstanceEntity.getName());
 			if (entityTerms.length() > 0) {
 				jsonObject.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(),
