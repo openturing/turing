@@ -49,7 +49,9 @@ public class TurMLDataAPI {
 	TurDataRepository turDataRepository;
 	@Autowired
 	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
-
+	@Autowired
+	TurOpenNLPConnector turOpenNLPConnector;
+	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<TurData> list() throws JSONException {
@@ -109,7 +111,7 @@ public class TurMLDataAPI {
 		pdfparser.parse(inputStream, handler, metadata, pcontext);
 
 
-		String sentences[] = TurOpenNLPConnector.sentenceDetect(handler.toString());
+		String sentences[] = turOpenNLPConnector.sentenceDetect(handler.toString());
 
 		TurData turData = new TurData();
 

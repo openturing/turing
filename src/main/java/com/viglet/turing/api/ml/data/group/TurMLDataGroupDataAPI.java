@@ -53,7 +53,8 @@ public class TurMLDataGroupDataAPI {
 	TurDataRepository turDataRepository;
 	@Autowired
 	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
-
+	@Autowired
+	TurOpenNLPConnector turOpenNLPConnector;
 	@GET
 	@Produces("application/json")
 	public List<TurDataGroupData> list(@PathParam("dataGroupId") int dataGroupId) throws JSONException {
@@ -119,7 +120,7 @@ public class TurMLDataGroupDataAPI {
 		PDFParser pdfparser = new PDFParser();
 		pdfparser.parse(inputStream, handler, metadata, pcontext);
 
-		String sentences[] = TurOpenNLPConnector.sentenceDetect(handler.toString());
+		String sentences[] = turOpenNLPConnector.sentenceDetect(handler.toString());
 
 		TurData turData = new TurData();
 
