@@ -103,10 +103,10 @@ More details: [https://bower.io/#install-bower](https://bower.io/#install-bower)
 
 ## Run
 
-To run Viglet Turing with Jetty 9 embedded, just execute the following line:
+To run Viglet Turing with Spring Boot, just execute the following line:
 
 ```shell
-$ mvn jetty:run
+$ mvn spring-boot:run
 ```
 
 ## Viglet Turing

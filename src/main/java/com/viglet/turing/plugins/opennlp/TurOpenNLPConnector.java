@@ -16,7 +16,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.nlp.TurNLPResults;
@@ -120,7 +119,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 			nameFinder = openNLPModelManager.get(entityPath);
 		} else {
 			try {
-				File modelIn = new ClassPathResource(entityPath).getFile();
+				File modelIn = new File(entityPath);
 				logger.debug("Creating OpenNLP Entity: " + entityPath);
 
 				TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
@@ -157,7 +156,8 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 		File modelIn;
 		String sentences[] = null;
 		try {
-			modelIn = new ClassPathResource("/models/opennlp/en/en-sent.bin").getFile();
+			File userDir = new File(System.getProperty("user.dir"));
+			modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/en/en-sent.bin"));
 			SentenceModel model = new SentenceModel(modelIn);
 			SentenceDetectorME sentenceDetector = new SentenceDetectorME(model);
 			sentences = sentenceDetector.sentDetect(text);
@@ -171,8 +171,8 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 		File modelIn = null;
 		String tokens[] = null;
 		try {
-			modelIn = new ClassPathResource("/models/opennlp/en/en-token.bin").getFile();
-
+			File userDir = new File(System.getProperty("user.dir"));
+			modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/en/en-token.bin"));
 			TokenizerModel model = new TokenizerModel(modelIn);
 			Tokenizer tokenizer = new TokenizerME(model);
 			tokens = tokenizer.tokenize(sentence);

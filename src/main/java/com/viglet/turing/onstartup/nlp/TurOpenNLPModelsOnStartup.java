@@ -46,25 +46,35 @@ public class TurOpenNLPModelsOnStartup {
 	}
 
 	public static void downloadModel(String locale, String fromFile, String toFile) {
-		String toFileFullPath = "src/main/resources/models/opennlp/" + locale + "/" + toFile;
-		File file = new File(toFileFullPath);
-		if (!file.exists()) {
-			numberOfDonwloads++;
-			if (numberOfDonwloads == 1) {
-				System.out.println("Downloading OpenNLP Models...");
-			}
-			
-			System.out.print("Downloading " + toFile + " Model...");
-			try {
-				FileUtils.copyURLToFile(new URL(fromFile), new File(toFileFullPath), 100000, 100000);
 
-			} catch (IOException e) {
-				e.printStackTrace();
+		File userDir = new File(System.getProperty("user.dir"));
+		if (userDir.exists() && userDir.isDirectory()) {
+			File modelDir = new File(userDir.getAbsolutePath().concat("/models/opennlp/" + locale));
+			if (!modelDir.exists()) {
+				modelDir.mkdirs();
 			}
 
-			System.out.print("[ OK ]");
-			System.out.println("");
-			
-		}	
+			String toFileFullPath = modelDir.getAbsolutePath().concat("/" + toFile);
+			System.out.println("Path: " + toFileFullPath);
+			File file = new File(toFileFullPath);
+			if (!file.exists()) {
+				numberOfDonwloads++;
+				if (numberOfDonwloads == 1) {
+					System.out.println("Downloading OpenNLP Models...");
+				}
+
+				System.out.print("Downloading " + toFile + " Model...");
+				try {
+					FileUtils.copyURLToFile(new URL(fromFile), new File(toFileFullPath), 100000, 100000);
+
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+				System.out.print("[ OK ]");
+				System.out.println("");
+
+			}
+		}
 	}
 }

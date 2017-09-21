@@ -1,5 +1,7 @@
 package com.viglet.turing.onstartup.nlp;
 
+import java.io.File;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,18 +41,29 @@ public class TurNLPVendorEntityOnStartup {
 				this.addNLPVendor(turNLPVendor, "ORDINAL", "ORDINAL");
 				this.addNLPVendor(turNLPVendor, "TIME", "TIME");
 			}
-			
+
 			turNLPVendor = turNLPVendorRepository.findOne(OPENNLP);
 
 			if (turNLPVendor != null) {
 				TurOpenNLPModelsOnStartup.downloadModels();
-				this.addNLPVendor(turNLPVendor, "PN", "/models/opennlp/en/en-ner-person.bin");
-				this.addNLPVendor(turNLPVendor, "GL", "/models/opennlp/en/en-ner-location.bin");
-				this.addNLPVendor(turNLPVendor, "ON", "/models/opennlp/en/en-ner-organization.bin");
-				this.addNLPVendor(turNLPVendor, "MONEY", "/models/opennlp/en/en-ner-money.bin");
-				this.addNLPVendor(turNLPVendor, "DATE", "/models/opennlp/en/en-ner-date.bin");
-				this.addNLPVendor(turNLPVendor, "PERCENTAGE", "/models/opennlp/en/en-ner-percentage.bin");
-				this.addNLPVendor(turNLPVendor, "TIME", "/models/opennlp/en/en-ner-time.bin");
+				File userDir = new File(System.getProperty("user.dir"));
+				if (userDir.exists() && userDir.isDirectory()) {
+
+					this.addNLPVendor(turNLPVendor, "PN",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-person.bin"));
+					this.addNLPVendor(turNLPVendor, "GL",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-location.bin"));
+					this.addNLPVendor(turNLPVendor, "ON",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-organization.bin"));
+					this.addNLPVendor(turNLPVendor, "MONEY",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-money.bin"));
+					this.addNLPVendor(turNLPVendor, "DATE",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-date.bin"));
+					this.addNLPVendor(turNLPVendor, "PERCENTAGE",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-percentage.bin"));
+					this.addNLPVendor(turNLPVendor, "TIME",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-time.bin"));
+				}
 			}
 
 			turNLPVendor = turNLPVendorRepository.findOne(OTCA);
