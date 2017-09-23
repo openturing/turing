@@ -4,9 +4,11 @@ buildscript {
 	}
 	repositories {
 		mavenCentral()
+		 jcenter()
 	}
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+		classpath "com.eriwen:gradle-js-plugin:2.12.0"
 	}
 }
 
@@ -15,6 +17,7 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'org.springframework.boot'
+apply plugin: "com.eriwen.gradle.js"
 
 group = 'com.viglet.turing'
 version = '1.0-SNAPSHOT'
@@ -26,6 +29,20 @@ targetCompatibility = 1.8
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
+}
+
+// Combine JS files
+task combine(type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = "${projectDir}/src/main/resources/public/js/build/extract"
+    dest = "${projectDir}/src/main/resources/public/js/build/aggregate/turing.js"
+}
+
+minifyJs {
+    source = combineJs
+    dest = file("${projectDir}/src/main/resources/public/js/dist/turing-min.js")
+    closure {
+        warningLevel = 'QUIET'
+    }
 }
 
 jar {

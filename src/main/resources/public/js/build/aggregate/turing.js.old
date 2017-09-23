@@ -81,7 +81,6 @@ turingApp.controller('TurHomeCtrl', [
 	function ($scope, $http, $window, $state, $rootScope, $translate) {
 		$scope.accesses = null;
 		$rootScope.$state = $state;		
-		var a=1;
 	}]);
 turingApp.factory('turMLCategoryResource', [ '$resource', function($resource) {
 	return $resource('/turing/api/ml/category/:id', {
