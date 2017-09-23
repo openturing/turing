@@ -43,7 +43,7 @@ public class TurMLDataGroupAPI {
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurDataGroup update(@PathParam("dataGroupId") int id, TurDataGroup turDataGroup) throws Exception {
-		TurDataGroup turDataGroupEdit = this.turDataGroupRepository.getOne(id);
+		TurDataGroup turDataGroupEdit = this.turDataGroupRepository.findById(id);
 		turDataGroupEdit.setName(turDataGroup.getName());
 		turDataGroupEdit.setDescription(turDataGroup.getDescription());
 		this.turDataGroupRepository.save(turDataGroupEdit);

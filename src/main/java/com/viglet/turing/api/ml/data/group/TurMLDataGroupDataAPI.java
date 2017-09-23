@@ -67,7 +67,7 @@ public class TurMLDataGroupDataAPI {
 	@Produces("application/json")
 	public TurDataGroupData mlSolution(@PathParam("dataGroupId") int dataGroupId, @PathParam("dataGroupDataId") int id)
 			throws JSONException {
-		return this.turDataGroupDataRepository.getOne(id);
+		return this.turDataGroupDataRepository.findById(id);
 	}
 
 	@Path("/{dataGroupDataId}")

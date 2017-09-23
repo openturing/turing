@@ -13,6 +13,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
@@ -21,6 +22,8 @@ import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
 @Component
 @Path("ml/category")
 public class TurMLCategoryAPI {
+	
+	@Autowired
 	TurMLCategoryRepository turMLCategoryRepository;
 
 	@GET
@@ -45,6 +48,8 @@ public class TurMLCategoryAPI {
 		turMLCategoryEdit.setName(turMLCategory.getName());
 		turMLCategoryEdit.setDescription(turMLCategory.getDescription());
 		this.turMLCategoryRepository.save(turMLCategoryEdit);
+		this.turMLCategoryRepository.flush();
+		
 		return turMLCategoryEdit;
 	}
 
@@ -60,6 +65,7 @@ public class TurMLCategoryAPI {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurMLCategory add(TurMLCategory turMLCategory) throws Exception {
 		this.turMLCategoryRepository.save(turMLCategory);
+		this.turMLCategoryRepository.flush();
 		return turMLCategory;
 
 	}

@@ -25,12 +25,11 @@ public class TurDataGroupSentence implements Serializable {
 	private int id;
 
 	@Lob
-	@Column(nullable = false)
+	@Column(nullable = false, length = 100000 )
 	private String sentence;
 
 	// bi-directional many-to-one association to TurCategory
 	@ManyToOne
-	@JoinColumn(name = "ml_category_id")
 	private TurMLCategory turMLCategory;
 
 	// bi-directional many-to-one association to TurData

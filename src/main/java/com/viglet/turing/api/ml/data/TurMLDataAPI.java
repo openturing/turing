@@ -62,14 +62,14 @@ public class TurMLDataAPI {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurData detail(@PathParam("dataId") int id) throws JSONException {
-		return this.turDataRepository.getOne(id);
+		return this.turDataRepository.findById(id);
 	}
 
 	@Path("/{dataId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurData update(@PathParam("dataId") int id, TurData turData) throws Exception {
-		TurData turDataEdit = this.turDataRepository.getOne(id);
+		TurData turDataEdit = this.turDataRepository.findById(id);
 		turDataEdit.setName(turData.getName());
 		turDataEdit.setType(turData.getType());
 		this.turDataRepository.save(turDataEdit);
