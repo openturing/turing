@@ -13,8 +13,8 @@ tracking requests and bugs.**
 
 # Installation
 
-## Maven
-* Install Apache Maven. [https://maven.apache.org/install.html](https://maven.apache.org/install.html)
+## Gradle
+* Install Gradle. [https://gradle.org/install](https://gradle.org/install)
 
 ## Docker
 * Install Docker. [https://docs.docker.com/engine/installation](https://docs.docker.com/engine/installation)
@@ -92,10 +92,10 @@ $ curl -X POST -H 'Content-type:application/json' --data-binary '{
 ## Deploy 
 ### Generate Fat Jar File
 
-Use Maven to generate a Viglet Turing Fat Jar file.
+Use Gradle to generate a Viglet Turing Fat Jar file.
 
 ```shell
-$ mvn package
+$ ./gradlew build
 ```
 
 ## Run
@@ -103,7 +103,7 @@ $ mvn package
 To run Viglet Turing Fat Jar file, just execute the following line:
 
 ```shell
-$ java -jar turing.jar
+$ java -jar build/libs/turing-0.1.0.jar
 ```
 
 ## Viglet Turing
