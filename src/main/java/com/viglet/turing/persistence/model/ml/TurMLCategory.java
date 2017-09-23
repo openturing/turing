@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.ml;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import org.hibernate.annotations.Fetch;
+
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.fasterxml.jackson.annotation.JsonBackReference;
@@ -23,8 +25,6 @@ import java.util.List;
 @Table(name="turMLCategory")
 @NamedQuery(name="TurMLCategory.findAll", query="SELECT mlc FROM TurMLCategory mlc")
 @JsonIgnoreProperties({ "turDataGroupCategories" })
-@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property="@id")
-@JsonIdentityReference(alwaysAsId = true)
 public class TurMLCategory implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -43,11 +43,13 @@ public class TurMLCategory implements Serializable {
 	private String name;
 
 	//bi-directional many-to-one association to TurDataGroupCategory
-	@OneToMany(mappedBy="turMLCategory")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turMLCategory", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupCategory> turDataGroupCategories;
 
 	//bi-directional many-to-one association to TurDataSentence
-	@OneToMany(mappedBy="turMLCategory")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turMLCategory", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentences;
 
 	public TurMLCategory() {

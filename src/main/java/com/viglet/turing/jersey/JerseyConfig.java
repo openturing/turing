@@ -2,9 +2,11 @@ package com.viglet.turing.jersey;
 
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.api.entity.TurNLPEntityAPI;
 import com.viglet.turing.api.entity.TurNLPEntityTermAPI;
 import com.viglet.turing.api.ml.TurMLInstanceAPI;
@@ -28,13 +30,20 @@ import com.viglet.turing.api.se.TurSEVendorAPI;
 import com.viglet.turing.api.sn.TurSNSiteAPI;
 
 import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Provider;
 
 @Profile("production")
 @Component
 @ApplicationPath("/api")
 public class JerseyConfig extends ResourceConfig {
+	@Autowired
+	public JerseyConfig(ObjectMapper objectMapper) {
+		// register endpoints
+		packages("com.shengwang.demo");
+		// register jackson for json
+		register(new ObjectMapperContextResolver(objectMapper));
 
-	public JerseyConfig() {
 		register(MultiPartFeature.class);
 		register(TurOTCAAutorityFileAPI.class);
 		register(TurNLPEntityAPI.class);
@@ -57,5 +66,20 @@ public class JerseyConfig extends ResourceConfig {
 		register(TurSEInstanceAPI.class);
 		register(TurSEVendorAPI.class);
 		register(TurSNSiteAPI.class);
+	}
+
+	@Provider
+	public static class ObjectMapperContextResolver implements ContextResolver<ObjectMapper> {
+
+		private final ObjectMapper mapper;
+
+		public ObjectMapperContextResolver(ObjectMapper mapper) {
+			this.mapper = mapper;
+		}
+
+		@Override
+		public ObjectMapper getContext(Class<?> type) {
+			return mapper;
+		}
 	}
 }

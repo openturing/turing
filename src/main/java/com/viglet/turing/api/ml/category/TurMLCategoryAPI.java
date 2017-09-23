@@ -22,7 +22,7 @@ import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
 @Component
 @Path("ml/category")
 public class TurMLCategoryAPI {
-	
+
 	@Autowired
 	TurMLCategoryRepository turMLCategoryRepository;
 
@@ -49,7 +49,7 @@ public class TurMLCategoryAPI {
 		turMLCategoryEdit.setDescription(turMLCategory.getDescription());
 		this.turMLCategoryRepository.save(turMLCategoryEdit);
 		this.turMLCategoryRepository.flush();
-		
+
 		return turMLCategoryEdit;
 	}
 
@@ -65,7 +65,6 @@ public class TurMLCategoryAPI {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurMLCategory add(TurMLCategory turMLCategory) throws Exception {
 		this.turMLCategoryRepository.save(turMLCategory);
-		this.turMLCategoryRepository.flush();
 		return turMLCategory;
 
 	}
