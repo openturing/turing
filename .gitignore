@@ -7,3 +7,7 @@
 *.log
 /logs/
 /models/
+/bin/
+/.gradle/
+/gradle/
+/build/

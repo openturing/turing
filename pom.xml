@@ -37,69 +37,25 @@
 				</plugin>
 				<!--This plugin's configuration is used to store Eclipse m2e settings 
 					only. It has no influence on the Maven build itself. -->
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											net.alchim31.maven
-										</groupId>
-										<artifactId>
-											yuicompressor-maven-plugin
-										</artifactId>
-										<versionRange>
-											[1.5.1,)
-										</versionRange>
-										<goals>
-											<goal>compress</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore></ignore>
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
+				<!-- <plugin> <groupId>org.eclipse.m2e</groupId> <artifactId>lifecycle-mapping</artifactId> 
+					<version>1.0.0</version> <configuration> <lifecycleMappingMetadata> <pluginExecutions> 
+					<pluginExecution> <pluginExecutionFilter> <groupId> net.alchim31.maven </groupId> 
+					<artifactId> yuicompressor-maven-plugin </artifactId> <versionRange> [1.5.1,) 
+					</versionRange> <goals> <goal>compress</goal> </goals> </pluginExecutionFilter> 
+					<action> <ignore></ignore> </action> </pluginExecution> </pluginExecutions> 
+					</lifecycleMappingMetadata> </configuration> </plugin> -->
 			</plugins>
 		</pluginManagement>
 		<plugins>
-			<plugin>
-				<groupId>net.alchim31.maven</groupId>
-				<artifactId>yuicompressor-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>compressyui</id>
-						<phase>process-resources</phase>
-						<goals>
-							<goal>compress</goal>
-						</goals>
-						<configuration>
-							<preProcessAggregates>true</preProcessAggregates>
-							<aggregations>
-								<aggregation>
-									<insertNewLine>true</insertNewLine>
-									<output>${basedir}/src/main/webapp/js/build/aggregate/turing.js</output>
-									<inputDir>${basedir}/src/main/webapp/js/build/extract</inputDir>
-									<includes>
-										<include>**/*.js</include>
-									</includes>
-								</aggregation>
-							</aggregations>
-							<nosuffix>false</nosuffix>
-							<warSourceDirectory>${basedir}/src/main/webapp/js/build/aggregate</warSourceDirectory>
-							<webappDirectory>${basedir}/src/main/webapp/js/dist</webappDirectory>
-							<jswarn>false</jswarn>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
+			<!-- <plugin> <groupId>net.alchim31.maven</groupId> <artifactId>yuicompressor-maven-plugin</artifactId> 
+				<executions> <execution> <id>compressyui</id> <phase>process-resources</phase> 
+				<goals> <goal>compress</goal> </goals> <configuration> <preProcessAggregates>true</preProcessAggregates> 
+				<aggregations> <aggregation> <insertNewLine>true</insertNewLine> <output>${basedir}/src/main/webapp/js/build/aggregate/turing.js</output> 
+				<inputDir>${basedir}/src/main/webapp/js/build/extract</inputDir> <includes> 
+				<include>**/*.js</include> </includes> </aggregation> </aggregations> <nosuffix>false</nosuffix> 
+				<warSourceDirectory>${basedir}/src/main/webapp/js/build/aggregate</warSourceDirectory> 
+				<webappDirectory>${basedir}/src/main/webapp/js/dist</webappDirectory> <jswarn>false</jswarn> 
+				</configuration> </execution> </executions> </plugin> -->
 			<plugin>
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-maven-plugin</artifactId>
@@ -181,6 +137,11 @@
 			<artifactId>jersey-container-servlet-core</artifactId>
 			<version>2.25</version>
 		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.containers</groupId>
+			<artifactId>jersey-container-servlet</artifactId>
+			<version>2.5</version>
+		</dependency>
 		<!-- Spring and Spring Boot dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -209,25 +170,6 @@
 			<groupId>com.zaxxer</groupId>
 			<artifactId>HikariCP</artifactId>
 			<version>2.6.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.webjars</groupId>
-			<artifactId>webjars-locator</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.webjars</groupId>
-			<artifactId>jquery</artifactId>
-			<version>${webjars-jquery.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.webjars</groupId>
-			<artifactId>jquery-ui</artifactId>
-			<version>${webjars-jquery-ui.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.webjars</groupId>
-			<artifactId>bootstrap</artifactId>
-			<version>${webjars-bootstrap.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -301,21 +243,6 @@
 			<groupId>edu.stanford.nlp</groupId>
 			<artifactId>stanford-corenlp</artifactId>
 			<version>3.7.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-server</artifactId>
-			<version>1.19.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-bundle</artifactId>
-			<version>1.19.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.jersey.contribs</groupId>
-			<artifactId>jersey-multipart</artifactId>
-			<version>1.19.1</version>
 		</dependency>
 		<dependency>
 			<groupId>asm</groupId>

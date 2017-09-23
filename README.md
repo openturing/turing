@@ -90,23 +90,20 @@ $ curl -X POST -H 'Content-type:application/json' --data-binary '{
 ```
 
 ## Deploy 
-### Bower
-Bower is a command line utility. Install it with npm.
+### Generate Fat Jar File
+
+Use Maven to generate a Viglet Turing Fat Jar file.
 
 ```shell
-$ npm install -g bower
+$ mvn package
 ```
-
-Bower requires node, npm and git.
-
-More details: [https://bower.io/#install-bower](https://bower.io/#install-bower)
 
 ## Run
 
-To run Viglet Turing with Spring Boot, just execute the following line:
+To run Viglet Turing Fat Jar file, just execute the following line:
 
 ```shell
-$ mvn spring-boot:run
+$ java -jar turing.jar
 ```
 
 ## Viglet Turing

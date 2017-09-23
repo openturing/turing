@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html lang="en" ng-app="turingApp">
 
+
 <head>
-<meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"></meta>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"></meta>
+<meta name="viewport" content="width=device-width, initial-scale=1"></meta>
 <title ng-bind="$state.current.data.pageTitle">Console | Viglet
 	Turing</title>
 <!-- Bootstrap -->
 <link href="thirdparty/bootstrap/dist/css/bootstrap.min.css"
-	rel="stylesheet">
+	rel="stylesheet"></link>
 <link
 	href="https://viglet.ai/ui/thirdparty/font-awesome/css/font-awesome.min.css"
-	rel="stylesheet">
-<link href="https://viglet.ai/ui/css/viglet.css" rel="stylesheet">
+	rel="stylesheet"></link>
+<link href="https://viglet.ai/ui/css/viglet.css" rel="stylesheet"></link>
 <link href="https://viglet.ai/ui/favicon.ico" rel="shortcut icon"
-	type="image/x-icon" />
+	type="image/x-icon"></link>
+
 </head>
 <body data-target=".navbar-default">
 	<div id="wrap" style="margin-bottom: 15px;">
@@ -32,7 +34,7 @@
 							class="icon-bar"></span>
 					</button>
 					<a class="navbar-brand" href="#viglet"><img
-						src="img/viglet_logo_sm.png"></a>
+						src="img/viglet_logo_sm.png"></img></a>
 				</div>
 				<nav class="collapse navbar-collapse bs-navbar-collapse"
 					role="navigation">
@@ -55,7 +57,7 @@
 		<div class="container">
 			<div id="home" class="row row-centered" style="margin-top: 80px">
 				<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 col-centered"
-					 ng-controller="TurAlertCtrl">
+					ng-controller="TurAlertCtrl">
 					<div uib-alert ng-repeat="alert in alerts"
 						ng-class="'alert-' + (alert.type || 'warning')"
 						close="closeAlert($index)" dismiss-on-timeout="5000">{{alert.msg}}</div>

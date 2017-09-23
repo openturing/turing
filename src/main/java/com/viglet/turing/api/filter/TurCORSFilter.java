@@ -1,31 +1,20 @@
 package com.viglet.turing.api.filter;
 
-import java.net.URL;
-
-import javax.servlet.ServletContext;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-
-import com.sun.jersey.spi.container.ContainerRequest;
-import com.sun.jersey.spi.container.ContainerResponse;
-import com.sun.jersey.spi.container.ContainerResponseFilter;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
 
 public class TurCORSFilter implements ContainerResponseFilter {
-	@javax.ws.rs.core.Context
-	ServletContext context;
-	URL vecchioURL = null;
 
 	@Override
-	public ContainerResponse filter(ContainerRequest containerRequest, ContainerResponse containerResponse) {
+	public void filter(ContainerRequestContext creq, ContainerResponseContext cres) {
 
-		ResponseBuilder responseBuilder = Response.fromResponse(containerResponse.getResponse());
-		responseBuilder.header("Access-Control-Allow-Origin", "*");
-		responseBuilder.header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
-		responseBuilder.header("Access-Control-Allow-Headers", "Content-type");
-		responseBuilder.header("Access-Control-Max-Age", "86400");
-		responseBuilder.header("Content-Length",
-				Integer.getInteger(containerResponse.getHeaderValue("X-Content-Length")));
-		containerResponse.setResponse(responseBuilder.build());
-		return containerResponse;
+		cres.getHeaders().add("Access-Control-Allow-Origin", "*");
+		cres.getHeaders().add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
+		cres.getHeaders().add("Access-Control-Allow-Headers", "Content-type");
+		cres.getHeaders().add("Access-Control-Max-Age", "86400");
+		cres.getHeaders().add("Access-Control-Max-Age", "1209600");
+		cres.getHeaders().add("Content-Length", Integer.getInteger(cres.getHeaderString("X-Content-Length")));
 	}
+
 }
