@@ -150,6 +150,40 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Data | Viglet Turing'
 				}
+			}).state('converse', {
+				url : '/converse',
+				templateUrl : 'templates/converse/converse.html',
+				data : {
+					pageTitle : 'Converse | Viglet Turing'
+				}
+			}).state('converse.intent', {
+				url : '/intent',
+				templateUrl : 'templates/converse/converse-intent.html',
+				controller : 'TurConverseIntentCtrl',
+				data : {
+					pageTitle : 'Converse Intents | Viglet Turing'
+				}
+			}).state('converse.entity', {
+				url : '/intent',
+				templateUrl : 'templates/converse/converse-entity.html',
+				controller : 'TurConverseEntityCtrl',
+				data : {
+					pageTitle : 'Converse Entity | Viglet Turing'
+				}
+			}).state('converse.training', {
+				url : '/training',
+				templateUrl : 'templates/converse/converse-training.html',
+				controller : 'TurConverseTrainingCtrl',
+				data : {
+					pageTitle : 'Converse Training | Viglet Turing'
+				}
+			}).state('converse.prebuilt-agent', {
+				url : '/prebuiltagent',
+				templateUrl : 'templates/converse/converse-prebuilt-agent.html',
+				controller : 'TurConversePreBuiltAgentCtrl',
+				data : {
+					pageTitle : 'Converse Prebuilt Agents | Viglet Turing'
+				}
 			}).state('se', {
 				url : '/se',
 				templateUrl : 'templates/se/se.html',

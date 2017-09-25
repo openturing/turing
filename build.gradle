@@ -32,18 +32,25 @@ tasks.withType(JavaCompile) {
 }
 
 // Combine JS files
-task combine(type: com.eriwen.gradle.js.tasks.CombineJsTask) {
-    source = "${projectDir}/src/main/resources/public/js/build/extract"
+task combineFeatureJs(type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = "${projectDir}/src/main/resources/public/js/build/extract/feature"
+    dest = "${projectDir}/src/main/resources/public/js/build/aggregate/turFeature.js"
+}
+
+task combineAllJs(dependsOn: ':combineFeatureJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = ["${projectDir}/src/main/resources/public/js/build/extract/main/__turFactory.js", "${projectDir}/src/main/resources/public/js/build/aggregate/turFeature.js"]
     dest = "${projectDir}/src/main/resources/public/js/build/aggregate/turing.js"
 }
 
-minifyJs {
-    source = combineJs
+task minifyAllJs(dependsOn: ':combineAllJs', type: com.eriwen.gradle.js.tasks.MinifyJsTask) {
+ 	source = "${projectDir}/src/main/resources/public/js/build/aggregate/turing.js"
     dest = file("${projectDir}/src/main/resources/public/js/dist/turing-min.js")
     closure {
         warningLevel = 'QUIET'
     }
 }
+
+compileJava.dependsOn(minifyAllJs)
 
 jar {
     baseName = 'turing'
