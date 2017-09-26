@@ -19,6 +19,7 @@ turingApp.controller('TurMLDataEditCtrl', [
 				id : $stateParams.mlDataId
 			});
 			$scope.dataSave = function() {
+				delete $scope.data.turDataGroupSentences;
 				$scope.data.$update(function() {
 					turNotificationService.addNotification("Data \"" + $scope.data.name + "\" was saved.");
 				});

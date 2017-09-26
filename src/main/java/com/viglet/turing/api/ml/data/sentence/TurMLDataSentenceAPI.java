@@ -42,12 +42,13 @@ public class TurMLDataSentenceAPI {
 	@Path("/{sentenceId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
-	public TurDataGroupSentence update(@PathParam("sentenceId") int id, TurDataGroupSentence turDataSentence)
+	public TurDataGroupSentence update(@PathParam("sentenceId") int id, TurDataGroupSentence turDataGroupSentence)
 			throws Exception {
+	
 		TurDataGroupSentence turDataGroupSentenceEdit = turDataGroupSentenceRepository.findOne(id);
-		turDataGroupSentenceEdit.setSentence(turDataSentence.getSentence());
-		turDataGroupSentenceEdit.setTurData(turDataSentence.getTurData());
-		turDataGroupSentenceEdit.setTurMLCategory(turDataSentence.getTurMLCategory());
+		turDataGroupSentenceEdit.setSentence(turDataGroupSentence.getSentence());
+		turDataGroupSentenceEdit.setTurData(turDataGroupSentence.getTurData());
+		turDataGroupSentenceEdit.setTurMLCategory(turDataGroupSentence.getTurMLCategory());
 		this.turDataGroupSentenceRepository.save(turDataGroupSentenceEdit);
 		return turDataGroupSentenceEdit;
 	}

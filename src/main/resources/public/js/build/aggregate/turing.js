@@ -1383,6 +1383,7 @@ turingApp.controller('TurMLDataEditCtrl', [
 				id : $stateParams.mlDataId
 			});
 			$scope.dataSave = function() {
+				delete $scope.data.turDataGroupSentences;
 				$scope.data.$update(function() {
 					turNotificationService.addNotification("Data \"" + $scope.data.name + "\" was saved.");
 				});
@@ -1448,9 +1449,9 @@ turingApp.controller('TurMLDataSentenceCtrl', [
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			$scope.categories = turMLDataGroupCategoryResource.query({
+		/*	$scope.categories = turMLDataGroupCategoryResource.query({
 				dataGroupId : $stateParams.mlDataGroupId
-			});
+			});*/
 			$scope.sentenceUpdate = function(turDataGroupSentence) {
 				turMLDataGroupSentenceResource.update({
 					dataGroupId : $stateParams.mlDataGroupId,

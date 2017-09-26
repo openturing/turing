@@ -17,8 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.bean.ml.sentence.TurMLSentenceBean;
+import com.viglet.turing.persistence.bean.storage.TurDataGroupSentenceBean;
 import com.viglet.turing.persistence.model.storage.TurDataGroup;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
+import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 
@@ -30,6 +32,8 @@ public class TurMLDataGroupSentenceAPI {
 	TurDataGroupRepository turDataGroupRepository;
 	@Autowired
 	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	@Autowired
+	TurMLCategoryRepository turMLCategoryRepository;
 
 	@GET
 	@Produces("application/json")
@@ -50,10 +54,12 @@ public class TurMLDataGroupSentenceAPI {
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurDataGroupSentence update(@PathParam("dataGroupId") int dataGroupId,
-			@PathParam("dataGroupSentenceId") int id, TurDataGroupSentence turDataGroupSentence) throws Exception {
+			@PathParam("dataGroupSentenceId") int id, TurDataGroupSentenceBean turDataGroupSentenceBean)
+			throws Exception {
 		TurDataGroupSentence turDataGroupSentenceEdit = this.turDataGroupSentenceRepository.findOne(id);
-		turDataGroupSentenceEdit.setSentence(turDataGroupSentence.getSentence());
-		turDataGroupSentenceEdit.setTurMLCategory(turDataGroupSentence.getTurMLCategory());
+		turDataGroupSentenceEdit.setSentence(turDataGroupSentenceBean.getSentence());
+		turDataGroupSentenceEdit
+				.setTurMLCategory(turMLCategoryRepository.findById(turDataGroupSentenceBean.getTurMLCategory()));
 		this.turDataGroupSentenceRepository.save(turDataGroupSentenceEdit);
 		return turDataGroupSentenceEdit;
 	}
