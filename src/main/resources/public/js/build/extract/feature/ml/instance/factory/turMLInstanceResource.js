@@ -1,9 +1,10 @@
-turingApp.factory('turMLInstanceResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
+turingApp.factory('turMLInstanceResource', [ '$resource',
+		'turAPIServerService', function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat('/ml/:id'), {
+				id : '@id'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);

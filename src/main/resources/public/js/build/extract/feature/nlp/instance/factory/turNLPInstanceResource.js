@@ -1,5 +1,5 @@
-turingApp.factory('turNLPInstanceResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/nlp/:id', {
+turingApp.factory('turNLPInstanceResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/nlp/:id'), {
 		id : '@id'
 	}, {
 		update : {

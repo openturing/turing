@@ -1,5 +1,5 @@
-turingApp.factory('turMLDataResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/data/:id', {
+turingApp.factory('turMLDataResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/ml/data/:id'), {
 		id : '@id'
 	}, {
 		update : {

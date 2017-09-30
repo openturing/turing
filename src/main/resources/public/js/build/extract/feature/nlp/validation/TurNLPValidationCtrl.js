@@ -6,8 +6,9 @@ turingApp.controller('TurNLPValidationCtrl', [
 		"$rootScope",
 		"$translate",
 		"turNLPInstanceResource",
+		"turAPIServerService",
 		function($scope, $http, $window, $state, $rootScope, $translate,
-				turNLPInstanceResource) {
+				turNLPInstanceResource, turAPIServerService) {
 			$scope.results = null;
 			$scope.text = null;
 			$scope.nlpmodel = null;
@@ -24,7 +25,7 @@ turingApp.controller('TurNLPValidationCtrl', [
 					'text' : $scope.text
 				};
 				var parameter = JSON.stringify(text);
-				$http.post('/turing/api/nlp/' + $scope.nlpmodel + '/validate',
+				$http.post(turAPIServerService.get().concat('/nlp/' + $scope.nlpmodel + '/validate'),
 						parameter).then(function(response) {
 					$scope.results = response.data;
 				}, function(response) {

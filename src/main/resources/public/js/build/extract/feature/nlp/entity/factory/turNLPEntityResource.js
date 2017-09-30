@@ -1,5 +1,5 @@
-turingApp.factory('turNLPEntityResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/entity/:id', {
+turingApp.factory('turNLPEntityResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/entity/:id'), {
 		id : '@id'
 	}, {
 		update : {

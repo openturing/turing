@@ -1,205 +1,5 @@
-var turingApp = angular.module('turingApp', [ 'ngResource', 'ngAnimate',
+var turingApp = angular.module('turingApp', [  'ngCookies','ngResource', 'ngAnimate',
 		'ngSanitize', 'ui.router', 'ui.bootstrap', 'pascalprecht.translate' ]);
-
-turingApp.directive('convertToNumber', function() {
-	return {
-		require : 'ngModel',
-		link : function(scope, element, attrs, ngModel) {
-			ngModel.$parsers.push(function(val) {
-				return parseInt(val, 10);
-			});
-			ngModel.$formatters.push(function(val) {
-				return '' + val;
-			});
-		}
-	};
-});
-turingApp.directive('fileModel', [ '$parse', function($parse) {
-	return {
-		restrict : 'A',
-		link : function(scope, element, attrs) {
-			var model = $parse(attrs.fileModel);
-			var modelSetter = model.assign;
-
-			element.bind('change', function() {
-				scope.$apply(function() {
-					modelSetter(scope, element[0].files[0]);
-				});
-			});
-		}
-	};
-} ]);
-
-turingApp.service('fileUpload', [ '$http', function($http) {
-
-	this.uploadFileToUrl = function(file, uploadUrl) {
-		var fd = new FormData();
-		fd.append('file', file);
-		return $http.post(uploadUrl, fd, {
-			transformRequest : angular.identity,
-			headers : {
-				'Content-Type' : undefined
-			}
-		});
-	}
-} ]);
-
-turingApp.service('turNotificationService', [ '$http', function($http) {
-	this.notifications = [];
-	this.addNotification = function(msgString) {
-		this.notifications.push({
-			msg : msgString
-		});
-	};
-
-} ]);
-
-turingApp.factory('vigLocale', [
-		'$window',
-		function($window) {
-			return {
-				getLocale : function() {
-					var nav = $window.navigator;
-					if (angular.isArray(nav.languages)) {
-						if (nav.languages.length > 0) {
-							return nav.languages[0].split('-').join('_');
-						}
-					}
-					return ((nav.language || nav.browserLanguage
-							|| nav.systemLanguage || nav.userLanguage) || '')
-							.split('-').join('_');
-				}
-			}
-		} ]);
-turingApp.controller('TurSEInstanceEditCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turSEInstanceResource",
-		"turSEVendorResource",
-		"turLocaleResource",
-		"turNotificationService",
-		"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService, $uibModal) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.locales = turLocaleResource.query();
-			$scope.seVendors = turSEVendorResource.query();
-			$scope.se = turSEInstanceResource.get({
-				id : $stateParams.seInstanceId
-			});
-
-			$scope.seInstanceUpdate = function() {
-				$scope.se.$update(function() {
-					turNotificationService.addNotification("Search Engine Instance \"" + $scope.se.title + "\" was saved.");
-				});
-			}
-			$scope.seInstanceDelete = function() {
-				var $ctrl = this;
-
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/modal/turDeleteInstance.html',
-					controller : 'ModalDeleteInstanceCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						instanceName : function() {
-							return $scope.se.title;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(removeInstance) {
-					$scope.removeInstance = removeInstance;
-					$scope.deletedMessage = "Search Engine Instance \"" + $scope.se.title + "\" was deleted.";
-					$scope.se.$delete(function() {
-						turNotificationService.addNotification($scope.deletedMessage);
-						$state.go('se.instance');						
-					});
-				}, function() {
-					// Selected NO
-				});
-
-			}
-
-		} ]);
-turingApp.controller('TurSEInstanceNewCtrl', [
-		"$scope",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turSEInstanceResource",
-		"turSEVendorResource",
-		"turLocaleResource",
-		"turNotificationService",
-		function($scope, $state, $rootScope, $translate, vigLocale,
-				turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-
-			$rootScope.$state = $state;
-			$scope.locales = turLocaleResource.query();
-			$scope.seVendors = turSEVendorResource.query();
-			$scope.se = {
-				'enabled' : 0
-			};
-			$scope.seInstanceSave = function() {
-				turSEInstanceResource.save($scope.se, function() {
-					turNotificationService.addNotification( "Search Engine Instance \"" + $scope.se.title + "\" was created.");
-					$state.go('se.instance');
-				});
-			}
-		} ]);
-turingApp.controller('TurSEInstanceCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"turSEInstanceResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
-				turSEInstanceResource) {
-			$rootScope.$state = $state;
-			$scope.ses = turSEInstanceResource.query();
-		} ]);
-turingApp.factory('turSEInstanceResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/se/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
-turingApp.factory('turSEVendorResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/se/vendor/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
-turingApp.controller('TurHomeCtrl', [ "$scope", "$http", "$window", "$state",
-		"$rootScope", "$translate",
-		function($scope, $http, $window, $state, $rootScope, $translate) {
-			$scope.accesses = null;
-			$rootScope.$state = $state;
-		} ]);
 turingApp.controller('TurAlertCtrl', [ "$scope", "turNotificationService",
 		function($scope, turNotificationService) {
 		$scope.alerts = turNotificationService.notifications;
@@ -230,6 +30,8 @@ turingApp.config([
 		'$translateProvider',
 		function($stateProvider, $urlRouterProvider, $locationProvider,
 				$translateProvider) {
+		
+			$turServer = "http://localhost:2700/turing/api";
 			$translateProvider.useSanitizeValueStrategy('escaped');
 			$translateProvider.translations('en', {
 
@@ -533,8 +335,89 @@ turingApp.config([
 			});
 
 		} ]);
+turingApp.directive('fileModel', [ '$parse', function($parse) {
+	return {
+		restrict : 'A',
+		link : function(scope, element, attrs) {
+			var model = $parse(attrs.fileModel);
+			var modelSetter = model.assign;
+
+			element.bind('change', function() {
+				scope.$apply(function() {
+					modelSetter(scope, element[0].files[0]);
+				});
+			});
+		}
+	};
+} ]);
+turingApp.directive('convertToNumber', function() {
+	return {
+		require : 'ngModel',
+		link : function(scope, element, attrs, ngModel) {
+			ngModel.$parsers.push(function(val) {
+				return parseInt(val, 10);
+			});
+			ngModel.$formatters.push(function(val) {
+				return '' + val;
+			});
+		}
+	};
+});
+turingApp.service('turNotificationService', [ '$http', function($http) {
+	this.notifications = [];
+	this.addNotification = function(msgString) {
+		this.notifications.push({
+			msg : msgString
+		});
+	};
+
+} ]);
+turingApp.service('fileUpload', [ '$http', function($http) {
+
+	this.uploadFileToUrl = function(file, uploadUrl) {
+		var fd = new FormData();
+		fd.append('file', file);
+		return $http.post(uploadUrl, fd, {
+			transformRequest : angular.identity,
+			headers : {
+				'Content-Type' : undefined
+			}
+		});
+	}
+} ]);
+turingApp.service('turAPIServerService', [
+		'$http',
+		'$location',
+		'$cookies',
+		function($http, $location, $cookies) {
+			var turProtocol = $location.protocol();
+			var turHostname = $location.host();
+			var turPort = $location.port();
+			var turAPIContext = "/turing/api";
+			var turEmbServer = turProtocol + "://" + turHostname + ":"
+					+ turPort + turAPIContext;
+			console.log(turEmbServer);
+
+			this.get = function() {
+
+				if ($cookies.get('turAPIServer') != null)
+					return $cookies.get('turAPIServer');
+				else {
+					$http({
+						method : 'GET',
+						url : turEmbServer
+					}).then(function successCallback(response) {
+						$cookies.put('turAPIServer', turEmbServer);
+					}, function errorCallback(response) {
+						$cookies.put('turAPIServer', 'http://localhost:2700' + turAPIContext);
+
+					});
+					return turEmbServer;
+				}
+			}
+		} ]);
 turingApp.factory('turLocaleResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/locale/:id', {
+	return $resource($turServer.concat('/locale/:id'), {
 		id : '@id'
 	}, {
 		update : {
@@ -542,6 +425,154 @@ turingApp.factory('turLocaleResource', [ '$resource', function($resource) {
 		}
 	});
 } ]);
+turingApp.factory('vigLocale', [
+		'$window',
+		function($window) {
+			return {
+				getLocale : function() {
+					var nav = $window.navigator;
+					if (angular.isArray(nav.languages)) {
+						if (nav.languages.length > 0) {
+							return nav.languages[0].split('-').join('_');
+						}
+					}
+					return ((nav.language || nav.browserLanguage
+							|| nav.systemLanguage || nav.userLanguage) || '')
+							.split('-').join('_');
+				}
+			}
+		} ]);
+turingApp.controller('TurSEInstanceEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turSEInstanceResource",
+		"turSEVendorResource",
+		"turLocaleResource",
+		"turNotificationService",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.locales = turLocaleResource.query();
+			$scope.seVendors = turSEVendorResource.query();
+			$scope.se = turSEInstanceResource.get({
+				id : $stateParams.seInstanceId
+			});
+
+			$scope.seInstanceUpdate = function() {
+				$scope.se.$update(function() {
+					turNotificationService.addNotification("Search Engine Instance \"" + $scope.se.title + "\" was saved.");
+				});
+			}
+			$scope.seInstanceDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.se.title;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Search Engine Instance \"" + $scope.se.title + "\" was deleted.";
+					$scope.se.$delete(function() {
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('se.instance');						
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+turingApp.controller('TurSEInstanceNewCtrl', [
+		"$scope",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turSEInstanceResource",
+		"turSEVendorResource",
+		"turLocaleResource",
+		"turNotificationService",
+		function($scope, $state, $rootScope, $translate, vigLocale,
+				turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+
+			$rootScope.$state = $state;
+			$scope.locales = turLocaleResource.query();
+			$scope.seVendors = turSEVendorResource.query();
+			$scope.se = {
+				'enabled' : 0
+			};
+			$scope.seInstanceSave = function() {
+				turSEInstanceResource.save($scope.se, function() {
+					turNotificationService.addNotification( "Search Engine Instance \"" + $scope.se.title + "\" was created.");
+					$state.go('se.instance');
+				});
+			}
+		} ]);
+turingApp.controller('TurSEInstanceCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turSEInstanceResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turSEInstanceResource) {
+			$rootScope.$state = $state;
+			$scope.ses = turSEInstanceResource.query();
+		} ]);
+turingApp.factory('turSEInstanceResource', [ '$resource',
+		'turAPIServerService', function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat('/se/:id'), {
+				id : '@id'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
+turingApp.factory('turSEVendorResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/se/vendor/:id'), {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
+turingApp.controller('TurHomeCtrl', [ "$scope", "$http", "$window", "$state",
+		"$rootScope", "$translate",'turAPIServerService',
+		function($scope, $http, $window, $state, $rootScope, $translate, turAPIServerService) {
+			createServerAPICookie = turAPIServerService.get();
+			$scope.accesses = null;
+			$rootScope.$state = $state;
+		} ]);
 turingApp.controller('TurSNAdvertisingCtrl', [
 	"$scope",
 	"$http",
@@ -673,8 +704,8 @@ turingApp.controller('TurSNSiteEditCtrl', [
 			}
 
 		} ]);
-turingApp.factory('turSNSiteResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/sn/:id', {
+turingApp.factory('turSNSiteResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/sn/:id'), {
 		id : '@id'
 	}, {
 		update : {
@@ -790,8 +821,8 @@ turingApp.controller('TurMLCategoryEditCtrl', [
 			}
 
 		} ]);
-turingApp.factory('turMLCategoryResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/category/:id', {
+turingApp.factory('turMLCategoryResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/ml/category/:id'), {
 		id : '@id'
 	}, {
 		update : {
@@ -840,15 +871,19 @@ turingApp.controller('TurMLModelCtrl', [
 			$rootScope.$state = $state;
 			$scope.mlModels = turMLModelResource.query();
 		} ]);
-turingApp.factory('turMLModelResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/model/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
+turingApp.factory('turMLModelResource', [
+		'$resource',
+		'turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat('/ml/model/:id'),
+					{
+						id : '@id'
+					}, {
+						update : {
+							method : 'PUT'
+						}
+					});
+		} ]);
 turingApp.controller('TurMLInstanceCtrl',
 		[
 				"$scope",
@@ -891,15 +926,16 @@ turingApp.controller('TurMLInstanceNewCtrl', [
 				});
 			}
 		} ]);
-turingApp.factory('turMLInstanceResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
+turingApp.factory('turMLInstanceResource', [ '$resource',
+		'turAPIServerService', function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat('/ml/:id'), {
+				id : '@id'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
 turingApp.controller('TurMLInstanceEditCtrl', [
 		"$scope",
 		"$stateParams",
@@ -1282,8 +1318,8 @@ turingApp.controller('TurMLDataGroupDataCtrl', [
 			}
 
 		} ]);
-turingApp.factory('turMLDataGroupResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/data/group/:id', {
+turingApp.factory('turMLDataGroupResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/ml/data/group/:id'), {
 		id : '@id'
 	}, {
 		update : {
@@ -1292,10 +1328,10 @@ turingApp.factory('turMLDataGroupResource', [ '$resource', function($resource) {
 	});
 } ]);
 turingApp.factory('turMLDataGroupCategoryResource', [
-		'$resource',
-		function($resource) {
+		'$resource','turAPIServerService',
+		function($resource, turAPIServerService) {
 			return $resource(
-					'/turing/api/ml/data/group/:dataGroupId/category/:id', {
+					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/category/:id'), {
 						id : '@id',
 						dataGroupId : '@dataGroupId'
 					}, {
@@ -1305,10 +1341,10 @@ turingApp.factory('turMLDataGroupCategoryResource', [
 					});
 		} ]);
 turingApp.factory('turMLDataGroupDataResource', [
-		'$resource',
-		function($resource) {
+		'$resource', 'turAPIServerService',
+		function($resource, turAPIServerService) {
 			return $resource(
-					'/turing/api/ml/data/group/:dataGroupId/data/:id', {
+					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/data/:id'), {
 						id : '@id',
 						dataGroupId : '@dataGroupId'
 					}, {
@@ -1318,10 +1354,10 @@ turingApp.factory('turMLDataGroupDataResource', [
 					});
 		} ]);
 turingApp.factory('turMLDataGroupSentenceResource', [
-		'$resource',
-		function($resource) {
+		'$resource', 'turAPIServerService',
+		function($resource, turAPIServerService) {
 			return $resource(
-					'/turing/api/ml/data/group/:dataGroupId/sentence/:id', {
+					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/sentence/:id'), {
 						id : '@id',
 						dataGroupId : '@dataGroupId'
 					}, {
@@ -1330,38 +1366,51 @@ turingApp.factory('turMLDataGroupSentenceResource', [
 						}
 					});
 		} ]);
-turingApp.controller('TurMLDataNewCtrl', [ "$uibModalInstance",
-	"data", 'fileUpload', 'turNotificationService', function($uibModalInstance, data, fileUpload, turNotificationService) {
-		var $ctrl = this;
-		$ctrl.myFile = null;
-		$ctrl.removeInstance = false;
-		$ctrl.data = data;
-		$ctrl.ok = function() {
-			var file = $ctrl.myFile;
-			var uploadUrl = '/turing/api/ml/data/group/' + data.datagroupId + '/data/import';
-			var response = null;
-			fileUpload.uploadFileToUrl(file, uploadUrl).then( function(response){
-				turNotificationService.addNotification(response.data.turData.name + "\" file was uploaded.");
-				$uibModalInstance.close(response);
-			});
-			
-			
-		};
-
-		$ctrl.cancel = function() {
+turingApp.controller('TurMLDataNewCtrl', [
+		"$uibModalInstance",
+		"data",
+		'fileUpload',
+		'turNotificationService',
+		'turAPIServerService',
+		function($uibModalInstance, data, fileUpload, turNotificationService,
+				turAPIServerService) {
+			var $ctrl = this;
+			$ctrl.myFile = null;
 			$ctrl.removeInstance = false;
-			$uibModalInstance.dismiss('cancel');
-		};
-	} ]);
-turingApp.factory('turMLDataSentenceResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/data/sentence/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
+			$ctrl.data = data;
+			$ctrl.ok = function() {
+				var file = $ctrl.myFile;
+				var uploadUrl = turAPIServerService.get().concat(
+						'/ml/data/group/' + data.datagroupId + '/data/import');
+				var response = null;
+				fileUpload.uploadFileToUrl(file, uploadUrl).then(
+						function(response) {
+							turNotificationService
+									.addNotification(response.data.turData.name
+											+ "\" file was uploaded.");
+							$uibModalInstance.close(response);
+						});
+
+			};
+
+			$ctrl.cancel = function() {
+				$ctrl.removeInstance = false;
+				$uibModalInstance.dismiss('cancel');
+			};
+		} ]);
+turingApp.factory('turMLDataSentenceResource', [
+		'$resource',
+		'turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat(
+					'/ml/data/sentence/:id'), {
+				id : '@id'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
 turingApp.controller('TurMLDataEditCtrl', [
 		"$scope",
 		"$stateParams",
@@ -1422,8 +1471,8 @@ turingApp.controller('TurMLDataEditCtrl', [
 			}
 
 		} ]);
-turingApp.factory('turMLDataResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/data/:id', {
+turingApp.factory('turMLDataResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/ml/data/:id'), {
 		id : '@id'
 	}, {
 		update : {
@@ -1463,8 +1512,8 @@ turingApp.controller('TurMLDataSentenceCtrl', [
 				});
 			}
 		} ]);
-turingApp.factory('turMLVendorResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/vendor/:id', {
+turingApp.factory('turMLVendorResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/ml/vendor/:id'), {
 		id : '@id'
 	}, {
 		update : {
@@ -1505,8 +1554,8 @@ turingApp.controller('TurNLPEntityCtrl', [
 			$rootScope.$state = $state;
 			$scope.entities = turNLPEntityResource.query();
 		} ]);
-turingApp.factory('turNLPEntityResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/entity/:id', {
+turingApp.factory('turNLPEntityResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/entity/:id'), {
 		id : '@id'
 	}, {
 		update : {
@@ -1591,8 +1640,8 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 			}
 
 		} ]);
-turingApp.factory('turNLPInstanceResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/nlp/:id', {
+turingApp.factory('turNLPInstanceResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/nlp/:id'), {
 		id : '@id'
 	}, {
 		update : {
@@ -1637,8 +1686,9 @@ turingApp.controller('TurNLPValidationCtrl', [
 		"$rootScope",
 		"$translate",
 		"turNLPInstanceResource",
+		"turAPIServerService",
 		function($scope, $http, $window, $state, $rootScope, $translate,
-				turNLPInstanceResource) {
+				turNLPInstanceResource, turAPIServerService) {
 			$scope.results = null;
 			$scope.text = null;
 			$scope.nlpmodel = null;
@@ -1655,7 +1705,7 @@ turingApp.controller('TurNLPValidationCtrl', [
 					'text' : $scope.text
 				};
 				var parameter = JSON.stringify(text);
-				$http.post('/turing/api/nlp/' + $scope.nlpmodel + '/validate',
+				$http.post(turAPIServerService.get().concat('/nlp/' + $scope.nlpmodel + '/validate'),
 						parameter).then(function(response) {
 					$scope.results = response.data;
 				}, function(response) {
@@ -1663,15 +1713,19 @@ turingApp.controller('TurNLPValidationCtrl', [
 				});
 			};
 		} ]);
-turingApp.factory('turNLPVendorResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/nlp/vendor/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
+turingApp.factory('turNLPVendorResource', [
+		'$resource',
+		'turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get()
+					.concat('/nlp/vendor/:id'), {
+				id : '@id'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
 turingApp.controller('TurConverseEntityCtrl', [
 		"$scope",
 		"$http",

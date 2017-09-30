@@ -32,13 +32,18 @@ tasks.withType(JavaCompile) {
 }
 
 // Combine JS files
-task combineFeatureJs(type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+task combineSystemJs(type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = "${projectDir}/src/main/resources/public/js/build/extract/system"
+    dest = "${projectDir}/src/main/resources/public/js/build/aggregate/turSystem.js"
+}
+
+task combineFeatureJs(dependsOn: ':combineSystemJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
     source = "${projectDir}/src/main/resources/public/js/build/extract/feature"
     dest = "${projectDir}/src/main/resources/public/js/build/aggregate/turFeature.js"
 }
 
 task combineAllJs(dependsOn: ':combineFeatureJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
-    source = ["${projectDir}/src/main/resources/public/js/build/extract/main/__turFactory.js", "${projectDir}/src/main/resources/public/js/build/aggregate/turFeature.js"]
+    source = ["${projectDir}/src/main/resources/public/js/build/extract/main/__turFactory.js", "${projectDir}/src/main/resources/public/js/build/aggregate/turSystem.js", "${projectDir}/src/main/resources/public/js/build/aggregate/turFeature.js"]
     dest = "${projectDir}/src/main/resources/public/js/build/aggregate/turing.js"
 }
 

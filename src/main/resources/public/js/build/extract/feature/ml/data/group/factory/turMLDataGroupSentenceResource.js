@@ -1,8 +1,8 @@
 turingApp.factory('turMLDataGroupSentenceResource', [
-		'$resource',
-		function($resource) {
+		'$resource', 'turAPIServerService',
+		function($resource, turAPIServerService) {
 			return $resource(
-					'/turing/api/ml/data/group/:dataGroupId/sentence/:id', {
+					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/sentence/:id'), {
 						id : '@id',
 						dataGroupId : '@dataGroupId'
 					}, {

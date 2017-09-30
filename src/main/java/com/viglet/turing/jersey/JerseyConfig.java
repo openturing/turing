@@ -7,8 +7,10 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.api.TurAPI;
 import com.viglet.turing.api.entity.TurNLPEntityAPI;
 import com.viglet.turing.api.entity.TurNLPEntityTermAPI;
+import com.viglet.turing.api.filter.TurCORSFilter;
 import com.viglet.turing.api.ml.TurMLInstanceAPI;
 import com.viglet.turing.api.ml.TurMLVendorAPI;
 import com.viglet.turing.api.ml.category.TurMLCategoryAPI;
@@ -43,7 +45,8 @@ public class JerseyConfig extends ResourceConfig {
 		packages("com.shengwang.demo");
 		// register jackson for json
 		register(new ObjectMapperContextResolver(objectMapper));
-
+		register(TurCORSFilter.class);
+		register(TurAPI.class);
 		register(MultiPartFeature.class);
 		register(TurOTCAAutorityFileAPI.class);
 		register(TurNLPEntityAPI.class);

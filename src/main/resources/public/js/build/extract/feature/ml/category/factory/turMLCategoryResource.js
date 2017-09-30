@@ -1,5 +1,5 @@
-turingApp.factory('turMLCategoryResource', [ '$resource', function($resource) {
-	return $resource('/turing/api/ml/category/:id', {
+turingApp.factory('turMLCategoryResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/ml/category/:id'), {
 		id : '@id'
 	}, {
 		update : {

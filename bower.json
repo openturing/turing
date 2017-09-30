@@ -24,6 +24,7 @@
 		"angular-resource": "*",
 		"angular-animate": "*",
 		"angular-sanitize": "*",
-		"angular-bootstrap": "*"
+		"angular-bootstrap": "*",
+		"angular-cookies": "*"
 	}
 }

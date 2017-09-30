@@ -1,8 +1,8 @@
 turingApp.factory('turMLDataGroupCategoryResource', [
-		'$resource',
-		function($resource) {
+		'$resource','turAPIServerService',
+		function($resource, turAPIServerService) {
 			return $resource(
-					'/turing/api/ml/data/group/:dataGroupId/category/:id', {
+					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/category/:id'), {
 						id : '@id',
 						dataGroupId : '@dataGroupId'
 					}, {
