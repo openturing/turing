@@ -17,12 +17,12 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'org.springframework.boot'
-apply plugin: "com.eriwen.gradle.js"
+apply plugin: 'com.eriwen.gradle.js'
 
 group = 'com.viglet.turing'
 version = '1.0-SNAPSHOT'
 
-description = """viglet-turing"""
+description = "viglet-turing"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -30,6 +30,7 @@ targetCompatibility = 1.8
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 }
+
 
 // Combine JS files
 task combineSystemJs(type: com.eriwen.gradle.js.tasks.CombineJsTask) {

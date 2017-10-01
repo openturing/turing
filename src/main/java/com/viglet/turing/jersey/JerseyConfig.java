@@ -19,6 +19,7 @@ import com.viglet.turing.api.ml.data.TurMLDataAPI;
 import com.viglet.turing.api.ml.data.group.TurMLDataGroupAPI;
 import com.viglet.turing.api.ml.data.group.TurMLDataGroupCategoryAPI;
 import com.viglet.turing.api.ml.data.group.TurMLDataGroupDataAPI;
+import com.viglet.turing.api.ml.data.group.TurMLDataGroupModelAPI;
 import com.viglet.turing.api.ml.data.group.TurMLDataGroupSentenceAPI;
 import com.viglet.turing.api.ml.data.sentence.TurMLDataSentenceAPI;
 import com.viglet.turing.api.ml.model.TurMLModelAPI;
@@ -60,6 +61,7 @@ public class JerseyConfig extends ResourceConfig {
 		register(TurMLDataGroupCategoryAPI.class);
 		register(TurMLDataGroupDataAPI.class);
 		register(TurMLDataGroupSentenceAPI.class);
+		register(TurMLDataGroupModelAPI.class);
 		register(TurMLDataSentenceAPI.class);
 		register(TurMLModelAPI.class);
 		register(TurNLPInstanceAPI.class);

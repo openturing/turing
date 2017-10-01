@@ -635,8 +635,11 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 		"turMLDataGroupResource",
 		"turNotificationService",
 		"$uibModal",
+		"$http",
+		"turAPIServerService",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupResource, turNotificationService, $uibModal) {
+				vigLocale, turMLDataGroupResource, turNotificationService,
+				$uibModal, $http, turAPIServerService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -647,8 +650,24 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 			});
 			$scope.dataGroupSave = function() {
 				$scope.dataGroup.$update(function() {
-					turNotificationService.addNotification("Data Group \"" + $scope.dataGroup.name + "\" was saved.");
+					turNotificationService.addNotification("Data Group \""
+							+ $scope.dataGroup.name + "\" was saved.");
 				});
+			}
+
+			$scope.generateModel = function() {
+				$http.get(
+						turAPIServerService.get().concat(
+								"/ml/data/group/" + $stateParams.mlDataGroupId
+										+ "/model/generate")).then(
+						function(response) {
+							turNotificationService.addNotification("\""
+									+ $scope.dataGroup.name
+									+ "\" model was generated.");
+							$scope.results = response.data;
+						}, function(response) {
+							//
+						});
 			}
 
 			$scope.dataGroupDelete = function() {
@@ -672,9 +691,11 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 
 				modalInstance.result.then(function(removeInstance) {
 					$scope.removeInstance = removeInstance;
-					$scope.deletedMessage = "Data Group \"" + $scope.dataGroup.name + "\" was deleted.";
+					$scope.deletedMessage = "Data Group \""
+							+ $scope.dataGroup.name + "\" was deleted.";
 					$scope.dataGroup.$delete(function() {
-						turNotificationService.addNotification($scope.deletedMessage);
+						turNotificationService
+								.addNotification($scope.deletedMessage);
 						$state.go('ml.datagroup');
 					});
 				}, function() {
@@ -873,6 +894,19 @@ turingApp.controller('TurMLDataGroupDataCtrl', [
 
 			}
 
+		} ]);
+turingApp.factory('turMLDataGroupModelResource', [
+		'$resource','turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(
+					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/model/:id'), {
+						id : '@id',
+						dataGroupId : '@dataGroupId'
+					}, {
+						update : {
+							method : 'PUT'
+						}
+					});
 		} ]);
 turingApp.factory('turMLDataGroupResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
 	return $resource(turAPIServerService.get().concat('/ml/data/group/:id'), {
