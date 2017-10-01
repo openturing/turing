@@ -145,6 +145,20 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Sentence | Viglet Turing'
 				}
+			}).state('ml.datagroup-edit.model', {
+				url : '/model',
+				templateUrl : 'templates/ml/data/group/ml-datagroup-model.html',
+				controller : 'TurMLDataGroupModelCtrl',
+				data : {
+					pageTitle : 'Data Group Models | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.model-edit', {
+				url : '/model/:mlModelId',
+				templateUrl : 'templates/ml/model/ml-model-edit.html',
+				controller : 'TurMLDataGroupModelEditCtrl',
+				data : {
+					pageTitle : 'Edit Model | Viglet Turing'
+				}
 			}).state('ml.datagroup-edit.data-edit.sentence', {
 				url : '/sentence',
 				templateUrl : 'templates/ml/data/ml-data-sentence.html',

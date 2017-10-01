@@ -170,6 +170,20 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Sentence | Viglet Turing'
 				}
+			}).state('ml.datagroup-edit.model', {
+				url : '/model',
+				templateUrl : 'templates/ml/data/group/ml-datagroup-model.html',
+				controller : 'TurMLDataGroupModelCtrl',
+				data : {
+					pageTitle : 'Data Group Models | Viglet Turing'
+				}
+			}).state('ml.datagroup-edit.model-edit', {
+				url : '/model/:mlModelId',
+				templateUrl : 'templates/ml/model/ml-model-edit.html',
+				controller : 'TurMLDataGroupModelEditCtrl',
+				data : {
+					pageTitle : 'Edit Model | Viglet Turing'
+				}
 			}).state('ml.datagroup-edit.data-edit.sentence', {
 				url : '/sentence',
 				templateUrl : 'templates/ml/data/ml-data-sentence.html',
@@ -1277,6 +1291,122 @@ turingApp.controller('TurMLDataGroupSentenceCtrl', [
 					resolve : {
 						sentence : function() {
 							return $scope.sentence;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(response) {					
+					//
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+turingApp.controller('TurMLDataGroupModelEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupModelResource",
+		"turNotificationService",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupModelResource,
+				turNotificationService, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.model = turMLDataGroupModelResource.get({
+				dataGroupId : $stateParams.mlDataGroupId,
+				id : $stateParams.mlModelId
+			});
+			$scope.mlModelUpdate = function() {
+				$scope.model.$update({
+					dataGroupId : $stateParams.mlDataGroupId}, function() {
+					turNotificationService.addNotification("Model \""
+							+ $scope.model.model + "\" was saved.");
+				});
+			}
+
+			$scope.mlModelDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.model.model;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Model \""
+							+ $scope.model.model + "\" was deleted.";
+					$scope.model.$delete(function() {
+						turNotificationService
+								.addNotification($scope.deletedMessage);
+						$state.go('ml.datagroup');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+turingApp.controller('TurMLDataGroupModelCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupModelResource",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupModelResource, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.mlDataGroupModels = turMLDataGroupModelResource
+					.query({
+						dataGroupId : $stateParams.mlDataGroupId
+					});
+
+			$scope.modelNew = function() {
+				var $ctrl = this;
+				$scope.model = {
+					dataGroupId : $stateParams.mlDataGroupId
+				};
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/ml/model/ml-model-new.html',
+					controller : 'TurMLModelNewCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						model : function() {
+							return $scope.model;
 						}
 					}
 				});
