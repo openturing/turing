@@ -1,5 +1,5 @@
-turingApp.factory('turLocaleResource', [ '$resource', function($resource) {
-	return $resource($turServer.concat('/locale/:id'), {
+turingApp.factory('turLocaleResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/locale/:id'), {
 		id : '@id'
 	}, {
 		update : {

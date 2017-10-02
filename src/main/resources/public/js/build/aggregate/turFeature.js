@@ -129,6 +129,29 @@ turingApp.controller('TurHomeCtrl', [ "$scope", "$http", "$window", "$state",
 			$scope.accesses = null;
 			$rootScope.$state = $state;
 		} ]);
+turingApp.controller('TurStorageInstanceCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turStorageInstanceResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turStorageInstanceResource) {
+			$rootScope.$state = $state;
+			$scope.ses = turStorageInstanceResource.query();
+		} ]);
+turingApp.factory('turStorageInstanceResource', [ '$resource',
+		'turAPIServerService', function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat('/storage/:id'), {
+				id : '@id'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
 turingApp.controller('TurSNAdvertisingCtrl', [
 	"$scope",
 	"$http",

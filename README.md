@@ -107,8 +107,8 @@ $ java -jar build/libs/turing-0.1.0.jar
 ```
 
 ## Viglet Turing
-* Administration Console [http://localhost:2700/turing](http://localhost:2700/turing).
-* Semantic Navigation [http://localhost:2700/turing/sn](http://localhost:2700/turing/sn).
+* Administration Console [http://localhost:2700](http://localhost:2700).
+* Semantic Navigation [http://localhost:2700/sn](http://localhost:2700/sn).
 
 # For more information
 

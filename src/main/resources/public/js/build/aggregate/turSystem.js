@@ -28,8 +28,6 @@ turingApp.config([
 		'$translateProvider',
 		function($stateProvider, $urlRouterProvider, $locationProvider,
 				$translateProvider) {
-		
-			$turServer = "http://localhost:2700/turing/api";
 			$translateProvider.useSanitizeValueStrategy('escaped');
 			$translateProvider.translations('en', {
 
@@ -223,7 +221,21 @@ turingApp.config([
 				data : {
 					pageTitle : 'Converse Prebuilt Agents | Viglet Turing'
 				}
-			}).state('se', {
+			}).state('storage', {
+				url : '/storage',
+				templateUrl : 'templates/storage/storage.html',
+				data : {
+					pageTitle : 'Storage | Viglet Turing'
+				}
+			}).state('storage.instance', {
+				url : '/instance',
+				templateUrl : 'templates/storage/storage-instance.html',
+				controller : 'TurStorageInstanceCtrl',
+				data : {
+					pageTitle : 'Storages | Viglet Turing'
+				}
+			})
+			.state('se', {
 				url : '/se',
 				templateUrl : 'templates/se/se.html',
 				data : {
@@ -405,7 +417,7 @@ turingApp.service('turAPIServerService', [
 			var turProtocol = $location.protocol();
 			var turHostname = $location.host();
 			var turPort = $location.port();
-			var turAPIContext = "/turing/api";
+			var turAPIContext = "/api";
 			var turEmbServer = turProtocol + "://" + turHostname + ":"
 					+ turPort + turAPIContext;
 			console.log(turEmbServer);
@@ -428,8 +440,8 @@ turingApp.service('turAPIServerService', [
 				}
 			}
 		} ]);
-turingApp.factory('turLocaleResource', [ '$resource', function($resource) {
-	return $resource($turServer.concat('/locale/:id'), {
+turingApp.factory('turLocaleResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/locale/:id'), {
 		id : '@id'
 	}, {
 		update : {

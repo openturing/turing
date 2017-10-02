@@ -6,7 +6,7 @@ turingApp.service('turAPIServerService', [
 			var turProtocol = $location.protocol();
 			var turHostname = $location.host();
 			var turPort = $location.port();
-			var turAPIContext = "/turing/api";
+			var turAPIContext = "/api";
 			var turEmbServer = turProtocol + "://" + turHostname + ":"
 					+ turPort + turAPIContext;
 			console.log(turEmbServer);
