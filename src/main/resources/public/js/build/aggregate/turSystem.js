@@ -39,7 +39,10 @@ turingApp.config([
 				HOST : "Host",
 				PORT : "Port",
 				SETTINGS_SAVE_CHANGES : "Save Changes",
-				INTERNAL_NAME :  "Internal Name"
+				INTERNAL_NAME :  "Internal Name",
+				SENTENCE: "Sentence",
+				SENTENCES: "Sentences",
+				CATEGORY: "Category"
 			});
 			$translateProvider.translations('pt', {
 				NLP_EDIT : "Editar o NLP",
@@ -50,7 +53,10 @@ turingApp.config([
 				HOST : "Host",
 				PORT : "Porta",
 				SETTINGS_SAVE_CHANGES : "Salvar Alterações",
-				INTERNAL_NAME :  "Nome Interno"
+				INTERNAL_NAME :  "Nome Interno",
+				SENTENCE: "Sentença",
+				SENTENCES: "Sentenças",
+				CATEGORY: "Categoria"
 			});
 			$translateProvider.fallbackLanguage('en');
 

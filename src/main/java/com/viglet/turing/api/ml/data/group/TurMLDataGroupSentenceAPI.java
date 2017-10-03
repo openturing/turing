@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import com.viglet.turing.bean.ml.sentence.TurMLSentenceBean;
 import com.viglet.turing.persistence.bean.storage.TurDataGroupSentenceBean;
+import com.viglet.turing.persistence.model.ml.TurMLCategory;
 import com.viglet.turing.persistence.model.storage.TurDataGroup;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
@@ -67,7 +68,7 @@ public class TurMLDataGroupSentenceAPI {
 	@Path("{dataGroupSentenceId}")
 	@DELETE
 	@Produces("application/json")
-	public boolean deleteEntity(@PathParam("dataGroupId") int dataGroupId, @PathParam("dataGroupSentenceId") int id) {
+	public boolean deleteSentence(@PathParam("dataGroupId") int dataGroupId, @PathParam("dataGroupSentenceId") int id) throws Exception  {
 		this.turDataGroupSentenceRepository.delete(id);
 		return true;
 	}
@@ -78,8 +79,15 @@ public class TurMLDataGroupSentenceAPI {
 			throws Exception {
 		TurDataGroupSentence turDataGroupSentence = new TurDataGroupSentence();
 		TurDataGroup turDataGroup = this.turDataGroupRepository.findOne(dataGroupId);
+
 		turDataGroupSentence.setSentence(turMLSentenceBean.getSentence());
 		turDataGroupSentence.setTurDataGroup(turDataGroup);
+
+		TurMLCategory turMLCategory = this.turMLCategoryRepository.findOne(turMLSentenceBean.getTurMLCategoryId());
+		if (turMLCategory != null) {
+			turDataGroupSentence.setTurMLCategory(turMLCategory);
+		}
+		
 		this.turDataGroupSentenceRepository.save(turDataGroupSentence);
 		return turDataGroupSentence;
 

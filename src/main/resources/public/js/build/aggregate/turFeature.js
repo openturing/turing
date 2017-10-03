@@ -326,19 +326,43 @@ turingApp.controller('TurMLCategorySentenceCtrl', [
 		"turMLDataSentenceResource",
 		"turNotificationService",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, $uibModal,
-				turMLDataSentenceResource, turNotificationService) {
+				vigLocale, $uibModal, turMLDataSentenceResource,
+				turNotificationService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-			$scope.sentenceUpdate = function(turDataSentence) {
-				turMLDataSentenceResource.update({
-					id : turDataSentence.id
-				}, turDataSentence, function() {
-					turNotificationService.addNotification("Sentence \""
-							+ turDataSentence.sentence.substring(0,20) + "...\" was saved.");
+			$scope.sentenceNew = function() {
+				var $ctrl = this;
+				$scope.sentence = {
+					dataGroupId : $stateParams.mlDataGroupId,
+					turMLCategoryId : $stateParams.mlCategoryId
+				};
+				$scope.categoryId = {
+						dataGroupId : $stateParams.mlDataGroupId
+					};
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/ml/sentence/ml-sentence-new.html',
+					controller : 'TurMLSentenceNewCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						sentence : function() {
+							return $scope.sentence;
+						}
+					}
 				});
+
+				modalInstance.result.then(function(response) {
+					//
+				}, function() {
+					// Selected NO
+				});
+
 			}
 		} ]);
 turingApp.controller('TurMLCategoryEditCtrl', [
@@ -419,6 +443,9 @@ turingApp.controller('TurMLSentenceNewCtrl', [
 			var $ctrl = this;
 			$ctrl.removeInstance = false;
 			$ctrl.dataGroupId = sentence.dataGroupId;
+			
+			console.log(sentence.turMLCategoryId);
+			
 			$ctrl.sentence = sentence;
 			$ctrl.ok = function() {
 				delete sentence.dataGroupId;
@@ -806,7 +833,8 @@ turingApp.controller('TurMLDataGroupSentenceEditCtrl', [
 					$scope.removeInstance = removeInstance;
 					$scope.deletedMessage = "Sentence \""
 							+ $scope.sentence.sentence + "\" was deleted.";
-					$scope.sentence.$delete(function() {
+					$scope.sentence.$delete({
+						dataGroupId : $stateParams.mlDataGroupId}, function() {
 						turNotificationService
 								.addNotification($scope.deletedMessage);
 						$state.go('ml.datagroup');
@@ -827,8 +855,9 @@ turingApp.controller('TurMLDataGroupSentenceCtrl', [
 		"vigLocale",
 		"turMLDataGroupSentenceResource",
 		"$uibModal",
+		"turNotificationService",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupSentenceResource, $uibModal) {
+				vigLocale, turMLDataGroupSentenceResource, $uibModal, turNotificationService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -839,6 +868,17 @@ turingApp.controller('TurMLDataGroupSentenceCtrl', [
 						dataGroupId : $stateParams.mlDataGroupId
 					});
 
+			$scope.sentenceUpdate = function(turDataGroupSentence) {
+				turMLDataGroupSentenceResource.update({
+					dataGroupId : $stateParams.mlDataGroupId,
+					id : turDataGroupSentence.id
+				}, turDataGroupSentence, function() {
+					turNotificationService.addNotification("Sentence \""
+							+ turDataGroupSentence.sentence.substring(0, 20)
+							+ "...\" was saved.");
+				});
+			}
+			
 			$scope.sentenceNew = function() {
 				var $ctrl = this;
 				$scope.sentence = {
@@ -1227,9 +1267,6 @@ turingApp.controller('TurMLDataSentenceCtrl', [
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
-		/*	$scope.categories = turMLDataGroupCategoryResource.query({
-				dataGroupId : $stateParams.mlDataGroupId
-			});*/
 			$scope.sentenceUpdate = function(turDataGroupSentence) {
 				turMLDataGroupSentenceResource.update({
 					dataGroupId : $stateParams.mlDataGroupId,

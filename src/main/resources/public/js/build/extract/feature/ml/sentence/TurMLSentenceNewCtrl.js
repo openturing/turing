@@ -8,6 +8,9 @@ turingApp.controller('TurMLSentenceNewCtrl', [
 			var $ctrl = this;
 			$ctrl.removeInstance = false;
 			$ctrl.dataGroupId = sentence.dataGroupId;
+			
+			console.log(sentence.turMLCategoryId);
+			
 			$ctrl.sentence = sentence;
 			$ctrl.ok = function() {
 				delete sentence.dataGroupId;

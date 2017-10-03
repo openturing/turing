@@ -6,6 +6,8 @@ import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 public interface TurDataGroupSentenceRepository extends JpaRepository<TurDataGroupSentence, Integer> {
 
@@ -18,4 +20,8 @@ public interface TurDataGroupSentenceRepository extends JpaRepository<TurDataGro
 	TurDataGroupSentence save(TurDataGroupSentence turDataGroupSentence);
 
 	void delete(TurDataGroupSentence turDataGroupSentence);
+	
+	@Modifying
+	@Query("delete from TurDataGroupSentence ds where ds.id = ?1")
+	void delete(int turDataGroupSentenceId);
 }

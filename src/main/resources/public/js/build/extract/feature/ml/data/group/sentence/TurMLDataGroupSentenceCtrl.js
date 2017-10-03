@@ -7,8 +7,9 @@ turingApp.controller('TurMLDataGroupSentenceCtrl', [
 		"vigLocale",
 		"turMLDataGroupSentenceResource",
 		"$uibModal",
+		"turNotificationService",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupSentenceResource, $uibModal) {
+				vigLocale, turMLDataGroupSentenceResource, $uibModal, turNotificationService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
@@ -19,6 +20,17 @@ turingApp.controller('TurMLDataGroupSentenceCtrl', [
 						dataGroupId : $stateParams.mlDataGroupId
 					});
 
+			$scope.sentenceUpdate = function(turDataGroupSentence) {
+				turMLDataGroupSentenceResource.update({
+					dataGroupId : $stateParams.mlDataGroupId,
+					id : turDataGroupSentence.id
+				}, turDataGroupSentence, function() {
+					turNotificationService.addNotification("Sentence \""
+							+ turDataGroupSentence.sentence.substring(0, 20)
+							+ "...\" was saved.");
+				});
+			}
+			
 			$scope.sentenceNew = function() {
 				var $ctrl = this;
 				$scope.sentence = {

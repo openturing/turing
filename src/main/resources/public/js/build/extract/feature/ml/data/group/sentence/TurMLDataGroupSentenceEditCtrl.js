@@ -51,7 +51,8 @@ turingApp.controller('TurMLDataGroupSentenceEditCtrl', [
 					$scope.removeInstance = removeInstance;
 					$scope.deletedMessage = "Sentence \""
 							+ $scope.sentence.sentence + "\" was deleted.";
-					$scope.sentence.$delete(function() {
+					$scope.sentence.$delete({
+						dataGroupId : $stateParams.mlDataGroupId}, function() {
 						turNotificationService
 								.addNotification($scope.deletedMessage);
 						$state.go('ml.datagroup');
