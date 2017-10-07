@@ -74,7 +74,59 @@ repositories {
 
 
 dependencies {
+	compile (group: 'org.apache.hadoop', name: 'hadoop-common', version: '2.2.0') {
+		exclude(module: 'guava')
+		exclude(module: 'commons-logging')
+		exclude(module: 'log4j')
+		exclude(module: 'slf4j-api')
+		exclude(module: 'slf4j-log4j12')
+		exclude(module: 'jackson-mapper-asl')
+		exclude(module: 'jackson-core-asl')
+		exclude(module: 'jersey-core')
+		exclude(module: 'jersey-json')
+		exclude(module: 'jersey-server')				
+		exclude(module: 'jasper-runtime')
+		exclude(module: 'jasper-compiler')
+		exclude(module: 'servlet-api')
+		exclude(module: 'jsp-api')
+		
 
+	}
+	
+	compile (group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '2.2.0') {
+		exclude(module: 'jackson-mapper-asl')
+		exclude(module: 'jackson-core-asl')
+		exclude(module: 'jersey-core')
+		exclude(module: 'jersey-json')
+		exclude(module: 'jersey-server')				
+		exclude(module: 'jasper-runtime')
+		exclude(module: 'jasper-compiler')
+		exclude(module: 'servlet-api')
+		exclude(module: 'jsp-api')
+	}
+	compile (group: 'org.apache.hadoop', name: 'hadoop-auth', version: '2.2.0') {
+		exclude(module: 'commons-logging')
+		exclude(module: 'log4j')
+		exclude(module: 'slf4j-api')
+		exclude(module: 'slf4j-log4j12')
+		exclude(module: 'jackson-mapper-asl')
+		exclude(module: 'jackson-core-asl')
+		exclude(module: 'jersey-core')
+		exclude(module: 'jersey-json')
+		exclude(module: 'jersey-server')				
+		exclude(module: 'jasper-runtime')
+		exclude(module: 'jasper-compiler')
+		exclude(module: 'servlet-api')
+		exclude(module: 'jsp-api')
+	}
+	compile (group: 'org.apache.hadoop', name: 'hadoop-core', version: '1.2.1') {
+		exclude(module: 'jersey-core')
+		exclude(module: 'jersey-json')
+		exclude(module: 'jersey-server')
+		exclude(module: 'jackson-mapper-asl')
+		exclude(module: 'jackson-core-asl')
+		exclude(module: 'hsqldb')
+	}
 	compile group: 'com.google.guava', name: 'guava', version: '19.0'
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version:'1.5.2.RELEASE'
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-jersey', version:'1.5.2.RELEASE'

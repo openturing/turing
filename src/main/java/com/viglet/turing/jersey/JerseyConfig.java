@@ -31,6 +31,7 @@ import com.viglet.turing.api.otsn.search.TurOTSNSearchAPI;
 import com.viglet.turing.api.se.TurSEInstanceAPI;
 import com.viglet.turing.api.se.TurSEVendorAPI;
 import com.viglet.turing.api.sn.TurSNSiteAPI;
+import com.viglet.turing.api.storage.hadoop.TurHadoopAPI;
 
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.ext.ContextResolver;
@@ -47,6 +48,7 @@ public class JerseyConfig extends ResourceConfig {
 		// register jackson for json
 		register(new ObjectMapperContextResolver(objectMapper));
 		register(TurCORSFilter.class);
+		register(TurHadoopAPI.class);
 		register(TurAPI.class);
 		register(MultiPartFeature.class);
 		register(TurOTCAAutorityFileAPI.class);
