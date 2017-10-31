@@ -242,6 +242,20 @@ turingApp.config([
 				data : {
 					pageTitle : 'Storages | Viglet Turing'
 				}
+			}).state('storage.mgmt', {
+				url : '/mgmt',
+				templateUrl : 'templates/storage/mgmt/storage-mgmt.html',
+				controller : 'TurStorageMgmtCtrl',
+				data : {
+					pageTitle : 'Storages | Viglet Turing'
+				}
+			}).state('storage.mgmt-child', {				
+				url: '/mgmt?path',
+				templateUrl : 'templates/storage/mgmt/storage-mgmt-child.html',
+				controller : 'TurStorageMgmtCtrl',
+				data : {
+					pageTitle : 'Storages | Viglet Turing'
+				}
 			})
 			.state('se', {
 				url : '/se',
@@ -604,6 +618,45 @@ turingApp.controller('TurHomeCtrl', [ "$scope", "$http", "$window", "$state",
 			createServerAPICookie = turAPIServerService.get();
 			$scope.accesses = null;
 			$rootScope.$state = $state;
+		} ]);
+turingApp.controller('TurStorageMgmtCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turStorageMgmtResource",
+		"$stateParams",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turStorageMgmtResource, $stateParams) {
+			$rootScope.$state = $state;
+			$scope.currPath = $stateParams.path + "\/";
+			console.log("Teste1");
+			console.log($state.params.path);
+			$scope.getFullPath = function (path){
+				return  $stateParams.path + "/" + path;
+			}
+			if ($stateParams.path.length <= 0) {
+				$scope.rootPath = true;
+				$scope.filesAndDirs = turStorageMgmtResource.query();
+			} else {
+				$scope.rootPath = false;
+				$scope.filesAndDirs = turStorageMgmtResource.get({
+					id : $stateParams.path
+				});
+
+			}
+		} ]);
+turingApp.factory('turStorageMgmtResource', [ '$resource',
+		'turAPIServerService', function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat('/storage/hadoop/:id'), {
+				id : '@id'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
 		} ]);
 turingApp.controller('TurStorageInstanceCtrl', [
 		"$scope",

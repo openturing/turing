@@ -34,6 +34,8 @@ public class TurOTSNBrokerAPI {
 	TurSEInstanceRepository turSEInstanceRepository;
 	@Autowired
 	TurConfigVarRepository turConfigVarRepository;
+	@Autowired
+	TurSolr turSolr;
 
 	@POST
 	@Produces("application/json")
@@ -65,9 +67,8 @@ public class TurOTSNBrokerAPI {
 		}
 
 		try {
-			TurSolr turSolr = new TurSolr(
-					Integer.parseInt(this.turConfigVarRepository.getOne("DEFAULT_NLP").getValue()),
-					Integer.parseInt(this.turConfigVarRepository.getOne("DEFAULT_SE").getValue()), jsonAttributes);
+			turSolr.init(Integer.parseInt(this.turConfigVarRepository.findById("DEFAULT_NLP").getValue()),
+					Integer.parseInt(this.turConfigVarRepository.findById("DEFAULT_SE").getValue()), jsonAttributes);
 			turSolr.indexing();
 		} catch (Exception e) {
 			e.printStackTrace();

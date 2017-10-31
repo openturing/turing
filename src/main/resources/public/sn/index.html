@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="turingSNApp">
+<head>
+<base href="/">
+<meta charset="utf-8" />
+<meta http-equiv="content-type"
+	content="application/xhtml+xml; charset=UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1.0, minimum-scale=1.0" />
+<title>Semantic Navigation</title>
+<!-- Page styles -->
+<link rel="stylesheet"
+	href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en" />
+<link rel="stylesheet"
+	href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+<link rel="stylesheet"
+	href="https://code.getmdl.io/1.2.0/material.min.css" />
+<link rel="stylesheet" href="styles.css" />
+
+<!-- Add to homescreen for Chrome on Android -->
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="icon" sizes="192x192" href="../images/android-desktop.png" />
+
+<!-- Add to homescreen for Safari on iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-title" content="Viglet Turing" />
+<link rel="apple-touch-icon-precomposed"
+	href="../images/ios-desktop.png" />
+
+<!-- Tile icon for Win8 (144x144 + tile color) -->
+<meta name="msapplication-TileImage"
+	content="../images/touch/ms-touch-icon-144x144-precomposed.png" />
+<meta name="msapplication-TileColor" content="#3372DF" />
+<link rel="shortcut icon" href="../images/favicon.png" />
+<style>
+#view-source {
+	position: fixed;
+	display: block;
+	right: 0;
+	bottom: 0;
+	margin-right: 40px;
+	margin-bottom: 40px;
+	z-index: 900;
+}
+</style>
+</head>
+<body ng-controller="TurSNMainCtrl">
+	<div style="margin: 20px">
+		<form method="get" action="">
+			<div
+				class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+				style="width: calc(100% - 250px);">
+				<input class="mdl-textfield__input" id="q" name="q"
+					style="font-size: 40px" value='{{turQuery}}'> <label
+					class="mdl-textfield__label" for="sample3">Pesquise...</label>
+			</div>
+			<button
+				class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent"
+				style="font-size: 20px" type="submit">Pesquisar</button>
+		</form>
+		
+		<div ng-repeat="page in pages" style="display:inline;">
+			<a ng-if="page.href" ng-click="turRedirect(turQuery,page.page);"  href="{{replaceUrlSearch(page.href)}}" _target='_self' style='font-size:20px'>{{page.text}}</a>
+			<span ng-if="!page.href" style='font-size:20px'>{{page.text}}</span> |		
+		</div>
+		<h2>Resultado da busca</h2>
+		<h5>
+			Foram encontrados <strong id="totalResultados">{{total}}</strong>
+			resultados para o termo "{{turQuery}}".
+		</h5>
+	</div>
+	<div style="margin: 20px;">
+		<table>
+			<tr>
+				<td style="vertical-align: top;">
+					<div
+						class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
+						<div class="mdl-card__supporting-text mdl-card--expand">
+							<h3>Filtros Aplicados</h3>
+							<ul class="demo-list-item mdl-list">
+								<li class="mdl-list__item"
+									style="padding: 0px; min-height: 30px;"><span
+									class="mdl-list__item-primary-content"> <a
+										href="<%=otsnONURL%>">TITULO (Remover) </a></li>
+							</ul>
+						</div>
+					</div>
+				</td>
+				<td style="vertical-align: top;">
+					<div
+						class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
+						<div class="mdl-card__supporting-text mdl-card--expand">
+							<article ng-repeat="document in results"
+								class="col-boo-12 filter-texto box-institucional space-bottom-30">
+								<div>
+									<h4>
+										<a href="<%=otsnResultURL%>">{{document.name[0]}}</a>
+									</h4>
+								</div>
+								<div><%=otsnResultDate%></div>
+								<div><%=otsnResultType%></div>
+								<div>
+									Destaque? <%=otsnResultIsDestaque ? "Sim" : "Não"%>
+									<div><%=otsnResultDescription%></div>
+
+									<% if (otsnMetadataArray != null) { %>
+									<div>Assuntos encontrados:</div>
+								</div>
+							</article>
+						</div>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<script src="../thirdparty/jquery/dist/jquery.min.js"></script>
+	<script src="../thirdparty/moment/min/moment-with-locales.min.js"></script>
+	<script src="../thirdparty/angular/angular.min.js"></script>
+	<script
+		src="../thirdparty/angular-ui-router/release/angular-ui-router.min.js"></script>
+	<script src="../thirdparty/angular-translate/angular-translate.min.js"></script>
+	<script src="../thirdparty/angular-resource/angular-resource.min.js"></script>
+	<script src="../thirdparty/angular-animate/angular-animate.min.js"></script>
+	<script src="../thirdparty/angular-cookies/angular-cookies.min.js"></script>
+	<script src="../thirdparty/angular-sanitize/angular-sanitize.min.js"></script>
+	<script src="../thirdparty/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+	<script src="../thirdparty/bootstrap/dist/js/bootstrap.min.js"></script>
+	<script src="../thirdparty/material-design-lite/material.min.js"></script>
+	<script src="../js/sn/dist/turing-sn-min.js"></script>
+</body>
+
+</html>

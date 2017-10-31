@@ -25,6 +25,7 @@
 		"angular-animate": "*",
 		"angular-sanitize": "*",
 		"angular-bootstrap": "*",
-		"angular-cookies": "*"
+		"angular-cookies": "*",
+		"material-design-lite": "*"
 	}
 }

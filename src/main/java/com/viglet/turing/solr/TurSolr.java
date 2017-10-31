@@ -50,7 +50,7 @@ import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.se.similar.TurSESimilarResult;
 import com.viglet.turing.se.similar.TurSESimilarResultAttr;
 
-@ComponentScan
+@Component
 @Transactional
 public class TurSolr {
 
@@ -61,7 +61,7 @@ public class TurSolr {
 	static final Logger logger = LogManager.getLogger(TurSolr.class.getName());
 	@Autowired
 	TurNLP turNLP;
-	
+
 	private int currNLP = 0;
 	private int currSE = 0;
 	private JSONObject jsonAttributes = null;
@@ -106,8 +106,9 @@ public class TurSolr {
 		this.setCurrNLP(nlpInstanceId);
 
 		this.setCurrSE(se);
-
-		TurSEInstance turSEInstance = turSEInstanceRepository.findOne(se);
+		System.out.println("NLP01: " + nlpInstanceId);
+		System.out.println("SE01: " + se);
+		TurSEInstance turSEInstance = turSEInstanceRepository.findById(se);
 
 		if (turSEInstance != null) {
 			solrServer = new HttpSolrServer(
@@ -115,24 +116,20 @@ public class TurSolr {
 		}
 	}
 
-	public TurSolr(int nlpInstanceId, int se, String text) {
-		super();
+	public void init(int nlpInstanceId, int se, String text) {
 		init(nlpInstanceId, se);
 		this.setCurrText(text);
 	}
 
-	public TurSolr(int nlpInstanceId, int se, JSONObject jsonAttributes) {
-		super();
+	public void init(int nlpInstanceId, int se, JSONObject jsonAttributes) {
 		init(nlpInstanceId, se);
 		this.setJsonAttributes(jsonAttributes);
 		this.setCurrText(null);
 	}
 
-	public TurSolr() {
-		super();
-		init(Integer.parseInt(turConfigVarRepository.getOne("DEFAULT_NLP").getValue()),
-				Integer.parseInt(turConfigVarRepository.getOne("DEFAULT_SE").getValue()));
-
+	public void init() {
+		init(Integer.parseInt(turConfigVarRepository.findById("DEFAULT_NLP").getValue()),
+				Integer.parseInt(turConfigVarRepository.findById("DEFAULT_SE").getValue()));
 	}
 
 	public String indexing() throws JSONException {
@@ -162,8 +159,14 @@ public class TurSolr {
 			Iterator<?> keys = jsonAttributes.keys();
 			while (keys.hasNext()) {
 				String key = (String) keys.next();
-				String value = (String) jsonAttributes.get(key);
-				document.addField(key, value);
+				System.out.println("A1" + jsonAttributes.get(key).getClass().getName());
+				if (jsonAttributes.get(key).getClass().getName().equals("java.lang.Integer")) {
+					int intValue = jsonAttributes.getInt(key);
+					document.addField(key, intValue);
+				} else {
+					String value = (String) jsonAttributes.get(key);
+					document.addField(key, value);
+				}
 			}
 		} else {
 			UUID documentId = UUID.randomUUID();

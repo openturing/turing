@@ -17,13 +17,13 @@
     "test",
     "src"
   ],
-  "version": "1.0.6",
+  "version": "1.0.10",
   "homepage": "https://github.com/angular-ui/angular-ui-router-bower",
-  "_release": "1.0.6",
+  "_release": "1.0.10",
   "_resolution": {
     "type": "version",
-    "tag": "1.0.6",
-    "commit": "1f5f1f67a320fdde441c035f5d6a6b8645c78edd"
+    "tag": "1.0.10",
+    "commit": "50430a313fba39526de6031662acae0e254f7948"
   },
   "_source": "https://github.com/angular-ui/angular-ui-router-bower.git",
   "_target": "*",

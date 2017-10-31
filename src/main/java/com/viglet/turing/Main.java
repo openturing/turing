@@ -36,5 +36,10 @@ public class Main {
 	@RequestMapping("/")
 	String index() {
 		return "index";
-	}
+	}	
+	
+	@RequestMapping("/sn")
+	String sn() {
+		return "sn/index";
+	}	
 }

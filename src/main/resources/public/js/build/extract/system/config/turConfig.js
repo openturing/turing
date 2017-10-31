@@ -217,6 +217,20 @@ turingApp.config([
 				data : {
 					pageTitle : 'Storages | Viglet Turing'
 				}
+			}).state('storage.mgmt', {
+				url : '/mgmt',
+				templateUrl : 'templates/storage/mgmt/storage-mgmt.html',
+				controller : 'TurStorageMgmtCtrl',
+				data : {
+					pageTitle : 'Storages | Viglet Turing'
+				}
+			}).state('storage.mgmt-child', {				
+				url: '/mgmt?path',
+				templateUrl : 'templates/storage/mgmt/storage-mgmt-child.html',
+				controller : 'TurStorageMgmtCtrl',
+				data : {
+					pageTitle : 'Storages | Viglet Turing'
+				}
 			})
 			.state('se', {
 				url : '/se',

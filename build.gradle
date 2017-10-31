@@ -31,9 +31,31 @@ tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 }
 
+task combineSNSystemJs(type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = "${projectDir}/src/main/resources/public/js/sn/build/extract/system"
+    dest = "${projectDir}/src/main/resources/public/js/sn/build/aggregate/turSNSystem.js"
+}
+
+task combineSNFeatureJs(dependsOn: ':combineSNSystemJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = "${projectDir}/src/main/resources/public/js/sn/build/extract/feature"
+    dest = "${projectDir}/src/main/resources/public/js/sn/build/aggregate/turSNFeature.js"
+}
+
+task combineSNAllJs(dependsOn: ':combineSNFeatureJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = ["${projectDir}/src/main/resources/public/js/sn/build/extract/main/__turSNFactory.js", "${projectDir}/src/main/resources/public/js/sn/build/aggregate/turSNSystem.js", "${projectDir}/src/main/resources/public/js/sn/build/aggregate/turSNFeature.js"]
+    dest = "${projectDir}/src/main/resources/public/js/sn/build/aggregate/turing-sn.js"
+}
+
+task minifySNAllJs(dependsOn: ':combineSNAllJs', type: com.eriwen.gradle.js.tasks.MinifyJsTask) {
+ 	source = "${projectDir}/src/main/resources/public/js/sn/build/aggregate/turing-sn.js"
+    dest = file("${projectDir}/src/main/resources/public/js/sn/dist/turing-sn-min.js")
+    closure {
+        warningLevel = 'QUIET'
+    }
+}
 
 // Combine JS files
-task combineSystemJs(type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+task combineSystemJs(dependsOn: ':minifySNAllJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
     source = "${projectDir}/src/main/resources/public/js/build/extract/system"
     dest = "${projectDir}/src/main/resources/public/js/build/aggregate/turSystem.js"
 }
@@ -129,6 +151,7 @@ dependencies {
 	}
 	compile group: 'com.google.guava', name: 'guava', version: '19.0'
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version:'1.5.2.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version:'1.5.2.RELEASE'
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-jersey', version:'1.5.2.RELEASE'
     compile group: 'org.glassfish.jersey.media', name: 'jersey-media-multipart', version:'2.25'
     compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-servlet-core', version:'2.25'
@@ -161,6 +184,7 @@ exclude(module: 'commons-logging')
     compile group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.3'
     compile group: 'org.apache.tika', name: 'tika-core', version:'1.5'
     compile group: 'org.apache.tika', name: 'tika-parsers', version:'1.5'
+    
     runtime group: 'org.springframework.boot', name: 'spring-boot-devtools', version:'1.5.2.RELEASE'
     testCompile(group: 'org.springframework.boot', name: 'spring-boot-starter-test', version:'1.5.2.RELEASE') {
 exclude(module: 'commons-logging')

@@ -19,6 +19,7 @@ import javax.ws.rs.core.UriInfo;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.solr.TurSolr;
@@ -37,6 +38,9 @@ import com.viglet.turing.se.similar.TurSESimilarResultAttr;
 @Component
 @Path("otsn/search")
 public class TurOTSNSearchAPI {
+
+	@Autowired
+	TurSolr turSolr;
 
 	public String addOrReplaceParameter(UriInfo uriInfo, String paramName, String paramValue) {
 		StringBuffer sbQueryString = new StringBuffer();
@@ -173,7 +177,7 @@ public class TurOTSNSearchAPI {
 		TurSEResults turSEResults = null;
 		JSONArray otsnResults = new JSONArray();
 
-		TurSolr turSolr = new TurSolr();
+		turSolr.init();
 		try {
 			turSEResults = turSolr.retrieveSolr(q, filterQueryModified, currentPage);
 			List<TurSEResult> seResults = turSEResults.getResults();
@@ -267,6 +271,7 @@ public class TurOTSNSearchAPI {
 			jsonOTSNPaginationPage = new JSONObject();
 			jsonOTSNPaginationPage.put("class", "first");
 			jsonOTSNPaginationPage.put("href", this.addOrReplaceParameter(uriInfo, "p", Integer.toString(1)));
+			jsonOTSNPaginationPage.put("page", 1);
 			jsonOTSNPaginationPage.put("text", "Primeira");
 			jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
 
@@ -275,6 +280,7 @@ public class TurOTSNSearchAPI {
 				jsonOTSNPaginationPage.put("class", "previous");
 				jsonOTSNPaginationPage.put("href",
 						this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getCurrentPage() - 1)));
+				jsonOTSNPaginationPage.put("page", turSEResults.getCurrentPage() - 1);
 				jsonOTSNPaginationPage.put("text", "Anterior");
 				jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
 			}
@@ -291,6 +297,7 @@ public class TurOTSNSearchAPI {
 			} else {
 				jsonOTSNPaginationPage = new JSONObject();
 				jsonOTSNPaginationPage.put("href", this.addOrReplaceParameter(uriInfo, "p", Integer.toString(page)));
+				jsonOTSNPaginationPage.put("page", page);
 				jsonOTSNPaginationPage.put("text", Integer.toString(page));
 				jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
 
@@ -302,6 +309,7 @@ public class TurOTSNSearchAPI {
 				jsonOTSNPaginationPage.put("class", "next");
 				jsonOTSNPaginationPage.put("href",
 						this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getCurrentPage() + 1)));
+				jsonOTSNPaginationPage.put("page", turSEResults.getCurrentPage() + 1);
 				jsonOTSNPaginationPage.put("text", "Próxima");
 				jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
 			}
@@ -310,6 +318,7 @@ public class TurOTSNSearchAPI {
 			jsonOTSNPaginationPage.put("class", "last");
 			jsonOTSNPaginationPage.put("href",
 					this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getPageCount())));
+			jsonOTSNPaginationPage.put("page", turSEResults.getPageCount());
 			jsonOTSNPaginationPage.put("text", "Última");
 			jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
 		}
