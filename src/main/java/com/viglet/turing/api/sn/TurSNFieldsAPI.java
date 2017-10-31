@@ -52,14 +52,16 @@ public class TurSNFieldsAPI {
 		CloseableHttpClient client = HttpClients.createDefault();
 		JSONObject jsonAddField = new JSONObject();
 		jsonAddField.put("name", field);
-		jsonAddField.put("type", "text_general");
+		
 		jsonAddField.put("indexed", true);
 		jsonAddField.put("stored", true);
 		System.out.println(field);
 		if (field.trim().toLowerCase().startsWith("turing_entity_")) {
+			jsonAddField.put("type", "string");
 			jsonAddField.put("multiValued", true);
 			System.out.println("true");
 		} else {
+			jsonAddField.put("type", "text_general");
 			jsonAddField.put("multiValued", false);
 			System.out.println("false");
 		}

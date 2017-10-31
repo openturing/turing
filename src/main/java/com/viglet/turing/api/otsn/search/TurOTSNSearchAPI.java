@@ -193,20 +193,31 @@ public class TurOTSNSearchAPI {
 				for (Object facetObject : facetMap.keySet().toArray()) {
 					String facet = (String) facetObject;
 					if (turSEResultAttr.containsKey(facet)) {
-						JSONObject otsnMetadataItem = new JSONObject();
+
 						if (turSEResultAttr.get(facet).getAttrJSON().get(facet) instanceof ArrayList) {
 							for (Object facetValueObject : (ArrayList) turSEResultAttr.get(facet).getAttrJSON()
 									.get(facet)) {
 								String facetValue = (String) facetValueObject;
+								JSONObject otsnMetadataItem = new JSONObject();
 								otsnMetadataItem.put("href", this.addFilterQuery(uriInfo, facet + ":" + facetValue));
 								otsnMetadataItem.put("text", facetValue);
+								otsnMetadata.put(otsnMetadataItem);
 							}
 						} else {
-							otsnMetadataItem.put("href", this.addFilterQuery(uriInfo,
-									facet + ":" + turSEResultAttr.get(facet).getAttrJSON().get(facet)));
-							otsnMetadataItem.put("text", turSEResultAttr.get(facet).getAttrJSON().get(facet));
+							JSONObject otsnMetadataItem = new JSONObject();
+							if (turSEResultAttr.get(facet).getAttrJSON().get(facet) instanceof String[]) {
+								String[] facetValue = (String[]) turSEResultAttr.get(facet).getAttrJSON().get(facet);
+								otsnMetadataItem.put("text", facetValue[0]);
+								otsnMetadataItem.put("href", this.addFilterQuery(uriInfo, facet + ":" + facetValue[0]));
+							} else {
+								String facetValue = (String) turSEResultAttr.get(facet).getAttrJSON().get(facet);
+								otsnMetadataItem.put("text", facetValue);
+								otsnMetadataItem.put("href", this.addFilterQuery(uriInfo, facet + ":" + facetValue));
+							}
+
+							otsnMetadata.put(otsnMetadataItem);
 						}
-						otsnMetadata.put(otsnMetadataItem);
+
 					}
 				}
 

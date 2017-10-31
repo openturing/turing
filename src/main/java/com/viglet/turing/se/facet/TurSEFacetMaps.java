@@ -14,6 +14,10 @@ public class TurSEFacetMaps {
 	}
 
 	public TurSEFacetMaps() {
+		facetMaps.put("turing_entity_MONEY", new TurSEFacetMap("turing_entity_TIME", "Money", "otsn:money",
+				"http://semantic.opentext.com/otca/entity/money"));
+		facetMaps.put("turing_entity_TIME", new TurSEFacetMap("turing_entity_TIME", "Time", "otsn:time",
+				"http://semantic.opentext.com/otca/entity/time"));
 		facetMaps.put("turing_entity_DATE", new TurSEFacetMap("turing_entity_DATE", "Date", "otsn:date",
 				"http://semantic.opentext.com/otca/entity/date"));
 		facetMaps.put("turing_entity_PN", new TurSEFacetMap("turing_entity_PN", "People", "otsn:people",
