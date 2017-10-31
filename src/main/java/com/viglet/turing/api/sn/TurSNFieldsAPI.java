@@ -40,7 +40,7 @@ public class TurSNFieldsAPI {
 		for (String field : turSEFieldMaps.getFieldMaps().keySet()) {
 			this.createField(field);
 		}
-		
+
 		TurSEFacetMaps turSEFacetMaps = new TurSEFacetMaps();
 		for (String facet : turSEFacetMaps.getFacetMaps().keySet()) {
 			this.createField(facet);
@@ -48,13 +48,21 @@ public class TurSNFieldsAPI {
 		return this.turSNSiteRepository.findAll();
 	}
 
-	public void createField (String field) throws ClientProtocolException, IOException {
+	public void createField(String field) throws ClientProtocolException, IOException {
 		CloseableHttpClient client = HttpClients.createDefault();
 		JSONObject jsonAddField = new JSONObject();
 		jsonAddField.put("name", field);
 		jsonAddField.put("type", "text_general");
 		jsonAddField.put("indexed", true);
 		jsonAddField.put("stored", true);
+		System.out.println(field);
+		if (field.trim().toLowerCase().startsWith("turing_entity_")) {
+			jsonAddField.put("multiValued", true);
+			System.out.println("true");
+		} else {
+			jsonAddField.put("multiValued", false);
+			System.out.println("false");
+		}
 		JSONObject json = new JSONObject();
 		json.put("add-field", jsonAddField);
 

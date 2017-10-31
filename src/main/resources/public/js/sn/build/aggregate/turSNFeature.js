@@ -18,8 +18,7 @@ turingSNApp
 								$scope.initParams($scope.turQuery,
 										$scope.turPage)
 							}
-							$scope.initParams = function(q, p) {
-								console.log($location.search());
+							$scope.initParams = function(q, p) {			
 								turSNSearch
 										.search(q, p)
 										.then(

@@ -14,6 +14,8 @@ public class TurSEFacetMaps {
 	}
 
 	public TurSEFacetMaps() {
+		facetMaps.put("turing_entity_DATE", new TurSEFacetMap("turing_entity_DATE", "Date", "otsn:date",
+				"http://semantic.opentext.com/otca/entity/date"));
 		facetMaps.put("turing_entity_PN", new TurSEFacetMap("turing_entity_PN", "People", "otsn:people",
 				"http://semantic.opentext.com/otca/entity/people"));
 		facetMaps.put("turing_entity_ON", new TurSEFacetMap("turing_entity_PN", "Organization", "otsn:organization",

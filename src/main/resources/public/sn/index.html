@@ -96,17 +96,19 @@
 								class="col-boo-12 filter-texto box-institucional space-bottom-30">
 								<div>
 									<h4>
-										<a href="<%=otsnResultURL%>">{{document.name[0]}}</a>
+										<a href="{{document['rdf:about']}}">{{document["dc:title"]}}</a>
 									</h4>
 								</div>
-								<div><%=otsnResultDate%></div>
+								<div>{{document["original_date"]}}</div>
 								<div><%=otsnResultType%></div>
 								<div>
 									Destaque? <%=otsnResultIsDestaque ? "Sim" : "Não"%>
-									<div><%=otsnResultDescription%></div>
-
-									<% if (otsnMetadataArray != null) { %>
-									<div>Assuntos encontrados:</div>
+									<div>{{document["text"]}}</div>
+									<div ng-if="document['dc:metadata'].length > 0">Assuntos encontrados:
+										<div ng-repeat="entity in document['dc:metadata']" style="display:inline;">
+										<a href="{{replaceUrlSearch(entity['href'])}}">{{entity['text']}}</a>,
+										</div>
+									</div>
 								</div>
 							</article>
 						</div>

@@ -295,12 +295,12 @@ public class TurSolr {
 				TurSESimilarResult turSESimilarResult = new TurSESimilarResult();
 				turSESimilarResult.add("id",
 						new TurSESimilarResultAttr("id", (String) mltDocument.getFieldValue("id")));
-				turSESimilarResult.add("title", new TurSESimilarResultAttr("title",
-						(String) ((ArrayList<?>) mltDocument.getFieldValue("title")).get(0)));
-				turSESimilarResult.add("type", new TurSESimilarResultAttr("type",
-						(String) ((ArrayList<?>) mltDocument.getFieldValue("type")).get(0)));
-				turSESimilarResult.add("url", new TurSESimilarResultAttr("url",
-						(String) ((ArrayList<?>) mltDocument.getFieldValue("url")).get(0)));
+				turSESimilarResult.add("title",
+						new TurSESimilarResultAttr("title", (String) mltDocument.getFieldValue("title")));
+				turSESimilarResult.add("type",
+						new TurSESimilarResultAttr("type", (String) mltDocument.getFieldValue("type")));
+				turSESimilarResult.add("url",
+						new TurSESimilarResultAttr("url", (String) mltDocument.getFieldValue("url")));
 				similarResults.add(turSESimilarResult);
 			}
 
