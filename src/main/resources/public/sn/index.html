@@ -60,10 +60,12 @@
 				class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent"
 				style="font-size: 20px" type="submit">Pesquisar</button>
 		</form>
-		
-		<div ng-repeat="page in pages" style="display:inline;">
-			<a ng-if="page.href" ng-click="turRedirect(turQuery,page.page);"  href="{{replaceUrlSearch(page.href)}}" _target='_self' style='font-size:20px'>{{page.text}}</a>
-			<span ng-if="!page.href" style='font-size:20px'>{{page.text}}</span> |		
+
+		<div ng-repeat="page in pages" style="display: inline;">
+			<a ng-if="page.href" ng-click="turRedirect(page.href);"
+				href="{{replaceUrlSearch(page.href)}}" _target='_self'
+				style='font-size: 20px'>{{page.text}}</a> <span ng-if="!page.href"
+				style='font-size: 20px'>{{page.text}}</span> |
 		</div>
 		<h2>Resultado da busca</h2>
 		<h5>
@@ -75,18 +77,34 @@
 		<table>
 			<tr>
 				<td style="vertical-align: top;">
-					<div
+					<div ng-if="facets['otsn:facet-to-remove'] != null"
 						class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
 						<div class="mdl-card__supporting-text mdl-card--expand">
 							<h3>Filtros Aplicados</h3>
 							<ul class="demo-list-item mdl-list">
-								<li class="mdl-list__item"
+								<li ng-repeat="facetToRemove in facets['otsn:facet-to-remove']['otsn-facet']['facet']" class="mdl-list__item"
 									style="padding: 0px; min-height: 30px;"><span
-									class="mdl-list__item-primary-content"> <a
-										href="<%=otsnONURL%>">TITULO (Remover) </a></li>
+									class="mdl-list__item-primary-content"> <a ng-click="turRedirect(facetToRemove['facet-link']);"
+										href="{{replaceUrlSearch(facetToRemove['facet-link'])}}">{{facetToRemove.label}} (Remover) </a></span></li>
 							</ul>
 						</div>
 					</div>
+
+					<div ng-repeat="(facet, facetDetail) in facets" ng-if="facet != 'otsn:facet-to-remove'"
+						class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
+						<div class="mdl-card__supporting-text mdl-card--expand">				
+							<h3>{{facetDetail["rdfs:label"]["text"]}}</h3>
+							<ul class="demo-list-item mdl-list">
+								<li ng-repeat="facetItem in facetDetail['otsn-facet']['facet']" class="mdl-list__item"
+									style="padding: 0px; min-height: 30px;"><span
+									class="mdl-list__item-primary-content"> <a ng-click="turRedirect(facetItem['facet-link']);"
+										href="{{replaceUrlSearch(facetItem['facet-link'])}}">{{facetItem.label}}
+											({{facetItem['facet-count']}})</a>
+								</span></li>
+							</ul>
+						</div>
+					</div>
+
 				</td>
 				<td style="vertical-align: top;">
 					<div
@@ -96,17 +114,18 @@
 								class="col-boo-12 filter-texto box-institucional space-bottom-30">
 								<div>
 									<h4>
-										<a href="{{document['rdf:about']}}">{{document["dc:title"]}}</a>
+										<a href="{{document['rdf:about']}}" ng-bind-html="document['dc:title']"></a>
 									</h4>
 								</div>
 								<div>{{document["original_date"]}}</div>
-								<div><%=otsnResultType%></div>
+								<div>{{document["dc:type"][0]}}</div>
 								<div>
-									Destaque? <%=otsnResultIsDestaque ? "Sim" : "Não"%>
-									<div>{{document["text"]}}</div>
-									<div ng-if="document['dc:metadata'].length > 0">Assuntos encontrados:
-										<div ng-repeat="entity in document['dc:metadata']" style="display:inline;">
-										<a href="{{replaceUrlSearch(entity['href'])}}">{{entity['text']}}</a>,
+									<div ng-bind-html="document['text']"></div>
+									<div ng-if="document['dc:metadata'].length > 0">
+										Assuntos encontrados:
+										<div ng-repeat="entity in document['dc:metadata']"
+											style="display: inline;">
+											<a ng-click="turRedirect(entity['href']);" href="{{replaceUrlSearch(entity['href'])}}">{{entity['text']}}</a>,
 										</div>
 									</div>
 								</div>
