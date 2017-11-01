@@ -34,24 +34,13 @@
 	content="../images/touch/ms-touch-icon-144x144-precomposed.png" />
 <meta name="msapplication-TileColor" content="#3372DF" />
 <link rel="shortcut icon" href="../images/favicon.png" />
-<style>
-#view-source {
-	position: fixed;
-	display: block;
-	right: 0;
-	bottom: 0;
-	margin-right: 40px;
-	margin-bottom: 40px;
-	z-index: 900;
-}
-</style>
 </head>
 <body ng-controller="TurSNMainCtrl">
 	<div style="margin: 20px">
 		<form method="get" action="">
 			<div
 				class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
-				style="width: calc(100% - 250px);">
+				style="width: calc(100% - 150px);">
 				<input class="mdl-textfield__input" id="q" name="q"
 					style="font-size: 40px" value='{{turQuery}}'> <label
 					class="mdl-textfield__label" for="sample3">Pesquise...</label>
@@ -60,82 +49,100 @@
 				class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent"
 				style="font-size: 20px" type="submit">Pesquisar</button>
 		</form>
-
-		<div ng-repeat="page in pages" style="display: inline;">
-			<a ng-if="page.href" ng-click="turRedirect(page.href);"
-				href="{{replaceUrlSearch(page.href)}}" _target='_self'
-				style='font-size: 20px'>{{page.text}}</a> <span ng-if="!page.href"
-				style='font-size: 20px'>{{page.text}}</span> |
-		</div>
-		<h2>Resultado da busca</h2>
-		<h5>
-			Foram encontrados <strong id="totalResultados">{{total}}</strong>
-			resultados para o termo "{{turQuery}}".
-		</h5>
 	</div>
-	<div style="margin: 20px;">
-		<table>
-			<tr>
-				<td style="vertical-align: top;">
-					<div ng-if="facets['otsn:facet-to-remove'] != null"
-						class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
-						<div class="mdl-card__supporting-text mdl-card--expand">
-							<h3>Filtros Aplicados</h3>
-							<ul class="demo-list-item mdl-list">
-								<li ng-repeat="facetToRemove in facets['otsn:facet-to-remove']['otsn-facet']['facet']" class="mdl-list__item"
-									style="padding: 0px; min-height: 30px;"><span
-									class="mdl-list__item-primary-content"> <a ng-click="turRedirect(facetToRemove['facet-link']);"
-										href="{{replaceUrlSearch(facetToRemove['facet-link'])}}">{{facetToRemove.label}} (Remover) </a></span></li>
-							</ul>
-						</div>
-					</div>
+	<div ng-if="total > 0" style="margin: 20px">
 
-					<div ng-repeat="(facet, facetDetail) in facets" ng-if="facet != 'otsn:facet-to-remove'"
-						class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
-						<div class="mdl-card__supporting-text mdl-card--expand">				
-							<h3>{{facetDetail["rdfs:label"]["text"]}}</h3>
-							<ul class="demo-list-item mdl-list">
-								<li ng-repeat="facetItem in facetDetail['otsn-facet']['facet']" class="mdl-list__item"
-									style="padding: 0px; min-height: 30px;"><span
-									class="mdl-list__item-primary-content"> <a ng-click="turRedirect(facetItem['facet-link']);"
-										href="{{replaceUrlSearch(facetItem['facet-link'])}}">{{facetItem.label}}
-											({{facetItem['facet-count']}})</a>
-								</span></li>
-							</ul>
+		<div style="margin: 20px;">
+			<table>
+				<tr>
+					<td style="vertical-align: top;">
+						<div ng-if="facets['otsn:facet-to-remove'] != null"
+							class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
+							<div class="mdl-card__supporting-text mdl-card--expand">
+								<h3>Filtros Aplicados</h3>
+								<ul class="demo-list-item mdl-list">
+									<li
+										ng-repeat="facetToRemove in facets['otsn:facet-to-remove']['otsn-facet']['facet']"
+										class="mdl-list__item" style="padding: 0px; min-height: 30px;"><span
+										class="mdl-list__item-primary-content"> <a
+											ng-click="turRedirect(facetToRemove['facet-link']);"
+											href="{{replaceUrlSearch(facetToRemove['facet-link'])}}">{{facetToRemove.label}}
+												(Remover) </a></span></li>
+								</ul>
+							</div>
 						</div>
-					</div>
 
-				</td>
-				<td style="vertical-align: top;">
-					<div
-						class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
-						<div class="mdl-card__supporting-text mdl-card--expand">
-							<article ng-repeat="document in results"
-								class="col-boo-12 filter-texto box-institucional space-bottom-30">
-								<div>
-									<h4>
-										<a href="{{document['rdf:about']}}" ng-bind-html="document['dc:title']"></a>
-									</h4>
-								</div>
-								<div>{{document["original_date"]}}</div>
-								<div>{{document["dc:type"][0]}}</div>
-								<div>
-									<div ng-bind-html="document['text']"></div>
-									<div ng-if="document['dc:metadata'].length > 0">
-										Assuntos encontrados:
-										<div ng-repeat="entity in document['dc:metadata']"
-											style="display: inline;">
-											<a ng-click="turRedirect(entity['href']);" href="{{replaceUrlSearch(entity['href'])}}">{{entity['text']}}</a>,
+						<div ng-repeat="(facet, facetDetail) in facets"
+							ng-if="facet != 'otsn:facet-to-remove'"
+							class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
+							<div class="mdl-card__supporting-text mdl-card--expand">
+								<h3>{{facetDetail["rdfs:label"]["text"]}}</h3>
+								<ul class="demo-list-item mdl-list">
+									<li ng-repeat="facetItem in facetDetail['otsn-facet']['facet']"
+										class="mdl-list__item" style="padding: 0px; min-height: 30px;"><span
+										class="mdl-list__item-primary-content"> <a
+											ng-click="turRedirect(facetItem['facet-link']);"
+											href="{{replaceUrlSearch(facetItem['facet-link'])}}">{{facetItem.label}}
+												({{facetItem['facet-count']}})</a>
+									</span></li>
+								</ul>
+							</div>
+						</div>
+
+					</td>
+					<td style="vertical-align: top;">
+						<div class="mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
+							<h5>
+								Foram encontrados <strong>{{total}}</strong> resultados para o
+								termo "{{turQuery}}".
+							</h5>
+						</div>
+						<div
+							class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
+							<div class="mdl-card__supporting-text mdl-card--expand">
+								<article ng-repeat="document in results"
+									class="col-boo-12 filter-texto box-institucional space-bottom-30">
+									<div>
+										<h4>
+											<a href="{{document['rdf:about']}}"
+												ng-bind-html="document['dc:title']"></a>
+										</h4>
+									</div>
+									<div>{{document['original_date'] | amParse:'YYYY-MM-DD
+										HH:mm:ss' | amDateFormat:'DD MMMM YYYY'}}</div>
+									<div>{{document["dc:type"][0]}}</div>
+									<div>
+										<div ng-bind-html="document['text']"></div>
+										<div ng-if="document['dc:metadata'].length > 0">
+											Assuntos encontrados:
+											<div ng-repeat="entity in document['dc:metadata']"
+												style="display: inline;">
+												<a ng-click="turRedirect(entity['href']);"
+													href="{{replaceUrlSearch(entity['href'])}}">{{entity['text']}}</a>
+
+												<div ng-if="!$last" style="display: inline;">,</div>
+											</div>
 										</div>
 									</div>
-								</div>
-							</article>
+								</article>
+							</div>
 						</div>
-					</div>
-				</td>
-			</tr>
-		</table>
+						<div style="text-align: center;">
+							<div ng-repeat="page in pages" style="display: inline;">
+								<a ng-if="page.href" ng-click="turRedirect(page.href);"
+									href="{{replaceUrlSearch(page.href)}}" _target='_self'
+									style='font-size: 20px'>{{page.text}}</a> <span
+									ng-if="!page.href" style='font-size: 20px'>{{page.text}}</span>
+								<div ng-if="!$last" style="display: inline;">|</div>
+							</div>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</div>
 	</div>
+	<div ng-if="total == 0" style="margin: 20px">Nenhum resultado
+		encontrado.</div>
 	<script src="../thirdparty/jquery/dist/jquery.min.js"></script>
 	<script src="../thirdparty/moment/min/moment-with-locales.min.js"></script>
 	<script src="../thirdparty/angular/angular.min.js"></script>
@@ -147,6 +154,7 @@
 	<script src="../thirdparty/angular-cookies/angular-cookies.min.js"></script>
 	<script src="../thirdparty/angular-sanitize/angular-sanitize.min.js"></script>
 	<script src="../thirdparty/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+	<script src="../thirdparty/angular-moment/angular-moment.min.js"></script>
 	<script src="../thirdparty/bootstrap/dist/js/bootstrap.min.js"></script>
 	<script src="../thirdparty/material-design-lite/material.min.js"></script>
 	<script src="../js/sn/dist/turing-sn-min.js"></script>

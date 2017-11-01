@@ -26,6 +26,7 @@
 		"angular-sanitize": "*",
 		"angular-bootstrap": "*",
 		"angular-cookies": "*",
+		"angular-moment" : "*",
 		"material-design-lite": "*"
 	}
 }

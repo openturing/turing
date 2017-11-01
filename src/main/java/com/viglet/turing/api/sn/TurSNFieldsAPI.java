@@ -52,7 +52,7 @@ public class TurSNFieldsAPI {
 		CloseableHttpClient client = HttpClients.createDefault();
 		JSONObject jsonAddField = new JSONObject();
 		jsonAddField.put("name", field);
-		
+
 		jsonAddField.put("indexed", true);
 		jsonAddField.put("stored", true);
 		System.out.println(field);
@@ -67,6 +67,27 @@ public class TurSNFieldsAPI {
 		}
 		JSONObject json = new JSONObject();
 		json.put("add-field", jsonAddField);
+
+		HttpPost httpPost = new HttpPost("http://localhost:8983/solr/turing/schema");
+		StringEntity entity = new StringEntity(json.toString());
+		httpPost.setEntity(entity);
+		httpPost.setHeader("Accept", "application/json");
+		httpPost.setHeader("Content-type", "application/json");
+
+		CloseableHttpResponse response = client.execute(httpPost);
+		System.out.println(response.toString());
+		client.close();
+		this.copyField(field, "_text_");
+	}
+
+	public void copyField(String field, String dest) throws ClientProtocolException, IOException {
+		CloseableHttpClient client = HttpClients.createDefault();
+		JSONObject jsonAddField = new JSONObject();
+		jsonAddField.put("source", field);
+
+		jsonAddField.put("dest", dest);
+		JSONObject json = new JSONObject();
+		json.put("add-copy-field", jsonAddField);
 
 		HttpPost httpPost = new HttpPost("http://localhost:8983/solr/turing/schema");
 		StringEntity entity = new StringEntity(json.toString());

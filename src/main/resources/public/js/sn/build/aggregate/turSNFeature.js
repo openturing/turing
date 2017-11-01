@@ -10,8 +10,11 @@ turingSNApp
 						"$translate",
 						"$location",
 						'turSNSearch',
+						'amMoment',
 						function($scope, $http, $window, $state, $rootScope,
-								$translate, $location, turSNSearch) {
+								$translate, $location, turSNSearch, amMoment) {
+							amMoment.changeLocale('en');
+							$scope.total = 0;
 							$scope.init = function() {
 								$scope.turQuery = $location.search().q;
 								$scope.turPage = $location.search().p;
@@ -22,7 +25,7 @@ turingSNApp
 								$scope.initParams($scope.turQuery,
 										$scope.turPage,$scope.turLocale,$scope.turSort,$scope.turFilterQuery)
 							}
-							$scope.initParams = function(q, p, _setlocale, sort, fq) {			
+							$scope.initParams = function(q, p, _setlocale, sort, fq) {	
 								turSNSearch
 										.search(q, p, _setlocale, sort, fq)
 										.then(

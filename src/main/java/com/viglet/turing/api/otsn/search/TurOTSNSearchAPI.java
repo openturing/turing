@@ -147,7 +147,7 @@ public class TurOTSNSearchAPI {
 		for (Object queryParamObject : queryParams.keySet().toArray()) {
 			String queryParam = (String) queryParamObject;
 			for (String queryParamValue : queryParams.get(queryParam)) {
-				System.out.println("OTSNSearchAPI parameters:" + queryParam + " is " + queryParamValue);
+				//System.out.println("OTSNSearchAPI parameters:" + queryParam + " is " + queryParamValue);
 			}
 		}
 
@@ -181,7 +181,7 @@ public class TurOTSNSearchAPI {
 		try {
 			turSEResults = turSolr.retrieveSolr(q, filterQueryModified, currentPage);
 			List<TurSEResult> seResults = turSEResults.getResults();
-			System.out.println("getResults size:" + turSEResults.getResults().size());
+			//System.out.println("getResults size:" + turSEResults.getResults().size());
 			for (TurSEResult result : seResults) {
 				JSONObject otsnResult = new JSONObject();
 				Map<String, TurSEResultAttr> turSEResultAttr = result.getTurSEResultAttr();

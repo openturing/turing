@@ -106,8 +106,6 @@ public class TurSolr {
 		this.setCurrNLP(nlpInstanceId);
 
 		this.setCurrSE(se);
-		System.out.println("NLP01: " + nlpInstanceId);
-		System.out.println("SE01: " + se);
 		TurSEInstance turSEInstance = turSEInstanceRepository.findById(se);
 
 		if (turSEInstance != null) {
@@ -159,7 +157,6 @@ public class TurSolr {
 			Iterator<?> keys = jsonAttributes.keys();
 			while (keys.hasNext()) {
 				String key = (String) keys.next();
-				System.out.println("A1" + jsonAttributes.get(key).getClass().getName());
 				if (jsonAttributes.get(key).getClass().getName().equals("java.lang.Integer")) {
 					int intValue = jsonAttributes.getInt(key);
 					document.addField(key, intValue);
@@ -246,7 +243,7 @@ public class TurSolr {
 		query.set(MoreLikeThisParams.SIMILARITY_FIELDS, "title,text,abstract");
 
 		query.setHighlight(true).setHighlightSnippets(1);
-		query.setParam("hl.fl", "title,abstract");
+		query.setParam("hl.fl", "title,abstract,text");
 		query.setParam("hl.fragsize", "0");
 		query.setParam("hl.simple.pre", "<mark>");
 		query.setParam("hl.simple.post", "</mark>");
@@ -256,7 +253,7 @@ public class TurSolr {
 
 		query.setFilterQueries(filterQueryArr);
 
-		System.out.println("Solr Query:" + query.toString());
+		//System.out.println("Solr Query:" + query.toString());
 		QueryResponse queryResponse = solrServer.query(query);
 		turSEResults.setNumFound(queryResponse.getResults().getNumFound());
 		turSEResults.setElapsedTime(queryResponse.getElapsedTime());
