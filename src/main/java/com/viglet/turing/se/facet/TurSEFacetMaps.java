@@ -37,6 +37,12 @@ public class TurSEFacetMaps {
 		facetMaps.put("turing_entity_ComplexConcepts", new TurSEFacetMap("turing_entity_ComplexConcepts", "Concepts", "otsn:concept",
 				"http://semantic.opentext.com/otca/concepts"));
 
+		facetMaps.put("turing_entity_character", new TurSEFacetMap("turing_entity_character", "Character", "cinestamp:character",
+				"http://semantic.opentext.com/cinestamp/character"));
+		facetMaps.put("turing_entity_cast", new TurSEFacetMap("turing_entity_cast", "Cast", "cinestamp:cast",
+				"http://semantic.opentext.com/cinestamp/cast"));
+		
+		
 		facetMaps.put("sebna_segmento", new TurSEFacetMap("sebna_segmento", "Segment", "sebna:segment",
 				"http://semantic.opentext.com/sebna/segment"));
 		facetMaps.put("sebna_momento", new TurSEFacetMap("sebna_momento", "Moment", "sebna:moment",

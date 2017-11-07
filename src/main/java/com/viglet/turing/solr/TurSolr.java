@@ -160,6 +160,13 @@ public class TurSolr {
 				if (jsonAttributes.get(key).getClass().getName().equals("java.lang.Integer")) {
 					int intValue = jsonAttributes.getInt(key);
 					document.addField(key, intValue);
+				} else if (jsonAttributes.get(key).getClass().getName().equals("org.json.JSONArray")) {
+					JSONArray value = jsonAttributes.getJSONArray(key);
+					if (value != null) {
+						for (int i = 0; i < value.length(); i++) {
+							document.addField(key, value.getString(i));
+						}
+					}
 				} else {
 					String value = (String) jsonAttributes.get(key);
 					document.addField(key, value);
@@ -253,7 +260,7 @@ public class TurSolr {
 
 		query.setFilterQueries(filterQueryArr);
 
-		//System.out.println("Solr Query:" + query.toString());
+		// System.out.println("Solr Query:" + query.toString());
 		QueryResponse queryResponse = solrServer.query(query);
 		turSEResults.setNumFound(queryResponse.getResults().getNumFound());
 		turSEResults.setElapsedTime(queryResponse.getElapsedTime());
