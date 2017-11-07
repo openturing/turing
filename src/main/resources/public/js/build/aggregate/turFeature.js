@@ -201,6 +201,36 @@ turingApp.controller('TurSNAdvertisingCtrl', [
 	function($scope, $http, $window, $state, $rootScope, $translate) {
 		$rootScope.$state = $state;
 	} ]);
+turingApp.controller('TurSNSiteUICtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$rootScope.$state = $state;
+		} ]);
+turingApp.controller('TurSNSiteHLCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$rootScope.$state = $state;
+		} ]);
+turingApp.controller('TurSNSiteFieldCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$rootScope.$state = $state;
+		} ]);
 turingApp.controller('TurSNSiteNewCtrl', [
 		"$scope",
 		"$state",
@@ -331,6 +361,16 @@ turingApp.factory('turSNSiteResource', [ '$resource', 'turAPIServerService', fun
 		}
 	});
 } ]);
+turingApp.controller('TurSNSiteFacetCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$rootScope.$state = $state;
+		} ]);
 turingApp.controller('TurMLCategoryNewCtrl', [
 		"$uibModalInstance",
 		"category",

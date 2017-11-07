@@ -1,0 +1,25 @@
+<div style="padding: 15px">
+	<div class="pull-right">
+		<button ng-click="fieldNew()" type="button" class="btn btn-viglet">New</button>
+	</div>
+	<h3>Fields</h3>
+
+	<ul class="list-group">
+		<li class="list-group-item" ng-repeat="mlDataGroupSentence in mlDataGroupSentences |orderBy:'id'">
+		<div class="row">
+				<div class="col-lg-3 col-md-3 col-sm-2 col-xs-2">
+					<select class="form-control"
+						ng-model="mlDataGroupSentence.turMLCategory"
+						ng-change="sentenceUpdate(mlDataGroupSentence)">
+						<option ng-repeat="category in dataGroup.turDataGroupCategories"
+							ng-value="category.turMLCategory.id">{{category.turMLCategory.name}}</option>
+						<option value="">- Pick One -</option>
+					</select>
+				</div>
+				<div class="col-lg-9 col-md-9 col-sm-10 col-xs-10">
+					<a
+			ui-sref="ml.datagroup-edit.sentence-edit ({mlSentenceId:mlDataGroupSentence.id})">{{mlDataGroupSentence.sentence}}</a></div>
+			</div>	
+		</li>
+	</ul>
+</div>

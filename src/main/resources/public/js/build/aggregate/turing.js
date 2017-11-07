@@ -292,24 +292,52 @@ turingApp.config([
 				}
 			}).state('sn.site', {
 				url : '/site',
-				templateUrl : 'templates/sn/sn-site.html',
+				templateUrl : 'templates/sn/site/sn-site.html',
 				controller : 'TurSNSiteCtrl',
 				data : {
 					pageTitle : 'Semantic Navigation Sites | Viglet Turing'
 				}
 			}).state('sn.site-new', {
 				url : '/site/new',
-				templateUrl : 'templates/sn/sn-site-new.html',
+				templateUrl : 'templates/sn/site/sn-site-new.html',
 				controller : 'TurSNSiteNewCtrl',
 				data : {
 					pageTitle : 'New Semantic Navigation Site | Viglet Turing'
 				}
 			}).state('sn.site-edit', {
 				url : '/site/:snSiteId',
-				templateUrl : 'templates/sn/sn-site-edit.html',
+				templateUrl : 'templates/sn/site/sn-site-edit.html',
 				controller : 'TurSNSiteEditCtrl',
 				data : {
 					pageTitle : 'Edit Semantic Navigation Site | Viglet Turing'
+				}
+			}).state('sn.site-edit.field', {
+				url : '/field',
+				templateUrl : 'templates/sn/site/sn-site-field.html',
+				controller : 'TurSNSiteFieldCtrl',
+				data : {
+					pageTitle : 'Semantic Navigation Site Fields | Viglet Turing'
+				}
+			}).state('sn.site-edit.facet', {
+				url : '/facet',
+				templateUrl : 'templates/sn/site/sn-site-facet.html',
+				controller : 'TurSNSiteFacetCtrl',
+				data : {
+					pageTitle : 'Semantic Navigation Site Facets | Viglet Turing'
+				}
+			}).state('sn.site-edit.hl', {
+				url : '/hl',
+				templateUrl : 'templates/sn/site/sn-site-hl.html',
+				controller : 'TurSNSiteHLCtrl',
+				data : {
+					pageTitle : 'Semantic Navigation Site Highlighting | Viglet Turing'
+				}
+			}).state('sn.site-edit.ui', {
+				url : '/ui',
+				templateUrl : 'templates/sn/site/sn-site-ui.html',
+				controller : 'TurSNSiteUICtrl',
+				data : {
+					pageTitle : 'Semantic Navigation Site Appearance | Viglet Turing'
 				}
 			}).state('sn.ad', {
 				url : '/ad',
@@ -691,6 +719,36 @@ turingApp.controller('TurSNAdvertisingCtrl', [
 	function($scope, $http, $window, $state, $rootScope, $translate) {
 		$rootScope.$state = $state;
 	} ]);
+turingApp.controller('TurSNSiteUICtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$rootScope.$state = $state;
+		} ]);
+turingApp.controller('TurSNSiteHLCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$rootScope.$state = $state;
+		} ]);
+turingApp.controller('TurSNSiteFieldCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$rootScope.$state = $state;
+		} ]);
 turingApp.controller('TurSNSiteNewCtrl', [
 		"$scope",
 		"$state",
@@ -821,6 +879,16 @@ turingApp.factory('turSNSiteResource', [ '$resource', 'turAPIServerService', fun
 		}
 	});
 } ]);
+turingApp.controller('TurSNSiteFacetCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$rootScope.$state = $state;
+		} ]);
 turingApp.controller('TurMLCategoryNewCtrl', [
 		"$uibModalInstance",
 		"category",
