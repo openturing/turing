@@ -1,7 +1,11 @@
 package com.viglet.turing.persistence.model.sn;
 
 import java.io.Serializable;
+import java.util.List;
+
 import javax.persistence.*;
+
+import org.hibernate.annotations.Fetch;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
@@ -39,6 +43,11 @@ public class TurSNSite implements Serializable {
 	@ManyToOne
 	@JoinColumn(name = "nlp_instance_id", nullable = false)
 	private TurNLPInstance turNLPInstance;
+
+	// bi-directional many-to-one association to TurSNSiteField
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turSNSite", cascade = CascadeType.ALL)
+	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
+	private List<TurSNSiteField> turSNSiteFields;
 
 	public TurSNSite() {
 	}
@@ -91,4 +100,25 @@ public class TurSNSite implements Serializable {
 		this.turNLPInstance = turNLPInstance;
 	}
 
+	public List<TurSNSiteField> getTurSNSiteFields() {
+		return turSNSiteFields;
+	}
+
+	public void setTurSNSiteFields(List<TurSNSiteField> turSNSiteFields) {
+		this.turSNSiteFields = turSNSiteFields;
+	}
+
+	public TurSNSiteField addTurSNSiteField(TurSNSiteField turSNSiteField) {
+		getTurSNSiteFields().add(turSNSiteField);
+		turSNSiteField.setTurSNSite(this);
+
+		return turSNSiteField;
+	}
+
+	public TurSNSiteField removeTurNLPInstanceEntity(TurSNSiteField turSNSiteField) {
+		getTurSNSiteFields().remove(turSNSiteField);
+		turSNSiteField.setTurSNSite(this);
+
+		return turSNSiteField;
+	}
 }

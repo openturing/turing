@@ -30,9 +30,9 @@ import com.viglet.turing.api.otsn.broker.TurOTSNBrokerAPI;
 import com.viglet.turing.api.otsn.search.TurOTSNSearchAPI;
 import com.viglet.turing.api.se.TurSEInstanceAPI;
 import com.viglet.turing.api.se.TurSEVendorAPI;
-import com.viglet.turing.api.sn.TurSNFieldsAPI;
 import com.viglet.turing.api.sn.TurSNImportAPI;
 import com.viglet.turing.api.sn.TurSNSiteAPI;
+import com.viglet.turing.api.sn.TurSNSiteFieldAPI;
 import com.viglet.turing.api.storage.hadoop.TurHadoopAPI;
 
 import javax.ws.rs.ApplicationPath;
@@ -76,7 +76,7 @@ public class JerseyConfig extends ResourceConfig {
 		register(TurSEVendorAPI.class);
 		register(TurSNSiteAPI.class);
 		register(TurSNImportAPI.class);
-		register(TurSNFieldsAPI.class);
+		register(TurSNSiteFieldAPI.class);
 	}
 
 	@Provider

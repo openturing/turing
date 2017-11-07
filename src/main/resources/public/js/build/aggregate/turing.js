@@ -318,6 +318,13 @@ turingApp.config([
 				data : {
 					pageTitle : 'Semantic Navigation Site Fields | Viglet Turing'
 				}
+			}).state('sn.site-edit.field-edit', {
+				url : '/field/:snSiteFieldId',
+				templateUrl : 'templates/sn/site/field/sn-site-field-edit.html',
+				controller : 'TurSNSiteFieldEditCtrl',
+				data : {
+					pageTitle : 'Edit Semantic Navigation Site Field | Viglet Turing'
+				}
 			}).state('sn.site-edit.facet', {
 				url : '/facet',
 				templateUrl : 'templates/sn/site/sn-site-facet.html',
@@ -739,6 +746,68 @@ turingApp.controller('TurSNSiteHLCtrl', [
 		function($scope, $http, $window, $state, $rootScope, $translate) {
 			$rootScope.$state = $state;
 		} ]);
+turingApp.controller('TurSNSiteFieldEditCtrl', [
+	"$scope",
+	"$stateParams",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	"turSNSiteFieldResource",
+	"turNotificationService",
+	"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turSNSiteFieldResource, turNotificationService, $uibModal) {
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.snSiteField = turSNSiteFieldResource.get({
+				id : $stateParams.snSiteFieldId,
+				snSiteId : $stateParams.snSiteId
+			});
+			$scope.snSiteFieldUpdate = function() {			
+				$scope.snSiteField.$update({				
+					snSiteId : $stateParams.snSiteId
+				}, function() {
+					turNotificationService.addNotification("Field \"" + $scope.snSiteField.name + "\" was saved.");
+				});
+			}
+
+			$scope.snSiteFieldDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.snSiteField.name;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Field \"" + $scope.snSiteField.name  + "\" was deleted.";
+					$scope.snSiteField.$delete({				
+						snSiteId : $stateParams.snSiteId
+					}, function() {
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('sn.site');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+		} ]);
 turingApp.controller('TurSNSiteFieldCtrl', [
 		"$scope",
 		"$http",
@@ -746,8 +815,76 @@ turingApp.controller('TurSNSiteFieldCtrl', [
 		"$state",
 		"$rootScope",
 		"$translate",
-		function($scope, $http, $window, $state, $rootScope, $translate) {
+		"$uibModal",
+		"$stateParams",
+		function($scope, $http, $window, $state, $rootScope, $translate, $uibModal, $stateParams) {
 			$rootScope.$state = $state;
+			
+			$scope.fieldNew = function() {
+				var $ctrl = this;
+				$scope.snSiteField = {};
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/sn/site/field/sn-site-field-new.html',
+					controller : 'TurSNSiteFieldNewCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						snSiteField : function() {
+							return $scope.snSiteField;
+						},
+						snSiteId : function() {
+							return  $stateParams.snSiteId;
+						}
+					}
+				});
+				
+				modalInstance.result.then(function(response) {
+					/*delete response.turDataGroupCategories;
+					delete response.turDataSentences;
+					turMLDataGroupCategory = {};
+					turMLDataGroupCategory.turMLCategory = response;
+					turMLDataGroupCategoryResource.save({
+						dataGroupId : $stateParams.mlDataGroupId
+					}, turMLDataGroupCategory);*/
+
+					//
+				}, function() {
+					// Selected NO
+				});
+
+			}
+		} ]);
+turingApp.controller('TurSNSiteFieldNewCtrl', [
+		"$uibModalInstance",
+		"snSiteField",
+		"snSiteId",
+		"turSNSiteFieldResource",
+		"turNotificationService",
+		function($uibModalInstance, snSiteField, snSiteId,
+				turSNSiteFieldResource, turNotificationService) {
+			var $ctrl = this;
+			$ctrl.removeInstance = false;
+			$ctrl.snSiteField = snSiteField;
+			console.log($ctrl.snSiteField);
+			$ctrl.ok = function() {
+				console.log($ctrl.snSiteField);
+				turSNSiteFieldResource.save({
+					snSiteId : snSiteId
+				}, $ctrl.snSiteField, function(response) {
+					turNotificationService.addNotification("Field \""
+							+ response.name + "\" was created.");
+					$uibModalInstance.close(response);
+				});
+
+			};
+
+			$ctrl.cancel = function() {
+				$uibModalInstance.dismiss('cancel');
+			};
 		} ]);
 turingApp.controller('TurSNSiteNewCtrl', [
 		"$scope",
@@ -873,6 +1010,16 @@ turingApp.controller('TurSNSiteEditCtrl', [
 turingApp.factory('turSNSiteResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
 	return $resource(turAPIServerService.get().concat('/sn/:id'), {
 		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
+turingApp.factory('turSNSiteFieldResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/sn/:snSiteId/field/:id'), {
+		id : '@id',
+		snSiteId : '@snSiteId'
 	}, {
 		update : {
 			method : 'PUT'

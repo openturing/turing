@@ -74,7 +74,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 
 		URL serverURL = new URL("http", turNLPInstance.getHost(), turNLPInstance.getPort(), "/?" + queryParams);
 
-		System.out.println("URL:" + serverURL.toString());
+		//System.out.println("URL:" + serverURL.toString());
 
 		HttpClient httpclient = HttpClients.createDefault();
 		HttpPost httppost = new HttpPost(serverURL.toString());
@@ -90,7 +90,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 			BufferedReader rd = new BufferedReader(new InputStreamReader(instream, Charset.forName("UTF-8")));
 			String jsonText = readAll(rd);
 			this.json = new JSONObject(jsonText);
-			System.out.println(this.json);
+			//System.out.println(this.json);
 			try {
 			} finally {
 				instream.close();
@@ -114,7 +114,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 		}
 		jsonObject.put("nlp", "CoreNLP");
 
-		System.out.println(jsonObject.toString());
+		//System.out.println(jsonObject.toString());
 		return jsonObject;
 	}
 
@@ -142,7 +142,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 				JSONObject token = (JSONObject) tokens.get(t);
 
 				currNeToken = token.getString("ner");
-				System.out.println("NER: " + currNeToken);
+				//System.out.println("NER: " + currNeToken);
 				String word = token.getString("word");
 				// Strip out "O"s completely, makes code below easier to
 				// understand
@@ -184,7 +184,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 	}
 
 	public JSONArray getEntity(String entity) {
-		System.out.println("Entity getEntity: " + entity);
+		//System.out.println("Entity getEntity: " + entity);
 		return entityList.get(entity);
 	}
 
@@ -193,7 +193,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 	}
 
 	private void handleEntity(String inKey, StringBuilder inSb, List inTokens) {
-		System.out.println(inSb + " is a " + inKey);
+		//System.out.println(inSb + " is a " + inKey);
 		inTokens.add(new EmbeddedToken(inKey, inSb.toString()));
 
 		if (entityList.containsKey(inKey)) {
@@ -202,7 +202,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 			entityList.put(inKey, new JSONArray().put(inSb.toString()));
 		}
 
-		System.out.println("entityList Size:" + entityList.size());
+		//System.out.println("entityList Size:" + entityList.size());
 		inSb.setLength(0);
 	}
 

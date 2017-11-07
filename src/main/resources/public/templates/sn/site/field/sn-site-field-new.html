@@ -1,75 +1,78 @@
-<div style="padding: 15px">
-	<div class="pull-right">
-		<button ng-click="sentenceNew()" type="button" class="btn btn-viglet">New</button>
-	</div>
-	<h3>Field</h3>
-	<div>
-		<div class="row"
-			style="margin: 0px; padding: 10px; padding-bottom: 0px">
-			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-				{{'ID' | translate }}</div>
-			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-				<input ng-model="snSite.name" maxlength="50" class="form-control">
+<div class="modal-header">
+	<h3 class="modal-title" id="modal-title">New Field</h3>
+</div>
+<div class="modal-body">
+	<!-- <div class="row"
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'ID' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+			<input ng-model="$ctrl.snSiteField.id" maxlength="50" class="form-control">
 
-			</div>
 		</div>
-		<div class="row"
-			style="margin: 0px; padding: 10px; padding-bottom: 0px">
-			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-				{{'NAME' | translate }}</div>
-			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+	</div> -->
+	<div class="row"
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'NAME' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-				<input maxlength="50" ng-model="snSite.description" type="text"
-					class="form-control">
-			</div>
-		</div>
-		<div class="row"
-			style="margin: 0px; padding: 10px; padding-bottom: 0px">
-			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-				{{'DESCRIPTION' | translate }}</div>
-			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-
-				<input maxlength="50" ng-model="snSite.description" type="text"
-					class="form-control">
-			</div>
-		</div>
-
-		<div class="row"
-			style="margin: 0px; padding: 10px; padding-bottom: 0px">
-			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-				{{'TYPE' | translate }}</div>
-			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-
-				<input maxlength="50" ng-model="snSite.description" type="text"
-					class="form-control">
-			</div>
-		</div>
-		<div class="row"
-			style="margin: 0px; padding: 10px; padding-bottom: 0px">
-			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-				{{'Multi Valued' | translate }}</div>
-			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-
-				<input maxlength="50" ng-model="snSite.description" type="text"
-					class="form-control">
-			</div>
-		</div>
-
-		<div class="row"
-			style="margin: 0px; padding: 10px; padding-bottom: 0px">
-			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-				{{'FACET_NAME' | translate }}</div>
-			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-
-				<input maxlength="50" ng-model="snSite.description" type="text"
-					class="form-control">
-			</div>
+			<input maxlength="50" ng-model="$ctrl.snSiteField.name" type="text"
+				class="form-control">
 		</div>
 	</div>
+	<div class="row"
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'DESCRIPTION' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+			<input maxlength="50" ng-model="$ctrl.snSiteField.description" type="text"
+				class="form-control">
+		</div>
+	</div>
+
+	<div class="row"
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'TYPE' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+			<input maxlength="50" ng-model="$ctrl.snSiteField.type" type="text"
+				class="form-control">
+		</div>
+	</div>
+	<div class="row"
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'Multi Valued' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+			<input maxlength="50" ng-model="$ctrl.snSiteField.multiValued" type="text"
+				class="form-control">
+		</div>
+	</div>
+
+	<div class="row"
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'FACET_NAME' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+			<input maxlength="50" ng-model="$ctrl.snSiteField.facetName" type="text"
+				class="form-control">
+		</div>
+	</div>
+</div>
+<div class="modal-footer">
+
+	<button class="btn btn-default" type="button" ng-click="$ctrl.cancel()">Cancel</button>
+	<button class="btn btn-viglet" type="button" ng-click="$ctrl.ok()">{{'SETTINGS_SAVE_CHANGES'
+		| translate }}</button>
 </div>

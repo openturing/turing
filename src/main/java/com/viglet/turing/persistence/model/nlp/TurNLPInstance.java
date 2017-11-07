@@ -129,18 +129,18 @@ public class TurNLPInstance implements Serializable {
 		return this.turNLPInstanceEntities;
 	}
 
-	public void setVigNLPInstanceEntities(List<TurNLPInstanceEntity> turNLPInstanceEntities) {
+	public void setTurNLPInstanceEntities(List<TurNLPInstanceEntity> turNLPInstanceEntities) {
 		this.turNLPInstanceEntities = turNLPInstanceEntities;
 	}
 
-	public TurNLPInstanceEntity addVigServicesNLPEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
+	public TurNLPInstanceEntity addTurNLPInstanceEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
 		getTurNLPInstanceEntities().add(turNLPInstanceEntity);
 		turNLPInstanceEntity.setTurNLPInstance(this);
 
 		return turNLPInstanceEntity;
 	}
 
-	public TurNLPInstanceEntity removeVigServicesNlPEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
+	public TurNLPInstanceEntity removeTurNLPInstanceEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
 		getTurNLPInstanceEntities().remove(turNLPInstanceEntity);
 		turNLPInstanceEntity.setTurNLPInstance(null);
 
