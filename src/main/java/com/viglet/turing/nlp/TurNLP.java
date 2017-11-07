@@ -45,8 +45,7 @@ public class TurNLP {
 	ServletContext context; 
 	
 	static final Logger logger = LogManager.getLogger(TurNLP.class.getName());
-
-	private int currNLP = 0;
+	
 	private String currText = null;
 	private JSONObject jsonAttributes = null;
 
@@ -58,15 +57,14 @@ public class TurNLP {
 	
 
 	public void init() {
-
-		this.init(Integer.parseInt(turConfigVarRepository.findOne("DEFAULT_NLP").getValue()));
+		TurNLPInstance turNLPInstance = turNLPInstanceRepository
+				.findById(Integer.parseInt(turConfigVarRepository.findById("DEFAULT_NLP").getValue()));
+		this.init(turNLPInstance);
 	}
 
-	public void init(int nlp) {
-
-		this.setCurrNLP(nlp);
-
-		this.turNLPInstance = turNLPInstanceRepository.findOne(this.getCurrNLP());
+	public void init(TurNLPInstance turNLPInstance) {
+		
+		this.turNLPInstance = turNLPInstance;
 		this.turNLPVendor = turNLPInstance.getTurNLPVendor();
 		this.turNLPResults = new TurNLPResults();
 	}
@@ -76,13 +74,13 @@ public class TurNLP {
 		this.setCurrText(null);
 	}
 
-	public void startup(int nlp, String text) {
-		this.init(nlp);
+	public void startup(TurNLPInstance turNLPInstance, String text) {
+		this.init(turNLPInstance);
 		this.setCurrText(text);
 	}
 
-	public void startup(int nlp, JSONObject jsonAttributes) throws JSONException {
-		this.init(nlp);
+	public void startup(TurNLPInstance turNLPInstance, JSONObject jsonAttributes) throws JSONException {
+		this.init(turNLPInstance);
 
 		StringBuffer sbText = new StringBuffer();
 
@@ -111,14 +109,6 @@ public class TurNLP {
 
 	public void setJsonAttributes(JSONObject jsonAttributes) {
 		this.jsonAttributes = jsonAttributes;
-	}
-
-	public int getCurrNLP() {
-		return currNLP;
-	}
-
-	public void setCurrNLP(int currNLP) {
-		this.currNLP = currNLP;
 	}
 
 	public String getCurrText() {

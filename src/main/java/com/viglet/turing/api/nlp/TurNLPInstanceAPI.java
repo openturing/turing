@@ -41,7 +41,7 @@ public class TurNLPInstanceAPI {
 	@Path("/{nlpInstanceId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurNLPInstance dataGroup(@PathParam("nlpInstanceId") int id) throws JSONException {
-		return this.turNLPInstanceRepository.findOne(id);
+		return this.turNLPInstanceRepository.findById(id);
 	}
 
 	@Path("/{nlpInstanceId}")
@@ -80,7 +80,7 @@ public class TurNLPInstanceAPI {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response validate(@PathParam("nlpInstanceId") int id, TurNLPTextValidate textValidate) throws JSONException {
 
-		turNLP.startup(id, textValidate.getText());
+		turNLP.startup(this.turNLPInstanceRepository.findById(id), textValidate.getText());
 		return Response.status(200).entity(turNLP.validate()).build();
 	}
 

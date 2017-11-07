@@ -67,8 +67,8 @@ public class TurOTSNBrokerAPI {
 		}
 
 		try {
-			turSolr.init(Integer.parseInt(this.turConfigVarRepository.findById("DEFAULT_NLP").getValue()),
-					Integer.parseInt(this.turConfigVarRepository.findById("DEFAULT_SE").getValue()), jsonAttributes);
+			turSolr.init();
+			turSolr.setJsonAttributes(jsonAttributes);
 			turSolr.indexing();
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -33,9 +33,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.nlp.TurNLPResults;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.se.facet.TurSEFacetMap;
@@ -55,6 +58,8 @@ import com.viglet.turing.se.similar.TurSESimilarResultAttr;
 public class TurSolr {
 
 	@Autowired
+	TurNLPInstanceRepository turNLPInstanceRepository;
+	@Autowired
 	TurSEInstanceRepository turSEInstanceRepository;
 	@Autowired
 	TurConfigVarRepository turConfigVarRepository;
@@ -62,8 +67,8 @@ public class TurSolr {
 	@Autowired
 	TurNLP turNLP;
 
-	private int currNLP = 0;
-	private int currSE = 0;
+	private TurNLPInstance currNLP = null;
+	private TurSEInstance currSE = null;
 	private JSONObject jsonAttributes = null;
 
 	String currText = null;
@@ -78,19 +83,19 @@ public class TurSolr {
 		this.jsonAttributes = jsonAttributes;
 	}
 
-	public int getCurrNLP() {
+	public TurNLPInstance getCurrNLP() {
 		return currNLP;
 	}
 
-	public void setCurrNLP(int currNLP) {
+	public void setCurrNLP(TurNLPInstance currNLP) {
 		this.currNLP = currNLP;
 	}
 
-	public int getCurrSE() {
+	public TurSEInstance getCurrSE() {
 		return currSE;
 	}
 
-	public void setCurrSE(int currSE) {
+	public void setCurrSE(TurSEInstance currSE) {
 		this.currSE = currSE;
 	}
 
@@ -102,11 +107,10 @@ public class TurSolr {
 		this.currText = currText;
 	}
 
-	public void init(int nlpInstanceId, int se) {
-		this.setCurrNLP(nlpInstanceId);
+	public void init(TurNLPInstance turNLPInstance, TurSEInstance turSEInstance) {
+		this.setCurrNLP(turNLPInstance);
 
-		this.setCurrSE(se);
-		TurSEInstance turSEInstance = turSEInstanceRepository.findById(se);
+		this.setCurrSE(turSEInstance);
 
 		if (turSEInstance != null) {
 			solrServer = new HttpSolrServer(
@@ -114,20 +118,38 @@ public class TurSolr {
 		}
 	}
 
-	public void init(int nlpInstanceId, int se, String text) {
-		init(nlpInstanceId, se);
+	public void init(TurSNSite turSNSite) {
+		init(turSNSite.getTurNLPInstance(), turSNSite.getTurSEInstance());
+	}
+
+	public void init(TurSNSite turSNSite, String text) {
+		init(turSNSite);
 		this.setCurrText(text);
 	}
 
-	public void init(int nlpInstanceId, int se, JSONObject jsonAttributes) {
-		init(nlpInstanceId, se);
+	public void init(TurNLPInstance turNLPInstance, TurSEInstance turSEInstance, String text) {
+		init(turNLPInstance, turSEInstance);
+		this.setCurrText(text);
+	}
+
+	public void init(TurNLPInstance turNLPInstance, TurSEInstance turSEInstance, JSONObject jsonAttributes) {
+		init(turNLPInstance, turSEInstance);
+		this.setJsonAttributes(jsonAttributes);
+		this.setCurrText(null);
+	}
+
+	public void init(TurSNSite turSNSite, JSONObject jsonAttributes) {
+		init(turSNSite);
 		this.setJsonAttributes(jsonAttributes);
 		this.setCurrText(null);
 	}
 
 	public void init() {
-		init(Integer.parseInt(turConfigVarRepository.findById("DEFAULT_NLP").getValue()),
-				Integer.parseInt(turConfigVarRepository.findById("DEFAULT_SE").getValue()));
+		TurNLPInstance turNLPInstance = turNLPInstanceRepository
+				.findById(Integer.parseInt(turConfigVarRepository.findById("DEFAULT_NLP").getValue()));
+		TurSEInstance turSEInstance = turSEInstanceRepository
+				.findById(Integer.parseInt(turConfigVarRepository.findById("DEFAULT_SE").getValue()));
+		init(turNLPInstance, turSEInstance);
 	}
 
 	public String indexing() throws JSONException {
