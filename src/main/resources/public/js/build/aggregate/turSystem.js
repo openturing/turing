@@ -323,20 +323,6 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Semantic Navigation Site Field | Viglet Turing'
 				}
-			}).state('sn.site-edit.facet', {
-				url : '/facet',
-				templateUrl : 'templates/sn/site/sn-site-facet.html',
-				controller : 'TurSNSiteFacetCtrl',
-				data : {
-					pageTitle : 'Semantic Navigation Site Facets | Viglet Turing'
-				}
-			}).state('sn.site-edit.hl', {
-				url : '/hl',
-				templateUrl : 'templates/sn/site/sn-site-hl.html',
-				controller : 'TurSNSiteHLCtrl',
-				data : {
-					pageTitle : 'Semantic Navigation Site Highlighting | Viglet Turing'
-				}
 			}).state('sn.site-edit.ui', {
 				url : '/ui',
 				templateUrl : 'templates/sn/site/sn-site-ui.html',

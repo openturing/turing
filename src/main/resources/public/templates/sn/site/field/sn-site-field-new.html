@@ -30,8 +30,8 @@
 			{{'DESCRIPTION' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-			<input maxlength="50" ng-model="$ctrl.snSiteField.description" type="text"
-				class="form-control">
+			<input maxlength="50" ng-model="$ctrl.snSiteField.description"
+				type="text" class="form-control">
 		</div>
 	</div>
 
@@ -52,9 +52,9 @@
 			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 			{{'Multi Valued' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+			<input type="checkbox" ng-model="$ctrl.snSiteField.multiValued"
+				ng-true-value="1" ng-false-value="0">
 
-			<input maxlength="50" ng-model="$ctrl.snSiteField.multiValued" type="text"
-				class="form-control">
 		</div>
 	</div>
 
@@ -64,9 +64,34 @@
 			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 			{{'FACET_NAME' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+			<input maxlength="50" ng-model="$ctrl.snSiteField.facetName"
+				type="text" class="form-control">
+		</div>
+	</div>
+	<div class="row"
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'FACET' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+			<div class="input-group">
+				<input type="checkbox" ng-model="$ctrl.snSiteField.facet"
+					ng-true-value="1" ng-false-value="0">
+			</div>
 
-			<input maxlength="50" ng-model="$ctrl.snSiteField.facetName" type="text"
-				class="form-control">
+		</div>
+	</div>
+	<div class="row"
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'Highlighting' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+			<div class="input-group">
+				<input type="checkbox" ng-model="$ctrl.snSiteField.hl"
+					ng-true-value="1" ng-false-value="0">
+			</div>
+
 		</div>
 	</div>
 </div>

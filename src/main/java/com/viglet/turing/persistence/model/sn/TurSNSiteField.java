@@ -34,9 +34,15 @@ public class TurSNSiteField implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String type;
 
-	@Column(nullable = false, length = 50)
-	private String multiValued;
-
+	@Column(nullable = false)
+	private int multiValued;
+	
+	@Column(nullable = false)
+	private int facet;
+	
+	@Column(nullable = false)
+	private int hl;
+	
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)
@@ -83,11 +89,11 @@ public class TurSNSiteField implements Serializable {
 		this.type = type;
 	}
 
-	public String getMultiValued() {
+	public int getMultiValued() {
 		return multiValued;
 	}
 
-	public void setMultiValued(String multiValued) {
+	public void setMultiValued(int multiValued) {
 		this.multiValued = multiValued;
 	}
 
@@ -102,5 +108,22 @@ public class TurSNSiteField implements Serializable {
 	public static long getSerialversionuid() {
 		return serialVersionUID;
 	}
+
+	public int getFacet() {
+		return facet;
+	}
+
+	public void setFacet(int facet) {
+		this.facet = facet;
+	}
+
+	public int getHl() {
+		return hl;
+	}
+
+	public void setHl(int hl) {
+		this.hl = hl;
+	}
+
 	
 }

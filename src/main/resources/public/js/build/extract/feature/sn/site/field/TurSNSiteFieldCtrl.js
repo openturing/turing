@@ -7,9 +7,19 @@ turingApp.controller('TurSNSiteFieldCtrl', [
 		"$translate",
 		"$uibModal",
 		"$stateParams",
-		function($scope, $http, $window, $state, $rootScope, $translate, $uibModal, $stateParams) {
+		"turSNSiteFieldResource",
+		"turNotificationService",
+		function($scope, $http, $window, $state, $rootScope, $translate, $uibModal, $stateParams,turSNSiteFieldResource, turNotificationService) {
 			$rootScope.$state = $state;
 			
+			$scope.snSiteFieldUpdate = function(snSiteField) {			
+				turSNSiteFieldResource.update({
+					id:	snSiteField.id,		
+					snSiteId : $stateParams.snSiteId
+				}, snSiteField, function() {
+					//turNotificationService.addNotification("Field \"" + snSiteField.name + "\" was updated.");
+				});
+			}
 			$scope.fieldNew = function() {
 				var $ctrl = this;
 				$scope.snSiteField = {};

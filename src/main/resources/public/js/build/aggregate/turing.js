@@ -325,20 +325,6 @@ turingApp.config([
 				data : {
 					pageTitle : 'Edit Semantic Navigation Site Field | Viglet Turing'
 				}
-			}).state('sn.site-edit.facet', {
-				url : '/facet',
-				templateUrl : 'templates/sn/site/sn-site-facet.html',
-				controller : 'TurSNSiteFacetCtrl',
-				data : {
-					pageTitle : 'Semantic Navigation Site Facets | Viglet Turing'
-				}
-			}).state('sn.site-edit.hl', {
-				url : '/hl',
-				templateUrl : 'templates/sn/site/sn-site-hl.html',
-				controller : 'TurSNSiteHLCtrl',
-				data : {
-					pageTitle : 'Semantic Navigation Site Highlighting | Viglet Turing'
-				}
 			}).state('sn.site-edit.ui', {
 				url : '/ui',
 				templateUrl : 'templates/sn/site/sn-site-ui.html',
@@ -736,16 +722,6 @@ turingApp.controller('TurSNSiteUICtrl', [
 		function($scope, $http, $window, $state, $rootScope, $translate) {
 			$rootScope.$state = $state;
 		} ]);
-turingApp.controller('TurSNSiteHLCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		function($scope, $http, $window, $state, $rootScope, $translate) {
-			$rootScope.$state = $state;
-		} ]);
 turingApp.controller('TurSNSiteFieldEditCtrl', [
 	"$scope",
 	"$stateParams",
@@ -817,9 +793,19 @@ turingApp.controller('TurSNSiteFieldCtrl', [
 		"$translate",
 		"$uibModal",
 		"$stateParams",
-		function($scope, $http, $window, $state, $rootScope, $translate, $uibModal, $stateParams) {
+		"turSNSiteFieldResource",
+		"turNotificationService",
+		function($scope, $http, $window, $state, $rootScope, $translate, $uibModal, $stateParams,turSNSiteFieldResource, turNotificationService) {
 			$rootScope.$state = $state;
 			
+			$scope.snSiteFieldUpdate = function(snSiteField) {			
+				turSNSiteFieldResource.update({
+					id:	snSiteField.id,		
+					snSiteId : $stateParams.snSiteId
+				}, snSiteField, function() {
+					//turNotificationService.addNotification("Field \"" + snSiteField.name + "\" was updated.");
+				});
+			}
 			$scope.fieldNew = function() {
 				var $ctrl = this;
 				$scope.snSiteField = {};
@@ -1026,16 +1012,6 @@ turingApp.factory('turSNSiteFieldResource', [ '$resource', 'turAPIServerService'
 		}
 	});
 } ]);
-turingApp.controller('TurSNSiteFacetCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		function($scope, $http, $window, $state, $rootScope, $translate) {
-			$rootScope.$state = $state;
-		} ]);
 turingApp.controller('TurMLCategoryNewCtrl', [
 		"$uibModalInstance",
 		"category",

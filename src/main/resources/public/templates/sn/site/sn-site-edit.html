@@ -23,18 +23,6 @@
 			</div>
 			<div class="btn-group" role="group">
 				<button type="button"
-					ng-class="{'btn-viglet': $state.current.name.indexOf('sn.site-edit.facet') == 0,'btn-default': $state.current.name.indexOf('sn.site-edit.facet') != 0}"
-					ui-sref="sn.site-edit.facet" class="btn btn-default">
-					Facets <span class="badge">{{dataGroup.turMLCategories.length}}</span>
-				</button>
-			</div>
-			<div class="btn-group" role="group">
-				<button type="button"
-					ng-class="{'btn-viglet':$state.current.name.indexOf('sn.site-edit.hl') == 0, 'btn-default':$state.current.name.indexOf('sn.site-edit.hl') != 0}"
-					ui-sref="sn.site-edit.hl" class="btn btn-default">Highlighting <span class="badge">{{dataGroup.turDataGroupSentences.length}}</span></button>
-			</div>
-			<div class="btn-group" role="group">
-				<button type="button"
 					ng-class="{'btn-viglet':$state.current.name.indexOf('sn.site-edit.ui') == 0, 'btn-default':$state.current.name.indexOf('sn.site-edit.ui') != 0}"
 					ui-sref="sn.site-edit.ui" class="btn btn-default">Appearance <span class="badge">{{dataGroup.turDataGroupModels.length}}</span></button>
 			</div>

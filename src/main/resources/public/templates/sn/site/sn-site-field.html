@@ -5,12 +5,39 @@
 	<h3>Fields</h3>
 
 	<ul class="list-group">
+		<li class="list-group-item">
+			<div class="row">
+				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
+					<b>Field</b>
+				</div>
+				<div class="col-lg-2 col-md-2 col-sm-2col-xs-2">
+					<b>Facets</b>
+				</div>
+				<div class="col-lg-2 col-md-2 col-sm-2col-xs-2">
+					<b>Highlighting</b>
+				</div>
+			</div>
+		</li>
 		<li class="list-group-item"
 			ng-repeat="turSNSiteField in snSite.turSNSiteFields |orderBy:'id'">
+
 			<div class="row">
-				<div class="col-lg-9 col-md-9 col-sm-10 col-xs-10">
+				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
 					<a
 						ui-sref="sn.site-edit.field-edit({snSiteFieldId:turSNSiteField.id})">{{turSNSiteField.name}}</a>
+				</div>
+				<div class="col-lg-2 col-md-2 col-sm-2col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox" ng-click="snSiteFieldUpdate(turSNSiteField)" ng-model="turSNSiteField.facet" ng-true-value="1" ng-false-value="0">
+
+					</div>
+				</div>
+				<div class="col-lg-2 col-md-2 col-sm-2col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox" ng-click="snSiteFieldUpdate(turSNSiteField)" ng-model="turSNSiteField.hl" ng-true-value="1" ng-false-value="0">
+					</div>
 				</div>
 			</div>
 		</li>

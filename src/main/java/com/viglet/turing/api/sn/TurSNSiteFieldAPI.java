@@ -66,7 +66,8 @@ public class TurSNSiteFieldAPI {
 		turSNSiteFieldEdit.setMultiValued(turSNSiteField.getMultiValued());
 		turSNSiteFieldEdit.setName(turSNSiteField.getName());
 		turSNSiteFieldEdit.setType(turSNSiteField.getType());
-		
+		turSNSiteFieldEdit.setFacet(turSNSiteField.getFacet());
+		turSNSiteFieldEdit.setHl(turSNSiteField.getHl());
 		this.turSNSiteFieldRepository.save(turSNSiteFieldEdit);
 		return turSNSiteFieldEdit;
 	}
