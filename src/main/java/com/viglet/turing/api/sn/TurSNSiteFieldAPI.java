@@ -62,12 +62,9 @@ public class TurSNSiteFieldAPI {
 			@PathParam("snSiteFieldId") int id, TurSNSiteField turSNSiteField) throws Exception {
 		TurSNSiteField turSNSiteFieldEdit = this.turSNSiteFieldRepository.findById(id);
 		turSNSiteFieldEdit.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldEdit.setFacetName(turSNSiteField.getFacetName());
 		turSNSiteFieldEdit.setMultiValued(turSNSiteField.getMultiValued());
 		turSNSiteFieldEdit.setName(turSNSiteField.getName());
 		turSNSiteFieldEdit.setType(turSNSiteField.getType());
-		turSNSiteFieldEdit.setFacet(turSNSiteField.getFacet());
-		turSNSiteFieldEdit.setHl(turSNSiteField.getHl());
 		this.turSNSiteFieldRepository.save(turSNSiteFieldEdit);
 		return turSNSiteFieldEdit;
 	}

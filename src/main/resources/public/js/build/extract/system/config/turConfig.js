@@ -38,7 +38,7 @@ turingApp.config([
 				DELETE: "Delete",
 				NEW: "New",
 				ENABLED: "Enabled",
-				REBUILD: "Rebuild"
+				SYNC: "Sync"
 			
 					
 			});
@@ -73,7 +73,7 @@ turingApp.config([
 				DELETE: "Apagar",
 				NEW: "Novo",
 				ENABLED: "Ativado",
-				REBUILD: "Reconstruir"
+				SYNC: "Sincronizar"
 
 
 			});

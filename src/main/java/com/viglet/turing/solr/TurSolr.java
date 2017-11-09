@@ -37,10 +37,10 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteField;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.se.facet.TurSEFacetResult;
@@ -52,6 +52,7 @@ import com.viglet.turing.se.result.TurSEResultAttr;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.se.similar.TurSESimilarResult;
 import com.viglet.turing.se.similar.TurSESimilarResultAttr;
+import com.viglet.turing.sn.TurSNFieldType;
 
 @Component
 @Transactional
@@ -67,7 +68,7 @@ public class TurSolr {
 	@Autowired
 	TurNLP turNLP;
 	@Autowired
-	TurSNSiteFieldRepository turSNSiteFieldRepository;
+	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
 	TurSNSiteRepository turSNSiteRepository;
 
@@ -260,10 +261,16 @@ public class TurSolr {
 			query.setFacetMinCount(1);
 			query.setFacetSort("count");
 
-			List<TurSNSiteField> turSNSiteFacetFields = turSNSiteFieldRepository.findByTurSNSiteAndFacet(turSNSite, 1);
+			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
+					.findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
 
-			for (TurSNSiteField turSNSiteFacetField : turSNSiteFacetFields) {
-				query.addFacetField(turSNSiteFacetField.getName());
+			for (TurSNSiteFieldExt turSNSiteFacetFieldExt : turSNSiteFacetFieldExts) {
+				TurSNFieldType snType = turSNSiteFacetFieldExt.getSnType();
+				if (snType == TurSNFieldType.NER || snType == TurSNFieldType.THESAURUS) {
+					query.addFacetField(String.format("turing_entity_%s", turSNSiteFacetFieldExt.getName()));
+				} else {
+					query.addFacetField(turSNSiteFacetFieldExt.getName());
+				}
 
 			}
 
@@ -271,13 +278,14 @@ public class TurSolr {
 
 		// Highlighting
 		if (turSNSite.getHl() == 1) {
-			List<TurSNSiteField> turSNSiteHlFields = turSNSiteFieldRepository.findByTurSNSiteAndHl(turSNSite, 1);
+			List<TurSNSiteFieldExt> turSNSiteHlFieldExts = turSNSiteFieldExtRepository
+					.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1);
 			StringBuilder hlFields = new StringBuilder();
-			for (TurSNSiteField turSNSiteHlField : turSNSiteHlFields) {
+			for (TurSNSiteFieldExt turSNSiteHlFieldExt : turSNSiteHlFieldExts) {
 				if (hlFields.length() != 0) {
 					hlFields.append(",");
 				}
-				hlFields.append(turSNSiteHlField.getName());
+				hlFields.append(turSNSiteHlFieldExt.getName());
 			}
 
 			query.setHighlight(true).setHighlightSnippets(1);
@@ -340,10 +348,10 @@ public class TurSolr {
 		SimpleOrderedMap mltResp = (SimpleOrderedMap) queryResponse.getResponse().get("moreLikeThis");
 
 		for (SolrDocument document : queryResponse.getResults()) {
-			//HL
+			// HL
 			Map<String, List<String>> hl = null;
 			if (turSNSite.getHl() == 1) {
-			hl = queryResponse.getHighlighting().get((String) document.get("id"));
+				hl = queryResponse.getHighlighting().get((String) document.get("id"));
 			}
 			// MLT
 			if (turSNSite.getMlt() == 1) {

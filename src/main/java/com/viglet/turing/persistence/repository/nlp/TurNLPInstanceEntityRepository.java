@@ -13,8 +13,9 @@ public interface TurNLPInstanceEntityRepository extends JpaRepository<TurNLPInst
 
 	List<TurNLPInstanceEntity> findByTurNLPInstance(TurNLPInstance turNLPInstance);
 
+	List<TurNLPInstanceEntity> findByTurNLPInstanceAndEnabled(TurNLPInstance turNLPInstance, int enabled
+			);
 	TurNLPInstanceEntity findById(int id);
-	
 
 	TurNLPInstanceEntity save(TurNLPInstanceEntity turNLPInstanceEntity);
 

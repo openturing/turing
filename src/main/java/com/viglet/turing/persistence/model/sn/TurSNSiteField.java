@@ -26,9 +26,6 @@ public class TurSNSiteField implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String name;
 	
-	@Column(nullable = true, length = 50)
-	private String facetName;
-
 	@Column(nullable = true, length = 255)
 	private String description;
 
@@ -37,12 +34,6 @@ public class TurSNSiteField implements Serializable {
 
 	@Column(nullable = true)
 	private int multiValued;
-	
-	@Column(nullable = true)
-	private int facet;
-	
-	@Column(nullable = true)
-	private int hl;
 	
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
@@ -64,14 +55,6 @@ public class TurSNSiteField implements Serializable {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public String getFacetName() {
-		return facetName;
-	}
-
-	public void setFacetName(String facetName) {
-		this.facetName = facetName;
 	}
 
 	public String getDescription() {
@@ -104,26 +87,6 @@ public class TurSNSiteField implements Serializable {
 
 	public void setTurSNSite(TurSNSite turSNSite) {
 		this.turSNSite = turSNSite;
-	}
-
-	public static long getSerialversionuid() {
-		return serialVersionUID;
-	}
-
-	public int getFacet() {
-		return facet;
-	}
-
-	public void setFacet(int facet) {
-		this.facet = facet;
-	}
-
-	public int getHl() {
-		return hl;
-	}
-
-	public void setHl(int hl) {
-		this.hl = hl;
 	}
 
 	

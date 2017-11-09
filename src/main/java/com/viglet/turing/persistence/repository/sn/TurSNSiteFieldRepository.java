@@ -17,10 +17,6 @@ public interface TurSNSiteFieldRepository extends JpaRepository<TurSNSiteField, 
 	
 	List<TurSNSiteField> findByTurSNSite(TurSNSite turSNSite);
 	
-	List<TurSNSiteField> findByTurSNSiteAndFacet(TurSNSite turSNSite, int facet);
-	
-	List<TurSNSiteField> findByTurSNSiteAndHl(TurSNSite turSNSite, int hl);
-	
 	TurSNSiteField save(TurSNSiteField turSNSiteField);
 
 	void delete(TurSNSiteField turSNSiteField);

@@ -25,8 +25,8 @@ import org.springframework.stereotype.Component;
 
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteField;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
@@ -37,6 +37,7 @@ import com.viglet.turing.se.result.TurSEResultAttr;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.se.similar.TurSESimilarResult;
 import com.viglet.turing.se.similar.TurSESimilarResultAttr;
+import com.viglet.turing.sn.TurSNFieldType;
 
 @Component
 @Path("otsn/search")
@@ -45,7 +46,7 @@ public class TurOTSNSearchAPI {
 	@Autowired
 	TurSolr turSolr;
 	@Autowired
-	TurSNSiteFieldRepository turSNSiteFieldRepository;
+	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
 	TurSNSiteRepository turSNSiteRepository;
 
@@ -183,12 +184,20 @@ public class TurOTSNSearchAPI {
 
 		TurSNSite turSNSite = turSNSiteRepository.findById(1);
 
-		List<TurSNSiteField> turSNSiteFacetFields = turSNSiteFieldRepository.findByTurSNSiteAndFacet(turSNSite, 1);
+		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
+				.findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
 
-		Map<String, TurSNSiteField> facetMap = new HashMap<String, TurSNSiteField>();
+		Map<String, TurSNSiteFieldExt> facetMap = new HashMap<String, TurSNSiteFieldExt>();
 
-		for (TurSNSiteField turSNSiteFacetField : turSNSiteFacetFields) {
-			facetMap.put(turSNSiteFacetField.getName(), turSNSiteFacetField);
+		for (TurSNSiteFieldExt turSNSiteFacetFieldExt : turSNSiteFacetFieldExts) {
+			TurSNFieldType snType = turSNSiteFacetFieldExt.getSnType();
+			if (snType == TurSNFieldType.NER || snType == TurSNFieldType.THESAURUS) {
+				facetMap.put(String.format("turing_entity_%s", turSNSiteFacetFieldExt.getName()),
+						turSNSiteFacetFieldExt);
+			} else {
+				facetMap.put(turSNSiteFacetFieldExt.getName(), turSNSiteFacetFieldExt);
+			}
+			facetMap.put(turSNSiteFacetFieldExt.getName(), turSNSiteFacetFieldExt);
 		}
 
 		TurSEResults turSEResults = null;
@@ -369,7 +378,7 @@ public class TurOTSNSearchAPI {
 
 				if (facetMap.containsKey(facet.getFacet()) && !hiddenFilterQuery.contains(facet.getFacet())
 						&& facet.getTurSEFacetResultAttr().size() > 0) {
-					TurSNSiteField turSNSiteField = facetMap.get(facet.getFacet());
+					TurSNSiteFieldExt turSNSiteFieldExt = facetMap.get(facet.getFacet());
 
 					JSONObject jsonOTSNFacetWidgetEntityLabel = new JSONObject();
 					JSONArray jsonOTSNFacetWidgetEntityItems = new JSONArray();
@@ -388,13 +397,13 @@ public class TurOTSNSearchAPI {
 					}
 
 					jsonOTSNFacetWidgetEntityLabel.put("xml:lang", "en");
-					jsonOTSNFacetWidgetEntityLabel.put("text", turSNSiteField.getFacetName());
+					jsonOTSNFacetWidgetEntityLabel.put("text", turSNSiteFieldExt.getFacetName());
 					jsonOTSNFacetWidgetEntity.put("rdf:Description", (new JSONObject()).put("rdf:resource", "turing"));
 					jsonOTSNFacetWidgetEntity.put("rdfs:label", jsonOTSNFacetWidgetEntityLabel);
 					jsonOTSNFacetWidgetEntity.put("otsn-facet",
 							(new JSONObject()).put("facet", jsonOTSNFacetWidgetEntityItems));
 
-					jsonOTSNFacetWidget.put(turSNSiteField.getName(), jsonOTSNFacetWidgetEntity);
+					jsonOTSNFacetWidget.put(turSNSiteFieldExt.getName(), jsonOTSNFacetWidgetEntity);
 
 				}
 			}
