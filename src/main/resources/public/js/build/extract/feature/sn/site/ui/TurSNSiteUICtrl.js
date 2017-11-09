@@ -4,7 +4,8 @@ turingApp.controller('TurSNSiteUICtrl', [
 		"$window",
 		"$state",
 		"$rootScope",
-		"$translate",
+		"$translate",		
 		function($scope, $http, $window, $state, $rootScope, $translate) {
 			$rootScope.$state = $state;
+		
 		} ]);

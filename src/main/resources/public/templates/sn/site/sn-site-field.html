@@ -1,20 +1,33 @@
 <div style="padding: 15px">
 	<div class="pull-right">
-		<button ng-click="fieldNew()" type="button" class="btn btn-viglet">New</button>
+	<button ng-click="fieldNew()" type="button" class="btn btn-success">{{'REBUILD'
+			| translate }}</button>
+		<button ng-click="fieldNew()" type="button" class="btn btn-viglet">{{'NEW'
+			| translate }}</button>
 	</div>
-	<h3>Fields</h3>
+	<h3>{{'FIELDS' | translate }}</h3>
 
 	<ul class="list-group">
 		<li class="list-group-item">
 			<div class="row">
-				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
-					<b>Field</b>
+				<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<b>{{'TYPE' | translate }}</b>
 				</div>
-				<div class="col-lg-2 col-md-2 col-sm-2col-xs-2">
-					<b>Facets</b>
+				<div class="col-lg-6 col-md-2 col-sm-2 col-xs-2">
+					<b>{{'FIELD' | translate }}</b>
 				</div>
-				<div class="col-lg-2 col-md-2 col-sm-2col-xs-2">
-					<b>Highlighting</b>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2">
+					<b>{{'ENABLED' | translate }}</b>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2">
+					<b>{{'MLT' | translate }}</b>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2">
+					<b>{{'FACETS' | translate }}</b>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2">
+					<b>{{'HIGHLIGHTING' | translate }}</b>
 				</div>
 			</div>
 		</li>
@@ -22,21 +35,154 @@
 			ng-repeat="turSNSiteField in snSite.turSNSiteFields |orderBy:'id'">
 
 			<div class="row">
-				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
+				<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">Search Engine</div>
+				<div class="col-lg-6 col-md-2 col-sm-2 col-xs-2">
 					<a
 						ui-sref="sn.site-edit.field-edit({snSiteFieldId:turSNSiteField.id})">{{turSNSiteField.name}}</a>
 				</div>
-				<div class="col-lg-2 col-md-2 col-sm-2col-xs-2"
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
 					style="text-align: center">
 					<div class="input-group">
-						<input type="checkbox" ng-click="snSiteFieldUpdate(turSNSiteField)" ng-model="turSNSiteField.facet" ng-true-value="1" ng-false-value="0">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turSNSiteField)"
+							ng-model="turSNSiteField.facet" ng-true-value="1"
+							ng-false-value="0">
 
 					</div>
 				</div>
-				<div class="col-lg-2 col-md-2 col-sm-2col-xs-2"
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
 					style="text-align: center">
 					<div class="input-group">
-						<input type="checkbox" ng-click="snSiteFieldUpdate(turSNSiteField)" ng-model="turSNSiteField.hl" ng-true-value="1" ng-false-value="0">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turSNSiteField)"
+							ng-model="turSNSiteField.facet" ng-true-value="1"
+							ng-false-value="0">
+
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turSNSiteField)"
+							ng-model="turSNSiteField.facet" ng-true-value="1"
+							ng-false-value="0">
+
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turSNSiteField)"
+							ng-model="turSNSiteField.hl" ng-true-value="1" ng-false-value="0">
+					</div>
+				</div>
+			</div>
+		</li>
+
+		<li class="list-group-item"
+			ng-repeat="turNLPInstanceEntity in snSite.turNLPInstance.turNLPInstanceEntities |orderBy:'id'">
+
+			<div class="row">
+				<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">NER</div>
+				<div class="col-lg-6 col-md-2 col-sm-2 col-xs-2">
+					<a
+						ui-sref="sn.site-edit.field-edit({snSiteFieldId:turSNSiteField.id})">{{turNLPInstanceEntity.turNLPEntity.name}}
+						(turing_entity_{{turNLPInstanceEntity.turNLPEntity.internalName}})</a>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turSNSiteField)"
+							ng-model="turSNSiteField.facet" ng-true-value="1"
+							ng-false-value="0">
+
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turSNSiteField)"
+							ng-model="turSNSiteField.facet" ng-true-value="1"
+							ng-false-value="0">
+
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turNLPInstanceEntity)"
+							ng-model="turNLPInstanceEntity.facet" ng-true-value="1"
+							ng-false-value="0">
+
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turNLPInstanceEntity)"
+							ng-model="turNLPInstanceEntity.hl" ng-true-value="1"
+							ng-false-value="0">
+					</div>
+				</div>
+			</div>
+		</li>
+
+		<li class="list-group-item"
+			ng-repeat="turNLPInstanceEntityLocal in turNLPEntitiesLocal |orderBy:'id'">
+
+			<div class="row">
+				<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">Thesaurus</div>
+				<div class="col-lg-6 col-md-2 col-sm-2 col-xs-2">
+					<a
+						ui-sref="sn.site-edit.field-edit({snSiteFieldId:turSNSiteField.id})">{{turNLPInstanceEntityLocal.name}}
+						(turing_entity_{{turNLPInstanceEntityLocal.internalName}})</a>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turSNSiteField)"
+							ng-model="turSNSiteField.facet" ng-true-value="1"
+							ng-false-value="0">
+
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turSNSiteField)"
+							ng-model="turSNSiteField.facet" ng-true-value="1"
+							ng-false-value="0">
+
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turNLPInstanceEntityLocal)"
+							ng-model="turNLPInstanceEntityLocal.facet" ng-true-value="1"
+							ng-false-value="0">
+
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turNLPInstanceEntityLocal)"
+							ng-model="turNLPInstanceEntityLocal.hl" ng-true-value="1"
+							ng-false-value="0">
 					</div>
 				</div>
 			</div>

@@ -31,6 +31,13 @@ public class TurNLPEntityAPI {
 		return this.turNLPEntityRepository.findAll();
 	}
 
+	@Path("local")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<TurNLPEntity> listLocal() throws JSONException {
+		return this.turNLPEntityRepository.findByLocal(1);
+	}
+	
 	@Path("{entityId}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)

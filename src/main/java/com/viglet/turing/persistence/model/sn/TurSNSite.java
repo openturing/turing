@@ -34,6 +34,30 @@ public class TurSNSite implements Serializable {
 	@Column(nullable = false, length = 5)
 	private String language;
 
+	@Column(nullable = false, length = 50)
+	private String core;
+	
+	@Column(nullable = true)
+	private int rowsPerPage;
+
+	@Column(nullable = true)
+	private int facet;
+
+	@Column(nullable = true)
+	private int itemsPerFacet;
+
+	@Column(nullable = true)
+	private int hl;
+
+	@Column(nullable = true, length = 50)
+	private String hlPre;
+	
+	@Column(nullable = true, length = 50)
+	private String hlPost;
+
+	@Column(nullable = true)
+	private int mlt;
+	
 	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
@@ -121,4 +145,69 @@ public class TurSNSite implements Serializable {
 
 		return turSNSiteField;
 	}
+
+	public String getCore() {
+		return core;
+	}
+
+	public void setCore(String core) {
+		this.core = core;
+	}
+
+	public int getRowsPerPage() {
+		return rowsPerPage;
+	}
+
+	public void setRowsPerPage(int rowsPerPage) {
+		this.rowsPerPage = rowsPerPage;
+	}
+
+	public int getFacet() {
+		return facet;
+	}
+
+	public void setFacet(int facet) {
+		this.facet = facet;
+	}
+
+	public int getItemsPerFacet() {
+		return itemsPerFacet;
+	}
+
+	public void setItemsPerFacet(int itemsPerFacet) {
+		this.itemsPerFacet = itemsPerFacet;
+	}
+
+	public int getHl() {
+		return hl;
+	}
+
+	public void setHl(int hl) {
+		this.hl = hl;
+	}
+
+	public String getHlPre() {
+		return hlPre;
+	}
+
+	public void setHlPre(String hlPre) {
+		this.hlPre = hlPre;
+	}
+
+	public String getHlPost() {
+		return hlPost;
+	}
+
+	public void setHlPost(String hlPost) {
+		this.hlPost = hlPost;
+	}
+
+	public int getMlt() {
+		return mlt;
+	}
+
+	public void setMlt(int mlt) {
+		this.mlt = mlt;
+	}
+	
 }

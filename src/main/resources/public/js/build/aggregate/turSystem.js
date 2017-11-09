@@ -42,7 +42,28 @@ turingApp.config([
 				INTERNAL_NAME :  "Internal Name",
 				SENTENCE: "Sentence",
 				SENTENCES: "Sentences",
-				CATEGORY: "Category"
+				CATEGORY: "Category",
+				LANGUAGE: "Language",
+				CORE: "Core",
+				SE: "Search Engine",
+				NLP: "NLP",
+				TYPE: "Type",
+				FACET: "Facet",
+				FACETS: "Facets",
+				FACET_NAME: "Facet Name",
+				MULTI_VALUED: "Multi Valued",
+				HIGHLIGHTING: "Highlighting",
+				NEW_FIELD: "New Field",
+				FIELD: "Field",
+				FIELDS: "Fields",
+				DETAIL: "Detail",
+				APPEARANCE: "Appearance"	,
+				DELETE: "Delete",
+				NEW: "New",
+				ENABLED: "Enabled",
+				REBUILD: "Rebuild"
+			
+					
 			});
 			$translateProvider.translations('pt', {
 				NLP_EDIT : "Editar o NLP",
@@ -56,7 +77,28 @@ turingApp.config([
 				INTERNAL_NAME :  "Nome Interno",
 				SENTENCE: "Sentença",
 				SENTENCES: "Sentenças",
-				CATEGORY: "Categoria"
+				CATEGORY: "Categoria",
+				LANGUAGE: "Idioma",
+				CORE: "Instância",
+				SE: "Motor de Busca",
+				NLP: "NLP",
+				TYPE: "Tipo",
+				FACET: "Faceta",
+				FACETS: "Facetas",
+				FACET_NAME: "Nome da Faceta",
+				MULTI_VALUED: "Múltiplos Valores",
+				HIGHLIGHTING: "Realce",
+				NEW_FIELD: "Novo Campo",
+				FIELD: "Campo",
+				FIELDS: "Campos",
+				DETAIL: "Detalhe",
+				APPEARANCE: "Aparência",
+				DELETE: "Apagar",
+				NEW: "Novo",
+				ENABLED: "Ativado",
+				REBUILD: "Reconstruir"
+
+
 			});
 			$translateProvider.fallbackLanguage('en');
 

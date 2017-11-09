@@ -6,6 +6,7 @@ import javax.persistence.*;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.se.field.TurSEFieldType;
 
 /**
  * The persistent class for the vigServices database table.
@@ -25,22 +26,22 @@ public class TurSNSiteField implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String name;
 	
-	@Column(nullable = false, length = 50)
+	@Column(nullable = true, length = 50)
 	private String facetName;
 
-	@Column(nullable = false, length = 255)
+	@Column(nullable = true, length = 255)
 	private String description;
 
-	@Column(nullable = false, length = 50)
-	private String type;
-
 	@Column(nullable = false)
+	private TurSEFieldType type;
+
+	@Column(nullable = true)
 	private int multiValued;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private int facet;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private int hl;
 	
 	// bi-directional many-to-one association to TurSNSite
@@ -81,11 +82,11 @@ public class TurSNSiteField implements Serializable {
 		this.description = description;
 	}
 
-	public String getType() {
+	public TurSEFieldType getType() {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(TurSEFieldType type) {
 		this.type = type;
 	}
 

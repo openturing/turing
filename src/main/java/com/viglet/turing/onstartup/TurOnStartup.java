@@ -15,6 +15,7 @@ import com.viglet.turing.onstartup.nlp.TurNLPVendorEntityOnStartup;
 import com.viglet.turing.onstartup.nlp.TurNLPVendorOnStartup;
 import com.viglet.turing.onstartup.se.TurSEInstanceOnStartup;
 import com.viglet.turing.onstartup.se.TurSEVendorOnStartup;
+import com.viglet.turing.onstartup.sn.TurSNSiteOnStartup;
 import com.viglet.turing.onstartup.storage.TurDataGroupStartup;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.onstartup.system.TurLocaleOnStartup;
@@ -51,7 +52,9 @@ public class TurOnStartup implements ApplicationRunner {
 	private TurDataGroupStartup turDataGroupStartup;
 	@Autowired
 	private TurConfigVarOnStartup turConfigVarOnStartup;
-
+	@Autowired
+	private TurSNSiteOnStartup turSNSiteOnStartup;
+	
 	@Override
 	public void run(ApplicationArguments arg0) throws Exception {
 		final String FIRST_TIME = "FIRST_TIME";
@@ -71,6 +74,7 @@ public class TurOnStartup implements ApplicationRunner {
 			turSEVendorOnStartup.createDefaultRows();
 			turSEInstanceOnStartup.createDefaultRows();
 			turDataGroupStartup.createDefaultRows();
+			turSNSiteOnStartup.createDefaultRows();
 			turConfigVarOnStartup.createDefaultRows();
 
 			System.out.println("Configuration finished.");

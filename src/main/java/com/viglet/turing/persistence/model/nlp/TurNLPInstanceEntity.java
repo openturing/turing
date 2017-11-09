@@ -3,6 +3,8 @@ package com.viglet.turing.persistence.model.nlp;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 /**
  * The persistent class for the vigServicesNLPEntities database table.
  * 
@@ -31,6 +33,7 @@ public class TurNLPInstanceEntity implements Serializable {
 
 	@ManyToOne
 	@JoinColumn(name = "nlp_instance_id", nullable = false)
+	@JsonBackReference (value="turNLPInstanceEntity-turNLPInstance")
 	private TurNLPInstance turNLPInstance;
 
 	public TurNLPInstanceEntity() {

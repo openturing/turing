@@ -3,6 +3,7 @@ package com.viglet.turing.api.otsn.search;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,8 +24,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.se.facet.TurSEFacetMap;
-import com.viglet.turing.se.facet.TurSEFacetMaps;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteField;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.field.TurSEFieldMap;
@@ -41,6 +44,10 @@ public class TurOTSNSearchAPI {
 
 	@Autowired
 	TurSolr turSolr;
+	@Autowired
+	TurSNSiteFieldRepository turSNSiteFieldRepository;
+	@Autowired
+	TurSNSiteRepository turSNSiteRepository;
 
 	public String addOrReplaceParameter(UriInfo uriInfo, String paramName, String paramValue) {
 		StringBuffer sbQueryString = new StringBuffer();
@@ -147,7 +154,8 @@ public class TurOTSNSearchAPI {
 		for (Object queryParamObject : queryParams.keySet().toArray()) {
 			String queryParam = (String) queryParamObject;
 			for (String queryParamValue : queryParams.get(queryParam)) {
-				//System.out.println("OTSNSearchAPI parameters:" + queryParam + " is " + queryParamValue);
+				// System.out.println("OTSNSearchAPI parameters:" + queryParam + " is " +
+				// queryParamValue);
 			}
 		}
 
@@ -172,7 +180,16 @@ public class TurOTSNSearchAPI {
 		filterQueryModifiedArr = filterQueryModified.toArray(filterQueryModifiedArr);
 
 		Map<String, TurSEFieldMap> fieldMap = new TurSEFieldMaps().getFieldMaps();
-		Map<String, TurSEFacetMap> facetMap = new TurSEFacetMaps().getFacetMaps();
+
+		TurSNSite turSNSite = turSNSiteRepository.findById(1);
+
+		List<TurSNSiteField> turSNSiteFacetFields = turSNSiteFieldRepository.findByTurSNSiteAndFacet(turSNSite, 1);
+
+		Map<String, TurSNSiteField> facetMap = new HashMap<String, TurSNSiteField>();
+
+		for (TurSNSiteField turSNSiteFacetField : turSNSiteFacetFields) {
+			facetMap.put(turSNSiteFacetField.getName(), turSNSiteFacetField);
+		}
 
 		TurSEResults turSEResults = null;
 		JSONArray otsnResults = new JSONArray();
@@ -181,7 +198,7 @@ public class TurOTSNSearchAPI {
 		try {
 			turSEResults = turSolr.retrieveSolr(q, filterQueryModified, currentPage);
 			List<TurSEResult> seResults = turSEResults.getResults();
-			//System.out.println("getResults size:" + turSEResults.getResults().size());
+			// System.out.println("getResults size:" + turSEResults.getResults().size());
 			for (TurSEResult result : seResults) {
 				JSONObject otsnResult = new JSONObject();
 				Map<String, TurSEResultAttr> turSEResultAttr = result.getTurSEResultAttr();
@@ -345,91 +362,93 @@ public class TurOTSNSearchAPI {
 		jsonOTSNQuery.put("otsn:query-string", turSEResults.getQueryString());
 		jsonOTSNQuery.put("otsn:sort", turSEResults.getSort());
 
-		// BEGIN Facet
-		JSONObject jsonOTSNFacetWidget = new JSONObject();
-		for (TurSEFacetResult facet : turSEResults.getFacetResults()) {
+		if (turSNSite.getFacet() == 1) {
+			// BEGIN Facet
+			JSONObject jsonOTSNFacetWidget = new JSONObject();
+			for (TurSEFacetResult facet : turSEResults.getFacetResults()) {
 
-			if (facetMap.containsKey(facet.getFacet()) && !hiddenFilterQuery.contains(facet.getFacet())
-					&& facet.getTurSEFacetResultAttr().size() > 0) {
-				TurSEFacetMap turSEFacetdMap = facetMap.get(facet.getFacet());
+				if (facetMap.containsKey(facet.getFacet()) && !hiddenFilterQuery.contains(facet.getFacet())
+						&& facet.getTurSEFacetResultAttr().size() > 0) {
+					TurSNSiteField turSNSiteField = facetMap.get(facet.getFacet());
 
-				JSONObject jsonOTSNFacetWidgetEntityLabel = new JSONObject();
-				JSONArray jsonOTSNFacetWidgetEntityItems = new JSONArray();
-				JSONObject jsonOTSNFacetWidgetEntity = new JSONObject();
+					JSONObject jsonOTSNFacetWidgetEntityLabel = new JSONObject();
+					JSONArray jsonOTSNFacetWidgetEntityItems = new JSONArray();
+					JSONObject jsonOTSNFacetWidgetEntity = new JSONObject();
 
-				for (Object facetItemObject : facet.getTurSEFacetResultAttr().values().toArray()) {
+					for (Object facetItemObject : facet.getTurSEFacetResultAttr().values().toArray()) {
 
-					JSONObject jsonOTSNFacetWidgetEntityItem = new JSONObject();
+						JSONObject jsonOTSNFacetWidgetEntityItem = new JSONObject();
 
-					TurSEFacetResultAttr facetItem = (TurSEFacetResultAttr) facetItemObject;
-					jsonOTSNFacetWidgetEntityItem.put("facet-link",
-							this.addFilterQuery(uriInfo, facet.getFacet() + ":" + facetItem.getAttribute()));
-					jsonOTSNFacetWidgetEntityItem.put("label", facetItem.getAttribute());
-					jsonOTSNFacetWidgetEntityItem.put("facet-count", Integer.toString(facetItem.getCount()));
-					jsonOTSNFacetWidgetEntityItems.put(jsonOTSNFacetWidgetEntityItem);
-				}
+						TurSEFacetResultAttr facetItem = (TurSEFacetResultAttr) facetItemObject;
+						jsonOTSNFacetWidgetEntityItem.put("facet-link",
+								this.addFilterQuery(uriInfo, facet.getFacet() + ":" + facetItem.getAttribute()));
+						jsonOTSNFacetWidgetEntityItem.put("label", facetItem.getAttribute());
+						jsonOTSNFacetWidgetEntityItem.put("facet-count", Integer.toString(facetItem.getCount()));
+						jsonOTSNFacetWidgetEntityItems.put(jsonOTSNFacetWidgetEntityItem);
+					}
 
-				jsonOTSNFacetWidgetEntityLabel.put("xml:lang", "en");
-				jsonOTSNFacetWidgetEntityLabel.put("text", turSEFacetdMap.getAlias());
-				jsonOTSNFacetWidgetEntity.put("rdf:Description",
-						(new JSONObject()).put("rdf:resource", turSEFacetdMap.getRdf()));
-				jsonOTSNFacetWidgetEntity.put("rdfs:label", jsonOTSNFacetWidgetEntityLabel);
-				jsonOTSNFacetWidgetEntity.put("otsn-facet",
-						(new JSONObject()).put("facet", jsonOTSNFacetWidgetEntityItems));
+					jsonOTSNFacetWidgetEntityLabel.put("xml:lang", "en");
+					jsonOTSNFacetWidgetEntityLabel.put("text", turSNSiteField.getFacetName());
+					jsonOTSNFacetWidgetEntity.put("rdf:Description", (new JSONObject()).put("rdf:resource", "turing"));
+					jsonOTSNFacetWidgetEntity.put("rdfs:label", jsonOTSNFacetWidgetEntityLabel);
+					jsonOTSNFacetWidgetEntity.put("otsn-facet",
+							(new JSONObject()).put("facet", jsonOTSNFacetWidgetEntityItems));
 
-				jsonOTSNFacetWidget.put(turSEFacetdMap.getInternal(), jsonOTSNFacetWidgetEntity);
+					jsonOTSNFacetWidget.put(turSNSiteField.getName(), jsonOTSNFacetWidgetEntity);
 
-			}
-		}
-
-		// BEGIN Facet Remove
-		if (fq.size() > 0) {
-			JSONObject jsonOTSNFacetToRemoveWidgetEntityLabel = new JSONObject();
-			JSONArray jsonOTSNFacetToRemoveWidgetEntityItems = new JSONArray();
-			JSONObject jsonOTSNFacetToRemoveWidgetEntity = new JSONObject();
-
-			for (String facetToRemove : fq) {
-				String[] facetToRemoveParts = facetToRemove.split(":");
-				if (facetToRemoveParts.length == 2) {
-					String facetToRemoveValue = facetToRemoveParts[1].replaceAll("\"", "");
-
-					JSONObject jsonOTSNFacetToRemoveWidgetEntityItem = new JSONObject();
-					jsonOTSNFacetToRemoveWidgetEntityItem.put("facet-link",
-							this.removeFilterQuery(uriInfo, facetToRemove));
-					jsonOTSNFacetToRemoveWidgetEntityItem.put("label", facetToRemoveValue);
-					jsonOTSNFacetToRemoveWidgetEntityItems.put(jsonOTSNFacetToRemoveWidgetEntityItem);
 				}
 			}
 
-			jsonOTSNFacetToRemoveWidgetEntityLabel.put("xml:lang", "en");
-			jsonOTSNFacetToRemoveWidgetEntityLabel.put("text", "Facets To Remove");
-			jsonOTSNFacetToRemoveWidgetEntity.put("rdf:Description",
-					(new JSONObject()).put("rdf:resource", "http://semantic.opentext.com/otsn/facetstoremove"));
-			jsonOTSNFacetToRemoveWidgetEntity.put("rdfs:label", jsonOTSNFacetToRemoveWidgetEntityLabel);
-			jsonOTSNFacetToRemoveWidgetEntity.put("otsn-facet",
-					(new JSONObject()).put("facet", jsonOTSNFacetToRemoveWidgetEntityItems));
-			jsonOTSNFacetWidget.put("otsn:facet-to-remove", jsonOTSNFacetToRemoveWidgetEntity);
-		}
+			// BEGIN Facet Remove
+			if (fq.size() > 0) {
+				JSONObject jsonOTSNFacetToRemoveWidgetEntityLabel = new JSONObject();
+				JSONArray jsonOTSNFacetToRemoveWidgetEntityItems = new JSONArray();
+				JSONObject jsonOTSNFacetToRemoveWidgetEntity = new JSONObject();
 
-		// END Facet Remove
+				for (String facetToRemove : fq) {
+					String[] facetToRemoveParts = facetToRemove.split(":");
+					if (facetToRemoveParts.length == 2) {
+						String facetToRemoveValue = facetToRemoveParts[1].replaceAll("\"", "");
 
-		jsonOTSNWidget.put("otsn:facet-widget", jsonOTSNFacetWidget);
-		// END Facet
+						JSONObject jsonOTSNFacetToRemoveWidgetEntityItem = new JSONObject();
+						jsonOTSNFacetToRemoveWidgetEntityItem.put("facet-link",
+								this.removeFilterQuery(uriInfo, facetToRemove));
+						jsonOTSNFacetToRemoveWidgetEntityItem.put("label", facetToRemoveValue);
+						jsonOTSNFacetToRemoveWidgetEntityItems.put(jsonOTSNFacetToRemoveWidgetEntityItem);
+					}
+				}
 
-		// BEGIN Similar
-		JSONArray jsonOTSNSimilarWidgetItems = new JSONArray();
-		for (TurSESimilarResult similar : turSEResults.getSimilarResults()) {
-			JSONObject jsonOTSNSimilarWidgetItem = new JSONObject();
-			for (Object similarItemObject : similar.getTurSESimilarResultAttr().values().toArray()) {
-				TurSESimilarResultAttr similarItem = (TurSESimilarResultAttr) similarItemObject;
-				jsonOTSNSimilarWidgetItem.put(similarItem.getAttribute(), similarItem.getValue());
+				jsonOTSNFacetToRemoveWidgetEntityLabel.put("xml:lang", "en");
+				jsonOTSNFacetToRemoveWidgetEntityLabel.put("text", "Facets To Remove");
+				jsonOTSNFacetToRemoveWidgetEntity.put("rdf:Description",
+						(new JSONObject()).put("rdf:resource", "http://semantic.opentext.com/otsn/facetstoremove"));
+				jsonOTSNFacetToRemoveWidgetEntity.put("rdfs:label", jsonOTSNFacetToRemoveWidgetEntityLabel);
+				jsonOTSNFacetToRemoveWidgetEntity.put("otsn-facet",
+						(new JSONObject()).put("facet", jsonOTSNFacetToRemoveWidgetEntityItems));
+				jsonOTSNFacetWidget.put("otsn:facet-to-remove", jsonOTSNFacetToRemoveWidgetEntity);
 			}
-			jsonOTSNSimilarWidgetItems.put(jsonOTSNSimilarWidgetItem);
+
+			// END Facet Remove
+
+			jsonOTSNWidget.put("otsn:facet-widget", jsonOTSNFacetWidget);
+			// END Facet
 		}
+		if (turSNSite.getMlt() == 1) {
+			// BEGIN Similar
+			JSONArray jsonOTSNSimilarWidgetItems = new JSONArray();
+			for (TurSESimilarResult similar : turSEResults.getSimilarResults()) {
+				JSONObject jsonOTSNSimilarWidgetItem = new JSONObject();
+				for (Object similarItemObject : similar.getTurSESimilarResultAttr().values().toArray()) {
+					TurSESimilarResultAttr similarItem = (TurSESimilarResultAttr) similarItemObject;
+					jsonOTSNSimilarWidgetItem.put(similarItem.getAttribute(), similarItem.getValue());
+				}
+				jsonOTSNSimilarWidgetItems.put(jsonOTSNSimilarWidgetItem);
+			}
 
-		jsonOTSNWidget.put("otsn:similar-widget", jsonOTSNSimilarWidgetItems);
+			jsonOTSNWidget.put("otsn:similar-widget", jsonOTSNSimilarWidgetItems);
 
-		// END Similar
+			// END Similar
+		}
 		jsonOTSNQueryContext.put("otsn:pageEnd", 7);
 		jsonOTSNQueryContext.put("otsn:pageStart", turSEResults.getStart());
 		jsonOTSNQueryContext.put("otsn:pageCount", turSEResults.getPageCount());

@@ -49,6 +49,15 @@ public class TurSNSiteAPI {
 		turSNSiteEdit.setLanguage(turSNSite.getLanguage());
 		turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
 		turSNSiteEdit.setTurNLPInstance(turSNSite.getTurNLPInstance());
+		turSNSiteEdit.setCore(turSNSite.getCore());
+		//UI
+		turSNSiteEdit.setFacet(turSNSite.getFacet());
+		turSNSiteEdit.setHl(turSNSite.getHl());
+		turSNSiteEdit.setHlPost(turSNSite.getHlPost());
+		turSNSiteEdit.setHlPre(turSNSite.getHlPre());
+		turSNSiteEdit.setItemsPerFacet(turSNSite.getItemsPerFacet());
+		turSNSiteEdit.setMlt(turSNSite.getMlt());
+		turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
 		this.turSNSiteRepository.save(turSNSiteEdit);
 		return turSNSiteEdit;
 	}

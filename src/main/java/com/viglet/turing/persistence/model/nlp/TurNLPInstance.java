@@ -20,7 +20,6 @@ import java.util.List;
 @Entity
 @Table(name = "turNLPInstance")
 @NamedQuery(name = "TurNLPInstance.findAll", query = "SELECT n FROM TurNLPInstance n")
-@JsonIgnoreProperties({ "turNLPInstanceEntities" })
 public class TurNLPInstance implements Serializable {
 	private static final long serialVersionUID = 1L;
 

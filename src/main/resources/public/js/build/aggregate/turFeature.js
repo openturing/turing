@@ -207,9 +207,10 @@ turingApp.controller('TurSNSiteUICtrl', [
 		"$window",
 		"$state",
 		"$rootScope",
-		"$translate",
+		"$translate",		
 		function($scope, $http, $window, $state, $rootScope, $translate) {
 			$rootScope.$state = $state;
+		
 		} ]);
 turingApp.controller('TurSNSiteFieldEditCtrl', [
 	"$scope",
@@ -283,16 +284,19 @@ turingApp.controller('TurSNSiteFieldCtrl', [
 		"$uibModal",
 		"$stateParams",
 		"turSNSiteFieldResource",
+		"turNLPEntityLocalResource",
 		"turNotificationService",
-		function($scope, $http, $window, $state, $rootScope, $translate, $uibModal, $stateParams,turSNSiteFieldResource, turNotificationService) {
+		function($scope, $http, $window, $state, $rootScope, $translate, $uibModal, $stateParams,turSNSiteFieldResource, turNLPEntityLocalResource, turNotificationService) {
 			$rootScope.$state = $state;
+			$scope.turNLPEntitiesLocal = turNLPEntityLocalResource.query();
 			
 			$scope.snSiteFieldUpdate = function(snSiteField) {			
 				turSNSiteFieldResource.update({
 					id:	snSiteField.id,		
 					snSiteId : $stateParams.snSiteId
 				}, snSiteField, function() {
-					//turNotificationService.addNotification("Field \"" + snSiteField.name + "\" was updated.");
+					// turNotificationService.addNotification("Field \"" +
+					// snSiteField.name + "\" was updated.");
 				});
 			}
 			$scope.fieldNew = function() {
@@ -318,13 +322,13 @@ turingApp.controller('TurSNSiteFieldCtrl', [
 				});
 				
 				modalInstance.result.then(function(response) {
-					/*delete response.turDataGroupCategories;
-					delete response.turDataSentences;
-					turMLDataGroupCategory = {};
-					turMLDataGroupCategory.turMLCategory = response;
-					turMLDataGroupCategoryResource.save({
-						dataGroupId : $stateParams.mlDataGroupId
-					}, turMLDataGroupCategory);*/
+					/*
+					 * delete response.turDataGroupCategories; delete
+					 * response.turDataSentences; turMLDataGroupCategory = {};
+					 * turMLDataGroupCategory.turMLCategory = response;
+					 * turMLDataGroupCategoryResource.save({ dataGroupId :
+					 * $stateParams.mlDataGroupId }, turMLDataGroupCategory);
+					 */
 
 					//
 				}, function() {
@@ -491,16 +495,20 @@ turingApp.factory('turSNSiteResource', [ '$resource', 'turAPIServerService', fun
 		}
 	});
 } ]);
-turingApp.factory('turSNSiteFieldResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
-	return $resource(turAPIServerService.get().concat('/sn/:snSiteId/field/:id'), {
-		id : '@id',
-		snSiteId : '@snSiteId'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
+turingApp.factory('turSNSiteFieldResource', [
+		'$resource',
+		'turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat(
+					'/sn/:snSiteId/field/:id'), {
+				id : '@id',
+				snSiteId : '@snSiteId'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
 turingApp.controller('TurMLCategoryNewCtrl', [
 		"$uibModalInstance",
 		"category",
@@ -1529,6 +1537,15 @@ turingApp.controller('TurNLPEntityCtrl', [
 			$rootScope.$state = $state;
 			$scope.entities = turNLPEntityResource.query();
 		} ]);
+turingApp.factory('turNLPEntityLocalResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/entity/local/:id'), {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
 turingApp.factory('turNLPEntityResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
 	return $resource(turAPIServerService.get().concat('/entity/:id'), {
 		id : '@id'

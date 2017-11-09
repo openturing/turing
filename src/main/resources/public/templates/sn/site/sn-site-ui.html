@@ -1,1 +1,112 @@
-<h3>UI</h3>
+<div style="padding: 15px">
+	<h3>{{'APPEARANCE' | translate }}</h3>
+</div>
+
+<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+	<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+		style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+		{{'Number of rows per page' | translate }}</div>
+	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+		<input ng-model="snSite.rowsPerPage" maxlength="4"
+			class="form-control">
+
+	</div>
+</div>
+<div style="padding: 15px">
+	<h3>{{'FACET' | translate }}</h3>
+</div>
+<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+	<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+		style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+		{{'Facet Enabled?' | translate }}</div>
+	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+		<select class="form-control" ng-model="snSite.facet" convert-to-number>
+			<option value="0">No</option>
+			<option value="1">Yes</option>
+		</select>
+	</div>
+</div>
+<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+	<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+		style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+		{{'Number of Items per facet' | translate }}</div>
+	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+		<input maxlength="4" ng-model="snSite.itemsPerFacet" type="text"
+			class="form-control">
+	</div>
+</div>
+<div style="padding: 15px">
+	<h3>{{'HIGHLIGHTING' | translate }}</h3>
+</div>
+<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+	<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+		style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+		{{'HL Enabled?' | translate }}</div>
+	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+		<select class="form-control" ng-model="snSite.hl" convert-to-number>
+			<option value="0">No</option>
+			<option value="1">Yes</option>
+		</select>
+	</div>
+
+</div>
+<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+	<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+		style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+		{{'HL Pre Tag' | translate }}</div>
+	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+		<input maxlength="15" ng-model="snSite.hlPre" type="text"
+			class="form-control">
+
+	</div>
+</div>
+<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+	<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+		style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+		{{'HL Post Tag' | translate }}</div>
+	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+		<input maxlength="15" ng-model="snSite.hlPost" type="text"
+			class="form-control">
+
+	</div>
+</div>
+
+<div style="padding: 15px">
+	<h3>{{'MLT' | translate }}</h3>
+</div>
+
+<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+	<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+		style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+		{{'More Like This Enabled?' | translate }}</div>
+	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+		<select class="form-control" ng-model="snSite.mlt" convert-to-number>
+			<option value="0">No</option>
+			<option value="1">Yes</option>
+		</select>
+	</div>
+</div>
+<div style="padding: 10px;">
+	<div class="row">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"></div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
+			style="padding: 0px; padding-top: 20px; padding-bottom: 20px;">
+			<div class="btn-group">
+				<button ng-click="snSiteUpdate()" type="button"
+					class="btn btn-viglet">{{'SETTINGS_SAVE_CHANGES' |
+					translate }}</button>
+				<button type="button" class="btn btn-viglet dropdown-toggle"
+					data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					<span class="caret"></span> <span class="sr-only">Toggle
+						Dropdown</span>
+				</button>
+				<ul class="dropdown-menu">
+					<li><a ng-click="snSiteDelete()">Delete</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+</div>

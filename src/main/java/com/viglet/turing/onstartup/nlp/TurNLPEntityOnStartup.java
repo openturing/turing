@@ -25,7 +25,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setName("People");
 			turNLPEntity.setInternalName("PN");
 			turNLPEntity.setDescription("Entidade de Pessoas");
-			turNLPEntity.setLocal(1);
+			turNLPEntity.setLocal(0);
 			turNLPEntity.setCollectionName("persons");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -33,7 +33,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setName("Places");
 			turNLPEntity.setInternalName("GL");
 			turNLPEntity.setDescription("Entidade de Lugares");
-			turNLPEntity.setLocal(1);
+			turNLPEntity.setLocal(0);
 			turNLPEntity.setCollectionName("locations");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -41,7 +41,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setName("Fraud");
 			turNLPEntity.setInternalName("FR");
 			turNLPEntity.setDescription("Entidade de Fraude");
-			turNLPEntity.setLocal(1);
+			turNLPEntity.setLocal(0);
 			turNLPEntity.setCollectionName("frauds");
 			turNLPEntityRepository.save(turNLPEntity);
 
