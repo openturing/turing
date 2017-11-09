@@ -43,36 +43,38 @@ public class TurSNSiteFieldExtAPI {
 	TurSNSiteFieldRepository turSNSiteFieldRepository;
 	@Autowired
 	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
-
+	@Autowired
+	TurNLPEntityRepository turNLPEntityRepository;
+	
 	@GET
 	@Produces("application/json")
 	public List<TurSNSiteFieldExt> list(@PathParam("snSiteId") int snSiteId) throws JSONException {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
 
 		List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
-
+		List<TurNLPInstanceEntity> turNLPInstanceEntities = turNLPInstanceEntityRepository
+				.findByTurNLPInstanceAndEnabled(turSNSite.getTurNLPInstance(), 1);
+		List<TurNLPEntity> turNLPEntityThesaurus = turNLPEntityRepository.findByLocal(1);
+		
 		Map<Integer, TurSNSiteField> fieldMap = new HashMap<Integer, TurSNSiteField>();
+		Map<Integer, TurNLPEntity> nerMap = new HashMap<Integer, TurNLPEntity>();
+		Map<Integer, TurNLPEntity> thesaurusMap = new HashMap<Integer, TurNLPEntity>();
 
 		for (TurSNSiteField turSNSiteField : turSNSiteFields) {
 			fieldMap.put(turSNSiteField.getId(), turSNSiteField);
 
 		}
 
-		List<TurNLPInstanceEntity> turNLPInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstanceAndEnabled(turSNSite.getTurNLPInstance(), 1);
-		
-		Map<Integer, TurNLPEntity> nerMap = new HashMap<Integer, TurNLPEntity>();
-		Map<Integer, TurNLPEntity> thesaurusMap = new HashMap<Integer, TurNLPEntity>();
-		
 		for (TurNLPInstanceEntity turNLPInstanceEntity : turNLPInstanceEntities) {
 			TurNLPEntity turNLPEntity = turNLPInstanceEntity.getTurNLPEntity();
-			if (turNLPInstanceEntity.getTurNLPEntity().getLocal() == 0) {
-			nerMap.put(turNLPEntity.getId(), turNLPEntity);
-			}
-			else {
-				thesaurusMap.put(turNLPEntity.getId(), turNLPEntity);
-			}
+				nerMap.put(turNLPEntity.getId(), turNLPEntity);
 		}
 
+		for (TurNLPEntity turNLPEntityThesaurusSingle : turNLPEntityThesaurus) {
+			thesaurusMap.put(turNLPEntityThesaurusSingle.getId(), turNLPEntityThesaurusSingle);
+		}
+
+		
 		List<TurSNSiteFieldExt> turSNSiteFieldExts = this.turSNSiteFieldExtRepository.findByTurSNSite(turSNSite);
 
 		for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExts) {
@@ -110,7 +112,7 @@ public class TurSNSiteFieldExtAPI {
 			turSNSiteFieldExt.setType(turSNSiteField.getType());
 			turSNSiteFieldExt.setTurSNSite(turSNSite);
 			turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-			
+
 			turSNSiteFieldExts.add(turSNSiteFieldExt);
 		}
 
@@ -128,7 +130,7 @@ public class TurSNSiteFieldExtAPI {
 			turSNSiteFieldExt.setType(TurSEFieldType.STRING);
 			turSNSiteFieldExt.setTurSNSite(turSNSite);
 			turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-			
+
 			turSNSiteFieldExts.add(turSNSiteFieldExt);
 		}
 
@@ -146,7 +148,7 @@ public class TurSNSiteFieldExtAPI {
 			turSNSiteFieldExt.setType(TurSEFieldType.STRING);
 			turSNSiteFieldExt.setTurSNSite(turSNSite);
 			turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-			
+
 			turSNSiteFieldExts.add(turSNSiteFieldExt);
 		}
 
