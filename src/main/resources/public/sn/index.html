@@ -1,149 +1,168 @@
+
 <!DOCTYPE html>
 <html lang="en" ng-app="turingSNApp">
+
+
 <head>
-<base href="/">
-<meta charset="utf-8" />
-<meta http-equiv="content-type"
-	content="application/xhtml+xml; charset=UTF-8" />
-<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport"
-	content="width=device-width, initial-scale=1.0, minimum-scale=1.0" />
+<meta charset="utf-8"></meta>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"></meta>
+<meta name="viewport" content="width=device-width, initial-scale=1"></meta>
 <title>Semantic Navigation</title>
-<!-- Page styles -->
-<link rel="stylesheet"
-	href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en" />
-<link rel="stylesheet"
-	href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-<link rel="stylesheet"
-	href="https://code.getmdl.io/1.2.0/material.min.css" />
-<link rel="stylesheet" href="styles.css" />
-
-<!-- Add to homescreen for Chrome on Android -->
-<meta name="mobile-web-app-capable" content="yes" />
-<link rel="icon" sizes="192x192" href="../images/android-desktop.png" />
-
-<!-- Add to homescreen for Safari on iOS -->
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black" />
-<meta name="apple-mobile-web-app-title" content="Viglet Turing" />
-<link rel="apple-touch-icon-precomposed"
-	href="../images/ios-desktop.png" />
-
-<!-- Tile icon for Win8 (144x144 + tile color) -->
-<meta name="msapplication-TileImage"
-	content="../images/touch/ms-touch-icon-144x144-precomposed.png" />
-<meta name="msapplication-TileColor" content="#3372DF" />
-<link rel="shortcut icon" href="../images/favicon.png" />
+<!-- Bootstrap -->
+<link href="../thirdparty/bootstrap/dist/css/bootstrap.min.css"
+	rel="stylesheet"></link>
+<link
+	href="https://viglet.ai/ui/thirdparty/font-awesome/css/font-awesome.min.css"
+	rel="stylesheet"></link>
+<link href="https://viglet.ai/ui/css/viglet.css" rel="stylesheet"></link>
+<link href="https://viglet.ai/ui/favicon.ico" rel="shortcut icon"
+	type="image/x-icon"></link>
+<base href="/">
 </head>
-<body ng-controller="TurSNMainCtrl">
-	<div style="margin: 20px">
-		<form method="get" action="">
+<body data-target=".navbar-default" ng-controller="TurSNMainCtrl">
+
+	<div id="wrap" style="margin-bottom: 15px;">
+		<nav class="navbar navbar-default navbar-fixed-top row  row-centered"
+			role="navigation">
 			<div
-				class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
-				style="width: calc(100% - 150px);">
-				<input class="mdl-textfield__input" id="q" name="q"
-					style="font-size: 40px" value='{{turQuery}}'> <label
-					class="mdl-textfield__label" for="sample3">Pesquise...</label>
+				class="container-fluid col-centered col-lg-9 col-md-9 col-sm-10 col-xs-10">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="row">
+					<div class="col-lg-1 col-md-1 col-sm-1 col-xs-2">
+						<a class="navbar-brand" href="#viglet"><img
+							src="../img/viglet_logo_sm.png"></img></a>
+					</div>
+					<div class="col-lg-11 col-md-11 col-sm-11 col-xs-10"
+						style="padding-top: 7px">
+						<form method="get" action="">
+							<div class="input-group">
+								<input id="q" name="q" type="text" class="form-control"
+									placeholder="Search for..." value='{{turQuery}}'> <span
+									class="input-group-btn">
+									<button class="btn btn-viglet" type="submit">Pesquisar</button>
+								</span>
+							</div>
+
+						</form>
+					</div>
+				</div>
+
 			</div>
-			<button
-				class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent"
-				style="font-size: 20px" type="submit">Pesquisar</button>
-		</form>
-	</div>
-	<div ng-if="total > 0" style="margin: 20px">
+			<!-- /.container-fluid -->
+		</nav>
 
-		<div style="margin: 20px;">
-			<table>
-				<tr>
-					<td style="vertical-align: top;">
-						<div ng-if="facets['otsn:facet-to-remove'] != null"
-							class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
-							<div class="mdl-card__supporting-text mdl-card--expand">
-								<h3>Filtros Aplicados</h3>
-								<ul class="demo-list-item mdl-list">
-									<li
-										ng-repeat="facetToRemove in facets['otsn:facet-to-remove']['otsn-facet']['facet']"
-										class="mdl-list__item" style="padding: 0px; min-height: 30px;"><span
-										class="mdl-list__item-primary-content"> <a
-											ng-click="turRedirect(facetToRemove['facet-link']);"
-											href="{{replaceUrlSearch(facetToRemove['facet-link'])}}">{{facetToRemove.label}}
-												(Remover) </a></span></li>
-								</ul>
-							</div>
-						</div>
+		<div class="container">
+			<div id="home" class="row row-centered" style="margin: 0px;margin-top: 80px">
+				<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 col-centered" style="padding:0px">
+					<div ng-if="total > 0" style="margin-top: 20px">
 
-						<div ng-repeat="(facet, facetDetail) in facets"
-							ng-if="facet != 'otsn:facet-to-remove'"
-							class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
-							<div class="mdl-card__supporting-text mdl-card--expand">
-								<h3>{{facetDetail["rdfs:label"]["text"]}}</h3>
-								<ul class="demo-list-item mdl-list">
-									<li ng-repeat="facetItem in facetDetail['otsn-facet']['facet']"
-										class="mdl-list__item" style="padding: 0px; min-height: 30px;"><span
-										class="mdl-list__item-primary-content"> <a
-											ng-click="turRedirect(facetItem['facet-link']);"
-											href="{{replaceUrlSearch(facetItem['facet-link'])}}">{{facetItem.label}}
-												({{facetItem['facet-count']}})</a>
-									</span></li>
-								</ul>
-							</div>
-						</div>
+						<div>
+							<div class="row" style="margin: 0px">
+								<div class="col-lg-3" style="vertical-align: top; padding: 0px">
 
-					</td>
-					<td style="vertical-align: top;">
-						<div class="mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
-							<h5>
-								Foram encontrados <strong>{{total}}</strong> resultados para o
-								termo "{{turQuery}}".
-							</h5>
-						</div>
-						<div
-							class="demo-options mdl-card mdl-card--expand mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
-							<div class="mdl-card__supporting-text mdl-card--expand">
-								<article ng-repeat="document in results"
-									class="col-boo-12 filter-texto box-institucional space-bottom-30">
-									<div>
-										<h4>
-											<a href="{{document['rdf:about']}}"
-												ng-bind-html="document['dc:title']"></a>
-										</h4>
-									</div>
-									<div>{{document['original_date'] | amParse:'YYYY-MM-DD
-										HH:mm:ss' | amDateFormat:'DD MMMM YYYY'}}</div>
-									<div>{{document["dc:type"][0]}}</div>
-									<div>
-										<div ng-bind-html="document['text']"></div>
-										<div ng-if="document['dc:metadata'].length > 0">
-											Assuntos encontrados:
-											<div ng-repeat="entity in document['dc:metadata']"
-												style="display: inline;">
-												<a ng-click="turRedirect(entity['href']);"
-													href="{{replaceUrlSearch(entity['href'])}}">{{entity['text']}}</a>
-
-												<div ng-if="!$last" style="display: inline;">,</div>
+									<div ng-if="facets['otsn:facet-to-remove'] != null"
+										class="col-lg-12" style="padding: 2px">
+										<div class="panel panel-default">
+											<div class="panel-heading"
+												style="background-color: #FF874B; color: white !important;">
+												<h3 class="panel-title">Filtros Aplicados</h3>
+											</div>
+											<div class="panel-body list-group" style="padding: 2px;">
+												<a
+													ng-repeat="facetToRemove in facets['otsn:facet-to-remove']['otsn-facet']['facet']"
+													ng-click="turRedirect(facetToRemove['facet-link']);"
+													href="{{replaceUrlSearch(facetToRemove['facet-link'])}}"
+													class="list-group-item">{{facetToRemove.label}}
+													(Remover) </a>
 											</div>
 										</div>
 									</div>
-								</article>
+
+
+									<div ng-repeat="(facet, facetDetail) in facets"
+										ng-if="facet != 'otsn:facet-to-remove'" class="col-lg-12"
+										style="padding: 2px" id="{{facetDetail["
+										rdfs:label"]["text"]}}" name="{{facetDetail["rdfs:label"]["text"]}}">
+										<div class="panel panel-default">
+											<div class="panel-heading"
+												style="background-color: #FF874B; color: white !important;">
+												<h3 class="panel-title">{{facetDetail["rdfs:label"]["text"]}}</h3>
+											</div>
+											<div class="panel-body list-group" style="padding: 2px">
+												<a
+													ng-repeat="facetItem in facetDetail['otsn-facet']['facet']"
+													ng-click="turRedirect(facetItem['facet-link']);"
+													href="{{replaceUrlSearch(facetItem['facet-link'])}}"
+													class="list-group-item">{{facetItem.label}}
+													({{facetItem['facet-count']}}) </a>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="col-lg-9" style="vertical-align: top;">
+									<div class="row">
+										<div class="col-lg-12" style="padding:0px;padding-left:20px">
+
+											<div class="panel panel-default">
+												<div class="panel-heading">
+													Foram encontrados <strong>{{total}}</strong> resultados
+													para o termo "{{turQuery}}".
+												</div>
+												<div class="panel-body">
+													<article ng-repeat="document in results"
+														style="margin-top: 40px;border-bottom-color: #FF874B;border-bottom-style: solid;border-bottom-width: thin;padding-bottom: 20px;">
+														<div>
+															<h4>
+																<a style="color: #FF874B; font-weight: bolder;"
+																	href="{{document['rdf:about']}}"
+																	ng-bind-html="document['dc:title']"></a>
+															</h4>
+														</div>
+														<div>{{document['original_date'] |
+															amParse:'YYYY-MM-DD HH:mm:ss' | amDateFormat:'DD MMMM
+															YYYY'}}</div>
+														<div style="margin-top: 10px">
+															<div ng-bind-html="document['text']"></div>
+															<div ng-if="document['dc:metadata'].length > 0"
+																style="margin-top: 10px">
+																Assuntos encontrados:
+																<div ng-repeat="entity in document['dc:metadata']"
+																	style="display: inline;">
+																	<a style="color: #FF874B"
+																		ng-click="turRedirect(entity['href']);"
+																		href="{{replaceUrlSearch(entity['href'])}}">{{entity['text']}}</a>
+
+																	<div ng-if="!$last" style="display: inline;">,</div>
+																</div>
+															</div>
+														</div>
+													</article>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div style="text-align: center;">
+										<div ng-repeat="page in pages" style="display: inline;">
+											<a ng-if="page.href" ng-click="turRedirect(page.href);"
+												href="{{replaceUrlSearch(page.href)}}" _target='_self'
+												style='font-size: 20px'>{{page.text}}</a> <span
+												ng-if="!page.href" style='font-size: 20px'>{{page.text}}</span>
+											<div ng-if="!$last" style="display: inline;">|</div>
+										</div>
+									</div>
+								</div>
 							</div>
 						</div>
-						<div style="text-align: center;">
-							<div ng-repeat="page in pages" style="display: inline;">
-								<a ng-if="page.href" ng-click="turRedirect(page.href);"
-									href="{{replaceUrlSearch(page.href)}}" _target='_self'
-									style='font-size: 20px'>{{page.text}}</a> <span
-									ng-if="!page.href" style='font-size: 20px'>{{page.text}}</span>
-								<div ng-if="!$last" style="display: inline;">|</div>
-							</div>
-						</div>
-					</td>
-				</tr>
-			</table>
+					</div>
+					<div ng-if="total == 0" style="margin: 20px">Nenhum resultado
+						encontrado.</div>
+				</div>
+			</div>
 		</div>
 	</div>
-	<div ng-if="total == 0" style="margin: 20px">Nenhum resultado
-		encontrado.</div>
 	<script src="../thirdparty/jquery/dist/jquery.min.js"></script>
+
 	<script src="../thirdparty/moment/min/moment-with-locales.min.js"></script>
 	<script src="../thirdparty/angular/angular.min.js"></script>
 	<script
@@ -156,7 +175,6 @@
 	<script src="../thirdparty/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
 	<script src="../thirdparty/angular-moment/angular-moment.min.js"></script>
 	<script src="../thirdparty/bootstrap/dist/js/bootstrap.min.js"></script>
-	<script src="../thirdparty/material-design-lite/material.min.js"></script>
 	<script src="../js/sn/dist/turing-sn-min.js"></script>
 </body>
 
