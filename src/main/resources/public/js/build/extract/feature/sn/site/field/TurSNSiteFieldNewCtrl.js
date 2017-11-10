@@ -1,20 +1,19 @@
 turingApp.controller('TurSNSiteFieldNewCtrl', [
 		"$uibModalInstance",
-		"snSiteField",
+		"snSiteFieldExt",
 		"snSiteId",
-		"turSNSiteFieldResource",
+		"turSNSiteFieldExtResource",
 		"turNotificationService",
-		function($uibModalInstance, snSiteField, snSiteId,
-				turSNSiteFieldResource, turNotificationService) {
+		function($uibModalInstance, snSiteFieldExt, snSiteId,
+				turSNSiteFieldExtResource, turNotificationService) {
 			var $ctrl = this;
 			$ctrl.removeInstance = false;
-			$ctrl.snSiteField = snSiteField;
-			console.log($ctrl.snSiteField);
+			$ctrl.snSiteFieldExt = snSiteFieldExt;
 			$ctrl.ok = function() {
 				console.log($ctrl.snSiteField);
-				turSNSiteFieldResource.save({
+				turSNSiteFieldExtResource.save({
 					snSiteId : snSiteId
-				}, $ctrl.snSiteField, function(response) {
+				}, $ctrl.snSiteFieldExt, function(response) {
 					turNotificationService.addNotification("Field \""
 							+ response.name + "\" was created.");
 					$uibModalInstance.close(response);

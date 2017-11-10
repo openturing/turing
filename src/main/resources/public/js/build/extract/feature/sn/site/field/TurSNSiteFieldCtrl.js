@@ -40,7 +40,7 @@ turingApp
 							}
 							$scope.fieldNew = function() {
 								var $ctrl = this;
-								$scope.snSiteField = {};
+								$scope.snSiteFieldExt = {};
 								var modalInstance = $uibModal
 										.open({
 											animation : true,
@@ -52,8 +52,8 @@ turingApp
 											size : null,
 											appendTo : undefined,
 											resolve : {
-												snSiteField : function() {
-													return $scope.snSiteField;
+												snSiteFieldExt : function() {
+													return $scope.snSiteFieldExt;
 												},
 												snSiteId : function() {
 													return $stateParams.snSiteId;

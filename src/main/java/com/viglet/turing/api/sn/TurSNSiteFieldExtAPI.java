@@ -45,7 +45,7 @@ public class TurSNSiteFieldExtAPI {
 	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
 	@Autowired
 	TurNLPEntityRepository turNLPEntityRepository;
-	
+
 	@GET
 	@Produces("application/json")
 	public List<TurSNSiteFieldExt> list(@PathParam("snSiteId") int snSiteId) throws JSONException {
@@ -55,7 +55,7 @@ public class TurSNSiteFieldExtAPI {
 		List<TurNLPInstanceEntity> turNLPInstanceEntities = turNLPInstanceEntityRepository
 				.findByTurNLPInstanceAndEnabled(turSNSite.getTurNLPInstance(), 1);
 		List<TurNLPEntity> turNLPEntityThesaurus = turNLPEntityRepository.findByLocal(1);
-		
+
 		Map<Integer, TurSNSiteField> fieldMap = new HashMap<Integer, TurSNSiteField>();
 		Map<Integer, TurNLPEntity> nerMap = new HashMap<Integer, TurNLPEntity>();
 		Map<Integer, TurNLPEntity> thesaurusMap = new HashMap<Integer, TurNLPEntity>();
@@ -67,14 +67,13 @@ public class TurSNSiteFieldExtAPI {
 
 		for (TurNLPInstanceEntity turNLPInstanceEntity : turNLPInstanceEntities) {
 			TurNLPEntity turNLPEntity = turNLPInstanceEntity.getTurNLPEntity();
-				nerMap.put(turNLPEntity.getId(), turNLPEntity);
+			nerMap.put(turNLPEntity.getId(), turNLPEntity);
 		}
 
 		for (TurNLPEntity turNLPEntityThesaurusSingle : turNLPEntityThesaurus) {
 			thesaurusMap.put(turNLPEntityThesaurusSingle.getId(), turNLPEntityThesaurusSingle);
 		}
 
-		
 		List<TurSNSiteFieldExt> turSNSiteFieldExts = this.turSNSiteFieldExtRepository.findByTurSNSite(turSNSite);
 
 		for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExts) {
@@ -102,6 +101,7 @@ public class TurSNSiteFieldExtAPI {
 			TurSNSiteFieldExt turSNSiteFieldExt = new TurSNSiteFieldExt();
 			turSNSiteFieldExt.setEnabled(0);
 			turSNSiteFieldExt.setName(turSNSiteField.getName());
+			turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
 			turSNSiteFieldExt.setFacet(0);
 			turSNSiteFieldExt.setFacetName(turSNSiteField.getName());
 			turSNSiteFieldExt.setHl(0);
@@ -120,6 +120,7 @@ public class TurSNSiteFieldExtAPI {
 			TurSNSiteFieldExt turSNSiteFieldExt = new TurSNSiteFieldExt();
 			turSNSiteFieldExt.setEnabled(0);
 			turSNSiteFieldExt.setName(turNLPEntity.getInternalName());
+			turSNSiteFieldExt.setDescription(turNLPEntity.getDescription());
 			turSNSiteFieldExt.setFacet(0);
 			turSNSiteFieldExt.setFacetName(turNLPEntity.getName());
 			turSNSiteFieldExt.setHl(0);
@@ -138,6 +139,7 @@ public class TurSNSiteFieldExtAPI {
 			TurSNSiteFieldExt turSNSiteFieldExt = new TurSNSiteFieldExt();
 			turSNSiteFieldExt.setEnabled(0);
 			turSNSiteFieldExt.setName(turNLPEntity.getInternalName());
+			turSNSiteFieldExt.setDescription(turNLPEntity.getDescription());
 			turSNSiteFieldExt.setFacet(0);
 			turSNSiteFieldExt.setFacetName(turNLPEntity.getName());
 			turSNSiteFieldExt.setHl(0);
@@ -172,6 +174,7 @@ public class TurSNSiteFieldExtAPI {
 		turSNSiteFieldExtEdit.setFacetName(turSNSiteFieldExt.getFacetName());
 		turSNSiteFieldExtEdit.setMultiValued(turSNSiteFieldExt.getMultiValued());
 		turSNSiteFieldExtEdit.setName(turSNSiteFieldExt.getName());
+		turSNSiteFieldExtEdit.setDescription(turSNSiteFieldExt.getDescription());
 		turSNSiteFieldExtEdit.setType(turSNSiteFieldExt.getType());
 		turSNSiteFieldExtEdit.setFacet(turSNSiteFieldExt.getFacet());
 		turSNSiteFieldExtEdit.setHl(turSNSiteFieldExt.getHl());
@@ -180,6 +183,9 @@ public class TurSNSiteFieldExtAPI {
 		turSNSiteFieldExtEdit.setExternalId(turSNSiteFieldExt.getExternalId());
 		turSNSiteFieldExtEdit.setSnType(turSNSiteFieldExt.getSnType());
 		this.turSNSiteFieldExtRepository.save(turSNSiteFieldExtEdit);
+
+		this.updateExternalField(turSNSiteFieldExt);
+
 		return turSNSiteFieldExtEdit;
 	}
 
@@ -187,7 +193,19 @@ public class TurSNSiteFieldExtAPI {
 	@DELETE
 	@Produces("application/json")
 	public boolean deleteEntity(@PathParam("snSiteId") int snSiteId, @PathParam("snSiteFieldId") int id) {
+		TurSNSiteFieldExt turSNSiteFieldExtEdit = this.turSNSiteFieldExtRepository.findById(id);
+
+		switch (turSNSiteFieldExtEdit.getSnType()) {
+		case SE:
+			this.turSNSiteFieldRepository.delete(turSNSiteFieldExtEdit.getExternalId());
+
+			break;
+		default:
+			break;
+		}
+
 		this.turSNSiteFieldExtRepository.delete(id);
+
 		return true;
 	}
 
@@ -195,10 +213,55 @@ public class TurSNSiteFieldExtAPI {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurSNSiteFieldExt add(@PathParam("snSiteId") int snSiteId, TurSNSiteFieldExt turSNSiteFieldExt)
 			throws Exception {
+
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
+
+		TurSNSiteField turSNSiteField = new TurSNSiteField();
+		turSNSiteField.setDescription(turSNSiteFieldExt.getDescription());
+		turSNSiteField.setMultiValued(turSNSiteFieldExt.getMultiValued());
+		turSNSiteField.setName(turSNSiteFieldExt.getName());
+		turSNSiteField.setType(turSNSiteFieldExt.getType());
+		turSNSiteField.setTurSNSite(turSNSite);
+		this.turSNSiteFieldRepository.save(turSNSiteField);
+
 		turSNSiteFieldExt.setTurSNSite(turSNSite);
+		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
+		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
+
 		this.turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
+
 		return turSNSiteFieldExt;
 
+	}
+
+	public void updateExternalField(TurSNSiteFieldExt turSNSiteFieldExt) {
+		switch (turSNSiteFieldExt.getSnType()) {
+		case SE:
+			TurSNSiteField turSNSiteField = turSNSiteFieldRepository.findById(turSNSiteFieldExt.getExternalId());
+			turSNSiteField.setDescription(turSNSiteFieldExt.getDescription());
+			turSNSiteField.setMultiValued(turSNSiteFieldExt.getMultiValued());
+			turSNSiteField.setName(turSNSiteFieldExt.getName());
+			turSNSiteField.setType(turSNSiteFieldExt.getType());
+			this.turSNSiteFieldRepository.save(turSNSiteField);
+
+			break;
+
+		case NER:
+			TurNLPEntity turNLPEntityNER = turNLPEntityRepository.findById(turSNSiteFieldExt.getExternalId());
+			turNLPEntityNER.setDescription(turSNSiteFieldExt.getDescription());
+			turNLPEntityNER.setInternalName(turSNSiteFieldExt.getName());
+			this.turNLPEntityRepository.save(turNLPEntityNER);
+
+			break;
+
+		case THESAURUS:
+			TurNLPEntity turNLPEntityThesaurus = turNLPEntityRepository.findById(turSNSiteFieldExt.getExternalId());
+			turNLPEntityThesaurus.setDescription(turSNSiteFieldExt.getDescription());
+			turNLPEntityThesaurus.setInternalName(turSNSiteFieldExt.getName());
+			this.turNLPEntityRepository.save(turNLPEntityThesaurus);
+
+			break;
+
+		}
 	}
 }

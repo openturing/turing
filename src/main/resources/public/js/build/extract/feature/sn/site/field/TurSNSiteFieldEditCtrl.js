@@ -5,28 +5,28 @@ turingApp.controller('TurSNSiteFieldEditCtrl', [
 	"$rootScope",
 	"$translate",
 	"vigLocale",
-	"turSNSiteFieldResource",
+	"turSNSiteFieldExtResource",
 	"turNotificationService",
 	"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turSNSiteFieldResource, turNotificationService, $uibModal) {
+				vigLocale, turSNSiteFieldExtResource, turNotificationService, $uibModal) {
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.snSiteField = turSNSiteFieldResource.get({
+			$scope.snSiteFieldExt = turSNSiteFieldExtResource.get({
 				id : $stateParams.snSiteFieldId,
 				snSiteId : $stateParams.snSiteId
 			});
-			$scope.snSiteFieldUpdate = function() {			
-				$scope.snSiteField.$update({				
+			$scope.snSiteFieldExtUpdate = function() {			
+				$scope.snSiteFieldExt.$update({				
 					snSiteId : $stateParams.snSiteId
 				}, function() {
-					turNotificationService.addNotification("Field \"" + $scope.snSiteField.name + "\" was saved.");
+					turNotificationService.addNotification("Field \"" + $scope.snSiteFieldExt.name + "\" was saved.");
 				});
 			}
 
-			$scope.snSiteFieldDelete = function() {
+			$scope.snSiteFieldExtDelete = function() {
 				var $ctrl = this;
 
 				var modalInstance = $uibModal.open({
@@ -40,15 +40,15 @@ turingApp.controller('TurSNSiteFieldEditCtrl', [
 					appendTo : undefined,
 					resolve : {
 						instanceName : function() {
-							return $scope.snSiteField.name;
+							return $scope.snSiteFieldExt.name;
 						}
 					}
 				});
 
 				modalInstance.result.then(function(removeInstance) {
 					$scope.removeInstance = removeInstance;
-					$scope.deletedMessage = "Field \"" + $scope.snSiteField.name  + "\" was deleted.";
-					$scope.snSiteField.$delete({				
+					$scope.deletedMessage = "Field \"" + $scope.snSiteFieldExt.name  + "\" was deleted.";
+					$scope.snSiteFieldExt.$delete({				
 						snSiteId : $stateParams.snSiteId
 					}, function() {
 						turNotificationService.addNotification($scope.deletedMessage);

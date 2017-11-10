@@ -21,6 +21,8 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 	
 	List<TurSNSiteFieldExt> findByTurSNSiteAndHlAndEnabled(TurSNSite turSNSite, int hl, int enabled);
 	
+	List<TurSNSiteFieldExt> findByTurSNSiteAndMltAndEnabled(TurSNSite turSNSite, int mlt, int enabled);
+	
 	TurSNSiteFieldExt save(TurSNSiteFieldExt turSNSiteFieldExt);
 
 	void delete(TurSNSiteFieldExt turSNSiteFieldExt);

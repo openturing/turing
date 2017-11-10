@@ -931,28 +931,28 @@ turingApp.controller('TurSNSiteFieldEditCtrl', [
 	"$rootScope",
 	"$translate",
 	"vigLocale",
-	"turSNSiteFieldResource",
+	"turSNSiteFieldExtResource",
 	"turNotificationService",
 	"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turSNSiteFieldResource, turNotificationService, $uibModal) {
+				vigLocale, turSNSiteFieldExtResource, turNotificationService, $uibModal) {
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
-			$scope.snSiteField = turSNSiteFieldResource.get({
+			$scope.snSiteFieldExt = turSNSiteFieldExtResource.get({
 				id : $stateParams.snSiteFieldId,
 				snSiteId : $stateParams.snSiteId
 			});
-			$scope.snSiteFieldUpdate = function() {			
-				$scope.snSiteField.$update({				
+			$scope.snSiteFieldExtUpdate = function() {			
+				$scope.snSiteFieldExt.$update({				
 					snSiteId : $stateParams.snSiteId
 				}, function() {
-					turNotificationService.addNotification("Field \"" + $scope.snSiteField.name + "\" was saved.");
+					turNotificationService.addNotification("Field \"" + $scope.snSiteFieldExt.name + "\" was saved.");
 				});
 			}
 
-			$scope.snSiteFieldDelete = function() {
+			$scope.snSiteFieldExtDelete = function() {
 				var $ctrl = this;
 
 				var modalInstance = $uibModal.open({
@@ -966,15 +966,15 @@ turingApp.controller('TurSNSiteFieldEditCtrl', [
 					appendTo : undefined,
 					resolve : {
 						instanceName : function() {
-							return $scope.snSiteField.name;
+							return $scope.snSiteFieldExt.name;
 						}
 					}
 				});
 
 				modalInstance.result.then(function(removeInstance) {
 					$scope.removeInstance = removeInstance;
-					$scope.deletedMessage = "Field \"" + $scope.snSiteField.name  + "\" was deleted.";
-					$scope.snSiteField.$delete({				
+					$scope.deletedMessage = "Field \"" + $scope.snSiteFieldExt.name  + "\" was deleted.";
+					$scope.snSiteFieldExt.$delete({				
 						snSiteId : $stateParams.snSiteId
 					}, function() {
 						turNotificationService.addNotification($scope.deletedMessage);
@@ -1028,7 +1028,7 @@ turingApp
 							}
 							$scope.fieldNew = function() {
 								var $ctrl = this;
-								$scope.snSiteField = {};
+								$scope.snSiteFieldExt = {};
 								var modalInstance = $uibModal
 										.open({
 											animation : true,
@@ -1040,8 +1040,8 @@ turingApp
 											size : null,
 											appendTo : undefined,
 											resolve : {
-												snSiteField : function() {
-													return $scope.snSiteField;
+												snSiteFieldExt : function() {
+													return $scope.snSiteFieldExt;
 												},
 												snSiteId : function() {
 													return $stateParams.snSiteId;
@@ -1059,21 +1059,20 @@ turingApp
 						} ]);
 turingApp.controller('TurSNSiteFieldNewCtrl', [
 		"$uibModalInstance",
-		"snSiteField",
+		"snSiteFieldExt",
 		"snSiteId",
-		"turSNSiteFieldResource",
+		"turSNSiteFieldExtResource",
 		"turNotificationService",
-		function($uibModalInstance, snSiteField, snSiteId,
-				turSNSiteFieldResource, turNotificationService) {
+		function($uibModalInstance, snSiteFieldExt, snSiteId,
+				turSNSiteFieldExtResource, turNotificationService) {
 			var $ctrl = this;
 			$ctrl.removeInstance = false;
-			$ctrl.snSiteField = snSiteField;
-			console.log($ctrl.snSiteField);
+			$ctrl.snSiteFieldExt = snSiteFieldExt;
 			$ctrl.ok = function() {
 				console.log($ctrl.snSiteField);
-				turSNSiteFieldResource.save({
+				turSNSiteFieldExtResource.save({
 					snSiteId : snSiteId
-				}, $ctrl.snSiteField, function(response) {
+				}, $ctrl.snSiteFieldExt, function(response) {
 					turNotificationService.addNotification("Field \""
 							+ response.name + "\" was created.");
 					$uibModalInstance.close(response);

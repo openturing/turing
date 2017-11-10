@@ -73,6 +73,7 @@ public class TurSNSiteOnStartup {
 			TurSNSiteFieldExt turSNSiteFieldExt = new TurSNSiteFieldExt();
 			turSNSiteFieldExt.setEnabled(1);
 			turSNSiteFieldExt.setName(turSNSiteField.getName());
+			turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
 			turSNSiteFieldExt.setFacet(0);
 			turSNSiteFieldExt.setFacetName("Title");
 			turSNSiteFieldExt.setHl(1);
@@ -98,6 +99,7 @@ public class TurSNSiteOnStartup {
 			turSNSiteFieldExt = new TurSNSiteFieldExt();
 			turSNSiteFieldExt.setEnabled(1);
 			turSNSiteFieldExt.setName(turSNSiteField.getName());
+			turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
 			turSNSiteFieldExt.setFacet(0);
 			turSNSiteFieldExt.setFacetName("Text");
 			turSNSiteFieldExt.setHl(1);
@@ -123,6 +125,7 @@ public class TurSNSiteOnStartup {
 			turSNSiteFieldExt = new TurSNSiteFieldExt();
 			turSNSiteFieldExt.setEnabled(1);
 			turSNSiteFieldExt.setName(turSNSiteField.getName());
+			turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
 			turSNSiteFieldExt.setFacet(0);
 			turSNSiteFieldExt.setFacetName("Abstract");
 			turSNSiteFieldExt.setHl(1);
@@ -148,6 +151,7 @@ public class TurSNSiteOnStartup {
 			turSNSiteFieldExt = new TurSNSiteFieldExt();
 			turSNSiteFieldExt.setEnabled(1);
 			turSNSiteFieldExt.setName(turSNSiteField.getName());
+			turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
 			turSNSiteFieldExt.setFacet(1);
 			turSNSiteFieldExt.setFacetName("Types");
 			turSNSiteFieldExt.setHl(1);
@@ -166,6 +170,7 @@ public class TurSNSiteOnStartup {
 			turSNSiteFieldExt = new TurSNSiteFieldExt();
 			turSNSiteFieldExt.setEnabled(1);
 			turSNSiteFieldExt.setName(turNLPEntity.getInternalName());
+			turSNSiteFieldExt.setDescription(turNLPEntity.getDescription());
 			turSNSiteFieldExt.setFacet(1);
 			turSNSiteFieldExt.setFacetName("People");
 			turSNSiteFieldExt.setHl(0);

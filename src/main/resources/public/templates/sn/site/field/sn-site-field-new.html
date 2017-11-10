@@ -8,7 +8,7 @@
 			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 			{{'ID' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-			<input ng-model="$ctrl.snSiteField.id" maxlength="50" class="form-control">
+			<input ng-model="$ctrl.snSiteFieldExt.id" maxlength="50" class="form-control">
 
 		</div>
 	</div> -->
@@ -19,7 +19,7 @@
 			{{'NAME' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-			<input maxlength="50" ng-model="$ctrl.snSiteField.name" type="text"
+			<input maxlength="50" ng-model="$ctrl.snSiteFieldExt.name" type="text"
 				class="form-control">
 		</div>
 	</div>
@@ -30,7 +30,7 @@
 			{{'DESCRIPTION' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-			<input maxlength="50" ng-model="$ctrl.snSiteField.description"
+			<input maxlength="50" ng-model="$ctrl.snSiteFieldExt.description"
 				type="text" class="form-control">
 		</div>
 	</div>
@@ -42,7 +42,7 @@
 			{{'TYPE' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-			<input maxlength="50" ng-model="$ctrl.snSiteField.type" type="text"
+			<input maxlength="50" ng-model="$ctrl.snSiteFieldExt.type" type="text"
 				class="form-control">
 		</div>
 	</div>
@@ -52,7 +52,7 @@
 			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 			{{'MULTI_VALUED' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-			<input type="checkbox" ng-model="$ctrl.snSiteField.multiValued"
+			<input type="checkbox" ng-model="$ctrl.snSiteFieldExt.multiValued"
 				ng-true-value="1" ng-false-value="0">
 
 		</div>
@@ -64,7 +64,7 @@
 			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 			{{'FACET_NAME' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-			<input maxlength="50" ng-model="$ctrl.snSiteField.facetName"
+			<input maxlength="50" ng-model="$ctrl.snSiteFieldExt.facetName"
 				type="text" class="form-control">
 		</div>
 	</div>
@@ -75,7 +75,7 @@
 			{{'FACET' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 			<div class="input-group">
-				<input type="checkbox" ng-model="$ctrl.snSiteField.facet"
+				<input type="checkbox" ng-model="$ctrl.snSiteFieldExt.facet"
 					ng-true-value="1" ng-false-value="0">
 			</div>
 
@@ -88,12 +88,38 @@
 			{{'HIGHLIGHTING' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 			<div class="input-group">
-				<input type="checkbox" ng-model="$ctrl.snSiteField.hl"
+				<input type="checkbox" ng-model="$ctrl.snSiteFieldExt.hl"
 					ng-true-value="1" ng-false-value="0">
 			</div>
 
 		</div>
 	</div>
+	<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'MLT' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+				<div class="input-group">
+					<input type="checkbox" ng-model="$ctrl.snSiteFieldExt.mlt" ng-true-value="1"
+						ng-false-value="0">
+				</div>
+
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'ENABLED' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+				<div class="input-group">
+					<input type="checkbox" ng-model="$ctrl.snSiteFieldExt.enabled" ng-true-value="1"
+						ng-false-value="0">
+				</div>
+
+			</div>
+		</div>
 </div>
 <div class="modal-footer">
 

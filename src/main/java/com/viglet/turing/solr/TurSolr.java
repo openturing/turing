@@ -297,6 +297,16 @@ public class TurSolr {
 		}
 
 		if (turSNSite.getMlt() == 1) {
+			List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = turSNSiteFieldExtRepository
+					.findByTurSNSiteAndMltAndEnabled(turSNSite, 1, 1);
+			StringBuilder mltFields = new StringBuilder();
+			for (TurSNSiteFieldExt turSNSiteMltFieldExt : turSNSiteMLTFieldExts) {
+				if (mltFields.length() != 0) {
+					mltFields.append(",");
+				}
+				mltFields.append(turSNSiteMltFieldExt.getName());
+			}
+
 			query.set(MoreLikeThisParams.MLT, true);
 			query.set(MoreLikeThisParams.MATCH_INCLUDE, true);
 			query.set(MoreLikeThisParams.MIN_DOC_FREQ, 1);
@@ -304,7 +314,7 @@ public class TurSolr {
 			query.set(MoreLikeThisParams.MIN_WORD_LEN, 7);
 			query.set(MoreLikeThisParams.BOOST, false);
 			query.set(MoreLikeThisParams.MAX_QUERY_TERMS, 1000);
-			query.set(MoreLikeThisParams.SIMILARITY_FIELDS, "title,text,abstract");
+			query.set(MoreLikeThisParams.SIMILARITY_FIELDS, mltFields.toString());
 		}
 
 		String[] filterQueryArr = new String[fq.size()];

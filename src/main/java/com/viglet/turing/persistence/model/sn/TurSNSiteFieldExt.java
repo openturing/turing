@@ -29,6 +29,9 @@ public class TurSNSiteFieldExt implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String name;
 	
+	@Column(nullable = true, length = 255)
+	private String description;
+	
 	@Column(nullable = true, length = 50)
 	private String facetName;
 
@@ -157,6 +160,14 @@ public class TurSNSiteFieldExt implements Serializable {
 
 	public void setExternalId(int externalId) {
 		this.externalId = externalId;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	

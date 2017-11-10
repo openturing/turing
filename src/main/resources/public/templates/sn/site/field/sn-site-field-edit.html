@@ -2,7 +2,7 @@
 	style='font-family: "Raleway", sans-serif; font-weight: 400; margin-bottom: 0px; padding-bottom: 0px;'>
 	<div class="panel-title"
 		style="padding: 10px; border-bottom-color: rgb(217, 217, 217); border-bottom-style: solid; border-bottom-width: thin;">
-		<p style="font-size: 18px; color: #FF874B; margin: 0px;">{{snSiteField.name}}</p>
+		<p style="font-size: 18px; color: #FF874B; margin: 0px;">{{snSiteFieldExt.name}} ({{ snSiteFieldExt.snType | translate }})</p>
 	</div>
 	<div class="panel-body" style="padding: 0px;">
 		<!-- <div class="row"
@@ -11,7 +11,7 @@
 			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 			{{'ID' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-			<input ng-model="snSiteField.id" maxlength="50" class="form-control">
+			<input ng-model="snSiteFieldExt.id" maxlength="50" class="form-control">
 
 		</div>
 	</div> -->
@@ -22,7 +22,7 @@
 				{{'NAME' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-				<input maxlength="50" ng-model="snSiteField.name" type="text"
+				<input maxlength="50" ng-model="snSiteFieldExt.name" type="text"
 					class="form-control">
 			</div>
 		</div>
@@ -33,7 +33,7 @@
 				{{'DESCRIPTION' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-				<input maxlength="50" ng-model="snSiteField.description" type="text"
+				<input maxlength="50" ng-model="snSiteFieldExt.description" type="text"
 					class="form-control">
 			</div>
 		</div>
@@ -45,7 +45,7 @@
 				{{'TYPE' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-				<input maxlength="50" ng-model="snSiteField.type" type="text"
+				<input maxlength="50" ng-model="snSiteFieldExt.type" type="text"
 					class="form-control">
 			</div>
 		</div>
@@ -56,7 +56,7 @@
 				{{'MULTI_VALUED' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 				<div class="input-group">
-					<input type="checkbox" ng-model="snSiteField.multiValued"
+					<input type="checkbox" ng-model="snSiteFieldExt.multiValued"
 						ng-true-value="1" ng-false-value="0">
 				</div>
 			</div>
@@ -69,7 +69,7 @@
 				{{'FACET_NAME' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-				<input maxlength="50" ng-model="snSiteField.facetName" type="text"
+				<input maxlength="50" ng-model="snSiteFieldExt.facetName" type="text"
 					class="form-control">
 			</div>
 		</div>
@@ -80,7 +80,7 @@
 				{{'FACET' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 				<div class="input-group">
-					<input type="checkbox" ng-model="snSiteField.facet"
+					<input type="checkbox" ng-model="snSiteFieldExt.facet"
 						ng-true-value="1" ng-false-value="0">
 				</div>
 
@@ -93,7 +93,33 @@
 				{{'HIGHLIGHTING' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 				<div class="input-group">
-					<input type="checkbox" ng-model="snSiteField.hl" ng-true-value="1"
+					<input type="checkbox" ng-model="snSiteFieldExt.hl" ng-true-value="1"
+						ng-false-value="0">
+				</div>
+
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'MLT' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+				<div class="input-group">
+					<input type="checkbox" ng-model="snSiteFieldExt.mlt" ng-true-value="1"
+						ng-false-value="0">
+				</div>
+
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'ENABLED' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+				<div class="input-group">
+					<input type="checkbox" ng-model="snSiteFieldExt.enabled" ng-true-value="1"
 						ng-false-value="0">
 				</div>
 
@@ -105,7 +131,7 @@
 				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
 					style="padding: 0px; padding-top: 20px; padding-bottom: 20px;">
 					<div class="btn-group">
-						<button ng-click="snSiteFieldUpdate()" type="button"
+						<button ng-click="snSiteFieldExtUpdate()" type="button"
 							class="btn btn-viglet">{{'SETTINGS_SAVE_CHANGES' |
 							translate }}</button>
 						<button type="button" class="btn btn-viglet dropdown-toggle"
@@ -114,7 +140,7 @@
 								Dropdown</span>
 						</button>
 						<ul class="dropdown-menu">
-							<li><a ng-click="snSiteFieldDelete()">{{'DELETE' | translate }}</a></li>
+							<li><a ng-click="snSiteFieldExtDelete()">{{'DELETE' | translate }}</a></li>
 						</ul>
 					</div>
 				</div>
