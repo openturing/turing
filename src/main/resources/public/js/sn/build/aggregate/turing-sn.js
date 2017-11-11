@@ -10,12 +10,33 @@ turingSNApp.config([
 			$translateProvider.useSanitizeValueStrategy('escaped');
 			$locationProvider.html5Mode(true);
 			$translateProvider.translations('en', {
-
-				REMOVE : "Remove"
+				REMOVE : "Remove",
+				FIRST: "First",
+				LAST: "LAST",
+				PREVIOUS: "Previous",
+				NEXT: "Next",
+				SEARCH: "Search",
+				SEARCH_FOR: "Search for",
+				NO_RESULTS_FOUND:"No results found",
+				APPLIED_FILTERS: "Applied Filters",
+				FOUND: "Found", 
+				RESULTS_FOR_THE_TERM: "results for the term"
 			});
 			$translateProvider.translations('pt', {
-				REMOVE : "Remover"
+				REMOVE : "Remover",
+				FIRST: "Primeiro",
+				LAST: "Último",
+				PREVIOUS: "Anterior",
+				NEXT: "Próximo",
+				SEARCH: "Pesquisar",
+				SEARCH_FOR: "Pesquisar por",
+				NO_RESULTS_FOUND: "Nenhum resultado encontrado",
+				APPLIED_FILTERS: "Filtros Aplicados",
+				FOUND: "Encontrados", 
+				RESULTS_FOR_THE_TERM: "resultados para o termo"
+
 			});
+			
 			$translateProvider.fallbackLanguage('en');
 			
 		/*	$urlRouterProvider.otherwise('/sn/search');
@@ -60,6 +81,23 @@ turingSNApp.service('turAPIServerService', [
 				}
 			}
 		} ]);
+turingSNApp.factory('vigLocale', [
+		'$window',
+		function($window) {
+			return {
+				getLocale : function() {
+					var nav = $window.navigator;
+					if (angular.isArray(nav.languages)) {
+						if (nav.languages.length > 0) {
+							return nav.languages[0].split('-').join('_');
+						}
+					}
+					return ((nav.language || nav.browserLanguage
+							|| nav.systemLanguage || nav.userLanguage) || '')
+							.split('-').join('_');
+				}
+			}
+		} ]);
 turingSNApp
 		.controller(
 				'TurSNMainCtrl',
@@ -73,8 +111,13 @@ turingSNApp
 						"$location",
 						'turSNSearch',
 						'amMoment',
+						'vigLocale',
 						function($scope, $http, $window, $state, $rootScope,
-								$translate, $location, turSNSearch, amMoment) {
+								$translate, $location, turSNSearch, amMoment, vigLocale) {
+							
+							$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+							$translate.use($scope.vigLanguage);
+							
 							amMoment.changeLocale('en');
 							$scope.total = 0;
 							var turPath = $location.path().trim();
@@ -104,10 +147,10 @@ turingSNApp
 										.then(
 												function successCallback(
 														response) {
-													$scope.total = response.data["rdf:Description"]["otsn:query-context"]["otsn:count"];
-													$scope.results = response.data["rdf:Description"]["otsn:results"]["otsn:document"];
-													$scope.pages = response.data["rdf:Description"]["otsn:pagination"]["otsn:page"];
-													$scope.facets = response.data["rdf:Description"]["otsn:widget"]["otsn:facet-widget"];
+													$scope.total = response.data["description"]["query-context"]["count"];
+													$scope.results = response.data["description"]["results"]["document"];
+													$scope.pages = response.data["description"]["pagination"]["page"];
+													$scope.facets = response.data["description"]["widget"]["facet-widget"];
 												},
 												function errorCallback(response) {
 													// error
@@ -121,17 +164,16 @@ turingSNApp
 										.then(
 												function successCallback(
 														response) {
-													$scope.total = response.data["rdf:Description"]["otsn:query-context"]["otsn:count"];
-													$scope.results = response.data["rdf:Description"]["otsn:results"]["otsn:document"];
-													$scope.pages = response.data["rdf:Description"]["otsn:pagination"]["otsn:page"];
-													$scope.facets = response.data["rdf:Description"]["otsn:widget"]["otsn:facet-widget"];
+													$scope.total = response.data["description"]["query-context"]["count"];
+													$scope.results = response.data["description"]["results"]["document"];
+													$scope.pages = response.data["description"]["pagination"]["page"];
+													$scope.facets = response.data["description"]["widget"]["facet-widget"];
 												},
 												function errorCallback(response) {
 													// error
 												})
 							}
 							$scope.init();
-							$scope.test = "Alexandre";
 							$rootScope.$state = $state;
 							$scope.turRedirect = function(href) {
 								$scope.initURL(href);

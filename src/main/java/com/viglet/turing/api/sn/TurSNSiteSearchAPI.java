@@ -159,7 +159,7 @@ public class TurSNSiteSearchAPI {
 		for (Object queryParamObject : queryParams.keySet().toArray()) {
 			String queryParam = (String) queryParamObject;
 			for (String queryParamValue : queryParams.get(queryParam)) {
-				// System.out.println("OTSNSearchAPI parameters:" + queryParam + " is " +
+				// System.out.println("SNSearchAPI parameters:" + queryParam + " is " +
 				// queryParamValue);
 			}
 		}
@@ -205,7 +205,7 @@ public class TurSNSiteSearchAPI {
 		}
 
 		TurSEResults turSEResults = null;
-		JSONArray otsnResults = new JSONArray();
+		JSONArray snResults = new JSONArray();
 
 		turSolr.init(turSNSite);
 		try {
@@ -213,13 +213,13 @@ public class TurSNSiteSearchAPI {
 			List<TurSEResult> seResults = turSEResults.getResults();
 			// System.out.println("getResults size:" + turSEResults.getResults().size());
 			for (TurSEResult result : seResults) {
-				JSONObject otsnResult = new JSONObject();
+				JSONObject snResult = new JSONObject();
 				Map<String, TurSEResultAttr> turSEResultAttr = result.getTurSEResultAttr();
 				Set<String> attribs = turSEResultAttr.keySet();
 
-				otsnResult.put("otsn:elevate", false);
+				snResult.put("elevate", false);
 
-				JSONArray otsnMetadata = new JSONArray();
+				JSONArray snMetadata = new JSONArray();
 				for (Object facetObject : facetMap.keySet().toArray()) {
 					String facet = (String) facetObject;
 					if (turSEResultAttr.containsKey(facet)) {
@@ -228,28 +228,28 @@ public class TurSNSiteSearchAPI {
 							for (Object facetValueObject : (ArrayList) turSEResultAttr.get(facet).getAttrJSON()
 									.get(facet)) {
 								String facetValue = (String) facetValueObject;
-								JSONObject otsnMetadataItem = new JSONObject();
-								otsnMetadataItem.put("href", this.addFilterQuery(uriInfo, facet + ":" + facetValue));
-								otsnMetadataItem.put("text", facetValue);
-								otsnMetadata.put(otsnMetadataItem);
+								JSONObject snMetadataItem = new JSONObject();
+								snMetadataItem.put("href", this.addFilterQuery(uriInfo, facet + ":" + facetValue));
+								snMetadataItem.put("text", facetValue);
+								snMetadata.put(snMetadataItem);
 							}
 						} else {
-							JSONObject otsnMetadataItem = new JSONObject();
+							JSONObject snMetadataItem = new JSONObject();
 							String facetValue = turSolrField
 									.convertFieldToString(turSEResultAttr.get(facet).getAttrJSON().get(facet));
 							
-							otsnMetadataItem.put("text", facetValue);
-							otsnMetadataItem.put("href", this.addFilterQuery(uriInfo, facet + ":" + facetValue));
+							snMetadataItem.put("text", facetValue);
+							snMetadataItem.put("href", this.addFilterQuery(uriInfo, facet + ":" + facetValue));
 
-							otsnMetadata.put(otsnMetadataItem);
+							snMetadata.put(snMetadataItem);
 						}
 
 					}
 				}
 
-				otsnResult.put("dc:metadata", otsnMetadata);
+				snResult.put("metadata", snMetadata);
 				if (turSEResultAttr.containsKey("url")) {
-					otsnResult.put("dc:source", new JSONObject().put("rdf:resource",
+					snResult.put("source", new JSONObject().put("resource",
 							turSEResultAttr.get("url").getAttrJSON().getString("url")));
 				}
 				for (String attribute : attribs) {
@@ -257,14 +257,14 @@ public class TurSNSiteSearchAPI {
 					if (!attribute.startsWith("turing_entity")) {
 						if (fieldMap.containsKey(attribute)) {
 							TurSEFieldMap turSEFieldMap = fieldMap.get(attribute);
-							otsnResult.put(turSEFieldMap.getAlias(),
+							snResult.put(turSEFieldMap.getAlias(),
 									turSEResultAttr.get(attribute).getAttrJSON().get(attribute));
 						} else {
-							otsnResult.put(attribute, turSEResultAttr.get(attribute).getAttrJSON().get(attribute));
+							snResult.put(attribute, turSEResultAttr.get(attribute).getAttrJSON().get(attribute));
 						}
 					}
 				}
-				otsnResults.put(otsnResult);
+				snResults.put(snResult);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -273,13 +273,13 @@ public class TurSNSiteSearchAPI {
 		JSONObject jsonSearch = new JSONObject();
 		JSONObject jsonRDFDescription = new JSONObject();
 		JSONObject jsonRDFResource = new JSONObject();
-		JSONObject jsonOTSNDocument = new JSONObject();
-		JSONObject jsonOTSNQueryContext = new JSONObject();
-		JSONObject jsonOTSNQuery = new JSONObject();
-		JSONObject jsonOTSNWidget = new JSONObject();
-		JSONObject jsonOTSNPagination = new JSONObject();
-		JSONArray jsonOTSNPaginationPages = new JSONArray();
-		JSONObject jsonOTSNPaginationPage = new JSONObject();
+		JSONObject jsonSNDocument = new JSONObject();
+		JSONObject jsonSNQueryContext = new JSONObject();
+		JSONObject jsonSNQuery = new JSONObject();
+		JSONObject jsonSNWidget = new JSONObject();
+		JSONObject jsonSNPagination = new JSONObject();
+		JSONArray jsonSNPaginationPages = new JSONArray();
+		JSONObject jsonSNPaginationPage = new JSONObject();
 		// BEGIN Pagination
 		int firstPagination = 1;
 		int lastPagination = turSEResults.getPageCount();
@@ -305,21 +305,21 @@ public class TurSNSiteSearchAPI {
 		}
 
 		if (turSEResults.getCurrentPage() > 1) {
-			jsonOTSNPaginationPage = new JSONObject();
-			jsonOTSNPaginationPage.put("class", "first");
-			jsonOTSNPaginationPage.put("href", this.addOrReplaceParameter(uriInfo, "p", Integer.toString(1)));
-			jsonOTSNPaginationPage.put("page", 1);
-			jsonOTSNPaginationPage.put("text", "Primeira");
-			jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
+			jsonSNPaginationPage = new JSONObject();
+			jsonSNPaginationPage.put("class", "first");
+			jsonSNPaginationPage.put("href", this.addOrReplaceParameter(uriInfo, "p", Integer.toString(1)));
+			jsonSNPaginationPage.put("page", 1);
+			jsonSNPaginationPage.put("text", "FIRST");
+			jsonSNPaginationPages.put(jsonSNPaginationPage);
 
 			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
-				jsonOTSNPaginationPage = new JSONObject();
-				jsonOTSNPaginationPage.put("class", "previous");
-				jsonOTSNPaginationPage.put("href",
+				jsonSNPaginationPage = new JSONObject();
+				jsonSNPaginationPage.put("class", "previous");
+				jsonSNPaginationPage.put("href",
 						this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getCurrentPage() - 1)));
-				jsonOTSNPaginationPage.put("page", turSEResults.getCurrentPage() - 1);
-				jsonOTSNPaginationPage.put("text", "Anterior");
-				jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
+				jsonSNPaginationPage.put("page", turSEResults.getCurrentPage() - 1);
+				jsonSNPaginationPage.put("text", "PREVIOUS");
+				jsonSNPaginationPages.put(jsonSNPaginationPage);
 			}
 
 		}
@@ -327,157 +327,148 @@ public class TurSNSiteSearchAPI {
 		for (int page = firstPagination; page <= lastPagination; page++) {
 
 			if (page == turSEResults.getCurrentPage()) {
-				jsonOTSNPaginationPage = new JSONObject();
-				jsonOTSNPaginationPage.put("class", "current");
-				jsonOTSNPaginationPage.put("text", Integer.toString(page));
-				jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
+				jsonSNPaginationPage = new JSONObject();
+				jsonSNPaginationPage.put("class", "current");
+				jsonSNPaginationPage.put("text", Integer.toString(page));
+				jsonSNPaginationPages.put(jsonSNPaginationPage);
 			} else {
-				jsonOTSNPaginationPage = new JSONObject();
-				jsonOTSNPaginationPage.put("href", this.addOrReplaceParameter(uriInfo, "p", Integer.toString(page)));
-				jsonOTSNPaginationPage.put("page", page);
-				jsonOTSNPaginationPage.put("text", Integer.toString(page));
-				jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
+				jsonSNPaginationPage = new JSONObject();
+				jsonSNPaginationPage.put("href", this.addOrReplaceParameter(uriInfo, "p", Integer.toString(page)));
+				jsonSNPaginationPage.put("page", page);
+				jsonSNPaginationPage.put("text", Integer.toString(page));
+				jsonSNPaginationPages.put(jsonSNPaginationPage);
 
 			}
 		}
 		if (turSEResults.getCurrentPage() != turSEResults.getPageCount() && turSEResults.getPageCount() > 1) {
 			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
-				jsonOTSNPaginationPage = new JSONObject();
-				jsonOTSNPaginationPage.put("class", "next");
-				jsonOTSNPaginationPage.put("href",
+				jsonSNPaginationPage = new JSONObject();
+				jsonSNPaginationPage.put("class", "next");
+				jsonSNPaginationPage.put("href",
 						this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getCurrentPage() + 1)));
-				jsonOTSNPaginationPage.put("page", turSEResults.getCurrentPage() + 1);
-				jsonOTSNPaginationPage.put("text", "Próxima");
-				jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
+				jsonSNPaginationPage.put("page", turSEResults.getCurrentPage() + 1);
+				jsonSNPaginationPage.put("text", "NEXT");
+				jsonSNPaginationPages.put(jsonSNPaginationPage);
 			}
 
-			jsonOTSNPaginationPage = new JSONObject();
-			jsonOTSNPaginationPage.put("class", "last");
-			jsonOTSNPaginationPage.put("href",
+			jsonSNPaginationPage = new JSONObject();
+			jsonSNPaginationPage.put("class", "last");
+			jsonSNPaginationPage.put("href",
 					this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getPageCount())));
-			jsonOTSNPaginationPage.put("page", turSEResults.getPageCount());
-			jsonOTSNPaginationPage.put("text", "Última");
-			jsonOTSNPaginationPages.put(jsonOTSNPaginationPage);
+			jsonSNPaginationPage.put("page", turSEResults.getPageCount());
+			jsonSNPaginationPage.put("text", "LAST");
+			jsonSNPaginationPages.put(jsonSNPaginationPage);
 		}
 
 		// END Pagination
 
-		jsonOTSNPagination.put("otsn:page", jsonOTSNPaginationPages);
-		jsonRDFResource.put("rdf:resource", "http://semantic.opentext.com/otsn/result-set");
-		jsonOTSNDocument.put("otsn:document", otsnResults);
-
-		jsonOTSNQuery.put("rdf:Description",
-				(new JSONObject()).put("rdf:resource", "http://semantic.opentext.com/otsn/query"));
-		jsonOTSNQuery.put("otsn:query-string", turSEResults.getQueryString());
-		jsonOTSNQuery.put("otsn:sort", turSEResults.getSort());
+		jsonSNPagination.put("page", jsonSNPaginationPages);
+		jsonSNDocument.put("document", snResults);
+		jsonSNQuery.put("query-string", turSEResults.getQueryString());
+		jsonSNQuery.put("sort", turSEResults.getSort());
 
 		if (turSNSite.getFacet() == 1) {
 			// BEGIN Facet
-			JSONObject jsonOTSNFacetWidget = new JSONObject();
+			JSONObject jsonSNFacetWidget = new JSONObject();
 			for (TurSEFacetResult facet : turSEResults.getFacetResults()) {
 
 				if (facetMap.containsKey(facet.getFacet()) && !hiddenFilterQuery.contains(facet.getFacet())
 						&& facet.getTurSEFacetResultAttr().size() > 0) {
 					TurSNSiteFieldExt turSNSiteFieldExt = facetMap.get(facet.getFacet());
 
-					JSONObject jsonOTSNFacetWidgetEntityLabel = new JSONObject();
-					JSONArray jsonOTSNFacetWidgetEntityItems = new JSONArray();
-					JSONObject jsonOTSNFacetWidgetEntity = new JSONObject();
+					JSONObject jsonSNFacetWidgetEntityLabel = new JSONObject();
+					JSONArray jsonSNFacetWidgetEntityItems = new JSONArray();
+					JSONObject jsonSNFacetWidgetEntity = new JSONObject();
 
 					for (Object facetItemObject : facet.getTurSEFacetResultAttr().values().toArray()) {
 
-						JSONObject jsonOTSNFacetWidgetEntityItem = new JSONObject();
+						JSONObject jsonSNFacetWidgetEntityItem = new JSONObject();
 
 						TurSEFacetResultAttr facetItem = (TurSEFacetResultAttr) facetItemObject;
-						jsonOTSNFacetWidgetEntityItem.put("facet-link",
+						jsonSNFacetWidgetEntityItem.put("facet-link",
 								this.addFilterQuery(uriInfo, facet.getFacet() + ":" + facetItem.getAttribute()));
-						jsonOTSNFacetWidgetEntityItem.put("label", facetItem.getAttribute());
-						jsonOTSNFacetWidgetEntityItem.put("facet-count", Integer.toString(facetItem.getCount()));
-						jsonOTSNFacetWidgetEntityItems.put(jsonOTSNFacetWidgetEntityItem);
+						jsonSNFacetWidgetEntityItem.put("label", facetItem.getAttribute());
+						jsonSNFacetWidgetEntityItem.put("facet-count", Integer.toString(facetItem.getCount()));
+						jsonSNFacetWidgetEntityItems.put(jsonSNFacetWidgetEntityItem);
 					}
 
-					jsonOTSNFacetWidgetEntityLabel.put("xml:lang", "en");
-					jsonOTSNFacetWidgetEntityLabel.put("text", turSNSiteFieldExt.getFacetName());
-					jsonOTSNFacetWidgetEntity.put("rdf:Description", (new JSONObject()).put("rdf:resource", "turing"));
-					jsonOTSNFacetWidgetEntity.put("rdfs:label", jsonOTSNFacetWidgetEntityLabel);
-					jsonOTSNFacetWidgetEntity.put("otsn-facet",
-							(new JSONObject()).put("facet", jsonOTSNFacetWidgetEntityItems));
+					jsonSNFacetWidgetEntityLabel.put("lang", "en");
+					jsonSNFacetWidgetEntityLabel.put("text", turSNSiteFieldExt.getFacetName());
+					jsonSNFacetWidgetEntity.put("label", jsonSNFacetWidgetEntityLabel);
+					jsonSNFacetWidgetEntity.put("facets",
+							(new JSONObject()).put("facet", jsonSNFacetWidgetEntityItems));
 
-					jsonOTSNFacetWidget.put(turSNSiteFieldExt.getName(), jsonOTSNFacetWidgetEntity);
+					jsonSNFacetWidget.put(turSNSiteFieldExt.getName(), jsonSNFacetWidgetEntity);
 
 				}
 			}
 
 			// BEGIN Facet Remove
 			if (fq.size() > 0) {
-				JSONObject jsonOTSNFacetToRemoveWidgetEntityLabel = new JSONObject();
-				JSONArray jsonOTSNFacetToRemoveWidgetEntityItems = new JSONArray();
-				JSONObject jsonOTSNFacetToRemoveWidgetEntity = new JSONObject();
+				JSONObject jsonSNFacetToRemoveWidgetEntityLabel = new JSONObject();
+				JSONArray jsonSNFacetToRemoveWidgetEntityItems = new JSONArray();
+				JSONObject jsonSNFacetToRemoveWidgetEntity = new JSONObject();
 
 				for (String facetToRemove : fq) {
 					String[] facetToRemoveParts = facetToRemove.split(":");
 					if (facetToRemoveParts.length == 2) {
 						String facetToRemoveValue = facetToRemoveParts[1].replaceAll("\"", "");
 
-						JSONObject jsonOTSNFacetToRemoveWidgetEntityItem = new JSONObject();
-						jsonOTSNFacetToRemoveWidgetEntityItem.put("facet-link",
+						JSONObject jsonSNFacetToRemoveWidgetEntityItem = new JSONObject();
+						jsonSNFacetToRemoveWidgetEntityItem.put("facet-link",
 								this.removeFilterQuery(uriInfo, facetToRemove));
-						jsonOTSNFacetToRemoveWidgetEntityItem.put("label", facetToRemoveValue);
-						jsonOTSNFacetToRemoveWidgetEntityItems.put(jsonOTSNFacetToRemoveWidgetEntityItem);
+						jsonSNFacetToRemoveWidgetEntityItem.put("label", facetToRemoveValue);
+						jsonSNFacetToRemoveWidgetEntityItems.put(jsonSNFacetToRemoveWidgetEntityItem);
 					}
 				}
 
-				jsonOTSNFacetToRemoveWidgetEntityLabel.put("xml:lang", "en");
-				jsonOTSNFacetToRemoveWidgetEntityLabel.put("text", "Facets To Remove");
-				jsonOTSNFacetToRemoveWidgetEntity.put("rdf:Description",
-						(new JSONObject()).put("rdf:resource", "http://semantic.opentext.com/otsn/facetstoremove"));
-				jsonOTSNFacetToRemoveWidgetEntity.put("rdfs:label", jsonOTSNFacetToRemoveWidgetEntityLabel);
-				jsonOTSNFacetToRemoveWidgetEntity.put("otsn-facet",
-						(new JSONObject()).put("facet", jsonOTSNFacetToRemoveWidgetEntityItems));
-				jsonOTSNFacetWidget.put("otsn:facet-to-remove", jsonOTSNFacetToRemoveWidgetEntity);
+				jsonSNFacetToRemoveWidgetEntityLabel.put("lang", "en");
+				jsonSNFacetToRemoveWidgetEntityLabel.put("text", "Facets To Remove");
+				jsonSNFacetToRemoveWidgetEntity.put("label", jsonSNFacetToRemoveWidgetEntityLabel);
+				jsonSNFacetToRemoveWidgetEntity.put("facets",
+						(new JSONObject()).put("facet", jsonSNFacetToRemoveWidgetEntityItems));
+				jsonSNFacetWidget.put("facet-to-remove", jsonSNFacetToRemoveWidgetEntity);
 			}
 
 			// END Facet Remove
 
-			jsonOTSNWidget.put("otsn:facet-widget", jsonOTSNFacetWidget);
+			jsonSNWidget.put("facet-widget", jsonSNFacetWidget);
 			// END Facet
 		}
 		if (turSNSite.getMlt() == 1) {
 			// BEGIN Similar
-			JSONArray jsonOTSNSimilarWidgetItems = new JSONArray();
+			JSONArray jsonSNSimilarWidgetItems = new JSONArray();
 			for (TurSESimilarResult similar : turSEResults.getSimilarResults()) {
-				JSONObject jsonOTSNSimilarWidgetItem = new JSONObject();
+				JSONObject jsonSNSimilarWidgetItem = new JSONObject();
 				for (Object similarItemObject : similar.getTurSESimilarResultAttr().values().toArray()) {
 					TurSESimilarResultAttr similarItem = (TurSESimilarResultAttr) similarItemObject;
-					jsonOTSNSimilarWidgetItem.put(similarItem.getAttribute(), similarItem.getValue());
+					jsonSNSimilarWidgetItem.put(similarItem.getAttribute(), similarItem.getValue());
 				}
-				jsonOTSNSimilarWidgetItems.put(jsonOTSNSimilarWidgetItem);
+				jsonSNSimilarWidgetItems.put(jsonSNSimilarWidgetItem);
 			}
 
-			jsonOTSNWidget.put("otsn:similar-widget", jsonOTSNSimilarWidgetItems);
+			jsonSNWidget.put("similar-widget", jsonSNSimilarWidgetItems);
 
 			// END Similar
 		}
-		jsonOTSNQueryContext.put("otsn:pageEnd", 7);
-		jsonOTSNQueryContext.put("otsn:pageStart", turSEResults.getStart());
-		jsonOTSNQueryContext.put("otsn:pageCount", turSEResults.getPageCount());
-		jsonOTSNQueryContext.put("otsn:page", turSEResults.getCurrentPage());
-		jsonOTSNQueryContext.put("otsn:count", turSEResults.getNumFound());
-		jsonOTSNQueryContext.put("otsn:limit", turSEResults.getLimit());
-		jsonOTSNQueryContext.put("otsn:offset", 0);
-		jsonOTSNQueryContext.put("otsn:response-time", turSEResults.getElapsedTime());
-		jsonOTSNQueryContext.put("otsn:query", jsonOTSNQuery);
-		jsonOTSNQueryContext.put("otsn:index", "SebraeNA");
-		jsonOTSNQueryContext.put("rdf:Description",
-				(new JSONObject()).put("rdf:resource", "http://semantic.opentext.com/otsn/query-context"));
+		jsonSNQueryContext.put("pageEnd", 7);
+		jsonSNQueryContext.put("pageStart", turSEResults.getStart());
+		jsonSNQueryContext.put("pageCount", turSEResults.getPageCount());
+		jsonSNQueryContext.put("page", turSEResults.getCurrentPage());
+		jsonSNQueryContext.put("count", turSEResults.getNumFound());
+		jsonSNQueryContext.put("limit", turSEResults.getLimit());
+		jsonSNQueryContext.put("offset", 0);
+		jsonSNQueryContext.put("response-time", turSEResults.getElapsedTime());
+		jsonSNQueryContext.put("query", jsonSNQuery);
+		jsonSNQueryContext.put("index", turSNSite.getName());
 
-		jsonRDFDescription.put("otsn:pagination", jsonOTSNPagination);
-		jsonRDFDescription.put("otsn:widget", jsonOTSNWidget);
-		jsonRDFDescription.put("otsn:results", jsonOTSNDocument);
-		jsonRDFDescription.put("otsn:query-context", jsonOTSNQueryContext);
-		jsonRDFDescription.put("rdf:type", jsonRDFResource);
+		jsonRDFDescription.put("pagination", jsonSNPagination);
+		jsonRDFDescription.put("widget", jsonSNWidget);
+		jsonRDFDescription.put("results", jsonSNDocument);
+		jsonRDFDescription.put("query-context", jsonSNQueryContext);
+		jsonRDFDescription.put("type", jsonRDFResource);
 
-		jsonSearch.put("rdf:Description", jsonRDFDescription);
+		jsonSearch.put("description", jsonRDFDescription);
 
 		return Response.status(200).entity(jsonSearch.toString()).build();
 	}

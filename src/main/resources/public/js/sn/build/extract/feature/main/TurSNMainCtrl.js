@@ -11,8 +11,13 @@ turingSNApp
 						"$location",
 						'turSNSearch',
 						'amMoment',
+						'vigLocale',
 						function($scope, $http, $window, $state, $rootScope,
-								$translate, $location, turSNSearch, amMoment) {
+								$translate, $location, turSNSearch, amMoment, vigLocale) {
+							
+							$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+							$translate.use($scope.vigLanguage);
+							
 							amMoment.changeLocale('en');
 							$scope.total = 0;
 							var turPath = $location.path().trim();
@@ -42,10 +47,10 @@ turingSNApp
 										.then(
 												function successCallback(
 														response) {
-													$scope.total = response.data["rdf:Description"]["otsn:query-context"]["otsn:count"];
-													$scope.results = response.data["rdf:Description"]["otsn:results"]["otsn:document"];
-													$scope.pages = response.data["rdf:Description"]["otsn:pagination"]["otsn:page"];
-													$scope.facets = response.data["rdf:Description"]["otsn:widget"]["otsn:facet-widget"];
+													$scope.total = response.data["description"]["query-context"]["count"];
+													$scope.results = response.data["description"]["results"]["document"];
+													$scope.pages = response.data["description"]["pagination"]["page"];
+													$scope.facets = response.data["description"]["widget"]["facet-widget"];
 												},
 												function errorCallback(response) {
 													// error
@@ -59,17 +64,16 @@ turingSNApp
 										.then(
 												function successCallback(
 														response) {
-													$scope.total = response.data["rdf:Description"]["otsn:query-context"]["otsn:count"];
-													$scope.results = response.data["rdf:Description"]["otsn:results"]["otsn:document"];
-													$scope.pages = response.data["rdf:Description"]["otsn:pagination"]["otsn:page"];
-													$scope.facets = response.data["rdf:Description"]["otsn:widget"]["otsn:facet-widget"];
+													$scope.total = response.data["description"]["query-context"]["count"];
+													$scope.results = response.data["description"]["results"]["document"];
+													$scope.pages = response.data["description"]["pagination"]["page"];
+													$scope.facets = response.data["description"]["widget"]["facet-widget"];
 												},
 												function errorCallback(response) {
 													// error
 												})
 							}
 							$scope.init();
-							$scope.test = "Alexandre";
 							$rootScope.$state = $state;
 							$scope.turRedirect = function(href) {
 								$scope.initURL(href);

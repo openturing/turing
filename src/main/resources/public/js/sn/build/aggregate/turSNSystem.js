@@ -8,12 +8,33 @@ turingSNApp.config([
 			$translateProvider.useSanitizeValueStrategy('escaped');
 			$locationProvider.html5Mode(true);
 			$translateProvider.translations('en', {
-
-				REMOVE : "Remove"
+				REMOVE : "Remove",
+				FIRST: "First",
+				LAST: "LAST",
+				PREVIOUS: "Previous",
+				NEXT: "Next",
+				SEARCH: "Search",
+				SEARCH_FOR: "Search for",
+				NO_RESULTS_FOUND:"No results found",
+				APPLIED_FILTERS: "Applied Filters",
+				FOUND: "Found", 
+				RESULTS_FOR_THE_TERM: "results for the term"
 			});
 			$translateProvider.translations('pt', {
-				REMOVE : "Remover"
+				REMOVE : "Remover",
+				FIRST: "Primeiro",
+				LAST: "Último",
+				PREVIOUS: "Anterior",
+				NEXT: "Próximo",
+				SEARCH: "Pesquisar",
+				SEARCH_FOR: "Pesquisar por",
+				NO_RESULTS_FOUND: "Nenhum resultado encontrado",
+				APPLIED_FILTERS: "Filtros Aplicados",
+				FOUND: "Encontrados", 
+				RESULTS_FOR_THE_TERM: "resultados para o termo"
+
 			});
+			
 			$translateProvider.fallbackLanguage('en');
 			
 		/*	$urlRouterProvider.otherwise('/sn/search');
@@ -55,6 +76,23 @@ turingSNApp.service('turAPIServerService', [
 
 					});
 					return turEmbServer;
+				}
+			}
+		} ]);
+turingSNApp.factory('vigLocale', [
+		'$window',
+		function($window) {
+			return {
+				getLocale : function() {
+					var nav = $window.navigator;
+					if (angular.isArray(nav.languages)) {
+						if (nav.languages.length > 0) {
+							return nav.languages[0].split('-').join('_');
+						}
+					}
+					return ((nav.language || nav.browserLanguage
+							|| nav.systemLanguage || nav.userLanguage) || '')
+							.split('-').join('_');
 				}
 			}
 		} ]);
