@@ -4,7 +4,7 @@ turingSNApp.factory('turSNSearch', [
 		function($http, turAPIServerService) {
 
 			return {
-				search : function(query, page, _setlocale, sort, fq) {
+				search : function(turSiteName, query, page, _setlocale, sort, fq) {
 					var data = {
 						'q' : query,
 						'p' : page,
@@ -20,10 +20,9 @@ turingSNApp.factory('turSNSearch', [
 					};
 
 					return $http.get(turAPIServerService.get().concat(
-							'/otsn/search/theme/json'), config);
+							'/sn/' + turSiteName + '/search'), config);
 				},
 				searchURL : function(url) {
-					console.log("a1:" + url);
 					urlFormatted = url.replace("/api/",
 							"/");
 					var config = {

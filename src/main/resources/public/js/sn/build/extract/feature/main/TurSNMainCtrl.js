@@ -15,19 +15,30 @@ turingSNApp
 								$translate, $location, turSNSearch, amMoment) {
 							amMoment.changeLocale('en');
 							$scope.total = 0;
+							var turPath = $location.path().trim();
+							if (turPath.endsWith("/")) {
+								turPath = turPath.substring(0,
+										turPath.length - 1);
+							}
+							var turSiteNameSplit = turPath.split('/');
+							$scope.turSiteName = turSiteNameSplit[turSiteNameSplit.length - 1];
+
 							$scope.init = function() {
+
 								$scope.turQuery = $location.search().q;
 								$scope.turPage = $location.search().p;
 								$scope.turLocale = $location.search()._setlocale;
 								$scope.turSort = $location.search().sort;
 								$scope.turFilterQuery = $location.search()['fq[]'];
-								console.log($scope.turFilterQuery);
 								$scope.initParams($scope.turQuery,
-										$scope.turPage,$scope.turLocale,$scope.turSort,$scope.turFilterQuery)
+										$scope.turPage, $scope.turLocale,
+										$scope.turSort, $scope.turFilterQuery)
 							}
-							$scope.initParams = function(q, p, _setlocale, sort, fq) {	
+							$scope.initParams = function(q, p, _setlocale,
+									sort, fq) {
 								turSNSearch
-										.search(q, p, _setlocale, sort, fq)
+										.search($scope.turSiteName, q, p,
+												_setlocale, sort, fq)
 										.then(
 												function successCallback(
 														response) {
@@ -40,8 +51,9 @@ turingSNApp
 													// error
 												})
 							}
-							
-							$scope.initURL = function(q, p, _setlocale, sort, fq) {			
+
+							$scope.initURL = function(q, p, _setlocale, sort,
+									fq) {
 								turSNSearch
 										.searchURL(q, p, _setlocale, sort, fq)
 										.then(
@@ -60,16 +72,12 @@ turingSNApp
 							$scope.test = "Alexandre";
 							$rootScope.$state = $state;
 							$scope.turRedirect = function(href) {
-								// $location.url(url.replace(
-								// "/api/otsn/search/theme/json", "/sn/"));
-
-								// $window.location.reload();
-
 								$scope.initURL(href);
 							}
 							$scope.replaceUrlSearch = function(url) {
-								urlFormatted = url.replace(
-										"/api/otsn/search/theme/json", "/sn/");
+								urlFormatted = url.replace("/api/sn/"
+										+ $scope.turSiteName + "/search",
+										"/sn/" + $scope.turSiteName);
 								return urlFormatted;
 							}
 						} ]);

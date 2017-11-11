@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"></meta>
 <title>Semantic Navigation</title>
 <!-- Bootstrap -->
-<link href="../thirdparty/bootstrap/dist/css/bootstrap.min.css"
+<link href="../../thirdparty/bootstrap/dist/css/bootstrap.min.css"
 	rel="stylesheet"></link>
 <link
 	href="https://viglet.ai/ui/thirdparty/font-awesome/css/font-awesome.min.css"
@@ -20,7 +20,7 @@
 <base href="/">
 </head>
 <body data-target=".navbar-default" ng-controller="TurSNMainCtrl">
-
+	
 	<div id="wrap" style="margin-bottom: 15px;">
 		<nav class="navbar navbar-default navbar-fixed-top row  row-centered"
 			role="navigation">
@@ -73,7 +73,7 @@
 													ng-click="turRedirect(facetToRemove['facet-link']);"
 													href="{{replaceUrlSearch(facetToRemove['facet-link'])}}"
 													class="list-group-item">{{facetToRemove.label}}
-													(Remover) </a>
+													({{ 'REMOVE' | translate }}) </a>
 											</div>
 										</div>
 									</div>
@@ -81,12 +81,11 @@
 
 									<div ng-repeat="(facet, facetDetail) in facets"
 										ng-if="facet != 'otsn:facet-to-remove'" class="col-lg-12"
-										style="padding: 2px" id="{{facetDetail["
-										rdfs:label"]["text"]}}" name="{{facetDetail["rdfs:label"]["text"]}}">
+										style="padding: 2px" id="{{facetDetail['rdfs:label']['text']}}" name="{{facetDetail['rdfs:label']['text']}}">
 										<div class="panel panel-default">
 											<div class="panel-heading"
 												style="background-color: #FF874B; color: white !important;">
-												<h3 class="panel-title">{{facetDetail["rdfs:label"]["text"]}}</h3>
+												<h3 class="panel-title">{{facetDetail['rdfs:label']['text']}}</h3>
 											</div>
 											<div class="panel-body list-group" style="padding: 2px">
 												<a
@@ -146,7 +145,7 @@
 										<div ng-repeat="page in pages" style="display: inline;">
 											<a ng-if="page.href" ng-click="turRedirect(page.href);"
 												href="{{replaceUrlSearch(page.href)}}" _target='_self'
-												style='font-size: 20px'>{{page.text}}</a> <span
+												style='font-size: 20px;color: #FF874B'>{{page.text}}</a> <span
 												ng-if="!page.href" style='font-size: 20px'>{{page.text}}</span>
 											<div ng-if="!$last" style="display: inline;">|</div>
 										</div>
@@ -161,21 +160,21 @@
 			</div>
 		</div>
 	</div>
-	<script src="../thirdparty/jquery/dist/jquery.min.js"></script>
+	<script src="../../thirdparty/jquery/dist/jquery.min.js"></script>
 
-	<script src="../thirdparty/moment/min/moment-with-locales.min.js"></script>
-	<script src="../thirdparty/angular/angular.min.js"></script>
+	<script src="../../thirdparty/moment/min/moment-with-locales.min.js"></script>
+	<script src="../../thirdparty/angular/angular.min.js"></script>
 	<script
-		src="../thirdparty/angular-ui-router/release/angular-ui-router.min.js"></script>
-	<script src="../thirdparty/angular-translate/angular-translate.min.js"></script>
-	<script src="../thirdparty/angular-resource/angular-resource.min.js"></script>
-	<script src="../thirdparty/angular-animate/angular-animate.min.js"></script>
-	<script src="../thirdparty/angular-cookies/angular-cookies.min.js"></script>
-	<script src="../thirdparty/angular-sanitize/angular-sanitize.min.js"></script>
-	<script src="../thirdparty/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
-	<script src="../thirdparty/angular-moment/angular-moment.min.js"></script>
-	<script src="../thirdparty/bootstrap/dist/js/bootstrap.min.js"></script>
-	<script src="../js/sn/dist/turing-sn-min.js"></script>
+		src="../../thirdparty/angular-ui-router/release/angular-ui-router.min.js"></script>
+	<script src="../../thirdparty/angular-translate/angular-translate.min.js"></script>
+	<script src="../../thirdparty/angular-resource/angular-resource.min.js"></script>
+	<script src="../../thirdparty/angular-animate/angular-animate.min.js"></script>
+	<script src="../../thirdparty/angular-cookies/angular-cookies.min.js"></script>
+	<script src="../../thirdparty/angular-sanitize/angular-sanitize.min.js"></script>
+	<script src="../../thirdparty/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+	<script src="../../thirdparty/angular-moment/angular-moment.min.js"></script>
+	<script src="../../thirdparty/bootstrap/dist/js/bootstrap.min.js"></script>
+	<script src="../../js/sn/dist/turing-sn-min.js"></script>
 </body>
 
 </html>

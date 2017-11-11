@@ -7,14 +7,25 @@ turingSNApp.config([
 				$translateProvider) {
 			$translateProvider.useSanitizeValueStrategy('escaped');
 			$locationProvider.html5Mode(true);
+			$translateProvider.translations('en', {
 
-		/*	$urlRouterProvider.otherwise('/sn');
-			$stateProvider.state('home?q&p', {
-				url : '/sn',
-				data : {
-					pageTitle : 'Home | Viglet Turing'
-				}
-			})*/
+				REMOVE : "Remove"
+			});
+			$translateProvider.translations('pt', {
+				REMOVE : "Remover"
+			});
+			$translateProvider.fallbackLanguage('en');
+			
+		/*	$urlRouterProvider.otherwise('/sn/search');
+			$stateProvider
+					.state('search', {
+						url : '/sn/search',
+						templateUrl : 'sn/templates/home.html',
+						controller : 'TurSNMainCtrl',
+						data : {
+							pageTitle : 'Home | Viglet Turing'
+						}
+					})*/
 		} ]);
 turingSNApp.service('turAPIServerService', [
 		'$http',

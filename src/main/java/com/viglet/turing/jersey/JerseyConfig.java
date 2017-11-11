@@ -34,6 +34,7 @@ import com.viglet.turing.api.sn.TurSNImportAPI;
 import com.viglet.turing.api.sn.TurSNSiteAPI;
 import com.viglet.turing.api.sn.TurSNSiteFieldAPI;
 import com.viglet.turing.api.sn.TurSNSiteFieldExtAPI;
+import com.viglet.turing.api.sn.TurSNSiteSearchAPI;
 import com.viglet.turing.api.storage.hadoop.TurHadoopAPI;
 
 import javax.ws.rs.ApplicationPath;
@@ -79,6 +80,7 @@ public class JerseyConfig extends ResourceConfig {
 		register(TurSNImportAPI.class);
 		register(TurSNSiteFieldAPI.class);
 		register(TurSNSiteFieldExtAPI.class);
+		register(TurSNSiteSearchAPI.class);
 	}
 
 	@Provider

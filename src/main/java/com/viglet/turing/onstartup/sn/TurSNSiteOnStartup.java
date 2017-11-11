@@ -135,7 +135,7 @@ public class TurSNSiteOnStartup {
 			turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
 			turSNSiteFieldExt.setType(turSNSiteField.getType());
 			turSNSiteFieldExt.setTurSNSite(turSNSite);
-			
+
 			turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
 
 			// Type
@@ -155,6 +155,32 @@ public class TurSNSiteOnStartup {
 			turSNSiteFieldExt.setFacet(1);
 			turSNSiteFieldExt.setFacetName("Types");
 			turSNSiteFieldExt.setHl(1);
+			turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
+			turSNSiteFieldExt.setMlt(0);
+			turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
+			turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
+			turSNSiteFieldExt.setType(turSNSiteField.getType());
+			turSNSiteFieldExt.setTurSNSite(turSNSite);
+
+			turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
+
+			// URL
+			turSNSiteField = new TurSNSiteField();
+			turSNSiteField.setName("url");
+			turSNSiteField.setDescription("URL Field");
+			turSNSiteField.setMultiValued(0);
+			turSNSiteField.setTurSNSite(turSNSite);
+			turSNSiteField.setType(TurSEFieldType.STRING);
+
+			turSNSiteFieldRepository.save(turSNSiteField);
+
+			turSNSiteFieldExt = new TurSNSiteFieldExt();
+			turSNSiteFieldExt.setEnabled(1);
+			turSNSiteFieldExt.setName(turSNSiteField.getName());
+			turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
+			turSNSiteFieldExt.setFacet(1);
+			turSNSiteFieldExt.setFacetName("URLs");
+			turSNSiteFieldExt.setHl(0);
 			turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
 			turSNSiteFieldExt.setMlt(0);
 			turSNSiteFieldExt.setExternalId(turSNSiteField.getId());

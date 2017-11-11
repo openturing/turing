@@ -47,6 +47,7 @@ import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.field.TurSEFieldMap;
 import com.viglet.turing.se.field.TurSEFieldMaps;
+import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResultAttr;
 import com.viglet.turing.se.result.TurSEResults;
@@ -71,10 +72,13 @@ public class TurSolr {
 	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
 	TurSNSiteRepository turSNSiteRepository;
+	@Autowired
+	TurSolrField turSolrField;
 
 	private TurNLPInstance currNLP = null;
 	private TurSEInstance currSE = null;
 	private JSONObject jsonAttributes = null;
+	private TurSNSite turSNSite = null;
 
 	String currText = null;
 	TurNLPVendor turNLPVendor = null;
@@ -118,12 +122,13 @@ public class TurSolr {
 		this.setCurrSE(turSEInstance);
 
 		if (turSEInstance != null) {
-			solrServer = new HttpSolrServer(
-					"http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort() + "/solr/turing");
+			solrServer = new HttpSolrServer("http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort()
+					+ "/solr/" + turSNSite.getCore());
 		}
 	}
 
 	public void init(TurSNSite turSNSite) {
+		this.turSNSite = turSNSite;
 		init(turSNSite.getTurNLPInstance(), turSNSite.getTurSEInstance());
 	}
 
@@ -133,6 +138,7 @@ public class TurSolr {
 	}
 
 	public void init(TurNLPInstance turNLPInstance, TurSEInstance turSEInstance, String text) {
+
 		init(turNLPInstance, turSEInstance);
 		this.setCurrText(text);
 	}
@@ -236,7 +242,6 @@ public class TurSolr {
 		String sort = "relevant";
 		TurSEResults turSEResults = new TurSEResults();
 
-		TurSNSite turSNSite = turSNSiteRepository.findById(1);
 		int rows = turSNSite.getRowsPerPage();
 
 		Map<String, TurSEFieldMap> fieldMap = new TurSEFieldMaps().getFieldMaps();
@@ -368,14 +373,14 @@ public class TurSolr {
 				SolrDocumentList mltDocumentList = (SolrDocumentList) mltResp.get((String) document.get("id"));
 				for (SolrDocument mltDocument : mltDocumentList) {
 					TurSESimilarResult turSESimilarResult = new TurSESimilarResult();
-					turSESimilarResult.add("id",
-							new TurSESimilarResultAttr("id", (String) mltDocument.getFieldValue("id")));
-					turSESimilarResult.add("title",
-							new TurSESimilarResultAttr("title", (String) mltDocument.getFieldValue("title")));
-					turSESimilarResult.add("type",
-							new TurSESimilarResultAttr("type", (String) mltDocument.getFieldValue("type")));
-					turSESimilarResult.add("url",
-							new TurSESimilarResultAttr("url", (String) mltDocument.getFieldValue("url")));
+					turSESimilarResult.add("id", new TurSESimilarResultAttr("id",
+							turSolrField.convertFieldToString(mltDocument.getFieldValue("id"))));
+					turSESimilarResult.add("title", new TurSESimilarResultAttr("title",
+							turSolrField.convertFieldToString(mltDocument.getFieldValue("title"))));
+					turSESimilarResult.add("type", new TurSESimilarResultAttr("type",
+							turSolrField.convertFieldToString(mltDocument.getFieldValue("type"))));
+					turSESimilarResult.add("url", new TurSESimilarResultAttr("url",
+							turSolrField.convertFieldToString(mltDocument.getFieldValue("url"))));
 					similarResults.add(turSESimilarResult);
 				}
 			}
@@ -389,138 +394,18 @@ public class TurSolr {
 			for (String attribute : document.getFieldNames()) {
 				Object attrValue = document.getFieldValue(attribute);
 				JSONObject jsonObject = new JSONObject();
+
 				if (fieldMap.containsKey(attribute)) {
 					TurSEFieldMap turSEFieldMap = fieldMap.get(attribute);
-					switch (turSEFieldMap.getType()) {
-					case INT:
-						if (attrValue instanceof String) {
-							jsonObject.put(attribute, Integer.parseInt((String) attrValue));
-						} else if (attrValue instanceof ArrayList) {
-							ArrayList<?> arrAttValue = (ArrayList<?>) attrValue;
-							if (arrAttValue.get(0) instanceof Long) {
-								jsonObject.put(attribute, ((Long) arrAttValue.get(0)).intValue());
-							} else if (arrAttValue.get(0) instanceof String) {
-								jsonObject.put(attribute, Integer.parseInt((String) arrAttValue.get(0)));
-							} else {
-								jsonObject.put(attribute, arrAttValue.get(0));
-							}
 
-						} else if (attrValue instanceof Long) {
-							jsonObject.put(attribute, ((Long) attrValue).intValue());
-						} else {
-							jsonObject.put(attribute, attrValue);
-						}
-						break;
-					case LONG:
-						if (attrValue instanceof String) {
-							jsonObject.put(attribute, Long.parseLong((String) attrValue));
-						} else if (attrValue instanceof ArrayList) {
-							ArrayList<?> arrAttValue = (ArrayList<?>) attrValue;
-							if (arrAttValue.get(0) instanceof String) {
-								jsonObject.put(attribute, Long.parseLong((String) arrAttValue.get(0)));
-							} else if (arrAttValue.get(0) instanceof Long) {
-								jsonObject.put(attribute, (Long) arrAttValue.get(0));
-							} else {
-								jsonObject.put(attribute, arrAttValue.get(0));
-							}
-						} else if (attrValue instanceof Long) {
-							jsonObject.put(attribute, (Long) attrValue);
-						} else {
-							jsonObject.put(attribute, attrValue);
-						}
-						break;
-					case STRING:
-						if (hl != null && hl.containsKey(attribute)) {
-							jsonObject.put(attribute, (String) hl.get(attribute).get(0));
-						} else {
-							if (attrValue instanceof String) {
-								jsonObject.put(attribute, (String) attrValue);
-							} else if (attrValue instanceof ArrayList) {
-								ArrayList<?> arrAttValue = (ArrayList<?>) attrValue;
-
-								if (arrAttValue.get(0) instanceof String) {
-									jsonObject.put(attribute, (String) arrAttValue.get(0));
-								} else if (arrAttValue.get(0) instanceof Long) {
-									jsonObject.put(attribute, ((Long) arrAttValue.get(0)).toString());
-								} else {
-									jsonObject.put(attribute, arrAttValue.get(0));
-								}
-							} else if (attrValue instanceof Long) {
-								jsonObject.put(attribute, ((Long) attrValue).toString());
-							} else {
-								jsonObject.put(attribute, attrValue);
-							}
-						}
-						break;
-					case ARRAY:
-						if (attrValue instanceof String) {
-							String[] array = { (String) attrValue };
-							jsonObject.put(attribute, array);
-						} else if (attrValue instanceof ArrayList) {
-							jsonObject.put(attribute, attrValue);
-						} else if (attrValue instanceof Long) {
-							Long[] array = { (Long) attrValue };
-							jsonObject.put(attribute, array);
-						} else {
-							jsonObject.put(attribute, attrValue);
-						}
-						break;
-					case DATE:
-						if (attrValue instanceof String) {
-							jsonObject.put(attribute, (String) attrValue);
-						} else if (attrValue instanceof ArrayList) {
-							ArrayList<?> arrAttValue = (ArrayList<?>) attrValue;
-							jsonObject.put(attribute, arrAttValue.get(0));
-						} else if (attrValue instanceof Long) {
-							jsonObject.put(attribute, ((Long) attrValue).toString());
-						} else {
-							jsonObject.put(attribute, attrValue);
-						}
-						break;
-					case BOOL:
-						if (attrValue instanceof String) {
-							jsonObject.put(attribute, Boolean.parseBoolean((String) attrValue));
-						} else if (attrValue instanceof ArrayList) {
-							ArrayList<?> arrAttValue = (ArrayList<?>) attrValue;
-							if (arrAttValue.get(0) instanceof String) {
-								jsonObject.put(attribute, Boolean.parseBoolean((String) arrAttValue.get(0)));
-							} else if (arrAttValue.get(0) instanceof Long) {
-								if (((Long) arrAttValue.get(0)) > 0) {
-									jsonObject.put(attribute, true);
-								} else {
-									jsonObject.put(attribute, false);
-								}
-							} else {
-								jsonObject.put(attribute, attrValue);
-							}
-						} else if (attrValue instanceof Long) {
-							if (((Long) attrValue) > 0) {
-								jsonObject.put(attribute, true);
-							} else {
-								jsonObject.put(attribute, false);
-							}
-						} else {
-							jsonObject.put(attribute, attrValue);
-						}
-						break;
-					default:
-						if (attrValue instanceof String) {
-							jsonObject.put(attribute, (String) attrValue);
-						} else if (attrValue instanceof ArrayList) {
-							ArrayList<?> arrAttValue = (ArrayList<?>) attrValue;
-							jsonObject.put(attribute, arrAttValue.get(0));
-						} else if (attrValue instanceof Long) {
-							jsonObject.put(attribute, ((Long) attrValue).toString());
-						} else {
-							jsonObject.put(attribute, attrValue);
-						}
-						break;
-					}
-					turSEResult.add(attribute, new TurSEResultAttr(attribute, jsonObject));
-				} else {
+					if (turSEFieldMap.getType() == TurSEFieldType.STRING && hl != null && hl.containsKey(attribute))
+						jsonObject.put(attribute, (String) hl.get(attribute).get(0));
+					else
+						jsonObject.put(attribute, turSolrField.convertField(turSEFieldMap.getType(), attrValue));
+				} else
 					jsonObject.put(attribute, attrValue);
-					turSEResult.add(attribute, new TurSEResultAttr(attribute, jsonObject));
-				}
+
+				turSEResult.add(attribute, new TurSEResultAttr(attribute, jsonObject));
 			}
 			results.add(turSEResult);
 		}

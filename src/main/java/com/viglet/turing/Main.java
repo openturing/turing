@@ -26,6 +26,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import javax.sql.DataSource;
 
@@ -40,7 +41,7 @@ public class Main {
 	public Queue queue() {
 		return new ActiveMQQueue("sample.queue");
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(Main.class, args);
 	}
@@ -48,10 +49,10 @@ public class Main {
 	@RequestMapping("/")
 	String index() {
 		return "index";
-	}	
-	
-	@RequestMapping("/sn")
-	String sn() {
-		return "sn/index";
-	}	
+	}
+
+	@RequestMapping("/sn/{siteName}")
+	String sn(@PathVariable("siteName") String siteName) {
+		return "sn/templates/index";
+	}
 }

@@ -11,6 +11,8 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, Integer> {
 	List<TurSNSite> findAll();
 
 	TurSNSite findById(int id);
+	
+	TurSNSite findByName(String name);
 
 	TurSNSite save(TurSNSite turSNSite);
 
