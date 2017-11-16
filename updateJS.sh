@@ -1,2 +1,2 @@
 #! /bin/bash
-gradle combinejs
+./gradlew minifyAllJs

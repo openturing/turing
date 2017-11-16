@@ -47,10 +47,11 @@ turingSNApp
 										.then(
 												function successCallback(
 														response) {
-													$scope.total = response.data["description"]["query-context"]["count"];
-													$scope.results = response.data["description"]["results"]["document"];
-													$scope.pages = response.data["description"]["pagination"]["page"];
-													$scope.facets = response.data["description"]["widget"]["facet-widget"];
+													$scope.total = response.data["queryContext"]["count"];
+													$scope.results = response.data["results"]["document"];
+													$scope.pages = response.data["pagination"];
+													$scope.facets = response.data["widget"]["facet"];
+													$scope.facetsToRemove = response.data["widget"]["facetToRemove"];
 												},
 												function errorCallback(response) {
 													// error
@@ -64,10 +65,11 @@ turingSNApp
 										.then(
 												function successCallback(
 														response) {
-													$scope.total = response.data["description"]["query-context"]["count"];
-													$scope.results = response.data["description"]["results"]["document"];
-													$scope.pages = response.data["description"]["pagination"]["page"];
-													$scope.facets = response.data["description"]["widget"]["facet-widget"];
+													$scope.total = response.data["queryContext"]["count"];
+													$scope.results = response.data["results"]["document"];
+													$scope.pages = response.data["pagination"];
+													$scope.facets = response.data["widget"]["facet"];
+													$scope.facetsToRemove = response.data["widget"]["facetToRemove"];
 												},
 												function errorCallback(response) {
 													// error

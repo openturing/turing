@@ -60,7 +60,7 @@
 							<div class="row" style="margin: 0px">
 								<div class="col-lg-3" style="vertical-align: top; padding: 0px">
 
-									<div ng-if="facets['facet-to-remove'] != null"
+									<div ng-if="facetsToRemove != null"
 										class="col-lg-12" style="padding: 2px">
 										<div class="panel panel-default">
 											<div class="panel-heading"
@@ -69,9 +69,9 @@
 											</div>
 											<div class="panel-body list-group" style="padding: 2px;">
 												<a
-													ng-repeat="facetToRemove in facets['facet-to-remove']['facets']['facet']"
-													ng-click="turRedirect(facetToRemove['facet-link']);"
-													href="{{replaceUrlSearch(facetToRemove['facet-link'])}}"
+													ng-repeat="facetToRemove in facetsToRemove['facets']"
+													ng-click="turRedirect(facetToRemove['link']);"
+													href="{{replaceUrlSearch(facetToRemove['link'])}}"
 													class="list-group-item">{{facetToRemove.label}}
 													({{ 'REMOVE' | translate }}) </a>
 											</div>
@@ -79,21 +79,20 @@
 									</div>
 
 
-									<div ng-repeat="(facet, facetDetail) in facets"
-										ng-if="facet != 'facet-to-remove'" class="col-lg-12"
-										style="padding: 2px" id="{{facetDetail['label']['text']}}" name="{{facetDetail['label']['text']}}">
+									<div ng-repeat="facet in facets" class="col-lg-12"
+										style="padding: 2px" id="{{facet['label']['text']}}" name="{{facet['label']['text']}}">
 										<div class="panel panel-default">
 											<div class="panel-heading"
 												style="background-color: #FF874B; color: white !important;">
-												<h3 class="panel-title">{{facetDetail['label']['text']}}</h3>
+												<h3 class="panel-title">{{facet['label']['text']}}</h3>
 											</div>
 											<div class="panel-body list-group" style="padding: 2px">
 												<a
-													ng-repeat="facetItem in facetDetail['facets']['facet']"
-													ng-click="turRedirect(facetItem['facet-link']);"
-													href="{{replaceUrlSearch(facetItem['facet-link'])}}"
+													ng-repeat="facetItem in facet['facets']"
+													ng-click="turRedirect(facetItem['link']);"
+													href="{{replaceUrlSearch(facetItem['link'])}}"
 													class="list-group-item">{{facetItem.label}}
-													({{facetItem['facet-count']}}) </a>
+													({{facetItem['count']}}) </a>
 											</div>
 										</div>
 									</div>
@@ -113,15 +112,15 @@
 														<div>
 															<h4>
 																<a style="color: #FF874B; font-weight: bolder;"
-																	href="{{document['rdf:about']}}"
-																	ng-bind-html="document['dc:title']"></a>
+																	href="{{document.fields.url}}"
+																	ng-bind-html="document.fields.title"></a>
 															</h4>
 														</div>
 														<div>{{document['original_date'] |
 															amParse:'YYYY-MM-DD HH:mm:ss' | amDateFormat:'DD MMMM
 															YYYY'}}</div>
 														<div style="margin-top: 10px">
-															<div ng-bind-html="document['text']"></div>
+															<div ng-bind-html="document.fields.text"></div>
 															<div ng-if="document['metadata'].length > 0"
 																style="margin-top: 10px">
 																Assuntos encontrados:

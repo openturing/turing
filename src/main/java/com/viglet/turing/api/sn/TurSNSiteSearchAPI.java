@@ -15,17 +15,26 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrField;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentMetadataBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetItemBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetLabelBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchPaginationBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContextBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContextQueryBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchResultsBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchSimilarBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchWidgetBean;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
@@ -148,9 +157,12 @@ public class TurSNSiteSearchAPI {
 
 	@GET
 	@Produces("application/json")
-	public Response select(@PathParam("siteName") String siteName, @QueryParam("q") String q,
+	public TurSNSiteSearchBean select(@PathParam("siteName") String siteName, @QueryParam("q") String q,
 			@QueryParam("p") int currentPage, @QueryParam("fq[]") List<String> fq, @Context UriInfo uriInfo)
 			throws JSONException {
+
+		TurSNSiteSearchBean turSNSiteSearchBean = new TurSNSiteSearchBean();
+		TurSNSiteSearchResultsBean turSNSiteSearchResultsBean = new TurSNSiteSearchResultsBean();
 
 		if (currentPage <= 0) {
 			currentPage = 1;
@@ -205,82 +217,85 @@ public class TurSNSiteSearchAPI {
 		}
 
 		TurSEResults turSEResults = null;
-		JSONArray snResults = new JSONArray();
 
 		turSolr.init(turSNSite);
 		try {
 			turSEResults = turSolr.retrieveSolr(q, filterQueryModified, currentPage);
 			List<TurSEResult> seResults = turSEResults.getResults();
 			// System.out.println("getResults size:" + turSEResults.getResults().size());
+			List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean = new ArrayList<TurSNSiteSearchDocumentBean>();
 			for (TurSEResult result : seResults) {
-				JSONObject snResult = new JSONObject();
+				TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean = new TurSNSiteSearchDocumentBean();
+
 				Map<String, TurSEResultAttr> turSEResultAttr = result.getTurSEResultAttr();
 				Set<String> attribs = turSEResultAttr.keySet();
 
-				snResult.put("elevate", false);
+				turSNSiteSearchDocumentBean.setElevate(false);
+				List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans = new ArrayList<TurSNSiteSearchDocumentMetadataBean>();
 
-				JSONArray snMetadata = new JSONArray();
 				for (Object facetObject : facetMap.keySet().toArray()) {
+
 					String facet = (String) facetObject;
 					if (turSEResultAttr.containsKey(facet)) {
 
 						if (turSEResultAttr.get(facet).getAttrJSON().get(facet) instanceof ArrayList) {
 							for (Object facetValueObject : (ArrayList) turSEResultAttr.get(facet).getAttrJSON()
 									.get(facet)) {
+
 								String facetValue = (String) facetValueObject;
-								JSONObject snMetadataItem = new JSONObject();
-								snMetadataItem.put("href", this.addFilterQuery(uriInfo, facet + ":" + facetValue));
-								snMetadataItem.put("text", facetValue);
-								snMetadata.put(snMetadataItem);
+								TurSNSiteSearchDocumentMetadataBean turSNSiteSearchDocumentMetadataBean = new TurSNSiteSearchDocumentMetadataBean();
+								turSNSiteSearchDocumentMetadataBean
+										.setHref(this.addFilterQuery(uriInfo, facet + ":" + facetValue));
+								turSNSiteSearchDocumentMetadataBean.setText(facetValue);
+								turSNSiteSearchDocumentMetadataBeans.add(turSNSiteSearchDocumentMetadataBean);
 							}
 						} else {
-							JSONObject snMetadataItem = new JSONObject();
 							String facetValue = turSolrField
 									.convertFieldToString(turSEResultAttr.get(facet).getAttrJSON().get(facet));
-							
-							snMetadataItem.put("text", facetValue);
-							snMetadataItem.put("href", this.addFilterQuery(uriInfo, facet + ":" + facetValue));
-
-							snMetadata.put(snMetadataItem);
+							TurSNSiteSearchDocumentMetadataBean turSNSiteSearchDocumentMetadataBean = new TurSNSiteSearchDocumentMetadataBean();
+							turSNSiteSearchDocumentMetadataBean
+									.setHref(this.addFilterQuery(uriInfo, facet + ":" + facetValue));
+							turSNSiteSearchDocumentMetadataBean.setText(facetValue);
+							turSNSiteSearchDocumentMetadataBeans.add(turSNSiteSearchDocumentMetadataBean);
 						}
 
 					}
+
+				}
+				turSNSiteSearchDocumentBean.setMetadata(turSNSiteSearchDocumentMetadataBeans);
+
+				if (turSEResultAttr.containsKey("url")) {
+					turSNSiteSearchDocumentBean.setSource(turSEResultAttr.get("url").getAttrJSON().getString("url"));
 				}
 
-				snResult.put("metadata", snMetadata);
-				if (turSEResultAttr.containsKey("url")) {
-					snResult.put("source", new JSONObject().put("resource",
-							turSEResultAttr.get("url").getAttrJSON().getString("url")));
-				}
+				Map<String, Object> fields = new HashMap<String, Object>();
 				for (String attribute : attribs) {
+
 					// System.out.println("attribs: " + attribute);
 					if (!attribute.startsWith("turing_entity")) {
 						if (fieldMap.containsKey(attribute)) {
 							TurSEFieldMap turSEFieldMap = fieldMap.get(attribute);
-							snResult.put(turSEFieldMap.getAlias(),
+							fields.put(turSEFieldMap.getAlias(),
 									turSEResultAttr.get(attribute).getAttrJSON().get(attribute));
 						} else {
-							snResult.put(attribute, turSEResultAttr.get(attribute).getAttrJSON().get(attribute));
+							fields.put(attribute, turSEResultAttr.get(attribute).getAttrJSON().get(attribute));
 						}
 					}
+
 				}
-				snResults.put(snResult);
+				turSNSiteSearchDocumentBean.setFields(fields);
+				turSNSiteSearchDocumentsBean.add(turSNSiteSearchDocumentBean);
+
 			}
+			turSNSiteSearchResultsBean.setDocument(turSNSiteSearchDocumentsBean);
+			turSNSiteSearchBean.setResults(turSNSiteSearchResultsBean);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		JSONObject jsonSearch = new JSONObject();
-		JSONObject jsonRDFDescription = new JSONObject();
-		JSONObject jsonRDFResource = new JSONObject();
-		JSONObject jsonSNDocument = new JSONObject();
-		JSONObject jsonSNQueryContext = new JSONObject();
-		JSONObject jsonSNQuery = new JSONObject();
-		JSONObject jsonSNWidget = new JSONObject();
-		JSONObject jsonSNPagination = new JSONObject();
-		JSONArray jsonSNPaginationPages = new JSONArray();
-		JSONObject jsonSNPaginationPage = new JSONObject();
 		// BEGIN Pagination
+		List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans = new ArrayList<TurSNSiteSearchPaginationBean>();
+
 		int firstPagination = 1;
 		int lastPagination = turSEResults.getPageCount();
 
@@ -303,23 +318,22 @@ public class TurSNSiteSearchAPI {
 				firstPagination = 1;
 			}
 		}
-
+		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
 		if (turSEResults.getCurrentPage() > 1) {
-			jsonSNPaginationPage = new JSONObject();
-			jsonSNPaginationPage.put("class", "first");
-			jsonSNPaginationPage.put("href", this.addOrReplaceParameter(uriInfo, "p", Integer.toString(1)));
-			jsonSNPaginationPage.put("page", 1);
-			jsonSNPaginationPage.put("text", "FIRST");
-			jsonSNPaginationPages.put(jsonSNPaginationPage);
 
+			turSNSiteSearchPaginationBean.setType("first");
+			turSNSiteSearchPaginationBean.setHref(this.addOrReplaceParameter(uriInfo, "p", Integer.toString(1)));
+			turSNSiteSearchPaginationBean.setText("FIRST");
+			turSNSiteSearchPaginationBean.setPage(1);
+			turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
 			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
-				jsonSNPaginationPage = new JSONObject();
-				jsonSNPaginationPage.put("class", "previous");
-				jsonSNPaginationPage.put("href",
+				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+				turSNSiteSearchPaginationBean.setType("previous");
+				turSNSiteSearchPaginationBean.setHref(
 						this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getCurrentPage() - 1)));
-				jsonSNPaginationPage.put("page", turSEResults.getCurrentPage() - 1);
-				jsonSNPaginationPage.put("text", "PREVIOUS");
-				jsonSNPaginationPages.put(jsonSNPaginationPage);
+				turSNSiteSearchPaginationBean.setText("PREVIOUS");
+				turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() - 1);
+				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
 			}
 
 		}
@@ -327,149 +341,156 @@ public class TurSNSiteSearchAPI {
 		for (int page = firstPagination; page <= lastPagination; page++) {
 
 			if (page == turSEResults.getCurrentPage()) {
-				jsonSNPaginationPage = new JSONObject();
-				jsonSNPaginationPage.put("class", "current");
-				jsonSNPaginationPage.put("text", Integer.toString(page));
-				jsonSNPaginationPages.put(jsonSNPaginationPage);
+				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+				turSNSiteSearchPaginationBean.setType("current");
+				turSNSiteSearchPaginationBean.setText(Integer.toString(page));
+				turSNSiteSearchPaginationBean.setPage(page);
+				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+
 			} else {
-				jsonSNPaginationPage = new JSONObject();
-				jsonSNPaginationPage.put("href", this.addOrReplaceParameter(uriInfo, "p", Integer.toString(page)));
-				jsonSNPaginationPage.put("page", page);
-				jsonSNPaginationPage.put("text", Integer.toString(page));
-				jsonSNPaginationPages.put(jsonSNPaginationPage);
+				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+				turSNSiteSearchPaginationBean.setHref(this.addOrReplaceParameter(uriInfo, "p", Integer.toString(page)));
+				turSNSiteSearchPaginationBean.setText(Integer.toString(page));
+				turSNSiteSearchPaginationBean.setPage(page);
+				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
 
 			}
 		}
 		if (turSEResults.getCurrentPage() != turSEResults.getPageCount() && turSEResults.getPageCount() > 1) {
 			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
-				jsonSNPaginationPage = new JSONObject();
-				jsonSNPaginationPage.put("class", "next");
-				jsonSNPaginationPage.put("href",
+				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+				turSNSiteSearchPaginationBean.setType("next");
+				turSNSiteSearchPaginationBean.setHref(
 						this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getCurrentPage() + 1)));
-				jsonSNPaginationPage.put("page", turSEResults.getCurrentPage() + 1);
-				jsonSNPaginationPage.put("text", "NEXT");
-				jsonSNPaginationPages.put(jsonSNPaginationPage);
+				turSNSiteSearchPaginationBean.setText("NEXT");
+				turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() + 1);
+				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+
 			}
 
-			jsonSNPaginationPage = new JSONObject();
-			jsonSNPaginationPage.put("class", "last");
-			jsonSNPaginationPage.put("href",
-					this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getPageCount())));
-			jsonSNPaginationPage.put("page", turSEResults.getPageCount());
-			jsonSNPaginationPage.put("text", "LAST");
-			jsonSNPaginationPages.put(jsonSNPaginationPage);
+			turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+			turSNSiteSearchPaginationBean.setType("last");
+			turSNSiteSearchPaginationBean
+					.setHref(this.addOrReplaceParameter(uriInfo, "p", Integer.toString(turSEResults.getPageCount())));
+			turSNSiteSearchPaginationBean.setText("LAST");
+			turSNSiteSearchPaginationBean.setPage(turSEResults.getPageCount());
+			turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+
 		}
 
 		// END Pagination
+		turSNSiteSearchBean.setPagination(turSNSiteSearchPaginationBeans);
 
-		jsonSNPagination.put("page", jsonSNPaginationPages);
-		jsonSNDocument.put("document", snResults);
-		jsonSNQuery.put("query-string", turSEResults.getQueryString());
-		jsonSNQuery.put("sort", turSEResults.getSort());
+		TurSNSiteSearchQueryContextQueryBean turSNSiteSearchQueryContextQueryBean = new TurSNSiteSearchQueryContextQueryBean();
+
+		turSNSiteSearchQueryContextQueryBean.setQueryString(turSEResults.getQueryString());
+		turSNSiteSearchQueryContextQueryBean.setSort(turSEResults.getSort());
+
+		TurSNSiteSearchWidgetBean turSNSiteSearchWidgetBean = new TurSNSiteSearchWidgetBean();
 
 		if (turSNSite.getFacet() == 1) {
 			// BEGIN Facet
-			JSONObject jsonSNFacetWidget = new JSONObject();
+
+			List<TurSNSiteSearchFacetBean> turSNSiteSearchFacetBeans = new ArrayList<TurSNSiteSearchFacetBean>();
 			for (TurSEFacetResult facet : turSEResults.getFacetResults()) {
 
 				if (facetMap.containsKey(facet.getFacet()) && !hiddenFilterQuery.contains(facet.getFacet())
 						&& facet.getTurSEFacetResultAttr().size() > 0) {
 					TurSNSiteFieldExt turSNSiteFieldExt = facetMap.get(facet.getFacet());
 
-					JSONObject jsonSNFacetWidgetEntityLabel = new JSONObject();
-					JSONArray jsonSNFacetWidgetEntityItems = new JSONArray();
-					JSONObject jsonSNFacetWidgetEntity = new JSONObject();
-
+					TurSNSiteSearchFacetBean turSNSiteSearchFacetBean = new TurSNSiteSearchFacetBean();
+					List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetItemBeans = new ArrayList<TurSNSiteSearchFacetItemBean>();
 					for (Object facetItemObject : facet.getTurSEFacetResultAttr().values().toArray()) {
 
-						JSONObject jsonSNFacetWidgetEntityItem = new JSONObject();
-
 						TurSEFacetResultAttr facetItem = (TurSEFacetResultAttr) facetItemObject;
-						jsonSNFacetWidgetEntityItem.put("facet-link",
+
+						TurSNSiteSearchFacetItemBean turSNSiteSearchFacetItemBean = new TurSNSiteSearchFacetItemBean();
+						turSNSiteSearchFacetItemBean.setCount(facetItem.getCount());
+						turSNSiteSearchFacetItemBean.setLabel(facetItem.getAttribute());
+						turSNSiteSearchFacetItemBean.setLink(
 								this.addFilterQuery(uriInfo, facet.getFacet() + ":" + facetItem.getAttribute()));
-						jsonSNFacetWidgetEntityItem.put("label", facetItem.getAttribute());
-						jsonSNFacetWidgetEntityItem.put("facet-count", Integer.toString(facetItem.getCount()));
-						jsonSNFacetWidgetEntityItems.put(jsonSNFacetWidgetEntityItem);
+						turSNSiteSearchFacetItemBeans.add(turSNSiteSearchFacetItemBean);
 					}
 
-					jsonSNFacetWidgetEntityLabel.put("lang", "en");
-					jsonSNFacetWidgetEntityLabel.put("text", turSNSiteFieldExt.getFacetName());
-					jsonSNFacetWidgetEntity.put("label", jsonSNFacetWidgetEntityLabel);
-					jsonSNFacetWidgetEntity.put("facets",
-							(new JSONObject()).put("facet", jsonSNFacetWidgetEntityItems));
+					TurSNSiteSearchFacetLabelBean turSNSiteSearchFacetLabelBean = new TurSNSiteSearchFacetLabelBean();
+					turSNSiteSearchFacetLabelBean.setLang("en");
+					turSNSiteSearchFacetLabelBean.setText(turSNSiteFieldExt.getFacetName());
+					turSNSiteSearchFacetBean.setLabel(turSNSiteSearchFacetLabelBean);
+					turSNSiteSearchFacetBean.setFacets(turSNSiteSearchFacetItemBeans);
 
-					jsonSNFacetWidget.put(turSNSiteFieldExt.getName(), jsonSNFacetWidgetEntity);
-
+					turSNSiteSearchFacetBeans.add(turSNSiteSearchFacetBean);
 				}
 			}
 
+			turSNSiteSearchWidgetBean.setFacet(turSNSiteSearchFacetBeans);
+
 			// BEGIN Facet Remove
 			if (fq.size() > 0) {
-				JSONObject jsonSNFacetToRemoveWidgetEntityLabel = new JSONObject();
-				JSONArray jsonSNFacetToRemoveWidgetEntityItems = new JSONArray();
-				JSONObject jsonSNFacetToRemoveWidgetEntity = new JSONObject();
 
+				TurSNSiteSearchFacetBean turSNSiteSearchFacetToRemoveBean = new TurSNSiteSearchFacetBean();
+				List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<TurSNSiteSearchFacetItemBean>();
 				for (String facetToRemove : fq) {
 					String[] facetToRemoveParts = facetToRemove.split(":");
 					if (facetToRemoveParts.length == 2) {
 						String facetToRemoveValue = facetToRemoveParts[1].replaceAll("\"", "");
 
-						JSONObject jsonSNFacetToRemoveWidgetEntityItem = new JSONObject();
-						jsonSNFacetToRemoveWidgetEntityItem.put("facet-link",
-								this.removeFilterQuery(uriInfo, facetToRemove));
-						jsonSNFacetToRemoveWidgetEntityItem.put("label", facetToRemoveValue);
-						jsonSNFacetToRemoveWidgetEntityItems.put(jsonSNFacetToRemoveWidgetEntityItem);
+						TurSNSiteSearchFacetItemBean turSNSiteSearchFacetToRemoveItemBean = new TurSNSiteSearchFacetItemBean();
+						turSNSiteSearchFacetToRemoveItemBean.setLabel(facetToRemoveValue);
+						turSNSiteSearchFacetToRemoveItemBean.setLink(this.removeFilterQuery(uriInfo, facetToRemove));
+						turSNSiteSearchFacetToRemoveItemBeans.add(turSNSiteSearchFacetToRemoveItemBean);
 					}
 				}
-
-				jsonSNFacetToRemoveWidgetEntityLabel.put("lang", "en");
-				jsonSNFacetToRemoveWidgetEntityLabel.put("text", "Facets To Remove");
-				jsonSNFacetToRemoveWidgetEntity.put("label", jsonSNFacetToRemoveWidgetEntityLabel);
-				jsonSNFacetToRemoveWidgetEntity.put("facets",
-						(new JSONObject()).put("facet", jsonSNFacetToRemoveWidgetEntityItems));
-				jsonSNFacetWidget.put("facet-to-remove", jsonSNFacetToRemoveWidgetEntity);
+				TurSNSiteSearchFacetLabelBean turSNSiteSearchFacetToRemoveLabelBean = new TurSNSiteSearchFacetLabelBean();
+				turSNSiteSearchFacetToRemoveLabelBean.setLang("en");
+				turSNSiteSearchFacetToRemoveLabelBean.setText("Facets To Remove");
+				turSNSiteSearchFacetToRemoveBean.setLabel(turSNSiteSearchFacetToRemoveLabelBean);
+				turSNSiteSearchFacetToRemoveBean.setFacets(turSNSiteSearchFacetToRemoveItemBeans);
+				turSNSiteSearchWidgetBean.setFacetToRemove(turSNSiteSearchFacetToRemoveBean);
 			}
 
 			// END Facet Remove
-
-			jsonSNWidget.put("facet-widget", jsonSNFacetWidget);
 			// END Facet
 		}
 		if (turSNSite.getMlt() == 1) {
 			// BEGIN Similar
-			JSONArray jsonSNSimilarWidgetItems = new JSONArray();
+			List<TurSNSiteSearchSimilarBean> turSNSiteSearchSimilarBeans = new ArrayList<TurSNSiteSearchSimilarBean>();
 			for (TurSESimilarResult similar : turSEResults.getSimilarResults()) {
-				JSONObject jsonSNSimilarWidgetItem = new JSONObject();
+				TurSNSiteSearchSimilarBean turSNSiteSearchSimilarBean = new TurSNSiteSearchSimilarBean();
 				for (Object similarItemObject : similar.getTurSESimilarResultAttr().values().toArray()) {
 					TurSESimilarResultAttr similarItem = (TurSESimilarResultAttr) similarItemObject;
-					jsonSNSimilarWidgetItem.put(similarItem.getAttribute(), similarItem.getValue());
+					if (similarItem.getAttribute().equals("id")) {
+						turSNSiteSearchSimilarBean.setId(similarItem.getValue());
+					} else if (similarItem.getAttribute().equals("title")) {
+						turSNSiteSearchSimilarBean.setTitle(similarItem.getValue());
+					} else if (similarItem.getAttribute().equals("type")) {
+						turSNSiteSearchSimilarBean.setType(similarItem.getValue());
+					} else if (similarItem.getAttribute().equals("url")) {
+						turSNSiteSearchSimilarBean.setUrl(similarItem.getValue());
+					}
 				}
-				jsonSNSimilarWidgetItems.put(jsonSNSimilarWidgetItem);
+				turSNSiteSearchSimilarBeans.add(turSNSiteSearchSimilarBean);
 			}
 
-			jsonSNWidget.put("similar-widget", jsonSNSimilarWidgetItems);
+			turSNSiteSearchWidgetBean.setSimilar(turSNSiteSearchSimilarBeans);
 
 			// END Similar
 		}
-		jsonSNQueryContext.put("pageEnd", 7);
-		jsonSNQueryContext.put("pageStart", turSEResults.getStart());
-		jsonSNQueryContext.put("pageCount", turSEResults.getPageCount());
-		jsonSNQueryContext.put("page", turSEResults.getCurrentPage());
-		jsonSNQueryContext.put("count", turSEResults.getNumFound());
-		jsonSNQueryContext.put("limit", turSEResults.getLimit());
-		jsonSNQueryContext.put("offset", 0);
-		jsonSNQueryContext.put("response-time", turSEResults.getElapsedTime());
-		jsonSNQueryContext.put("query", jsonSNQuery);
-		jsonSNQueryContext.put("index", turSNSite.getName());
+		turSNSiteSearchBean.setWidget(turSNSiteSearchWidgetBean);
+		TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContextBean = new TurSNSiteSearchQueryContextBean();
+		turSNSiteSearchQueryContextBean.setQuery(turSNSiteSearchQueryContextQueryBean);
 
-		jsonRDFDescription.put("pagination", jsonSNPagination);
-		jsonRDFDescription.put("widget", jsonSNWidget);
-		jsonRDFDescription.put("results", jsonSNDocument);
-		jsonRDFDescription.put("query-context", jsonSNQueryContext);
-		jsonRDFDescription.put("type", jsonRDFResource);
+		turSNSiteSearchQueryContextBean.setPageEnd(7); // Corrigir
+		turSNSiteSearchQueryContextBean.setPageStart((int) turSEResults.getStart());
+		turSNSiteSearchQueryContextBean.setPageCount(turSEResults.getPageCount());
+		turSNSiteSearchQueryContextBean.setPage(turSEResults.getCurrentPage());
+		turSNSiteSearchQueryContextBean.setCount((int) turSEResults.getNumFound());
+		turSNSiteSearchQueryContextBean.setLimit(turSEResults.getLimit());
+		turSNSiteSearchQueryContextBean.setOffset(0); // Corrigir
+		turSNSiteSearchQueryContextBean.setResponseTime(turSEResults.getElapsedTime());
+		turSNSiteSearchQueryContextBean.setIndex(turSNSite.getName());
 
-		jsonSearch.put("description", jsonRDFDescription);
+		turSNSiteSearchBean.setQueryContext(turSNSiteSearchQueryContextBean);
 
-		return Response.status(200).entity(jsonSearch.toString()).build();
+		return turSNSiteSearchBean;
 	}
 }
