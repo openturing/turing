@@ -7,7 +7,7 @@
 <meta charset="utf-8"></meta>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"></meta>
 <meta name="viewport" content="width=device-width, initial-scale=1"></meta>
-<title>Semantic Navigation</title>
+<title>Semantic Navigation | Viglet Turing</title>
 <!-- Bootstrap -->
 <link href="../../thirdparty/bootstrap/dist/css/bootstrap.min.css"
 	rel="stylesheet"></link>
@@ -20,7 +20,7 @@
 <base href="/">
 </head>
 <body data-target=".navbar-default" ng-controller="TurSNMainCtrl">
-	
+
 	<div id="wrap" style="margin-bottom: 15px;">
 		<nav class="navbar navbar-default navbar-fixed-top row  row-centered"
 			role="navigation">
@@ -37,9 +37,10 @@
 						<form method="get" action="">
 							<div class="input-group">
 								<input id="q" name="q" type="text" class="form-control"
-									placeholder="{{ 'SEARCH_FOR' | translate }}..." value='{{turQuery}}'> <span
-									class="input-group-btn">
-									<button class="btn btn-viglet" type="submit">{{ 'SEARCH' | translate}}</button>
+									placeholder="{{ 'SEARCH_FOR' | translate }}..."
+									value='{{turQuery}}'> <span class="input-group-btn">
+									<button class="btn btn-viglet" type="submit">{{
+										'SEARCH' | translate}}</button>
 								</span>
 							</div>
 
@@ -52,43 +53,46 @@
 		</nav>
 
 		<div class="container">
-			<div id="home" class="row row-centered" style="margin: 0px;margin-top: 80px">
-				<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 col-centered" style="padding:0px">
+			<div id="home" class="row row-centered"
+				style="margin: 0px; margin-top: 80px">
+				<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 col-centered"
+					style="padding: 0px">
 					<div ng-if="total > 0" style="margin-top: 20px">
 
 						<div>
 							<div class="row" style="margin: 0px">
-								<div class="col-lg-3" style="vertical-align: top; padding: 0px">
+								<div class="col-lg-3 col-md-3 col-sm-4 col-xs-12 col-centered"
+									style="vertical-align: top; padding: 0px">
 
-									<div ng-if="facetsToRemove != null"
-										class="col-lg-12" style="padding: 2px">
+									<div ng-if="facetsToRemove != null" class="col-lg-12"
+										style="padding: 2px">
 										<div class="panel panel-default">
 											<div class="panel-heading"
 												style="background-color: #FF874B; color: white !important;">
-												<h3 class="panel-title">{{ 'APPLIED_FILTERS' | translate }}</h3>
+												<h3 class="panel-title">{{ 'APPLIED_FILTERS' |
+													translate }}</h3>
 											</div>
 											<div class="panel-body list-group" style="padding: 2px;">
-												<a
-													ng-repeat="facetToRemove in facetsToRemove['facets']"
+												<a ng-repeat="facetToRemove in facetsToRemove['facets']"
 													ng-click="turRedirect(facetToRemove['link']);"
 													href="{{replaceUrlSearch(facetToRemove['link'])}}"
-													class="list-group-item">{{facetToRemove.label}}
-													({{ 'REMOVE' | translate }}) </a>
+													class="list-group-item">{{facetToRemove.label}} ({{
+													'REMOVE' | translate }}) </a>
 											</div>
 										</div>
 									</div>
 
 
 									<div ng-repeat="facet in facets" class="col-lg-12"
-										style="padding: 2px" id="{{facet['label']['text']}}" name="{{facet['label']['text']}}">
+										style="padding: 2px" id="{{facet['label']['text']}}"
+										name="{{facet['label']['text']}}">
 										<div class="panel panel-default">
 											<div class="panel-heading"
 												style="background-color: #FF874B; color: white !important;">
 												<h3 class="panel-title">{{facet['label']['text']}}</h3>
 											</div>
 											<div class="panel-body list-group" style="padding: 2px">
-												<a
-													ng-repeat="facetItem in facet['facets']"
+												<a ng-repeat="facetItem in facet['facets']"
 													ng-click="turRedirect(facetItem['link']);"
 													href="{{replaceUrlSearch(facetItem['link'])}}"
 													class="list-group-item">{{facetItem.label}}
@@ -98,17 +102,20 @@
 									</div>
 								</div>
 
-								<div class="col-lg-9" style="vertical-align: top;">
+								<div class="col-lg-9 col-md-9 col-sm-8 col-xs-12 col-centered"
+									style="vertical-align: top;">
 									<div class="row">
-										<div class="col-lg-12" style="padding:0px;padding-left:20px">
+										<div class="col-lg-12"
+											style="padding: 0px; padding-left: 20px">
 
 											<div class="panel panel-default">
 												<div class="panel-heading">
-													{{ 'FOUND' | translate }} <strong>{{total}}</strong> {{ 'RESULTS_FOR_THE_TERM' | translate }} "{{turQuery}}".
+													{{ 'FOUND' | translate }} <strong>{{total}}</strong> {{
+													'RESULTS_FOR_THE_TERM' | translate }} "{{turQuery}}".
 												</div>
 												<div class="panel-body">
 													<article ng-repeat="document in results"
-														style="margin-top: 40px;border-bottom-color: #FF874B;border-bottom-style: solid;border-bottom-width: thin;padding-bottom: 20px;">
+														style="margin-top: 40px; border-bottom-color: #FF874B; border-bottom-style: solid; border-bottom-width: thin; padding-bottom: 20px;">
 														<div>
 															<h4>
 																<a style="color: #FF874B; font-weight: bolder;"
@@ -143,8 +150,9 @@
 										<div ng-repeat="page in pages" style="display: inline;">
 											<a ng-if="page.href" ng-click="turRedirect(page.href);"
 												href="{{replaceUrlSearch(page.href)}}" _target='_self'
-												style='font-size: 20px;color: #FF874B'>{{ page.text | translate}}</a> <span
-												ng-if="!page.href" style='font-size: 20px'>{{page.text | translate }}</span>
+												style='font-size: 20px; color: #FF874B'>{{ page.text |
+												translate}}</a> <span ng-if="!page.href" style='font-size: 20px'>{{page.text
+												| translate }}</span>
 											<div ng-if="!$last" style="display: inline;">|</div>
 										</div>
 									</div>
@@ -152,7 +160,8 @@
 							</div>
 						</div>
 					</div>
-					<div ng-if="total == 0" style="margin: 20px">{{ 'NO_RESULTS_FOUND' | translate}}.</div>
+					<div ng-if="total == 0" style="margin: 20px">{{
+						'NO_RESULTS_FOUND' | translate}}.</div>
 				</div>
 			</div>
 		</div>
@@ -163,12 +172,14 @@
 	<script src="../../thirdparty/angular/angular.min.js"></script>
 	<script
 		src="../../thirdparty/angular-ui-router/release/angular-ui-router.min.js"></script>
-	<script src="../../thirdparty/angular-translate/angular-translate.min.js"></script>
+	<script
+		src="../../thirdparty/angular-translate/angular-translate.min.js"></script>
 	<script src="../../thirdparty/angular-resource/angular-resource.min.js"></script>
 	<script src="../../thirdparty/angular-animate/angular-animate.min.js"></script>
 	<script src="../../thirdparty/angular-cookies/angular-cookies.min.js"></script>
 	<script src="../../thirdparty/angular-sanitize/angular-sanitize.min.js"></script>
-	<script src="../../thirdparty/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+	<script
+		src="../../thirdparty/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
 	<script src="../../thirdparty/angular-moment/angular-moment.min.js"></script>
 	<script src="../../thirdparty/bootstrap/dist/js/bootstrap.min.js"></script>
 	<script src="../../js/sn/dist/turing-sn-min.js"></script>

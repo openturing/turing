@@ -14,19 +14,23 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 	List<TurSNSiteFieldExt> findAll();
 
 	TurSNSiteFieldExt findById(int id);
-	
+
 	List<TurSNSiteFieldExt> findByTurSNSite(TurSNSite turSNSite);
-	
+
+	List<TurSNSiteFieldExt> findByTurSNSiteAndEnabled(TurSNSite turSNSite, int enabled);
+
 	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabled(TurSNSite turSNSite, int facet, int enabled);
-	
+
 	List<TurSNSiteFieldExt> findByTurSNSiteAndHlAndEnabled(TurSNSite turSNSite, int hl, int enabled);
-	
+
 	List<TurSNSiteFieldExt> findByTurSNSiteAndMltAndEnabled(TurSNSite turSNSite, int mlt, int enabled);
-	
+
+	List<TurSNSiteFieldExt> findByTurSNSiteAndRequiredAndEnabled(TurSNSite turSNSite, int required, int enabled);
+
 	TurSNSiteFieldExt save(TurSNSiteFieldExt turSNSiteFieldExt);
 
 	void delete(TurSNSiteFieldExt turSNSiteFieldExt);
-	
+
 	@Modifying
 	@Query("delete from TurSNSiteFieldExt ssfe where ssfe.id = ?1")
 	void delete(int turSnSiteFieldId);

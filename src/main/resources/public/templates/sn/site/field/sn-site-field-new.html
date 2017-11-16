@@ -1,5 +1,6 @@
 <div class="modal-header">
-	<h3 class="modal-title" id="modal-title">{{'NEW_FIELD' | translate }}</h3>
+	<h3 class="modal-title" id="modal-title">{{'NEW_FIELD' | translate
+		}}</h3>
 </div>
 <div class="modal-body">
 	<!-- <div class="row"
@@ -19,8 +20,8 @@
 			{{'NAME' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-			<input maxlength="50" ng-model="$ctrl.snSiteFieldExt.name" type="text"
-				class="form-control">
+			<input maxlength="50" ng-model="$ctrl.snSiteFieldExt.name"
+				type="text" class="form-control">
 		</div>
 	</div>
 	<div class="row"
@@ -42,8 +43,8 @@
 			{{'TYPE' | translate }}</div>
 		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
 
-			<input maxlength="50" ng-model="$ctrl.snSiteFieldExt.type" type="text"
-				class="form-control">
+			<input maxlength="50" ng-model="$ctrl.snSiteFieldExt.type"
+				type="text" class="form-control">
 		</div>
 	</div>
 	<div class="row"
@@ -95,31 +96,56 @@
 		</div>
 	</div>
 	<div class="row"
-			style="margin: 0px; padding: 10px; padding-bottom: 0px">
-			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-				{{'MLT' | translate }}</div>
-			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-				<div class="input-group">
-					<input type="checkbox" ng-model="$ctrl.snSiteFieldExt.mlt" ng-true-value="1"
-						ng-false-value="0">
-				</div>
-
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'MLT' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+			<div class="input-group">
+				<input type="checkbox" ng-model="$ctrl.snSiteFieldExt.mlt"
+					ng-true-value="1" ng-false-value="0">
 			</div>
-		</div>
-		<div class="row"
-			style="margin: 0px; padding: 10px; padding-bottom: 0px">
-			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
-				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
-				{{'ENABLED' | translate }}</div>
-			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-				<div class="input-group">
-					<input type="checkbox" ng-model="$ctrl.snSiteFieldExt.enabled" ng-true-value="1"
-						ng-false-value="0">
-				</div>
 
-			</div>
 		</div>
+	</div>
+	<div class="row"
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'ENABLED' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+			<div class="input-group">
+				<input type="checkbox" ng-model="$ctrl.snSiteFieldExt.enabled"
+					ng-true-value="1" ng-false-value="0">
+			</div>
+
+		</div>
+	</div>
+
+	<div class="row"
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'REQUIRED' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+			<div class="input-group">
+				<input type="checkbox" ng-model="$ctrl.snSiteFieldExt.required"
+					ng-true-value="1" ng-false-value="0">
+			</div>
+
+		</div>
+	</div>
+	<div class="row"
+		style="margin: 0px; padding: 10px; padding-bottom: 0px">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+			style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+			{{'DEFAULT_VALUE' | translate }}</div>
+		<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+
+			<input maxlength="50" ng-model="$ctrl.snSiteFieldExt.defaultValue"
+				type="text" class="form-control">
+		</div>
+	</div>
 </div>
 <div class="modal-footer">
 

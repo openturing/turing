@@ -45,8 +45,6 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
-import com.viglet.turing.se.field.TurSEFieldMap;
-import com.viglet.turing.se.field.TurSEFieldMaps;
 import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResultAttr;
@@ -239,20 +237,26 @@ public class TurSolr {
 	public TurSEResults retrieveSolr(String txtQuery, List<String> fq, int currentPage)
 			throws SolrServerException, NumberFormatException, JSONException {
 
+		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,
+				1);
+
+		Map<String, TurSNSiteFieldExt> fieldExtMap = new HashMap<String, TurSNSiteFieldExt>();
+
+		for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExts) {
+			fieldExtMap.put(turSNSiteFieldExt.getName(), turSNSiteFieldExt);
+		}
+
+		List<TurSNSiteFieldExt> turSNSiteRequiredFieldExts = turSNSiteFieldExtRepository
+				.findByTurSNSiteAndRequiredAndEnabled(turSNSite, 1, 1);
+		Map<String, Object> requiredFields = new HashMap<String, Object>();
+
+		for (TurSNSiteFieldExt turSNSiteRequiredFieldExt : turSNSiteRequiredFieldExts) {
+			requiredFields.put(turSNSiteRequiredFieldExt.getName(), turSNSiteRequiredFieldExt.getDefaultValue());
+		}
 		String sort = "relevant";
 		TurSEResults turSEResults = new TurSEResults();
 
 		int rows = turSNSite.getRowsPerPage();
-
-		Map<String, TurSEFieldMap> fieldMap = new TurSEFieldMaps().getFieldMaps();
-
-		Map<String, Object> requiredFields = new HashMap<String, Object>();
-		for (Object fieldMapObject : fieldMap.values().toArray()) {
-			TurSEFieldMap fieldMapRequired = (TurSEFieldMap) fieldMapObject;
-			if (fieldMapRequired.getRequired() != null && fieldMapRequired.getRequired().isRequired()) {
-				requiredFields.put(fieldMapRequired.getField(), fieldMapRequired.getRequired().getDefaultValue());
-			}
-		}
 
 		SolrQuery query = new SolrQuery();
 		query.setQuery(txtQuery);
@@ -395,13 +399,15 @@ public class TurSolr {
 				Object attrValue = document.getFieldValue(attribute);
 				JSONObject jsonObject = new JSONObject();
 
-				if (fieldMap.containsKey(attribute)) {
-					TurSEFieldMap turSEFieldMap = fieldMap.get(attribute);
+				if (fieldExtMap.containsKey(attribute)) {
+					TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
+					
 
-					if (turSEFieldMap.getType() == TurSEFieldType.STRING && hl != null && hl.containsKey(attribute))
+
+					if (turSNSiteFieldExt.getType() == TurSEFieldType.STRING && hl != null && hl.containsKey(attribute))
 						jsonObject.put(attribute, (String) hl.get(attribute).get(0));
 					else
-						jsonObject.put(attribute, turSolrField.convertField(turSEFieldMap.getType(), attrValue));
+						jsonObject.put(attribute, turSolrField.convertField(turSNSiteFieldExt.getType(), attrValue));
 				} else
 					jsonObject.put(attribute, attrValue);
 

@@ -41,8 +41,6 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
-import com.viglet.turing.se.field.TurSEFieldMap;
-import com.viglet.turing.se.field.TurSEFieldMaps;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResultAttr;
 import com.viglet.turing.se.result.TurSEResults;
@@ -161,9 +159,17 @@ public class TurSNSiteSearchAPI {
 			@QueryParam("p") int currentPage, @QueryParam("fq[]") List<String> fq, @Context UriInfo uriInfo)
 			throws JSONException {
 
+		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
+		
 		TurSNSiteSearchBean turSNSiteSearchBean = new TurSNSiteSearchBean();
 		TurSNSiteSearchResultsBean turSNSiteSearchResultsBean = new TurSNSiteSearchResultsBean();
 
+		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,
+				1);
+
+		Map<String, TurSNSiteFieldExt> fieldExtMap = new HashMap<String, TurSNSiteFieldExt>();
+
+		
 		if (currentPage <= 0) {
 			currentPage = 1;
 		}
@@ -196,9 +202,7 @@ public class TurSNSiteSearchAPI {
 		String[] filterQueryModifiedArr = new String[filterQueryModified.size()];
 		filterQueryModifiedArr = filterQueryModified.toArray(filterQueryModifiedArr);
 
-		Map<String, TurSEFieldMap> fieldMap = new TurSEFieldMaps().getFieldMaps();
 
-		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 
 		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
 				.findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
@@ -273,9 +277,9 @@ public class TurSNSiteSearchAPI {
 
 					// System.out.println("attribs: " + attribute);
 					if (!attribute.startsWith("turing_entity")) {
-						if (fieldMap.containsKey(attribute)) {
-							TurSEFieldMap turSEFieldMap = fieldMap.get(attribute);
-							fields.put(turSEFieldMap.getAlias(),
+						if (fieldExtMap.containsKey(attribute)) {
+							TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
+							fields.put(turSNSiteFieldExt.getName(),
 									turSEResultAttr.get(attribute).getAttrJSON().get(attribute));
 						} else {
 							fields.put(attribute, turSEResultAttr.get(attribute).getAttrJSON().get(attribute));

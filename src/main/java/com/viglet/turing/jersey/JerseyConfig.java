@@ -27,7 +27,6 @@ import com.viglet.turing.api.nlp.TurNLPInstanceAPI;
 import com.viglet.turing.api.nlp.TurNLPVendorAPI;
 import com.viglet.turing.api.otca.af.TurOTCAAutorityFileAPI;
 import com.viglet.turing.api.otsn.broker.TurOTSNBrokerAPI;
-import com.viglet.turing.api.otsn.search.TurOTSNSearchAPI;
 import com.viglet.turing.api.se.TurSEInstanceAPI;
 import com.viglet.turing.api.se.TurSEVendorAPI;
 import com.viglet.turing.api.sn.TurSNImportAPI;
@@ -73,7 +72,6 @@ public class JerseyConfig extends ResourceConfig {
 		register(TurNLPInstanceAPI.class);
 		register(TurNLPVendorAPI.class);
 		register(TurOTSNBrokerAPI.class);
-		register(TurOTSNSearchAPI.class);
 		register(TurSEInstanceAPI.class);
 		register(TurSEVendorAPI.class);
 		register(TurSNSiteAPI.class);

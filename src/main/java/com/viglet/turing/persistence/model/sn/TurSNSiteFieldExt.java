@@ -56,6 +56,12 @@ public class TurSNSiteFieldExt implements Serializable {
 	@Column(nullable = true)
 	private int enabled;
 
+	@Column(nullable = true)
+	private int required;
+	
+	@Column(nullable = true, length = 50)
+	private String defaultValue;
+	
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)
@@ -168,6 +174,22 @@ public class TurSNSiteFieldExt implements Serializable {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public int getRequired() {
+		return required;
+	}
+
+	public void setRequired(int required) {
+		this.required = required;
+	}
+
+	public String getDefaultValue() {
+		return defaultValue;
+	}
+
+	public void setDefaultValue(String defaultValue) {
+		this.defaultValue = defaultValue;
 	}
 
 	

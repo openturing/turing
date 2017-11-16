@@ -73,7 +73,9 @@ turingApp
 						MLT_ENABLED : "More Like This enabled?",
 						HL_ENABLED : "Highlighting enabled?",
 						HL_PRE: "Pre Tag",
-						HL_POST: "Post Tag"
+						HL_POST: "Post Tag",
+						REQUIRED: "Required",
+						DEFAULT_VALUE: "Default Value"
 
 					});
 					$translateProvider.translations('pt', {
@@ -118,7 +120,9 @@ turingApp
 						MLT_ENABLED : "Conteúdos Similares ativados?",
 						HL_ENABLED : "Realce ativado?",
 						HL_PRE: "Tag Pré",
-						HL_POST: "Tag Pós"
+						HL_POST: "Tag Pós",
+						REQUIRED: "Requerido",
+						DEFAULT_VALUE: "Valor Padrão"
 
 					});
 					$translateProvider.fallbackLanguage('en');
