@@ -3,7 +3,6 @@ package com.viglet.turing.solr;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,16 +24,10 @@ import org.apache.solr.common.params.MoreLikeThisParams;
 import org.apache.solr.common.util.SimpleOrderedMap;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.viglet.turing.nlp.TurNLP;
-import com.viglet.turing.nlp.TurNLPResults;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
-import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
@@ -47,10 +40,8 @@ import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.se.result.TurSEResult;
-import com.viglet.turing.se.result.TurSEResultAttr;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.se.similar.TurSESimilarResult;
-import com.viglet.turing.se.similar.TurSESimilarResultAttr;
 import com.viglet.turing.sn.TurSNFieldType;
 
 @Component
@@ -65,37 +56,26 @@ public class TurSolr {
 	TurConfigVarRepository turConfigVarRepository;
 	static final Logger logger = LogManager.getLogger(TurSolr.class.getName());
 	@Autowired
-	TurNLP turNLP;
-	@Autowired
 	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
 	TurSNSiteRepository turSNSiteRepository;
 	@Autowired
 	TurSolrField turSolrField;
 
-	private TurNLPInstance currNLP = null;
 	private TurSEInstance currSE = null;
-	private JSONObject jsonAttributes = null;
+	private Map<String, Object> attributes = null;
 	private TurSNSite turSNSite = null;
 
 	String currText = null;
-	TurNLPVendor turNLPVendor = null;
+
 	SolrServer solrServer = null;
 
-	public JSONObject getJsonAttributes() {
-		return jsonAttributes;
+	public Map<String, Object> getAttributes() {
+		return attributes;
 	}
 
-	public void setJsonAttributes(JSONObject jsonAttributes) {
-		this.jsonAttributes = jsonAttributes;
-	}
-
-	public TurNLPInstance getCurrNLP() {
-		return currNLP;
-	}
-
-	public void setCurrNLP(TurNLPInstance currNLP) {
-		this.currNLP = currNLP;
+	public void setAttributes(Map<String, Object> attributes) {
+		this.attributes = attributes;
 	}
 
 	public TurSEInstance getCurrSE() {
@@ -114,9 +94,7 @@ public class TurSolr {
 		this.currText = currText;
 	}
 
-	public void init(TurNLPInstance turNLPInstance, TurSEInstance turSEInstance) {
-		this.setCurrNLP(turNLPInstance);
-
+	public void init(TurSEInstance turSEInstance) {
 		this.setCurrSE(turSEInstance);
 
 		if (turSEInstance != null) {
@@ -127,7 +105,7 @@ public class TurSolr {
 
 	public void init(TurSNSite turSNSite) {
 		this.turSNSite = turSNSite;
-		init(turSNSite.getTurNLPInstance(), turSNSite.getTurSEInstance());
+		init(turSNSite.getTurSEInstance());
 	}
 
 	public void init(TurSNSite turSNSite, String text) {
@@ -135,91 +113,78 @@ public class TurSolr {
 		this.setCurrText(text);
 	}
 
-	public void init(TurNLPInstance turNLPInstance, TurSEInstance turSEInstance, String text) {
+	public void init(TurSEInstance turSEInstance, String text) {
 
-		init(turNLPInstance, turSEInstance);
+		init(turSEInstance);
 		this.setCurrText(text);
 	}
 
-	public void init(TurNLPInstance turNLPInstance, TurSEInstance turSEInstance, JSONObject jsonAttributes) {
-		init(turNLPInstance, turSEInstance);
-		this.setJsonAttributes(jsonAttributes);
+	public void init(TurSEInstance turSEInstance, Map<String, Object> attributes) {
+		init(turSEInstance);
+		this.setAttributes(attributes);
 		this.setCurrText(null);
 	}
 
-	public void init(TurSNSite turSNSite, JSONObject jsonAttributes) {
+	public void init(TurSNSite turSNSite, Map<String, Object> attributes) {
 		init(turSNSite);
-		this.setJsonAttributes(jsonAttributes);
+		this.setAttributes(attributes);
 		this.setCurrText(null);
 	}
 
 	public void init() {
-		TurNLPInstance turNLPInstance = turNLPInstanceRepository
-				.findById(Integer.parseInt(turConfigVarRepository.findById("DEFAULT_NLP").getValue()));
 		TurSEInstance turSEInstance = turSEInstanceRepository
 				.findById(Integer.parseInt(turConfigVarRepository.findById("DEFAULT_SE").getValue()));
-		init(turNLPInstance, turSEInstance);
+		init(turSEInstance);
 	}
 
-	public String indexing() throws JSONException {
+	public void indexing() throws JSONException {
 		logger.debug("Executing indexing ...");
-		if (this.getJsonAttributes() != null) {
-			turNLP.startup(currNLP, this.getJsonAttributes());
-		} else {
-			turNLP.startup(currNLP, currText);
-		}
-
-		TurNLPResults turNLPResults = turNLP.retrieveNLP();
 		if (solrServer != null) {
-			this.addDocument(turNLPResults);
+			this.addDocument();
 		}
-
-		return turNLPResults.getJsonResult().toString();
 	}
 
-	public void addDocument(TurNLPResults turNLPResults) throws JSONException {
+	public void addDocument() throws JSONException {
 
 		SolrInputDocument document = new SolrInputDocument();
 
-		JSONObject jsonNLP = turNLPResults.getJsonResult();
-		JSONObject jsonAttributes = turNLPResults.getJsonAttributes();
+		// JSONObject jsonNLP = turNLPResults.getJsonResult();
+		Map<String, Object> attributes = this.getAttributes();
 
-		if (jsonAttributes != null) {
-			Iterator<?> keys = jsonAttributes.keys();
-			while (keys.hasNext()) {
-				String key = (String) keys.next();
-				if (jsonAttributes.get(key).getClass().getName().equals("java.lang.Integer")) {
-					int intValue = jsonAttributes.getInt(key);
-					document.addField(key, intValue);
-				} else if (jsonAttributes.get(key).getClass().getName().equals("org.json.JSONArray")) {
-					JSONArray value = jsonAttributes.getJSONArray(key);
-					if (value != null) {
-						for (int i = 0; i < value.length(); i++) {
-							document.addField(key, value.getString(i));
+		if (attributes != null) {
+
+			for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+				String key = entry.getKey();
+				Object attribute = entry.getValue();
+				if (attribute != null) {
+					if (attribute.getClass().getName().equals("java.lang.Integer")) {
+						int intValue = (Integer) attribute;
+						document.addField(key, intValue);
+					} else if (attribute.getClass().getName().equals("org.json.JSONArray")) {
+						JSONArray value = (JSONArray) attribute;
+						if (value != null) {
+							for (int i = 0; i < value.length(); i++) {
+								document.addField(key, value.getString(i));
+							}
 						}
+					} else if (attribute instanceof ArrayList) {
+						ArrayList values = (ArrayList) attribute;
+						if (values != null) {
+							for (Object valueItem : values) {
+								document.addField(key, turSolrField.convertFieldToString(valueItem));
+							}
+						}
+					} else {
+						String valueStr = turSolrField.convertFieldToString(attribute);
+						document.addField(key, valueStr);
 					}
-				} else {
-					String value = (String) jsonAttributes.get(key);
-					document.addField(key, value);
 				}
 			}
+
 		} else {
 			UUID documentId = UUID.randomUUID();
 			document.addField("id", documentId);
 			document.addField("text", currText);
-		}
-
-		for (TurNLPInstanceEntity turNLPEntity : turNLPResults.getTurNLPInstanceEntities()) {
-			if (jsonNLP.has(turNLPEntity.getTurNLPEntity().getCollectionName())) {
-				JSONArray jsonEntity = jsonNLP.getJSONArray(turNLPEntity.getTurNLPEntity().getCollectionName());
-
-				if (jsonEntity.length() > 0) {
-					for (int i = 0; i < jsonEntity.length(); i++) {
-						document.addField("turing_entity_" + turNLPEntity.getTurNLPEntity().getInternalName(),
-								jsonEntity.getString(i));
-					}
-				}
-			}
 		}
 
 		try {
@@ -264,14 +229,14 @@ public class TurSolr {
 		query.setStart((currentPage * rows) - rows);
 
 		// Facet
-		if (turSNSite.getFacet() == 1) {
+		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
+				.findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
+
+		if (turSNSite.getFacet() == 1 && turSNSiteFacetFieldExts != null && turSNSiteFacetFieldExts.size() > 0) {
 			query.setFacet(true);
 			query.setFacetLimit(turSNSite.getItemsPerFacet());
 			query.setFacetMinCount(1);
 			query.setFacetSort("count");
-
-			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
-					.findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
 
 			for (TurSNSiteFieldExt turSNSiteFacetFieldExt : turSNSiteFacetFieldExts) {
 				TurSNFieldType snType = turSNSiteFacetFieldExt.getSnType();
@@ -286,9 +251,11 @@ public class TurSolr {
 		}
 
 		// Highlighting
-		if (turSNSite.getHl() == 1) {
-			List<TurSNSiteFieldExt> turSNSiteHlFieldExts = turSNSiteFieldExtRepository
-					.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1);
+		List<TurSNSiteFieldExt> turSNSiteHlFieldExts = turSNSiteFieldExtRepository
+				.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1);
+
+		if (turSNSite.getHl() == 1 && turSNSiteHlFieldExts != null && turSNSiteHlFieldExts.size() > 0) {
+
 			StringBuilder hlFields = new StringBuilder();
 			for (TurSNSiteFieldExt turSNSiteHlFieldExt : turSNSiteHlFieldExts) {
 				if (hlFields.length() != 0) {
@@ -305,9 +272,11 @@ public class TurSolr {
 
 		}
 
-		if (turSNSite.getMlt() == 1) {
-			List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = turSNSiteFieldExtRepository
-					.findByTurSNSiteAndMltAndEnabled(turSNSite, 1, 1);
+		// MLT
+		List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = turSNSiteFieldExtRepository
+				.findByTurSNSiteAndMltAndEnabled(turSNSite, 1, 1);
+		if (turSNSite.getMlt() == 1 && turSNSiteMLTFieldExts != null && turSNSiteMLTFieldExts.size() > 0) {
+
 			StringBuilder mltFields = new StringBuilder();
 			for (TurSNSiteFieldExt turSNSiteMltFieldExt : turSNSiteMLTFieldExts) {
 				if (mltFields.length() != 0) {
@@ -348,7 +317,7 @@ public class TurSolr {
 		List<TurSEResult> results = new ArrayList<TurSEResult>();
 
 		// Facet
-		if (turSNSite.getFacet() == 1) {
+		if (turSNSite.getFacet() == 1 && turSNSiteFacetFieldExts != null && turSNSiteFacetFieldExts.size() > 0) {
 			List<TurSEFacetResult> facetResults = new ArrayList<TurSEFacetResult>();
 			for (FacetField facet : queryResponse.getFacetFields()) {
 				TurSEFacetResult turSEFacetResult = new TurSEFacetResult();
@@ -369,22 +338,18 @@ public class TurSolr {
 		for (SolrDocument document : queryResponse.getResults()) {
 			// HL
 			Map<String, List<String>> hl = null;
-			if (turSNSite.getHl() == 1) {
+			if (turSNSite.getHl() == 1 && turSNSiteHlFieldExts.size() > 0) {
 				hl = queryResponse.getHighlighting().get((String) document.get("id"));
 			}
 			// MLT
-			if (turSNSite.getMlt() == 1) {
+			if (turSNSite.getMlt() == 1 && turSNSiteMLTFieldExts.size() > 0) {
 				SolrDocumentList mltDocumentList = (SolrDocumentList) mltResp.get((String) document.get("id"));
 				for (SolrDocument mltDocument : mltDocumentList) {
 					TurSESimilarResult turSESimilarResult = new TurSESimilarResult();
-					turSESimilarResult.add("id", new TurSESimilarResultAttr("id",
-							turSolrField.convertFieldToString(mltDocument.getFieldValue("id"))));
-					turSESimilarResult.add("title", new TurSESimilarResultAttr("title",
-							turSolrField.convertFieldToString(mltDocument.getFieldValue("title"))));
-					turSESimilarResult.add("type", new TurSESimilarResultAttr("type",
-							turSolrField.convertFieldToString(mltDocument.getFieldValue("type"))));
-					turSESimilarResult.add("url", new TurSESimilarResultAttr("url",
-							turSolrField.convertFieldToString(mltDocument.getFieldValue("url"))));
+					turSESimilarResult.setId(turSolrField.convertFieldToString(mltDocument.getFieldValue("id")));
+					turSESimilarResult.setTitle(turSolrField.convertFieldToString(mltDocument.getFieldValue("title")));
+					turSESimilarResult.setType(turSolrField.convertFieldToString(mltDocument.getFieldValue("type")));
+					turSESimilarResult.setUrl(turSolrField.convertFieldToString(mltDocument.getFieldValue("url")));
 					similarResults.add(turSESimilarResult);
 				}
 			}
@@ -395,28 +360,26 @@ public class TurSolr {
 					document.addField(requiredField, requiredFields.get(requiredField));
 				}
 			}
+			Map<String, Object> fields = new HashMap<String, Object>();
 			for (String attribute : document.getFieldNames()) {
 				Object attrValue = document.getFieldValue(attribute);
-				JSONObject jsonObject = new JSONObject();
 
 				if (fieldExtMap.containsKey(attribute)) {
 					TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
-					
-
 
 					if (turSNSiteFieldExt.getType() == TurSEFieldType.STRING && hl != null && hl.containsKey(attribute))
-						jsonObject.put(attribute, (String) hl.get(attribute).get(0));
+						fields.put(attribute, (String) hl.get(attribute).get(0));
 					else
-						jsonObject.put(attribute, turSolrField.convertField(turSNSiteFieldExt.getType(), attrValue));
+						fields.put(attribute, turSolrField.convertField(turSNSiteFieldExt.getType(), attrValue));
 				} else
-					jsonObject.put(attribute, attrValue);
+					fields.put(attribute, attrValue);
 
-				turSEResult.add(attribute, new TurSEResultAttr(attribute, jsonObject));
+				turSEResult.setFields(fields);
 			}
 			results.add(turSEResult);
 		}
 
-		if (turSNSite.getMlt() == 1) {
+		if (turSNSite.getMlt() == 1 && turSNSiteMLTFieldExts != null && turSNSiteMLTFieldExts.size() > 0) {
 			turSEResults.setSimilarResults(similarResults);
 		}
 

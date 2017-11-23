@@ -5,17 +5,15 @@ import java.util.Map;
 
 public class TurSEResult {
 
-	Map<String, TurSEResultAttr> turSEResultAttr = new HashMap<String, TurSEResultAttr>();
+	Map<String, Object> fields = new HashMap<String, Object>();
 
-	public Map<String, TurSEResultAttr> getTurSEResultAttr() {
-		return turSEResultAttr;
+	public Map<String, Object> getFields() {
+		return fields;
 	}
 
-	public void setTurSEResultAttr(Map<String, TurSEResultAttr> turSEResultAttr) {
-		this.turSEResultAttr = turSEResultAttr;
+	public void setFields(Map<String, Object> fields) {
+		this.fields = fields;
 	}
 
-	public void add(String attribute, TurSEResultAttr turSEResultAttr) {
-		this.turSEResultAttr.put(attribute, turSEResultAttr);
-	}
+	
 }

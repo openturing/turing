@@ -1,12 +1,13 @@
 package com.viglet.turing.api.otsn.broker;
 
 import java.io.StringReader;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Response;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -39,7 +40,7 @@ public class TurOTSNBrokerAPI {
 
 	@POST
 	@Produces("application/json")
-	public Response broker(@FormParam("index") String index, @FormParam("config") String config,
+	public Map<String, Object> broker(@FormParam("index") String index, @FormParam("config") String config,
 			@FormParam("data") String data) throws JSONException {
 
 		JSONObject jsonObject = new JSONObject();
@@ -59,21 +60,20 @@ public class TurOTSNBrokerAPI {
 			e.printStackTrace();
 		}
 		Element element = document.getDocumentElement();
-		JSONObject jsonAttributes = new JSONObject();
+		Map<String, Object> attributes = new HashMap<String, Object>();
 		NodeList nodes = element.getChildNodes();
 		for (int i = 0; i < nodes.getLength(); i++) {
-			jsonAttributes.put(nodes.item(i).getNodeName(), nodes.item(i).getTextContent());
-
+			attributes.put(nodes.item(i).getNodeName(), nodes.item(i).getTextContent());
 		}
 
 		try {
 			turSolr.init();
-			turSolr.setJsonAttributes(jsonAttributes);
+			turSolr.setAttributes(attributes);
 			turSolr.indexing();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return Response.status(200).entity(jsonAttributes.toString()).build();
+		return attributes;
 
 	}
 }

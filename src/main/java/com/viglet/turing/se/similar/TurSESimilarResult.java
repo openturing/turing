@@ -1,21 +1,35 @@
 package com.viglet.turing.se.similar;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class TurSESimilarResult {
 
-	Map<String, TurSESimilarResultAttr> turSESimilarResultAttr = new HashMap<String, TurSESimilarResultAttr>();
-
-	public Map<String, TurSESimilarResultAttr> getTurSESimilarResultAttr() {
-		return turSESimilarResultAttr;
+	private String id;
+	private String title;
+	private String type;
+	private String url;
+	
+	public String getId() {
+		return id;
 	}
-
-	public void setTurSEFacetResultAttr(Map<String, TurSESimilarResultAttr> turSEFacetResultAttr) {
-		this.turSESimilarResultAttr = turSEFacetResultAttr;
+	public void setId(String id) {
+		this.id = id;
 	}
-
-	public void add(String attribute, TurSESimilarResultAttr turSEFacetResultAttr) {
-		this.turSESimilarResultAttr.put(attribute, turSEFacetResultAttr);
+	public String getTitle() {
+		return title;
 	}
+	public void setTitle(String title) {
+		this.title = title;
+	}
+	public String getType() {
+		return type;
+	}
+	public void setType(String type) {
+		this.type = type;
+	}
+	public String getUrl() {
+		return url;
+	}
+	public void setUrl(String url) {
+		this.url = url;
+	}
+	
 }

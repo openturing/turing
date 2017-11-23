@@ -2,27 +2,25 @@ package com.viglet.turing.plugins.opennlp;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletContext;
 import javax.xml.transform.TransformerException;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
 import com.viglet.turing.plugins.nlp.TurNLPImpl;
+import com.viglet.turing.solr.TurSolrField;
 
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinderModel;
@@ -38,76 +36,53 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 	static final Logger logger = LogManager.getLogger(TurOpenNLPConnector.class.getName());
 
 	@Autowired
-	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
+	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
 	@Autowired
-	ServletContext context;
+	private TurSolrField turSolrField;
 
-	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
-	Map<String, JSONArray> entityList = new HashMap<String, JSONArray>();
-	public JSONObject json;
-	TurOpenNLPModelManager openNLPModelManager = null;
-	TurNLPInstance turNLPInstance = null;
-	private String text = null;
-	private String[] sentencesTokens = {};
-
-	public String[] getSentencesTokens() {
-		return sentencesTokens;
-	}
-
-	public void setSentencesTokens(String[] sentencesTokens) {
-		this.sentencesTokens = sentencesTokens;
-	}
-
-	public String getText() {
-		return text;
-	}
+	private List<TurNLPInstanceEntity> nlpInstanceEntities = null;
+	private TurOpenNLPModelManager openNLPModelManager = null;
+	private List<String> sentencesTokens = new ArrayList<String>();
 
 	public void startup(TurNLPInstance turNLPInstance) {
 
 		openNLPModelManager = TurOpenNLPModelManager.getInstance();
-		this.turNLPInstance = turNLPInstance;
 
 		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstance(turNLPInstance);
 	}
 
-	public void setText(String text) {
-		this.text = text;
-	}
-
 	@Override
-	public TurNLPResults retrieve(String text) throws TransformerException, Exception {
-		this.setText(text);
+	public Map<String, Object> retrieve(Map<String, Object> attributes) throws TransformerException, Exception {
 
-		String sentences[] = this.sentenceDetect(text);
-	
-		for (String sentence : sentences) {
-			logger.debug("OpenNLP Sentence : " + sentence);
-			String tokens[] = this.tokenDetect(sentence);
-			this.setSentencesTokens((String[]) ArrayUtils.addAll(this.getSentencesTokens(), tokens));
-			
+		for (Object attrValue : attributes.values()) {
+			String sentences[] = this.sentenceDetect(turSolrField.convertFieldToString(attrValue));
+
+			for (String sentence : sentences) {
+				logger.debug("OpenNLP Sentence : " + sentence);
+				String tokens[] = this.tokenDetect(sentence);
+				for (String token : tokens) {
+					sentencesTokens.add(token);
+				}
+
+			}
 		}
 
-		TurNLPResults turNLPResults = new TurNLPResults();
-		turNLPResults.setJsonResult(this.getJSON());
-
-		turNLPResults.setTurNLPInstanceEntities(nlpInstanceEntities);
-
-		return turNLPResults;
+		return this.getAttributes();
 	}
 
-	public JSONObject getJSON() throws JSONException {
-		JSONObject jsonObject = new JSONObject();
+	public Map<String, Object> getAttributes() throws JSONException {
+		Map<String, Object> entityAttributes = new HashMap<String, Object>();
+
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
 			logger.debug("TurNLPInstanceEntity : " + nlpInstanceEntity.getName());
-			JSONArray entityTerms = this.getEntity(nlpInstanceEntity.getName());
-			if (entityTerms.length() > 0) {
-				jsonObject.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(),
+
+			if (this.getEntity(nlpInstanceEntity.getName()).length() > 0) {
+				entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
 						this.getEntity(nlpInstanceEntity.getName()));
 			}
 		}
-		jsonObject.put("nlp", "OpenNLP");
 
-		return jsonObject;
+		return entityAttributes;
 	}
 
 	public JSONArray getEntity(String entityPath) {
@@ -131,7 +106,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 			}
 		}
 
-		String tokens[] = this.getSentencesTokens();
+		String[] tokens = this.sentencesTokens.toArray(new String[0]);
 		if (tokens != null) {
 			Span nameSpans[] = nameFinder.find(tokens);
 

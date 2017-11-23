@@ -33,7 +33,6 @@ import com.viglet.turing.api.sn.bean.TurSNSiteSearchPaginationBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContextBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContextQueryBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchResultsBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchSimilarBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchWidgetBean;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
@@ -42,10 +41,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.result.TurSEResult;
-import com.viglet.turing.se.result.TurSEResultAttr;
 import com.viglet.turing.se.result.TurSEResults;
-import com.viglet.turing.se.similar.TurSESimilarResult;
-import com.viglet.turing.se.similar.TurSESimilarResultAttr;
 import com.viglet.turing.sn.TurSNFieldType;
 
 @Component
@@ -160,16 +156,21 @@ public class TurSNSiteSearchAPI {
 			throws JSONException {
 
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
-		
+
 		TurSNSiteSearchBean turSNSiteSearchBean = new TurSNSiteSearchBean();
 		TurSNSiteSearchResultsBean turSNSiteSearchResultsBean = new TurSNSiteSearchResultsBean();
 
 		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,
 				1);
+		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
+				.findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
 
 		Map<String, TurSNSiteFieldExt> fieldExtMap = new HashMap<String, TurSNSiteFieldExt>();
 
-		
+		for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExts) {
+			fieldExtMap.put(turSNSiteFieldExt.getName(), turSNSiteFieldExt);
+		}
+
 		if (currentPage <= 0) {
 			currentPage = 1;
 		}
@@ -202,11 +203,6 @@ public class TurSNSiteSearchAPI {
 		String[] filterQueryModifiedArr = new String[filterQueryModified.size()];
 		filterQueryModifiedArr = filterQueryModified.toArray(filterQueryModifiedArr);
 
-
-
-		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
-				.findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
-
 		Map<String, TurSNSiteFieldExt> facetMap = new HashMap<String, TurSNSiteFieldExt>();
 
 		for (TurSNSiteFieldExt turSNSiteFacetFieldExt : turSNSiteFacetFieldExts) {
@@ -231,7 +227,7 @@ public class TurSNSiteSearchAPI {
 			for (TurSEResult result : seResults) {
 				TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean = new TurSNSiteSearchDocumentBean();
 
-				Map<String, TurSEResultAttr> turSEResultAttr = result.getTurSEResultAttr();
+				Map<String, Object> turSEResultAttr = result.getFields();
 				Set<String> attribs = turSEResultAttr.keySet();
 
 				turSNSiteSearchDocumentBean.setElevate(false);
@@ -242,11 +238,9 @@ public class TurSNSiteSearchAPI {
 					String facet = (String) facetObject;
 					if (turSEResultAttr.containsKey(facet)) {
 
-						if (turSEResultAttr.get(facet).getAttrJSON().get(facet) instanceof ArrayList) {
-							for (Object facetValueObject : (ArrayList) turSEResultAttr.get(facet).getAttrJSON()
-									.get(facet)) {
-
-								String facetValue = (String) facetValueObject;
+						if (turSEResultAttr.get(facet) instanceof ArrayList) {
+							for (Object facetValueObject : (ArrayList) turSEResultAttr.get(facet)) {
+								String facetValue = turSolrField.convertFieldToString(facetValueObject);
 								TurSNSiteSearchDocumentMetadataBean turSNSiteSearchDocumentMetadataBean = new TurSNSiteSearchDocumentMetadataBean();
 								turSNSiteSearchDocumentMetadataBean
 										.setHref(this.addFilterQuery(uriInfo, facet + ":" + facetValue));
@@ -254,8 +248,7 @@ public class TurSNSiteSearchAPI {
 								turSNSiteSearchDocumentMetadataBeans.add(turSNSiteSearchDocumentMetadataBean);
 							}
 						} else {
-							String facetValue = turSolrField
-									.convertFieldToString(turSEResultAttr.get(facet).getAttrJSON().get(facet));
+							String facetValue = turSolrField.convertFieldToString(turSEResultAttr.get(facet));
 							TurSNSiteSearchDocumentMetadataBean turSNSiteSearchDocumentMetadataBean = new TurSNSiteSearchDocumentMetadataBean();
 							turSNSiteSearchDocumentMetadataBean
 									.setHref(this.addFilterQuery(uriInfo, facet + ":" + facetValue));
@@ -269,7 +262,7 @@ public class TurSNSiteSearchAPI {
 				turSNSiteSearchDocumentBean.setMetadata(turSNSiteSearchDocumentMetadataBeans);
 
 				if (turSEResultAttr.containsKey("url")) {
-					turSNSiteSearchDocumentBean.setSource(turSEResultAttr.get("url").getAttrJSON().getString("url"));
+					turSNSiteSearchDocumentBean.setSource((String) turSEResultAttr.get("url"));
 				}
 
 				Map<String, Object> fields = new HashMap<String, Object>();
@@ -279,10 +272,9 @@ public class TurSNSiteSearchAPI {
 					if (!attribute.startsWith("turing_entity")) {
 						if (fieldExtMap.containsKey(attribute)) {
 							TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
-							fields.put(turSNSiteFieldExt.getName(),
-									turSEResultAttr.get(attribute).getAttrJSON().get(attribute));
+							fields.put(turSNSiteFieldExt.getName(), turSEResultAttr.get(attribute));
 						} else {
-							fields.put(attribute, turSEResultAttr.get(attribute).getAttrJSON().get(attribute));
+							fields.put(attribute, turSEResultAttr.get(attribute));
 						}
 					}
 
@@ -391,9 +383,8 @@ public class TurSNSiteSearchAPI {
 		turSNSiteSearchQueryContextQueryBean.setSort(turSEResults.getSort());
 
 		TurSNSiteSearchWidgetBean turSNSiteSearchWidgetBean = new TurSNSiteSearchWidgetBean();
-
-		if (turSNSite.getFacet() == 1) {
-			// BEGIN Facet
+		// BEGIN Facet
+		if (turSNSite.getFacet() == 1 && turSNSiteFacetFieldExts != null && turSNSiteFacetFieldExts.size() > 0) {
 
 			List<TurSNSiteSearchFacetBean> turSNSiteSearchFacetBeans = new ArrayList<TurSNSiteSearchFacetBean>();
 			for (TurSEFacetResult facet : turSEResults.getFacetResults()) {
@@ -451,34 +442,18 @@ public class TurSNSiteSearchAPI {
 				turSNSiteSearchFacetToRemoveBean.setFacets(turSNSiteSearchFacetToRemoveItemBeans);
 				turSNSiteSearchWidgetBean.setFacetToRemove(turSNSiteSearchFacetToRemoveBean);
 			}
-
 			// END Facet Remove
-			// END Facet
 		}
-		if (turSNSite.getMlt() == 1) {
-			// BEGIN Similar
-			List<TurSNSiteSearchSimilarBean> turSNSiteSearchSimilarBeans = new ArrayList<TurSNSiteSearchSimilarBean>();
-			for (TurSESimilarResult similar : turSEResults.getSimilarResults()) {
-				TurSNSiteSearchSimilarBean turSNSiteSearchSimilarBean = new TurSNSiteSearchSimilarBean();
-				for (Object similarItemObject : similar.getTurSESimilarResultAttr().values().toArray()) {
-					TurSESimilarResultAttr similarItem = (TurSESimilarResultAttr) similarItemObject;
-					if (similarItem.getAttribute().equals("id")) {
-						turSNSiteSearchSimilarBean.setId(similarItem.getValue());
-					} else if (similarItem.getAttribute().equals("title")) {
-						turSNSiteSearchSimilarBean.setTitle(similarItem.getValue());
-					} else if (similarItem.getAttribute().equals("type")) {
-						turSNSiteSearchSimilarBean.setType(similarItem.getValue());
-					} else if (similarItem.getAttribute().equals("url")) {
-						turSNSiteSearchSimilarBean.setUrl(similarItem.getValue());
-					}
-				}
-				turSNSiteSearchSimilarBeans.add(turSNSiteSearchSimilarBean);
-			}
 
-			turSNSiteSearchWidgetBean.setSimilar(turSNSiteSearchSimilarBeans);
+		// END Facet
 
-			// END Similar
+		// BEGIN Similar
+		if (turSNSite.getMlt() == 1 && turSEResults.getSimilarResults() != null
+				&& turSEResults.getSimilarResults().size() > 0) {
+			turSNSiteSearchWidgetBean.setSimilar(turSEResults.getSimilarResults());
 		}
+		// END Similar
+
 		turSNSiteSearchBean.setWidget(turSNSiteSearchWidgetBean);
 		TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContextBean = new TurSNSiteSearchQueryContextBean();
 		turSNSiteSearchQueryContextBean.setQuery(turSNSiteSearchQueryContextQueryBean);

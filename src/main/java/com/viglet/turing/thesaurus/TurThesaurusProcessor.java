@@ -1,11 +1,13 @@
-package com.viglet.turing.nlp.entity;
+package com.viglet.turing.thesaurus;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Logger;
@@ -26,24 +28,25 @@ import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
 import com.viglet.turing.persistence.repository.nlp.term.TurTermVariationRepository;
+import com.viglet.turing.solr.TurSolrField;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.util.TurUtils;
-
 
 @Component
 @ComponentScan
 @Transactional
-public class TurNLPEntityProcessor {
-	static final Logger logger = LogManager.getLogger(TurNLPEntityProcessor.class.getName());
+public class TurThesaurusProcessor {
+	static final Logger logger = LogManager.getLogger(TurThesaurusProcessor.class.getName());
 
 	@Autowired
 	TurTermVariationRepository turTermVariationRepository;
-	
+	@Autowired
+	TurSolrField turSolrField;
+
 	LinkedHashMap<String, List<String>> entityResults = new LinkedHashMap<String, List<String>>();
 
 	LinkedHashMap<Integer, TurTermVariation> terms = new LinkedHashMap<Integer, TurTermVariation>();
 
-	
 	public void startup() {
 		List<TurTermVariation> turTermVariations = turTermVariationRepository.findAll();
 
@@ -52,6 +55,29 @@ public class TurNLPEntityProcessor {
 			terms.put(turTermVariation.getId(), turTermVariation);
 		}
 		logger.debug("Fim Carregando termos..");
+	}
+
+	public Map<String, Object> detectTerms(Map<String, Object> attributes) {
+		Map<String, List<String>> entityResults = new HashMap<String, List<String>>();
+		if (attributes != null) {
+			for (Object attrValue : attributes.values()) {
+				LinkedHashMap<String, List<String>> termsDetected = this
+						.detectTerms(turSolrField.convertFieldToString(attrValue));
+				for (Entry<String, List<String>> termDetected : termsDetected.entrySet()) {
+					if (entityResults.containsKey(termDetected.getKey())) {
+						entityResults.get(termDetected.getKey())
+								.add(turSolrField.convertFieldToString(termDetected.getValue()));
+					}
+
+				}
+			}
+		}
+
+		Map<String, Object> entityObjectResults = new HashMap<String, Object>();
+		for (Entry<String, List<String>> entityResult : entityResults.entrySet()) {
+			entityObjectResults.put(entityResult.getKey(), entityResult.getValue());
+		}
+		return entityObjectResults;
 	}
 
 	public LinkedHashMap<String, List<String>> detectTerms(String text) {

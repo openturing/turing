@@ -14,20 +14,23 @@
 					style="text-align: center">
 					<b>{{'TYPE' | translate }}</b>
 				</div>
-				<div class="col-lg-6 col-md-2 col-sm-2 col-xs-2">
+				<div class="col-lg-5 col-md-2 col-sm-2 col-xs-2">
 					<b>{{'FIELD' | translate }}</b>
 				</div>
-				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2">
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1">
 					<b>{{'ENABLED' | translate }}</b>
 				</div>
-				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2">
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1">
 					<b>{{'MLT' | translate }}</b>
 				</div>
-				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2">
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1">
 					<b>{{'FACETS' | translate }}</b>
 				</div>
-				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2">
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1">
 					<b>{{'HIGHLIGHTING' | translate }}</b>
+				</div>
+					<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1">
+					<b>{{'NLP' | translate }}</b>
 				</div>
 			</div>
 		</li>
@@ -37,11 +40,11 @@
 			<div class="row">
 				<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2"
 					style="text-align: center">{{turSNSiteFieldExt.snType | translate }}</div>
-				<div class="col-lg-6 col-md-2 col-sm-2 col-xs-2">
+				<div class="col-lg-5 col-md-2 col-sm-2 col-xs-2">
 					<a
 						ui-sref="sn.site-edit.field-edit({snSiteFieldId:turSNSiteFieldExt.id})">{{turSNSiteFieldExt.name}}</a>
 				</div>
-				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
 					style="text-align: center">
 					<div class="input-group">
 						<input type="checkbox"
@@ -51,7 +54,7 @@
 
 					</div>
 				</div>
-				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
 					style="text-align: center">
 					<div class="input-group">
 						<input type="checkbox"
@@ -61,7 +64,7 @@
 
 					</div>
 				</div>
-				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
 					style="text-align: center">
 					<div class="input-group">
 						<input type="checkbox"
@@ -71,12 +74,21 @@
 
 					</div>
 				</div>
-				<div class="col-lg-1 col-md-2 col-sm-2 col-xs-2"
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
 					style="text-align: center">
 					<div class="input-group">
 						<input type="checkbox"
 							ng-click="snSiteFieldUpdate(turSNSiteFieldExt)"
 							ng-model="turSNSiteFieldExt.hl" ng-true-value="1"
+							ng-false-value="0">
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-click="snSiteFieldUpdate(turSNSiteFieldExt)"
+							ng-model="turSNSiteFieldExt.nlp" ng-true-value="1"
 							ng-false-value="0">
 					</div>
 				</div>

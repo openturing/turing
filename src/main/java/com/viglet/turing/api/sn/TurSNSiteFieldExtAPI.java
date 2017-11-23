@@ -191,6 +191,7 @@ public class TurSNSiteFieldExtAPI {
 		turSNSiteFieldExtEdit.setExternalId(turSNSiteFieldExt.getExternalId());
 		turSNSiteFieldExtEdit.setRequired(turSNSiteFieldExt.getRequired());
 		turSNSiteFieldExtEdit.setDefaultValue(turSNSiteFieldExt.getDefaultValue());
+		turSNSiteFieldExtEdit.setNlp(turSNSiteFieldExt.getNlp());
 		turSNSiteFieldExtEdit.setSnType(turSNSiteFieldExt.getSnType());
 		this.turSNSiteFieldExtRepository.save(turSNSiteFieldExtEdit);
 
@@ -283,7 +284,13 @@ public class TurSNSiteFieldExtAPI {
 		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1);
 		
 		for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExts) {
-			this.createField(turSNSiteFieldExt.getName());
+			if (turSNSiteFieldExt.getSnType() == TurSNFieldType.NER || turSNSiteFieldExt.getSnType() == TurSNFieldType.THESAURUS) {
+				this.createField("turing_entity_" + turSNSiteFieldExt.getName());
+			}
+			else {
+				this.createField(turSNSiteFieldExt.getName());	
+			}
+			
 		}
 		return this.turSNSiteRepository.findAll();
 	}
@@ -307,7 +314,7 @@ public class TurSNSiteFieldExtAPI {
 		}
 		JSONObject json = new JSONObject();
 		json.put("add-field", jsonAddField);
-
+		// json.put("replace-field", jsonAddField);
 		HttpPost httpPost = new HttpPost("http://localhost:8983/solr/turing/schema");
 		StringEntity entity = new StringEntity(json.toString());
 		httpPost.setEntity(entity);
@@ -315,7 +322,6 @@ public class TurSNSiteFieldExtAPI {
 		httpPost.setHeader("Content-type", "application/json");
 
 		CloseableHttpResponse response = client.execute(httpPost);
-		System.out.println(response.toString());
 		client.close();
 		this.copyField(field, "_text_");
 	}

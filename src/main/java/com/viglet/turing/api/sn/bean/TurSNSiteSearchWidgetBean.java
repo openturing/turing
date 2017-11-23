@@ -2,11 +2,13 @@ package com.viglet.turing.api.sn.bean;
 
 import java.util.List;
 
+import com.viglet.turing.se.similar.TurSESimilarResult;
+
 public class TurSNSiteSearchWidgetBean {
 
 	private List<TurSNSiteSearchFacetBean> facet;
 	private TurSNSiteSearchFacetBean facetToRemove;
-	private List<TurSNSiteSearchSimilarBean> similar;
+	private List<TurSESimilarResult> similar;
 	
 	public List<TurSNSiteSearchFacetBean> getFacet() {
 		return facet;
@@ -20,10 +22,10 @@ public class TurSNSiteSearchWidgetBean {
 	public void setFacetToRemove(TurSNSiteSearchFacetBean facetToRemove) {
 		this.facetToRemove = facetToRemove;
 	}
-	public List<TurSNSiteSearchSimilarBean> getSimilar() {
+	public List<TurSESimilarResult> getSimilar() {
 		return similar;
 	}
-	public void setSimilar(List<TurSNSiteSearchSimilarBean> similar) {
+	public void setSimilar(List<TurSESimilarResult> similar) {
 		this.similar = similar;
 	}
 

@@ -24,7 +24,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.viglet.turing.nlp.TurNLPResults;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
@@ -43,6 +42,7 @@ import com.viglet.turing.plugins.otca.response.xml.ServerResponseEntityExtractor
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseEntityExtractorResultTermType;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseEntityExtractorResultType;
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseType;
+import com.viglet.turing.solr.TurSolrField;
 
 @ComponentScan
 @Component
@@ -51,6 +51,8 @@ public class TurTMEConnector implements TurNLPImpl {
 
 	@Autowired
 	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
+	@Autowired
+	TurSolrField turSolrField;
 
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	Map<String, JSONArray> hmEntities = new HashMap<String, JSONArray>();
@@ -129,103 +131,101 @@ public class TurTMEConnector implements TurNLPImpl {
 		}
 	}
 
-	public TurNLPResults retrieve(String text) throws TransformerException, Exception {
+	public Map<String, Object> retrieve(Map<String, Object> attributes) throws TransformerException, Exception {
 
-		StringBuilder sb = new StringBuilder();
-		sb.append("<Nserver>");
-		sb.append("<Methods>");
-		sb.append("<nconceptextractor>");
-		sb.append("<ComplexConcepts>");
-		sb.append("<RelevancyLevel>FIRST</RelevancyLevel>");
-		sb.append("<NumberOfComplexConcepts>40</NumberOfComplexConcepts>");
-		sb.append("</ComplexConcepts>");
-		sb.append("<SimpleConcepts>");
-		sb.append("<NumberOfSimpleConcepts>20</NumberOfSimpleConcepts>");
-		sb.append("</SimpleConcepts>");
-		sb.append("<ExcludeEntities/>");
-		sb.append("<ResultLayout>NCONCEPTEXTRACTOR</ResultLayout>");
-		sb.append("</nconceptextractor>");
-		sb.append("<nfinder>");
-		sb.append("<nfExtract>");
-		sb.append("<Cartridges>");
+		for (Object attrValue : attributes.values()) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("<Nserver>");
+			sb.append("<Methods>");
+			sb.append("<nconceptextractor>");
+			sb.append("<ComplexConcepts>");
+			sb.append("<RelevancyLevel>FIRST</RelevancyLevel>");
+			sb.append("<NumberOfComplexConcepts>40</NumberOfComplexConcepts>");
+			sb.append("</ComplexConcepts>");
+			sb.append("<SimpleConcepts>");
+			sb.append("<NumberOfSimpleConcepts>20</NumberOfSimpleConcepts>");
+			sb.append("</SimpleConcepts>");
+			sb.append("<ExcludeEntities/>");
+			sb.append("<ResultLayout>NCONCEPTEXTRACTOR</ResultLayout>");
+			sb.append("</nconceptextractor>");
+			sb.append("<nfinder>");
+			sb.append("<nfExtract>");
+			sb.append("<Cartridges>");
 
-		for (TurNLPInstanceEntity entity : nlpInstanceEntities) {
-			sb.append("<Cartridge>" + entity.getName() + "</Cartridge>");
+			for (TurNLPInstanceEntity entity : nlpInstanceEntities) {
+				sb.append("<Cartridge>" + entity.getName() + "</Cartridge>");
+			}
+
+			sb.append("</Cartridges>");
+			sb.append("<OutputAttributes>true</OutputAttributes>");
+			sb.append("<OutputParents>true</OutputParents>");
+			sb.append("</nfExtract>");
+
+			sb.append("<nfFullTextSearch>");
+			sb.append("<Cartridges>");
+			sb.append("<Cartridge>APICULTURA</Cartridge>");
+			sb.append(" <Cartridge>CONFECÇÃO</Cartridge>");
+			sb.append("<Cartridge>ARTESANATO</Cartridge>");
+			sb.append(" <Cartridge>AQUICULTURA</Cartridge>");
+			sb.append("<Cartridge>COURO E CALÇADOS</Cartridge>");
+			sb.append("<Cartridge>CONSTRUÇÃO CIVIL</Cartridge>");
+			sb.append("<Cartridge>ALIMENTO</Cartridge>");
+			sb.append("<Cartridge>ROCHA ORNAMENTAL</Cartridge>");
+			sb.append("<Cartridge>AGRICULTURA</Cartridge>");
+			sb.append("<Cartridge>GRÁFICA E EDITORA</Cartridge>");
+			sb.append("<Cartridge>TURISMO</Cartridge>");
+			sb.append("<Cartridge>TÊXTIL</Cartridge>");
+			sb.append("<Cartridge>CERÂMICA</Cartridge>");
+			sb.append("<Cartridge>BEBIDA</Cartridge>");
+			sb.append("<Cartridge>CULTURA, ENTRETENIMENTO E LAZER</Cartridge>");
+			sb.append("<Cartridge>RECICLAGEM</Cartridge>");
+			sb.append("<Cartridge>PLÁSTICO E BORRACHA</Cartridge>");
+			sb.append("<Cartridge>METALURGIA, METAL MECÂNICA E AUTO PEÇAS</Cartridge>");
+			sb.append("<Cartridge>HIGIENE PESSOAL, PERFUMARIA E COSMÉTICO</Cartridge>");
+			sb.append("<Cartridge>ELETRO-ELETRÔNICA</Cartridge>");
+			sb.append("<Cartridge>PETRÓLEO, GÁS E ENERGIA</Cartridge>");
+			sb.append("<Cartridge>QUÍMICA</Cartridge>");
+			sb.append("<Cartridge>GEMA, JÓIA E BIJUTERIA</Cartridge>");
+			sb.append("<Cartridge>EMPREENDEDORISMO</Cartridge>");
+			sb.append("<Cartridge>GESTÃO EMPRESARIAL</Cartridge>");
+			sb.append("<Cartridge>AMBIENTE ECONÔMICO E SOCIAL</Cartridge>");
+			sb.append("<Cartridge>COMÉRCIO VAREJISTA E ATACADISTA</Cartridge>");
+			sb.append("<Cartridge>SAÚDE, BELEZA E MEDICINA</Cartridge>");
+			sb.append("<Cartridge>BIOTECNOLOGIA</Cartridge>");
+			sb.append("<Cartridge>PECUÁRIA</Cartridge>");
+			sb.append("<Cartridge>MADEIRA E MOBILIÁRIO</Cartridge>");
+			sb.append("<Cartridge>AMBIENTE NORMATIVO</Cartridge>");
+			sb.append("<Cartridge>TECNOLOGIA DA INFORMAÇÃO E COMUNICAÇÃO</Cartridge>");
+			sb.append("<Cartridge>TABELAS AUXILIARES</Cartridge>");
+			sb.append("<Cartridge>VITIVINICULTURA</Cartridge>");
+			sb.append("<Cartridge>OUTROS</Cartridge>");
+			sb.append("</Cartridges>");
+			sb.append("<OutputAttributes>true</OutputAttributes>");
+			sb.append("<OutputParents>true</OutputParents>");
+			sb.append("</nfFullTextSearch>");
+
+			sb.append("</nfinder>");
+			sb.append("<ncategorizer>");
+			sb.append("<KnowledgeBase>");
+			sb.append("<KBid>IPTC</KBid>");
+			sb.append("</KnowledgeBase>");
+			sb.append("</ncategorizer>");
+			sb.append("</Methods>");
+			sb.append("<Texts>");
+			sb.append("<Text>");
+			sb.append("<TextID>32534ae2e9282510VgnVCM1000004c00210aRCRD</TextID>");
+			sb.append("<LanguageID>PORTUGUESE</LanguageID>");
+			sb.append("<NSTEIN_Text>");
+			sb.append(turSolrField.convertFieldToString(attrValue));
+			sb.append("</NSTEIN_Text>");
+			sb.append("</Text>");
+			sb.append("</Texts>");
+			sb.append("</Nserver>");
+
+			this.toJSON(this.request(turNLPInstance, sb.toString()));
 		}
 
-		sb.append("</Cartridges>");
-		sb.append("<OutputAttributes>true</OutputAttributes>");
-		sb.append("<OutputParents>true</OutputParents>");
-		sb.append("</nfExtract>");
-
-		sb.append("<nfFullTextSearch>");
-		sb.append("<Cartridges>");
-		sb.append("<Cartridge>APICULTURA</Cartridge>");
-		sb.append(" <Cartridge>CONFECÇÃO</Cartridge>");
-		sb.append("<Cartridge>ARTESANATO</Cartridge>");
-		sb.append(" <Cartridge>AQUICULTURA</Cartridge>");
-		sb.append("<Cartridge>COURO E CALÇADOS</Cartridge>");
-		sb.append("<Cartridge>CONSTRUÇÃO CIVIL</Cartridge>");
-		sb.append("<Cartridge>ALIMENTO</Cartridge>");
-		sb.append("<Cartridge>ROCHA ORNAMENTAL</Cartridge>");
-		sb.append("<Cartridge>AGRICULTURA</Cartridge>");
-		sb.append("<Cartridge>GRÁFICA E EDITORA</Cartridge>");
-		sb.append("<Cartridge>TURISMO</Cartridge>");
-		sb.append("<Cartridge>TÊXTIL</Cartridge>");
-		sb.append("<Cartridge>CERÂMICA</Cartridge>");
-		sb.append("<Cartridge>BEBIDA</Cartridge>");
-		sb.append("<Cartridge>CULTURA, ENTRETENIMENTO E LAZER</Cartridge>");
-		sb.append("<Cartridge>RECICLAGEM</Cartridge>");
-		sb.append("<Cartridge>PLÁSTICO E BORRACHA</Cartridge>");
-		sb.append("<Cartridge>METALURGIA, METAL MECÂNICA E AUTO PEÇAS</Cartridge>");
-		sb.append("<Cartridge>HIGIENE PESSOAL, PERFUMARIA E COSMÉTICO</Cartridge>");
-		sb.append("<Cartridge>ELETRO-ELETRÔNICA</Cartridge>");
-		sb.append("<Cartridge>PETRÓLEO, GÁS E ENERGIA</Cartridge>");
-		sb.append("<Cartridge>QUÍMICA</Cartridge>");
-		sb.append("<Cartridge>GEMA, JÓIA E BIJUTERIA</Cartridge>");
-		sb.append("<Cartridge>EMPREENDEDORISMO</Cartridge>");
-		sb.append("<Cartridge>GESTÃO EMPRESARIAL</Cartridge>");
-		sb.append("<Cartridge>AMBIENTE ECONÔMICO E SOCIAL</Cartridge>");
-		sb.append("<Cartridge>COMÉRCIO VAREJISTA E ATACADISTA</Cartridge>");
-		sb.append("<Cartridge>SAÚDE, BELEZA E MEDICINA</Cartridge>");
-		sb.append("<Cartridge>BIOTECNOLOGIA</Cartridge>");
-		sb.append("<Cartridge>PECUÁRIA</Cartridge>");
-		sb.append("<Cartridge>MADEIRA E MOBILIÁRIO</Cartridge>");
-		sb.append("<Cartridge>AMBIENTE NORMATIVO</Cartridge>");
-		sb.append("<Cartridge>TECNOLOGIA DA INFORMAÇÃO E COMUNICAÇÃO</Cartridge>");
-		sb.append("<Cartridge>TABELAS AUXILIARES</Cartridge>");
-		sb.append("<Cartridge>VITIVINICULTURA</Cartridge>");
-		sb.append("<Cartridge>OUTROS</Cartridge>");
-		sb.append("</Cartridges>");
-		sb.append("<OutputAttributes>true</OutputAttributes>");
-		sb.append("<OutputParents>true</OutputParents>");
-		sb.append("</nfFullTextSearch>");
-
-		sb.append("</nfinder>");
-		sb.append("<ncategorizer>");
-		sb.append("<KnowledgeBase>");
-		sb.append("<KBid>IPTC</KBid>");
-		sb.append("</KnowledgeBase>");
-		sb.append("</ncategorizer>");
-		sb.append("</Methods>");
-		sb.append("<Texts>");
-		sb.append("<Text>");
-		sb.append("<TextID>32534ae2e9282510VgnVCM1000004c00210aRCRD</TextID>");
-		sb.append("<LanguageID>PORTUGUESE</LanguageID>");
-		sb.append("<NSTEIN_Text>");
-		sb.append(text);
-		sb.append("</NSTEIN_Text>");
-		sb.append("</Text>");
-		sb.append("</Texts>");
-		sb.append("</Nserver>");
-
-		this.toJSON(this.request(turNLPInstance, sb.toString()));
-
-		TurNLPResults turNLPResults = new TurNLPResults();
-		turNLPResults.setJsonResult(this.getJSON());
-		turNLPResults.setTurNLPInstanceEntities(nlpInstanceEntities);
-
-		return turNLPResults;
+		return this.getAttributes();
 
 	}
 
@@ -432,15 +432,14 @@ public class TurTMEConnector implements TurNLPImpl {
 
 	}
 
-	public JSONObject getJSON() throws JSONException {
-		JSONObject jsonObject = new JSONObject();
+	public Map<String, Object> getAttributes() throws JSONException {
+		Map<String, Object> entityAttributes = new HashMap<String, Object>();
 
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
-			jsonObject.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(),
+			entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(),
 					hmEntities.get(nlpInstanceEntity.getName()));
 		}
-		jsonObject.put("nlp", "OTCA");
-		return jsonObject;
+		return entityAttributes;
 	}
 
 }
