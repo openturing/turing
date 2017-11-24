@@ -16,7 +16,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -275,58 +274,67 @@ public class TurSNSiteFieldExtAPI {
 
 		}
 	}
-	
+
 	@GET
 	@Path("create")
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<TurSNSite> create(@PathParam("snSiteId") int snSiteId) throws JSONException, ClientProtocolException, IOException {
+	public List<TurSNSite> create(@PathParam("snSiteId") int snSiteId)
+			throws JSONException, ClientProtocolException, IOException {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
-		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1);
-		
+		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,
+				1);
+
 		for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExts) {
-			if (turSNSiteFieldExt.getSnType() == TurSNFieldType.NER || turSNSiteFieldExt.getSnType() == TurSNFieldType.THESAURUS) {
-				this.createField("turing_entity_" + turSNSiteFieldExt.getName());
+			if (turSNSiteFieldExt.getSnType() == TurSNFieldType.NER
+					|| turSNSiteFieldExt.getSnType() == TurSNFieldType.THESAURUS) {
+				this.createField(turSNSite, turSNSiteFieldExt);
+			} else {
+				this.createField(turSNSite, turSNSiteFieldExt);
 			}
-			else {
-				this.createField(turSNSiteFieldExt.getName());	
-			}
-			
+
 		}
 		return this.turSNSiteRepository.findAll();
 	}
 
-	public void createField(String field) throws ClientProtocolException, IOException {
+	public void createField(TurSNSite turSNSite, TurSNSiteFieldExt turSNSiteFieldExts)
+			throws ClientProtocolException, IOException {
 		CloseableHttpClient client = HttpClients.createDefault();
 		JSONObject jsonAddField = new JSONObject();
-		jsonAddField.put("name", field);
+		String fieldName = null;
+
+		if (turSNSiteFieldExts.getSnType() == TurSNFieldType.NER) {
+			fieldName = String.format("turing_entity_%s", turSNSiteFieldExts.getName());
+		} else {
+			fieldName = turSNSiteFieldExts.getName();
+		}
+
+		jsonAddField.put("name", fieldName);
 
 		jsonAddField.put("indexed", true);
 		jsonAddField.put("stored", true);
-		System.out.println(field);
-		if (field.trim().toLowerCase().startsWith("turing_entity_")) {
+		if (turSNSiteFieldExts.getMultiValued() == 1) {
 			jsonAddField.put("type", "string");
 			jsonAddField.put("multiValued", true);
-			System.out.println("true");
 		} else {
 			jsonAddField.put("type", "text_general");
 			jsonAddField.put("multiValued", false);
-			System.out.println("false");
 		}
 		JSONObject json = new JSONObject();
 		json.put("add-field", jsonAddField);
 		// json.put("replace-field", jsonAddField);
-		HttpPost httpPost = new HttpPost("http://localhost:8983/solr/turing/schema");
+		HttpPost httpPost = new HttpPost(String.format("http://%s:%d/solr/%s/schema",
+				turSNSite.getTurSEInstance().getHost(), turSNSite.getTurSEInstance().getPort(), turSNSite.getCore()));
 		StringEntity entity = new StringEntity(json.toString());
 		httpPost.setEntity(entity);
 		httpPost.setHeader("Accept", "application/json");
 		httpPost.setHeader("Content-type", "application/json");
 
-		CloseableHttpResponse response = client.execute(httpPost);
+		client.execute(httpPost);
 		client.close();
-		this.copyField(field, "_text_");
+		this.copyField(turSNSite, fieldName, "_text_");
 	}
 
-	public void copyField(String field, String dest) throws ClientProtocolException, IOException {
+	public void copyField(TurSNSite turSNSite, String field, String dest) throws ClientProtocolException, IOException {
 		CloseableHttpClient client = HttpClients.createDefault();
 		JSONObject jsonAddField = new JSONObject();
 		jsonAddField.put("source", field);
@@ -335,14 +343,14 @@ public class TurSNSiteFieldExtAPI {
 		JSONObject json = new JSONObject();
 		json.put("add-copy-field", jsonAddField);
 
-		HttpPost httpPost = new HttpPost("http://localhost:8983/solr/turing/schema");
+		HttpPost httpPost = new HttpPost(String.format("http://%s:%d/solr/%s/schema",
+				turSNSite.getTurSEInstance().getHost(), turSNSite.getTurSEInstance().getPort(), turSNSite.getCore()));
 		StringEntity entity = new StringEntity(json.toString());
 		httpPost.setEntity(entity);
 		httpPost.setHeader("Accept", "application/json");
 		httpPost.setHeader("Content-type", "application/json");
 
-		CloseableHttpResponse response = client.execute(httpPost);
-		System.out.println(response.toString());
+		client.execute(httpPost);
 		client.close();
 	}
 }

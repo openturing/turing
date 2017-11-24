@@ -58,8 +58,20 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 			String sentences[] = this.sentenceDetect(turSolrField.convertFieldToString(attrValue));
 
 			for (String sentence : sentences) {
-				logger.debug("OpenNLP Sentence : " + sentence);
-				String tokens[] = this.tokenDetect(sentence);
+
+				String sentencesFormatted = sentence.trim();
+
+				if (sentencesFormatted.endsWith(".")) {
+					if (!sentencesFormatted.endsWith(" .")) {
+						sentencesFormatted = sentencesFormatted.substring(0, sentencesFormatted.length() - 1) + " .";
+					}
+				}
+				else {
+					
+					sentencesFormatted = sentencesFormatted + " .";
+				}
+				logger.debug("OpenNLP Sentence: " + sentencesFormatted);
+				String tokens[] = this.tokenDetect(sentencesFormatted + ".");
 				for (String token : tokens) {
 					sentencesTokens.add(token);
 				}

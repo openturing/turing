@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,14 +16,13 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.TransformerException;
 
-import org.json.JSONArray;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
@@ -44,18 +44,16 @@ import com.viglet.turing.plugins.otca.response.xml.ServerResponseEntityExtractor
 import com.viglet.turing.plugins.otca.response.xml.ServerResponseType;
 import com.viglet.turing.solr.TurSolrField;
 
-@ComponentScan
 @Component
-@Transactional
 public class TurTMEConnector implements TurNLPImpl {
-
+	static final Logger logger = LogManager.getLogger(TurTMEConnector.class.getName());
 	@Autowired
 	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
 	@Autowired
 	TurSolrField turSolrField;
 
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
-	Map<String, JSONArray> hmEntities = new HashMap<String, JSONArray>();
+	Map<String, List<Object>> hmEntities = new HashMap<String,  List<Object>>();
 	TurNLPInstance turNLPInstance = null;
 	public JSONObject json;
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
@@ -126,7 +124,7 @@ public class TurTMEConnector implements TurNLPImpl {
 				socket.close();
 			}
 		} catch (Exception e) {
-			System.out.println("Server not reached: " + e.getMessage());
+			logger.debug("Server not reached: " + e.getMessage());
 			return null;
 		}
 	}
@@ -236,12 +234,12 @@ public class TurTMEConnector implements TurNLPImpl {
 
 		JAXBContext jaxbContext;
 		try {
-			System.out.println(xml);
+			logger.debug(xml);
 			jaxbContext = JAXBContext.newInstance(com.viglet.turing.plugins.otca.response.xml.ObjectFactory.class);
 			ServerResponseType serverResponseType = ((JAXBElement<ServerResponseType>) jaxbContext.createUnmarshaller()
 					.unmarshal(is)).getValue();
-			System.out.println("getErrorDescription: " + serverResponseType.getErrorDescription());
-			System.out.println("getVersion: " + serverResponseType.getVersion());
+			logger.debug("getErrorDescription: " + serverResponseType.getErrorDescription());
+			logger.debug("getVersion: " + serverResponseType.getVersion());
 			for (Object result : serverResponseType.getResults().getPingOrGetSupportedEncodingsOrLanguagedetector()) {
 				this.getResult(result);
 			}
@@ -266,10 +264,10 @@ public class TurTMEConnector implements TurNLPImpl {
 		return jsonResult;
 	}
 
-	public void getParentTerms(Parents parents, Map<String, JSONArray> hmEntities, String cartridgeID) {
+	public void getParentTerms(Parents parents, Map<String, List<Object>> hmEntities, String cartridgeID) {
 		if (parents != null) {
 			for (ServerResponseEntityExtractorResultTermParentType parent : parents.getParent()) {
-				hmEntities.get(cartridgeID).put(parent.getTerm());
+				hmEntities.get(cartridgeID).add(parent.getTerm());
 				this.getParentTerms(parent.getParents(), hmEntities, cartridgeID);
 			}
 		}
@@ -278,46 +276,46 @@ public class TurTMEConnector implements TurNLPImpl {
 
 	public void getResult(Object result) {
 
-		System.out.println("iterateResults... " + result.toString());
+		logger.debug("iterateResults... " + result.toString());
 
 		if (result instanceof ServerResponseConceptExtractorResultType) {
 			ServerResponseConceptExtractorResultType concepts = (ServerResponseConceptExtractorResultType) result;
-			System.out.println("Concepts:" + concepts.getName());
+			logger.debug("Concepts:" + concepts.getName());
 			if (concepts.getComplexConcepts() != null) {
-				System.out.println("ComplexConcept");
+				logger.debug("ComplexConcept");
 				if (!hmEntities.containsKey("ComplexConcepts")) {
-					hmEntities.put("ComplexConcepts", new JSONArray());
+					hmEntities.put("ComplexConcepts", new ArrayList<Object>());
 				}
 
 				for (Object complexConcept : concepts.getComplexConcepts().getConceptOrExtractedTerm()) {
 					if (complexConcept instanceof ServerResponseConceptExtractorResultConcept1Type) {
 						hmEntities.get("ComplexConcepts")
-								.put(((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
-						System.out.println("ComplexConcept: "
+								.add(((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
+						logger.debug("ComplexConcept: "
 								+ ((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
 					}
 					if (complexConcept instanceof ServerResponseConceptExtractorResultConcept2Type) {
 						hmEntities.get("ComplexConcepts")
-								.put(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
-						System.out.println("ComplexConcept: "
+								.add(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
+						logger.debug("ComplexConcept: "
 								+ ((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
 					}
 				}
 			}
 			if (concepts.getSimpleConcepts() != null) {
-				System.out.println("SimpleConcept");
+				logger.debug("SimpleConcept");
 				if (!hmEntities.containsKey("SimpleConcepts")) {
-					hmEntities.put("SimpleConcepts", new JSONArray());
+					hmEntities.put("SimpleConcepts", new ArrayList<Object>());
 				}
 				for (Object simpleConcepts : concepts.getSimpleConcepts().getConceptOrExtractedTerm()) {
 					if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept1Type) {
 						hmEntities.get("SimpleConcepts")
-								.put(((ServerResponseConceptExtractorResultConcept1Type) simpleConcepts).getValue());
+								.add(((ServerResponseConceptExtractorResultConcept1Type) simpleConcepts).getValue());
 					}
 					if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept2Type) {
 						hmEntities.get("SimpleConcepts")
-								.put(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
-						System.out.println("SimpleConcept: "
+								.add(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
+						logger.debug("SimpleConcept: "
 								+ ((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
 					}
 				}
@@ -328,13 +326,13 @@ public class TurTMEConnector implements TurNLPImpl {
 				if (nf instanceof ServerResponseEntityExtractorResultExtractResultType) {
 					ServerResponseEntityExtractorResultExtractResultType extractor = (ServerResponseEntityExtractorResultExtractResultType) nf;
 					for (ServerResponseEntityExtractorResultTermType term : extractor.getExtractedTerm()) {
-						System.out.println("getCartridgeID: " + term.getCartridgeID());
+						logger.debug("getCartridgeID: " + term.getCartridgeID());
 						if (!hmEntities.containsKey(term.getCartridgeID())) {
-							hmEntities.put(term.getCartridgeID(), new JSONArray());
+							hmEntities.put(term.getCartridgeID(), new ArrayList<Object>());
 						}
 
-						System.out.println("getId: " + term.getId());
-						System.out.println("getNfinderNormalized: " + term.getNfinderNormalized());
+						logger.debug("getId: " + term.getId());
+						logger.debug("getNfinderNormalized: " + term.getNfinderNormalized());
 						if (term.getMainTerm() != null) {
 							// System.out.println("getMainTerm: " +
 							// term.getMainTerm().getValue());
@@ -342,7 +340,7 @@ public class TurTMEConnector implements TurNLPImpl {
 						if (term.getSubterms() != null) {
 							for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
 									.getSubterm()) {
-								hmEntities.get(term.getCartridgeID()).put(subterm.getValue());
+								hmEntities.get(term.getCartridgeID()).add(subterm.getValue());
 								// System.out.println("getSubTerm: " +
 								// subterm.getValue());
 							}
@@ -353,7 +351,7 @@ public class TurTMEConnector implements TurNLPImpl {
 					ServerResponseEntityExtractorResultFullTextSearchResultType fullText = (ServerResponseEntityExtractorResultFullTextSearchResultType) nf;
 					for (ServerResponseEntityExtractorResultTermType term : fullText.getExtractedTerm()) {
 						if (!hmEntities.containsKey(term.getCartridgeID())) {
-							hmEntities.put(term.getCartridgeID(), new JSONArray());
+							hmEntities.put(term.getCartridgeID(), new ArrayList<Object>());
 						}
 						if (term.getMainTerm() != null) {
 							// System.out.println("getMainTerm: " +
@@ -362,7 +360,7 @@ public class TurTMEConnector implements TurNLPImpl {
 						if (term.getSubterms() != null) {
 							for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
 									.getSubterm()) {
-								hmEntities.get(term.getCartridgeID()).put(subterm.getValue());
+								hmEntities.get(term.getCartridgeID()).add(subterm.getValue());
 								// System.out.println("getSubTerm: " +
 								// subterm.getValue());
 							}
@@ -373,7 +371,7 @@ public class TurTMEConnector implements TurNLPImpl {
 
 							for (ServerResponseEntityExtractorResultTermParentType parent : term.getHierarchy()
 									.getBase().getParents().getParent()) {
-								hmEntities.get(term.getCartridgeID()).put(parent.getTerm());
+								hmEntities.get(term.getCartridgeID()).add(parent.getTerm());
 								this.getParentTerms(parent.getParents(), hmEntities, term.getCartridgeID());
 							}
 						}
@@ -386,16 +384,16 @@ public class TurTMEConnector implements TurNLPImpl {
 			if (categorizer.getCategories() != null) {
 				for (ServerResponseCategorizerResultCategoryType category : categorizer.getCategories().getCategory()) {
 					for (Serializable content : category.getContent()) {
-						System.out.println("Category Content: " + content.toString());
+						logger.debug("Category Content: " + content.toString());
 					}
-					System.out.println("Category ID: " + category.getId());
-					System.out.println("Category Weight: " + category.getWeight());
+					logger.debug("Category ID: " + category.getId());
+					logger.debug("Category Weight: " + category.getWeight());
 				}
 			}
 			if (categorizer.getKnowledgeBase() != null) {
 				for (ServerResponseCategorizerResultKnowledgeBaseType kb : categorizer.getKnowledgeBase()) {
 					if (!hmEntities.containsKey(kb.getKBid())) {
-						hmEntities.put(kb.getKBid(), new JSONArray());
+						hmEntities.put(kb.getKBid(), new ArrayList<Object>());
 					}
 					// System.out.println("KB Id:" + kb.getKBid());
 					// System.out.println("KB Relevance:" +
@@ -404,9 +402,9 @@ public class TurTMEConnector implements TurNLPImpl {
 						for (ServerResponseCategorizerResultCategoryType category : kb.getCategories().getCategory()) {
 
 							for (Serializable content : category.getContent()) {
-								System.out.println("KB Content: " + content.toString());
+								logger.debug("KB Content: " + content.toString());
 								hmEntities.get(kb.getKBid())
-										.put(content.toString().replaceAll(category.getId() + " - ", ""));
+										.add(content.toString().replaceAll(category.getId() + " - ", ""));
 							}
 							// System.out.println("KB ID: " + category.getId());
 							// System.out.println("KB Weight: " +
@@ -417,10 +415,10 @@ public class TurTMEConnector implements TurNLPImpl {
 						for (ServerResponseCategorizerResultCategoryType category : kb.getRejectedCategories()
 								.getRejectedCategory()) {
 							for (Serializable content : category.getContent()) {
-								System.out.println("KB Content Rejected: " + content.toString());
+								logger.debug("KB Content Rejected: " + content.toString());
 							}
-							System.out.println("KB ID Rejected: " + category.getId());
-							System.out.println("KB Weight Rejected: " + category.getWeight());
+							logger.debug("KB ID Rejected: " + category.getId());
+							logger.debug("KB Weight Rejected: " + category.getWeight());
 
 						}
 					}
@@ -433,12 +431,16 @@ public class TurTMEConnector implements TurNLPImpl {
 	}
 
 	public Map<String, Object> getAttributes() throws JSONException {
+		logger.debug("getAttributes() hmEntities: " + hmEntities.toString());
+		logger.debug("getAttributes() nlpInstanceEntities: " + nlpInstanceEntities.toString());
 		Map<String, Object> entityAttributes = new HashMap<String, Object>();
 
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
-			entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getCollectionName(),
-					hmEntities.get(nlpInstanceEntity.getName()));
+			entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
+					hmEntities.get(nlpInstanceEntity.getTurNLPEntity().getInternalName()));
 		}
+
+		logger.debug("getAttributes() entityAttributes: " + entityAttributes.toString());
 		return entityAttributes;
 	}
 

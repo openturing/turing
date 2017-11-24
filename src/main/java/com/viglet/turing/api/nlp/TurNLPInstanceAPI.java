@@ -70,7 +70,7 @@ public class TurNLPInstanceAPI {
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurNLPInstance add(TurNLPInstance turNLPInstance) throws Exception {
-		this.turNLPInstanceRepository.save(turNLPInstance);
+		this.turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 		return turNLPInstance;
 
 	}

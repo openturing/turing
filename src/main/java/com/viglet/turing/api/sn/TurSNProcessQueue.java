@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,11 +26,13 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
+import com.viglet.turing.plugins.corenlp.TurCoreNLPConnector;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.thesaurus.TurThesaurusProcessor;
 
 @Component
 public class TurSNProcessQueue {
+	static final Logger logger = LogManager.getLogger(TurSNJob.class.getName());
 	@Autowired
 	TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
@@ -46,42 +50,55 @@ public class TurSNProcessQueue {
 
 	@JmsListener(destination = "sample.queue")
 	public void receiveQueue(TurSNJob turSNJob) {
+
 		JSONArray jsonRows = new JSONArray(turSNJob.getJson());
 		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
 		try {
 			for (int i = 0; i < jsonRows.length(); i++) {
 				JSONObject jsonRow = jsonRows.getJSONObject(i);
-
+				logger.debug("receiveQueue JsonObject: " + jsonRow.toString());
 				ObjectMapper mapper = new ObjectMapper();
 				TypeFactory typeFactory = mapper.getTypeFactory();
 				MapType mapType = typeFactory.constructMapType(HashMap.class, String.class, Object.class);
 				HashMap<String, Object> attributes = mapper.readValue(new StringReader(jsonRow.toString()), mapType);
 
 				Map<String, Object> consolidateResults = new HashMap<String, Object>();
-				// NLP
-				turNLP.startup(turSNSite.getTurNLPInstance(), attributes);
-				Map<String, Object> nlpResults = turNLP.retrieveNLP();
-				Map<String, Object> nlpResultsPreffix = new HashMap<String, Object>();
-				
-				for (Entry<String, Object> nlpResult : nlpResults.entrySet()) {
-					nlpResultsPreffix.put("turing_entity_" + nlpResult.getKey() , nlpResult.getValue());
-				}
-				
-				// Thesaurus
-				turThesaurusProcessor.startup();
-				Map<String, Object> thesaurusResults = turThesaurusProcessor.detectTerms(attributes);
 
+				// SE
 				for (Entry<String, Object> attribute : attributes.entrySet()) {
+					logger.debug("SE Consolidate Value: " + attribute.getValue());
+					logger.debug("SE Consolidate Class: " + attribute.getValue().getClass().getName());
 					consolidateResults.put(attribute.getKey(), attribute.getValue());
 				}
 
-				for (Entry<String, Object> nlpResultPreffix : nlpResultsPreffix.entrySet()) {
-					consolidateResults.put(nlpResultPreffix.getKey(), nlpResultPreffix.getValue());
+				// NLP
+				boolean nlp = true;
+
+				if (nlp) {
+					turNLP.startup(turSNSite.getTurNLPInstance(), attributes);
+					Map<String, Object> nlpResults = turNLP.retrieveNLP();
+					Map<String, Object> nlpResultsPreffix = new HashMap<String, Object>();
+
+					for (Entry<String, Object> nlpResult : nlpResults.entrySet()) {
+						nlpResultsPreffix.put("turing_entity_" + nlpResult.getKey(), nlpResult.getValue());
+					}
+
+					for (Entry<String, Object> nlpResultPreffix : nlpResultsPreffix.entrySet()) {
+						consolidateResults.put(nlpResultPreffix.getKey(), nlpResultPreffix.getValue());
+					}
 				}
 
-				for (Entry<String, Object> thesaurusResult : thesaurusResults.entrySet()) {
-					consolidateResults.put(thesaurusResult.getKey(), thesaurusResult.getValue());
+				// Thesaurus
+				boolean thesaurus = false;
+				if (thesaurus) {
+					turThesaurusProcessor.startup();
+					Map<String, Object> thesaurusResults = turThesaurusProcessor.detectTerms(attributes);
+
+					for (Entry<String, Object> thesaurusResult : thesaurusResults.entrySet()) {
+						consolidateResults.put(thesaurusResult.getKey(), thesaurusResult.getValue());
+					}
 				}
+
 				// Remove Duplicate Terms
 				Map<String, Object> attributesWithUniqueTerms = this.removeDuplicateTerms(consolidateResults);
 
@@ -100,22 +117,36 @@ public class TurSNProcessQueue {
 		Map<String, Object> attributesWithUniqueTerms = new HashMap<String, Object>();
 		if (attributes != null) {
 			for (Entry<String, Object> attribute : attributes.entrySet()) {
+				if (attribute.getValue() != null) {
 
-				if (attribute.getValue() instanceof ArrayList) {
-					ArrayList<?> nlpAttributeArray = (ArrayList<?>) attribute.getValue();
-					if (nlpAttributeArray.size() > 0) {
-						List<String> list = new ArrayList<String>();
-						for (Object nlpAttributeItem : nlpAttributeArray) {
-							list.add((String) nlpAttributeItem);
+					logger.debug("removeDuplicateTerms: attribute Value: " + attribute.getValue().toString());
+					logger.debug("removeDuplicateTerms: attribute Class: " + attribute.getValue().getClass().getName());
+					if (attribute.getValue() instanceof ArrayList) {
+
+						ArrayList<?> nlpAttributeArray = (ArrayList<?>) attribute.getValue();
+						if (nlpAttributeArray.size() > 0) {
+							List<String> list = new ArrayList<String>();
+							for (Object nlpAttributeItem : nlpAttributeArray) {
+								list.add((String) nlpAttributeItem);
+							}
+							Set<String> termsUnique = new HashSet<String>(list);
+							List<Object> arrayValue = new ArrayList<Object>();
+							arrayValue.addAll(termsUnique);
+							attributesWithUniqueTerms.put(attribute.getKey(), arrayValue);
+							for (Object term : termsUnique) {
+								logger.debug("removeDuplicateTerms: attributesWithUniqueTerms Array Value: "
+										+ (String) term);
+							}
 						}
-						Set<String> termsUnique = new HashSet<String>(list);
-						attributesWithUniqueTerms.put(attribute.getKey(), termsUnique.toArray());
+					} else {
+
+						attributesWithUniqueTerms.put(attribute.getKey(), attribute.getValue());
 					}
-				} else {
-					attributesWithUniqueTerms.put(attribute.getKey(), attribute.getValue());
 				}
 			}
+			logger.debug("removeDuplicateTerms: attributesWithUniqueTerms: " + attributesWithUniqueTerms.toString());
+
 		}
-		return attributes;
+		return attributesWithUniqueTerms;
 	}
 }
