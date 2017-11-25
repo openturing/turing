@@ -41,6 +41,9 @@ turingSNApp
 							}
 							$scope.initParams = function(q, p, _setlocale,
 									sort, fq) {
+								if (q == null || q.trim().length == 0) {
+									q = "*";
+								}
 								turSNSearch
 										.search($scope.turSiteName, q, p,
 												_setlocale, sort, fq)

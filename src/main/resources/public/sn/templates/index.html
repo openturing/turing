@@ -127,7 +127,11 @@
 															amParse:'YYYY-MM-DD HH:mm:ss' | amDateFormat:'DD MMMM
 															YYYY'}}</div>
 														<div style="margin-top: 10px">
-															<div ng-bind-html="document.fields.text"></div>
+															<div style="display: table-row">
+																<img ng-if="document.fields.image != null" src="{{document.fields.image}}"
+																	style="height: 100px; margin-right: 10px" align="left"></img>
+																<div ng-bind-html="document.fields.text"></div>
+															</div>
 															<div ng-if="document['metadata'].length > 0"
 																style="margin-top: 10px">
 																Assuntos encontrados:
