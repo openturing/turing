@@ -26,13 +26,12 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
-import com.viglet.turing.plugins.corenlp.TurCoreNLPConnector;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.thesaurus.TurThesaurusProcessor;
 
 @Component
 public class TurSNProcessQueue {
-	static final Logger logger = LogManager.getLogger(TurSNJob.class.getName());
+	static final Logger logger = LogManager.getLogger(TurSNProcessQueue.class.getName());
 	@Autowired
 	TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired

@@ -16,10 +16,14 @@
 
 package com.viglet.turing;
 
+import java.io.File;
+
 import javax.jms.Queue;
 
+import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.command.ActiveMQQueue;
-
+import org.apache.activemq.store.PersistenceAdapter;
+import org.apache.activemq.store.kahadb.KahaDBPersistenceAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -37,6 +41,22 @@ public class Main {
 	@Autowired
 	DataSource dataSource;
 
+	@Bean(initMethod = "start", destroyMethod = "stop")
+	public BrokerService broker() throws Exception {
+	    final BrokerService broker = new BrokerService();
+	    //broker.addConnector("tcp://localhost:61616");
+	    broker.addConnector("vm://localhost");
+	    PersistenceAdapter persistenceAdapter = new KahaDBPersistenceAdapter();
+	    File dir = new File(System.getProperty("user.home") + File.separator + "kaha");
+	    if (!dir.exists()) {
+	        dir.mkdirs();
+	    }
+	    persistenceAdapter.setDirectory(dir);
+	    broker.setPersistenceAdapter(persistenceAdapter);
+	    broker.setPersistent(true);
+	    return broker;
+	}
+	
 	@Bean
 	public Queue queue() {
 		return new ActiveMQQueue("sample.queue");
