@@ -10,6 +10,7 @@ import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEVendorRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
+import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 
 @Component
 @Transactional
@@ -37,7 +38,7 @@ public class TurSEInstanceOnStartup {
 				turSEInstance.setTurSEVendor(turSEVendor);
 				turSEInstance.setHost("localhost");
 				turSEInstance.setPort(8983);
-				turSEInstance.setLanguage("pt-br");
+				turSEInstance.setLanguage(TurLocaleRepository.EN_US);
 				turSEInstance.setEnabled(1);
 				turSEInstanceRepository.save(turSEInstance);
 				

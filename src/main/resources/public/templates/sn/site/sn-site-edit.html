@@ -12,7 +12,8 @@
 			<div class="btn-group" role="group">
 				<button type="button"
 					ng-class="{'btn-viglet':$state.current.name == 'sn.site-edit','btn-default':$state.current.name != 'sn.site-edit' }"
-					ui-sref="sn.site-edit" class="btn">{{'DETAIL' | translate }}</button>
+					ui-sref="sn.site-edit" class="btn">{{'DETAIL' | translate
+					}}</button>
 			</div>
 			<div class="btn-group" role="group">
 				<button type="button"
@@ -24,7 +25,9 @@
 			<div class="btn-group" role="group">
 				<button type="button"
 					ng-class="{'btn-viglet':$state.current.name.indexOf('sn.site-edit.ui') == 0, 'btn-default':$state.current.name.indexOf('sn.site-edit.ui') != 0}"
-					ui-sref="sn.site-edit.ui" class="btn btn-default">{{'APPEARANCE' | translate }} <span class="badge">{{dataGroup.turDataGroupModels.length}}</span></button>
+					ui-sref="sn.site-edit.ui" class="btn btn-default">
+					{{'APPEARANCE' | translate }} <span class="badge">{{dataGroup.turDataGroupModels.length}}</span>
+				</button>
 			</div>
 		</div>
 	</div>
@@ -86,9 +89,10 @@
 				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 				{{'LANGUAGE' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-
-				<input maxlength="15" ng-model="snSite.language" type="text"
-					class="form-control">
+				<select class="form-control" ng-model="snSite.language"
+					ng-options="locale.initials as locale.en for locale in locales">
+					<option value="">- Pick One -</option>
+				</select>
 
 			</div>
 		</div>
@@ -109,7 +113,7 @@
 				<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"></div>
 				<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8"
 					style="padding: 0px; padding-top: 20px; padding-bottom: 20px;">
-										<div class="btn-group">
+					<div class="btn-group">
 						<button ng-click="snSiteUpdate()" type="button"
 							class="btn btn-viglet">{{'SETTINGS_SAVE_CHANGES' |
 							translate }}</button>

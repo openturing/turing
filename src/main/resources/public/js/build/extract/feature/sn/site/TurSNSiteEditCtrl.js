@@ -8,16 +8,18 @@ turingApp.controller('TurSNSiteEditCtrl', [
 		"turSNSiteResource",
 		"turSEInstanceResource",
 		"turNLPInstanceResource",
+		"turLocaleResource",
 		"turNotificationService",
 		"$uibModal",
 		function($scope, $stateParams, $state, $rootScope, $translate,
 				vigLocale, turSNSiteResource, turSEInstanceResource,
-				turNLPInstanceResource, turNotificationService, $uibModal) {
+				turNLPInstanceResource, turLocaleResource, turNotificationService, $uibModal) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 			$rootScope.$state = $state;
 
+			$scope.locales = turLocaleResource.query();
 			$scope.seInstances = turSEInstanceResource.query();
 			$scope.nlpInstances = turNLPInstanceResource.query();
 			$scope.snSite = turSNSiteResource.get({

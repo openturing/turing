@@ -7,14 +7,17 @@ turingApp.controller('TurSNSiteNewCtrl', [
 		"turSNSiteResource",
 		"turSEInstanceResource",
 		"turNLPInstanceResource",
+		"turLocaleResource",
 		"turNotificationService",
 		function($scope, $state, $rootScope, $translate, vigLocale,
 				turSNSiteResource, turSEInstanceResource,
-				turNLPInstanceResource, turNotificationService) {
+				turNLPInstanceResource, turLocaleResource, turNotificationService) {
 
 			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 			$translate.use($scope.vigLanguage);
 
+			$scope.locales = turLocaleResource.query();
+			
 			$rootScope.$state = $state;
 			$scope.snSite = {};
 

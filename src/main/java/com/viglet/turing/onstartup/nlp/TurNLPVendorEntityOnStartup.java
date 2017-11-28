@@ -12,6 +12,7 @@ import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
+import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 
 @Component
 @Transactional
@@ -32,14 +33,14 @@ public class TurNLPVendorEntityOnStartup {
 		if (turNLPVendorEntityRepository.findAll().isEmpty()) {
 			TurNLPVendor turNLPVendor = turNLPVendorRepository.findOne(CORENLP);
 			if (turNLPVendor != null) {
-				this.addNLPVendor(turNLPVendor, "PN", "PERSON");
-				this.addNLPVendor(turNLPVendor, "GL", "LOCATION");
-				this.addNLPVendor(turNLPVendor, "ON", "ORGANIZATION");
-				this.addNLPVendor(turNLPVendor, "DURATION", "DURATION");
-				this.addNLPVendor(turNLPVendor, "DATE", "DATE");
-				this.addNLPVendor(turNLPVendor, "MISC", "MISC");
-				this.addNLPVendor(turNLPVendor, "ORDINAL", "ORDINAL");
-				this.addNLPVendor(turNLPVendor, "TIME", "TIME");
+				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, "GL", "LOCATION", TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, "ON", "ORGANIZATION", TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, "DURATION", "DURATION", TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, "DATE", "DATE", TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, "MISC", "MISC", TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, "ORDINAL", "ORDINAL", TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, "TIME", "TIME", TurLocaleRepository.EN_US);
 			}
 
 			turNLPVendor = turNLPVendorRepository.findOne(OPENNLP);
@@ -50,40 +51,74 @@ public class TurNLPVendorEntityOnStartup {
 				if (userDir.exists() && userDir.isDirectory()) {
 
 					this.addNLPVendor(turNLPVendor, "PN",
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-person.bin"));
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-person.bin"),
+							TurLocaleRepository.EN_US);
 					this.addNLPVendor(turNLPVendor, "GL",
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-location.bin"));
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-location.bin"),
+							TurLocaleRepository.EN_US);
 					this.addNLPVendor(turNLPVendor, "ON",
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-organization.bin"));
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-organization.bin"),
+							TurLocaleRepository.EN_US);
 					this.addNLPVendor(turNLPVendor, "MONEY",
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-money.bin"));
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-money.bin"),
+							TurLocaleRepository.EN_US);
 					this.addNLPVendor(turNLPVendor, "DATE",
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-date.bin"));
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-date.bin"),
+							TurLocaleRepository.EN_US);
 					this.addNLPVendor(turNLPVendor, "PERCENTAGE",
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-percentage.bin"));
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-percentage.bin"),
+							TurLocaleRepository.EN_US);
 					this.addNLPVendor(turNLPVendor, "TIME",
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-time.bin"));
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-time.bin"),
+							TurLocaleRepository.EN_US);
+
+					this.addNLPVendor(turNLPVendor, "PN",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-person.bin"),
+							TurLocaleRepository.PT_BR);
+					this.addNLPVendor(turNLPVendor, "GL",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-location.bin"),
+							TurLocaleRepository.PT_BR);
+					this.addNLPVendor(turNLPVendor, "ON",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-organization.bin"),
+							TurLocaleRepository.PT_BR);
+					this.addNLPVendor(turNLPVendor, "MONEY",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-money.bin"),
+							TurLocaleRepository.PT_BR);
+					this.addNLPVendor(turNLPVendor, "DATE",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-date.bin"),
+							TurLocaleRepository.PT_BR);
+					this.addNLPVendor(turNLPVendor, "PERCENTAGE",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-percentage.bin"),
+							TurLocaleRepository.PT_BR);
+					this.addNLPVendor(turNLPVendor, "TIME",
+							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-time.bin"),
+							TurLocaleRepository.PT_BR);
 				}
 			}
 
 			turNLPVendor = turNLPVendorRepository.findOne(OTCA);
 
 			if (turNLPVendor != null) {
-				this.addNLPVendor(turNLPVendor, "PN", "PN");
-				this.addNLPVendor(turNLPVendor, "GL", "GL");
-				this.addNLPVendor(turNLPVendor, "ON", "ON");
+				this.addNLPVendor(turNLPVendor, "PN", "PN", TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, "GL", "GL", TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, "ON", "ON", TurLocaleRepository.EN_US);
+
+				this.addNLPVendor(turNLPVendor, "PN", "PN", TurLocaleRepository.PT_BR);
+				this.addNLPVendor(turNLPVendor, "GL", "GL", TurLocaleRepository.PT_BR);
+				this.addNLPVendor(turNLPVendor, "ON", "ON", TurLocaleRepository.PT_BR);
 			}
 
 		}
 	}
 
-	public void addNLPVendor(TurNLPVendor turNLPVendor, String internalName, String name) {
+	public void addNLPVendor(TurNLPVendor turNLPVendor, String internalName, String name, String language) {
 		TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(internalName);
 		if (turNLPEntity != null) {
 			TurNLPVendorEntity turNLPVendorEntity = new TurNLPVendorEntity();
 			turNLPVendorEntity.setName(name);
 			turNLPVendorEntity.setTurNLPEntity(turNLPEntity);
 			turNLPVendorEntity.setTurNLPVendor(turNLPVendor);
+			turNLPVendorEntity.setLanguage(language);
 			turNLPVendorEntityRepository.save(turNLPVendorEntity);
 		}
 	}

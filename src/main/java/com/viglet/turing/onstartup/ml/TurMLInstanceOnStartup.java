@@ -10,6 +10,7 @@ import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.repository.ml.TurMLInstanceRepository;
 import com.viglet.turing.persistence.repository.ml.TurMLVendorRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
+import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 
 @Component
 @Transactional
@@ -35,7 +36,7 @@ public class TurMLInstanceOnStartup {
 				turMLInstance.setTurMLVendor(turMLVendor);
 				turMLInstance.setHost("");
 				turMLInstance.setPort(0);
-				turMLInstance.setLanguage("en");
+				turMLInstance.setLanguage(TurLocaleRepository.EN_US);
 				turMLInstance.setEnabled(1);
 				turMLInstanceRepository.save(turMLInstance);
 

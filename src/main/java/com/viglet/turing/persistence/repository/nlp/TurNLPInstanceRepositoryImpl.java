@@ -37,6 +37,7 @@ class TurNLPInstanceRepositoryImpl implements TurNLPInstanceRepositoryCustom {
 				turNLPInstanceEntity.setTurNLPEntity(turNLPVendorEntity.getTurNLPEntity());
 				turNLPInstanceEntity.setTurNLPInstance(turNLPInstance);
 				turNLPInstanceEntity.setEnabled(1);
+				turNLPInstanceEntity.setLanguage(turNLPVendorEntity.getLanguage());
 				turNLPInstanceEntityRepository.save(turNLPInstanceEntity);
 			}
 		}

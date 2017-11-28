@@ -69,9 +69,8 @@
 				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
 				{{'LANGUAGE' | translate }}</div>
 			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
-
 				<select class="form-control" ng-model="nlp.language"
-					ng-options="locale.initials as locale.en for locale in locales track by locale.initials">
+					ng-options="locale.initials as locale.en for locale in locales">
 				</select>			
 
 			</div>

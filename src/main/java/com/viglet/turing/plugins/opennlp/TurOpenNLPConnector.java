@@ -40,6 +40,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 	@Autowired
 	private TurSolrField turSolrField;
 
+	private TurNLPInstance turNLPInstance = null;
 	private List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	private TurOpenNLPModelManager openNLPModelManager = null;
 	private List<String> sentencesTokens = new ArrayList<String>();
@@ -47,8 +48,8 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 	public void startup(TurNLPInstance turNLPInstance) {
 
 		openNLPModelManager = TurOpenNLPModelManager.getInstance();
-
-		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstance(turNLPInstance);
+		this.turNLPInstance = turNLPInstance;
+		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstanceAndEnabled(turNLPInstance, 1);
 	}
 
 	@Override
@@ -65,9 +66,8 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 					if (!sentencesFormatted.endsWith(" .")) {
 						sentencesFormatted = sentencesFormatted.substring(0, sentencesFormatted.length() - 1) + " .";
 					}
-				}
-				else {
-					
+				} else {
+
 					sentencesFormatted = sentencesFormatted + " .";
 				}
 				logger.debug("OpenNLP Sentence: " + sentencesFormatted);
@@ -140,11 +140,15 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 	}
 
 	public String[] sentenceDetect(String text) {
-		File modelIn;
+		File modelIn = null;
 		String sentences[] = null;
 		try {
 			File userDir = new File(System.getProperty("user.dir"));
-			modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/en/en-sent.bin"));
+			if (this.turNLPInstance.getLanguage().equals("en_US")) {
+				modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/en/en-sent.bin"));
+			} else if (this.turNLPInstance.getLanguage().equals("pt_BR")) {
+				modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/pt/pt-sent.bin"));
+			}
 			SentenceModel model = new SentenceModel(modelIn);
 			SentenceDetectorME sentenceDetector = new SentenceDetectorME(model);
 			sentences = sentenceDetector.sentDetect(text);
@@ -159,7 +163,11 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 		String tokens[] = null;
 		try {
 			File userDir = new File(System.getProperty("user.dir"));
-			modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/en/en-token.bin"));
+			if (this.turNLPInstance.getLanguage().equals("en_US")) {
+				modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/en/en-token.bin"));
+			} else if (this.turNLPInstance.getLanguage().equals("pt_BR")) {
+				modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/pt/pt-token.bin"));
+			}
 			TokenizerModel model = new TokenizerModel(modelIn);
 			Tokenizer tokenizer = new TokenizerME(model);
 			tokens = tokenizer.tokenize(sentence);

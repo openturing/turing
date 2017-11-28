@@ -55,6 +55,7 @@ public class TurNLPInstanceAPI {
 		turNLPInstanceEdit.setHost(turNLPInstance.getHost());
 		turNLPInstanceEdit.setPort(turNLPInstance.getPort());
 		turNLPInstanceEdit.setEnabled(turNLPInstance.getEnabled());
+		turNLPInstanceEdit.setLanguage(turNLPInstance.getLanguage());
 		this.turNLPInstanceRepository.save(turNLPInstanceEdit);
 		return turNLPInstanceEdit;
 	}

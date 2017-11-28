@@ -54,7 +54,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 	public void startup(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
 
-		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstance(turNLPInstance);
+		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstanceAndEnabled(turNLPInstance, 1);
 	}
 
 	public Map<String, Object> retrieve(Map<String, Object> attributes) throws TransformerException, Exception {

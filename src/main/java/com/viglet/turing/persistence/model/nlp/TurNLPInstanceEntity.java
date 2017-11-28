@@ -26,6 +26,9 @@ public class TurNLPInstanceEntity implements Serializable {
 	@Column(nullable = false, length = 255)
 	private String name;
 
+	@Column(nullable=false, length=5)
+	private String language;
+	
 	// bi-directional many-to-one association to VigEntity
 	@ManyToOne
 	@JoinColumn(name = "entity_id", nullable = false)
@@ -78,4 +81,13 @@ public class TurNLPInstanceEntity implements Serializable {
 	public void setTurNLPInstance(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
 	}
+
+	public String getLanguage() {
+		return language;
+	}
+
+	public void setLanguage(String language) {
+		this.language = language;
+	}
+	
 }

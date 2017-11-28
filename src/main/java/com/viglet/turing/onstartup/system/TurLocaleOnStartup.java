@@ -25,9 +25,9 @@ public class TurLocaleOnStartup {
 			turLocaleRepository.save(new TurLocale("da", "Dansk - Danish", "Dansk - Dinamarquês"));
 			turLocaleRepository.save(new TurLocale("de", "Deutsch - German", "Deutsch - Alemão"));
 			turLocaleRepository.save(new TurLocale("el", "Ελληνικά - Greek", "Ελληνικά - Grego"));
-			turLocaleRepository.save(new TurLocale("en", "English", "English - Inglês"));
+			turLocaleRepository.save(new TurLocale(TurLocaleRepository.EN_US, "English", "English - Inglês"));
 			turLocaleRepository
-					.save(new TurLocale("en-gb", "English UK - British English", "English UK - Inglês britânico"));
+					.save(new TurLocale(TurLocaleRepository.EN_GB, "English UK - British English", "English UK - Inglês britânico"));
 			turLocaleRepository.save(new TurLocale("es", "Español - Spanish", "Español - Espanhol"));
 			turLocaleRepository.save(new TurLocale("eu", "Euskara - Basque", "Euskara - Basco"));
 			turLocaleRepository.save(new TurLocale("fa", "فارسی - Persian", "فارسی - Persa"));
@@ -53,7 +53,7 @@ public class TurLocaleOnStartup {
 			turLocaleRepository.save(new TurLocale("pl", "Polski - Polish", "Polski - Polonês"));
 			turLocaleRepository
 					.save(new TurLocale("pt-pt", "Português - Portuguese (Portugal)", "Português (Portugal)"));
-			turLocaleRepository.save(new TurLocale("pt-br", "Português - Portuguese (Brazil)", "Português (Brasil)"));
+			turLocaleRepository.save(new TurLocale(TurLocaleRepository.PT_BR, "Português - Portuguese (Brazil)", "Português (Brasil)"));
 			turLocaleRepository.save(new TurLocale("ro", "Română - Romanian", "Română - Romeno"));
 			turLocaleRepository.save(new TurLocale("ru", "Русский - Russian", "Русский - Russo"));
 			turLocaleRepository.save(new TurLocale("sv", "Svenska - Swedish", "Svenska - Sueco"));

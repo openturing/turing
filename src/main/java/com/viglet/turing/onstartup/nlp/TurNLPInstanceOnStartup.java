@@ -10,6 +10,7 @@ import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
+import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 
 @Component
 @Transactional
@@ -29,14 +30,16 @@ public class TurNLPInstanceOnStartup {
 		if (turNLPInstanceRepository.findAll().isEmpty()) {
 
 			TurNLPVendor turNLPVendorOpenNLP = turNLPVendorRepository.findOne("OPENNLP");
+			
+			
 			if (turNLPVendorOpenNLP != null) {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
-				turNLPInstance.setTitle("OpenNLP");
-				turNLPInstance.setDescription("OpenNLP Production");
+				turNLPInstance.setTitle("OpenNLP English");
+				turNLPInstance.setDescription("OpenNLP Production - English");
 				turNLPInstance.setTurNLPVendor(turNLPVendorOpenNLP);
 				turNLPInstance.setHost("");
 				turNLPInstance.setPort(0);
-				turNLPInstance.setLanguage("pt-br");
+				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 
@@ -44,6 +47,16 @@ public class TurNLPInstanceOnStartup {
 				turConfigVar.setPath("/nlp");
 				turConfigVar.setValue(Integer.toString(turNLPInstance.getId()));
 				turConfigVarRepository.save(turConfigVar);
+				
+				turNLPInstance = new TurNLPInstance();
+				turNLPInstance.setTitle("OpenNLP Portuguese");
+				turNLPInstance.setDescription("OpenNLP Production - Portuguese");
+				turNLPInstance.setTurNLPVendor(turNLPVendorOpenNLP);
+				turNLPInstance.setHost("");
+				turNLPInstance.setPort(0);
+				turNLPInstance.setLanguage(TurLocaleRepository.PT_BR);
+				turNLPInstance.setEnabled(1);
+				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 
 			}
 
@@ -51,11 +64,11 @@ public class TurNLPInstanceOnStartup {
 			if (turNLPVendorCoreNLP != null) {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("CoreNLP");
-				turNLPInstance.setDescription("CoreNLP Production");
+				turNLPInstance.setDescription("CoreNLP Production - English");
 				turNLPInstance.setTurNLPVendor(turNLPVendorCoreNLP);
 				turNLPInstance.setHost("localhost");
 				turNLPInstance.setPort(9001);
-				turNLPInstance.setLanguage("en");
+				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 

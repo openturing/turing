@@ -14,6 +14,7 @@ import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 
@@ -43,7 +44,7 @@ public class TurSNSiteOnStartup {
 			// Detail
 			turSNSite.setName("Sample");
 			turSNSite.setDescription("Semantic Sample Site");
-			turSNSite.setLanguage("pt_BR");
+			turSNSite.setLanguage(TurLocaleRepository.EN_US);
 			turSNSite.setCore("turing");
 
 			turSNSite.setTurNLPInstance(turNLPInstanceRepository.findById(1));
@@ -178,7 +179,7 @@ public class TurSNSiteOnStartup {
 			turSNSiteFieldExt.setEnabled(1);
 			turSNSiteFieldExt.setName(turSNSiteField.getName());
 			turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-			turSNSiteFieldExt.setFacet(1);
+			turSNSiteFieldExt.setFacet(0);
 			turSNSiteFieldExt.setFacetName("URLs");
 			turSNSiteFieldExt.setHl(0);
 			turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
