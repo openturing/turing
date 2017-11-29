@@ -1,7 +1,7 @@
 /**
  * State-based routing for AngularJS 1.x
  * This bundle requires the ui-router-core.js bundle from the @uirouter/core package.
- * @version v1.0.10
+ * @version v1.0.11
  * @link https://ui-router.github.io
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -1860,7 +1860,7 @@ function $ViewDirectiveFill($compile, $controller, $transitions, $view, $q, $tim
                     $compile($element.contents())(scope);
                     return;
                 }
-                var cfg = data.$cfg || { viewDecl: {}, getTemplate: ng_from_import.noop };
+                var cfg = data.$cfg || { viewDecl: {}, getTemplate: core.noop };
                 var resolveCtx = cfg.path && new core.ResolveContext(cfg.path);
                 $element.html(cfg.getTemplate($element, resolveCtx) || initial);
                 core.trace.traceUIViewFill(data.$uiView, $element.html());
