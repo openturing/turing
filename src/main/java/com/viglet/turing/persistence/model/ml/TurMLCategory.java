@@ -5,11 +5,6 @@ import javax.persistence.*;
 
 import org.hibernate.annotations.Fetch;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;

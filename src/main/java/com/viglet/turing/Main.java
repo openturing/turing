@@ -27,11 +27,14 @@ import org.apache.activemq.store.kahadb.KahaDBPersistenceAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.filter.CharacterEncodingFilter;
+
 import javax.sql.DataSource;
 
 @Controller
@@ -41,6 +44,16 @@ public class Main {
 	@Autowired
 	DataSource dataSource;
 
+	@Bean
+	public FilterRegistrationBean filterRegistrationBean() {
+	    FilterRegistrationBean registrationBean = new FilterRegistrationBean();
+	    CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
+	    characterEncodingFilter.setForceEncoding(true);
+	    characterEncodingFilter.setEncoding("UTF-8");
+	    registrationBean.setFilter(characterEncodingFilter);
+	    return registrationBean;
+	}
+	
 	@Bean(initMethod = "start", destroyMethod = "stop")
 	public BrokerService broker() throws Exception {
 	    final BrokerService broker = new BrokerService();
