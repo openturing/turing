@@ -12,15 +12,16 @@ turingSNApp.config([
 			$translateProvider.translations('en', {
 				REMOVE : "Remove",
 				FIRST: "First",
-				LAST: "LAST",
+				LAST: "Last",
 				PREVIOUS: "Previous",
 				NEXT: "Next",
 				SEARCH: "Search",
 				SEARCH_FOR: "Search for",
 				NO_RESULTS_FOUND:"No results found",
 				APPLIED_FILTERS: "Applied Filters",
-				FOUND: "Found", 
-				RESULTS_FOR_THE_TERM: "results for the term"
+				SHOWING:  "Showing",
+				OF: "of",
+				RESULTS: "results"						
 			});
 			$translateProvider.translations('pt', {
 				REMOVE : "Remover",
@@ -32,9 +33,9 @@ turingSNApp.config([
 				SEARCH_FOR: "Pesquisar por",
 				NO_RESULTS_FOUND: "Nenhum resultado encontrado",
 				APPLIED_FILTERS: "Filtros Aplicados",
-				FOUND: "Encontrados", 
-				RESULTS_FOR_THE_TERM: "resultados para o termo"
-
+				SHOWING:  "Exibindo",
+				OF: "de",
+				RESULTS: "resultados"						
 			});
 			
 			$translateProvider.fallbackLanguage('en');
@@ -112,14 +113,20 @@ turingSNApp
 						'turSNSearch',
 						'amMoment',
 						'vigLocale',
+						'$location',
+						'$anchorScroll',
 						function($scope, $http, $window, $state, $rootScope,
-								$translate, $location, turSNSearch, amMoment, vigLocale) {
-							
-							$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+								$translate, $location, turSNSearch, amMoment,
+								vigLocale, $location, $anchorScroll) {
+
+							$scope.vigLanguage = vigLocale.getLocale()
+									.substring(0, 2);
 							$translate.use($scope.vigLanguage);
-							
+
 							amMoment.changeLocale('en');
-							$scope.total = 0;
+							$scope.pageCount = 0;
+							$scope.pageStart = 0;
+							$scope.pageEnd = 0;
 							var turPath = $location.path().trim();
 							if (turPath.endsWith("/")) {
 								turPath = turPath.substring(0,
@@ -150,7 +157,9 @@ turingSNApp
 										.then(
 												function successCallback(
 														response) {
-													$scope.total = response.data["queryContext"]["count"];
+													$scope.pageCount = response.data["queryContext"]["count"];
+													$scope.pageStart = response.data["queryContext"]["pageStart"];
+													$scope.pageEnd = response.data["queryContext"]["pageEnd"];
 													$scope.results = response.data["results"]["document"];
 													$scope.pages = response.data["pagination"];
 													$scope.facets = response.data["widget"]["facet"];
@@ -168,7 +177,9 @@ turingSNApp
 										.then(
 												function successCallback(
 														response) {
-													$scope.total = response.data["queryContext"]["count"];
+													$scope.pageCount = response.data["queryContext"]["count"];
+													$scope.pageStart = response.data["queryContext"]["pageStart"];
+													$scope.pageEnd = response.data["queryContext"]["pageEnd"];
 													$scope.results = response.data["results"]["document"];
 													$scope.pages = response.data["pagination"];
 													$scope.facets = response.data["widget"]["facet"];
@@ -181,6 +192,8 @@ turingSNApp
 							$scope.init();
 							$rootScope.$state = $state;
 							$scope.turRedirect = function(href) {
+								$location.hash('turHeader');
+								$anchorScroll();
 								$scope.initURL(href);
 							}
 							$scope.replaceUrlSearch = function(url) {

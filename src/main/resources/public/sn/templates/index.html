@@ -29,8 +29,9 @@
 				<!-- Brand and toggle get grouped for better mobile display -->
 				<div class="row">
 					<div class="col-lg-1 col-md-1 col-sm-1 col-xs-2">
-						<a class="navbar-brand" href="#viglet"><img
-							src="../img/viglet_logo_sm.png"></img></a>
+						<img class="navbar-brand"
+							style="padding: 5px; padding-right: 20px;"
+							src="../img/viglet_logo_sm.png"></img>
 					</div>
 					<div class="col-lg-11 col-md-11 col-sm-11 col-xs-10"
 						style="padding-top: 7px">
@@ -52,12 +53,12 @@
 			<!-- /.container-fluid -->
 		</nav>
 
-		<div class="container">
+		<div class="container" id="turHeader">
 			<div id="home" class="row row-centered"
 				style="margin: 0px; margin-top: 80px">
 				<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 col-centered"
 					style="padding: 0px">
-					<div ng-if="total > 0" style="margin-top: 20px">
+					<div ng-if="pageCount > 0" style="margin-top: 20px">
 
 						<div>
 							<div class="row" style="margin: 0px">
@@ -110,8 +111,8 @@
 
 											<div class="panel panel-default">
 												<div class="panel-heading">
-													{{ 'FOUND' | translate }} <strong>{{total}}</strong> {{
-													'RESULTS_FOR_THE_TERM' | translate }} "{{turQuery}}".
+													{{ 'SHOWING' | translate }} {{pageStart}} - {{pageEnd}} {{
+													'OF' | translate }} <strong>{{pageCount}}</strong>  {{ 'RESULTS' | translate }}
 												</div>
 												<div class="panel-body">
 													<article ng-repeat="document in results"
@@ -128,7 +129,8 @@
 															YYYY'}}</div>
 														<div style="margin-top: 10px">
 															<div style="display: table-row">
-																<img ng-if="document.fields.image != null" src="{{document.fields.image}}"
+																<img ng-if="document.fields.image != null"
+																	src="{{document.fields.image}}"
 																	style="height: 100px; margin-right: 10px" align="left"></img>
 																<div ng-bind-html="document.fields.text"></div>
 															</div>

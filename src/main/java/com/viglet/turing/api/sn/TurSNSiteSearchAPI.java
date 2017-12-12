@@ -458,8 +458,8 @@ public class TurSNSiteSearchAPI {
 		TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContextBean = new TurSNSiteSearchQueryContextBean();
 		turSNSiteSearchQueryContextBean.setQuery(turSNSiteSearchQueryContextQueryBean);
 
-		turSNSiteSearchQueryContextBean.setPageEnd(7); // Corrigir
-		turSNSiteSearchQueryContextBean.setPageStart((int) turSEResults.getStart());
+		turSNSiteSearchQueryContextBean.setPageEnd((int) turSEResults.getStart() + turSEResults.getLimit());
+		turSNSiteSearchQueryContextBean.setPageStart((int) turSEResults.getStart() + 1);
 		turSNSiteSearchQueryContextBean.setPageCount(turSEResults.getPageCount());
 		turSNSiteSearchQueryContextBean.setPage(turSEResults.getCurrentPage());
 		turSNSiteSearchQueryContextBean.setCount((int) turSEResults.getNumFound());

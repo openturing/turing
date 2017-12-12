@@ -10,15 +10,16 @@ turingSNApp.config([
 			$translateProvider.translations('en', {
 				REMOVE : "Remove",
 				FIRST: "First",
-				LAST: "LAST",
+				LAST: "Last",
 				PREVIOUS: "Previous",
 				NEXT: "Next",
 				SEARCH: "Search",
 				SEARCH_FOR: "Search for",
 				NO_RESULTS_FOUND:"No results found",
 				APPLIED_FILTERS: "Applied Filters",
-				FOUND: "Found", 
-				RESULTS_FOR_THE_TERM: "results for the term"
+				SHOWING:  "Showing",
+				OF: "of",
+				RESULTS: "results"						
 			});
 			$translateProvider.translations('pt', {
 				REMOVE : "Remover",
@@ -30,9 +31,9 @@ turingSNApp.config([
 				SEARCH_FOR: "Pesquisar por",
 				NO_RESULTS_FOUND: "Nenhum resultado encontrado",
 				APPLIED_FILTERS: "Filtros Aplicados",
-				FOUND: "Encontrados", 
-				RESULTS_FOR_THE_TERM: "resultados para o termo"
-
+				SHOWING:  "Exibindo",
+				OF: "de",
+				RESULTS: "resultados"						
 			});
 			
 			$translateProvider.fallbackLanguage('en');
