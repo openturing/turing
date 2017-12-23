@@ -22,8 +22,10 @@ import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.solr.TurSolr;
@@ -46,6 +48,8 @@ public class TurSNProcessQueue {
 	TurNLP turNLP;
 	@Autowired
 	TurThesaurusProcessor turThesaurusProcessor;
+	@Autowired
+	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
 	@JmsListener(destination = "sample.queue")
 	public void receiveQueue(TurSNJob turSNJob) {
@@ -72,16 +76,41 @@ public class TurSNProcessQueue {
 
 				// NLP
 				boolean nlp = true;
+				if (turSNSite.getTurNLPInstance().getId() < 1) {
+					logger.debug("It is not using NLP to process attributes");
+				} else {
+					logger.debug("It is using NLP to process attributes");
+				}
 
 				if (nlp) {
-					turNLP.startup(turSNSite.getTurNLPInstance(), attributes);
+					List<TurSNSiteFieldExt> turSNSiteFieldsExt = turSNSiteFieldExtRepository
+							.findByTurSNSiteAndNlpAndEnabled(turSNSite, 1, 1);
+
+					// Convert List to HashMap
+					Map<String, TurSNSiteFieldExt> turSNSiteFieldsExtMap = new HashMap<String, TurSNSiteFieldExt>();
+					for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldsExt) {
+						turSNSiteFieldsExtMap.put(turSNSiteFieldExt.getName().toLowerCase(), turSNSiteFieldExt);
+					}
+
+					// Select only fields that is checked as NLP. These attributes will be processed
+					// by NLP
+					HashMap<String, Object> nlpAttributes = new HashMap<String, Object>();
+					for (Entry<String, Object> attribute : attributes.entrySet()) {
+						if (turSNSiteFieldsExtMap.containsKey(attribute.getKey().toLowerCase())) {
+							nlpAttributes.put(attribute.getKey(), attribute.getValue());
+						}
+					}
+
+					turNLP.startup(turSNSite.getTurNLPInstance(), nlpAttributes);
 					Map<String, Object> nlpResults = turNLP.retrieveNLP();
 					Map<String, Object> nlpResultsPreffix = new HashMap<String, Object>();
 
+					// Add prefix to attribute name
 					for (Entry<String, Object> nlpResult : nlpResults.entrySet()) {
 						nlpResultsPreffix.put("turing_entity_" + nlpResult.getKey(), nlpResult.getValue());
 					}
 
+					// Copy NLP attributes to consolidateResults
 					for (Entry<String, Object> nlpResultPreffix : nlpResultsPreffix.entrySet()) {
 						consolidateResults.put(nlpResultPreffix.getKey(), nlpResultPreffix.getValue());
 					}
