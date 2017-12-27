@@ -43,37 +43,33 @@ import javax.sql.DataSource;
 public class Main {
 	@Autowired
 	DataSource dataSource;
-
+    
 	@Bean
 	public FilterRegistrationBean filterRegistrationBean() {
-	    FilterRegistrationBean registrationBean = new FilterRegistrationBean();
-	    CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
-	    characterEncodingFilter.setForceEncoding(true);
-	    characterEncodingFilter.setEncoding("UTF-8");
-	    registrationBean.setFilter(characterEncodingFilter);
-	    return registrationBean;
+		FilterRegistrationBean registrationBean = new FilterRegistrationBean();
+		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
+		characterEncodingFilter.setForceEncoding(true);
+		characterEncodingFilter.setEncoding("UTF-8");
+		registrationBean.setFilter(characterEncodingFilter);
+		return registrationBean;
 	}
-	
+
 	@Bean(initMethod = "start", destroyMethod = "stop")
 	public BrokerService broker() throws Exception {
-	    final BrokerService broker = new BrokerService();
-	    //broker.addConnector("tcp://localhost:61616");
-	    broker.addConnector("vm://localhost");
-	    PersistenceAdapter persistenceAdapter = new KahaDBPersistenceAdapter();
-	    File dir = new File(System.getProperty("user.home") + File.separator + "kaha");
-	    if (!dir.exists()) {
-	        dir.mkdirs();
-	    }
-	    persistenceAdapter.setDirectory(dir);
-	    broker.setPersistenceAdapter(persistenceAdapter);
-	    broker.setPersistent(true);
-	    return broker;
+		final BrokerService broker = new BrokerService();
+		// broker.addConnector("tcp://localhost:61616");
+		broker.addConnector("vm://localhost");
+		PersistenceAdapter persistenceAdapter = new KahaDBPersistenceAdapter();
+		File dir = new File(System.getProperty("user.home") + File.separator + "kaha");
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+		persistenceAdapter.setDirectory(dir);
+		broker.setPersistenceAdapter(persistenceAdapter);
+		broker.setPersistent(true);
+		return broker;
 	}
-	
-	@Bean
-	public Queue queue() {
-		return new ActiveMQQueue("sample.queue");
-	}
+
 
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(Main.class, args);

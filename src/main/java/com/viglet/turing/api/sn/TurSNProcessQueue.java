@@ -15,6 +15,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
+import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,10 +51,15 @@ public class TurSNProcessQueue {
 	TurThesaurusProcessor turThesaurusProcessor;
 	@Autowired
 	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+	@Autowired
+	private JmsMessagingTemplate jmsMessagingTemplate;
+	
+	public static final String INDEXING_QUEUE = "indexing.queue";
+	public static final String NLP_QUEUE = "nlp.queue";
 
-	@JmsListener(destination = "sample.queue")
-	public void receiveQueue(TurSNJob turSNJob) {
-
+	@JmsListener(destination = NLP_QUEUE)
+	public void receiveNLPQueue(TurSNJob turSNJob) {
+		logger.debug("Received job - " + NLP_QUEUE);
 		JSONArray jsonRows = new JSONArray(turSNJob.getJson());
 		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
 		try {
@@ -138,7 +144,48 @@ public class TurSNProcessQueue {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("Received job");
+		
+	}
+
+	@JmsListener(destination = INDEXING_QUEUE)
+	public void receiveIndexingQueue(TurSNJob turSNJob) {
+		logger.debug("Received job - " + INDEXING_QUEUE);
+		JSONArray jsonRows = new JSONArray(turSNJob.getJson());
+		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
+		try {
+			for (int i = 0; i < jsonRows.length(); i++) {
+				JSONObject jsonRow = jsonRows.getJSONObject(i);
+				logger.debug("receiveQueue JsonObject: " + jsonRow.toString());
+				ObjectMapper mapper = new ObjectMapper();
+				TypeFactory typeFactory = mapper.getTypeFactory();
+				MapType mapType = typeFactory.constructMapType(HashMap.class, String.class, Object.class);
+				HashMap<String, Object> attributes = mapper.readValue(new StringReader(jsonRow.toString()), mapType);
+
+				Map<String, Object> consolidateResults = new HashMap<String, Object>();
+
+				// SE
+				for (Entry<String, Object> attribute : attributes.entrySet()) {
+					logger.debug("SE Consolidate Value: " + attribute.getValue());
+					logger.debug("SE Consolidate Class: " + attribute.getValue().getClass().getName());
+					consolidateResults.put(attribute.getKey(), attribute.getValue());
+				}
+
+				// Remove Duplicate Terms
+				Map<String, Object> attributesWithUniqueTerms = this.removeDuplicateTerms(consolidateResults);
+
+				// SE
+				turSolr.init(turSNSite, attributesWithUniqueTerms);
+				turSolr.indexing();
+
+			}
+			
+			logger.debug("Sent job - " + NLP_QUEUE);
+			this.jmsMessagingTemplate.convertAndSend(NLP_QUEUE, turSNJob);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 	}
 
 	public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {
