@@ -43,7 +43,7 @@ import javax.sql.DataSource;
 public class Main {
 	@Autowired
 	DataSource dataSource;
-    
+
 	@Bean
 	public FilterRegistrationBean filterRegistrationBean() {
 		FilterRegistrationBean registrationBean = new FilterRegistrationBean();
@@ -60,16 +60,26 @@ public class Main {
 		// broker.addConnector("tcp://localhost:61616");
 		broker.addConnector("vm://localhost");
 		PersistenceAdapter persistenceAdapter = new KahaDBPersistenceAdapter();
-		File dir = new File(System.getProperty("user.home") + File.separator + "kaha");
-		if (!dir.exists()) {
-			dir.mkdirs();
+
+		File userDir = new File(System.getProperty("user.dir"));
+		File queueDir = null;
+		if (userDir.exists() && userDir.isDirectory()) {
+			queueDir = new File(userDir.getAbsolutePath().concat(File.separator + "store" + File.separator + "queue"));
+			if (!queueDir.exists()) {
+				queueDir.mkdirs();
+			}
+
+		} else {
+			queueDir = new File(System.getProperty("user.home") + File.separator + "turing-queue");
+			if (!queueDir.exists()) {
+				queueDir.mkdirs();
+			}
 		}
-		persistenceAdapter.setDirectory(dir);
+		persistenceAdapter.setDirectory(queueDir);
 		broker.setPersistenceAdapter(persistenceAdapter);
 		broker.setPersistent(true);
 		return broker;
 	}
-
 
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(Main.class, args);
