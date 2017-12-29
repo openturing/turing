@@ -2,6 +2,7 @@ package com.viglet.turing.api.sn;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -152,8 +153,8 @@ public class TurSNSiteSearchAPI {
 	@GET
 	@Produces("application/json")
 	public TurSNSiteSearchBean select(@PathParam("siteName") String siteName, @QueryParam("q") String q,
-			@QueryParam("p") int currentPage, @QueryParam("fq[]") List<String> fq, @Context UriInfo uriInfo)
-			throws JSONException {
+			@QueryParam("p") int currentPage, @QueryParam("fq[]") List<String> fq, @QueryParam("sort") String sort,
+			@Context UriInfo uriInfo) throws JSONException {
 
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 
@@ -217,10 +218,10 @@ public class TurSNSiteSearchAPI {
 		}
 
 		TurSEResults turSEResults = null;
-
+	
 		turSolr.init(turSNSite);
 		try {
-			turSEResults = turSolr.retrieveSolr(q, filterQueryModified, currentPage);
+			turSEResults = turSolr.retrieveSolr(q, filterQueryModified, currentPage, sort);
 			List<TurSEResult> seResults = turSEResults.getResults();
 			// System.out.println("getResults size:" + turSEResults.getResults().size());
 			List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean = new ArrayList<TurSNSiteSearchDocumentBean>();

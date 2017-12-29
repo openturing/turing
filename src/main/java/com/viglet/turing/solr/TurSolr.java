@@ -6,10 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.AbstractMap.SimpleEntry;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
@@ -199,7 +201,7 @@ public class TurSolr {
 		}
 	}
 
-	public TurSEResults retrieveSolr(String txtQuery, List<String> fq, int currentPage)
+	public TurSEResults retrieveSolr(String txtQuery, List<String> fq, int currentPage, String sort)
 			throws SolrServerException, NumberFormatException, JSONException {
 
 		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,
@@ -218,13 +220,27 @@ public class TurSolr {
 		for (TurSNSiteFieldExt turSNSiteRequiredFieldExt : turSNSiteRequiredFieldExts) {
 			requiredFields.put(turSNSiteRequiredFieldExt.getName(), turSNSiteRequiredFieldExt.getDefaultValue());
 		}
-		String sort = "relevant";
+
 		TurSEResults turSEResults = new TurSEResults();
 
 		int rows = turSNSite.getRowsPerPage();
-
+		SimpleEntry<String, String> sortEntry = null;
+		if (sort != null) {
+			if (sort.toLowerCase().equals("relevance")) {
+				sortEntry = null;
+			} else if (sort.toLowerCase().equals("newest")) {
+				sortEntry = new SimpleEntry<String, String>("id", "desc");
+			} else if (sort.toLowerCase().equals("oldest")) {
+				sortEntry = new SimpleEntry<String, String>("id", "asc");
+			}
+		}
 		SolrQuery query = new SolrQuery();
 		query.setQuery(txtQuery);
+		
+		if (sortEntry != null) {
+			query.setSort(sortEntry.getKey(), sortEntry.getValue().equals("asc") ? ORDER.asc : ORDER.desc);
+		}
+		
 		query.setRows(rows);
 		query.setStart((currentPage * rows) - rows);
 

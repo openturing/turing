@@ -25,23 +25,23 @@ import com.viglet.turing.solr.TurSolr;
 @Component
 @Path("se")
 public class TurSEInstanceAPI {
-	
+
 	@Autowired
 	TurSEInstanceRepository turSEInstanceRepository;
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<TurSEInstance> list() throws JSONException {
-		 return this.turSEInstanceRepository.findAll();
+		return this.turSEInstanceRepository.findAll();
 	}
 
 	@GET
 	@Path("{seInstanceId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurSEInstance dataGroup(@PathParam("seInstanceId") int id) throws JSONException {
-		 return this.turSEInstanceRepository.findOne(id);
+		return this.turSEInstanceRepository.findOne(id);
 	}
-	
+
 	@Path("/{seInstanceId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
@@ -72,22 +72,21 @@ public class TurSEInstanceAPI {
 		return turSEInstance;
 
 	}
-	
+
 	@GET
 	@Path("select")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response select(@QueryParam("q") String q, @QueryParam("p") int p, @QueryParam("fq[]") List<String> fq)
-			throws JSONException {
+	public Response select(@QueryParam("q") String q, @QueryParam("p") int p, @QueryParam("fq[]") List<String> fq,
+			@QueryParam("sort") String sort) throws JSONException {
 		String result = null;
 		TurSolr turSolr = new TurSolr();
 		try {
-			result = turSolr.retrieveSolr(q, fq, p).toString();
+			result = turSolr.retrieveSolr(q, fq, p, sort).toString();
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return Response.status(200).entity(result).build();
 	}
-	
-	
+
 }

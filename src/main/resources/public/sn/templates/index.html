@@ -76,7 +76,7 @@
 											<div class="panel-body list-group" style="padding: 2px;">
 												<a ng-repeat="facetToRemove in facetsToRemove['facets']"
 													ng-click="turRedirect(facetToRemove['link']);"
-													href="{{replaceUrlSearch(facetToRemove['link'])}}"
+													href 
 													class="list-group-item">{{facetToRemove.label}} ({{
 													'REMOVE' | translate }}) </a>
 											</div>
@@ -95,7 +95,7 @@
 											<div class="panel-body list-group" style="padding: 2px">
 												<a ng-repeat="facetItem in facet['facets']"
 													ng-click="turRedirect(facetItem['link']);"
-													href="{{replaceUrlSearch(facetItem['link'])}}"
+													href
 													class="list-group-item">{{facetItem.label}}
 													({{facetItem['count']}}) </a>
 											</div>
@@ -105,14 +105,34 @@
 
 								<div class="col-lg-9 col-md-9 col-sm-8 col-xs-12 col-centered"
 									style="vertical-align: top;">
-									<div class="row">
+									<div class="row" >
 										<div class="col-lg-12"
 											style="padding: 0px; padding-left: 20px">
 
 											<div class="panel panel-default">
 												<div class="panel-heading">
-													{{ 'SHOWING' | translate }} {{pageStart}} - {{pageEnd}} {{
-													'OF' | translate }} <strong>{{pageCount}}</strong>  {{ 'RESULTS' | translate }}
+													<div class="row" style="margin:0px">
+														<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6" style="padding:0px;padding-top:5px">
+															{{ 'SHOWING' | translate }} {{pageStart}} - {{pageEnd}}
+															{{ 'OF' | translate }} <strong>{{pageCount}}</strong> {{
+															'RESULTS' | translate }}
+														</div>
+														<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6" style="padding:0px">
+															<div class="row" style="margin:0px">
+																<div class="col-lg-4 col-md-5 hidden-sm hidden-xs" style="padding:0px;text-align:right;padding-right:10px;padding-top:5px">
+																	Ordenar por:</div>
+																<div class="col-lg-8 col-md-7 col-sm-12 col-xs-10 col-lg-offset-0 col-md-offset-0 col-sm-offset-0 col-xs-offset-2" style="padding:0px">
+																	<div class="form-group">
+																		<select class="form-control" ng-model="turSort" ng-change="turChangeSort(turSort)" >
+																			<option value="relevance">Relevância</option>
+																			<option value="newest">Mais recentes</option>
+																			<option value="oldest">Mais antigos</option>
+																		</select>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
 												</div>
 												<div class="panel-body">
 													<article ng-repeat="document in results"
@@ -141,7 +161,7 @@
 																	style="display: inline;">
 																	<a style="color: #FF874B"
 																		ng-click="turRedirect(entity['href']);"
-																		href="{{replaceUrlSearch(entity['href'])}}">{{entity['text']}}</a>
+																		href >{{entity['text']}}</a>
 
 																	<div ng-if="!$last" style="display: inline;">,</div>
 																</div>
@@ -155,7 +175,7 @@
 									<div style="text-align: center;">
 										<div ng-repeat="page in pages" style="display: inline;">
 											<a ng-if="page.href" ng-click="turRedirect(page.href);"
-												href="{{replaceUrlSearch(page.href)}}" _target='_self'
+												href  _target='_self'
 												style='font-size: 20px; color: #FF874B'>{{ page.text |
 												translate}}</a> <span ng-if="!page.href" style='font-size: 20px'>{{page.text
 												| translate }}</span>

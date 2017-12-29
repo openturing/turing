@@ -33,23 +33,36 @@ turingSNApp
 							}
 							var turSiteNameSplit = turPath.split('/');
 							$scope.turSiteName = turSiteNameSplit[turSiteNameSplit.length - 1];
-
-							$scope.init = function() {
-
+							$scope.updateParameters = function() {
+								$scope.turQueryString = $location.url();
 								$scope.turQuery = $location.search().q;
 								$scope.turPage = $location.search().p;
 								$scope.turLocale = $location.search()._setlocale;
 								$scope.turSort = $location.search().sort;
 								$scope.turFilterQuery = $location.search()['fq[]'];
+
+								if ($scope.turQuery == null
+										|| $scope.turQuery.trim().length == 0) {
+									$scope.turQuery = "*";
+								}
+								if ($scope.turPage == null
+										|| $scope.turPage.trim().length == 0) {
+									$scope.turPage = "1";
+								}
+								if ($scope.turSort == null
+										|| $scope.turSort.trim().length == 0) {
+									$scope.turSort = "relevance";
+								}
+							}
+							$scope.init = function() {
+								$scope.updateParameters();
 								$scope.initParams($scope.turQuery,
 										$scope.turPage, $scope.turLocale,
 										$scope.turSort, $scope.turFilterQuery)
 							}
 							$scope.initParams = function(q, p, _setlocale,
 									sort, fq) {
-								if (q == null || q.trim().length == 0) {
-									q = "*";
-								}
+
 								turSNSearch
 										.search($scope.turSiteName, q, p,
 												_setlocale, sort, fq)
@@ -63,6 +76,8 @@ turingSNApp
 													$scope.pages = response.data["pagination"];
 													$scope.facets = response.data["widget"]["facet"];
 													$scope.facetsToRemove = response.data["widget"]["facetToRemove"];
+													// $scope.turSort =
+													// response.data["queryContext"]["query"]["sort"];
 												},
 												function errorCallback(response) {
 													// error
@@ -83,6 +98,8 @@ turingSNApp
 													$scope.pages = response.data["pagination"];
 													$scope.facets = response.data["widget"]["facet"];
 													$scope.facetsToRemove = response.data["widget"]["facetToRemove"];
+													// $scope.turSort =
+													// response.data["queryContext"]["query"]["sort"];
 												},
 												function errorCallback(response) {
 													// error
@@ -91,15 +108,58 @@ turingSNApp
 							$scope.init();
 							$rootScope.$state = $state;
 							$scope.turRedirect = function(href) {
+								// console.log("turRedirect");
 								$location.hash('turHeader');
+								$location.url($scope.replaceUrlSearch(href));
+								$scope.updateParameters();
 								$anchorScroll();
 								$scope.initURL(href);
 							}
+
 							$scope.replaceUrlSearch = function(url) {
+								// console.log("replaceUrlSearch");
 								urlFormatted = url.replace("/api/sn/"
 										+ $scope.turSiteName + "/search",
 										"/sn/" + $scope.turSiteName);
+								$location.url(urlFormatted);
 								return urlFormatted;
+							}
+
+							$scope.turChangeSort = function(turSortParam) {
+								// console.log("turChangeSort");
+								$scope.updateParameters();
+								var browserURL = $scope
+										.changeQueryStringParameter(
+												$scope.turQueryString, "sort",
+												turSortParam);
+								browserURL = $scope.changeQueryStringParameter(
+										browserURL, "p", $scope.turPage);
+								browserURL = $scope.changeQueryStringParameter(
+										browserURL, "q", $scope.turQuery);
+								var apiURL = browserURL.replace("/sn/"
+										+ $scope.turSiteName, "/api/sn/"
+										+ $scope.turSiteName + "/search")
+								$location.url(browserURL);
+								$scope.updateParameters();
+								// console.log($scope.turQueryString);
+								$scope.initURL(apiURL);
+
+							}
+
+							$scope.changeQueryStringParameter = function(uri,
+									key, val) {
+								// console.log("changeQueryStringParameter");
+								return uri
+										.replace(
+												new RegExp(
+														"([?&]"
+																+ key
+																+ "(?=[=&#]|$)[^#&]*|(?=#|$))"),
+												"&"
+														+ key
+														+ "="
+														+ encodeURIComponent(val))
+										.replace(/^([^?&]+)&/, "$1?");
 							}
 						} ]);
 turingSNApp.factory('turSNSearch', [
