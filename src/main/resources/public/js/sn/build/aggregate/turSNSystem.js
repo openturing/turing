@@ -19,7 +19,11 @@ turingSNApp.config([
 				APPLIED_FILTERS: "Applied Filters",
 				SHOWING:  "Showing",
 				OF: "of",
-				RESULTS: "results"						
+				RESULTS: "results",
+				ORDER_BY: "Order by",
+				RELEVANCE: "Relevance",
+				NEWEST: "Newest",
+				OLDEST: "Oldest"
 			});
 			$translateProvider.translations('pt', {
 				REMOVE : "Remover",
@@ -33,7 +37,12 @@ turingSNApp.config([
 				APPLIED_FILTERS: "Filtros Aplicados",
 				SHOWING:  "Exibindo",
 				OF: "de",
-				RESULTS: "resultados"						
+				RESULTS: "resultados",
+				ORDER_BY: "Ordenar por",
+				RELEVANCE: "Relevância",
+				NEWEST: "Mais recente",
+				OLDEST: "Mais antigo"
+
 			});
 			
 			$translateProvider.fallbackLanguage('en');

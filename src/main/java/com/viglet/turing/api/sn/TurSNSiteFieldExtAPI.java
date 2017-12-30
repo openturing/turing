@@ -316,7 +316,12 @@ public class TurSNSiteFieldExtAPI {
 			jsonAddField.put("type", "string");
 			jsonAddField.put("multiValued", true);
 		} else {
-			jsonAddField.put("type", "text_general");
+			if (turSNSiteFieldExts.getType().equals(TurSEFieldType.DATE)) {
+				jsonAddField.put("type", "pdate");
+			}
+			else {
+				jsonAddField.put("type", "text_general");
+			}
 			jsonAddField.put("multiValued", false);
 		}
 		JSONObject json = new JSONObject();

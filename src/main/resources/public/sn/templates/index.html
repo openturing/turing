@@ -120,13 +120,13 @@
 														<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6" style="padding:0px">
 															<div class="row" style="margin:0px">
 																<div class="col-lg-4 col-md-5 hidden-sm hidden-xs" style="padding:0px;text-align:right;padding-right:10px;padding-top:5px">
-																	Ordenar por:</div>
+																	{{ 'ORDER_BY' | translate }}:</div>
 																<div class="col-lg-8 col-md-7 col-sm-12 col-xs-10 col-lg-offset-0 col-md-offset-0 col-sm-offset-0 col-xs-offset-2" style="padding:0px">
 																	<div class="form-group">
 																		<select class="form-control" ng-model="turSort" ng-change="turChangeSort(turSort)" >
-																			<option value="relevance">Relevância</option>
-																			<option value="newest">Mais recentes</option>
-																			<option value="oldest">Mais antigos</option>
+																			<option value="relevance">{{ 'RELEVANCE' | translate }}</option>
+																			<option value="newest">{{ 'NEWEST' | translate }}</option>
+																			<option value="oldest">{{ 'OLDEST' | translate }}</option>
 																		</select>
 																	</div>
 																</div>
@@ -144,8 +144,8 @@
 																	ng-bind-html="document.fields.title"></a>
 															</h4>
 														</div>
-														<div>{{document['original_date'] |
-															amParse:'YYYY-MM-DD HH:mm:ss' | amDateFormat:'DD MMMM
+														<div>{{document.fields.publication_date |
+															amParse:'YYYY-MM-DDTHH:mm:ssZ' | amDateFormat:'DD MMMM
 															YYYY'}}</div>
 														<div style="margin-top: 10px">
 															<div style="display: table-row">

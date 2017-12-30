@@ -1,7 +1,10 @@
 package com.viglet.turing.solr;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.TimeZone;
 
 import org.springframework.stereotype.Component;
 
@@ -106,6 +109,11 @@ public class TurSolrField {
 			}
 		} else if (attrValue instanceof Long) {
 			return ((Long) attrValue).toString();
+		} else if (attrValue instanceof Date) {
+			TimeZone tz = TimeZone.getTimeZone("UTC");
+			DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+			df.setTimeZone(tz);
+			return df.format((Date) attrValue);
 		} else {
 			return (String) attrValue;
 		}

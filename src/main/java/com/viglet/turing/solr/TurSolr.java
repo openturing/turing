@@ -229,9 +229,9 @@ public class TurSolr {
 			if (sort.toLowerCase().equals("relevance")) {
 				sortEntry = null;
 			} else if (sort.toLowerCase().equals("newest")) {
-				sortEntry = new SimpleEntry<String, String>("id", "desc");
+				sortEntry = new SimpleEntry<String, String>("publication_date", "desc");
 			} else if (sort.toLowerCase().equals("oldest")) {
-				sortEntry = new SimpleEntry<String, String>("id", "asc");
+				sortEntry = new SimpleEntry<String, String>("publication_date", "asc");
 			}
 		}
 		SolrQuery query = new SolrQuery();
