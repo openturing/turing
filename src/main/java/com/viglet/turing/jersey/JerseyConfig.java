@@ -46,8 +46,6 @@ import javax.ws.rs.ext.Provider;
 public class JerseyConfig extends ResourceConfig {
 	@Autowired
 	public JerseyConfig(ObjectMapper objectMapper) {
-		// register endpoints
-		packages("com.shengwang.demo");
 		// register jackson for json
 		register(new ObjectMapperContextResolver(objectMapper));
 		register(TurCORSFilter.class);

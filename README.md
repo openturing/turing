@@ -13,9 +13,6 @@ tracking requests and bugs.**
 
 # Installation
 
-## Gradle
-* Install Gradle. [https://gradle.org/install](https://gradle.org/install)
-
 ## Docker
 * Install Docker. [https://docs.docker.com/engine/installation](https://docs.docker.com/engine/installation)
 
