@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/openviglet/turing.svg?branch=master)](https://travis-ci.org/openviglet/turing)
 
-![viglet_logo.png](https://viglet.ai/img/banner/viglet_turing.png)
+![viglet_logo.png](https://openviglet.github.io/img/banner/viglet_turing.png)
 ------
 
 **Viglet Turing** is a platform that uses natural language processing (NLP) and machine learning to provide more intelligent data. Choose your favorite NLP as CoreNLP and OpenText Content Analytics, and index your content in Solr with higher added value. Train and manages models for your learning machine like Google Tensorflow.
