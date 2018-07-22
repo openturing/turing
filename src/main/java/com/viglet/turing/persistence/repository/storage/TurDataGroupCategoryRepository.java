@@ -6,6 +6,8 @@ import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 public interface TurDataGroupCategoryRepository extends JpaRepository<TurDataGroupCategory, Integer> {
 
@@ -17,5 +19,7 @@ public interface TurDataGroupCategoryRepository extends JpaRepository<TurDataGro
 
 	TurDataGroupCategory save(TurDataGroupCategory turDataGroupCategory);
 
-	void delete(TurDataGroupCategory turDataGroupCategory);
+	@Modifying
+	@Query("delete from  TurDataGroupCategory dgc where dgc.id = ?1")
+	void delete(int id);
 }

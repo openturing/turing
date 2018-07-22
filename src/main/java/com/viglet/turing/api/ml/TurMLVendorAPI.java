@@ -36,14 +36,14 @@ public class TurMLVendorAPI {
 	@GET
 	@Produces("application/json")
 	public TurMLVendor mlSolution(@PathParam("mlVendorId") String id) throws JSONException {
-		return this.turMLVendorRepository.findOne(id);
+		return this.turMLVendorRepository.findById(id).get();
 	}
 
 	@Path("/{mlVendorId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurMLVendor update(@PathParam("mlVendorId") String id, TurMLVendor turMLVendor) throws Exception {
-		TurMLVendor turMLVendorEdit = this.turMLVendorRepository.findOne(id);
+		TurMLVendor turMLVendorEdit = this.turMLVendorRepository.findById(id).get();
 		turMLVendorEdit.setDescription(turMLVendor.getDescription());
 		turMLVendorEdit.setPlugin(turMLVendor.getPlugin());
 		turMLVendorEdit.setTitle(turMLVendor.getTitle());

@@ -36,14 +36,14 @@ public class TurMLInstanceAPI {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurMLInstance detailService(@PathParam("mlInstanceId") int id) throws JSONException {
-		return this.turMLInstanceRepository.findOne(id);
+		return this.turMLInstanceRepository.findById(id);
 	}
 
 	@Path("/{mlInstanceId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurMLInstance update(@PathParam("mlInstanceId") int id, TurMLInstance turMLInstance) throws Exception {
-		TurMLInstance turMLInstanceEdit = this.turMLInstanceRepository.findOne(id);
+		TurMLInstance turMLInstanceEdit = this.turMLInstanceRepository.findById(id);
 		turMLInstanceEdit.setTitle(turMLInstance.getTitle());
 		turMLInstanceEdit.setDescription(turMLInstance.getDescription());
 		turMLInstanceEdit.setTurMLVendor(turMLInstance.getTurMLVendor());

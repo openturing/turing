@@ -36,7 +36,7 @@ public class TurNLPVendorAPI {
 	@GET
 	@Produces("application/json")
 	public TurNLPVendor nlpSolution(@PathParam("nlpVendorId") String id) throws JSONException {
-		return this.turNLPVendorRepository.findOne(id);
+		return this.turNLPVendorRepository.findById(id).get();
 	}
 	
 
@@ -44,7 +44,7 @@ public class TurNLPVendorAPI {
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurNLPVendor update(@PathParam("nlpVendorId") String id, TurNLPVendor turNLPVendor) throws Exception {
-		TurNLPVendor turNLPVendorEdit = this.turNLPVendorRepository.findOne(id);
+		TurNLPVendor turNLPVendorEdit = this.turNLPVendorRepository.findById(id).get();
 		turNLPVendorEdit.setDescription(turNLPVendor.getDescription());
 		turNLPVendorEdit.setPlugin(turNLPVendor.getPlugin());
 		turNLPVendorEdit.setTitle(turNLPVendor.getTitle());

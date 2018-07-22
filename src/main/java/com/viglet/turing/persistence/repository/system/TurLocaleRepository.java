@@ -5,6 +5,8 @@ import com.viglet.turing.persistence.model.system.TurLocale;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 
@@ -19,4 +21,8 @@ public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 	TurLocale save(TurLocale turLocale);
 
 	void delete(TurLocale turConfigVar);
+	
+	@Modifying
+	@Query("delete from  TurLocale l where l.id = ?1")
+	void delete(String initials);
 }

@@ -36,14 +36,14 @@ public class TurSNSiteAPI {
 	@Path("{snSiteId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurSNSite dataGroup(@PathParam("snSiteId") int id) throws JSONException {
-		 return this.turSNSiteRepository.findOne(id);
+		 return this.turSNSiteRepository.findById(id);
 	}
 	
 	@Path("/{snSiteId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurSNSite update(@PathParam("snSiteId") int id, TurSNSite turSNSite) throws Exception {
-		TurSNSite turSNSiteEdit = this.turSNSiteRepository.findOne(id);
+		TurSNSite turSNSiteEdit = this.turSNSiteRepository.findById(id);
 		turSNSiteEdit.setName(turSNSite.getName());
 		turSNSiteEdit.setDescription(turSNSite.getDescription());
 		turSNSiteEdit.setLanguage(turSNSite.getLanguage());

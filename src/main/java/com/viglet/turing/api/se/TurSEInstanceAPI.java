@@ -39,14 +39,14 @@ public class TurSEInstanceAPI {
 	@Path("{seInstanceId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurSEInstance dataGroup(@PathParam("seInstanceId") int id) throws JSONException {
-		return this.turSEInstanceRepository.findOne(id);
+		return this.turSEInstanceRepository.findById(id);
 	}
 
 	@Path("/{seInstanceId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurSEInstance update(@PathParam("seInstanceId") int id, TurSEInstance turSEInstance) throws Exception {
-		TurSEInstance turSEInstanceEdit = turSEInstanceRepository.findOne(id);
+		TurSEInstance turSEInstanceEdit = turSEInstanceRepository.findById(id);
 		turSEInstanceEdit.setTitle(turSEInstance.getTitle());
 		turSEInstanceEdit.setDescription(turSEInstance.getDescription());
 		turSEInstanceEdit.setTurSEVendor(turSEInstance.getTurSEVendor());

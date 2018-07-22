@@ -5,6 +5,8 @@ import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 public interface TurTermRepository extends JpaRepository<TurTerm, Integer> {
 
@@ -16,5 +18,7 @@ public interface TurTermRepository extends JpaRepository<TurTerm, Integer> {
 
 	TurTerm save(TurTerm turTerm);
 
-	void delete(TurTerm turTerm);
+	@Modifying
+	@Query("delete from TurTerm t where t.id = ?1")
+	void delete(int id);
 }

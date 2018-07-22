@@ -39,7 +39,7 @@ public class TurMLDataGroupSentenceAPI {
 	@GET
 	@Produces("application/json")
 	public List<TurDataGroupSentence> list(@PathParam("dataGroupId") int dataGroupId) throws JSONException {
-		TurDataGroup turDataGroup = turDataGroupRepository.findOne(dataGroupId);
+		TurDataGroup turDataGroup = turDataGroupRepository.findById(dataGroupId);
 		return this.turDataGroupSentenceRepository.findByTurDataGroup(turDataGroup);
 	}
 
@@ -48,7 +48,7 @@ public class TurMLDataGroupSentenceAPI {
 	@Produces("application/json")
 	public TurDataGroupSentence mlSolution(@PathParam("dataGroupId") int dataGroupId,
 			@PathParam("dataGroupSentenceId") int id) throws JSONException {
-		return this.turDataGroupSentenceRepository.findOne(id);
+		return this.turDataGroupSentenceRepository.findById(id);
 	}
 
 	@Path("/{dataGroupSentenceId}")
@@ -57,7 +57,7 @@ public class TurMLDataGroupSentenceAPI {
 	public TurDataGroupSentence update(@PathParam("dataGroupId") int dataGroupId,
 			@PathParam("dataGroupSentenceId") int id, TurDataGroupSentenceBean turDataGroupSentenceBean)
 			throws Exception {
-		TurDataGroupSentence turDataGroupSentenceEdit = this.turDataGroupSentenceRepository.findOne(id);
+		TurDataGroupSentence turDataGroupSentenceEdit = this.turDataGroupSentenceRepository.findById(id);
 		turDataGroupSentenceEdit.setSentence(turDataGroupSentenceBean.getSentence());
 		turDataGroupSentenceEdit
 				.setTurMLCategory(turMLCategoryRepository.findById(turDataGroupSentenceBean.getTurMLCategory()));
@@ -78,12 +78,12 @@ public class TurMLDataGroupSentenceAPI {
 	public TurDataGroupSentence add(@PathParam("dataGroupId") int dataGroupId, TurMLSentenceBean turMLSentenceBean)
 			throws Exception {
 		TurDataGroupSentence turDataGroupSentence = new TurDataGroupSentence();
-		TurDataGroup turDataGroup = this.turDataGroupRepository.findOne(dataGroupId);
+		TurDataGroup turDataGroup = this.turDataGroupRepository.findById(dataGroupId);
 
 		turDataGroupSentence.setSentence(turMLSentenceBean.getSentence());
 		turDataGroupSentence.setTurDataGroup(turDataGroup);
 
-		TurMLCategory turMLCategory = this.turMLCategoryRepository.findOne(turMLSentenceBean.getTurMLCategoryId());
+		TurMLCategory turMLCategory = this.turMLCategoryRepository.findById(turMLSentenceBean.getTurMLCategoryId());
 		if (turMLCategory != null) {
 			turDataGroupSentence.setTurMLCategory(turMLCategory);
 		}

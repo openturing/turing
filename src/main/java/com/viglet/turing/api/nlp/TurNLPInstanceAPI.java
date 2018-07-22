@@ -48,7 +48,7 @@ public class TurNLPInstanceAPI {
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurNLPInstance update(@PathParam("nlpInstanceId") int id, TurNLPInstance turNLPInstance) throws Exception {
-		TurNLPInstance turNLPInstanceEdit = turNLPInstanceRepository.findOne(id);
+		TurNLPInstance turNLPInstanceEdit = turNLPInstanceRepository.findById(id);
 		turNLPInstanceEdit.setTitle(turNLPInstance.getTitle());
 		turNLPInstanceEdit.setDescription(turNLPInstance.getDescription());
 		turNLPInstanceEdit.setTurNLPVendor(turNLPInstance.getTurNLPVendor());

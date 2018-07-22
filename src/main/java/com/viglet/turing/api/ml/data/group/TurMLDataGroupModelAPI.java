@@ -69,7 +69,7 @@ public class TurMLDataGroupModelAPI {
 	@GET
 	@Produces("application/json")
 	public List<TurDataGroupModel> list(@PathParam("dataGroupId") int dataGroupId) throws JSONException {
-		TurDataGroup turDataGroup = turDataGroupRepository.findOne(dataGroupId);
+		TurDataGroup turDataGroup = turDataGroupRepository.findById(dataGroupId);
 		return this.turDataGroupModelRepository.findByTurDataGroup(turDataGroup);
 	}
 
@@ -78,7 +78,7 @@ public class TurMLDataGroupModelAPI {
 	@Produces("application/json")
 	public TurDataGroupModel mlSolution(@PathParam("dataGroupId") int dataGroupId,
 			@PathParam("dataGroupModelId") int id) throws JSONException {
-		return this.turDataGroupModelRepository.findOne(id);
+		return this.turDataGroupModelRepository.findById(id);
 	}
 
 	@Path("/{dataGroupModelId}")
@@ -86,7 +86,7 @@ public class TurMLDataGroupModelAPI {
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurDataGroupModel update(@PathParam("dataGroupId") int dataGroupId, @PathParam("dataGroupModelId") int id,
 			TurDataGroupModel turDataGroupModel) throws Exception {
-		TurDataGroupModel turDataGroupModelEdit = this.turDataGroupModelRepository.findOne(id);
+		TurDataGroupModel turDataGroupModelEdit = this.turDataGroupModelRepository.findById(id);
 		turDataGroupModelEdit.setTurMLModel(turDataGroupModel.getTurMLModel());
 		this.turDataGroupModelRepository.save(turDataGroupModelEdit);
 		return turDataGroupModelEdit;
@@ -104,7 +104,7 @@ public class TurMLDataGroupModelAPI {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public TurDataGroupModel add(@PathParam("dataGroupId") int dataGroupId, TurMLModel turMLModel) throws Exception {
 		TurDataGroupModel turDataGroupModel = new TurDataGroupModel();
-		TurDataGroup turDataGroup = this.turDataGroupRepository.findOne(dataGroupId);
+		TurDataGroup turDataGroup = this.turDataGroupRepository.findById(dataGroupId);
 		turDataGroupModel.setTurMLModel(turMLModel);
 		turDataGroupModel.setTurDataGroup(turDataGroup);
 		this.turDataGroupModelRepository.save(turDataGroupModel);
@@ -118,7 +118,7 @@ public class TurMLDataGroupModelAPI {
 	public TurDataGroupModel generate(@PathParam("dataGroupId") int dataGroupId)
 			throws JSONException, IOException, SAXException, TikaException {
 
-		TurDataGroup turDataGroup = turDataGroupRepository.findOne(dataGroupId);
+		TurDataGroup turDataGroup = turDataGroupRepository.findById(dataGroupId);
 		List<TurDataGroupSentence> turDataSentences = this.turDataGroupSentenceRepository
 				.findByTurDataGroup(turDataGroup);
 

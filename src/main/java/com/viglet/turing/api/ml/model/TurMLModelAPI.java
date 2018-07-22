@@ -66,14 +66,14 @@ public class TurMLModelAPI {
 	@Path("{mlModelId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurMLModel dataGroup(@PathParam("mlModelId") int id) throws JSONException {
-		return this.turMLModelRepository.findOne(id);
+		return this.turMLModelRepository.findById(id);
 	}
 
 	@Path("/{mlModelId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurMLModel update(@PathParam("mlModelId") int id, TurMLModel turMLModel) throws Exception {
-		TurMLModel turMLModelEdit = this.turMLModelRepository.findOne(id);
+		TurMLModel turMLModelEdit = this.turMLModelRepository.findById(id);
 		turMLModelEdit.setInternalName(turMLModel.getInternalName());
 		turMLModelEdit.setName(turMLModel.getName());
 		turMLModelEdit.setDescription(turMLModel.getDescription());

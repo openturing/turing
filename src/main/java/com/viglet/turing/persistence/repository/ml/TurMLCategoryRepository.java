@@ -5,6 +5,8 @@ import com.viglet.turing.persistence.model.ml.TurMLCategory;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 public interface TurMLCategoryRepository extends JpaRepository<TurMLCategory, Integer> {
 
@@ -14,5 +16,7 @@ public interface TurMLCategoryRepository extends JpaRepository<TurMLCategory, In
 	
 	TurMLCategory save(TurMLCategory turMLCategory);
 
-	void delete(TurMLCategory turMLCategory);
+	@Modifying
+	@Query("delete from  TurMLCategory mc where mc.id = ?1")
+	void delete(int id);
 }

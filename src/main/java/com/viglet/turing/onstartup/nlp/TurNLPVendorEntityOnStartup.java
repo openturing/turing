@@ -31,7 +31,7 @@ public class TurNLPVendorEntityOnStartup {
 	public void createDefaultRows() {
 
 		if (turNLPVendorEntityRepository.findAll().isEmpty()) {
-			TurNLPVendor turNLPVendor = turNLPVendorRepository.findOne(CORENLP);
+			TurNLPVendor turNLPVendor = turNLPVendorRepository.findById(CORENLP).get();
 			if (turNLPVendor != null) {
 				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.EN_US);
 				this.addNLPVendor(turNLPVendor, "GL", "LOCATION", TurLocaleRepository.EN_US);
@@ -43,7 +43,7 @@ public class TurNLPVendorEntityOnStartup {
 				this.addNLPVendor(turNLPVendor, "TIME", "TIME", TurLocaleRepository.EN_US);
 			}
 
-			turNLPVendor = turNLPVendorRepository.findOne(OPENNLP);
+			turNLPVendor = turNLPVendorRepository.findById(OPENNLP).get();
 
 			if (turNLPVendor != null) {
 				TurOpenNLPModelsOnStartup.downloadModels();
@@ -96,7 +96,7 @@ public class TurNLPVendorEntityOnStartup {
 				}
 			}
 
-			turNLPVendor = turNLPVendorRepository.findOne(OTCA);
+			turNLPVendor = turNLPVendorRepository.findById(OTCA).get();
 
 			if (turNLPVendor != null) {
 				this.addNLPVendor(turNLPVendor, "PN", "PN", TurLocaleRepository.EN_US);

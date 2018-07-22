@@ -46,7 +46,7 @@ public class TurNLP {
 
 	public void init() {
 		TurNLPInstance turNLPInstance = turNLPInstanceRepository
-				.findById(Integer.parseInt(turConfigVarRepository.findById("DEFAULT_NLP").getValue()));
+				.findById(Integer.parseInt(turConfigVarRepository.findById("DEFAULT_NLP").get().getValue()));
 		this.init(turNLPInstance);
 
 	}

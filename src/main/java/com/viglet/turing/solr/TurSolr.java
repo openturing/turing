@@ -135,7 +135,7 @@ public class TurSolr {
 
 	public void init() {
 		TurSEInstance turSEInstance = turSEInstanceRepository
-				.findById(Integer.parseInt(turConfigVarRepository.findById("DEFAULT_SE").getValue()));
+				.findById(Integer.parseInt(turConfigVarRepository.findById("DEFAULT_SE").get().getValue()));
 		init(turSEInstance);
 	}
 

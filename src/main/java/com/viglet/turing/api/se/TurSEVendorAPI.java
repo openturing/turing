@@ -36,7 +36,7 @@ public class TurSEVendorAPI {
 	@GET
 	@Produces("application/json")
 	public TurSEVendor seSolution(@PathParam("seVendorId") String id) throws JSONException {
-		return this.turSEVendorRepository.findOne(id);
+		return this.turSEVendorRepository.findById(id).get();
 	}
 	
 
@@ -44,7 +44,7 @@ public class TurSEVendorAPI {
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurSEVendor update(@PathParam("seVendorId") String id, TurSEVendor turSEVendor) throws Exception {
-		TurSEVendor turSEVendorEdit = this.turSEVendorRepository.findOne(id);
+		TurSEVendor turSEVendorEdit = this.turSEVendorRepository.findById(id).get();
 		turSEVendorEdit.setDescription(turSEVendor.getDescription());
 		turSEVendorEdit.setPlugin(turSEVendor.getPlugin());
 		turSEVendorEdit.setTitle(turSEVendor.getTitle());

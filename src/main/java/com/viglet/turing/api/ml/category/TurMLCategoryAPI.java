@@ -36,14 +36,14 @@ public class TurMLCategoryAPI {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurMLCategory mlSolution(@PathParam("mlCategoryId") int id) throws JSONException {
-		return this.turMLCategoryRepository.findOne(id);
+		return this.turMLCategoryRepository.findById(id);
 	}
 
 	@Path("/{mlCategoryId}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurMLCategory update(@PathParam("mlCategoryId") int id, TurMLCategory turMLCategory) throws Exception {
-		TurMLCategory turMLCategoryEdit = this.turMLCategoryRepository.findOne(id);
+		TurMLCategory turMLCategoryEdit = this.turMLCategoryRepository.findById(id);
 		turMLCategoryEdit.setInternalName(turMLCategory.getInternalName());
 		turMLCategoryEdit.setName(turMLCategory.getName());
 		turMLCategoryEdit.setDescription(turMLCategory.getDescription());

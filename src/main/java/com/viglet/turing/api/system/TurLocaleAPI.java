@@ -36,14 +36,14 @@ public class TurLocaleAPI {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurLocale detail(@PathParam("initials") String id) throws JSONException {
-		return this.turLocaleRepository.findOne(id);
+		return this.turLocaleRepository.findById(id).get();
 	}
 
 	@Path("/{initials}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
 	public TurLocale update(@PathParam("initials") String id, TurLocale turLocale) throws Exception {
-		TurLocale turLocaleEdit = this.turLocaleRepository.findOne(id);
+		TurLocale turLocaleEdit = this.turLocaleRepository.findById(id).get();
 		turLocaleEdit.setEn(turLocale.getEn());
 		turLocaleEdit.setPt(turLocale.getPt());
 		this.turLocaleRepository.save(turLocaleEdit);

@@ -29,7 +29,7 @@ public class TurNLPInstanceOnStartup {
 
 		if (turNLPInstanceRepository.findAll().isEmpty()) {
 
-			TurNLPVendor turNLPVendorOpenNLP = turNLPVendorRepository.findOne("OPENNLP");
+			TurNLPVendor turNLPVendorOpenNLP = turNLPVendorRepository.findById("OPENNLP").get();
 			
 			
 			if (turNLPVendorOpenNLP != null) {
@@ -60,7 +60,7 @@ public class TurNLPInstanceOnStartup {
 
 			}
 
-			TurNLPVendor turNLPVendorCoreNLP = turNLPVendorRepository.findOne("CORENLP");
+			TurNLPVendor turNLPVendorCoreNLP = turNLPVendorRepository.findById("CORENLP").get();
 			if (turNLPVendorCoreNLP != null) {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("CoreNLP");

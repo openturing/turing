@@ -5,6 +5,8 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 public interface TurNLPInstanceRepository
 		extends JpaRepository<TurNLPInstance, Integer>, TurNLPInstanceRepositoryCustom {
@@ -15,5 +17,7 @@ public interface TurNLPInstanceRepository
 
 	TurNLPInstance save(TurNLPInstance turNLPInstance);
 
-	void delete(TurNLPInstance turNLPInstance);
+	@Modifying
+	@Query("delete from  TurNLPInstance ni where ni.id = ?1")
+	void delete(int id);
 }
