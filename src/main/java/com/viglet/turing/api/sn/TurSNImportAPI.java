@@ -1,21 +1,17 @@
 package com.viglet.turing.api.sn;
 
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsMessagingTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Component
-@Path("sn/{snSiteId}/import")
+@RestController
+@RequestMapping("/api/sn/{id}/import")
 public class TurSNImportAPI {
 	static final Logger logger = LogManager.getLogger(TurSNImportAPI.class.getName());
 	@Autowired
@@ -25,14 +21,13 @@ public class TurSNImportAPI {
     public static final String NLP_QUEUE = "nlp.queue";
 
     
-	@POST
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response broker(@PathParam("snSiteId") String id, String json) throws JSONException {
+	@PostMapping
+	public String broker(@PathVariable String id, String json) throws JSONException {
 		TurSNJob turSNJob = new TurSNJob();
 		turSNJob.setSiteId(id);
 		turSNJob.setJson(json);
 		send(turSNJob);
-		return Response.status(200).entity("Ok").build();
+		return "Ok";
 
 	}
 

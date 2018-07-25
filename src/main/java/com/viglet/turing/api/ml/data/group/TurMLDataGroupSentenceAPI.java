@@ -2,19 +2,17 @@ package com.viglet.turing.api.ml.data.group;
 
 import java.util.List;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.bean.ml.sentence.TurMLSentenceBean;
 import com.viglet.turing.persistence.bean.storage.TurDataGroupSentenceBean;
@@ -25,8 +23,10 @@ import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 
-@Component
-@Path("ml/data/group/{dataGroupId}/sentence")
+import io.swagger.annotations.ApiOperation;
+
+@RestController
+@RequestMapping("/api/ml/data/group/{dataGroupId}/sentence")
 public class TurMLDataGroupSentenceAPI {
 
 	@Autowired
@@ -36,26 +36,24 @@ public class TurMLDataGroupSentenceAPI {
 	@Autowired
 	TurMLCategoryRepository turMLCategoryRepository;
 
-	@GET
-	@Produces("application/json")
-	public List<TurDataGroupSentence> list(@PathParam("dataGroupId") int dataGroupId) throws JSONException {
+	@ApiOperation(value = "Machine Learning Data Group Sentence List")
+	@GetMapping
+	public List<TurDataGroupSentence> list(@PathVariable int dataGroupId) throws JSONException {
 		TurDataGroup turDataGroup = turDataGroupRepository.findById(dataGroupId);
 		return this.turDataGroupSentenceRepository.findByTurDataGroup(turDataGroup);
 	}
 
-	@Path("{dataGroupSentenceId}")
-	@GET
-	@Produces("application/json")
-	public TurDataGroupSentence mlSolution(@PathParam("dataGroupId") int dataGroupId,
-			@PathParam("dataGroupSentenceId") int id) throws JSONException {
+	@ApiOperation(value = "Show a Machine Learning Data Group Sentence")
+	@GetMapping("/{id}")
+	public TurDataGroupSentence mlSolution(@PathVariable int dataGroupId,
+			@PathVariable int id) throws JSONException {
 		return this.turDataGroupSentenceRepository.findById(id);
 	}
 
-	@Path("/{dataGroupSentenceId}")
-	@PUT
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurDataGroupSentence update(@PathParam("dataGroupId") int dataGroupId,
-			@PathParam("dataGroupSentenceId") int id, TurDataGroupSentenceBean turDataGroupSentenceBean)
+	@ApiOperation(value = "Update a Machine Learning Data Group Sentence")
+	@PutMapping("/{id}")
+	public TurDataGroupSentence update(@PathVariable int dataGroupId,
+			@PathVariable int id, @RequestBody TurDataGroupSentenceBean turDataGroupSentenceBean)
 			throws Exception {
 		TurDataGroupSentence turDataGroupSentenceEdit = this.turDataGroupSentenceRepository.findById(id);
 		turDataGroupSentenceEdit.setSentence(turDataGroupSentenceBean.getSentence());
@@ -65,17 +63,17 @@ public class TurMLDataGroupSentenceAPI {
 		return turDataGroupSentenceEdit;
 	}
 
-	@Path("{dataGroupSentenceId}")
-	@DELETE
-	@Produces("application/json")
-	public boolean deleteSentence(@PathParam("dataGroupId") int dataGroupId, @PathParam("dataGroupSentenceId") int id) throws Exception  {
+	@Transactional
+	@ApiOperation(value = "Delete a Machine Learning Data Group Sentence")
+	@DeleteMapping("/{id}")
+	public boolean deleteSentence(@PathVariable int dataGroupId, @PathVariable int id) throws Exception  {
 		this.turDataGroupSentenceRepository.delete(id);
 		return true;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public TurDataGroupSentence add(@PathParam("dataGroupId") int dataGroupId, TurMLSentenceBean turMLSentenceBean)
+	@ApiOperation(value = "Create a Machine Learning Data Group Sentence")
+	@PostMapping
+	public TurDataGroupSentence add(@PathVariable int dataGroupId, @RequestBody TurMLSentenceBean turMLSentenceBean)
 			throws Exception {
 		TurDataGroupSentence turDataGroupSentence = new TurDataGroupSentence();
 		TurDataGroup turDataGroup = this.turDataGroupRepository.findById(dataGroupId);

@@ -5,16 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -23,7 +13,15 @@ import org.apache.http.impl.client.HttpClients;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
@@ -38,8 +36,10 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 
-@Component
-@Path("sn/{snSiteId}/field/ext")
+import io.swagger.annotations.ApiOperation;
+
+@RestController
+@RequestMapping("/api/sn/{snSiteId}/field/ext")
 public class TurSNSiteFieldExtAPI {
 
 	@Autowired
@@ -53,9 +53,9 @@ public class TurSNSiteFieldExtAPI {
 	@Autowired
 	TurNLPEntityRepository turNLPEntityRepository;
 
-	@GET
-	@Produces("application/json")
-	public List<TurSNSiteFieldExt> list(@PathParam("snSiteId") int snSiteId) throws JSONException {
+	@ApiOperation(value = "Semantic Navigation Site Field Ext List")
+	@GetMapping
+	public List<TurSNSiteFieldExt> list(@PathVariable int snSiteId) throws JSONException {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
 
 		List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
@@ -164,19 +164,17 @@ public class TurSNSiteFieldExtAPI {
 		return this.turSNSiteFieldExtRepository.findByTurSNSite(turSNSite);
 	}
 
-	@Path("{snSiteFieldId}")
-	@GET
-	@Produces("application/json")
-	public TurSNSiteFieldExt mlSolution(@PathParam("snSiteId") int snSiteId, @PathParam("snSiteFieldId") int id)
+	@ApiOperation(value = "Show a Semantic Navigation Site Field Ext")
+	@GetMapping("/{id}")
+	public TurSNSiteFieldExt mlSolution(@PathVariable int snSiteId, @PathVariable int id)
 			throws JSONException {
 		return this.turSNSiteFieldExtRepository.findById(id);
 	}
 
-	@Path("/{snSiteFieldId}")
-	@PUT
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurSNSiteFieldExt update(@PathParam("snSiteId") int snSiteId, @PathParam("snSiteFieldId") int id,
-			TurSNSiteFieldExt turSNSiteFieldExt) throws Exception {
+	@ApiOperation(value = "Update a Semantic Navigation Site Field Ext")
+	@PutMapping("/{id}")
+	public TurSNSiteFieldExt update(@PathVariable int snSiteId, @PathVariable int id,
+			@RequestBody TurSNSiteFieldExt turSNSiteFieldExt) throws Exception {
 		TurSNSiteFieldExt turSNSiteFieldExtEdit = this.turSNSiteFieldExtRepository.findById(id);
 		turSNSiteFieldExtEdit.setFacetName(turSNSiteFieldExt.getFacetName());
 		turSNSiteFieldExtEdit.setMultiValued(turSNSiteFieldExt.getMultiValued());
@@ -199,10 +197,10 @@ public class TurSNSiteFieldExtAPI {
 		return turSNSiteFieldExtEdit;
 	}
 
-	@Path("{snSiteFieldId}")
-	@DELETE
-	@Produces("application/json")
-	public boolean deleteEntity(@PathParam("snSiteId") int snSiteId, @PathParam("snSiteFieldId") int id) {
+	@Transactional
+	@ApiOperation(value = "Delete a Semantic Navigation Site Field Ext")
+	@DeleteMapping("/{id}")
+	public boolean deleteEntity(@PathVariable int snSiteId, @PathVariable int id) {
 		TurSNSiteFieldExt turSNSiteFieldExtEdit = this.turSNSiteFieldExtRepository.findById(id);
 
 		switch (turSNSiteFieldExtEdit.getSnType()) {
@@ -219,9 +217,9 @@ public class TurSNSiteFieldExtAPI {
 		return true;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public TurSNSiteFieldExt add(@PathParam("snSiteId") int snSiteId, TurSNSiteFieldExt turSNSiteFieldExt)
+	@ApiOperation(value = "Create a Semantic Navigation Site Field Ext")
+	@PostMapping
+	public TurSNSiteFieldExt add(@PathVariable int snSiteId, @RequestBody TurSNSiteFieldExt turSNSiteFieldExt)
 			throws Exception {
 
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
@@ -275,10 +273,8 @@ public class TurSNSiteFieldExtAPI {
 		}
 	}
 
-	@GET
-	@Path("create")
-	@Produces(MediaType.APPLICATION_JSON)
-	public List<TurSNSite> create(@PathParam("snSiteId") int snSiteId)
+	@GetMapping("/create")
+	public List<TurSNSite> create(@PathVariable int snSiteId)
 			throws JSONException, ClientProtocolException, IOException {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
 		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,

@@ -14,20 +14,18 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import org.apache.tika.exception.TikaException;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.xml.sax.SAXException;
 
 import com.viglet.turing.persistence.model.ml.TurMLModel;
@@ -40,6 +38,7 @@ import com.viglet.turing.persistence.repository.storage.TurDataGroupModelReposit
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 
+import io.swagger.annotations.ApiOperation;
 import opennlp.tools.doccat.DoccatFactory;
 import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;
@@ -51,8 +50,8 @@ import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
 import opennlp.tools.util.TrainingParameters;
 
-@Component
-@Path("ml/data/group/{dataGroupId}/model")
+@RestController
+@RequestMapping("/api/ml/data/group/{dataGroupId}/model")
 public class TurMLDataGroupModelAPI {
 
 	@Autowired
@@ -66,43 +65,41 @@ public class TurMLDataGroupModelAPI {
 	@Autowired
 	TurDataGroupModelRepository turDataGroupModelRepository;
 
-	@GET
-	@Produces("application/json")
-	public List<TurDataGroupModel> list(@PathParam("dataGroupId") int dataGroupId) throws JSONException {
+	@ApiOperation(value = "Machine Learning Data Group Model List")
+	@GetMapping
+	public List<TurDataGroupModel> list(@PathVariable int dataGroupId) throws JSONException {
 		TurDataGroup turDataGroup = turDataGroupRepository.findById(dataGroupId);
 		return this.turDataGroupModelRepository.findByTurDataGroup(turDataGroup);
 	}
 
-	@Path("{dataGroupModelId}")
-	@GET
-	@Produces("application/json")
-	public TurDataGroupModel mlSolution(@PathParam("dataGroupId") int dataGroupId,
-			@PathParam("dataGroupModelId") int id) throws JSONException {
+	@ApiOperation(value = "Show a Machine Learning Data Group Model")
+	@GetMapping("/{id}")
+	public TurDataGroupModel mlSolution(@PathVariable int dataGroupId,
+			@PathVariable int id) throws JSONException {
 		return this.turDataGroupModelRepository.findById(id);
 	}
 
-	@Path("/{dataGroupModelId}")
-	@PUT
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurDataGroupModel update(@PathParam("dataGroupId") int dataGroupId, @PathParam("dataGroupModelId") int id,
-			TurDataGroupModel turDataGroupModel) throws Exception {
+	@ApiOperation(value = "Update a Machine Learning Data Group Model")
+	@PutMapping("/{id}")
+	public TurDataGroupModel update(@PathVariable int dataGroupId, @PathVariable int id,
+			@RequestBody TurDataGroupModel turDataGroupModel) throws Exception {
 		TurDataGroupModel turDataGroupModelEdit = this.turDataGroupModelRepository.findById(id);
 		turDataGroupModelEdit.setTurMLModel(turDataGroupModel.getTurMLModel());
 		this.turDataGroupModelRepository.save(turDataGroupModelEdit);
 		return turDataGroupModelEdit;
 	}
 
-	@Path("{dataGroupModelId}")
-	@DELETE
-	@Produces("application/json")
-	public boolean deleteEntity(@PathParam("dataGroupId") int dataGroupId, @PathParam("dataGroupModelId") int id) {
+	@Transactional
+	@ApiOperation(value = "Delete a Machine Learning Data Group Model")
+	@DeleteMapping("/{id}")
+	public boolean deleteEntity(@PathVariable int dataGroupId, @PathVariable int id) {
 		this.turDataGroupModelRepository.delete(id);
 		return true;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public TurDataGroupModel add(@PathParam("dataGroupId") int dataGroupId, TurMLModel turMLModel) throws Exception {
+	@ApiOperation(value = "Create a Machine Learning Data Group Model")
+	@PostMapping
+	public TurDataGroupModel add(@PathVariable int dataGroupId, @RequestBody TurMLModel turMLModel) throws Exception {
 		TurDataGroupModel turDataGroupModel = new TurDataGroupModel();
 		TurDataGroup turDataGroup = this.turDataGroupRepository.findById(dataGroupId);
 		turDataGroupModel.setTurMLModel(turMLModel);
@@ -112,10 +109,8 @@ public class TurMLDataGroupModelAPI {
 
 	}
 
-	@GET
-	@Path("generate")
-	@Produces("application/json")
-	public TurDataGroupModel generate(@PathParam("dataGroupId") int dataGroupId)
+	@GetMapping("/generate")
+	public TurDataGroupModel generate(@PathVariable int dataGroupId)
 			throws JSONException, IOException, SAXException, TikaException {
 
 		TurDataGroup turDataGroup = turDataGroupRepository.findById(dataGroupId);

@@ -1,23 +1,23 @@
 package com.viglet.turing.api;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Component
-@Path("")
+import io.swagger.annotations.Api;
+
+
+@RestController
+@RequestMapping("/api")
+@Api(value="/", tags="Heartbeat", description="Heartbeat")
 public class TurAPI {
 
 	@Autowired
 	TurAPIBean turAPIBean;
 
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
+	@GetMapping
 	public TurAPIBean info() throws JSONException {
 
 		turAPIBean.setProduct("Viglet Turing");

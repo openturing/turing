@@ -2,28 +2,26 @@ package com.viglet.turing.api.nlp;
 
 import java.util.List;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 
-@ComponentScan
-@Path("nlp")
+import io.swagger.annotations.ApiOperation;
+
+@RestController
+@RequestMapping("/api/nlp")
 public class TurNLPInstanceAPI {
 
 	@Autowired
@@ -31,23 +29,21 @@ public class TurNLPInstanceAPI {
 	@Autowired
 	TurNLP turNLP;
 
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Natural Language Processing List")
+	@GetMapping
 	public List<TurNLPInstance> list() throws JSONException {
 		return this.turNLPInstanceRepository.findAll();
 	}
 
-	@GET
-	@Path("/{nlpInstanceId}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurNLPInstance dataGroup(@PathParam("nlpInstanceId") int id) throws JSONException {
+	@ApiOperation(value = "Show a Natural Language Processing")
+	@GetMapping("/{id}")
+	public TurNLPInstance dataGroup(@PathVariable int id) throws JSONException {
 		return this.turNLPInstanceRepository.findById(id);
 	}
 
-	@Path("/{nlpInstanceId}")
-	@PUT
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurNLPInstance update(@PathParam("nlpInstanceId") int id, TurNLPInstance turNLPInstance) throws Exception {
+	@ApiOperation(value = "Update a Natural Language Processing")
+	@PutMapping("/{id}")
+	public TurNLPInstance update(@PathVariable int id, @RequestBody TurNLPInstance turNLPInstance) throws Exception {
 		TurNLPInstance turNLPInstanceEdit = turNLPInstanceRepository.findById(id);
 		turNLPInstanceEdit.setTitle(turNLPInstance.getTitle());
 		turNLPInstanceEdit.setDescription(turNLPInstance.getDescription());
@@ -60,29 +56,27 @@ public class TurNLPInstanceAPI {
 		return turNLPInstanceEdit;
 	}
 
-	@Path("/{nlpInstanceId}")
-	@DELETE
-	@Produces(MediaType.APPLICATION_JSON)
-	public boolean delete(@PathParam("nlpInstanceId") int id) throws Exception {
+	@Transactional
+	@ApiOperation(value = "Delete a Natural Language Processing")
+	@DeleteMapping("/{id}")
+	public boolean delete(@PathVariable int id) throws Exception {
 		this.turNLPInstanceRepository.delete(id);
 		return true;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public TurNLPInstance add(TurNLPInstance turNLPInstance) throws Exception {
+	@ApiOperation(value = "Create a Natural Language Processing")
+	@PostMapping
+	public TurNLPInstance add(@RequestBody TurNLPInstance turNLPInstance) throws Exception {
 		this.turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 		return turNLPInstance;
 
 	}
 
-	@POST
-	@Path("/{nlpInstanceId}/validate")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response validate(@PathParam("nlpInstanceId") int id, TurNLPTextValidate textValidate) throws JSONException {
+	@PostMapping("/{id}/validate")
+	public String validate(@PathVariable int id, @RequestBody TurNLPTextValidate textValidate) throws JSONException {
 
 		turNLP.startup(this.turNLPInstanceRepository.findById(id), textValidate.getText());
-		return Response.status(200).entity(turNLP.validate()).build();
+		return turNLP.validate().toString();
 	}
 
 	public boolean isNumeric(String str) {

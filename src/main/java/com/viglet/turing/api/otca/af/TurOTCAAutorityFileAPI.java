@@ -1,26 +1,22 @@
 package com.viglet.turing.api.otca.af;
 
-import java.io.InputStream;
-import java.net.URI;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.view.RedirectView;
 
 import com.viglet.turing.nlp.TurNLPRelationType;
 import com.viglet.turing.nlp.TurNLPTermAccent;
@@ -53,8 +49,8 @@ import com.viglet.turing.plugins.otca.af.xml.AFType;
 import com.viglet.turing.plugins.otca.af.xml.AFType.Terms;
 import com.viglet.util.TurUtils;
 
-@Component
-@Path("otca/af")
+@RestController
+@RequestMapping("/api/otca/af")
 public class TurOTCAAutorityFileAPI {
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
@@ -70,6 +66,8 @@ public class TurOTCAAutorityFileAPI {
 	private TurTermVariationRepository turTermVariationRepository;
 	@Autowired
 	private TurTermVariationLanguageRepository turTermVariationLanguageRepository;
+	@Autowired
+	ServletContext servletContext;
 	
 	final String EMPTY_TERM_NAME = "<EMPTY>";
 
@@ -220,21 +218,17 @@ public class TurOTCAAutorityFileAPI {
 		}
 
 	}
-
+	
 	@SuppressWarnings("unchecked")
-	@POST
-	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	@Produces("application/json")
-	@Path("import")
-	public Response fileUpload(@DefaultValue("true") @FormDataParam("enabled") boolean enabled,
-			@FormDataParam("file") InputStream inputStream,
-			@FormDataParam("file") FormDataContentDisposition fileDetail, @Context UriInfo uriInfo)
-			throws URISyntaxException {
+	@PostMapping("/import")	
+	@Transactional
+	public RedirectView importData(@RequestParam("file") MultipartFile multipartFile, HttpServletRequest request)
+			throws URISyntaxException, UnsupportedEncodingException {
 
 		try {
 			JAXBContext jaxbContext = JAXBContext
 					.newInstance(com.viglet.turing.plugins.otca.af.xml.ObjectFactory.class);
-			AFType documentType = ((JAXBElement<AFType>) jaxbContext.createUnmarshaller().unmarshal(inputStream))
+			AFType documentType = ((JAXBElement<AFType>) jaxbContext.createUnmarshaller().unmarshal(multipartFile.getInputStream()))
 					.getValue();
 
 			TurNLPEntity turNLPEntity = this.setEntity(documentType.getName(), documentType.getDescription());
@@ -245,9 +239,10 @@ public class TurOTCAAutorityFileAPI {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-		URI absolutePath = uriInfo.getAbsolutePath();
-		URI redirect = new URI(absolutePath.getScheme() + "://" + absolutePath.getHost() + ":" + absolutePath.getPort()
-				+ "/turing/#entity/import");
-		return Response.temporaryRedirect(redirect).build();
+		String redirect = "/turing/#entity/import";
+		
+		RedirectView redirectView = new RedirectView(new String(redirect.getBytes("UTF-8"), "ISO-8859-1"));
+		redirectView.setHttp10Compatible(false);
+		return redirectView;
 	}
 }

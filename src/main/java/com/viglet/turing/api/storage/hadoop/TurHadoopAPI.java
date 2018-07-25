@@ -5,13 +5,6 @@ import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.fs.FileSystem;
@@ -19,14 +12,17 @@ import org.apache.hadoop.fs.FileStatus;
 
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
-@Component
-@Path("storage/hadoop")
+
+@RestController
+@RequestMapping("/api/storage/hadoop")
 public class TurHadoopAPI {
 
 	@Autowired
@@ -64,9 +60,8 @@ public class TurHadoopAPI {
 		return null;
 	}*/
 
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurChildPath getPath(@QueryParam("path") String path) throws JSONException, IOException {
+	@GetMapping
+	public TurChildPath getPath(@RequestParam String path) throws JSONException, IOException {
 		try {
 			UserGroupInformation ugi = UserGroupInformation.createRemoteUser("root");
 

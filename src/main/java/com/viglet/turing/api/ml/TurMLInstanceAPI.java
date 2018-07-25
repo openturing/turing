@@ -2,47 +2,45 @@ package com.viglet.turing.api.ml;
 
 import java.util.List;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.ml.TurMLInstance;
 import com.viglet.turing.persistence.repository.ml.TurMLInstanceRepository;
 
-@Component
-@Path("ml")
+import io.swagger.annotations.ApiOperation;
+
+@RestController
+@RequestMapping("/api/ml")
 public class TurMLInstanceAPI {
 
 	@Autowired
 	TurMLInstanceRepository turMLInstanceRepository;
 
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Machine Learning List")
+	@GetMapping
 	public List<TurMLInstance> list() throws JSONException {
 		return this.turMLInstanceRepository.findAll();
 	}
 
-	@Path("{mlInstanceId}")
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurMLInstance detailService(@PathParam("mlInstanceId") int id) throws JSONException {
+	@ApiOperation(value = "Show a Machine Learning")
+	@GetMapping("/{id}")
+	public TurMLInstance detailService(@PathVariable int id) throws JSONException {
 		return this.turMLInstanceRepository.findById(id);
 	}
 
-	@Path("/{mlInstanceId}")
-	@PUT
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurMLInstance update(@PathParam("mlInstanceId") int id, TurMLInstance turMLInstance) throws Exception {
+	@ApiOperation(value = "Update a Machine Learning")
+	@PutMapping("/{id}")
+	public TurMLInstance update(@PathVariable int id, @RequestBody TurMLInstance turMLInstance) throws Exception {
 		TurMLInstance turMLInstanceEdit = this.turMLInstanceRepository.findById(id);
 		turMLInstanceEdit.setTitle(turMLInstance.getTitle());
 		turMLInstanceEdit.setDescription(turMLInstance.getDescription());
@@ -54,17 +52,17 @@ public class TurMLInstanceAPI {
 		return turMLInstanceEdit;
 	}
 
-	@Path("{mlInstanceId}")
-	@DELETE
-	@Produces("application/json")
-	public boolean deleteEntity(@PathParam("mlInstanceId") int id) {
+	@Transactional
+	@ApiOperation(value = "Delete a Machine Learning")
+	@DeleteMapping("/{id}")
+	public boolean deleteEntity(@PathVariable int id) {
 		this.turMLInstanceRepository.delete(id);
 		return true;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public TurMLInstance add(TurMLInstance turMLInstance) throws Exception {
+	@ApiOperation(value = "Create a Machine Learning")
+	@PostMapping
+	public TurMLInstance add(@RequestBody TurMLInstance turMLInstance) throws Exception {
 		this.turMLInstanceRepository.save(turMLInstance);
 		return turMLInstance;
 

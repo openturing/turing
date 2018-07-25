@@ -1,22 +1,7 @@
 package com.viglet.turing.api.ml.data;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.exception.TikaException;
@@ -28,11 +13,18 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
-
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 
 import com.viglet.turing.persistence.model.storage.TurData;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
@@ -41,8 +33,10 @@ import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepo
 import com.viglet.turing.persistence.repository.storage.TurDataRepository;
 import com.viglet.turing.plugins.opennlp.TurOpenNLPConnector;
 
-@Component
-@Path("ml/data")
+import io.swagger.annotations.ApiOperation;
+
+@RestController
+@RequestMapping("/api/ml/data")
 public class TurMLDataAPI {
 	
 	@Autowired
@@ -52,23 +46,21 @@ public class TurMLDataAPI {
 	@Autowired
 	TurOpenNLPConnector turOpenNLPConnector;
 	
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Machine Learning Data List")
+	@GetMapping
 	public List<TurData> list() throws JSONException {
 		return this.turDataRepository.findAll();
 	}
 
-	@Path("{dataId}")
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurData detail(@PathParam("dataId") int id) throws JSONException {
+	@ApiOperation(value = "Show a Machine Learning Data")
+	@GetMapping("/{id}")
+	public TurData detail(@PathVariable int id) throws JSONException {
 		return this.turDataRepository.findById(id);
 	}
 
-	@Path("/{dataId}")
-	@PUT
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurData update(@PathParam("dataId") int id, TurData turData) throws Exception {
+	@ApiOperation(value = "Update a Machine Learning Data")
+	@PutMapping("/{id}")
+	public TurData update(@PathVariable int id, @RequestBody TurData turData) throws Exception {
 		TurData turDataEdit = this.turDataRepository.findById(id);
 		turDataEdit.setName(turData.getName());
 		turDataEdit.setType(turData.getType());
@@ -76,29 +68,25 @@ public class TurMLDataAPI {
 		return turDataEdit;
 	}
 
-	@Path("/{dataId}")
-	@DELETE
-	@Produces(MediaType.APPLICATION_JSON)
-	public boolean delete(@PathParam("dataId") int id) throws Exception {
+	@Transactional
+	@ApiOperation(value = "Delete a Machine Learning Data")
+	@DeleteMapping("/{id}")
+	public boolean delete(@PathVariable int id) throws Exception {
 		this.turDataRepository.delete(id);
 		return true;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public TurData add(TurData turData) throws Exception {
+	@ApiOperation(value = "Create a Machine Learning Data")
+	@PostMapping
+	public TurData add(@RequestBody TurData turData) throws Exception {
 		this.turDataRepository.save(turData);
 		return turData;
 
 	}
 
-	@POST
-	@Path("import")
-	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response importData(@DefaultValue("true") @FormDataParam("enabled") boolean enabled,
-			@FormDataParam("file") InputStream inputStream,
-			@FormDataParam("file") FormDataContentDisposition fileDetail, @Context UriInfo uriInfo)
+	@PostMapping("/import")	
+	@Transactional
+	public String importData(@RequestParam("file") MultipartFile multipartFile)
 			throws JSONException, IOException, SAXException, TikaException {
 
 		BodyContentHandler handler = new BodyContentHandler(-1);
@@ -108,15 +96,15 @@ public class TurMLDataAPI {
 
 		// parsing the document using PDF parser
 		PDFParser pdfparser = new PDFParser();
-		pdfparser.parse(inputStream, handler, metadata, pcontext);
+		pdfparser.parse(multipartFile.getInputStream(), handler, metadata, pcontext);
 
 
 		String sentences[] = turOpenNLPConnector.sentenceDetect(handler.toString());
 
 		TurData turData = new TurData();
 
-		turData.setName(fileDetail.getFileName());
-		turData.setType(FilenameUtils.getExtension(fileDetail.getFileName()));
+		turData.setName(multipartFile.getOriginalFilename());
+		turData.setType(FilenameUtils.getExtension(multipartFile.getOriginalFilename()));
 		this.turDataRepository.save(turData);
 
 		for (String sentence : sentences) {
@@ -128,6 +116,6 @@ public class TurMLDataAPI {
 		
 		JSONObject jsonTraining = new JSONObject();
 		jsonTraining.put("sentences", sentences);
-		return Response.status(200).entity(jsonTraining.toString()).build();
+		return jsonTraining.toString();
 	}
 }

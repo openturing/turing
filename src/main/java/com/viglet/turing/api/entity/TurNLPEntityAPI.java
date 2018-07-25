@@ -2,53 +2,50 @@ package com.viglet.turing.api.entity;
 
 import java.util.List;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 
-@Component
-@Path("entity")
+import io.swagger.annotations.ApiOperation;
+
+@RestController
+@RequestMapping("/api/entity")
 public class TurNLPEntityAPI {
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
 
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Entity list")
+	@GetMapping
 	public List<TurNLPEntity> list() throws JSONException {
 		return this.turNLPEntityRepository.findAll();
 	}
 
-	@Path("local")
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Local Entity list")
+	@GetMapping("/local")
 	public List<TurNLPEntity> listLocal() throws JSONException {
 		return this.turNLPEntityRepository.findByLocal(1);
 	}
 	
-	@Path("{entityId}")
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurNLPEntity detail(@PathParam("entityId") int id) throws JSONException {
+	@ApiOperation(value = "Show a entity")
+	@GetMapping("/{id}")
+	public TurNLPEntity detail(@PathVariable int id) throws JSONException {
 		return this.turNLPEntityRepository.findById(id);
 	}
 
-	@Path("/{entityId}")
-	@PUT
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurNLPEntity update(@PathParam("entityId") int id, TurNLPEntity turNLPEntity) throws Exception {
+	@ApiOperation(value = "Update a entity")
+	@PutMapping("/{id}")
+	public TurNLPEntity update(@PathVariable int id, @RequestBody TurNLPEntity turNLPEntity) throws Exception {
 		TurNLPEntity turNLPEntityEdit =  this.turNLPEntityRepository.findById(id);
 		turNLPEntityEdit.setName(turNLPEntity.getName());
 		turNLPEntityEdit.setDescription(turNLPEntity.getDescription());
@@ -56,18 +53,18 @@ public class TurNLPEntityAPI {
 		return turNLPEntityEdit;
 	}
 
-	@Path("{id}")
-	@DELETE
-	@Produces("application/json")
-	public boolean deleteEntity(@PathParam("id") int id) {
+	@Transactional
+	@ApiOperation(value = "Delete a entity")
+	@DeleteMapping("/{id}")
+	public boolean deleteEntity(@PathVariable int id) {
 		TurNLPEntity turNLPEntity =  this.turNLPEntityRepository.findById(id);
 		this.turNLPEntityRepository.delete(turNLPEntity);
 		return true;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public TurNLPEntity add(TurNLPEntity turNLPEntity) throws Exception {
+	@ApiOperation(value = "Create a entity")
+	@PostMapping
+	public TurNLPEntity add(@RequestBody TurNLPEntity turNLPEntity) throws Exception {
 		this.turNLPEntityRepository.save(turNLPEntity);
 		return turNLPEntity;
 

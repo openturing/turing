@@ -2,50 +2,47 @@ package com.viglet.turing.api.se;
 
 import java.util.List;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.solr.TurSolr;
 
-@Component
-@Path("se")
+import io.swagger.annotations.ApiOperation;
+
+@RestController
+@RequestMapping("/api/se")
 public class TurSEInstanceAPI {
 
 	@Autowired
 	TurSEInstanceRepository turSEInstanceRepository;
 
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Search Engine List")
+	@GetMapping
 	public List<TurSEInstance> list() throws JSONException {
 		return this.turSEInstanceRepository.findAll();
 	}
 
-	@GET
-	@Path("{seInstanceId}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurSEInstance dataGroup(@PathParam("seInstanceId") int id) throws JSONException {
+	@ApiOperation(value = "Show a Search Engine")
+	@GetMapping("/{id}")
+	public TurSEInstance dataGroup(@PathVariable int id) throws JSONException {
 		return this.turSEInstanceRepository.findById(id);
 	}
 
-	@Path("/{seInstanceId}")
-	@PUT
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurSEInstance update(@PathParam("seInstanceId") int id, TurSEInstance turSEInstance) throws Exception {
+	@ApiOperation(value = "Update a Search Engine")
+	@PutMapping("/{id}")
+	public TurSEInstance update(@PathVariable int id, @RequestBody TurSEInstance turSEInstance) throws Exception {
 		TurSEInstance turSEInstanceEdit = turSEInstanceRepository.findById(id);
 		turSEInstanceEdit.setTitle(turSEInstance.getTitle());
 		turSEInstanceEdit.setDescription(turSEInstance.getDescription());
@@ -57,27 +54,25 @@ public class TurSEInstanceAPI {
 		return turSEInstanceEdit;
 	}
 
-	@Path("/{seInstanceId}")
-	@DELETE
-	@Produces(MediaType.APPLICATION_JSON)
-	public boolean delete(@PathParam("seInstanceId") int id) throws Exception {
+	@Transactional
+	@ApiOperation(value = "Delete a Search Engine")
+	@DeleteMapping("/{id}")
+	public boolean delete(@PathVariable int id) throws Exception {
 		this.turSEInstanceRepository.delete(id);
 		return true;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public TurSEInstance add(TurSEInstance turSEInstance) throws Exception {
+	@ApiOperation(value = "Create a Search Engine")
+	@PostMapping
+	public TurSEInstance add(@RequestBody TurSEInstance turSEInstance) throws Exception {
 		this.turSEInstanceRepository.save(turSEInstance);
 		return turSEInstance;
 
 	}
 
-	@GET
-	@Path("select")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response select(@QueryParam("q") String q, @QueryParam("p") int p, @QueryParam("fq[]") List<String> fq,
-			@QueryParam("sort") String sort) throws JSONException {
+	@GetMapping("/select")
+	public String select(@RequestParam("q") String q, @RequestParam("p") int p, @RequestParam("fq[]") List<String> fq,
+			@RequestParam("sort") String sort) throws JSONException {
 		String result = null;
 		TurSolr turSolr = new TurSolr();
 		try {
@@ -86,7 +81,7 @@ public class TurSEInstanceAPI {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return Response.status(200).entity(result).build();
+		return result;
 	}
 
 }

@@ -4,17 +4,16 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.FormParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.xml.sax.InputSource;
 
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
@@ -26,8 +25,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-@Component
-@Path("otsn/broker")
+@RestController
+@RequestMapping("/api/otsn/broker")
 public class TurOTSNBrokerAPI {
 	@Autowired
 	TurNLPInstanceRepository turNLPInstanceRepository;
@@ -38,10 +37,10 @@ public class TurOTSNBrokerAPI {
 	@Autowired
 	TurSolr turSolr;
 
-	@POST
-	@Produces("application/json")
-	public Map<String, Object> broker(@FormParam("index") String index, @FormParam("config") String config,
-			@FormParam("data") String data) throws JSONException {
+	
+	@PostMapping
+	public Map<String, Object> broker(@RequestParam("index") String index, @RequestParam("config") String config,
+			@RequestParam("data") String data) throws JSONException {
 
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("index", index);

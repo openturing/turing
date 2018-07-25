@@ -2,47 +2,46 @@ package com.viglet.turing.api.sn;
 
 import java.util.List;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
-@Component
-@Path("sn")
+import io.swagger.annotations.ApiOperation;
+
+
+@RestController
+@RequestMapping("/api/sn")
 public class TurSNSiteAPI {
 	
 	@Autowired
 	TurSNSiteRepository turSNSiteRepository;
 
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Semantic Navigation Site List")
+	@GetMapping
 	public List<TurSNSite> list() throws JSONException {
 		 return this.turSNSiteRepository.findAll();
 	}
 
-	@GET
-	@Path("{snSiteId}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurSNSite dataGroup(@PathParam("snSiteId") int id) throws JSONException {
+	@ApiOperation(value = "Show a Semantic Navigation Site")
+	@GetMapping("/{id}")
+	public TurSNSite dataGroup(@PathVariable int id) throws JSONException {
 		 return this.turSNSiteRepository.findById(id);
 	}
 	
-	@Path("/{snSiteId}")
-	@PUT
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurSNSite update(@PathParam("snSiteId") int id, TurSNSite turSNSite) throws Exception {
+	@ApiOperation(value = "Update a Semantic Navigation Site")
+	@PutMapping("/{id}")
+	public TurSNSite update(@PathVariable int id, @RequestBody TurSNSite turSNSite) throws Exception {
 		TurSNSite turSNSiteEdit = this.turSNSiteRepository.findById(id);
 		turSNSiteEdit.setName(turSNSite.getName());
 		turSNSiteEdit.setDescription(turSNSite.getDescription());
@@ -62,16 +61,16 @@ public class TurSNSiteAPI {
 		return turSNSiteEdit;
 	}
 
-	@Path("/{snSiteId}")
-	@DELETE
-	@Produces(MediaType.APPLICATION_JSON)
-	public boolean delete(@PathParam("snSiteId") int id) throws Exception {
+	@Transactional
+	@ApiOperation(value = "Delete a Semantic Navigation Site")
+	@DeleteMapping("/{id}")
+	public boolean delete(@PathVariable int id) throws Exception {
 		this.turSNSiteRepository.delete(id);
 		return true;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Create a Semantic Navigation Site")
+	@PostMapping
 	public TurSNSite add(TurSNSite turSNSite) throws Exception {
 		this.turSNSiteRepository.save(turSNSite);
 		return turSNSite;

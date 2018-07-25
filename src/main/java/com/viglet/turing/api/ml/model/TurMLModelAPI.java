@@ -13,22 +13,19 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import org.apache.tika.exception.TikaException;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.xml.sax.SAXException;
 
 import com.viglet.turing.persistence.model.ml.TurMLModel;
@@ -36,6 +33,7 @@ import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.repository.ml.TurMLModelRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 
+import io.swagger.annotations.ApiOperation;
 import opennlp.tools.doccat.DoccatFactory;
 import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;
@@ -47,8 +45,8 @@ import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
 import opennlp.tools.util.TrainingParameters;
 
-@Component
-@Path("ml/model")
+@RestController
+@RequestMapping("/api/ml/model")
 public class TurMLModelAPI {
 	
 	@Autowired
@@ -56,23 +54,21 @@ public class TurMLModelAPI {
 	@Autowired
 	TurMLModelRepository turMLModelRepository; 
 
-	@GET
-	@Produces("application/json")
+	@ApiOperation(value = "Machine Learning Model List")
+	@GetMapping
 	public List<TurMLModel> list() throws JSONException {
 		return this.turMLModelRepository.findAll();
 	}
 
-	@GET
-	@Path("{mlModelId}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurMLModel dataGroup(@PathParam("mlModelId") int id) throws JSONException {
+	@ApiOperation(value = "Show a Machine Learning Model")
+	@GetMapping("/{id}")
+	public TurMLModel dataGroup(@PathVariable int id) throws JSONException {
 		return this.turMLModelRepository.findById(id);
 	}
 
-	@Path("/{mlModelId}")
-	@PUT
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurMLModel update(@PathParam("mlModelId") int id, TurMLModel turMLModel) throws Exception {
+	@ApiOperation(value = "Update a Machine Learning Model")
+	@PutMapping("/{id}")
+	public TurMLModel update(@PathVariable int id, @RequestBody TurMLModel turMLModel) throws Exception {
 		TurMLModel turMLModelEdit = this.turMLModelRepository.findById(id);
 		turMLModelEdit.setInternalName(turMLModel.getInternalName());
 		turMLModelEdit.setName(turMLModel.getName());
@@ -81,26 +77,24 @@ public class TurMLModelAPI {
 		return turMLModelEdit;
 	}
 
-	@Path("/{mlModelId}")
-	@DELETE
-	@Produces(MediaType.APPLICATION_JSON)
-	public boolean delete(@PathParam("mlModelId") int id) throws Exception {
+	@Transactional
+	@ApiOperation(value = "Delete a Machine Learning Model")
+	@DeleteMapping("/{id}")
+	public boolean delete(@PathVariable int id) throws Exception {
 		this.turMLModelRepository.delete(id);
 		return true;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public TurMLModel add(TurMLModel turMLModel) throws Exception {
+	@ApiOperation(value = "Create a Machine Learning Model")
+	@PostMapping
+	public TurMLModel add(@RequestBody TurMLModel turMLModel) throws Exception {
 		this.turMLModelRepository.save(turMLModel);
 		return turMLModel;
 
 	}
 
-	@GET
-	@Path("evaluation")
-	@Produces("application/json")
-	public Response evaluation() throws JSONException {
+	@GetMapping("/evaluation")
+	public String evaluation() throws JSONException {
 		File modelFile = new File("store/ml/model/generate.bin");
 		InputStream modelStream;
 		DoccatModel m = null;
@@ -119,13 +113,11 @@ public class TurMLModelAPI {
 
 		JSONObject json = new JSONObject().put("text", inputText).put("category", category);
 
-		return Response.status(200).entity(json.toString()).build();
+		return json.toString();
 	}
 
-	@GET
-	@Path("generate")
-	@Produces("application/json")
-	public Response generate() throws JSONException, IOException, SAXException, TikaException {
+	@GetMapping("/generate")
+	public String generate() throws JSONException, IOException, SAXException, TikaException {
 
 		List<TurDataGroupSentence> turDataSentences = turDataGroupSentenceRepository.findAll();
 

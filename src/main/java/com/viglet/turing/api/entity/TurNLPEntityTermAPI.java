@@ -2,46 +2,44 @@ package com.viglet.turing.api.entity;
 
 import java.util.List;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 import com.viglet.turing.persistence.repository.nlp.term.TurTermRepository;
 
-@Component
-@Path("entity/terms")
+import io.swagger.annotations.ApiOperation;
+
+@RestController
+@RequestMapping("/api/entity/terms")
 public class TurNLPEntityTermAPI {
 	@Autowired
 	private TurTermRepository turTermRepository;
 	
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Entity Term list")
+	@GetMapping
 	public List<TurTerm> list() throws JSONException {
 		return this.turTermRepository.findAll();
 	}
 
-	@Path("{termId}")
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurTerm detail(@PathParam("termId") int id) throws JSONException {
+	@ApiOperation(value = "Show a Entity Term")
+	@GetMapping("/{id}")
+	public TurTerm detail(@PathVariable int id) throws JSONException {
 		return this.turTermRepository.getOne(id);
 	}
 
-	@Path("/{termId}")
-	@PUT
-	@Produces(MediaType.APPLICATION_JSON)
-	public TurTerm update(@PathParam("termId") int id, TurTerm turTerm) throws Exception {
+	@ApiOperation(value = "Update a Entity Term")
+	@PutMapping("/{id}")
+	public TurTerm update(@PathVariable int id, @RequestBody TurTerm turTerm) throws Exception {
 		TurTerm turTermEdit = this.turTermRepository.getOne(id);
 		turTermEdit.setName(turTerm.getName());
 		turTermEdit.setIdCustom(turTerm.getIdCustom());
@@ -49,17 +47,17 @@ public class TurNLPEntityTermAPI {
 		return turTermEdit;
 	}
 
-	@Path("{termId}")
-	@DELETE
-	@Produces("application/json")
-	public boolean deleteEntity(@PathParam("id") int id) {
+	@Transactional
+	@ApiOperation(value = "Delete a Entity Term")
+	@DeleteMapping("/{id}")
+	public boolean deleteEntity(@PathVariable int id) {
 		this.turTermRepository.delete(id);
 		return true;
 	}
 
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public TurTerm add(TurTerm turTerm) throws Exception {
+	@ApiOperation(value = "Create a Entity Term")
+	@PostMapping
+	public TurTerm add(@RequestBody TurTerm turTerm) throws Exception {
 		this.turTermRepository.save(turTerm);
 		return turTerm;
 

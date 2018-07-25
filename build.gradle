@@ -155,15 +155,11 @@ dependencies {
 	}
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: "${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: "${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-jersey', version: "${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version: "${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf',version: "${springBootVersion}"
-
-	// Jersey   
-    compile group: 'org.glassfish.jersey.media', name: 'jersey-media-multipart', version:'2.25'
-    compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-servlet-core', version:'2.25'
-    
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
+	
+	// HSQLDB    
     compile group: 'org.hsqldb', name: 'hsqldb', version:'2.4.0'
     
 	// Solr
@@ -213,7 +209,11 @@ exclude(module: 'commons-logging')
     
     //ActiveMQ using KahaDB
     compile group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.14.5'
-
+	
+	// Swagger 2
+	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
+	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"
+	
 task wrapper(type: Wrapper) {
     gradleVersion = '4.8.1'
 }
