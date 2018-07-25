@@ -19,10 +19,12 @@ import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/sn/{snSiteId}/field")
+@Api(tags = "Semantic Navigation Field", description = "Semantic Navigation Field API")
 public class TurSNSiteFieldAPI {
 
 	@Autowired
@@ -32,20 +34,20 @@ public class TurSNSiteFieldAPI {
 
 	@ApiOperation(value = "Semantic Navigation Site Field List")
 	@GetMapping
-	public List<TurSNSiteField> list(@PathVariable int snSiteId) throws JSONException {
+	public List<TurSNSiteField> turSNSiteFieldList(@PathVariable int snSiteId) throws JSONException {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
 		return this.turSNSiteFieldRepository.findByTurSNSite(turSNSite);
 	}
 
 	@ApiOperation(value = "Show a Semantic Navigation Site Field")
 	@GetMapping("/{id}")
-	public TurSNSiteField mlSolution(@PathVariable int snSiteId, @PathVariable int id) throws JSONException {
+	public TurSNSiteField turSNSiteFieldGet(@PathVariable int snSiteId, @PathVariable int id) throws JSONException {
 		return this.turSNSiteFieldRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Semantic Navigation Site Field")
 	@PutMapping("/{id}")
-	public TurSNSiteField update(@PathVariable int snSiteId, @PathVariable int id,
+	public TurSNSiteField turSNSiteFieldUpdate(@PathVariable int snSiteId, @PathVariable int id,
 			@RequestBody TurSNSiteField turSNSiteField) throws Exception {
 		TurSNSiteField turSNSiteFieldEdit = this.turSNSiteFieldRepository.findById(id);
 		turSNSiteFieldEdit.setDescription(turSNSiteField.getDescription());
@@ -59,14 +61,14 @@ public class TurSNSiteFieldAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Semantic Navigation Site Field")
 	@DeleteMapping("/{id}")
-	public boolean deleteEntity(@PathVariable int snSiteId, @PathVariable int id) {
+	public boolean turSNSiteFieldDelete(@PathVariable int snSiteId, @PathVariable int id) {
 		this.turSNSiteFieldRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Semantic Navigation Site Field")
 	@PostMapping
-	public TurSNSiteField add(@PathVariable int snSiteId, @RequestBody TurSNSiteField turSNSiteField) throws Exception {
+	public TurSNSiteField turSNSiteFieldAdd(@PathVariable int snSiteId, @RequestBody TurSNSiteField turSNSiteField) throws Exception {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
 		turSNSiteField.setTurSNSite(turSNSite);
 		this.turSNSiteFieldRepository.save(turSNSiteField);

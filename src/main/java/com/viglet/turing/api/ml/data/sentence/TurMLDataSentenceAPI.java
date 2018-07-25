@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/ml/data/sentence")
+@Api(tags = "Machine Learning Sentence", description = "Machine Learning Sentence API")
 public class TurMLDataSentenceAPI {
 
 	@Autowired
@@ -28,19 +30,19 @@ public class TurMLDataSentenceAPI {
 
 	@ApiOperation(value = "Machine Learning Data Sentence List")
 	@GetMapping
-	public List<TurDataGroupSentence> list() throws JSONException {
+	public List<TurDataGroupSentence> turDataSentenceList() throws JSONException {
 		return this.turDataGroupSentenceRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Data Sentence")
 	@GetMapping("/{id}")
-	public TurDataGroupSentence detail(@PathVariable int id) throws JSONException {
+	public TurDataGroupSentence turDataSentenceGet(@PathVariable int id) throws JSONException {
 		return turDataGroupSentenceRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Machine Learning Data Sentence")
 	@PutMapping("/{id}")
-	public TurDataGroupSentence update(@PathVariable int id, @RequestBody TurDataGroupSentence turDataGroupSentence)
+	public TurDataGroupSentence turDataSentenceUpdate(@PathVariable int id, @RequestBody TurDataGroupSentence turDataGroupSentence)
 			throws Exception {
 	
 		TurDataGroupSentence turDataGroupSentenceEdit = turDataGroupSentenceRepository.findById(id);
@@ -54,14 +56,14 @@ public class TurMLDataSentenceAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Machine Learning Data Sentence")
 	@DeleteMapping("/{id}")
-	public boolean delete(@PathVariable int id) throws Exception {
+	public boolean turDataSentenceDelete(@PathVariable int id) throws Exception {
 		this.turDataGroupSentenceRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Machine Learning Data Sentence")
 	@PostMapping
-	public TurDataGroupSentence add(@RequestBody TurDataGroupSentence turDataSentence) throws Exception {
+	public TurDataGroupSentence turDataSentenceAdd(@RequestBody TurDataGroupSentence turDataSentence) throws Exception {
 		this.turDataGroupSentenceRepository.save(turDataSentence);
 		return turDataSentence;
 

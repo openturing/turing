@@ -17,35 +17,37 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/entity")
+@Api(tags = "Entity", description = "Entity API")
 public class TurNLPEntityAPI {
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
 
-	@ApiOperation(value = "Entity list")
+	@ApiOperation(value = "Entity List")
 	@GetMapping
-	public List<TurNLPEntity> list() throws JSONException {
+	public List<TurNLPEntity> turNLPEntityList() throws JSONException {
 		return this.turNLPEntityRepository.findAll();
 	}
 
 	@ApiOperation(value = "Local Entity list")
 	@GetMapping("/local")
-	public List<TurNLPEntity> listLocal() throws JSONException {
+	public List<TurNLPEntity> turNLPEntityLocal() throws JSONException {
 		return this.turNLPEntityRepository.findByLocal(1);
 	}
 	
 	@ApiOperation(value = "Show a entity")
 	@GetMapping("/{id}")
-	public TurNLPEntity detail(@PathVariable int id) throws JSONException {
+	public TurNLPEntity turNLPEntityGet(@PathVariable int id) throws JSONException {
 		return this.turNLPEntityRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a entity")
 	@PutMapping("/{id}")
-	public TurNLPEntity update(@PathVariable int id, @RequestBody TurNLPEntity turNLPEntity) throws Exception {
+	public TurNLPEntity turNLPEntityUpdate(@PathVariable int id, @RequestBody TurNLPEntity turNLPEntity) throws Exception {
 		TurNLPEntity turNLPEntityEdit =  this.turNLPEntityRepository.findById(id);
 		turNLPEntityEdit.setName(turNLPEntity.getName());
 		turNLPEntityEdit.setDescription(turNLPEntity.getDescription());
@@ -56,7 +58,7 @@ public class TurNLPEntityAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a entity")
 	@DeleteMapping("/{id}")
-	public boolean deleteEntity(@PathVariable int id) {
+	public boolean turNLPEntityDelete(@PathVariable int id) {
 		TurNLPEntity turNLPEntity =  this.turNLPEntityRepository.findById(id);
 		this.turNLPEntityRepository.delete(turNLPEntity);
 		return true;
@@ -64,7 +66,7 @@ public class TurNLPEntityAPI {
 
 	@ApiOperation(value = "Create a entity")
 	@PostMapping
-	public TurNLPEntity add(@RequestBody TurNLPEntity turNLPEntity) throws Exception {
+	public TurNLPEntity turNLPEntityAdd(@RequestBody TurNLPEntity turNLPEntity) throws Exception {
 		this.turNLPEntityRepository.save(turNLPEntity);
 		return turNLPEntity;
 

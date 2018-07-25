@@ -10,8 +10,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.annotations.Api;
+
 @RestController
 @RequestMapping("/api/sn/{id}/import")
+@Api(tags = "Semantic Navigation Import", description = "Semantic Navigation Import API")
 public class TurSNImportAPI {
 	static final Logger logger = LogManager.getLogger(TurSNImportAPI.class.getName());
 	@Autowired
@@ -22,7 +25,7 @@ public class TurSNImportAPI {
 
     
 	@PostMapping
-	public String broker(@PathVariable String id, String json) throws JSONException {
+	public String turSNImportBroker(@PathVariable String id, String json) throws JSONException {
 		TurSNJob turSNJob = new TurSNJob();
 		turSNJob.setSiteId(id);
 		turSNJob.setJson(json);

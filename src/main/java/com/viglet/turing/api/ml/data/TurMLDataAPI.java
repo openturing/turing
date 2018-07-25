@@ -33,10 +33,12 @@ import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepo
 import com.viglet.turing.persistence.repository.storage.TurDataRepository;
 import com.viglet.turing.plugins.opennlp.TurOpenNLPConnector;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/ml/data")
+@Api(tags = "Machine Learning Data", description = "Machine Learning Data API")
 public class TurMLDataAPI {
 	
 	@Autowired
@@ -48,19 +50,19 @@ public class TurMLDataAPI {
 	
 	@ApiOperation(value = "Machine Learning Data List")
 	@GetMapping
-	public List<TurData> list() throws JSONException {
+	public List<TurData> turDataList() throws JSONException {
 		return this.turDataRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Data")
 	@GetMapping("/{id}")
-	public TurData detail(@PathVariable int id) throws JSONException {
+	public TurData turDataGet(@PathVariable int id) throws JSONException {
 		return this.turDataRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Machine Learning Data")
 	@PutMapping("/{id}")
-	public TurData update(@PathVariable int id, @RequestBody TurData turData) throws Exception {
+	public TurData turDataUpdate(@PathVariable int id, @RequestBody TurData turData) throws Exception {
 		TurData turDataEdit = this.turDataRepository.findById(id);
 		turDataEdit.setName(turData.getName());
 		turDataEdit.setType(turData.getType());
@@ -71,14 +73,14 @@ public class TurMLDataAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Machine Learning Data")
 	@DeleteMapping("/{id}")
-	public boolean delete(@PathVariable int id) throws Exception {
+	public boolean turDataDelete(@PathVariable int id) throws Exception {
 		this.turDataRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Machine Learning Data")
 	@PostMapping
-	public TurData add(@RequestBody TurData turData) throws Exception {
+	public TurData turDataAdd(@RequestBody TurData turData) throws Exception {
 		this.turDataRepository.save(turData);
 		return turData;
 
@@ -86,7 +88,7 @@ public class TurMLDataAPI {
 
 	@PostMapping("/import")	
 	@Transactional
-	public String importData(@RequestParam("file") MultipartFile multipartFile)
+	public String turDataImport(@RequestParam("file") MultipartFile multipartFile)
 			throws JSONException, IOException, SAXException, TikaException {
 
 		BodyContentHandler handler = new BodyContentHandler(-1);

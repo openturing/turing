@@ -49,8 +49,11 @@ import com.viglet.turing.plugins.otca.af.xml.AFType;
 import com.viglet.turing.plugins.otca.af.xml.AFType.Terms;
 import com.viglet.util.TurUtils;
 
+import io.swagger.annotations.Api;
+
 @RestController
 @RequestMapping("/api/otca/af")
+@Api(tags = "OTCA", description = "OTCA API")
 public class TurOTCAAutorityFileAPI {
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
@@ -222,7 +225,7 @@ public class TurOTCAAutorityFileAPI {
 	@SuppressWarnings("unchecked")
 	@PostMapping("/import")	
 	@Transactional
-	public RedirectView importData(@RequestParam("file") MultipartFile multipartFile, HttpServletRequest request)
+	public RedirectView turOTCAAutorityFileImport(@RequestParam("file") MultipartFile multipartFile, HttpServletRequest request)
 			throws URISyntaxException, UnsupportedEncodingException {
 
 		try {

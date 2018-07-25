@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.ml.TurMLVendor;
 import com.viglet.turing.persistence.repository.ml.TurMLVendorRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/ml/vendor")
+@Api(tags = "Machine Learning Vendor", description = "Machine Learning Vendor API")
 public class TurMLVendorAPI {
 
 	@Autowired
@@ -28,19 +30,19 @@ public class TurMLVendorAPI {
 
 	@ApiOperation(value = "Machine Learning Vendor List")
 	@GetMapping
-	public List<TurMLVendor> list() throws JSONException {
+	public List<TurMLVendor> turMLVendorList() throws JSONException {
 		return this.turMLVendorRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Vendor")
 	@GetMapping("/{id}")
-	public TurMLVendor mlSolution(@PathVariable String id) throws JSONException {
+	public TurMLVendor turMLVendorGet(@PathVariable String id) throws JSONException {
 		return this.turMLVendorRepository.findById(id).get();
 	}
 
 	@ApiOperation(value = "Update a Machine Learning Vendor")
 	@PutMapping("/{id}")
-	public TurMLVendor update(@PathVariable String id, @RequestBody TurMLVendor turMLVendor) throws Exception {
+	public TurMLVendor turMLVendorUpdate(@PathVariable String id, @RequestBody TurMLVendor turMLVendor) throws Exception {
 		TurMLVendor turMLVendorEdit = this.turMLVendorRepository.findById(id).get();
 		turMLVendorEdit.setDescription(turMLVendor.getDescription());
 		turMLVendorEdit.setPlugin(turMLVendor.getPlugin());
@@ -53,14 +55,14 @@ public class TurMLVendorAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Machine Learning Vendor")
 	@DeleteMapping("/{id}")
-	public boolean deleteEntity(@PathVariable String id) {
+	public boolean turMLVendorDelete(@PathVariable String id) {
 		this.turMLVendorRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Machine Learning Vendor")
 	@PostMapping
-	public TurMLVendor add(@RequestBody TurMLVendor turMLVendor) throws Exception {
+	public TurMLVendor turMLVendorAdd(@RequestBody TurMLVendor turMLVendor) throws Exception {
 		this.turMLVendorRepository.save(turMLVendor);
 		return turMLVendor;
 

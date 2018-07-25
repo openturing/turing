@@ -20,9 +20,12 @@ import org.apache.commons.lang3.StringEscapeUtils;
 
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
+import io.swagger.annotations.Api;
+
 
 @RestController
 @RequestMapping("/api/storage/hadoop")
+@Api(tags = "Hadoop", description = "Hadoop API")
 public class TurHadoopAPI {
 
 	@Autowired
@@ -61,7 +64,7 @@ public class TurHadoopAPI {
 	}*/
 
 	@GetMapping
-	public TurChildPath getPath(@RequestParam String path) throws JSONException, IOException {
+	public TurChildPath turHadoopPath(@RequestParam String path) throws JSONException, IOException {
 		try {
 			UserGroupInformation ugi = UserGroupInformation.createRemoteUser("root");
 

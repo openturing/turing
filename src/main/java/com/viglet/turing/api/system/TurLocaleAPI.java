@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.system.TurLocale;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/locale")
+@Api(tags = "Locale", description = "Locale API")
 public class TurLocaleAPI {
 
 	@Autowired
@@ -28,19 +30,19 @@ public class TurLocaleAPI {
 
 	@ApiOperation(value = "Locale List")
 	@GetMapping
-	public List<TurLocale> list() throws JSONException {
+	public List<TurLocale> turLocaleList() throws JSONException {
 		return this.turLocaleRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Locale")
 	@GetMapping("/{id}")
-	public TurLocale detail(@PathVariable String id) throws JSONException {
+	public TurLocale turLocaleGet(@PathVariable String id) throws JSONException {
 		return this.turLocaleRepository.findById(id).get();
 	}
 
 	@ApiOperation(value = "Update a Locle")
 	@PutMapping("/{id}")
-	public TurLocale update(@PathVariable String id, @RequestBody TurLocale turLocale) throws Exception {
+	public TurLocale turLocaleUpdate(@PathVariable String id, @RequestBody TurLocale turLocale) throws Exception {
 		TurLocale turLocaleEdit = this.turLocaleRepository.findById(id).get();
 		turLocaleEdit.setEn(turLocale.getEn());
 		turLocaleEdit.setPt(turLocale.getPt());
@@ -51,14 +53,14 @@ public class TurLocaleAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Locale")
 	@DeleteMapping("/{id}")
-	public boolean delete(@PathVariable String id) throws Exception {
+	public boolean turLocaleDelete(@PathVariable String id) throws Exception {
 		this.turLocaleRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Locale")
 	@PostMapping
-	public TurLocale add(@RequestBody TurLocale turLocale) throws Exception {
+	public TurLocale turLocaleAdd(@RequestBody TurLocale turLocale) throws Exception {
 		this.turLocaleRepository.save(turLocale);
 		return turLocale;
 

@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
 import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/ml/category")
+@Api(tags = "Category", description = "Category API")
 public class TurMLCategoryAPI {
 
 	@Autowired
@@ -28,19 +30,19 @@ public class TurMLCategoryAPI {
 
 	@ApiOperation(value = "Machine Learning Category List")
 	@GetMapping
-	public List<TurMLCategory> list() throws JSONException {
+	public List<TurMLCategory> turMLCategoryList() throws JSONException {
 		return this.turMLCategoryRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Category")
 	@GetMapping("/{id}")
-	public TurMLCategory mlSolution(@PathVariable int id) throws JSONException {
+	public TurMLCategory turMLCategoryGet(@PathVariable int id) throws JSONException {
 		return this.turMLCategoryRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Machine Learning Category")
 	@PutMapping("/{id}")
-	public TurMLCategory update(@PathVariable int id, @RequestBody TurMLCategory turMLCategory) throws Exception {
+	public TurMLCategory turMLCategoryUpdate(@PathVariable int id, @RequestBody TurMLCategory turMLCategory) throws Exception {
 		TurMLCategory turMLCategoryEdit = this.turMLCategoryRepository.findById(id);
 		turMLCategoryEdit.setInternalName(turMLCategory.getInternalName());
 		turMLCategoryEdit.setName(turMLCategory.getName());
@@ -54,14 +56,14 @@ public class TurMLCategoryAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Machine Learning Category")
 	@DeleteMapping("/{id}")
-	public boolean deleteEntity(@PathVariable int id) {
+	public boolean turMLCategoryDelete(@PathVariable int id) {
 		this.turMLCategoryRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Machine Learning Category")
 	@PostMapping
-	public TurMLCategory add(@RequestBody TurMLCategory turMLCategory) throws Exception {
+	public TurMLCategory turMLCategoryAdd(@RequestBody TurMLCategory turMLCategory) throws Exception {
 		this.turMLCategoryRepository.save(turMLCategory);
 		return turMLCategory;
 

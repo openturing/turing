@@ -34,10 +34,12 @@ import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepo
 import com.viglet.turing.persistence.repository.storage.TurDataRepository;
 import com.viglet.turing.plugins.opennlp.TurOpenNLPConnector;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/ml/data/group/{dataGroupId}/data")
+@Api(tags = "Machine Learning Data by Group", description = "Machine Learning Data by Group API")
 public class TurMLDataGroupDataAPI {
 
 	@Autowired
@@ -53,20 +55,20 @@ public class TurMLDataGroupDataAPI {
 
 	@ApiOperation(value = "Machine Learning Data Group Data List")
 	@GetMapping
-	public List<TurDataGroupData> list(@PathVariable int dataGroupId) throws JSONException {
+	public List<TurDataGroupData> turDataGroupDataList(@PathVariable int dataGroupId) throws JSONException {
 		TurDataGroup turDataGroup = this.turDataGroupRepository.getOne(dataGroupId);
 		return this.turDataGroupDataRepository.findByTurDataGroup(turDataGroup);
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Data Group Data")
 	@GetMapping("/{id}")
-	public TurDataGroupData mlSolution(@PathVariable int dataGroupId, @PathVariable int id) throws JSONException {
+	public TurDataGroupData turDataGroupDataGet(@PathVariable int dataGroupId, @PathVariable int id) throws JSONException {
 		return this.turDataGroupDataRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Machine Learning Data Group Data")
 	@PutMapping("/{id}")
-	public TurDataGroupData update(@PathVariable int dataGroupId, @PathVariable int id,
+	public TurDataGroupData turDataGroupDataUpdate(@PathVariable int dataGroupId, @PathVariable int id,
 			@RequestBody TurData turMLData) throws Exception {
 		TurDataGroupData turDataGroupDataEdit = this.turDataGroupDataRepository.getOne(id);
 		turDataGroupDataEdit.setTurData(turMLData);
@@ -77,14 +79,14 @@ public class TurMLDataGroupDataAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Machine Learning Data Group Data")
 	@DeleteMapping("/{id}")
-	public boolean deleteEntity(@PathVariable int dataGroupId, @PathVariable int id) {
+	public boolean turDataGroupDataDelete(@PathVariable int dataGroupId, @PathVariable int id) {
 		this.turDataGroupDataRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Machine Learning Data Group Data")
 	@PostMapping
-	public TurDataGroupData add(@PathVariable int dataGroupId, @RequestBody TurDataGroupData turDataGroupData)
+	public TurDataGroupData turDataGroupDataAdd(@PathVariable int dataGroupId, @RequestBody TurDataGroupData turDataGroupData)
 			throws Exception {
 		TurDataGroup turDataGroup = this.turDataGroupRepository.getOne(dataGroupId);
 		turDataGroupData.setTurDataGroup(turDataGroup);
@@ -95,7 +97,7 @@ public class TurMLDataGroupDataAPI {
 
 	@PostMapping("/import")	
 	@Transactional
-	public TurDataGroupData importData(@PathVariable int dataGroupId, @RequestParam("file") MultipartFile multipartFile)
+	public TurDataGroupData turDataGroupDataImport(@PathVariable int dataGroupId, @RequestParam("file") MultipartFile multipartFile)
 			throws JSONException, IOException, SAXException, TikaException {
 	
 		TurDataGroup turDataGroup = this.turDataGroupRepository.getOne(dataGroupId);

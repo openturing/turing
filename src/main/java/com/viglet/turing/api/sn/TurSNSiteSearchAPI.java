@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrField;
+
+import io.swagger.annotations.Api;
+
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentMetadataBean;
@@ -43,6 +46,7 @@ import com.viglet.turing.sn.TurSNFieldType;
 
 @RestController
 @RequestMapping("/api/sn/{siteName}/search")
+@Api(tags = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
 
 	@Autowired
@@ -147,7 +151,7 @@ public class TurSNSiteSearchAPI {
 	}
 
 	@GetMapping
-	public TurSNSiteSearchBean select(@PathVariable String siteName, @RequestParam String q,
+	public TurSNSiteSearchBean turSNSiteSearchSelect(@PathVariable String siteName, @RequestParam String q,
 			@RequestParam("p") int currentPage, @RequestParam("fq[]") List<String> fq, @RequestParam("sort") String sort,
 			HttpServletRequest request) throws JSONException {
 

@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.ml.TurMLInstance;
 import com.viglet.turing.persistence.repository.ml.TurMLInstanceRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/ml")
+@Api(tags = "Machine Learning", description = "Machine Learning API")
 public class TurMLInstanceAPI {
 
 	@Autowired
@@ -28,19 +30,19 @@ public class TurMLInstanceAPI {
 
 	@ApiOperation(value = "Machine Learning List")
 	@GetMapping
-	public List<TurMLInstance> list() throws JSONException {
+	public List<TurMLInstance> turMLInstanceList() throws JSONException {
 		return this.turMLInstanceRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Machine Learning")
 	@GetMapping("/{id}")
-	public TurMLInstance detailService(@PathVariable int id) throws JSONException {
+	public TurMLInstance turMLInstanceGEt(@PathVariable int id) throws JSONException {
 		return this.turMLInstanceRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Machine Learning")
 	@PutMapping("/{id}")
-	public TurMLInstance update(@PathVariable int id, @RequestBody TurMLInstance turMLInstance) throws Exception {
+	public TurMLInstance turMLInstanceUpdate(@PathVariable int id, @RequestBody TurMLInstance turMLInstance) throws Exception {
 		TurMLInstance turMLInstanceEdit = this.turMLInstanceRepository.findById(id);
 		turMLInstanceEdit.setTitle(turMLInstance.getTitle());
 		turMLInstanceEdit.setDescription(turMLInstance.getDescription());
@@ -55,14 +57,14 @@ public class TurMLInstanceAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Machine Learning")
 	@DeleteMapping("/{id}")
-	public boolean deleteEntity(@PathVariable int id) {
+	public boolean turMLInstanceDelete(@PathVariable int id) {
 		this.turMLInstanceRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Machine Learning")
 	@PostMapping
-	public TurMLInstance add(@RequestBody TurMLInstance turMLInstance) throws Exception {
+	public TurMLInstance turMLInstanceAdd(@RequestBody TurMLInstance turMLInstance) throws Exception {
 		this.turMLInstanceRepository.save(turMLInstance);
 		return turMLInstance;
 

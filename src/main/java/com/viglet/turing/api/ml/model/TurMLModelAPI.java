@@ -33,6 +33,7 @@ import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.repository.ml.TurMLModelRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import opennlp.tools.doccat.DoccatFactory;
 import opennlp.tools.doccat.DoccatModel;
@@ -47,6 +48,7 @@ import opennlp.tools.util.TrainingParameters;
 
 @RestController
 @RequestMapping("/api/ml/model")
+@Api(tags = "Machine Learning Model", description = "Machine Learning Model API")
 public class TurMLModelAPI {
 	
 	@Autowired
@@ -56,19 +58,19 @@ public class TurMLModelAPI {
 
 	@ApiOperation(value = "Machine Learning Model List")
 	@GetMapping
-	public List<TurMLModel> list() throws JSONException {
+	public List<TurMLModel> turMLModelList() throws JSONException {
 		return this.turMLModelRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Model")
 	@GetMapping("/{id}")
-	public TurMLModel dataGroup(@PathVariable int id) throws JSONException {
+	public TurMLModel turMLModelGet(@PathVariable int id) throws JSONException {
 		return this.turMLModelRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Machine Learning Model")
 	@PutMapping("/{id}")
-	public TurMLModel update(@PathVariable int id, @RequestBody TurMLModel turMLModel) throws Exception {
+	public TurMLModel turMLModelUpdate(@PathVariable int id, @RequestBody TurMLModel turMLModel) throws Exception {
 		TurMLModel turMLModelEdit = this.turMLModelRepository.findById(id);
 		turMLModelEdit.setInternalName(turMLModel.getInternalName());
 		turMLModelEdit.setName(turMLModel.getName());
@@ -80,21 +82,21 @@ public class TurMLModelAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Machine Learning Model")
 	@DeleteMapping("/{id}")
-	public boolean delete(@PathVariable int id) throws Exception {
+	public boolean turMLModelDelete(@PathVariable int id) throws Exception {
 		this.turMLModelRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Machine Learning Model")
 	@PostMapping
-	public TurMLModel add(@RequestBody TurMLModel turMLModel) throws Exception {
+	public TurMLModel turMLModelAdd(@RequestBody TurMLModel turMLModel) throws Exception {
 		this.turMLModelRepository.save(turMLModel);
 		return turMLModel;
 
 	}
 
 	@GetMapping("/evaluation")
-	public String evaluation() throws JSONException {
+	public String turMLModelEvaluation() throws JSONException {
 		File modelFile = new File("store/ml/model/generate.bin");
 		InputStream modelStream;
 		DoccatModel m = null;
@@ -117,7 +119,7 @@ public class TurMLModelAPI {
 	}
 
 	@GetMapping("/generate")
-	public String generate() throws JSONException, IOException, SAXException, TikaException {
+	public String turMLModelGenerate() throws JSONException, IOException, SAXException, TikaException {
 
 		List<TurDataGroupSentence> turDataSentences = turDataGroupSentenceRepository.findAll();
 

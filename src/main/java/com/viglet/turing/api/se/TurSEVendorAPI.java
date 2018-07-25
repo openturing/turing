@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEVendorRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/se/vendor")
+@Api(tags = "Search Engine Vendor", description = "Search Engine Vendor API")
 public class TurSEVendorAPI {
 	
 	@Autowired
@@ -29,20 +31,20 @@ public class TurSEVendorAPI {
 	
 	@ApiOperation(value = "Search Engine Vendor List")
 	@GetMapping
-	public List<TurSEVendor> list() throws JSONException {
+	public List<TurSEVendor> turSEVendorList() throws JSONException {
 		return this.turSEVendorRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Search Engine Vendor")
 	@GetMapping("/{id}")
-	public TurSEVendor seSolution(@PathVariable String id) throws JSONException {
+	public TurSEVendor turSEVendorGet(@PathVariable String id) throws JSONException {
 		return this.turSEVendorRepository.findById(id).get();
 	}
 	
 
 	@ApiOperation(value = "Update a Search Engine Vendor")
 	@PutMapping("/{id}")
-	public TurSEVendor update(@PathVariable String id, @RequestBody TurSEVendor turSEVendor) throws Exception {
+	public TurSEVendor turSEVendorUpdate(@PathVariable String id, @RequestBody TurSEVendor turSEVendor) throws Exception {
 		TurSEVendor turSEVendorEdit = this.turSEVendorRepository.findById(id).get();
 		turSEVendorEdit.setDescription(turSEVendor.getDescription());
 		turSEVendorEdit.setPlugin(turSEVendor.getPlugin());
@@ -55,14 +57,14 @@ public class TurSEVendorAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Search Engine Vendor")
 	@DeleteMapping("/{id}")
-	public boolean deleteEntity(@PathVariable String id) {
+	public boolean turSEVendorDelete(@PathVariable String id) {
 		this.turSEVendorRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Search Engine Vendor")
 	@PostMapping
-	public TurSEVendor add(@RequestBody TurSEVendor turSEVendor) throws Exception {
+	public TurSEVendor turSEVendorAdd(@RequestBody TurSEVendor turSEVendor) throws Exception {
 		this.turSEVendorRepository.save(turSEVendor);
 		return turSEVendor;
 

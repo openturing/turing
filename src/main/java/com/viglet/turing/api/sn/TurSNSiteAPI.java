@@ -17,11 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 
 @RestController
 @RequestMapping("/api/sn")
+@Api(tags = "Semantic Navigation Site", description = "Semantic Navigation Site API")
 public class TurSNSiteAPI {
 	
 	@Autowired
@@ -41,7 +43,7 @@ public class TurSNSiteAPI {
 	
 	@ApiOperation(value = "Update a Semantic Navigation Site")
 	@PutMapping("/{id}")
-	public TurSNSite update(@PathVariable int id, @RequestBody TurSNSite turSNSite) throws Exception {
+	public TurSNSite turSNSiteUpdate(@PathVariable int id, @RequestBody TurSNSite turSNSite) throws Exception {
 		TurSNSite turSNSiteEdit = this.turSNSiteRepository.findById(id);
 		turSNSiteEdit.setName(turSNSite.getName());
 		turSNSiteEdit.setDescription(turSNSite.getDescription());
@@ -64,14 +66,14 @@ public class TurSNSiteAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Semantic Navigation Site")
 	@DeleteMapping("/{id}")
-	public boolean delete(@PathVariable int id) throws Exception {
+	public boolean turSNSiteDelete(@PathVariable int id) throws Exception {
 		this.turSNSiteRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Semantic Navigation Site")
 	@PostMapping
-	public TurSNSite add(TurSNSite turSNSite) throws Exception {
+	public TurSNSite turSNSiteAdd(TurSNSite turSNSite) throws Exception {
 		this.turSNSiteRepository.save(turSNSite);
 		return turSNSite;
 

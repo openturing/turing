@@ -36,10 +36,12 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/sn/{snSiteId}/field/ext")
+@Api(tags = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
 public class TurSNSiteFieldExtAPI {
 
 	@Autowired
@@ -55,7 +57,7 @@ public class TurSNSiteFieldExtAPI {
 
 	@ApiOperation(value = "Semantic Navigation Site Field Ext List")
 	@GetMapping
-	public List<TurSNSiteFieldExt> list(@PathVariable int snSiteId) throws JSONException {
+	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable int snSiteId) throws JSONException {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
 
 		List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
@@ -166,14 +168,14 @@ public class TurSNSiteFieldExtAPI {
 
 	@ApiOperation(value = "Show a Semantic Navigation Site Field Ext")
 	@GetMapping("/{id}")
-	public TurSNSiteFieldExt mlSolution(@PathVariable int snSiteId, @PathVariable int id)
+	public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable int snSiteId, @PathVariable int id)
 			throws JSONException {
 		return this.turSNSiteFieldExtRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Semantic Navigation Site Field Ext")
 	@PutMapping("/{id}")
-	public TurSNSiteFieldExt update(@PathVariable int snSiteId, @PathVariable int id,
+	public TurSNSiteFieldExt turSNSiteFieldExtUpdate(@PathVariable int snSiteId, @PathVariable int id,
 			@RequestBody TurSNSiteFieldExt turSNSiteFieldExt) throws Exception {
 		TurSNSiteFieldExt turSNSiteFieldExtEdit = this.turSNSiteFieldExtRepository.findById(id);
 		turSNSiteFieldExtEdit.setFacetName(turSNSiteFieldExt.getFacetName());
@@ -200,7 +202,7 @@ public class TurSNSiteFieldExtAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Semantic Navigation Site Field Ext")
 	@DeleteMapping("/{id}")
-	public boolean deleteEntity(@PathVariable int snSiteId, @PathVariable int id) {
+	public boolean turSNSiteFieldExtDelete(@PathVariable int snSiteId, @PathVariable int id) {
 		TurSNSiteFieldExt turSNSiteFieldExtEdit = this.turSNSiteFieldExtRepository.findById(id);
 
 		switch (turSNSiteFieldExtEdit.getSnType()) {
@@ -219,7 +221,7 @@ public class TurSNSiteFieldExtAPI {
 
 	@ApiOperation(value = "Create a Semantic Navigation Site Field Ext")
 	@PostMapping
-	public TurSNSiteFieldExt add(@PathVariable int snSiteId, @RequestBody TurSNSiteFieldExt turSNSiteFieldExt)
+	public TurSNSiteFieldExt turSNSiteFieldExtAdd(@PathVariable int snSiteId, @RequestBody TurSNSiteFieldExt turSNSiteFieldExt)
 			throws Exception {
 
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
@@ -274,7 +276,7 @@ public class TurSNSiteFieldExtAPI {
 	}
 
 	@GetMapping("/create")
-	public List<TurSNSite> create(@PathVariable int snSiteId)
+	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable int snSiteId)
 			throws JSONException, ClientProtocolException, IOException {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
 		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,

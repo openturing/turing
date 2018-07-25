@@ -21,12 +21,15 @@ import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.solr.TurSolr;
 
+import io.swagger.annotations.Api;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 @RestController
 @RequestMapping("/api/otsn/broker")
+@Api(tags = "OTSN Broker", description = "OTSN Broker API")
 public class TurOTSNBrokerAPI {
 	@Autowired
 	TurNLPInstanceRepository turNLPInstanceRepository;
@@ -39,7 +42,7 @@ public class TurOTSNBrokerAPI {
 
 	
 	@PostMapping
-	public Map<String, Object> broker(@RequestParam("index") String index, @RequestParam("config") String config,
+	public Map<String, Object> turOTSNBrokerAdd(@RequestParam("index") String index, @RequestParam("config") String config,
 			@RequestParam("data") String data) throws JSONException {
 
 		JSONObject jsonObject = new JSONObject();

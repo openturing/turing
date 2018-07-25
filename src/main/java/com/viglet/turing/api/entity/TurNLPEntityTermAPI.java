@@ -17,29 +17,31 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 import com.viglet.turing.persistence.repository.nlp.term.TurTermRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/entity/terms")
+@Api(tags = "Term", description = "Term API")
 public class TurNLPEntityTermAPI {
 	@Autowired
 	private TurTermRepository turTermRepository;
 	
 	@ApiOperation(value = "Entity Term list")
 	@GetMapping
-	public List<TurTerm> list() throws JSONException {
+	public List<TurTerm> turTermList() throws JSONException {
 		return this.turTermRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Entity Term")
 	@GetMapping("/{id}")
-	public TurTerm detail(@PathVariable int id) throws JSONException {
+	public TurTerm turTermGet(@PathVariable int id) throws JSONException {
 		return this.turTermRepository.getOne(id);
 	}
 
 	@ApiOperation(value = "Update a Entity Term")
 	@PutMapping("/{id}")
-	public TurTerm update(@PathVariable int id, @RequestBody TurTerm turTerm) throws Exception {
+	public TurTerm turTermUpdate(@PathVariable int id, @RequestBody TurTerm turTerm) throws Exception {
 		TurTerm turTermEdit = this.turTermRepository.getOne(id);
 		turTermEdit.setName(turTerm.getName());
 		turTermEdit.setIdCustom(turTerm.getIdCustom());
@@ -50,14 +52,14 @@ public class TurNLPEntityTermAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Entity Term")
 	@DeleteMapping("/{id}")
-	public boolean deleteEntity(@PathVariable int id) {
+	public boolean turTermDelete(@PathVariable int id) {
 		this.turTermRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Entity Term")
 	@PostMapping
-	public TurTerm add(@RequestBody TurTerm turTerm) throws Exception {
+	public TurTerm turTermAdd(@RequestBody TurTerm turTerm) throws Exception {
 		this.turTermRepository.save(turTerm);
 		return turTerm;
 

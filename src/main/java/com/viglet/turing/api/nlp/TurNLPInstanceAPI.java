@@ -18,10 +18,12 @@ import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/nlp")
+@Api(tags = "Natural Language Processing", description = "Natural Language Processing API")
 public class TurNLPInstanceAPI {
 
 	@Autowired
@@ -31,19 +33,19 @@ public class TurNLPInstanceAPI {
 
 	@ApiOperation(value = "Natural Language Processing List")
 	@GetMapping
-	public List<TurNLPInstance> list() throws JSONException {
+	public List<TurNLPInstance> turNLPInstanceList() throws JSONException {
 		return this.turNLPInstanceRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Natural Language Processing")
 	@GetMapping("/{id}")
-	public TurNLPInstance dataGroup(@PathVariable int id) throws JSONException {
+	public TurNLPInstance turNLPInstanceGet(@PathVariable int id) throws JSONException {
 		return this.turNLPInstanceRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Natural Language Processing")
 	@PutMapping("/{id}")
-	public TurNLPInstance update(@PathVariable int id, @RequestBody TurNLPInstance turNLPInstance) throws Exception {
+	public TurNLPInstance turNLPInstanceUpdate(@PathVariable int id, @RequestBody TurNLPInstance turNLPInstance) throws Exception {
 		TurNLPInstance turNLPInstanceEdit = turNLPInstanceRepository.findById(id);
 		turNLPInstanceEdit.setTitle(turNLPInstance.getTitle());
 		turNLPInstanceEdit.setDescription(turNLPInstance.getDescription());
@@ -59,14 +61,14 @@ public class TurNLPInstanceAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Natural Language Processing")
 	@DeleteMapping("/{id}")
-	public boolean delete(@PathVariable int id) throws Exception {
+	public boolean turNLPInstanceDelete(@PathVariable int id) throws Exception {
 		this.turNLPInstanceRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Natural Language Processing")
 	@PostMapping
-	public TurNLPInstance add(@RequestBody TurNLPInstance turNLPInstance) throws Exception {
+	public TurNLPInstance turNLPInstanceAdd(@RequestBody TurNLPInstance turNLPInstance) throws Exception {
 		this.turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 		return turNLPInstance;
 
