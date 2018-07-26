@@ -18,35 +18,40 @@ package com.viglet.turing;
 
 import java.io.File;
 
-import javax.jms.Queue;
 
 import org.apache.activemq.broker.BrokerService;
-import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.kahadb.KahaDBPersistenceAdapter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFactory;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jms.annotation.EnableJms;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
-import javax.sql.DataSource;
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 
-@Controller
+import io.undertow.UndertowOptions;
+
 @SpringBootApplication
 @EnableJms
-public class Main {
-	@Autowired
-	DataSource dataSource;
+@EnableCaching
+public class Turing {
 
+	public static void main(String[] args) throws Exception {		
+		System.out.println("Viglet Turing starting...");
+		SpringApplication.run(Turing.class, args);
+		System.out.println("Viglet Turing started");
+	}
+	
 	@Bean
-	public FilterRegistrationBean filterRegistrationBean() {
-		FilterRegistrationBean registrationBean = new FilterRegistrationBean();
+	public FilterRegistrationBean<CharacterEncodingFilter> filterRegistrationBean() {
+		FilterRegistrationBean<CharacterEncodingFilter> registrationBean = new FilterRegistrationBean<CharacterEncodingFilter>();
 		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
 		characterEncodingFilter.setForceEncoding(true);
 		characterEncodingFilter.setEncoding("UTF-8");
@@ -54,6 +59,18 @@ public class Main {
 		return registrationBean;
 	}
 
+	@Bean
+	public Module hibernate5Module() {
+		return new Hibernate5Module();
+	}
+
+	@Bean
+	UndertowServletWebServerFactory embeddedServletContainerFactory() {
+		UndertowServletWebServerFactory factory = new UndertowServletWebServerFactory();
+		factory.addBuilderCustomizers(builder -> builder.setServerOption(UndertowOptions.ENABLE_HTTP2, true));
+		return factory;
+	}
+	
 	@Bean(initMethod = "start", destroyMethod = "stop")
 	public BrokerService broker() throws Exception {
 		final BrokerService broker = new BrokerService();
@@ -79,10 +96,6 @@ public class Main {
 		broker.setPersistenceAdapter(persistenceAdapter);
 		broker.setPersistent(true);
 		return broker;
-	}
-
-	public static void main(String[] args) throws Exception {
-		SpringApplication.run(Main.class, args);
 	}
 
 	@RequestMapping("/")

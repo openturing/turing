@@ -59,7 +59,7 @@ public class TurOnStartup implements ApplicationRunner {
 	public void run(ApplicationArguments arg0) throws Exception {
 		final String FIRST_TIME = "FIRST_TIME";
 
-		if (turConfigVarRepository.findById(FIRST_TIME) == null) {
+		if (!turConfigVarRepository.findById(FIRST_TIME).isPresent()) {
 			
 			System.out.println("First Time Configuration ...");
 

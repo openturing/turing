@@ -15,26 +15,31 @@ buildscript {
     			   classpath("com.eriwen:gradle-js-plugin:2.12.0") }
 }
 
-
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'com.eriwen.gradle.js'
+apply plugin: 'jacoco'
+apply plugin: 'project-report'
 
-group = 'com.viglet.turing'
-version = '1.0-SNAPSHOT'
+jar {
+    baseName = 'viglet-turing'
+    version =  '0.1.0'
+}
 
-description = "viglet-turing"
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+bootJar {
+    launchScript()
+}
 
 repositories {
 	mavenCentral()
 	maven { url "https://repo.spring.io/snapshot" }
 	maven { url "https://repo.spring.io/milestone" }
 }
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
@@ -89,14 +94,14 @@ task minifyAllJs(dependsOn: ':combineAllJs', type: com.eriwen.gradle.js.tasks.Mi
 
 task stage(dependsOn: ['build', 'clean'])
 
-
 compileJava.dependsOn(minifyAllJs)
 
 build.mustRunAfter clean
 
-jar {
-    baseName = 'turing'
-    version =  '0.1.0'
+javadoc {
+    source = sourceSets.main.allJava
+    classpath = configurations.compile
+    destinationDir = file("store/doc/javadoc")
 }
 
 dependencies {
@@ -115,6 +120,7 @@ dependencies {
 		exclude(module: 'jasper-compiler')
 		exclude(module: 'servlet-api')
 		exclude(module: 'jsp-api')
+		exclude(module: 'commons-el')
 		
 
 	}
@@ -129,6 +135,7 @@ dependencies {
 		exclude(module: 'jasper-compiler')
 		exclude(module: 'servlet-api')
 		exclude(module: 'jsp-api')
+		exclude(module: 'log4j')
 	}
 	compile (group: 'org.apache.hadoop', name: 'hadoop-auth', version: '2.2.0') {
 		exclude(module: 'commons-logging')
@@ -152,24 +159,35 @@ dependencies {
 		exclude(module: 'jackson-mapper-asl')
 		exclude(module: 'jackson-core-asl')
 		exclude(module: 'hsqldb')
+		exclude(module: 'commons-el')
 	}
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: "${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: "${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version: "${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
-	compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
+		
+ 	// Spring Boot
+    compile (group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}") { 
+    }
+ 
+    compile (group: 'org.springframework.boot', name: 'spring-boot-starter-undertow', version:"${springBootVersion}"){ 
+    exclude(module: 'javax.el')
+    }
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version:"${springBootVersion}"
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version:"${springBootVersion}"
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"  
 	
-	// HSQLDB    
-    compile group: 'org.hsqldb', name: 'hsqldb', version:'2.4.0'
-    
+	// Spring
+  	compile group: 'org.springframework', name: 'spring-test', version: '5.0.6.RELEASE'
+
+ 	// Jackson
+   	compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.6'
+   	  	
+  	// H2
+     compile group: 'com.h2database', name: 'h2', version:'1.4.197'
+            
 	// Solr
     compile(group: 'org.apache.solr', name: 'solr-solrj', version:'4.6.0') {
 exclude(module: 'httpclient')
 exclude(module: 'httpmime')
     }
-    
-    // Commons Logging
-    compile group: 'commons-logging', name: 'commons-logging', version:'1.2'
     
     // JSON
     compile group: 'org.json', name: 'json', version:'20140107'
@@ -191,15 +209,10 @@ exclude(module: 'commons-logging')
     // OpenNLP
     compile group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.7.2'
     
-    // Commons-IO
+    // Apache Commons
     compile group: 'commons-io', name: 'commons-io', version:'2.5'
-    
-    // Commons Lang
     compile group: 'commons-lang', name: 'commons-lang', version:'2.6'
-    
-    // Log4J-Core
-    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.7'
-    
+  
     // EhCache
     compile group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.3'
     
@@ -213,9 +226,32 @@ exclude(module: 'commons-logging')
 	// Swagger 2
 	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
 	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"
-	
+
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+}
 task wrapper(type: Wrapper) {
     gradleVersion = '4.8.1'
 }
+
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+    
+ jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled false
+    }
+}
+
+bootRun {
+    if (project.hasProperty('args')) {
+        args project.args.split(',')
+    }
+}
+
+check.dependsOn jacocoTestReport 
 
 }
