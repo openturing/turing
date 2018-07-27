@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,7 +26,7 @@ public class TurSNImportAPI {
 
     
 	@PostMapping
-	public String turSNImportBroker(@PathVariable String id, String json) throws JSONException {
+	public String turSNImportBroker(@PathVariable String id, @RequestBody String json) throws JSONException {
 		TurSNJob turSNJob = new TurSNJob();
 		turSNJob.setSiteId(id);
 		turSNJob.setJson(json);
