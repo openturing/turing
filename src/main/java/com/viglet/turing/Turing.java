@@ -102,9 +102,4 @@ public class Turing {
 	String index() {
 		return "index";
 	}
-
-	@RequestMapping("/sn/{siteName}")
-	String sn(@PathVariable("siteName") String siteName) {
-		return "sn/templates/index";
-	}
 }

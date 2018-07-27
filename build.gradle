@@ -241,6 +241,7 @@ exclude(module: 'commons-logging')
 	compile 'org.webjars.bower:angular-bootstrap:2.5.0'
 	compile 'org.webjars.bower:angular-cookies:1.6.9'
 	compile 'org.webjars.bower:angular-sanitize:1.6.9'
+	compile 'org.webjars.bower:angular-moment:1.2.0'
 	compile 'org.webjars.bower:font-awesome:4.7.0'
 	
 	testCompile('org.springframework.boot:spring-boot-starter-test')

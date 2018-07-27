@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrField;
@@ -84,7 +85,7 @@ public class TurSNSiteSearchAPI {
 
 		String queryString = sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
 
-		return request.getContextPath() + "?" + queryString;
+		return request.getRequestURI() + "?" + queryString;
 
 	}
 
@@ -117,7 +118,7 @@ public class TurSNSiteSearchAPI {
 
 		String queryString = sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
 
-		return request.getContextPath() + "?" + queryString;
+		return request.getRequestURI() + "?" + queryString;
 
 	}
 
@@ -146,15 +147,22 @@ public class TurSNSiteSearchAPI {
 
 		String queryString = sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
 
-		return  request.getContextPath() + "?" + queryString;
+		return request.getRequestURI() + "?" + queryString;
 
 	}
 
 	@GetMapping
-	public TurSNSiteSearchBean turSNSiteSearchSelect(@PathVariable String siteName, @RequestParam String q,
-			@RequestParam("p") int currentPage, @RequestParam("fq[]") List<String> fq, @RequestParam("sort") String sort,
-			HttpServletRequest request) throws JSONException {
-
+	public TurSNSiteSearchBean turSNSiteSearchSelect(@PathVariable String siteName,
+			@RequestParam(required = false, name = "q") String q,
+			@RequestParam(required = false, name = "p") String strCurrentPage,
+			@RequestParam(required = false, name = "fq[]") List<String> fq,
+			@RequestParam(required = false, name = "sort") String sort, HttpServletRequest request)
+			throws JSONException {
+		int currentPage = 1;
+		if (strCurrentPage != null) {
+			currentPage = Integer.parseInt(strCurrentPage);
+		}
+		
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 
 		TurSNSiteSearchBean turSNSiteSearchBean = new TurSNSiteSearchBean();
@@ -185,20 +193,22 @@ public class TurSNSiteSearchAPI {
 
 		List<String> filterQueryModified = new ArrayList<String>();
 		List<String> hiddenFilterQuery = new ArrayList<String>();
-		for (String filterQuery : fq) {
-			String[] filterParts = filterQuery.split(":");
-			if (filterParts.length == 2) {
-				if (!hiddenFilterQuery.contains(filterParts[0])) {
-					hiddenFilterQuery.add(filterParts[0]);
+		if (fq != null) {
+			for (String filterQuery : fq) {
+				String[] filterParts = filterQuery.split(":");
+				if (filterParts.length == 2) {
+					if (!hiddenFilterQuery.contains(filterParts[0])) {
+						hiddenFilterQuery.add(filterParts[0]);
+					}
+					if (!filterParts[1].startsWith("\"") && !filterParts[1].startsWith("[")) {
+						filterParts[1] = "\"" + filterParts[1] + "\"";
+						filterQueryModified.add(filterParts[0] + ":" + filterParts[1]);
+					}
+				} else {
+					filterQueryModified.add(filterQuery);
 				}
-				if (!filterParts[1].startsWith("\"") && !filterParts[1].startsWith("[")) {
-					filterParts[1] = "\"" + filterParts[1] + "\"";
-					filterQueryModified.add(filterParts[0] + ":" + filterParts[1]);
-				}
-			} else {
-				filterQueryModified.add(filterQuery);
-			}
 
+			}
 		}
 		String[] filterQueryModifiedArr = new String[filterQueryModified.size()];
 		filterQueryModifiedArr = filterQueryModified.toArray(filterQueryModifiedArr);
@@ -217,7 +227,7 @@ public class TurSNSiteSearchAPI {
 		}
 
 		TurSEResults turSEResults = null;
-	
+
 		turSolr.init(turSNSite);
 		try {
 			turSEResults = turSolr.retrieveSolr(q, filterQueryModified, currentPage, sort);
@@ -420,7 +430,7 @@ public class TurSNSiteSearchAPI {
 			turSNSiteSearchWidgetBean.setFacet(turSNSiteSearchFacetBeans);
 
 			// BEGIN Facet Remove
-			if (fq.size() > 0) {
+			if (fq != null && fq.size() > 0) {
 
 				TurSNSiteSearchFacetBean turSNSiteSearchFacetToRemoveBean = new TurSNSiteSearchFacetBean();
 				List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<TurSNSiteSearchFacetItemBean>();
