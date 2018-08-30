@@ -145,7 +145,25 @@ public class TurSolr {
 			this.addDocument();
 		}
 	}
-
+	public void desindexing(String id) throws JSONException {
+		logger.debug("Executing desindexing ...");
+		if (solrServer != null) {
+			this.deleteDocument(id);
+		}
+	}
+	public void deleteDocument(String id) {
+		try {			
+			@SuppressWarnings("unused")
+			UpdateResponse response = solrServer.deleteById(id);
+			solrServer.commit();
+		} catch (SolrServerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	public void addDocument() throws JSONException {
 
 		SolrInputDocument document = new SolrInputDocument();
