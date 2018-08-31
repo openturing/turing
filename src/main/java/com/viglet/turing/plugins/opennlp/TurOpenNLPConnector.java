@@ -56,7 +56,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 	public Map<String, Object> retrieve(Map<String, Object> attributes) throws TransformerException, Exception {
 
 		for (Object attrValue : attributes.values()) {
-			String sentences[] = this.sentenceDetect(turSolrField.convertFieldToString(attrValue));
+			String sentences[] = this.sentenceDetect(turSolrField.convertFieldToString(attrValue).replaceAll("\"", "").replaceAll("'", ""));
 
 			for (String sentence : sentences) {
 
@@ -70,6 +70,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 
 					sentencesFormatted = sentencesFormatted + " .";
 				}
+				;
 				logger.debug("OpenNLP Sentence: " + sentencesFormatted);
 				String tokens[] = this.tokenDetect(sentencesFormatted + ".");
 				for (String token : tokens) {

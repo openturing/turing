@@ -53,8 +53,9 @@ public class TurSNProcessQueue {
 	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
 	private JmsMessagingTemplate jmsMessagingTemplate;
-	
+
 	public static final String INDEXING_QUEUE = "indexing.queue";
+	public static final String DEINDEXING_QUEUE = "deindexing.queue";
 	public static final String NLP_QUEUE = "nlp.queue";
 
 	@JmsListener(destination = NLP_QUEUE)
@@ -144,7 +145,24 @@ public class TurSNProcessQueue {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
+	}
+
+	@JmsListener(destination = DEINDEXING_QUEUE)
+	public void receiveDesindexingQueue(TurSNJob turSNJob) {
+		logger.debug("Received job - " + DEINDEXING_QUEUE);
+		JSONArray jsonRows = new JSONArray(turSNJob.getJson());
+		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
+		try {
+			for (int i = 0; i < jsonRows.length(); i++) {
+				JSONObject jsonRow = jsonRows.getJSONObject(i);
+				logger.debug("receiveQueue JsonObject: " + jsonRow.toString());
+				turSolr.init(turSNSite);
+				turSolr.desindexing(jsonRow.getString("id"));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@JmsListener(destination = INDEXING_QUEUE)
@@ -178,14 +196,14 @@ public class TurSNProcessQueue {
 				turSolr.indexing();
 
 			}
-			
+
 			logger.debug("Sent job - " + NLP_QUEUE);
 			this.jmsMessagingTemplate.convertAndSend(NLP_QUEUE, turSNJob);
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 	}
 
 	public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {

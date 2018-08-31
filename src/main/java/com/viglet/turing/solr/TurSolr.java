@@ -12,12 +12,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
+import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.FacetField.Count;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -146,6 +148,27 @@ public class TurSolr {
 		}
 	}
 
+	public void desindexing(String id) throws JSONException {
+		logger.debug("Executing desindexing ...");
+		if (solrServer != null) {
+			this.deleteDocument(id);
+		}
+	}
+
+	public void deleteDocument(String id) {
+		try {
+			@SuppressWarnings("unused")
+			UpdateResponse response = solrServer.deleteById(id);
+			solrServer.commit();
+		} catch (SolrServerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
 	public void addDocument() throws JSONException {
 
 		SolrInputDocument document = new SolrInputDocument();
@@ -201,6 +224,14 @@ public class TurSolr {
 		}
 	}
 
+	public SpellCheckResponse autoComplete(String term) throws SolrServerException {
+		SolrQuery query = new SolrQuery();
+	      query.setRequestHandler("/tur_suggest");
+		query.setQuery(term);
+		QueryResponse queryResponse = solrServer.query(query);
+		return queryResponse.getSpellCheckResponse();
+	}
+
 	public TurSEResults retrieveSolr(String txtQuery, List<String> fq, int currentPage, String sort)
 			throws SolrServerException, NumberFormatException, JSONException {
 
@@ -236,11 +267,11 @@ public class TurSolr {
 		}
 		SolrQuery query = new SolrQuery();
 		query.setQuery(txtQuery);
-		
+
 		if (sortEntry != null) {
 			query.setSort(sortEntry.getKey(), sortEntry.getValue().equals("asc") ? ORDER.asc : ORDER.desc);
 		}
-		
+
 		query.setRows(rows);
 		query.setStart((currentPage * rows) - rows);
 
