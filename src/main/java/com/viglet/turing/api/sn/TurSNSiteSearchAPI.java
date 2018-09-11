@@ -10,6 +10,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -150,6 +151,7 @@ public class TurSNSiteSearchAPI {
 
 	}
 
+	@SuppressWarnings("unchecked")
 	@GetMapping
 	public TurSNSiteSearchBean turSNSiteSearchSelect(@PathVariable String siteName,
 			@RequestParam(required = false, name = "q") String q,
@@ -161,7 +163,7 @@ public class TurSNSiteSearchAPI {
 		if (strCurrentPage != null) {
 			currentPage = Integer.parseInt(strCurrentPage);
 		}
-		
+
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 
 		TurSNSiteSearchBean turSNSiteSearchBean = new TurSNSiteSearchBean();
@@ -279,11 +281,25 @@ public class TurSNSiteSearchAPI {
 
 					// System.out.println("attribs: " + attribute);
 					if (!attribute.startsWith("turing_entity")) {
+						String nodeName = null;
 						if (fieldExtMap.containsKey(attribute)) {
 							TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
-							fields.put(turSNSiteFieldExt.getName(), turSEResultAttr.get(attribute));
+							nodeName = turSNSiteFieldExt.getName();
 						} else {
-							fields.put(attribute, turSEResultAttr.get(attribute));
+							nodeName = attribute;
+						}
+						if (nodeName != null && fields.containsKey(nodeName)) {
+							if (!(fields.get(nodeName) instanceof List)) {
+								List<Object> attributeValues = new ArrayList<Object>();
+								attributeValues.add(fields.get(nodeName));
+								attributeValues.add(turSEResultAttr.get(attribute));
+								fields.put(nodeName, attributeValues);
+							} else {
+								((List<Object>) fields.get(nodeName)).add(turSEResultAttr.get(attribute));
+							}
+						} else {
+							fields.put(nodeName, turSEResultAttr.get(attribute));
+
 						}
 					}
 

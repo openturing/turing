@@ -154,14 +154,14 @@ public class TurSolrField {
 			return this.convertFieldToLong(attrValue);
 		case STRING:
 			return this.convertFieldToString(attrValue);
-		case ARRAY:
-			return this.convertFieldToArray(attrValue);
+		//case ARRAY:
+		//	return this.convertFieldToArray(attrValue);
 		case DATE:
 			return this.convertFieldToDate(attrValue);
 		case BOOL:
 			return this.convertFieldToBoolean(attrValue);
 		default:
-			return this.convertFieldToString(attrValue);
+			return attrValue;
 		}
 	}
 }

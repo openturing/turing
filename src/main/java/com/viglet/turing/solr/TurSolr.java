@@ -433,12 +433,28 @@ public class TurSolr {
 					TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
 
 					if (turSNSiteFieldExt.getType() == TurSEFieldType.STRING && hl != null && hl.containsKey(attribute))
-						fields.put(attribute, (String) hl.get(attribute).get(0));
-					else
-						fields.put(attribute, turSolrField.convertField(turSNSiteFieldExt.getType(), attrValue));
-				} else
+						attrValue = (String) hl.get(attribute).get(0);
+					else {
+						//System.out.println(turSNSiteFieldExt.getType() + " "  + attribute);
+						//attrValue = turSolrField.convertField(turSNSiteFieldExt.getType(), attrValue);
+					}
+				}
+				
+				if (attribute != null && fields.containsKey(attribute)) {
+					if (!(fields.get(attribute) instanceof List)) {
+						List<Object> attributeValues = new ArrayList<Object>();
+						attributeValues.add(fields.get(attribute));
+						attributeValues.add(attrValue);
+						fields.put(attribute, attributeValues);
+					} else {
+						((List<Object>) fields.get(attribute)).add(attrValue);
+					}
+				} else {
 					fields.put(attribute, attrValue);
-
+				}
+				
+			//	fields.put(attribute, attrValue);
+				
 				turSEResult.setFields(fields);
 			}
 			results.add(turSEResult);
