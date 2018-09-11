@@ -28,16 +28,16 @@ import org.apache.solr.common.util.SimpleOrderedMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
@@ -46,24 +46,21 @@ import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.se.similar.TurSESimilarResult;
 import com.viglet.turing.sn.TurSNFieldType;
+import com.viglet.util.TurSNSiteFieldUtils;
 
 @Component
 @Transactional
 public class TurSolr {
 
 	@Autowired
-	TurNLPInstanceRepository turNLPInstanceRepository;
+	private TurSEInstanceRepository turSEInstanceRepository;
 	@Autowired
-	TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	TurConfigVarRepository turConfigVarRepository;
+	private TurConfigVarRepository turConfigVarRepository;
 	static final Logger logger = LogManager.getLogger(TurSolr.class.getName());
 	@Autowired
-	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
-	TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	TurSolrField turSolrField;
+	private TurSolrField turSolrField;
 
 	private TurSEInstance currSE = null;
 	private Map<String, Object> attributes = null;
@@ -169,7 +166,8 @@ public class TurSolr {
 	}
 
 	public void addDocument() throws JSONException {
-
+		TurSNSiteFieldUtils turSNSiteFieldUtils = new TurSNSiteFieldUtils();
+		Map<String, TurSNSiteField> turSNSiteFieldMap = turSNSiteFieldUtils.toMap(turSNSite);
 		SolrInputDocument document = new SolrInputDocument();
 
 		// JSONObject jsonNLP = turNLPResults.getJsonResult();
@@ -180,22 +178,43 @@ public class TurSolr {
 			for (Map.Entry<String, Object> entry : attributes.entrySet()) {
 				String key = entry.getKey();
 				Object attribute = entry.getValue();
+				System.out.println("key: " + key);
 				if (attribute != null) {
 					if (attribute.getClass().getName().equals("java.lang.Integer")) {
 						int intValue = (Integer) attribute;
 						document.addField(key, intValue);
 					} else if (attribute.getClass().getName().equals("org.json.JSONArray")) {
 						JSONArray value = (JSONArray) attribute;
-						if (value != null) {
-							for (int i = 0; i < value.length(); i++) {
-								document.addField(key, value.getString(i));
+						if (turSNSiteFieldMap.get(key).getMultiValued() == 1) {
+							if (value != null) {
+								for (int i = 0; i < value.length(); i++) {
+									document.addField(key, value.getString(i));
+								}
 							}
+						} else {
+							// Convert to String with concatenate attributes
+							StringBuilder sb = new StringBuilder();
+							for (int i = 0; i < value.length(); i++) {
+								sb.append(value.toString());
+								sb.append(System.getProperty("line.separator"));
+							}
+							document.addField(key, sb.toString());
 						}
 					} else if (attribute instanceof ArrayList) {
 						ArrayList values = (ArrayList) attribute;
 						if (values != null) {
-							for (Object valueItem : values) {
-								document.addField(key, turSolrField.convertFieldToString(valueItem));
+							if (turSNSiteFieldMap.get(key).getMultiValued() == 1) {
+								for (Object valueItem : values) {
+									document.addField(key, turSolrField.convertFieldToString(valueItem));
+								}
+							} else {
+								// Convert to String with concatenate attributes
+								StringBuilder sb = new StringBuilder();
+								for (Object valueItem : values) {
+									sb.append(turSolrField.convertFieldToString(valueItem));									
+									sb.append(System.getProperty("line.separator"));
+								}
+								document.addField(key, sb.toString());
 							}
 						}
 					} else {
@@ -225,7 +244,7 @@ public class TurSolr {
 
 	public SpellCheckResponse autoComplete(String term) throws SolrServerException {
 		SolrQuery query = new SolrQuery();
-	      query.setRequestHandler("/tur_suggest");
+		query.setRequestHandler("/tur_suggest");
 		query.setQuery(term);
 		QueryResponse queryResponse = solrServer.query(query);
 		return queryResponse.getSpellCheckResponse();

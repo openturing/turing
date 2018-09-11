@@ -250,7 +250,7 @@
                 <filter class="solr.StemmerOverrideFilterFactory" dictionary="stem_plural_singular.txt" />
                 <filter class="solr.PortugueseMinimalStemFilterFactory" />
                 <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true" />
-                <filter class="solr.StopFilterFactory" ignoreCase="true" words="lang/stopwords_pt.txt" />
+                <filter class="solr.StopFilterFactory" format="snowball" words="lang/stopwords_pt.txt" ignoreCase="true" />
                 <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt" />
                 <filter class="solr.RemoveDuplicatesTokenFilterFactory" />
                 <filter class="solr.PatternReplaceFilterFactory" pattern="\p{Punct}" replacement="" replace="all" /> </analyzer>

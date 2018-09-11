@@ -1,21 +1,24 @@
 package com.viglet.turing.api.otsn.broker;
 
 import java.io.StringReader;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.xml.sax.InputSource;
 
+import com.viglet.turing.api.sn.TurSNJob;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
@@ -31,6 +34,7 @@ import org.w3c.dom.NodeList;
 @RequestMapping("/api/otsn/broker")
 @Api(tags = "OTSN Broker", description = "OTSN Broker API")
 public class TurOTSNBrokerAPI {
+	static final Logger logger = LogManager.getLogger(TurOTSNBrokerAPI.class.getName());
 	@Autowired
 	TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
@@ -39,18 +43,15 @@ public class TurOTSNBrokerAPI {
 	TurConfigVarRepository turConfigVarRepository;
 	@Autowired
 	TurSolr turSolr;
+	@Autowired
+	private JmsMessagingTemplate jmsMessagingTemplate;
 
-	
+	public static final String INDEXING_QUEUE = "indexing.queue";
+	public static final String NLP_QUEUE = "nlp.queue";
+
 	@PostMapping
-	public Map<String, Object> turOTSNBrokerAdd(@RequestParam("index") String index, @RequestParam("config") String config,
+	public String turOTSNBrokerAdd(@RequestParam("index") String index, @RequestParam("config") String config,
 			@RequestParam("data") String data) throws JSONException {
-
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("index", index);
-		jsonObject.put("config", config);
-		jsonObject.put("data", data);
-		JSONObject turOTSNBrokerJSON = new JSONObject();
-		turOTSNBrokerJSON.put("otsn-broker", jsonObject);
 
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder builder;
@@ -62,20 +63,42 @@ public class TurOTSNBrokerAPI {
 			e.printStackTrace();
 		}
 		Element element = document.getDocumentElement();
-		Map<String, Object> attributes = new HashMap<String, Object>();
+		JSONArray items = new JSONArray();
+		JSONObject attributes = new JSONObject();
+
 		NodeList nodes = element.getChildNodes();
 		for (int i = 0; i < nodes.getLength(); i++) {
-			attributes.put(nodes.item(i).getNodeName(), nodes.item(i).getTextContent());
+			String nodeName = nodes.item(i).getNodeName();
+			if (attributes.has(nodeName)) {
+				if (!(attributes.get(nodeName) instanceof JSONArray)) {
+					JSONArray attributeValues = new JSONArray();
+					attributeValues.put(attributes.get(nodeName));
+					attributeValues.put(nodes.item(i).getTextContent());
+					attributes.put(nodeName, attributeValues);
+				} else {
+					attributes.getJSONArray(nodeName).put(nodes.item(i).getTextContent());
+				}
+			} else {
+				attributes.put(nodeName, nodes.item(i).getTextContent());
+
+			}
 		}
 
-		try {
-			turSolr.init();
-			turSolr.setAttributes(attributes);
-			turSolr.indexing();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return attributes;
+		items.put(attributes);
+		TurSNJob turSNJob = new TurSNJob();
+		turSNJob.setSiteId("1");
+		System.out.println(items.toString());
+		turSNJob.setJson(items.toString());
+		send(turSNJob);
+
+		return "Ok";
 
 	}
+
+	public void send(TurSNJob turSNJob) {
+		logger.debug("Sent job - " + INDEXING_QUEUE);
+		this.jmsMessagingTemplate.convertAndSend(INDEXING_QUEUE, turSNJob);
+
+	}
+
 }
