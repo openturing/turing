@@ -4,6 +4,6 @@
 * Deindexing API
 
 #### IMPROVEMENTS
-* Spring Boot 2.0.3
-* Gradle 4.8.1
+* Spring Boot 2.0.5
+* Gradle 4.10.1
 * Using WebJars
