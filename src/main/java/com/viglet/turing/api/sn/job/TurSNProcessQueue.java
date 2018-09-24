@@ -49,7 +49,6 @@ public class TurSNProcessQueue {
 	private JmsMessagingTemplate jmsMessagingTemplate;
 
 	public static final String INDEXING_QUEUE = "indexing.queue";
-	public static final String DEINDEXING_QUEUE = "deindexing.queue";
 	public static final String NLP_QUEUE = "nlp.queue";
 
 	@JmsListener(destination = NLP_QUEUE)
@@ -138,55 +137,49 @@ public class TurSNProcessQueue {
 
 	}
 
-	@JmsListener(destination = DEINDEXING_QUEUE)
-	public void receiveDesindexingQueue(TurSNJob turSNJob) {
-		logger.debug("Received job - " + DEINDEXING_QUEUE);
-		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
-		try {
-			for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
+	@JmsListener(destination = INDEXING_QUEUE)
+	public void receiveIndexingQueue(TurSNJob turSNJob) {
 
-				logger.debug("receiveQueue JsonObject: " + turSNJobItem.toString());
-				turSolr.init(turSNSite);
-				turSolr.desindexing((String) turSNJobItem.getAttributes().get("id"));
+		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
+		for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
+			logger.debug("receiveQueue TurSNJobItem: " + turSNJobItem.toString());
+			if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
+				this.indexing(turSNJobItem, turSNSite);
+				
+				
+			} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
+				this.desindexing(turSNJobItem, turSNSite);
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
+			
+			logger.debug("Sent job - " + NLP_QUEUE);
+			this.jmsMessagingTemplate.convertAndSend(NLP_QUEUE, turSNJob);
 		}
 	}
 
-	@JmsListener(destination = INDEXING_QUEUE)
-	public void receiveIndexingQueue(TurSNJob turSNJob) {
-		logger.debug("Received job - " + INDEXING_QUEUE);
-		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
-		try {
-			for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
-				logger.debug("receiveQueue JsonObject: " + turSNJobItem.toString());
+	public void desindexing(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
+		logger.debug("Deindexing");
 
-				Map<String, Object> consolidateResults = new HashMap<String, Object>();
+		turSolr.init(turSNSite);
+		turSolr.desindexing((String) turSNJobItem.getAttributes().get("id"));
+	}
 
-				// SE
-				for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
-					logger.debug("SE Consolidate Value: " + attribute.getValue());
-					logger.debug("SE Consolidate Class: " + attribute.getValue().getClass().getName());
-					consolidateResults.put(attribute.getKey(), attribute.getValue());
-				}
+	public void indexing(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
+		logger.debug("Indexing");
+		Map<String, Object> consolidateResults = new HashMap<String, Object>();
 
-				// Remove Duplicate Terms
-				Map<String, Object> attributesWithUniqueTerms = this.removeDuplicateTerms(consolidateResults);
-
-				// SE
-				turSolr.init(turSNSite, attributesWithUniqueTerms);
-				turSolr.indexing();
-
-			}
-
-			logger.debug("Sent job - " + NLP_QUEUE);
-			this.jmsMessagingTemplate.convertAndSend(NLP_QUEUE, turSNJob);
-
-		} catch (Exception e) {
-			e.printStackTrace();
+		// SE
+		for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
+			logger.debug("SE Consolidate Value: " + attribute.getValue());
+			logger.debug("SE Consolidate Class: " + attribute.getValue().getClass().getName());
+			consolidateResults.put(attribute.getKey(), attribute.getValue());
 		}
 
+		// Remove Duplicate Terms
+		Map<String, Object> attributesWithUniqueTerms = this.removeDuplicateTerms(consolidateResults);
+
+		// SE
+		turSolr.init(turSNSite, attributesWithUniqueTerms);
+		turSolr.indexing();
 	}
 
 	public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {

@@ -21,12 +21,13 @@ public class TurSNDeindexingAPI {
 	@Autowired
 	private JmsMessagingTemplate jmsMessagingTemplate;
 
-	public static final String DEINDEXING_QUEUE = "deindexing.queue";
+	public static final String INDEXING_QUEUE = "indexing.queue";
 
 	@PostMapping
-	public String turSNDesindexingBroker(@PathVariable String id, @RequestBody TurSNJobItems turSNJobItems) throws JSONException {
+	public String turSNDesindexingBroker(@PathVariable String id, @RequestBody TurSNJobItems turSNJobItems)
+			throws JSONException {
 		TurSNJob turSNJob = new TurSNJob();
-		turSNJob.setSiteId(id);		
+		turSNJob.setSiteId(id);
 		turSNJob.setTurSNJobItems(turSNJobItems);
 		send(turSNJob);
 		return "Ok";
@@ -34,8 +35,8 @@ public class TurSNDeindexingAPI {
 	}
 
 	public void send(TurSNJob turSNJob) {
-		logger.debug("Sent job - " + DEINDEXING_QUEUE);
-		this.jmsMessagingTemplate.convertAndSend(DEINDEXING_QUEUE, turSNJob);
-		
+		logger.debug("Sent job - " + INDEXING_QUEUE);
+		this.jmsMessagingTemplate.convertAndSend(INDEXING_QUEUE, turSNJob);
+
 	}
 }

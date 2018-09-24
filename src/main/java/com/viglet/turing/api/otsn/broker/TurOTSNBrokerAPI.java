@@ -11,7 +11,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsMessagingTemplate;
@@ -59,7 +58,6 @@ public class TurOTSNBrokerAPI {
 
 	public static final String INDEXING_QUEUE = "indexing.queue";
 	public static final String NLP_QUEUE = "nlp.queue";
-	public static final String DEINDEXING_QUEUE = "deindexing.queue";
 
 	@PostMapping
 	public String turOTSNBrokerAdd(@RequestParam("index") String siteName, @RequestParam("config") String config,
@@ -89,9 +87,7 @@ public class TurOTSNBrokerAPI {
 
 			String nodeName = nodes.item(i).getNodeName();
 			if (attributes.containsKey(nodeName)) {
-				System.out.println("attributes: " + attributes.get(nodeName).getClass().getName());
 				if (!(attributes.get(nodeName) instanceof ArrayList)) {
-					System.out.println("No");
 					List<Object> attributeValues = new ArrayList<Object>();
 					attributeValues.add(attributes.get(nodeName));
 					attributeValues.add(nodes.item(i).getTextContent());
@@ -99,7 +95,6 @@ public class TurOTSNBrokerAPI {
 					attributes.put(nodeName, attributeValues);
 					turSNJobItem.setAttributes(attributes);
 				} else {
-					System.out.println("Yes");
 					@SuppressWarnings("unchecked")
 					List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
 					attributeValues.add(nodes.item(i).getTextContent());
@@ -122,7 +117,7 @@ public class TurOTSNBrokerAPI {
 
 		turSNJob.setTurSNJobItems(turSNJobItems);
 
-		index(turSNJob);
+		sendIndexerJob(turSNJob);
 
 		return "Ok";
 
@@ -149,7 +144,7 @@ public class TurOTSNBrokerAPI {
 			TurSNJob turSNJob = new TurSNJob();
 			turSNJob.setSiteId(Integer.toString(turSNSite.getId()));
 			turSNJob.setTurSNJobItems(turSNJobItems);
-			deindex(turSNJob);
+			sendIndexerJob(turSNJob);
 			return "Ok";
 
 		} else {
@@ -157,15 +152,9 @@ public class TurOTSNBrokerAPI {
 		}
 	}
 
-	public void index(TurSNJob turSNJob) {
-		logger.debug("Sent Index job - " + INDEXING_QUEUE);
+	public void sendIndexerJob(TurSNJob turSNJob) {
+		logger.debug("Sent Indexer Job - " + INDEXING_QUEUE);
 		this.jmsMessagingTemplate.convertAndSend(INDEXING_QUEUE, turSNJob);
-
-	}
-
-	public void deindex(TurSNJob turSNJob) {
-		logger.debug("Sent Deindex job - " + DEINDEXING_QUEUE);
-		this.jmsMessagingTemplate.convertAndSend(DEINDEXING_QUEUE, turSNJob);
 
 	}
 }
