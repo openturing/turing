@@ -162,7 +162,12 @@ public class TurSNProcessQueue {
 		logger.debug("Deindexing");
 
 		turSolr.init(turSNSite);
+		if (turSNJobItem.getAttributes().containsKey("id")) {
 		turSolr.desindexing((String) turSNJobItem.getAttributes().get("id"));
+		}
+		else if (turSNJobItem.getAttributes().containsKey("type")) {
+			turSolr.desindexingByType((String) turSNJobItem.getAttributes().get("type"));
+		}
 	}
 
 	public void indexing(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {

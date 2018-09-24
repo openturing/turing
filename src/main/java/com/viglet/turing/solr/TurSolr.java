@@ -28,7 +28,6 @@ import org.apache.solr.common.util.SimpleOrderedMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -151,10 +150,31 @@ public class TurSolr {
 		}
 	}
 
+	public void desindexingByType(String type) throws JSONException {
+		logger.debug("Executing desindexing by type " + type + "...");
+		if (solrServer != null) {
+			this.deleteDocumentByType(type);
+		}
+	}
+
 	public void deleteDocument(String id) {
 		try {
 			@SuppressWarnings("unused")
 			UpdateResponse response = solrServer.deleteById(id);
+			solrServer.commit();
+		} catch (SolrServerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void deleteDocumentByType(String type) {
+		try {
+			@SuppressWarnings("unused")
+			UpdateResponse response = solrServer.deleteByQuery("type:" + type);
 			solrServer.commit();
 		} catch (SolrServerException e) {
 			// TODO Auto-generated catch block
@@ -178,7 +198,6 @@ public class TurSolr {
 			for (Map.Entry<String, Object> entry : attributes.entrySet()) {
 				String key = entry.getKey();
 				Object attribute = entry.getValue();
-				System.out.println("key: " + key);
 				if (attribute != null) {
 					if (attribute.getClass().getName().equals("java.lang.Integer")) {
 						int intValue = (Integer) attribute;
@@ -211,7 +230,7 @@ public class TurSolr {
 								// Convert to String with concatenate attributes
 								StringBuilder sb = new StringBuilder();
 								for (Object valueItem : values) {
-									sb.append(turSolrField.convertFieldToString(valueItem));									
+									sb.append(turSolrField.convertFieldToString(valueItem));
 									sb.append(System.getProperty("line.separator"));
 								}
 								document.addField(key, sb.toString());
@@ -435,11 +454,12 @@ public class TurSolr {
 					if (turSNSiteFieldExt.getType() == TurSEFieldType.STRING && hl != null && hl.containsKey(attribute))
 						attrValue = (String) hl.get(attribute).get(0);
 					else {
-						//System.out.println(turSNSiteFieldExt.getType() + " "  + attribute);
-						//attrValue = turSolrField.convertField(turSNSiteFieldExt.getType(), attrValue);
+						// System.out.println(turSNSiteFieldExt.getType() + " " + attribute);
+						// attrValue = turSolrField.convertField(turSNSiteFieldExt.getType(),
+						// attrValue);
 					}
 				}
-				
+
 				if (attribute != null && fields.containsKey(attribute)) {
 					if (!(fields.get(attribute) instanceof List)) {
 						List<Object> attributeValues = new ArrayList<Object>();
@@ -452,9 +472,9 @@ public class TurSolr {
 				} else {
 					fields.put(attribute, attrValue);
 				}
-				
-			//	fields.put(attribute, attrValue);
-				
+
+				// fields.put(attribute, attrValue);
+
 				turSEResult.setFields(fields);
 			}
 			results.add(turSEResult);

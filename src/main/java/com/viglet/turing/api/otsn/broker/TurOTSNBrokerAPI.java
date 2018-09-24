@@ -5,13 +5,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -61,7 +61,7 @@ public class TurOTSNBrokerAPI {
 
 	@PostMapping
 	public String turOTSNBrokerAdd(@RequestParam("index") String siteName, @RequestParam("config") String config,
-			@RequestParam("data") String data) throws JSONException {
+			@RequestParam("data") String data) {
 		if (siteName.contains(",")) {
 			String[] siteNames = siteName.split(",");
 			siteName = siteNames[0];
@@ -116,7 +116,7 @@ public class TurOTSNBrokerAPI {
 		turSNJob.setSiteId(Integer.toString(turSNSite.getId()));
 
 		turSNJob.setTurSNJobItems(turSNJobItems);
-
+		logger.debug("Indexed Job by Id");
 		sendIndexerJob(turSNJob);
 
 		return "Ok";
@@ -125,7 +125,8 @@ public class TurOTSNBrokerAPI {
 
 	@GetMapping
 	public String turOTSNBrokerDelete(@RequestParam("index") String siteName, @RequestParam("config") String config,
-			@RequestParam("action") String action, @RequestParam("id") String id) throws JSONException {
+			@RequestParam("action") String action, @RequestParam("id") Optional<String> id,
+			@RequestParam("type") Optional<String> type) {
 
 		if (action.equals("delete")) {
 			TurSNJobItems turSNJobItems = new TurSNJobItems();
@@ -138,7 +139,13 @@ public class TurOTSNBrokerAPI {
 			}
 			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 			Map<String, Object> attributes = new HashMap<String, Object>();
-			attributes.put("id", id);
+			if (id.isPresent()) {
+				logger.debug("Deindexed Job by Id");
+				attributes.put("id", id.get());
+			} else if (type.isPresent()) {
+				logger.debug("Deindexed Job by Type");
+				attributes.put("type", type.get());
+			}
 			turSNJobItem.setAttributes(attributes);
 			turSNJobItems.add(turSNJobItem);
 			TurSNJob turSNJob = new TurSNJob();
