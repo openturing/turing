@@ -12,6 +12,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsMessagingTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,6 +49,7 @@ public class TurOTSNBrokerAPI {
 
 	public static final String INDEXING_QUEUE = "indexing.queue";
 	public static final String NLP_QUEUE = "nlp.queue";
+	public static final String DEINDEXING_QUEUE = "deindexing.queue";
 
 	@PostMapping
 	public String turOTSNBrokerAdd(@RequestParam("index") String index, @RequestParam("config") String config,
@@ -89,16 +91,42 @@ public class TurOTSNBrokerAPI {
 		turSNJob.setSiteId("1");
 		System.out.println(items.toString());
 		turSNJob.setJson(items.toString());
-		send(turSNJob);
+		index(turSNJob);
 
 		return "Ok";
 
 	}
 
-	public void send(TurSNJob turSNJob) {
-		logger.debug("Sent job - " + INDEXING_QUEUE);
+	@GetMapping
+	public String turOTSNBrokerDelete(@RequestParam("index") String index, @RequestParam("config") String config,
+			@RequestParam("action") String action, @RequestParam("id") String id) throws JSONException {
+
+		if (action.equals("delete")) {
+			JSONArray json = new JSONArray();
+			JSONObject objectId = new JSONObject();
+			objectId.put("id", id);
+			json.put(objectId);
+
+			TurSNJob turSNJob = new TurSNJob();
+			turSNJob.setSiteId(index);
+			turSNJob.setJson(json.toString());
+			deindex(turSNJob);
+			return "Ok";
+
+		} else {
+			return "Failed";
+		}
+	}
+
+	public void index(TurSNJob turSNJob) {
+		logger.debug("Sent Index job - " + INDEXING_QUEUE);
 		this.jmsMessagingTemplate.convertAndSend(INDEXING_QUEUE, turSNJob);
 
 	}
 
+	public void deindex(TurSNJob turSNJob) {
+		logger.debug("Sent Deindex job - " + DEINDEXING_QUEUE);
+		this.jmsMessagingTemplate.convertAndSend(DEINDEXING_QUEUE, turSNJob);
+
+	}
 }
