@@ -1,6 +1,10 @@
 package com.viglet.turing.api.otsn.broker;
 
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -9,7 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,9 +22,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.xml.sax.InputSource;
 
-import com.viglet.turing.api.sn.TurSNJob;
+import com.viglet.turing.api.sn.job.TurSNJob;
+import com.viglet.turing.api.sn.job.TurSNJobAction;
+import com.viglet.turing.api.sn.job.TurSNJobItem;
+import com.viglet.turing.api.sn.job.TurSNJobItems;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.solr.TurSolr;
 
@@ -45,6 +53,8 @@ public class TurOTSNBrokerAPI {
 	@Autowired
 	TurSolr turSolr;
 	@Autowired
+	TurSNSiteRepository turSNSiteRepository;
+	@Autowired
 	private JmsMessagingTemplate jmsMessagingTemplate;
 
 	public static final String INDEXING_QUEUE = "indexing.queue";
@@ -52,9 +62,14 @@ public class TurOTSNBrokerAPI {
 	public static final String DEINDEXING_QUEUE = "deindexing.queue";
 
 	@PostMapping
-	public String turOTSNBrokerAdd(@RequestParam("index") String index, @RequestParam("config") String config,
+	public String turOTSNBrokerAdd(@RequestParam("index") String siteName, @RequestParam("config") String config,
 			@RequestParam("data") String data) throws JSONException {
+		if (siteName.contains(",")) {
+			String[] siteNames = siteName.split(",");
+			siteName = siteNames[0];
+		}
 
+		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder builder;
 		Document document = null;
@@ -65,32 +80,48 @@ public class TurOTSNBrokerAPI {
 			e.printStackTrace();
 		}
 		Element element = document.getDocumentElement();
-		JSONArray items = new JSONArray();
-		JSONObject attributes = new JSONObject();
 
 		NodeList nodes = element.getChildNodes();
+
+		TurSNJobItem turSNJobItem = new TurSNJobItem();
+		Map<String, Object> attributes = new HashMap<String, Object>();
 		for (int i = 0; i < nodes.getLength(); i++) {
+
 			String nodeName = nodes.item(i).getNodeName();
-			if (attributes.has(nodeName)) {
-				if (!(attributes.get(nodeName) instanceof JSONArray)) {
-					JSONArray attributeValues = new JSONArray();
-					attributeValues.put(attributes.get(nodeName));
-					attributeValues.put(nodes.item(i).getTextContent());
+			if (attributes.containsKey(nodeName)) {
+				System.out.println("attributes: " + attributes.get(nodeName).getClass().getName());
+				if (!(attributes.get(nodeName) instanceof ArrayList)) {
+					System.out.println("No");
+					List<Object> attributeValues = new ArrayList<Object>();
+					attributeValues.add(attributes.get(nodeName));
+					attributeValues.add(nodes.item(i).getTextContent());
+
 					attributes.put(nodeName, attributeValues);
+					turSNJobItem.setAttributes(attributes);
 				} else {
-					attributes.getJSONArray(nodeName).put(nodes.item(i).getTextContent());
+					System.out.println("Yes");
+					@SuppressWarnings("unchecked")
+					List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
+					attributeValues.add(nodes.item(i).getTextContent());
+					attributes.put(nodeName, attributeValues);
 				}
 			} else {
 				attributes.put(nodeName, nodes.item(i).getTextContent());
 
 			}
 		}
+		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+		turSNJobItem.setAttributes(attributes);
 
-		items.put(attributes);
+		TurSNJobItems turSNJobItems = new TurSNJobItems();
+
+		turSNJobItems.add(turSNJobItem);
+
 		TurSNJob turSNJob = new TurSNJob();
-		turSNJob.setSiteId("1");
-		System.out.println(items.toString());
-		turSNJob.setJson(items.toString());
+		turSNJob.setSiteId(Integer.toString(turSNSite.getId()));
+
+		turSNJob.setTurSNJobItems(turSNJobItems);
+
 		index(turSNJob);
 
 		return "Ok";
@@ -98,18 +129,26 @@ public class TurOTSNBrokerAPI {
 	}
 
 	@GetMapping
-	public String turOTSNBrokerDelete(@RequestParam("index") String index, @RequestParam("config") String config,
+	public String turOTSNBrokerDelete(@RequestParam("index") String siteName, @RequestParam("config") String config,
 			@RequestParam("action") String action, @RequestParam("id") String id) throws JSONException {
 
 		if (action.equals("delete")) {
-			JSONArray json = new JSONArray();
-			JSONObject objectId = new JSONObject();
-			objectId.put("id", id);
-			json.put(objectId);
+			TurSNJobItems turSNJobItems = new TurSNJobItems();
+			TurSNJobItem turSNJobItem = new TurSNJobItem();
+			turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 
+			if (siteName.contains(",")) {
+				String[] siteNames = siteName.split(",");
+				siteName = siteNames[0];
+			}
+			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
+			Map<String, Object> attributes = new HashMap<String, Object>();
+			attributes.put("id", id);
+			turSNJobItem.setAttributes(attributes);
+			turSNJobItems.add(turSNJobItem);
 			TurSNJob turSNJob = new TurSNJob();
-			turSNJob.setSiteId(index);
-			turSNJob.setJson(json.toString());
+			turSNJob.setSiteId(Integer.toString(turSNSite.getId()));
+			turSNJob.setTurSNJobItems(turSNJobItems);
 			deindex(turSNJob);
 			return "Ok";
 

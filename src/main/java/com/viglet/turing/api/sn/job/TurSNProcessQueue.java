@@ -1,6 +1,5 @@
-package com.viglet.turing.api.sn;
+package com.viglet.turing.api.sn.job;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,16 +10,11 @@ import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.MapType;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
@@ -61,21 +55,17 @@ public class TurSNProcessQueue {
 	@JmsListener(destination = NLP_QUEUE)
 	public void receiveNLPQueue(TurSNJob turSNJob) {
 		logger.debug("Received job - " + NLP_QUEUE);
-		JSONArray jsonRows = new JSONArray(turSNJob.getJson());
+
 		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
 		try {
-			for (int i = 0; i < jsonRows.length(); i++) {
-				JSONObject jsonRow = jsonRows.getJSONObject(i);
-				logger.debug("receiveQueue JsonObject: " + jsonRow.toString());
-				ObjectMapper mapper = new ObjectMapper();
-				TypeFactory typeFactory = mapper.getTypeFactory();
-				MapType mapType = typeFactory.constructMapType(HashMap.class, String.class, Object.class);
-				HashMap<String, Object> attributes = mapper.readValue(new StringReader(jsonRow.toString()), mapType);
+			for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
+
+				logger.debug("receiveQueue JsonObject: " + turSNJobItem.toString());
 
 				Map<String, Object> consolidateResults = new HashMap<String, Object>();
 
 				// SE
-				for (Entry<String, Object> attribute : attributes.entrySet()) {
+				for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
 					logger.debug("SE Consolidate Value: " + attribute.getValue());
 					logger.debug("SE Consolidate Class: " + attribute.getValue().getClass().getName());
 					consolidateResults.put(attribute.getKey(), attribute.getValue());
@@ -102,7 +92,7 @@ public class TurSNProcessQueue {
 					// Select only fields that is checked as NLP. These attributes will be processed
 					// by NLP
 					HashMap<String, Object> nlpAttributes = new HashMap<String, Object>();
-					for (Entry<String, Object> attribute : attributes.entrySet()) {
+					for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
 						if (turSNSiteFieldsExtMap.containsKey(attribute.getKey().toLowerCase())) {
 							nlpAttributes.put(attribute.getKey(), attribute.getValue());
 						}
@@ -127,7 +117,8 @@ public class TurSNProcessQueue {
 				boolean thesaurus = false;
 				if (thesaurus) {
 					turThesaurusProcessor.startup();
-					Map<String, Object> thesaurusResults = turThesaurusProcessor.detectTerms(attributes);
+					Map<String, Object> thesaurusResults = turThesaurusProcessor
+							.detectTerms(turSNJobItem.getAttributes());
 
 					for (Entry<String, Object> thesaurusResult : thesaurusResults.entrySet()) {
 						consolidateResults.put(thesaurusResult.getKey(), thesaurusResult.getValue());
@@ -140,7 +131,6 @@ public class TurSNProcessQueue {
 				// SE
 				turSolr.init(turSNSite, attributesWithUniqueTerms);
 				turSolr.indexing();
-
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -151,14 +141,13 @@ public class TurSNProcessQueue {
 	@JmsListener(destination = DEINDEXING_QUEUE)
 	public void receiveDesindexingQueue(TurSNJob turSNJob) {
 		logger.debug("Received job - " + DEINDEXING_QUEUE);
-		JSONArray jsonRows = new JSONArray(turSNJob.getJson());
 		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
 		try {
-			for (int i = 0; i < jsonRows.length(); i++) {
-				JSONObject jsonRow = jsonRows.getJSONObject(i);
-				logger.debug("receiveQueue JsonObject: " + jsonRow.toString());
+			for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
+
+				logger.debug("receiveQueue JsonObject: " + turSNJobItem.toString());
 				turSolr.init(turSNSite);
-				turSolr.desindexing(jsonRow.getString("id"));
+				turSolr.desindexing((String) turSNJobItem.getAttributes().get("id"));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -168,21 +157,15 @@ public class TurSNProcessQueue {
 	@JmsListener(destination = INDEXING_QUEUE)
 	public void receiveIndexingQueue(TurSNJob turSNJob) {
 		logger.debug("Received job - " + INDEXING_QUEUE);
-		JSONArray jsonRows = new JSONArray(turSNJob.getJson());
 		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
 		try {
-			for (int i = 0; i < jsonRows.length(); i++) {
-				JSONObject jsonRow = jsonRows.getJSONObject(i);
-				logger.debug("receiveQueue JsonObject: " + jsonRow.toString());
-				ObjectMapper mapper = new ObjectMapper();
-				TypeFactory typeFactory = mapper.getTypeFactory();
-				MapType mapType = typeFactory.constructMapType(HashMap.class, String.class, Object.class);
-				HashMap<String, Object> attributes = mapper.readValue(new StringReader(jsonRow.toString()), mapType);
+			for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
+				logger.debug("receiveQueue JsonObject: " + turSNJobItem.toString());
 
 				Map<String, Object> consolidateResults = new HashMap<String, Object>();
 
 				// SE
-				for (Entry<String, Object> attribute : attributes.entrySet()) {
+				for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
 					logger.debug("SE Consolidate Value: " + attribute.getValue());
 					logger.debug("SE Consolidate Class: " + attribute.getValue().getClass().getName());
 					consolidateResults.put(attribute.getKey(), attribute.getValue());

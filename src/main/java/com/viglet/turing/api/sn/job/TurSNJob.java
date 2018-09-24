@@ -1,4 +1,4 @@
-package com.viglet.turing.api.sn;
+package com.viglet.turing.api.sn.job;
 
 import java.io.Serializable;
 
@@ -6,8 +6,9 @@ public class TurSNJob implements Serializable{
 
 	private static final long serialVersionUID = 1L;
 	private String siteId;
-	private String json;
-
+	
+	private TurSNJobItems turSNJobItems;
+	
 	public String getSiteId() {
 		return siteId;
 	}
@@ -16,12 +17,15 @@ public class TurSNJob implements Serializable{
 		this.siteId = siteId;
 	}
 
-	public String getJson() {
-		return json;
+	public TurSNJobItems getTurSNJobItems() {
+		return turSNJobItems;
 	}
 
-	public void setJson(String json) {
-		this.json = json;
+	public void setTurSNJobItems(TurSNJobItems turSNJobItems) {
+		this.turSNJobItems = turSNJobItems;
 	}
 
+
+
+	
 }
