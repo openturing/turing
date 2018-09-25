@@ -269,9 +269,8 @@ public class TurSolr {
 		return queryResponse.getSpellCheckResponse();
 	}
 
-	public TurSEResults retrieveSolr(String txtQuery, List<String> fq, int currentPage, String sort)
+	public TurSEResults retrieveSolr(String txtQuery, List<String> fq, int currentPage, String sort, int rows)
 			throws SolrServerException, NumberFormatException, JSONException {
-
 		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,
 				1);
 
@@ -290,8 +289,9 @@ public class TurSolr {
 		}
 
 		TurSEResults turSEResults = new TurSEResults();
-
-		int rows = turSNSite.getRowsPerPage();
+		if (rows <= 0) {
+			rows = turSNSite.getRowsPerPage();
+		}
 		SimpleEntry<String, String> sortEntry = null;
 		if (sort != null) {
 			if (sort.toLowerCase().equals("relevance")) {

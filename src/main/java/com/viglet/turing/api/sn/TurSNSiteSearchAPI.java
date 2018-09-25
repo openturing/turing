@@ -10,7 +10,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -155,13 +154,17 @@ public class TurSNSiteSearchAPI {
 	@GetMapping
 	public TurSNSiteSearchBean turSNSiteSearchSelect(@PathVariable String siteName,
 			@RequestParam(required = false, name = "q") String q,
-			@RequestParam(required = false, name = "p") String strCurrentPage,
+			@RequestParam(required = false, name = "p") Integer currentPage,
 			@RequestParam(required = false, name = "fq[]") List<String> fq,
-			@RequestParam(required = false, name = "sort") String sort, HttpServletRequest request)
+			@RequestParam(required = false, name = "sort") String sort,
+			@RequestParam(required = false, name = "rows") Integer rows, HttpServletRequest request)
 			throws JSONException {
-		int currentPage = 1;
-		if (strCurrentPage != null) {
-			currentPage = Integer.parseInt(strCurrentPage);
+
+		if (currentPage == null || currentPage <= 0) {
+			currentPage = 1;
+		}
+		if (rows == null) {
+			rows = 0;
 		}
 
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
@@ -231,7 +234,8 @@ public class TurSNSiteSearchAPI {
 
 		turSolr.init(turSNSite);
 		try {
-			turSEResults = turSolr.retrieveSolr(q, filterQueryModified, currentPage, sort);
+
+			turSEResults = turSolr.retrieveSolr(q, filterQueryModified, currentPage.intValue(), sort, rows.intValue());
 			List<TurSEResult> seResults = turSEResults.getResults();
 			// System.out.println("getResults size:" + turSEResults.getResults().size());
 			List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean = new ArrayList<TurSNSiteSearchDocumentBean>();

@@ -32,19 +32,20 @@ public class TurSEInstanceAPI {
 
 	@ApiOperation(value = "Search Engine List")
 	@GetMapping
-	public List<TurSEInstance>  turSEInstanceList() throws JSONException {
+	public List<TurSEInstance> turSEInstanceList() throws JSONException {
 		return this.turSEInstanceRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Search Engine")
 	@GetMapping("/{id}")
-	public TurSEInstance  turSEInstanceGet(@PathVariable int id) throws JSONException {
+	public TurSEInstance turSEInstanceGet(@PathVariable int id) throws JSONException {
 		return this.turSEInstanceRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Search Engine")
 	@PutMapping("/{id}")
-	public TurSEInstance  turSEInstanceUpdate(@PathVariable int id, @RequestBody TurSEInstance turSEInstance) throws Exception {
+	public TurSEInstance turSEInstanceUpdate(@PathVariable int id, @RequestBody TurSEInstance turSEInstance)
+			throws Exception {
 		TurSEInstance turSEInstanceEdit = turSEInstanceRepository.findById(id);
 		turSEInstanceEdit.setTitle(turSEInstance.getTitle());
 		turSEInstanceEdit.setDescription(turSEInstance.getDescription());
@@ -73,12 +74,22 @@ public class TurSEInstanceAPI {
 	}
 
 	@GetMapping("/select")
-	public String turSEInstanceSelect(@RequestParam("q") String q, @RequestParam("p") int p, @RequestParam("fq[]") List<String> fq,
-			@RequestParam("sort") String sort) throws JSONException {
+	public String turSEInstanceSelect(@RequestParam(required = false, name = "q") String q,
+			@RequestParam(required = false, name = "p") Integer currentPage,
+			@RequestParam(required = false, name = "fq[]") List<String> fq,
+			@RequestParam(required = false, name = "sort") String sort,
+			@RequestParam(required = false, name = "rows") Integer rows) throws JSONException {
+
+		if (currentPage == null || currentPage <= 0)
+			currentPage = 1;
+
+		if (rows == null)
+			rows = 0;
+
 		String result = null;
 		TurSolr turSolr = new TurSolr();
 		try {
-			result = turSolr.retrieveSolr(q, fq, p, sort).toString();
+			result = turSolr.retrieveSolr(q, fq, currentPage, sort, rows).toString();
 
 		} catch (Exception e) {
 			e.printStackTrace();
