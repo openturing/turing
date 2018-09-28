@@ -185,6 +185,20 @@ public class TurSolr {
 		}
 	}
 
+	// Convert to String with concatenate attributes
+	private String concatenateString(List list) {
+		int i = 0;
+		StringBuilder sb = new StringBuilder();
+		for (Object valueItem : list) {
+			sb.append(turSolrField.convertFieldToString(valueItem));
+			// Last Item
+			if (i++ != list.size() - 1) {
+				sb.append(System.getProperty("line.separator"));
+			}
+		}
+		return sb.toString().trim();
+	}
+
 	public void addDocument() throws JSONException {
 		TurSNSiteFieldUtils turSNSiteFieldUtils = new TurSNSiteFieldUtils();
 		Map<String, TurSNSiteField> turSNSiteFieldMap = turSNSiteFieldUtils.toMap(turSNSite);
@@ -211,13 +225,13 @@ public class TurSolr {
 								}
 							}
 						} else {
-							// Convert to String with concatenate attributes
-							StringBuilder sb = new StringBuilder();
-							for (int i = 0; i < value.length(); i++) {
-								sb.append(value.toString());
-								sb.append(System.getProperty("line.separator"));
+							ArrayList<String> listValues = new ArrayList<String>();
+							if (value != null) {
+								for (int i = 0; i < value.length(); i++) {
+									listValues.add(value.getString(i));
+								}
 							}
-							document.addField(key, sb.toString());
+							document.addField(key, concatenateString(listValues));							
 						}
 					} else if (attribute instanceof ArrayList) {
 						ArrayList values = (ArrayList) attribute;
@@ -227,13 +241,7 @@ public class TurSolr {
 									document.addField(key, turSolrField.convertFieldToString(valueItem));
 								}
 							} else {
-								// Convert to String with concatenate attributes
-								StringBuilder sb = new StringBuilder();
-								for (Object valueItem : values) {
-									sb.append(turSolrField.convertFieldToString(valueItem));
-									sb.append(System.getProperty("line.separator"));
-								}
-								document.addField(key, sb.toString());
+								document.addField(key, concatenateString(values));
 							}
 						}
 					} else {
