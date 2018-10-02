@@ -58,6 +58,9 @@ public class TurSNSiteOnStartup {
 			turSNSite.setHlPre("<mark>");
 			turSNSite.setHlPost("</mark>");
 			turSNSite.setMlt(1);
+			turSNSite.setDefaultTextField("text");
+			turSNSite.setDefaultDescriptionField("abstract");
+			turSNSite.setDefaultDateField("publication_date");
 
 			turSNSiteRepository.save(turSNSite);
 

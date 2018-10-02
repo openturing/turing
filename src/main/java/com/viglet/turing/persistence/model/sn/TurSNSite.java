@@ -58,6 +58,16 @@ public class TurSNSite implements Serializable {
 	@Column(nullable = true)
 	private int mlt;
 	
+	@Column(nullable = false)
+	private String defaultTextField;
+	
+	@Column(nullable = false)
+	private String defaultDescriptionField;
+	
+	@Column(nullable = false)
+	private String defaultDateField;
+	
+	
 	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
@@ -208,6 +218,30 @@ public class TurSNSite implements Serializable {
 
 	public void setMlt(int mlt) {
 		this.mlt = mlt;
+	}
+
+	public String getDefaultTextField() {
+		return defaultTextField;
+	}
+
+	public void setDefaultTextField(String defaultTextField) {
+		this.defaultTextField = defaultTextField;
+	}
+
+	public String getDefaultDescriptionField() {
+		return defaultDescriptionField;
+	}
+
+	public void setDefaultDescriptionField(String defaultDescriptionField) {
+		this.defaultDescriptionField = defaultDescriptionField;
+	}
+
+	public String getDefaultDateField() {
+		return defaultDateField;
+	}
+
+	public void setDefaultDateField(String defaultDateField) {
+		this.defaultDateField = defaultDateField;
 	}
 	
 }

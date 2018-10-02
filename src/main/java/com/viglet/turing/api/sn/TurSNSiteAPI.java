@@ -58,6 +58,10 @@ public class TurSNSiteAPI {
 		turSNSiteEdit.setItemsPerFacet(turSNSite.getItemsPerFacet());
 		turSNSiteEdit.setMlt(turSNSite.getMlt());
 		turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
+		turSNSiteEdit.setDefaultTextField(turSNSite.getDefaultTextField());
+		turSNSiteEdit.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
+		turSNSiteEdit.setDefaultDateField(turSNSite.getDefaultDateField());
+		
 		this.turSNSiteRepository.save(turSNSiteEdit);
 		return turSNSiteEdit;
 	}

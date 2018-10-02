@@ -218,7 +218,7 @@ public class TurSolr {
 						document.addField(key, intValue);
 					} else if (attribute.getClass().getName().equals("org.json.JSONArray")) {
 						JSONArray value = (JSONArray) attribute;
-						if (turSNSiteFieldMap.get(key).getMultiValued() == 1) {
+						if (turSNSiteFieldMap.get(key) !=  null && turSNSiteFieldMap.get(key).getMultiValued() == 1) {
 							if (value != null) {
 								for (int i = 0; i < value.length(); i++) {
 									document.addField(key, value.getString(i));
@@ -236,7 +236,7 @@ public class TurSolr {
 					} else if (attribute instanceof ArrayList) {
 						ArrayList values = (ArrayList) attribute;
 						if (values != null) {
-							if (turSNSiteFieldMap.get(key).getMultiValued() == 1) {
+							if (turSNSiteFieldMap.get(key) !=  null && turSNSiteFieldMap.get(key).getMultiValued() == 1) {
 								for (Object valueItem : values) {
 									document.addField(key, turSolrField.convertFieldToString(valueItem));
 								}
@@ -305,9 +305,9 @@ public class TurSolr {
 			if (sort.toLowerCase().equals("relevance")) {
 				sortEntry = null;
 			} else if (sort.toLowerCase().equals("newest")) {
-				sortEntry = new SimpleEntry<String, String>("publication_date", "desc");
+				sortEntry = new SimpleEntry<String, String>(turSNSite.getDefaultDateField(), "desc");
 			} else if (sort.toLowerCase().equals("oldest")) {
-				sortEntry = new SimpleEntry<String, String>("publication_date", "asc");
+				sortEntry = new SimpleEntry<String, String>(turSNSite.getDefaultDateField(), "asc");
 			}
 		}
 		SolrQuery query = new SolrQuery();
