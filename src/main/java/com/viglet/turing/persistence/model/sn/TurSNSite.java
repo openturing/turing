@@ -6,6 +6,7 @@ import java.util.List;
 import javax.persistence.*;
 
 import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.GenericGenerator;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
@@ -18,12 +19,13 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 @Table(name = "turSNSite")
 @NamedQuery(name = "TurSNSite.findAll", query = "SELECT sns FROM TurSNSite sns")
 public class TurSNSite implements Serializable {
-	private static final long serialVersionUID = 1L;
 
+	private static final long serialVersionUID = 1L;
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(unique = true, nullable = false)
-	private int id;
+	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
+	@GeneratedValue(generator = "UUID")
+	@Column(name = "id", updatable = false, nullable = false)
+	private String id;
 
 	@Column(nullable = false, length = 50)
 	private String name;
@@ -36,7 +38,7 @@ public class TurSNSite implements Serializable {
 
 	@Column(nullable = false, length = 50)
 	private String core;
-	
+
 	@Column(nullable = true)
 	private int rowsPerPage;
 
@@ -51,25 +53,25 @@ public class TurSNSite implements Serializable {
 
 	@Column(nullable = true, length = 50)
 	private String hlPre;
-	
+
 	@Column(nullable = true, length = 50)
 	private String hlPost;
 
 	@Column(nullable = true)
 	private int mlt;
-	
+
 	@Column(nullable = true)
 	private int thesaurus;
-	
+
 	@Column(nullable = false)
 	private String defaultTitleField;
-	
+
 	@Column(nullable = false)
 	private String defaultTextField;
-	
+
 	@Column(nullable = false)
 	private String defaultDescriptionField;
-	
+
 	@Column(nullable = false)
 	private String defaultDateField;
 
@@ -78,7 +80,7 @@ public class TurSNSite implements Serializable {
 
 	@Column(nullable = false)
 	private String defaultURLField;
-	
+
 	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
@@ -97,11 +99,11 @@ public class TurSNSite implements Serializable {
 	public TurSNSite() {
 	}
 
-	public int getId() {
+	public String getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(String id) {
 		this.id = id;
 	}
 
@@ -238,7 +240,7 @@ public class TurSNSite implements Serializable {
 	public void setThesaurus(int thesaurus) {
 		this.thesaurus = thesaurus;
 	}
-	
+
 	public String getDefaultTextField() {
 		return defaultTextField;
 	}
@@ -286,5 +288,5 @@ public class TurSNSite implements Serializable {
 	public void setDefaultImageField(String defaultImageField) {
 		this.defaultImageField = defaultImageField;
 	}
-	
+
 }

@@ -114,7 +114,7 @@ public class TurOTSNBrokerAPI {
 			turSNJobItems.add(turSNJobItem);
 
 			TurSNJob turSNJob = new TurSNJob();
-			turSNJob.setSiteId(Integer.toString(turSNSite.getId()));
+			turSNJob.setSiteId(turSNSite.getId());
 
 			turSNJob.setTurSNJobItems(turSNJobItems);
 			logger.debug("Indexed Job by Id");
@@ -153,7 +153,7 @@ public class TurOTSNBrokerAPI {
 			turSNJobItem.setAttributes(attributes);
 			turSNJobItems.add(turSNJobItem);
 			TurSNJob turSNJob = new TurSNJob();
-			turSNJob.setSiteId(Integer.toString(turSNSite.getId()));
+			turSNJob.setSiteId(turSNSite.getId());
 			turSNJob.setTurSNJobItems(turSNJobItems);
 			sendIndexerJob(turSNJob);
 			return "Ok";

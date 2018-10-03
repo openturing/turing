@@ -57,8 +57,8 @@ public class TurSNSiteFieldExtAPI {
 
 	@ApiOperation(value = "Semantic Navigation Site Field Ext List")
 	@GetMapping
-	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable int snSiteId) throws JSONException {
-		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
+	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String snSiteId) throws JSONException {
+		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
 
 		List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
 		List<TurNLPInstanceEntity> turNLPInstanceEntities = turNLPInstanceEntityRepository
@@ -221,10 +221,10 @@ public class TurSNSiteFieldExtAPI {
 
 	@ApiOperation(value = "Create a Semantic Navigation Site Field Ext")
 	@PostMapping
-	public TurSNSiteFieldExt turSNSiteFieldExtAdd(@PathVariable int snSiteId, @RequestBody TurSNSiteFieldExt turSNSiteFieldExt)
+	public TurSNSiteFieldExt turSNSiteFieldExtAdd(@PathVariable String snSiteId, @RequestBody TurSNSiteFieldExt turSNSiteFieldExt)
 			throws Exception {
 
-		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
+		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
 
 		TurSNSiteField turSNSiteField = new TurSNSiteField();
 		turSNSiteField.setDescription(turSNSiteFieldExt.getDescription());
@@ -276,9 +276,9 @@ public class TurSNSiteFieldExtAPI {
 	}
 
 	@GetMapping("/create")
-	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable int snSiteId)
+	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String snSiteId)
 			throws JSONException, ClientProtocolException, IOException {
-		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
+		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
 		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,
 				1);
 

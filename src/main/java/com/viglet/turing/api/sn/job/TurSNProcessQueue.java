@@ -50,7 +50,7 @@ public class TurSNProcessQueue {
 	@JmsListener(destination = INDEXING_QUEUE)
 	public void receiveIndexingQueue(TurSNJob turSNJob) {
 
-		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
+		TurSNSite turSNSite = this.turSNSiteRepository.findById(turSNJob.getSiteId()).get();
 		for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
 			logger.debug("receiveQueue TurSNJobItem: " + turSNJobItem.toString());
 			if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {

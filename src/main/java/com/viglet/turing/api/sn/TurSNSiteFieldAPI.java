@@ -34,8 +34,8 @@ public class TurSNSiteFieldAPI {
 
 	@ApiOperation(value = "Semantic Navigation Site Field List")
 	@GetMapping
-	public List<TurSNSiteField> turSNSiteFieldList(@PathVariable int snSiteId) throws JSONException {
-		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
+	public List<TurSNSiteField> turSNSiteFieldList(@PathVariable String snSiteId) throws JSONException {
+		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
 		return this.turSNSiteFieldRepository.findByTurSNSite(turSNSite);
 	}
 
@@ -68,8 +68,8 @@ public class TurSNSiteFieldAPI {
 
 	@ApiOperation(value = "Create a Semantic Navigation Site Field")
 	@PostMapping
-	public TurSNSiteField turSNSiteFieldAdd(@PathVariable int snSiteId, @RequestBody TurSNSiteField turSNSiteField) throws Exception {
-		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId);
+	public TurSNSiteField turSNSiteFieldAdd(@PathVariable String snSiteId, @RequestBody TurSNSiteField turSNSiteField) throws Exception {
+		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
 		turSNSiteField.setTurSNSite(turSNSite);
 		this.turSNSiteFieldRepository.save(turSNSiteField);
 		return turSNSiteField;

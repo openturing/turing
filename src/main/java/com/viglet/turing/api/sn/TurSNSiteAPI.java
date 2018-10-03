@@ -36,14 +36,14 @@ public class TurSNSiteAPI {
 
 	@ApiOperation(value = "Show a Semantic Navigation Site")
 	@GetMapping("/{id}")
-	public TurSNSite dataGroup(@PathVariable int id) throws JSONException {
-		return this.turSNSiteRepository.findById(id);
+	public TurSNSite dataGroup(@PathVariable String id) throws JSONException {
+		return this.turSNSiteRepository.findById(id).get();
 	}
 
 	@ApiOperation(value = "Update a Semantic Navigation Site")
 	@PutMapping("/{id}")
-	public TurSNSite turSNSiteUpdate(@PathVariable int id, @RequestBody TurSNSite turSNSite) throws Exception {
-		TurSNSite turSNSiteEdit = this.turSNSiteRepository.findById(id);
+	public TurSNSite turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSite turSNSite) throws Exception {
+		TurSNSite turSNSiteEdit = this.turSNSiteRepository.findById(id).get();
 		turSNSiteEdit.setName(turSNSite.getName());
 		turSNSiteEdit.setDescription(turSNSite.getDescription());
 		turSNSiteEdit.setLanguage(turSNSite.getLanguage());
@@ -73,7 +73,7 @@ public class TurSNSiteAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Semantic Navigation Site")
 	@DeleteMapping("/{id}")
-	public boolean turSNSiteDelete(@PathVariable int id) throws Exception {
+	public boolean turSNSiteDelete(@PathVariable String id) throws Exception {
 		this.turSNSiteRepository.delete(id);
 		return true;
 	}
