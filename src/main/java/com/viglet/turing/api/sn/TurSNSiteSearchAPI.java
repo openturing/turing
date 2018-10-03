@@ -24,6 +24,7 @@ import com.viglet.turing.solr.TurSolrField;
 import io.swagger.annotations.Api;
 
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchDefaultFieldsBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentMetadataBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetBean;
@@ -410,6 +411,7 @@ public class TurSNSiteSearchAPI {
 
 		turSNSiteSearchQueryContextQueryBean.setQueryString(turSEResults.getQueryString());
 		turSNSiteSearchQueryContextQueryBean.setSort(turSEResults.getSort());
+		
 
 		TurSNSiteSearchWidgetBean turSNSiteSearchWidgetBean = new TurSNSiteSearchWidgetBean();
 		// BEGIN Facet
@@ -482,11 +484,20 @@ public class TurSNSiteSearchAPI {
 			turSNSiteSearchWidgetBean.setSimilar(turSEResults.getSimilarResults());
 		}
 		// END Similar
-
+		
+		TurSNSiteSearchDefaultFieldsBean turSNSiteSearchDefaultFieldsBean = new TurSNSiteSearchDefaultFieldsBean();
+		turSNSiteSearchDefaultFieldsBean.setData(turSNSite.getDefaultDateField());
+		turSNSiteSearchDefaultFieldsBean.setDescription(turSNSite.getDefaultDescriptionField());
+		turSNSiteSearchDefaultFieldsBean.setImage(turSNSite.getDefaultImageField());
+		turSNSiteSearchDefaultFieldsBean.setText(turSNSite.getDefaultTextField());
+		turSNSiteSearchDefaultFieldsBean.setTitle(turSNSite.getDefaultTitleField());
+		turSNSiteSearchDefaultFieldsBean.setUrl(turSNSite.getDefaultURLField());
+		
 		turSNSiteSearchBean.setWidget(turSNSiteSearchWidgetBean);
 		TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContextBean = new TurSNSiteSearchQueryContextBean();
 		turSNSiteSearchQueryContextBean.setQuery(turSNSiteSearchQueryContextQueryBean);
-
+		turSNSiteSearchQueryContextBean.setDefaultFields(turSNSiteSearchDefaultFieldsBean);
+		
 		turSNSiteSearchQueryContextBean.setPageEnd((int) turSEResults.getStart() + turSEResults.getLimit());
 		turSNSiteSearchQueryContextBean.setPageStart((int) turSEResults.getStart() + 1);
 		turSNSiteSearchQueryContextBean.setPageCount(turSEResults.getPageCount());

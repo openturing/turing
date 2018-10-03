@@ -79,6 +79,21 @@
 
 				<select class="form-control" ng-model="snSite.turNLPInstance"
 					ng-options="nlpInstance as nlpInstance.title for nlpInstance in nlpInstances track by nlpInstance.id">
+					  <option value="">{{'NONE' | translate }}</option>
+				</select>
+
+			</div>
+		</div>
+		<div class="row"
+			style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'THESAURUS' | translate }}</div>
+			<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8" style="padding: 0px">
+				<select class="form-control" ng-model="snSite.thesaurus"
+					convert-to-number>
+					<option value="0">{{'NO' | translate }}</option>
+					<option value="1">{{'YES' | translate }}</option>
 				</select>
 
 			</div>

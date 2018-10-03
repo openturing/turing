@@ -58,6 +58,12 @@ public class TurSNSite implements Serializable {
 	@Column(nullable = true)
 	private int mlt;
 	
+	@Column(nullable = true)
+	private int thesaurus;
+	
+	@Column(nullable = false)
+	private String defaultTitleField;
+	
 	@Column(nullable = false)
 	private String defaultTextField;
 	
@@ -66,7 +72,12 @@ public class TurSNSite implements Serializable {
 	
 	@Column(nullable = false)
 	private String defaultDateField;
-	
+
+	@Column(nullable = false)
+	private String defaultImageField;
+
+	@Column(nullable = false)
+	private String defaultURLField;
 	
 	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
@@ -75,7 +86,7 @@ public class TurSNSite implements Serializable {
 
 	// bi-directional many-to-one association to TurNLPInstance
 	@ManyToOne
-	@JoinColumn(name = "nlp_instance_id", nullable = false)
+	@JoinColumn(name = "nlp_instance_id", nullable = true)
 	private TurNLPInstance turNLPInstance;
 
 	// bi-directional many-to-one association to TurSNSiteField
@@ -220,6 +231,14 @@ public class TurSNSite implements Serializable {
 		this.mlt = mlt;
 	}
 
+	public int getThesaurus() {
+		return thesaurus;
+	}
+
+	public void setThesaurus(int thesaurus) {
+		this.thesaurus = thesaurus;
+	}
+	
 	public String getDefaultTextField() {
 		return defaultTextField;
 	}
@@ -242,6 +261,30 @@ public class TurSNSite implements Serializable {
 
 	public void setDefaultDateField(String defaultDateField) {
 		this.defaultDateField = defaultDateField;
+	}
+
+	public String getDefaultURLField() {
+		return defaultURLField;
+	}
+
+	public void setDefaultURLField(String defaultURLField) {
+		this.defaultURLField = defaultURLField;
+	}
+
+	public String getDefaultTitleField() {
+		return defaultTitleField;
+	}
+
+	public void setDefaultTitleField(String defaultTitleField) {
+		this.defaultTitleField = defaultTitleField;
+	}
+
+	public String getDefaultImageField() {
+		return defaultImageField;
+	}
+
+	public void setDefaultImageField(String defaultImageField) {
+		this.defaultImageField = defaultImageField;
 	}
 	
 }

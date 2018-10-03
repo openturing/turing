@@ -57,7 +57,6 @@ public class TurOTSNBrokerAPI {
 	private JmsMessagingTemplate jmsMessagingTemplate;
 
 	public static final String INDEXING_QUEUE = "indexing.queue";
-	public static final String NLP_QUEUE = "nlp.queue";
 
 	@PostMapping
 	public String turOTSNBrokerAdd(@RequestParam("index") String siteName, @RequestParam("config") String config,
@@ -77,49 +76,54 @@ public class TurOTSNBrokerAPI {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		Element element = document.getDocumentElement();
 
-		NodeList nodes = element.getChildNodes();
+		if (document != null) {
+			Element element = document.getDocumentElement();
 
-		TurSNJobItem turSNJobItem = new TurSNJobItem();
-		Map<String, Object> attributes = new HashMap<String, Object>();
-		for (int i = 0; i < nodes.getLength(); i++) {
+			NodeList nodes = element.getChildNodes();
 
-			String nodeName = nodes.item(i).getNodeName();
-			if (attributes.containsKey(nodeName)) {
-				if (!(attributes.get(nodeName) instanceof ArrayList)) {
-					List<Object> attributeValues = new ArrayList<Object>();
-					attributeValues.add(attributes.get(nodeName));
-					attributeValues.add(nodes.item(i).getTextContent());
+			TurSNJobItem turSNJobItem = new TurSNJobItem();
+			Map<String, Object> attributes = new HashMap<String, Object>();
+			for (int i = 0; i < nodes.getLength(); i++) {
 
-					attributes.put(nodeName, attributeValues);
-					turSNJobItem.setAttributes(attributes);
+				String nodeName = nodes.item(i).getNodeName();
+				if (attributes.containsKey(nodeName)) {
+					if (!(attributes.get(nodeName) instanceof ArrayList)) {
+						List<Object> attributeValues = new ArrayList<Object>();
+						attributeValues.add(attributes.get(nodeName));
+						attributeValues.add(nodes.item(i).getTextContent());
+
+						attributes.put(nodeName, attributeValues);
+						turSNJobItem.setAttributes(attributes);
+					} else {
+						@SuppressWarnings("unchecked")
+						List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
+						attributeValues.add(nodes.item(i).getTextContent());
+						attributes.put(nodeName, attributeValues);
+					}
 				} else {
-					@SuppressWarnings("unchecked")
-					List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
-					attributeValues.add(nodes.item(i).getTextContent());
-					attributes.put(nodeName, attributeValues);
+					attributes.put(nodeName, nodes.item(i).getTextContent());
+
 				}
-			} else {
-				attributes.put(nodeName, nodes.item(i).getTextContent());
-
 			}
+			turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+			turSNJobItem.setAttributes(attributes);
+
+			TurSNJobItems turSNJobItems = new TurSNJobItems();
+
+			turSNJobItems.add(turSNJobItem);
+
+			TurSNJob turSNJob = new TurSNJob();
+			turSNJob.setSiteId(Integer.toString(turSNSite.getId()));
+
+			turSNJob.setTurSNJobItems(turSNJobItems);
+			logger.debug("Indexed Job by Id");
+			sendIndexerJob(turSNJob);
+
+			return "Ok";
+		} else {
+			return "Failed";
 		}
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-		turSNJobItem.setAttributes(attributes);
-
-		TurSNJobItems turSNJobItems = new TurSNJobItems();
-
-		turSNJobItems.add(turSNJobItem);
-
-		TurSNJob turSNJob = new TurSNJob();
-		turSNJob.setSiteId(Integer.toString(turSNSite.getId()));
-
-		turSNJob.setTurSNJobItems(turSNJobItems);
-		logger.debug("Indexed Job by Id");
-		sendIndexerJob(turSNJob);
-
-		return "Ok";
 
 	}
 

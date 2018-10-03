@@ -52,7 +52,13 @@ turingApp
 						HL_PRE: "Pre Tag",
 						HL_POST: "Post Tag",
 						REQUIRED: "Required",
-						DEFAULT_VALUE: "Default Value"
+						DEFAULT_VALUE: "Default Value",
+						NONE: "None",
+						TEXT: "Text",
+						DATE: "Date",
+						URL: "URL",
+						DEFAULT_FIELDS: "Default Fields"
+							
 
 					});
 					$translateProvider.translations('pt', {
@@ -99,7 +105,13 @@ turingApp
 						HL_PRE: "Tag Pré",
 						HL_POST: "Tag Pós",
 						REQUIRED: "Requerido",
-						DEFAULT_VALUE: "Valor Padrão"
+						DEFAULT_VALUE: "Valor Padrão",
+						NONE: "Nenhum",
+						TEXT: "Texto",
+						DATE: "Data",
+						URL: "URL",
+						DEFAULT_FIELDS: "Campos Padrões"
+
 
 					});
 					$translateProvider.fallbackLanguage('en');

@@ -47,8 +47,9 @@ public class TurSNSiteAPI {
 		turSNSiteEdit.setName(turSNSite.getName());
 		turSNSiteEdit.setDescription(turSNSite.getDescription());
 		turSNSiteEdit.setLanguage(turSNSite.getLanguage());
-		turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
+		turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());		
 		turSNSiteEdit.setTurNLPInstance(turSNSite.getTurNLPInstance());
+		turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
 		turSNSiteEdit.setCore(turSNSite.getCore());
 		// UI
 		turSNSiteEdit.setFacet(turSNSite.getFacet());
@@ -58,9 +59,12 @@ public class TurSNSiteAPI {
 		turSNSiteEdit.setItemsPerFacet(turSNSite.getItemsPerFacet());
 		turSNSiteEdit.setMlt(turSNSite.getMlt());
 		turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
+		turSNSiteEdit.setDefaultTitleField(turSNSite.getDefaultTitleField());
 		turSNSiteEdit.setDefaultTextField(turSNSite.getDefaultTextField());
 		turSNSiteEdit.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
 		turSNSiteEdit.setDefaultDateField(turSNSite.getDefaultDateField());
+		turSNSiteEdit.setDefaultImageField(turSNSite.getDefaultImageField());
+		turSNSiteEdit.setDefaultURLField(turSNSite.getDefaultURLField());
 		
 		this.turSNSiteRepository.save(turSNSiteEdit);
 		return turSNSiteEdit;

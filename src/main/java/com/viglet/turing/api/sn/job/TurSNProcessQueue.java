@@ -12,7 +12,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
-import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.nlp.TurNLP;
@@ -45,100 +44,8 @@ public class TurSNProcessQueue {
 	TurThesaurusProcessor turThesaurusProcessor;
 	@Autowired
 	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-	@Autowired
-	private JmsMessagingTemplate jmsMessagingTemplate;
 
 	public static final String INDEXING_QUEUE = "indexing.queue";
-	public static final String NLP_QUEUE = "nlp.queue";
-
-	@JmsListener(destination = NLP_QUEUE)
-	public void receiveNLPQueue(TurSNJob turSNJob) {
-		logger.debug("Received job - " + NLP_QUEUE);
-
-		TurSNSite turSNSite = this.turSNSiteRepository.findById(Integer.parseInt(turSNJob.getSiteId()));
-		try {
-			for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
-				if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
-					logger.debug("receiveQueue JsonObject: " + turSNJobItem.toString());
-
-					Map<String, Object> consolidateResults = new HashMap<String, Object>();
-
-					// SE
-					for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
-						logger.debug("SE Consolidate Value: " + attribute.getValue());
-						logger.debug("SE Consolidate Class: " + attribute.getValue().getClass().getName());
-						consolidateResults.put(attribute.getKey(), attribute.getValue());
-					}
-
-					// NLP
-					boolean nlp = true;
-					if (turSNSite.getTurNLPInstance().getId() < 1) {
-						logger.debug("It is not using NLP to process attributes");
-					} else {
-						logger.debug("It is using NLP to process attributes");
-					}
-
-					if (nlp) {
-						List<TurSNSiteFieldExt> turSNSiteFieldsExt = turSNSiteFieldExtRepository
-								.findByTurSNSiteAndNlpAndEnabled(turSNSite, 1, 1);
-
-						// Convert List to HashMap
-						Map<String, TurSNSiteFieldExt> turSNSiteFieldsExtMap = new HashMap<String, TurSNSiteFieldExt>();
-						for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldsExt) {
-							turSNSiteFieldsExtMap.put(turSNSiteFieldExt.getName().toLowerCase(), turSNSiteFieldExt);
-						}
-
-						// Select only fields that is checked as NLP. These attributes will be processed
-						// by NLP
-						HashMap<String, Object> nlpAttributes = new HashMap<String, Object>();
-						for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
-							if (turSNSiteFieldsExtMap.containsKey(attribute.getKey().toLowerCase())) {
-								nlpAttributes.put(attribute.getKey(), attribute.getValue());
-							}
-						}
-
-						turNLP.startup(turSNSite.getTurNLPInstance(), nlpAttributes);
-						Map<String, Object> nlpResults = turNLP.retrieveNLP();
-						Map<String, Object> nlpResultsPreffix = new HashMap<String, Object>();
-
-						// Add prefix to attribute name
-						for (Entry<String, Object> nlpResult : nlpResults.entrySet()) {
-							nlpResultsPreffix.put("turing_entity_" + nlpResult.getKey(), nlpResult.getValue());
-						}
-
-						// Copy NLP attributes to consolidateResults
-						for (Entry<String, Object> nlpResultPreffix : nlpResultsPreffix.entrySet()) {
-							consolidateResults.put(nlpResultPreffix.getKey(), nlpResultPreffix.getValue());
-						}
-					}
-
-					// Thesaurus
-					boolean thesaurus = false;
-					if (thesaurus) {
-						turThesaurusProcessor.startup();
-						Map<String, Object> thesaurusResults = turThesaurusProcessor
-								.detectTerms(turSNJobItem.getAttributes());
-
-						for (Entry<String, Object> thesaurusResult : thesaurusResults.entrySet()) {
-							consolidateResults.put(thesaurusResult.getKey(), thesaurusResult.getValue());
-						}
-					}
-
-					// Remove Duplicate Terms
-					Map<String, Object> attributesWithUniqueTerms = this.removeDuplicateTerms(consolidateResults);
-
-					// SE
-					turSolr.init(turSNSite, attributesWithUniqueTerms);
-					turSolr.indexing();
-				} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
-					this.desindexing(turSNJobItem, turSNSite);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-	}
 
 	@JmsListener(destination = INDEXING_QUEUE)
 	public void receiveIndexingQueue(TurSNJob turSNJob) {
@@ -152,9 +59,6 @@ public class TurSNProcessQueue {
 			} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
 				this.desindexing(turSNJobItem, turSNSite);
 			}
-
-			logger.debug("Sent job - " + NLP_QUEUE);
-			this.jmsMessagingTemplate.convertAndSend(NLP_QUEUE, turSNJob);
 		}
 	}
 
@@ -163,9 +67,8 @@ public class TurSNProcessQueue {
 
 		turSolr.init(turSNSite);
 		if (turSNJobItem.getAttributes().containsKey("id")) {
-		turSolr.desindexing((String) turSNJobItem.getAttributes().get("id"));
-		}
-		else if (turSNJobItem.getAttributes().containsKey("type")) {
+			turSolr.desindexing((String) turSNJobItem.getAttributes().get("id"));
+		} else if (turSNJobItem.getAttributes().containsKey("type")) {
 			turSolr.desindexingByType((String) turSNJobItem.getAttributes().get("type"));
 		}
 	}
@@ -179,6 +82,68 @@ public class TurSNProcessQueue {
 			logger.debug("SE Consolidate Value: " + attribute.getValue());
 			logger.debug("SE Consolidate Class: " + attribute.getValue().getClass().getName());
 			consolidateResults.put(attribute.getKey(), attribute.getValue());
+		}
+
+		// NLP
+		boolean nlp = true;
+		if (turSNSite.getTurNLPInstance() != null && turSNSite.getTurNLPInstance().getId() >= 1) {
+			logger.debug("It is using NLP to process attributes");
+			nlp = true;
+		} else {
+			logger.debug("It is not using NLP to process attributes");
+			nlp = false;
+		}
+
+		if (nlp) {
+			List<TurSNSiteFieldExt> turSNSiteFieldsExt = turSNSiteFieldExtRepository
+					.findByTurSNSiteAndNlpAndEnabled(turSNSite, 1, 1);
+
+			// Convert List to HashMap
+			Map<String, TurSNSiteFieldExt> turSNSiteFieldsExtMap = new HashMap<String, TurSNSiteFieldExt>();
+			for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldsExt) {
+				turSNSiteFieldsExtMap.put(turSNSiteFieldExt.getName().toLowerCase(), turSNSiteFieldExt);
+			}
+
+			// Select only fields that is checked as NLP. These attributes will be processed
+			// by NLP
+			HashMap<String, Object> nlpAttributes = new HashMap<String, Object>();
+			for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
+				if (turSNSiteFieldsExtMap.containsKey(attribute.getKey().toLowerCase())) {
+					nlpAttributes.put(attribute.getKey(), attribute.getValue());
+				}
+			}
+
+			turNLP.startup(turSNSite.getTurNLPInstance(), nlpAttributes);
+			Map<String, Object> nlpResults = turNLP.retrieveNLP();
+			Map<String, Object> nlpResultsPreffix = new HashMap<String, Object>();
+
+			// Add prefix to attribute name
+			for (Entry<String, Object> nlpResult : nlpResults.entrySet()) {
+				nlpResultsPreffix.put("turing_entity_" + nlpResult.getKey(), nlpResult.getValue());
+			}
+
+			// Copy NLP attributes to consolidateResults
+			for (Entry<String, Object> nlpResultPreffix : nlpResultsPreffix.entrySet()) {
+				consolidateResults.put(nlpResultPreffix.getKey(), nlpResultPreffix.getValue());
+			}
+		}
+
+		// Thesaurus
+		boolean thesaurus = false;
+		if (turSNSite.getThesaurus() < 1) {
+			logger.debug("It is not using Thesaurus to process attributes");
+			thesaurus = false;
+		} else {
+			logger.debug("It is using Thesaurus to process attributes");
+			thesaurus = true;
+		}
+		if (thesaurus) {
+			turThesaurusProcessor.startup();
+			Map<String, Object> thesaurusResults = turThesaurusProcessor.detectTerms(turSNJobItem.getAttributes());
+
+			for (Entry<String, Object> thesaurusResult : thesaurusResults.entrySet()) {
+				consolidateResults.put(thesaurusResult.getKey(), thesaurusResult.getValue());
+			}
 		}
 
 		// Remove Duplicate Terms

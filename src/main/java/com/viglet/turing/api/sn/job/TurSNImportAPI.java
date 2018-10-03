@@ -22,11 +22,10 @@ public class TurSNImportAPI {
 	private JmsMessagingTemplate jmsMessagingTemplate;
 
 	public static final String INDEXING_QUEUE = "indexing.queue";
-    public static final String NLP_QUEUE = "nlp.queue";
 
-    
 	@PostMapping
-	public String turSNImportBroker(@PathVariable String id, @RequestBody TurSNJobItems turSNJobItems) throws JSONException {
+	public String turSNImportBroker(@PathVariable String id, @RequestBody TurSNJobItems turSNJobItems)
+			throws JSONException {
 		TurSNJob turSNJob = new TurSNJob();
 		turSNJob.setSiteId(id);
 		turSNJob.setTurSNJobItems(turSNJobItems);
@@ -38,6 +37,6 @@ public class TurSNImportAPI {
 	public void send(TurSNJob turSNJob) {
 		logger.debug("Sent job - " + INDEXING_QUEUE);
 		this.jmsMessagingTemplate.convertAndSend(INDEXING_QUEUE, turSNJob);
-		
+
 	}
 }

@@ -58,9 +58,13 @@ public class TurSNSiteOnStartup {
 			turSNSite.setHlPre("<mark>");
 			turSNSite.setHlPost("</mark>");
 			turSNSite.setMlt(1);
+			turSNSite.setThesaurus(0);
+			turSNSite.setDefaultTitleField("title");
 			turSNSite.setDefaultTextField("text");
 			turSNSite.setDefaultDescriptionField("abstract");
 			turSNSite.setDefaultDateField("publication_date");
+			turSNSite.setDefaultImageField("image");
+			turSNSite.setDefaultURLField("url");
 
 			turSNSiteRepository.save(turSNSite);
 
@@ -168,6 +172,32 @@ public class TurSNSiteOnStartup {
 
 			turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
 
+			// Image
+			turSNSiteField = new TurSNSiteField();
+			turSNSiteField.setName("image");
+			turSNSiteField.setDescription("Image Field");
+			turSNSiteField.setMultiValued(0);
+			turSNSiteField.setTurSNSite(turSNSite);
+			turSNSiteField.setType(TurSEFieldType.STRING);
+
+			turSNSiteFieldRepository.save(turSNSiteField);
+
+			turSNSiteFieldExt = new TurSNSiteFieldExt();
+			turSNSiteFieldExt.setEnabled(1);
+			turSNSiteFieldExt.setName(turSNSiteField.getName());
+			turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
+			turSNSiteFieldExt.setFacet(1);
+			turSNSiteFieldExt.setFacetName("Images");
+			turSNSiteFieldExt.setHl(0);
+			turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
+			turSNSiteFieldExt.setMlt(0);
+			turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
+			turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
+			turSNSiteFieldExt.setType(turSNSiteField.getType());
+			turSNSiteFieldExt.setTurSNSite(turSNSite);
+
+			turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
+			
 			// URL
 			turSNSiteField = new TurSNSiteField();
 			turSNSiteField.setName("url");

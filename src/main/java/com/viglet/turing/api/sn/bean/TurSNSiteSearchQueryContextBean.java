@@ -12,6 +12,8 @@ public class TurSNSiteSearchQueryContextBean {
 	private int pageStart;
 	private long responseTime;
 	private TurSNSiteSearchQueryContextQueryBean query;
+	private TurSNSiteSearchDefaultFieldsBean defaultFields;
+	
 	public int getCount() {
 		return count;
 	}
@@ -71,6 +73,12 @@ public class TurSNSiteSearchQueryContextBean {
 	}
 	public void setQuery(TurSNSiteSearchQueryContextQueryBean query) {
 		this.query = query;
+	}
+	public TurSNSiteSearchDefaultFieldsBean getDefaultFields() {
+		return defaultFields;
+	}
+	public void setDefaultFields(TurSNSiteSearchDefaultFieldsBean defaultFields) {
+		this.defaultFields = defaultFields;
 	}
 
 }
