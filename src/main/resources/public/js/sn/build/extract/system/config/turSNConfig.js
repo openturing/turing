@@ -23,7 +23,8 @@ turingSNApp.config([
 				ORDER_BY: "Order by",
 				RELEVANCE: "Relevance",
 				NEWEST: "Newest",
-				OLDEST: "Oldest"
+				OLDEST: "Oldest",
+				SUBJECTS_FOUND: "Subjects found"
 			});
 			$translateProvider.translations('pt', {
 				REMOVE : "Remover",
@@ -41,7 +42,8 @@ turingSNApp.config([
 				ORDER_BY: "Ordenar por",
 				RELEVANCE: "Relevância",
 				NEWEST: "Mais recente",
-				OLDEST: "Mais antigo"
+				OLDEST: "Mais antigo",
+				SUBJECTS_FOUND: "Assuntos Encontrados"
 
 			});
 			

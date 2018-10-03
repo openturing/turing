@@ -486,7 +486,7 @@ public class TurSNSiteSearchAPI {
 		// END Similar
 		
 		TurSNSiteSearchDefaultFieldsBean turSNSiteSearchDefaultFieldsBean = new TurSNSiteSearchDefaultFieldsBean();
-		turSNSiteSearchDefaultFieldsBean.setData(turSNSite.getDefaultDateField());
+		turSNSiteSearchDefaultFieldsBean.setDate(turSNSite.getDefaultDateField());
 		turSNSiteSearchDefaultFieldsBean.setDescription(turSNSite.getDefaultDescriptionField());
 		turSNSiteSearchDefaultFieldsBean.setImage(turSNSite.getDefaultImageField());
 		turSNSiteSearchDefaultFieldsBean.setText(turSNSite.getDefaultTextField());

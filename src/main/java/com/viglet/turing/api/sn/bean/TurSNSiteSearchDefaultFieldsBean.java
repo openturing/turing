@@ -4,7 +4,7 @@ package com.viglet.turing.api.sn.bean;
 public class TurSNSiteSearchDefaultFieldsBean {
 
 	private String title;
-	private String data;
+	private String date;
 	private String description;
 	private String text;
 	private String image;
@@ -16,12 +16,7 @@ public class TurSNSiteSearchDefaultFieldsBean {
 	public void setTitle(String title) {
 		this.title = title;
 	}
-	public String getData() {
-		return data;
-	}
-	public void setData(String data) {
-		this.data = data;
-	}
+	
 	public String getDescription() {
 		return description;
 	}
@@ -46,6 +41,11 @@ public class TurSNSiteSearchDefaultFieldsBean {
 	public void setUrl(String url) {
 		this.url = url;
 	}
-	
+	public String getDate() {
+		return date;
+	}
+	public void setDate(String date) {
+		this.date = date;
+	}	
 
 }
