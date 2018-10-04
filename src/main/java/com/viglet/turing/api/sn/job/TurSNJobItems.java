@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 	private static final long serialVersionUID = 1L;
 	private List<TurSNJobItem> turSNJobItems = new ArrayList<TurSNJobItem>();

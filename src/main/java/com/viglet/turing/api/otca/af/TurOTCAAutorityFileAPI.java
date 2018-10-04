@@ -47,7 +47,7 @@ import com.viglet.turing.plugins.otca.af.xml.AFTermVariationCaseEnum;
 import com.viglet.turing.plugins.otca.af.xml.AFTermVariationType;
 import com.viglet.turing.plugins.otca.af.xml.AFType;
 import com.viglet.turing.plugins.otca.af.xml.AFType.Terms;
-import com.viglet.util.TurUtils;
+import com.viglet.turing.util.TurUtils;
 
 import io.swagger.annotations.Api;
 
@@ -58,7 +58,7 @@ public class TurOTCAAutorityFileAPI {
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
-	private TurTermRepository  turTermRepository;
+	private TurTermRepository turTermRepository;
 	@Autowired
 	private TurTermAttributeRepository turTermAttributeRepository;
 	@Autowired
@@ -71,11 +71,13 @@ public class TurOTCAAutorityFileAPI {
 	private TurTermVariationLanguageRepository turTermVariationLanguageRepository;
 	@Autowired
 	ServletContext servletContext;
-	
+	@Autowired
+	TurUtils turUtils;
+
 	final String EMPTY_TERM_NAME = "<EMPTY>";
 
-	public static String normalizeEntity(String s) {
-		s = TurUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "").replaceAll(" ", "_");
+	public String normalizeEntity(String s) {
+		s = turUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "").replaceAll(" ", "_");
 		return s;
 	}
 
@@ -155,8 +157,8 @@ public class TurOTCAAutorityFileAPI {
 
 		for (AFTermVariationType afTermVariationType : variations.getVariation()) {
 			TurTermVariation turTermVariation = new TurTermVariation();
-			turTermVariation.setName(TurUtils.removeDuplicateWhiteSpaces(afTermVariationType.getName()));
-			turTermVariation.setNameLower(TurUtils.stripAccents(turTermVariation.getName()).toLowerCase());
+			turTermVariation.setName(turUtils.removeDuplicateWhiteSpaces(afTermVariationType.getName()));
+			turTermVariation.setNameLower(turUtils.stripAccents(turTermVariation.getName()).toLowerCase());
 			if (afTermVariationType.getAccent().equals(AFTermVariationAccentEnum.AI))
 				turTermVariation.setRuleAccent(TurNLPTermAccent.AI.id());
 			else
@@ -221,18 +223,18 @@ public class TurOTCAAutorityFileAPI {
 		}
 
 	}
-	
+
 	@SuppressWarnings("unchecked")
-	@PostMapping("/import")	
+	@PostMapping("/import")
 	@Transactional
-	public RedirectView turOTCAAutorityFileImport(@RequestParam("file") MultipartFile multipartFile, HttpServletRequest request)
-			throws URISyntaxException, UnsupportedEncodingException {
+	public RedirectView turOTCAAutorityFileImport(@RequestParam("file") MultipartFile multipartFile,
+			HttpServletRequest request) throws URISyntaxException, UnsupportedEncodingException {
 
 		try {
 			JAXBContext jaxbContext = JAXBContext
 					.newInstance(com.viglet.turing.plugins.otca.af.xml.ObjectFactory.class);
-			AFType documentType = ((JAXBElement<AFType>) jaxbContext.createUnmarshaller().unmarshal(multipartFile.getInputStream()))
-					.getValue();
+			AFType documentType = ((JAXBElement<AFType>) jaxbContext.createUnmarshaller()
+					.unmarshal(multipartFile.getInputStream())).getValue();
 
 			TurNLPEntity turNLPEntity = this.setEntity(documentType.getName(), documentType.getDescription());
 			this.setTerms(turNLPEntity, documentType.getTerms());
@@ -243,7 +245,7 @@ public class TurOTCAAutorityFileAPI {
 			ex.printStackTrace();
 		}
 		String redirect = "/turing/#entity/import";
-		
+
 		RedirectView redirectView = new RedirectView(new String(redirect.getBytes("UTF-8"), "ISO-8859-1"));
 		redirectView.setHttp10Compatible(false);
 		return redirectView;

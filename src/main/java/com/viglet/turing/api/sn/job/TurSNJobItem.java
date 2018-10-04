@@ -3,6 +3,9 @@ package com.viglet.turing.api.sn.job;
 import java.io.Serializable;
 import java.util.Map;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class TurSNJobItem implements Serializable{
 
 	private static final long serialVersionUID = 1L;

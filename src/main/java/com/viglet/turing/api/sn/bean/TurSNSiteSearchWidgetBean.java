@@ -2,8 +2,11 @@ package com.viglet.turing.api.sn.bean;
 
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
 import com.viglet.turing.se.similar.TurSESimilarResult;
 
+@Component
 public class TurSNSiteSearchWidgetBean {
 
 	private List<TurSNSiteSearchFacetBean> facet;

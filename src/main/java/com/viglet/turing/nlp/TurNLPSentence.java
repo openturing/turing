@@ -2,6 +2,8 @@ package com.viglet.turing.nlp;
 
 import java.util.LinkedHashMap;
 
+import org.springframework.stereotype.Component;
+@Component
 public class TurNLPSentence {
 	LinkedHashMap<String, TurNLPWord> words = new LinkedHashMap<String, TurNLPWord>();
 

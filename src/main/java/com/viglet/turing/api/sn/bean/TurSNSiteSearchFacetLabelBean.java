@@ -1,6 +1,8 @@
 package com.viglet.turing.api.sn.bean;
 
+import org.springframework.stereotype.Component;
 
+@Component
 public class TurSNSiteSearchFacetLabelBean {
 
 	private String lang;

@@ -3,7 +3,9 @@ package com.viglet.turing.api.sn.bean;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.stereotype.Component;
 
+@Component
 public class TurSNSiteSearchDocumentBean {
 	
 	private String source;

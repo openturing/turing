@@ -1,5 +1,8 @@
 package com.viglet.turing.bean.ml.sentence;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class TurMLSentenceBean {
 	String sentence;
 	

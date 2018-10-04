@@ -2,8 +2,11 @@ package com.viglet.turing.api.sn;
 
 import java.util.List;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,8 +15,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
@@ -23,11 +29,14 @@ import io.swagger.annotations.ApiOperation;
 @RestController
 @RequestMapping("/api/sn")
 @Api(tags = "Semantic Navigation Site", description = "Semantic Navigation Site API")
+@ComponentScan("com.viglet.turing") 
 public class TurSNSiteAPI {
 
 	@Autowired
 	TurSNSiteRepository turSNSiteRepository;
-
+	@Autowired
+	TurSNSiteExport turSNSiteExport;
+	
 	@ApiOperation(value = "Semantic Navigation Site List")
 	@GetMapping
 	public List<TurSNSite> list() throws JSONException {
@@ -83,6 +92,14 @@ public class TurSNSiteAPI {
 	public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite) throws Exception {
 		this.turSNSiteRepository.save(turSNSite);
 		return turSNSite;
+
+	}
+
+	@ResponseBody
+	@GetMapping(value = "/export", produces = "application/zip")
+	public StreamingResponseBody turSNSiteExport(HttpServletResponse response) throws Exception {
+		
+		return turSNSiteExport.exportObject(response);
 
 	}
 
