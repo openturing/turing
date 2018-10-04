@@ -1,6 +1,6 @@
 package com.viglet.turing.exchange.sn;
 
-import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -51,7 +51,11 @@ public class TurSNSiteExchange {
 
 	private int turNLPInstance;
 
-	private List<TurSNSiteField> turSNSiteFields;
+	private Set<TurSNSiteField> turSNSiteFields;
+
+	public TurSNSiteExchange() {
+		super();
+	}
 
 	public TurSNSiteExchange(TurSNSite turSNSite) {
 		this.setCore(turSNSite.getCore());
@@ -73,8 +77,12 @@ public class TurSNSiteExchange {
 		this.setName(turSNSite.getName());
 		this.setRowsPerPage(turSNSite.getRowsPerPage());
 		this.setThesaurus(turSNSite.getThesaurus() == 1 ? true : false);
-		this.setTurNLPInstance(turSNSite.getTurNLPInstance().getId());
-		this.setTurSEInstance(turSNSite.getTurSEInstance().getId());
+		if (turSNSite.getTurNLPInstance() != null) {
+			this.setTurNLPInstance(turSNSite.getTurNLPInstance().getId());
+		}
+		if (turSNSite.getTurSEInstance() != null) {
+			this.setTurSEInstance(turSNSite.getTurSEInstance().getId());
+		}
 		this.setTurSNSiteFields(turSNSite.getTurSNSiteFields());
 	}
 
@@ -246,11 +254,11 @@ public class TurSNSiteExchange {
 		this.turNLPInstance = turNLPInstance;
 	}
 
-	public List<TurSNSiteField> getTurSNSiteFields() {
+	public Set<TurSNSiteField> getTurSNSiteFields() {
 		return turSNSiteFields;
 	}
 
-	public void setTurSNSiteFields(List<TurSNSiteField> turSNSiteFields) {
+	public void setTurSNSiteFields(Set<TurSNSiteField> turSNSiteFields) {
 		this.turSNSiteFields = turSNSiteFields;
 	}
 

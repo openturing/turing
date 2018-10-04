@@ -45,7 +45,7 @@ import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.se.similar.TurSESimilarResult;
 import com.viglet.turing.sn.TurSNFieldType;
-import com.viglet.util.TurSNSiteFieldUtils;
+import com.viglet.turing.util.TurSNSiteFieldUtils;
 
 @Component
 @Transactional

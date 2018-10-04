@@ -13,6 +13,7 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Component;
@@ -74,4 +75,37 @@ public class TurUtils {
 
 		return path.substring(index);
 	}
+	
+	/**
+	 * Unzip it
+	 * 
+	 * @param zipFile
+	 *            input zip file
+	 * @param outputFolder
+	 *            output Folder
+	 * @throws ArchiveException
+	 *             if creating or adding to the archive fails
+	 * @throws IOException
+	 *             if the io fails
+	 */
+	public void unZipIt(File zipFile, File outputFolder) throws ArchiveException, IOException {
+
+		try (ZipArchiveInputStream zin = new ZipArchiveInputStream(new FileInputStream(zipFile))) {
+			ZipArchiveEntry entry;
+			while ((entry = zin.getNextZipEntry()) != null) {
+				if (entry.isDirectory()) {
+					continue;
+				}
+				File curfile = new File(outputFolder, entry.getName());
+				File parent = curfile.getParentFile();
+				if (!parent.exists()) {
+					if (!parent.mkdirs()) {
+						throw new RuntimeException("could not create directory: " + parent.getPath());
+					}
+				}
+				IOUtils.copy(zin, new FileOutputStream(curfile));
+			}
+		}
+	}
+
 }

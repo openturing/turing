@@ -1,13 +1,19 @@
 package com.viglet.turing.persistence.model.sn;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Set;
 
 import javax.persistence.*;
 
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
+import com.viglet.turing.exchange.sn.TurSNSiteExchange;
+import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 
@@ -21,6 +27,7 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 public class TurSNSite implements Serializable {
 
 	private static final long serialVersionUID = 1L;
+
 	@Id
 	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
 	@GeneratedValue(generator = "UUID")
@@ -92,9 +99,18 @@ public class TurSNSite implements Serializable {
 	private TurNLPInstance turNLPInstance;
 
 	// bi-directional many-to-one association to TurSNSiteField
-	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turSNSite", cascade = CascadeType.ALL)
-	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
-	private List<TurSNSiteField> turSNSiteFields;
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
+	@Cascade({ CascadeType.ALL })
+	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNSiteField> turSNSiteFields;
+
+	// bi-directional many-to-one association to TurSNSiteFieldExt
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
+	@Cascade({ CascadeType.ALL })
+	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNSiteFieldExt> turSNSiteFieldExts;
 
 	public TurSNSite() {
 	}
@@ -147,11 +163,11 @@ public class TurSNSite implements Serializable {
 		this.turNLPInstance = turNLPInstance;
 	}
 
-	public List<TurSNSiteField> getTurSNSiteFields() {
+	public Set<TurSNSiteField> getTurSNSiteFields() {
 		return turSNSiteFields;
 	}
 
-	public void setTurSNSiteFields(List<TurSNSiteField> turSNSiteFields) {
+	public void setTurSNSiteFields(Set<TurSNSiteField> turSNSiteFields) {
 		this.turSNSiteFields = turSNSiteFields;
 	}
 
