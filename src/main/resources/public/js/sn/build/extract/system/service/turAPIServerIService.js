@@ -9,23 +9,14 @@ turingSNApp.service('turAPIServerService', [
 			var turAPIContext = "/api";
 			var turEmbServer = turProtocol + "://" + turHostname + ":"
 					+ turPort + turAPIContext;
-			console.log(turEmbServer);
 
 			this.get = function() {
 
 				if ($cookies.get('turAPIServer') != null)
 					return $cookies.get('turAPIServer');
 				else {
-					$http({
-						method : 'GET',
-						url : turEmbServer
-					}).then(function successCallback(response) {
-						$cookies.put('turAPIServer', turEmbServer);
-					}, function errorCallback(response) {
-						$cookies.put('turAPIServer', 'http://localhost:2700' + turAPIContext);
-
-					});
-					return turEmbServer;
-				}
+	                $cookies.put('turAPIServer', turEmbServer);
+	                return turEmbServer;
+	            }
 			}
 		} ]);

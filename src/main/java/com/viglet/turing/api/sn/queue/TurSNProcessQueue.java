@@ -1,4 +1,4 @@
-package com.viglet.turing.api.sn.job;
+package com.viglet.turing.api.sn.queue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,6 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.api.sn.job.TurSNJob;
+import com.viglet.turing.api.sn.job.TurSNJobAction;
+import com.viglet.turing.api.sn.job.TurSNJobItem;
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;

@@ -168,14 +168,14 @@ public class TurSNSiteFieldExtAPI {
 
 	@ApiOperation(value = "Show a Semantic Navigation Site Field Ext")
 	@GetMapping("/{id}")
-	public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable int snSiteId, @PathVariable int id)
+	public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable int id)
 			throws JSONException {
 		return this.turSNSiteFieldExtRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Semantic Navigation Site Field Ext")
 	@PutMapping("/{id}")
-	public TurSNSiteFieldExt turSNSiteFieldExtUpdate(@PathVariable int snSiteId, @PathVariable int id,
+	public TurSNSiteFieldExt turSNSiteFieldExtUpdate(@PathVariable String snSiteId, @PathVariable int id,
 			@RequestBody TurSNSiteFieldExt turSNSiteFieldExt) throws Exception {
 		TurSNSiteFieldExt turSNSiteFieldExtEdit = this.turSNSiteFieldExtRepository.findById(id);
 		turSNSiteFieldExtEdit.setFacetName(turSNSiteFieldExt.getFacetName());
@@ -202,7 +202,7 @@ public class TurSNSiteFieldExtAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Semantic Navigation Site Field Ext")
 	@DeleteMapping("/{id}")
-	public boolean turSNSiteFieldExtDelete(@PathVariable int snSiteId, @PathVariable int id) {
+	public boolean turSNSiteFieldExtDelete(@PathVariable String snSiteId, @PathVariable int id) {
 		TurSNSiteFieldExt turSNSiteFieldExtEdit = this.turSNSiteFieldExtRepository.findById(id);
 
 		switch (turSNSiteFieldExtEdit.getSnType()) {
