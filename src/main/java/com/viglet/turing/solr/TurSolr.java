@@ -263,7 +263,7 @@ public class TurSolr {
 			UpdateResponse response = solrServer.add(document);
 			if (addUntilCommitCounter >= ADD_UNTIL_COMMIT) {
 				addUntilCommitCounter = 0;			
-				solrServer.commit();
+	//			solrServer.commit();
 			} else {
 				addUntilCommitCounter++;
 			}
