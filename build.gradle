@@ -1,3 +1,4 @@
+
 buildscript {
     ext { springBootVersion = '2.0.5.RELEASE'
 	      hibernateVersion = '5.9.1.Final'
@@ -12,7 +13,8 @@ buildscript {
 		jcenter()
 		}
     dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-    			   classpath("com.eriwen:gradle-js-plugin:2.12.0") }
+    			   classpath("com.eriwen:gradle-js-plugin:2.12.0")
+    			   classpath('com.bmuschko:gradle-docker-plugin:3.2.5') }
 }
 
 apply plugin: 'java'
@@ -22,6 +24,7 @@ apply plugin: 'io.spring.dependency-management'
 apply plugin: 'com.eriwen.gradle.js'
 apply plugin: 'jacoco'
 apply plugin: 'project-report'
+apply plugin: 'com.bmuschko.docker-remote-api'
 
 jar {
     baseName = 'viglet-turing'
@@ -31,11 +34,70 @@ jar {
 bootJar {
     launchScript()
 }
+// Docker BEGIN
+
+import com.bmuschko.gradle.docker.tasks.container.*
+import com.bmuschko.gradle.docker.tasks.image.*
+docker {
+    registryCredentials {
+        username = getConfigurationProperty('DOCKER_USERNAME', 'docker.username')
+        password = getConfigurationProperty('DOCKER_PASSWORD', 'docker.password')
+        email = getConfigurationProperty('DOCKER_EMAIL', 'docker.email')
+    }
+}
+
+String getConfigurationProperty(String envVar, String sysProp) {
+    System.getenv(envVar) ?: project.findProperty(sysProp)
+}
+
+task createDockerfile(type: Dockerfile) {
+    destFile = project.file('build/docker/Dockerfile')
+    from 'openjdk:8-jre-alpine'
+    maintainer 'Alexandre Oliveira "alexandre.oliveira@viglet.com"'
+    copyFile jar.archiveName, '/tmp/viglet-turing.jar'
+    entryPoint 'java'
+    defaultCommand '-jar', '/tmp/viglet-turing.jar'
+    exposePort 8080
+    runCommand 'apk --update --no-cache add curl'
+    instruction 'HEALTHCHECK CMD curl -f http://localhost:2700/api || exit 1'
+}
+
+task syncWebAppArchive(type: Sync) {
+    dependsOn assemble
+    from jar.archivePath
+    into createDockerfile.destFile.parentFile
+}
+
+createDockerfile.dependsOn syncWebAppArchive
+
+task buildImage(type: DockerBuildImage) {
+    dependsOn createDockerfile
+    inputDir = createDockerfile.destFile.parentFile
+    tag = "viglet/turing:$jar.version"
+}
+
+task buildDockerImage(type: DockerBuildImage) {
+    dependsOn createDockerfile
+    if (System.env.DOCKER_HOST) {
+        url = "$System.env.DOCKER_HOST".replace("tcp","https")
+        if (System.env.DOCKER_CERT_PATH) {
+            certPath = new File(System.env.DOCKER_CERT_PATH)
+ 
+        }
+    }
+    else {
+        url = 'unix:///var/run/docker.sock'
+    }
+    inputDir = createDockerfile.destFile.parentFile
+    tag = 'viglet/turing:$jar.version'
+}
+// Docker END
 
 repositories {
 	mavenCentral()
 	maven { url "https://repo.spring.io/snapshot" }
 	maven { url "https://repo.spring.io/milestone" }
+	jcenter()
 }
 
 sourceCompatibility = 1.8
@@ -227,7 +289,7 @@ exclude(module: 'commons-logging')
 	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
 	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"
 
-
+ 	compile project(':turing-search')
 	// WebJars
 	compile 'org.webjars.bower:jquery:1.12.4'
 	compile 'org.webjars:bootstrap:3.3.7-1'

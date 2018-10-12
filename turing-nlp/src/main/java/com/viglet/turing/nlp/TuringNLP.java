@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.viglet.turing;
+package com.viglet.turing.nlp;
 
 import java.io.File;
 
@@ -28,7 +28,6 @@ import org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFa
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.filter.CharacterEncodingFilter;
@@ -41,12 +40,12 @@ import io.undertow.UndertowOptions;
 @SpringBootApplication
 @EnableJms
 @EnableCaching
-public class Turing {
+public class TuringNLP {
 
 	public static void main(String[] args) throws Exception {		
-		System.out.println("Viglet Turing starting...");
-		SpringApplication.run(Turing.class, args);
-		System.out.println("Viglet Turing started");
+		System.out.println("Viglet Turing NLP starting...");
+		SpringApplication.run(TuringNLP.class, args);
+		System.out.println("Viglet Turing NLP started");
 	}
 	
 	@Bean
