@@ -70,7 +70,25 @@ dependencies {
 	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
 	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"
 
+	// Solr
+    compile(group: 'org.apache.solr', name: 'solr-solrj', version:'4.6.0') {
+exclude(module: 'httpclient')
+exclude(module: 'httpmime')
+    }
     
+    // JSON
+    compile group: 'org.json', name: 'json', version:'20140107'
+    
+    // HTTP Client
+    compile(group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.2') {
+exclude(module: 'commons-logging')
+    }
+    
+    // HTTP Mime
+    compile group: 'org.apache.httpcomponents', name: 'httpmime', version:'4.5.2'
+	compile project(':turing-core')
+	compile project(':turing-nlp')
+
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 

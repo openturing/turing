@@ -22,6 +22,13 @@ tracking requests and bugs.**
 $ docker pull solr
 $ docker run -d -p 8983:8983 --name solr solr
 ```
+
+```bash
+$ cd TURING_DIR
+$ ./gradlew build && docker build -t viglet-turing .
+$ docker run -d -p 2700:2700 --name viglet-turing viglet-turing 
+```
+
 ## Solr
 ### Create Core
 

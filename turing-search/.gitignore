@@ -11,4 +11,5 @@
 /.gradle/
 /build/
 /store/logs
+/store/queue
 /activemq-data/
