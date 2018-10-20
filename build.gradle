@@ -1,6 +1,6 @@
 
 buildscript {
-    ext { springBootVersion = '2.0.5.RELEASE'
+    ext { springBootVersion = '2.0.6.RELEASE'
 	      hibernateVersion = '5.9.1.Final'
 		  httpClientVersion = '4.5.2'
 		  swaggerVersion = '2.8.0'
@@ -237,10 +237,10 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version:"${springBootVersion}"
 	
 	// Spring
-  	compile group: 'org.springframework', name: 'spring-test', version: '5.0.9.RELEASE'
+  	compile group: 'org.springframework', name: 'spring-test', version: '5.0.10.RELEASE'
 
  	// Jackson
-   	compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.6'
+   	compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.7'
    	  	
   	// H2
      compile group: 'com.h2database', name: 'h2', version:'1.4.197'
@@ -309,7 +309,7 @@ exclude(module: 'commons-logging')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 task wrapper(type: Wrapper) {
-    gradleVersion = '4.10.1'
+    gradleVersion = '4.10.2'
 }
 
 test {
