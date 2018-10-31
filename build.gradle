@@ -1,6 +1,6 @@
 
 buildscript {
-    ext { springBootVersion = '2.0.6.RELEASE'
+    ext { springBootVersion = '2.1.0.RELEASE'
 	      hibernateVersion = '5.9.1.Final'
 		  httpClientVersion = '4.5.2'
 		  swaggerVersion = '2.8.0'
@@ -167,7 +167,7 @@ javadoc {
 }
 
 dependencies {
-	compile (group: 'org.apache.hadoop', name: 'hadoop-common', version: '2.2.0') {
+	compile (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.1.1') {
 		exclude(module: 'guava')
 		exclude(module: 'commons-logging')
 		exclude(module: 'log4j')
@@ -187,7 +187,7 @@ dependencies {
 
 	}
 	
-	compile (group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '2.2.0') {
+	compile (group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.1.1') {
 		exclude(module: 'jackson-mapper-asl')
 		exclude(module: 'jackson-core-asl')
 		exclude(module: 'jersey-core')
@@ -199,7 +199,7 @@ dependencies {
 		exclude(module: 'jsp-api')
 		exclude(module: 'log4j')
 	}
-	compile (group: 'org.apache.hadoop', name: 'hadoop-auth', version: '2.2.0') {
+	compile (group: 'org.apache.hadoop', name: 'hadoop-auth', version: '3.1.1') {
 		exclude(module: 'commons-logging')
 		exclude(module: 'log4j')
 		exclude(module: 'slf4j-api')
@@ -237,7 +237,7 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version:"${springBootVersion}"
 	
 	// Spring
-  	compile group: 'org.springframework', name: 'spring-test', version: '5.0.10.RELEASE'
+  	compile group: 'org.springframework', name: 'spring-test', version: '5.1.2.RELEASE'
 
  	// Jackson
    	compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.7'
