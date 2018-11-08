@@ -2,6 +2,9 @@ package com.viglet.turing.api.storage.hadoop;
 
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class TurChildPath {
 	List<org.apache.hadoop.fs.Path> dir;
 

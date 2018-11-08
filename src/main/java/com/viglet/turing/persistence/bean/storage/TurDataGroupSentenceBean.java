@@ -3,7 +3,6 @@ package com.viglet.turing.persistence.bean.storage;
 import org.springframework.stereotype.Component;
 
 @Component
-
 public class TurDataGroupSentenceBean {
 
 	int id;

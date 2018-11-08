@@ -77,7 +77,13 @@ turingApp
 						HL_PRE: "Pre Tag",
 						HL_POST: "Post Tag",
 						REQUIRED: "Required",
-						DEFAULT_VALUE: "Default Value"
+						DEFAULT_VALUE: "Default Value",
+						NONE: "None",
+						TEXT: "Text",
+						DATE: "Date",
+						URL: "URL",
+						DEFAULT_FIELDS: "Default Fields"
+							
 
 					});
 					$translateProvider.translations('pt', {
@@ -124,7 +130,13 @@ turingApp
 						HL_PRE: "Tag Pré",
 						HL_POST: "Tag Pós",
 						REQUIRED: "Requerido",
-						DEFAULT_VALUE: "Valor Padrão"
+						DEFAULT_VALUE: "Valor Padrão",
+						NONE: "Nenhum",
+						TEXT: "Texto",
+						DATE: "Data",
+						URL: "URL",
+						DEFAULT_FIELDS: "Campos Padrões"
+
 
 					});
 					$translateProvider.fallbackLanguage('en');
@@ -668,24 +680,15 @@ turingApp.service('turAPIServerService', [
 			var turAPIContext = "/api";
 			var turEmbServer = turProtocol + "://" + turHostname + ":"
 					+ turPort + turAPIContext;
-			console.log(turEmbServer);
 
 			this.get = function() {
 
 				if ($cookies.get('turAPIServer') != null)
 					return $cookies.get('turAPIServer');
 				else {
-					$http({
-						method : 'GET',
-						url : turEmbServer
-					}).then(function successCallback(response) {
-						$cookies.put('turAPIServer', turEmbServer);
-					}, function errorCallback(response) {
-						$cookies.put('turAPIServer', 'http://localhost:2700' + turAPIContext);
-
-					});
-					return turEmbServer;
-				}
+	                $cookies.put('turAPIServer', turEmbServer);
+	                return turEmbServer;
+	            }
 			}
 		} ]);
 turingApp.factory('turLocaleResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {

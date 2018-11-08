@@ -23,7 +23,8 @@ turingSNApp.config([
 				ORDER_BY: "Order by",
 				RELEVANCE: "Relevance",
 				NEWEST: "Newest",
-				OLDEST: "Oldest"
+				OLDEST: "Oldest",
+				SUBJECTS_FOUND: "Subjects found"
 			});
 			$translateProvider.translations('pt', {
 				REMOVE : "Remover",
@@ -41,7 +42,8 @@ turingSNApp.config([
 				ORDER_BY: "Ordenar por",
 				RELEVANCE: "Relevância",
 				NEWEST: "Mais recente",
-				OLDEST: "Mais antigo"
+				OLDEST: "Mais antigo",
+				SUBJECTS_FOUND: "Assuntos Encontrados"
 
 			});
 			
@@ -69,24 +71,15 @@ turingSNApp.service('turAPIServerService', [
 			var turAPIContext = "/api";
 			var turEmbServer = turProtocol + "://" + turHostname + ":"
 					+ turPort + turAPIContext;
-			console.log(turEmbServer);
 
 			this.get = function() {
 
 				if ($cookies.get('turAPIServer') != null)
 					return $cookies.get('turAPIServer');
 				else {
-					$http({
-						method : 'GET',
-						url : turEmbServer
-					}).then(function successCallback(response) {
-						$cookies.put('turAPIServer', turEmbServer);
-					}, function errorCallback(response) {
-						$cookies.put('turAPIServer', 'http://localhost:2700' + turAPIContext);
-
-					});
-					return turEmbServer;
-				}
+	                $cookies.put('turAPIServer', turEmbServer);
+	                return turEmbServer;
+	            }
 			}
 		} ]);
 turingSNApp.factory('vigLocale', [

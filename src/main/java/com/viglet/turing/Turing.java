@@ -18,7 +18,6 @@ package com.viglet.turing;
 
 import java.io.File;
 
-
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.kahadb.KahaDBPersistenceAdapter;

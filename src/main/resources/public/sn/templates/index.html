@@ -11,15 +11,20 @@
 <!-- Bootstrap -->
 <link href="../../webjars/bootstrap/3.3.7-1/css/bootstrap.min.css"
 	rel="stylesheet"></link>
-<link
-	href="https://viglet.ai/ui/thirdparty/font-awesome/css/font-awesome.min.css"
+<link href="../../webjars/font-awesome/4.7.0/css/font-awesome.min.css"
 	rel="stylesheet"></link>
-<link href="https://viglet.ai/ui/css/viglet.css" rel="stylesheet"></link>
-<link href="https://viglet.ai/ui/favicon.ico" rel="shortcut icon"
-	type="image/x-icon"></link>
+<link href="../../css/viglet.css" rel="stylesheet"></link>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"></link>
 <base href="/">
+<style>
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-    ng-cloak
+	{
+	display: none !important;
+}
+</style>
 </head>
-<body data-target=".navbar-default" ng-controller="TurSNMainCtrl">
+<body data-target=".navbar-default" ng-controller="TurSNMainCtrl"
+	ng-cloak>
 
 	<div id="wrap" style="margin-bottom: 15px;">
 		<nav class="navbar navbar-default navbar-fixed-top row  row-centered"
@@ -75,8 +80,7 @@
 											</div>
 											<div class="panel-body list-group" style="padding: 2px;">
 												<a ng-repeat="facetToRemove in facetsToRemove['facets']"
-													ng-click="turRedirect(facetToRemove['link']);"
-													href 
+													ng-click="turRedirect(facetToRemove['link']);" href
 													class="list-group-item">{{facetToRemove.label}} ({{
 													'REMOVE' | translate }}) </a>
 											</div>
@@ -94,8 +98,7 @@
 											</div>
 											<div class="panel-body list-group" style="padding: 2px">
 												<a ng-repeat="facetItem in facet['facets']"
-													ng-click="turRedirect(facetItem['link']);"
-													href
+													ng-click="turRedirect(facetItem['link']);" href
 													class="list-group-item">{{facetItem.label}}
 													({{facetItem['count']}}) </a>
 											</div>
@@ -105,28 +108,37 @@
 
 								<div class="col-lg-9 col-md-9 col-sm-8 col-xs-12 col-centered"
 									style="vertical-align: top;">
-									<div class="row" >
+									<div class="row">
 										<div class="col-lg-12"
 											style="padding: 0px; padding-left: 20px">
 
 											<div class="panel panel-default">
 												<div class="panel-heading">
-													<div class="row" style="margin:0px">
-														<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6" style="padding:0px;padding-top:5px">
+													<div class="row" style="margin: 0px">
+														<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6"
+															style="padding: 0px; padding-top: 5px">
 															{{ 'SHOWING' | translate }} {{pageStart}} - {{pageEnd}}
 															{{ 'OF' | translate }} <strong>{{pageCount}}</strong> {{
 															'RESULTS' | translate }}
 														</div>
-														<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6" style="padding:0px">
-															<div class="row" style="margin:0px">
-																<div class="col-lg-4 col-md-5 hidden-sm hidden-xs" style="padding:0px;text-align:right;padding-right:10px;padding-top:5px">
+														<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6"
+															style="padding: 0px">
+															<div class="row" style="margin: 0px">
+																<div class="col-lg-4 col-md-5 hidden-sm hidden-xs"
+																	style="padding: 0px; text-align: right; padding-right: 10px; padding-top: 5px">
 																	{{ 'ORDER_BY' | translate }}:</div>
-																<div class="col-lg-8 col-md-7 col-sm-12 col-xs-10 col-lg-offset-0 col-md-offset-0 col-sm-offset-0 col-xs-offset-2" style="padding:0px">
+																<div
+																	class="col-lg-8 col-md-7 col-sm-12 col-xs-10 col-lg-offset-0 col-md-offset-0 col-sm-offset-0 col-xs-offset-2"
+																	style="padding: 0px">
 																	<div class="form-group">
-																		<select class="form-control" ng-model="turSort" ng-change="turChangeSort(turSort)" >
-																			<option value="relevance">{{ 'RELEVANCE' | translate }}</option>
-																			<option value="newest">{{ 'NEWEST' | translate }}</option>
-																			<option value="oldest">{{ 'OLDEST' | translate }}</option>
+																		<select class="form-control" ng-model="turSort"
+																			ng-change="turChangeSort(turSort)">
+																			<option value="relevance">{{ 'RELEVANCE' |
+																				translate }}</option>
+																			<option value="newest">{{ 'NEWEST' |
+																				translate }}</option>
+																			<option value="oldest">{{ 'OLDEST' |
+																				translate }}</option>
 																		</select>
 																	</div>
 																</div>
@@ -140,28 +152,29 @@
 														<div>
 															<h4>
 																<a style="color: #FF874B; font-weight: bolder;"
-																	href="{{document.fields.url}}"
-																	ng-bind-html="document.fields.title"></a>
+																	href="{{document.fields[defaultUrlField]}}"
+																	ng-bind-html="document.fields[defaultTitleField]"></a>
 															</h4>
 														</div>
-														<div>{{document.fields.publication_date |
+														<div>{{document.fields[defaultDateField] |
 															amParse:'YYYY-MM-DDTHH:mm:ssZ' | amDateFormat:'DD MMMM
 															YYYY'}}</div>
 														<div style="margin-top: 10px">
 															<div style="display: table-row">
-																<img ng-if="document.fields.image != null"
-																	src="{{document.fields.image}}"
+																<img ng-if="document.fields[defaultImageField] != null"
+																	src="{{document.fields[defaultImageField]}}"
 																	style="height: 100px; margin-right: 10px" align="left"></img>
-																<div ng-bind-html="document.fields.text"></div>
+																<div
+																	ng-bind-html="document.fields[defaultDescriptionField]"></div>
 															</div>
 															<div ng-if="document['metadata'].length > 0"
 																style="margin-top: 10px">
-																Assuntos encontrados:
+																{{'SUBJECTS_FOUND' | translate}}:
 																<div ng-repeat="entity in document['metadata']"
 																	style="display: inline;">
 																	<a style="color: #FF874B"
-																		ng-click="turRedirect(entity['href']);"
-																		href >{{entity['text']}}</a>
+																		ng-click="turRedirect(entity['href']);" href
+																		ng-bind-html="entity['text']"></a>
 
 																	<div ng-if="!$last" style="display: inline;">,</div>
 																</div>
@@ -174,11 +187,10 @@
 									</div>
 									<div style="text-align: center;">
 										<div ng-repeat="page in pages" style="display: inline;">
-											<a ng-if="page.href" ng-click="turRedirect(page.href);"
-												href  _target='_self'
-												style='font-size: 20px; color: #FF874B'>{{ page.text |
-												translate}}</a> <span ng-if="!page.href" style='font-size: 20px'>{{page.text
-												| translate }}</span>
+											<a ng-if="page.href" ng-click="turRedirect(page.href);" href
+												_target='_self' style='font-size: 20px; color: #FF874B'>{{
+												page.text | translate}}</a> <span ng-if="!page.href"
+												style='font-size: 20px'>{{page.text | translate }}</span>
 											<div ng-if="!$last" style="display: inline;">|</div>
 										</div>
 									</div>
@@ -200,16 +212,14 @@
 		src="../../webjars/angular-ui-router/1.0.14/release/angular-ui-router.min.js"></script>
 	<script
 		src="../../webjars/angular-translate/2.17.0/angular-translate.min.js"></script>
-	<script
-		src="../../webjars/angular-resource/angular-resource.min.js"></script>
+	<script src="../../webjars/angular-resource/angular-resource.min.js"></script>
 	<script
 		src="../../webjars/angular-animate/1.7.3/angular-animate.min.js"></script>
 	<script
 		src="../../webjars/angular-cookies/1.7.3/angular-cookies.min.js"></script>
 	<script
 		src="../../webjars/angular-sanitize/1.7.3/angular-sanitize.min.js"></script>
-	<script
-		src="../../webjars/angular-moment/1.2.0/angular-moment.min.js"></script>
+	<script src="../../webjars/angular-moment/1.2.0/angular-moment.min.js"></script>
 	<script
 		src="../../webjars/angular-bootstrap/2.5.0/ui-bootstrap-tpls.min.js"></script>
 	<script src="../../webjars/bootstrap/3.3.7-1/js/bootstrap.min.js"></script>

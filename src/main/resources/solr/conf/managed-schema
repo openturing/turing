@@ -250,7 +250,7 @@
                 <filter class="solr.StemmerOverrideFilterFactory" dictionary="stem_plural_singular.txt" />
                 <filter class="solr.PortugueseMinimalStemFilterFactory" />
                 <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true" />
-                <filter class="solr.StopFilterFactory" ignoreCase="true" words="lang/stopwords_pt.txt" />
+                <filter class="solr.StopFilterFactory" format="snowball" words="lang/stopwords_pt.txt" ignoreCase="true" />
                 <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt" />
                 <filter class="solr.RemoveDuplicatesTokenFilterFactory" />
                 <filter class="solr.PatternReplaceFilterFactory" pattern="\p{Punct}" replacement="" replace="all" /> </analyzer>
@@ -448,7 +448,7 @@
         <field name="_version_" type="plong" indexed="false" stored="false" />
         <field name="abstract" type="text_general" multiValued="false" indexed="true" stored="true" />
         <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true" />
-        <field name="image" type="text_general" multiValued="false" indexed="true" stored="true" />
+        <field name="image" type="string" multiValued="false" indexed="true" stored="true" />
         <field name="publication_date" type="pdate" multiValued="false" indexed="true" stored="true" />
         <field name="text" type="text_general" multiValued="false" indexed="true" stored="true" />
         <field name="title" type="text_general" multiValued="false" indexed="true" stored="true" />
@@ -459,8 +459,8 @@
         <field name="turing_entity_PERCENTAGE" type="string" multiValued="true" indexed="true" stored="true" />
         <field name="turing_entity_PN" type="string" multiValued="true" indexed="true" stored="true" />
         <field name="turing_entity_TIME" type="string" multiValued="true" indexed="true" stored="true" />
-        <field name="type" type="text_general" multiValued="false" indexed="true" stored="true" />
-        <field name="url" type="text_general" multiValued="false" indexed="true" stored="true" />
+        <field name="type" type="string" multiValued="false" indexed="true" stored="true" />
+        <field name="url" type="string" multiValued="false" indexed="true" stored="true" />
         <dynamicField name="*_txt_en_split_tight" type="text_en_splitting_tight" indexed="true" stored="true" />
         <dynamicField name="*_descendent_path" type="descendent_path" indexed="true" stored="true" />
         <dynamicField name="*_ancestor_path" type="ancestor_path" indexed="true" stored="true" />

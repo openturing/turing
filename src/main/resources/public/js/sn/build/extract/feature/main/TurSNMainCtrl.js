@@ -26,6 +26,14 @@ turingSNApp
 							$scope.pageCount = 0;
 							$scope.pageStart = 0;
 							$scope.pageEnd = 0;
+							
+							$scope.defaultTitleField = "title";
+							$scope.defaultDescriptionField = "abstract";
+							$scope.defaultTextField = "text";
+							$scope.defaultImageField = "image";
+							$scope.defaultDateField = "published_date";
+							$scope.defaultUrlField = "url";
+							
 							var turPath = $location.path().trim();
 							if (turPath.endsWith("/")) {
 								turPath = turPath.substring(0,
@@ -76,6 +84,14 @@ turingSNApp
 													$scope.pages = response.data["pagination"];
 													$scope.facets = response.data["widget"]["facet"];
 													$scope.facetsToRemove = response.data["widget"]["facetToRemove"];
+													
+													$scope.defaultTitleField =response.data["queryContext"]["defaultFields"]["title"];
+													$scope.defaultDescriptionField = response.data["queryContext"]["defaultFields"]["description"];
+													$scope.defaultTextField = response.data["queryContext"]["defaultFields"]["text"];
+													$scope.defaultImageField = response.data["queryContext"]["defaultFields"]["image"];
+													$scope.defaultDateField = response.data["queryContext"]["defaultFields"]["date"];
+													$scope.defaultUrlField = response.data["queryContext"]["defaultFields"]["url"];
+													
 													// $scope.turSort =
 													// response.data["queryContext"]["query"]["sort"];
 												},
