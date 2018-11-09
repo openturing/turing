@@ -45,7 +45,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendor = new TurNLPVendor();
 			turNLPVendor.setId("SPACY");
 			turNLPVendor.setTitle("SpaCy");
-			turNLPVendor.setPlugin(null);
+			turNLPVendor.setPlugin("com.viglet.turing.plugins.spacy.TurSpaCyConnector");
 			turNLPVendor.setDescription("SpaCy");
 			turNLPVendor.setWebsite("https://spacy.io");
 			turNLPVendorRepository.save(turNLPVendor);

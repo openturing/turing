@@ -10,6 +10,8 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,6 +41,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.plugins.spacy.TurSpaCyConnector;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.result.TurSEResult;
@@ -49,7 +52,7 @@ import com.viglet.turing.sn.TurSNFieldType;
 @RequestMapping("/api/sn/{siteName}/search")
 @Api(tags = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
-
+	static final Logger logger = LogManager.getLogger(TurSNSiteSearchAPI.class.getName());
 	@Autowired
 	TurSolr turSolr;
 	@Autowired
@@ -237,279 +240,291 @@ public class TurSNSiteSearchAPI {
 		try {
 
 			turSEResults = turSolr.retrieveSolr(q, filterQueryModified, currentPage.intValue(), sort, rows.intValue());
-			List<TurSEResult> seResults = turSEResults.getResults();
-			// System.out.println("getResults size:" + turSEResults.getResults().size());
-			List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean = new ArrayList<TurSNSiteSearchDocumentBean>();
-			for (TurSEResult result : seResults) {
-				TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean = new TurSNSiteSearchDocumentBean();
+			if (turSEResults != null) {
+				List<TurSEResult> seResults = turSEResults.getResults();
+				// System.out.println("getResults size:" + turSEResults.getResults().size());
+				List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean = new ArrayList<TurSNSiteSearchDocumentBean>();
+				for (TurSEResult result : seResults) {
+					TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean = new TurSNSiteSearchDocumentBean();
 
-				Map<String, Object> turSEResultAttr = result.getFields();
-				Set<String> attribs = turSEResultAttr.keySet();
+					Map<String, Object> turSEResultAttr = result.getFields();
+					Set<String> attribs = turSEResultAttr.keySet();
 
-				turSNSiteSearchDocumentBean.setElevate(false);
-				List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans = new ArrayList<TurSNSiteSearchDocumentMetadataBean>();
+					turSNSiteSearchDocumentBean.setElevate(false);
+					List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans = new ArrayList<TurSNSiteSearchDocumentMetadataBean>();
 
-				for (Object facetObject : facetMap.keySet().toArray()) {
+					for (Object facetObject : facetMap.keySet().toArray()) {
 
-					String facet = (String) facetObject;
-					if (turSEResultAttr.containsKey(facet)) {
+						String facet = (String) facetObject;
+						if (turSEResultAttr.containsKey(facet)) {
 
-						if (turSEResultAttr.get(facet) instanceof ArrayList) {
-							for (Object facetValueObject : (ArrayList) turSEResultAttr.get(facet)) {
-								String facetValue = turSolrField.convertFieldToString(facetValueObject);
+							if (turSEResultAttr.get(facet) instanceof ArrayList) {
+								for (Object facetValueObject : (ArrayList) turSEResultAttr.get(facet)) {
+									String facetValue = turSolrField.convertFieldToString(facetValueObject);
+									TurSNSiteSearchDocumentMetadataBean turSNSiteSearchDocumentMetadataBean = new TurSNSiteSearchDocumentMetadataBean();
+									turSNSiteSearchDocumentMetadataBean
+											.setHref(this.addFilterQuery(request, facet + ":" + facetValue));
+									turSNSiteSearchDocumentMetadataBean.setText(facetValue);
+									turSNSiteSearchDocumentMetadataBeans.add(turSNSiteSearchDocumentMetadataBean);
+								}
+							} else {
+								String facetValue = turSolrField.convertFieldToString(turSEResultAttr.get(facet));
 								TurSNSiteSearchDocumentMetadataBean turSNSiteSearchDocumentMetadataBean = new TurSNSiteSearchDocumentMetadataBean();
 								turSNSiteSearchDocumentMetadataBean
 										.setHref(this.addFilterQuery(request, facet + ":" + facetValue));
 								turSNSiteSearchDocumentMetadataBean.setText(facetValue);
 								turSNSiteSearchDocumentMetadataBeans.add(turSNSiteSearchDocumentMetadataBean);
 							}
-						} else {
-							String facetValue = turSolrField.convertFieldToString(turSEResultAttr.get(facet));
-							TurSNSiteSearchDocumentMetadataBean turSNSiteSearchDocumentMetadataBean = new TurSNSiteSearchDocumentMetadataBean();
-							turSNSiteSearchDocumentMetadataBean
-									.setHref(this.addFilterQuery(request, facet + ":" + facetValue));
-							turSNSiteSearchDocumentMetadataBean.setText(facetValue);
-							turSNSiteSearchDocumentMetadataBeans.add(turSNSiteSearchDocumentMetadataBean);
+
 						}
 
 					}
+					turSNSiteSearchDocumentBean.setMetadata(turSNSiteSearchDocumentMetadataBeans);
 
-				}
-				turSNSiteSearchDocumentBean.setMetadata(turSNSiteSearchDocumentMetadataBeans);
+					if (turSEResultAttr.containsKey("url")) {
+						turSNSiteSearchDocumentBean.setSource((String) turSEResultAttr.get("url"));
+					}
 
-				if (turSEResultAttr.containsKey("url")) {
-					turSNSiteSearchDocumentBean.setSource((String) turSEResultAttr.get("url"));
-				}
+					Map<String, Object> fields = new HashMap<String, Object>();
+					for (String attribute : attribs) {
 
-				Map<String, Object> fields = new HashMap<String, Object>();
-				for (String attribute : attribs) {
-
-					// System.out.println("attribs: " + attribute);
-					if (!attribute.startsWith("turing_entity")) {
-						String nodeName = null;
-						if (fieldExtMap.containsKey(attribute)) {
-							TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
-							nodeName = turSNSiteFieldExt.getName();
-						} else {
-							nodeName = attribute;
-						}
-						if (nodeName != null && fields.containsKey(nodeName)) {
-							if (!(fields.get(nodeName) instanceof List)) {
-								List<Object> attributeValues = new ArrayList<Object>();
-								attributeValues.add(fields.get(nodeName));
-								attributeValues.add(turSEResultAttr.get(attribute));
-								fields.put(nodeName, attributeValues);
+						// System.out.println("attribs: " + attribute);
+						if (!attribute.startsWith("turing_entity")) {
+							String nodeName = null;
+							if (fieldExtMap.containsKey(attribute)) {
+								TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
+								nodeName = turSNSiteFieldExt.getName();
 							} else {
-								((List<Object>) fields.get(nodeName)).add(turSEResultAttr.get(attribute));
+								nodeName = attribute;
 							}
-						} else {
-							fields.put(nodeName, turSEResultAttr.get(attribute));
+							if (nodeName != null && fields.containsKey(nodeName)) {
+								if (!(fields.get(nodeName) instanceof List)) {
+									List<Object> attributeValues = new ArrayList<Object>();
+									attributeValues.add(fields.get(nodeName));
+									attributeValues.add(turSEResultAttr.get(attribute));
+									fields.put(nodeName, attributeValues);
+								} else {
+									((List<Object>) fields.get(nodeName)).add(turSEResultAttr.get(attribute));
+								}
+							} else {
+								fields.put(nodeName, turSEResultAttr.get(attribute));
 
+							}
 						}
+
 					}
+					turSNSiteSearchDocumentBean.setFields(fields);
+					turSNSiteSearchDocumentsBean.add(turSNSiteSearchDocumentBean);
 
 				}
-				turSNSiteSearchDocumentBean.setFields(fields);
-				turSNSiteSearchDocumentsBean.add(turSNSiteSearchDocumentBean);
-
+				turSNSiteSearchResultsBean.setDocument(turSNSiteSearchDocumentsBean);
+				turSNSiteSearchBean.setResults(turSNSiteSearchResultsBean);
+			} else {
+				if (logger.isDebugEnabled()) {
+					logger.debug("No Results");
+				}
 			}
-			turSNSiteSearchResultsBean.setDocument(turSNSiteSearchDocumentsBean);
-			turSNSiteSearchBean.setResults(turSNSiteSearchResultsBean);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		// BEGIN Pagination
-		List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans = new ArrayList<TurSNSiteSearchPaginationBean>();
+		if (turSEResults != null) {
+			// BEGIN Pagination
+			List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans = new ArrayList<TurSNSiteSearchPaginationBean>();
 
-		int firstPagination = 1;
-		int lastPagination = turSEResults.getPageCount();
+			int firstPagination = 1;
+			int lastPagination = turSEResults.getPageCount();
 
-		if (turSEResults.getCurrentPage() - 3 > 0) {
-			firstPagination = turSEResults.getCurrentPage() - 3;
-		} else if (turSEResults.getCurrentPage() - 3 <= 0) {
-			firstPagination = 1;
-		}
-		if (turSEResults.getCurrentPage() + 3 <= turSEResults.getPageCount()) {
-			lastPagination = turSEResults.getCurrentPage() + 3;
-		} else if (turSEResults.getCurrentPage() + 3 > turSEResults.getPageCount()) {
-			lastPagination = turSEResults.getPageCount();
-		}
-
-		if (turSEResults.getCurrentPage() > turSEResults.getPageCount()) {
-			lastPagination = turSEResults.getPageCount();
-			if (turSEResults.getPageCount() - 3 > 0) {
-				firstPagination = turSEResults.getPageCount() - 3;
-			} else if (turSEResults.getPageCount() - 3 <= 0) {
+			if (turSEResults.getCurrentPage() - 3 > 0) {
+				firstPagination = turSEResults.getCurrentPage() - 3;
+			} else if (turSEResults.getCurrentPage() - 3 <= 0) {
 				firstPagination = 1;
 			}
-		}
-		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-		if (turSEResults.getCurrentPage() > 1) {
-
-			turSNSiteSearchPaginationBean.setType("first");
-			turSNSiteSearchPaginationBean.setHref(this.addOrReplaceParameter(request, "p", Integer.toString(1)));
-			turSNSiteSearchPaginationBean.setText("FIRST");
-			turSNSiteSearchPaginationBean.setPage(1);
-			turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
-			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
-				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-				turSNSiteSearchPaginationBean.setType("previous");
-				turSNSiteSearchPaginationBean.setHref(
-						this.addOrReplaceParameter(request, "p", Integer.toString(turSEResults.getCurrentPage() - 1)));
-				turSNSiteSearchPaginationBean.setText("PREVIOUS");
-				turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() - 1);
-				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+			if (turSEResults.getCurrentPage() + 3 <= turSEResults.getPageCount()) {
+				lastPagination = turSEResults.getCurrentPage() + 3;
+			} else if (turSEResults.getCurrentPage() + 3 > turSEResults.getPageCount()) {
+				lastPagination = turSEResults.getPageCount();
 			}
 
-		}
-
-		for (int page = firstPagination; page <= lastPagination; page++) {
-
-			if (page == turSEResults.getCurrentPage()) {
-				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-				turSNSiteSearchPaginationBean.setType("current");
-				turSNSiteSearchPaginationBean.setText(Integer.toString(page));
-				turSNSiteSearchPaginationBean.setPage(page);
-				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
-
-			} else {
-				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-				turSNSiteSearchPaginationBean.setHref(this.addOrReplaceParameter(request, "p", Integer.toString(page)));
-				turSNSiteSearchPaginationBean.setText(Integer.toString(page));
-				turSNSiteSearchPaginationBean.setPage(page);
-				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
-
-			}
-		}
-		if (turSEResults.getCurrentPage() != turSEResults.getPageCount() && turSEResults.getPageCount() > 1) {
-			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
-				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-				turSNSiteSearchPaginationBean.setType("next");
-				turSNSiteSearchPaginationBean.setHref(
-						this.addOrReplaceParameter(request, "p", Integer.toString(turSEResults.getCurrentPage() + 1)));
-				turSNSiteSearchPaginationBean.setText("NEXT");
-				turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() + 1);
-				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
-
-			}
-
-			turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-			turSNSiteSearchPaginationBean.setType("last");
-			turSNSiteSearchPaginationBean
-					.setHref(this.addOrReplaceParameter(request, "p", Integer.toString(turSEResults.getPageCount())));
-			turSNSiteSearchPaginationBean.setText("LAST");
-			turSNSiteSearchPaginationBean.setPage(turSEResults.getPageCount());
-			turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
-
-		}
-
-		// END Pagination
-		turSNSiteSearchBean.setPagination(turSNSiteSearchPaginationBeans);
-
-		TurSNSiteSearchQueryContextQueryBean turSNSiteSearchQueryContextQueryBean = new TurSNSiteSearchQueryContextQueryBean();
-
-		turSNSiteSearchQueryContextQueryBean.setQueryString(turSEResults.getQueryString());
-		turSNSiteSearchQueryContextQueryBean.setSort(turSEResults.getSort());
-		
-
-		TurSNSiteSearchWidgetBean turSNSiteSearchWidgetBean = new TurSNSiteSearchWidgetBean();
-		// BEGIN Facet
-		if (turSNSite.getFacet() == 1 && turSNSiteFacetFieldExts != null && turSNSiteFacetFieldExts.size() > 0) {
-
-			List<TurSNSiteSearchFacetBean> turSNSiteSearchFacetBeans = new ArrayList<TurSNSiteSearchFacetBean>();
-			for (TurSEFacetResult facet : turSEResults.getFacetResults()) {
-
-				if (facetMap.containsKey(facet.getFacet()) && !hiddenFilterQuery.contains(facet.getFacet())
-						&& facet.getTurSEFacetResultAttr().size() > 0) {
-					TurSNSiteFieldExt turSNSiteFieldExt = facetMap.get(facet.getFacet());
-
-					TurSNSiteSearchFacetBean turSNSiteSearchFacetBean = new TurSNSiteSearchFacetBean();
-					List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetItemBeans = new ArrayList<TurSNSiteSearchFacetItemBean>();
-					for (Object facetItemObject : facet.getTurSEFacetResultAttr().values().toArray()) {
-
-						TurSEFacetResultAttr facetItem = (TurSEFacetResultAttr) facetItemObject;
-
-						TurSNSiteSearchFacetItemBean turSNSiteSearchFacetItemBean = new TurSNSiteSearchFacetItemBean();
-						turSNSiteSearchFacetItemBean.setCount(facetItem.getCount());
-						turSNSiteSearchFacetItemBean.setLabel(facetItem.getAttribute());
-						turSNSiteSearchFacetItemBean.setLink(
-								this.addFilterQuery(request, facet.getFacet() + ":" + facetItem.getAttribute()));
-						turSNSiteSearchFacetItemBeans.add(turSNSiteSearchFacetItemBean);
-					}
-
-					TurSNSiteSearchFacetLabelBean turSNSiteSearchFacetLabelBean = new TurSNSiteSearchFacetLabelBean();
-					turSNSiteSearchFacetLabelBean.setLang("en");
-					turSNSiteSearchFacetLabelBean.setText(turSNSiteFieldExt.getFacetName());
-					turSNSiteSearchFacetBean.setLabel(turSNSiteSearchFacetLabelBean);
-					turSNSiteSearchFacetBean.setFacets(turSNSiteSearchFacetItemBeans);
-
-					turSNSiteSearchFacetBeans.add(turSNSiteSearchFacetBean);
+			if (turSEResults.getCurrentPage() > turSEResults.getPageCount()) {
+				lastPagination = turSEResults.getPageCount();
+				if (turSEResults.getPageCount() - 3 > 0) {
+					firstPagination = turSEResults.getPageCount() - 3;
+				} else if (turSEResults.getPageCount() - 3 <= 0) {
+					firstPagination = 1;
 				}
 			}
+			TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+			if (turSEResults.getCurrentPage() > 1) {
 
-			turSNSiteSearchWidgetBean.setFacet(turSNSiteSearchFacetBeans);
+				turSNSiteSearchPaginationBean.setType("first");
+				turSNSiteSearchPaginationBean.setHref(this.addOrReplaceParameter(request, "p", Integer.toString(1)));
+				turSNSiteSearchPaginationBean.setText("FIRST");
+				turSNSiteSearchPaginationBean.setPage(1);
+				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+				if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
+					turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+					turSNSiteSearchPaginationBean.setType("previous");
+					turSNSiteSearchPaginationBean.setHref(this.addOrReplaceParameter(request, "p",
+							Integer.toString(turSEResults.getCurrentPage() - 1)));
+					turSNSiteSearchPaginationBean.setText("PREVIOUS");
+					turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() - 1);
+					turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+				}
 
-			// BEGIN Facet Remove
-			if (fq != null && fq.size() > 0) {
+			}
 
-				TurSNSiteSearchFacetBean turSNSiteSearchFacetToRemoveBean = new TurSNSiteSearchFacetBean();
-				List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<TurSNSiteSearchFacetItemBean>();
-				for (String facetToRemove : fq) {
-					String[] facetToRemoveParts = facetToRemove.split(":");
-					if (facetToRemoveParts.length == 2) {
-						String facetToRemoveValue = facetToRemoveParts[1].replaceAll("\"", "");
+			for (int page = firstPagination; page <= lastPagination; page++) {
 
-						TurSNSiteSearchFacetItemBean turSNSiteSearchFacetToRemoveItemBean = new TurSNSiteSearchFacetItemBean();
-						turSNSiteSearchFacetToRemoveItemBean.setLabel(facetToRemoveValue);
-						turSNSiteSearchFacetToRemoveItemBean.setLink(this.removeFilterQuery(request, facetToRemove));
-						turSNSiteSearchFacetToRemoveItemBeans.add(turSNSiteSearchFacetToRemoveItemBean);
+				if (page == turSEResults.getCurrentPage()) {
+					turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+					turSNSiteSearchPaginationBean.setType("current");
+					turSNSiteSearchPaginationBean.setText(Integer.toString(page));
+					turSNSiteSearchPaginationBean.setPage(page);
+					turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+
+				} else {
+					turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+					turSNSiteSearchPaginationBean
+							.setHref(this.addOrReplaceParameter(request, "p", Integer.toString(page)));
+					turSNSiteSearchPaginationBean.setText(Integer.toString(page));
+					turSNSiteSearchPaginationBean.setPage(page);
+					turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+
+				}
+			}
+			if (turSEResults.getCurrentPage() != turSEResults.getPageCount() && turSEResults.getPageCount() > 1) {
+				if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
+					turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+					turSNSiteSearchPaginationBean.setType("next");
+					turSNSiteSearchPaginationBean.setHref(this.addOrReplaceParameter(request, "p",
+							Integer.toString(turSEResults.getCurrentPage() + 1)));
+					turSNSiteSearchPaginationBean.setText("NEXT");
+					turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() + 1);
+					turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+
+				}
+
+				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+				turSNSiteSearchPaginationBean.setType("last");
+				turSNSiteSearchPaginationBean.setHref(
+						this.addOrReplaceParameter(request, "p", Integer.toString(turSEResults.getPageCount())));
+				turSNSiteSearchPaginationBean.setText("LAST");
+				turSNSiteSearchPaginationBean.setPage(turSEResults.getPageCount());
+				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+
+			}
+
+			// END Pagination
+			turSNSiteSearchBean.setPagination(turSNSiteSearchPaginationBeans);
+
+			TurSNSiteSearchQueryContextQueryBean turSNSiteSearchQueryContextQueryBean = new TurSNSiteSearchQueryContextQueryBean();
+
+			turSNSiteSearchQueryContextQueryBean.setQueryString(turSEResults.getQueryString());
+			turSNSiteSearchQueryContextQueryBean.setSort(turSEResults.getSort());
+
+			TurSNSiteSearchWidgetBean turSNSiteSearchWidgetBean = new TurSNSiteSearchWidgetBean();
+			// BEGIN Facet
+			if (turSNSite.getFacet() == 1 && turSNSiteFacetFieldExts != null && turSNSiteFacetFieldExts.size() > 0) {
+
+				List<TurSNSiteSearchFacetBean> turSNSiteSearchFacetBeans = new ArrayList<TurSNSiteSearchFacetBean>();
+				for (TurSEFacetResult facet : turSEResults.getFacetResults()) {
+
+					if (facetMap.containsKey(facet.getFacet()) && !hiddenFilterQuery.contains(facet.getFacet())
+							&& facet.getTurSEFacetResultAttr().size() > 0) {
+						TurSNSiteFieldExt turSNSiteFieldExt = facetMap.get(facet.getFacet());
+
+						TurSNSiteSearchFacetBean turSNSiteSearchFacetBean = new TurSNSiteSearchFacetBean();
+						List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetItemBeans = new ArrayList<TurSNSiteSearchFacetItemBean>();
+						for (Object facetItemObject : facet.getTurSEFacetResultAttr().values().toArray()) {
+
+							TurSEFacetResultAttr facetItem = (TurSEFacetResultAttr) facetItemObject;
+
+							TurSNSiteSearchFacetItemBean turSNSiteSearchFacetItemBean = new TurSNSiteSearchFacetItemBean();
+							turSNSiteSearchFacetItemBean.setCount(facetItem.getCount());
+							turSNSiteSearchFacetItemBean.setLabel(facetItem.getAttribute());
+							turSNSiteSearchFacetItemBean.setLink(
+									this.addFilterQuery(request, facet.getFacet() + ":" + facetItem.getAttribute()));
+							turSNSiteSearchFacetItemBeans.add(turSNSiteSearchFacetItemBean);
+						}
+
+						TurSNSiteSearchFacetLabelBean turSNSiteSearchFacetLabelBean = new TurSNSiteSearchFacetLabelBean();
+						turSNSiteSearchFacetLabelBean.setLang("en");
+						turSNSiteSearchFacetLabelBean.setText(turSNSiteFieldExt.getFacetName());
+						turSNSiteSearchFacetBean.setLabel(turSNSiteSearchFacetLabelBean);
+						turSNSiteSearchFacetBean.setFacets(turSNSiteSearchFacetItemBeans);
+
+						turSNSiteSearchFacetBeans.add(turSNSiteSearchFacetBean);
 					}
 				}
-				TurSNSiteSearchFacetLabelBean turSNSiteSearchFacetToRemoveLabelBean = new TurSNSiteSearchFacetLabelBean();
-				turSNSiteSearchFacetToRemoveLabelBean.setLang("en");
-				turSNSiteSearchFacetToRemoveLabelBean.setText("Facets To Remove");
-				turSNSiteSearchFacetToRemoveBean.setLabel(turSNSiteSearchFacetToRemoveLabelBean);
-				turSNSiteSearchFacetToRemoveBean.setFacets(turSNSiteSearchFacetToRemoveItemBeans);
-				turSNSiteSearchWidgetBean.setFacetToRemove(turSNSiteSearchFacetToRemoveBean);
+
+				turSNSiteSearchWidgetBean.setFacet(turSNSiteSearchFacetBeans);
+
+				// BEGIN Facet Remove
+				if (fq != null && fq.size() > 0) {
+
+					TurSNSiteSearchFacetBean turSNSiteSearchFacetToRemoveBean = new TurSNSiteSearchFacetBean();
+					List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<TurSNSiteSearchFacetItemBean>();
+					for (String facetToRemove : fq) {
+						String[] facetToRemoveParts = facetToRemove.split(":");
+						if (facetToRemoveParts.length == 2) {
+							String facetToRemoveValue = facetToRemoveParts[1].replaceAll("\"", "");
+
+							TurSNSiteSearchFacetItemBean turSNSiteSearchFacetToRemoveItemBean = new TurSNSiteSearchFacetItemBean();
+							turSNSiteSearchFacetToRemoveItemBean.setLabel(facetToRemoveValue);
+							turSNSiteSearchFacetToRemoveItemBean
+									.setLink(this.removeFilterQuery(request, facetToRemove));
+							turSNSiteSearchFacetToRemoveItemBeans.add(turSNSiteSearchFacetToRemoveItemBean);
+						}
+					}
+					TurSNSiteSearchFacetLabelBean turSNSiteSearchFacetToRemoveLabelBean = new TurSNSiteSearchFacetLabelBean();
+					turSNSiteSearchFacetToRemoveLabelBean.setLang("en");
+					turSNSiteSearchFacetToRemoveLabelBean.setText("Facets To Remove");
+					turSNSiteSearchFacetToRemoveBean.setLabel(turSNSiteSearchFacetToRemoveLabelBean);
+					turSNSiteSearchFacetToRemoveBean.setFacets(turSNSiteSearchFacetToRemoveItemBeans);
+					turSNSiteSearchWidgetBean.setFacetToRemove(turSNSiteSearchFacetToRemoveBean);
+				}
+				// END Facet Remove
 			}
-			// END Facet Remove
+
+			// END Facet
+
+			// BEGIN Similar
+			if (turSNSite.getMlt() == 1 && turSEResults.getSimilarResults() != null
+					&& turSEResults.getSimilarResults().size() > 0) {
+				turSNSiteSearchWidgetBean.setSimilar(turSEResults.getSimilarResults());
+			}
+			// END Similar
+
+			TurSNSiteSearchDefaultFieldsBean turSNSiteSearchDefaultFieldsBean = new TurSNSiteSearchDefaultFieldsBean();
+			turSNSiteSearchDefaultFieldsBean.setDate(turSNSite.getDefaultDateField());
+			turSNSiteSearchDefaultFieldsBean.setDescription(turSNSite.getDefaultDescriptionField());
+			turSNSiteSearchDefaultFieldsBean.setImage(turSNSite.getDefaultImageField());
+			turSNSiteSearchDefaultFieldsBean.setText(turSNSite.getDefaultTextField());
+			turSNSiteSearchDefaultFieldsBean.setTitle(turSNSite.getDefaultTitleField());
+			turSNSiteSearchDefaultFieldsBean.setUrl(turSNSite.getDefaultURLField());
+
+			turSNSiteSearchBean.setWidget(turSNSiteSearchWidgetBean);
+			TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContextBean = new TurSNSiteSearchQueryContextBean();
+			turSNSiteSearchQueryContextBean.setQuery(turSNSiteSearchQueryContextQueryBean);
+			turSNSiteSearchQueryContextBean.setDefaultFields(turSNSiteSearchDefaultFieldsBean);
+
+			turSNSiteSearchQueryContextBean.setPageEnd((int) turSEResults.getStart() + turSEResults.getLimit());
+			turSNSiteSearchQueryContextBean.setPageStart((int) turSEResults.getStart() + 1);
+			turSNSiteSearchQueryContextBean.setPageCount(turSEResults.getPageCount());
+			turSNSiteSearchQueryContextBean.setPage(turSEResults.getCurrentPage());
+			turSNSiteSearchQueryContextBean.setCount((int) turSEResults.getNumFound());
+			turSNSiteSearchQueryContextBean.setLimit(turSEResults.getLimit());
+			turSNSiteSearchQueryContextBean.setOffset(0); // Corrigir
+			turSNSiteSearchQueryContextBean.setResponseTime(turSEResults.getElapsedTime());
+			turSNSiteSearchQueryContextBean.setIndex(turSNSite.getName());
+
+			turSNSiteSearchBean.setQueryContext(turSNSiteSearchQueryContextBean);
+		} else {
+			if (logger.isDebugEnabled()) {
+				logger.debug("No Results");
+			}
 		}
-
-		// END Facet
-
-		// BEGIN Similar
-		if (turSNSite.getMlt() == 1 && turSEResults.getSimilarResults() != null
-				&& turSEResults.getSimilarResults().size() > 0) {
-			turSNSiteSearchWidgetBean.setSimilar(turSEResults.getSimilarResults());
-		}
-		// END Similar
-		
-		TurSNSiteSearchDefaultFieldsBean turSNSiteSearchDefaultFieldsBean = new TurSNSiteSearchDefaultFieldsBean();
-		turSNSiteSearchDefaultFieldsBean.setDate(turSNSite.getDefaultDateField());
-		turSNSiteSearchDefaultFieldsBean.setDescription(turSNSite.getDefaultDescriptionField());
-		turSNSiteSearchDefaultFieldsBean.setImage(turSNSite.getDefaultImageField());
-		turSNSiteSearchDefaultFieldsBean.setText(turSNSite.getDefaultTextField());
-		turSNSiteSearchDefaultFieldsBean.setTitle(turSNSite.getDefaultTitleField());
-		turSNSiteSearchDefaultFieldsBean.setUrl(turSNSite.getDefaultURLField());
-		
-		turSNSiteSearchBean.setWidget(turSNSiteSearchWidgetBean);
-		TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContextBean = new TurSNSiteSearchQueryContextBean();
-		turSNSiteSearchQueryContextBean.setQuery(turSNSiteSearchQueryContextQueryBean);
-		turSNSiteSearchQueryContextBean.setDefaultFields(turSNSiteSearchDefaultFieldsBean);
-		
-		turSNSiteSearchQueryContextBean.setPageEnd((int) turSEResults.getStart() + turSEResults.getLimit());
-		turSNSiteSearchQueryContextBean.setPageStart((int) turSEResults.getStart() + 1);
-		turSNSiteSearchQueryContextBean.setPageCount(turSEResults.getPageCount());
-		turSNSiteSearchQueryContextBean.setPage(turSEResults.getCurrentPage());
-		turSNSiteSearchQueryContextBean.setCount((int) turSEResults.getNumFound());
-		turSNSiteSearchQueryContextBean.setLimit(turSEResults.getLimit());
-		turSNSiteSearchQueryContextBean.setOffset(0); // Corrigir
-		turSNSiteSearchQueryContextBean.setResponseTime(turSEResults.getElapsedTime());
-		turSNSiteSearchQueryContextBean.setIndex(turSNSite.getName());
-
-		turSNSiteSearchBean.setQueryContext(turSNSiteSearchQueryContextBean);
-
 		return turSNSiteSearchBean;
 	}
 }

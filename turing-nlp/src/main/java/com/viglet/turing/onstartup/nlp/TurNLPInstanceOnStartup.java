@@ -73,6 +73,20 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 
 			}
+			
+			TurNLPVendor turNLPVendorSpaCy = turNLPVendorRepository.findById("SPACY").get();
+			if (turNLPVendorCoreNLP != null) {
+				TurNLPInstance turNLPInstance = new TurNLPInstance();
+				turNLPInstance.setTitle("SpaCy");
+				turNLPInstance.setDescription("SpaCy Production - English");
+				turNLPInstance.setTurNLPVendor(turNLPVendorSpaCy);
+				turNLPInstance.setHost("localhost");
+				turNLPInstance.setPort(8080);
+				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
+				turNLPInstance.setEnabled(1);
+				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+
+			}
 
 		}
 

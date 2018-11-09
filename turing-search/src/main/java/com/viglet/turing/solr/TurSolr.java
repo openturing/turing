@@ -211,7 +211,7 @@ public class TurSolr {
 		if (attributes != null) {
 
 			for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-				String key = entry.getKey();
+				String key = entry.getKey();				
 				Object attribute = entry.getValue();
 				if (attribute != null) {
 					if (attribute.getClass().getName().equals("java.lang.Integer")) {
@@ -219,7 +219,8 @@ public class TurSolr {
 						document.addField(key, intValue);
 					} else if (attribute.getClass().getName().equals("org.json.JSONArray")) {
 						JSONArray value = (JSONArray) attribute;
-						if (turSNSiteFieldMap.get(key) != null && turSNSiteFieldMap.get(key).getMultiValued() == 1) {
+						if (key.startsWith("turing_entity_") || (turSNSiteFieldMap.get(key) != null
+								&& turSNSiteFieldMap.get(key).getMultiValued() == 1)) {
 							if (value != null) {
 								for (int i = 0; i < value.length(); i++) {
 									document.addField(key, value.getString(i));
@@ -237,8 +238,8 @@ public class TurSolr {
 					} else if (attribute instanceof ArrayList) {
 						ArrayList values = (ArrayList) attribute;
 						if (values != null) {
-							if (turSNSiteFieldMap.get(key) != null
-									&& turSNSiteFieldMap.get(key).getMultiValued() == 1) {
+							if (key.startsWith("turing_entity_") || (turSNSiteFieldMap.get(key) != null
+									&& turSNSiteFieldMap.get(key).getMultiValued() == 1)) {
 								for (Object valueItem : values) {
 									document.addField(key, turSolrField.convertFieldToString(valueItem));
 								}
@@ -262,8 +263,8 @@ public class TurSolr {
 		try {
 			UpdateResponse response = solrServer.add(document);
 			if (addUntilCommitCounter >= ADD_UNTIL_COMMIT) {
-				addUntilCommitCounter = 0;			
-	//			solrServer.commit();
+				addUntilCommitCounter = 0;
+				// solrServer.commit();
 			} else {
 				addUntilCommitCounter++;
 			}

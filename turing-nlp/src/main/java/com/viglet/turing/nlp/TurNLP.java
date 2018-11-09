@@ -1,5 +1,6 @@
 package com.viglet.turing.nlp;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.ServletContext;
@@ -63,6 +64,9 @@ public class TurNLP {
 
 	public void startup(TurNLPInstance turNLPInstance, String text) {
 		this.init(turNLPInstance);
+		Map<String, Object> attributes = new HashMap<String, Object>();
+		attributes.put("text", text);
+		this.setAttributes(attributes);
 	}
 
 	public void startup(TurNLPInstance turNLPInstance, Map<String, Object> attributes) throws JSONException {
@@ -108,7 +112,9 @@ public class TurNLP {
 			e.printStackTrace();
 		}
 
-		logger.debug("Result retrieveNLP: " + this.getNlpAttributes().toString());
+		if (logger.isDebugEnabled() && this.getNlpAttributes() != null) {
+			logger.debug("Result retrieveNLP: " + this.getNlpAttributes().toString());
+		}
 
 		return this.getNlpAttributes();
 	}

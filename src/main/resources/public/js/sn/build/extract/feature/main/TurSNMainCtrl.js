@@ -14,14 +14,14 @@ turingSNApp
 						'vigLocale',
 						'$location',
 						'$anchorScroll',
+						'$sce',
 						function($scope, $http, $window, $state, $rootScope,
 								$translate, $location, turSNSearch, amMoment,
-								vigLocale, $location, $anchorScroll) {
+								vigLocale, $location, $anchorScroll, $sce) {
 
 							$scope.vigLanguage = vigLocale.getLocale()
 									.substring(0, 2);
-							$translate.use($scope.vigLanguage);
-
+							$translate.use($scope.vigLanguage);							
 							amMoment.changeLocale('en');
 							$scope.pageCount = 0;
 							$scope.pageStart = 0;
@@ -62,6 +62,7 @@ turingSNApp
 									$scope.turSort = "relevance";
 								}
 							}
+							 
 							$scope.init = function() {
 								$scope.updateParameters();
 								$scope.initParams($scope.turQuery,
