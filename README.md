@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/openturing/turing.svg?branch=master)](https://travis-ci.org/openturing/turing) [![codecov](https://codecov.io/gh/openturing/turing/branch/master/graph/badge.svg)](https://codecov.io/gh/openturing/turing) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=openturing_turing&metric=alert_status)](https://sonarcloud.io/dashboard/index/openturing_turing)
+[![Build Status](https://travis-ci.com/openturing/turing.svg?branch=master)](https://travis-ci.org/openturing/turing) [![codecov](https://codecov.io/gh/openturing/turing/branch/master/graph/badge.svg)](https://codecov.io/gh/openturing/turing) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=openturing_turing&metric=alert_status)](https://sonarcloud.io/dashboard/index/openturing_turing)
 
-![viglet_logo.png](https://openviglet.github.io/img/banner/viglet_turing.png)
+![viglet_logo.png](https://openshio.github.io/img/banner/viglet_turing.png)
 ------
 
 **Viglet Turing** is a platform that uses natural language processing (NLP) and machine learning to provide more intelligent data. Choose your favorite NLP as CoreNLP and OpenText Content Analytics, and index your content in Solr with higher added value. Train and manages models for your learning machine like Google Tensorflow.
@@ -8,7 +8,7 @@
 **If you'd like to contribute to Viglet Turing, be sure to review the [contribution
 guidelines](CONTRIBUTING.md).**
 
-**We use [GitHub issues](https://github.com/openviglet/turing/issues) for
+**We use [GitHub issues](https://github.com/openshio/turing/issues) for
 tracking requests and bugs.**
 
 # Installation
