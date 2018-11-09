@@ -45,7 +45,7 @@
 			<div class="panel panel-default">
 				<div class="panel-body">
 					<h3 style="color: #FF874B;">{{entity.type.name}}</h3>
-					<div ng-repeat="term in entity.terms" style="padding: 5px">
+					<div ng-repeat="term in entity.terms track by $index" style="padding: 5px">
 						<i class="fa fa-cube fa-2x fa-viglet" aria-hidden="true"
 							style="padding-right: 10px;"></i> <span style="font-size: large">{{term}}</span>
 					</div>

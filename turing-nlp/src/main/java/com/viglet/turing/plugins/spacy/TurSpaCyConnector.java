@@ -7,10 +7,13 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.transform.TransformerException;
 
@@ -45,6 +48,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
 	@Autowired
 	TurSolrField turSolrField;
+	private String encoding = "UTF-8";
 
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
@@ -80,11 +84,16 @@ public class TurSpaCyConnector implements TurNLPImpl {
 		}
 		HttpClient httpclient = HttpClients.createDefault();
 		HttpPost httpPost = new HttpPost(serverURL.toString());
+		Charset utf8Charset = Charset.forName("UTF-8");
+		Charset customCharset = Charset.forName(encoding);
 
 		if (attributes != null) {
 			for (Object attrValue : attributes.values()) {
 				JSONObject jsonBody = new JSONObject();
-				String atributeValue = turSolrField.convertFieldToString(attrValue);
+				String atributeValue = removeUrl(turSolrField.convertFieldToString(attrValue))
+						.replaceAll("\\n|:|;", ". ").replaceAll("(^\\h*)|(\\h*$)|\\r|\\n|\"|\'|R\\$", " ")
+						.replaceAll("”", " ").replaceAll("“", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ");
+
 				jsonBody.put("text", atributeValue);
 
 				if (turNLPInstance.getLanguage().equals(TurLocaleRepository.PT_BR)) {
@@ -93,11 +102,24 @@ public class TurSpaCyConnector implements TurNLPImpl {
 					jsonBody.put("model", "en_core_web_lg");
 				}
 
+				ByteBuffer inputBuffer = ByteBuffer.wrap(jsonBody.toString().getBytes());
+
+				// decode UTF-8
+				CharBuffer data = utf8Charset.decode(inputBuffer);
+
+				// encode
+				ByteBuffer outputBuffer = customCharset.encode(data);
+
+				byte[] outputData = new String(outputBuffer.array()).getBytes("UTF-8");
+				String jsonUTF8 = new String(outputData);
+
 				if (logger.isDebugEnabled()) {
-					logger.debug("SpaCy JSONBody: " + jsonBody.toString());
+					logger.debug("SpaCy JSONBody: " + jsonUTF8);
 				}
-				httpPost.addHeader("content-type", "application/json");
-				StringEntity stringEntity = new StringEntity(jsonBody.toString());
+				httpPost.setHeader("Accept", "application/json");
+				httpPost.setHeader("Content-type", "application/json");
+				httpPost.setHeader("Accept-Encoding", "UTF-8");
+				StringEntity stringEntity = new StringEntity(new String(jsonBody.toString()), "UTF-8");
 				httpPost.setEntity(stringEntity);
 
 				HttpResponse response = httpclient.execute(httpPost);
@@ -161,7 +183,9 @@ public class TurSpaCyConnector implements TurNLPImpl {
 
 	private void handleEntity(String entityType, String entity) {
 		if (entityList.containsKey(entityType)) {
-			entityList.get(entityType).add(entity);
+			if (!entityList.get(entityType).contains(entity) && entity.trim().length() > 1) {
+				entityList.get(entityType).add(entity);
+			}
 		} else {
 			List<Object> valueList = new ArrayList<Object>();
 			valueList.add(entity);
@@ -183,5 +207,17 @@ public class TurSpaCyConnector implements TurNLPImpl {
 			}
 		}
 		return true;
+	}
+
+	private String removeUrl(String commentstr) {
+		String urlPattern = "((https?|ftp|gopher|telnet|file|Unsure|http):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)";
+		Pattern p = Pattern.compile(urlPattern, Pattern.CASE_INSENSITIVE);
+		Matcher m = p.matcher(commentstr);
+		int i = 0;
+		while (m.find()) {
+			commentstr = commentstr.replaceAll(m.group(i), "").trim();
+			i++;
+		}
+		return commentstr;
 	}
 }
