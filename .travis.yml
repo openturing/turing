@@ -3,13 +3,7 @@ sudo: false
 dist: trusty
 jdk:
   - oraclejdk8
-addons:
-  sonarcloud:
-    organization: "alegauss-github"
-    token:
-      secure: "faX22Gszu7D42+ehFnDYTpxWQqPgAH/irPGeWX+QkKPFJ7RFMtUcFPX1q45GwbB3cRJDfhFMOsSsTNvO9osKApbDIawzi8150Sp2LBtyF0CM8U+P5EDG8qs6R7gwyFb3ldZU11rOfVfVLmq7PilO3AOMNQFJArkAUdZ5Nc59Rf0jM7UOPzY997by9/SgJpHldMiaqneUdhpip0JiqL/PEdIBc2grl6JKERWYYvfdLE1mmqVXdJKK1KRnS96DH47dK+uooNVusIbuPZMtc9SJ4WNJS9kHfY8kFjUq8L6ZJ4ljCE/tTczSkcqvCtFWpJnCYsaltD9Vr8ZIHN8EWdefFqGTRREARnLW8ppLSEvfaKEe70n6M/cch0CD1AytUC8GZrEjMiE1rPgdEBor8bECIansWfrK0/jx6JNMCgWPo68h9tTqLJDMlQ0vjn81XwV/Xih9wTbqNcVH05hLMJZOILACiSaPZJ7eDfmgHPP5zCxYRb1TaxvlIBPyKnZnUztFTXwrR31dY45MeE90H0Bc5kQXVq1Jstnr15V2DQu4hP+9eSC0yxa5dOkO5CENQH7PYphNghG2NypFuq7ji9Jw4+rHT9icpuYMMEdAmO7KI3MBXYNVVVAflAejf7wStRAYIbhSw90MC2IaNdnb8OrlPHmO21qMESxnsBv+qGP/Ny4="
 script:
   - ./gradlew check
-  -  sonar-scanner
 after_success:
   - bash <(curl -s https://codecov.io/bash)
