@@ -108,6 +108,94 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setLocal(0);
 			turNLPEntity.setCollectionName("percentages");
 			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("NORP");
+			turNLPEntity.setInternalName("NORP");
+			turNLPEntity.setDescription("Nationalities or religious or political groups.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setCollectionName("NORPs");
+			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("FAC");
+			turNLPEntity.setInternalName("FAC");
+			turNLPEntity.setDescription("Buildings, airports, highways, bridges, etc.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setCollectionName("FACs");
+			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("GPE");
+			turNLPEntity.setInternalName("GPE");
+			turNLPEntity.setDescription("Countries, cities, states.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setCollectionName("GPE");
+			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("LOC");
+			turNLPEntity.setInternalName("LOC");
+			turNLPEntity.setDescription("Non-GPE locations, mountain ranges, bodies of water.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setCollectionName("LOCs");
+			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("Product");
+			turNLPEntity.setInternalName("PRODUCT");
+			turNLPEntity.setDescription("Objects, vehicles, foods, etc. (Not services.)");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setCollectionName("Products");
+			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("Event");
+			turNLPEntity.setInternalName("EVENT");
+			turNLPEntity.setDescription("Named hurricanes, battles, wars, sports events, etc.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setCollectionName("Events");
+			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("Work of Art");
+			turNLPEntity.setInternalName("WORK_OF_ART");
+			turNLPEntity.setDescription("Titles of books, songs, etc.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setCollectionName("Work of Art");
+			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("Law");
+			turNLPEntity.setInternalName("LAW");
+			turNLPEntity.setDescription("Named documents made into laws.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setCollectionName("Laws");
+			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("Language");
+			turNLPEntity.setInternalName("LANGUAGE");
+			turNLPEntity.setDescription("Any named language.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setCollectionName("Languages");
+			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("Quantity");
+			turNLPEntity.setInternalName("QUANTITY");
+			turNLPEntity.setDescription("Measurements, as of weight or distance.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setCollectionName("Quantities");
+			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("Cardinal");
+			turNLPEntity.setInternalName("CARDINAL");
+			turNLPEntity.setDescription("Numerals that do not fall under another type.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setCollectionName("Cardinal");
+			turNLPEntityRepository.save(turNLPEntity);
 		}
 	}
 }

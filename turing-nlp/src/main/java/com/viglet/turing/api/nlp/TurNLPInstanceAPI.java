@@ -1,6 +1,7 @@
 package com.viglet.turing.api.nlp;
 
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 
 import io.swagger.annotations.Api;
@@ -28,6 +31,8 @@ public class TurNLPInstanceAPI {
 
 	@Autowired
 	TurNLPInstanceRepository turNLPInstanceRepository;
+	@Autowired
+	TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
 	TurNLP turNLP;
 
@@ -74,11 +79,27 @@ public class TurNLPInstanceAPI {
 
 	}
 
+	@SuppressWarnings("unchecked")
 	@PostMapping("/{id}/validate")
-	public String validate(@PathVariable int id, @RequestBody TurNLPTextValidate textValidate) throws JSONException {
-
-		turNLP.startup(this.turNLPInstanceRepository.findById(id), textValidate.getText());
-		return turNLP.validate().toString();
+	public TurNLPValidateResponse validate(@PathVariable int id, @RequestBody TurNLPTextValidate textValidate) throws JSONException {
+		
+		TurNLPInstance turNLPInstance = this.turNLPInstanceRepository.findById(id);
+		turNLP.startup(turNLPInstance, textValidate.getText());
+		TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
+		turNLPValidateResponse.setVendor(turNLPInstance.getTurNLPVendor().getTitle());
+		turNLPValidateResponse.setLocale(turNLPInstance.getLanguage());
+		for ( Entry<String, Object> entityType : turNLP.validate().entrySet() ) {
+			if (entityType.getValue() != null) {
+				TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
+				TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
+				
+				turNLPEntityValidateResponse.setType(turNLPEntity);
+		
+				turNLPEntityValidateResponse.setTerms((List<Object>) entityType.getValue());
+				turNLPValidateResponse.getEntities().add(turNLPEntityValidateResponse);
+			}
+		}
+		return turNLPValidateResponse;
 	}
 
 	public boolean isNumeric(String str) {
