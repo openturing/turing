@@ -103,6 +103,10 @@ public class TurSolr {
 		}
 	}
 
+	public void close() {
+		solrServer.shutdown();
+	}
+
 	public void init(TurSNSite turSNSite) {
 		this.turSNSite = turSNSite;
 		init(turSNSite.getTurSEInstance());
@@ -211,7 +215,7 @@ public class TurSolr {
 		if (attributes != null) {
 
 			for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-				String key = entry.getKey();				
+				String key = entry.getKey();
 				Object attribute = entry.getValue();
 				if (attribute != null) {
 					if (attribute.getClass().getName().equals("java.lang.Integer")) {
@@ -262,6 +266,7 @@ public class TurSolr {
 
 		try {
 			UpdateResponse response = solrServer.add(document);
+			// solrServer.commit(false, false, true);
 			if (addUntilCommitCounter >= ADD_UNTIL_COMMIT) {
 				addUntilCommitCounter = 0;
 				// solrServer.commit();

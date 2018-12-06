@@ -155,6 +155,7 @@ public class TurSNProcessQueue {
 		// SE
 		turSolr.init(turSNSite, attributesWithUniqueTerms);
 		turSolr.indexing();
+		turSolr.close();
 	}
 
 	public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {

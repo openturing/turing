@@ -20,8 +20,10 @@ import javax.xml.transform.TransformerException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,65 +84,76 @@ public class TurSpaCyConnector implements TurNLPImpl {
 		if (logger.isDebugEnabled()) {
 			logger.debug("URL:" + serverURL.toString());
 		}
-		HttpClient httpclient = HttpClients.createDefault();
-		HttpPost httpPost = new HttpPost(serverURL.toString());
-		Charset utf8Charset = Charset.forName("UTF-8");
-		Charset customCharset = Charset.forName(encoding);
 
-		if (attributes != null) {
-			for (Object attrValue : attributes.values()) {
-				JSONObject jsonBody = new JSONObject();
-				String atributeValue = removeUrl(turSolrField.convertFieldToString(attrValue))
-						.replaceAll("\\n|:|;", ". ").replaceAll("(^\\h*)|(\\h*$)|\\r|\\n|\"|\'|R\\$", " ")
-						.replaceAll("”", " ").replaceAll("“", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ");
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		try {
+			HttpPost httpPost = new HttpPost(serverURL.toString());
+			Charset utf8Charset = Charset.forName("UTF-8");
+			Charset customCharset = Charset.forName(encoding);
 
-				jsonBody.put("text", atributeValue);
+			if (attributes != null) {
+				for (Object attrValue : attributes.values()) {
+					JSONObject jsonBody = new JSONObject();
+					String atributeValue = removeUrl(turSolrField.convertFieldToString(attrValue))
+							.replaceAll("\\n|:|;", ". ").replaceAll("(^\\h*)|(\\h*$)|\\r|\\n|\"|\'|R\\$", " ")
+							.replaceAll("”", " ").replaceAll("“", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ");
 
-				if (turNLPInstance.getLanguage().equals(TurLocaleRepository.PT_BR)) {
-					jsonBody.put("model", "pt_core_news_sm");
-				} else {
-					jsonBody.put("model", "en_core_web_lg");
-				}
+					jsonBody.put("text", atributeValue);
 
-				ByteBuffer inputBuffer = ByteBuffer.wrap(jsonBody.toString().getBytes());
-
-				// decode UTF-8
-				CharBuffer data = utf8Charset.decode(inputBuffer);
-
-				// encode
-				ByteBuffer outputBuffer = customCharset.encode(data);
-
-				byte[] outputData = new String(outputBuffer.array()).getBytes("UTF-8");
-				String jsonUTF8 = new String(outputData);
-
-				if (logger.isDebugEnabled()) {
-					logger.debug("SpaCy JSONBody: " + jsonUTF8);
-				}
-				httpPost.setHeader("Accept", "application/json");
-				httpPost.setHeader("Content-type", "application/json");
-				httpPost.setHeader("Accept-Encoding", "UTF-8");
-				StringEntity stringEntity = new StringEntity(new String(jsonBody.toString()), "UTF-8");
-				httpPost.setEntity(stringEntity);
-
-				HttpResponse response = httpclient.execute(httpPost);
-				HttpEntity entity = response.getEntity();
-
-				if (entity != null) {
-					InputStream instream = entity.getContent();
-					BufferedReader rd = new BufferedReader(new InputStreamReader(instream, Charset.forName("UTF-8")));
-					String jsonResponse = readAll(rd);
-					if (this.isJSONValid(jsonResponse)) {
-						if (logger.isDebugEnabled()) {
-							logger.debug("SpaCy JSONResponse: " + jsonResponse);
-						}
-						this.getEntities(atributeValue, new JSONArray(jsonResponse));
+					if (turNLPInstance.getLanguage().equals(TurLocaleRepository.PT_BR)) {
+						jsonBody.put("model", "pt_core_news_sm");
+					} else {
+						jsonBody.put("model", "en_core_web_lg");
 					}
+
+					ByteBuffer inputBuffer = ByteBuffer.wrap(jsonBody.toString().getBytes());
+
+					// decode UTF-8
+					CharBuffer data = utf8Charset.decode(inputBuffer);
+
+					// encode
+					ByteBuffer outputBuffer = customCharset.encode(data);
+
+					byte[] outputData = new String(outputBuffer.array()).getBytes("UTF-8");
+					String jsonUTF8 = new String(outputData);
+
+					if (logger.isDebugEnabled()) {
+						logger.debug("SpaCy JSONBody: " + jsonUTF8);
+					}
+					httpPost.setHeader("Accept", "application/json");
+					httpPost.setHeader("Content-type", "application/json");
+					httpPost.setHeader("Accept-Encoding", "UTF-8");
+					StringEntity stringEntity = new StringEntity(new String(jsonBody.toString()), "UTF-8");
+					httpPost.setEntity(stringEntity);
+
+					CloseableHttpResponse response = httpclient.execute(httpPost);
 					try {
+						HttpEntity entity = response.getEntity();
+
+						if (entity != null) {
+							InputStream instream = entity.getContent();
+							BufferedReader rd = new BufferedReader(
+									new InputStreamReader(instream, Charset.forName("UTF-8")));
+							String jsonResponse = readAll(rd);
+							if (this.isJSONValid(jsonResponse)) {
+								if (logger.isDebugEnabled()) {
+									logger.debug("SpaCy JSONResponse: " + jsonResponse);
+								}
+								this.getEntities(atributeValue, new JSONArray(jsonResponse));
+							}
+							try {
+							} finally {
+								instream.close();
+							}
+						}
 					} finally {
-						instream.close();
+						response.close();
 					}
 				}
+
 			}
+		} finally {
+			httpclient.close();
 		}
 		return this.getAttributes();
 
