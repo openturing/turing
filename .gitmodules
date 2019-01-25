@@ -1,9 +1,9 @@
 [submodule "search"]
-	path = search
+	path = turing-search
 	url = https://github.com/openturing/turing-search.git
 [submodule "nlp"]
-	path = nlp
+	path = turing-nlp
 	url = https://github.com/openturing/turing-nlp.git
 [submodule "core"]
-	path = core
+	path = turing-core
 	url = https://github.com/openturing/turing-core.git
