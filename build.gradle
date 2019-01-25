@@ -10,6 +10,7 @@ buildscript {
 		mavenCentral()
 		maven { url "https://repo.spring.io/snapshot" }
 		maven { url "https://repo.spring.io/milestone" }
+        maven { url 'https://jitpack.io' }
 		jcenter()
 		}
     dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
@@ -97,6 +98,7 @@ repositories {
 	mavenCentral()
 	maven { url "https://repo.spring.io/snapshot" }
 	maven { url "https://repo.spring.io/milestone" }
+    maven { url 'https://jitpack.io' }
 	jcenter()
 }
 
@@ -293,7 +295,6 @@ exclude(module: 'commons-logging')
 	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
 	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"
 
- 	compile project(':turing-search')
 	// WebJars
 	compile 'org.webjars.bower:jquery:1.12.4'
 	compile 'org.webjars:bootstrap:3.3.7-1'
@@ -310,6 +311,15 @@ exclude(module: 'commons-logging')
 	compile 'org.webjars.bower:angular-moment:1.2.0'
 	compile 'org.webjars.bower:font-awesome:4.7.0'
 	
+     // Turing Core
+    implementation 'com.github.openturing:turing-core-lib:498f802d9f'
+    
+    // Turing NLP
+    implementation 'com.github.openturing:turing-nlp-lib:bd817f8af1'
+
+    // Turing Search
+    implementation 'com.github.openturing:turing-search-lib:26caf762f9'
+
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 task wrapper(type: Wrapper) {
