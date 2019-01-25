@@ -1,9 +1,9 @@
 FROM openjdk:8-jre-alpine
  
-ENV JAVA_OPTS ${JAVA_OPTS:-'-Xmx512m'}
-ENV DEBUG_OPTS ${DEBUG_OPTS}
-ENV PORT ${PORT:-2700}
-ENV spring.datasource.url ${DATA_SOURCE:-'jdbc:h2:file:./store/db/turingDB2'}
+ENV JAVA_OPTS=${JAVA_OPTS:-'-Xmx512m'}
+ENV DEBUG_OPTS=${DEBUG_OPTS}
+ENV PORT=${PORT:-2700}
+ENV spring.datasource.url=${DATA_SOURCE:-'jdbc:h2:file:./store/db/turingDB'}
 ENV spring.datasource.username=${DB_USER:-'sa'}
 ENV spring.datasource.password=${DB_PASSWORD:-''}
 ENV spring.datasource.driver-class-name=${DB_DRIVER:-'org.h2.Driver'}

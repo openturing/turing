@@ -12,3 +12,8 @@
 /build/
 /store/logs
 /activemq-data/
+.project
+.jsdtscope
+.vscode
+.settings
+.classpath
