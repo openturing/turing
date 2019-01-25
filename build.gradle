@@ -6,51 +6,31 @@ buildscript {
 		  jgitVersion = '4.11.0.201803080745-r'
 		 }
 		repositories {
-		mavenCentral()
-		maven { url "https://repo.spring.io/snapshot" }
-		maven { url "https://repo.spring.io/milestone" }
-		jcenter()
+			mavenCentral()
+			maven { url 'https://jitpack.io' }
 		}
-    dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}") }
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
-apply plugin: 'org.springframework.boot'
-apply plugin: 'io.spring.dependency-management'
-apply plugin: 'jacoco'
-apply plugin: 'project-report'
+apply plugin: 'maven'
 
-jar {
-    baseName = 'viglet-search'
-    version =  '0.1.0'
-    enabled = true
-}
-
-bootJar {
-    enabled = false
-}
-
-
-repositories {
-	mavenCentral()
-	maven { url "https://repo.spring.io/snapshot" }
-	maven { url "https://repo.spring.io/milestone" }
-	jcenter()
-}
+group = 'com.github.openturing'
 
 sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
-tasks.withType(JavaCompile) {
-	options.encoding = 'UTF-8'
+jar {
+    baseName = 'turing-nlp-lib'
+    version =  '0.3.2'
 }
 
+repositories {		
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+}
 
-task stage(dependsOn: ['build', 'clean'])
-
-dependencies {
-	// Spring Boot
+dependencies {	
+   	// Spring Boot
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
  
     compile (group: 'org.springframework.boot', name: 'spring-boot-starter-undertow', version:"${springBootVersion}"){ 
@@ -91,35 +71,11 @@ exclude(module: 'commons-logging')
     
     // HTTP Mime
     compile group: 'org.apache.httpcomponents', name: 'httpmime', version:'4.5.2'
-	compile project(':turing-core')
-	compile project(':turing-nlp')
-
-    testCompile('org.springframework.boot:spring-boot-starter-test')
-}
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.10.2'
-}
-
-test {
-    testLogging {
-        events "passed", "skipped", "failed"
-        exceptionFormat "full"
-    }
     
- jacocoTestReport {
-    reports {
-        xml.enabled true
-        html.enabled false
-    }
-}
+    // Turing Core
+    implementation 'com.github.openturing:turing-core-lib:498f802d9f'
+    
+    // Turing NLP
+    implementation 'com.github.openturing:turing-nlp-lib:bd817f8af1'
 
-bootRun {
-    if (project.hasProperty('args')) {
-        args project.args.split(',')
-    }
-}
-
-
-check.dependsOn jacocoTestReport 
 }
