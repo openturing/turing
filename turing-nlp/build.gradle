@@ -22,7 +22,7 @@ apply plugin: 'jacoco'
 apply plugin: 'project-report'
 
 jar {
-    baseName = 'turing-nlp'
+    baseName = 'viglet-nlp'
     version =  '0.1.0'
     enabled = true
 }
