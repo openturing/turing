@@ -1,0 +1,4 @@
+rootProject.name = 'turing-nlp'
+
+include ':turing-core'
+project(':turing-core').projectDir = new File("../turing-core")
