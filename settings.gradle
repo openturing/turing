@@ -1,7 +1,1 @@
-rootProject.name = 'turing-search'
-
-include ':turing-core'
-project(':turing-core').projectDir = new File("../turing-core")
-
-include ':turing-nlp'
-project(':turing-nlp').projectDir = new File("../turing-nlp")
+rootProject.name = 'turing-search-lib'

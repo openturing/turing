@@ -20,7 +20,7 @@ group = 'com.github.openturing'
 sourceCompatibility = 1.8
 
 jar {
-    baseName = 'turing-nlp-lib'
+    baseName = 'turing-search-lib'
     version =  '0.3.2'
 }
 
