@@ -5,16 +5,20 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 
+	@Cacheable("turSNSitefindAll")
 	List<TurSNSite> findAll();
 
+	@Cacheable("turSNSitefindById")
 	Optional<TurSNSite> findById(String id);
 	
+	@Cacheable("turSNSitefindByName")
 	TurSNSite findByName(String name);
 
 	TurSNSite save(TurSNSite turSNSite);

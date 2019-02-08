@@ -5,6 +5,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 
 import java.util.List;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -12,9 +13,10 @@ import org.springframework.data.jpa.repository.Query;
 public interface TurSNSiteFieldRepository extends JpaRepository<TurSNSiteField, Integer> {
 
 	List<TurSNSiteField> findAll();
-
+	@Cacheable("turSNSiteFieldfindById")
 	TurSNSiteField findById(int id);
 	
+	@Cacheable("turSNSiteFieldfindByTurSNSite")
 	List<TurSNSiteField> findByTurSNSite(TurSNSite turSNSite);
 	
 	TurSNSiteField save(TurSNSiteField turSNSiteField);

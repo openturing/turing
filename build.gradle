@@ -40,7 +40,7 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version:"${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
- 
+ 	compile group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
     
     // Jackson
    	compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.7'
