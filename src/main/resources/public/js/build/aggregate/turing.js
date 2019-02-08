@@ -1,28 +1,5 @@
 var turingApp = angular.module('turingApp', [  'ngCookies','ngResource', 'ngAnimate',
 		'ngSanitize', 'ui.router', 'ui.bootstrap', 'pascalprecht.translate']);
-turingApp.controller('TurAlertCtrl', [ "$scope", "turNotificationService",
-		function($scope, turNotificationService) {
-		$scope.alerts = turNotificationService.notifications;
-
-			$scope.closeAlert = function(index) {
-				turNotificationService.notifications.splice(index, 1);
-			};
-		} ]);
-turingApp.controller('ModalDeleteInstanceCtrl', [ "$uibModalInstance",
-		"instanceName", function($uibModalInstance, instanceName) {
-			var $ctrl = this;
-			$ctrl.removeInstance = false;
-			$ctrl.instanceName = instanceName;
-			$ctrl.ok = function() {
-				$ctrl.removeInstance = true;
-				$uibModalInstance.close($ctrl.removeInstance);
-			};
-
-			$ctrl.cancel = function() {
-				$ctrl.removeInstance = false;
-				$uibModalInstance.dismiss('cancel');
-			};
-		} ]);
 turingApp
 		.config([
 				'$stateProvider',
@@ -619,6 +596,19 @@ turingApp
 									});
 
 				} ]);
+turingApp.directive('convertToNumber', function() {
+	return {
+		require : 'ngModel',
+		link : function(scope, element, attrs, ngModel) {
+			ngModel.$parsers.push(function(val) {
+				return parseInt(val, 10);
+			});
+			ngModel.$formatters.push(function(val) {
+				return '' + val;
+			});
+		}
+	};
+});
 turingApp.directive('fileModel', [ '$parse', function($parse) {
 	return {
 		restrict : 'A',
@@ -634,28 +624,47 @@ turingApp.directive('fileModel', [ '$parse', function($parse) {
 		}
 	};
 } ]);
-turingApp.directive('convertToNumber', function() {
-	return {
-		require : 'ngModel',
-		link : function(scope, element, attrs, ngModel) {
-			ngModel.$parsers.push(function(val) {
-				return parseInt(val, 10);
-			});
-			ngModel.$formatters.push(function(val) {
-				return '' + val;
-			});
+turingApp.factory('turLocaleResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/locale/:id'), {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
 		}
-	};
-});
-turingApp.service('turNotificationService', [ '$http', function($http) {
-	this.notifications = [];
-	this.addNotification = function(msgString) {
-		this.notifications.push({
-			msg : msgString
-		});
-	};
-
+	});
 } ]);
+turingApp.factory('vigLocale', [
+		'$window',
+		function($window) {
+			return {
+				getLocale : function() {
+					var nav = $window.navigator;
+					if (angular.isArray(nav.languages)) {
+						if (nav.languages.length > 0) {
+							return nav.languages[0].split('-').join('_');
+						}
+					}
+					return ((nav.language || nav.browserLanguage
+							|| nav.systemLanguage || nav.userLanguage) || '')
+							.split('-').join('_');
+				}
+			}
+		} ]);
+turingApp.controller('ModalDeleteInstanceCtrl', [ "$uibModalInstance",
+		"instanceName", function($uibModalInstance, instanceName) {
+			var $ctrl = this;
+			$ctrl.removeInstance = false;
+			$ctrl.instanceName = instanceName;
+			$ctrl.ok = function() {
+				$ctrl.removeInstance = true;
+				$uibModalInstance.close($ctrl.removeInstance);
+			};
+
+			$ctrl.cancel = function() {
+				$ctrl.removeInstance = false;
+				$uibModalInstance.dismiss('cancel');
+			};
+		} ]);
 turingApp.service('fileUpload', [ '$http', function($http) {
 
 	this.uploadFileToUrl = function(file, uploadUrl) {
@@ -691,156 +700,64 @@ turingApp.service('turAPIServerService', [
 	            }
 			}
 		} ]);
-turingApp.factory('turLocaleResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
-	return $resource(turAPIServerService.get().concat('/locale/:id'), {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
+turingApp.service('turNotificationService', [ '$http', function($http) {
+	this.notifications = [];
+	this.addNotification = function(msgString) {
+		this.notifications.push({
+			msg : msgString
+		});
+	};
+
 } ]);
-turingApp.factory('vigLocale', [
-		'$window',
-		function($window) {
-			return {
-				getLocale : function() {
-					var nav = $window.navigator;
-					if (angular.isArray(nav.languages)) {
-						if (nav.languages.length > 0) {
-							return nav.languages[0].split('-').join('_');
-						}
-					}
-					return ((nav.language || nav.browserLanguage
-							|| nav.systemLanguage || nav.userLanguage) || '')
-							.split('-').join('_');
-				}
-			}
-		} ]);
-turingApp.controller('TurSEInstanceEditCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turSEInstanceResource",
-		"turSEVendorResource",
-		"turLocaleResource",
-		"turNotificationService",
-		"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService, $uibModal) {
+turingApp.controller('TurAlertCtrl', [ "$scope", "turNotificationService",
+		function($scope, turNotificationService) {
+		$scope.alerts = turNotificationService.notifications;
 
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.locales = turLocaleResource.query();
-			$scope.seVendors = turSEVendorResource.query();
-			$scope.se = turSEInstanceResource.get({
-				id : $stateParams.seInstanceId
-			});
-
-			$scope.seInstanceUpdate = function() {
-				$scope.se.$update(function() {
-					turNotificationService.addNotification("Search Engine Instance \"" + $scope.se.title + "\" was saved.");
-				});
-			}
-			$scope.seInstanceDelete = function() {
-				var $ctrl = this;
-
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/modal/turDeleteInstance.html',
-					controller : 'ModalDeleteInstanceCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						instanceName : function() {
-							return $scope.se.title;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(removeInstance) {
-					$scope.removeInstance = removeInstance;
-					$scope.deletedMessage = "Search Engine Instance \"" + $scope.se.title + "\" was deleted.";
-					$scope.se.$delete(function() {
-						turNotificationService.addNotification($scope.deletedMessage);
-						$state.go('se.instance');						
-					});
-				}, function() {
-					// Selected NO
-				});
-
-			}
-
-		} ]);
-turingApp.controller('TurSEInstanceNewCtrl', [
-		"$scope",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turSEInstanceResource",
-		"turSEVendorResource",
-		"turLocaleResource",
-		"turNotificationService",
-		function($scope, $state, $rootScope, $translate, vigLocale,
-				turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-
-			$rootScope.$state = $state;
-			$scope.locales = turLocaleResource.query();
-			$scope.seVendors = turSEVendorResource.query();
-			$scope.se = {
-				'enabled' : 0
+			$scope.closeAlert = function(index) {
+				turNotificationService.notifications.splice(index, 1);
 			};
-			$scope.seInstanceSave = function() {
-				turSEInstanceResource.save($scope.se, function() {
-					turNotificationService.addNotification( "Search Engine Instance \"" + $scope.se.title + "\" was created.");
-					$state.go('se.instance');
-				});
-			}
 		} ]);
-turingApp.controller('TurSEInstanceCtrl', [
+
+turingApp.controller('TurConverseEntityCtrl', [
 		"$scope",
 		"$http",
 		"$window",
 		"$state",
 		"$rootScope",
 		"$translate",
-		"turSEInstanceResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
-				turSEInstanceResource) {
+		function($scope, $http, $window, $state, $rootScope, $translate) {
 			$rootScope.$state = $state;
-			$scope.ses = turSEInstanceResource.query();
 		} ]);
-turingApp.factory('turSEInstanceResource', [ '$resource',
-		'turAPIServerService', function($resource, turAPIServerService) {
-			return $resource(turAPIServerService.get().concat('/se/:id'), {
-				id : '@id'
-			}, {
-				update : {
-					method : 'PUT'
-				}
-			});
+turingApp.controller('TurConverseIntentCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$rootScope.$state = $state;
 		} ]);
-turingApp.factory('turSEVendorResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
-	return $resource(turAPIServerService.get().concat('/se/vendor/:id'), {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
+turingApp.controller('TurConversePreBuiltAgentCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$rootScope.$state = $state;
+		} ]);
+turingApp.controller('TurConverseTrainingCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		function($scope, $http, $window, $state, $rootScope, $translate) {
+			$rootScope.$state = $state;
+		} ]);
 turingApp.controller('TurHomeCtrl', [ "$scope", "$http", "$window", "$state",
 		"$rootScope", "$translate",'turAPIServerService',
 		function($scope, $http, $window, $state, $rootScope, $translate, turAPIServerService) {
@@ -848,377 +765,8 @@ turingApp.controller('TurHomeCtrl', [ "$scope", "$http", "$window", "$state",
 			$scope.accesses = null;
 			$rootScope.$state = $state;
 		} ]);
-turingApp.controller('TurStorageMgmtCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"turStorageMgmtResource",
-		"$stateParams",
-		function($scope, $http, $window, $state, $rootScope, $translate,
-				turStorageMgmtResource, $stateParams) {
-			$rootScope.$state = $state;
-			$scope.currPath = $stateParams.path + "\/";
-			console.log("Teste1");
-			console.log($state.params.path);
-			$scope.getFullPath = function (path){
-				return  $stateParams.path + "/" + path;
-			}
-			if ($stateParams.path.length <= 0) {
-				$scope.rootPath = true;
-				$scope.filesAndDirs = turStorageMgmtResource.query();
-			} else {
-				$scope.rootPath = false;
-				$scope.filesAndDirs = turStorageMgmtResource.get({
-					id : $stateParams.path
-				});
-
-			}
-		} ]);
-turingApp.factory('turStorageMgmtResource', [ '$resource',
-		'turAPIServerService', function($resource, turAPIServerService) {
-			return $resource(turAPIServerService.get().concat('/storage/hadoop/:id'), {
-				id : '@id'
-			}, {
-				update : {
-					method : 'PUT'
-				}
-			});
-		} ]);
-turingApp.controller('TurStorageInstanceCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"turStorageInstanceResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
-				turStorageInstanceResource) {
-			$rootScope.$state = $state;
-			$scope.ses = turStorageInstanceResource.query();
-		} ]);
-turingApp.factory('turStorageInstanceResource', [ '$resource',
-		'turAPIServerService', function($resource, turAPIServerService) {
-			return $resource(turAPIServerService.get().concat('/storage/:id'), {
-				id : '@id'
-			}, {
-				update : {
-					method : 'PUT'
-				}
-			});
-		} ]);
-turingApp.controller('TurSNAdvertisingCtrl', [
-	"$scope",
-	"$http",
-	"$window",
-	"$state",
-	"$rootScope",
-	"$translate",
-	function($scope, $http, $window, $state, $rootScope, $translate) {
-		$rootScope.$state = $state;
-	} ]);
-turingApp.controller('TurSNSiteUICtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",		
-		function($scope, $http, $window, $state, $rootScope, $translate) {
-			$rootScope.$state = $state;
-		
-		} ]);
-turingApp.controller('TurSNSiteFieldEditCtrl', [
-	"$scope",
-	"$stateParams",
-	"$state",
-	"$rootScope",
-	"$translate",
-	"vigLocale",
-	"turSNSiteFieldExtResource",
-	"turNotificationService",
-	"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turSNSiteFieldExtResource, turNotificationService, $uibModal) {
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.snSiteFieldExt = turSNSiteFieldExtResource.get({
-				id : $stateParams.snSiteFieldId,
-				snSiteId : $stateParams.snSiteId
-			});
-			$scope.snSiteFieldExtUpdate = function() {			
-				$scope.snSiteFieldExt.$update({				
-					snSiteId : $stateParams.snSiteId
-				}, function() {
-					turNotificationService.addNotification("Field \"" + $scope.snSiteFieldExt.name + "\" was saved.");
-				});
-			}
-
-			$scope.snSiteFieldExtDelete = function() {
-				var $ctrl = this;
-
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/modal/turDeleteInstance.html',
-					controller : 'ModalDeleteInstanceCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						instanceName : function() {
-							return $scope.snSiteFieldExt.name;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(removeInstance) {
-					$scope.removeInstance = removeInstance;
-					$scope.deletedMessage = "Field \"" + $scope.snSiteFieldExt.name  + "\" was deleted.";
-					$scope.snSiteFieldExt.$delete({				
-						snSiteId : $stateParams.snSiteId
-					}, function() {
-						turNotificationService.addNotification($scope.deletedMessage);
-						$state.go('sn.site');
-					});
-				}, function() {
-					// Selected NO
-				});
-
-			}
-		} ]);
-turingApp
-		.controller(
-				'TurSNSiteFieldCtrl',
-				[
-						"$scope",
-						"$http",
-						"$window",
-						"$state",
-						"$rootScope",
-						"$translate",
-						"$uibModal",
-						"$stateParams",
-						"turSNSiteFieldResource",
-						"turSNSiteFieldExtResource",
-						"turNLPEntityLocalResource",
-						"turNotificationService",
-						"$filter",
-						function($scope, $http, $window, $state, $rootScope,
-								$translate, $uibModal, $stateParams,
-								turSNSiteFieldResource,
-								turSNSiteFieldExtResource,
-								turNLPEntityLocalResource,
-								turNotificationService, $filter) {
-							$rootScope.$state = $state;
-
-							$scope.turSNSiteFieldExts = turSNSiteFieldExtResource
-									.query({
-										snSiteId : $stateParams.snSiteId
-									});
-
-							$scope.snSiteFieldUpdate = function(snSiteFieldExt) {
-								if (snSiteFieldExt != null) {
-									turSNSiteFieldExtResource.update({
-										id : snSiteFieldExt.id,
-										snSiteId : $stateParams.snSiteId
-									}, snSiteFieldExt, function() {
-										//
-									});
-								}
-							}
-							$scope.fieldNew = function() {
-								var $ctrl = this;
-								$scope.snSiteFieldExt = {};
-								var modalInstance = $uibModal
-										.open({
-											animation : true,
-											ariaLabelledBy : 'modal-title',
-											ariaDescribedBy : 'modal-body',
-											templateUrl : 'templates/sn/site/field/sn-site-field-new.html',
-											controller : 'TurSNSiteFieldNewCtrl',
-											controllerAs : '$ctrl',
-											size : null,
-											appendTo : undefined,
-											resolve : {
-												snSiteFieldExt : function() {
-													return $scope.snSiteFieldExt;
-												},
-												snSiteId : function() {
-													return $stateParams.snSiteId;
-												}
-											}
-										});
-
-								modalInstance.result.then(function(response) {
-									//
-								}, function() {
-									// Selected NO
-								});
-
-							}
-						} ]);
-turingApp.controller('TurSNSiteFieldNewCtrl', [
-		"$uibModalInstance",
-		"snSiteFieldExt",
-		"snSiteId",
-		"turSNSiteFieldExtResource",
-		"turNotificationService",
-		function($uibModalInstance, snSiteFieldExt, snSiteId,
-				turSNSiteFieldExtResource, turNotificationService) {
-			var $ctrl = this;
-			$ctrl.removeInstance = false;
-			$ctrl.snSiteFieldExt = snSiteFieldExt;
-			$ctrl.ok = function() {
-				console.log($ctrl.snSiteField);
-				turSNSiteFieldExtResource.save({
-					snSiteId : snSiteId
-				}, $ctrl.snSiteFieldExt, function(response) {
-					turNotificationService.addNotification("Field \""
-							+ response.name + "\" was created.");
-					$uibModalInstance.close(response);
-				});
-
-			};
-
-			$ctrl.cancel = function() {
-				$uibModalInstance.dismiss('cancel');
-			};
-		} ]);
-turingApp.controller('TurSNSiteNewCtrl', [
-		"$scope",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turSNSiteResource",
-		"turSEInstanceResource",
-		"turNLPInstanceResource",
-		"turLocaleResource",
-		"turNotificationService",
-		function($scope, $state, $rootScope, $translate, vigLocale,
-				turSNSiteResource, turSEInstanceResource,
-				turNLPInstanceResource, turLocaleResource, turNotificationService) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-
-			$scope.locales = turLocaleResource.query();
-			
-			$rootScope.$state = $state;
-			$scope.snSite = {};
-
-			$scope.seInstances = turSEInstanceResource.query({}, function() {
-				angular.forEach($scope.seInstances, function(value, key) {
-					if (value.selected == true) {
-						value.title = value.title;
-						$scope.snSite.turSEInstance = value;
-					}
-				})
-			});
-
-			$scope.nlpInstances = turNLPInstanceResource.query({}, function() {
-				angular.forEach($scope.nlpInstances, function(value, key) {
-					if (value.selected == true) {
-						value.title = value.title;
-						$scope.snSite.turNLPInstance = value;
-					}
-				})
-			});
-
-			$scope.snSiteSave = function() {
-				turSNSiteResource.save($scope.snSite, function() {
-					turNotificationService.addNotification("Semantic Navigation Site \"" + $scope.snSite.name + "\" was created.");
-					$state.go('sn.site');
-				});
-			}
-		} ]);
-turingApp.controller('TurSNSiteCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"turSNSiteResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
-				turSNSiteResource) {
-			$rootScope.$state = $state;
-			$scope.snSites = turSNSiteResource.query();
-		} ]);
-turingApp.controller('TurSNSiteEditCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turSNSiteResource",
-		"turSEInstanceResource",
-		"turNLPInstanceResource",
-		"turLocaleResource",
-		"turNotificationService",
-		"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turSNSiteResource, turSEInstanceResource,
-				turNLPInstanceResource, turLocaleResource, turNotificationService, $uibModal) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.locales = turLocaleResource.query();
-			$scope.seInstances = turSEInstanceResource.query();
-			$scope.nlpInstances = turNLPInstanceResource.query();
-			$scope.snSite = turSNSiteResource.get({
-				id : $stateParams.snSiteId
-			});
-
-			$scope.snSiteUpdate = function() {
-				$scope.snSite.$update(function() {
-					turNotificationService.addNotification("Semantic Navigation Site \"" + $scope.snSite.name + "\" was saved.");
-				});
-			}
-			$scope.snSiteDelete = function() {
-				var $ctrl = this;
-
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/modal/turDeleteInstance.html',
-					controller : 'ModalDeleteInstanceCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						instanceName : function() {
-							turNotificationService.addNotification("Semantic Navigation Site \"" + $scope.snSite.name + "\" was deleted.");
-							return $scope.snSite.name;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(removeInstance) {
-					$scope.removeInstance = removeInstance;
-					$scope.snSite.$delete(function() {
-						$state.go('sn.site');
-					});
-				}, function() {
-					// Selected NO
-				});
-
-			}
-
-		} ]);
-turingApp.factory('turSNSiteResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
-	return $resource(turAPIServerService.get().concat('/sn/:id'), {
+turingApp.factory('turMLCategoryResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/ml/category/:id'), {
 		id : '@id'
 	}, {
 		update : {
@@ -1226,34 +774,66 @@ turingApp.factory('turSNSiteResource', [ '$resource', 'turAPIServerService', fun
 		}
 	});
 } ]);
-turingApp.factory('turSNSiteFieldExtResource', [
-		'$resource',
-		'turAPIServerService',
-		function($resource, turAPIServerService) {
-			return $resource(turAPIServerService.get().concat(
-					'/sn/:snSiteId/field/ext/:id'), {
-				id : '@id',
-				snSiteId : '@snSiteId'
-			}, {
-				update : {
-					method : 'PUT'
-				}
+turingApp.controller('TurMLCategoryEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLCategoryResource",
+		"turNotificationService",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLCategoryResource, turNotificationService, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.category = turMLCategoryResource.get({
+				id : $stateParams.mlCategoryId
 			});
+			$scope.mlCategoryUpdate = function() {
+				$scope.category.$update(function() {
+					turNotificationService.addNotification("Category \"" + $scope.category.name + "\" was saved.");
+				});
+			}
+
+			$scope.mlCategoryDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.category.name;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Category \"" + $scope.category.name  + "\" was deleted.";
+					$scope.category.$delete(function() {
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('ml.datagroup');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
 		} ]);
-turingApp.factory('turSNSiteFieldResource', [
-		'$resource',
-		'turAPIServerService',
-		function($resource, turAPIServerService) {
-			return $resource(turAPIServerService.get().concat(
-					'/sn/:snSiteId/field/:id'), {
-				id : '@id',
-				snSiteId : '@snSiteId'
-			}, {
-				update : {
-					method : 'PUT'
-				}
-			});
-		} ]);
+
 turingApp.controller('TurMLCategoryNewCtrl', [
 		"$uibModalInstance",
 		"category",
@@ -1327,67 +907,8 @@ turingApp.controller('TurMLCategorySentenceCtrl', [
 
 			}
 		} ]);
-turingApp.controller('TurMLCategoryEditCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turMLCategoryResource",
-		"turNotificationService",
-		"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLCategoryResource, turNotificationService, $uibModal) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.category = turMLCategoryResource.get({
-				id : $stateParams.mlCategoryId
-			});
-			$scope.mlCategoryUpdate = function() {
-				$scope.category.$update(function() {
-					turNotificationService.addNotification("Category \"" + $scope.category.name + "\" was saved.");
-				});
-			}
-
-			$scope.mlCategoryDelete = function() {
-				var $ctrl = this;
-
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/modal/turDeleteInstance.html',
-					controller : 'ModalDeleteInstanceCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						instanceName : function() {
-							return $scope.category.name;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(removeInstance) {
-					$scope.removeInstance = removeInstance;
-					$scope.deletedMessage = "Category \"" + $scope.category.name  + "\" was deleted.";
-					$scope.category.$delete(function() {
-						turNotificationService.addNotification($scope.deletedMessage);
-						$state.go('ml.datagroup');
-					});
-				}, function() {
-					// Selected NO
-				});
-
-			}
-
-		} ]);
-turingApp.factory('turMLCategoryResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
-	return $resource(turAPIServerService.get().concat('/ml/category/:id'), {
+turingApp.factory('turMLDataResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/ml/data/:id'), {
 		id : '@id'
 	}, {
 		update : {
@@ -1395,191 +916,6 @@ turingApp.factory('turMLCategoryResource', [ '$resource', 'turAPIServerService',
 		}
 	});
 } ]);
-turingApp.controller('TurMLSentenceNewCtrl', [
-		"$uibModalInstance",
-		"sentence",
-		"turMLDataGroupSentenceResource",
-		"turNotificationService",
-		function($uibModalInstance, sentence, turMLDataGroupSentenceResource,
-				turNotificationService) {
-			var $ctrl = this;
-			$ctrl.removeInstance = false;
-			$ctrl.dataGroupId = sentence.dataGroupId;
-			
-			console.log(sentence.turMLCategoryId);
-			
-			$ctrl.sentence = sentence;
-			$ctrl.ok = function() {
-				delete sentence.dataGroupId;
-
-				turMLDataGroupSentenceResource.save({
-					dataGroupId : $ctrl.dataGroupId
-				}, $ctrl.sentence, function(response) {
-					turNotificationService.addNotification("Sentence \""
-							+ response.sentence + "\" was created.");
-					$uibModalInstance.close(response);
-				});
-
-			};
-
-			$ctrl.cancel = function() {
-				$uibModalInstance.dismiss('cancel');
-			};
-		} ]);
-turingApp.controller('TurMLModelCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"turMLModelResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
-				turMLModelResource) {
-			$rootScope.$state = $state;
-			$scope.mlModels = turMLModelResource.query();
-		} ]);
-turingApp.factory('turMLModelResource', [
-		'$resource',
-		'turAPIServerService',
-		function($resource, turAPIServerService) {
-			return $resource(turAPIServerService.get().concat('/ml/model/:id'),
-					{
-						id : '@id'
-					}, {
-						update : {
-							method : 'PUT'
-						}
-					});
-		} ]);
-turingApp.controller('TurMLInstanceCtrl',
-		[
-				"$scope",
-				"$state",
-				"$rootScope",
-				"$translate",
-				"turMLInstanceResource",
-				function($scope, $state, $rootScope, $translate,
-						turMLInstanceResource) {
-
-					$rootScope.$state = $state;
-					$scope.mls = turMLInstanceResource.query();
-				} ]);
-turingApp.controller('TurMLInstanceNewCtrl', [
-		"$scope",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turMLInstanceResource",
-		"turMLVendorResource",
-		"turLocaleResource",
-		"turNotificationService",
-		function($scope, $state, $rootScope, $translate, vigLocale,
-				turMLInstanceResource, turMLVendorResource, turLocaleResource, turNotificationService) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-
-			$rootScope.$state = $state;
-			$scope.locales = turLocaleResource.query();
-			$scope.mlVendors = turMLVendorResource.query();
-			$scope.ml = {
-				'enabled' : 0
-			};
-			$scope.mlInstanceSave = function() {
-				turMLInstanceResource.save($scope.ml, function() {
-					turNotificationService.addNotification("Machine Learning Instance \"" + $scope.ml.title + "\" was created.");
-					$state.go('ml.instance');
-				});
-			}
-		} ]);
-turingApp.factory('turMLInstanceResource', [ '$resource',
-		'turAPIServerService', function($resource, turAPIServerService) {
-			return $resource(turAPIServerService.get().concat('/ml/:id'), {
-				id : '@id'
-			}, {
-				update : {
-					method : 'PUT'
-				}
-			});
-		} ]);
-turingApp.controller('TurMLInstanceEditCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turMLInstanceResource",
-		"turMLVendorResource",
-		"turLocaleResource",
-		"turNotificationService",
-		"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLInstanceResource, turMLVendorResource,
-				turLocaleResource, turNotificationService, $uibModal) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.locales = turLocaleResource.query();
-			$scope.mlVendors = turMLVendorResource.query();
-			$scope.ml = turMLInstanceResource.get({
-				id : $stateParams.mlInstanceId
-			});
-
-			$scope.mlInstanceUpdate = function() {
-				$scope.ml.$update(function() {
-					turNotificationService.addNotification("Machine Learning Instance \"" + $scope.ml.title + "\" was saved.");
-				});
-			}
-			$scope.mlInstanceDelete = function() {
-				var $ctrl = this;
-
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/modal/turDeleteInstance.html',
-					controller : 'ModalDeleteInstanceCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						instanceName : function() {
-							return $scope.ml.title;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(removeInstance) {
-					$scope.removeInstance = removeInstance;
-					$scope.deletedMessage = "Machine Learning Instance \"" + $scope.ml.title + "\" was deleted.";
-					$scope.ml.$delete(function() {
-						turNotificationService.addNotification($scope.deletedMessage);
-						$state.go('ml.instance');
-					});
-				}, function() {
-					// Selected NO
-				});
-
-			}
-		} ]);
-turingApp.controller('TurMLDataGroupCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"turMLDataGroupResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
-				turMLDataGroupResource) {
-			$rootScope.$state = $state;
-			$scope.mlDataGroups = turMLDataGroupResource.query();
-		} ]);
 turingApp.controller('TurMLDataGroupCategoryCtrl', [
 		"$scope",
 		"$stateParams",
@@ -1636,6 +972,376 @@ turingApp.controller('TurMLDataGroupCategoryCtrl', [
 
 			}
 
+		} ]);
+turingApp.controller('TurMLDataGroupDataCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupDataResource",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupDataResource, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.mlDataGroupDatas = turMLDataGroupDataResource.query({
+				dataGroupId : $stateParams.mlDataGroupId
+			});
+
+			$scope.uploadDocument = function() {
+				var $ctrl = this;
+				$scope.data = {};
+				$scope.data.datagroupId = $stateParams.mlDataGroupId;
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/ml/data/ml-document-upload.html',
+					controller : 'TurMLDataNewCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						data : function() {
+							return $scope.data;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(response) {
+					//
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+turingApp.factory('turMLDataGroupCategoryResource', [
+		'$resource','turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(
+					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/category/:id'), {
+						id : '@id',
+						dataGroupId : '@dataGroupId'
+					}, {
+						update : {
+							method : 'PUT'
+						}
+					});
+		} ]);
+turingApp.factory('turMLDataGroupDataResource', [
+		'$resource', 'turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(
+					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/data/:id'), {
+						id : '@id',
+						dataGroupId : '@dataGroupId'
+					}, {
+						update : {
+							method : 'PUT'
+						}
+					});
+		} ]);
+turingApp.factory('turMLDataGroupModelResource', [
+		'$resource','turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(
+					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/model/:id'), {
+						id : '@id',
+						dataGroupId : '@dataGroupId'
+					}, {
+						update : {
+							method : 'PUT'
+						}
+					});
+		} ]);
+turingApp.factory('turMLDataGroupResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/ml/data/group/:id'), {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
+turingApp.factory('turMLDataGroupSentenceResource', [
+		'$resource', 'turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(
+					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/sentence/:id'), {
+						id : '@id',
+						dataGroupId : '@dataGroupId'
+					}, {
+						update : {
+							method : 'PUT'
+						}
+					});
+		} ]);
+turingApp.controller('TurMLDataGroupModelCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupModelResource",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupModelResource, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.mlDataGroupModels = turMLDataGroupModelResource
+					.query({
+						dataGroupId : $stateParams.mlDataGroupId
+					});
+
+			$scope.modelNew = function() {
+				var $ctrl = this;
+				$scope.model = {
+					dataGroupId : $stateParams.mlDataGroupId
+				};
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/ml/model/ml-model-new.html',
+					controller : 'TurMLModelNewCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						model : function() {
+							return $scope.model;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(response) {					
+					//
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+turingApp.controller('TurMLDataGroupModelEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupModelResource",
+		"turNotificationService",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupModelResource,
+				turNotificationService, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.model = turMLDataGroupModelResource.get({
+				dataGroupId : $stateParams.mlDataGroupId,
+				id : $stateParams.mlModelId
+			});
+			$scope.mlModelUpdate = function() {
+				$scope.model.$update({
+					dataGroupId : $stateParams.mlDataGroupId}, function() {
+					turNotificationService.addNotification("Model \""
+							+ $scope.model.model + "\" was saved.");
+				});
+			}
+
+			$scope.mlModelDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.model.model;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Model \""
+							+ $scope.model.model + "\" was deleted.";
+					$scope.model.$delete(function() {
+						turNotificationService
+								.addNotification($scope.deletedMessage);
+						$state.go('ml.datagroup');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+
+turingApp.controller('TurMLDataGroupSentenceCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupSentenceResource",
+		"$uibModal",
+		"turNotificationService",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupSentenceResource, $uibModal, turNotificationService) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.mlDataGroupSentences = turMLDataGroupSentenceResource
+					.query({
+						dataGroupId : $stateParams.mlDataGroupId
+					});
+
+			$scope.sentenceUpdate = function(turDataGroupSentence) {
+				turMLDataGroupSentenceResource.update({
+					dataGroupId : $stateParams.mlDataGroupId,
+					id : turDataGroupSentence.id
+				}, turDataGroupSentence, function() {
+					turNotificationService.addNotification("Sentence \""
+							+ turDataGroupSentence.sentence.substring(0, 20)
+							+ "...\" was saved.");
+				});
+			}
+			
+			$scope.sentenceNew = function() {
+				var $ctrl = this;
+				$scope.sentence = {
+					dataGroupId : $stateParams.mlDataGroupId
+				};
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/ml/sentence/ml-sentence-new.html',
+					controller : 'TurMLSentenceNewCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						sentence : function() {
+							return $scope.sentence;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(response) {					
+					//
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+turingApp.controller('TurMLDataGroupSentenceEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLDataGroupSentenceResource",
+		"turNotificationService",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLDataGroupSentenceResource,
+				turNotificationService, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.sentence = turMLDataGroupSentenceResource.get({
+				dataGroupId : $stateParams.mlDataGroupId,
+				id : $stateParams.mlSentenceId
+			});
+			$scope.mlSentenceUpdate = function() {
+				$scope.sentence.$update({
+					dataGroupId : $stateParams.mlDataGroupId}, function() {
+					turNotificationService.addNotification("Sentence \""
+							+ $scope.sentence.sentence + "\" was saved.");
+				});
+			}
+
+			$scope.mlSentenceDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.sentence.sentence;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Sentence \""
+							+ $scope.sentence.sentence + "\" was deleted.";
+					$scope.sentence.$delete({
+						dataGroupId : $stateParams.mlDataGroupId}, function() {
+						turNotificationService
+								.addNotification($scope.deletedMessage);
+						$state.go('ml.datagroup');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+
+turingApp.controller('TurMLDataGroupCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turMLDataGroupResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turMLDataGroupResource) {
+			$rootScope.$state = $state;
+			$scope.mlDataGroups = turMLDataGroupResource.query();
 		} ]);
 turingApp.controller('TurMLDataGroupEditCtrl', [
 		"$scope",
@@ -1717,6 +1423,7 @@ turingApp.controller('TurMLDataGroupEditCtrl', [
 			}
 
 		} ]);
+
 turingApp.controller('TurMLDataGroupNewCtrl', [
 		"$scope",
 		"$http",
@@ -1741,393 +1448,6 @@ turingApp.controller('TurMLDataGroupNewCtrl', [
 					$state.go('ml.datagroup');
 				});
 			}
-		} ]);
-turingApp.controller('TurMLDataGroupSentenceEditCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turMLDataGroupSentenceResource",
-		"turNotificationService",
-		"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupSentenceResource,
-				turNotificationService, $uibModal) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.sentence = turMLDataGroupSentenceResource.get({
-				dataGroupId : $stateParams.mlDataGroupId,
-				id : $stateParams.mlSentenceId
-			});
-			$scope.mlSentenceUpdate = function() {
-				$scope.sentence.$update({
-					dataGroupId : $stateParams.mlDataGroupId}, function() {
-					turNotificationService.addNotification("Sentence \""
-							+ $scope.sentence.sentence + "\" was saved.");
-				});
-			}
-
-			$scope.mlSentenceDelete = function() {
-				var $ctrl = this;
-
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/modal/turDeleteInstance.html',
-					controller : 'ModalDeleteInstanceCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						instanceName : function() {
-							return $scope.sentence.sentence;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(removeInstance) {
-					$scope.removeInstance = removeInstance;
-					$scope.deletedMessage = "Sentence \""
-							+ $scope.sentence.sentence + "\" was deleted.";
-					$scope.sentence.$delete({
-						dataGroupId : $stateParams.mlDataGroupId}, function() {
-						turNotificationService
-								.addNotification($scope.deletedMessage);
-						$state.go('ml.datagroup');
-					});
-				}, function() {
-					// Selected NO
-				});
-
-			}
-
-		} ]);
-turingApp.controller('TurMLDataGroupSentenceCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turMLDataGroupSentenceResource",
-		"$uibModal",
-		"turNotificationService",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupSentenceResource, $uibModal, turNotificationService) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.mlDataGroupSentences = turMLDataGroupSentenceResource
-					.query({
-						dataGroupId : $stateParams.mlDataGroupId
-					});
-
-			$scope.sentenceUpdate = function(turDataGroupSentence) {
-				turMLDataGroupSentenceResource.update({
-					dataGroupId : $stateParams.mlDataGroupId,
-					id : turDataGroupSentence.id
-				}, turDataGroupSentence, function() {
-					turNotificationService.addNotification("Sentence \""
-							+ turDataGroupSentence.sentence.substring(0, 20)
-							+ "...\" was saved.");
-				});
-			}
-			
-			$scope.sentenceNew = function() {
-				var $ctrl = this;
-				$scope.sentence = {
-					dataGroupId : $stateParams.mlDataGroupId
-				};
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/ml/sentence/ml-sentence-new.html',
-					controller : 'TurMLSentenceNewCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						sentence : function() {
-							return $scope.sentence;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(response) {					
-					//
-				}, function() {
-					// Selected NO
-				});
-
-			}
-
-		} ]);
-turingApp.controller('TurMLDataGroupModelEditCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turMLDataGroupModelResource",
-		"turNotificationService",
-		"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupModelResource,
-				turNotificationService, $uibModal) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.model = turMLDataGroupModelResource.get({
-				dataGroupId : $stateParams.mlDataGroupId,
-				id : $stateParams.mlModelId
-			});
-			$scope.mlModelUpdate = function() {
-				$scope.model.$update({
-					dataGroupId : $stateParams.mlDataGroupId}, function() {
-					turNotificationService.addNotification("Model \""
-							+ $scope.model.model + "\" was saved.");
-				});
-			}
-
-			$scope.mlModelDelete = function() {
-				var $ctrl = this;
-
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/modal/turDeleteInstance.html',
-					controller : 'ModalDeleteInstanceCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						instanceName : function() {
-							return $scope.model.model;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(removeInstance) {
-					$scope.removeInstance = removeInstance;
-					$scope.deletedMessage = "Model \""
-							+ $scope.model.model + "\" was deleted.";
-					$scope.model.$delete(function() {
-						turNotificationService
-								.addNotification($scope.deletedMessage);
-						$state.go('ml.datagroup');
-					});
-				}, function() {
-					// Selected NO
-				});
-
-			}
-
-		} ]);
-turingApp.controller('TurMLDataGroupModelCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turMLDataGroupModelResource",
-		"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupModelResource, $uibModal) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.mlDataGroupModels = turMLDataGroupModelResource
-					.query({
-						dataGroupId : $stateParams.mlDataGroupId
-					});
-
-			$scope.modelNew = function() {
-				var $ctrl = this;
-				$scope.model = {
-					dataGroupId : $stateParams.mlDataGroupId
-				};
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/ml/model/ml-model-new.html',
-					controller : 'TurMLModelNewCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						model : function() {
-							return $scope.model;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(response) {					
-					//
-				}, function() {
-					// Selected NO
-				});
-
-			}
-
-		} ]);
-turingApp.controller('TurMLDataGroupDataCtrl', [
-		"$scope",
-		"$stateParams",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"vigLocale",
-		"turMLDataGroupDataResource",
-		"$uibModal",
-		function($scope, $stateParams, $state, $rootScope, $translate,
-				vigLocale, turMLDataGroupDataResource, $uibModal) {
-
-			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
-			$translate.use($scope.vigLanguage);
-			$rootScope.$state = $state;
-
-			$scope.mlDataGroupDatas = turMLDataGroupDataResource.query({
-				dataGroupId : $stateParams.mlDataGroupId
-			});
-
-			$scope.uploadDocument = function() {
-				var $ctrl = this;
-				$scope.data = {};
-				$scope.data.datagroupId = $stateParams.mlDataGroupId;
-				var modalInstance = $uibModal.open({
-					animation : true,
-					ariaLabelledBy : 'modal-title',
-					ariaDescribedBy : 'modal-body',
-					templateUrl : 'templates/ml/data/ml-document-upload.html',
-					controller : 'TurMLDataNewCtrl',
-					controllerAs : '$ctrl',
-					size : null,
-					appendTo : undefined,
-					resolve : {
-						data : function() {
-							return $scope.data;
-						}
-					}
-				});
-
-				modalInstance.result.then(function(response) {
-					//
-				}, function() {
-					// Selected NO
-				});
-
-			}
-
-		} ]);
-turingApp.factory('turMLDataGroupModelResource', [
-		'$resource','turAPIServerService',
-		function($resource, turAPIServerService) {
-			return $resource(
-					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/model/:id'), {
-						id : '@id',
-						dataGroupId : '@dataGroupId'
-					}, {
-						update : {
-							method : 'PUT'
-						}
-					});
-		} ]);
-turingApp.factory('turMLDataGroupResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
-	return $resource(turAPIServerService.get().concat('/ml/data/group/:id'), {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
-turingApp.factory('turMLDataGroupCategoryResource', [
-		'$resource','turAPIServerService',
-		function($resource, turAPIServerService) {
-			return $resource(
-					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/category/:id'), {
-						id : '@id',
-						dataGroupId : '@dataGroupId'
-					}, {
-						update : {
-							method : 'PUT'
-						}
-					});
-		} ]);
-turingApp.factory('turMLDataGroupDataResource', [
-		'$resource', 'turAPIServerService',
-		function($resource, turAPIServerService) {
-			return $resource(
-					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/data/:id'), {
-						id : '@id',
-						dataGroupId : '@dataGroupId'
-					}, {
-						update : {
-							method : 'PUT'
-						}
-					});
-		} ]);
-turingApp.factory('turMLDataGroupSentenceResource', [
-		'$resource', 'turAPIServerService',
-		function($resource, turAPIServerService) {
-			return $resource(
-					turAPIServerService.get().concat('/ml/data/group/:dataGroupId/sentence/:id'), {
-						id : '@id',
-						dataGroupId : '@dataGroupId'
-					}, {
-						update : {
-							method : 'PUT'
-						}
-					});
-		} ]);
-turingApp.controller('TurMLDataNewCtrl', [
-		"$uibModalInstance",
-		"data",
-		'fileUpload',
-		'turNotificationService',
-		'turAPIServerService',
-		function($uibModalInstance, data, fileUpload, turNotificationService,
-				turAPIServerService) {
-			var $ctrl = this;
-			$ctrl.myFile = null;
-			$ctrl.removeInstance = false;
-			$ctrl.data = data;
-			$ctrl.ok = function() {
-				var file = $ctrl.myFile;
-				var uploadUrl = turAPIServerService.get().concat(
-						'/ml/data/group/' + data.datagroupId + '/data/import');
-				var response = null;
-				fileUpload.uploadFileToUrl(file, uploadUrl).then(
-						function(response) {
-							turNotificationService
-									.addNotification(response.data.turData.name
-											+ "\" file was uploaded.");
-							$uibModalInstance.close(response);
-						});
-
-			};
-
-			$ctrl.cancel = function() {
-				$ctrl.removeInstance = false;
-				$uibModalInstance.dismiss('cancel');
-			};
 		} ]);
 turingApp.factory('turMLDataSentenceResource', [
 		'$resource',
@@ -2202,15 +1522,39 @@ turingApp.controller('TurMLDataEditCtrl', [
 			}
 
 		} ]);
-turingApp.factory('turMLDataResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
-	return $resource(turAPIServerService.get().concat('/ml/data/:id'), {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
+
+turingApp.controller('TurMLDataNewCtrl', [
+		"$uibModalInstance",
+		"data",
+		'fileUpload',
+		'turNotificationService',
+		'turAPIServerService',
+		function($uibModalInstance, data, fileUpload, turNotificationService,
+				turAPIServerService) {
+			var $ctrl = this;
+			$ctrl.myFile = null;
+			$ctrl.removeInstance = false;
+			$ctrl.data = data;
+			$ctrl.ok = function() {
+				var file = $ctrl.myFile;
+				var uploadUrl = turAPIServerService.get().concat(
+						'/ml/data/group/' + data.datagroupId + '/data/import');
+				var response = null;
+				fileUpload.uploadFileToUrl(file, uploadUrl).then(
+						function(response) {
+							turNotificationService
+									.addNotification(response.data.turData.name
+											+ "\" file was uploaded.");
+							$uibModalInstance.close(response);
+						});
+
+			};
+
+			$ctrl.cancel = function() {
+				$ctrl.removeInstance = false;
+				$uibModalInstance.dismiss('cancel');
+			};
+		} ]);
 turingApp.controller('TurMLDataSentenceCtrl', [
 		"$scope",
 		"$stateParams",
@@ -2240,6 +1584,179 @@ turingApp.controller('TurMLDataSentenceCtrl', [
 				});
 			}
 		} ]);
+turingApp.factory('turMLInstanceResource', [ '$resource',
+		'turAPIServerService', function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat('/ml/:id'), {
+				id : '@id'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
+turingApp.controller('TurMLInstanceCtrl',
+		[
+				"$scope",
+				"$state",
+				"$rootScope",
+				"$translate",
+				"turMLInstanceResource",
+				function($scope, $state, $rootScope, $translate,
+						turMLInstanceResource) {
+
+					$rootScope.$state = $state;
+					$scope.mls = turMLInstanceResource.query();
+				} ]);
+turingApp.controller('TurMLInstanceEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLInstanceResource",
+		"turMLVendorResource",
+		"turLocaleResource",
+		"turNotificationService",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turMLInstanceResource, turMLVendorResource,
+				turLocaleResource, turNotificationService, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.locales = turLocaleResource.query();
+			$scope.mlVendors = turMLVendorResource.query();
+			$scope.ml = turMLInstanceResource.get({
+				id : $stateParams.mlInstanceId
+			});
+
+			$scope.mlInstanceUpdate = function() {
+				$scope.ml.$update(function() {
+					turNotificationService.addNotification("Machine Learning Instance \"" + $scope.ml.title + "\" was saved.");
+				});
+			}
+			$scope.mlInstanceDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.ml.title;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Machine Learning Instance \"" + $scope.ml.title + "\" was deleted.";
+					$scope.ml.$delete(function() {
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('ml.instance');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+		} ]);
+
+turingApp.controller('TurMLInstanceNewCtrl', [
+		"$scope",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turMLInstanceResource",
+		"turMLVendorResource",
+		"turLocaleResource",
+		"turNotificationService",
+		function($scope, $state, $rootScope, $translate, vigLocale,
+				turMLInstanceResource, turMLVendorResource, turLocaleResource, turNotificationService) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+
+			$rootScope.$state = $state;
+			$scope.locales = turLocaleResource.query();
+			$scope.mlVendors = turMLVendorResource.query();
+			$scope.ml = {
+				'enabled' : 0
+			};
+			$scope.mlInstanceSave = function() {
+				turMLInstanceResource.save($scope.ml, function() {
+					turNotificationService.addNotification("Machine Learning Instance \"" + $scope.ml.title + "\" was created.");
+					$state.go('ml.instance');
+				});
+			}
+		} ]);
+turingApp.factory('turMLModelResource', [
+		'$resource',
+		'turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat('/ml/model/:id'),
+					{
+						id : '@id'
+					}, {
+						update : {
+							method : 'PUT'
+						}
+					});
+		} ]);
+turingApp.controller('TurMLModelCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turMLModelResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turMLModelResource) {
+			$rootScope.$state = $state;
+			$scope.mlModels = turMLModelResource.query();
+		} ]);
+turingApp.controller('TurMLSentenceNewCtrl', [
+		"$uibModalInstance",
+		"sentence",
+		"turMLDataGroupSentenceResource",
+		"turNotificationService",
+		function($uibModalInstance, sentence, turMLDataGroupSentenceResource,
+				turNotificationService) {
+			var $ctrl = this;
+			$ctrl.removeInstance = false;
+			$ctrl.dataGroupId = sentence.dataGroupId;
+			
+			console.log(sentence.turMLCategoryId);
+			
+			$ctrl.sentence = sentence;
+			$ctrl.ok = function() {
+				delete sentence.dataGroupId;
+
+				turMLDataGroupSentenceResource.save({
+					dataGroupId : $ctrl.dataGroupId
+				}, $ctrl.sentence, function(response) {
+					turNotificationService.addNotification("Sentence \""
+							+ response.sentence + "\" was created.");
+					$uibModalInstance.close(response);
+				});
+
+			};
+
+			$ctrl.cancel = function() {
+				$uibModalInstance.dismiss('cancel');
+			};
+		} ]);
 turingApp.factory('turMLVendorResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
 	return $resource(turAPIServerService.get().concat('/ml/vendor/:id'), {
 		id : '@id'
@@ -2249,6 +1766,39 @@ turingApp.factory('turMLVendorResource', [ '$resource', 'turAPIServerService', f
 		}
 	});
 } ]);
+turingApp.factory('turNLPEntityLocalResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/entity/local/:id'), {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
+
+turingApp.factory('turNLPEntityResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/entity/:id'), {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
+
+turingApp.controller('TurNLPEntityCtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"turNLPEntityResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turNLPEntityResource) {
+			$rootScope.$state = $state;
+			$scope.entities = turNLPEntityResource.query();
+		} ]);
 turingApp.controller('TurNLPEntityEditCtrl', [
 		"$scope",
 		"$http",
@@ -2269,21 +1819,8 @@ turingApp.controller('TurNLPEntityEditCtrl', [
 				id : $scope.nlpEntityId
 			});
 		} ]);
-turingApp.controller('TurNLPEntityCtrl', [
-		"$scope",
-		"$http",
-		"$window",
-		"$state",
-		"$rootScope",
-		"$translate",
-		"turNLPEntityResource",
-		function($scope, $http, $window, $state, $rootScope, $translate,
-				turNLPEntityResource) {
-			$rootScope.$state = $state;
-			$scope.entities = turNLPEntityResource.query();
-		} ]);
-turingApp.factory('turNLPEntityLocalResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
-	return $resource(turAPIServerService.get().concat('/entity/local/:id'), {
+turingApp.factory('turNLPInstanceResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/nlp/:id'), {
 		id : '@id'
 	}, {
 		update : {
@@ -2291,15 +1828,7 @@ turingApp.factory('turNLPEntityLocalResource', [ '$resource', 'turAPIServerServi
 		}
 	});
 } ]);
-turingApp.factory('turNLPEntityResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
-	return $resource(turAPIServerService.get().concat('/entity/:id'), {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
+
 turingApp.controller('TurNLPInstanceCtrl', [
 		"$scope",
 		"$http",
@@ -2377,15 +1906,6 @@ turingApp.controller('TurNLPInstanceEditCtrl', [
 			}
 
 		} ]);
-turingApp.factory('turNLPInstanceResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
-	return $resource(turAPIServerService.get().concat('/nlp/:id'), {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-} ]);
 turingApp.controller('TurNLPInstanceNewCtrl', [
 		"$scope",
 		"$state",
@@ -2463,43 +1983,537 @@ turingApp.factory('turNLPVendorResource', [
 				}
 			});
 		} ]);
-turingApp.controller('TurConverseEntityCtrl', [
+turingApp.factory('turSEInstanceResource', [ '$resource',
+		'turAPIServerService', function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat('/se/:id'), {
+				id : '@id'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
+turingApp.controller('TurSEInstanceCtrl', [
 		"$scope",
 		"$http",
 		"$window",
 		"$state",
 		"$rootScope",
 		"$translate",
-		function($scope, $http, $window, $state, $rootScope, $translate) {
+		"turSEInstanceResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turSEInstanceResource) {
 			$rootScope.$state = $state;
+			$scope.ses = turSEInstanceResource.query();
 		} ]);
-turingApp.controller('TurConverseIntentCtrl', [
+turingApp.controller('TurSEInstanceEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turSEInstanceResource",
+		"turSEVendorResource",
+		"turLocaleResource",
+		"turNotificationService",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.locales = turLocaleResource.query();
+			$scope.seVendors = turSEVendorResource.query();
+			$scope.se = turSEInstanceResource.get({
+				id : $stateParams.seInstanceId
+			});
+
+			$scope.seInstanceUpdate = function() {
+				$scope.se.$update(function() {
+					turNotificationService.addNotification("Search Engine Instance \"" + $scope.se.title + "\" was saved.");
+				});
+			}
+			$scope.seInstanceDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.se.title;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Search Engine Instance \"" + $scope.se.title + "\" was deleted.";
+					$scope.se.$delete(function() {
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('se.instance');						
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+
+turingApp.controller('TurSEInstanceNewCtrl', [
+		"$scope",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turSEInstanceResource",
+		"turSEVendorResource",
+		"turLocaleResource",
+		"turNotificationService",
+		function($scope, $state, $rootScope, $translate, vigLocale,
+				turSEInstanceResource, turSEVendorResource, turLocaleResource, turNotificationService) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+
+			$rootScope.$state = $state;
+			$scope.locales = turLocaleResource.query();
+			$scope.seVendors = turSEVendorResource.query();
+			$scope.se = {
+				'enabled' : 0
+			};
+			$scope.seInstanceSave = function() {
+				turSEInstanceResource.save($scope.se, function() {
+					turNotificationService.addNotification( "Search Engine Instance \"" + $scope.se.title + "\" was created.");
+					$state.go('se.instance');
+				});
+			}
+		} ]);
+turingApp.factory('turSEVendorResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/se/vendor/:id'), {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
+turingApp.controller('TurSNAdvertisingCtrl', [
+	"$scope",
+	"$http",
+	"$window",
+	"$state",
+	"$rootScope",
+	"$translate",
+	function($scope, $http, $window, $state, $rootScope, $translate) {
+		$rootScope.$state = $state;
+	} ]);
+turingApp.factory('turSNSiteFieldExtResource', [
+		'$resource',
+		'turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat(
+					'/sn/:snSiteId/field/ext/:id'), {
+				id : '@id',
+				snSiteId : '@snSiteId'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
+turingApp.factory('turSNSiteFieldResource', [
+		'$resource',
+		'turAPIServerService',
+		function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat(
+					'/sn/:snSiteId/field/:id'), {
+				id : '@id',
+				snSiteId : '@snSiteId'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
+turingApp.factory('turSNSiteResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/sn/:id'), {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
+} ]);
+turingApp
+		.controller(
+				'TurSNSiteFieldCtrl',
+				[
+						"$scope",
+						"$http",
+						"$window",
+						"$state",
+						"$rootScope",
+						"$translate",
+						"$uibModal",
+						"$stateParams",
+						"turSNSiteFieldResource",
+						"turSNSiteFieldExtResource",
+						"turNLPEntityLocalResource",
+						"turNotificationService",
+						"$filter",
+						function($scope, $http, $window, $state, $rootScope,
+								$translate, $uibModal, $stateParams,
+								turSNSiteFieldResource,
+								turSNSiteFieldExtResource,
+								turNLPEntityLocalResource,
+								turNotificationService, $filter) {
+							$rootScope.$state = $state;
+
+							$scope.turSNSiteFieldExts = turSNSiteFieldExtResource
+									.query({
+										snSiteId : $stateParams.snSiteId
+									});
+
+							$scope.snSiteFieldUpdate = function(snSiteFieldExt) {
+								if (snSiteFieldExt != null) {
+									turSNSiteFieldExtResource.update({
+										id : snSiteFieldExt.id,
+										snSiteId : $stateParams.snSiteId
+									}, snSiteFieldExt, function() {
+										//
+									});
+								}
+							}
+							$scope.fieldNew = function() {
+								var $ctrl = this;
+								$scope.snSiteFieldExt = {};
+								var modalInstance = $uibModal
+										.open({
+											animation : true,
+											ariaLabelledBy : 'modal-title',
+											ariaDescribedBy : 'modal-body',
+											templateUrl : 'templates/sn/site/field/sn-site-field-new.html',
+											controller : 'TurSNSiteFieldNewCtrl',
+											controllerAs : '$ctrl',
+											size : null,
+											appendTo : undefined,
+											resolve : {
+												snSiteFieldExt : function() {
+													return $scope.snSiteFieldExt;
+												},
+												snSiteId : function() {
+													return $stateParams.snSiteId;
+												}
+											}
+										});
+
+								modalInstance.result.then(function(response) {
+									//
+								}, function() {
+									// Selected NO
+								});
+
+							}
+						} ]);
+turingApp.controller('TurSNSiteFieldEditCtrl', [
+	"$scope",
+	"$stateParams",
+	"$state",
+	"$rootScope",
+	"$translate",
+	"vigLocale",
+	"turSNSiteFieldExtResource",
+	"turNotificationService",
+	"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turSNSiteFieldExtResource, turNotificationService, $uibModal) {
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.snSiteFieldExt = turSNSiteFieldExtResource.get({
+				id : $stateParams.snSiteFieldId,
+				snSiteId : $stateParams.snSiteId
+			});
+			$scope.snSiteFieldExtUpdate = function() {			
+				$scope.snSiteFieldExt.$update({				
+					snSiteId : $stateParams.snSiteId
+				}, function() {
+					turNotificationService.addNotification("Field \"" + $scope.snSiteFieldExt.name + "\" was saved.");
+				});
+			}
+
+			$scope.snSiteFieldExtDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							return $scope.snSiteFieldExt.name;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.deletedMessage = "Field \"" + $scope.snSiteFieldExt.name  + "\" was deleted.";
+					$scope.snSiteFieldExt.$delete({				
+						snSiteId : $stateParams.snSiteId
+					}, function() {
+						turNotificationService.addNotification($scope.deletedMessage);
+						$state.go('sn.site');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+		} ]);
+turingApp.controller('TurSNSiteFieldNewCtrl', [
+		"$uibModalInstance",
+		"snSiteFieldExt",
+		"snSiteId",
+		"turSNSiteFieldExtResource",
+		"turNotificationService",
+		function($uibModalInstance, snSiteFieldExt, snSiteId,
+				turSNSiteFieldExtResource, turNotificationService) {
+			var $ctrl = this;
+			$ctrl.removeInstance = false;
+			$ctrl.snSiteFieldExt = snSiteFieldExt;
+			$ctrl.ok = function() {
+				console.log($ctrl.snSiteField);
+				turSNSiteFieldExtResource.save({
+					snSiteId : snSiteId
+				}, $ctrl.snSiteFieldExt, function(response) {
+					turNotificationService.addNotification("Field \""
+							+ response.name + "\" was created.");
+					$uibModalInstance.close(response);
+				});
+
+			};
+
+			$ctrl.cancel = function() {
+				$uibModalInstance.dismiss('cancel');
+			};
+		} ]);
+turingApp.controller('TurSNSiteCtrl', [
 		"$scope",
 		"$http",
 		"$window",
 		"$state",
 		"$rootScope",
 		"$translate",
+		"turSNSiteResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turSNSiteResource) {
+			$rootScope.$state = $state;
+			$scope.snSites = turSNSiteResource.query();
+		} ]);
+turingApp.controller('TurSNSiteEditCtrl', [
+		"$scope",
+		"$stateParams",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turSNSiteResource",
+		"turSEInstanceResource",
+		"turNLPInstanceResource",
+		"turLocaleResource",
+		"turNotificationService",
+		"$uibModal",
+		function($scope, $stateParams, $state, $rootScope, $translate,
+				vigLocale, turSNSiteResource, turSEInstanceResource,
+				turNLPInstanceResource, turLocaleResource, turNotificationService, $uibModal) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+			$rootScope.$state = $state;
+
+			$scope.locales = turLocaleResource.query();
+			$scope.seInstances = turSEInstanceResource.query();
+			$scope.nlpInstances = turNLPInstanceResource.query();
+			$scope.snSite = turSNSiteResource.get({
+				id : $stateParams.snSiteId
+			});
+
+			$scope.snSiteUpdate = function() {
+				$scope.snSite.$update(function() {
+					turNotificationService.addNotification("Semantic Navigation Site \"" + $scope.snSite.name + "\" was saved.");
+				});
+			}
+			$scope.snSiteDelete = function() {
+				var $ctrl = this;
+
+				var modalInstance = $uibModal.open({
+					animation : true,
+					ariaLabelledBy : 'modal-title',
+					ariaDescribedBy : 'modal-body',
+					templateUrl : 'templates/modal/turDeleteInstance.html',
+					controller : 'ModalDeleteInstanceCtrl',
+					controllerAs : '$ctrl',
+					size : null,
+					appendTo : undefined,
+					resolve : {
+						instanceName : function() {
+							turNotificationService.addNotification("Semantic Navigation Site \"" + $scope.snSite.name + "\" was deleted.");
+							return $scope.snSite.name;
+						}
+					}
+				});
+
+				modalInstance.result.then(function(removeInstance) {
+					$scope.removeInstance = removeInstance;
+					$scope.snSite.$delete(function() {
+						$state.go('sn.site');
+					});
+				}, function() {
+					// Selected NO
+				});
+
+			}
+
+		} ]);
+
+turingApp.controller('TurSNSiteNewCtrl', [
+		"$scope",
+		"$state",
+		"$rootScope",
+		"$translate",
+		"vigLocale",
+		"turSNSiteResource",
+		"turSEInstanceResource",
+		"turNLPInstanceResource",
+		"turLocaleResource",
+		"turNotificationService",
+		function($scope, $state, $rootScope, $translate, vigLocale,
+				turSNSiteResource, turSEInstanceResource,
+				turNLPInstanceResource, turLocaleResource, turNotificationService) {
+
+			$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
+			$translate.use($scope.vigLanguage);
+
+			$scope.locales = turLocaleResource.query();
+			
+			$rootScope.$state = $state;
+			$scope.snSite = {};
+
+			$scope.seInstances = turSEInstanceResource.query({}, function() {
+				angular.forEach($scope.seInstances, function(value, key) {
+					if (value.selected == true) {
+						value.title = value.title;
+						$scope.snSite.turSEInstance = value;
+					}
+				})
+			});
+
+			$scope.nlpInstances = turNLPInstanceResource.query({}, function() {
+				angular.forEach($scope.nlpInstances, function(value, key) {
+					if (value.selected == true) {
+						value.title = value.title;
+						$scope.snSite.turNLPInstance = value;
+					}
+				})
+			});
+
+			$scope.snSiteSave = function() {
+				turSNSiteResource.save($scope.snSite, function() {
+					turNotificationService.addNotification("Semantic Navigation Site \"" + $scope.snSite.name + "\" was created.");
+					$state.go('sn.site');
+				});
+			}
+		} ]);
+
+turingApp.controller('TurSNSiteUICtrl', [
+		"$scope",
+		"$http",
+		"$window",
+		"$state",
+		"$rootScope",
+		"$translate",		
 		function($scope, $http, $window, $state, $rootScope, $translate) {
 			$rootScope.$state = $state;
+		
 		} ]);
-turingApp.controller('TurConverseTrainingCtrl', [
+turingApp.factory('turStorageInstanceResource', [ '$resource',
+		'turAPIServerService', function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat('/storage/:id'), {
+				id : '@id'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
+turingApp.controller('TurStorageInstanceCtrl', [
 		"$scope",
 		"$http",
 		"$window",
 		"$state",
 		"$rootScope",
 		"$translate",
-		function($scope, $http, $window, $state, $rootScope, $translate) {
+		"turStorageInstanceResource",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turStorageInstanceResource) {
 			$rootScope.$state = $state;
+			$scope.ses = turStorageInstanceResource.query();
 		} ]);
-turingApp.controller('TurConversePreBuiltAgentCtrl', [
+turingApp.factory('turStorageMgmtResource', [ '$resource',
+		'turAPIServerService', function($resource, turAPIServerService) {
+			return $resource(turAPIServerService.get().concat('/storage/hadoop/:id'), {
+				id : '@id'
+			}, {
+				update : {
+					method : 'PUT'
+				}
+			});
+		} ]);
+turingApp.controller('TurStorageMgmtCtrl', [
 		"$scope",
 		"$http",
 		"$window",
 		"$state",
 		"$rootScope",
 		"$translate",
-		function($scope, $http, $window, $state, $rootScope, $translate) {
+		"turStorageMgmtResource",
+		"$stateParams",
+		function($scope, $http, $window, $state, $rootScope, $translate,
+				turStorageMgmtResource, $stateParams) {
 			$rootScope.$state = $state;
+			$scope.currPath = $stateParams.path + "\/";
+			console.log("Teste1");
+			console.log($state.params.path);
+			$scope.getFullPath = function (path){
+				return  $stateParams.path + "/" + path;
+			}
+			if ($stateParams.path.length <= 0) {
+				$scope.rootPath = true;
+				$scope.filesAndDirs = turStorageMgmtResource.query();
+			} else {
+				$scope.rootPath = false;
+				$scope.filesAndDirs = turStorageMgmtResource.get({
+					id : $stateParams.path
+				});
+
+			}
 		} ]);
+

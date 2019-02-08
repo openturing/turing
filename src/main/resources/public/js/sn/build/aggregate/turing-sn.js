@@ -62,6 +62,23 @@ turingSNApp.config([
 						}
 					})*/
 		} ]);
+turingSNApp.factory('vigLocale', [
+		'$window',
+		function($window) {
+			return {
+				getLocale : function() {
+					var nav = $window.navigator;
+					if (angular.isArray(nav.languages)) {
+						if (nav.languages.length > 0) {
+							return nav.languages[0].split('-').join('_');
+						}
+					}
+					return ((nav.language || nav.browserLanguage
+							|| nav.systemLanguage || nav.userLanguage) || '')
+							.split('-').join('_');
+				}
+			}
+		} ]);
 turingSNApp.service('turAPIServerService', [
 		'$http',
 		'$location',
@@ -84,20 +101,42 @@ turingSNApp.service('turAPIServerService', [
 	            }
 			}
 		} ]);
-turingSNApp.factory('vigLocale', [
-		'$window',
-		function($window) {
+
+turingSNApp.factory('turSNSearch', [
+		'$http',
+		'turAPIServerService',
+		function($http, turAPIServerService) {
+
 			return {
-				getLocale : function() {
-					var nav = $window.navigator;
-					if (angular.isArray(nav.languages)) {
-						if (nav.languages.length > 0) {
-							return nav.languages[0].split('-').join('_');
+				search : function(turSiteName, query, page, _setlocale, sort, fq) {
+					var data = {
+						'q' : query,
+						'p' : page,
+						'_setlocale' : _setlocale,
+						'sort' : sort,
+						'fq[]' : fq
+					};
+					var config = {
+						params : data,
+						headers : {
+							'Accept' : 'application/json'
 						}
-					}
-					return ((nav.language || nav.browserLanguage
-							|| nav.systemLanguage || nav.userLanguage) || '')
-							.split('-').join('_');
+					};
+
+					return $http.get(turAPIServerService.get().concat(
+							'/sn/' + turSiteName + '/search'), config);
+				},
+				searchURL : function(url) {
+					urlFormatted = url.replace("/api/",
+							"/");
+					var config = {
+						headers : {
+							'Accept' : 'application/json'
+						}
+					};
+
+					return $http.get(turAPIServerService.get().concat(
+							urlFormatted), config);
 				}
 			}
 		} ]);
@@ -282,41 +321,4 @@ turingSNApp
 										.replace(/^([^?&]+)&/, "$1?");
 							}
 						} ]);
-turingSNApp.factory('turSNSearch', [
-		'$http',
-		'turAPIServerService',
-		function($http, turAPIServerService) {
 
-			return {
-				search : function(turSiteName, query, page, _setlocale, sort, fq) {
-					var data = {
-						'q' : query,
-						'p' : page,
-						'_setlocale' : _setlocale,
-						'sort' : sort,
-						'fq[]' : fq
-					};
-					var config = {
-						params : data,
-						headers : {
-							'Accept' : 'application/json'
-						}
-					};
-
-					return $http.get(turAPIServerService.get().concat(
-							'/sn/' + turSiteName + '/search'), config);
-				},
-				searchURL : function(url) {
-					urlFormatted = url.replace("/api/",
-							"/");
-					var config = {
-						headers : {
-							'Accept' : 'application/json'
-						}
-					};
-
-					return $http.get(turAPIServerService.get().concat(
-							urlFormatted), config);
-				}
-			}
-		} ]);
