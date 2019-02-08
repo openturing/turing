@@ -1,8 +1,8 @@
 buildscript {
-    ext { springBootVersion = '2.1.0.RELEASE'
-	      hibernateVersion = '5.9.1.Final'
-		  httpClientVersion = '4.5.2'
-		  swaggerVersion = '2.8.0'
+    ext { springBootVersion = '2.1.2.RELEASE'
+	      hibernateVersion = '5.11.0.Final'
+		  httpClientVersion = '4.5.6'
+		  swaggerVersion = '2.9.2'
 		  jgitVersion = '4.11.0.201803080745-r'
 		 }
 		repositories {
@@ -38,7 +38,8 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version:"${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
- 
+ 	compile group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
+ 	
     // Spring
   	compile group: 'org.springframework', name: 'spring-test', version: '5.0.9.RELEASE'
     

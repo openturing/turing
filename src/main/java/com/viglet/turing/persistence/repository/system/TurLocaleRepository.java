@@ -4,6 +4,7 @@ import com.viglet.turing.persistence.model.system.TurLocale;
 
 import java.util.List;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,8 +15,10 @@ public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 	static final String EN_GB = "en_GB";
 	static final String PT_BR = "pt_BR";
 	
+	@Cacheable("turLocalefindAll")
 	List<TurLocale> findAll();
 
+	@Cacheable("turLocalefindByInitials")
 	TurLocale findByInitials(String initials);
 
 	TurLocale save(TurLocale turLocale);
