@@ -21,11 +21,13 @@ public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 	@Cacheable("turLocalefindByInitials")
 	TurLocale findByInitials(String initials);
 
+	@CacheEvict(value = { "turLocalefindAll", "turLocalefindByInitials" }, allEntries = true)
 	TurLocale save(TurLocale turLocale);
 
 	void delete(TurLocale turConfigVar);
 	
 	@Modifying
 	@Query("delete from  TurLocale l where l.id = ?1")
+	@CacheEvict(value = { "turLocalefindAll", "turLocalefindByInitials" }, allEntries = true)
 	void delete(String initials);
 }
