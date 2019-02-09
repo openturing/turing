@@ -73,7 +73,7 @@ exclude(module: 'commons-logging')
     compile group: 'org.apache.httpcomponents', name: 'httpmime', version:'4.5.2'
     
     // Turing Core
-    implementation 'com.github.openturing:turing-core-lib:498f802d9f'
+    implementation 'com.github.openturing:turing-core-lib:f4e1aef1e8'
     
     // Turing NLP
     implementation 'com.github.openturing:turing-nlp-lib:bd817f8af1'
