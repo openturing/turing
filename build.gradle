@@ -55,12 +55,6 @@ dependencies {
 	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
 	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"
 	
-    // Solr
-    compile(group: 'org.apache.solr', name: 'solr-solrj', version:'4.6.0') {
-exclude(module: 'httpclient')
-exclude(module: 'httpmime')
-    }
-    
     // JSON
     compile group: 'org.json', name: 'json', version:'20140107'
     
