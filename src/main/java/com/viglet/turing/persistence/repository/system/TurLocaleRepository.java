@@ -5,6 +5,7 @@ import com.viglet.turing.persistence.model.system.TurLocale;
 import java.util.List;
 
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
