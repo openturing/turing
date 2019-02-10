@@ -1,3 +1,26 @@
+turingApp.controller('TurAlertCtrl', [ "$scope", "turNotificationService",
+		function($scope, turNotificationService) {
+		$scope.alerts = turNotificationService.notifications;
+
+			$scope.closeAlert = function(index) {
+				turNotificationService.notifications.splice(index, 1);
+			};
+		} ]);
+turingApp.controller('ModalDeleteInstanceCtrl', [ "$uibModalInstance",
+		"instanceName", function($uibModalInstance, instanceName) {
+			var $ctrl = this;
+			$ctrl.removeInstance = false;
+			$ctrl.instanceName = instanceName;
+			$ctrl.ok = function() {
+				$ctrl.removeInstance = true;
+				$uibModalInstance.close($ctrl.removeInstance);
+			};
+
+			$ctrl.cancel = function() {
+				$ctrl.removeInstance = false;
+				$uibModalInstance.dismiss('cancel');
+			};
+		} ]);
 turingApp
 		.config([
 				'$stateProvider',
@@ -594,19 +617,6 @@ turingApp
 									});
 
 				} ]);
-turingApp.directive('convertToNumber', function() {
-	return {
-		require : 'ngModel',
-		link : function(scope, element, attrs, ngModel) {
-			ngModel.$parsers.push(function(val) {
-				return parseInt(val, 10);
-			});
-			ngModel.$formatters.push(function(val) {
-				return '' + val;
-			});
-		}
-	};
-});
 turingApp.directive('fileModel', [ '$parse', function($parse) {
 	return {
 		restrict : 'A',
@@ -622,47 +632,28 @@ turingApp.directive('fileModel', [ '$parse', function($parse) {
 		}
 	};
 } ]);
-turingApp.factory('turLocaleResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
-	return $resource(turAPIServerService.get().concat('/locale/:id'), {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
+turingApp.directive('convertToNumber', function() {
+	return {
+		require : 'ngModel',
+		link : function(scope, element, attrs, ngModel) {
+			ngModel.$parsers.push(function(val) {
+				return parseInt(val, 10);
+			});
+			ngModel.$formatters.push(function(val) {
+				return '' + val;
+			});
 		}
-	});
-} ]);
-turingApp.factory('vigLocale', [
-		'$window',
-		function($window) {
-			return {
-				getLocale : function() {
-					var nav = $window.navigator;
-					if (angular.isArray(nav.languages)) {
-						if (nav.languages.length > 0) {
-							return nav.languages[0].split('-').join('_');
-						}
-					}
-					return ((nav.language || nav.browserLanguage
-							|| nav.systemLanguage || nav.userLanguage) || '')
-							.split('-').join('_');
-				}
-			}
-		} ]);
-turingApp.controller('ModalDeleteInstanceCtrl', [ "$uibModalInstance",
-		"instanceName", function($uibModalInstance, instanceName) {
-			var $ctrl = this;
-			$ctrl.removeInstance = false;
-			$ctrl.instanceName = instanceName;
-			$ctrl.ok = function() {
-				$ctrl.removeInstance = true;
-				$uibModalInstance.close($ctrl.removeInstance);
-			};
+	};
+});
+turingApp.service('turNotificationService', [ '$http', function($http) {
+	this.notifications = [];
+	this.addNotification = function(msgString) {
+		this.notifications.push({
+			msg : msgString
+		});
+	};
 
-			$ctrl.cancel = function() {
-				$ctrl.removeInstance = false;
-				$uibModalInstance.dismiss('cancel');
-			};
-		} ]);
+} ]);
 turingApp.service('fileUpload', [ '$http', function($http) {
 
 	this.uploadFileToUrl = function(file, uploadUrl) {
@@ -698,20 +689,29 @@ turingApp.service('turAPIServerService', [
 	            }
 			}
 		} ]);
-turingApp.service('turNotificationService', [ '$http', function($http) {
-	this.notifications = [];
-	this.addNotification = function(msgString) {
-		this.notifications.push({
-			msg : msgString
-		});
-	};
-
+turingApp.factory('turLocaleResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
+	return $resource(turAPIServerService.get().concat('/locale/:id'), {
+		id : '@id'
+	}, {
+		update : {
+			method : 'PUT'
+		}
+	});
 } ]);
-turingApp.controller('TurAlertCtrl', [ "$scope", "turNotificationService",
-		function($scope, turNotificationService) {
-		$scope.alerts = turNotificationService.notifications;
-
-			$scope.closeAlert = function(index) {
-				turNotificationService.notifications.splice(index, 1);
-			};
+turingApp.factory('vigLocale', [
+		'$window',
+		function($window) {
+			return {
+				getLocale : function() {
+					var nav = $window.navigator;
+					if (angular.isArray(nav.languages)) {
+						if (nav.languages.length > 0) {
+							return nav.languages[0].split('-').join('_');
+						}
+					}
+					return ((nav.language || nav.browserLanguage
+							|| nav.systemLanguage || nav.userLanguage) || '')
+							.split('-').join('_');
+				}
+			}
 		} ]);

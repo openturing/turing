@@ -253,7 +253,7 @@ dependencies {
 
             
 	// Solr
-    compile(group: 'org.apache.solr', name: 'solr-solrj', version:'4.6.0') {
+    compile(group: 'org.apache.solr', name: 'solr-solrj', version:'7.7.0') {
 exclude(module: 'httpclient')
 exclude(module: 'httpmime')
     }
@@ -296,6 +296,7 @@ exclude(module: 'commons-logging')
 	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
 	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"
 
+
 	// WebJars
 	compile 'org.webjars.bower:jquery:1.12.4'
 	compile 'org.webjars:bootstrap:3.3.7-1'
@@ -313,13 +314,13 @@ exclude(module: 'commons-logging')
 	compile 'org.webjars.bower:font-awesome:4.7.0'
 	
      // Turing Core
-    implementation 'com.github.openturing:turing-core-lib:939bbfc801'
+    implementation 'com.github.openturing:turing-core-lib:391869d4c7'
     
     // Turing NLP
-    implementation 'com.github.openturing:turing-nlp-lib:bd817f8af1'
+    implementation 'com.github.openturing:turing-nlp-lib:3b25428c9c'
 
     // Turing Search
-    implementation 'com.github.openturing:turing-search-lib:f765a3e747'
+    implementation 'com.github.openturing:turing-search-lib:ca9c673b02'
 
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
