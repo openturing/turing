@@ -6,15 +6,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.AbstractMap.SimpleEntry;
 
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.Registry;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.HttpClientUtil;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.impl.SolrHttpRequestRetryHandler;
 import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.FacetField.Count;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -94,13 +103,39 @@ public class TurSolr {
 		this.currText = currText;
 	}
 
+	private static CloseableHttpClient createClient() {
+		// code derived from org.apache.solr.client.solrj.impl.HttpClientUtil,
+		// simplified and removed irrelevant config
+		Registry<ConnectionSocketFactory> schemaRegistry = HttpClientUtil.getSchemaRegisteryProvider()
+				.getSchemaRegistry();
+		PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(schemaRegistry);
+		cm.setMaxTotal(10000);
+		cm.setDefaultMaxPerRoute(10000);
+		cm.setValidateAfterInactivity(3000);
+
+		RequestConfig.Builder requestConfigBuilder = RequestConfig.custom()
+				// .setConnectTimeout(HttpClientUtil.DEFAULT_CONNECT_TIMEOUT)
+				// .setSocketTimeout(HttpClientUtil.DEFAULT_SO_TIMEOUT);
+				.setConnectTimeout(30000).setSocketTimeout(30000);
+
+		HttpClientBuilder httpClientBuilder = HttpClientBuilder.create().setKeepAliveStrategy((response, context) -> -1)
+				.evictIdleConnections(50000, TimeUnit.MILLISECONDS)
+				.setDefaultRequestConfig(requestConfigBuilder.build())
+				.setRetryHandler(new SolrHttpRequestRetryHandler(0)).disableContentCompression().useSystemProperties()
+				.setConnectionManager(cm);
+
+		return httpClientBuilder.build();
+	}
+
 	public void init(TurSEInstance turSEInstance) {
 		this.setCurrSE(turSEInstance);
 
 		if (turSEInstance != null) {
 			String urlString = "http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort() + "/solr/"
 					+ turSNSite.getCore();
-			solrClient = new HttpSolrClient.Builder(urlString).withConnectionTimeout(30000).withSocketTimeout(30000).build();
+			solrClient = new HttpSolrClient.Builder(urlString).withHttpClient(createClient())
+					.withConnectionTimeout(30000).withSocketTimeout(30000).build();
+
 		}
 	}
 
