@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.AbstractMap.SimpleEntry;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.Registry;
@@ -80,6 +82,20 @@ public class TurSolr {
 
 	SolrClient solrClient = null;
 
+	@PostConstruct
+	public void initialize() {
+		logger.info("TurSolr initialized");
+		if (httpClient == null) {
+			httpClient = createClient();
+		}
+	}
+
+	@PreDestroy
+	public void destroy() {
+		logger.info("TurSolr destroyed");
+		this.close();
+	}
+
 	public Map<String, Object> getAttributes() {
 		return attributes;
 	}
@@ -150,7 +166,7 @@ public class TurSolr {
 			}
 			if (httpClient != null) {
 				httpClient.close();
-				httpClient= null;
+				httpClient = null;
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -577,8 +593,6 @@ public class TurSolr {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} finally {
-			this.close();
 		}
 		return null;
 	}
