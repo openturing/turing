@@ -74,7 +74,7 @@ public class TurSolr {
 	private TurSEInstance currSE = null;
 	private Map<String, Object> attributes = null;
 	private TurSNSite turSNSite = null;
-	private CloseableHttpClient httpClient = createClient();
+	private CloseableHttpClient httpClient = null;
 
 	String currText = null;
 
@@ -130,7 +130,9 @@ public class TurSolr {
 
 	public void init(TurSEInstance turSEInstance) {
 		this.setCurrSE(turSEInstance);
-
+		if (httpClient == null) {
+			httpClient = createClient();
+		}
 		if (turSEInstance != null) {
 			String urlString = "http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort() + "/solr/"
 					+ turSNSite.getCore();
@@ -144,9 +146,11 @@ public class TurSolr {
 		try {
 			if (solrClient != null) {
 				solrClient.close();
+				solrClient = null;
 			}
 			if (httpClient != null) {
 				httpClient.close();
+				httpClient= null;
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
