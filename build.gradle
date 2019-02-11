@@ -41,6 +41,7 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
  	compile group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-solr', version:"${springBootVersion}"
     
     // Jackson
    	compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.7'
@@ -55,22 +56,9 @@ dependencies {
 	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
 	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"
 
-	// Solr
-    compile(group: 'org.apache.solr', name: 'solr-solrj', version:'7.7.0') {
-exclude(module: 'httpclient')
-exclude(module: 'httpmime')
-    }
-    
     // JSON
     compile group: 'org.json', name: 'json', version:'20140107'
     
-    // HTTP Client
-    compile(group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.2') {
-exclude(module: 'commons-logging')
-    }
-    
-    // HTTP Mime
-    compile group: 'org.apache.httpcomponents', name: 'httpmime', version:'4.5.2'
     
     // Turing Core
     implementation 'com.github.openturing:turing-core-lib:391869d4c7'
