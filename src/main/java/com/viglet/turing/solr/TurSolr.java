@@ -147,7 +147,11 @@ public class TurSolr {
 	public void init(TurSEInstance turSEInstance) {
 		this.setCurrSE(turSEInstance);
 		if (httpClient == null) {
+			logger.info("TurSolr createClient");
 			httpClient = createClient();
+		}
+		else {
+			logger.info("TurSolr reusing createClient");
 		}
 		if (turSEInstance != null) {
 			String urlString = "http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort() + "/solr/"
