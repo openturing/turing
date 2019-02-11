@@ -14,7 +14,6 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.HttpClientUtil;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.FacetField.Count;
@@ -101,7 +100,7 @@ public class TurSolr {
 		if (turSEInstance != null) {
 			String urlString = "http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort() + "/solr/"
 					+ turSNSite.getCore();
-			solrClient = new HttpSolrClient.Builder(urlString).build();
+			solrClient = new HttpSolrClient.Builder(urlString).withConnectionTimeout(30000).withSocketTimeout(30000).build();
 		}
 	}
 
