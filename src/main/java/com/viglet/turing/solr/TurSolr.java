@@ -84,7 +84,9 @@ public class TurSolr {
 
 	@PostConstruct
 	public void initialize() {
-		logger.info("TurSolr initialized");
+		if (logger.isDebugEnabled()) {
+			logger.debug("TurSolr initialized");
+		}
 		if (httpClient == null) {
 			httpClient = createClient();
 		}
@@ -92,7 +94,9 @@ public class TurSolr {
 
 	@PreDestroy
 	public void destroy() {
-		logger.info("TurSolr destroyed");
+		if (logger.isDebugEnabled()) {
+			logger.debug("TurSolr destroyed");
+		}
 		this.close();
 	}
 
@@ -147,11 +151,10 @@ public class TurSolr {
 	public void init(TurSEInstance turSEInstance) {
 		this.setCurrSE(turSEInstance);
 		if (httpClient == null) {
-			logger.info("TurSolr createClient");
+			if (logger.isDebugEnabled()) {
+				logger.debug("TurSolr createClient");
+			}
 			httpClient = createClient();
-		}
-		else {
-			logger.info("TurSolr reusing createClient");
 		}
 		if (turSEInstance != null) {
 			String urlString = "http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort() + "/solr/"
