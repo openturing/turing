@@ -238,6 +238,8 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version:"${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-solr', version:"${springBootVersion}"
+    
 	
 	// Spring
   	compile group: 'org.springframework', name: 'spring-test', version: '5.1.2.RELEASE'
@@ -249,26 +251,11 @@ dependencies {
     compile group: 'com.h2database', name: 'h2', version:'1.4.197'
     
     // MariaDB
-    compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.3.0'
-
-            
-	// Solr
-    compile(group: 'org.apache.solr', name: 'solr-solrj', version:'7.7.0') {
-exclude(module: 'httpclient')
-exclude(module: 'httpmime')
-    }
+    compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.3.0'         
     
     // JSON
     compile group: 'org.json', name: 'json', version:'20140107'
-    
-    // HTTP Client
-    compile(group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.2') {
-exclude(module: 'commons-logging')
-    }
-    
-    // HTTP Mime
-    compile group: 'org.apache.httpcomponents', name: 'httpmime', version:'4.5.2'
-    
+      
     // CoreNLP
     compile group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'3.7.0'
     
@@ -320,7 +307,7 @@ exclude(module: 'commons-logging')
     implementation 'com.github.openturing:turing-nlp-lib:3b25428c9c'
 
     // Turing Search
-    implementation 'com.github.openturing:turing-search-lib:ca9c673b02'
+    implementation 'com.github.openturing:turing-search-lib:84ab7096da'
 
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
