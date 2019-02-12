@@ -1,0 +1,17 @@
+/target/
+.DS_Store
+._.DS_Store
+**/.DS_Store
+**/._.DS_Store
+*.log
+/logs/
+/models/
+/bin/
+/.gradle/
+/build/
+/activemq-data/
+.project
+.settings
+.springBeans
+.classpath
+.vscode
