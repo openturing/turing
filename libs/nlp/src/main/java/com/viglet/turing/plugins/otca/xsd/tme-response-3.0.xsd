@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+  <xs:element name="Nserver" type="ServerResponseType"/>
+  <xs:complexType name="ServerResponseConceptExtractorResultConcept2Type" mixed="true">
+    <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="GenericForm" type="xs:string"/>
+        <xs:element name="Subterms" type="ServerResponseConceptExtractorResultConceptOccurencesType"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attribute name="Frequency" type="xs:int"/>
+    <xs:attribute name="Weight" type="xs:int"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseConceptExtractorResultConceptOccurencesType">
+    <xs:sequence>
+      <xs:element name="Subterm" type="ServerResponseConceptExtractorResultConceptOccurenceType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseConceptExtractorResultConceptOccurenceType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="Position" type="xs:int" use="required"/>
+        <xs:attribute name="Length" type="xs:int" use="required"/>
+        <xs:attribute name="TextPart" type="xs:string"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseCategorizerResultCategoryType" mixed="true">
+    <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="Name" type="xs:string"/>
+        <xs:element name="Attributes" type="ServerResponseCategorizerResultCategoryAttributesType"/>
+        <xs:element name="Parents" type="ServerResponseCategorizerResultCategoryParentsType"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attribute name="Id" type="xs:string"/>
+    <xs:attribute name="Weight" type="xs:double"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseCategorizerResultCategoryAttributesType">
+    <xs:sequence>
+      <xs:element name="Attribute" type="ServerResponseCategorizerResultCategoryAttributeType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseCategorizerResultCategoryAttributeType">
+    <xs:sequence>
+      <xs:element name="Name" type="xs:string" minOccurs="0"/>
+      <xs:element name="Value" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseCategorizerResultCategoryParentsType">
+    <xs:sequence>
+      <xs:element name="Parent" type="ServerResponseCategorizerResultCategoryParentType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseCategorizerResultCategoryParentType">
+    <xs:sequence>
+      <xs:element name="Id" type="xs:string" minOccurs="0"/>
+      <xs:element name="Name" type="xs:string" minOccurs="0"/>
+      <xs:element name="Attributes" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Attribute" type="ServerResponseCategorizerResultCategoryAttributeType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Parents" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Parent" type="ServerResponseCategorizerResultCategoryParentType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseType">
+    <xs:sequence>
+      <xs:element name="ID" type="xs:string" minOccurs="0"/>
+      <xs:element name="TextID" type="xs:string" minOccurs="0"/>
+      <xs:element name="ErrorID" type="ServerResponseErrorCodeType" minOccurs="0"/>
+      <xs:element name="ErrorDescription" type="xs:string" minOccurs="0"/>
+      <xs:element name="Warnings" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Warning" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Results" type="ServerResponseResultsType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseErrorCodeType">
+    <xs:simpleContent>
+      <xs:extension base="xs:int">
+        <xs:attribute name="Type" type="ServerResponseErrorTypeEnum"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseResultsType">
+    <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="Ping" type="ServerResponsePingResultType"/>
+        <xs:element name="GetSupportedEncodings" type="ServerResponseGetSupportedEncodingsResultType"/>
+        <xs:element name="languagedetector" type="ServerResponseLanguageDetectorResultType"/>
+        <xs:element name="nconceptextractor" type="ServerResponseConceptExtractorResultType"/>
+        <xs:element name="ncategorizer" type="ServerResponseCategorizerResultType"/>
+        <xs:element name="nfinder" type="ServerResponseEntityExtractorResultType"/>
+        <xs:element name="nsentiment" type="ServerResponseSentimentResultType"/>
+        <xs:element name="nlikethis" type="ServerResponseSimilarityResultType"/>
+        <xs:element name="nsummarizer" type="ServerResponseSummarizerResultType"/>
+      </xs:choice>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="LanguageDetector" type="ServerResponseLanguageDetectorResultType"/>
+        <xs:element name="NConceptExtractor" type="ServerResponseConceptExtractorResultType"/>
+        <xs:element name="NCategorizer" type="ServerResponseCategorizerResultType"/>
+        <xs:element name="NFinder" type="ServerResponseEntityExtractorResultType"/>
+        <xs:element name="NSentiment" type="ServerResponseSentimentResultType"/>
+        <xs:element name="NLikeThis" type="ServerResponseSimilarityResultType"/>
+        <xs:element name="NSummarizer" type="ServerResponseSummarizerResultType"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponsePingResultType">
+    <xs:sequence>
+      <xs:element name="Pong" type="ServerResponsePingResultPongType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponsePingResultPongType">
+    <xs:sequence/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseGetSupportedEncodingsResultType">
+    <xs:sequence>
+      <xs:element name="Encodings" type="ServerResponseGetSupportedEncodingsResultEncodingsType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseGetSupportedEncodingsResultEncodingsType">
+    <xs:sequence>
+      <xs:element name="Encoding" type="ServerResponseGetSupportedEncodingsResultEncodingType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseGetSupportedEncodingsResultEncodingType">
+    <xs:sequence>
+      <xs:element name="Alias" type="ServerResponseGetSupportedEncodingsResultEncodingAliasType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseGetSupportedEncodingsResultEncodingAliasType">
+    <xs:sequence/>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseLanguageDetectorResultType">
+    <xs:sequence>
+      <xs:element name="Paragraphs" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Paragraph" type="ServerResponseLanguageDetectorResultParagraphType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Languages" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Language" type="ServerResponseLanguageDetectorResultCandidateType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseLanguageDetectorResultParagraphType">
+    <xs:sequence>
+      <xs:element name="BeginIndex" type="xs:int"/>
+      <xs:element name="EndIndex" type="xs:int"/>
+      <xs:element name="Text" type="xs:string" minOccurs="0"/>
+      <xs:element name="Languages" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Language" type="ServerResponseLanguageDetectorResultCandidateType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseLanguageDetectorResultCandidateType">
+    <xs:sequence>
+      <xs:element name="Id" type="xs:string" minOccurs="0"/>
+      <xs:element name="ConfidenceScore" type="xs:double"/>
+      <xs:element name="DistributionScore" type="xs:int" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseConceptExtractorResultType">
+    <xs:sequence>
+      <xs:element name="ComplexConcepts" type="ServerResponseConceptExtractorResultConceptsType" minOccurs="0"/>
+      <xs:element name="SimpleConcepts" type="ServerResponseConceptExtractorResultConceptsType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseConceptExtractorResultConceptsType">
+    <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="Concept" type="ServerResponseConceptExtractorResultConcept1Type"/>
+        <xs:element name="ExtractedTerm" type="ServerResponseConceptExtractorResultConcept2Type"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseConceptExtractorResultConcept1Type">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="Frequency" type="xs:int"/>
+        <xs:attribute name="Relevancy" type="xs:int"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseCategorizerResultType">
+    <xs:sequence>
+      <xs:element name="KBid" type="xs:string" minOccurs="0"/>
+      <xs:element name="RelevancyScore" type="xs:int" minOccurs="0"/>
+      <xs:element name="Categories" type="ServerResponseCategorizerResultCategoriesType" minOccurs="0"/>
+      <xs:element name="RejectedCategories" type="ServerResponseCategorizerResultRejectedCategoriesType" minOccurs="0"/>
+      <xs:element name="KnowledgeBase" type="ServerResponseCategorizerResultKnowledgeBaseType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseCategorizerResultCategoriesType">
+    <xs:sequence>
+      <xs:element name="Category" type="ServerResponseCategorizerResultCategoryType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseCategorizerResultRejectedCategoriesType">
+    <xs:sequence>
+      <xs:element name="RejectedCategory" type="ServerResponseCategorizerResultCategoryType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseCategorizerResultKnowledgeBaseType">
+    <xs:sequence>
+      <xs:element name="KBid" type="xs:string" minOccurs="0"/>
+      <xs:element name="RelevancyScore" type="xs:int" minOccurs="0"/>
+      <xs:element name="Categories" type="ServerResponseCategorizerResultCategoriesType" minOccurs="0"/>
+      <xs:element name="RejectedCategories" type="ServerResponseCategorizerResultRejectedCategoriesType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntityExtractorResultType">
+    <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="nfExtract" type="ServerResponseEntityExtractorResultExtractResultType"/>
+        <xs:element name="nfFullTextSearch" type="ServerResponseEntityExtractorResultFullTextSearchResultType"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntityExtractorResultExtractResultType">
+    <xs:sequence>
+      <xs:element name="ExtractedTerm" type="ServerResponseEntityExtractorResultTermType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntityExtractorResultTermType">
+    <xs:sequence>
+      <xs:element name="nfinderNormalized" type="xs:string" minOccurs="0"/>
+      <xs:element name="ClientNormalized" type="xs:string" minOccurs="0"/>
+      <xs:element name="Id" type="xs:string" minOccurs="0"/>
+      <xs:element name="MainTerm" type="ServerResponseEntityExtractorResultTermMaintermType" minOccurs="0"/>
+      <xs:element name="Subterms" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Subterm" type="ServerResponseEntityExtractorResultTermOccurenceType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Hierarchy" type="ServerResponseEntityExtractorResultTermHierarchyType" minOccurs="0"/>
+      <xs:element name="Homonyms" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Homonym" type="ServerResponseEntityExtractorResultTermHomonymType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="CartridgeID" type="xs:string"/>
+    <xs:attribute name="ConfidenceScore" type="xs:double"/>
+    <xs:attribute name="RelevancyScore" type="xs:double"/>
+    <xs:attribute name="Frequency" type="xs:int"/>
+    <xs:attribute name="Subjectivity" type="xs:string"/>
+    <xs:attribute name="SubjectivityConfidenceScore" type="xs:double"/>
+    <xs:attribute name="SubjectivityScore" type="xs:double"/>
+    <xs:attribute name="SubjectivityDistribution" type="xs:double"/>
+    <xs:attribute name="Tone" type="xs:string"/>
+    <xs:attribute name="ToneConfidenceScore" type="xs:double"/>
+    <xs:attribute name="PositiveToneScore" type="xs:double"/>
+    <xs:attribute name="PositiveToneDistribution" type="xs:double"/>
+    <xs:attribute name="NegativeToneScore" type="xs:double"/>
+    <xs:attribute name="NegativeToneDistribution" type="xs:double"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntityExtractorResultTermMaintermType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="language" type="xs:string"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntityExtractorResultTermOccurenceType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="Id" type="xs:string"/>
+        <xs:attribute name="Position" type="xs:int" use="required"/>
+        <xs:attribute name="Length" type="xs:int" use="required"/>
+        <xs:attribute name="Candidate" type="xs:int"/>
+        <xs:attribute name="Subjectivity" type="xs:string"/>
+        <xs:attribute name="SubjectivityConfidenceScore" type="xs:double"/>
+        <xs:attribute name="SubjectivityScore" type="xs:double"/>
+        <xs:attribute name="Tone" type="xs:string"/>
+        <xs:attribute name="ToneConfidenceScore" type="xs:double"/>
+        <xs:attribute name="PositiveToneScore" type="xs:double"/>
+        <xs:attribute name="NegativeToneScore" type="xs:double"/>
+        <xs:attribute name="SentenceBeginIndex" type="xs:int"/>
+        <xs:attribute name="SentenceEndIndex" type="xs:int"/>
+        <xs:attribute name="Sentence" type="xs:string"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntityExtractorResultTermHierarchyType">
+    <xs:sequence>
+      <xs:element name="Base" type="ServerResponseEntityExtractorResultTermHierarchyBaseType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntityExtractorResultTermHierarchyBaseType">
+    <xs:sequence>
+      <xs:element name="Attributes" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Attribute" type="ServerResponseEntityExtractorResultTermAttributeType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Parents" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Parent" type="ServerResponseEntityExtractorResultTermParentType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntityExtractorResultTermAttributeType">
+    <xs:sequence>
+      <xs:element name="Name" type="xs:string" minOccurs="0"/>
+      <xs:element name="Value" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntityExtractorResultTermParentType">
+    <xs:sequence>
+      <xs:element name="Id" type="xs:string" minOccurs="0"/>
+      <xs:element name="Term" type="xs:string" minOccurs="0"/>
+      <xs:element name="Attributes" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Attribute" type="ServerResponseEntityExtractorResultTermAttributeType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Parents" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Parent" type="ServerResponseEntityExtractorResultTermParentType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntityExtractorResultTermHomonymType">
+    <xs:sequence>
+      <xs:element name="Id" type="xs:string" minOccurs="0"/>
+      <xs:element name="Term" type="xs:string" minOccurs="0"/>
+      <xs:element name="Attributes" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Attribute" type="ServerResponseEntityExtractorResultTermAttributeType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Parents" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Parent" type="ServerResponseEntityExtractorResultTermParentType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntityExtractorResultFullTextSearchResultType">
+    <xs:sequence>
+      <xs:element name="ExtractedTerm" type="ServerResponseEntityExtractorResultTermType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseSentimentResultType">
+    <xs:sequence>
+      <xs:element name="SentenceLevel" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Sentence" type="ServerResponseSentimentResultSentenceType" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="DocumentLevel" type="ServerResponseSentimentResultDocumentType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseSentimentResultSentenceType">
+    <xs:sequence>
+      <xs:element name="Text" type="ServerResponseSentimentResultSentenceTextType" minOccurs="0"/>
+      <xs:element name="Subjectivity" type="ServerResponseSentimentResultSentenceSubjectivityType" minOccurs="0"/>
+      <xs:element name="PositiveTone" type="ServerResponseSentimentResultSentenceToneType" minOccurs="0"/>
+      <xs:element name="NegativeTone" type="ServerResponseSentimentResultSentenceToneType" minOccurs="0"/>
+      <xs:element name="Tone" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseSentimentResultSentenceTextType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="begin" type="xs:int" use="required"/>
+        <xs:attribute name="end" type="xs:int" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseSentimentResultSentenceSubjectivityType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="score" type="xs:double" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseSentimentResultSentenceToneType">
+    <xs:sequence/>
+    <xs:attribute name="score" type="xs:double" use="required"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseSentimentResultDocumentType">
+    <xs:sequence>
+      <xs:element name="Subjectivity" type="ServerResponseSentimentResultDocumentSubjectivityType" minOccurs="0"/>
+      <xs:element name="PositiveTone" type="ServerResponseSentimentResultDocumentToneType" minOccurs="0"/>
+      <xs:element name="NegativeTone" type="ServerResponseSentimentResultDocumentToneType" minOccurs="0"/>
+      <xs:element name="Tone" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseSentimentResultDocumentSubjectivityType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="score" type="xs:double" use="required"/>
+        <xs:attribute name="distribution" type="xs:double" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseSentimentResultDocumentToneType">
+    <xs:sequence/>
+    <xs:attribute name="score" type="xs:double" use="required"/>
+    <xs:attribute name="distribution" type="xs:double" use="required"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseSimilarityResultType">
+    <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="IsTextIndexed" type="ServerResponseEntitySimilarityMethodContainsMethodType"/>
+        <xs:element name="Compare" type="ServerResponseEntitySimilarityMethodCompareMethodType"/>
+        <xs:element name="GetAllIds" type="ServerResponseEntitySimilarityMethodListMethodType"/>
+        <xs:element name="GetStats" type="ServerResponseEntitySimilarityMethodSizeMethodType"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntitySimilarityMethodContainsMethodType">
+    <xs:sequence>
+      <xs:element name="IsTextIndexed" type="xs:int"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntitySimilarityMethodCompareMethodType">
+    <xs:sequence>
+      <xs:element name="Text" type="ServerResponseEntitySimilarityMethodCompareMethodTextType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntitySimilarityMethodCompareMethodTextType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="Weight" type="xs:double" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntitySimilarityMethodListMethodType">
+    <xs:sequence>
+      <xs:element name="Id" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseEntitySimilarityMethodSizeMethodType">
+    <xs:sequence>
+      <xs:element name="NbDocuments" type="xs:int"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ServerResponseSummarizerResultType">
+    <xs:sequence>
+      <xs:element name="Summary" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+  <xs:simpleType name="ServerResponseErrorTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Status"/>
+      <xs:enumeration value="Error"/>
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>
