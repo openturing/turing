@@ -4,6 +4,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -19,7 +20,7 @@ public interface TurSNSiteFieldRepository extends JpaRepository<TurSNSiteField, 
 	TurSNSiteField findById(int id);
 
 	@Cacheable("turSNSiteFieldfindByTurSNSite")
-	List<TurSNSiteField> findByTurSNSite(TurSNSite turSNSite);
+	Set<TurSNSiteField> findByTurSNSite(TurSNSite turSNSite);
 
 	@CacheEvict(value = { "turSNSiteFieldfindById", "turSNSiteFieldfindByTurSNSite" }, allEntries = true)
 	TurSNSiteField save(TurSNSiteField turSNSiteField);
