@@ -1,2 +1,0 @@
-# core
-Viglet Turing Core
