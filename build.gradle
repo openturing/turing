@@ -27,6 +27,13 @@ apply plugin: 'jacoco'
 apply plugin: 'project-report'
 apply plugin: 'com.bmuschko.docker-remote-api'
 
+sourceSets {
+  main {
+      java {
+         srcDirs = ['src/main/java', 'libs/search/src/main/java','libs/core/src/main/java','libs/nlp/src/main/java']
+      }
+  }
+}
 jar {
     baseName = 'viglet-turing'
     version =  '0.3.1'
