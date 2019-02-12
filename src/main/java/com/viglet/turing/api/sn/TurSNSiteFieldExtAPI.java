@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpPost;
@@ -60,7 +61,7 @@ public class TurSNSiteFieldExtAPI {
 	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String snSiteId) throws JSONException {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
 
-		List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
+		Set<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
 		List<TurNLPInstanceEntity> turNLPInstanceEntities = turNLPInstanceEntityRepository
 				.findByTurNLPInstanceAndEnabled(turSNSite.getTurNLPInstance(), 1);
 		List<TurNLPEntity> turNLPEntityThesaurus = turNLPEntityRepository.findByLocal(1);

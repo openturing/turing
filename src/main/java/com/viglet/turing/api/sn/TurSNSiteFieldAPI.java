@@ -1,6 +1,6 @@
 package com.viglet.turing.api.sn;
 
-import java.util.List;
+import java.util.Set;
 
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +34,7 @@ public class TurSNSiteFieldAPI {
 
 	@ApiOperation(value = "Semantic Navigation Site Field List")
 	@GetMapping
-	public List<TurSNSiteField> turSNSiteFieldList(@PathVariable String snSiteId) throws JSONException {
+	public Set<TurSNSiteField> turSNSiteFieldList(@PathVariable String snSiteId) throws JSONException {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
 		return this.turSNSiteFieldRepository.findByTurSNSite(turSNSite);
 	}
