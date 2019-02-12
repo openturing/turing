@@ -1,0 +1,67 @@
+buildscript {
+    ext { springBootVersion = '2.1.2.RELEASE'
+	      hibernateVersion = '5.11.0.Final'
+		  httpClientVersion = '4.5.6'
+		  swaggerVersion = '2.9.2'
+		  jgitVersion = '4.11.0.201803080745-r'
+		 }
+		repositories {
+			mavenCentral()
+		}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'maven'
+
+group = 'com.github.openturing'
+
+sourceCompatibility = 1.8
+
+jar {
+    baseName = 'turing-core-lib'
+    version =  '0.3.2'
+}
+
+repositories {		
+        mavenCentral()
+}
+
+dependencies {
+   	// Spring Boot
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
+ 
+    compile (group: 'org.springframework.boot', name: 'spring-boot-starter-undertow', version:"${springBootVersion}"){ 
+    exclude(module: 'javax.el')
+    }
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version:"${springBootVersion}"
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version:"${springBootVersion}"
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
+ 	compile group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
+ 	
+    // Spring
+  	compile group: 'org.springframework', name: 'spring-test', version: '5.0.9.RELEASE'
+    
+    // Jackson
+   	compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.7'
+   	
+    // H2
+    compile group: 'com.h2database', name: 'h2', version:'1.4.197'
+    
+    //ActiveMQ using KahaDB
+    compile group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.14.5'
+    
+    // Swagger 2
+	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
+	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"
+
+    // Apache Commons
+    compile group: 'commons-io', name: 'commons-io', version:'2.5'
+    compile group: 'commons-lang', name: 'commons-lang', version:'2.6'
+    compile group: 'org.apache.commons', name: 'commons-compress', version: '1.18'
+    
+     // JSON
+    compile group: 'org.json', name: 'json', version:'20140107'
+
+}
