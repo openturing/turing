@@ -290,21 +290,31 @@ public class TurSolr {
 
 			for (Map.Entry<String, Object> entry : attributes.entrySet()) {
 				String key = entry.getKey();
-				Object attribute = entry.getValue();
+				Object attribute = entry.getValue();				
 				if (attribute != null) {
+					logger.info("key: " + key);
+					logger.info("attribute: " + attribute.toString());
+					logger.info("class: " + attribute.getClass().getName());
+					if (turSNSiteFieldMap.get(key) != null) {
+						logger.info("multivalue: " + turSNSiteFieldMap.get(key).getMultiValued());
+					}
 					if (attribute.getClass().getName().equals("java.lang.Integer")) {
+						logger.info("is Integer");
 						int intValue = (Integer) attribute;
 						document.addField(key, intValue);
 					} else if (attribute.getClass().getName().equals("org.json.JSONArray")) {
+						logger.info("is JSONArray");
 						JSONArray value = (JSONArray) attribute;
 						if (key.startsWith("turing_entity_") || (turSNSiteFieldMap.get(key) != null
 								&& turSNSiteFieldMap.get(key).getMultiValued() == 1)) {
+							logger.info("is MultiValued");
 							if (value != null) {
 								for (int i = 0; i < value.length(); i++) {
 									document.addField(key, value.getString(i));
 								}
 							}
 						} else {
+							logger.info("is not MultiValued");
 							ArrayList<String> listValues = new ArrayList<String>();
 							if (value != null) {
 								for (int i = 0; i < value.length(); i++) {
@@ -314,18 +324,22 @@ public class TurSolr {
 							document.addField(key, concatenateString(listValues));
 						}
 					} else if (attribute instanceof ArrayList) {
+						logger.info("is ArrayList");
 						ArrayList values = (ArrayList) attribute;
 						if (values != null) {
 							if (key.startsWith("turing_entity_") || (turSNSiteFieldMap.get(key) != null
 									&& turSNSiteFieldMap.get(key).getMultiValued() == 1)) {
+								logger.info("is MultiValued");
 								for (Object valueItem : values) {
 									document.addField(key, turSolrField.convertFieldToString(valueItem));
 								}
 							} else {
+								logger.info("is not MultiValued");
 								document.addField(key, concatenateString(values));
 							}
 						}
 					} else {
+						logger.info("is undefined");
 						String valueStr = turSolrField.convertFieldToString(attribute);
 						document.addField(key, valueStr);
 					}
