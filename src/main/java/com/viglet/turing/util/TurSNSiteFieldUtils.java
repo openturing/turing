@@ -1,6 +1,7 @@
 package com.viglet.turing.util;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,7 +22,7 @@ public class TurSNSiteFieldUtils {
 	TurSNSiteFieldRepository turSNSiteFieldRepository;
 
 	public Map<String, TurSNSiteField> toMap(TurSNSite turSNSite) {
-		Set<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
+		List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
 		logger.info("TurSNSiteFieldUtil.toMap Count: " + turSNSiteFields.size());
 		Map<String, TurSNSiteField> turSNSiteFieldsMap = new HashMap<String, TurSNSiteField>();
 		for (TurSNSiteField turSNSiteField : turSNSiteFields)

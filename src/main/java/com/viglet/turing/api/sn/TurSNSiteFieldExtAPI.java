@@ -61,7 +61,7 @@ public class TurSNSiteFieldExtAPI {
 	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String snSiteId) throws JSONException {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
 
-		Set<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
+		List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
 		List<TurNLPInstanceEntity> turNLPInstanceEntities = turNLPInstanceEntityRepository
 				.findByTurNLPInstanceAndEnabled(turSNSite.getTurNLPInstance(), 1);
 		List<TurNLPEntity> turNLPEntityThesaurus = turNLPEntityRepository.findByLocal(1);
