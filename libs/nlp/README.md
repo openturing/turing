@@ -1,2 +1,0 @@
-# nlp
-Viglet Turing NLP
