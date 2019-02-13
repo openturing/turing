@@ -27,6 +27,13 @@ apply plugin: 'jacoco'
 apply plugin: 'project-report'
 apply plugin: 'com.bmuschko.docker-remote-api'
 
+sourceSets {
+  main {
+      java {
+         srcDirs = ['src/main/java', 'libs/search/src/main/java','libs/core/src/main/java','libs/nlp/src/main/java']
+      }
+  }
+}
 jar {
     baseName = 'viglet-turing'
     version =  '0.3.1'
@@ -35,64 +42,6 @@ jar {
 bootJar {
     launchScript()
 }
-// Docker BEGIN
-
-import com.bmuschko.gradle.docker.tasks.container.*
-import com.bmuschko.gradle.docker.tasks.image.*
-docker {
-    registryCredentials {
-        username = getConfigurationProperty('DOCKER_USERNAME', 'docker.username')
-        password = getConfigurationProperty('DOCKER_PASSWORD', 'docker.password')
-        email = getConfigurationProperty('DOCKER_EMAIL', 'docker.email')
-    }
-}
-
-String getConfigurationProperty(String envVar, String sysProp) {
-    System.getenv(envVar) ?: project.findProperty(sysProp)
-}
-
-task createDockerfile(type: Dockerfile) {
-    destFile = project.file('build/docker/Dockerfile')
-    from 'openjdk:8-jre-alpine'
-    maintainer 'Alexandre Oliveira "alexandre.oliveira@viglet.com"'
-    copyFile jar.archiveName, '/tmp/viglet-turing.jar'
-    entryPoint 'java'
-    defaultCommand '-jar', '/tmp/viglet-turing.jar'
-    exposePort 8080
-    runCommand 'apk --update --no-cache add curl'
-    instruction 'HEALTHCHECK CMD curl -f http://localhost:2700/api || exit 1'
-}
-
-task syncWebAppArchive(type: Sync) {
-    dependsOn assemble
-    from jar.archivePath
-    into createDockerfile.destFile.parentFile
-}
-
-createDockerfile.dependsOn syncWebAppArchive
-
-task buildImage(type: DockerBuildImage) {
-    dependsOn createDockerfile
-    inputDir = createDockerfile.destFile.parentFile
-    tag = "viglet/turing:$jar.version"
-}
-
-task buildDockerImage(type: DockerBuildImage) {
-    dependsOn createDockerfile
-    if (System.env.DOCKER_HOST) {
-        url = "$System.env.DOCKER_HOST".replace("tcp","https")
-        if (System.env.DOCKER_CERT_PATH) {
-            certPath = new File(System.env.DOCKER_CERT_PATH)
- 
-        }
-    }
-    else {
-        url = 'unix:///var/run/docker.sock'
-    }
-    inputDir = createDockerfile.destFile.parentFile
-    tag = 'viglet/turing:$jar.version'
-}
-// Docker END
 
 repositories {
 	mavenCentral()
@@ -237,6 +186,9 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version:"${springBootVersion}"
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-solr', version:"${springBootVersion}"
+    
 	
 	// Spring
   	compile group: 'org.springframework', name: 'spring-test', version: '5.1.2.RELEASE'
@@ -248,26 +200,11 @@ dependencies {
     compile group: 'com.h2database', name: 'h2', version:'1.4.197'
     
     // MariaDB
-    compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.3.0'
-
-            
-	// Solr
-    compile(group: 'org.apache.solr', name: 'solr-solrj', version:'4.6.0') {
-exclude(module: 'httpclient')
-exclude(module: 'httpmime')
-    }
+    compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.3.0'         
     
     // JSON
     compile group: 'org.json', name: 'json', version:'20140107'
-    
-    // HTTP Client
-    compile(group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.2') {
-exclude(module: 'commons-logging')
-    }
-    
-    // HTTP Mime
-    compile group: 'org.apache.httpcomponents', name: 'httpmime', version:'4.5.2'
-    
+      
     // CoreNLP
     compile group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'3.7.0'
     
@@ -295,6 +232,7 @@ exclude(module: 'commons-logging')
 	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
 	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"
 
+
 	// WebJars
 	compile 'org.webjars.bower:jquery:1.12.4'
 	compile 'org.webjars:bootstrap:3.3.7-1'
@@ -310,15 +248,6 @@ exclude(module: 'commons-logging')
 	compile 'org.webjars.bower:angular-sanitize:1.7.3'
 	compile 'org.webjars.bower:angular-moment:1.2.0'
 	compile 'org.webjars.bower:font-awesome:4.7.0'
-	
-     // Turing Core
-    implementation 'com.github.openturing:turing-core-lib:498f802d9f'
-    
-    // Turing NLP
-    implementation 'com.github.openturing:turing-nlp-lib:bd817f8af1'
-
-    // Turing Search
-    implementation 'com.github.openturing:turing-search-lib:26caf762f9'
 
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
