@@ -188,8 +188,9 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version:"${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-solr', version:"${springBootVersion}"
-    
-	
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
+	compile group: 'org.springframework.security.oauth.boot', name: 'spring-security-oauth2-autoconfigure', version:"${springBootVersion}"
+
 	// Spring
   	compile group: 'org.springframework', name: 'spring-test', version: '5.1.2.RELEASE'
 
@@ -247,8 +248,9 @@ dependencies {
 	compile 'org.webjars.bower:angular-cookies:1.7.3'
 	compile 'org.webjars.bower:angular-sanitize:1.7.3'
 	compile 'org.webjars.bower:angular-moment:1.2.0'
+	compile 'org.webjars.bower:angular-moment:1.2.0'
 	compile 'org.webjars.bower:font-awesome:4.7.0'
-
+	
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 task wrapper(type: Wrapper) {

@@ -682,13 +682,20 @@ turingApp.service('turAPIServerService', [
 					+ turPort + turAPIContext;
 
 			this.get = function() {
-
+				if ($cookies.get('access_token') != null)						
+				$http.defaults.headers.common['Authorization'] = 'Bearer ' + $cookies.get('access_token');
+				
 				if ($cookies.get('turAPIServer') != null)
 					return $cookies.get('turAPIServer');
 				else {
 	                $cookies.put('turAPIServer', turEmbServer);
 	                return turEmbServer;
 	            }
+			}
+			
+			this.token = function() {
+				if ($cookies.get('access_token') != null)
+					return $cookies.get('access_token');				
 			}
 		} ]);
 turingApp.factory('turLocaleResource', [ '$resource', 'turAPIServerService', function($resource, turAPIServerService) {
