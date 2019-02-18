@@ -26,6 +26,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+public class TurIndexContext {
+	
+}
+/*
 @Controller
 public class TurIndexContext {
 
@@ -40,3 +44,4 @@ public class TurIndexContext {
 
 	}
 }
+*/

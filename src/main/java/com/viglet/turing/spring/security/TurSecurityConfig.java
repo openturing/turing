@@ -1,6 +1,7 @@
 package com.viglet.turing.spring.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -9,12 +10,52 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
+//import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+//import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.bind.annotation.RestController;
 
+@Configuration
+@EnableWebSecurity
+@Profile("production")
+public class TurSecurityConfig extends WebSecurityConfigurerAdapter {
+	   
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http.headers().frameOptions().disable().cacheControl().disable();
+		http.csrf().disable();
+		http.cors().disable();
+	}
+
+	@Override
+	public void configure(WebSecurity web) throws Exception {
+
+		super.configure(web);
+		web.ignoring().antMatchers("/webjars/**", "/js/**", "/css/**", "/template/**", "/img/**", "/sites/**",
+				"/swagger-resources/**", "/h2/**");
+		web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
+	}
+
+	// create two users, admin and user
+	@Autowired
+	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+
+		auth.inMemoryAuthentication().withUser("user").password("{noop}user").roles("USER").and().withUser("admin")
+				.password("{noop}admin").roles("ADMIN");
+
+	}
+
+	@Bean
+	public HttpFirewall allowUrlEncodedSlashHttpFirewall() {
+		// Allow double slash in URL
+		StrictHttpFirewall firewall = new StrictHttpFirewall();
+		firewall.setAllowUrlEncodedSlash(true);
+		return firewall;
+	}
+}
+
+/*
 @Configuration
 @EnableWebSecurity
 @RestController
@@ -59,4 +100,6 @@ public class TurSecurityConfig extends WebSecurityConfigurerAdapter {
 		firewall.setAllowUrlEncodedSlash(true);
 		return firewall;
 	}
+	
 }
+*/

@@ -19,7 +19,7 @@ public class TurAPI {
 	@Autowired
 	TurAPIBean turAPIBean;
 
-	@PreAuthorize("#oauth2.hasScope('read')")
+	//@PreAuthorize("#oauth2.hasScope('read')")
 	@GetMapping
 	public TurAPIBean info() throws JSONException {
 

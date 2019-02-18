@@ -18,6 +18,7 @@
 package com.viglet.turing.spring;
 
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+
 import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
