@@ -21,19 +21,19 @@ turingSNApp
 
 							$scope.vigLanguage = vigLocale.getLocale()
 									.substring(0, 2);
-							$translate.use($scope.vigLanguage);							
+							$translate.use($scope.vigLanguage);
 							amMoment.changeLocale('en');
 							$scope.pageCount = 0;
 							$scope.pageStart = 0;
 							$scope.pageEnd = 0;
-							
+
 							$scope.defaultTitleField = "title";
 							$scope.defaultDescriptionField = "abstract";
 							$scope.defaultTextField = "text";
 							$scope.defaultImageField = "image";
 							$scope.defaultDateField = "published_date";
 							$scope.defaultUrlField = "url";
-							
+
 							var turPath = $location.path().trim();
 							if (turPath.endsWith("/")) {
 								turPath = turPath.substring(0,
@@ -41,6 +41,21 @@ turingSNApp
 							}
 							var turSiteNameSplit = turPath.split('/');
 							$scope.turSiteName = turSiteNameSplit[turSiteNameSplit.length - 1];
+							$scope.firstLetters = function(text) {
+								if (text != null) {
+									var splitText = text.toUpperCase().split(
+											' ');
+									if (splitText.length > 1) {
+										return splitText[0].charAt(0)
+												+ splitText[1].charAt(0);
+									} else {
+										return "&nbsp;"+ splitText[0].charAt(0) + "&nbsp;";
+									}
+								} else {
+									return "";
+								}
+
+							}
 							$scope.updateParameters = function() {
 								$scope.turQueryString = $location.url();
 								$scope.turQuery = $location.search().q;
@@ -62,7 +77,7 @@ turingSNApp
 									$scope.turSort = "relevance";
 								}
 							}
-							 
+
 							$scope.init = function() {
 								$scope.updateParameters();
 								$scope.initParams($scope.turQuery,
@@ -85,14 +100,14 @@ turingSNApp
 													$scope.pages = response.data["pagination"];
 													$scope.facets = response.data["widget"]["facet"];
 													$scope.facetsToRemove = response.data["widget"]["facetToRemove"];
-													
-													$scope.defaultTitleField =response.data["queryContext"]["defaultFields"]["title"];
+
+													$scope.defaultTitleField = response.data["queryContext"]["defaultFields"]["title"];
 													$scope.defaultDescriptionField = response.data["queryContext"]["defaultFields"]["description"];
 													$scope.defaultTextField = response.data["queryContext"]["defaultFields"]["text"];
 													$scope.defaultImageField = response.data["queryContext"]["defaultFields"]["image"];
 													$scope.defaultDateField = response.data["queryContext"]["defaultFields"]["date"];
 													$scope.defaultUrlField = response.data["queryContext"]["defaultFields"]["url"];
-													
+
 													// $scope.turSort =
 													// response.data["queryContext"]["query"]["sort"];
 												},

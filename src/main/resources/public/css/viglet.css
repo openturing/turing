@@ -1,3 +1,44 @@
+.numberCircle {
+	padding: 5px;
+	display: inline-block;
+	line-height: 0px;
+	border-radius: 50%;
+	border: 1px solid;
+	font-size: 12px;
+	border-color: #FF874Bdd;
+}
+
+.numberCircle span {
+	display: inline-block;
+	padding-top: 50%;
+	padding-bottom: 50%;
+	margin-left: 2px;
+	margin-right: 2px;
+	color: #FF874Bdd;
+	font-family: Arial, sans-serif;
+}
+
+.numberCircleFolder {
+	padding: 5px;
+	display: inline-block;
+	line-height: 0px;
+	border-radius: 50%;
+	border: 0px solid;
+	/* border-bottom-color: #ddd; */
+	font-size: 12px;
+	background-color: #FF874Bdd;
+}
+
+.numberCircleFolder span {
+	display: inline-block;
+	padding-top: 50%;
+	padding-bottom: 50%;
+	margin-left: 2px;
+	margin-right: 2px;
+	color: white;
+	font-family: Arial, sans-serif;
+}
+
 .fa-viglet {
     color: #FF874B;
 }

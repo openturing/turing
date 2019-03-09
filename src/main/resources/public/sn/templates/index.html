@@ -149,31 +149,54 @@
 												<div class="panel-body">
 													<article ng-repeat="document in results"
 														style="margin-top: 40px; border-bottom-color: #FF874B; border-bottom-style: solid; border-bottom-width: thin; padding-bottom: 20px;">
-														<div>
-															<h4>
-																<a style="color: #FF874B; font-weight: bolder;"
-																	href="{{document.fields[defaultUrlField]}}"
-																	ng-bind-html="document.fields[defaultTitleField]"></a>
-															</h4>
-														</div>
-														<div>{{document.fields[defaultDateField] |
-															amParse:'YYYY-MM-DDTHH:mm:ssZ' | amDateFormat:'DD MMMM
-															YYYY'}}</div>
-														<div style="margin-top: 10px">
-															<div style="display: table-row">
-																<div
-																	ng-bind-html="document.fields[defaultDescriptionField]"></div>
+														<div class="row">
+															<div class="col-lg-2" style="padding-bottom: 20px;">
+																<img class="img-thumbnail"
+																	ng-if="document.fields[defaultImageField]"
+																	style="width: 100%; background-position: center; background-repeat: no-repeat; background-size: cover; -webkit-background-size: cover;"
+																	ng-src="{{document.fields[defaultImageField]}}">
+																<span ng-if="!document.fields[defaultImageField] && document.fields['author']"
+																	class="numberCircle" style="margin-left: 10px;">
+																	<span style="font-size: 40px;" ng-bind-html="firstLetters(document.fields['author'])"></span>
+																</span>
 															</div>
-															<div ng-if="document['metadata'].length > 0"
-																style="margin-top: 10px">
-																{{'SUBJECTS_FOUND' | translate}}:
-																<div ng-repeat="entity in document['metadata']"
-																	style="display: inline;">
-																	<a style="color: #FF874B"
-																		ng-click="turRedirect(entity['href']);" href
-																		ng-bind-html="entity['text']"></a>
+															<div class="col-lg-10">
+																<div>
+																	<h4>
+																		<a ng-if="document.fields[defaultTitleField]" style="color: #FF874B; font-weight: bolder;"
+																			href="{{document.fields[defaultUrlField]}}"
+																			ng-bind-html="document.fields[defaultTitleField]"></a>
+																			
+																		<a style="color: #FF874B; font-weight: bolder;overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;" ng-if="!document.fields[defaultTitleField]" 
+																			href="{{document.fields[defaultUrlField]}}"
+																			ng-bind-html="document.fields[defaultDescriptionField]"></a>	
+																	</h4>
+																</div>
+																<div>
+																	{{document.fields[defaultDateField] |
+																	amParse:'YYYY-MM-DDTHH:mm:ssZ' | amDateFormat:'DD MMMM
+																	YYYY'}}<span ng-if="document.fields['author']">
+																		- {{document.fields['author']}}</span>
+																</div>
 
-																	<div ng-if="!$last" style="display: inline;">,</div>
+																<div style="margin-top: 10px">
+																	<div style="display: table-row">
+																		<div
+																			style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
+																			ng-bind-html="document.fields[defaultDescriptionField]"></div>
+																	</div>
+																	<div ng-if="document['metadata'].length > 0"
+																		style="margin-top: 10px">
+																		{{'SUBJECTS_FOUND' | translate}}:
+																		<div ng-repeat="entity in document['metadata']"
+																			style="display: inline;">
+																			<a style="color: #FF874B"
+																				ng-click="turRedirect(entity['href']);" href
+																				ng-bind-html="entity['text']"></a>
+
+																			<div ng-if="!$last" style="display: inline;">,</div>
+																		</div>
+																	</div>
 																</div>
 															</div>
 														</div>
