@@ -63,6 +63,7 @@ turingSNApp
 								$scope.turLocale = $location.search()._setlocale;
 								$scope.turSort = $location.search().sort;
 								$scope.turFilterQuery = $location.search()['fq[]'];
+								$scope.turTargetingRule = $location.search()['tr[]'];
 
 								if ($scope.turQuery == null
 										|| $scope.turQuery.trim().length == 0) {
@@ -82,14 +83,14 @@ turingSNApp
 								$scope.updateParameters();
 								$scope.initParams($scope.turQuery,
 										$scope.turPage, $scope.turLocale,
-										$scope.turSort, $scope.turFilterQuery)
+										$scope.turSort, $scope.turFilterQuery, $scope.turTargetingRule)
 							}
 							$scope.initParams = function(q, p, _setlocale,
-									sort, fq) {
+									sort, fq, tr) {
 
 								turSNSearch
 										.search($scope.turSiteName, q, p,
-												_setlocale, sort, fq)
+												_setlocale, sort, fq, tr)
 										.then(
 												function successCallback(
 														response) {
@@ -117,9 +118,9 @@ turingSNApp
 							}
 
 							$scope.initURL = function(q, p, _setlocale, sort,
-									fq) {
+									fq, tr) {
 								turSNSearch
-										.searchURL(q, p, _setlocale, sort, fq)
+										.searchURL(q, p, _setlocale, sort, fq, tr)
 										.then(
 												function successCallback(
 														response) {
@@ -200,13 +201,14 @@ turingSNApp.factory('turSNSearch', [
 		function($http, turAPIServerService) {
 
 			return {
-				search : function(turSiteName, query, page, _setlocale, sort, fq) {
+				search : function(turSiteName, query, page, _setlocale, sort, fq, tr) {
 					var data = {
 						'q' : query,
 						'p' : page,
 						'_setlocale' : _setlocale,
 						'sort' : sort,
-						'fq[]' : fq
+						'fq[]' : fq,
+						'tr[]' : tr
 					};
 					var config = {
 						params : data,
