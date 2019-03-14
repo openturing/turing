@@ -1,0 +1,1082 @@
+{
+    "terms": [{
+            "term": "Departamento de Trânsito do Paraná",
+            "ignore": false,
+            "ner": "ON",
+            "convertTo": "DETRAN/PR"
+        }, {
+            "term": "DETRANPR",
+            "ignore": false,
+            "ner": "ON",
+            "convertTo": "DETRAN/PR"
+        },
+        {
+            "term": "Departamento de Trânsito",
+            "ignore": false,
+            "ner": "ON",
+            "convertTo": "DETRAN"
+        },
+        {
+            "term": "Departamento Nacional de Trânsito",
+            "ignore": false,
+            "ner": "ON",
+            "convertTo": "DENATRAN"
+        },
+        {
+            "term": "DENATRAN",
+            "ignore": false,
+            "ner": "ON",
+            "convertTo": "DENATRAN"
+        },
+        {
+            "term": "Procurador",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Diretores",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Gerais",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Diretores de Ensino de Centros de Formação",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Apresentar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Pamella Garcia",
+            "ignore": false,
+            "ner": "PN"
+        },
+        {
+            "term": "Representante Legal",
+            "ignore": false,
+            "ner": "PN"
+        },
+        {
+            "term": "Custo",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Fazer",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Clique",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Fale Conosco",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Anexe",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Preencha",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Registrar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Alterar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Banco",
+            "ignore": false,
+            "ner": "GL"
+        },
+        {
+            "term": "CNH",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "CPF",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "CFC",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "Unidade de Atendimento",
+            "ignore": false,
+            "ner": "GL"
+        },
+        {
+            "term": "Telefone Celular e Fixo",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Telefone Fixo",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Portaria",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Portarias",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Comentários",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Foto",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Protocolo Empresa",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "IOS",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Site",
+            "ignore": false,
+            "ner": "GL"
+        },
+        {
+            "term": "Carnaval",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Certificado de Registro de Veículo",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Certificado de Registro",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Veículos",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo": "Veiculo"
+        },
+        {
+            "term": "PR",
+            "ignore": false,
+            "ner": "GL",
+            "convertTo": "Paraná"
+        },
+        {
+            "term": "Licenciamento de Veículo",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "– Apresentar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Transferência de Propriedade",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Inclusão",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Detran",
+            "ignore": false,
+            "ner": "ON",
+            "convertTo": "DETRAN"
+        },
+        {
+            "term": "Adjust",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Bancos Arrecadadores",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "Canais de Atendimento",
+            "ignore": false,
+            "ner": "GL"
+        },
+        {
+            "term": "Digital",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Entidades Credenciadas pelo Inmetro",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "Links Importantes",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Protocolo Integrado",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Trabalhe Conosco",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Acessibilidade",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Aula",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Comparecer",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Créditos",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Estado Veículo",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Estado do Paraná",
+            "ignore": true,
+            "ner": null,
+            "convertTo": "Paraná"
+        },
+        {
+            "term": "Consulte",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Verifique",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Março",
+            "ignore": false,
+            "ner": "DATE"
+        },
+        {
+            "term": "Janeiro",
+            "ignore": false,
+            "ner": "DATE",
+            "convertTo": "Janeiro"
+        },
+        {
+            "term": "Junho",
+            "ignore": false,
+            "ner": "DATE"
+        },
+        {
+            "term": "Agosto",
+            "ignore": false,
+            "ner": "DATE"
+        },
+        {
+            "term": "Agosto 2009",
+            "ignore": false,
+            "ner": "DATE"
+        },
+        {
+            "term": "Fevereiro 2009",
+            "ignore": false,
+            "ner": "DATE"
+        },
+        {
+            "term": "Download",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Biometria",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Driver Leitor de Impressão Digital",
+            "ignore": false,
+            "ner": "DATE"
+        },
+        {
+            "term": "Im",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Impressão Digital Fingerprint",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Impressão Digital Nitgen",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Impressão Digital Nitgen Nitgen",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Impressão Digital Real",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Leitores Instruções para Utilização",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Download de Drivers",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Driver Leitor",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Realizar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Realiza",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "App Store",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "App do Detran",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo": "Aplicativo do Detran"
+        },
+        {
+            "term": "Aplicativo do Detran",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Agen Clique",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Atualizar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Realizar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Telefone Celula",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Curso de Reciclagem",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Curso de Reciclagem EAD",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Direção Defensiva",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Relacionamento Interpessoal",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "DENATRAN",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "CSV",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Estabelece",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Fixar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Pas Clique",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Renavams",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Órgãos Oficiais",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "Órgãos de Trânsito",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "DG",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo": "Diretor Geral"
+        },
+        {
+            "term": "DG",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo": "Diretor Geral"
+        },
+        {
+            "term": "COOHA",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "Instituição de Ensino",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "IBACBRASIL Cursos de Trânsito SIMEAD",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "DG –",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo": "Diretor Geral"
+        },
+        {
+            "term": "Diretorias Administrativo Financeira",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo": "DAF"
+        },
+        {
+            "term": "Vistoria Veicular  Passo 2 –",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo": "DAF"
+        },
+        {
+            "term": "Veículo",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Mulher!.",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Mulher!. Comentários",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Veículo",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Trânsito Brasileiro",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "Condutor",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Multa",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Proprietário",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Suspensão",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Permissão internacional",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Unidade de Atendimento Passo 01",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Correios",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "Trânsito Seguro",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Buscar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Carteira Nacional de Habilitação",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo": "CNH"
+        },
+        {
+            "term": "Acordos Internacionais",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Baixa",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Dispõe",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Efetuar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Rea Clique",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Permissão para Dirigir",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "RG",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Saber",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Saiba",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Comissão",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Passo 2",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Passo 3",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Trânsito Viário",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Ano Novo",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Guia de Recolhimento",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Inclusão de Gravame",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Credenciamento",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "IPVA",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Liga",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Telefone",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Sexta",
+            "ignore": false,
+            "ner": "DATE"
+        },
+        {
+            "term": "Sexta",
+            "ignore": false,
+            "ner": "DATE"
+        },
+        {
+            "term": "Cayman Ceuta",
+            "ignore": false,
+            "ner": "GL"
+        },
+        {
+            "term": "Alemanha Anguilla",
+            "ignore": false,
+            "ner": "GL"
+        },
+        {
+            "term": "Azerbaidjão Bahamas",
+            "ignore": false,
+            "ner": "GL"
+        },
+        {
+            "term": "Barém Bélgica",
+            "ignore": false,
+            "ner": "GL"
+        },
+        {
+            "term": "Cesar Kogut",
+            "ignore": false,
+            "ner": "PN",
+            "convertTo": "César Kogut"
+        },
+        {
+            "term": "Formulário",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Gravame",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Intranet",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Certificado de Reg Clique",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Ciretran",
+            "ignore": false,
+            "ner": "ON",
+            "convertTo": "CIRETRAN"
+        },
+        {
+            "term": "Ciretrans",
+            "ignore": false,
+            "ner": "ON",
+            "convertTo": "CIRETRAN"
+        },
+        {
+            "term": "Contran",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "Dezembro Despesas",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Tarjetas",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Informação",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Financiamento",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Registro",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Licenciamento Anual",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Entidades",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Órgãos Públicos",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "Notificação",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Objeto",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Psicológicas",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Aniversário",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Clique Aqui",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Psicológicas",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "AUSÊNCIA OU",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Advertência",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Prorroga",
+            "ignore": true
+        },
+        {
+            "term": "Advertência",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Teste Seletivo",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Cliq",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "CNH DEFINITIVA",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Convênio de Cooperação Técnica",
+            "ignore": false,
+            "ner": "ON"
+        },
+        {
+            "term": "Curso de Reciclagem Presencial",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "25 de Julho de 2013",
+            "ignore": false,
+            "ner": "DATE"
+        },
+        {
+            "term": "Cópia Simples do Documento",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Cópia de Autos de Infração",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Dano de Média Monta",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Documentos",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Documentos",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Pessoa Física",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Inspeção",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Exceto Vistoria Lacrada",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Exame Toxicológico",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Notificado",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "COMPETÊNCIA",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Solicitar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Anexo XII",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Anuário Estatístico",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Anuário Estatístico 2012 Anuário Estatístico",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Anuário Estatístico 2012 Anuário Estatístico",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Art",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Renovação do Credenciamento dos",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Estampadores de Placas",
+            "ignore": false,
+            "ner": "PN"
+        },
+        {
+            "term": "Android",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Autorizar",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Autorização",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "Bancos Arrecadadores Formulário",
+            "ignore": true,
+            "ner": null
+        },
+        {
+            "term": "Restituição de Taxas Consulta Pública de Pagamento de GRD",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "CONDUTORES",
+            "ignore": false,
+            "ner": "PN",
+            "convertTo":"Condutor"
+        },
+        {
+            "term": "DADOS",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo":"Dados"
+        },
+        {
+            "term": "Tutorial",
+            "ignore": false,
+            "ner": "MISC"
+        },
+        {
+            "term": "BLOQUEIO",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo":"Bloqueio"
+        },
+        {
+            "term": "ROUBO",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo":"Roubo"
+        },
+        {
+            "term": "EXTRAVIO",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo":"Extravio"
+        },
+        {
+            "term": "FURTO",
+            "ignore": false,
+            "ner": "MISC",
+            "convertTo":"Furto"
+        },
+        {
+            "term": "Dezembro Novembro",
+            "ignore": true,
+            "ner": null
+        }
+    ]
+}

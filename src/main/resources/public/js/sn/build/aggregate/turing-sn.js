@@ -124,19 +124,19 @@ turingSNApp
 
 							$scope.vigLanguage = vigLocale.getLocale()
 									.substring(0, 2);
-							$translate.use($scope.vigLanguage);							
+							$translate.use($scope.vigLanguage);
 							amMoment.changeLocale('en');
 							$scope.pageCount = 0;
 							$scope.pageStart = 0;
 							$scope.pageEnd = 0;
-							
+
 							$scope.defaultTitleField = "title";
 							$scope.defaultDescriptionField = "abstract";
 							$scope.defaultTextField = "text";
 							$scope.defaultImageField = "image";
 							$scope.defaultDateField = "published_date";
 							$scope.defaultUrlField = "url";
-							
+
 							var turPath = $location.path().trim();
 							if (turPath.endsWith("/")) {
 								turPath = turPath.substring(0,
@@ -144,6 +144,21 @@ turingSNApp
 							}
 							var turSiteNameSplit = turPath.split('/');
 							$scope.turSiteName = turSiteNameSplit[turSiteNameSplit.length - 1];
+							$scope.firstLetters = function(text) {
+								if (text != null) {
+									var splitText = text.toUpperCase().split(
+											' ');
+									if (splitText.length > 1) {
+										return splitText[0].charAt(0)
+												+ splitText[1].charAt(0);
+									} else {
+										return "&nbsp;"+ splitText[0].charAt(0) + "&nbsp;";
+									}
+								} else {
+									return "";
+								}
+
+							}
 							$scope.updateParameters = function() {
 								$scope.turQueryString = $location.url();
 								$scope.turQuery = $location.search().q;
@@ -151,6 +166,7 @@ turingSNApp
 								$scope.turLocale = $location.search()._setlocale;
 								$scope.turSort = $location.search().sort;
 								$scope.turFilterQuery = $location.search()['fq[]'];
+								$scope.turTargetingRule = $location.search()['tr[]'];
 
 								if ($scope.turQuery == null
 										|| $scope.turQuery.trim().length == 0) {
@@ -165,19 +181,19 @@ turingSNApp
 									$scope.turSort = "relevance";
 								}
 							}
-							 
+
 							$scope.init = function() {
 								$scope.updateParameters();
 								$scope.initParams($scope.turQuery,
 										$scope.turPage, $scope.turLocale,
-										$scope.turSort, $scope.turFilterQuery)
+										$scope.turSort, $scope.turFilterQuery, $scope.turTargetingRule)
 							}
 							$scope.initParams = function(q, p, _setlocale,
-									sort, fq) {
+									sort, fq, tr) {
 
 								turSNSearch
 										.search($scope.turSiteName, q, p,
-												_setlocale, sort, fq)
+												_setlocale, sort, fq, tr)
 										.then(
 												function successCallback(
 														response) {
@@ -188,14 +204,14 @@ turingSNApp
 													$scope.pages = response.data["pagination"];
 													$scope.facets = response.data["widget"]["facet"];
 													$scope.facetsToRemove = response.data["widget"]["facetToRemove"];
-													
-													$scope.defaultTitleField =response.data["queryContext"]["defaultFields"]["title"];
+
+													$scope.defaultTitleField = response.data["queryContext"]["defaultFields"]["title"];
 													$scope.defaultDescriptionField = response.data["queryContext"]["defaultFields"]["description"];
 													$scope.defaultTextField = response.data["queryContext"]["defaultFields"]["text"];
 													$scope.defaultImageField = response.data["queryContext"]["defaultFields"]["image"];
 													$scope.defaultDateField = response.data["queryContext"]["defaultFields"]["date"];
 													$scope.defaultUrlField = response.data["queryContext"]["defaultFields"]["url"];
-													
+
 													// $scope.turSort =
 													// response.data["queryContext"]["query"]["sort"];
 												},
@@ -205,9 +221,9 @@ turingSNApp
 							}
 
 							$scope.initURL = function(q, p, _setlocale, sort,
-									fq) {
+									fq, tr) {
 								turSNSearch
-										.searchURL(q, p, _setlocale, sort, fq)
+										.searchURL(q, p, _setlocale, sort, fq, tr)
 										.then(
 												function successCallback(
 														response) {
@@ -288,13 +304,14 @@ turingSNApp.factory('turSNSearch', [
 		function($http, turAPIServerService) {
 
 			return {
-				search : function(turSiteName, query, page, _setlocale, sort, fq) {
+				search : function(turSiteName, query, page, _setlocale, sort, fq, tr) {
 					var data = {
 						'q' : query,
 						'p' : page,
 						'_setlocale' : _setlocale,
 						'sort' : sort,
-						'fq[]' : fq
+						'fq[]' : fq,
+						'tr[]' : tr
 					};
 					var config = {
 						params : data,

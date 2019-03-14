@@ -15,25 +15,32 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.persistence.repository.ml;
+package com.viglet.turing;
 
-import com.viglet.turing.persistence.model.ml.TurMLModel;
+import java.io.IOException;
+import java.security.Principal;
 
-import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
 
-public interface TurMLModelRepository extends JpaRepository<TurMLModel, Integer> {
 
-	List<TurMLModel> findAll();
 
-	TurMLModel findById(int id);
-	
-	TurMLModel save(TurMLModel turMLModel);
+@Controller
+public class TurIndexContext {
 
-	@Modifying
-	@Query("delete from  TurMLModel mm where mm.id = ?1")
-	void delete(int id);
+	@RequestMapping("/")
+	private void index(HttpServletRequest request, HttpServletResponse response, final Principal principal)
+			throws IOException {
+		/*if (principal != null) {
+			response.sendRedirect("/console");
+		} else {
+			response.sendRedirect("/welcome");
+		} */
+		
+		response.sendRedirect("/console");
+
+	}
 }

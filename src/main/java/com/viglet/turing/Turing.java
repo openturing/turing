@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2018 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
+ * Copyright (C) 2016-2019 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@ package com.viglet.turing;
 
 import java.io.File;
 
+import javax.servlet.MultipartConfigElement;
+
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.kahadb.KahaDBPersistenceAdapter;
@@ -26,10 +28,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFactory;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jms.annotation.EnableJms;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 import com.fasterxml.jackson.databind.Module;
@@ -96,9 +99,16 @@ public class Turing {
 		broker.setPersistent(true);
 		return broker;
 	}
+	
+	@Bean
 
-	@RequestMapping("/")
-	String index() {
-		return "index";
+	public MultipartConfigElement multipartConfigElement() {
+
+	     MultipartConfigFactory factory = new MultipartConfigFactory();	
+	     factory.setMaxFileSize (DataSize.ofMegabytes(100L));
+	     factory.setMaxRequestSize(DataSize.ofMegabytes(100L));
+
+	     return factory.createMultipartConfig();
+
 	}
 }
