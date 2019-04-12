@@ -159,15 +159,19 @@
 																	class="numberCircle" style="margin-left: 10px;">
 																	<span style="font-size: 40px;" ng-bind-html="firstLetters(document.fields['author'])"></span>
 																</span>
+																<span ng-if="!document.fields[defaultImageField] && !document.fields['author'] && document.fields['fileExtension']"
+																	 style="margin-left: 10px;">
+																	<span style="font-size: 40px;color: #FF874B; font-weight: bolder;" ng-bind-html="document.fields['fileExtension']"></span>
+																</span>
 															</div>
 															<div class="col-lg-10">
 																<div>
 																	<h4>
-																		<a ng-if="document.fields[defaultTitleField]" style="color: #FF874B; font-weight: bolder;"
+																		<a ng-if="document.fields[defaultTitleField]" target="_blank" style="color: #FF874B; font-weight: bolder;"
 																			href="{{document.fields[defaultUrlField]}}"
 																			ng-bind-html="document.fields[defaultTitleField]"></a>
 																			
-																		<a style="color: #FF874B; font-weight: bolder;overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;" ng-if="!document.fields[defaultTitleField]" 
+																		<a target="_blank" style="color: #FF874B; font-weight: bolder;overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;" ng-if="!document.fields[defaultTitleField]" 
 																			href="{{document.fields[defaultUrlField]}}"
 																			ng-bind-html="document.fields[defaultDescriptionField]"></a>	
 																	</h4>
@@ -180,7 +184,7 @@
 																</div>
 
 																<div style="margin-top: 10px">
-																	<div style="display: table-row">
+																	<div style="display: block">
 																		<div
 																			style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
 																			ng-bind-html="document.fields[defaultDescriptionField]"></div>
