@@ -11,6 +11,7 @@ buildscript {
 		maven { url "https://repo.spring.io/snapshot" }
 		maven { url "https://repo.spring.io/milestone" }
         maven { url 'https://jitpack.io' }
+        maven { url "https://code.lds.org/nexus/content/groups/main-repo" }
 		jcenter()
 		}
     dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
@@ -46,6 +47,7 @@ repositories {
 	maven { url "https://repo.spring.io/snapshot" }
 	maven { url "https://repo.spring.io/milestone" }
     maven { url 'https://jitpack.io' }
+    maven { url "https://code.lds.org/nexus/content/groups/main-repo" }
 	jcenter()
 }
 
@@ -189,6 +191,10 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
 //	compile group: 'org.springframework.security.oauth.boot', name: 'spring-security-oauth2-autoconfigure', version:"${springBootVersion}"
 
+
+	// Oracle	
+	compile group: 'com.oracle', name: 'ojdbc6', version: '11.2.0.3'
+	
 	// Jasypt
 	compile group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
 
