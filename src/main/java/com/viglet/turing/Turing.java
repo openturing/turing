@@ -24,9 +24,7 @@ import javax.servlet.MultipartConfigElement;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.kahadb.KahaDBPersistenceAdapter;
-import org.jasypt.encryption.StringEncryptor;
-import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
-import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
+import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -54,17 +52,16 @@ import io.undertow.UndertowOptions;
 public class Turing {
 
 	public static void main(String... args) throws Exception {
-		
+
 		if (args != null && args.length > 0 && args[0].equals("console")) {
-			System.out.println("Viglet Turing Console mode");
-			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE)
-            .run(args);
+			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
+					.run(args);
 		} else {
 			System.out.println("Viglet Turing starting...");
 			SpringApplication.run(Turing.class, args);
 			System.out.println("Viglet Turing started");
 		}
-		
+
 	}
 
 	@Bean

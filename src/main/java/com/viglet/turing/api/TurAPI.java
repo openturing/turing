@@ -28,10 +28,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.annotations.Api;
-import org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI;
 
 @RestController
-
 @RequestMapping("/api")
 @Api(value="/", tags="Heartbeat", description="Heartbeat")
 public class TurAPI {
