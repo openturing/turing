@@ -17,3 +17,4 @@
 .vscode
 .settings
 .classpath
+db-encrypted.properties
