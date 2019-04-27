@@ -24,8 +24,13 @@ import javax.servlet.MultipartConfigElement;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.kahadb.KahaDBPersistenceAdapter;
+import org.jasypt.encryption.StringEncryptor;
+import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
+import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFactory;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.MultipartConfigFactory;
@@ -37,20 +42,31 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
+import com.viglet.turing.console.TurConsole;
 
 import io.undertow.UndertowOptions;
 
 @SpringBootApplication
 @EnableJms
 @EnableCaching
+@EnableEncryptableProperties
 public class Turing {
 
-	public static void main(String[] args) throws Exception {		
-		System.out.println("Viglet Turing starting...");
-		SpringApplication.run(Turing.class, args);
-		System.out.println("Viglet Turing started");
+	public static void main(String... args) throws Exception {
+		
+		if (args != null && args.length > 0 && args[0].equals("console")) {
+			System.out.println("Viglet Turing Console mode");
+			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE)
+            .run(args);
+		} else {
+			System.out.println("Viglet Turing starting...");
+			SpringApplication.run(Turing.class, args);
+			System.out.println("Viglet Turing started");
+		}
+		
 	}
-	
+
 	@Bean
 	public FilterRegistrationBean<CharacterEncodingFilter> filterRegistrationBean() {
 		FilterRegistrationBean<CharacterEncodingFilter> registrationBean = new FilterRegistrationBean<CharacterEncodingFilter>();
@@ -72,7 +88,7 @@ public class Turing {
 		factory.addBuilderCustomizers(builder -> builder.setServerOption(UndertowOptions.ENABLE_HTTP2, true));
 		return factory;
 	}
-	
+
 	@Bean(initMethod = "start", destroyMethod = "stop")
 	public BrokerService broker() throws Exception {
 		final BrokerService broker = new BrokerService();
@@ -99,16 +115,16 @@ public class Turing {
 		broker.setPersistent(true);
 		return broker;
 	}
-	
-	@Bean
 
+	@Bean
 	public MultipartConfigElement multipartConfigElement() {
 
-	     MultipartConfigFactory factory = new MultipartConfigFactory();	
-	     factory.setMaxFileSize (DataSize.ofMegabytes(100L));
-	     factory.setMaxRequestSize(DataSize.ofMegabytes(100L));
+		MultipartConfigFactory factory = new MultipartConfigFactory();
+		factory.setMaxFileSize(DataSize.ofMegabytes(100L));
+		factory.setMaxRequestSize(DataSize.ofMegabytes(100L));
 
-	     return factory.createMultipartConfig();
+		return factory.createMultipartConfig();
 
 	}
+
 }

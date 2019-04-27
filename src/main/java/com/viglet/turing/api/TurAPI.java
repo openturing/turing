@@ -17,21 +17,31 @@
 
 package com.viglet.turing.api;
 
+import org.jasypt.intf.service.JasyptStatelessService;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.annotations.Api;
-
+import org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI;
 
 @RestController
 
 @RequestMapping("/api")
 @Api(value="/", tags="Heartbeat", description="Heartbeat")
 public class TurAPI {
-
+	@Value("${encryptedv3.property}")
+	private String encrypt;
+	 @Autowired
+	    ApplicationContext appCtx;
+	
+	 final JasyptStatelessService service = new JasyptStatelessService();
+	 
 	@Autowired
 	TurAPIBean turAPIBean;
 
@@ -43,4 +53,14 @@ public class TurAPI {
 
 		return turAPIBean;
 	}
+	
+	@GetMapping("/test")
+	public String test() {
+		Environment environment = appCtx.getBean(Environment.class);
+		   System.out.println("turJasypt: " + environment.getProperty("encryptedv3.property"));
+		   
+		   return environment.getProperty("encryptedv3.property");
+
+	}
+
 }
