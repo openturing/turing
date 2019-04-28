@@ -177,10 +177,6 @@ dependencies {
 		
  	// Spring Boot
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
- 
-    compile (group: 'org.springframework.boot', name: 'spring-boot-starter-undertow', version:"${springBootVersion}"){ 
-    exclude(module: 'javax.el')
-    }
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version:"${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version:"${springBootVersion}"
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   

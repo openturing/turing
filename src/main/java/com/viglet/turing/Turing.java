@@ -29,7 +29,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFactory;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.cache.annotation.EnableCaching;
@@ -42,8 +41,6 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
 import com.viglet.turing.console.TurConsole;
-
-import io.undertow.UndertowOptions;
 
 @SpringBootApplication
 @EnableJms
@@ -79,13 +76,6 @@ public class Turing {
 		return new Hibernate5Module();
 	}
 
-	@Bean
-	UndertowServletWebServerFactory embeddedServletContainerFactory() {
-		UndertowServletWebServerFactory factory = new UndertowServletWebServerFactory();
-		factory.addBuilderCustomizers(builder -> builder.setServerOption(UndertowOptions.ENABLE_HTTP2, true));
-		return factory;
-	}
-
 	@Bean(initMethod = "start", destroyMethod = "stop")
 	public BrokerService broker() throws Exception {
 		final BrokerService broker = new BrokerService();
@@ -117,8 +107,8 @@ public class Turing {
 	public MultipartConfigElement multipartConfigElement() {
 
 		MultipartConfigFactory factory = new MultipartConfigFactory();
-		factory.setMaxFileSize(DataSize.ofMegabytes(100L));
-		factory.setMaxRequestSize(DataSize.ofMegabytes(100L));
+		factory.setMaxFileSize(DataSize.ofMegabytes(1024L));
+		factory.setMaxRequestSize(DataSize.ofMegabytes(1024L));
 
 		return factory.createMultipartConfig();
 
