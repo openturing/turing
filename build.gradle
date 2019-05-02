@@ -216,7 +216,7 @@ dependencies {
     compile group: 'asm', name: 'asm', version:'3.3.1'
     
     // OpenNLP
-    compile group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.7.2'
+    compile group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.9.1'
     
     // Apache Commons
     compile group: 'commons-io', name: 'commons-io', version:'2.5'

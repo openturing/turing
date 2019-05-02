@@ -75,4 +75,12 @@
 	<cache name="turLocalefindByInitials" maxElementsInMemory="10000"
 		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
 		overflowToDisk="true" />
+	<cache name="nlpName" maxElementsInMemory="10000" eternal="false"
+		timeToIdleSeconds="600" timeToLiveSeconds="3600" overflowToDisk="true" />
+	<cache name="nlpSentence" maxElementsInMemory="10000"
+		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
+		overflowToDisk="true" />
+	<cache name="nlpToken" maxElementsInMemory="10000"
+		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
+		overflowToDisk="true" />
 </ehcache>
