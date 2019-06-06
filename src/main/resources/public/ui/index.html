@@ -1,0 +1,159 @@
+<html lang="en" ng-app="tuSearchApp">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Angular Material style sheet -->
+  <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.css">
+</head>
+
+<body ng-controller="AppCtrl as ctrl" ng-cloak>
+  <!--
+    Your HTML content here
+  -->
+  <md-toolbar>
+    <div layout="row">
+      <h2 class="md-toolbar-tools">
+        <md-button class="md-icon-button" aria-label="Settings" ng-click="toggleLeft()" href="#">
+          <md-icon md-svg-icon="svg/menu.svg"></md-icon>
+        </md-button>
+        <div style="margin: 0px 10px;width: 40px;height: 40px;padding-top: 6px;padding-left: 5px;font-size: 18px;font-weight: bolder;border-width: 1px;border-style: solid">
+          <div style="margin-top: 8px;">
+            Tu
+          </div>
+        </div>
+        <span>Turing Search</span>
+      </h2>
+    </div>
+
+  </md-toolbar>
+  <md-sidenav class="md-sidenav-left md-whiteframe-4dp" md-component-id="left" ng-include="'components/sidenav.html'">
+  </md-sidenav>
+
+  <div style="background: white;color: rgba(0,0,0,0.6); border-bottom: rgba(0,0,0,0.2) 1px solid;padding: 5px 20px;font-size: 14px;">
+    Admin Console
+  </div>
+  <md-content class="md-padding" layout-xs="column" layout="row">
+    <div flex-xs flex-gt-xs="33" layout="column">
+      <md-card>
+        <md-card-title>
+          <md-card-title-text>
+            <span class="md-headline">NLP</span>
+          </md-card-title-text>
+        </md-card-title>
+        <md-card-content>
+          <p>
+            Using CoreNLP
+          </p>
+        </md-card-content>
+        <md-card-actions layout="row" layout-align="end center">
+          <md-button>Configure</md-button>
+        </md-card-actions>
+      </md-card>
+    </div>
+    <div flex-xs flex-gt-xs="33" layout="column">
+      <md-card>
+        <md-card-title>
+          <md-card-title-text>
+            <span class="md-headline">Search Engine</span>
+          </md-card-title-text>
+        </md-card-title>
+        <md-card-content>
+          <p>
+            Using Solr
+          </p>
+        </md-card-content>
+        <md-card-actions layout="row" layout-align="end center">
+          <md-button>Configure</md-button>
+        </md-card-actions>
+      </md-card>
+    </div>
+
+    <div flex-xs flex-gt-xs="33" layout="column">
+      <md-card>
+        <md-card-title>
+          <md-card-title-text>
+            <span class="md-headline">Semantic Navigation</span>
+          </md-card-title-text>
+        </md-card-title>
+        <md-card-content>
+          <p>
+            Using Portugues Brazil
+          </p>
+        </md-card-content>
+        <md-card-actions layout="row" layout-align="end center">
+          <md-button>Configure</md-button>
+        </md-card-actions>
+      </md-card>
+    </div>
+  </md-content>
+  <!-- Angular Material requires Angular.js Libraries -->
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-animate.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-aria.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-messages.min.js"></script>
+
+  <!-- Angular Material Library -->
+  <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.js"></script>
+
+  <!-- Your application bootstrap  -->
+  <script type="text/javascript">
+    /**
+     * You must include the dependency on 'ngMaterial' 
+     */
+    angular.module('tuSearchApp', ['ngMaterial', 'ngMessages']).config(function ($mdThemingProvider) {
+      $mdThemingProvider.theme('default')
+        .primaryPalette('blue')
+        .accentPalette('orange');
+    }).controller('AppCtrl', function ($scope, $timeout, $mdSidenav, $log, $mdDialog, $window) {
+      $scope.toggleLeft = buildDelayedToggler('left');
+
+      /**
+       * Supplies a function that will continue to operate until the
+       * time is up.
+       */
+      function debounce(func, wait, context) {
+        var timer;
+
+        return function debounced() {
+          var context = $scope,
+            args = Array.prototype.slice.call(arguments);
+          $timeout.cancel(timer);
+          timer = $timeout(function () {
+            timer = undefined;
+            func.apply(context, args);
+          }, wait || 10);
+        };
+      }
+
+      /**
+       * Build handler to open/close a SideNav; when animation finishes
+       * report completion in console
+       */
+      function buildDelayedToggler(navID) {
+        console.log("teste");
+        return debounce(function () {
+          // Component lookup should always be available since we are not using `ng-if`
+          $mdSidenav(navID)
+            .toggle()
+            .then(function () {
+              $log.debug("toggle " + navID + " is done");
+            });
+        }, 200);
+      }
+
+      function buildToggler(navID) {
+        return function () {
+          // Component lookup should always be available since we are not using `ng-if`
+          $mdSidenav(navID)
+            .toggle()
+            .then(function () {
+              $log.debug("toggle " + navID + " is done");
+            });
+        };
+      };
+    });
+  </script>
+
+</body>
+
+</html>
