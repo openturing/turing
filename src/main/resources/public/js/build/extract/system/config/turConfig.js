@@ -310,6 +310,7 @@ turingApp
 									{
 										url : '/converse',
 										templateUrl : 'templates/converse/converse.html',
+										controller : 'TurConverseCtrl',
 										data : {
 											pageTitle : 'Converse | Viglet Turing'
 										}
@@ -318,12 +319,22 @@ turingApp
 									'converse.intent',
 									{
 										url : '/intent',
-										templateUrl : 'templates/converse/converse-intent.html',
-										controller : 'TurConverseIntentCtrl',
+										templateUrl : 'templates/converse/converse-intent-list.html',
+										controller : 'TurConverseIntentListCtrl',
 										data : {
 											pageTitle : 'Converse Intents | Viglet Turing'
 										}
 									})
+									.state(
+										'converse.intent-edit',
+										{
+											url : '/intent/:intentId',
+											templateUrl : 'templates/converse/converse-intent.html',
+											controller : 'TurConverseIntentCtrl',
+											data : {
+												pageTitle : 'Edit Semantic Converse Intent | Viglet Turing'
+											}
+										})		
 							.state(
 									'converse.entity',
 									{

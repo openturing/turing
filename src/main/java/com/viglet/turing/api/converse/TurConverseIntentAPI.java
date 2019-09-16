@@ -33,6 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.converse.TurConverseIntent;
 import com.viglet.turing.persistence.repository.converse.TurConverseIntentRepository;
+import com.viglet.turing.persistence.repository.converse.TurConversePhraseRepository;
+import com.viglet.turing.persistence.repository.converse.TurConverseResponseRepository;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -44,6 +46,10 @@ public class TurConverseIntentAPI {
 
 	@Autowired
 	TurConverseIntentRepository turConverseIntentRepository;
+	@Autowired
+	TurConversePhraseRepository turConversePhraseRepository;
+	@Autowired
+	TurConverseResponseRepository turConverseResponseRepository;
 
 	@ApiOperation(value = "Converse Intent List")
 	@GetMapping
@@ -53,8 +59,11 @@ public class TurConverseIntentAPI {
 
 	@ApiOperation(value = "Show a Converse Intent")
 	@GetMapping("/{id}")
-	public TurConverseIntent turConverseIntentGet(@PathVariable String id) throws JSONException {
-		return this.turConverseIntentRepository.findById(id).get();
+	public TurConverseIntent turConverseIntentGet(@PathVariable String id){
+		TurConverseIntent turConverseIntent  = this.turConverseIntentRepository.findById(id).get();
+		turConverseIntent.setPhrases(turConversePhraseRepository.findByIntent(turConverseIntent));
+		turConverseIntent.setResponses(turConverseResponseRepository.findByIntent(turConverseIntent));
+		return turConverseIntent;
 	}
 
 	@ApiOperation(value = "Update a Converse Intent")

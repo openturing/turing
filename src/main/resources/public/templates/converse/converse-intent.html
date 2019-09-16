@@ -1,3 +1,109 @@
 <div>
-<h1>Converse Intents</h1>
+    <h1>{{intent.name}}</h1>
+
+    <uib-accordion>
+        <div uib-accordion-group class="panel-default" is-open="status.contexts">
+            <uib-accordion-heading>
+                Contexts <i class="pull-right glyphicon"
+                    ng-class="{'glyphicon-chevron-down': status.contexts, 'glyphicon-chevron-right': !status.contexts}"></i>
+            </uib-accordion-heading>
+            <div class="form-group">
+                <input type="text" class="form-control" id="inputContext" placeholder="Add input context">
+            </div>
+            <div class="form-group">
+                <input type="text" class="form-control" id="outputContext" placeholder="Add output context">
+            </div>
+        </div>
+
+
+        <div uib-accordion-group class="panel-default" is-open="status.events">
+            <uib-accordion-heading>
+                Events <i class="pull-right glyphicon"
+                    ng-class="{'glyphicon-chevron-down': status.events, 'glyphicon-chevron-right': !status.events}"></i>
+            </uib-accordion-heading>
+            <div>About Events</div>
+        </div>
+        <div uib-accordion-group class="panel-default" is-open="status.phrases">
+            <uib-accordion-heading>
+                Training phrases <i class="pull-right glyphicon"
+                    ng-class="{'glyphicon-chevron-down': status.phrases, 'glyphicon-chevron-right': !status.phrases}"></i>
+            </uib-accordion-heading>
+            <div>
+                <div class="form-group">
+                    <input type="text" class="form-control" id="phrase">
+                </div>
+                <div style="border-color: #f5f5f5; border-style: solid; border-width: 2px;">
+
+                    <div style="background-color: #f5f5f5; padding: 10px">
+                        <button ng-click="addRelatorItem(shPost, shPostAttr)" class="btn btn-viglet">Add</button>
+                    </div>
+                    <div style="padding: 10px">
+                        <div ui-sortable ng-model="intent.phrases">
+                            <div class="list-group-item" ng-repeat="phrase in intent.phrases">
+                                <div style="display: inline-table">
+                                    <div style="min-width: 50px;">
+                                        <span class="numberCircle"
+                                            style="margin-right: 10px"><span>{{$index+1}}</span></span>
+                                    </div>
+                                    <span style="visibility: hidden;">{{phrase.ordinal=$index+1}}</span>
+                                </div>
+                                <div style="display: inline-table; width: calc(100% - 120px);">
+                                    {{phrase.text}}
+                                </div>
+                                <div style="display: inline-table">
+                                    <button type="button" class="btn btn-link btn-xs pull-right" style="display: block;"
+                                        ng-click="relatorDelete(shPostAttr,$index)">
+                                        <i class="fa fa-trash-o" aria-hidden="true"></i> Delete
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div uib-accordion-group class="panel-default" is-open="status.actions">
+            <uib-accordion-heading>
+                Action and parameters <i class="pull-right glyphicon"
+                    ng-class="{'glyphicon-chevron-down': status.actions, 'glyphicon-chevron-right': !status.actions}"></i>
+            </uib-accordion-heading>
+            <div>About Action and parameters</div>
+        </div>
+        <div uib-accordion-group class="panel-default" is-open="status.responses">
+            <uib-accordion-heading>
+                Responses <i class="pull-right glyphicon"
+                    ng-class="{'glyphicon-chevron-down': status.responses, 'glyphicon-chevron-right': !status.responses}"></i>
+            </uib-accordion-heading>
+            <div style="border-color: #f5f5f5; border-style: solid; border-width: 2px;">
+
+                <div style="background-color: #f5f5f5; padding: 10px">
+                    <button ng-click="addRelatorItem(shPost, shPostAttr)" class="btn btn-viglet">Add</button>
+                </div>
+                <div style="padding: 10px">
+                    <div ui-sortable ng-model="intent.responses">
+                        <div class="list-group-item" ng-repeat="response in intent.responses">
+                            <div style="display: inline-table">
+                                <div style="min-width: 50px;">
+                                    <span class="numberCircle"
+                                        style="margin-right: 10px"><span>{{$index+1}}</span></span>
+                                </div>
+                                <span style="visibility: hidden;">{{response.ordinal=$index+1}}</span>
+                            </div>
+                            <div style="display: inline-table; width: calc(100% - 120px);">
+                                {{response.text}}
+                            </div>
+                            <div style="display: inline-table">
+                                <button type="button" class="btn btn-link btn-xs pull-right" style="display: block;"
+                                    ng-click="relatorDelete(shPostAttr,$index)">
+                                    <i class="fa fa-trash-o" aria-hidden="true"></i> Delete
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </uib-accordion>
 </div>

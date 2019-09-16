@@ -18,20 +18,22 @@
 package com.viglet.turing.persistence.model.converse;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.persistence.*;
 
 import org.hibernate.annotations.GenericGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-
 /**
  * The persistent class for the turMLModel database table.
  * 
  */
 @Entity
-@Table(name="turConverseContext")
-@NamedQuery(name="TurConverseContext.findAll", query="SELECT cc FROM TurConverseContext cc")
+@Table(name = "turConverseContext")
+@NamedQuery(name = "TurConverseContext.findAll", query = "SELECT cc FROM TurConverseContext cc")
 @JsonIgnoreProperties({ "intent" })
 public class TurConverseContext implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -42,9 +44,11 @@ public class TurConverseContext implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "intent_id")
-	private TurConverseIntent intent;
+	@ManyToMany
+	private Set<TurConverseIntent> intentInputs = new HashSet<>();
+
+	@ManyToMany
+	private Set<TurConverseIntent> intentOutputs = new HashSet<>();
 
 	public String getId() {
 		return id;
@@ -54,14 +58,26 @@ public class TurConverseContext implements Serializable {
 		this.id = id;
 	}
 
-	public TurConverseIntent getIntent() {
-		return intent;
+	public Set<TurConverseIntent> getIntentInputs() {
+		return this.intentInputs;
 	}
 
-	public void setIntent(TurConverseIntent intent) {
-		this.intent = intent;
+	public void setIntentInputs(Set<TurConverseIntent> intentInputs) {
+		this.intentInputs.clear();
+		if (intentInputs != null) {
+			this.intentInputs.addAll(intentInputs);
+		}
 	}
-	
-	
+
+	public Set<TurConverseIntent> getIntentOutputs() {
+		return this.intentOutputs;
+	}
+
+	public void setIntentOutputs(Set<TurConverseIntent> intentOutputs) {
+		this.intentOutputs.clear();
+		if (intentOutputs != null) {
+			this.intentOutputs.addAll(intentOutputs);
+		}
+	}
 
 }

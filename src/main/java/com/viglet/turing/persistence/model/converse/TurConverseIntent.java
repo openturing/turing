@@ -29,6 +29,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+
 /**
  * The persistent class for the TurConverseIntent database table.
  * 
@@ -45,35 +46,33 @@ public class TurConverseIntent implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	@OneToMany(mappedBy = "intent", orphanRemoval = true, fetch = FetchType.LAZY)
-	@Cascade({ CascadeType.ALL })
-	@OnDelete(action = OnDeleteAction.CASCADE)
+	private String name;
+	
+	@ManyToMany(mappedBy = "intentInputs")
 	private Set<TurConverseContext> contextInputs = new HashSet<>();
 
-	@OneToMany(mappedBy = "intent", orphanRemoval = true, fetch = FetchType.LAZY)
-	@Cascade({ CascadeType.ALL })
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurConverseContext> contextOutputs;
+	@ManyToMany(mappedBy = "intentOutputs")
+	private Set<TurConverseContext> contextOutputs = new HashSet<>();
 
 	@OneToMany(mappedBy = "intent", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurConverseEvent> events;
+	private Set<TurConverseEvent> events = new HashSet<>();
 
 	@OneToMany(mappedBy = "intent", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurConversePhrase> phrases;
+	private Set<TurConversePhrase> phrases = new HashSet<>();
 
 	@OneToMany(mappedBy = "intent", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurConverseAction> actions;
+	private Set<TurConverseAction> actions = new HashSet<>();
 
 	@OneToMany(mappedBy = "intent", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurConverseResponse> responses;	
+	private Set<TurConverseResponse> responses = new HashSet<>();	
 
 	public String getId() {
 		return id;
@@ -81,6 +80,14 @@ public class TurConverseIntent implements Serializable {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+	
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public Set<TurConverseContext> getContextInputs() {

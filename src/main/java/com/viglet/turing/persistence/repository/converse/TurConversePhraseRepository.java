@@ -17,10 +17,12 @@
 
 package com.viglet.turing.persistence.repository.converse;
 
+import com.viglet.turing.persistence.model.converse.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.TurConversePhrase;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -30,8 +32,12 @@ public interface TurConversePhraseRepository extends JpaRepository<TurConversePh
 
 	List<TurConversePhrase> findAll();
 
+	Set<TurConversePhrase> findByIntent(TurConverseIntent turConverseIntent);
+	
+	Set<TurConversePhrase> findByText(String text);
+	
 	Optional<TurConversePhrase> findById(String id);
-
+	
 	TurConversePhrase save(TurConversePhrase turConversePhrase);
 
 	@Modifying

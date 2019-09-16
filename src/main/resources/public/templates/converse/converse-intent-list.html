@@ -1,0 +1,31 @@
+<div>
+    <h1>Intents</h1>
+    <div style="border-color: #f5f5f5; border-style: solid; border-width: 2px;">
+
+        <div style="background-color: #f5f5f5; padding: 10px">
+            <button ng-click="addRelatorItem(shPost, shPostAttr)" class="btn btn-viglet">Add</button>
+        </div>
+        <div style="padding: 10px">
+            <div ui-sortable ng-model="intents">
+                <div class="list-group-item" ng-repeat="intent in intents">
+                    <div style="display: inline-table">
+                        <div style="min-width: 50px;">
+                            <span class="numberCircle" style="margin-right: 10px"><span>{{$index+1}}</span></span>
+                        </div>
+                        <span style="visibility: hidden;">{{intent.ordinal=$index+1}}</span>
+                    </div>
+                    <div style="display: inline-table; width: calc(100% - 120px);">
+                        <a ui-sref="converse.intent-edit({intentId: intent.id})">{{intent.name}}</a>
+                    </div>
+                    <div style="display: inline-table">
+                        <button type="button" class="btn btn-link btn-xs pull-right" style="display: block;"
+                            ng-click="relatorDelete(shPostAttr,$index)">
+                            <i class="fa fa-trash-o" aria-hidden="true"></i> Delete
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

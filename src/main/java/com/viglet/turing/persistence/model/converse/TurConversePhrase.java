@@ -48,6 +48,13 @@ public class TurConversePhrase implements Serializable {
 	@JoinColumn(name = "intent_id")
 	private TurConverseIntent intent;
 
+	public TurConversePhrase() {
+		super();
+	}
+	public TurConversePhrase(String text ) {
+		super();
+		this.setText(text);
+	}
 	public String getId() {
 		return id;
 	}

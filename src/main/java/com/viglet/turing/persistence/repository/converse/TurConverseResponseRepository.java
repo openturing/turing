@@ -17,10 +17,12 @@
 
 package com.viglet.turing.persistence.repository.converse;
 
+import com.viglet.turing.persistence.model.converse.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.TurConverseResponse;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -32,6 +34,8 @@ public interface TurConverseResponseRepository extends JpaRepository<TurConverse
 
 	Optional<TurConverseResponse> findById(String id);
 
+	Set<TurConverseResponse> findByIntent(TurConverseIntent turConverseIntent);
+	
 	TurConverseResponse save(TurConverseResponse turConverseResponse);
 
 	@Modifying

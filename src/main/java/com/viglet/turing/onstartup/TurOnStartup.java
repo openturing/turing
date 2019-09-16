@@ -23,6 +23,8 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.onstartup.converse.TurConverseIntentOnStartup;
+import com.viglet.turing.onstartup.converse.TurConversePhraseOnStartup;
 import com.viglet.turing.onstartup.ml.TurMLInstanceOnStartup;
 import com.viglet.turing.onstartup.ml.TurMLVendorOnStartup;
 import com.viglet.turing.onstartup.nlp.TurNLPEntityOnStartup;
@@ -71,13 +73,17 @@ public class TurOnStartup implements ApplicationRunner {
 	private TurConfigVarOnStartup turConfigVarOnStartup;
 	@Autowired
 	private TurSNSiteOnStartup turSNSiteOnStartup;
-	
+	@Autowired
+	private TurConversePhraseOnStartup turConversePhraseOnStartup;
+	@Autowired
+	private TurConverseIntentOnStartup turConverseIntentOnStartup;
+
 	@Override
 	public void run(ApplicationArguments arg0) throws Exception {
 		final String FIRST_TIME = "FIRST_TIME";
 
 		if (!turConfigVarRepository.findById(FIRST_TIME).isPresent()) {
-			
+
 			System.out.println("First Time Configuration ...");
 
 			turLocaleOnStartup.createDefaultRows();
@@ -92,6 +98,8 @@ public class TurOnStartup implements ApplicationRunner {
 			turSEInstanceOnStartup.createDefaultRows();
 			turDataGroupStartup.createDefaultRows();
 			turSNSiteOnStartup.createDefaultRows();
+			turConversePhraseOnStartup.createDefaultRows();
+			turConverseIntentOnStartup.createDefaultRows();
 			turConfigVarOnStartup.createDefaultRows();
 
 			System.out.println("Configuration finished.");
