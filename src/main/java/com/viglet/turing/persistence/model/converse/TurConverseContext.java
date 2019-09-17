@@ -34,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Entity
 @Table(name = "turConverseContext")
 @NamedQuery(name = "TurConverseContext.findAll", query = "SELECT cc FROM TurConverseContext cc")
-@JsonIgnoreProperties({ "intent" })
+@JsonIgnoreProperties({ "intentInputs", "intentOutputs" })
 public class TurConverseContext implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -44,11 +44,22 @@ public class TurConverseContext implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	private String text;
+
 	@ManyToMany
 	private Set<TurConverseIntent> intentInputs = new HashSet<>();
 
 	@ManyToMany
 	private Set<TurConverseIntent> intentOutputs = new HashSet<>();
+
+	public TurConverseContext() {
+		super();
+	}
+
+	public TurConverseContext(String text) {
+		super();
+		this.setText(text);
+	}
 
 	public String getId() {
 		return id;
@@ -56,6 +67,14 @@ public class TurConverseContext implements Serializable {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public void setText(String text) {
+		this.text = text;
 	}
 
 	public Set<TurConverseIntent> getIntentInputs() {

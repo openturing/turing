@@ -24,14 +24,13 @@ import org.hibernate.annotations.GenericGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-
 /**
  * The persistent class for the turMLModel database table.
  * 
  */
 @Entity
-@Table(name="turConversePhrase")
-@NamedQuery(name="TurConversePhrase.findAll", query="SELECT cp FROM TurConversePhrase cp")
+@Table(name = "turConversePhrase")
+@NamedQuery(name = "TurConversePhrase.findAll", query = "SELECT cp FROM TurConversePhrase cp")
 @JsonIgnoreProperties({ "intent" })
 public class TurConversePhrase implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -43,7 +42,7 @@ public class TurConversePhrase implements Serializable {
 	private String id;
 
 	private String text;
-	
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "intent_id")
 	private TurConverseIntent intent;
@@ -51,10 +50,12 @@ public class TurConversePhrase implements Serializable {
 	public TurConversePhrase() {
 		super();
 	}
-	public TurConversePhrase(String text ) {
+
+	public TurConversePhrase(String text) {
 		super();
 		this.setText(text);
 	}
+
 	public String getId() {
 		return id;
 	}

@@ -332,7 +332,7 @@ turingApp
 											templateUrl : 'templates/converse/converse-intent.html',
 											controller : 'TurConverseIntentCtrl',
 											data : {
-												pageTitle : 'Edit Semantic Converse Intent | Viglet Turing'
+												pageTitle : 'Edit Converse Intent | Viglet Turing'
 											}
 										})		
 							.state(

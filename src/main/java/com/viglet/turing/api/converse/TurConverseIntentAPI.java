@@ -17,6 +17,8 @@
 
 package com.viglet.turing.api.converse;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import org.json.JSONException;
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.converse.TurConverseIntent;
+import com.viglet.turing.persistence.repository.converse.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.TurConverseIntentRepository;
 import com.viglet.turing.persistence.repository.converse.TurConversePhraseRepository;
 import com.viglet.turing.persistence.repository.converse.TurConverseResponseRepository;
@@ -47,6 +50,8 @@ public class TurConverseIntentAPI {
 	@Autowired
 	TurConverseIntentRepository turConverseIntentRepository;
 	@Autowired
+	TurConverseContextRepository turConverseContextRepository;
+	@Autowired
 	TurConversePhraseRepository turConversePhraseRepository;
 	@Autowired
 	TurConverseResponseRepository turConverseResponseRepository;
@@ -59,8 +64,12 @@ public class TurConverseIntentAPI {
 
 	@ApiOperation(value = "Show a Converse Intent")
 	@GetMapping("/{id}")
-	public TurConverseIntent turConverseIntentGet(@PathVariable String id){
-		TurConverseIntent turConverseIntent  = this.turConverseIntentRepository.findById(id).get();
+	public TurConverseIntent turConverseIntentGet(@PathVariable String id) {
+		TurConverseIntent turConverseIntent = this.turConverseIntentRepository.findById(id).get();
+		turConverseIntent.setContextInputs(
+				turConverseContextRepository.findByIntentInputs(new HashSet<>(Arrays.asList(turConverseIntent))));
+		turConverseIntent.setContextOutputs(
+				turConverseContextRepository.findByIntentOutputs(new HashSet<>(Arrays.asList(turConverseIntent))));
 		turConverseIntent.setPhrases(turConversePhraseRepository.findByIntent(turConverseIntent));
 		turConverseIntent.setResponses(turConverseResponseRepository.findByIntent(turConverseIntent));
 		return turConverseIntent;
@@ -68,9 +77,10 @@ public class TurConverseIntentAPI {
 
 	@ApiOperation(value = "Update a Converse Intent")
 	@PutMapping("/{id}")
-	public TurConverseIntent turConverseIntentUpdate(@PathVariable String id, @RequestBody TurConverseIntent turConverseIntent) throws Exception {
+	public TurConverseIntent turConverseIntentUpdate(@PathVariable String id,
+			@RequestBody TurConverseIntent turConverseIntent) throws Exception {
 		TurConverseIntent turConverseIntentEdit = this.turConverseIntentRepository.findById(id).get();
-		
+
 		this.turConverseIntentRepository.save(turConverseIntentEdit);
 		return turConverseIntentEdit;
 	}
