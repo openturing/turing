@@ -58,7 +58,32 @@ tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 }
 
-task combineSNSystemJs(type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+// Combine JS Converse files
+task combineConverseSystemJs(type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = "${projectDir}/src/main/resources/public/js/converse/build/extract/system"
+    dest = "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turConverseSystem.js"
+}
+
+task combineConverseFeatureJs(dependsOn: ':combineConverseSystemJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = "${projectDir}/src/main/resources/public/js/converse/build/extract/feature"
+    dest = "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turConverseFeature.js"
+}
+
+task combineConverseAllJs(dependsOn: ':combineConverseFeatureJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = ["${projectDir}/src/main/resources/public/js/converse/build/extract/main/__turConverseFactory.js", "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turConverseSystem.js", "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turConverseFeature.js"]
+    dest = "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turing-converse.js"
+}
+
+task minifyConverseAllJs(dependsOn: ':combineConverseAllJs', type: com.eriwen.gradle.js.tasks.MinifyJsTask) {
+ 	source = "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turing-converse.js"
+    dest = file("${projectDir}/src/main/resources/public/js/converse/dist/turing-converse-min.js")
+    closure {
+        warningLevel = 'QUIET'
+    }
+}
+
+// Combine JS SN files
+task combineSNSystemJs(dependsOn: ':minifyConverseAllJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
     source = "${projectDir}/src/main/resources/public/js/sn/build/extract/system"
     dest = "${projectDir}/src/main/resources/public/js/sn/build/aggregate/turSNSystem.js"
 }
