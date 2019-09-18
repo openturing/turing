@@ -20,7 +20,8 @@ package com.viglet.turing.api.converse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.Set;
+
+import javax.servlet.http.HttpSession;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.solr.client.solrj.SolrClient;
@@ -37,10 +38,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.bean.converse.TurConverseAgentResponse;
-import com.viglet.turing.persistence.model.converse.TurConverseIntent;
-import com.viglet.turing.persistence.model.converse.TurConversePhrase;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
-import com.viglet.turing.persistence.repository.converse.TurConversePhraseRepository;
 import com.viglet.turing.solr.TurSolr;
 
 import io.swagger.annotations.Api;
@@ -52,26 +50,40 @@ import io.swagger.annotations.ApiOperation;
 public class TurConverseAgentAPI {
 
 	@Autowired
-	private TurConversePhraseRepository turConversePhraseRepository;
-	@Autowired
 	TurSolr turSolr;
 	@Autowired
 	CloseableHttpClient closeableHttpClient;
+	SolrClient solrClient = null;
 
 	@ApiOperation(value = "Converse Intent List")
 	@GetMapping("/try")
-	public TurConverseAgentResponse turConverseAgentTry(@RequestParam(required = false, name = "q") String q) {
+	public TurConverseAgentResponse turConverseAgentTry(@RequestParam(required = false, name = "q") String q,
+			HttpSession session) {
 		TurSEInstance turSEInstance = new TurSEInstance();
 		turSEInstance.setHost("localhost");
 		turSEInstance.setPort(8983);
 		String core = "converse";
-
-		SolrClient solrClient = null;
+		
 		String urlString = "http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort() + "/solr/" + core;
 		solrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
 				.withConnectionTimeout(30000).withSocketTimeout(30000).build();
+
+		String nextContext = (String) session.getAttribute("nextContext");
+		TurConverseAgentResponse turConverseAgentResponse = this.interactionNested(q, turSEInstance, nextContext, session);
+
+		return turConverseAgentResponse;
+	}
+
+	private TurConverseAgentResponse interactionNested(String q, TurSEInstance turSEInstance, String nextContext,
+			HttpSession session) {
+
 		SolrQuery query = new SolrQuery();
+
+		if (nextContext != null)
+			query.addFilterQuery("contextInput:\"" + nextContext + "\"");
+
 		query.setQuery("phrases:\"" + q + "\"");
+
 		TurConverseAgentResponse turConverseAgentResponse = new TurConverseAgentResponse();
 		try {
 			QueryResponse queryResponse = solrClient.query(query);
@@ -81,26 +93,30 @@ public class TurConverseAgentAPI {
 				@SuppressWarnings("unchecked")
 				ArrayList<String> responses = (ArrayList<String>) firstResult.getFieldValue("responses");
 				int rnd = new Random().nextInt(responses.size());
+
+				ArrayList<String> contextOutputs = (ArrayList<String>) firstResult.getFieldValue("contextOutput");
 				turConverseAgentResponse.setResponse(responses.get(rnd).toString());
 				turConverseAgentResponse.setIntent(firstResult.getFieldValue("name").toString());
+
+				if (contextOutputs != null && !contextOutputs.isEmpty()) {
+					session.setAttribute("nextContext", contextOutputs.get(0).toString());
+				}
+			} else {
+				query = new SolrQuery();
+				if (nextContext != null) {
+					turConverseAgentResponse = this.interactionNested(q, turSEInstance, null, session);
+				} else {
+					turConverseAgentResponse.setResponse("Não sei o que dizer");
+					turConverseAgentResponse.setIntent("empty");
+				}
 			}
+
 		} catch (SolrServerException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		/*
-		 * Set<TurConversePhrase> phrases = turConversePhraseRepository.findByText(q);
-		 * 
-		 * TurConverseAgentResponse turConverseAgentResponse = new
-		 * TurConverseAgentResponse(); if (!phrases.isEmpty()) { TurConverseIntent
-		 * intent = phrases.iterator().next().getIntent();
-		 * turConverseAgentResponse.setResponse(intent.getResponses().iterator().next().
-		 * getText()); turConverseAgentResponse.setIntent(intent.getName()); }
-		 */
+
 		return turConverseAgentResponse;
 	}
-
 }
