@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.converse.TurConverseIndex;
 import com.viglet.turing.persistence.model.converse.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.TurConversePhrase;
@@ -45,11 +46,13 @@ public class TurConverseIntentOnStartup {
 	private TurConversePhraseRepository turConversePhraseRepository;
 	@Autowired
 	private TurConverseResponseRepository turConverseResponseRepository;
+	@Autowired
+	private TurConverseIndex turConverseIndex;
 
 	public void createDefaultRows() {
 
 		if (turConverseIntentRepository.findAll().isEmpty()) {
-			
+
 			// Intent01
 			TurConverseIntent turConverseIntent = new TurConverseIntent();
 			turConverseIntent.setName("Intent01");
@@ -63,7 +66,6 @@ public class TurConverseIntentOnStartup {
 
 			turConverseContextRepository.save(turConverseContextOutput);
 
-
 			// Phrases
 			TurConversePhrase turConversePhrase1a = new TurConversePhrase("Oi");
 			turConversePhrase1a.setIntent(turConverseIntent);
@@ -75,8 +77,8 @@ public class TurConverseIntentOnStartup {
 
 			TurConversePhrase turConversePhrase1c = new TurConversePhrase("Como vai?");
 			turConversePhrase1c.setIntent(turConverseIntent);
-			turConversePhraseRepository.save(turConversePhrase1c);					
-			
+			turConversePhraseRepository.save(turConversePhrase1c);
+
 			// Responses
 			TurConverseResponse turConverseResponse1a = new TurConverseResponse("Acordei bem, obrigado!");
 			turConverseResponse1a.setIntent(turConverseIntent);
@@ -89,10 +91,13 @@ public class TurConverseIntentOnStartup {
 			TurConverseResponse turConverseResponse1c = new TurConverseResponse("Mais um novo dia");
 			turConverseResponse1c.setIntent(turConverseIntent);
 			turConverseResponseRepository.save(turConverseResponse1c);
-			
+
+			// Solr
+			turConverseIndex.index(turConverseIntent);
+
 			// Intent02
-			
-			 turConverseIntent = new TurConverseIntent();
+
+			turConverseIntent = new TurConverseIntent();
 			turConverseIntent.setName("Intent02");
 			turConverseIntentRepository.save(turConverseIntent);
 
@@ -137,6 +142,9 @@ public class TurConverseIntentOnStartup {
 			TurConverseResponse turConverseResponse2c = new TurConverseResponse("Como vai sua família?");
 			turConverseResponse2c.setIntent(turConverseIntent);
 			turConverseResponseRepository.save(turConverseResponse2c);
+
+			// Solr
+			turConverseIndex.index(turConverseIntent);
 
 		}
 	}
