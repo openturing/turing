@@ -121,13 +121,13 @@ public class TurConverseIntentAPI {
 			turConverseEventRepository.save(event);
 		}
 
-		
+
 		Set<TurConversePhrase> phrases  = turConverseIntent.getPhrases();
 		for (TurConversePhrase phrase : phrases) {
 			phrase.setIntent(turConverseIntentEdit);
 			turConversePhraseRepository.save(phrase);
 		}
-
+		
 		Set<TurConverseResponse> responses  = turConverseIntent.getResponses();
 		for (TurConverseResponse response : responses) {
 			response.setIntent(turConverseIntentEdit);
