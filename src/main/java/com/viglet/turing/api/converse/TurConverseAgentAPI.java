@@ -19,6 +19,8 @@ package com.viglet.turing.api.converse;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 import javax.servlet.http.HttpSession;
@@ -74,6 +76,7 @@ public class TurConverseAgentAPI {
 		return turConverseAgentResponse;
 	}
 
+	@SuppressWarnings("unchecked")
 	private TurConverseAgentResponse interactionNested(String q, TurSEInstance turSEInstance, String nextContext,
 			HttpSession session) {
 
@@ -90,11 +93,12 @@ public class TurConverseAgentAPI {
 			SolrDocumentList results = queryResponse.getResults();
 			if (!results.isEmpty()) {
 				SolrDocument firstResult = results.get(0);
-				@SuppressWarnings("unchecked")
-				ArrayList<String> responses = (ArrayList<String>) firstResult.getFieldValue("responses");
-				int rnd = new Random().nextInt(responses.size());
 
-				ArrayList<String> contextOutputs = (ArrayList<String>) firstResult.getFieldValue("contextOutput");
+				List<String> responses = (List<String>) firstResult.getFieldValue("responses");
+				int rnd = new Random().nextInt(responses.size());
+				
+				List<String> contextOutputs = (List<String>) firstResult.getFieldValue("contextOutput");
+				
 				turConverseAgentResponse.setResponse(responses.get(rnd).toString());
 				turConverseAgentResponse.setIntent(firstResult.getFieldValue("name").toString());
 

@@ -1,6 +1,11 @@
 <div>
-    <h1>{{intent.name}}</h1>
+    <div style="display:flex">
+        <h1 style="width: 100%">{{intent.name}}</h1>
 
+        <div class="pull-right">
+            <button class="btn btn-viglet" ng-click="saveIntent()">Save</button>
+        </div>
+    </div>
     <uib-accordion>
         <div uib-accordion-group class="panel-default" is-open="status.contexts">
             <uib-accordion-heading>
@@ -8,10 +13,12 @@
                     ng-class="{'glyphicon-chevron-down': status.contexts, 'glyphicon-chevron-right': !status.contexts}"></i>
             </uib-accordion-heading>
             <div class="form-group">
-                <input type="text" class="form-control" id="inputContext" placeholder="Add input context" ng-model="intent.contextInputs[0].text">
+                <input type="text" class="form-control" id="inputContext" placeholder="Add input context"
+                    ng-model="intent.contextInputs[0].text">
             </div>
             <div class="form-group">
-                <input type="text" class="form-control" id="outputContext" placeholder="Add output context" ng-model="intent.contextOutputs[0].text">
+                <input type="text" class="form-control" id="outputContext" placeholder="Add output context"
+                    ng-model="intent.contextOutputs[0].text">
             </div>
         </div>
 

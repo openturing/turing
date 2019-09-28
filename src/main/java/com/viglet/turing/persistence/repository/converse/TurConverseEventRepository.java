@@ -18,9 +18,11 @@
 package com.viglet.turing.persistence.repository.converse;
 
 import com.viglet.turing.persistence.model.converse.TurConverseEvent;
+import com.viglet.turing.persistence.model.converse.TurConverseIntent;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -30,6 +32,8 @@ public interface TurConverseEventRepository extends JpaRepository<TurConverseEve
 
 	List<TurConverseEvent> findAll();
 
+	Set<TurConverseEvent> findByIntent(TurConverseIntent turConverseIntent);
+	
 	Optional<TurConverseEvent> findById(String id);
 
 	TurConverseEvent save(TurConverseEvent turConverseEvent);
