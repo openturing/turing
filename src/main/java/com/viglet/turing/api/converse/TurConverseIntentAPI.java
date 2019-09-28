@@ -94,9 +94,7 @@ public class TurConverseIntentAPI {
 	public TurConverseIntent turConverseIntentUpdate(@PathVariable String id,
 			@RequestBody TurConverseIntent turConverseIntent) throws Exception {
 		TurConverseIntent turConverseIntentEdit = this.turConverseIntentRepository.findById(id).get();
-		
-	
-		
+
 		turConverseIntentEdit.setActions(turConverseIntent.getActions());
 		turConverseIntentEdit.setContextInputs(turConverseIntent.getContextInputs());
 		turConverseIntentEdit.setContextOutputs(turConverseIntent.getContextOutputs());
@@ -104,10 +102,10 @@ public class TurConverseIntentAPI {
 		turConverseIntentEdit.setName(turConverseIntent.getName());
 		turConverseIntentEdit.setPhrases(turConverseIntent.getPhrases());
 		turConverseIntentEdit.setResponses(turConverseIntent.getResponses());
-		
+
 		this.turConverseIntentRepository.save(turConverseIntentEdit);
-		
-		Set<TurConverseContext> inputs  = turConverseIntent.getContextInputs();
+
+		Set<TurConverseContext> inputs = turConverseIntent.getContextInputs();
 		for (TurConverseContext input : inputs) {
 			Set<TurConverseIntent> intents = new HashSet<>();
 			intents.add(turConverseIntentEdit);
@@ -115,26 +113,32 @@ public class TurConverseIntentAPI {
 			turConverseContextRepository.save(input);
 		}
 
-		Set<TurConverseEvent> events  = turConverseIntent.getEvents();
+		Set<TurConverseContext> outputs = turConverseIntent.getContextOutputs();
+		for (TurConverseContext output : outputs) {
+			Set<TurConverseIntent> intents = new HashSet<>();
+			intents.add(turConverseIntentEdit);
+			output.setIntentOutputs(intents);
+			turConverseContextRepository.save(output);
+		}
+
+		Set<TurConverseEvent> events = turConverseIntent.getEvents();
 		for (TurConverseEvent event : events) {
 			event.setIntent(turConverseIntentEdit);
 			turConverseEventRepository.save(event);
 		}
 
-
-		Set<TurConversePhrase> phrases  = turConverseIntent.getPhrases();
+		Set<TurConversePhrase> phrases = turConverseIntent.getPhrases();
 		for (TurConversePhrase phrase : phrases) {
 			phrase.setIntent(turConverseIntentEdit);
 			turConversePhraseRepository.save(phrase);
 		}
-		
-		Set<TurConverseResponse> responses  = turConverseIntent.getResponses();
+
+		Set<TurConverseResponse> responses = turConverseIntent.getResponses();
 		for (TurConverseResponse response : responses) {
 			response.setIntent(turConverseIntentEdit);
 			turConverseResponseRepository.save(response);
 		}
 
-		
 		return this.getIntent(turConverseIntentEdit.getId());
 	}
 
@@ -150,7 +154,49 @@ public class TurConverseIntentAPI {
 	@PostMapping
 	public TurConverseIntent turConverseIntentAdd(@RequestBody TurConverseIntent turConverseIntent) throws Exception {
 		this.turConverseIntentRepository.save(turConverseIntent);
+
+		Set<TurConverseContext> inputs = turConverseIntent.getContextInputs();
+		for (TurConverseContext input : inputs) {
+			Set<TurConverseIntent> intents = new HashSet<>();
+			intents.add(turConverseIntent);
+			input.setIntentInputs(intents);
+			turConverseContextRepository.save(input);
+		}
+
+		Set<TurConverseContext> outputs = turConverseIntent.getContextOutputs();
+		for (TurConverseContext output : outputs) {
+			Set<TurConverseIntent> intents = new HashSet<>();
+			intents.add(turConverseIntent);
+			output.setIntentOutputs(intents);
+			turConverseContextRepository.save(output);
+		}
+
+		Set<TurConverseEvent> events = turConverseIntent.getEvents();
+		for (TurConverseEvent event : events) {
+			event.setIntent(turConverseIntent);
+			turConverseEventRepository.save(event);
+		}
+
+		Set<TurConversePhrase> phrases = turConverseIntent.getPhrases();
+		for (TurConversePhrase phrase : phrases) {
+			phrase.setIntent(turConverseIntent);
+			turConversePhraseRepository.save(phrase);
+		}
+
+		Set<TurConverseResponse> responses = turConverseIntent.getResponses();
+		for (TurConverseResponse response : responses) {
+			response.setIntent(turConverseIntent);
+			turConverseResponseRepository.save(response);
+		}
 		return turConverseIntent;
 
 	}
+
+	@ApiOperation(value = "Converse Intent Model")
+	@GetMapping("/model")
+	public TurConverseIntent turConverseIntenModel() {
+		TurConverseIntent turConverseIntent = new TurConverseIntent();
+		return turConverseIntent;
+	}
+
 }

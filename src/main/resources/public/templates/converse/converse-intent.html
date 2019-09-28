@@ -1,7 +1,7 @@
 <div>
     <div style="display:flex">
-        <h1 style="width: 100%">{{intent.name}}</h1>
-
+        <input type="text" id="name" placeholder="Intent Name" ng-model="intent.name"
+        style="font-size: 24px;border: 0px none;margin-bottom: 25px;width: 100%;margin-right: 10px;font-weight: bolder;">
         <div class="pull-right">
             <button class="btn btn-viglet" ng-click="saveIntent()">Save</button>
         </div>
@@ -37,8 +37,8 @@
             </uib-accordion-heading>
             <div>
                 <div class="form-group">
-                    <input type="text" class="form-control" id="phrase" ng-model="phraseText"
-                        my-enter="addPhrase(phraseText)">
+                    <input type="text" class="form-control" id="phrase" ng-model="form.phraseText"
+                        my-enter="addPhrase(form.phraseText)">
                 </div>
                 <div style="padding: 10px">
                     <div ui-sortable ng-model="intent.phrases">
@@ -76,8 +76,8 @@
                     ng-class="{'glyphicon-chevron-down': status.responses, 'glyphicon-chevron-right': !status.responses}"></i>
             </uib-accordion-heading>
             <div class="form-group">
-                <input type="text" class="form-control" id="phrase" ng-model="responseText"
-                    my-enter="addResponse(responseText)">
+                <input type="text" class="form-control" id="phrase" ng-model="form.responseText"
+                    my-enter="addResponse(form.responseText)">
             </div>
             <div style="padding: 10px">
                 <div ui-sortable ng-model="intent.responses">

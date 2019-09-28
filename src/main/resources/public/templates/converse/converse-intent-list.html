@@ -3,7 +3,7 @@
     <div style="border-color: #f5f5f5; border-style: solid; border-width: 2px;">
 
         <div style="background-color: #f5f5f5; padding: 10px">
-            <button ng-click="addRelatorItem(shPost, shPostAttr)" class="btn btn-viglet">Add</button>
+            <a ui-sref="converse.intent-new" class="btn btn-viglet">Add</a>
         </div>
         <div style="padding: 10px">
             <div ui-sortable ng-model="intents">
@@ -19,7 +19,7 @@
                     </div>
                     <div style="display: inline-table">
                         <button type="button" class="btn btn-link btn-xs pull-right" style="display: block;"
-                            ng-click="relatorDelete(shPostAttr,$index)">
+                            ng-click="removeIntent(intent, $index)">
                             <i class="fa fa-trash-o" aria-hidden="true"></i> Delete
                         </button>
                     </div>
