@@ -34,16 +34,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.persistence.model.converse.TurConverseContext;
-import com.viglet.turing.persistence.model.converse.TurConverseEvent;
-import com.viglet.turing.persistence.model.converse.TurConverseIntent;
-import com.viglet.turing.persistence.model.converse.TurConversePhrase;
-import com.viglet.turing.persistence.model.converse.TurConverseResponse;
-import com.viglet.turing.persistence.repository.converse.TurConverseContextRepository;
-import com.viglet.turing.persistence.repository.converse.TurConverseEventRepository;
-import com.viglet.turing.persistence.repository.converse.TurConverseIntentRepository;
-import com.viglet.turing.persistence.repository.converse.TurConversePhraseRepository;
-import com.viglet.turing.persistence.repository.converse.TurConverseResponseRepository;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseEvent;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
+import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseEventRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -194,7 +194,7 @@ public class TurConverseIntentAPI {
 
 	@ApiOperation(value = "Converse Intent Model")
 	@GetMapping("/model")
-	public TurConverseIntent turConverseIntenModel() {
+	public TurConverseIntent turConverseIntentModel() {
 		TurConverseIntent turConverseIntent = new TurConverseIntent();
 		return turConverseIntent;
 	}

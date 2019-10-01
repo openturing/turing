@@ -310,13 +310,52 @@ turingApp
 					{
 						url: '/converse',
 						templateUrl: 'templates/converse/converse.html',
-						controller: 'TurConverseCtrl',
 						data: {
 							pageTitle: 'Converse | Viglet Turing'
 						}
 					})
 				.state(
-					'converse.intent',
+					'converse.agent-list',
+					{
+						url: '/agent',
+						templateUrl: 'templates/converse/converse-agent-list.html',
+						controller: 'TurConverseAgentListCtrl',
+						data: {
+							pageTitle: 'Converse Agents | Viglet Turing'
+						}
+					})
+				.state(
+					'converse.agent-new',
+					{
+						url: '/agent/new',
+						templateUrl: 'templates/converse/converse-agent-new.html',
+						controller: 'TurConverseAgentDetailCtrl',
+						data: {
+							pageTitle: 'New Converse Agent | Viglet Turing'
+						}
+					})
+				.state(
+					'converse.agent',
+					{
+						url: '/agent/:agentId',
+						templateUrl: 'templates/converse/converse-agent.html',
+						controller: 'TurConverseAgentCtrl',
+						data: {
+							pageTitle: 'Edit Converse Agent | Viglet Turing'
+						}
+					})
+					.state(
+						'converse.agent.detail',
+						{
+							url: '/detail',
+							templateUrl: 'templates/converse/converse-agent-detail.html',
+							controller: 'TurConverseAgentDetailCtrl',
+							data: {
+								pageTitle: 'Converse Agent Detail | Viglet Turing'
+							}
+						})	
+				.state(
+					'converse.agent.intent',
 					{
 						url: '/intent',
 						templateUrl: 'templates/converse/converse-intent-list.html',
@@ -326,7 +365,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.intent-new',
+					'converse.agent.intent-new',
 					{
 						url: '/intent/new',
 						templateUrl: 'templates/converse/converse-intent.html',
@@ -336,7 +375,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.intent-edit',
+					'converse.agent.intent-edit',
 					{
 						url: '/intent/:intentId',
 						templateUrl: 'templates/converse/converse-intent.html',
@@ -346,7 +385,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.entity',
+					'converse.agent.entity',
 					{
 						url: '/intent',
 						templateUrl: 'templates/converse/converse-entity.html',
@@ -356,7 +395,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.training',
+					'converse.agent.training',
 					{
 						url: '/training',
 						templateUrl: 'templates/converse/converse-training.html',
@@ -366,7 +405,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.prebuilt-agent',
+					'converse.agent.prebuilt-agent',
 					{
 						url: '/prebuiltagent',
 						templateUrl: 'templates/converse/converse-prebuilt-agent.html',

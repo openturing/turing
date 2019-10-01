@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.persistence.model.converse;
+package com.viglet.turing.persistence.model.converse.intent;
 
 import java.io.Serializable;
 import java.util.HashSet;

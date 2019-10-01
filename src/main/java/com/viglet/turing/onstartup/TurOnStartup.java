@@ -23,8 +23,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.viglet.turing.onstartup.converse.TurConverseIntentOnStartup;
-import com.viglet.turing.onstartup.converse.TurConversePhraseOnStartup;
+import com.viglet.turing.onstartup.converse.TurConverseAgentOnStartup;
 import com.viglet.turing.onstartup.ml.TurMLInstanceOnStartup;
 import com.viglet.turing.onstartup.ml.TurMLVendorOnStartup;
 import com.viglet.turing.onstartup.nlp.TurNLPEntityOnStartup;
@@ -74,9 +73,7 @@ public class TurOnStartup implements ApplicationRunner {
 	@Autowired
 	private TurSNSiteOnStartup turSNSiteOnStartup;
 	@Autowired
-	private TurConversePhraseOnStartup turConversePhraseOnStartup;
-	@Autowired
-	private TurConverseIntentOnStartup turConverseIntentOnStartup;
+	private TurConverseAgentOnStartup turConverseAgentOnStartup;
 
 	@Override
 	public void run(ApplicationArguments arg0) throws Exception {
@@ -98,8 +95,7 @@ public class TurOnStartup implements ApplicationRunner {
 			turSEInstanceOnStartup.createDefaultRows();
 			turDataGroupStartup.createDefaultRows();
 			turSNSiteOnStartup.createDefaultRows();
-			turConversePhraseOnStartup.createDefaultRows();
-			turConverseIntentOnStartup.createDefaultRows();
+			turConverseAgentOnStartup.createDefaultRows();
 			turConfigVarOnStartup.createDefaultRows();
 
 			System.out.println("Configuration finished.");

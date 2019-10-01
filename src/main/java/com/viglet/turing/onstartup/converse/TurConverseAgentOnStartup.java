@@ -25,19 +25,23 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.converse.TurConverseIndex;
-import com.viglet.turing.persistence.model.converse.TurConverseContext;
-import com.viglet.turing.persistence.model.converse.TurConverseIntent;
-import com.viglet.turing.persistence.model.converse.TurConversePhrase;
-import com.viglet.turing.persistence.model.converse.TurConverseResponse;
-import com.viglet.turing.persistence.repository.converse.TurConverseContextRepository;
-import com.viglet.turing.persistence.repository.converse.TurConverseIntentRepository;
-import com.viglet.turing.persistence.repository.converse.TurConversePhraseRepository;
-import com.viglet.turing.persistence.repository.converse.TurConverseResponseRepository;
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
+import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
+import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
+import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 
 @Component
 @Transactional
-public class TurConverseIntentOnStartup {
-
+public class TurConverseAgentOnStartup {
+	@Autowired
+	private TurConverseAgentRepository turConverseAgentRepository;
 	@Autowired
 	private TurConverseIntentRepository turConverseIntentRepository;
 	@Autowired
@@ -47,15 +51,27 @@ public class TurConverseIntentOnStartup {
 	@Autowired
 	private TurConverseResponseRepository turConverseResponseRepository;
 	@Autowired
+	private TurSEInstanceRepository turSEInstanceRepository;
+	@Autowired
 	private TurConverseIndex turConverseIndex;
 
 	public void createDefaultRows() {
 
-		if (turConverseIntentRepository.findAll().isEmpty()) {
+		if (turConverseAgentRepository.findAll().isEmpty()) {
 
+			TurConverseAgent turConverseAgent = new TurConverseAgent();
+			turConverseAgent.setName("Agent01");
+			turConverseAgent.setDescription("Sample Agent");
+			turConverseAgent.setLanguage("pt_BR");
+			turConverseAgent.setCore("converse");					
+			turConverseAgent.setTurSEInstance(turSEInstanceRepository.findAll().get(0));
+			
+			turConverseAgentRepository.save(turConverseAgent);
+			
 			// Intent01
 			TurConverseIntent turConverseIntent = new TurConverseIntent();
 			turConverseIntent.setName("Intent01");
+			turConverseIntent.setAgent(turConverseAgent);
 			turConverseIntentRepository.save(turConverseIntent);
 
 			// Contexts
@@ -97,55 +113,58 @@ public class TurConverseIntentOnStartup {
 
 			// Intent02
 
-			turConverseIntent = new TurConverseIntent();
-			turConverseIntent.setName("Intent02");
-			turConverseIntentRepository.save(turConverseIntent);
+			TurConverseIntent turConverseIntent2 = new TurConverseIntent();
+			turConverseIntent2.setName("Intent02");
+			turConverseIntent2.setAgent(turConverseAgent);
+			turConverseIntentRepository.save(turConverseIntent2);
 
 			// Contexts
 
 			TurConverseContext turConverseContextInput = new TurConverseContext("intent01");
 			Set<TurConverseIntent> intentInputs = new HashSet<>();
-			intentInputs.add(turConverseIntent);
+			intentInputs.add(turConverseIntent2);
 			turConverseContextInput.setIntentInputs(intentInputs);
 
 			turConverseContextRepository.save(turConverseContextInput);
 
 			turConverseContextOutput = new TurConverseContext("intent02");
 			intentOutputs = new HashSet<>();
-			intentOutputs.add(turConverseIntent);
+			intentOutputs.add(turConverseIntent2);
 			turConverseContextOutput.setIntentOutputs(intentOutputs);
 
 			turConverseContextRepository.save(turConverseContextOutput);
 
 			// Phrases
 			TurConversePhrase turConversePhrase2a = new TurConversePhrase("Muito bom");
-			turConversePhrase2a.setIntent(turConverseIntent);
+			turConversePhrase2a.setIntent(turConverseIntent2);
 			turConversePhraseRepository.save(turConversePhrase2a);
 
 			TurConversePhrase turConversePhrase2b = new TurConversePhrase("Legal");
-			turConversePhrase2b.setIntent(turConverseIntent);
+			turConversePhrase2b.setIntent(turConverseIntent2);
 			turConversePhraseRepository.save(turConversePhrase2b);
 
 			TurConversePhrase turConversePhrase2c = new TurConversePhrase("Ótimo");
-			turConversePhrase2c.setIntent(turConverseIntent);
+			turConversePhrase2c.setIntent(turConverseIntent2);
 			turConversePhraseRepository.save(turConversePhrase2c);
 
 			// Responses
 			TurConverseResponse turConverseResponse2a = new TurConverseResponse("Obrigado por perguntar");
-			turConverseResponse2a.setIntent(turConverseIntent);
+			turConverseResponse2a.setIntent(turConverseIntent2);
 			turConverseResponseRepository.save(turConverseResponse2a);
 
 			TurConverseResponse turConverseResponse2b = new TurConverseResponse("Um belo dia hoje");
-			turConverseResponse2b.setIntent(turConverseIntent);
+			turConverseResponse2b.setIntent(turConverseIntent2);
 			turConverseResponseRepository.save(turConverseResponse2b);
 
 			TurConverseResponse turConverseResponse2c = new TurConverseResponse("Como vai sua família?");
-			turConverseResponse2c.setIntent(turConverseIntent);
+			turConverseResponse2c.setIntent(turConverseIntent2);
 			turConverseResponseRepository.save(turConverseResponse2c);
-
+			
 			// Solr
-			turConverseIndex.index(turConverseIntent);
-
+			turConverseIndex.index(turConverseIntent2);
+			
+		
+			
 		}
 	}
 

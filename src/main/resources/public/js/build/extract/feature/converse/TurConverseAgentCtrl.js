@@ -1,4 +1,4 @@
-turingApp.controller('TurConverseCtrl', [
+turingApp.controller('TurConverseAgentCtrl', [
 	"$scope",
 	"$http",
 	"$window",

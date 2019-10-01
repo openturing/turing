@@ -15,9 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.persistence.repository.converse;
-
-import com.viglet.turing.persistence.model.converse.TurConverseAction;
+package com.viglet.turing.persistence.repository.converse.intent;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +23,8 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+
+import com.viglet.turing.persistence.model.converse.intent.TurConverseAction;
 
 public interface TurConverseActionRepository extends JpaRepository<TurConverseAction, String> {
 

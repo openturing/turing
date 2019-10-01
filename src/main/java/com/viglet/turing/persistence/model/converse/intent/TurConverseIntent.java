@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.persistence.model.converse;
+package com.viglet.turing.persistence.model.converse.intent;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -29,6 +29,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 /**
  * The persistent class for the TurConverseIntent database table.
@@ -47,7 +48,7 @@ public class TurConverseIntent implements Serializable {
 	private String id;
 
 	private String name;
-	
+
 	@ManyToMany(mappedBy = "intentInputs")
 	private Set<TurConverseContext> contextInputs = new HashSet<>();
 
@@ -72,7 +73,11 @@ public class TurConverseIntent implements Serializable {
 	@OneToMany(mappedBy = "intent", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurConverseResponse> responses = new HashSet<>();	
+	private Set<TurConverseResponse> responses = new HashSet<>();
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "agent_id")
+	private TurConverseAgent agent;
 
 	public String getId() {
 		return id;
@@ -81,7 +86,7 @@ public class TurConverseIntent implements Serializable {
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+
 	public String getName() {
 		return name;
 	}
@@ -122,7 +127,7 @@ public class TurConverseIntent implements Serializable {
 			this.events.addAll(events);
 		}
 	}
-	
+
 	public Set<TurConversePhrase> getPhrases() {
 		return this.phrases;
 	}
@@ -133,7 +138,7 @@ public class TurConverseIntent implements Serializable {
 			this.phrases.addAll(phrases);
 		}
 	}
-	
+
 	public Set<TurConverseAction> getActions() {
 		return this.actions;
 	}
@@ -144,7 +149,7 @@ public class TurConverseIntent implements Serializable {
 			this.actions.addAll(actions);
 		}
 	}
-	
+
 	public Set<TurConverseResponse> getResponses() {
 		return this.responses;
 	}
@@ -155,4 +160,13 @@ public class TurConverseIntent implements Serializable {
 			this.responses.addAll(responses);
 		}
 	}
+
+	public TurConverseAgent getAgent() {
+		return agent;
+	}
+
+	public void setAgent(TurConverseAgent agent) {
+		this.agent = agent;
+	}
+
 }

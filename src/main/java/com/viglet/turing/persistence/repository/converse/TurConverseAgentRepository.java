@@ -15,31 +15,26 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.persistence.repository.converse.intent;
+package com.viglet.turing.persistence.repository.converse;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
-import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
-public interface TurConverseIntentRepository extends JpaRepository<TurConverseIntent, String> {
+public interface TurConverseAgentRepository extends JpaRepository<TurConverseAgent, String> {
 
-	List<TurConverseIntent> findAll();
+	List<TurConverseAgent> findAll();
 
-	Optional<TurConverseIntent> findById(String id);
-	
-	List<TurConverseIntent> findByPhrases(Set<TurConversePhrase> phrases);
+	Optional<TurConverseAgent> findById(String id);
 
-
-	TurConverseIntent save(TurConverseIntent turConverseIntent);
+	TurConverseAgent save(TurConverseAgent turConverseAgent);
 
 	@Modifying
-	@Query("delete from  TurConverseIntent ci where ci.id = ?1")
+	@Query("delete from  TurConverseAgent ca where ca.id = ?1")
 	void delete(String id);
 }

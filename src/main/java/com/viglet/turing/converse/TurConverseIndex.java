@@ -31,14 +31,14 @@ import org.apache.solr.common.SolrInputDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.persistence.model.converse.TurConverseContext;
-import com.viglet.turing.persistence.model.converse.TurConverseIntent;
-import com.viglet.turing.persistence.model.converse.TurConversePhrase;
-import com.viglet.turing.persistence.model.converse.TurConverseResponse;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
+import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
-import com.viglet.turing.persistence.repository.converse.TurConverseContextRepository;
-import com.viglet.turing.persistence.repository.converse.TurConversePhraseRepository;
-import com.viglet.turing.persistence.repository.converse.TurConverseResponseRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 import com.viglet.turing.solr.TurSolr;
 
 @Component

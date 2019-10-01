@@ -18,8 +18,6 @@
 package com.viglet.turing.api.converse;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -34,14 +32,22 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.bean.converse.TurConverseAgentResponse;
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
-import com.viglet.turing.solr.TurSolr;
+import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -52,10 +58,52 @@ import io.swagger.annotations.ApiOperation;
 public class TurConverseAgentAPI {
 
 	@Autowired
-	TurSolr turSolr;
+	private CloseableHttpClient closeableHttpClient;
 	@Autowired
-	CloseableHttpClient closeableHttpClient;
-	SolrClient solrClient = null;
+	private TurConverseAgentRepository turConverseAgentRepository;
+	private SolrClient solrClient = null;
+
+	@ApiOperation(value = "Converse Agent List")
+	@GetMapping
+	public List<TurConverseAgent> turConverseAgentList() {
+		return this.turConverseAgentRepository.findAll();
+	}
+
+	@ApiOperation(value = "Show a Converse Agent")
+	@GetMapping("/{id}")
+	public TurConverseAgent turConverseAgentGet(@PathVariable String id) {
+		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
+		return turConverseAgent;
+	}
+
+	@ApiOperation(value = "Create a Converse Agent")
+	@PostMapping
+	public TurConverseAgent turConverseAgentAdd(@RequestBody TurConverseAgent turConverseAgent) {
+		return turConverseAgentRepository.save(turConverseAgent);
+	}
+
+	@ApiOperation(value = "Update a Converse Intent")
+	@PutMapping("/{id}")
+	public TurConverseAgent turConverseAgentUpdate(@PathVariable String id,
+			@RequestBody TurConverseAgent turConverseAgent) {
+		return turConverseAgentRepository.save(turConverseAgent);
+
+	}
+
+	@Transactional
+	@ApiOperation(value = "Delete a Converse Agent")
+	@DeleteMapping("/{id}")
+	public boolean turConverseAgentDelete(@PathVariable String id) {
+		this.turConverseAgentRepository.delete(id);
+		return true;
+	}
+
+	@ApiOperation(value = "Converse Agent Model")
+	@GetMapping("/model")
+	public TurConverseAgent turConverseAgentModel() {
+		TurConverseAgent turConverseAgent = new TurConverseAgent();
+		return turConverseAgent;
+	}
 
 	@ApiOperation(value = "Converse Intent List")
 	@GetMapping("/try")
@@ -65,13 +113,14 @@ public class TurConverseAgentAPI {
 		turSEInstance.setHost("localhost");
 		turSEInstance.setPort(8983);
 		String core = "converse";
-		
+
 		String urlString = "http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort() + "/solr/" + core;
 		solrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
 				.withConnectionTimeout(30000).withSocketTimeout(30000).build();
 
 		String nextContext = (String) session.getAttribute("nextContext");
-		TurConverseAgentResponse turConverseAgentResponse = this.interactionNested(q, turSEInstance, nextContext, session);
+		TurConverseAgentResponse turConverseAgentResponse = this.interactionNested(q, turSEInstance, nextContext,
+				session);
 
 		return turConverseAgentResponse;
 	}
@@ -96,9 +145,9 @@ public class TurConverseAgentAPI {
 
 				List<String> responses = (List<String>) firstResult.getFieldValue("responses");
 				int rnd = new Random().nextInt(responses.size());
-				
+
 				List<String> contextOutputs = (List<String>) firstResult.getFieldValue("contextOutput");
-				
+
 				turConverseAgentResponse.setResponse(responses.get(rnd).toString());
 				turConverseAgentResponse.setIntent(firstResult.getFieldValue("name").toString());
 
