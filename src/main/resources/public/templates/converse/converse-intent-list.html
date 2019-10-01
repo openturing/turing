@@ -1,13 +1,11 @@
 <div>
-    <h1>Intents</h1>
     <div style="border-color: #f5f5f5; border-style: solid; border-width: 2px;">
-
         <div style="background-color: #f5f5f5; padding: 10px">
             <a ui-sref="converse.intent-new" class="btn btn-viglet">Add</a>
         </div>
         <div style="padding: 10px">
             <div ui-sortable ng-model="intents">
-                <div class="list-group-item" ng-repeat="intent in intents">
+                <div class="list-group-item" ng-repeat="intent in agent.intents">
                     <div style="display: inline-table">
                         <div style="min-width: 50px;">
                             <span class="numberCircle" style="margin-right: 10px"><span>{{$index+1}}</span></span>
@@ -23,7 +21,6 @@
                             <i class="fa fa-trash-o" aria-hidden="true"></i> Delete
                         </button>
                     </div>
-
                 </div>
             </div>
         </div>

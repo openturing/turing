@@ -29,6 +29,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 /**
@@ -38,6 +39,7 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 @Entity
 @Table(name = "turConverseIntent")
 @NamedQuery(name = "TurConverseIntent.findAll", query = "SELECT ci FROM TurConverseIntent ci")
+@JsonIgnoreProperties({ "agent" })
 public class TurConverseIntent implements Serializable {
 	private static final long serialVersionUID = 1L;
 

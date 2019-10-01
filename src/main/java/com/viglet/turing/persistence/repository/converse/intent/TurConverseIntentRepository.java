@@ -25,6 +25,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
 
@@ -36,7 +37,8 @@ public interface TurConverseIntentRepository extends JpaRepository<TurConverseIn
 	
 	List<TurConverseIntent> findByPhrases(Set<TurConversePhrase> phrases);
 
-
+	Set<TurConverseIntent> findByAgent(TurConverseAgent agent);
+	
 	TurConverseIntent save(TurConverseIntent turConverseIntent);
 
 	@Modifying

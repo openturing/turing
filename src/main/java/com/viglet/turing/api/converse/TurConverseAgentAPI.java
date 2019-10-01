@@ -48,6 +48,7 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -58,9 +59,11 @@ import io.swagger.annotations.ApiOperation;
 public class TurConverseAgentAPI {
 
 	@Autowired
-	private CloseableHttpClient closeableHttpClient;
+	private CloseableHttpClient closeableHttpClient;	
 	@Autowired
 	private TurConverseAgentRepository turConverseAgentRepository;
+	@Autowired
+	private TurConverseIntentRepository turConverseIntentRepository;
 	private SolrClient solrClient = null;
 
 	@ApiOperation(value = "Converse Agent List")
@@ -73,6 +76,7 @@ public class TurConverseAgentAPI {
 	@GetMapping("/{id}")
 	public TurConverseAgent turConverseAgentGet(@PathVariable String id) {
 		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
+		turConverseAgent.setIntents(turConverseIntentRepository.findByAgent(turConverseAgent));
 		return turConverseAgent;
 	}
 

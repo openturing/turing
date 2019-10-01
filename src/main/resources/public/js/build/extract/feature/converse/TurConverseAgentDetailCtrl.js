@@ -20,9 +20,7 @@ turingApp.controller('TurConverseAgentDetailCtrl', [
 
 		$scope.isNew = false;
 		if ($scope.agentId !== null && typeof $scope.agentId !== 'undefined') {
-			$scope.agent = turConverseAgentResource.get({
-				id: $scope.agentId
-			});
+		//
 		}
 		else {
 			$scope.isNew = true;
