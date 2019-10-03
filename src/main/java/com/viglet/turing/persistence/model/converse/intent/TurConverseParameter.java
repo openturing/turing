@@ -47,6 +47,8 @@ public class TurConverseParameter implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	private int position;
+
 	private boolean required;
 
 	private String name;
@@ -63,8 +65,8 @@ public class TurConverseParameter implements Serializable {
 	private Set<String> prompts = new HashSet<>();
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "action_id")
-	private TurConverseAction action;
+	@JoinColumn(name = "intent_id")
+	private TurConverseIntent intent;
 
 	public String getId() {
 		return id;
@@ -72,6 +74,14 @@ public class TurConverseParameter implements Serializable {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public int getPosition() {
+		return position;
+	}
+
+	public void setPosition(int position) {
+		this.position = position;
 	}
 
 	public boolean isRequired() {
@@ -114,12 +124,11 @@ public class TurConverseParameter implements Serializable {
 		this.prompts = prompts;
 	}
 
-	public TurConverseAction getAction() {
-		return action;
+	public TurConverseIntent getIntent() {
+		return intent;
 	}
 
-	public void setAction(TurConverseAction action) {
-		this.action = action;
+	public void setIntent(TurConverseIntent intent) {
+		this.intent = intent;
 	}
-
 }

@@ -28,11 +28,13 @@ import com.viglet.turing.converse.TurConverseIndex;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
 import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseParameterRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
@@ -51,6 +53,8 @@ public class TurConverseAgentOnStartup {
 	@Autowired
 	private TurConverseResponseRepository turConverseResponseRepository;
 	@Autowired
+	private TurConverseParameterRepository turConverseParameterRepository;
+	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
 	@Autowired
 	private TurConverseIndex turConverseIndex;
@@ -63,15 +67,16 @@ public class TurConverseAgentOnStartup {
 			turConverseAgent.setName("Agent01");
 			turConverseAgent.setDescription("Sample Agent");
 			turConverseAgent.setLanguage("pt_BR");
-			turConverseAgent.setCore("converse");					
+			turConverseAgent.setCore("converse");
 			turConverseAgent.setTurSEInstance(turSEInstanceRepository.findAll().get(0));
-			
+
 			turConverseAgentRepository.save(turConverseAgent);
-			
+
 			// Intent01
 			TurConverseIntent turConverseIntent = new TurConverseIntent();
 			turConverseIntent.setName("Intent01");
 			turConverseIntent.setAgent(turConverseAgent);
+			turConverseIntent.setActionName("dados-pessoais");
 			turConverseIntentRepository.save(turConverseIntent);
 
 			// Contexts
@@ -107,6 +112,34 @@ public class TurConverseAgentOnStartup {
 			TurConverseResponse turConverseResponse1c = new TurConverseResponse("Mais um novo dia");
 			turConverseResponse1c.setIntent(turConverseIntent);
 			turConverseResponseRepository.save(turConverseResponse1c);
+
+			TurConverseParameter turConverseParameter01 = new TurConverseParameter();
+			turConverseParameter01.setPosition(1);
+			turConverseParameter01.setRequired(true);
+			turConverseParameter01.setName("nome");
+			turConverseParameter01.setEntity("@sys.any");
+			Set<String> prompts01 = new HashSet<>();
+			prompts01.add("Qual é o seu nome?");
+			prompts01.add("Digite seu nome");
+
+			turConverseParameter01.setPrompts(prompts01);
+			turConverseParameter01.setIntent(turConverseIntent);
+
+			turConverseParameterRepository.save(turConverseParameter01);
+
+			TurConverseParameter turConverseParameter02 = new TurConverseParameter();
+			turConverseParameter02.setPosition(2);
+			turConverseParameter02.setRequired(true);
+			turConverseParameter02.setName("idade");
+			turConverseParameter02.setEntity("@sys.any");
+			Set<String> prompts02 = new HashSet<>();
+			prompts02.add("Qual é o sua idade?");
+			prompts02.add("Digite sua idade");
+
+			turConverseParameter02.setPrompts(prompts02);
+			turConverseParameter02.setIntent(turConverseIntent);
+
+			turConverseParameterRepository.save(turConverseParameter02);
 
 			// Solr
 			turConverseIndex.index(turConverseIntent);
@@ -159,12 +192,10 @@ public class TurConverseAgentOnStartup {
 			TurConverseResponse turConverseResponse2c = new TurConverseResponse("Como vai sua família?");
 			turConverseResponse2c.setIntent(turConverseIntent2);
 			turConverseResponseRepository.save(turConverseResponse2c);
-			
+
 			// Solr
 			turConverseIndex.index(turConverseIntent2);
-			
-		
-			
+
 		}
 	}
 

@@ -8,7 +8,8 @@ turingApp.controller('TurConverseIntentCtrl', [
 	"turConverseIntentResource",
 	"$stateParams",
 	"turAPIServerService",
-	function ($scope, $http, $window, $state, $rootScope, $translate, turConverseIntentResource, $stateParams, turAPIServerService) {
+	"$filter",
+	function ($scope, $http, $window, $state, $rootScope, $translate, turConverseIntentResource, $stateParams, turAPIServerService, $filter) {
 		$rootScope.$state = $state;
 		$scope.form = {
 			phraseText: "",
@@ -20,6 +21,8 @@ turingApp.controller('TurConverseIntentCtrl', [
 		if ($scope.intentId !== null && typeof $scope.intentId !== 'undefined') {
 			$scope.intent = turConverseIntentResource.get({
 				id: $scope.intentId
+			}, function() {
+				$scope.intent.parameters = $filter('orderBy')($scope.intent.parameters, 'position');
 			});
 		}
 		else {
@@ -50,6 +53,7 @@ turingApp.controller('TurConverseIntentCtrl', [
 				$scope.intent.agent = $scope.agentId;
 				turConverseIntentResource.save($scope.intent, function (response) {
 					$scope.intent = response;
+					$scope.intent.parameters = $filter('orderBy')($scope.intent.parameters, 'position');
 					$scope.isNew = false;
 					$scope.intentId = response.id;
 					console.log("Save Intent");
@@ -58,6 +62,7 @@ turingApp.controller('TurConverseIntentCtrl', [
 			else {
 				turConverseIntentResource.update({ id: $scope.intent.id }, $scope.intent, function (response) {
 					$scope.intent = response;
+					$scope.intent.parameters = $filter('orderBy')($scope.intent.parameters, 'position');
 					console.log("Updated Intent");
 				});
 			}
@@ -70,6 +75,20 @@ turingApp.controller('TurConverseIntentCtrl', [
 			$scope.form.phraseText = "";
 		}
 
+		$scope.addParameter = function () {
+			var parameterObject = {};
+			parameterObject.required = false;
+			parameterObject.name = null;
+			parameterObject.entity = null;
+			parameterObject.value = null;
+			parameterObject.prompts = [];
+			$scope.intent.parameters.push(parameterObject);
+
+		}
+
+		$scope.removeParameter = function (index) {
+			$scope.intent.parameters.splice(index, 1);
+		}
 		$scope.removePhrase = function (index) {
 			$scope.intent.phrases.splice(index, 1);
 		}

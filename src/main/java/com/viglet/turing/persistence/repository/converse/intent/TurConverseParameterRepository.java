@@ -19,22 +19,26 @@ package com.viglet.turing.persistence.repository.converse.intent;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-import com.viglet.turing.persistence.model.converse.intent.TurConverseAction;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
 
-public interface TurConverseActionRepository extends JpaRepository<TurConverseAction, String> {
+public interface TurConverseParameterRepository extends JpaRepository<TurConverseParameter, String> {
 
-	List<TurConverseAction> findAll();
+	List<TurConverseParameter> findAll();
 
-	Optional<TurConverseAction> findById(String id);
+	Optional<TurConverseParameter> findById(String id);
 
-	TurConverseAction save(TurConverseAction turConverseAction);
+	Set<TurConverseParameter> findByIntent(TurConverseIntent turConverseIntent);
+	
+	TurConverseParameter save(TurConverseParameter turConverseParameter);
 
 	@Modifying
-	@Query("delete from  TurConverseAction ca where ca.id = ?1")
+	@Query("delete from  TurConverseParameter cp where cp.id = ?1")
 	void delete(String id);
 }

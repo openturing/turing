@@ -40,12 +40,14 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseEvent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
 import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseEventRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseParameterRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 
@@ -65,6 +67,8 @@ public class TurConverseIntentAPI {
 	TurConverseContextRepository turConverseContextRepository;
 	@Autowired
 	TurConverseEventRepository turConverseEventRepository;
+	@Autowired
+	TurConverseParameterRepository turConverseParameterRepository;
 	@Autowired
 	TurConversePhraseRepository turConversePhraseRepository;
 	@Autowired
@@ -93,6 +97,7 @@ public class TurConverseIntentAPI {
 		turConverseIntent.setContextOutputs(
 				turConverseContextRepository.findByIntentOutputs(new HashSet<>(Arrays.asList(turConverseIntent))));
 		turConverseIntent.setEvents(turConverseEventRepository.findByIntent(turConverseIntent));
+		turConverseIntent.setParameters(turConverseParameterRepository.findByIntent(turConverseIntent));
 		turConverseIntent.setPhrases(turConversePhraseRepository.findByIntent(turConverseIntent));
 		turConverseIntent.setResponses(turConverseResponseRepository.findByIntent(turConverseIntent));
 		return turConverseIntent;
@@ -104,11 +109,12 @@ public class TurConverseIntentAPI {
 			@RequestBody TurConverseIntent turConverseIntent) throws Exception {
 		TurConverseIntent turConverseIntentEdit = this.turConverseIntentRepository.findById(id).get();
 
-		turConverseIntentEdit.setActions(turConverseIntent.getActions());
+		turConverseIntentEdit.setParameters(turConverseIntent.getParameters());
 		turConverseIntentEdit.setContextInputs(turConverseIntent.getContextInputs());
 		turConverseIntentEdit.setContextOutputs(turConverseIntent.getContextOutputs());
 		turConverseIntentEdit.setEvents(turConverseIntent.getEvents());
 		turConverseIntentEdit.setName(turConverseIntent.getName());
+		turConverseIntentEdit.setParameters(turConverseIntent.getParameters());
 		turConverseIntentEdit.setPhrases(turConverseIntent.getPhrases());
 		turConverseIntentEdit.setResponses(turConverseIntent.getResponses());
 
@@ -142,6 +148,14 @@ public class TurConverseIntentAPI {
 			}
 		}
 
+		Set<TurConverseParameter> parameters = turConverseIntent.getParameters();
+		for (TurConverseParameter parameter : parameters) {
+			if (parameter != null) {
+				parameter.setIntent(turConverseIntentEdit);
+				turConverseParameterRepository.save(parameter);
+			}
+		}
+		
 		Set<TurConversePhrase> phrases = turConverseIntent.getPhrases();
 		for (TurConversePhrase phrase : phrases) {
 			if (phrase != null) {

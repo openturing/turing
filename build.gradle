@@ -267,6 +267,7 @@ dependencies {
 
 	// WebJars
 	compile 'org.webjars.bower:jquery:1.12.4'
+	compile 'org.webjars.bower:jquery.ui:1.11.3'
 	compile 'org.webjars:bootstrap:3.3.7-1'
 	compile 'org.webjars.bower:moment:2.22.2'
 	compile 'org.webjars.bower:angular:1.7.3'
@@ -281,6 +282,7 @@ dependencies {
 	compile 'org.webjars.bower:angular-moment:1.2.0'
 	compile 'org.webjars.bower:angular-moment:1.2.0'
 	compile 'org.webjars.bower:font-awesome:4.7.0'
+    compile 'org.webjars.bower:angular-ui-sortable:0.14.3'
 	
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }

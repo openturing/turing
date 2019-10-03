@@ -50,6 +50,8 @@ public class TurConverseIntent implements Serializable {
 
 	private String name;
 
+	private String actionName;
+	
 	@ManyToMany(mappedBy = "intentInputs")
 	private Set<TurConverseContext> contextInputs = new HashSet<>();
 
@@ -69,7 +71,7 @@ public class TurConverseIntent implements Serializable {
 	@OneToMany(mappedBy = "intent", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurConverseAction> actions = new HashSet<>();
+	private Set<TurConverseParameter> parameters = new HashSet<>();
 
 	@OneToMany(mappedBy = "intent", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
@@ -95,6 +97,14 @@ public class TurConverseIntent implements Serializable {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public String getActionName() {
+		return actionName;
+	}
+
+	public void setActionName(String actionName) {
+		this.actionName = actionName;
 	}
 
 	public Set<TurConverseContext> getContextInputs() {
@@ -141,14 +151,14 @@ public class TurConverseIntent implements Serializable {
 		}
 	}
 
-	public Set<TurConverseAction> getActions() {
-		return this.actions;
+	public Set<TurConverseParameter> getParameters() {
+		return this.parameters;
 	}
 
-	public void setActions(Set<TurConverseAction> actions) {
-		this.actions.clear();
-		if (actions != null) {
-			this.actions.addAll(actions);
+	public void setParameters(Set<TurConverseParameter> parameters) {
+		this.parameters.clear();
+		if (parameters != null) {
+			this.parameters.addAll(parameters);
 		}
 	}
 
