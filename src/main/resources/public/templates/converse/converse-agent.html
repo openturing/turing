@@ -2,8 +2,19 @@
 	<div style="width: 100%">
 		<h1>{{agent.name}}</h1>
 	</div>
-	<div class="pull-left">
-		<a ng-href="converse#!/{{agent.id}}" target="_blank" class="btn btn-viglet">Chat Room</a>
+	<div class="pull-left" style="width: 200px;text-align: right;">		<div class="btn-group">
+			<div class="btn-group">
+				<a ng-href="converse#!/{{agent.id}}" target="_blank" class="btn btn-viglet">Chat Room</a>
+				<button type="button" class="btn btn-viglet dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+					aria-expanded="false">
+					<span class="caret"></span> <span class="sr-only">Toggle
+						Dropdown</span>
+				</button>
+				<ul class="dropdown-menu pull-right">
+					<li><a ng-click="agentRebuild()">Rebuild</a></li>
+				</ul>
+			</div>
+		</div>
 	</div>
 </div>
 <div id="configuration" class="row row-centered">

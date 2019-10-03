@@ -26,7 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -54,7 +54,7 @@ public class TurConverseIndex {
 	TurConverseResponseRepository turConverseResponseRepository;
 	@Autowired
 	TurConverseContextRepository turConverseContextRepository;
-	
+
 	public void index(TurConverseIntent turConverseIntent) {
 		turConverseIntent.setContextInputs(
 				turConverseContextRepository.findByIntentInputs(new HashSet<>(Arrays.asList(turConverseIntent))));
@@ -62,16 +62,11 @@ public class TurConverseIndex {
 				turConverseContextRepository.findByIntentOutputs(new HashSet<>(Arrays.asList(turConverseIntent))));
 		turConverseIntent.setPhrases(turConversePhraseRepository.findByIntent(turConverseIntent));
 		turConverseIntent.setResponses(turConverseResponseRepository.findByIntent(turConverseIntent));
-		
-		TurSEInstance turSEInstance = new TurSEInstance();
-		turSEInstance.setHost("localhost");
-		turSEInstance.setPort(8983);
-		String core = "converse";
 
-		SolrClient solrClient = null;
-		String urlString = "http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort() + "/solr/" + core;
-		solrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
-				.withConnectionTimeout(30000).withSocketTimeout(30000).build();
+		TurSEInstance turSEInstance = turConverseIntent.getAgent().getTurSEInstance();
+		String core = turConverseIntent.getAgent().getCore();
+
+		SolrClient solrClient = turSolr.getSolrClient(turSEInstance, core);
 
 		SolrInputDocument document = new SolrInputDocument();
 
@@ -80,11 +75,11 @@ public class TurConverseIndex {
 		document.addField("type", "Intent");
 		document.addField("name", turConverseIntent.getName());
 		for (TurConverseContext contextInput : turConverseIntent.getContextInputs())
-		document.addField("contextInput", contextInput.getText());
-		
+			document.addField("contextInput", contextInput.getText());
+
 		for (TurConverseContext contextOutput : turConverseIntent.getContextOutputs())
 			document.addField("contextOutput", contextOutput.getText());
-			
+
 		for (TurConversePhrase phrase : turConverseIntent.getPhrases())
 			document.addField("phrases", phrase.getText());
 
@@ -93,6 +88,26 @@ public class TurConverseIndex {
 
 		try {
 			solrClient.add(document);
+			solrClient.commit();
+		} catch (SolrServerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void desindex(TurConverseIntent turConverseIntent) {
+
+		TurSEInstance turSEInstance = turConverseIntent.getAgent().getTurSEInstance();
+		String core = turConverseIntent.getAgent().getCore();
+
+		SolrClient solrClient = turSolr.getSolrClient(turSEInstance, core);
+
+		try {
+			@SuppressWarnings("unused")
+			UpdateResponse response = solrClient.deleteByQuery("id:" + turConverseIntent.getId());
 			solrClient.commit();
 		} catch (SolrServerException e) {
 			// TODO Auto-generated catch block

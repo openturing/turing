@@ -30,11 +30,10 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 /**
- * The persistent class for the TurConverseIntent database table.
+ * The persistent class for the turConverseIntent database table.
  * 
  */
 @Entity
@@ -79,7 +78,7 @@ public class TurConverseIntent implements Serializable {
 
 	@ManyToOne
 	@JoinColumn(name = "agent_id")
-	@JsonIdentityReference(alwaysAsId=true)
+	@JsonIdentityReference(alwaysAsId = true)
 	private TurConverseAgent agent;
 
 	public String getId() {
@@ -175,6 +174,6 @@ public class TurConverseIntent implements Serializable {
 	public void setAgent(String agentId) {
 		agent = new TurConverseAgent();
 		agent.setId(agentId);
-	   
+
 	}
 }

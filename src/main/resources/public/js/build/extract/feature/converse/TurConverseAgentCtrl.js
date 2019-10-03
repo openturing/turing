@@ -19,10 +19,20 @@ turingApp.controller('TurConverseAgentCtrl', [
 		$scope.try = function () {
 			$scope
 				.$evalAsync($http
-					.get(turAPIServerService.get().concat("/converse/agent/try?q=" + $scope.tryText))
+					.get(turAPIServerService.get().concat("/converse/agent/" + $scope.agentId + "/chat?q=" + $scope.tryText))
 					.then(
 						function (response) {
 							$scope.agentResponse = response.data;
+						}));
+
+		}
+		$scope.agentRebuild = function () {
+			$scope
+				.$evalAsync($http
+					.get(turAPIServerService.get().concat("/converse/agent/" + $scope.agentId + "/rebuild"))
+					.then(
+						function (response) {
+							console.log("Rebuilded");
 						}));
 
 		}

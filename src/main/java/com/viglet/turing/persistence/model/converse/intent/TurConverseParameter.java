@@ -23,8 +23,7 @@ import java.util.Set;
 
 import javax.persistence.*;
 
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -32,14 +31,14 @@ import org.hibernate.annotations.OnDeleteAction;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * The persistent class for the turConverseAction database table.
+ * The persistent class for the turConverseParameter database table.
  * 
  */
 @Entity
-@Table(name = "turConverseAction")
-@NamedQuery(name = "TurConverseAction.findAll", query = "SELECT ca FROM TurConverseAction ca")
+@Table(name = "turConverseParameter")
+@NamedQuery(name = "TurConverseParameter.findAll", query = "SELECT cp FROM TurConverseParameter cp")
 @JsonIgnoreProperties({ "intent" })
-public class TurConverseAction implements Serializable {
+public class TurConverseParameter implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -47,18 +46,25 @@ public class TurConverseAction implements Serializable {
 	@GeneratedValue(generator = "UUID")
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
-	
-	private String name;
-	
-	@OneToMany(mappedBy = "action", orphanRemoval = true, fetch = FetchType.LAZY)
-	@Cascade({ CascadeType.ALL })
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurConverseParameter> parameters = new HashSet<>();
-	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "intent_id")
-	private TurConverseIntent intent;
 
+	private boolean required;
+
+	private String name;
+
+	private String entity;
+
+	private String value;
+
+	@ElementCollection
+	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
+	@CollectionTable(name = "turConverseParameterPrompt")
+	@JoinColumn(name = "parameter_id")
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<String> prompts = new HashSet<>();
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "action_id")
+	private TurConverseAction action;
 
 	public String getId() {
 		return id;
@@ -66,6 +72,14 @@ public class TurConverseAction implements Serializable {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public boolean isRequired() {
+		return required;
+	}
+
+	public void setRequired(boolean required) {
+		this.required = required;
 	}
 
 	public String getName() {
@@ -76,23 +90,36 @@ public class TurConverseAction implements Serializable {
 		this.name = name;
 	}
 
-	public Set<TurConverseParameter> getParameters() {
-		return this.parameters;
+	public String getEntity() {
+		return entity;
 	}
 
-	public void setParameters(Set<TurConverseParameter> parameters) {
-		this.parameters.clear();
-		if (parameters != null) {
-			this.parameters.addAll(parameters);
-		}
+	public void setEntity(String entity) {
+		this.entity = entity;
 	}
 
-	public TurConverseIntent getIntent() {
-		return intent;
+	public String getValue() {
+		return value;
 	}
 
-	public void setIntent(TurConverseIntent intent) {
-		this.intent = intent;
+	public void setValue(String value) {
+		this.value = value;
+	}
+
+	public Set<String> getPrompts() {
+		return prompts;
+	}
+
+	public void setPrompts(Set<String> prompts) {
+		this.prompts = prompts;
+	}
+
+	public TurConverseAction getAction() {
+		return action;
+	}
+
+	public void setAction(TurConverseAction action) {
+		this.action = action;
 	}
 
 }
