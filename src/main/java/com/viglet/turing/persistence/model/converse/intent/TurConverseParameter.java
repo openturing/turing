@@ -23,6 +23,8 @@ import java.util.Set;
 
 import javax.persistence.*;
 
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
@@ -57,12 +59,10 @@ public class TurConverseParameter implements Serializable {
 
 	private String value;
 
-	@ElementCollection
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
-	@CollectionTable(name = "turConverseParameterPrompt")
-	@JoinColumn(name = "parameter_id")
+	@OneToMany(mappedBy = "parameter", orphanRemoval = true, fetch = FetchType.LAZY)
+	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<String> prompts = new HashSet<>();
+	private Set<TurConversePrompt> prompts = new HashSet<>();
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "intent_id")
@@ -116,12 +116,15 @@ public class TurConverseParameter implements Serializable {
 		this.value = value;
 	}
 
-	public Set<String> getPrompts() {
-		return prompts;
+	public Set<TurConversePrompt> getPrompts() {
+		return this.prompts;
 	}
 
-	public void setPrompts(Set<String> prompts) {
-		this.prompts = prompts;
+	public void setPrompts(Set<TurConversePrompt> prompts) {
+		this.prompts.clear();
+		if (prompts != null) {
+			this.prompts.addAll(prompts);
+		}
 	}
 
 	public TurConverseIntent getIntent() {

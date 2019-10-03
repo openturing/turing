@@ -42,6 +42,7 @@ import com.viglet.turing.persistence.model.converse.intent.TurConverseEvent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
 import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
+import com.viglet.turing.persistence.model.converse.intent.TurConversePrompt;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
@@ -49,6 +50,7 @@ import com.viglet.turing.persistence.repository.converse.intent.TurConverseEvent
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseParameterRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConversePromptRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 
 import io.swagger.annotations.Api;
@@ -74,6 +76,8 @@ public class TurConverseIntentAPI {
 	@Autowired
 	TurConverseResponseRepository turConverseResponseRepository;
 	@Autowired
+	TurConversePromptRepository turConversePromptRepository;
+	@Autowired
 	TurConverseIndex turConverseIndex;
 	
 	@ApiOperation(value = "Converse Intent List")
@@ -96,8 +100,12 @@ public class TurConverseIntentAPI {
 				turConverseContextRepository.findByIntentInputs(new HashSet<>(Arrays.asList(turConverseIntent))));
 		turConverseIntent.setContextOutputs(
 				turConverseContextRepository.findByIntentOutputs(new HashSet<>(Arrays.asList(turConverseIntent))));
-		turConverseIntent.setEvents(turConverseEventRepository.findByIntent(turConverseIntent));
+		turConverseIntent.setEvents(turConverseEventRepository.findByIntent(turConverseIntent));		
 		turConverseIntent.setParameters(turConverseParameterRepository.findByIntent(turConverseIntent));
+		
+		for (TurConverseParameter parameter: turConverseIntent.getParameters() ) {
+			parameter.setPrompts(turConversePromptRepository.findByParameter(parameter));
+		}
 		turConverseIntent.setPhrases(turConversePhraseRepository.findByIntent(turConverseIntent));
 		turConverseIntent.setResponses(turConverseResponseRepository.findByIntent(turConverseIntent));
 		return turConverseIntent;
@@ -154,6 +162,16 @@ public class TurConverseIntentAPI {
 				parameter.setIntent(turConverseIntentEdit);
 				turConverseParameterRepository.save(parameter);
 			}
+			
+			
+			Set<TurConversePrompt> prompts = parameter.getPrompts();
+			for (TurConversePrompt prompt : prompts) {
+				if (prompt != null) {
+					prompt.setParameter(parameter);
+					turConversePromptRepository.save(prompt);
+				}
+			}
+
 		}
 		
 		Set<TurConversePhrase> phrases = turConverseIntent.getPhrases();

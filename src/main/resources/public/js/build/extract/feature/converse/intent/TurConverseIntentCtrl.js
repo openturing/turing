@@ -9,7 +9,8 @@ turingApp.controller('TurConverseIntentCtrl', [
 	"$stateParams",
 	"turAPIServerService",
 	"$filter",
-	function ($scope, $http, $window, $state, $rootScope, $translate, turConverseIntentResource, $stateParams, turAPIServerService, $filter) {
+	"turConverseIntentFactory",
+	function ($scope, $http, $window, $state, $rootScope, $translate, turConverseIntentResource, $stateParams, turAPIServerService, $filter, turConverseIntentFactory) {
 		$rootScope.$state = $state;
 		$scope.form = {
 			phraseText: "",
@@ -21,7 +22,7 @@ turingApp.controller('TurConverseIntentCtrl', [
 		if ($scope.intentId !== null && typeof $scope.intentId !== 'undefined') {
 			$scope.intent = turConverseIntentResource.get({
 				id: $scope.intentId
-			}, function() {
+			}, function () {
 				$scope.intent.parameters = $filter('orderBy')($scope.intent.parameters, 'position');
 			});
 		}
@@ -105,4 +106,7 @@ turingApp.controller('TurConverseIntentCtrl', [
 			$scope.intent.responses.splice(index, 1);
 		}
 
+		$scope.editParamPrompts = function (actionName, parameter) {
+			turConverseIntentFactory.showParamPrompts(actionName, parameter);
+		}
 	}]);

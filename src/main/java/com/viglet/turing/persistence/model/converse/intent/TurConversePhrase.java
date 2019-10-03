@@ -25,7 +25,7 @@ import org.hibernate.annotations.GenericGenerator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * The persistent class for the turMLModel database table.
+ * The persistent class for the turConversePhrase database table.
  * 
  */
 @Entity

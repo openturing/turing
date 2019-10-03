@@ -30,12 +30,14 @@ import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
 import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
+import com.viglet.turing.persistence.model.converse.intent.TurConversePrompt;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseParameterRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConversePromptRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 
@@ -54,6 +56,8 @@ public class TurConverseAgentOnStartup {
 	private TurConverseResponseRepository turConverseResponseRepository;
 	@Autowired
 	private TurConverseParameterRepository turConverseParameterRepository;
+	@Autowired
+	private TurConversePromptRepository turConversePromptRepository;
 	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
 	@Autowired
@@ -118,29 +122,40 @@ public class TurConverseAgentOnStartup {
 			turConverseParameter01.setRequired(true);
 			turConverseParameter01.setName("nome");
 			turConverseParameter01.setEntity("@sys.any");
-			Set<String> prompts01 = new HashSet<>();
-			prompts01.add("Qual é o seu nome?");
-			prompts01.add("Digite seu nome");
-
-			turConverseParameter01.setPrompts(prompts01);
 			turConverseParameter01.setIntent(turConverseIntent);
 
 			turConverseParameterRepository.save(turConverseParameter01);
+
+			TurConversePrompt prompt11 = new TurConversePrompt(1, "Qual é o seu nome?");
+			prompt11.setParameter(turConverseParameter01);
+
+			turConversePromptRepository.save(prompt11);
+			
+			TurConversePrompt prompt12 = new TurConversePrompt(2, "Digite seu nome");
+			prompt12.setParameter(turConverseParameter01);
+
+			turConversePromptRepository.save(prompt12);
 
 			TurConverseParameter turConverseParameter02 = new TurConverseParameter();
 			turConverseParameter02.setPosition(2);
 			turConverseParameter02.setRequired(true);
 			turConverseParameter02.setName("idade");
 			turConverseParameter02.setEntity("@sys.any");
-			Set<String> prompts02 = new HashSet<>();
-			prompts02.add("Qual é o sua idade?");
-			prompts02.add("Digite sua idade");
-
-			turConverseParameter02.setPrompts(prompts02);
 			turConverseParameter02.setIntent(turConverseIntent);
 
 			turConverseParameterRepository.save(turConverseParameter02);
 
+			TurConversePrompt prompt21 = new TurConversePrompt(1, "Qual é o sua idade?");
+			prompt21.setParameter(turConverseParameter02);
+
+			turConversePromptRepository.save(prompt21);
+			
+			TurConversePrompt prompt22 = new TurConversePrompt(2, "Digite sua idade");
+			prompt22.setParameter(turConverseParameter02);
+
+			turConversePromptRepository.save(prompt22);
+
+		
 			// Solr
 			turConverseIndex.index(turConverseIntent);
 
