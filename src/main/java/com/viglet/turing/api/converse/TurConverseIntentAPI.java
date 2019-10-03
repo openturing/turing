@@ -20,6 +20,7 @@ package com.viglet.turing.api.converse;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.json.JSONException;
@@ -34,11 +35,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.viglet.turing.converse.TurConverseIndex;
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseEvent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
+import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseEventRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
@@ -56,6 +61,8 @@ public class TurConverseIntentAPI {
 	@Autowired
 	TurConverseIntentRepository turConverseIntentRepository;
 	@Autowired
+	TurConverseAgentRepository turConverseAgentRepository;
+	@Autowired
 	TurConverseContextRepository turConverseContextRepository;
 	@Autowired
 	TurConverseEventRepository turConverseEventRepository;
@@ -63,7 +70,9 @@ public class TurConverseIntentAPI {
 	TurConversePhraseRepository turConversePhraseRepository;
 	@Autowired
 	TurConverseResponseRepository turConverseResponseRepository;
-
+	@Autowired
+	TurConverseIndex turConverseIndex;
+	
 	@ApiOperation(value = "Converse Intent List")
 	@GetMapping
 	public List<TurConverseIntent> turConverseIntentList() throws JSONException {
@@ -79,6 +88,7 @@ public class TurConverseIntentAPI {
 
 	private TurConverseIntent getIntent(String id) {
 		TurConverseIntent turConverseIntent = this.turConverseIntentRepository.findById(id).get();
+		//turConverseIntent.setAgent(turConverseAgentRepository.find);
 		turConverseIntent.setContextInputs(
 				turConverseContextRepository.findByIntentInputs(new HashSet<>(Arrays.asList(turConverseIntent))));
 		turConverseIntent.setContextOutputs(
@@ -91,7 +101,7 @@ public class TurConverseIntentAPI {
 
 	@ApiOperation(value = "Update a Converse Intent")
 	@PutMapping("/{id}")
-	public TurConverseIntent turConverseIntentUpdate(@PathVariable String id,
+	public TurConverseIntent turConverseIntentUpdate(@JsonProperty("agent") String agent, @PathVariable String id,
 			@RequestBody TurConverseIntent turConverseIntent) throws Exception {
 		TurConverseIntent turConverseIntentEdit = this.turConverseIntentRepository.findById(id).get();
 
@@ -107,38 +117,49 @@ public class TurConverseIntentAPI {
 
 		Set<TurConverseContext> inputs = turConverseIntent.getContextInputs();
 		for (TurConverseContext input : inputs) {
-			Set<TurConverseIntent> intents = new HashSet<>();
-			intents.add(turConverseIntentEdit);
-			input.setIntentInputs(intents);
-			turConverseContextRepository.save(input);
+			if (input != null) {
+				Set<TurConverseIntent> intents = new HashSet<>();
+				intents.add(turConverseIntentEdit);
+				input.setIntentInputs(intents);
+				turConverseContextRepository.save(input);
+			}
 		}
 
 		Set<TurConverseContext> outputs = turConverseIntent.getContextOutputs();
 		for (TurConverseContext output : outputs) {
-			Set<TurConverseIntent> intents = new HashSet<>();
-			intents.add(turConverseIntentEdit);
-			output.setIntentOutputs(intents);
-			turConverseContextRepository.save(output);
+			if (output != null) {
+				Set<TurConverseIntent> intents = new HashSet<>();
+				intents.add(turConverseIntentEdit);
+				output.setIntentOutputs(intents);
+				turConverseContextRepository.save(output);
+			}
 		}
 
 		Set<TurConverseEvent> events = turConverseIntent.getEvents();
 		for (TurConverseEvent event : events) {
-			event.setIntent(turConverseIntentEdit);
-			turConverseEventRepository.save(event);
+			if (event != null) {
+				event.setIntent(turConverseIntentEdit);
+				turConverseEventRepository.save(event);
+			}
 		}
 
 		Set<TurConversePhrase> phrases = turConverseIntent.getPhrases();
 		for (TurConversePhrase phrase : phrases) {
-			phrase.setIntent(turConverseIntentEdit);
-			turConversePhraseRepository.save(phrase);
+			if (phrase != null) {
+				phrase.setIntent(turConverseIntentEdit);
+				turConversePhraseRepository.save(phrase);
+			}
 		}
 
 		Set<TurConverseResponse> responses = turConverseIntent.getResponses();
 		for (TurConverseResponse response : responses) {
-			response.setIntent(turConverseIntentEdit);
-			turConverseResponseRepository.save(response);
+			if (response != null) {
+				response.setIntent(turConverseIntentEdit);
+				turConverseResponseRepository.save(response);			
+			}
 		}
 
+		turConverseIndex.index(turConverseIntentEdit);
 		return this.getIntent(turConverseIntentEdit.getId());
 	}
 
@@ -152,7 +173,10 @@ public class TurConverseIntentAPI {
 
 	@ApiOperation(value = "Create a Converse Intent")
 	@PostMapping
-	public TurConverseIntent turConverseIntentAdd(@RequestBody TurConverseIntent turConverseIntent) throws Exception {
+	public TurConverseIntent turConverseIntentAdd(@JsonProperty("agent") String agent, @RequestBody TurConverseIntent turConverseIntent) throws Exception {
+		
+		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(turConverseIntent.getAgent().getId()).orElse(null);
+		turConverseIntent.setAgent(turConverseAgent);
 		this.turConverseIntentRepository.save(turConverseIntent);
 
 		Set<TurConverseContext> inputs = turConverseIntent.getContextInputs();
@@ -188,6 +212,8 @@ public class TurConverseIntentAPI {
 			response.setIntent(turConverseIntent);
 			turConverseResponseRepository.save(response);
 		}
+		
+		turConverseIndex.index(turConverseIntent);
 		return turConverseIntent;
 
 	}

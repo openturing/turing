@@ -6,7 +6,6 @@ turConverseApp.config([
 		function($stateProvider, $urlRouterProvider, $locationProvider,
 				$translateProvider) {
 			$translateProvider.useSanitizeValueStrategy('escaped');
-			$locationProvider.html5Mode(true);
 			$translateProvider.translations('en', {
 				REMOVE : "Remove",
 				FIRST: "First",
@@ -47,16 +46,25 @@ turConverseApp.config([
 
 			});
 			
-			$translateProvider.fallbackLanguage('en');
-			
-		/*	$urlRouterProvider.otherwise('/sn/search');
+			$translateProvider.fallbackLanguage('en');	
+			$urlRouterProvider.otherwise('');
 			$stateProvider
-					.state('search', {
-						url : '/sn/search',
-						templateUrl : 'sn/templates/home.html',
-						controller : 'TurSNMainCtrl',
-						data : {
-							pageTitle : 'Home | Viglet Turing'
+				.state('home', {
+					url : '',
+					templateUrl: '/converse/template/converse.html',		
+					controller: 'TurConverseMainCtrl',		
+					data: {
+						pageTitle: 'Converse | Viglet Turing'
+					}
+				})
+				.state(
+					'agent',
+					{
+						url: '/:agentId',
+						templateUrl: '/converse/template/converse.html',
+						controller: 'TurConverseMainCtrl',
+						data: {
+							pageTitle: 'Converse | Viglet Turing'
 						}
-					})*/
+					})
 		} ]);

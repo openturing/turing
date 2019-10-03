@@ -76,6 +76,7 @@ public class TurConverseIndex {
 		SolrInputDocument document = new SolrInputDocument();
 
 		document.addField("id", turConverseIntent.getId());
+		document.addField("agent", turConverseIntent.getAgent().getId());
 		document.addField("type", "Intent");
 		document.addField("name", turConverseIntent.getName());
 		for (TurConverseContext contextInput : turConverseIntent.getContextInputs())

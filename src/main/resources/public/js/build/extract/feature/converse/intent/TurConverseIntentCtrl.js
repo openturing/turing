@@ -46,11 +46,12 @@ turingApp.controller('TurConverseIntentCtrl', [
 				contextOutputsArray.push($scope.intent.contextOutputs);
 				$scope.intent.contextOutputs = contextOutputsArray;
 			}
-			if ($scope.isNew) {			
+			if ($scope.isNew) {
+				$scope.intent.agent = $scope.agentId;
 				turConverseIntentResource.save($scope.intent, function (response) {
 					$scope.intent = response;
 					$scope.isNew = false;
-					$scope.intentId = $response.id;
+					$scope.intentId = response.id;
 					console.log("Save Intent");
 				});
 			}

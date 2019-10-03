@@ -20,6 +20,7 @@ package com.viglet.turing.api.converse;
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import javax.servlet.http.HttpSession;
 
@@ -59,7 +60,7 @@ import io.swagger.annotations.ApiOperation;
 public class TurConverseAgentAPI {
 
 	@Autowired
-	private CloseableHttpClient closeableHttpClient;	
+	private CloseableHttpClient closeableHttpClient;
 	@Autowired
 	private TurConverseAgentRepository turConverseAgentRepository;
 	@Autowired
@@ -75,9 +76,15 @@ public class TurConverseAgentAPI {
 	@ApiOperation(value = "Show a Converse Agent")
 	@GetMapping("/{id}")
 	public TurConverseAgent turConverseAgentGet(@PathVariable String id) {
-		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
-		turConverseAgent.setIntents(turConverseIntentRepository.findByAgent(turConverseAgent));
+		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();		
 		return turConverseAgent;
+	}
+
+	@ApiOperation(value = "Show a Converse Agent")
+	@GetMapping("/{id}/intents")
+	public Set<TurConverseIntent> turConverseAgentIntentsGet(@PathVariable String id) {
+		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
+		return turConverseIntentRepository.findByAgent(turConverseAgent);
 	}
 
 	@ApiOperation(value = "Create a Converse Agent")
@@ -86,7 +93,7 @@ public class TurConverseAgentAPI {
 		return turConverseAgentRepository.save(turConverseAgent);
 	}
 
-	@ApiOperation(value = "Update a Converse Intent")
+	@ApiOperation(value = "Update a Converse Agent")
 	@PutMapping("/{id}")
 	public TurConverseAgent turConverseAgentUpdate(@PathVariable String id,
 			@RequestBody TurConverseAgent turConverseAgent) {
@@ -109,10 +116,10 @@ public class TurConverseAgentAPI {
 		return turConverseAgent;
 	}
 
-	@ApiOperation(value = "Converse Intent List")
-	@GetMapping("/try")
-	public TurConverseAgentResponse turConverseAgentTry(@RequestParam(required = false, name = "q") String q,
-			HttpSession session) {
+	@ApiOperation(value = "Converse Chat")
+	@GetMapping("/{id}/chat")
+	public TurConverseAgentResponse turConverseAgentChat(@PathVariable String id,
+			@RequestParam(required = false, name = "q") String q, HttpSession session) {
 		TurSEInstance turSEInstance = new TurSEInstance();
 		turSEInstance.setHost("localhost");
 		turSEInstance.setPort(8983);
@@ -123,20 +130,22 @@ public class TurConverseAgentAPI {
 				.withConnectionTimeout(30000).withSocketTimeout(30000).build();
 
 		String nextContext = (String) session.getAttribute("nextContext");
-		TurConverseAgentResponse turConverseAgentResponse = this.interactionNested(q, turSEInstance, nextContext,
+		TurConverseAgentResponse turConverseAgentResponse = this.interactionNested(id, q, turSEInstance, nextContext,
 				session);
 
 		return turConverseAgentResponse;
 	}
 
 	@SuppressWarnings("unchecked")
-	private TurConverseAgentResponse interactionNested(String q, TurSEInstance turSEInstance, String nextContext,
-			HttpSession session) {
+	private TurConverseAgentResponse interactionNested(String agentId, String q, TurSEInstance turSEInstance,
+			String nextContext, HttpSession session) {
 
 		SolrQuery query = new SolrQuery();
 
-		if (nextContext != null)
+		if (nextContext != null) {
+			query.addFilterQuery("agent:\"" + agentId + "\"");
 			query.addFilterQuery("contextInput:\"" + nextContext + "\"");
+		}
 
 		query.setQuery("phrases:\"" + q + "\"");
 
@@ -161,7 +170,7 @@ public class TurConverseAgentAPI {
 			} else {
 				query = new SolrQuery();
 				if (nextContext != null) {
-					turConverseAgentResponse = this.interactionNested(q, turSEInstance, null, session);
+					turConverseAgentResponse = this.interactionNested(agentId, q, turSEInstance, null, session);
 				} else {
 					turConverseAgentResponse.setResponse("Não sei o que dizer");
 					turConverseAgentResponse.setIntent("empty");

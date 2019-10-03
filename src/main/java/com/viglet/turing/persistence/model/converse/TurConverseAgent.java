@@ -29,9 +29,11 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
-
 
 /**
  * The persistent class for the turConverseAgent database table.
@@ -40,7 +42,8 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 @Entity
 @Table(name = "turConverseAgent")
 @NamedQuery(name = "TurConverseAgent.findAll", query = "SELECT ca FROM TurConverseAgent ca")
-
+@JsonIgnoreProperties({ "intents" })
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class TurConverseAgent implements Serializable {
 	private static final long serialVersionUID = 1L;
 

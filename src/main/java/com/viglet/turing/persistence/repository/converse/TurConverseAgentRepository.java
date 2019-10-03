@@ -31,7 +31,7 @@ public interface TurConverseAgentRepository extends JpaRepository<TurConverseAge
 	List<TurConverseAgent> findAll();
 
 	Optional<TurConverseAgent> findById(String id);
-
+	//TurConverseAgent findByIntents()
 	TurConverseAgent save(TurConverseAgent turConverseAgent);
 
 	@Modifying

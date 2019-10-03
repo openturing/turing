@@ -1,10 +1,17 @@
-<h1>{{agent.name}}</h1>
+<div style="display: flex;">
+	<div style="width: 100%">
+		<h1>{{agent.name}}</h1>
+	</div>
+	<div class="pull-left">
+		<a ng-href="converse#!/{{agent.id}}" target="_blank" class="btn btn-viglet">Chat Room</a>
+	</div>
+</div>
 <div id="configuration" class="row row-centered">
 	<div class="col-lg-3 col-md-3 col-sm-3 col-xs-3 col-centered">
 		<div class="list-group" style="margin-bottom: 10px">
-			<a ng-class="{'disabled':$state.current.name.indexOf('converse.agent.detail') == 0}" ui-sref="converse.agent.detail"
-				class="list-group-item ng-binding" style="color: rgb(51, 51, 51)">Agent<span
-					class="glyphicon glyphicon-chevron-right" aria-hidden="true"
+			<a ng-class="{'disabled':$state.current.name.indexOf('converse.agent.detail') == 0}"
+				ui-sref="converse.agent.detail" class="list-group-item ng-binding"
+				style="color: rgb(51, 51, 51)">Agent<span class="glyphicon glyphicon-chevron-right" aria-hidden="true"
 					style="float: right; position: relative; color: gray"></span>
 			</a>
 			<a ng-class="{'disabled':$state.current.name.indexOf('converse.agent.intent') == 0}"

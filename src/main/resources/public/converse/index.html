@@ -19,7 +19,7 @@
 	</link>
 	<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon">
 	</link>
-	<base href="/">
+	<base href="/converse">
 	<style>
 		[ng\:cloak],
 		[ng-cloak],
@@ -101,62 +101,10 @@
 	</style>
 </head>
 
-<body data-target=".navbar-default" ng-controller="TurConverseMainCtrl" ng-cloak>
+<body data-target=".navbar-default" ng-cloak>
 
-	<div id="wrap" style="margin-bottom: 15px;">
-		<nav class="navbar navbar-default navbar-fixed-top row  row-centered" role="navigation">
-			<div class="container-fluid col-centered col-lg-12 col-md-12 col-sm-12 col-xs-12"
-				style="margin-left: 30px; margin-right: 30px">
-				<!-- Brand and toggle get grouped for better mobile display -->
-				<div class="row">
-					<div class="col-lg-2 col-md-2 col-sm-3 col-xs-3">
-						<a class="navbar-brand" href="/"><img
-								style="margin: 5px; padding: 0px; width: 40px; height: 40px"
-								src="/img/viglet_logo_sm.png"></img> </a> <a class="navbar-brand" ui-sref="content"
-							ui-sref-opts="{reload:true}">
-							<div class="hidden-xs"
-								style="margin-top: 17px; margin-left: 20px; color: #444; font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif; font-size: 20px; line-height: 1; letter-spacing: .02em; font-weight: 400;">
-								Turing Converse</div>
-						</a>
-					</div>
-				</div>
-			</div>
-			<!-- /.container-fluid -->
-		</nav>
+	<div ui-view></div>
 
-		<div class="container" id="turHeader" style="padding: 0px;">
-			<div id="home" class="row" style="margin: 0px; margin-top: 53px;">
-				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 col-centered"
-					style="padding: 0px;height: calc(100vh - 156px);">
-					<div style="background-color: white;height:100%;padding: 10px;overflow-x: hidden;overflow-y: auto;">
-						<div ng-repeat="message in messages">
-							<div ng-if="message.bot" style="display: list-item;min-height: 50px;">
-								<div
-									style="background-color: aquamarine;width: 200px;min-height: 30px;vertical-align: middle;padding: 5px;border-radius: 5px;">
-									{{message.text}}</div>
-							</div>
-							<div ng-if="!message.bot" style="display: list-item;min-height: 50px;">
-								<div
-									style="background-color: blanchedalmond;text-align: right;width: 200px;float: right;min-height: 30px;vertical-align: middle;padding: 5px;border-radius: 5px;">
-									{{message.text}}</div>
-							</div>
-						</div>
-						<div ng-if="waiting" style="display: list-item;min-height: 50px;">
-							<div>
-								<span class="saving" style="font-size: 70px;margin: 0px;"><span>.</span><span>.</span><span>.</span></span></div>
-						</div>
-						<div id="bottom"></div>
-					</div>
-					<div style="background-color: coral;height:100px;padding: 15px 10px;">
-						<div class="form-group">
-							<input type="text" class="form-control" id="text" ng-model="turConverseText"
-								my-enter="sendMessage()">
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
 	<script src="../../webjars/jquery/1.12.4/dist/jquery.min.js"></script>
 	<script src="../../webjars/moment/2.22.2/min/moment-with-locales.min.js"></script>
 	<script src="../../webjars/angular/1.7.3/angular.min.js"></script>

@@ -29,6 +29,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
@@ -39,7 +40,6 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 @Entity
 @Table(name = "turConverseIntent")
 @NamedQuery(name = "TurConverseIntent.findAll", query = "SELECT ci FROM TurConverseIntent ci")
-@JsonIgnoreProperties({ "agent" })
 public class TurConverseIntent implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -77,8 +77,9 @@ public class TurConverseIntent implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConverseResponse> responses = new HashSet<>();
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne
 	@JoinColumn(name = "agent_id")
+	@JsonIdentityReference(alwaysAsId=true)
 	private TurConverseAgent agent;
 
 	public String getId() {
@@ -171,4 +172,9 @@ public class TurConverseIntent implements Serializable {
 		this.agent = agent;
 	}
 
+	public void setAgent(String agentId) {
+		agent = new TurConverseAgent();
+		agent.setId(agentId);
+	   
+	}
 }
