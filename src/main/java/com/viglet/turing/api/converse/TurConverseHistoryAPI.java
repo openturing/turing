@@ -20,6 +20,8 @@ package com.viglet.turing.api.converse;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,10 +53,18 @@ public class TurConverseHistoryAPI {
 	
 	@ApiOperation(value = "Show a Converse Conversation")
 	@GetMapping("/{id}")
-	public TurConverseChat turConverseAgentGet(@PathVariable String id) {
+	public TurConverseChat turConverseHistoryGet(@PathVariable String id) {
 		TurConverseChat turConverseChat = turConverseChatRepository.findById(id).get();
 		List<TurConverseChatResponse> responses = turConverseChatResponseRepository.findByChat(turConverseChat);
 		turConverseChat.setResponses(responses);
 		return turConverseChat;
+	}
+	
+	@Transactional
+	@ApiOperation(value = "Delete a Converse Conversation")
+	@DeleteMapping("/{id}")
+	public boolean turConverseHistoryDelete(@PathVariable String id) {
+		this.turConverseChatRepository.delete(id);
+		return true;
 	}
 }
