@@ -134,10 +134,40 @@ public class TurConverseAgentAPI {
 		return true;
 	}
 
+	private void showSession(HttpSession session) {
+		System.out.println("hasParameter: " + (Boolean) session.getAttribute("hasParameter"));
+		System.out.println("nextParameter: " + (Integer) session.getAttribute("nextParameter"));
+		System.out.println("nextContext: " + (String) session.getAttribute("nextContext"));
+		System.out.println("intent: " + (String) session.getAttribute("intent"));
+		System.out.println("-----");
+	}
+
+	private void cleanSession(HttpSession session) {
+		System.out.println("Clean Session");
+		session.removeAttribute("hasParameter");
+		session.removeAttribute("nextParameter");
+		session.removeAttribute("nextContext");
+		session.removeAttribute("intent");
+
+	}
+
+	private void cleanParameter(HttpSession session) {
+		session.removeAttribute("hasParameter");
+		session.removeAttribute("nextParameter");
+		session.removeAttribute("intent");
+
+	}
+
 	@ApiOperation(value = "Converse Chat")
 	@GetMapping("/{id}/chat")
 	public TurConverseAgentResponse turConverseAgentChat(@PathVariable String id,
-			@RequestParam(required = false, name = "q") String q, HttpSession session) {
+			@RequestParam(required = false, name = "q") String q,
+			@RequestParam(required = false, name = "start") boolean start, HttpSession session) {
+
+		if (start)
+			this.cleanSession(session);
+
+		this.showSession(session);
 
 		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
 		TurSEInstance turSEInstance = turConverseAgent.getTurSEInstance();
@@ -152,7 +182,6 @@ public class TurConverseAgentAPI {
 				: false;
 
 		if (hasParameter) {
-			System.out.println("hasParameter");
 			this.getChatParameter(id, session, turConverseAgentResponse);
 		} else {
 			String nextContext = (String) session.getAttribute("nextContext");
@@ -169,10 +198,6 @@ public class TurConverseAgentAPI {
 				: 0;
 
 		String intent = session.getAttribute("intent") != null ? (String) session.getAttribute("intent") : null;
-
-		session.setAttribute("hasParameter", true);
-		session.setAttribute("intent", intent);
-		session.setAttribute("nextParameter", 1);
 
 		try {
 			SolrQuery queryParameter = new SolrQuery();
@@ -207,7 +232,9 @@ public class TurConverseAgentAPI {
 
 	private void getIntentWhenFinishParameters(String id, HttpSession session,
 			TurConverseAgentResponse turConverseAgentResponse, String intent) throws SolrServerException, IOException {
-		session.setAttribute("hasParameter", false);
+
+		this.cleanParameter(session);
+
 		SolrQuery query = new SolrQuery();
 
 		query.addFilterQuery("type:\"Intent\"");
@@ -237,7 +264,9 @@ public class TurConverseAgentAPI {
 				query.addFilterQuery("agent:\"" + agentId + "\"");
 				query.addFilterQuery("contextInput:\"" + nextContext + "\"");
 			}
-
+			else {
+				query.addFilterQuery("-contextInput:[\"\" TO *]");
+			}
 			query.setQuery("phrases:\"" + q + "\"");
 
 			QueryResponse queryResponse = solrClient.query(query);
@@ -247,13 +276,17 @@ public class TurConverseAgentAPI {
 
 				if ((boolean) firstResult.getFieldValue("hasParameters")) {
 					session.setAttribute("intent", firstResult.getFieldValue("id"));
+					session.setAttribute("hasParameter", true);
 					this.getChatParameter(agentId, session, turConverseAgentResponse);
 				} else {
 					getIntentFlow(session, turConverseAgentResponse, firstResult);
 				}
 			} else {
-				turConverseAgentResponse = getFallback(agentId, q, turSEInstance, nextContext, session,
-						turConverseAgentResponse);
+				if (nextContext != null) {
+					turConverseAgentResponse = this.interactionNested(agentId, q, turSEInstance, null, session);
+				} else {
+					turConverseAgentResponse = getFallback(session, turConverseAgentResponse);
+				}
 			}
 
 		} catch (SolrServerException e) {
@@ -280,14 +313,12 @@ public class TurConverseAgentAPI {
 		}
 	}
 
-	private TurConverseAgentResponse getFallback(String agentId, String q, TurSEInstance turSEInstance,
-			String nextContext, HttpSession session, TurConverseAgentResponse turConverseAgentResponse) {
-		if (nextContext != null) {
-			turConverseAgentResponse = this.interactionNested(agentId, q, turSEInstance, null, session);
-		} else {
-			turConverseAgentResponse.setResponse("Não sei o que dizer");
-			turConverseAgentResponse.setIntent("empty");
-		}
+	private TurConverseAgentResponse getFallback(HttpSession session,
+			TurConverseAgentResponse turConverseAgentResponse) {
+		this.cleanSession(session);
+		turConverseAgentResponse.setResponse("Não sei o que dizer");
+		turConverseAgentResponse.setIntent("empty");
+
 		return turConverseAgentResponse;
 	}
 

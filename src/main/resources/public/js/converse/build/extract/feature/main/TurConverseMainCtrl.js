@@ -14,7 +14,7 @@ turConverseApp
 			"$stateParams",
 			"turConverseAgentResource",
 			function ($scope, $translate, amMoment, vigLocale, $http, turAPIServerService, $timeout, $location, $anchorScroll, $stateParams, turConverseAgentResource) {
-			
+				$scope.start = true;
 				$scope.agentId = $stateParams.agentId;
 				$scope.agent = turConverseAgentResource.get({id: $stateParams.agentId});	
 				$scope.waiting = false;
@@ -36,11 +36,16 @@ turConverseApp
 					$anchorScroll();
 
 					$scope.waiting = true;
+					var startStr = "";
+					if ($scope.start) {
+						startStr = "&start=true"
+					}
 					$scope
 						.$evalAsync($http
-							.get(turAPIServerService.get().concat("/converse/agent/" + $scope.agentId + "/chat?q=" + $scope.turConverseText))
+							.get(turAPIServerService.get().concat("/converse/agent/" + $scope.agentId + "/chat?q=" + $scope.turConverseText + startStr))
 							.then(
 								function (response) {
+									$scope.start = false;
 									if (response !== null) {
 										$scope.agentResponse = response.data;
 										var message = {
