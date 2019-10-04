@@ -283,6 +283,7 @@ dependencies {
 	compile 'org.webjars.bower:angular-moment:1.2.0'
 	compile 'org.webjars.bower:font-awesome:4.7.0'
     compile 'org.webjars.bower:angular-ui-sortable:0.14.3'
+	compile 'org.webjars.bower:angular-ui-select:0.19.8'
 	
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }

@@ -32,6 +32,7 @@ import org.hibernate.annotations.OnDeleteAction;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 
@@ -42,7 +43,7 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 @Entity
 @Table(name = "turConverseAgent")
 @NamedQuery(name = "TurConverseAgent.findAll", query = "SELECT ca FROM TurConverseAgent ca")
-@JsonIgnoreProperties({ "intents" })
+@JsonIgnoreProperties({ "intents", "contexts" })
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class TurConverseAgent implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -69,6 +70,11 @@ public class TurConverseAgent implements Serializable {
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConverseIntent> intents = new HashSet<>();
+	
+	@OneToMany(mappedBy = "agent", orphanRemoval = true, fetch = FetchType.LAZY)
+	@Cascade({ CascadeType.ALL })
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurConverseContext> contexts = new HashSet<>();
 
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
@@ -130,6 +136,17 @@ public class TurConverseAgent implements Serializable {
 		this.intents.clear();
 		if (intents != null) {
 			this.intents.addAll(intents);
+		}
+	}
+	
+	public Set<TurConverseContext> getContexts() {
+		return this.contexts;
+	}
+
+	public void setContexts(Set<TurConverseContext> contexts) {
+		this.contexts.clear();
+		if (contexts != null) {
+			this.contexts.addAll(contexts);
 		}
 	}
 }

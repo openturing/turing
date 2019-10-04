@@ -16,13 +16,36 @@ turingApp.controller('TurConverseIntentCtrl', [
 			phraseText: "",
 			responseText: ""
 		}
+		$scope.contexts = [];
+		$scope.contextObjects = [];
+		$scope.object = {
+			contextInputs: [],
+			contextOutputs: []
+		}
+		$scope
+			.$evalAsync($http
+				.get(turAPIServerService.get().concat("/converse/agent/" + $scope.agentId + "/contexts"))
+				.then(
+					function (response) {
+						$scope.contextObjects = response.data;
+						angular.forEach($scope.contextObjects, function (context, key) {
+							$scope.contexts.push(context.text);
+						});
+					}));
+
 		$scope.intentId = $stateParams.intentId;
-		console.log($scope.intentId);
 		$scope.isNew = false;
 		if ($scope.intentId !== null && typeof $scope.intentId !== 'undefined') {
 			$scope.intent = turConverseIntentResource.get({
 				id: $scope.intentId
 			}, function () {
+				angular.forEach($scope.intent.contextInputs, function (context, key) {
+					$scope.object.contextInputs.push(context.text);
+				});
+				angular.forEach($scope.intent.contextOutputs, function (context, key) {
+					$scope.object.contextOutputs.push(context.text);
+				});
+
 				$scope.intent.parameters = $filter('orderBy')($scope.intent.parameters, 'position');
 			});
 		}
@@ -40,16 +63,33 @@ turingApp.controller('TurConverseIntentCtrl', [
 		}
 
 		$scope.saveIntent = function () {
-			if (!angular.isArray($scope.intent.contextInputs)) {
-				var contextInputsArray = [];
-				contextInputsArray.push($scope.intent.contextInputs);
-				$scope.intent.contextInputs = contextInputsArray;
-			}
-			if (!angular.isArray($scope.intent.contextOutputs)) {
-				var contextOutputsArray = [];
-				contextOutputsArray.push($scope.intent.contextOutputs);
-				$scope.intent.contextOutputs = contextOutputsArray;
-			}
+
+			var contextInputObjects = [];
+			angular.forEach($scope.object.contextInputs, function (context, key) {
+				var contextObject = $filter('filter')($scope.contextObjects, { text: context }, true)[0];
+				if (contextObject === null || typeof contextObject === 'undefined') {
+					contextObject = {
+						text: context,
+						agent: $scope.agentId
+					}
+				}				
+				contextInputObjects.push(contextObject);
+			});
+			$scope.intent.contextInputs = contextInputObjects;
+
+			var contextOutputObjects = [];
+			angular.forEach($scope.object.contextOutputs, function (context, key) {
+				var contextObject = $filter('filter')($scope.contextObjects, { text: context }, true)[0];
+				if (contextObject === null || typeof contextObject === 'undefined') {
+					contextObject = {
+						text: context,
+						agent: $scope.agentId
+					}
+				}
+				contextOutputObjects.push(contextObject);
+			});
+			$scope.intent.contextOutputs = contextOutputObjects;
+
 			if ($scope.isNew) {
 				$scope.intent.agent = $scope.agentId;
 				turConverseIntentResource.save($scope.intent, function (response) {

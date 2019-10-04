@@ -46,9 +46,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.bean.converse.TurConverseAgentResponse;
 import com.viglet.turing.converse.TurConverseIndex;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
 import com.viglet.turing.solr.TurSolr;
 
@@ -64,6 +66,8 @@ public class TurConverseAgentAPI {
 	private TurConverseAgentRepository turConverseAgentRepository;
 	@Autowired
 	private TurConverseIntentRepository turConverseIntentRepository;
+	@Autowired
+	private TurConverseContextRepository turConverseContextRepository;
 	@Autowired
 	private TurConverseIndex turConverseIndex;
 	@Autowired
@@ -84,13 +88,20 @@ public class TurConverseAgentAPI {
 		return turConverseAgent;
 	}
 
-	@ApiOperation(value = "Show a Converse Agent")
+	@ApiOperation(value = "Show a Converse Intent List")
 	@GetMapping("/{id}/intents")
 	public Set<TurConverseIntent> turConverseAgentIntentsGet(@PathVariable String id) {
 		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
 		return turConverseIntentRepository.findByAgent(turConverseAgent);
 	}
 
+	@ApiOperation(value = "Show a Converse Context List")
+	@GetMapping("/{id}/contexts")
+	public Set<TurConverseContext> turConverseAgentContextsGet(@PathVariable String id) {
+		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
+		return turConverseContextRepository.findByAgent(turConverseAgent);
+	}
+	
 	@ApiOperation(value = "Create a Converse Agent")
 	@PostMapping
 	public TurConverseAgent turConverseAgentAdd(@RequestBody TurConverseAgent turConverseAgent) {

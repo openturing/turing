@@ -13,12 +13,24 @@
                     ng-class="{'glyphicon-chevron-down': status.contexts, 'glyphicon-chevron-right': !status.contexts}"></i>
             </uib-accordion-heading>
             <div class="form-group">
-                <input type="text" class="form-control" id="inputContext" placeholder="Add input context"
-                    ng-model="intent.contextInputs[0].text">
+                <label>Input</label>
+                <ui-select multiple tagging tagging-label="" ng-model="object.contextInputs"
+                    theme="bootstrap" sortable="true" style="width: 100%;" title="Add input context">
+                    <ui-select-match placeholder="Add input context">{{$item}}</ui-select-match>
+                    <ui-select-choices repeat="context in contexts | filter:$select.search">
+                        {{context}}
+                    </ui-select-choices>
+                </ui-select>
             </div>
             <div class="form-group">
-                <input type="text" class="form-control" id="outputContext" placeholder="Add output context"
-                    ng-model="intent.contextOutputs[0].text">
+                <label>Output</label>
+                <ui-select multiple tagging tagging-label="" ng-model="object.contextOutputs"
+                    theme="bootstrap" sortable="true" style="width: 100%;" title="Add output context">
+                    <ui-select-match placeholder="Add output context">{{$item}}</ui-select-match>
+                    <ui-select-choices repeat="context in contexts | filter:$select.search">
+                        {{context}}
+                    </ui-select-choices>
+                </ui-select>
             </div>
         </div>
 
@@ -106,7 +118,8 @@
                                         ng-model="parameter.value"></div>
                             </td>
                             <td>
-                                <button class="btn btn-viglet" ng-click="editParamPrompts(intent.actionName, parameter)">Edit</button>
+                                <button class="btn btn-viglet"
+                                    ng-click="editParamPrompts(intent.actionName, parameter)">Edit</button>
                             </td>
                             <td>
                                 <div style="display: inline-table">

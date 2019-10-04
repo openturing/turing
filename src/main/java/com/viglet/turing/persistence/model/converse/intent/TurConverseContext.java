@@ -25,7 +25,9 @@ import javax.persistence.*;
 
 import org.hibernate.annotations.GenericGenerator;
 
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 /**
  * The persistent class for the turMLModel database table.
@@ -51,6 +53,11 @@ public class TurConverseContext implements Serializable {
 
 	@ManyToMany
 	private Set<TurConverseIntent> intentOutputs = new HashSet<>();
+
+	@ManyToOne
+	@JoinColumn(name = "agent_id")
+	@JsonIdentityReference(alwaysAsId = true)
+	private TurConverseAgent agent;
 
 	public TurConverseContext() {
 		super();
@@ -99,4 +106,17 @@ public class TurConverseContext implements Serializable {
 		}
 	}
 
+	public TurConverseAgent getAgent() {
+		return agent;
+	}
+
+	public void setAgent(TurConverseAgent agent) {
+		this.agent = agent;
+	}
+
+	public void setAgent(String agentId) {
+		agent = new TurConverseAgent();
+		agent.setId(agentId);
+
+	}
 }

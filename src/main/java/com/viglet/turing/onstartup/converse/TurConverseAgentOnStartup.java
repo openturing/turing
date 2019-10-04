@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.viglet.turing.converse.TurConverseIndex;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
@@ -60,8 +59,6 @@ public class TurConverseAgentOnStartup {
 	private TurConversePromptRepository turConversePromptRepository;
 	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	private TurConverseIndex turConverseIndex;
 
 	public void createDefaultRows() {
 
@@ -82,14 +79,6 @@ public class TurConverseAgentOnStartup {
 			turConverseIntent.setAgent(turConverseAgent);
 			turConverseIntent.setActionName("dados-pessoais");
 			turConverseIntentRepository.save(turConverseIntent);
-
-			// Contexts
-			TurConverseContext turConverseContextOutput = new TurConverseContext("intent01");
-			Set<TurConverseIntent> intentOutputs = new HashSet<>();
-			intentOutputs.add(turConverseIntent);
-			turConverseContextOutput.setIntentOutputs(intentOutputs);
-
-			turConverseContextRepository.save(turConverseContextOutput);
 
 			// Phrases
 			TurConversePhrase turConversePhrase1a = new TurConversePhrase("Oi");
@@ -130,7 +119,7 @@ public class TurConverseAgentOnStartup {
 			prompt11.setParameter(turConverseParameter01);
 
 			turConversePromptRepository.save(prompt11);
-			
+
 			TurConversePrompt prompt12 = new TurConversePrompt(2, "Digite seu nome");
 			prompt12.setParameter(turConverseParameter01);
 
@@ -149,7 +138,7 @@ public class TurConverseAgentOnStartup {
 			prompt21.setParameter(turConverseParameter02);
 
 			turConversePromptRepository.save(prompt21);
-			
+
 			TurConversePrompt prompt22 = new TurConversePrompt(2, "Digite sua idade");
 			prompt22.setParameter(turConverseParameter02);
 
@@ -163,20 +152,22 @@ public class TurConverseAgentOnStartup {
 			turConverseIntentRepository.save(turConverseIntent2);
 
 			// Contexts
-
-			TurConverseContext turConverseContextInput = new TurConverseContext("intent01");
+			TurConverseContext turConverseContextOutput01 = new TurConverseContext("intent01");
 			Set<TurConverseIntent> intentInputs = new HashSet<>();
 			intentInputs.add(turConverseIntent2);
-			turConverseContextInput.setIntentInputs(intentInputs);
+			Set<TurConverseIntent> intentOutputs = new HashSet<>();
+			intentOutputs.add(turConverseIntent);
+			turConverseContextOutput01.setIntentInputs(intentInputs);
+			turConverseContextOutput01.setIntentOutputs(intentOutputs);
+			turConverseContextOutput01.setAgent(turConverseAgent);
+			turConverseContextRepository.save(turConverseContextOutput01);
 
-			turConverseContextRepository.save(turConverseContextInput);
-
-			turConverseContextOutput = new TurConverseContext("intent02");
+			TurConverseContext turConverseContextOutput02 = new TurConverseContext("intent02");
 			intentOutputs = new HashSet<>();
 			intentOutputs.add(turConverseIntent2);
-			turConverseContextOutput.setIntentOutputs(intentOutputs);
-
-			turConverseContextRepository.save(turConverseContextOutput);
+			turConverseContextOutput02.setAgent(turConverseAgent);
+			turConverseContextOutput02.setIntentOutputs(intentOutputs);
+			turConverseContextRepository.save(turConverseContextOutput02);
 
 			// Phrases
 			TurConversePhrase turConversePhrase2a = new TurConversePhrase("Muito bom");
