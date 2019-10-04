@@ -5,7 +5,6 @@ turingApp.factory('turConverseIntentFactory', [
             showParamPrompts: function (actionName, parameter) {
                 var modalInstance = this.modalParamPrompts(actionName, parameter);
                 modalInstance.result.then(function (promptsModal) {
-                    console.log(promptsModal);
                     parameter.prompts = promptsModal;
                 }, function () {
                     // Selected NO

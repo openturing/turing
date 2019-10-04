@@ -1,16 +1,17 @@
 turingApp.controller('TurModalConversePromptListCtrl', [
 	"$uibModalInstance",
 	"resolvePrompt",	
-	function ($uibModalInstance, resolvePrompt) {
+	"$filter",
+	function ($uibModalInstance, resolvePrompt, $filter) {
 		var $ctrl = this;
 		$ctrl.actionName = resolvePrompt.actionName;
-		$ctrl.prompts = resolvePrompt.parameter.prompts;
+		$ctrl.prompts = $filter('orderBy')(resolvePrompt.parameter.prompts, 'position');
 		$ctrl.i = 0;	
 		$ctrl.parameter = resolvePrompt.parameter;
 		$ctrl.addPrompt = function () {
 			$ctrl.i = $ctrl.i + 1;
 			var promptObject = {
-				position: $ctrl.parameter.length + 1,
+				position: $ctrl.parameter.prompts.length + 1,
 				text: ""
 			}
 			$ctrl.prompts.push(promptObject);
