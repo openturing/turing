@@ -34,28 +34,42 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
-@RequestMapping("/api/converse/history")
-@Api(tags = "Converse History", description = "Converse History API")
-public class TurConverseHistoryAPI {
+@RequestMapping("/api/converse/training")
+@Api(tags = "Converse Training", description = "Converse Training API")
+public class TurConverseTrainingAPI {
 	@Autowired
 	private TurConverseChatRepository turConverseChatRepository;
 	@Autowired
 	private TurConverseChatResponseRepository turConverseChatResponseRepository;
-	
-	
+
 	@ApiOperation(value = "Converse Training List")
 	@GetMapping
-	public List<TurConverseChat> turConverseHistoryList(){
-		return this.turConverseChatRepository.findAll();
+	public List<TurConverseChat> turConverseTrainingList() {
+		List<TurConverseChat> turConverseChats = this.turConverseChatRepository.findAll();
+
+		for (TurConverseChat turConverseChat : turConverseChats) {
+			if (!turConverseChat.isUpdated()) {
+				List<TurConverseChatResponse> responses = turConverseChatResponseRepository
+						.findByChatOrderByDate(turConverseChat);
+				turConverseChat.setUpdated(true);
+				turConverseChat.setSummary(responses.get(0).getText());
+				turConverseChat
+						.setRequests(turConverseChatResponseRepository.countByChatAndIsUser(turConverseChat, true));
+				turConverseChat.setNoMatch(
+						turConverseChatResponseRepository.countByChatAndIsUserAndIntentIdIsNull(turConverseChat, true));
+				turConverseChatRepository.save(turConverseChat);
+			}
+		}
+		return turConverseChats;
 	}
-	
+
 	@ApiOperation(value = "Show a Converse Training")
 	@GetMapping("/{id}")
 	public TurConverseChat turConverseTrainingGet(@PathVariable String id) {
 		TurConverseChat turConverseChat = turConverseChatRepository.findById(id).get();
-		List<TurConverseChatResponse> responses = turConverseChatResponseRepository.findByChat(turConverseChat);
+		List<TurConverseChatResponse> responses = turConverseChatResponseRepository.findByChatAndIsUser(turConverseChat, true);
 		turConverseChat.setResponses(responses);
 		return turConverseChat;
 	}
-	
+
 }

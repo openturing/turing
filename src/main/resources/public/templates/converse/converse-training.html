@@ -1,3 +1,59 @@
-<div>
-<h1>Converse Training</h1>
+<h2>Training</h2>
+<h3>{{conversation.summary}}</h3>
+<div class="row"
+    style="max-width: 450px;background-color: lightgray;height: 30px;vertical-align: middle;font-size: 14px;padding: 5px;border-radius: 6px;margin: 3px;">
+    <div class="col-sm-4 col-md-4">{{conversation.date | amCalendar:referenceTime:formats}}</div>
+    <div class="col-sm-4 col-md-4">{{conversation.requests}} Requests</div>
+    <div class="col-sm-4 col-md-4">{{conversation.noMatch}} No Match</div>
 </div>
+<table class="table table-hover">
+    <tbody>
+        <tr ng-repeat="response in conversation.responses |orderBy:'date'">
+            <td>
+                <div class="row">
+                    <div class="col-sm-11 col-md-11">
+                        <div class="row">
+                            <div class="col-sm-3 col-md-3" style="font-size: 18px;">
+                                User says
+                            </div>
+                            <div class="col-sm-9 col-md-9">
+                                <div class="form-group"><input type="text" class="form-control" id="paramEntity"
+                                        ng-model="response.text"></div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-3 col-md-3" style="font-size: 18px;">
+                                Intent
+                            </div>
+                            <div class="col-sm-9 col-md-9">
+                                <div class="form-group">
+                                    <ui-select ng-model="response.intentId" theme="bootstrap" style="min-width: 100%;"
+                                        title="Intents">
+                                        <ui-select-match placeholder="Select a Intent...">
+                                            {{$select.selected.value.name}}</ui-select-match>
+                                        <ui-select-choices
+                                            repeat="intent.value.id as (key, intent) in intents | filter: { value: { name: $select.search }}">
+                                            <div ng-bind-html="intent.value.name | highlight: $select.search"></div>
+                                        </ui-select-choices>
+                                      
+                                    </ui-select>
+                                    <a href="">+ Create new</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-1 col-md-1">
+                        <div><button class="btn btn-link" style="padding: 0px 0px;padding-bottom: 2px;"><i class="fa fa-check-circle-o"
+                                    aria-hidden="true" style="font-size: 22px;"></i></button></div>
+                        <div><button class="btn btn-link" style="padding: 2px 0px;"><i class="fa fa-ban"
+                                    aria-hidden="true" style="font-size: 22px;"></i></button></div>
+                        <div><button class="btn btn-link" style="padding: 2px 0px;"><i class="fa fa-trash-o"
+                                    aria-hidden="true" style="font-size: 22px;"></i></button></div>
+
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </tbody>
+</table>

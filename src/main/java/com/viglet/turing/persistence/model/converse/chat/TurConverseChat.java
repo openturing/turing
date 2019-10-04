@@ -53,11 +53,19 @@ public class TurConverseChat  implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 	
+	private String summary;
+	
 	private Date date;
 	
 	private String session;
 	
 	private String agentId;
+	
+	private int requests;
+	
+	private int noMatch;
+	
+	private boolean updated;
 	
 	@OneToMany(mappedBy = "chat", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
@@ -105,6 +113,38 @@ public class TurConverseChat  implements Serializable {
 		if (responses != null) {
 			this.responses.addAll(responses);
 		}
+	}
+
+	public String getSummary() {
+		return summary;
+	}
+
+	public void setSummary(String summary) {
+		this.summary = summary;
+	}
+
+	public int getRequests() {
+		return requests;
+	}
+
+	public void setRequests(int requests) {
+		this.requests = requests;
+	}
+
+	public int getNoMatch() {
+		return noMatch;
+	}
+
+	public void setNoMatch(int noMatch) {
+		this.noMatch = noMatch;
+	}
+
+	public boolean isUpdated() {
+		return updated;
+	}
+
+	public void setUpdated(boolean updated) {
+		this.updated = updated;
 	}
 	
 }

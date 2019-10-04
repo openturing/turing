@@ -35,6 +35,14 @@ public interface TurConverseChatResponseRepository extends JpaRepository<TurConv
 
 	List<TurConverseChatResponse> findByChat(TurConverseChat turConverseChat);
 	
+	List<TurConverseChatResponse> findByChatOrderByDate(TurConverseChat turConverseChat);
+	
+	List<TurConverseChatResponse> findByChatAndIsUser(TurConverseChat turConverseChat, boolean isUser);
+	
+	int countByChatAndIsUser(TurConverseChat turConverseChat, boolean isUser);
+	
+	int countByChatAndIsUserAndIntentIdIsNull(TurConverseChat turConverseChat, boolean isUser);
+	
 	TurConverseChatResponse save(TurConverseChatResponse turConverseChat);
 
 	@Modifying
