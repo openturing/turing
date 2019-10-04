@@ -18,6 +18,7 @@
 package com.viglet.turing.persistence.model.converse.chat;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,8 +31,6 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.GenericGenerator;
-
-import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 
 /**
  * The persistent class for the turConverseChatResponse database table.
@@ -49,7 +48,7 @@ public class TurConverseChatResponse implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	private int position;
+	private Date date;
 
 	private String text;
 
@@ -63,7 +62,7 @@ public class TurConverseChatResponse implements Serializable {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "chat_id")
-	private TurConverseIntent chat;
+	private TurConverseChat chat;
 
 	public String getId() {
 		return id;
@@ -73,12 +72,12 @@ public class TurConverseChatResponse implements Serializable {
 		this.id = id;
 	}
 
-	public int getPosition() {
-		return position;
+	public Date getDate() {
+		return date;
 	}
 
-	public void setPosition(int position) {
-		this.position = position;
+	public void setDate(Date date) {
+		this.date = date;
 	}
 
 	public String getText() {
@@ -121,11 +120,11 @@ public class TurConverseChatResponse implements Serializable {
 		this.parameterName = parameterName;
 	}
 
-	public TurConverseIntent getChat() {
+	public TurConverseChat getChat() {
 		return chat;
 	}
 
-	public void setChat(TurConverseIntent chat) {
+	public void setChat(TurConverseChat chat) {
 		this.chat = chat;
 	}
 

@@ -19,6 +19,7 @@ package com.viglet.turing.persistence.model.converse.chat;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.Column;
@@ -51,7 +52,9 @@ public class TurConverseChat  implements Serializable {
 	@GeneratedValue(generator = "UUID")
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
-		
+	
+	private Date date;
+	
 	private String session;
 	
 	private String agentId;
@@ -67,6 +70,14 @@ public class TurConverseChat  implements Serializable {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+	
+	public Date getDate() {
+		return date;
+	}
+
+	public void setDate(Date date) {
+		this.date = date;
 	}
 
 	public String getSession() {

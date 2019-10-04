@@ -32,6 +32,8 @@ public interface TurConverseChatRepository extends JpaRepository<TurConverseChat
 	
 	Optional<TurConverseChat> findById(String id);
 
+	TurConverseChat findBySession(String session) ;
+	
 	TurConverseChat save(TurConverseChat turConverseChat);
 
 	@Modifying
