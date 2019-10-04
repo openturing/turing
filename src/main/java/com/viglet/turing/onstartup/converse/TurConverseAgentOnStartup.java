@@ -155,10 +155,6 @@ public class TurConverseAgentOnStartup {
 
 			turConversePromptRepository.save(prompt22);
 
-		
-			// Solr
-			turConverseIndex.index(turConverseIntent);
-
 			// Intent02
 
 			TurConverseIntent turConverseIntent2 = new TurConverseIntent();
@@ -207,9 +203,6 @@ public class TurConverseAgentOnStartup {
 			TurConverseResponse turConverseResponse2c = new TurConverseResponse("Como vai sua família?");
 			turConverseResponse2c.setIntent(turConverseIntent2);
 			turConverseResponseRepository.save(turConverseResponse2c);
-
-			// Solr
-			turConverseIndex.index(turConverseIntent2);
 
 		}
 	}
