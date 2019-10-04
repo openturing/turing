@@ -32,6 +32,8 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.GenericGenerator;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * The persistent class for the turConverseChatResponse database table.
  * 
@@ -39,6 +41,7 @@ import org.hibernate.annotations.GenericGenerator;
 @Entity
 @Table(name = "turConverseChatResponse")
 @NamedQuery(name = "TurConverseChatResponse.findAll", query = "SELECT ccr FROM TurConverseChatResponse ccr")
+@JsonIgnoreProperties({ "chat" })
 public class TurConverseChatResponse implements Serializable {
 	private static final long serialVersionUID = 1L;
 

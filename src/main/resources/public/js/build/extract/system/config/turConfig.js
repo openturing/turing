@@ -344,16 +344,16 @@ turingApp
 							pageTitle: 'Edit Converse Agent | Viglet Turing'
 						}
 					})
-					.state(
-						'converse.agent.detail',
-						{
-							url: '/detail',
-							templateUrl: 'templates/converse/converse-agent-detail.html',
-							controller: 'TurConverseAgentDetailCtrl',
-							data: {
-								pageTitle: 'Converse Agent Detail | Viglet Turing'
-							}
-						})	
+				.state(
+					'converse.agent.detail',
+					{
+						url: '/detail',
+						templateUrl: 'templates/converse/converse-agent-detail.html',
+						controller: 'TurConverseAgentDetailCtrl',
+						data: {
+							pageTitle: 'Converse Agent Detail | Viglet Turing'
+						}
+					})
 				.state(
 					'converse.agent.intent',
 					{
@@ -404,6 +404,26 @@ turingApp
 							pageTitle: 'Converse Training | Viglet Turing'
 						}
 					})
+				.state(
+					'converse.agent.history',
+					{
+						url: '/history',
+						templateUrl: 'templates/converse/converse-history.html',
+						controller: 'TurConverseHistoryCtrl',
+						data: {
+							pageTitle: 'Converse History | Viglet Turing'
+						}
+					})
+					.state(
+						'converse.agent.history-edit',
+						{
+							url: '/history/:conversationId',
+							templateUrl: 'templates/converse/converse-conversation.html',
+							controller: 'TurConverseConversationCtrl',
+							data: {
+								pageTitle: 'Converse Conversation | Viglet Turing'
+							}
+						})
 				.state(
 					'converse.agent.prebuilt-agent',
 					{

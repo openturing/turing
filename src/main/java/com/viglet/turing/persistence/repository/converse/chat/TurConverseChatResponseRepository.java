@@ -24,6 +24,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
 
 public interface TurConverseChatResponseRepository extends JpaRepository<TurConverseChatResponse, String> {
@@ -32,9 +33,13 @@ public interface TurConverseChatResponseRepository extends JpaRepository<TurConv
 	
 	Optional<TurConverseChatResponse> findById(String id);
 
+	List<TurConverseChatResponse> findByChat(TurConverseChat turConverseChat);
+	
 	TurConverseChatResponse save(TurConverseChatResponse turConverseChat);
 
 	@Modifying
 	@Query("delete from  TurConverseChatResponse ccr where ccr.id = ?1")
 	void delete(String id);
+
+	
 }
