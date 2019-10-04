@@ -146,74 +146,14 @@ public class TurConverseAgentAPI {
 		solrClient = turSolr.getSolrClient(turSEInstance, core);
 
 		TurConverseAgentResponse turConverseAgentResponse = new TurConverseAgentResponse();
-		boolean hasParameter = false;
 
-		if (session.getAttribute("hasParameter") != null) {
-			hasParameter = ((Boolean) session.getAttribute("hasParameter")).booleanValue();
-		}
+		boolean hasParameter = session.getAttribute("hasParameter") != null
+				? (boolean) session.getAttribute("hasParameter")
+				: false;
+
 		if (hasParameter) {
-			try {
-				int nextParameter = 0;
-				if (session.getAttribute("nextParameter") != null) {
-					nextParameter = (int) session.getAttribute("nextParameter");
-				}
-
-				String intent = null;
-				if (session.getAttribute("intent") != null) {
-					intent = (String) session.getAttribute("intent");
-				}
-
-				SolrQuery queryParameter = new SolrQuery();
-
-				queryParameter.addFilterQuery("type:\"Parameter\"");
-				queryParameter.addFilterQuery("agent:\"" + id + "\"");
-				queryParameter.addFilterQuery("intent:\"" + intent + "\"");
-				queryParameter.setQuery("*:*");
-
-				QueryResponse queryResponseParameter = solrClient.query(queryParameter);
-				SolrDocumentList resultsParameter = queryResponseParameter.getResults();
-				if (resultsParameter.size() > nextParameter) {
-					SolrDocument firstResultParameter = resultsParameter.get(nextParameter);
-					if (!resultsParameter.isEmpty()) {
-						List<String> prompts = (List<String>) firstResultParameter.getFieldValue("prompts");
-						int rnd = new Random().nextInt(prompts.size());
-						turConverseAgentResponse.setResponse(prompts.get(rnd).toString());
-						turConverseAgentResponse.setIntent(intent);
-					}
-					session.setAttribute("nextParameter", nextParameter + 1);
-				}
-
-				if (resultsParameter.size() == nextParameter) {
-					session.setAttribute("hasParameter", false);
-					SolrQuery query = new SolrQuery();
-
-					query.addFilterQuery("type:\"Intent\"");
-					query.addFilterQuery("agent:\"" + id + "\"");
-					query.addFilterQuery("id:\"" + intent + "\"");
-
-					query.setQuery("*:*");
-					QueryResponse queryResponse = solrClient.query(query);
-					SolrDocumentList results = queryResponse.getResults();
-					if (!results.isEmpty()) {
-						SolrDocument firstResult = results.get(0);
-						List<String> responses = (List<String>) firstResult.getFieldValue("responses");
-						int rnd = new Random().nextInt(responses.size());
-
-						List<String> contextOutputs = (List<String>) firstResult.getFieldValue("contextOutput");
-
-						turConverseAgentResponse.setResponse(responses.get(rnd).toString());
-						turConverseAgentResponse.setIntent(firstResult.getFieldValue("name").toString());
-
-						if (contextOutputs != null && !contextOutputs.isEmpty()) {
-							session.setAttribute("nextContext", contextOutputs.get(0).toString());
-						}
-					}
-				}
-			} catch (SolrServerException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			System.out.println("hasParameter");
+			this.getChatParameter(id, session, turConverseAgentResponse);
 		} else {
 			String nextContext = (String) session.getAttribute("nextContext");
 			turConverseAgentResponse = this.interactionNested(id, q, turSEInstance, nextContext, session);
@@ -222,6 +162,67 @@ public class TurConverseAgentAPI {
 	}
 
 	@SuppressWarnings("unchecked")
+	private void getChatParameter(String agentId, HttpSession session,
+			TurConverseAgentResponse turConverseAgentResponse) {
+
+		int nextParameter = session.getAttribute("nextParameter") != null ? (int) session.getAttribute("nextParameter")
+				: 0;
+
+		String intent = session.getAttribute("intent") != null ? (String) session.getAttribute("intent") : null;
+
+		session.setAttribute("hasParameter", true);
+		session.setAttribute("intent", intent);
+		session.setAttribute("nextParameter", 1);
+
+		try {
+			SolrQuery queryParameter = new SolrQuery();
+
+			queryParameter.addFilterQuery("type:\"Parameter\"");
+			queryParameter.addFilterQuery("agent:\"" + agentId + "\"");
+			queryParameter.addFilterQuery("intent:\"" + intent + "\"");
+			queryParameter.setQuery("*:*");
+
+			QueryResponse queryResponseParameter = solrClient.query(queryParameter);
+			SolrDocumentList resultsParameter = queryResponseParameter.getResults();
+			if (resultsParameter.size() > nextParameter) {
+				SolrDocument firstResultParameter = resultsParameter.get(nextParameter);
+				if (!resultsParameter.isEmpty()) {
+					List<String> prompts = (List<String>) firstResultParameter.getFieldValue("prompts");
+					int rnd = new Random().nextInt(prompts.size());
+					turConverseAgentResponse.setResponse(prompts.get(rnd).toString());
+					turConverseAgentResponse.setIntent(intent);
+				}
+				session.setAttribute("nextParameter", nextParameter + 1);
+			}
+
+			if (resultsParameter.size() == nextParameter) {
+				getIntentWhenFinishParameters(agentId, session, turConverseAgentResponse, intent);
+			}
+		} catch (SolrServerException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void getIntentWhenFinishParameters(String id, HttpSession session,
+			TurConverseAgentResponse turConverseAgentResponse, String intent) throws SolrServerException, IOException {
+		session.setAttribute("hasParameter", false);
+		SolrQuery query = new SolrQuery();
+
+		query.addFilterQuery("type:\"Intent\"");
+		query.addFilterQuery("agent:\"" + id + "\"");
+		query.addFilterQuery("id:\"" + intent + "\"");
+
+		query.setQuery("*:*");
+		QueryResponse queryResponse = solrClient.query(query);
+		SolrDocumentList results = queryResponse.getResults();
+		if (!results.isEmpty()) {
+			SolrDocument firstResult = results.get(0);
+			getIntentFlow(session, turConverseAgentResponse, firstResult);
+		}
+	}
+
 	private TurConverseAgentResponse interactionNested(String agentId, String q, TurSEInstance turSEInstance,
 			String nextContext, HttpSession session) {
 
@@ -245,54 +246,47 @@ public class TurConverseAgentAPI {
 				SolrDocument firstResult = results.get(0);
 
 				if ((boolean) firstResult.getFieldValue("hasParameters")) {
-					session.setAttribute("hasParameter", true);
 					session.setAttribute("intent", firstResult.getFieldValue("id"));
-					session.setAttribute("nextParameter", 1);
-					SolrQuery queryParameter = new SolrQuery();
-
-					queryParameter.addFilterQuery("type:\"Parameter\"");
-					queryParameter.addFilterQuery("agent:\"" + agentId + "\"");
-					queryParameter.addFilterQuery("intent:\"" + firstResult.getFieldValue("id") + "\"");
-					queryParameter.setQuery("*:*");
-
-					QueryResponse queryResponseParameter = solrClient.query(queryParameter);
-					SolrDocumentList resultsParameter = queryResponseParameter.getResults();
-					SolrDocument firstResultParameter = resultsParameter.get(0);
-					if (!resultsParameter.isEmpty()) {
-						List<String> prompts = (List<String>) firstResultParameter.getFieldValue("prompts");
-						int rnd = new Random().nextInt(prompts.size());
-						turConverseAgentResponse.setResponse(prompts.get(rnd).toString());
-						turConverseAgentResponse.setIntent(firstResult.getFieldValue("name").toString());
-					}
-
+					this.getChatParameter(agentId, session, turConverseAgentResponse);
 				} else {
-
-					List<String> responses = (List<String>) firstResult.getFieldValue("responses");
-					int rnd = new Random().nextInt(responses.size());
-
-					List<String> contextOutputs = (List<String>) firstResult.getFieldValue("contextOutput");
-
-					turConverseAgentResponse.setResponse(responses.get(rnd).toString());
-					turConverseAgentResponse.setIntent(firstResult.getFieldValue("name").toString());
-
-					if (contextOutputs != null && !contextOutputs.isEmpty()) {
-						session.setAttribute("nextContext", contextOutputs.get(0).toString());
-					}
+					getIntentFlow(session, turConverseAgentResponse, firstResult);
 				}
 			} else {
-				query = new SolrQuery();
-				if (nextContext != null) {
-					turConverseAgentResponse = this.interactionNested(agentId, q, turSEInstance, null, session);
-				} else {
-					turConverseAgentResponse.setResponse("Não sei o que dizer");
-					turConverseAgentResponse.setIntent("empty");
-				}
+				turConverseAgentResponse = getFallback(agentId, q, turSEInstance, nextContext, session,
+						turConverseAgentResponse);
 			}
 
 		} catch (SolrServerException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+		return turConverseAgentResponse;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void getIntentFlow(HttpSession session, TurConverseAgentResponse turConverseAgentResponse,
+			SolrDocument firstResult) {
+		List<String> responses = (List<String>) firstResult.getFieldValue("responses");
+		int rnd = new Random().nextInt(responses.size());
+
+		List<String> contextOutputs = (List<String>) firstResult.getFieldValue("contextOutput");
+
+		turConverseAgentResponse.setResponse(responses.get(rnd).toString());
+		turConverseAgentResponse.setIntent(firstResult.getFieldValue("name").toString());
+
+		if (contextOutputs != null && !contextOutputs.isEmpty()) {
+			session.setAttribute("nextContext", contextOutputs.get(0).toString());
+		}
+	}
+
+	private TurConverseAgentResponse getFallback(String agentId, String q, TurSEInstance turSEInstance,
+			String nextContext, HttpSession session, TurConverseAgentResponse turConverseAgentResponse) {
+		if (nextContext != null) {
+			turConverseAgentResponse = this.interactionNested(agentId, q, turSEInstance, null, session);
+		} else {
+			turConverseAgentResponse.setResponse("Não sei o que dizer");
+			turConverseAgentResponse.setIntent("empty");
 		}
 		return turConverseAgentResponse;
 	}
