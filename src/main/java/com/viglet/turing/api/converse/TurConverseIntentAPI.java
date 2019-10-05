@@ -38,7 +38,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.viglet.turing.converse.TurConverseIndex;
+import com.viglet.turing.converse.TurConverseSE;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseEvent;
@@ -65,23 +65,23 @@ import io.swagger.annotations.ApiOperation;
 public class TurConverseIntentAPI {
 
 	@Autowired
-	TurConverseIntentRepository turConverseIntentRepository;
+	private TurConverseIntentRepository turConverseIntentRepository;
 	@Autowired
-	TurConverseAgentRepository turConverseAgentRepository;
+	private TurConverseAgentRepository turConverseAgentRepository;
 	@Autowired
-	TurConverseContextRepository turConverseContextRepository;
+	private TurConverseContextRepository turConverseContextRepository;
 	@Autowired
-	TurConverseEventRepository turConverseEventRepository;
+	private TurConverseEventRepository turConverseEventRepository;
 	@Autowired
-	TurConverseParameterRepository turConverseParameterRepository;
+	private TurConverseParameterRepository turConverseParameterRepository;
 	@Autowired
-	TurConversePhraseRepository turConversePhraseRepository;
+	private TurConversePhraseRepository turConversePhraseRepository;
 	@Autowired
-	TurConverseResponseRepository turConverseResponseRepository;
+	private TurConverseResponseRepository turConverseResponseRepository;
 	@Autowired
-	TurConversePromptRepository turConversePromptRepository;
+	private TurConversePromptRepository turConversePromptRepository;
 	@Autowired
-	TurConverseIndex turConverseIndex;
+	private TurConverseSE turConverseSE;
 
 	@ApiOperation(value = "Converse Intent List")
 	@GetMapping
@@ -180,7 +180,7 @@ public class TurConverseIntentAPI {
 			}
 		}
 
-		turConverseIndex.index(turConverseIntentEdit);
+		turConverseSE.index(turConverseIntentEdit);
 		return this.getIntent(turConverseIntentEdit.getId());
 	}
 
@@ -366,7 +366,7 @@ public class TurConverseIntentAPI {
 			turConverseResponseRepository.save(response);
 		}
 
-		turConverseIndex.index(turConverseIntent);
+		turConverseSE.index(turConverseIntent);
 		return turConverseIntent;
 
 	}

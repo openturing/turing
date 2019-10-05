@@ -17,21 +17,12 @@
 
 package com.viglet.turing.api.converse;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 
 import javax.servlet.http.HttpSession;
 
-import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.QueryResponse;
-import org.apache.solr.client.solrj.response.UpdateResponse;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -45,19 +36,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.bean.converse.TurConverseAgentResponse;
-import com.viglet.turing.converse.TurConverseIndex;
+import com.viglet.turing.converse.TurConverse;
+import com.viglet.turing.converse.TurConverseSE;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
-import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
-import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
 import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatRepository;
-import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatResponseRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
-import com.viglet.turing.solr.TurSolr;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -76,13 +64,9 @@ public class TurConverseAgentAPI {
 	@Autowired
 	private TurConverseChatRepository turConverseChatRepository;
 	@Autowired
-	private TurConverseChatResponseRepository turConverseChatResponseRepository;
+	private TurConverse turConverse;
 	@Autowired
-	private TurConverseIndex turConverseIndex;
-	@Autowired
-	private TurSolr turSolr;
-
-	private SolrClient solrClient;
+	private TurConverseSE turConverseSE;
 
 	@ApiOperation(value = "Converse Agent List")
 	@GetMapping
@@ -146,36 +130,12 @@ public class TurConverseAgentAPI {
 
 		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
 		Set<TurConverseIntent> turConverseIntents = turConverseIntentRepository.findByAgent(turConverseAgent);
-		this.desindexAll(turConverseAgent);
+		turConverseSE.desindexAll(turConverseAgent);
 
 		for (TurConverseIntent turConverseIntent : turConverseIntents) {
-			turConverseIndex.index(turConverseIntent);
+			turConverseSE.index(turConverseIntent);
 		}
 		return true;
-	}
-
-	private void showSession(HttpSession session) {
-		System.out.println("hasParameter: " + (Boolean) session.getAttribute("hasParameter"));
-		System.out.println("nextParameter: " + (Integer) session.getAttribute("nextParameter"));
-		System.out.println("nextContext: " + (String) session.getAttribute("nextContext"));
-		System.out.println("intent: " + (String) session.getAttribute("intent"));
-		System.out.println("-----");
-	}
-
-	private void cleanSession(HttpSession session) {
-		System.out.println("Clean Session");
-		session.removeAttribute("hasParameter");
-		session.removeAttribute("nextParameter");
-		session.removeAttribute("nextContext");
-		session.removeAttribute("intent");
-
-	}
-
-	private void cleanParameter(HttpSession session) {
-		session.removeAttribute("hasParameter");
-		session.removeAttribute("nextParameter");
-		session.removeAttribute("intent");
-
 	}
 
 	@ApiOperation(value = "Converse Chat")
@@ -185,10 +145,10 @@ public class TurConverseAgentAPI {
 			@RequestParam(required = false, name = "start") boolean start, HttpSession session) {
 
 		if (start)
-			this.cleanSession(session);
+			turConverse.cleanSession(session);
 
-		this.showSession(session);
-		
+		turConverse.showSession(session);
+
 		boolean hasParameter = session.getAttribute("hasParameter") != null
 				? (boolean) session.getAttribute("hasParameter")
 				: false;
@@ -197,231 +157,28 @@ public class TurConverseAgentAPI {
 		if (session != null && session.getId() != null) {
 			chat = turConverseChatRepository.findBySession(session.getId());
 			if (chat == null) {
+				
 				chat = new TurConverseChat();
 				chat.setSession(session.getId());
-				chat.setAgentId(id);
+				chat.setAgent(turConverseAgentRepository.findById(id).orElse(null));
 				chat.setDate(new Date());
 				turConverseChatRepository.save(chat);
 			}
 		}
 
-		saveChatResponseUser(q, chat, session);
-
-		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
-		TurSEInstance turSEInstance = turConverseAgent.getTurSEInstance();
-		String core = turConverseAgent.getCore();
-
-		solrClient = turSolr.getSolrClient(turSEInstance, core);
+		turConverse.saveChatResponseUser(q, chat, session);
 
 		TurConverseAgentResponse turConverseAgentResponse = new TurConverseAgentResponse();
 
-		
 		if (hasParameter) {
-			this.getChatParameter(chat, id, session, turConverseAgentResponse);
+			turConverse.getChatParameter(chat, session, turConverseAgentResponse);
 		} else {
 			String nextContext = (String) session.getAttribute("nextContext");
-			turConverseAgentResponse = this.interactionNested(chat, id, q, turSEInstance, nextContext, session);			
+			turConverseAgentResponse = turConverse.interactionNested(chat, q, nextContext, session);
 		}
-		this.saveChatResponseBot(chat, turConverseAgentResponse, session);
-		
-		return turConverseAgentResponse;
-	}
-
-	private void saveChatResponseUser(String q, TurConverseChat chat, HttpSession session) {
-		boolean hasParameter = session.getAttribute("hasParameter") != null
-				? (boolean) session.getAttribute("hasParameter")
-				: false;
-				
-		TurConverseChatResponse chatResponseUser = new TurConverseChatResponse();
-		chatResponseUser.setDate(new Date());
-		chatResponseUser.setUser(true);
-		chatResponseUser.setText(q);
-		chatResponseUser.setChat(chat);
-		if (hasParameter && session.getAttribute("previousResponseBot") != null) {
-			TurConverseChatResponse chatResponseBot = (TurConverseChatResponse) session.getAttribute("previousResponseBot");
-			chatResponseUser.setIntentId(chatResponseBot.getIntentId());
-			chatResponseUser.setActionName(chatResponseBot.getActionName());
-			chatResponseUser.setParameterName(chatResponseBot.getParameterName());					
-		}
-		turConverseChatResponseRepository.save(chatResponseUser);
-		session.setAttribute("previousResponseUser", chatResponseUser);
-	}
-
-	private void saveChatResponseBot(TurConverseChat chat, TurConverseAgentResponse turConverseAgentResponse, HttpSession session) {
-		TurConverseChatResponse chatResponseBot = new TurConverseChatResponse();
-		chatResponseBot.setDate(new Date());
-		chatResponseBot.setUser(false);
-		chatResponseBot.setText(turConverseAgentResponse.getResponse());
-		chatResponseBot.setChat(chat);
-		chatResponseBot.setIntentId(turConverseAgentResponse.getIntentId());
-		chatResponseBot.setParameterName(turConverseAgentResponse.getParameterName());
-		chatResponseBot.setActionName(turConverseAgentResponse.getActionName());
-
-		session.setAttribute("previousResponseBot", chatResponseBot);
-		
-		turConverseChatResponseRepository.save(chatResponseBot);
-		
-		if (session.getAttribute("previousResponseUser") != null) {
-			TurConverseChatResponse chatResponseUser = (TurConverseChatResponse) session.getAttribute("previousResponseUser");
-			if (chatResponseUser.getActionName() == null && chatResponseUser.getIntentId() == null) {
-				chatResponseUser.setIntentId(turConverseAgentResponse.getIntentId());
-				turConverseChatResponseRepository.save(chatResponseUser);
-			}
-		}
-		
-	}
-
-	@SuppressWarnings("unchecked")
-	private void getChatParameter(TurConverseChat chat, String agentId, HttpSession session,
-			TurConverseAgentResponse turConverseAgentResponse) {
-
-		int nextParameter = session.getAttribute("nextParameter") != null ? (int) session.getAttribute("nextParameter")
-				: 0;
-
-		String intent = session.getAttribute("intent") != null ? (String) session.getAttribute("intent") : null;
-
-		try {
-			SolrQuery queryParameter = new SolrQuery();
-
-			queryParameter.addFilterQuery("type:\"Parameter\"");
-			queryParameter.addFilterQuery("agent:\"" + agentId + "\"");
-			queryParameter.addFilterQuery("intent:\"" + intent + "\"");
-			queryParameter.setQuery("*:*");
-
-			QueryResponse queryResponseParameter = solrClient.query(queryParameter);
-			SolrDocumentList resultsParameter = queryResponseParameter.getResults();
-			if (resultsParameter.size() > nextParameter) {
-				SolrDocument firstResultParameter = resultsParameter.get(nextParameter);
-				if (!resultsParameter.isEmpty()) {
-					List<String> prompts = (List<String>) firstResultParameter.getFieldValue("prompts");
-					int rnd = new Random().nextInt(prompts.size());
-					turConverseAgentResponse.setResponse(prompts.get(rnd).toString());
-					turConverseAgentResponse.setIntentId(intent);
-					turConverseAgentResponse.setActionName(firstResultParameter.getFieldValue("action").toString());
-					turConverseAgentResponse.setParameterName(firstResultParameter.getFieldValue("name").toString());
-									
-				}
-				session.setAttribute("nextParameter", nextParameter + 1);
-			}
-
-			if (resultsParameter.size() == nextParameter) {
-				this.getIntentWhenFinishParameters(chat, agentId, session, turConverseAgentResponse, intent);
-			}
-		} catch (SolrServerException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void getIntentWhenFinishParameters(TurConverseChat chat, String id, HttpSession session,
-			TurConverseAgentResponse turConverseAgentResponse, String intent) throws SolrServerException, IOException {
-
-		this.cleanParameter(session);
-
-		SolrQuery query = new SolrQuery();
-
-		query.addFilterQuery("type:\"Intent\"");
-		query.addFilterQuery("agent:\"" + id + "\"");
-		query.addFilterQuery("id:\"" + intent + "\"");
-
-		query.setQuery("*:*");
-		QueryResponse queryResponse = solrClient.query(query);
-		SolrDocumentList results = queryResponse.getResults();
-		if (!results.isEmpty()) {
-			SolrDocument firstResult = results.get(0);
-			this.getIntentFlow(chat, session, turConverseAgentResponse, firstResult);
-		}
-	}
-
-	private TurConverseAgentResponse interactionNested(TurConverseChat chat, String agentId, String q, TurSEInstance turSEInstance,
-			String nextContext, HttpSession session) {
-
-		TurConverseAgentResponse turConverseAgentResponse = new TurConverseAgentResponse();
-
-		try {
-
-			SolrQuery query = new SolrQuery();
-
-			if (nextContext != null) {
-				query.addFilterQuery("type:\"Intent\"");
-				query.addFilterQuery("agent:\"" + agentId + "\"");
-				query.addFilterQuery("contextInput:\"" + nextContext + "\"");
-			} else {
-				query.addFilterQuery("-contextInput:[\"\" TO *]");
-			}
-			query.setQuery("phrases:\"" + q + "\"");
-
-			QueryResponse queryResponse = solrClient.query(query);
-			SolrDocumentList results = queryResponse.getResults();
-			if (!results.isEmpty()) {
-				SolrDocument firstResult = results.get(0);
-
-				if ((boolean) firstResult.getFieldValue("hasParameters")) {
-					session.setAttribute("intent", firstResult.getFieldValue("id"));
-					session.setAttribute("hasParameter", true);
-					this.getChatParameter(chat, agentId, session, turConverseAgentResponse);
-				} else {
-					this.getIntentFlow(chat, session, turConverseAgentResponse, firstResult);
-				}
-			} else {
-				if (nextContext != null) {
-					turConverseAgentResponse = this.interactionNested(chat, agentId, q, turSEInstance, null, session);
-				} else {
-					turConverseAgentResponse = this.getFallback(chat, session, turConverseAgentResponse);
-				}
-			}
-
-		} catch (SolrServerException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return turConverseAgentResponse;
-	}
-
-	@SuppressWarnings("unchecked")
-	private void getIntentFlow(TurConverseChat chat, HttpSession session, TurConverseAgentResponse turConverseAgentResponse,
-			SolrDocument firstResult) {
-		List<String> responses = (List<String>) firstResult.getFieldValue("responses");
-		int rnd = new Random().nextInt(responses.size());
-
-		List<String> contextOutputs = (List<String>) firstResult.getFieldValue("contextOutput");
-
-		turConverseAgentResponse.setResponse(responses.get(rnd).toString());
-		turConverseAgentResponse.setIntentId(firstResult.getFieldValue("id").toString());
-		turConverseAgentResponse.setIntentName(firstResult.getFieldValue("name").toString());
-		
-		if (contextOutputs != null && !contextOutputs.isEmpty()) {
-			session.setAttribute("nextContext", contextOutputs.get(0).toString());
-		}
-	}
-
-	private TurConverseAgentResponse getFallback(TurConverseChat chat, HttpSession session,
-			TurConverseAgentResponse turConverseAgentResponse) {
-		this.cleanSession(session);
-		turConverseAgentResponse.setResponse("Não sei o que dizer");
-		turConverseAgentResponse.setIntentName("empty");
+		turConverse.saveChatResponseBot(chat, turConverseAgentResponse, session);
 
 		return turConverseAgentResponse;
 	}
 
-	public void desindexAll(TurConverseAgent turConverseAgent) {
-
-		TurSEInstance turSEInstance = turConverseAgent.getTurSEInstance();
-		String core = turConverseAgent.getCore();
-
-		SolrClient solrClient = turSolr.getSolrClient(turSEInstance, core);
-		try {
-			@SuppressWarnings("unused")
-			UpdateResponse response = solrClient.deleteByQuery("agent:" + turConverseAgent.getId());
-			solrClient.commit();
-		} catch (SolrServerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 }

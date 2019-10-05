@@ -18,7 +18,9 @@
 package com.viglet.turing.persistence.model.converse;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.persistence.*;
@@ -32,6 +34,7 @@ import org.hibernate.annotations.OnDeleteAction;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
@@ -43,7 +46,7 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 @Entity
 @Table(name = "turConverseAgent")
 @NamedQuery(name = "TurConverseAgent.findAll", query = "SELECT ca FROM TurConverseAgent ca")
-@JsonIgnoreProperties({ "intents", "contexts" })
+@JsonIgnoreProperties({ "intents", "contexts", "chats" })
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class TurConverseAgent implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -80,6 +83,12 @@ public class TurConverseAgent implements Serializable {
 	@JoinColumn(name = "se_instance_id", nullable = false)
 	private TurSEInstance turSEInstance;
 
+
+	@OneToMany(mappedBy = "agent", orphanRemoval = true, fetch = FetchType.LAZY)
+	@Cascade({ CascadeType.ALL })
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private List<TurConverseChat> chats = new ArrayList<>();
+	
 	public String getId() {
 		return id;
 	}

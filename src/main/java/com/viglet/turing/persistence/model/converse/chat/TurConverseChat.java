@@ -27,6 +27,8 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -36,6 +38,8 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 /**
  * The persistent class for the turConverseChat database table.
@@ -59,7 +63,9 @@ public class TurConverseChat  implements Serializable {
 	
 	private String session;
 	
-	private String agentId;
+	@ManyToOne
+	@JoinColumn(name = "agent_id")
+	private TurConverseAgent agent;
 	
 	private int requests;
 	
@@ -96,12 +102,12 @@ public class TurConverseChat  implements Serializable {
 		this.session = session;
 	}
 
-	public String getAgentId() {
-		return agentId;
+	public TurConverseAgent getAgent() {
+		return agent;
 	}
 
-	public void setAgentId(String agentId) {
-		this.agentId = agentId;
+	public void setAgent(TurConverseAgent agent) {
+		this.agent = agent;
 	}
 
 	public List<TurConverseChatResponse> getResponses() {
