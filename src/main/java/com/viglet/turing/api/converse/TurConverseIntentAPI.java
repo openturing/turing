@@ -98,7 +98,6 @@ public class TurConverseIntentAPI {
 
 	private TurConverseIntent getIntent(String id) {
 		TurConverseIntent turConverseIntent = this.turConverseIntentRepository.findById(id).get();
-		// turConverseIntent.setAgent(turConverseAgentRepository.find);
 		turConverseIntent.setContextInputs(
 				turConverseContextRepository.findByIntentInputs(new HashSet<>(Arrays.asList(turConverseIntent))));
 		turConverseIntent.setContextOutputs(

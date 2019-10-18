@@ -387,11 +387,31 @@ turingApp
 				.state(
 					'converse.agent.entity',
 					{
-						url: '/intent',
+						url: '/entity',
+						templateUrl: 'templates/converse/converse-entity-list.html',
+						controller: 'TurConverseEntityListCtrl',
+						data: {
+							pageTitle: 'Converse Entity | Viglet Turing'
+						}
+					})
+				.state(
+					'converse.agent.entity-new',
+					{
+						url: '/entity/new',
 						templateUrl: 'templates/converse/converse-entity.html',
 						controller: 'TurConverseEntityCtrl',
 						data: {
-							pageTitle: 'Converse Entity | Viglet Turing'
+							pageTitle: 'New Converse Entity | Viglet Turing'
+						}
+					})	
+				.state(
+					'converse.agent.entity-edit',
+					{
+						url: '/entity/:entityId',
+						templateUrl: 'templates/converse/converse-entity.html',
+						controller: 'TurConverseEntityCtrl',
+						data: {
+							pageTitle: 'Edit Converse Entity | Viglet Turing'
 						}
 					})
 				.state(

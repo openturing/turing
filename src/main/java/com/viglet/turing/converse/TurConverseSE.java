@@ -94,7 +94,9 @@ public class TurConverseSE {
 
 	
 	
-	SolrDocumentList solrGetIntent(TurConverseAgent turConverseAgent, String intent) throws SolrServerException, IOException {
+	SolrDocumentList solrGetIntent(TurConverseAgent turConverseAgent, String intent) {
+		SolrDocumentList results = null;
+		try {
 		SolrClient solrClient = this.getSolrClient(turConverseAgent);
 		SolrQuery query = new SolrQuery();
 
@@ -104,7 +106,14 @@ public class TurConverseSE {
 
 		query.setQuery("*:*");
 		QueryResponse queryResponse = solrClient.query(query);
-		SolrDocumentList results = queryResponse.getResults();
+		results = queryResponse.getResults();
+		} catch (SolrServerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return results;
 	}
 	

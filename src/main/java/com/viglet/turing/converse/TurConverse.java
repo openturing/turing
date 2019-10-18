@@ -167,7 +167,7 @@ public class TurConverse {
 
 	
 	private void getIntentWhenFinishParameters(TurConverseChat chat, HttpSession session,
-			TurConverseAgentResponse turConverseAgentResponse, String intent) throws SolrServerException, IOException {
+			TurConverseAgentResponse turConverseAgentResponse, String intent){
 
 		this.cleanParameter(session);
 

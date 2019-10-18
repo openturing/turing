@@ -35,6 +35,7 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
+import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
@@ -73,6 +74,11 @@ public class TurConverseAgent implements Serializable {
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConverseIntent> intents = new HashSet<>();
+	
+	@OneToMany(mappedBy = "agent", orphanRemoval = true, fetch = FetchType.LAZY)
+	@Cascade({ CascadeType.ALL })
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurConverseEntity> entities = new HashSet<>();
 	
 	@OneToMany(mappedBy = "agent", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
@@ -145,6 +151,17 @@ public class TurConverseAgent implements Serializable {
 		this.intents.clear();
 		if (intents != null) {
 			this.intents.addAll(intents);
+		}
+	}
+
+	public Set<TurConverseEntity> getEntities() {
+		return this.entities;
+	}
+
+	public void setEntities(Set<TurConverseEntity> entities) {
+		this.entities.clear();
+		if (entities != null) {
+			this.entities.addAll(entities);
 		}
 	}
 	

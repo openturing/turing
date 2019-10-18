@@ -25,6 +25,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
+import com.viglet.turing.persistence.model.converse.entity.TurConverseEntityTerm;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
@@ -32,6 +34,8 @@ import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
 import com.viglet.turing.persistence.model.converse.intent.TurConversePrompt;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
+import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityRepository;
+import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityTermRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseParameterRepository;
@@ -59,6 +63,10 @@ public class TurConverseAgentOnStartup {
 	private TurConversePromptRepository turConversePromptRepository;
 	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
+	@Autowired
+	private TurConverseEntityRepository turConverseEntityRepository;
+	@Autowired
+	private TurConverseEntityTermRepository turConverseEntityTermRepository;
 
 	public void createDefaultRows() {
 
@@ -195,6 +203,74 @@ public class TurConverseAgentOnStartup {
 			turConverseResponse2c.setIntent(turConverseIntent2);
 			turConverseResponseRepository.save(turConverseResponse2c);
 
+			this.createEntities(turConverseAgent);
+		}
+	}
+
+	private void createEntities(TurConverseAgent agent) {
+
+		if (turConverseEntityRepository.findAll().isEmpty()) {
+
+			// Carros
+			TurConverseEntity turConverseEntity = new TurConverseEntity();
+			turConverseEntity.setName("carros");
+			turConverseEntity.setSynonyms(true);
+			turConverseEntity.setAllowAutomatedExpansion(false);
+			turConverseEntity.setFuzzyMatching(false);
+			turConverseEntity.setUseRegexp(false);
+			turConverseEntity.setAgent(agent);
+			turConverseEntityRepository.save(turConverseEntity);
+
+			Set<String> terms = new HashSet<>();
+			terms.add("veículos");
+			terms.add("automóveis");
+			TurConverseEntityTerm turConverseEntityTerm = new TurConverseEntityTerm();
+			turConverseEntityTerm.setName("carro");
+			turConverseEntityTerm.setSynonyms(terms);
+			turConverseEntityTerm.setEntity(turConverseEntity);
+
+			turConverseEntityTermRepository.save(turConverseEntityTerm);
+			Set<String> terms02 = new HashSet<>();
+			terms02.add("bus");
+			terms02.add("biarticulado");
+
+			turConverseEntityTerm = new TurConverseEntityTerm();
+			turConverseEntityTerm.setName("onibus");
+			turConverseEntityTerm.setSynonyms(terms02);
+			turConverseEntityTerm.setEntity(turConverseEntity);
+
+			turConverseEntityTermRepository.save(turConverseEntityTerm);
+
+			// Bicicletas
+			turConverseEntity = new TurConverseEntity();
+			turConverseEntity.setName("bibicleta");
+			turConverseEntity.setSynonyms(true);
+			turConverseEntity.setAllowAutomatedExpansion(false);
+			turConverseEntity.setFuzzyMatching(false);
+			turConverseEntity.setUseRegexp(false);
+			turConverseEntity.setAgent(agent);
+			turConverseEntityRepository.save(turConverseEntity);
+
+			Set<String> terms03 = new HashSet<>();
+			terms03.add("bike");
+			terms03.add("bicycle");
+			turConverseEntityTerm = new TurConverseEntityTerm();
+			turConverseEntityTerm.setName("bibicleta");
+			turConverseEntityTerm.setSynonyms(terms03);
+			turConverseEntityTerm.setEntity(turConverseEntity);
+
+			turConverseEntityTermRepository.save(turConverseEntityTerm);
+
+			Set<String> terms04 = new HashSet<>();
+			terms04.add("triciclo");
+			terms04.add("moto");
+
+			turConverseEntityTerm = new TurConverseEntityTerm();
+			turConverseEntityTerm.setName("triciclo");
+			turConverseEntityTerm.setSynonyms(terms04);
+			turConverseEntityTerm.setEntity(turConverseEntity);
+
+			turConverseEntityTermRepository.save(turConverseEntityTerm);
 		}
 	}
 

@@ -40,10 +40,12 @@ import com.viglet.turing.converse.TurConverse;
 import com.viglet.turing.converse.TurConverseSE;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
+import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
 import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatRepository;
+import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
 
@@ -52,13 +54,15 @@ import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/converse/agent")
-@Api(tags = "Converse Intent", description = "Converse Intent API")
+@Api(tags = "Converse Agent", description = "Converse Agent API")
 public class TurConverseAgentAPI {
 
 	@Autowired
 	private TurConverseAgentRepository turConverseAgentRepository;
 	@Autowired
 	private TurConverseIntentRepository turConverseIntentRepository;
+	@Autowired
+	private TurConverseEntityRepository turConverseEntityRepository;
 	@Autowired
 	private TurConverseContextRepository turConverseContextRepository;
 	@Autowired
@@ -88,6 +92,13 @@ public class TurConverseAgentAPI {
 		return turConverseIntentRepository.findByAgent(turConverseAgent);
 	}
 
+	@ApiOperation(value = "Show a Converse Entity List")
+	@GetMapping("/{id}/entities")
+	public Set<TurConverseEntity> turConverseAgentEntitiesGet(@PathVariable String id) {
+		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
+		return turConverseEntityRepository.findByAgent(turConverseAgent);
+	}
+	
 	@ApiOperation(value = "Show a Converse Context List")
 	@GetMapping("/{id}/contexts")
 	public Set<TurConverseContext> turConverseAgentContextsGet(@PathVariable String id) {

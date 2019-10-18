@@ -1,3 +1,21 @@
 <div>
-    <h1>Converse Entity</h1>
+    <div style="display:flex">
+        <input type="text" id="name" placeholder="Entity Name" ng-model="entity.name"
+            style="font-size: 24px;border: 0px none;margin-bottom: 25px;width: 100%;margin-right: 10px;font-weight: bolder;">
+        <div class="pull-right">
+            <button class="btn btn-viglet" ng-click="saveIntent()">Save</button>
+        </div>
+    </div>
+    <div>
+        <div class="form-group" ng-repeat="term in terms">
+            <ui-select multiple tagging tagging-label="" ng-model="object.contextInputs" theme="bootstrap"
+                sortable="true" style="width: 100%;" title="New entry">
+                <ui-select-match placeholder="New entry">{{$item}}</ui-select-match>
+                <ui-select-choices repeat="context in contexts | filter:$select.search">
+                    {{context}}
+                </ui-select-choices>
+            </ui-select>
+        </div>
+    </div>
+    <button class="btn btn-link" ng-click="addRow()">+ Add a row</button>
 </div>
