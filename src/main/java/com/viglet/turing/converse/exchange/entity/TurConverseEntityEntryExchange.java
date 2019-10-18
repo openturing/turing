@@ -15,30 +15,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */ 
 
-package com.viglet.turing.console.encrypt;
+package com.viglet.turing.converse.exchange.entity;
 
-import org.jasypt.encryption.StringEncryptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import java.util.List;
 
-import org.springframework.stereotype.Component;
+public class TurConverseEntityEntryExchange {
 
-@Component
-public class TurEncryptCLI {
+	private String value;
+	
+	private List<String> synonyms;
 
-	@Qualifier("turEncryptor")
-	@Autowired
-	StringEncryptor stringEncryptor;
-
-	public String encrypt(String input) {
-		String result = null;
-		try {
-			return stringEncryptor.encrypt(input);
-
-		} catch (Throwable t) {
-			t.printStackTrace();
-		}
-		return result;
+	public String getValue() {
+		return value;
 	}
 
+	public void setValue(String value) {
+		this.value = value;
+	}
+
+	public List<String> getSynonyms() {
+		return synonyms;
+	}
+
+	public void setSynonyms(List<String> synonyms) {
+		this.synonyms = synonyms;
+	}
+	
 }

@@ -15,30 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */ 
 
-package com.viglet.turing.console.encrypt;
+package com.viglet.turing.converse.exchange.intent;
 
-import org.jasypt.encryption.StringEncryptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+public class TurConverseIntentResponsePlataformsExchange {
 
-import org.springframework.stereotype.Component;
-
-@Component
-public class TurEncryptCLI {
-
-	@Qualifier("turEncryptor")
-	@Autowired
-	StringEncryptor stringEncryptor;
-
-	public String encrypt(String input) {
-		String result = null;
-		try {
-			return stringEncryptor.encrypt(input);
-
-		} catch (Throwable t) {
-			t.printStackTrace();
-		}
-		return result;
-	}
-
+	
 }

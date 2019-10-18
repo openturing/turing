@@ -15,30 +15,50 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */ 
 
-package com.viglet.turing.console.encrypt;
+package com.viglet.turing.converse.exchange.intent;
 
-import org.jasypt.encryption.StringEncryptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import java.util.List;
 
-import org.springframework.stereotype.Component;
+public class TurConverseIntentMessageExchange {
 
-@Component
-public class TurEncryptCLI {
+	private int type;
+	
+	private String lang;
+	
+	private String condition;
+	
+	private List<String> speech;
 
-	@Qualifier("turEncryptor")
-	@Autowired
-	StringEncryptor stringEncryptor;
-
-	public String encrypt(String input) {
-		String result = null;
-		try {
-			return stringEncryptor.encrypt(input);
-
-		} catch (Throwable t) {
-			t.printStackTrace();
-		}
-		return result;
+	public int getType() {
+		return type;
 	}
 
+	public void setType(int type) {
+		this.type = type;
+	}
+
+	public String getLang() {
+		return lang;
+	}
+
+	public void setLang(String lang) {
+		this.lang = lang;
+	}
+
+	public String getCondition() {
+		return condition;
+	}
+
+	public void setCondition(String condition) {
+		this.condition = condition;
+	}
+
+	public List<String> getSpeech() {
+		return speech;
+	}
+
+	public void setSpeech(List<String> speech) {
+		this.speech = speech;
+	}
+	
 }
