@@ -4,9 +4,21 @@ turingApp
 		'$urlRouterProvider',
 		'$locationProvider',
 		'$translateProvider',
+		'NotificationProvider',
 		function ($stateProvider, $urlRouterProvider, $locationProvider,
-			$translateProvider) {
+			$translateProvider, NotificationProvider) {
 			$translateProvider.useSanitizeValueStrategy('escaped');
+
+			NotificationProvider.setOptions({
+				delay : 5000,
+				startTop : 20,
+				startRight : 10,
+				verticalSpacing : 20,
+				horizontalSpacing : 20,
+				positionX : 'right',
+				positionY : 'bottom'
+			});
+			
 			$translateProvider.translations('en', {
 
 				NLP_EDIT: "Edit NLP",
@@ -325,6 +337,16 @@ turingApp
 						}
 					})
 				.state(
+					'converse.agent-import',
+					{
+						url: '/agent/import',
+						templateUrl: 'templates/converse/converse-agent-import.html',
+						controller: 'TurConverseAgentImportCtrl',
+						data: {
+							pageTitle: 'Import Agent | Viglet Turing'
+						}
+					})
+				.state(
 					'converse.agent-new',
 					{
 						url: '/agent/new',
@@ -403,7 +425,7 @@ turingApp
 						data: {
 							pageTitle: 'New Converse Entity | Viglet Turing'
 						}
-					})	
+					})
 				.state(
 					'converse.agent.entity-edit',
 					{

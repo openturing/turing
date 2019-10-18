@@ -17,12 +17,14 @@
 
 package com.viglet.turing.api.converse;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -34,10 +36,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.bean.converse.TurConverseAgentResponse;
 import com.viglet.turing.converse.TurConverse;
 import com.viglet.turing.converse.TurConverseSE;
+import com.viglet.turing.converse.exchange.TurConverseImportExchange;
+import com.viglet.turing.converse.exchange.agent.TurConverseAgentExchange;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
 import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
@@ -67,6 +72,8 @@ public class TurConverseAgentAPI {
 	private TurConverseContextRepository turConverseContextRepository;
 	@Autowired
 	private TurConverseChatRepository turConverseChatRepository;
+	@Autowired
+	private TurConverseImportExchange turConverseImportExchange;
 	@Autowired
 	private TurConverse turConverse;
 	@Autowired
@@ -192,4 +199,11 @@ public class TurConverseAgentAPI {
 		return turConverseAgentResponse;
 	}
 
+
+	@PostMapping("/import")
+	@Transactional
+	public TurConverseAgentExchange shImport(@RequestParam("file") MultipartFile multipartFile)
+			throws IllegalStateException, IOException, ArchiveException {
+		return turConverseImportExchange.importFromMultipartFile(multipartFile);
+	}
 }
