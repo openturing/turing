@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */ 
+ */
 
 package com.viglet.turing.converse.exchange.intent;
 
@@ -22,29 +22,33 @@ import java.util.List;
 public class TurConverseIntentExchange {
 
 	private String id;
-	
+
+	private String parentId;
+
+	private String rootParentId;
+
 	private String name;
-	
+
 	private boolean auto;
-	
+
 	private List<String> contexts;
-	
+
 	private List<TurConverseIntentResponseExchange> responses;
-	
+
 	private int priority;
-	
+
 	private boolean webhookUsed;
-	
+
 	private boolean webhookForSlotFilling;
-	
+
 	private boolean fallbackIntent;
-	
+
 	private List<String> events;
-	
+
 	private List<String> conditionalResponses;
-	
+
 	private String condition;
-	
+
 	private List<String> conditionalFollowupEvents;
 
 	public String getId() {
@@ -53,6 +57,22 @@ public class TurConverseIntentExchange {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public String getParentId() {
+		return parentId;
+	}
+
+	public void setParentId(String parentId) {
+		this.parentId = parentId;
+	}
+
+	public String getRootParentId() {
+		return rootParentId;
+	}
+
+	public void setRootParentId(String rootParentId) {
+		this.rootParentId = rootParentId;
 	}
 
 	public String getName() {
@@ -150,5 +170,5 @@ public class TurConverseIntentExchange {
 	public void setConditionalFollowupEvents(List<String> conditionalFollowupEvents) {
 		this.conditionalFollowupEvents = conditionalFollowupEvents;
 	}
-	
+
 }

@@ -17,18 +17,10 @@
 
 package com.viglet.turing.converse.exchange.entity;
 
-import java.util.List;
+import java.util.ArrayList;
 
-public class TurConverseEntityEntriesExchange {
+public class TurConverseEntityEntriesExchange extends ArrayList<TurConverseEntityEntryExchange> {
 
-	private List<TurConverseEntityEntryExchange> entries;
-
-	public List<TurConverseEntityEntryExchange> getEntries() {
-		return entries;
-	}
-
-	public void setEntries(List<TurConverseEntityEntryExchange> entries) {
-		this.entries = entries;
-	}
+	private static final long serialVersionUID = 1L;
 	
 }

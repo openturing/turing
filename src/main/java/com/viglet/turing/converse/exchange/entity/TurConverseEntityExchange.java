@@ -49,31 +49,31 @@ public class TurConverseEntityExchange {
 		this.name = name;
 	}
 
-	public boolean isOverridable() {
+	public boolean getIsOverridable() {
 		return isOverridable;
 	}
 
-	public void setOverridable(boolean isOverridable) {
+	public void setIsOverridable(boolean isOverridable) {
 		this.isOverridable = isOverridable;
 	}
 
-	public boolean isEnum() {
+	public boolean getIsEnum() {
 		return isEnum;
 	}
 
-	public void setEnum(boolean isEnum) {
+	public void setIsEnum(boolean isEnum) {
 		this.isEnum = isEnum;
 	}
 
-	public boolean isRegexp() {
+	public boolean getIsRegexp() {
 		return isRegexp;
 	}
 
-	public void setRegexp(boolean isRegexp) {
+	public void setIsRegexp(boolean isRegexp) {
 		this.isRegexp = isRegexp;
 	}
 
-	public boolean isAutomatedExpansion() {
+	public boolean getAutomatedExpansion() {
 		return automatedExpansion;
 	}
 
@@ -81,7 +81,7 @@ public class TurConverseEntityExchange {
 		this.automatedExpansion = automatedExpansion;
 	}
 
-	public boolean isAllowFuzzyExtraction() {
+	public boolean getAllowFuzzyExtraction() {
 		return allowFuzzyExtraction;
 	}
 

@@ -143,11 +143,11 @@ public class TurConverseAgentGAExchange {
 		this.autoPreviewEnabled = autoPreviewEnabled;
 	}
 
-	public boolean isDeviceAgent() {
+	public boolean getIsDeviceAgent() {
 		return isDeviceAgent;
 	}
 
-	public void setDeviceAgent(boolean isDeviceAgent) {
+	public void setIsDeviceAgent(boolean isDeviceAgent) {
 		this.isDeviceAgent = isDeviceAgent;
 	}
 	

@@ -13,21 +13,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */ 
+ */
 
 package com.viglet.turing.converse.exchange.intent;
 
-public class TurConverseIntentResponsePlatformsExchange {
+import java.util.ArrayList;
 
-	private String dummy;
+public class TurConverseIntentPhrasesExchange extends ArrayList<TurConverseIntentPhraseExchange> {
 
-	public String getDummy() {
-		return dummy;
-	}
+	private static final long serialVersionUID = 1L;
 
-	public void setDummy(String dummy) {
-		this.dummy = dummy;
-	}
-	
-	
 }

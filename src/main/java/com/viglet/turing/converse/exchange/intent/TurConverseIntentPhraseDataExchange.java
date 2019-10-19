@@ -13,21 +13,50 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */ 
+ */
 
 package com.viglet.turing.converse.exchange.intent;
 
-public class TurConverseIntentResponsePlatformsExchange {
+public class TurConverseIntentPhraseDataExchange {
 
-	private String dummy;
+	private String text;
 
-	public String getDummy() {
-		return dummy;
+	private String alias;
+
+	private String meta;
+
+	private boolean userDefined;
+
+	public String getText() {
+		return text;
 	}
 
-	public void setDummy(String dummy) {
-		this.dummy = dummy;
+	public void setText(String text) {
+		this.text = text;
 	}
-	
-	
+
+	public String getAlias() {
+		return alias;
+	}
+
+	public void setAlias(String alias) {
+		this.alias = alias;
+	}
+
+	public String getMeta() {
+		return meta;
+	}
+
+	public void setMeta(String meta) {
+		this.meta = meta;
+	}
+
+	public boolean isUserDefined() {
+		return userDefined;
+	}
+
+	public void setUserDefined(boolean userDefined) {
+		this.userDefined = userDefined;
+	}
+
 }

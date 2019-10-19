@@ -25,13 +25,13 @@ public class TurConverseIntentResponseExchange {
 	
 	private String action;
 	
-	private List<String> affectedContexts;
+	private List<TurConverseIntentResponseAffectedContextExchange> affectedContexts;
 	
-	private List<String> parameters;
+	private List<TurConverseIntentResponseParameterExchange> parameters;
 	
 	private List<TurConverseIntentMessageExchange> messages;
 	
-	private TurConverseIntentResponsePlataformsExchange defaultResponsePlataforms;
+	private TurConverseIntentResponsePlatformsExchange defaultResponsePlatforms;
 	
 	private List<String> speech;
 
@@ -51,19 +51,19 @@ public class TurConverseIntentResponseExchange {
 		this.action = action;
 	}
 
-	public List<String> getAffectedContexts() {
+	public List<TurConverseIntentResponseAffectedContextExchange> getAffectedContexts() {
 		return affectedContexts;
 	}
 
-	public void setAffectedContexts(List<String> affectedContexts) {
+	public void setAffectedContexts(List<TurConverseIntentResponseAffectedContextExchange> affectedContexts) {
 		this.affectedContexts = affectedContexts;
 	}
 
-	public List<String> getParameters() {
+	public List<TurConverseIntentResponseParameterExchange> getParameters() {
 		return parameters;
 	}
 
-	public void setParameters(List<String> parameters) {
+	public void setParameters(List<TurConverseIntentResponseParameterExchange> parameters) {
 		this.parameters = parameters;
 	}
 
@@ -75,12 +75,12 @@ public class TurConverseIntentResponseExchange {
 		this.messages = messages;
 	}
 
-	public TurConverseIntentResponsePlataformsExchange getDefaultResponsePlataforms() {
-		return defaultResponsePlataforms;
+	public TurConverseIntentResponsePlatformsExchange getDefaultResponsePlatforms() {
+		return defaultResponsePlatforms;
 	}
 
-	public void setDefaultResponsePlataforms(TurConverseIntentResponsePlataformsExchange defaultResponsePlataforms) {
-		this.defaultResponsePlataforms = defaultResponsePlataforms;
+	public void setDefaultResponsePlatforms(TurConverseIntentResponsePlatformsExchange defaultResponsePlatforms) {
+		this.defaultResponsePlatforms = defaultResponsePlatforms;
 	}
 
 	public List<String> getSpeech() {

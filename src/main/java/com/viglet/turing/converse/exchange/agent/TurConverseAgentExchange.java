@@ -49,15 +49,17 @@ public class TurConverseAgentExchange {
 
 	private List<String> supportedLanguages;
 
-	private String onePlataformApiVersion;
+	private String onePlatformApiVersion;
 
 	private boolean analyzeQueryTextSentiment;
 
-	private List<String> enableKnowledgeBaseNames;
+	private List<String> enabledKnowledgeBaseNames;
 
+	private float knowledgeServiceConfidenceAdjustment;
+	
 	private boolean dialogBuilderMode;
 
-	private String baseActionPackageUrl;
+	private String baseActionPackagesUrl;
 
 	public String getDescription() {
 		return description;
@@ -139,11 +141,11 @@ public class TurConverseAgentExchange {
 		this.webhook = webhook;
 	}
 
-	public boolean isPrivate() {
+	public boolean getIsPrivate() {
 		return isPrivate;
 	}
 
-	public void setPrivate(boolean isPrivate) {
+	public void setIsPrivate(boolean isPrivate) {
 		this.isPrivate = isPrivate;
 	}
 
@@ -171,12 +173,12 @@ public class TurConverseAgentExchange {
 		this.supportedLanguages = supportedLanguages;
 	}
 
-	public String getOnePlataformApiVersion() {
-		return onePlataformApiVersion;
+	public String getOnePlatformApiVersion() {
+		return onePlatformApiVersion;
 	}
 
-	public void setOnePlataformApiVersion(String onePlataformApiVersion) {
-		this.onePlataformApiVersion = onePlataformApiVersion;
+	public void setOnePlatformApiVersion(String onePlatformApiVersion) {
+		this.onePlatformApiVersion = onePlatformApiVersion;
 	}
 
 	public boolean isAnalyzeQueryTextSentiment() {
@@ -187,12 +189,12 @@ public class TurConverseAgentExchange {
 		this.analyzeQueryTextSentiment = analyzeQueryTextSentiment;
 	}
 
-	public List<String> getEnableKnowledgeBaseNames() {
-		return enableKnowledgeBaseNames;
+	public List<String> getEnabledKnowledgeBaseNames() {
+		return enabledKnowledgeBaseNames;
 	}
 
-	public void setEnableKnowledgeBaseNames(List<String> enableKnowledgeBaseNames) {
-		this.enableKnowledgeBaseNames = enableKnowledgeBaseNames;
+	public void setEnabledKnowledgeBaseNames(List<String> enabledKnowledgeBaseNames) {
+		this.enabledKnowledgeBaseNames = enabledKnowledgeBaseNames;
 	}
 
 	public boolean isDialogBuilderMode() {
@@ -203,12 +205,21 @@ public class TurConverseAgentExchange {
 		this.dialogBuilderMode = dialogBuilderMode;
 	}
 
-	public String getBaseActionPackageUrl() {
-		return baseActionPackageUrl;
+	public float getKnowledgeServiceConfidenceAdjustment() {
+		return knowledgeServiceConfidenceAdjustment;
 	}
 
-	public void setBaseActionPackageUrl(String baseActionPackageUrl) {
-		this.baseActionPackageUrl = baseActionPackageUrl;
+	public void setKnowledgeServiceConfidenceAdjustment(float knowledgeServiceConfidenceAdjustment) {
+		this.knowledgeServiceConfidenceAdjustment = knowledgeServiceConfidenceAdjustment;
 	}
 
+	public String getBaseActionPackagesUrl() {
+		return baseActionPackagesUrl;
+	}
+
+	public void setBaseActionPackagesUrl(String baseActionPackagesUrl) {
+		this.baseActionPackagesUrl = baseActionPackagesUrl;
+	}
+
+	
 }

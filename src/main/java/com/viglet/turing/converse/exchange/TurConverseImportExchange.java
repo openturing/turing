@@ -34,8 +34,13 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.converse.exchange.agent.TurConverseAgentExchange;
+import com.viglet.turing.converse.exchange.entity.TurConverseEntityEntriesExchange;
+import com.viglet.turing.converse.exchange.entity.TurConverseEntityExchange;
+import com.viglet.turing.converse.exchange.intent.TurConverseIntentExchange;
+import com.viglet.turing.converse.exchange.intent.TurConverseIntentPhrasesExchange;
 import com.viglet.turing.util.TurUtils;
 
 @Component
@@ -57,7 +62,7 @@ public class TurConverseImportExchange {
 			// Check if export.json exists, if it is not exist try access a sub directory
 			if (!(new File(extractFolder, "export.json").exists()) && (extractFolder.listFiles().length == 1)) {
 				for (File fileOrDirectory : extractFolder.listFiles()) {
-					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, "export.json").exists()) {
+					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, "agent.json").exists()) {
 						parentExtractFolder = extractFolder;
 						extractFolder = fileOrDirectory;
 					}
@@ -65,11 +70,30 @@ public class TurConverseImportExchange {
 			}
 			ObjectMapper mapper = new ObjectMapper();
 			TurConverseAgentExchange turConverseAgentExchange = null;
-/*
-			TurConverseAgentExchange turConverseAgentExchange = mapper.readValue(
-					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + "export.json")),
+
+			turConverseAgentExchange = mapper.readValue(
+					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + "agent.json")),
 					TurConverseAgentExchange.class);
-*/
+			System.out.println(turConverseAgentExchange.getDescription());
+
+			TurConverseEntityExchange turConverseEntityExchange = mapper.readValue(
+					new FileInputStream(extractFolder.getAbsolutePath()
+							.concat(File.separator + "entities" + File.separator + "pessoa.json")),
+					TurConverseEntityExchange.class);
+
+			System.out.println(turConverseEntityExchange.getName());
+
+			TurConverseEntityEntriesExchange turConverseEntityEntriesExchange = mapper.readValue(
+					new FileInputStream(extractFolder.getAbsolutePath()
+							.concat(File.separator + "entities" + File.separator + "pessoa_entries_pt-br.json")),
+					TurConverseEntityEntriesExchange.class);
+
+			System.out.println(turConverseEntityEntriesExchange.get(0).getValue());
+
+			final File folder = new File(extractFolder.getAbsolutePath().concat(File.separator + "intents"));
+
+			listFilesForFolder(folder);
+
 			try {
 				FileUtils.deleteDirectory(extractFolder);
 				if (parentExtractFolder != null) {
@@ -84,8 +108,32 @@ public class TurConverseImportExchange {
 		}
 	}
 
-	public TurConverseAgentExchange importFromFile(File file)
-			throws IOException, IllegalStateException {
+	public void listFilesForFolder(final File folder) {
+
+		final ObjectMapper mapper = new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+
+		for (final File fileEntry : folder.listFiles()) {
+
+			try {
+				System.out.println(fileEntry.getName());
+				if (fileEntry.getName().contains("_usersays_")) {
+					TurConverseIntentPhrasesExchange turConverseIntentPhrasesExchange = mapper
+							.readValue(new FileInputStream(fileEntry), TurConverseIntentPhrasesExchange.class);
+					System.out.println(turConverseIntentPhrasesExchange.get(0).getId());
+				}
+				else {
+					TurConverseIntentExchange turConverseIntentExchange = mapper
+							.readValue(new FileInputStream(fileEntry), TurConverseIntentExchange.class);
+					System.out.println(turConverseIntentExchange.getName());
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}
+	}
+
+	public TurConverseAgentExchange importFromFile(File file) throws IOException, IllegalStateException {
 
 		FileInputStream input = new FileInputStream(file);
 		MultipartFile multipartFile = new MockMultipartFile(file.getName(), IOUtils.toByteArray(input));

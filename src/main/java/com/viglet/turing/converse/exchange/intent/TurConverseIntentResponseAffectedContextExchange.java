@@ -13,21 +13,40 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */ 
+ */
 
 package com.viglet.turing.converse.exchange.intent;
 
-public class TurConverseIntentResponsePlatformsExchange {
+public class TurConverseIntentResponseAffectedContextExchange {
 
-	private String dummy;
-
-	public String getDummy() {
-		return dummy;
-	}
-
-	public void setDummy(String dummy) {
-		this.dummy = dummy;
-	}
+	private String name;
 	
+	private TurConverseIntentResponseContextParameterExchange parameters;
+	
+	private int lifespan;
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public TurConverseIntentResponseContextParameterExchange getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(TurConverseIntentResponseContextParameterExchange parameters) {
+		this.parameters = parameters;
+	}
+
+	public int getLifespan() {
+		return lifespan;
+	}
+
+	public void setLifespan(int lifespan) {
+		this.lifespan = lifespan;
+	}
 	
 }

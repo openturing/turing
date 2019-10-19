@@ -13,11 +13,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */ 
+ */
 
 package com.viglet.turing.converse.exchange.intent;
 
-public class TurConverseIntentResponsePlatformsExchange {
+public class TurConverseIntentResponseContextParameterExchange {
 
 	private String dummy;
 
