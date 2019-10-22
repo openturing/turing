@@ -215,6 +215,7 @@ dependencies {
 	// Apache Vysper
     compile group: 'org.apache.vysper', name: 'vysper-core', version:"0.7"
     compile group: 'org.apache.vysper.extensions', name: 'xep0060-pubsub', version: '0.7'
+    compile group: 'org.apache.vysper.extensions', name: 'vysper-websockets', version: '0.7'
     compile (group: 'org.apache.vysper.extensions', name: 'xep0045-muc', version:"0.7") {
        	exclude(module: 'slf4j-log4j12')
        	exclude(module: 'log4j')

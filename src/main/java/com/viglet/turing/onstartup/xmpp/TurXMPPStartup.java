@@ -44,6 +44,14 @@ public class TurXMPPStartup {
 			turXMPPUser.setPassword("admin");
 			turXMPPUser.setAdmin(true);
 			turXMPPUserService.createUser(turXMPPUser);
+			
+			turXMPPUser = new TurXMPPUser();
+			
+			turXMPPUser.setId((long) 1);
+			turXMPPUser.setUsername("user1");
+			turXMPPUser.setPassword("user1");
+			turXMPPUser.setAdmin(false);
+			turXMPPUserService.createUser(turXMPPUser);
 		}
 	}
 }
