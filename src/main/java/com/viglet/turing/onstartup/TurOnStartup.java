@@ -37,7 +37,6 @@ import com.viglet.turing.onstartup.sn.TurSNSiteOnStartup;
 import com.viglet.turing.onstartup.storage.TurDataGroupStartup;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.onstartup.system.TurLocaleOnStartup;
-import com.viglet.turing.onstartup.xmpp.TurXMPPStartup;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 
 @Component
@@ -75,8 +74,6 @@ public class TurOnStartup implements ApplicationRunner {
 	private TurSNSiteOnStartup turSNSiteOnStartup;
 	@Autowired
 	private TurConverseAgentOnStartup turConverseAgentOnStartup;
-	@Autowired
-	private TurXMPPStartup turXMPPStartup;
 	
 	@Override
 	public void run(ApplicationArguments arg0) throws Exception {
@@ -99,7 +96,6 @@ public class TurOnStartup implements ApplicationRunner {
 			turDataGroupStartup.createDefaultRows();
 			turSNSiteOnStartup.createDefaultRows();
 			turConverseAgentOnStartup.createDefaultRows();
-			turXMPPStartup.createDefaultRows();
 			turConfigVarOnStartup.createDefaultRows();
 
 			System.out.println("Configuration finished.");

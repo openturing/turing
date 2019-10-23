@@ -212,17 +212,6 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
 //	compile group: 'org.springframework.security.oauth.boot', name: 'spring-security-oauth2-autoconfigure', version:"${springBootVersion}"
 
-	// Apache Vysper
-    compile group: 'org.apache.vysper', name: 'vysper-core', version:"0.7"
-    compile group: 'org.apache.vysper.extensions', name: 'xep0060-pubsub', version: '0.7'
-    compile group: 'org.apache.vysper.extensions', name: 'vysper-websockets', version: '0.7'
-    compile (group: 'org.apache.vysper.extensions', name: 'xep0045-muc', version:"0.7") {
-       	exclude(module: 'slf4j-log4j12')
-       	exclude(module: 'log4j')
-    }
-    
-    compile group: 'de.svenkubiak', name: 'jBCrypt', version:"0.4.1"
-  
     // Tensorflow   
 	compile group: 'org.tensorflow', name: 'tensorflow', version: '1.13.1'
 	
