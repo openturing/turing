@@ -26,6 +26,8 @@ turingApp.controller('TurConverseEntityCtrl', [
 		if ($scope.entityId !== null && typeof $scope.entityId !== 'undefined') {
 			$scope.entity = turConverseEntityResource.get({
 				id: $scope.entityId
+			}, function(response) {
+				$scope.terms = response.terms;
 			});
 		}
 		else {
