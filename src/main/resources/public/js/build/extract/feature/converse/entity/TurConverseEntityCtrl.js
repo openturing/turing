@@ -7,7 +7,8 @@ turingApp.controller('TurConverseEntityCtrl', [
 	"$stateParams",
 	"turAPIServerService",
 	"$filter",
-	function ($scope, $http, $state, $rootScope, turConverseEntityResource, $stateParams, turAPIServerService, $filter) {
+	"Notification",
+	function ($scope, $http, $state, $rootScope, turConverseEntityResource, $stateParams, turAPIServerService, $filter, Notification) {
 		$rootScope.$state = $state;
 
 		$scope.entityId = $stateParams.entityId;
@@ -77,19 +78,19 @@ turingApp.controller('TurConverseEntityCtrl', [
 
 			if ($scope.isNew) {
 				$scope.intent.agent = $scope.agentId;
-				turConverseEntityResource.save($scope.intent, function (response) {
-					$scope.intent = response;
-					$scope.intent.parameters = $filter('orderBy')($scope.intent.parameters, 'position');
+				turConverseEntityResource.save($scope.entity, function (response) {
+					$scope.entity = response;
+					$scope.entity.parameters = $filter('orderBy')($scope.entity.parameters, 'position');
 					$scope.isNew = false;
-					$scope.intentId = response.id;
-					console.log("Save Intent");
+					$scope.entity = response.id;
+					Notification.warning($scope.entity.name + ' Entity was saved.');
 				});
 			}
 			else {
-				turConverseEntityResource.update({ id: $scope.intent.id }, $scope.intent, function (response) {
-					$scope.intent = response;
-					$scope.intent.parameters = $filter('orderBy')($scope.intent.parameters, 'position');
-					console.log("Updated Intent");
+				turConverseEntityResource.update({ id: $scope.entity.id }, $scope.entity, function (response) {
+					$scope.entity = response;
+					$scope.entity.parameters = $filter('orderBy')($scope.entity.parameters, 'position');
+					Notification.warning($scope.entity.name + ' Entity was updated.');
 				});
 			}
 		}

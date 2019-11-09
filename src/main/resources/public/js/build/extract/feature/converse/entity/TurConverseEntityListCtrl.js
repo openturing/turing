@@ -6,7 +6,8 @@ turingApp.controller('TurConverseEntityListCtrl', [
 	"$rootScope",	
 	"turConverseEntityResource",
 	"turAPIServerService",
-	function ($scope, $http, $state, $stateParams, $rootScope, turConverseEntityResource, turAPIServerService) {
+	"Notification",
+	function ($scope, $http, $state, $stateParams, $rootScope, turConverseEntityResource, turAPIServerService, Notification) {
 		$rootScope.$state = $state;
 		$scope.agentId = $stateParams.agentId;
 		$scope.entities = [];
@@ -18,8 +19,11 @@ turingApp.controller('TurConverseEntityListCtrl', [
 					$scope.entities = response.data;
 				}));
 		$scope.removeEntity = function (entity, index) {
-			turConverseEntityResource.delete({ id: entity.id });
-			$scope.entities.splice(index, 1);
+			turConverseEntityResource.delete({ id: entity.id }, function () {
+				$scope.entities.splice(index, 1);
+				Notification.error(entity.name + " Entity was deleted");
+			});
+			
 
 		}
 	}]);

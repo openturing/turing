@@ -119,6 +119,7 @@ public class TurConverseIntentAPI {
 			@RequestBody TurConverseIntent turConverseIntent) throws Exception {
 		TurConverseIntent turConverseIntentEdit = turConverseIntentRepository.findById(id).get();
 
+		turConverseIntentEdit.setActionName(turConverseIntent.getActionName());
 		turConverseIntentEdit.setParameters(turConverseIntent.getParameters());
 		turConverseIntentEdit.setContextInputs(turConverseIntent.getContextInputs());
 		turConverseIntentEdit.setContextOutputs(turConverseIntent.getContextOutputs());
@@ -364,7 +365,23 @@ public class TurConverseIntentAPI {
 			response.setIntent(turConverseIntent);
 			turConverseResponseRepository.save(response);
 		}
+		
+		Set<TurConverseParameter> parameters = turConverseIntent.getParameters();
+		for (TurConverseParameter parameter : parameters) {
+			if (parameter != null) {
+				parameter.setIntent(turConverseIntent);
+				turConverseParameterRepository.save(parameter);
+			}
 
+			Set<TurConversePrompt> prompts = parameter.getPrompts();
+			for (TurConversePrompt prompt : prompts) {
+				if (prompt != null) {
+					prompt.setParameter(parameter);
+					turConversePromptRepository.save(prompt);
+				}
+			}
+
+		}
 		turConverseSE.index(turConverseIntent);
 		return turConverseIntent;
 

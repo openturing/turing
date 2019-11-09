@@ -10,7 +10,8 @@ turingApp.controller('TurConverseIntentCtrl', [
 	"turAPIServerService",
 	"$filter",
 	"turConverseIntentFactory",
-	function ($scope, $http, $window, $state, $rootScope, $translate, turConverseIntentResource, $stateParams, turAPIServerService, $filter, turConverseIntentFactory) {
+	"Notification",
+	function ($scope, $http, $window, $state, $rootScope, $translate, turConverseIntentResource, $stateParams, turAPIServerService, $filter, turConverseIntentFactory, Notification) {
 		$rootScope.$state = $state;
 		$scope.form = {
 			phraseText: "",
@@ -97,14 +98,14 @@ turingApp.controller('TurConverseIntentCtrl', [
 					$scope.intent.parameters = $filter('orderBy')($scope.intent.parameters, 'position');
 					$scope.isNew = false;
 					$scope.intentId = response.id;
-					console.log("Save Intent");
+					Notification.warning($scope.intent.name + ' Intent was saved.');
 				});
 			}
 			else {
 				turConverseIntentResource.update({ id: $scope.intent.id }, $scope.intent, function (response) {
 					$scope.intent = response;
 					$scope.intent.parameters = $filter('orderBy')($scope.intent.parameters, 'position');
-					console.log("Updated Intent");
+					Notification.warning($scope.intent.name + ' Intent was updated.');
 				});
 			}
 		}

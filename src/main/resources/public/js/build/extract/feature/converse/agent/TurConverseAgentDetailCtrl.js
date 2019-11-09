@@ -10,7 +10,8 @@ turingApp.controller('TurConverseAgentDetailCtrl', [
 	"turSEInstanceResource",
 	"turLocaleResource",
 	"turConverseAgentResource",
-	function ($scope, $stateParams, $state, $rootScope, $translate, $http, vigLocale, turAPIServerService, turSEInstanceResource, turLocaleResource, turConverseAgentResource) {
+	"Notification",
+	function ($scope, $stateParams, $state, $rootScope, $translate, $http, vigLocale, turAPIServerService, turSEInstanceResource, turLocaleResource, turConverseAgentResource, Notification) {
 		$rootScope.$state = $state;
 		$scope.vigLanguage = vigLocale.getLocale().substring(0, 2);
 		$translate.use($scope.vigLanguage);
@@ -41,7 +42,7 @@ turingApp.controller('TurConverseAgentDetailCtrl', [
 					$scope.agent = response;
 					$scope.isNew = false;
 					$scope.agentId = response.id;
-					console.log("Save Agent");
+					Notification.warning($scope.agent.name + ' Agent was saved.');
 					$state.go('converse.agent.intent', { agentId: response.id });
 
 				});
@@ -49,13 +50,14 @@ turingApp.controller('TurConverseAgentDetailCtrl', [
 			else {
 				turConverseAgentResource.update({ id: $scope.agent.id }, $scope.agent, function (response) {
 					$scope.agent = response;
-					console.log("Updated Agent");
+					Notification.warning($scope.agent.name + ' Agent was updated.');
 				});
 			}
 		}
 
 		$scope.agentDelete = function () {
 			turConverseAgentResource.delete({ id: $scope.agent.id }, function (response) {
+				Notification.error($scope.agent.name + " Agent was deleted");
 				$state.go('converse.agent-list');
 			});
 		}

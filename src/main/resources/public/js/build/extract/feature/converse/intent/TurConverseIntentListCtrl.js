@@ -8,7 +8,8 @@ turingApp.controller('TurConverseIntentListCtrl', [
 	"$translate",
 	"turConverseIntentResource",
 	"turAPIServerService",
-	function ($scope, $http, $window, $state, $stateParams, $rootScope, $translate,turConverseIntentResource, turAPIServerService) {
+	"Notification",
+	function ($scope, $http, $window, $state, $stateParams, $rootScope, $translate,turConverseIntentResource, turAPIServerService, Notification) {
 		$rootScope.$state = $state;
 		$scope.agentId = $stateParams.agentId;
 		$scope.intents = [];
@@ -20,8 +21,11 @@ turingApp.controller('TurConverseIntentListCtrl', [
 					$scope.intents = response.data;
 				}));
 		$scope.removeIntent = function (intent, index) {
-			turConverseIntentResource.delete({ id: intent.id });
-			$scope.intents.splice(index, 1);
+			turConverseIntentResource.delete({ id: intent.id }, function() {
+				$scope.intents.splice(index, 1);
+				Notification.error(intent.name + " Intent was deleted");
+			});
+			
 
 		}
 	}]);
