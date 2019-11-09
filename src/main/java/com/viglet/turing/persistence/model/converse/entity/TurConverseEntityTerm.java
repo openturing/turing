@@ -28,10 +28,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 /**
  * The persistent class for the turConverseEntityTerm database table.
@@ -64,6 +61,8 @@ public class TurConverseEntityTerm implements Serializable {
 	@JoinColumn(name = "entity_id")
 	private TurConverseEntity entity;
 
+	private int position;
+
 	public String getId() {
 		return id;
 	}
@@ -94,6 +93,14 @@ public class TurConverseEntityTerm implements Serializable {
 
 	public void setEntity(TurConverseEntity entity) {
 		this.entity = entity;
+	}
+
+	public int getPosition() {
+		return position;
+	}
+
+	public void setPosition(int position) {
+		this.position = position;
 	}
 
 }

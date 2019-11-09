@@ -28,7 +28,7 @@ turingApp.controller('TurConverseEntityCtrl', [
 			$scope.entity = turConverseEntityResource.get({
 				id: $scope.entityId
 			}, function(response) {
-				//$scope.terms = response.terms;
+				$scope.entity.terms = $filter('orderBy')($scope.entity.terms, 'position');
 			});
 		}
 		else {
@@ -56,12 +56,14 @@ turingApp.controller('TurConverseEntityCtrl', [
 				turConverseEntityResource.save($scope.entity, function (response) {
 					$scope.entity = response;				
 					$scope.isNew = false;
+					$scope.entity.terms = $filter('orderBy')($scope.entity.terms, 'position');
 					Notification.warning($scope.entity.name + ' Entity was saved.');
 				});
 			}
 			else {
 				turConverseEntityResource.update({ id: $scope.entity.id }, $scope.entity, function (response) {
 					$scope.entity = response;
+					$scope.entity.terms = $filter('orderBy')($scope.entity.terms, 'position');
 					Notification.warning($scope.entity.name + ' Entity was updated.');
 				});
 			}

@@ -123,7 +123,16 @@ public class TurConverseAgentAPI {
 	@PutMapping("/{id}")
 	public TurConverseAgent turConverseAgentUpdate(@PathVariable String id,
 			@RequestBody TurConverseAgent turConverseAgent) {
-		return turConverseAgentRepository.save(turConverseAgent);
+		TurConverseAgent turConverseAgentEdit = turConverseAgentRepository.findById(turConverseAgent.getId()).get();
+		
+		turConverseAgentEdit.setCore(turConverseAgent.getCore());
+		turConverseAgentEdit.setDescription(turConverseAgent.getDescription());
+		turConverseAgentEdit.setLanguage(turConverseAgent.getLanguage());
+		turConverseAgentEdit.setName(turConverseAgent.getName());
+		turConverseAgentEdit.setTurSEInstance(turConverseAgent.getTurSEInstance());
+		
+		
+		return turConverseAgentRepository.save(turConverseAgentEdit);
 
 	}
 

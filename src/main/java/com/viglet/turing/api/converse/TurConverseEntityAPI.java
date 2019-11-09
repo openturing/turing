@@ -33,7 +33,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
 import com.viglet.turing.persistence.model.converse.entity.TurConverseEntityTerm;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseEvent;
 import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityRepository;
 import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityTermRepository;
 
@@ -83,7 +82,7 @@ public class TurConverseEntityAPI {
 
 		Set<TurConverseEntityTerm> terms = turConverseEntity.getTerms();
 		for (TurConverseEntityTerm term : terms) {
-			if (term != null) {
+			if (term != null) {			
 				term.setEntity(turConverseEntity);
 				turConverseEntityTermRepository.save(term);
 			}
