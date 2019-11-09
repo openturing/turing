@@ -66,13 +66,13 @@
 			<input type="text" class="form-control" id="phrase" placeholder="Try it now" ng-model="tryText"
 				my-enter="try()" x-webkit-speech>
 		</div>
-		<div sytle="margin-bottom:15px">
+		<div ng-if="agentResponse.response != null" sytle="margin-bottom:15px">
 			<h4 style="margin-bottom: 5px;">Default Response</h4>
 			{{agentResponse.response}}
 		</div>
-		<div>
+		<div ng-if="agentResponse.intentName != null">
 			<h4 style="margin-bottom: 5px;">Intent</h4>
-			{{agentResponse.intent}}
+			{{agentResponse.intentName}}
 		</div>
 	</div>
 </div>

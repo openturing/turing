@@ -131,6 +131,13 @@ public class TurConverseAgentAPI {
 	@ApiOperation(value = "Delete a Converse Agent")
 	@DeleteMapping("/{id}")
 	public boolean turConverseAgentDelete(@PathVariable String id) {
+		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
+		Set<TurConverseContext> turConverseContexts = turConverseContextRepository.findByAgent(turConverseAgent);
+		for (TurConverseContext context :turConverseContexts) {
+			context.setIntentInputs(null);
+			context.setIntentOutputs(null);
+			turConverseContextRepository.saveAndFlush(context);
+		}
 		this.turConverseAgentRepository.delete(id);
 		return true;
 	}

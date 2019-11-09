@@ -18,9 +18,7 @@
 package com.viglet.turing.persistence.model.converse.entity;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import javax.persistence.*;
@@ -31,10 +29,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 /**
@@ -141,4 +136,9 @@ public class TurConverseEntity implements Serializable {
 		this.agent = agent;
 	}
 
+	public void setAgent(String agentId) {
+		agent = new TurConverseAgent();
+		agent.setId(agentId);
+
+	}
 }

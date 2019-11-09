@@ -18,16 +18,22 @@
 package com.viglet.turing.api.converse;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
+import com.viglet.turing.persistence.model.converse.entity.TurConverseEntityTerm;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseEvent;
 import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityRepository;
 import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityTermRepository;
 
@@ -57,7 +63,34 @@ public class TurConverseEntityAPI {
 		turConverseEntity.setTerms(turConverseEntityTermRepository.findByEntity(turConverseEntity));
 		return turConverseEntity;
 	}
-	
+
+	@ApiOperation(value = "Create a Converse Entity")
+	@PostMapping
+	public TurConverseEntity turConverseEntityAdd(@RequestBody TurConverseEntity turConverseEntity) {
+		return this.saveEntity(turConverseEntity);
+	}
+
+	@ApiOperation(value = "Update a Converse Entity")
+	@PutMapping("/{id}")
+	public TurConverseEntity turConverseEntityUpdate(@PathVariable String id,
+			@RequestBody TurConverseEntity turConverseEntity) {
+		return this.saveEntity(turConverseEntity);
+
+	}
+
+	private TurConverseEntity saveEntity(TurConverseEntity turConverseEntity) {
+		turConverseEntityRepository.save(turConverseEntity);
+
+		Set<TurConverseEntityTerm> terms = turConverseEntity.getTerms();
+		for (TurConverseEntityTerm term : terms) {
+			if (term != null) {
+				term.setEntity(turConverseEntity);
+				turConverseEntityTermRepository.save(term);
+			}
+		}
+		return turConverseEntity;
+	}
+
 	@Transactional
 	@ApiOperation(value = "Delete a Converse Entity")
 	@DeleteMapping("/{id}")
@@ -65,7 +98,7 @@ public class TurConverseEntityAPI {
 		this.turConverseEntityRepository.delete(id);
 		return true;
 	}
-	
+
 	@ApiOperation(value = "Converse Entity Model")
 	@GetMapping("/model")
 	public TurConverseEntity turConverseEntityModel() {
