@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */ 
+ */
 package com.viglet.turing.converse;
 
 import java.io.IOException;
@@ -40,28 +40,30 @@ public class TurConverse {
 	private TurConverseChatResponseRepository turConverseChatResponseRepository;
 	@Autowired
 	private TurConverseSE turConverseSE;
-	
+
 	public void saveChatResponseUser(String q, TurConverseChat chat, HttpSession session) {
 		boolean hasParameter = session.getAttribute("hasParameter") != null
 				? (boolean) session.getAttribute("hasParameter")
 				: false;
-				
+
 		TurConverseChatResponse chatResponseUser = new TurConverseChatResponse();
 		chatResponseUser.setDate(new Date());
 		chatResponseUser.setUser(true);
 		chatResponseUser.setText(q);
 		chatResponseUser.setChat(chat);
 		if (hasParameter && session.getAttribute("previousResponseBot") != null) {
-			TurConverseChatResponse chatResponseBot = (TurConverseChatResponse) session.getAttribute("previousResponseBot");
+			TurConverseChatResponse chatResponseBot = (TurConverseChatResponse) session
+					.getAttribute("previousResponseBot");
 			chatResponseUser.setIntentId(chatResponseBot.getIntentId());
 			chatResponseUser.setActionName(chatResponseBot.getActionName());
-			chatResponseUser.setParameterName(chatResponseBot.getParameterName());					
+			chatResponseUser.setParameterName(chatResponseBot.getParameterName());
 		}
 		turConverseChatResponseRepository.save(chatResponseUser);
 		session.setAttribute("previousResponseUser", chatResponseUser);
 	}
 
-	public void saveChatResponseBot(TurConverseChat chat, TurConverseAgentResponse turConverseAgentResponse, HttpSession session) {
+	public void saveChatResponseBot(TurConverseChat chat, TurConverseAgentResponse turConverseAgentResponse,
+			HttpSession session) {
 		TurConverseChatResponse chatResponseBot = new TurConverseChatResponse();
 		chatResponseBot.setDate(new Date());
 		chatResponseBot.setUser(false);
@@ -72,17 +74,18 @@ public class TurConverse {
 		chatResponseBot.setActionName(turConverseAgentResponse.getActionName());
 
 		session.setAttribute("previousResponseBot", chatResponseBot);
-		
+
 		turConverseChatResponseRepository.save(chatResponseBot);
-		
+
 		if (session.getAttribute("previousResponseUser") != null) {
-			TurConverseChatResponse chatResponseUser = (TurConverseChatResponse) session.getAttribute("previousResponseUser");
+			TurConverseChatResponse chatResponseUser = (TurConverseChatResponse) session
+					.getAttribute("previousResponseUser");
 			if (chatResponseUser.getActionName() == null && chatResponseUser.getIntentId() == null) {
 				chatResponseUser.setIntentId(turConverseAgentResponse.getIntentId());
 				turConverseChatResponseRepository.save(chatResponseUser);
 			}
 		}
-		
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -105,7 +108,7 @@ public class TurConverse {
 					turConverseAgentResponse.setIntentId(intent);
 					turConverseAgentResponse.setActionName(firstResultParameter.getFieldValue("action").toString());
 					turConverseAgentResponse.setParameterName(firstResultParameter.getFieldValue("name").toString());
-									
+
 				}
 				session.setAttribute("nextParameter", nextParameter + 1);
 			}
@@ -120,14 +123,13 @@ public class TurConverse {
 		}
 	}
 
-	
-	public TurConverseAgentResponse interactionNested(TurConverseChat chat, String q,
-			String nextContext, HttpSession session) {
+	public TurConverseAgentResponse interactionNested(TurConverseChat chat, String q, String nextContext,
+			HttpSession session) {
 
 		TurConverseAgentResponse turConverseAgentResponse = new TurConverseAgentResponse();
 
 		try {
-			SolrDocumentList results =  turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
+			SolrDocumentList results = turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
 			if (!results.isEmpty()) {
 				SolrDocument firstResult = results.get(0);
 
@@ -154,19 +156,44 @@ public class TurConverse {
 		return turConverseAgentResponse;
 	}
 
-
 	@SuppressWarnings("unchecked")
-	private void getIntentFlow(TurConverseChat chat, HttpSession session, TurConverseAgentResponse turConverseAgentResponse,
-			SolrDocument firstResult) {
+	private void getIntentFlow(TurConverseChat chat, HttpSession session,
+			TurConverseAgentResponse turConverseAgentResponse, SolrDocument firstResult) {
 		List<String> responses = (List<String>) firstResult.getFieldValue("responses");
 		int rnd = new Random().nextInt(responses.size());
 
 		List<String> contextOutputs = (List<String>) firstResult.getFieldValue("contextOutput");
 
-		turConverseAgentResponse.setResponse(responses.get(rnd).toString());
+		String response = responses.get(rnd).toString();
+
+		String[] words = response.split(" ");
+		StringBuffer responseModified = new StringBuffer();
+		for (String word : words) {
+			if (word.startsWith("$")) {
+				String parameterName = word.replaceAll("\\$", "").replaceAll(",", "").replaceAll(";", "")
+						.replaceAll("\\.", "");
+
+				String intent = session.getAttribute("intent") != null ? (String) session.getAttribute("intent") : null;
+				System.out.println("AA parameterName: " + parameterName);
+				System.out.println("AA intentId: " + intent);
+				System.out.println("AA chat: " + chat.getId());
+
+				List<TurConverseChatResponse> values = turConverseChatResponseRepository
+						.findByChatAndIsUserAndParameterNameOrderByDate(chat, true, parameterName);
+				if (!values.isEmpty()) {
+					word = values.get(0).getText();
+					System.out.println("Encontrou: " + word);
+				} else {
+					System.out.println("Nao Encontrou: " + word);
+				}
+			}
+			responseModified.append(word + " ");
+		}
+
+		turConverseAgentResponse.setResponse(responseModified.toString());
 		turConverseAgentResponse.setIntentId(firstResult.getFieldValue("id").toString());
 		turConverseAgentResponse.setIntentName(firstResult.getFieldValue("name").toString());
-		
+
 		if (contextOutputs != null && !contextOutputs.isEmpty()) {
 			session.setAttribute("nextContext", contextOutputs.get(0).toString());
 		}
@@ -181,9 +208,8 @@ public class TurConverse {
 		return turConverseAgentResponse;
 	}
 
-	
 	private void getIntentWhenFinishParameters(TurConverseChat chat, HttpSession session,
-			TurConverseAgentResponse turConverseAgentResponse, String intent){
+			TurConverseAgentResponse turConverseAgentResponse, String intent) {
 
 		this.cleanParameter(session);
 
