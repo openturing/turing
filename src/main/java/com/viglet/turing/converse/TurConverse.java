@@ -179,7 +179,7 @@ public class TurConverse {
 				System.out.println("AA chat: " + chat.getId());
 
 				List<TurConverseChatResponse> values = turConverseChatResponseRepository
-						.findByChatAndIsUserAndParameterNameOrderByDate(chat, true, parameterName);
+						.findByChatAndIsUserAndParameterNameOrderByDateDesc(chat, true, parameterName);
 				if (!values.isEmpty()) {
 					word = values.get(0).getText();
 					System.out.println("Encontrou: " + word);

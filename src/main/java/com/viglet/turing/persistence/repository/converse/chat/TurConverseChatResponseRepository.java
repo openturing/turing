@@ -40,7 +40,7 @@ public interface TurConverseChatResponseRepository extends JpaRepository<TurConv
 	List<TurConverseChatResponse> findByChatAndIsUser(TurConverseChat turConverseChat, boolean isUser);
 	
 	
-	List<TurConverseChatResponse> findByChatAndIsUserAndParameterNameOrderByDate(TurConverseChat turConverseChat, boolean isUser, String parameterName);
+	List<TurConverseChatResponse> findByChatAndIsUserAndParameterNameOrderByDateDesc(TurConverseChat turConverseChat, boolean isUser, String parameterName);
 	
 	
 	int countByChatAndIsUser(TurConverseChat turConverseChat, boolean isUser);

@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */ 
+ */
 
 package com.viglet.turing.converse;
 
@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -34,6 +35,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
+import com.viglet.turing.persistence.model.converse.entity.TurConverseEntityTerm;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
@@ -41,6 +44,7 @@ import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
 import com.viglet.turing.persistence.model.converse.intent.TurConversePrompt;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseParameterRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
@@ -63,7 +67,9 @@ public class TurConverseSE {
 	private TurConverseParameterRepository turConverseParameterRepository;
 	@Autowired
 	private TurConversePromptRepository turConversePromptRepository;
-	
+	@Autowired
+	private TurConverseEntityRepository turConverseEntityRepository;
+
 	private SolrClient getSolrClient(TurConverseAgent turConverseAgent) {
 		TurSEInstance turSEInstance = turConverseAgent.getTurSEInstance();
 		String core = turConverseAgent.getCore();
@@ -71,15 +77,14 @@ public class TurConverseSE {
 		SolrClient solrClient = turSolr.getSolrClient(turSEInstance, core);
 		return solrClient;
 	}
-	
 
 	SolrDocumentList solrAskPhrase(TurConverseAgent turConverseAgent, String q, String nextContext)
 			throws SolrServerException, IOException {
 		SolrClient solrClient = this.getSolrClient(turConverseAgent);
 		SolrQuery query = new SolrQuery();
-		
+
 		if (nextContext != null) {
-			
+
 			query.addFilterQuery("contextInput:\"" + nextContext + "\"");
 		} else {
 			query.addFilterQuery("-contextInput:[\"\" TO *]");
@@ -89,11 +94,10 @@ public class TurConverseSE {
 		query.setQuery("phrases:\"" + q + "\"");
 
 		QueryResponse queryResponse = solrClient.query(query);
-		
-		
+
 		return queryResponse.getResults();
 	}
-	
+
 	SolrDocumentList solrGetActionAndParameters(TurConverseAgent turConverseAgent, String intent)
 			throws SolrServerException, IOException {
 		SolrClient solrClient = this.getSolrClient(turConverseAgent);
@@ -109,21 +113,19 @@ public class TurConverseSE {
 		return resultsParameter;
 	}
 
-	
-	
 	SolrDocumentList solrGetIntent(TurConverseAgent turConverseAgent, String intent) {
 		SolrDocumentList results = null;
 		try {
-		SolrClient solrClient = this.getSolrClient(turConverseAgent);
-		SolrQuery query = new SolrQuery();
+			SolrClient solrClient = this.getSolrClient(turConverseAgent);
+			SolrQuery query = new SolrQuery();
 
-		query.addFilterQuery("type:\"Intent\"");
-		query.addFilterQuery("agent:\"" + turConverseAgent.getId() + "\"");
-		query.addFilterQuery("id:\"" + intent + "\"");
+			query.addFilterQuery("type:\"Intent\"");
+			query.addFilterQuery("agent:\"" + turConverseAgent.getId() + "\"");
+			query.addFilterQuery("id:\"" + intent + "\"");
 
-		query.setQuery("*:*");
-		QueryResponse queryResponse = solrClient.query(query);
-		results = queryResponse.getResults();
+			query.setQuery("*:*");
+			QueryResponse queryResponse = solrClient.query(query);
+			results = queryResponse.getResults();
 		} catch (SolrServerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -133,7 +135,7 @@ public class TurConverseSE {
 		}
 		return results;
 	}
-	
+
 	public void desindexAll(TurConverseAgent turConverseAgent) {
 
 		SolrClient solrClient = this.getSolrClient(turConverseAgent);
@@ -180,8 +182,27 @@ public class TurConverseSE {
 		for (TurConverseContext contextOutput : turConverseIntent.getContextOutputs())
 			document.addField("contextOutput", contextOutput.getText());
 
-		for (TurConversePhrase phrase : turConverseIntent.getPhrases())
-			document.addField("phrases", phrase.getText());
+		Set<TurConverseEntity> entities = turConverseEntityRepository.findByAgent(turConverseIntent.getAgent());
+
+		for (TurConversePhrase phrase : turConverseIntent.getPhrases()) {
+
+			if (phrase.getText().contains("@")) {
+				for (TurConverseEntity entity : entities) {
+					if (phrase.getText().contains("@" + entity.getName())) {
+						for (TurConverseEntityTerm term : entity.getTerms()) {
+							for (String synonym : term.getSynonyms()) {
+								document.addField("phrases",
+										phrase.getText().replaceAll("@" + entity.getName(), synonym));
+							}
+						}
+					}
+				}
+
+			} else {
+				document.addField("phrases", phrase.getText());
+			}
+
+		}
 
 		for (TurConverseResponse response : turConverseIntent.getResponses())
 			document.addField("responses", response.getText());
