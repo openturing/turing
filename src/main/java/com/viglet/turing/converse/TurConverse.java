@@ -58,27 +58,25 @@ public class TurConverse {
 
 		TurConverseChatResponse chatResponseBot = (TurConverseChatResponse) session.getAttribute("previousResponseBot");
 
-		if (chatResponseBot != null) {
+		if (hasParameter && chatResponseBot != null) {
 			chatResponseUser.setIntentId(chatResponseBot.getIntentId());
 			chatResponseUser.setActionName(chatResponseBot.getActionName());
-
-			if (hasParameter && session.getAttribute("previousResponseBot") != null) {
-				chatResponseUser.setParameterName(chatResponseBot.getParameterName());
-				chatResponseUser.setParameterValue(q);
-			} else {
-				String nextContext = (String) session.getAttribute("nextContext");
-				SolrDocumentList results = turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
-				if (!results.isEmpty()) {
-					SolrDocument firstResult = results.get(0);
-					String intentId = (String) firstResult.getFieldValue("id");
-					SimpleEntry<String, String> parameter = this.getParameterValue(q, chat, intentId);
-					if (parameter != null) {
-						chatResponseUser.setParameterName(parameter.getKey());
-						chatResponseUser.setParameterValue(parameter.getValue());
-					}
+			chatResponseUser.setParameterName(chatResponseBot.getParameterName());
+			chatResponseUser.setParameterValue(q);
+		} else {
+			String nextContext = (String) session.getAttribute("nextContext");
+			SolrDocumentList results = turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
+			if (!results.isEmpty()) {
+				SolrDocument firstResult = results.get(0);
+				String intentId = (String) firstResult.getFieldValue("id");
+				SimpleEntry<String, String> parameter = this.getParameterValue(q, chat, intentId);
+				if (parameter != null) {
+					chatResponseUser.setParameterName(parameter.getKey());
+					chatResponseUser.setParameterValue(parameter.getValue());
 				}
 			}
 		}
+
 		turConverseChatResponseRepository.save(chatResponseUser);
 
 		session.setAttribute("previousResponseUser", chatResponseUser);

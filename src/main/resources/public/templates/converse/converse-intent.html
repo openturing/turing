@@ -69,7 +69,7 @@
                                 </div>
                             </div>
                             <div style="display: inline-table; width: calc(100% - 120px);">
-                                <input type="text" id="name" placeholder="Intent Name" ng-model="phrase.text"
+                                <input type="text" ng-model="phrase.text"
                                     style="border: 0px none;width: 100%;margin-right: 10px;">
                             </div>
                             <div style="display: inline-table">
@@ -150,7 +150,7 @@
                     ng-class="{'glyphicon-chevron-down': status.responses, 'glyphicon-chevron-right': !status.responses}"></i>
             </uib-accordion-heading>
             <div class="form-group">
-                <input type="text" class="form-control" id="phrase" ng-model="form.responseText"
+                <input type="text" class="form-control" id="responseText" ng-model="form.responseText"
                     my-enter="addResponse(form.responseText)">
             </div>
             <div style="padding: 10px">
@@ -162,7 +162,7 @@
                             </div>
                         </div>
                         <div style="display: inline-table; width: calc(100% - 120px);">
-                            <input type="text" id="name" placeholder="Intent Name" ng-model="response.text"
+                            <input type="text" ng-model="response.text"
                                 style="border: 0px none;width: 100%;margin-right: 10px;">
                         </div>
                         <div style="display: inline-table">
