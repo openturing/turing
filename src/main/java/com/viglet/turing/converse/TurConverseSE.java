@@ -108,6 +108,33 @@ public class TurConverseSE {
 
 		return null;
 	}
+	
+	SolrDocumentList solrAskPhraseFallback(TurConverseAgent turConverseAgent, String q, String nextContext) {
+		SolrClient solrClient = this.getSolrClient(turConverseAgent);
+		SolrQuery query = new SolrQuery();
+
+		if (nextContext != null) {
+
+			query.addFilterQuery("contextInput:\"" + nextContext + "\"");
+		} else {
+			query.addFilterQuery("-contextInput:[\"\" TO *]");
+		}
+		query.addFilterQuery("type:\"FallbackIntent\"");
+		query.addFilterQuery("agent:\"" + turConverseAgent.getId() + "\"");
+		query.setQuery("phrases:\"" + q + "\"");
+
+		QueryResponse queryResponse;
+		try {
+			queryResponse = solrClient.query(query);
+
+			return queryResponse.getResults();
+		} catch (SolrServerException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return null;
+	}
 
 	SolrDocumentList solrGetActionAndParameters(TurConverseAgent turConverseAgent, String intent)
 			throws SolrServerException, IOException {

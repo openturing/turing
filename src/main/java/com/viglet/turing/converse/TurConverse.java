@@ -169,7 +169,10 @@ public class TurConverse {
 			HttpSession session) {
 
 		TurConverseAgentResponse turConverseAgentResponse = new TurConverseAgentResponse();
-		SolrDocumentList results = turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
+		SolrDocumentList results = turConverseSE.solrAskPhraseFallback(chat.getAgent(), q, nextContext);
+		if (results.isEmpty())
+			results = turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
+
 		if (!results.isEmpty()) {
 			SolrDocument firstResult = results.get(0);
 
@@ -194,11 +197,22 @@ public class TurConverse {
 	@SuppressWarnings("unchecked")
 	private void getIntentFlow(TurConverseChat chat, HttpSession session,
 			TurConverseAgentResponse turConverseAgentResponse, SolrDocument firstResult) {
-		List<String> responses = (List<String>) firstResult.getFieldValue("responses");
-		int rnd = new Random().nextInt(responses.size());
 
 		List<String> contextOutputs = (List<String>) firstResult.getFieldValue("contextOutput");
 
+		turConverseAgentResponse.setResponse(this.getIntentResponse(chat, session, firstResult));
+		turConverseAgentResponse.setIntentId(firstResult.getFieldValue("id").toString());
+		turConverseAgentResponse.setIntentName(firstResult.getFieldValue("name").toString());
+
+		if (contextOutputs != null && !contextOutputs.isEmpty()) {
+			session.setAttribute("nextContext", contextOutputs.get(0).toString());
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private String getIntentResponse(TurConverseChat chat, HttpSession session, SolrDocument firstResult) {
+		List<String> responses = (List<String>) firstResult.getFieldValue("responses");
+		int rnd = new Random().nextInt(responses.size());
 		String response = responses.get(rnd).toString();
 
 		String[] words = response.split(" ");
@@ -222,21 +236,22 @@ public class TurConverse {
 			responseModified.append(word + " ");
 		}
 
-		turConverseAgentResponse.setResponse(responseModified.toString());
-		turConverseAgentResponse.setIntentId(firstResult.getFieldValue("id").toString());
-		turConverseAgentResponse.setIntentName(firstResult.getFieldValue("name").toString());
-
-		if (contextOutputs != null && !contextOutputs.isEmpty()) {
-			session.setAttribute("nextContext", contextOutputs.get(0).toString());
-		}
+		return responseModified.toString();
 	}
 
 	private TurConverseAgentResponse getFallback(TurConverseChat chat, HttpSession session,
 			TurConverseAgentResponse turConverseAgentResponse) {
 		this.cleanSession(session);
+		turConverseAgentResponse.setResponse(this.getFallbackResponse(chat));
+		turConverseAgentResponse.setIntentName("empty");
+
+		return turConverseAgentResponse;
+	}
+
+	private String getFallbackResponse(TurConverseChat chat) {
 		SolrDocumentList fallbackList = turConverseSE.solrGetFallbackIntent(chat.getAgent());
 		if (fallbackList.isEmpty())
-			turConverseAgentResponse.setResponse(FALLBACK_DEFAULT_MESSAGE);
+			return FALLBACK_DEFAULT_MESSAGE;
 		else {
 			SolrDocument fallbackIntent = fallbackList.get(0);
 
@@ -245,14 +260,11 @@ public class TurConverse {
 
 			if (responses != null && !responses.isEmpty()) {
 				int rnd = new Random().nextInt(responses.size());
-				turConverseAgentResponse.setResponse(responses.get(rnd).toString());
+				return responses.get(rnd).toString();
 			} else {
-				turConverseAgentResponse.setResponse(FALLBACK_DEFAULT_MESSAGE);
+				return FALLBACK_DEFAULT_MESSAGE;
 			}
 		}
-		turConverseAgentResponse.setIntentName("empty");
-
-		return turConverseAgentResponse;
 	}
 
 	private void getIntentWhenFinishParameters(TurConverseChat chat, HttpSession session,
