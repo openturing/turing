@@ -1,6 +1,6 @@
 <div>
     <div style="display:flex">
-            <input type="text" id="name" placeholder="Intent Name" ng-model="intent.name"
+        <input type="text" id="name" placeholder="Intent Name" ng-model="intent.name"
             style="font-size: 24px;border: 0px none;margin-bottom: 25px;width: 100%;margin-right: 10px;font-weight: bolder;">
         <div class="pull-right">
             <button class="btn btn-viglet" ng-click="saveIntent()">Save</button>
@@ -52,7 +52,8 @@
                     ng-class="{'glyphicon-chevron-down': status.phrases, 'glyphicon-chevron-right': !status.phrases}"></i>
             </uib-accordion-heading>
             <div>
-                <div ng-if="intent.fallback" style="background-color: lightgoldenrodyellow;margin-bottom: 10px;padding: 10px;">
+                <div ng-if="intent.fallback"
+                    style="background-color: lightgoldenrodyellow;margin-bottom: 10px;padding: 10px;">
                     Fallback Intent training phrases are negative examples the agent will not match to any other intent.
                 </div>
                 <div class="form-group">
@@ -68,7 +69,8 @@
                                 </div>
                             </div>
                             <div style="display: inline-table; width: calc(100% - 120px);">
-                                {{phrase.text}}
+                                <input type="text" id="name" placeholder="Intent Name" ng-model="phrase.text"
+                                    style="border: 0px none;width: 100%;margin-right: 10px;">
                             </div>
                             <div style="display: inline-table">
                                 <button type="button" class="btn btn-link btn-xs pull-right" style="display: block;"
@@ -160,7 +162,8 @@
                             </div>
                         </div>
                         <div style="display: inline-table; width: calc(100% - 120px);">
-                            {{response.text}}
+                            <input type="text" id="name" placeholder="Intent Name" ng-model="response.text"
+                                style="border: 0px none;width: 100%;margin-right: 10px;">
                         </div>
                         <div style="display: inline-table">
                             <button type="button" class="btn btn-link btn-xs pull-right" style="display: block;"

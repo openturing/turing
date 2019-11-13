@@ -64,6 +64,13 @@ turingApp.controller('TurConverseIntentCtrl', [
 		}
 
 		$scope.saveIntent = function () {
+			if ($scope.form.phraseText != null && $scope.form.phraseText.trim().length > 0) {
+				$scope.addPhrase($scope.form.phraseText);
+			}
+
+			if ($scope.form.responseText != null && $scope.form.responseText.trim().length > 0) {
+				$scope.addResponse($scope.form.responseText);
+			}
 
 			var contextInputObjects = [];
 			angular.forEach($scope.object.contextInputs, function (context, key) {
