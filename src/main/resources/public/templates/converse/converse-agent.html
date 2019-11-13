@@ -12,7 +12,7 @@
 						Dropdown</span>
 				</button>
 				<ul class="dropdown-menu pull-right">
-					<li><a ng-click="agentRebuild()">Rebuild</a></li>
+					<li><a ng-click="agentRebuild()" href>Rebuild</a></li>
 				</ul>
 			</div>
 		</div>
@@ -48,13 +48,14 @@
 					style="float: right; position: relative; color: gray"></span>
 			</a>
 		</div>
-		<div class="list-group" style="margin-bottom: 10px">
+	<!--	<div class="list-group" style="margin-bottom: 10px">
 			<a ng-class="{'disabled':$state.current.name.indexOf('converse.agent.prebuilt-agent') == 0}"
 				ui-sref="converse.agent.prebuilt-agent" class="list-group-item ng-binding"
 				style="color: rgb(51, 51, 51)">Prebuild Agents<span class="glyphicon glyphicon-chevron-right"
 					aria-hidden="true" style="float: right; position: relative; color: gray"></span>
 			</a>
 		</div>
+		-->
 	</div>
 	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 col-centered">
 		<div ui-view>

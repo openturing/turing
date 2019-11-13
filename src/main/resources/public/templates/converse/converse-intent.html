@@ -1,10 +1,14 @@
 <div>
     <div style="display:flex">
-        <input type="text" id="name" placeholder="Intent Name" ng-model="intent.name"
+            <input type="text" id="name" placeholder="Intent Name" ng-model="intent.name"
             style="font-size: 24px;border: 0px none;margin-bottom: 25px;width: 100%;margin-right: 10px;font-weight: bolder;">
         <div class="pull-right">
             <button class="btn btn-viglet" ng-click="saveIntent()">Save</button>
         </div>
+    </div>
+    <div ng-if="intent.fallback" style="background-color: lightgoldenrodyellow;margin-bottom: 10px;padding: 10px;">
+        Fallback intents are triggered if a user's input is not matched by any of the regular intents or if it matches
+        the training phrases below.
     </div>
     <uib-accordion>
         <div uib-accordion-group class="panel-default" is-open="status.contexts">
@@ -14,8 +18,8 @@
             </uib-accordion-heading>
             <div class="form-group">
                 <label>Input</label>
-                <ui-select multiple tagging tagging-label="" ng-model="object.contextInputs"
-                    theme="bootstrap" sortable="true" style="width: 100%;" title="Add input context">
+                <ui-select multiple tagging tagging-label="" ng-model="object.contextInputs" theme="bootstrap"
+                    sortable="true" style="width: 100%;" title="Add input context">
                     <ui-select-match placeholder="Add input context">{{$item}}</ui-select-match>
                     <ui-select-choices repeat="context in contexts | filter:$select.search">
                         {{context}}
@@ -24,8 +28,8 @@
             </div>
             <div class="form-group">
                 <label>Output</label>
-                <ui-select multiple tagging tagging-label="" ng-model="object.contextOutputs"
-                    theme="bootstrap" sortable="true" style="width: 100%;" title="Add output context">
+                <ui-select multiple tagging tagging-label="" ng-model="object.contextOutputs" theme="bootstrap"
+                    sortable="true" style="width: 100%;" title="Add output context">
                     <ui-select-match placeholder="Add output context">{{$item}}</ui-select-match>
                     <ui-select-choices repeat="context in contexts | filter:$select.search">
                         {{context}}
@@ -35,7 +39,7 @@
         </div>
 
 
-      <!--  <div uib-accordion-group class="panel-default" is-open="status.events">
+        <!--  <div uib-accordion-group class="panel-default" is-open="status.events">
             <uib-accordion-heading>
                 Events <i class="pull-right glyphicon"
                     ng-class="{'glyphicon-chevron-down': status.events, 'glyphicon-chevron-right': !status.events}"></i>
@@ -48,6 +52,9 @@
                     ng-class="{'glyphicon-chevron-down': status.phrases, 'glyphicon-chevron-right': !status.phrases}"></i>
             </uib-accordion-heading>
             <div>
+                <div ng-if="intent.fallback" style="background-color: lightgoldenrodyellow;margin-bottom: 10px;padding: 10px;">
+                    Fallback Intent training phrases are negative examples the agent will not match to any other intent.
+                </div>
                 <div class="form-group">
                     <input type="text" class="form-control" id="phrase" ng-model="form.phraseText"
                         my-enter="addPhrase(form.phraseText)">

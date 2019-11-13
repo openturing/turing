@@ -48,10 +48,12 @@ public class TurConverseIntent implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	private boolean fallback = false;
+
 	private String name;
 
 	private String actionName;
-	
+
 	@ManyToMany(mappedBy = "intentInputs")
 	private Set<TurConverseContext> contextInputs = new HashSet<>();
 
@@ -186,4 +188,13 @@ public class TurConverseIntent implements Serializable {
 		agent.setId(agentId);
 
 	}
+
+	public boolean isFallback() {
+		return fallback;
+	}
+
+	public void setFallback(boolean fallback) {
+		this.fallback = fallback;
+	}
+
 }

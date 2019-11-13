@@ -92,24 +92,46 @@ public class TurConverseTrainingAPI {
 		for (TurConverseChatResponse response : turConverseChat.getResponses()) {
 			if (response.isTrainingToIntent() && response.getIntentId() != null) {
 				TurConverseIntent intent = turConverseIntentRepository.findById(response.getIntentId()).get();
-				Set<TurConversePhrase> phrases = turConversePhraseRepository.findByIntent(intent);
-				boolean foundText = false;
-				for (TurConversePhrase phrase : phrases)
-					if (phrase.getText().toLowerCase().trim().equals(response.getText().toLowerCase().trim()))
-						foundText = true;
+				addNewPhrase(response, intent);
+			}
+			if (response.isTrainingToFallback()) {
+				List<TurConverseIntent> intents = turConverseIntentRepository.findByFallback(true);
+				TurConverseIntent intent = null;
 
-				if (!foundText) {
-					TurConversePhrase turConversePhrase = new TurConversePhrase();
-					turConversePhrase.setIntent(intent);
-					turConversePhrase.setText(response.getText());
-					turConversePhraseRepository.saveAndFlush(turConversePhrase);
+				if (!intents.isEmpty()) {
+					intent = intents.get(0);
+				} else {
+					intent = new TurConverseIntent();
+					intent.setName("Default Fallback");
+					intent.setAgent(turConverseChat.getAgent());
+					intent.setFallback(true);
+					turConverseIntentRepository.saveAndFlush(intent);
 				}
+
+				if (intent != null)
+					addNewPhrase(response, intent);
+
 			}
 			response.setChat(turConverseChat);
 		}
 
 		return turConverseChatRepository.saveAndFlush(turConverseChat);
 
+	}
+
+	private void addNewPhrase(TurConverseChatResponse response, TurConverseIntent intent) {
+		Set<TurConversePhrase> phrases = turConversePhraseRepository.findByIntent(intent);
+		boolean foundText = false;
+		for (TurConversePhrase phrase : phrases)
+			if (phrase.getText().toLowerCase().trim().equals(response.getText().toLowerCase().trim()))
+				foundText = true;
+
+		if (!foundText) {
+			TurConversePhrase turConversePhrase = new TurConversePhrase();
+			turConversePhrase.setIntent(intent);
+			turConversePhrase.setText(response.getText());
+			turConversePhraseRepository.saveAndFlush(turConversePhrase);
+		}
 	}
 
 }

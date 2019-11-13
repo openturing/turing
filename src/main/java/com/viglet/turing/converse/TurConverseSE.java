@@ -147,6 +147,27 @@ public class TurConverseSE {
 		return results;
 	}
 
+	SolrDocumentList solrGetFallbackIntent(TurConverseAgent turConverseAgent) {
+		SolrDocumentList results = null;
+		try {
+			SolrClient solrClient = this.getSolrClient(turConverseAgent);
+			SolrQuery query = new SolrQuery();
+
+			query.addFilterQuery("type:\"FallbackIntent\"");
+			query.addFilterQuery("agent:\"" + turConverseAgent.getId() + "\"");
+
+			query.setQuery("*:*");
+			QueryResponse queryResponse = solrClient.query(query);
+			results = queryResponse.getResults();
+		} catch (SolrServerException e) {
+			logger.error("SolrServerException", e);
+		} catch (IOException e) {
+			logger.error("IOException", e);
+		}
+
+		return results;
+	}
+
 	public SolrDocumentList sorlGetParameterValue(String text, TurConverseChat turConverseChat, String intentId) {
 		SolrDocumentList results = null;
 		try {
@@ -244,7 +265,11 @@ public class TurConverseSE {
 
 		document.addField("id", turConverseIntent.getId());
 		document.addField("agent", turConverseIntent.getAgent().getId());
-		document.addField("type", "Intent");
+		if (turConverseIntent.isFallback())
+			document.addField("type", "FallbackIntent");
+		else
+			document.addField("type", "Intent");
+
 		document.addField("name", turConverseIntent.getName());
 		for (TurConverseContext contextInput : turConverseIntent.getContextInputs())
 			document.addField("contextInput", contextInput.getText());

@@ -22,7 +22,7 @@ turingApp.controller('TurConverseIntentListCtrl', [
 				}));
 		$scope.removeIntent = function (intent, index) {
 			turConverseIntentResource.delete({ id: intent.id }, function() {
-				$scope.conversation.responses.splice(index, 1);
+				$scope.intents.splice(index, 1);
 				Notification.error(intent.name + " Intent was deleted");
 			});
 		}

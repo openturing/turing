@@ -43,6 +43,8 @@ public class TurConverse {
 	@Autowired
 	private TurConverseSE turConverseSE;
 
+	final static String FALLBACK_DEFAULT_MESSAGE = "I do not know what to say";
+
 	public void saveChatResponseUser(String q, TurConverseChat chat, HttpSession session) {
 		boolean hasParameter = session.getAttribute("hasParameter") != null
 				? (boolean) session.getAttribute("hasParameter")
@@ -60,7 +62,7 @@ public class TurConverse {
 			chatResponseUser.setIntentId(chatResponseBot.getIntentId());
 			chatResponseUser.setActionName(chatResponseBot.getActionName());
 
-			if (hasParameter && session.getAttribute("previousResponseBot") != null) {				
+			if (hasParameter && session.getAttribute("previousResponseBot") != null) {
 				chatResponseUser.setParameterName(chatResponseBot.getParameterName());
 				chatResponseUser.setParameterValue(q);
 			} else {
@@ -232,7 +234,22 @@ public class TurConverse {
 	private TurConverseAgentResponse getFallback(TurConverseChat chat, HttpSession session,
 			TurConverseAgentResponse turConverseAgentResponse) {
 		this.cleanSession(session);
-		turConverseAgentResponse.setResponse("Não sei o que dizer");
+		SolrDocumentList fallbackList = turConverseSE.solrGetFallbackIntent(chat.getAgent());
+		if (fallbackList.isEmpty())
+			turConverseAgentResponse.setResponse(FALLBACK_DEFAULT_MESSAGE);
+		else {
+			SolrDocument fallbackIntent = fallbackList.get(0);
+
+			@SuppressWarnings("unchecked")
+			List<String> responses = (List<String>) fallbackIntent.getFieldValue("responses");
+
+			if (responses != null && !responses.isEmpty()) {
+				int rnd = new Random().nextInt(responses.size());
+				turConverseAgentResponse.setResponse(responses.get(rnd).toString());
+			} else {
+				turConverseAgentResponse.setResponse(FALLBACK_DEFAULT_MESSAGE);
+			}
+		}
 		turConverseAgentResponse.setIntentName("empty");
 
 		return turConverseAgentResponse;
