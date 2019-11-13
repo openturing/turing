@@ -108,7 +108,7 @@ public class TurConverseSE {
 
 		return null;
 	}
-	
+
 	SolrDocumentList solrAskPhraseFallback(TurConverseAgent turConverseAgent, String q, String nextContext) {
 		SolrClient solrClient = this.getSolrClient(turConverseAgent);
 		SolrQuery query = new SolrQuery();
@@ -196,6 +196,7 @@ public class TurConverseSE {
 	}
 
 	public SolrDocumentList sorlGetParameterValue(String text, TurConverseChat turConverseChat, String intentId) {
+		System.out.println("sorlGetParameterValue");
 		SolrDocumentList results = null;
 		try {
 			SolrClient solrClient = this.getSolrClient(turConverseChat.getAgent());
@@ -332,14 +333,15 @@ public class TurConverseSE {
 				for (TurConverseEntityTerm term : entity.getTerms()) {
 					Set<TurConverseParameter> parameters = turConverseParameterRepository
 							.findByIntentAndEntity(turConverseIntent, "@" + entity.getName());
-
-					if (!parameters.isEmpty()) {
-						if (logger.isDebugEnabled())
-							logger.debug("Have parameters to Entity: " + entity.getName());
-
-						for (TurConverseParameter parameter : parameters) {
-
-							for (String synonym : term.getSynonyms()) {
+					for (String synonym : term.getSynonyms()) {
+						String phraseFormatted = phrase.getText().replaceAll("@" + entity.getName(), synonym);
+						
+						document.addField("phrases", phraseFormatted);
+						
+						if (!parameters.isEmpty()) {
+							for (TurConverseParameter parameter : parameters) {
+								if (logger.isDebugEnabled())
+									logger.debug("Have parameters to Entity: " + entity.getName());
 								SolrInputDocument termDocument = new SolrInputDocument();
 								termDocument.addField("id",
 										String.format("%s.%s:%s", turConverseIntent.getId(), term.getId(), synonym));
@@ -348,20 +350,14 @@ public class TurConverseSE {
 								termDocument.addField("type", "Term");
 								termDocument.addField("parameters",
 										String.format("%s:%s", parameter.getName(), term.getName()));
-								String phraseFormatted = phrase.getText().replaceAll("@" + entity.getName(), synonym);
-								document.addField("phrases", phraseFormatted);
-
 								termDocument.addField("phrase", phraseFormatted);
-
 								if (logger.isDebugEnabled())
 									logger.debug(String.format("Term parameters %s:%s", parameter.getName(),
 											entity.getName()));
 								this.indexToSolr(solrClient, termDocument);
 							}
-
 						}
 					}
-
 				}
 			}
 		}

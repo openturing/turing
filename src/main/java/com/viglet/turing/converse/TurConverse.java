@@ -57,7 +57,6 @@ public class TurConverse {
 		chatResponseUser.setChat(chat);
 
 		TurConverseChatResponse chatResponseBot = (TurConverseChatResponse) session.getAttribute("previousResponseBot");
-
 		if (hasParameter && chatResponseBot != null) {
 			chatResponseUser.setIntentId(chatResponseBot.getIntentId());
 			chatResponseUser.setActionName(chatResponseBot.getActionName());
@@ -219,11 +218,6 @@ public class TurConverse {
 			if (word.startsWith("$")) {
 				String parameterName = word.replaceAll("\\$", "").replaceAll(",", "").replaceAll(";", "")
 						.replaceAll("\\.", "");
-
-				String intent = session.getAttribute("intent") != null ? (String) session.getAttribute("intent") : null;
-				System.out.println("AA parameterName: " + parameterName);
-				System.out.println("AA intentId: " + intent);
-				System.out.println("AA chat: " + chat.getId());
 
 				List<TurConverseChatResponse> values = turConverseChatResponseRepository
 						.findByChatAndIsUserAndParameterNameOrderByDateDesc(chat, true, parameterName);
