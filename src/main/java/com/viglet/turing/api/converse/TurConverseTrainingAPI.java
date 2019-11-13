@@ -95,7 +95,9 @@ public class TurConverseTrainingAPI {
 				addNewPhrase(response, intent);
 			}
 			if (response.isTrainingToFallback()) {
-				List<TurConverseIntent> intents = turConverseIntentRepository.findByFallback(true);
+				List<TurConverseIntent> intents = turConverseIntentRepository
+						.findByAgentAndFallback(turConverseChat.getAgent(), true);
+
 				TurConverseIntent intent = null;
 
 				if (!intents.isEmpty()) {

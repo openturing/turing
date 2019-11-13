@@ -39,7 +39,7 @@ public interface TurConverseIntentRepository extends JpaRepository<TurConverseIn
 
 	Set<TurConverseIntent> findByAgent(TurConverseAgent agent);
 	
-	List<TurConverseIntent> findByFallback(boolean fallback);
+	List<TurConverseIntent> findByAgentAndFallback(TurConverseAgent agent, boolean fallback);
 	
 	@SuppressWarnings("unchecked")
 	TurConverseIntent save(TurConverseIntent turConverseIntent);

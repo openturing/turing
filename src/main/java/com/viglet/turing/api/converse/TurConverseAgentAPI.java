@@ -18,6 +18,7 @@
 package com.viglet.turing.api.converse;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -105,7 +106,7 @@ public class TurConverseAgentAPI {
 		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
 		return turConverseEntityRepository.findByAgent(turConverseAgent);
 	}
-	
+
 	@ApiOperation(value = "Show a Converse Context List")
 	@GetMapping("/{id}/contexts")
 	public Set<TurConverseContext> turConverseAgentContextsGet(@PathVariable String id) {
@@ -124,14 +125,13 @@ public class TurConverseAgentAPI {
 	public TurConverseAgent turConverseAgentUpdate(@PathVariable String id,
 			@RequestBody TurConverseAgent turConverseAgent) {
 		TurConverseAgent turConverseAgentEdit = turConverseAgentRepository.findById(turConverseAgent.getId()).get();
-		
+
 		turConverseAgentEdit.setCore(turConverseAgent.getCore());
 		turConverseAgentEdit.setDescription(turConverseAgent.getDescription());
 		turConverseAgentEdit.setLanguage(turConverseAgent.getLanguage());
 		turConverseAgentEdit.setName(turConverseAgent.getName());
 		turConverseAgentEdit.setTurSEInstance(turConverseAgent.getTurSEInstance());
-		
-		
+
 		return turConverseAgentRepository.save(turConverseAgentEdit);
 
 	}
@@ -142,7 +142,7 @@ public class TurConverseAgentAPI {
 	public boolean turConverseAgentDelete(@PathVariable String id) {
 		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
 		Set<TurConverseContext> turConverseContexts = turConverseContextRepository.findByAgent(turConverseAgent);
-		for (TurConverseContext context :turConverseContexts) {
+		for (TurConverseContext context : turConverseContexts) {
 			context.setIntentInputs(null);
 			context.setIntentOutputs(null);
 			turConverseContextRepository.saveAndFlush(context);
@@ -178,9 +178,19 @@ public class TurConverseAgentAPI {
 			@RequestParam(required = false, name = "q") String q,
 			@RequestParam(required = false, name = "start") boolean start, HttpSession session) {
 
-		if (start)
-			turConverse.cleanSession(session);
+		String conversationId = null;
 
+		if (start || session.getAttribute("conversationId") == null) {
+			turConverse.cleanSession(session);
+			SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyyyyHHmmss");
+			conversationId = dateFormat.format(new Date());
+
+			session.setAttribute("conversationId", conversationId);
+		} else {
+			conversationId = (String) session.getAttribute("conversationId");
+		}
+
+		String sessionId = String.format("%s.%s", session.getId(), conversationId);
 		turConverse.showSession(session);
 
 		boolean hasParameter = session.getAttribute("hasParameter") != null
@@ -189,11 +199,11 @@ public class TurConverseAgentAPI {
 
 		TurConverseChat chat = null;
 		if (session != null && session.getId() != null) {
-			chat = turConverseChatRepository.findBySession(session.getId());
+			chat = turConverseChatRepository.findBySession(sessionId);
 			if (chat == null) {
-				
+
 				chat = new TurConverseChat();
-				chat.setSession(session.getId());
+				chat.setSession(sessionId);
 				chat.setAgent(turConverseAgentRepository.findById(id).orElse(null));
 				chat.setDate(new Date());
 				turConverseChatRepository.save(chat);
@@ -214,7 +224,6 @@ public class TurConverseAgentAPI {
 
 		return turConverseAgentResponse;
 	}
-
 
 	@PostMapping("/import")
 	@Transactional
