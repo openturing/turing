@@ -17,6 +17,8 @@
 package com.viglet.turing.converse;
 
 import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -51,15 +53,50 @@ public class TurConverse {
 		chatResponseUser.setUser(true);
 		chatResponseUser.setText(q);
 		chatResponseUser.setChat(chat);
-		if (hasParameter && session.getAttribute("previousResponseBot") != null) {
-			TurConverseChatResponse chatResponseBot = (TurConverseChatResponse) session
-					.getAttribute("previousResponseBot");
+
+		TurConverseChatResponse chatResponseBot = (TurConverseChatResponse) session.getAttribute("previousResponseBot");
+
+		if (chatResponseBot != null) {
 			chatResponseUser.setIntentId(chatResponseBot.getIntentId());
 			chatResponseUser.setActionName(chatResponseBot.getActionName());
-			chatResponseUser.setParameterName(chatResponseBot.getParameterName());
+
+			if (hasParameter && session.getAttribute("previousResponseBot") != null) {				
+				chatResponseUser.setParameterName(chatResponseBot.getParameterName());
+				chatResponseUser.setParameterValue(q);
+			} else {
+				String nextContext = (String) session.getAttribute("nextContext");
+				SolrDocumentList results = turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
+				if (!results.isEmpty()) {
+					SolrDocument firstResult = results.get(0);
+					String intentId = (String) firstResult.getFieldValue("id");
+					SimpleEntry<String, String> parameter = this.getParameterValue(q, chat, intentId);
+					if (parameter != null) {
+						chatResponseUser.setParameterName(parameter.getKey());
+						chatResponseUser.setParameterValue(parameter.getValue());
+					}
+				}
+			}
 		}
 		turConverseChatResponseRepository.save(chatResponseUser);
+
 		session.setAttribute("previousResponseUser", chatResponseUser);
+
+	}
+
+	public AbstractMap.SimpleEntry<String, String> getParameterValue(String text, TurConverseChat turConverseChat,
+			String intentId) {
+		SolrDocumentList termDocumentList = turConverseSE.sorlGetParameterValue(text, turConverseChat, intentId);
+		if (!termDocumentList.isEmpty()) {
+			String parameter = (String) termDocumentList.get(0).getFirstValue("parameters");
+
+			String[] parameterKV = parameter.split(":");
+			AbstractMap.SimpleEntry<String, String> entry = new AbstractMap.SimpleEntry<>(parameterKV[0],
+					parameterKV[1]);
+
+			return entry;
+
+		}
+		return null;
 	}
 
 	public void saveChatResponseBot(TurConverseChat chat, TurConverseAgentResponse turConverseAgentResponse,
@@ -103,11 +140,14 @@ public class TurConverse {
 				SolrDocument firstResultParameter = resultsParameter.get(nextParameter);
 				if (!resultsParameter.isEmpty()) {
 					List<String> prompts = (List<String>) firstResultParameter.getFieldValue("prompts");
-					int rnd = new Random().nextInt(prompts.size());
-					turConverseAgentResponse.setResponse(prompts.get(rnd).toString());
-					turConverseAgentResponse.setIntentId(intent);
-					turConverseAgentResponse.setActionName(firstResultParameter.getFieldValue("action").toString());
-					turConverseAgentResponse.setParameterName(firstResultParameter.getFieldValue("name").toString());
+					if (!prompts.isEmpty()) {
+						int rnd = new Random().nextInt(prompts.size());
+						turConverseAgentResponse.setResponse(prompts.get(rnd).toString());
+						turConverseAgentResponse.setIntentId(intent);
+						turConverseAgentResponse.setActionName(firstResultParameter.getFieldValue("action").toString());
+						turConverseAgentResponse
+								.setParameterName(firstResultParameter.getFieldValue("name").toString());
+					}
 
 				}
 				session.setAttribute("nextParameter", nextParameter + 1);
@@ -127,32 +167,25 @@ public class TurConverse {
 			HttpSession session) {
 
 		TurConverseAgentResponse turConverseAgentResponse = new TurConverseAgentResponse();
+		SolrDocumentList results = turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
+		if (!results.isEmpty()) {
+			SolrDocument firstResult = results.get(0);
 
-		try {
-			SolrDocumentList results = turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
-			if (!results.isEmpty()) {
-				SolrDocument firstResult = results.get(0);
-
-				if ((boolean) firstResult.getFieldValue("hasParameters")) {
-					session.setAttribute("intent", firstResult.getFieldValue("id"));
-					session.setAttribute("hasParameter", true);
-					this.getChatParameter(chat, session, turConverseAgentResponse);
-				} else {
-					this.getIntentFlow(chat, session, turConverseAgentResponse, firstResult);
-				}
+			if ((boolean) firstResult.getFieldValue("hasParameters")) {
+				session.setAttribute("intent", firstResult.getFieldValue("id"));
+				session.setAttribute("hasParameter", true);
+				this.getChatParameter(chat, session, turConverseAgentResponse);
 			} else {
-				if (nextContext != null) {
-					turConverseAgentResponse = this.interactionNested(chat, q, null, session);
-				} else {
-					turConverseAgentResponse = this.getFallback(chat, session, turConverseAgentResponse);
-				}
+				this.getIntentFlow(chat, session, turConverseAgentResponse, firstResult);
 			}
-
-		} catch (SolrServerException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+		} else {
+			if (nextContext != null) {
+				turConverseAgentResponse = this.interactionNested(chat, q, null, session);
+			} else {
+				turConverseAgentResponse = this.getFallback(chat, session, turConverseAgentResponse);
+			}
 		}
+
 		return turConverseAgentResponse;
 	}
 
@@ -181,10 +214,7 @@ public class TurConverse {
 				List<TurConverseChatResponse> values = turConverseChatResponseRepository
 						.findByChatAndIsUserAndParameterNameOrderByDateDesc(chat, true, parameterName);
 				if (!values.isEmpty()) {
-					word = values.get(0).getText();
-					System.out.println("Encontrou: " + word);
-				} else {
-					System.out.println("Nao Encontrou: " + word);
+					word = values.get(0).getParameterValue();
 				}
 			}
 			responseModified.append(word + " ");

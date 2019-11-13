@@ -63,6 +63,8 @@ public class TurConverseChatResponse implements Serializable {
 
 	private String parameterName;
 
+	private String parameterValue;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "chat_id")
 	private TurConverseChat chat;
@@ -129,6 +131,14 @@ public class TurConverseChatResponse implements Serializable {
 
 	public void setChat(TurConverseChat chat) {
 		this.chat = chat;
+	}
+
+	public String getParameterValue() {
+		return parameterValue;
+	}
+
+	public void setParameterValue(String parameterValue) {
+		this.parameterValue = parameterValue;
 	}
 
 }

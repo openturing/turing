@@ -36,6 +36,9 @@ public interface TurConverseParameterRepository extends JpaRepository<TurConvers
 
 	Set<TurConverseParameter> findByIntent(TurConverseIntent turConverseIntent);
 	
+	Set<TurConverseParameter> findByIntentAndEntity(TurConverseIntent turConverseIntent, String entity);
+	
+	@SuppressWarnings("unchecked")
 	TurConverseParameter save(TurConverseParameter turConverseParameter);
 
 	@Modifying

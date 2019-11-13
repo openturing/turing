@@ -8,7 +8,8 @@ turingApp.controller('TurConverseAgentCtrl', [
 	"$translate",
 	"turAPIServerService",
 	"turConverseAgentResource",
-	function ($scope, $http, $window, $state, $stateParams, $rootScope, $translate, turAPIServerService, turConverseAgentResource) {
+	"Notification",
+	function ($scope, $http, $window, $state, $stateParams, $rootScope, $translate, turAPIServerService, turConverseAgentResource, Notification) {
 		$rootScope.$state = $state;
 		$scope.agentId = $stateParams.agentId;
 		$scope.tryText = "";
@@ -32,7 +33,7 @@ turingApp.controller('TurConverseAgentCtrl', [
 					.get(turAPIServerService.get().concat("/converse/agent/" + $scope.agentId + "/rebuild"))
 					.then(
 						function (response) {
-							console.log("Rebuilded");
+							Notification.warning($scope.agent.name + ' Agent was rebuilt.');
 						}));
 
 		}

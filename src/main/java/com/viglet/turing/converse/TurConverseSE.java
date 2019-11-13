@@ -24,6 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -35,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
 import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
 import com.viglet.turing.persistence.model.converse.entity.TurConverseEntityTerm;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
@@ -54,6 +57,7 @@ import com.viglet.turing.solr.TurSolr;
 
 @Component
 public class TurConverseSE {
+	static final Logger logger = LogManager.getLogger(TurConverseSE.class.getName());
 
 	@Autowired
 	private TurSolr turSolr;
@@ -78,8 +82,7 @@ public class TurConverseSE {
 		return solrClient;
 	}
 
-	SolrDocumentList solrAskPhrase(TurConverseAgent turConverseAgent, String q, String nextContext)
-			throws SolrServerException, IOException {
+	SolrDocumentList solrAskPhrase(TurConverseAgent turConverseAgent, String q, String nextContext) {
 		SolrClient solrClient = this.getSolrClient(turConverseAgent);
 		SolrQuery query = new SolrQuery();
 
@@ -93,9 +96,17 @@ public class TurConverseSE {
 		query.addFilterQuery("agent:\"" + turConverseAgent.getId() + "\"");
 		query.setQuery("phrases:\"" + q + "\"");
 
-		QueryResponse queryResponse = solrClient.query(query);
+		QueryResponse queryResponse;
+		try {
+			queryResponse = solrClient.query(query);
 
-		return queryResponse.getResults();
+			return queryResponse.getResults();
+		} catch (SolrServerException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return null;
 	}
 
 	SolrDocumentList solrGetActionAndParameters(TurConverseAgent turConverseAgent, String intent)
@@ -106,6 +117,7 @@ public class TurConverseSE {
 		queryParameter.addFilterQuery("type:\"Parameter\"");
 		queryParameter.addFilterQuery("agent:\"" + turConverseAgent.getId() + "\"");
 		queryParameter.addFilterQuery("intent:\"" + intent + "\"");
+		queryParameter.addFilterQuery("prompts:[\"\" TO *]");
 		queryParameter.setQuery("*:*");
 
 		QueryResponse queryResponseParameter = solrClient.query(queryParameter);
@@ -127,12 +139,34 @@ public class TurConverseSE {
 			QueryResponse queryResponse = solrClient.query(query);
 			results = queryResponse.getResults();
 		} catch (SolrServerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("SolrServerException", e);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("IOException", e);
 		}
+
+		return results;
+	}
+
+	public SolrDocumentList sorlGetParameterValue(String text, TurConverseChat turConverseChat, String intentId) {
+		SolrDocumentList results = null;
+		try {
+			SolrClient solrClient = this.getSolrClient(turConverseChat.getAgent());
+			SolrQuery query = new SolrQuery();
+			query.setParam("defType", "edismax");
+			query.setParam("pf", "phrase^100");
+			query.addFilterQuery("type:\"Term\"");
+			query.addFilterQuery("agent:\"" + turConverseChat.getAgent().getId() + "\"");
+			query.addFilterQuery("intent:\"" + intentId + "\"");
+
+			query.setQuery("phrase:" + text);
+			QueryResponse queryResponse = solrClient.query(query);
+			results = queryResponse.getResults();
+		} catch (SolrServerException e) {
+			logger.error("SolrServerException", e);
+		} catch (IOException e) {
+			logger.error("IOException", e);
+		}
+
 		return results;
 	}
 
@@ -144,11 +178,9 @@ public class TurConverseSE {
 			UpdateResponse response = solrClient.deleteByQuery("agent:" + turConverseAgent.getId());
 			solrClient.commit();
 		} catch (SolrServerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("SolrServerException", e);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("IOException", e);
 		}
 	}
 
@@ -169,7 +201,45 @@ public class TurConverseSE {
 		String core = turConverseIntent.getAgent().getCore();
 
 		SolrClient solrClient = turSolr.getSolrClient(turSEInstance, core);
+		this.indexIntent(turConverseIntent, solrClient);
+		this.indexParameters(turConverseIntent, solrClient);
 
+	}
+
+	private void indexParameters(TurConverseIntent turConverseIntent, SolrClient solrClient) {
+		SolrInputDocument document;
+		for (TurConverseParameter parameter : turConverseIntent.getParameters()) {
+			document = new SolrInputDocument();
+			document.addField("id", parameter.getId());
+			document.addField("agent", turConverseIntent.getAgent().getId());
+			document.addField("intent", turConverseIntent.getId());
+			document.addField("type", "Parameter");
+			document.addField("action", turConverseIntent.getActionName());
+			document.addField("name", parameter.getName());
+			document.addField("position", parameter.getPosition());
+
+			List<String> promptList = new ArrayList<>();
+			for (TurConversePrompt prompt : parameter.getPrompts()) {
+				promptList.add(prompt.getText());
+			}
+			document.addField("prompts", promptList);
+
+			this.indexToSolr(solrClient, document);
+		}
+	}
+
+	private void indexToSolr(SolrClient solrClient, SolrInputDocument document) {
+		try {
+			solrClient.add(document);
+			solrClient.commit();
+		} catch (SolrServerException e) {
+			logger.error("SolrServerException", e);
+		} catch (IOException e) {
+			logger.error("IOException", e);
+		}
+	}
+
+	private void indexIntent(TurConverseIntent turConverseIntent, SolrClient solrClient) {
 		SolrInputDocument document = new SolrInputDocument();
 
 		document.addField("id", turConverseIntent.getId());
@@ -187,16 +257,7 @@ public class TurConverseSE {
 		for (TurConversePhrase phrase : turConverseIntent.getPhrases()) {
 
 			if (phrase.getText().contains("@")) {
-				for (TurConverseEntity entity : entities) {
-					if (phrase.getText().contains("@" + entity.getName())) {
-						for (TurConverseEntityTerm term : entity.getTerms()) {
-							for (String synonym : term.getSynonyms()) {
-								document.addField("phrases",
-										phrase.getText().replaceAll("@" + entity.getName(), synonym));
-							}
-						}
-					}
-				}
+				this.indexTerms(turConverseIntent, solrClient, document, entities, phrase);
 
 			} else {
 				document.addField("phrases", phrase.getText());
@@ -209,47 +270,49 @@ public class TurConverseSE {
 
 		document.addField("hasParameters", turConverseIntent.getParameters().size() > 0 ? true : false);
 
-		try {
-			solrClient.add(document);
-			solrClient.commit();
-		} catch (SolrServerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		this.indexToSolr(solrClient, document);
+	}
 
-		// Parameters
+	private void indexTerms(TurConverseIntent turConverseIntent, SolrClient solrClient, SolrInputDocument document,
+			Set<TurConverseEntity> entities, TurConversePhrase phrase) {
+		for (TurConverseEntity entity : entities) {
+			if (phrase.getText().contains("@" + entity.getName())) {
+				for (TurConverseEntityTerm term : entity.getTerms()) {
+					Set<TurConverseParameter> parameters = turConverseParameterRepository
+							.findByIntentAndEntity(turConverseIntent, "@" + entity.getName());
 
-		for (TurConverseParameter parameter : turConverseIntent.getParameters()) {
-			document = new SolrInputDocument();
-			document.addField("id", parameter.getId());
-			document.addField("agent", turConverseIntent.getAgent().getId());
-			document.addField("intent", turConverseIntent.getId());
-			document.addField("type", "Parameter");
-			document.addField("action", turConverseIntent.getActionName());
-			document.addField("name", parameter.getName());
-			document.addField("position", parameter.getPosition());
+					if (!parameters.isEmpty()) {
+						if (logger.isDebugEnabled())
+							logger.debug("Have parameters to Entity: " + entity.getName());
 
-			List<String> promptList = new ArrayList<>();
-			for (TurConversePrompt prompt : parameter.getPrompts()) {
-				promptList.add(prompt.getText());
+						for (TurConverseParameter parameter : parameters) {
+
+							for (String synonym : term.getSynonyms()) {
+								SolrInputDocument termDocument = new SolrInputDocument();
+								termDocument.addField("id",
+										String.format("%s.%s:%s", turConverseIntent.getId(), term.getId(), synonym));
+								termDocument.addField("agent", turConverseIntent.getAgent().getId());
+								termDocument.addField("intent", turConverseIntent.getId());
+								termDocument.addField("type", "Term");
+								termDocument.addField("parameters",
+										String.format("%s:%s", parameter.getName(), term.getName()));
+								String phraseFormatted = phrase.getText().replaceAll("@" + entity.getName(), synonym);
+								document.addField("phrases", phraseFormatted);
+
+								termDocument.addField("phrase", phraseFormatted);
+
+								if (logger.isDebugEnabled())
+									logger.debug(String.format("Term parameters %s:%s", parameter.getName(),
+											entity.getName()));
+								this.indexToSolr(solrClient, termDocument);
+							}
+
+						}
+					}
+
+				}
 			}
-			document.addField("prompts", promptList);
-
-			try {
-				solrClient.add(document);
-				solrClient.commit();
-			} catch (SolrServerException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 		}
-
 	}
 
 	public void desindex(TurConverseIntent turConverseIntent) {
