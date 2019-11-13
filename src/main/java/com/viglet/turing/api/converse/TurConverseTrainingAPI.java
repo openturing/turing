@@ -18,17 +18,24 @@
 package com.viglet.turing.api.converse;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
+import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
 import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatRepository;
 import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatResponseRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
+import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -41,6 +48,10 @@ public class TurConverseTrainingAPI {
 	private TurConverseChatRepository turConverseChatRepository;
 	@Autowired
 	private TurConverseChatResponseRepository turConverseChatResponseRepository;
+	@Autowired
+	private TurConverseIntentRepository turConverseIntentRepository;
+	@Autowired
+	private TurConversePhraseRepository turConversePhraseRepository;
 
 	@ApiOperation(value = "Converse Training List")
 	@GetMapping
@@ -52,7 +63,8 @@ public class TurConverseTrainingAPI {
 				List<TurConverseChatResponse> responses = turConverseChatResponseRepository
 						.findByChatOrderByDate(turConverseChat);
 				turConverseChat.setUpdated(true);
-				turConverseChat.setSummary(responses.get(0).getText());
+				if (!responses.isEmpty())
+					turConverseChat.setSummary(responses.get(0).getText());
 				turConverseChat
 						.setRequests(turConverseChatResponseRepository.countByChatAndIsUser(turConverseChat, true));
 				turConverseChat.setNoMatch(
@@ -67,9 +79,37 @@ public class TurConverseTrainingAPI {
 	@GetMapping("/{id}")
 	public TurConverseChat turConverseTrainingGet(@PathVariable String id) {
 		TurConverseChat turConverseChat = turConverseChatRepository.findById(id).get();
-		List<TurConverseChatResponse> responses = turConverseChatResponseRepository.findByChatAndIsUser(turConverseChat, true);
+		List<TurConverseChatResponse> responses = turConverseChatResponseRepository.findByChatAndIsUser(turConverseChat,
+				true);
 		turConverseChat.setResponses(responses);
 		return turConverseChat;
+	}
+
+	@ApiOperation(value = "Update a Converse Training")
+	@PutMapping("/{id}")
+	public TurConverseChat turConverseEntityUpdate(@PathVariable String id,
+			@RequestBody TurConverseChat turConverseChat) {
+		for (TurConverseChatResponse response : turConverseChat.getResponses()) {
+			if (response.isTrainingToIntent() && response.getIntentId() != null) {
+				TurConverseIntent intent = turConverseIntentRepository.findById(response.getIntentId()).get();
+				Set<TurConversePhrase> phrases = turConversePhraseRepository.findByIntent(intent);
+				boolean foundText = false;
+				for (TurConversePhrase phrase : phrases)
+					if (phrase.getText().toLowerCase().trim().equals(response.getText().toLowerCase().trim()))
+						foundText = true;
+
+				if (!foundText) {
+					TurConversePhrase turConversePhrase = new TurConversePhrase();
+					turConversePhrase.setIntent(intent);
+					turConversePhrase.setText(response.getText());
+					turConversePhraseRepository.saveAndFlush(turConversePhrase);
+				}
+			}
+			response.setChat(turConverseChat);
+		}
+
+		return turConverseChatRepository.saveAndFlush(turConverseChat);
+
 	}
 
 }

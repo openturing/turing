@@ -69,6 +69,12 @@ public class TurConverseChatResponse implements Serializable {
 	@JoinColumn(name = "chat_id")
 	private TurConverseChat chat;
 
+	private boolean trainingToIntent = false;
+	
+	private boolean trainingToFallback = false;
+	
+	private boolean trainingRemove = false;
+	
 	public String getId() {
 		return id;
 	}
@@ -139,6 +145,30 @@ public class TurConverseChatResponse implements Serializable {
 
 	public void setParameterValue(String parameterValue) {
 		this.parameterValue = parameterValue;
+	}
+
+	public boolean isTrainingToIntent() {
+		return trainingToIntent;
+	}
+
+	public void setTrainingToIntent(boolean trainingToIntent) {
+		this.trainingToIntent = trainingToIntent;
+	}
+
+	public boolean isTrainingToFallback() {
+		return trainingToFallback;
+	}
+
+	public void setTrainingToFallback(boolean trainingToFallback) {
+		this.trainingToFallback = trainingToFallback;
+	}
+
+	public boolean isTrainingRemove() {
+		return trainingRemove;
+	}
+
+	public void setTrainingRemove(boolean trainingRemove) {
+		this.trainingRemove = trainingRemove;
 	}
 
 }

@@ -48,7 +48,7 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 @Entity
 @Table(name = "turConverseChat")
 @NamedQuery(name = "TurConverseChat.findAll", query = "SELECT cc FROM TurConverseChat cc")
-public class TurConverseChat  implements Serializable {
+public class TurConverseChat implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -56,28 +56,30 @@ public class TurConverseChat  implements Serializable {
 	@GeneratedValue(generator = "UUID")
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
-	
+
 	private String summary;
-	
+
 	private Date date;
-	
+
 	private String session;
-	
+
 	@ManyToOne
 	@JoinColumn(name = "agent_id")
 	private TurConverseAgent agent;
-	
+
 	private int requests;
-	
+
 	private int noMatch;
-	
+
 	private boolean updated;
-	
+
 	@OneToMany(mappedBy = "chat", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private List<TurConverseChatResponse> responses = new ArrayList<>();
-	
+
+	private boolean trainingApproved = false;
+
 	public String getId() {
 		return id;
 	}
@@ -85,7 +87,7 @@ public class TurConverseChat  implements Serializable {
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+
 	public Date getDate() {
 		return date;
 	}
@@ -152,5 +154,13 @@ public class TurConverseChat  implements Serializable {
 	public void setUpdated(boolean updated) {
 		this.updated = updated;
 	}
-	
+
+	public boolean isTrainingApproved() {
+		return trainingApproved;
+	}
+
+	public void setTrainingApproved(boolean trainingApproved) {
+		this.trainingApproved = trainingApproved;
+	}
+
 }
