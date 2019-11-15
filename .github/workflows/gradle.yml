@@ -15,5 +15,5 @@ jobs:
         java-version: 1.8
     - name: Build with Gradle
       run: |
-        git clone --recurse-submodules https://github.com/ShioharaCMS/shiohara.git
+        git clone --recurse-submodules https://github.com/openturing/turing.git ./
         ./gradlew build
