@@ -27,15 +27,14 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 
 public interface TurConverseContextRepository extends JpaRepository<TurConverseContext, String> {
 
 	List<TurConverseContext> findAll();
 
-	Set<TurConverseContext> findByIntentInputs(Set<TurConverseIntent> intentInputs);
+	Set<TurConverseContext> findByIntentInputs_Id(String intentId);
 	
-	Set<TurConverseContext> findByIntentOutputs(Set<TurConverseIntent> intentOutputs);
+	Set<TurConverseContext> findByIntentOutputs_Id(String intentId);
 	
 	Set<TurConverseContext> findByAgent(TurConverseAgent agent);
 	

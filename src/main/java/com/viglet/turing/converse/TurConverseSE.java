@@ -19,8 +19,6 @@ package com.viglet.turing.converse;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -235,9 +233,9 @@ public class TurConverseSE {
 
 	public void index(TurConverseIntent turConverseIntent) {
 		turConverseIntent.setContextInputs(
-				turConverseContextRepository.findByIntentInputs(new HashSet<>(Arrays.asList(turConverseIntent))));
+				turConverseContextRepository.findByIntentInputs_Id(turConverseIntent.getId()));
 		turConverseIntent.setContextOutputs(
-				turConverseContextRepository.findByIntentOutputs(new HashSet<>(Arrays.asList(turConverseIntent))));
+				turConverseContextRepository.findByIntentOutputs_Id(turConverseIntent.getId()));
 		turConverseIntent.setPhrases(turConversePhraseRepository.findByIntent(turConverseIntent));
 		turConverseIntent.setResponses(turConverseResponseRepository.findByIntent(turConverseIntent));
 		turConverseIntent.setParameters(turConverseParameterRepository.findByIntent(turConverseIntent));

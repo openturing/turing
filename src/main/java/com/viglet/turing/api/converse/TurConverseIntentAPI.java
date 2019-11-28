@@ -18,7 +18,6 @@
 package com.viglet.turing.api.converse;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -99,9 +98,9 @@ public class TurConverseIntentAPI {
 	private TurConverseIntent getIntent(String id) {
 		TurConverseIntent turConverseIntent = this.turConverseIntentRepository.findById(id).get();
 		turConverseIntent.setContextInputs(
-				turConverseContextRepository.findByIntentInputs(new HashSet<>(Arrays.asList(turConverseIntent))));
+				turConverseContextRepository.findByIntentInputs_Id(turConverseIntent.getId()));
 		turConverseIntent.setContextOutputs(
-				turConverseContextRepository.findByIntentOutputs(new HashSet<>(Arrays.asList(turConverseIntent))));
+				turConverseContextRepository.findByIntentOutputs_Id(turConverseIntent.getId()));
 		turConverseIntent.setEvents(turConverseEventRepository.findByIntent(turConverseIntent));
 		turConverseIntent.setParameters(turConverseParameterRepository.findByIntent(turConverseIntent));
 
@@ -281,9 +280,7 @@ public class TurConverseIntentAPI {
 	}
 
 	private void removeInputContexts(String id, TurConverseIntent turConverseIntentEdit, List<String> inputsIds) {
-		Set<TurConverseIntent> intentInputs = new HashSet<>();
-		intentInputs.add(turConverseIntentEdit);
-		Set<TurConverseContext> contextInputs = turConverseContextRepository.findByIntentInputs(intentInputs);
+		Set<TurConverseContext> contextInputs = turConverseContextRepository.findByIntentInputs_Id(turConverseIntentEdit.getId());
 		for (TurConverseContext contextInput : contextInputs) {
 			if (!inputsIds.contains(contextInput.getId())) {
 				Set<TurConverseIntent> newIntentInput = new HashSet<>();
@@ -298,9 +295,7 @@ public class TurConverseIntentAPI {
 	}
 
 	private void removeOutputContexts(String id, TurConverseIntent turConverseIntentEdit, List<String> outputsIds) {
-		Set<TurConverseIntent> intentOutputs = new HashSet<>();
-		intentOutputs.add(turConverseIntentEdit);
-		Set<TurConverseContext> contextOutputs = turConverseContextRepository.findByIntentOutputs(intentOutputs);
+		Set<TurConverseContext> contextOutputs = turConverseContextRepository.findByIntentOutputs_Id(turConverseIntentEdit.getId());
 		for (TurConverseContext contextOutput : contextOutputs) {
 			if (!outputsIds.contains(contextOutput.getId())) {
 				Set<TurConverseIntent> newIntentOutput = new HashSet<>();
