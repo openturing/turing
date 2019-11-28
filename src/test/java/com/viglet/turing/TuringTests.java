@@ -48,7 +48,7 @@ public class TuringTests {
 	@Test
 	public void testVersion() throws Exception {
 		mockMvc.perform(get("/api")).andExpect(status().isOk())
-				.andExpect(content().contentType("application/json;charset=UTF-8"))
+				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$.product").value("Viglet Turing"));
 
 	}
