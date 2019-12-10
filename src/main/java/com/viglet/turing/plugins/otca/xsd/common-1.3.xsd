@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://dev.nstein.com/common/1.3" elementFormDefault="qualified" version="1.0" targetNamespace="http://dev.nstein.com/common/1.3">
+  <xs:element name="languages" type="tns:LanguagesType"/>
+  <xs:complexType name="LanguagesType">
+    <xs:sequence>
+      <xs:element name="language" type="tns:LanguageType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="LanguageType">
+    <xs:sequence>
+      <xs:element name="id" type="xs:string"/>
+      <xs:element name="part2B" type="xs:string" minOccurs="0"/>
+      <xs:element name="part2T" type="xs:string" minOccurs="0"/>
+      <xs:element name="part1" type="xs:string" minOccurs="0"/>
+      <xs:element name="scope" type="tns:LanguageScopeType"/>
+      <xs:element name="type" type="tns:LanguageTypeType"/>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="NameType">
+    <xs:sequence>
+      <xs:element name="title" type="tns:fileName"/>
+      <xs:element name="language" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="SearchTypeType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="label" type="xs:string"/>
+      <xs:element name="wordPattern" type="xs:string"/>
+      <xs:element name="contiguityPattern" type="xs:string"/>
+      <xs:element name="separatorPattern" type="xs:string"/>
+      <xs:element name="separatorMaxLength" type="xs:unsignedByte"/>
+      <xs:element name="resultAnyPattern" type="xs:string"/>
+      <xs:element name="resultSeparatorPattern" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="LanguageScopeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="I"/>
+      <xs:enumeration value="M"/>
+      <xs:enumeration value="S"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="LanguageTypeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="A"/>
+      <xs:enumeration value="C"/>
+      <xs:enumeration value="E"/>
+      <xs:enumeration value="H"/>
+      <xs:enumeration value="L"/>
+      <xs:enumeration value="S"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="fileName">
+    <xs:restriction base="tns:name">
+      <xs:pattern value="[\p{L}\p{N}_\-, ]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="name">
+    <xs:restriction base="tns:requiredToken">
+      <xs:maxLength value="256"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="requiredToken">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="requiredNormalizedString">
+    <xs:restriction base="xs:normalizedString">
+      <xs:minLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="requiredString">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>
