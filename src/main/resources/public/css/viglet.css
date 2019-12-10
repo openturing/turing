@@ -5,7 +5,7 @@
 	border-radius: 50%;
 	border: 1px solid;
 	font-size: 12px;
-	border-color: #FF874Bdd;
+	border-color: royalblue;
 }
 
 .numberCircle span {
@@ -14,7 +14,7 @@
 	padding-bottom: 50%;
 	margin-left: 2px;
 	margin-right: 2px;
-	color: #FF874Bdd;
+	color: royalblue;
 	font-family: Arial, sans-serif;
 }
 
@@ -26,7 +26,7 @@
 	border: 0px solid;
 	/* border-bottom-color: #ddd; */
 	font-size: 12px;
-	background-color: #FF874Bdd;
+	background-color: royalblue;
 }
 
 .numberCircleFolder span {
@@ -40,21 +40,21 @@
 }
 
 .fa-viglet {
-    color: #FF874B;
+    color: royalblue;
 }
 
 .fa-viglet:focus .fa-viglet:hover {
-    color: white !important;
+    color: papayawhipwhite !important;
 }
 
 .btn-viglet {
-    background-color: #FF874B;
-    color: white !important;
+    background-color: royalblue;
+    color: papayawhip !important;
 }
 
 .btn-viglet:hover {
-    background-color: #FF691F;
-    color: white !important;
+    background-color: royalblue;
+    color: papayawhip !important;
 }
 .video-container {
     position: relative;
@@ -178,7 +178,7 @@ h6 {
 .navbar-default .navbar-left>li:hover {
     color: #333;
     background-color: transparent;
-    border-bottom-color: #FF691F;
+    border-bottom-color: royalblue;
     border-bottom-width: 2px;
     border-bottom-style: solid;
 }
@@ -193,7 +193,7 @@ navbar-default .navbar-left>li:focus,
 }
 
 .navbar-default .navbar-left>li.active {
-    border-bottom-color: #FF874B;
+    border-bottom-color: royalblue;
     border-bottom-width: 2px;
     border-bottom-style: solid;
 }
