@@ -64,7 +64,7 @@ import com.viglet.turing.plugins.otca.af.xml.AFTermVariationCaseEnum;
 import com.viglet.turing.plugins.otca.af.xml.AFTermVariationType;
 import com.viglet.turing.plugins.otca.af.xml.AFType;
 import com.viglet.turing.plugins.otca.af.xml.AFType.Terms;
-import com.viglet.turing.util.TurUtils;
+import com.viglet.turing.utils.TurUtils;
 
 import io.swagger.annotations.Api;
 

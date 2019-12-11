@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.util;
+package com.viglet.turing.utils;
 
 import java.util.HashMap;
 import java.util.Map;

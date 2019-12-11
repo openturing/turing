@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.annotations.Api;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v2")
 @Api(value="/", tags="Heartbeat", description="Heartbeat")
 public class TurAPI {
 	@Autowired

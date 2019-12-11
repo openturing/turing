@@ -47,8 +47,8 @@ import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
 import com.viglet.turing.persistence.repository.nlp.term.TurTermVariationRepository;
 import com.viglet.turing.solr.TurSolrField;
+import com.viglet.turing.utils.TurUtils;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
-import com.viglet.turing.util.TurUtils;
 
 @Component
 @ComponentScan

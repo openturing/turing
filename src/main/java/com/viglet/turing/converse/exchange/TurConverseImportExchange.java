@@ -59,7 +59,7 @@ import com.viglet.turing.persistence.repository.converse.intent.TurConversePhras
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePromptRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
-import com.viglet.turing.util.TurUtils;
+import com.viglet.turing.utils.TurUtils;
 
 @Component
 public class TurConverseImportExchange {

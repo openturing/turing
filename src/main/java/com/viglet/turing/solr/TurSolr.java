@@ -65,7 +65,7 @@ import com.viglet.turing.se.similar.TurSESimilarResult;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.tr.TurSNTargetingRuleMethod;
 import com.viglet.turing.sn.tr.TurSNTargetingRules;
-import com.viglet.turing.util.TurSNSiteFieldUtils;
+import com.viglet.turing.utils.TurSNSiteFieldUtils;
 
 @Component
 @Transactional

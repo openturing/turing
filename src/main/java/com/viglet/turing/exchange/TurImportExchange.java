@@ -35,7 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
-import com.viglet.turing.util.TurUtils;
+import com.viglet.turing.utils.TurUtils;
 
 @Component
 public class TurImportExchange {
