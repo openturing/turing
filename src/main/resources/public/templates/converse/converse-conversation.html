@@ -11,7 +11,7 @@
             <td><span>{{response.date | amCalendar:referenceTime:formats}}</span>
             </td>
             <td>
-                <a ng-if="!response.user && response.intentId !== null" ui-sref="converse.agent.intent-edit({intentId: response.intentId})">Go to Intent</a>
+                <a ng-if="!response.user && response.intentId !== null" ui-sref="console.converse.agent.intent-edit({intentId: response.intentId})">Go to Intent</a>
             </td>
         </tr>
     </tbody>

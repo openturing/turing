@@ -10,7 +10,7 @@
         </thead>
         <tbody>
             <tr ng-repeat="conversation in conversations">
-                <td><a ui-sref="converse.agent.history-edit({conversationId: conversation.id})">{{conversation.id}}</a>
+                <td><a ui-sref="console.converse.agent.history-edit({conversationId: conversation.id})">{{conversation.id}}</a>
                 </td>
                 <td><span am-time-ago="conversation.date"></span></td>
                 <td>

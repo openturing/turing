@@ -12,7 +12,7 @@
         </thead>
         <tbody>
             <tr ng-repeat="conversation in conversations">
-                <td><a ui-sref="converse.agent.training({conversationId: conversation.id})">{{conversation.summary}}</a>
+                <td><a ui-sref="console.converse.agent.training({conversationId: conversation.id})">{{conversation.summary}}</a>
                 </td>
                 <td>{{conversation.requests}}</td>
                 <td>{{conversation.noMatch}}</td>

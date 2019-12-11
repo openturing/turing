@@ -5,20 +5,23 @@ turingApp
 		'$locationProvider',
 		'$translateProvider',
 		'NotificationProvider',
+		'$httpProvider',
 		function ($stateProvider, $urlRouterProvider, $locationProvider,
-			$translateProvider, NotificationProvider) {
+			$translateProvider, NotificationProvider, $httpProvider) {
 			$translateProvider.useSanitizeValueStrategy('escaped');
+			$httpProvider.defaults.headers.common["X-Requested-With"] = 'XMLHttpRequest';
+			$httpProvider.interceptors.push('turAuthInterceptor');
 
 			NotificationProvider.setOptions({
-				delay : 5000,
-				startTop : 20,
-				startRight : 10,
-				verticalSpacing : 20,
-				horizontalSpacing : 20,
-				positionX : 'right',
-				positionY : 'bottom'
+				delay: 5000,
+				startTop: 20,
+				startRight: 10,
+				verticalSpacing: 20,
+				horizontalSpacing: 20,
+				positionX: 'right',
+				positionY: 'bottom'
 			});
-			
+
 			$translateProvider.translations('en', {
 
 				NLP_EDIT: "Edit NLP",
@@ -128,9 +131,13 @@ turingApp
 			});
 			$translateProvider.fallbackLanguage('en');
 
-			$urlRouterProvider.otherwise('/home');
-			$stateProvider
-				.state('home', {
+			$urlRouterProvider.otherwise('');
+			$stateProvider.state('console', {
+				url: '',
+				controller: 'TurConsoleCtrl',
+				redirectTo: 'console.home'
+			})
+				.state('console.home', {
 					url: '/home',
 					templateUrl: 'templates/home.html',
 					controller: 'TurHomeCtrl',
@@ -139,7 +146,7 @@ turingApp
 					}
 				})
 				.state(
-					'ml',
+					'console.ml',
 					{
 						url: '/ml',
 						templateUrl: 'templates/ml/ml.html',
@@ -148,7 +155,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.instance',
+					'console.ml.instance',
 					{
 						url: '/instance',
 						templateUrl: 'templates/ml/ml-instance.html',
@@ -158,7 +165,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.instance-new',
+					'console.ml.instance-new',
 					{
 						url: '/instance/new',
 						templateUrl: 'templates/ml/ml-instance-new.html',
@@ -168,7 +175,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.instance-edit',
+					'console.ml.instance-edit',
 					{
 						url: '/instance/:mlInstanceId',
 						templateUrl: 'templates/ml/ml-instance-edit.html',
@@ -178,7 +185,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.model',
+					'console.ml.model',
 					{
 						url: '/model',
 						templateUrl: 'templates/ml/model/ml-model.html',
@@ -188,7 +195,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup',
+					'console.ml.datagroup',
 					{
 						url: '/datagroup',
 						templateUrl: 'templates/ml/data/group/ml-datagroup.html',
@@ -198,7 +205,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-new',
+					'console.ml.datagroup-new',
 					{
 						url: '/datagroup/new',
 						templateUrl: 'templates/ml/data/group/ml-datagroup-new.html',
@@ -208,7 +215,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-edit',
+					'console.ml.datagroup-edit',
 					{
 						url: '/datagroup/:mlDataGroupId',
 						templateUrl: 'templates/ml/data/group/ml-datagroup-edit.html',
@@ -218,7 +225,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-edit.category',
+					'console.ml.datagroup-edit.category',
 					{
 						url: '/category',
 						templateUrl: 'templates/ml/data/group/ml-datagroup-category.html',
@@ -228,7 +235,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-edit.category-edit',
+					'console.ml.datagroup-edit.category-edit',
 					{
 						url: '/category/:mlCategoryId',
 						templateUrl: 'templates/ml/category/ml-category-edit.html',
@@ -238,7 +245,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-edit.category-edit.sentence',
+					'console.ml.datagroup-edit.category-edit.sentence',
 					{
 						url: '/sentence',
 						templateUrl: 'templates/ml/category/ml-category-sentence.html',
@@ -248,7 +255,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-edit.data',
+					'console.ml.datagroup-edit.data',
 					{
 						url: '/data',
 						templateUrl: 'templates/ml/data/group/ml-datagroup-data.html',
@@ -258,7 +265,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-edit.data-edit',
+					'console.ml.datagroup-edit.data-edit',
 					{
 						url: '/data/:mlDataId',
 						templateUrl: 'templates/ml/data/ml-data-edit.html',
@@ -268,7 +275,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-edit.sentence',
+					'console.ml.datagroup-edit.sentence',
 					{
 						url: '/sentence',
 						templateUrl: 'templates/ml/data/group/ml-datagroup-sentence.html',
@@ -278,7 +285,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-edit.sentence-edit',
+					'console.ml.datagroup-edit.sentence-edit',
 					{
 						url: '/sentence/:mlSentenceId',
 						templateUrl: 'templates/ml/sentence/ml-sentence-edit.html',
@@ -288,7 +295,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-edit.model',
+					'console.ml.datagroup-edit.model',
 					{
 						url: '/model',
 						templateUrl: 'templates/ml/data/group/ml-datagroup-model.html',
@@ -298,7 +305,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-edit.model-edit',
+					'console.ml.datagroup-edit.model-edit',
 					{
 						url: '/model/:mlModelId',
 						templateUrl: 'templates/ml/model/ml-model-edit.html',
@@ -308,7 +315,7 @@ turingApp
 						}
 					})
 				.state(
-					'ml.datagroup-edit.data-edit.sentence',
+					'console.ml.datagroup-edit.data-edit.sentence',
 					{
 						url: '/sentence',
 						templateUrl: 'templates/ml/data/ml-data-sentence.html',
@@ -318,7 +325,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse',
+					'console.converse',
 					{
 						url: '/converse',
 						templateUrl: 'templates/converse/converse.html',
@@ -327,7 +334,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent-list',
+					'console.converse.agent-list',
 					{
 						url: '/agent',
 						templateUrl: 'templates/converse/converse-agent-list.html',
@@ -337,7 +344,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent-import',
+					'console.converse.agent-import',
 					{
 						url: '/agent/import',
 						templateUrl: 'templates/converse/converse-agent-import.html',
@@ -347,7 +354,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent-new',
+					'console.converse.agent-new',
 					{
 						url: '/agent/new',
 						templateUrl: 'templates/converse/converse-agent-new.html',
@@ -357,7 +364,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent',
+					'console.converse.agent',
 					{
 						url: '/agent/:agentId',
 						templateUrl: 'templates/converse/converse-agent.html',
@@ -367,7 +374,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent.detail',
+					'console.converse.agent.detail',
 					{
 						url: '/detail',
 						templateUrl: 'templates/converse/converse-agent-detail.html',
@@ -377,7 +384,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent.intent',
+					'console.converse.agent.intent',
 					{
 						url: '/intent',
 						templateUrl: 'templates/converse/converse-intent-list.html',
@@ -387,7 +394,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent.intent-new',
+					'console.converse.agent.intent-new',
 					{
 						url: '/intent/new',
 						templateUrl: 'templates/converse/converse-intent.html',
@@ -397,7 +404,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent.intent-edit',
+					'console.converse.agent.intent-edit',
 					{
 						url: '/intent/:intentId',
 						templateUrl: 'templates/converse/converse-intent.html',
@@ -407,7 +414,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent.entity',
+					'console.converse.agent.entity',
 					{
 						url: '/entity',
 						templateUrl: 'templates/converse/converse-entity-list.html',
@@ -417,7 +424,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent.entity-new',
+					'console.converse.agent.entity-new',
 					{
 						url: '/entity/new',
 						templateUrl: 'templates/converse/converse-entity.html',
@@ -427,7 +434,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent.entity-edit',
+					'console.converse.agent.entity-edit',
 					{
 						url: '/entity/:entityId',
 						templateUrl: 'templates/converse/converse-entity.html',
@@ -437,7 +444,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent.training-list',
+					'console.converse.agent.training-list',
 					{
 						url: '/training',
 						templateUrl: 'templates/converse/converse-training-list.html',
@@ -457,7 +464,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent.history',
+					'console.converse.agent.history',
 					{
 						url: '/history',
 						templateUrl: 'templates/converse/converse-history.html',
@@ -467,7 +474,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent.history-edit',
+					'console.converse.agent.history-edit',
 					{
 						url: '/history/:conversationId',
 						templateUrl: 'templates/converse/converse-conversation.html',
@@ -477,7 +484,7 @@ turingApp
 						}
 					})
 				.state(
-					'converse.agent.prebuilt-agent',
+					'console.converse.agent.prebuilt-agent',
 					{
 						url: '/prebuiltagent',
 						templateUrl: 'templates/converse/converse-prebuilt-agent.html',
@@ -486,7 +493,7 @@ turingApp
 							pageTitle: 'Converse Prebuilt Agents | Viglet Turing'
 						}
 					})
-				.state('storage', {
+				.state('console.storage', {
 					url: '/storage',
 					templateUrl: 'templates/storage/storage.html',
 					data: {
@@ -494,7 +501,7 @@ turingApp
 					}
 				})
 				.state(
-					'storage.instance',
+					'console.storage.instance',
 					{
 						url: '/instance',
 						templateUrl: 'templates/storage/storage-instance.html',
@@ -504,7 +511,7 @@ turingApp
 						}
 					})
 				.state(
-					'storage.mgmt',
+					'console.storage.mgmt',
 					{
 						url: '/mgmt',
 						templateUrl: 'templates/storage/mgmt/storage-mgmt.html',
@@ -514,7 +521,7 @@ turingApp
 						}
 					})
 				.state(
-					'storage.mgmt-child',
+					'console.storage.mgmt-child',
 					{
 						url: '/mgmt?path',
 						templateUrl: 'templates/storage/mgmt/storage-mgmt-child.html',
@@ -523,7 +530,7 @@ turingApp
 							pageTitle: 'Storages | Viglet Turing'
 						}
 					})
-				.state('se', {
+				.state('console.se', {
 					url: '/se',
 					templateUrl: 'templates/se/se.html',
 					data: {
@@ -531,7 +538,7 @@ turingApp
 					}
 				})
 				.state(
-					'se.instance',
+					'console.se.instance',
 					{
 						url: '/instance',
 						templateUrl: 'templates/se/se-instance.html',
@@ -541,7 +548,7 @@ turingApp
 						}
 					})
 				.state(
-					'se.instance-new',
+					'console.se.instance-new',
 					{
 						url: '/instance/new',
 						templateUrl: 'templates/se/se-instance-new.html',
@@ -551,7 +558,7 @@ turingApp
 						}
 					})
 				.state(
-					'se.instance-edit',
+					'console.se.instance-edit',
 					{
 						url: '/instance/:seInstanceId',
 						templateUrl: 'templates/se/se-instance-edit.html',
@@ -561,7 +568,7 @@ turingApp
 						}
 					})
 				.state(
-					'sn',
+					'console.sn',
 					{
 						url: '/sn',
 						templateUrl: 'templates/sn/sn.html',
@@ -570,7 +577,7 @@ turingApp
 						}
 					})
 				.state(
-					'sn.site',
+					'console.sn.site',
 					{
 						url: '/site',
 						templateUrl: 'templates/sn/site/sn-site.html',
@@ -580,7 +587,7 @@ turingApp
 						}
 					})
 				.state(
-					'sn.site-new',
+					'console.sn.site-new',
 					{
 						url: '/site/new',
 						templateUrl: 'templates/sn/site/sn-site-new.html',
@@ -590,7 +597,7 @@ turingApp
 						}
 					})
 				.state(
-					'sn.site-edit',
+					'console.sn.site-edit',
 					{
 						url: '/site/:snSiteId',
 						templateUrl: 'templates/sn/site/sn-site-edit.html',
@@ -600,7 +607,7 @@ turingApp
 						}
 					})
 				.state(
-					'sn.site-edit.field',
+					'console.sn.site-edit.field',
 					{
 						url: '/field',
 						templateUrl: 'templates/sn/site/sn-site-field.html',
@@ -610,7 +617,7 @@ turingApp
 						}
 					})
 				.state(
-					'sn.site-edit.field-edit',
+					'console.sn.site-edit.field-edit',
 					{
 						url: '/field/:snSiteFieldId',
 						templateUrl: 'templates/sn/site/field/sn-site-field-edit.html',
@@ -620,7 +627,7 @@ turingApp
 						}
 					})
 				.state(
-					'sn.site-edit.ui',
+					'console.sn.site-edit.ui',
 					{
 						url: '/ui',
 						templateUrl: 'templates/sn/site/sn-site-ui.html',
@@ -630,7 +637,7 @@ turingApp
 						}
 					})
 				.state(
-					'sn.ad',
+					'console.sn.ad',
 					{
 						url: '/ad',
 						templateUrl: 'templates/sn/sn-ad.html',
@@ -639,7 +646,7 @@ turingApp
 							pageTitle: 'Semantic Navigation Advertising | Viglet Turing'
 						}
 					})
-				.state('nlp', {
+				.state('console.nlp', {
 					url: '/nlp',
 					templateUrl: 'templates/nlp/nlp.html',
 					data: {
@@ -647,7 +654,7 @@ turingApp
 					}
 				})
 				.state(
-					'nlp.instance',
+					'console.nlp.instance',
 					{
 						url: '/instance',
 						templateUrl: 'templates/nlp/nlp-instance.html',
@@ -657,7 +664,7 @@ turingApp
 						}
 					})
 				.state(
-					'nlp.instance-new',
+					'console.nlp.instance-new',
 					{
 						url: '/instance/new',
 						templateUrl: 'templates/nlp/nlp-instance-new.html',
@@ -667,7 +674,7 @@ turingApp
 						}
 					})
 				.state(
-					'nlp.instance-edit',
+					'console.nlp.instance-edit',
 					{
 						url: '/instance/:nlpInstanceId',
 						templateUrl: 'templates/nlp/nlp-instance-edit.html',
@@ -677,7 +684,7 @@ turingApp
 						}
 					})
 				.state(
-					'nlp.validation',
+					'console.nlp.validation',
 					{
 						url: '/validation',
 						templateUrl: 'templates/nlp/nlp-validation.html',
@@ -687,7 +694,7 @@ turingApp
 						}
 					})
 				.state(
-					'nlp.entity',
+					'console.nlp.entity',
 					{
 						url: '/entity',
 						templateUrl: 'templates/nlp/entity/nlp-entity.html',
@@ -697,7 +704,7 @@ turingApp
 						}
 					})
 				.state(
-					'nlp.entity-import',
+					'console.nlp.entity-import',
 					{
 						url: '/entity/import',
 						templateUrl: 'templates/nlp/entity/nlp-entity-import.html',
@@ -706,7 +713,7 @@ turingApp
 						}
 					})
 				.state(
-					'nlp.entity-edit',
+					'console.nlp.entity-edit',
 					{
 						url: '/entity/:nlpEntityId',
 						templateUrl: 'templates/nlp/entity/nlp-entity-edit.html',
@@ -716,7 +723,7 @@ turingApp
 						}
 					})
 				.state(
-					'nlp.entity-edit.term',
+					'console.nlp.entity-edit.term',
 					{
 						url: '/term',
 						templateUrl: 'templates/nlp/entity/nlp-entity-term.html',

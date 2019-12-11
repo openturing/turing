@@ -2,7 +2,7 @@
     <h2>Entities</h2>
     <div style="border-color: #f5f5f5; border-style: solid; border-width: 2px;">
         <div style="background-color: #f5f5f5; padding: 10px">
-            <a ui-sref="converse.agent.entity-new" class="btn btn-viglet">Add</a>
+            <a ui-sref="console.converse.agent.entity-new" class="btn btn-viglet">Add</a>
         </div>
         <div style="padding: 10px">
             <div ui-sortable ng-model="entities">
@@ -14,7 +14,7 @@
                         <span style="visibility: hidden;">{{entity.ordinal=$index+1}}</span>
                     </div>
                     <div style="display: inline-table; width: calc(100% - 120px);">
-                        <a ui-sref="converse.agent.entity-edit({entityId: entity.id})">{{entity.name}}</a>
+                        <a ui-sref="console.converse.agent.entity-edit({entityId: entity.id})">{{entity.name}}</a>
                     </div>
                     <div style="display: inline-table">
                         <button type="button" class="btn btn-link btn-xs pull-right" style="display: block;"

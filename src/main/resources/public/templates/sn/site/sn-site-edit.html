@@ -12,20 +12,20 @@
 			<div class="btn-group" role="group">
 				<button type="button"
 					ng-class="{'btn-viglet':$state.current.name == 'sn.site-edit','btn-default':$state.current.name != 'sn.site-edit' }"
-					ui-sref="sn.site-edit" class="btn">{{'DETAIL' | translate
+					ui-sref="console.sn.site-edit" class="btn">{{'DETAIL' | translate
 					}}</button>
 			</div>
 			<div class="btn-group" role="group">
 				<button type="button"
 					ng-class="{'btn-viglet':$state.current.name.indexOf('sn.site-edit.field') == 0, 'btn-default':$state.current.name.indexOf('sn.site-edit.field') != 0}"
-					ui-sref="sn.site-edit.field" class="btn btn-default">
+					ui-sref="console.sn.site-edit.field" class="btn btn-default">
 					{{'FIELDS' | translate }} <span class="badge">{{dataGroup.turDatas.length}}</span>
 				</button>
 			</div>
 			<div class="btn-group" role="group">
 				<button type="button"
 					ng-class="{'btn-viglet':$state.current.name.indexOf('sn.site-edit.ui') == 0, 'btn-default':$state.current.name.indexOf('sn.site-edit.ui') != 0}"
-					ui-sref="sn.site-edit.ui" class="btn btn-default">
+					ui-sref="console.sn.site-edit.ui" class="btn btn-default">
 					{{'APPEARANCE' | translate }} <span class="badge">{{dataGroup.turDataGroupModels.length}}</span>
 				</button>
 			</div>

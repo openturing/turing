@@ -9,11 +9,11 @@
 		<ul class="nav nav-tabs" role="tablist" style="padding-top:10px">
 			<li role="presentation"
 				ng-class="{'active':$state.current.name == 'nlp.entity-edit'}"><a
-				ui-sref="nlp.entity-edit" data-target="#dummy" aria-controls="home"
+				ui-sref="console.nlp.entity-edit" data-target="#dummy" aria-controls="home"
 				role="tab" data-toggle="tab">Details</a></li>
 			<li role="presentation"
 				ng-class="{'active':$state.current.name.indexOf('nlp.entity-edit.term') == 0}"><a
-				ui-sref="nlp.entity-edit.term" data-target="#dummy"
+				ui-sref="console.nlp.entity-edit.term" data-target="#dummy"
 				aria-controls="messages" role="tab" data-toggle="tab">Terms <span class="badge">{{entity.turTerms.length}}</span></a></li>
 		</ul>
 		<div ui-view>
