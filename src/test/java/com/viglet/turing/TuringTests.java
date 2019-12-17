@@ -47,7 +47,7 @@ public class TuringTests {
 
 	@Test
 	public void testVersion() throws Exception {
-		mockMvc.perform(get("/api")).andExpect(status().isOk())
+		mockMvc.perform(get("/api/v2")).andExpect(status().isOk())
 				.andExpect(content().contentType("application/json"))
 				.andExpect(jsonPath("$.product").value("Viglet Turing"));
 
