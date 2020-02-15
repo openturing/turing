@@ -20,6 +20,7 @@ buildscript {
 
 plugins {
   id "com.eriwen.gradle.js" version "2.14.1"
+  id "com.gorylenko.gradle-git-properties" version "2.2.1"
 }
 
 apply plugin: 'java'
@@ -29,20 +30,21 @@ apply plugin: 'io.spring.dependency-management'
 apply plugin: 'jacoco'
 apply plugin: 'project-report'
 
-sourceSets {
-  main {
-      java {
-         srcDirs = ['src/main/java', 'libs/search/src/main/java','libs/core/src/main/java','libs/nlp/src/main/java']
-      }
-  }
-}
 jar {
     baseName = 'viglet-turing'
     version =  '0.3.3'
 }
 
+gitProperties {
+    extProperty = 'gitProps' // git properties will be put in a map at project.ext.gitProps
+}
+
 bootJar {
-    launchScript()
+    manifest {
+    	attributes(    
+        'Implementation-Version': "${-> project.jar.version + '-' + project.ext.gitProps['git.commit.id.abbrev']}"
+    	)
+  	} 
 }
 
 repositories {
