@@ -7,12 +7,7 @@ buildscript {
 		  jasyptVersion = '2.1.1'
 		 }
 		repositories {
-		mavenCentral()
-		maven { url "https://repo.spring.io/snapshot" }
-		maven { url "https://repo.spring.io/milestone" }
-        maven { url 'https://jitpack.io' }
-        maven { url "https://code.lds.org/nexus/content/groups/main-repo" }
-		jcenter()
+			mavenCentral()		
 		}
     dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     			   classpath files("lib/gradle-js-plugin-2.14.2-SNAPSHOT.jar") }
@@ -224,7 +219,7 @@ compile group: 'org.springframework.boot', name: 'spring-boot-properties-migrato
 	
 
 	// Oracle	
-	compile group: 'com.oracle', name: 'ojdbc6', version: '11.2.0.3'
+	compile group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
 	
 	// Jasypt
 	compile group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
