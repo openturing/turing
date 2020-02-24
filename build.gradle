@@ -26,8 +26,8 @@ apply plugin: 'jacoco'
 apply plugin: 'project-report'
 
 jar {
-    baseName = 'viglet-turing'
-    version =  '0.3.3'
+    archiveBaseName = 'viglet-turing'
+    archiveVersion =  '0.3.3'
 }
 
 gitProperties {
@@ -44,11 +44,6 @@ bootJar {
 
 repositories {
 	mavenCentral()
-	maven { url "https://repo.spring.io/snapshot" }
-	maven { url "https://repo.spring.io/milestone" }
-    maven { url 'https://jitpack.io' }
-    maven { url "https://code.lds.org/nexus/content/groups/main-repo" }
-	jcenter()
 }
 
 sourceCompatibility = 1.8
@@ -143,7 +138,7 @@ javadoc {
 }
 
 dependencies {
-	compile (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.1.1') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.1.1') {
 		exclude(module: 'guava')
 		exclude(module: 'commons-logging')
 		exclude(module: 'log4j')
@@ -163,7 +158,7 @@ dependencies {
 
 	}
 	
-	compile (group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.1.1') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.1.1') {
 		exclude(module: 'jackson-mapper-asl')
 		exclude(module: 'jackson-core-asl')
 		exclude(module: 'jersey-core')
@@ -175,7 +170,7 @@ dependencies {
 		exclude(module: 'jsp-api')
 		exclude(module: 'log4j')
 	}
-	compile (group: 'org.apache.hadoop', name: 'hadoop-auth', version: '3.1.1') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-auth', version: '3.1.1') {
 		exclude(module: 'commons-logging')
 		exclude(module: 'log4j')
 		exclude(module: 'slf4j-api')
@@ -190,7 +185,7 @@ dependencies {
 		exclude(module: 'servlet-api')
 		exclude(module: 'jsp-api')
 	}
-	compile (group: 'org.apache.hadoop', name: 'hadoop-core', version: '1.2.1') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-core', version: '1.2.1') {
 		exclude(module: 'jersey-core')
 		exclude(module: 'jersey-json')
 		exclude(module: 'jersey-server')
@@ -201,101 +196,101 @@ dependencies {
 	}
 		
  	// Spring Boot
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-solr', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
-//	compile group: 'org.springframework.security.oauth.boot', name: 'spring-security-oauth2-autoconfigure', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-solr', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
+//	implementation group: 'org.springframework.security.oauth.boot', name: 'spring-security-oauth2-autoconfigure', version:"${springBootVersion}"
 
-compile group: 'org.springframework.boot', name: 'spring-boot-properties-migrator', version:"${springBootVersion}"
+	implementation group: 'org.springframework.boot', name: 'spring-boot-properties-migrator', version:"${springBootVersion}"
 
     // Tensorflow   
-	compile group: 'org.tensorflow', name: 'tensorflow', version: '1.13.1'
+	implementation group: 'org.tensorflow', name: 'tensorflow', version: '1.13.1'
 	
 
 	// Oracle	
-	compile group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
+	implementation group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
 	
 	// Jasypt
-	compile group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
+	implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
 
 	// Spring
-  	compile group: 'org.springframework', name: 'spring-test', version: '5.2.3.RELEASE'
+  	implementation group: 'org.springframework', name: 'spring-test', version: '5.2.3.RELEASE'
 
  	// Jackson
-   	compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.7'
+   	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.7'
    	  	
   	// H2
-    compile group: 'com.h2database', name: 'h2', version:'1.4.197'
+    implementation group: 'com.h2database', name: 'h2', version:'1.4.197'
     
     // MariaDB
-    compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.3.0'         
+    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.3.0'         
     
     // JSON
-    compile group: 'org.json', name: 'json', version:'20140107'
+    implementation group: 'org.json', name: 'json', version:'20140107'
       
     // CoreNLP
-    compile group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'3.7.0'
+    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'3.7.0'
     
     //ASM
-    compile group: 'asm', name: 'asm', version:'3.3.1'
+    implementation group: 'asm', name: 'asm', version:'3.3.1'
     
     // OpenNLP
-    compile group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.9.1'
+    implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.9.1'
     
     // Apache Commons
-    compile group: 'commons-io', name: 'commons-io', version:'2.5'
-    compile group: 'commons-lang', name: 'commons-lang', version:'2.6'
+    implementation group: 'commons-io', name: 'commons-io', version:'2.5'
+    implementation group: 'commons-lang', name: 'commons-lang', version:'2.6'
   
     // EhCache
-    compile group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.3'
+    implementation group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.3'
     
     // Tika
-    compile group: 'org.apache.tika', name: 'tika-core', version:'1.5'
-    compile group: 'org.apache.tika', name: 'tika-parsers', version:'1.5'
+    implementation group: 'org.apache.tika', name: 'tika-core', version:'1.5'
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'1.5'
     
     //ActiveMQ using KahaDB
-    compile group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.14.5'
+    implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.14.5'
 	
 	// Swagger 2
-	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
-	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"	
+	implementation group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
+	implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"	
 	
 	// WebJars
-	compile 'org.webjars.bower:jquery:1.12.4'
-	compile 'org.webjars.bower:jquery.ui:1.11.3'
-	compile 'org.webjars:bootstrap:3.3.7-1'
-	compile 'org.webjars.bower:bootstrap:4.1.1'
-	compile 'org.webjars.bower:moment:2.22.2'
-	compile 'org.webjars.bower:angular:1.7.3'
-	compile 'org.webjars.bower:ace-builds:1.3.1'
-	compile 'org.webjars.bower:tinymce:4.5.8'
-	compile 'org.webjars.bower:angular-ui-router:1.0.14'
-	compile 'org.webjars.bower:angular-translate:2.17.0'
-	compile 'org.webjars.bowergithub.angular:bower-angular-resource:1.7.3'
-	compile 'org.webjars.bower:angular-animate:1.7.3'
-	compile 'org.webjars.bower:angular-sanitize:1.7.3'
-	compile 'org.webjars.bower:angular-bootstrap:2.5.0'
-	compile 'org.webjars.bower:angular-cookies:1.7.3'
-	compile 'org.webjars.bower:angular-moment:1.2.0'
-	compile 'org.webjars.bower:angular-ui-ace:0.2.3'
-	compile 'org.webjars.bower:font-awesome:4.7.0'
-	compile 'org.webjars.bower:ng-file-upload:12.2.13'
-	compile 'org.webjars.bower:angular-ui-notification:0.3.6'
-	compile 'org.webjars.bower:angular-ui-tinymce:0.0.19'
-	compile 'org.webjars.bower:angular-ui-sortable:0.14.3'
-	compile 'org.webjars.bower:angular-ui-select:0.19.8'
-	compile 'org.webjars.bower:ngInfiniteScroll:1.3.4'
-	compile 'org.webjars.bower:nvd3:1.8.6'
-    compile 'org.webjars:d3js:3.5.17'
-	compile 'org.webjars:angular-nvd3:1.0.5'
+	implementation 'org.webjars.bower:jquery:1.12.4'
+	implementation 'org.webjars.bower:jquery.ui:1.11.3'
+	implementation 'org.webjars:bootstrap:3.3.7-1'
+	implementation 'org.webjars.bower:bootstrap:4.1.1'
+	implementation 'org.webjars.bower:moment:2.22.2'
+	implementation 'org.webjars.bower:angular:1.7.3'
+	implementation 'org.webjars.bower:ace-builds:1.3.1'
+	implementation 'org.webjars.bower:tinymce:4.5.8'
+	implementation 'org.webjars.bower:angular-ui-router:1.0.14'
+	implementation 'org.webjars.bower:angular-translate:2.17.0'
+	implementation 'org.webjars.bowergithub.angular:bower-angular-resource:1.7.3'
+	implementation 'org.webjars.bower:angular-animate:1.7.3'
+	implementation 'org.webjars.bower:angular-sanitize:1.7.3'
+	implementation 'org.webjars.bower:angular-bootstrap:2.5.0'
+	implementation 'org.webjars.bower:angular-cookies:1.7.3'
+	implementation 'org.webjars.bower:angular-moment:1.2.0'
+	implementation 'org.webjars.bower:angular-ui-ace:0.2.3'
+	implementation 'org.webjars.bower:font-awesome:4.7.0'
+	implementation 'org.webjars.bower:ng-file-upload:12.2.13'
+	implementation 'org.webjars.bower:angular-ui-notification:0.3.6'
+	implementation 'org.webjars.bower:angular-ui-tinymce:0.0.19'
+	implementation 'org.webjars.bower:angular-ui-sortable:0.14.3'
+	implementation 'org.webjars.bower:angular-ui-select:0.19.8'
+	implementation 'org.webjars.bower:ngInfiniteScroll:1.3.4'
+	implementation 'org.webjars.bower:nvd3:1.8.6'
+    implementation 'org.webjars:d3js:3.5.17'
+	implementation 'org.webjars:angular-nvd3:1.0.5'
 	
-	testCompile('org.springframework.boot:spring-boot-starter-test')
+	testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
 
 test {
