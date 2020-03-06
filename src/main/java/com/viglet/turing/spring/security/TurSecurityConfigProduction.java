@@ -54,7 +54,7 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 		http.httpBasic().authenticationEntryPoint(turAuthenticationEntryPoint).and().authorizeRequests()
 				.antMatchers("/index.html", "/welcome/**", "/", "/store/**", "/webjars/**", "/js/**", "/css/**",
 						"/template/**", "/img/**", "/sites/**", "/__tur/**", "/swagger-resources/**", "/h2/**",
-						"/image/**", "/login-page/**", "/logout-page/**")
+						"/images/**", "/login-page/**", "/logout-page/**", "/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico")
 				.permitAll().anyRequest().authenticated().and()
 				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf()
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
