@@ -30,11 +30,23 @@ jar {
     archiveVersion =  '0.3.3'
 }
 
+eclipse {
+    classpath {
+        file {
+            whenMerged {
+                def src = entries.find { it.path == 'src/main/resources' }
+                src.excludes = ['**']
+            }
+        }
+    }
+}
+
 gitProperties {
     extProperty = 'gitProps' // git properties will be put in a map at project.ext.gitProps
 }
 
 bootJar {
+	launchScript() // executable jar
     manifest {
     	attributes(    
         'Implementation-Version': "${-> project.jar.version + '-' + project.ext.gitProps['git.commit.id.abbrev']}"
