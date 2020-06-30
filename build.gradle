@@ -244,7 +244,7 @@ dependencies {
     implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.3.0'         
     
     // JSON
-    implementation group: 'org.json', name: 'json', version:'20140107'
+    implementation group: 'org.json', name: 'json', version:'20200518'
       
     // CoreNLP
     implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'4.0.0'
