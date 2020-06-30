@@ -1,0 +1,18 @@
+<h2>Conversation</h2>
+<table class="table table-hover">
+
+    <tbody>
+        <tr ng-repeat="response in conversation.responses |orderBy:'date'">
+            <td>
+                <span ng-if="response.user" class="label label-success" style="width: 50px;display: block;text-align: center;font-size: 12px;">User</span>
+                <span ng-if="!response.user" class="label label-warning" style="width: 50px;display: block;text-align: center;font-size: 12px;">Agent</span>
+            </td>
+            <td>{{response.text}}</td>
+            <td><span>{{response.date | amCalendar:referenceTime:formats}}</span>
+            </td>
+            <td>
+                <a ng-if="!response.user && response.intentId !== null" ui-sref="console.converse.agent.intent-edit({intentId: response.intentId})">Go to Intent</a>
+            </td>
+        </tr>
+    </tbody>
+</table>

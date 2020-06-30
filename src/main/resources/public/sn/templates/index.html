@@ -1,54 +1,71 @@
-
 <!DOCTYPE html>
 <html lang="en" ng-app="turingSNApp">
 
 
 <head>
-<meta charset="utf-8"></meta>
-<meta http-equiv="X-UA-Compatible" content="IE=edge"></meta>
-<meta name="viewport" content="width=device-width, initial-scale=1"></meta>
-<title>Semantic Navigation | Viglet Turing</title>
-<!-- Bootstrap -->
-<link href="../../webjars/bootstrap/3.3.7-1/css/bootstrap.min.css"
-	rel="stylesheet"></link>
-<link href="../../webjars/font-awesome/4.7.0/css/font-awesome.min.css"
-	rel="stylesheet"></link>
-<link href="../../css/viglet.css" rel="stylesheet"></link>
-<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"></link>
-<base href="/">
-<style>
-[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-    ng-cloak
-	{
-	display: none !important;
-}
-</style>
+	<meta charset="utf-8">
+	</meta>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	</meta>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	</meta>
+	<title>Semantic Navigation | Viglet Turing</title>
+	<!-- Bootstrap -->
+	<link href="../../webjars/bootstrap/3.3.7-1/css/bootstrap.min.css" rel="stylesheet">
+	</link>
+	<link href="../../webjars/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+	</link>
+	<link href="../../css/viglet.css" rel="stylesheet">
+	</link>
+	<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon">
+	</link>
+	<base href="/">
+	<style>
+		[ng\:cloak],
+		[ng-cloak],
+		[data-ng-cloak],
+		[x-ng-cloak],
+		.ng-cloak,
+		.x- ng-cloak {
+			display: none !important;
+		}
+	</style>
 </head>
-<body data-target=".navbar-default" ng-controller="TurSNMainCtrl"
-	ng-cloak>
+
+<body data-target=".navbar-default" ng-controller="TurSNMainCtrl" ng-cloak>
 
 	<div id="wrap" style="margin-bottom: 15px;">
-		<nav class="navbar navbar-default navbar-fixed-top row  row-centered"
-			role="navigation">
-			<div
-				class="container-fluid col-centered col-lg-9 col-md-9 col-sm-10 col-xs-10">
+		<nav class="navbar navbar-default navbar-fixed-top row  row-centered" role="navigation">
+			<div class="container-fluid col-centered col-lg-9 col-md-9 col-sm-10 col-xs-10">
 				<!-- Brand and toggle get grouped for better mobile display -->
 				<div class="row">
 					<div class="col-lg-1 col-md-1 col-sm-1 col-xs-2">
-						<img class="navbar-brand"
-							style="padding: 5px; padding-right: 20px;"
+						<img class="navbar-brand" style="padding: 5px; padding-right: 20px;"
 							src="../img/viglet_logo_sm.png"></img>
 					</div>
-					<div class="col-lg-11 col-md-11 col-sm-11 col-xs-10"
-						style="padding-top: 7px">
-						<form method="get" action="">
-							<div class="input-group">
-								<input id="q" name="q" type="text" class="form-control"
-									placeholder="{{ 'SEARCH_FOR' | translate }}..."
-									value='{{turQuery}}'> <span class="input-group-btn">
-									<button class="btn btn-viglet" type="submit">{{
+					<div class="col-lg-11 col-md-11 col-sm-11 col-xs-10" style="padding-top: 7px">
+						<form method="get" action="" style="display: flex;">
+
+							<input id="q" name="q" type="text" class="form-control"
+								placeholder="{{ 'SEARCH_FOR' | translate }}..." value='{{turQuery}}'>
+							<input ng-click="dictateIt()"
+								style="    
+									width: 80px;
+									height: 34px;
+									-webkit-appearence: none;
+									-moz-appearence: none;
+									border: 0;
+									cursor: pointer;
+									overflow: hidden;
+									text-indent: -9999px;
+									transition: background .2s ease;
+									background-color: royalblue;
+									background: url(/images/microphone.svg) center center no-repeat;">
+
+							<button class="btn btn-viglet" type="submit">{{
 										'SEARCH' | translate}}</button>
-								</span>
-							</div>
+
+
 
 						</form>
 					</div>
@@ -59,10 +76,8 @@
 		</nav>
 
 		<div class="container" id="turHeader">
-			<div id="home" class="row row-centered"
-				style="margin: 0px; margin-top: 80px">
-				<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 col-centered"
-					style="padding: 0px">
+			<div id="home" class="row row-centered" style="margin: 0px; margin-top: 80px">
+				<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 col-centered" style="padding: 0px">
 					<div ng-if="pageCount > 0" style="margin-top: 20px">
 
 						<div>
@@ -70,8 +85,7 @@
 								<div class="col-lg-3 col-md-3 col-sm-4 col-xs-12 col-centered"
 									style="vertical-align: top; padding: 0px">
 
-									<div ng-if="facetsToRemove != null" class="col-lg-12"
-										style="padding: 2px">
+									<div ng-if="facetsToRemove != null" class="col-lg-12" style="padding: 2px">
 										<div class="panel panel-default">
 											<div class="panel-heading"
 												style="background-color: #FF874B; color: white !important;">
@@ -88,9 +102,8 @@
 									</div>
 
 
-									<div ng-repeat="facet in facets" class="col-lg-12"
-										style="padding: 2px" id="{{facet['label']['text']}}"
-										name="{{facet['label']['text']}}">
+									<div ng-repeat="facet in facets" class="col-lg-12" style="padding: 2px"
+										id="{{facet['label']['text']}}" name="{{facet['label']['text']}}">
 										<div class="panel panel-default">
 											<div class="panel-heading"
 												style="background-color: #FF874B; color: white !important;">
@@ -109,8 +122,7 @@
 								<div class="col-lg-9 col-md-9 col-sm-8 col-xs-12 col-centered"
 									style="vertical-align: top;">
 									<div class="row">
-										<div class="col-lg-12"
-											style="padding: 0px; padding-left: 20px">
+										<div class="col-lg-12" style="padding: 0px; padding-left: 20px">
 
 											<div class="panel panel-default">
 												<div class="panel-heading">
@@ -127,8 +139,7 @@
 																<div class="col-lg-4 col-md-5 hidden-sm hidden-xs"
 																	style="padding: 0px; text-align: right; padding-right: 10px; padding-top: 5px">
 																	{{ 'ORDER_BY' | translate }}:</div>
-																<div
-																	class="col-lg-8 col-md-7 col-sm-12 col-xs-10 col-lg-offset-0 col-md-offset-0 col-sm-offset-0 col-xs-offset-2"
+																<div class="col-lg-8 col-md-7 col-sm-12 col-xs-10 col-lg-offset-0 col-md-offset-0 col-sm-offset-0 col-xs-offset-2"
 																	style="padding: 0px">
 																	<div class="form-group">
 																		<select class="form-control" ng-model="turSort"
@@ -155,21 +166,34 @@
 																	ng-if="document.fields[defaultImageField]"
 																	style="width: 100%; background-position: center; background-repeat: no-repeat; background-size: cover; -webkit-background-size: cover;"
 																	ng-src="{{document.fields[defaultImageField]}}">
-																<span ng-if="!document.fields[defaultImageField] && document.fields['author']"
+																<span
+																	ng-if="!document.fields[defaultImageField] && document.fields['author']"
 																	class="numberCircle" style="margin-left: 10px;">
-																	<span style="font-size: 40px;" ng-bind-html="firstLetters(document.fields['author'])"></span>
+																	<span style="font-size: 40px;"
+																		ng-bind-html="firstLetters(document.fields['author'])"></span>
+																</span>
+																<span
+																	ng-if="!document.fields[defaultImageField] && !document.fields['author'] && document.fields['fileExtension']"
+																	style="margin-left: 10px;">
+																	<span
+																		style="font-size: 40px;color: #FF874B; font-weight: bolder;"
+																		ng-bind-html="document.fields['fileExtension']"></span>
 																</span>
 															</div>
 															<div class="col-lg-10">
 																<div>
 																	<h4>
-																		<a ng-if="document.fields[defaultTitleField]" style="color: #FF874B; font-weight: bolder;"
+																		<a ng-if="document.fields[defaultTitleField]"
+																			target="_blank"
+																			style="color: #FF874B; font-weight: bolder;"
 																			href="{{document.fields[defaultUrlField]}}"
 																			ng-bind-html="document.fields[defaultTitleField]"></a>
-																			
-																		<a style="color: #FF874B; font-weight: bolder;overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;" ng-if="!document.fields[defaultTitleField]" 
+
+																		<a target="_blank"
+																			style="color: #FF874B; font-weight: bolder;overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;"
+																			ng-if="!document.fields[defaultTitleField]"
 																			href="{{document.fields[defaultUrlField]}}"
-																			ng-bind-html="document.fields[defaultDescriptionField]"></a>	
+																			ng-bind-html="document.fields[defaultDescriptionField]"></a>
 																	</h4>
 																</div>
 																<div>
@@ -180,10 +204,10 @@
 																</div>
 
 																<div style="margin-top: 10px">
-																	<div style="display: table-row">
-																		<div
-																			style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
-																			ng-bind-html="document.fields[defaultDescriptionField]"></div>
+																	<div style="display: block">
+																		<div style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
+																			ng-bind-html="document.fields[defaultDescriptionField]">
+																		</div>
 																	</div>
 																	<div ng-if="document['metadata'].length > 0"
 																		style="margin-top: 10px">
@@ -191,10 +215,11 @@
 																		<div ng-repeat="entity in document['metadata']"
 																			style="display: inline;">
 																			<a style="color: #FF874B"
-																				ng-click="turRedirect(entity['href']);" href
-																				ng-bind-html="entity['text']"></a>
+																				ng-click="turRedirect(entity['href']);"
+																				href ng-bind-html="entity['text']"></a>
 
-																			<div ng-if="!$last" style="display: inline;">,</div>
+																			<div ng-if="!$last"
+																				style="display: inline;">,</div>
 																		</div>
 																	</div>
 																</div>
@@ -207,8 +232,8 @@
 									</div>
 									<div style="text-align: center;">
 										<div ng-repeat="page in pages" style="display: inline;">
-											<a ng-if="page.href" ng-click="turRedirect(page.href);" href
-												_target='_self' style='font-size: 20px; color: #FF874B'>{{
+											<a ng-if="page.href" ng-click="turRedirect(page.href);" href _target='_self'
+												style='font-size: 20px; color: #FF874B'>{{
 												page.text | translate}}</a> <span ng-if="!page.href"
 												style='font-size: 20px'>{{page.text | translate }}</span>
 											<div ng-if="!$last" style="display: inline;">|</div>
@@ -225,23 +250,16 @@
 		</div>
 	</div>
 	<script src="../../webjars/jquery/1.12.4/dist/jquery.min.js"></script>
-	<script
-		src="../../webjars/moment/2.22.2/min/moment-with-locales.min.js"></script>
+	<script src="../../webjars/moment/2.22.2/min/moment-with-locales.min.js"></script>
 	<script src="../../webjars/angular/1.7.3/angular.min.js"></script>
-	<script
-		src="../../webjars/angular-ui-router/1.0.14/release/angular-ui-router.min.js"></script>
-	<script
-		src="../../webjars/angular-translate/2.17.0/angular-translate.min.js"></script>
+	<script src="../../webjars/angular-ui-router/1.0.14/release/angular-ui-router.min.js"></script>
+	<script src="../../webjars/angular-translate/2.17.0/angular-translate.min.js"></script>
 	<script src="../../webjars/angular-resource/angular-resource.min.js"></script>
-	<script
-		src="../../webjars/angular-animate/1.7.3/angular-animate.min.js"></script>
-	<script
-		src="../../webjars/angular-cookies/1.7.3/angular-cookies.min.js"></script>
-	<script
-		src="../../webjars/angular-sanitize/1.7.3/angular-sanitize.min.js"></script>
+	<script src="../../webjars/angular-animate/1.7.3/angular-animate.min.js"></script>
+	<script src="../../webjars/angular-cookies/1.7.3/angular-cookies.min.js"></script>
+	<script src="../../webjars/angular-sanitize/1.7.3/angular-sanitize.min.js"></script>
 	<script src="../../webjars/angular-moment/1.2.0/angular-moment.min.js"></script>
-	<script
-		src="../../webjars/angular-bootstrap/2.5.0/ui-bootstrap-tpls.min.js"></script>
+	<script src="../../webjars/angular-bootstrap/2.5.0/ui-bootstrap-tpls.min.js"></script>
 	<script src="../../webjars/bootstrap/3.3.7-1/js/bootstrap.min.js"></script>
 	<script src="../../js/sn/dist/turing-sn-min.js"></script>
 </body>

@@ -12,7 +12,7 @@
 				<div class="caption">
 					<p>Create a New Storage Instance</p>
 					<p>
-						<a ui-sref="se.instance-new"
+						<a ui-sref="console.se.instance-new"
 							class="btn btn-primary btn-lg btn-block" role="button">Create</a>
 					</p>
 				</div>
@@ -21,7 +21,7 @@
 		<div class="col-sm-6 col-md-4" ng-repeat="se in ses">
 			<div class="thumbnail">
 				<div
-					style="background-color: #FF874B; text-align: right; height: 200px">
+					style="background-color: royalblue; text-align: right; height: 200px">
 					<img src="images/models.png" alt="nlp" style="padding: 15px">
 					<h3
 						style="color: white; position: absolute; left: 30px; top: 170px; z-index: 10">{{storage.title}}</h3>
@@ -29,7 +29,7 @@
 				<div class="caption">
 					<p>{{storage.description}}&nbsp;</p>
 					<p>
-						<a ui-sref="storage.instance-edit({storageInstanceId:storage.id})"
+						<a ui-sref="console.storage.instance-edit({storageInstanceId:storage.id})"
 							class="btn btn-viglet btn-lg btn-block" role="button">Configure</a>
 					</p>
 				</div>

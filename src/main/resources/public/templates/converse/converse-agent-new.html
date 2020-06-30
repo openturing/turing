@@ -1,0 +1,68 @@
+<div class="panel panel-default"
+	style='font-family: "Raleway", sans-serif; font-weight: 400; margin-bottom: 0px; padding-bottom: 0px;'>
+	<div class="panel-title"
+		style="padding: 10px; border-bottom-color: rgb(217, 217, 217); border-bottom-style: solid; border-bottom-width: thin;">
+		<p style="font-size: 18px; color: royalblue; margin: 0px;">New Converse Agent</p>
+		<p style="font-size: 14px; color: rgb(182, 182, 182); margin: 0px;">Add a Converse Agent
+		</p>
+	</div>
+	<div class="panel-body" style="padding: 0px;">
+		<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-3 col-md-3 col-sm-3 col-xs-3"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'NAME' | translate }}</div>
+			<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9" style="padding: 0px">
+				<input ng-model="agent.name" class="form-control">
+			</div>
+		</div>
+		<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-3 col-md-3 col-sm-3 col-xs-3"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'DESCRIPTION' | translate }}</div>
+			<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9" style="padding: 0px">
+				<input ng-model="agent.description" type="text" class="form-control">
+			</div>
+		</div>
+		<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-3 col-md-3 col-sm-3 col-xs-3"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'SE' | translate }}</div>
+			<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9" style="padding: 0px">
+				<select class="form-control" ng-model="agent.turSEInstance"
+					ng-options="seInstance as seInstance.title for seInstance in seInstances track by seInstance.id">
+				</select>
+			</div>
+		</div>
+		<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-3 col-md-3 col-sm-3 col-xs-3"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'LANGUAGE' | translate }}</div>
+			<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9" style="padding: 0px">
+				<select class="form-control" ng-model="agent.language"
+					ng-options="locale.initials as locale.en for locale in locales">
+					<option value="">- Pick One -</option>
+				</select>
+			</div>
+		</div>
+		<div class="row" style="margin: 0px; padding: 10px; padding-bottom: 0px">
+			<div class="col-lg-3 col-md-3 col-sm-3 col-xs-3"
+				style="text-align: right; padding: 0px; padding-right: 20px; padding-top: 5px; font-size: 14px; color: rgb(51, 51, 51)">
+				{{'CORE' | translate }}</div>
+			<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9" style="padding: 0px">
+				<input ng-model="agent.core" type="text" class="form-control">
+			</div>
+		</div>
+		<div style="padding: 10px;">
+			<div class="row">
+				<div class="col-lg-3 col-md-3 col-sm-3 col-xs-3"></div>
+				<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9"
+					style="padding: 0px; padding-top: 20px; padding-bottom: 20px;">
+					<div class="btn-group">
+						<button ng-click="agentSave()" type="button" class="btn btn-viglet">{{'SETTINGS_SAVE_CHANGES' |
+							translate }}</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

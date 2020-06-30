@@ -33,6 +33,21 @@ turingSNApp
 							$scope.defaultImageField = "image";
 							$scope.defaultDateField = "published_date";
 							$scope.defaultUrlField = "url";
+	
+							$scope.dictateIt = function () {
+								$scope.theText = "";
+								var recognition = new webkitSpeechRecognition();
+								recognition.onresult = function (event) {
+								  $scope.$apply(function() {
+									for (var i = event.resultIndex; i < event.results.length; i++) {
+									  if (event.results[i].isFinal) {
+										$scope.turQuery  = event.results[i][0].transcript;
+									  }
+									}
+								  });
+								};
+								recognition.start();
+							};
 
 							var turPath = $location.path().trim();
 							if (turPath.endsWith("/")) {

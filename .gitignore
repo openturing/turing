@@ -1,19 +1,32 @@
+db-encrypted.properties
 
-/target/
-.DS_Store
-._.DS_Store
-**/.DS_Store
-**/._.DS_Store
-*.log
-/logs/
-/models/
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.war
+*.ear
+/.classpath
+/.vscode
+/.settings
+/.project
+/volumes
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
 /bin/
+/target/
+/store/
 /.gradle/
+/logs/
 /build/
-/store/logs
-/activemq-data/
-.project
-.jsdtscope
-.vscode
-.settings
-.classpath
+/backup/
+src/main/resources/js/client-side/build
+/nashorn_code_cache
+.sts4-cache
+/store.*
+/node_modules
+
+/activemq-data
+/models
+

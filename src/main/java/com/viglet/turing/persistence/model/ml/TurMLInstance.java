@@ -31,7 +31,8 @@ public class TurMLInstance implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator = "id_Sequence")
+    @SequenceGenerator(name = "id_Sequence", sequenceName = "ID_SEQ")
 	@Column(unique = true, nullable = false)
 	private int id;
 
@@ -44,7 +45,7 @@ public class TurMLInstance implements Serializable {
 	@Column(nullable = false)
 	private int enabled;
 
-	@Column(nullable = false, length = 255)
+	@Column(length = 255)
 	private String host;
 
 	@Column(nullable = false, length = 5)

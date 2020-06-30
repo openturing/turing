@@ -5,7 +5,7 @@
 			<button ng-click="generateModel()" type="button"
 				class="btn btn-success">Generate Model</button>
 		</div>
-		<p style="font-size: 18px; color: #FF874B; margin: 0px;">{{dataGroup.name}}</p>
+		<p style="font-size: 18px; color: royalblue; margin: 0px;">{{dataGroup.name}}</p>
 		<p style="font-size: 14px; color: rgb(182, 182, 182); margin: 0px;">{{dataGroup.description}}</p>
 	</div>
 </div>
@@ -16,31 +16,31 @@
 			<div class="btn-group" role="group">
 				<button type="button"
 					ng-class="{'btn-viglet':$state.current.name == 'ml.datagroup-edit','btn-default':$state.current.name != 'ml.datagroup-edit' }"
-					ui-sref="ml.datagroup-edit" class="btn">Detail</button>
+					ui-sref="console.ml.datagroup-edit" class="btn">Detail</button>
 			</div>
 			<div class="btn-group" role="group">
 				<button type="button"
 					ng-class="{'btn-viglet':$state.current.name.indexOf('ml.datagroup-edit.data') == 0, 'btn-default':$state.current.name.indexOf('ml.datagroup-edit.data') != 0}"
-					ui-sref="ml.datagroup-edit.data" class="btn btn-default">
+					ui-sref="console.ml.datagroup-edit.data" class="btn btn-default">
 					Documents <span class="badge">{{dataGroup.turDatas.length}}</span>
 				</button>
 			</div>
 			<div class="btn-group" role="group">
 				<button type="button"
 					ng-class="{'btn-viglet': $state.current.name.indexOf('ml.datagroup-edit.category') == 0,'btn-default': $state.current.name.indexOf('ml.datagroup-edit.category') != 0}"
-					ui-sref="ml.datagroup-edit.category" class="btn btn-default">
+					ui-sref="console.ml.datagroup-edit.category" class="btn btn-default">
 					Categories <span class="badge">{{dataGroup.turMLCategories.length}}</span>
 				</button>
 			</div>
 			<div class="btn-group" role="group">
 				<button type="button"
 					ng-class="{'btn-viglet':$state.current.name.indexOf('ml.datagroup-edit.sentence') == 0, 'btn-default':$state.current.name.indexOf('ml.datagroup-edit.sentence') != 0}"
-					ui-sref="ml.datagroup-edit.sentence" class="btn btn-default">Sentences <span class="badge">{{dataGroup.turDataGroupSentences.length}}</span></button>
+					ui-sref="console.ml.datagroup-edit.sentence" class="btn btn-default">Sentences <span class="badge">{{dataGroup.turDataGroupSentences.length}}</span></button>
 			</div>
 			<div class="btn-group" role="group">
 				<button type="button"
 					ng-class="{'btn-viglet':$state.current.name.indexOf('ml.datagroup-edit.model') == 0, 'btn-default':$state.current.name.indexOf('ml.datagroup-edit.model') != 0}"
-					ui-sref="ml.datagroup-edit.model" class="btn btn-default">Models <span class="badge">{{dataGroup.turDataGroupModels.length}}</span></button>
+					ui-sref="console.ml.datagroup-edit.model" class="btn btn-default">Models <span class="badge">{{dataGroup.turDataGroupModels.length}}</span></button>
 			</div>
 		</div>
 	</div>

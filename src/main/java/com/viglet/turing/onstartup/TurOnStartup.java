@@ -23,6 +23,9 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.onstartup.auth.TurGroupOnStartup;
+import com.viglet.turing.onstartup.auth.TurUserOnStartup;
+import com.viglet.turing.onstartup.converse.TurConverseAgentOnStartup;
 import com.viglet.turing.onstartup.ml.TurMLInstanceOnStartup;
 import com.viglet.turing.onstartup.ml.TurMLVendorOnStartup;
 import com.viglet.turing.onstartup.nlp.TurNLPEntityOnStartup;
@@ -71,16 +74,24 @@ public class TurOnStartup implements ApplicationRunner {
 	private TurConfigVarOnStartup turConfigVarOnStartup;
 	@Autowired
 	private TurSNSiteOnStartup turSNSiteOnStartup;
+	@Autowired
+	private TurConverseAgentOnStartup turConverseAgentOnStartup;
+	@Autowired
+	private TurUserOnStartup turUserOnStartup;
+	@Autowired
+	private TurGroupOnStartup turGroupOnStartup;
 	
 	@Override
 	public void run(ApplicationArguments arg0) throws Exception {
 		final String FIRST_TIME = "FIRST_TIME";
 
 		if (!turConfigVarRepository.findById(FIRST_TIME).isPresent()) {
-			
+
 			System.out.println("First Time Configuration ...");
 
 			turLocaleOnStartup.createDefaultRows();
+			turGroupOnStartup.createDefaultRows();
+			turUserOnStartup.createDefaultRows();			
 			turNLPVendorOnStartup.createDefaultRows();
 			turNLPEntityOnStartup.createDefaultRows();
 			turNLPVendorEntityOnStartup.createDefaultRows();
@@ -92,6 +103,7 @@ public class TurOnStartup implements ApplicationRunner {
 			turSEInstanceOnStartup.createDefaultRows();
 			turDataGroupStartup.createDefaultRows();
 			turSNSiteOnStartup.createDefaultRows();
+			turConverseAgentOnStartup.createDefaultRows();
 			turConfigVarOnStartup.createDefaultRows();
 
 			System.out.println("Configuration finished.");

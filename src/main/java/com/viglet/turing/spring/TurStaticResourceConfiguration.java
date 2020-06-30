@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 
 import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
@@ -41,7 +42,16 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 	@Override
 	public void addViewControllers(ViewControllerRegistry registry) {
 		registry.addViewController("/console").setViewName("forward:/console/index.html");
+		registry.addViewController("/console/").setViewName("forward:/console/index.html");
 		registry.addViewController("/welcome").setViewName("forward:/welcome/index.html");
+		registry.addViewController("/welcome/").setViewName("forward:/welcome/index.html");
+		registry.addViewController("/converse").setViewName("forward:/converse/index.html");
+		registry.addViewController("/converse/").setViewName("forward:/converse/index.html");
 
+	}
+	
+	@Override
+	public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
+		configurer.setDefaultTimeout(-1);	
 	}
 }

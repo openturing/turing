@@ -1,2 +1,3 @@
-var turingApp = angular.module('turingApp', [  'ngCookies','ngResource', 'ngAnimate',
-		'ngSanitize', 'ui.router', 'ui.bootstrap', 'pascalprecht.translate']);
+var turingApp = angular.module('turingApp', ['ngCookies', 'ngResource', 'ngAnimate',
+	'ngSanitize', 'ui.router', 'ui.bootstrap', 'pascalprecht.translate', 'ui.sortable', 'ui.select',
+	'angularMoment', 'ngFileUpload', 'ui-notification']);

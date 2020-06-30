@@ -34,13 +34,10 @@ public class TurIndexContext {
 	@RequestMapping("/")
 	private void index(HttpServletRequest request, HttpServletResponse response, final Principal principal)
 			throws IOException {
-		/*if (principal != null) {
+		if (principal != null) {
 			response.sendRedirect("/console");
 		} else {
 			response.sendRedirect("/welcome");
-		} */
-		
-		response.sendRedirect("/console");
-
+		} 		
 	}
 }

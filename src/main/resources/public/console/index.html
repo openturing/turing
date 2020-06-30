@@ -3,57 +3,78 @@
 
 
 <head>
-<meta charset="utf-8"></meta>
-<meta http-equiv="X-UA-Compatible" content="IE=edge"></meta>
-<meta name="viewport" content="width=device-width, initial-scale=1"></meta>
-<title ng-bind="$state.current.data.pageTitle">Console | Viglet
-	Turing</title>
-	
-<!-- Bootstrap -->
-<link href="webjars/bootstrap/3.3.7-1/css/bootstrap.min.css"
-	rel="stylesheet"></link>
-<link href="webjars/font-awesome/4.7.0/css/font-awesome.min.css"
-	rel="stylesheet"></link>
-<link href="css/viglet.css" rel="stylesheet"></link>
-<link href="favicon.ico" rel="shortcut icon" type="image/x-icon"></link>
+	<meta charset="utf-8">
+	</meta>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	</meta>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	</meta>
+	<title ng-bind="$state.current.data.pageTitle">Console | Viglet
+		Turing</title>
+
+	<!-- Bootstrap -->
+	<link href="webjars/bootstrap/3.3.7-1/css/bootstrap.min.css" rel="stylesheet">
+	</link>
+	<link href="webjars/angular-ui-notification/0.3.6/dist/angular-ui-notification.min.css" rel="stylesheet">
+	</link>
+	<link href="webjars/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+	</link>
+	<link rel="stylesheet" href="webjars/angular-ui-select/0.19.8/dist/select.css">
+	<link href="css/viglet.css" rel="stylesheet">
+	</link>
+	<link href="favicon.ico" rel="shortcut icon" type="image/x-icon">
+	</link>
 
 </head>
+
 <body data-target=".navbar-default">
 	<div id="wrap" style="margin-bottom: 15px;">
-		<nav class="navbar navbar-default navbar-fixed-top row  row-centered"
-			role="navigation">
-			<div
-				class="container-fluid col-centered col-lg-9 col-md-9 col-sm-10 col-xs-10">
+		<nav class="navbar navbar-default navbar-fixed-top row  row-centered" role="navigation">
+			<div class="container-fluid col-centered col-lg-12 col-md-12 col-sm-12 col-xs-12">
 				<!-- Brand and toggle get grouped for better mobile display -->
 				<div class="navbar-header">
 					<button class="navbar-toggle" type="button" data-toggle="collapse"
 						data-target=".bs-navbar-collapse">
-						<span class="sr-only">Toggle navigation</span> <span
-							class="icon-bar"></span> <span class="icon-bar"></span> <span
-							class="icon-bar"></span>
+						<span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span
+							class="icon-bar"></span> <span class="icon-bar"></span>
 					</button>
-					<a class="navbar-brand"  href="#viglet"><img style="padding: 5px;
-    padding-right: 20px;"
-						src="img/viglet_logo_sm.png"></img></a>
+					<a class="navbar-brand" href="#viglet" style="margin-left: 10px;">
+						<div style="background: royalblue;width: 40px;height: 40px;color: antiquewhite;padding-top: 6px;padding-left: 4px;font-size: 18px;font-weight:  bolder; border-width: 1px; border-style: solid;border-radius: 5px;box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2), 0 1px 5px 0 rgba(0, 0, 0, 0.19);margin-right: 20px;
+							margin-top: 3px;">
+							<div style="margin-top: 8px;">
+								Tu
+							</div>
+						</div>
+
+					</a>
 				</div>
-				<nav class="collapse navbar-collapse bs-navbar-collapse"
-					role="navigation">
+				<nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
 					<ul class="nav navbar-nav navbar-left">
-						<li ng-class="{'active':$state.current.name == 'home'}"><a
-							ui-sref="home" data-target="#dummy">Home</a></li>
-						<li ng-class="{'active':$state.current.name.indexOf('nlp') == 0}"><a
-							ui-sref="nlp.instance" data-target="#dummy">NLP</a></li>
-						<li ng-class="{'active':$state.current.name.indexOf('ml') == 0}"><a
-							ui-sref="ml.instance" data-target="#dummy">Machine Learning</a></li>
-						<li
-							ng-class="{'active':$state.current.name.indexOf('converse') == 0}"><a
-							ui-sref="converse.intent" data-target="#dummy">Converse</a></li>
-						<li ng-class="{'active':$state.current.name.indexOf('se') == 0}"><a
-							ui-sref="se.instance" data-target="#dummy">Search Engine</a></li>
-						<li ng-class="{'active':$state.current.name.indexOf('sn') == 0}"><a
-							ui-sref="sn.site" data-target="#dummy">Semantic Navigation</a></li>
-						<li ng-class="{'active':$state.current.name.indexOf('storage') == 0}"><a
-							ui-sref="storage" data-target="#dummy">Storage</a></li>	
+						<li ng-class="{'active':$state.current.name == 'console.home'}"><a ui-sref="console.home"
+								data-target="#dummy">Home</a></li>
+						<li ng-class="{'active':$state.current.name.indexOf('console.nlp') == 0}"><a ui-sref="console.nlp.instance"
+								data-target="#dummy">NLP</a></li>
+						<li ng-class="{'active':$state.current.name.indexOf('console.ml') == 0}"><a ui-sref="console.ml.instance"
+								data-target="#dummy">Machine Learning</a></li>
+						<li ng-class="{'active':$state.current.name.indexOf('console.se') == 0}"><a ui-sref="console.se.instance"
+								data-target="#dummy">Search Engine</a></li>
+						<li ng-class="{'active':$state.current.name.indexOf('console.converse') == 0}"><a
+								ui-sref="console.converse.agent-list" data-target="#dummy">Converse</a></li>
+						<li ng-class="{'active':$state.current.name.indexOf('sn') == 0}"><a ui-sref="console.sn.site"
+								data-target="#dummy">Semantic Navigation</a></li>
+						<!--	<li ng-class="{'active':$state.current.name.indexOf('storage') == 0}"><a ui-sref="console.storage"
+								data-target="#dummy">Storage</a></li> -->
+					</ul>
+					<ul class="nav navbar-nav navbar-right" style="margin-right: 10px;">
+						<li class="dropdown"><a href class="dropdown-toggle" data-toggle="dropdown" role="button"
+								aria-haspopup="true" aria-expanded="false">{{principal.firstName}}
+								{{principal.lastName}}
+								<span class="caret"></span>
+							</a>
+							<ul class="dropdown-menu">
+								<li><a href ng-click="logout()">Sign out</a></li>
+							</ul>
+						</li>
 					</ul>
 				</nav>
 			</div>
@@ -61,41 +82,41 @@
 		</nav>
 		<div class="container">
 			<div id="home" class="row row-centered" style="margin-top: 80px">
-				<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 col-centered"
-					ng-controller="TurAlertCtrl">
-					<div uib-alert ng-repeat="alert in alerts"
-						ng-class="'alert-' + (alert.type || 'warning')"
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 col-centered" ng-controller="TurAlertCtrl">
+					<div uib-alert ng-repeat="alert in alerts" ng-class="'alert-' + (alert.type || 'warning')"
 						close="closeAlert($index)" dismiss-on-timeout="5000">{{alert.msg}}</div>
 				</div>
 
-				<div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 col-centered"
-					ui-view></div>
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 col-centered" ui-view></div>
 			</div>
 		</div>
 	</div>
-	
+
 	<script src="webjars/jquery/1.12.4/dist/jquery.min.js"></script>
-	<script
-		src="webjars/moment/2.22.2/min/moment-with-locales.min.js"></script>
+	<script src="webjars/jquery.ui/1.11.3/ui/core.js"></script>
+	<script src="webjars/jquery.ui/1.11.3/ui/widget.js"></script>
+	<script src="webjars/jquery.ui/1.11.3/ui/mouse.js"></script>
+	<script src="webjars/jquery.ui/1.11.3/ui/sortable.js"></script>
+	<script src="webjars/moment/2.22.2/min/moment-with-locales.min.js"></script>
 	<script src="webjars/angular/1.7.3/angular.min.js"></script>
-	<script
-		src="webjars/angular-ui-router/1.0.14/release/angular-ui-router.min.js"></script>
-	<script
-		src="webjars/angular-translate/2.17.0/angular-translate.min.js"></script>
-	<script
-		src="webjars/angular-resource/angular-resource.min.js"></script>
-	<script
-		src="webjars/angular-animate/1.7.3/angular-animate.min.js"></script>
-	<script
-		src="webjars/angular-cookies/1.7.3/angular-cookies.min.js"></script>
-	<script
-		src="webjars/angular-sanitize/1.7.3/angular-sanitize.min.js"></script>
-	<script
-		src="webjars/angular-bootstrap/2.5.0/ui-bootstrap-tpls.min.js"></script>
+	<script src="webjars/angular-ui-sortable/0.14.3/sortable.min.js"></script>
+	<script src="webjars/angular-ui-router/1.0.14/release/angular-ui-router.min.js"></script>
+	<script src="webjars/angular-translate/2.17.0/angular-translate.min.js"></script>
+	<!-- shim is needed to support non-HTML5 FormData browsers (IE8-9)-->
+	<script src="webjars/ng-file-upload/12.2.13/ng-file-upload-shim.min.js"></script>
+	<script src="webjars/ng-file-upload/12.2.13/ng-file-upload.min.js"></script>
+	<script src="webjars/angular-ui-notification/0.3.6/dist/angular-ui-notification.min.js"></script>
+	<script src="webjars/angular-resource/angular-resource.min.js"></script>
+	<script src="webjars/angular-animate/1.7.3/angular-animate.min.js"></script>
+	<script src="webjars/angular-cookies/1.7.3/angular-cookies.min.js"></script>
+	<script src="webjars/angular-sanitize/1.7.3/angular-sanitize.min.js"></script>
+	<script src="webjars/angular-ui-select/0.19.8/dist/select.min.js"></script>
+	<script src="webjars/angular-bootstrap/2.5.0/ui-bootstrap-tpls.min.js"></script>
+	<script src="webjars/angular-moment/1.2.0/angular-moment.min.js"></script>
 	<script src="webjars/bootstrap/3.3.7-1/js/bootstrap.min.js"></script>
 	<script src="js/dist/turing-min.js"></script>
-	
-	
+
+
 </body>
 
 </html>

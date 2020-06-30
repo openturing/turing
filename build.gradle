@@ -1,52 +1,61 @@
 
 buildscript {
-    ext { springBootVersion = '2.1.3.RELEASE'
+    ext { springBootVersion = '2.3.0.RELEASE'
 	      hibernateVersion = '5.11.0.Final'
-		  httpClientVersion = '4.5.6'
+		  httpClientVersion = '4.5.11'
 		  swaggerVersion = '2.9.2'
-		  jgitVersion = '4.11.0.201803080745-r'
+		  jasyptVersion = '2.1.1'
 		 }
 		repositories {
-		mavenCentral()
-		maven { url "https://repo.spring.io/snapshot" }
-		maven { url "https://repo.spring.io/milestone" }
-        maven { url 'https://jitpack.io' }
-		jcenter()
+			mavenCentral()		
 		}
     dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-    			   classpath("com.eriwen:gradle-js-plugin:2.12.0") }
+    			   classpath files("lib/gradle-js-plugin-2.14.2-SNAPSHOT.jar") }
+}
+
+plugins {
+  id "com.eriwen.gradle.js" version "2.14.1"
+  id "com.gorylenko.gradle-git-properties" version "2.2.1"
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
-apply plugin: 'com.eriwen.gradle.js'
 apply plugin: 'jacoco'
 apply plugin: 'project-report'
 
-sourceSets {
-  main {
-      java {
-         srcDirs = ['src/main/java', 'libs/search/src/main/java','libs/core/src/main/java','libs/nlp/src/main/java']
-      }
-  }
-}
 jar {
-    baseName = 'viglet-turing'
-    version =  '0.3.3'
+    archiveBaseName = 'viglet-turing'
+    archiveVersion =  '0.3.3'
+}
+
+eclipse {
+    classpath {
+        file {
+            whenMerged {
+                def src = entries.find { it.path == 'src/main/resources' }
+                src.excludes = ['**']
+            }
+        }
+    }
+}
+
+gitProperties {
+    extProperty = 'gitProps' // git properties will be put in a map at project.ext.gitProps
 }
 
 bootJar {
-    launchScript()
+	launchScript() // executable jar
+    manifest {
+    	attributes(    
+        'Implementation-Version': "${-> project.jar.version + '-' + project.ext.gitProps['git.commit.id.abbrev']}"
+    	)
+  	} 
 }
 
 repositories {
 	mavenCentral()
-	maven { url "https://repo.spring.io/snapshot" }
-	maven { url "https://repo.spring.io/milestone" }
-    maven { url 'https://jitpack.io' }
-	jcenter()
 }
 
 sourceCompatibility = 1.8
@@ -56,7 +65,32 @@ tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 }
 
-task combineSNSystemJs(type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+// Combine JS Converse files
+task combineConverseSystemJs(type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = "${projectDir}/src/main/resources/public/js/converse/build/extract/system"
+    dest = "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turConverseSystem.js"
+}
+
+task combineConverseFeatureJs(dependsOn: ':combineConverseSystemJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = "${projectDir}/src/main/resources/public/js/converse/build/extract/feature"
+    dest = "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turConverseFeature.js"
+}
+
+task combineConverseAllJs(dependsOn: ':combineConverseFeatureJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
+    source = ["${projectDir}/src/main/resources/public/js/converse/build/extract/main/__turConverseFactory.js", "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turConverseSystem.js", "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turConverseFeature.js"]
+    dest = "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turing-converse.js"
+}
+
+task minifyConverseAllJs(dependsOn: ':combineConverseAllJs', type: com.eriwen.gradle.js.tasks.MinifyJsTask) {
+ 	source = "${projectDir}/src/main/resources/public/js/converse/build/aggregate/turing-converse.js"
+    dest = file("${projectDir}/src/main/resources/public/js/converse/dist/turing-converse-min.js")
+    closure {
+        warningLevel = 'QUIET'
+    }
+}
+
+// Combine JS SN files
+task combineSNSystemJs(dependsOn: ':minifyConverseAllJs', type: com.eriwen.gradle.js.tasks.CombineJsTask) {
     source = "${projectDir}/src/main/resources/public/js/sn/build/extract/system"
     dest = "${projectDir}/src/main/resources/public/js/sn/build/aggregate/turSNSystem.js"
 }
@@ -116,7 +150,7 @@ javadoc {
 }
 
 dependencies {
-	compile (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.1.1') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.1.1') {
 		exclude(module: 'guava')
 		exclude(module: 'commons-logging')
 		exclude(module: 'log4j')
@@ -136,7 +170,7 @@ dependencies {
 
 	}
 	
-	compile (group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.1.1') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.1.1') {
 		exclude(module: 'jackson-mapper-asl')
 		exclude(module: 'jackson-core-asl')
 		exclude(module: 'jersey-core')
@@ -148,7 +182,7 @@ dependencies {
 		exclude(module: 'jsp-api')
 		exclude(module: 'log4j')
 	}
-	compile (group: 'org.apache.hadoop', name: 'hadoop-auth', version: '3.1.1') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-auth', version: '3.1.1') {
 		exclude(module: 'commons-logging')
 		exclude(module: 'log4j')
 		exclude(module: 'slf4j-api')
@@ -163,7 +197,7 @@ dependencies {
 		exclude(module: 'servlet-api')
 		exclude(module: 'jsp-api')
 	}
-	compile (group: 'org.apache.hadoop', name: 'hadoop-core', version: '1.2.1') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-core', version: '1.2.1') {
 		exclude(module: 'jersey-core')
 		exclude(module: 'jersey-json')
 		exclude(module: 'jersey-server')
@@ -174,82 +208,101 @@ dependencies {
 	}
 		
  	// Spring Boot
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
- 
-    compile (group: 'org.springframework.boot', name: 'spring-boot-starter-undertow', version:"${springBootVersion}"){ 
-    exclude(module: 'javax.el')
-    }
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-solr', version:"${springBootVersion}"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
-//	compile group: 'org.springframework.security.oauth.boot', name: 'spring-security-oauth2-autoconfigure', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-solr', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
+//	implementation group: 'org.springframework.security.oauth.boot', name: 'spring-security-oauth2-autoconfigure', version:"${springBootVersion}"
+
+	implementation group: 'org.springframework.boot', name: 'spring-boot-properties-migrator', version:"${springBootVersion}"
+
+    // Tensorflow   
+	implementation group: 'org.tensorflow', name: 'tensorflow', version: '1.13.1'
+	
+
+	// Oracle	
+	implementation group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
+	
+	// Jasypt
+	implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
 
 	// Spring
-  	compile group: 'org.springframework', name: 'spring-test', version: '5.1.5.RELEASE'
+  	implementation group: 'org.springframework', name: 'spring-test', version: '5.2.6.RELEASE'
 
  	// Jackson
-   	compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.7'
+   	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.7'
    	  	
   	// H2
-    compile group: 'com.h2database', name: 'h2', version:'1.4.197'
+    implementation group: 'com.h2database', name: 'h2', version:'1.4.197'
     
     // MariaDB
-    compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.3.0'         
+    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.3.0'         
     
     // JSON
-    compile group: 'org.json', name: 'json', version:'20140107'
+    implementation group: 'org.json', name: 'json', version:'20140107'
       
     // CoreNLP
-    compile group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'3.7.0'
+    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'3.7.0'
     
     //ASM
-    compile group: 'asm', name: 'asm', version:'3.3.1'
+    implementation group: 'asm', name: 'asm', version:'3.3.1'
     
     // OpenNLP
-    compile group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.7.2'
+    implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.9.1'
     
     // Apache Commons
-    compile group: 'commons-io', name: 'commons-io', version:'2.5'
-    compile group: 'commons-lang', name: 'commons-lang', version:'2.6'
+    implementation group: 'commons-io', name: 'commons-io', version:'2.5'
+    implementation group: 'commons-lang', name: 'commons-lang', version:'2.6'
   
     // EhCache
-    compile group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.3'
+    implementation group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.3'
     
     // Tika
-    compile group: 'org.apache.tika', name: 'tika-core', version:'1.5'
-    compile group: 'org.apache.tika', name: 'tika-parsers', version:'1.5'
+    implementation group: 'org.apache.tika', name: 'tika-core', version:'1.5'
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'1.5'
     
     //ActiveMQ using KahaDB
-    compile group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.14.5'
+    implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.14.5'
 	
 	// Swagger 2
-	compile group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
-	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"
-
-
-	// WebJars
-	compile 'org.webjars.bower:jquery:1.12.4'
-	compile 'org.webjars:bootstrap:3.3.7-1'
-	compile 'org.webjars.bower:moment:2.22.2'
-	compile 'org.webjars.bower:angular:1.7.3'
-	compile 'org.webjars.bower:angular-ui-router:1.0.14'
-	compile 'org.webjars.bower:angular-translate:2.17.0'
-	compile 'org.webjars.bowergithub.angular:bower-angular-resource:1.7.3'
-	compile 'org.webjars.bower:angular-animate:1.7.3'
-	compile 'org.webjars.bower:angular-sanitize:1.7.3'
-	compile 'org.webjars.bower:angular-bootstrap:2.5.0'
-	compile 'org.webjars.bower:angular-cookies:1.7.3'
-	compile 'org.webjars.bower:angular-sanitize:1.7.3'
-	compile 'org.webjars.bower:angular-moment:1.2.0'
-	compile 'org.webjars.bower:angular-moment:1.2.0'
-	compile 'org.webjars.bower:font-awesome:4.7.0'
+	implementation group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
+	implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"	
 	
-	testCompile('org.springframework.boot:spring-boot-starter-test')
+	// WebJars
+	implementation 'org.webjars.bower:jquery:1.12.4'
+	implementation 'org.webjars.bower:jquery.ui:1.11.3'
+	implementation 'org.webjars:bootstrap:3.3.7-1'
+	implementation 'org.webjars.bower:bootstrap:4.1.1'
+	implementation 'org.webjars.bower:moment:2.22.2'
+	implementation 'org.webjars.bower:angular:1.7.3'
+	implementation 'org.webjars.bower:ace-builds:1.3.1'
+	implementation 'org.webjars.bower:tinymce:4.5.8'
+	implementation 'org.webjars.bower:angular-ui-router:1.0.14'
+	implementation 'org.webjars.bower:angular-translate:2.17.0'
+	implementation 'org.webjars.bowergithub.angular:bower-angular-resource:1.7.3'
+	implementation 'org.webjars.bower:angular-animate:1.7.3'
+	implementation 'org.webjars.bower:angular-sanitize:1.7.3'
+	implementation 'org.webjars.bower:angular-bootstrap:2.5.0'
+	implementation 'org.webjars.bower:angular-cookies:1.7.3'
+	implementation 'org.webjars.bower:angular-moment:1.2.0'
+	implementation 'org.webjars.bower:angular-ui-ace:0.2.3'
+	implementation 'org.webjars.bower:font-awesome:4.7.0'
+	implementation 'org.webjars.bower:ng-file-upload:12.2.13'
+	implementation 'org.webjars.bower:angular-ui-notification:0.3.6'
+	implementation 'org.webjars.bower:angular-ui-tinymce:0.0.19'
+	implementation 'org.webjars.bower:angular-ui-sortable:0.14.3'
+	implementation 'org.webjars.bower:angular-ui-select:0.19.8'
+	implementation 'org.webjars.bower:ngInfiniteScroll:1.3.4'
+	implementation 'org.webjars.bower:nvd3:1.8.6'
+    implementation 'org.webjars:d3js:3.5.17'
+	implementation 'org.webjars:angular-nvd3:1.0.5'
+	
+	testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
 
 test {
