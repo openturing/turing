@@ -285,7 +285,7 @@ dependencies {
 	implementation 'org.webjars.bower:angular-ui-router:1.0.20'
 	implementation 'org.webjars.bower:angular-translate:2.18.1'
 	implementation 'org.webjars.bowergithub.angular:bower-angular-resource:1.7.3'
-	implementation 'org.webjars.bower:angular-animate:1.7.3'
+	implementation 'org.webjars.bower:angular-animate:1.8.0'
 	implementation 'org.webjars.bower:angular-sanitize:1.7.3'
 	implementation 'org.webjars.bower:angular-bootstrap:2.5.0'
 	implementation 'org.webjars.bower:angular-cookies:1.7.3'
