@@ -256,7 +256,7 @@ dependencies {
     implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.9.1'
     
     // Apache Commons
-    implementation group: 'commons-io', name: 'commons-io', version:'2.5'
+    implementation group: 'commons-io', name: 'commons-io', version:'2.7'
     implementation group: 'commons-lang', name: 'commons-lang', version:'2.6'
   
     // EhCache
