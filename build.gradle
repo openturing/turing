@@ -150,7 +150,7 @@ javadoc {
 }
 
 dependencies {
-	implementation (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.1.1') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.2.1') {
 		exclude(module: 'guava')
 		exclude(module: 'commons-logging')
 		exclude(module: 'log4j')
