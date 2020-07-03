@@ -30,3 +30,5 @@ src/main/resources/js/client-side/build
 /activemq-data
 /models
 
+.metals
+.bloop
