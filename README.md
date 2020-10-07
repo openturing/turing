@@ -119,11 +119,11 @@ $ java -jar build/libs/turing-0.1.0.jar
 
 # For more information
 
-* [Viglet website](https://viglet.ai)
-* [Installation Guide](https://github.com/openviglet/turing/wiki/Installation-Guide)
-* [Features](https://github.com/openviglet/turing/wiki/Features)
-* [Compatibility Matrix](https://github.com/openviglet/turing/wiki/Compatibility-Matrix)
-* [API Documentation](https://developers.viglet.ai)
-* [Viglet Turing for WordPress](https://github.com/openviglet/turing4wp)
-* [Viglet Turing Listener for WEM (OpenText Web Experience Management)](https://github.com/openviglet/turing-wem)
-* [Viglet Turing SDK for PHP (Under development)](https://github.com/openviglet/turing-php-sdk)
+* [Viglet website](https://viglet.com)
+* [Installation Guide](https://github.com/openturing/turing/wiki/Installation-Guide)
+* [Features](https://github.com/openturing/turing/wiki/Features)
+* [Compatibility Matrix](https://github.com/openturing/turing/wiki/Compatibility-Matrix)
+* [API Documentation](https://developers.viglet.com)
+* [Viglet Turing for WordPress](https://github.com/openturing/turing4wp)
+* [Viglet Turing Listener for WEM (OpenText Web Experience Management)](https://github.com/openturing/turing-wem)
+* [Viglet Turing SDK for PHP (Under development)](https://github.com/openturing/turing-php-sdk)
