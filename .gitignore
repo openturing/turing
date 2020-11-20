@@ -21,7 +21,6 @@ hs_err_pid*
 /logs/
 /build/
 /backup/
-src/main/resources/js/client-side/build
 /nashorn_code_cache
 .sts4-cache
 /store.*
@@ -29,4 +28,7 @@ src/main/resources/js/client-side/build
 
 /activemq-data
 /models
+
+/.bloop/
+/.metals/
 
