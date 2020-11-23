@@ -28,7 +28,5 @@ hs_err_pid*
 
 /activemq-data
 /models
-
-/.bloop/
-/.metals/
-
+.metals
+.bloop

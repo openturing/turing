@@ -150,7 +150,7 @@ javadoc {
 }
 
 dependencies {
-	implementation (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.1.1') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.3.0') {
 		exclude(module: 'guava')
 		exclude(module: 'commons-logging')
 		exclude(module: 'log4j')
@@ -170,7 +170,7 @@ dependencies {
 
 	}
 	
-	implementation (group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.1.1') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.3.0') {
 		exclude(module: 'jackson-mapper-asl')
 		exclude(module: 'jackson-core-asl')
 		exclude(module: 'jersey-core')
@@ -238,16 +238,16 @@ dependencies {
    	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.9.7'
    	  	
   	// H2
-    implementation group: 'com.h2database', name: 'h2', version:'1.4.197'
+    implementation group: 'com.h2database', name: 'h2', version:'1.4.200'
     
     // MariaDB
     implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.3.0'         
     
     // JSON
-    implementation group: 'org.json', name: 'json', version:'20140107'
+    implementation group: 'org.json', name: 'json', version:'20200518'
       
     // CoreNLP
-    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'3.7.0'
+    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'4.0.0'
     
     //ASM
     implementation group: 'asm', name: 'asm', version:'3.3.1'
@@ -256,14 +256,14 @@ dependencies {
     implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.9.1'
     
     // Apache Commons
-    implementation group: 'commons-io', name: 'commons-io', version:'2.5'
+    implementation group: 'commons-io', name: 'commons-io', version:'2.7'
     implementation group: 'commons-lang', name: 'commons-lang', version:'2.6'
   
     // EhCache
     implementation group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.3'
     
     // Tika
-    implementation group: 'org.apache.tika', name: 'tika-core', version:'1.5'
+    implementation group: 'org.apache.tika', name: 'tika-core', version:'1.24.1'
     implementation group: 'org.apache.tika', name: 'tika-parsers', version:'1.5'
     
     //ActiveMQ using KahaDB
@@ -274,7 +274,7 @@ dependencies {
 	implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"	
 	
 	// WebJars
-	implementation 'org.webjars.bower:jquery:1.12.4'
+	implementation 'org.webjars.bower:jquery:3.5.1'
 	implementation 'org.webjars.bower:jquery.ui:1.11.3'
 	implementation 'org.webjars:bootstrap:3.3.7-1'
 	implementation 'org.webjars.bower:bootstrap:4.1.1'

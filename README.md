@@ -1,3 +1,8 @@
+[![demo](https://img.shields.io/badge/demo-try%20online-FF874B.svg)](https://turing.viglet.net)
+[![downloads](https://img.shields.io/github/downloads/openturing/turing/total.svg)](https://github.com/openturing/turing/releases/download/v0.3.2/viglet-turing.jar)
+[![Build Status](https://travis-ci.com/openturing/turing.svg?branch=master)](https://travis-ci.org/openturing/turing) [![codecov](https://codecov.io/gh/openturing/turing/branch/master/graph/badge.svg)](https://codecov.io/gh/openturing/turing) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=openturing_turing&metric=alert_status)](https://sonarcloud.io/dashboard/index/openturing_turing)
+[![Twitter](https://img.shields.io/twitter/follow/openviglet.svg?style=social&label=Follow)](https://twitter.com/intent/follow?screen_name=openviglet)
+
 [![viglet_logo.png](https://openturing.github.io/turing/img/banner/viglet_turing.png)](http://viglet.com/turing)
 ------
 
@@ -114,11 +119,11 @@ $ java -jar build/libs/turing-0.1.0.jar
 
 # For more information
 
-* [Viglet website](https://viglet.ai)
-* [Installation Guide](https://github.com/openviglet/turing/wiki/Installation-Guide)
-* [Features](https://github.com/openviglet/turing/wiki/Features)
-* [Compatibility Matrix](https://github.com/openviglet/turing/wiki/Compatibility-Matrix)
-* [API Documentation](https://developers.viglet.ai)
-* [Viglet Turing for WordPress](https://github.com/openviglet/turing4wp)
-* [Viglet Turing Listener for WEM (OpenText Web Experience Management)](https://github.com/openviglet/turing-wem)
-* [Viglet Turing SDK for PHP (Under development)](https://github.com/openviglet/turing-php-sdk)
+* [Viglet website](https://viglet.com)
+* [Installation Guide](https://github.com/openturing/turing/wiki/Installation-Guide)
+* [Features](https://github.com/openturing/turing/wiki/Features)
+* [Compatibility Matrix](https://github.com/openturing/turing/wiki/Compatibility-Matrix)
+* [API Documentation](https://developers.viglet.com)
+* [Viglet Turing for WordPress](https://github.com/openturing/turing4wp)
+* [Viglet Turing Listener for WEM (OpenText Web Experience Management)](https://github.com/openturing/turing-wem)
+* [Viglet Turing SDK for PHP (Under development)](https://github.com/openturing/turing-php-sdk)
