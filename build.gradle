@@ -299,7 +299,7 @@ dependencies {
 	implementation 'org.webjars.bower:angular-ui-select:0.19.8'
 	implementation 'org.webjars.bower:ngInfiniteScroll:1.3.4'
 	implementation 'org.webjars.bower:nvd3:1.8.6'
-    implementation 'org.webjars:d3js:3.5.17'
+    implementation 'org.webjars:d3js:6.2.0'
 	implementation 'org.webjars:angular-nvd3:1.0.5'
 	
 	testImplementation('org.springframework.boot:spring-boot-starter-test')
