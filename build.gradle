@@ -286,7 +286,7 @@ dependencies {
 	implementation 'org.webjars.npm:angular-cookies:1.8.0'
 	implementation 'org.webjars.bower:ace-builds:1.4.12'
 	implementation 'org.webjars.bower:tinymce:4.5.8'
-	implementation 'org.webjars.bower:angular-ui-router:1.0.20'
+	implementation 'org.webjars.bower:angular-ui-router:1.0.28'
 	implementation 'org.webjars.bower:angular-translate:2.18.1'
 	implementation 'org.webjars.bower:angular-bootstrap:2.5.0'
 	implementation 'org.webjars.bower:angular-moment:1.2.0'
