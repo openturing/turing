@@ -35,7 +35,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 public class SwaggerConfig {
 	@Bean
 	public Docket api() {
-		TurCustomPathPrivider pathProvider = new TurCustomPathPrivider();
+		TurCustomPathProvider pathProvider = new TurCustomPathProvider();
 
 		return new Docket(DocumentationType.SWAGGER_2).pathProvider(pathProvider).select()
 				.apis(RequestHandlerSelectors.basePackage("com.viglet.turing.api")).paths(PathSelectors.any()).build()
