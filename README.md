@@ -16,6 +16,10 @@ tracking requests and bugs.**
 
 # Installation
 
+## Pre-reqs
+1. Install Java 8
+2. Install Git Client
+
 ## Docker
 * Install Docker. [https://docs.docker.com/engine/installation](https://docs.docker.com/engine/installation)
 
