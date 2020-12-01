@@ -6,7 +6,7 @@
 [![viglet_logo.png](https://openturing.github.io/turing/img/banner/viglet_turing.png)](http://viglet.com/turing)
 ------
 
-**Viglet Turing** is a platform that uses natural language processing (NLP) and machine learning to provide more intelligent data. Choose your favorite NLP as CoreNLP and OpenText Content Analytics, and index your content in Solr with higher added value.
+**Viglet Turing** - Semantic Navigation, Chatbot using Search Engine and Many NLP Vendors.
 
 **If you'd like to contribute to Viglet Turing, be sure to review the [contribution
 guidelines](CONTRIBUTING.md).**
