@@ -12,6 +12,7 @@ turingApp.controller('TurNLPValidationCtrl', [
 			$scope.results = null;
 			$scope.text = null;
 			$scope.nlpmodel = null;
+			$scope.outputFormat = null;
 			$rootScope.$state = $state;
 			$scope.nlps = turNLPInstanceResource.query({}, function() {
 				angular.forEach($scope.nlps, function(value, key) {
@@ -24,8 +25,9 @@ turingApp.controller('TurNLPValidationCtrl', [
 				text = {
 					'text' : $scope.text
 				};
+				//$scope.outputFormat
 				var parameter = JSON.stringify(text);
-				$http.post(turAPIServerService.get().concat('/nlp/' + $scope.nlpmodel + '/validate'),
+				$http.post(turAPIServerService.get().concat('/nlp/' + $scope.nlpmodel + '/validate/' + "blazon"),
 						parameter).then(function(response) {
 					$scope.results = response.data;
 				}, function(response) {

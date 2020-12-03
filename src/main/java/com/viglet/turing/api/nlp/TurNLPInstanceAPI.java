@@ -17,8 +17,12 @@
 
 package com.viglet.turing.api.nlp;
 
+import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+
+import javax.xml.bind.JAXB;
 
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +37,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.nlp.output.blazon.RedactionCommand;
+import com.viglet.turing.nlp.output.blazon.RedactionScript;
+import com.viglet.turing.nlp.output.blazon.SearchString;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
@@ -67,7 +74,8 @@ public class TurNLPInstanceAPI {
 
 	@ApiOperation(value = "Update a Natural Language Processing")
 	@PutMapping("/{id}")
-	public TurNLPInstance turNLPInstanceUpdate(@PathVariable String id, @RequestBody TurNLPInstance turNLPInstance) throws Exception {
+	public TurNLPInstance turNLPInstanceUpdate(@PathVariable String id, @RequestBody TurNLPInstance turNLPInstance)
+			throws Exception {
 		TurNLPInstance turNLPInstanceEdit = turNLPInstanceRepository.findById(id).get();
 		turNLPInstanceEdit.setTitle(turNLPInstance.getTitle());
 		turNLPInstanceEdit.setDescription(turNLPInstance.getDescription());
@@ -97,26 +105,68 @@ public class TurNLPInstanceAPI {
 	}
 
 	@SuppressWarnings("unchecked")
-	@PostMapping("/{id}/validate")
-	public TurNLPValidateResponse validate(@PathVariable String id, @RequestBody TurNLPTextValidate textValidate) throws JSONException {
+	@PostMapping("/{id}/validate/{format}")
+	public TurNLPValidateResponse validate(@PathVariable String id, @PathVariable String format,
+			@RequestBody TurNLPTextValidate textValidate) throws JSONException {
+		final String WEB_FORMAT = "web";
+		final String BLAZON_FORMAT = "blazon";
 		
-		TurNLPInstance turNLPInstance = this.turNLPInstanceRepository.findById(id).get();
-		turNLP.startup(turNLPInstance, textValidate.getText());
-		TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
-		turNLPValidateResponse.setVendor(turNLPInstance.getTurNLPVendor().getTitle());
-		turNLPValidateResponse.setLocale(turNLPInstance.getLanguage());
-		for ( Entry<String, Object> entityType : turNLP.validate().entrySet() ) {
-			if (entityType.getValue() != null) {
-				TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
-				TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
+		if (this.turNLPInstanceRepository.findById(id).isPresent()) {
+			TurNLPInstance turNLPInstance = this.turNLPInstanceRepository.findById(id).get();
+			turNLP.startup(turNLPInstance, textValidate.getText());
+			if (format.equals(WEB_FORMAT)) {
+				TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
+				turNLPValidateResponse.setVendor(turNLPInstance.getTurNLPVendor().getTitle());
+				turNLPValidateResponse.setLocale(turNLPInstance.getLanguage());
+				for (Entry<String, Object> entityType : turNLP.validate().entrySet()) {
+					if (entityType.getValue() != null) {
+						TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
+						TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
+
+						turNLPEntityValidateResponse.setType(turNLPEntity);
+
+						turNLPEntityValidateResponse.setTerms((List<Object>) entityType.getValue());
+						turNLPValidateResponse.getEntities().add(turNLPEntityValidateResponse);
+					}
+				}
+				return turNLPValidateResponse;
+			} else if (format.equals(BLAZON_FORMAT)) {
+
+				List<RedactionCommand> redactionCommands = new ArrayList<>();
+				RedactionScript redationScript = new RedactionScript();
 				
-				turNLPEntityValidateResponse.setType(turNLPEntity);
-		
-				turNLPEntityValidateResponse.setTerms((List<Object>) entityType.getValue());
-				turNLPValidateResponse.getEntities().add(turNLPEntityValidateResponse);
+				redationScript.setVersion("1");
+				for (Entry<String, Object> entityType : turNLP.validate().entrySet()) {
+					if (entityType.getValue() != null) {
+						TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
+						for (String term :((List<String>)entityType.getValue())) {
+							RedactionCommand redactionCommand = new RedactionCommand();
+							redactionCommand.setComment(turNLPEntity.getName());
+							SearchString searchString = new SearchString();
+							searchString.setMatchWholeWord(true);
+							searchString.setString(term);
+							redactionCommand.setSearchString(searchString);
+							redactionCommands.add(redactionCommand);
+						}
+					}
+				}
+				
+				redationScript.setRedactionCommands(redactionCommands);
+				
+				StringWriter sw = new StringWriter();
+				JAXB.marshal(redationScript, sw);
+				String xmlString = sw.toString();
+				
+				System.out.println(xmlString);
+				return null;
+			} else {
+
+				return null;
 			}
+
+		} else {
+			return null;
 		}
-		return turNLPValidateResponse;
 	}
 
 	public boolean isNumeric(String str) {
