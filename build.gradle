@@ -264,7 +264,7 @@ dependencies {
     
     // Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version:'1.24.1'
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'1.5'
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'1.25'
     
     //ActiveMQ using KahaDB
     implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.16.0'
