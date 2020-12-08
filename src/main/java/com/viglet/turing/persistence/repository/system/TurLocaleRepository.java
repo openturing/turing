@@ -32,6 +32,7 @@ public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 	static final String EN_US = "en_US";
 	static final String EN_GB = "en_GB";
 	static final String PT_BR = "pt_BR";
+	static final String CA_ES = "ca_ES";
 	
 	@Cacheable("turLocalefindAll")
 	List<TurLocale> findAll();

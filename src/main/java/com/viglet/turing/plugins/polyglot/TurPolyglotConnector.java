@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2020 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.plugins.spacy;
+package com.viglet.turing.plugins.polyglot;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -51,15 +51,14 @@ import org.springframework.stereotype.Component;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
-import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.plugins.nlp.TurNLPImpl;
 import com.viglet.turing.solr.TurSolrField;
 
 import java.util.*;
 
 @Component
-public class TurSpaCyConnector implements TurNLPImpl {
-	static final Logger logger = LogManager.getLogger(TurSpaCyConnector.class);
+public class TurPolyglotConnector implements TurNLPImpl {
+	static final Logger logger = LogManager.getLogger(TurPolyglotConnector.class);
 
 	@Autowired
 	TurNLPEntityRepository turNLPEntityRepository;
@@ -115,15 +114,12 @@ public class TurSpaCyConnector implements TurNLPImpl {
 
 					for (String atributeValue : atributeValueFullText.split("\\.")) {
 						if (logger.isDebugEnabled()) {
-							logger.debug("SpaCy Text: " + atributeValue);
+							logger.debug("Polyglot Text: " + atributeValue);
 						}
 						jsonBody.put("text", atributeValue);
-
-						if (turNLPInstance.getLanguage().equals(TurLocaleRepository.PT_BR)) {
-							jsonBody.put("model", "pt_core_news_sm");
-						} else {
-							jsonBody.put("model", turNLPInstance.getLanguage());
-						}
+		
+						jsonBody.put("model", turNLPInstance.getLanguage());
+				
 
 						ByteBuffer inputBuffer = ByteBuffer.wrap(jsonBody.toString().getBytes());
 
@@ -137,7 +133,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 						String jsonUTF8 = new String(outputData);
 
 						if (logger.isDebugEnabled()) {
-							logger.debug("SpaCy JSONBody: " + jsonUTF8);
+							logger.debug("Polyglot JSONBody: " + jsonUTF8);
 						}
 						httpPost.setHeader("Accept", "application/json");
 						httpPost.setHeader("Content-type", "application/json");
@@ -156,7 +152,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 								String jsonResponse = readAll(rd);
 								if (this.isJSONValid(jsonResponse)) {
 									if (logger.isDebugEnabled()) {
-										logger.debug("SpaCy JSONResponse: " + jsonResponse);
+										logger.debug("Polyglot JSONResponse: " + jsonResponse);
 									}
 									this.getEntities(atributeValue, new JSONArray(jsonResponse));
 								}
@@ -188,7 +184,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 
 		// System.out.println(jsonObject.toString());
 		if (logger.isDebugEnabled()) {
-			logger.debug("SpaCy getAttributes: " + entityAttributes.toString());
+			logger.debug("Polyglot getAttributes: " + entityAttributes.toString());
 		}
 		return entityAttributes;
 	}
@@ -214,7 +210,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 				label = "PN";
 
 			if (logger.isDebugEnabled()) {
-				logger.debug(String.format("SpaCy Term (NER): %s (%s)", term, label));
+				logger.debug(String.format("Polyglot Term (NER): %s (%s)", term, label));
 			}
 
 			if (add)

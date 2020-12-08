@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2020 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.nlp.TurNLPVendorsConstant;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
@@ -46,9 +47,8 @@ public class TurNLPInstanceOnStartup {
 
 		if (turNLPInstanceRepository.findAll().isEmpty()) {
 
-			TurNLPVendor turNLPVendorOpenNLP = turNLPVendorRepository.findById("OPENNLP").get();
-			
-			
+			TurNLPVendor turNLPVendorOpenNLP = turNLPVendorRepository.findById(TurNLPVendorsConstant.OPENNLP).get();
+
 			if (turNLPVendorOpenNLP != null) {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("OpenNLP English");
@@ -64,7 +64,7 @@ public class TurNLPInstanceOnStartup {
 				turConfigVar.setPath("/nlp");
 				turConfigVar.setValue(turNLPInstance.getId());
 				turConfigVarRepository.save(turConfigVar);
-				
+
 				turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("OpenNLP Portuguese");
 				turNLPInstance.setDescription("OpenNLP Production - Portuguese");
@@ -77,7 +77,7 @@ public class TurNLPInstanceOnStartup {
 
 			}
 
-			TurNLPVendor turNLPVendorCoreNLP = turNLPVendorRepository.findById("CORENLP").get();
+			TurNLPVendor turNLPVendorCoreNLP = turNLPVendorRepository.findById(TurNLPVendorsConstant.CORENLP).get();
 			if (turNLPVendorCoreNLP != null) {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("CoreNLP");
@@ -90,21 +90,34 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 
 			}
-			
-			TurNLPVendor turNLPVendorSpaCy = turNLPVendorRepository.findById("SPACY").get();
+
+			TurNLPVendor turNLPVendorSpaCy = turNLPVendorRepository.findById(TurNLPVendorsConstant.SPACY).get();
 			if (turNLPVendorCoreNLP != null) {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("SpaCy");
 				turNLPInstance.setDescription("SpaCy Production - English");
 				turNLPInstance.setTurNLPVendor(turNLPVendorSpaCy);
 				turNLPInstance.setHost("localhost");
-				turNLPInstance.setPort(8080);
+				turNLPInstance.setPort(2800);
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 
 			}
 
+			TurNLPVendor turNLPVendorPolyglot = turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).get();
+			if (turNLPVendorCoreNLP != null) {
+				TurNLPInstance turNLPInstance = new TurNLPInstance();
+				turNLPInstance.setTitle("Polyglot");
+				turNLPInstance.setDescription("SpaCy Production - Catalan");
+				turNLPInstance.setTurNLPVendor(turNLPVendorPolyglot);
+				turNLPInstance.setHost("localhost");
+				turNLPInstance.setPort(2810);
+				turNLPInstance.setLanguage(TurLocaleRepository.CA_ES);
+				turNLPInstance.setEnabled(1);
+				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+
+			}
 		}
 
 	}
