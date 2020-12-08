@@ -276,7 +276,7 @@ dependencies {
 	implementation group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
 	implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"	
 	
-	implementation group: 'xml-apis', name: 'xml-apis', version: '1.4.01'
+	implementation group: 'xml-apis', name: 'xml-apis', version: '2.0.2'
 	
 	// WebJars
 	implementation 'org.webjars.bower:jquery:3.5.1'
