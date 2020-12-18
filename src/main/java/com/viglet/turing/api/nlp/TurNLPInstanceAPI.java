@@ -23,13 +23,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Random;
-import java.util.UUID;
 
 import javax.xml.bind.JAXB;
 
@@ -181,7 +178,7 @@ public class TurNLPInstanceAPI {
 					Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 					try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
 						parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
-						contentFile.append(handlerInner.toString());
+						contentFile.append(cleanTextContent(handlerInner.toString()));
 						
 					} catch (IOException | SAXException | TikaException e) {
 						logger.error(e);
@@ -225,10 +222,10 @@ public class TurNLPInstanceAPI {
 				TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
 				for (String term : ((List<String>) entityType.getValue())) {
 					RedactionCommand redactionCommand = new RedactionCommand();
-					redactionCommand.setComment(turNLPEntity.getName());
+					//redactionCommand.setComment(turNLPEntity.getName());
 					SearchString searchString = new SearchString();
 					searchString.setMatchWholeWord(true);
-					searchString.setString(term);
+					searchString.setString(String.format("%s",term));
 					redactionCommand.setSearchString(searchString);
 					redactionCommands.add(redactionCommand);
 				}
@@ -246,9 +243,19 @@ public class TurNLPInstanceAPI {
 	}
 
 	private static String cleanTextContent(String text) {
+		if (logger.isDebugEnabled()) {
+			logger.debug(String.format("Original Text: %s", text.replaceAll("\n", "\\\\n \n").replaceAll("\t", "\\\\t \t")));
+		}
 		// Remove 2 or more spaces
+		text = text.trim().replaceAll("\\t|\\r","\\n");
 		text = text.trim().replaceAll(" +", " ");
-		return text.trim();
+		
+		text = text.trim();
+		
+		if (logger.isDebugEnabled()) {
+			logger.debug(String.format("Cleaned Text: %s", text));
+		}
+		return text;
 	}
 
 	@SuppressWarnings("unchecked")

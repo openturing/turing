@@ -71,7 +71,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendor = new TurNLPVendor();
 			turNLPVendor.setId(TurNLPVendorsConstant.POLYGLOT);
 			turNLPVendor.setTitle("Polyglot");
-			turNLPVendor.setPlugin("com.viglet.turing.plugins.spacy.TurPolyglotConnector");
+			turNLPVendor.setPlugin("com.viglet.turing.plugins.polyglot.TurPolyglotConnector");
 			turNLPVendor.setDescription("Polyglot");
 			turNLPVendor.setWebsite("http://polyglot-nlp.com");
 			turNLPVendorRepository.save(turNLPVendor);

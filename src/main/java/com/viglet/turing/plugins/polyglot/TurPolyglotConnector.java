@@ -195,19 +195,11 @@ public class TurPolyglotConnector implements TurNLPImpl {
 			boolean add = true;
 			JSONObject token = (JSONObject) json.get(i);
 
-			int tokenStart = token.getInt("start");
-			int tokenEnd = token.getInt("end");
+			String term = token.getString("token");
 			String label = token.getString("label");
 
-			String term = text.substring(tokenStart, tokenEnd);
-
-			if (label.equals("ORG")) {
-				label = "ON";
-				if (!Character.isUpperCase(term.charAt(0)))
-					add = false;
-			}
-			if (label.equals("PER"))
-				label = "PN";
+			if (label.equals("NAME"))
+				add = false;
 
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("Polyglot Term (NER): %s (%s)", term, label));

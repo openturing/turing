@@ -109,11 +109,11 @@ public class TurNLPInstanceOnStartup {
 			if (turNLPVendorCoreNLP != null) {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("Polyglot");
-				turNLPInstance.setDescription("SpaCy Production - Catalan");
+				turNLPInstance.setDescription("Polyglot Production - Catalan");
 				turNLPInstance.setTurNLPVendor(turNLPVendorPolyglot);
 				turNLPInstance.setHost("localhost");
 				turNLPInstance.setPort(2810);
-				turNLPInstance.setLanguage(TurLocaleRepository.CA_ES);
+				turNLPInstance.setLanguage(TurLocaleRepository.CA);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 

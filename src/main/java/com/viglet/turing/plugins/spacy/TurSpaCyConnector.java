@@ -76,7 +76,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 	public void startup(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
 
-		nlpEntities = turNLPEntityRepository.findAll();
+		nlpEntities = turNLPEntityRepository.findByEnabled(1);
 	}
 
 	public Map<String, Object> retrieve(Map<String, Object> attributes) throws TransformerException, Exception {

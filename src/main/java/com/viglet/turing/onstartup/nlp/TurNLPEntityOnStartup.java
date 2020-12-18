@@ -43,6 +43,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("PN");
 			turNLPEntity.setDescription("Entidade de Pessoas");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("persons");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -51,6 +52,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("GL");
 			turNLPEntity.setDescription("Entidade de Lugares");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("locations");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -59,6 +61,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("FR");
 			turNLPEntity.setDescription("Fraud Entity");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("frauds");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -67,6 +70,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("ON");
 			turNLPEntity.setDescription("Organization Entity");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("organizations");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -75,6 +79,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("DURATION");
 			turNLPEntity.setDescription("Duration Entity");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("durations");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -83,6 +88,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("ORDINAL");
 			turNLPEntity.setDescription("Ordinal Entity");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("ordinals");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -91,6 +97,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("MISC");
 			turNLPEntity.setDescription("Misc Entity");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("miscs");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -99,6 +106,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("DATE");
 			turNLPEntity.setDescription("Date Entity");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("dates");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -107,6 +115,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("TIME");
 			turNLPEntity.setDescription("Time Entity");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("times");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -115,6 +124,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("MONEY");
 			turNLPEntity.setDescription("Money Entity");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("moneys");
 			turNLPEntityRepository.save(turNLPEntity);
 
@@ -123,6 +133,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("PERCENTAGE");
 			turNLPEntity.setDescription("Percentage Entity");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("percentages");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -131,6 +142,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("NORP");
 			turNLPEntity.setDescription("Nationalities or religious or political groups.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("norps");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -139,6 +151,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("FAC");
 			turNLPEntity.setDescription("Buildings, airports, highways, bridges, etc.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("facs");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -147,6 +160,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("GPE");
 			turNLPEntity.setDescription("Countries, cities, states.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("gpe");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -155,6 +169,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("LOC");
 			turNLPEntity.setDescription("Non-GPE locations, mountain ranges, bodies of water.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("locs");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -163,6 +178,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("PRODUCT");
 			turNLPEntity.setDescription("Objects, vehicles, foods, etc. (Not services.)");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("products");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -171,6 +187,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("EVENT");
 			turNLPEntity.setDescription("Named hurricanes, battles, wars, sports events, etc.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("events");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -179,6 +196,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("WORK_OF_ART");
 			turNLPEntity.setDescription("Titles of books, songs, etc.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("work of art");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -187,6 +205,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("LAW");
 			turNLPEntity.setDescription("Named documents made into laws.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("laws");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -195,6 +214,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("LANGUAGE");
 			turNLPEntity.setDescription("Any named language.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("languages");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -203,6 +223,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("QUANTITY");
 			turNLPEntity.setDescription("Measurements, as of weight or distance.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("quantities");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -211,6 +232,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("CARDINAL");
 			turNLPEntity.setDescription("Numerals that do not fall under another type.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("cardinal");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -219,6 +241,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("DNI");
 			turNLPEntity.setDescription("Documento Nacional de Identidad.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("dnis");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -227,6 +250,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("CIF");
 			turNLPEntity.setDescription("Certificado de Identificación Fiscal.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("cifs");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -235,6 +259,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("NIE");
 			turNLPEntity.setDescription("Número de Identificación de Extranjero.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("nies");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -243,6 +268,7 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("PASSAPORT");
 			turNLPEntity.setDescription("Passport ID.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("passports");
 			turNLPEntityRepository.save(turNLPEntity);
 			
@@ -251,7 +277,27 @@ public class TurNLPEntityOnStartup {
 			turNLPEntity.setInternalName("EMAIL");
 			turNLPEntity.setDescription("Emails.");
 			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
 			turNLPEntity.setCollectionName("emails");
+			
+			turNLPEntityRepository.save(turNLPEntity);
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("First Name");
+			turNLPEntity.setInternalName("FIRST_NAME");
+			turNLPEntity.setDescription("First Name.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
+			turNLPEntity.setCollectionName("firstnames");
+			turNLPEntityRepository.save(turNLPEntity);
+			
+			turNLPEntityRepository.save(turNLPEntity);
+			turNLPEntity = new TurNLPEntity();
+			turNLPEntity.setName("Last Name");
+			turNLPEntity.setInternalName("LAST_NAME");
+			turNLPEntity.setDescription("Last Name.");
+			turNLPEntity.setLocal(0);
+			turNLPEntity.setEnabled(1);
+			turNLPEntity.setCollectionName("lastnames");
 			turNLPEntityRepository.save(turNLPEntity);
 		}
 	}

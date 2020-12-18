@@ -126,16 +126,16 @@ public class TurNLPVendorEntityOnStartup {
 			turNLPVendor = turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).get();
 
 			if (turNLPVendor != null) {
-				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.CA_ES);
-				this.addNLPVendor(turNLPVendor, "GL", "LOC", TurLocaleRepository.CA_ES);
-				this.addNLPVendor(turNLPVendor, "ON", "ORG", TurLocaleRepository.CA_ES);
-				this.addNLPVendor(turNLPVendor, "FIRST_NAME", "FIRST_NAME", TurLocaleRepository.CA_ES);
-				this.addNLPVendor(turNLPVendor, "LAST_NAME", "LAST_NAME", TurLocaleRepository.CA_ES);
-				this.addNLPVendor(turNLPVendor, "EMAIL", "EMAIL", TurLocaleRepository.CA_ES);
-				this.addNLPVendor(turNLPVendor, "NIE", "NIE", TurLocaleRepository.CA_ES);
-				this.addNLPVendor(turNLPVendor, "CIF", "CIF", TurLocaleRepository.CA_ES);
-				this.addNLPVendor(turNLPVendor, "DNI", "DNI", TurLocaleRepository.CA_ES);
-				this.addNLPVendor(turNLPVendor, "PASSAPORT", "PASSAPORT", TurLocaleRepository.CA_ES);
+				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "GL", "LOC", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "ON", "ORG", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "FIRST_NAME", "FIRST_NAME", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "LAST_NAME", "LAST_NAME", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "EMAIL", "EMAIL", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "NIE", "NIE", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "CIF", "CIF", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "DNI", "DNI", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "PASSPORT", "PASSPORT", TurLocaleRepository.CA);
 
 			}
 			
