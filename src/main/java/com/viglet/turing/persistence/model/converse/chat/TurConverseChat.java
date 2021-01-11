@@ -59,6 +59,7 @@ public class TurConverseChat implements Serializable {
 
 	private String summary;
 
+	@Column(name = "dateChat")
 	private Date date;
 
 	private String session;
