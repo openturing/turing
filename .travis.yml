@@ -1,8 +1,8 @@
 language: java
 os: linux
-dist: trusty
+dist: xenial
 jdk:
-  - oraclejdk8
+  - openjdk14
 addons:
   sonarcloud:
     organization: "alegauss-github"
