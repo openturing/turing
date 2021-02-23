@@ -1,6 +1,6 @@
 
 buildscript {
-    ext { springBootVersion = '2.1.4.RELEASE'
+    ext { springBootVersion = '2.1.18.RELEASE'
 	      hibernateVersion = '5.11.0.Final'
 		  httpClientVersion = '4.5.6'
 		  swaggerVersion = '2.9.2'
@@ -18,6 +18,10 @@ buildscript {
     			   classpath("com.eriwen:gradle-js-plugin:2.12.0") }
 }
 
+plugins {
+    id "com.github.ManifestClasspath" version "0.1.0-RELEASE"       
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
@@ -25,6 +29,9 @@ apply plugin: 'io.spring.dependency-management'
 apply plugin: 'com.eriwen.gradle.js'
 apply plugin: 'jacoco'
 apply plugin: 'project-report'
+apply plugin: 'application'
+
+mainClassName = 'com.viglet.turing.Turing'
 
 sourceSets {
   main {

@@ -12,6 +12,10 @@ guidelines](CONTRIBUTING.md).**
 tracking requests and bugs.**
 
 # Installation
+## Generate new keystore
+```shell
+keytool -genkeypair -alias turing -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore turing.p12 -validity 3650
+```
 
 ## Docker
 * Install Docker. [https://docs.docker.com/engine/installation](https://docs.docker.com/engine/installation)

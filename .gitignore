@@ -24,3 +24,6 @@ db-encrypted.properties
 .project
 src/main/resources/public/js/converse/build/aggregate
 src/main/resources/public/js/converse/dist
+store/db
+store/queue
+store/tmp
