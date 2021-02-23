@@ -18,3 +18,9 @@
 .settings
 .classpath
 db-encrypted.properties
+.bloop
+.metals
+.settings
+.project
+src/main/resources/public/js/converse/build/aggregate
+src/main/resources/public/js/converse/dist
