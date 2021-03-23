@@ -232,10 +232,10 @@ dependencies {
 	implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
 
 	// Spring
-  	implementation group: 'org.springframework', name: 'spring-test', version: '5.3.4'
+  	implementation group: 'org.springframework', name: 'spring-test', version: '5.3.5'
 
  	// Jackson
-   	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.12.1'
+   	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.12.2'
    	  	
   	// H2
     implementation group: 'com.h2database', name: 'h2', version:'1.4.200'
@@ -244,7 +244,7 @@ dependencies {
     implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.7.2'         
     
     // JSON
-    implementation group: 'org.json', name: 'json', version:'20201115'
+    implementation group: 'org.json', name: 'json', version:'20210307'
       
     // CoreNLP
     implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'4.2.0'
@@ -279,10 +279,10 @@ dependencies {
 	implementation group: 'xml-apis', name: 'xml-apis', version: '1.4.01'
 	
 	// WebJars
-	implementation 'org.webjars.bower:jquery:3.5.1'
+	implementation 'org.webjars.bower:jquery:3.6.0'
 	implementation 'org.webjars.bower:jquery.ui:1.12.1'
 	implementation 'org.webjars:bootstrap:3.3.7-1'
-	implementation 'org.webjars.bower:bootstrap:4.1.1'
+	implementation 'org.webjars.bower:bootstrap:4.6.0'
 	implementation 'org.webjars.bower:moment:2.27.0'
 	implementation 'org.webjars.npm:angular:1.8.2'
 	implementation 'org.webjars.npm:angular-resource:1.8.2'
