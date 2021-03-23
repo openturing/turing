@@ -279,7 +279,7 @@ dependencies {
 	implementation group: 'xml-apis', name: 'xml-apis', version: '1.4.01'
 	
 	// WebJars
-	implementation 'org.webjars.bower:jquery:3.5.1'
+	implementation 'org.webjars.bower:jquery:3.6.0'
 	implementation 'org.webjars.bower:jquery.ui:1.12.1'
 	implementation 'org.webjars:bootstrap:3.3.7-1'
 	implementation 'org.webjars.bower:bootstrap:4.6.0'
