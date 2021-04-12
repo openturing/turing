@@ -97,9 +97,27 @@ $ curl -X POST -H 'Content-type:application/json' --data-binary '{
 ```xml
 <field name="text" type="text_general" indexed="true" stored="true"/>
 <field name="title" type="text_general" indexed="true" stored="true"/>
-
 ```
 
+### Chat
+
+So add or modify the following fields in `/opt/solr/server/solr/turing/conf/managed-schema` file.
+
+```xml
+<field name="action" type="text_general"/>
+<field name="agent" type="text_general" indexed="true" stored="true"/>
+<field name="contextInput" type="text_general"/>
+<field name="contextOutput" type="text_general"/>
+<field name="hasParameters" type="boolean"/>
+<field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
+<field name="intent" type="text_general"/>
+<field name="name" type="text_general"/>
+<field name="phrases" type="text_general"/>
+<field name="position" type="plong"/>
+<field name="prompts" type="text_general"/>
+<field name="responses" type="text_general"/>
+<field name="type" type="text_general"/>
+```
 ## Deploy 
 ### Generate Fat Jar File
 
