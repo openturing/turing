@@ -18,10 +18,19 @@ plugins {
   id 'io.spring.dependency-management' version '1.0.11.RELEASE'
   id 'java'
   id "com.eriwen.gradle.js" version "2.14.1"
-  id "com.gorylenko.gradle-git-properties" version "2.3.0"
+  id "com.gorylenko.gradle-git-properties" version "2.2.4"
   id 'de.undercouch.download' version '4.1.1'
   id 'eclipse'
   id 'jacoco'
+  id "org.sonarqube" version "3.1.1"
+}
+
+sonarqube {
+  properties {
+    property "sonar.projectKey", "openturing_turing"
+    property "sonar.organization", "alegauss-github"
+    property "sonar.host.url", "https://sonarcloud.io"
+  }
 }
 
 jar {
@@ -142,12 +151,6 @@ task stage(dependsOn: ['build', 'clean'])
 compileJava.dependsOn(minifyAllJs)
 
 build.mustRunAfter clean
-
-javadoc {
-    source = sourceSets.main.allJava
-    classpath = configurations.compile
-    destinationDir = file("store/doc/javadoc")
-}
 
 dependencies {
 	implementation (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.3.0') {
