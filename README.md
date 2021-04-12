@@ -1,6 +1,6 @@
 [![demo](https://img.shields.io/badge/demo-try%20online-FF874B.svg)](https://turing.viglet.net)
 [![downloads](https://img.shields.io/github/downloads/openturing/turing/total.svg)](https://github.com/openturing/turing/releases/download/v0.3.2/viglet-turing.jar)
-[![Build Status](https://travis-ci.com/openturing/turing.svg?branch=master)](https://travis-ci.com/openturing/turing) [![codecov](https://codecov.io/gh/openturing/turing/branch/master/graph/badge.svg)](https://codecov.io/gh/openturing/turing) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=openturing_turing&metric=alert_status)](https://sonarcloud.io/dashboard/index/openturing_turing)
+[![Java CI](https://github.com/openturing/turing/actions/workflows/gradle.yml/badge.svg)](https://github.com/openturing/turing/actions/workflows/gradle.yml) [![codecov](https://codecov.io/gh/openturing/turing/branch/master/graph/badge.svg)](https://codecov.io/gh/openturing/turing) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=openturing_turing&metric=alert_status)](https://sonarcloud.io/dashboard/index/openturing_turing)
 [![Twitter](https://img.shields.io/twitter/follow/openviglet.svg?style=social&label=Follow)](https://twitter.com/intent/follow?screen_name=openviglet)
 
 [![viglet_logo.png](https://openturing.github.io/turing/img/banner/viglet_turing.png)](http://viglet.com/turing)
@@ -95,7 +95,29 @@ $ curl -X POST -H 'Content-type:application/json' --data-binary '{
 <field name="title" type="text_general" indexed="true" stored="true"/>
 
 ```
+### Chat
 
+Create the converse core int Solr.
+```bash
+# solr create -c core
+```
+
+So add or modify the following fields in `/opt/solr/server/solr/converse/conf/managed-schema` file.
+
+```xml
+<field name="action" type="text_general"/>
+<field name="agent" type="text_general" indexed="true" stored="true"/>
+<field name="contextInput" type="text_general"/>
+<field name="contextOutput" type="text_general"/>
+<field name="hasParameters" type="boolean"/>
+<field name="intent" type="text_general"/>
+<field name="name" type="text_general"/>
+<field name="phrases" type="text_general"/>
+<field name="position" type="plong"/>
+<field name="prompts" type="text_general"/>
+<field name="responses" type="text_general"/>
+<field name="type" type="text_general"/>
+```
 ## Deploy 
 ### Generate Fat Jar File
 
