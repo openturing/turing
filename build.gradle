@@ -58,8 +58,8 @@ repositories {
 }
 
 group = 'com.viglet.turing'
-sourceCompatibility = 15
-targetCompatibility = 15
+sourceCompatibility = 14
+targetCompatibility = 14
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
