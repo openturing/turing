@@ -18,7 +18,7 @@ plugins {
   id 'io.spring.dependency-management' version '1.0.11.RELEASE'
   id 'java'
   id "com.eriwen.gradle.js" version "2.14.1"
-  id "com.gorylenko.gradle-git-properties" version "2.2.4"
+  id "com.gorylenko.gradle-git-properties" version "2.3.0"
   id 'de.undercouch.download' version '4.1.1'
   id 'eclipse'
   id 'jacoco'
