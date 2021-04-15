@@ -238,7 +238,7 @@ dependencies {
   	implementation group: 'org.springframework', name: 'spring-test', version: '5.3.6'
 
  	// Jackson
-   	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.12.2'
+   	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.12.3'
    	  	
   	// H2
     implementation group: 'com.h2database', name: 'h2', version:'1.4.200'
