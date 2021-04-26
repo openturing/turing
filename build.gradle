@@ -263,7 +263,7 @@ dependencies {
     implementation group: 'commons-lang', name: 'commons-lang', version:'2.6'
   
     // EhCache
-    implementation group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.6'
+    implementation group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.9.2'
     
     // Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version:'1.26'
