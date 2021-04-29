@@ -1,5 +1,5 @@
 [![downloads](https://img.shields.io/github/downloads/openturing/turing/total.svg)](https://github.com/openturing/turing/releases/download/v0.3.2/viglet-turing.jar)
-[![Build Status](https://travis-ci.com/openturing/turing.svg?branch=master)](https://travis-ci.com/openturing/turing) [![codecov](https://codecov.io/gh/openturing/turing/branch/master/graph/badge.svg)](https://codecov.io/gh/openturing/turing) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=openturing_turing&metric=alert_status)](https://sonarcloud.io/dashboard/index/openturing_turing)
+[![Build](https://github.com/openturing/turing/actions/workflows/build.yml/badge.svg)](https://github.com/openturing/turing/actions/workflows/build.yml) [![codecov](https://codecov.io/gh/openturing/turing/branch/master/graph/badge.svg)](https://codecov.io/gh/openturing/turing) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=openturing_turing&metric=alert_status)](https://sonarcloud.io/dashboard/index/openturing_turing)
 [![Twitter](https://img.shields.io/twitter/follow/openviglet.svg?style=social&label=Follow)](https://twitter.com/intent/follow?screen_name=openviglet)
 
 [![viglet_logo.png](https://openturing.github.io/turing/img/banner/viglet_turing.png)](http://viglet.com/turing)
