@@ -142,7 +142,7 @@ turingApp
 					templateUrl: 'templates/home.html',
 					controller: 'TurHomeCtrl',
 					data: {
-						pageTitle: 'Home | Viglet Turing'
+						pageTitle: 'Home | Viglet Turing AI'
 					}
 				})
 				.state(
@@ -151,7 +151,7 @@ turingApp
 						url: '/ml',
 						templateUrl: 'templates/ml/ml.html',
 						data: {
-							pageTitle: 'Machine Learning | Viglet Turing'
+							pageTitle: 'Machine Learning | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -161,7 +161,7 @@ turingApp
 						templateUrl: 'templates/ml/ml-instance.html',
 						controller: 'TurMLInstanceCtrl',
 						data: {
-							pageTitle: 'Machine Learnings | Viglet Turing'
+							pageTitle: 'Machine Learnings | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -171,7 +171,7 @@ turingApp
 						templateUrl: 'templates/ml/ml-instance-new.html',
 						controller: 'TurMLInstanceNewCtrl',
 						data: {
-							pageTitle: 'New Machine Learning Instance | Viglet Turing'
+							pageTitle: 'New Machine Learning Instance | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -181,7 +181,7 @@ turingApp
 						templateUrl: 'templates/ml/ml-instance-edit.html',
 						controller: 'TurMLInstanceEditCtrl',
 						data: {
-							pageTitle: 'Edit Machine Learning | Viglet Turing'
+							pageTitle: 'Edit Machine Learning | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -191,7 +191,7 @@ turingApp
 						templateUrl: 'templates/ml/model/ml-model.html',
 						controller: 'TurMLModelCtrl',
 						data: {
-							pageTitle: 'Machine Learning Models | Viglet Turing'
+							pageTitle: 'Machine Learning Models | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -201,7 +201,7 @@ turingApp
 						templateUrl: 'templates/ml/data/group/ml-datagroup.html',
 						controller: 'TurMLDataGroupCtrl',
 						data: {
-							pageTitle: 'Machine Learning Data Groups | Viglet Turing'
+							pageTitle: 'Machine Learning Data Groups | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -211,7 +211,7 @@ turingApp
 						templateUrl: 'templates/ml/data/group/ml-datagroup-new.html',
 						controller: 'TurMLDataGroupNewCtrl',
 						data: {
-							pageTitle: 'New Data Group | Viglet Turing'
+							pageTitle: 'New Data Group | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -221,7 +221,7 @@ turingApp
 						templateUrl: 'templates/ml/data/group/ml-datagroup-edit.html',
 						controller: 'TurMLDataGroupEditCtrl',
 						data: {
-							pageTitle: 'Edit Data Group | Viglet Turing'
+							pageTitle: 'Edit Data Group | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -231,7 +231,7 @@ turingApp
 						templateUrl: 'templates/ml/data/group/ml-datagroup-category.html',
 						controller: 'TurMLDataGroupCategoryCtrl',
 						data: {
-							pageTitle: 'Data Group Categories | Viglet Turing'
+							pageTitle: 'Data Group Categories | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -241,7 +241,7 @@ turingApp
 						templateUrl: 'templates/ml/category/ml-category-edit.html',
 						controller: 'TurMLCategoryEditCtrl',
 						data: {
-							pageTitle: 'Edit Category | Viglet Turing'
+							pageTitle: 'Edit Category | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -251,7 +251,7 @@ turingApp
 						templateUrl: 'templates/ml/category/ml-category-sentence.html',
 						controller: 'TurMLCategorySentenceCtrl',
 						data: {
-							pageTitle: 'Edit Category | Viglet Turing'
+							pageTitle: 'Edit Category | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -261,7 +261,7 @@ turingApp
 						templateUrl: 'templates/ml/data/group/ml-datagroup-data.html',
 						controller: 'TurMLDataGroupDataCtrl',
 						data: {
-							pageTitle: 'Data Group Documents | Viglet Turing'
+							pageTitle: 'Data Group Documents | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -271,7 +271,7 @@ turingApp
 						templateUrl: 'templates/ml/data/ml-data-edit.html',
 						controller: 'TurMLDataEditCtrl',
 						data: {
-							pageTitle: 'Edit Data | Viglet Turing'
+							pageTitle: 'Edit Data | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -281,7 +281,7 @@ turingApp
 						templateUrl: 'templates/ml/data/group/ml-datagroup-sentence.html',
 						controller: 'TurMLDataGroupSentenceCtrl',
 						data: {
-							pageTitle: 'Data Group Sentences | Viglet Turing'
+							pageTitle: 'Data Group Sentences | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -291,7 +291,7 @@ turingApp
 						templateUrl: 'templates/ml/sentence/ml-sentence-edit.html',
 						controller: 'TurMLDataGroupSentenceEditCtrl',
 						data: {
-							pageTitle: 'Edit Sentence | Viglet Turing'
+							pageTitle: 'Edit Sentence | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -301,7 +301,7 @@ turingApp
 						templateUrl: 'templates/ml/data/group/ml-datagroup-model.html',
 						controller: 'TurMLDataGroupModelCtrl',
 						data: {
-							pageTitle: 'Data Group Models | Viglet Turing'
+							pageTitle: 'Data Group Models | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -311,7 +311,7 @@ turingApp
 						templateUrl: 'templates/ml/model/ml-model-edit.html',
 						controller: 'TurMLDataGroupModelEditCtrl',
 						data: {
-							pageTitle: 'Edit Model | Viglet Turing'
+							pageTitle: 'Edit Model | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -321,7 +321,7 @@ turingApp
 						templateUrl: 'templates/ml/data/ml-data-sentence.html',
 						controller: 'TurMLDataSentenceCtrl',
 						data: {
-							pageTitle: 'Edit Data | Viglet Turing'
+							pageTitle: 'Edit Data | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -330,7 +330,7 @@ turingApp
 						url: '/converse',
 						templateUrl: 'templates/converse/converse.html',
 						data: {
-							pageTitle: 'Converse | Viglet Turing'
+							pageTitle: 'Converse | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -340,7 +340,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-agent-list.html',
 						controller: 'TurConverseAgentListCtrl',
 						data: {
-							pageTitle: 'Converse Agents | Viglet Turing'
+							pageTitle: 'Converse Agents | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -350,7 +350,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-agent-import.html',
 						controller: 'TurConverseAgentImportCtrl',
 						data: {
-							pageTitle: 'Import Agent | Viglet Turing'
+							pageTitle: 'Import Agent | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -360,7 +360,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-agent-new.html',
 						controller: 'TurConverseAgentDetailCtrl',
 						data: {
-							pageTitle: 'New Converse Agent | Viglet Turing'
+							pageTitle: 'New Converse Agent | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -370,7 +370,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-agent.html',
 						controller: 'TurConverseAgentCtrl',
 						data: {
-							pageTitle: 'Edit Converse Agent | Viglet Turing'
+							pageTitle: 'Edit Converse Agent | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -380,7 +380,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-agent-detail.html',
 						controller: 'TurConverseAgentDetailCtrl',
 						data: {
-							pageTitle: 'Converse Agent Detail | Viglet Turing'
+							pageTitle: 'Converse Agent Detail | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -390,7 +390,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-intent-list.html',
 						controller: 'TurConverseIntentListCtrl',
 						data: {
-							pageTitle: 'Converse Intents | Viglet Turing'
+							pageTitle: 'Converse Intents | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -400,7 +400,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-intent.html',
 						controller: 'TurConverseIntentCtrl',
 						data: {
-							pageTitle: 'New Converse Intent | Viglet Turing'
+							pageTitle: 'New Converse Intent | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -410,7 +410,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-intent.html',
 						controller: 'TurConverseIntentCtrl',
 						data: {
-							pageTitle: 'Edit Converse Intent | Viglet Turing'
+							pageTitle: 'Edit Converse Intent | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -420,7 +420,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-entity-list.html',
 						controller: 'TurConverseEntityListCtrl',
 						data: {
-							pageTitle: 'Converse Entity | Viglet Turing'
+							pageTitle: 'Converse Entity | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -430,7 +430,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-entity.html',
 						controller: 'TurConverseEntityCtrl',
 						data: {
-							pageTitle: 'New Converse Entity | Viglet Turing'
+							pageTitle: 'New Converse Entity | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -440,7 +440,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-entity.html',
 						controller: 'TurConverseEntityCtrl',
 						data: {
-							pageTitle: 'Edit Converse Entity | Viglet Turing'
+							pageTitle: 'Edit Converse Entity | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -450,7 +450,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-training-list.html',
 						controller: 'TurConverseTrainingListCtrl',
 						data: {
-							pageTitle: 'Converse Training | Viglet Turing'
+							pageTitle: 'Converse Training | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -460,7 +460,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-training.html',
 						controller: 'TurConverseTrainingCtrl',
 						data: {
-							pageTitle: 'Converse Training | Viglet Turing'
+							pageTitle: 'Converse Training | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -470,7 +470,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-history.html',
 						controller: 'TurConverseHistoryCtrl',
 						data: {
-							pageTitle: 'Converse History | Viglet Turing'
+							pageTitle: 'Converse History | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -480,7 +480,7 @@ turingApp
 						templateUrl: 'templates/converse/converse-conversation.html',
 						controller: 'TurConverseConversationCtrl',
 						data: {
-							pageTitle: 'Converse Conversation | Viglet Turing'
+							pageTitle: 'Converse Conversation | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -490,14 +490,14 @@ turingApp
 						templateUrl: 'templates/converse/converse-prebuilt-agent.html',
 						controller: 'TurConversePreBuiltAgentCtrl',
 						data: {
-							pageTitle: 'Converse Prebuilt Agents | Viglet Turing'
+							pageTitle: 'Converse Prebuilt Agents | Viglet Turing AI'
 						}
 					})
 				.state('console.storage', {
 					url: '/storage',
 					templateUrl: 'templates/storage/storage.html',
 					data: {
-						pageTitle: 'Storage | Viglet Turing'
+						pageTitle: 'Storage | Viglet Turing AI'
 					}
 				})
 				.state(
@@ -507,7 +507,7 @@ turingApp
 						templateUrl: 'templates/storage/storage-instance.html',
 						controller: 'TurStorageInstanceCtrl',
 						data: {
-							pageTitle: 'Storages | Viglet Turing'
+							pageTitle: 'Storages | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -517,7 +517,7 @@ turingApp
 						templateUrl: 'templates/storage/mgmt/storage-mgmt.html',
 						controller: 'TurStorageMgmtCtrl',
 						data: {
-							pageTitle: 'Storages | Viglet Turing'
+							pageTitle: 'Storages | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -527,14 +527,14 @@ turingApp
 						templateUrl: 'templates/storage/mgmt/storage-mgmt-child.html',
 						controller: 'TurStorageMgmtCtrl',
 						data: {
-							pageTitle: 'Storages | Viglet Turing'
+							pageTitle: 'Storages | Viglet Turing AI'
 						}
 					})
 				.state('console.se', {
 					url: '/se',
 					templateUrl: 'templates/se/se.html',
 					data: {
-						pageTitle: 'Search Engine | Viglet Turing'
+						pageTitle: 'Search Engine | Viglet Turing AI'
 					}
 				})
 				.state(
@@ -544,7 +544,7 @@ turingApp
 						templateUrl: 'templates/se/se-instance.html',
 						controller: 'TurSEInstanceCtrl',
 						data: {
-							pageTitle: 'Search Engines | Viglet Turing'
+							pageTitle: 'Search Engines | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -554,7 +554,7 @@ turingApp
 						templateUrl: 'templates/se/se-instance-new.html',
 						controller: 'TurSEInstanceNewCtrl',
 						data: {
-							pageTitle: 'New Search Engine Instance | Viglet Turing'
+							pageTitle: 'New Search Engine Instance | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -564,7 +564,7 @@ turingApp
 						templateUrl: 'templates/se/se-instance-edit.html',
 						controller: 'TurSEInstanceEditCtrl',
 						data: {
-							pageTitle: 'Edit Search Engine | Viglet Turing'
+							pageTitle: 'Edit Search Engine | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -573,7 +573,7 @@ turingApp
 						url: '/sn',
 						templateUrl: 'templates/sn/sn.html',
 						data: {
-							pageTitle: 'Semantic Navigation | Viglet Turing'
+							pageTitle: 'Semantic Navigation | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -583,7 +583,7 @@ turingApp
 						templateUrl: 'templates/sn/site/sn-site.html',
 						controller: 'TurSNSiteCtrl',
 						data: {
-							pageTitle: 'Semantic Navigation Sites | Viglet Turing'
+							pageTitle: 'Semantic Navigation Sites | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -593,7 +593,7 @@ turingApp
 						templateUrl: 'templates/sn/site/sn-site-new.html',
 						controller: 'TurSNSiteNewCtrl',
 						data: {
-							pageTitle: 'New Semantic Navigation Site | Viglet Turing'
+							pageTitle: 'New Semantic Navigation Site | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -603,7 +603,7 @@ turingApp
 						templateUrl: 'templates/sn/site/sn-site-edit.html',
 						controller: 'TurSNSiteEditCtrl',
 						data: {
-							pageTitle: 'Edit Semantic Navigation Site | Viglet Turing'
+							pageTitle: 'Edit Semantic Navigation Site | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -613,7 +613,7 @@ turingApp
 						templateUrl: 'templates/sn/site/sn-site-field.html',
 						controller: 'TurSNSiteFieldCtrl',
 						data: {
-							pageTitle: 'Semantic Navigation Site Fields | Viglet Turing'
+							pageTitle: 'Semantic Navigation Site Fields | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -623,7 +623,7 @@ turingApp
 						templateUrl: 'templates/sn/site/field/sn-site-field-edit.html',
 						controller: 'TurSNSiteFieldEditCtrl',
 						data: {
-							pageTitle: 'Edit Semantic Navigation Site Field | Viglet Turing'
+							pageTitle: 'Edit Semantic Navigation Site Field | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -633,7 +633,7 @@ turingApp
 						templateUrl: 'templates/sn/site/sn-site-ui.html',
 						controller: 'TurSNSiteUICtrl',
 						data: {
-							pageTitle: 'Semantic Navigation Site Appearance | Viglet Turing'
+							pageTitle: 'Semantic Navigation Site Appearance | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -643,14 +643,14 @@ turingApp
 						templateUrl: 'templates/sn/sn-ad.html',
 						controller: 'TurSNAdvertisingCtrl',
 						data: {
-							pageTitle: 'Semantic Navigation Advertising | Viglet Turing'
+							pageTitle: 'Semantic Navigation Advertising | Viglet Turing AI'
 						}
 					})
 				.state('console.nlp', {
 					url: '/nlp',
 					templateUrl: 'templates/nlp/nlp.html',
 					data: {
-						pageTitle: 'NLP | Viglet Turing'
+						pageTitle: 'NLP | Viglet Turing AI'
 					}
 				})
 				.state(
@@ -660,7 +660,7 @@ turingApp
 						templateUrl: 'templates/nlp/nlp-instance.html',
 						controller: 'TurNLPInstanceCtrl',
 						data: {
-							pageTitle: 'NLPs | Viglet Turing'
+							pageTitle: 'NLPs | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -670,7 +670,7 @@ turingApp
 						templateUrl: 'templates/nlp/nlp-instance-new.html',
 						controller: 'TurNLPInstanceNewCtrl',
 						data: {
-							pageTitle: 'New NLP Instance | Viglet Turing'
+							pageTitle: 'New NLP Instance | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -680,7 +680,7 @@ turingApp
 						templateUrl: 'templates/nlp/nlp-instance-edit.html',
 						controller: 'TurNLPInstanceEditCtrl',
 						data: {
-							pageTitle: 'Edit NLP | Viglet Turing'
+							pageTitle: 'Edit NLP | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -690,7 +690,7 @@ turingApp
 						templateUrl: 'templates/nlp/nlp-validation.html',
 						controller: 'TurNLPValidationCtrl',
 						data: {
-							pageTitle: 'NLP Validation | Viglet Turing'
+							pageTitle: 'NLP Validation | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -700,7 +700,7 @@ turingApp
 						templateUrl: 'templates/nlp/entity/nlp-entity.html',
 						controller: 'TurNLPEntityCtrl',
 						data: {
-							pageTitle: 'NLP Entities | Viglet Turing'
+							pageTitle: 'NLP Entities | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -709,7 +709,7 @@ turingApp
 						url: '/entity/import',
 						templateUrl: 'templates/nlp/entity/nlp-entity-import.html',
 						data: {
-							pageTitle: 'Import Entity | Viglet Turing'
+							pageTitle: 'Import Entity | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -719,7 +719,7 @@ turingApp
 						templateUrl: 'templates/nlp/entity/nlp-entity-edit.html',
 						controller: 'TurNLPEntityEditCtrl',
 						data: {
-							pageTitle: 'Edit Entity | Viglet Turing'
+							pageTitle: 'Edit Entity | Viglet Turing AI'
 						}
 					})
 				.state(
@@ -728,8 +728,59 @@ turingApp
 						url: '/term',
 						templateUrl: 'templates/nlp/entity/nlp-entity-term.html',
 						data: {
-							pageTitle: 'Entity Terms | Viglet Turing'
+							pageTitle: 'Entity Terms | Viglet Turing AI'
 						}
+					}).state('admin', {
+						url: '/admin',
+						templateUrl: 'templates/admin/admin-home.html',
+						controller: 'TurAdminCtrl',
+						redirectTo: 'admin.user',
+						data: { pageTitle: 'Administration | Viglet Turing AI' }
+					}).state('admin.user', {
+						url: '/user',
+						templateUrl: 'templates/admin/user/user.html',
+						controller: 'TurUserCtrl',
+						data: { pageTitle: 'Users | Viglet Turing AI' }
+					}).state('admin.user-new', {
+						url: '/user/new',
+						templateUrl: 'templates/admin/user/user-item.html',
+						controller: 'TurUserNewCtrl',
+						data: { pageTitle: 'New User | Viglet Turing AI' }
+					}).state('admin.user-edit', {
+						url: '/user/:userId',
+						templateUrl: 'templates/admin/user/user-item.html',
+						controller: 'TurUserEditCtrl',
+						data: { pageTitle: 'Edit User | Viglet Turing AI' }
+					}).state('admin.role', {
+						url: '/role',
+						templateUrl: 'templates/admin/role/role.html',
+						controller: 'TurRoleCtrl',
+						data: { pageTitle: 'Roles | Viglet Turing AI' }
+					}).state('admin.role-new', {
+						url: '/role/new',
+						templateUrl: 'templates/admin/role/role-item.html',
+						controller: 'TurRoleNewCtrl',
+						data: { pageTitle: 'New Role | Viglet Turing AI' }
+					}).state('admin.role-edit', {
+						url: '/role/:roleId',
+						templateUrl: 'templates/admin/role/role-item.html',
+						controller: 'TurRoleEditCtrl',
+						data: { pageTitle: 'Edit Role | Viglet Turing AI' }
+					}).state('admin.group', {
+						url: '/group',
+						templateUrl: 'templates/admin/group/group.html',
+						controller: 'TurGroupCtrl',
+						data: { pageTitle: 'Groups | Viglet Turing AI' }
+					}).state('admin.group-new', {
+						url: '/group/new',
+						templateUrl: 'templates/admin/group/group-item.html',
+						controller: 'TurGroupNewCtrl',
+						data: { pageTitle: 'New Group | Viglet Turing AI' }
+					}).state('admin.group-edit', {
+						url: '/group/:groupId',
+						templateUrl: 'templates/admin/group/group-item.html',
+						controller: 'TurGroupEditCtrl',
+						data: { pageTitle: 'Edit Group | Viglet Turing AI' }
 					});
 
 		}]);

@@ -141,7 +141,9 @@ task combineAllJs(dependsOn: ':combineFeatureJs', type: com.eriwen.gradle.js.tas
 task minifyAllJs(dependsOn: ':combineAllJs', type: com.eriwen.gradle.js.tasks.MinifyJsTask) {
  	source = "${projectDir}/src/main/resources/public/js/build/aggregate/turing.js"
     dest = file("${projectDir}/src/main/resources/public/js/dist/turing-min.js")
-    closure {
+ 	closure {
+		compilerOptions.languageIn="ECMASCRIPT6"
+		compilerOptions.languageOut="ECMASCRIPT5"
         warningLevel = 'QUIET'
     }
 }
