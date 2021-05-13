@@ -254,7 +254,7 @@ dependencies {
     implementation group: 'org.json', name: 'json', version:'20210307'
       
     // CoreNLP
-    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'4.2.0'
+    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'4.2.1'
     
     //ASM
     implementation group: 'asm', name: 'asm', version:'3.3.1'
