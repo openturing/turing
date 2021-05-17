@@ -286,7 +286,7 @@ dependencies {
 	// WebJars
 	implementation 'org.webjars.bower:jquery:3.6.0'
 	implementation 'org.webjars.bower:jquery.ui:1.12.1'
-	implementation 'org.webjars:bootstrap:3.3.7-1'
+	implementation 'org.webjars:bootstrap:5.0.1'
 	implementation 'org.webjars.bower:bootstrap:4.6.0'
 	implementation 'org.webjars.bower:moment:2.29.1'
 	implementation 'org.webjars.npm:angular:1.8.2'
