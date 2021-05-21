@@ -1,6 +1,6 @@
 
 buildscript {
-    ext { springBootVersion = '2.4.5'
+    ext { springBootVersion = '2.5.0'
 	      hibernateVersion = '5.11.0.Final'
 		  httpClientVersion = '4.5.11'
 		  swaggerVersion = '3.0.0'
@@ -14,7 +14,7 @@ buildscript {
 }
 
 plugins {
-  id 'org.springframework.boot' version '2.4.5'
+  id 'org.springframework.boot' version "${springBootVersion}"
   id 'io.spring.dependency-management' version '1.0.11.RELEASE'
   id 'java'
   id "com.eriwen.gradle.js" version "2.14.1"
@@ -222,9 +222,10 @@ dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version:"${springBootVersion}"
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-solr', version:"${springBootVersion}"
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
-//	implementation group: 'org.springframework.security.oauth.boot', name: 'spring-security-oauth2-autoconfigure', version:"${springBootVersion}"
+
+	// SolrJ
+	implementation group: 'org.apache.solr', name: 'solr-solrj', version: '8.5.2'
 
 	implementation group: 'org.springframework.boot', name: 'spring-boot-properties-migrator', version:"${springBootVersion}"
 
