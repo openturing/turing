@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2018 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
+ * Copyright (C) 2016-2020 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as publitured by
@@ -54,10 +54,12 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 		http.httpBasic().authenticationEntryPoint(turAuthenticationEntryPoint).and().authorizeRequests()
 				.antMatchers("/index.html", "/welcome/**", "/", "/store/**", "/webjars/**", "/js/**", "/css/**",
 						"/template/**", "/img/**", "/sites/**", "/__tur/**", "/swagger-resources/**", "/h2/**",
-						"/images/**", "/login-page/**", "/logout-page/**", "/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico")
+						"/images/**", "/login-page/**", "/logout-page/**", "/sn/**", "/fonts/**", "/api/sn/**",
+						"/api/nlp/**", "/favicon.ico")
 				.permitAll().anyRequest().authenticated().and()
 				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf()
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
+		http.csrf().disable();
 	}
 
 	@Override

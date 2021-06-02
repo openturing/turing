@@ -91,7 +91,7 @@ public class TurNLP {
 
 	}
 
-	public Map<String, Object> validate() throws JSONException {
+	public Map<String, Object> validate() {
 		Map<String, Object> turNLPResults = this.retrieveNLP();
 		return turNLPResults;
 	}
@@ -112,7 +112,7 @@ public class TurNLP {
 		this.nlpAttributes = nlpAttributes;
 	}
 
-	public Map<String, Object> retrieveNLP() throws JSONException {
+	public Map<String, Object> retrieveNLP() {
 		logger.debug("Executing retrieveNLP...");
 		TurNLPImpl nlpService;
 

@@ -51,6 +51,7 @@ public class TurConverseChatResponse implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	@Column(name = "dateResponse")
 	private Date date;
 
 	private String text;

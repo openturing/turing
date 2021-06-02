@@ -59,6 +59,9 @@ public class TurNLPEntity implements Serializable {
 
 	@Column(nullable = false, length = 50)
 	private String name;
+	
+	@Column
+	private int enabled;		
 
 	// bi-directional many-to-one association to TurServicesNLPEntity
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turNLPEntity", cascade = CascadeType.ALL)
@@ -192,5 +195,15 @@ public class TurNLPEntity implements Serializable {
 
 		return turTerm;
 	}
+
+	public int getEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(int enabled) {
+		this.enabled = enabled;
+	}
+
+	
 
 }

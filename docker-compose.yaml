@@ -1,0 +1,50 @@
+version: '3'
+services:
+  turing-nginx:
+    container_name: turing-nginx
+    image: nginx:1.13
+    restart: always
+    ports:
+    - 80:80
+    - 443:443
+    volumes:
+    - ./containers/nginx/conf.d:/etc/nginx/conf.d
+  turing-solr:
+    container_name: turing-solr
+    build: ./containers/solr
+    restart: always    
+    ports:
+    - 8983:8983
+  turing-mariadb:
+    container_name: turing-mariadb
+    build: ./containers/mariadb
+    restart: always    
+    ports:
+    - 3306:3306
+    volumes:
+    - ./volumes/mariadb/lib:/var/lib/mysql 
+    environment:
+      MYSQL_DATABASE: turing
+      MYSQL_ROOT_PASSWORD: turing
+      MYSQL_USER: turing
+      MYSQL_PASSWORD: turing
+  turing:
+    container_name: turing
+    build: .
+    restart: always    
+    ports:
+     - 2700:2700
+    volumes:
+    - ./volumes/turing/models:/turing/models   
+    - ./volumes/turing/store:/turing/store
+    - ./volumes/turing/gradle:/root/.gradle
+    depends_on:
+      - turing-nginx
+      - turing-mariadb
+      - turing-solr
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://turing-mariadb:3306/turing
+      SPRING_DATASOURCE_USERNAME: turing
+      SPRING_DATASOURCE_PASSWORD: turing
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.mariadb.jdbc.Driver
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL5InnoDBDialect

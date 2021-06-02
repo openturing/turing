@@ -53,7 +53,7 @@ public class TurSEInstanceOnStartup {
 				turSEInstance.setTitle("Apache Solr");
 				turSEInstance.setDescription("Solr Production");
 				turSEInstance.setTurSEVendor(turSEVendor);
-				turSEInstance.setHost("localhost");
+				turSEInstance.setHost("turing-solr");
 				turSEInstance.setPort(8983);
 				turSEInstance.setLanguage(TurLocaleRepository.EN_US);
 				turSEInstance.setEnabled(1);

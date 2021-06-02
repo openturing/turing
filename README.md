@@ -94,28 +94,33 @@ $ curl -X POST -H 'Content-type:application/json' --data-binary '{
 **Solr Highlighting** to work requires that the fields that use this feature be **text_general** type. So add or modify the following fields in `/opt/solr/server/solr/turing/conf/managed-schema` file.
 
 ```xml
-<field name="text" type="text_general" indexed="true" stored="true"/>
-<field name="title" type="text_general" indexed="true" stored="true"/>
-```
+  <field name="text" type="text_general" indexed="true" stored="true"/>
+  <field name="title" type="text_general" indexed="true" stored="true"/>
 
+```
 ### Chat
 
-So add or modify the following fields in `/opt/solr/server/solr/turing/conf/managed-schema` file.
+Create the converse core int Solr.
+```bash
+# solr create -c converse
+```
+
+So add or modify the following fields in `/opt/solr/server/solr/converse/conf/managed-schema` file.
 
 ```xml
-<field name="action" type="text_general"/>
-<field name="agent" type="text_general" indexed="true" stored="true"/>
-<field name="contextInput" type="text_general"/>
-<field name="contextOutput" type="text_general"/>
-<field name="hasParameters" type="boolean"/>
-<field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
-<field name="intent" type="text_general"/>
-<field name="name" type="text_general"/>
-<field name="phrases" type="text_general"/>
-<field name="position" type="plong"/>
-<field name="prompts" type="text_general"/>
-<field name="responses" type="text_general"/>
-<field name="type" type="text_general"/>
+  <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
+  <field name="description" type="text_general" multiValued="false" indexed="true" stored="true"/>
+  <field name="action" type="text_general"/>
+  <field name="agent" type="text_general" indexed="true" stored="true"/>
+  <field name="contextInput" type="text_general" multiValued="true" indexed="true" stored="true"/>
+  <field name="contextOutput" type="text_general" multiValued="true" indexed="true" stored="true"/>
+  <field name="hasParameters" type="boolean"/>
+  <field name="intent" type="text_general"/>
+  <field name="name" type="text_general"/>
+  <field name="position" type="plong"/>
+  <field name="phrases" type="text_general" multiValued="true" indexed="true" stored="true"/>
+  <field name="prompts" type="text_general" multiValued="true" indexed="true" stored="true"/>
+  <field name="responses" type="text_general" multiValued="true" indexed="true" stored="true"/>
 ```
 ## Deploy 
 ### Generate Fat Jar File

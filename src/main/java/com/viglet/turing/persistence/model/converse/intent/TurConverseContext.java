@@ -34,7 +34,7 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
  * 
  */
 @Entity
-@Table(name = "turConverseContext")
+@Table(name = "turConverseCtx")
 @NamedQuery(name = "TurConverseContext.findAll", query = "SELECT cc FROM TurConverseContext cc")
 @JsonIgnoreProperties({ "intentInputs", "intentOutputs" })
 public class TurConverseContext implements Serializable {
@@ -49,9 +49,11 @@ public class TurConverseContext implements Serializable {
 	private String text;
 
 	@ManyToMany
+	@JoinTable(name = "turConverseCtxIntentIn")
 	private Set<TurConverseIntent> intentInputs = new HashSet<>();
 
 	@ManyToMany
+	@JoinTable(name = "turConverseCtxIntentOut")
 	private Set<TurConverseIntent> intentOutputs = new HashSet<>();
 
 	@ManyToOne

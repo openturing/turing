@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.nlp.TurNLPVendorsConstant;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
@@ -34,11 +35,6 @@ import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 @Component
 @Transactional
 public class TurNLPVendorEntityOnStartup {
-	private static final String CORENLP = "CORENLP";
-	private static final String OPENNLP = "OPENNLP";
-	private static final String OTCA = "OTCA";
-	private static final String SPACY = "SPACY";
-
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
@@ -49,7 +45,7 @@ public class TurNLPVendorEntityOnStartup {
 	public void createDefaultRows() {
 
 		if (turNLPVendorEntityRepository.findAll().isEmpty()) {
-			TurNLPVendor turNLPVendor = turNLPVendorRepository.findById(CORENLP).get();
+			TurNLPVendor turNLPVendor = turNLPVendorRepository.findById(TurNLPVendorsConstant.CORENLP).get();
 			
 			if (turNLPVendor != null) {
 				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.EN_US);
@@ -62,7 +58,7 @@ public class TurNLPVendorEntityOnStartup {
 				this.addNLPVendor(turNLPVendor, "TIME", "TIME", TurLocaleRepository.EN_US);
 			}
 
-			turNLPVendor = turNLPVendorRepository.findById(OPENNLP).get();
+			turNLPVendor = turNLPVendorRepository.findById(TurNLPVendorsConstant.OPENNLP).get();
 
 			if (turNLPVendor != null) {
 				TurOpenNLPModelsOnStartup.downloadModels();
@@ -115,7 +111,7 @@ public class TurNLPVendorEntityOnStartup {
 				}
 			}
 
-			turNLPVendor = turNLPVendorRepository.findById(OTCA).get();
+			turNLPVendor = turNLPVendorRepository.findById(TurNLPVendorsConstant.OTCA).get();
 			
 			if (turNLPVendor != null) {
 				this.addNLPVendor(turNLPVendor, "PN", "PN", TurLocaleRepository.EN_US);
@@ -127,7 +123,23 @@ public class TurNLPVendorEntityOnStartup {
 				this.addNLPVendor(turNLPVendor, "ON", "ON", TurLocaleRepository.PT_BR);
 			}
 			
-			turNLPVendor = turNLPVendorRepository.findById(SPACY).get();
+			turNLPVendor = turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).get();
+
+			if (turNLPVendor != null) {
+				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "GL", "LOC", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "ON", "ORG", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "FIRST_NAME", "FIRST_NAME", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "LAST_NAME", "LAST_NAME", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "EMAIL", "EMAIL", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "NIE", "NIE", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "CIF", "CIF", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "DNI", "DNI", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, "PASSPORT", "PASSPORT", TurLocaleRepository.CA);
+
+			}
+			
+			turNLPVendor = turNLPVendorRepository.findById(TurNLPVendorsConstant.SPACY).get();
 
 			if (turNLPVendor != null) {
 				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.EN_US);
