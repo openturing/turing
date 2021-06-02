@@ -253,8 +253,7 @@ dependencies {
     
     // PostgreSQL
 	implementation group: 'org.postgresql', name: 'postgresql', version: '42.2.20'
-    
-    
+        
     // JSON
     implementation group: 'org.json', name: 'json', version:'20210307'
       
