@@ -35,7 +35,7 @@ sonarqube {
 
 jar {
     archiveBaseName = 'viglet-turing'
-    archiveVersion =  '0.3.3'
+    archiveVersion =  '0.3.4'
 }
 
 eclipse {

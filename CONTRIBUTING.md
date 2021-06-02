@@ -1,4 +1,4 @@
-![viglet_logo.png](http://www.viglet.ai/img/banner/viglet_turing.png)
+![viglet_logo.png](http://www.viglet.org/img/banner/viglet_turing.png)
 # Contributing guidelines
 
 ## How to become a contributor and submit your own code
