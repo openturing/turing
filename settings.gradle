@@ -1,1 +1,6 @@
 rootProject.name = 'viglet-turing'
+include ':turing-app'
+include ':turing-wem'
+include ':turing-jdbc'
+include ':turing-filesystem'
+include ':turing-nutch'

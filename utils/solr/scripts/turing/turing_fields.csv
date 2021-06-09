@@ -1,0 +1,16 @@
+field, type, multiValued, indexed, stored
+image, text_general, false, true, true
+modificationDate, pdate, false, true, true
+publicationDate, pdate, false, true, true
+author, string, false, true, true
+section,string,false, true, true
+provider,string,false, true, true
+text_spellcheck,text_spellcheck,true, true, false
+text_suggest, text_suggest,true, true, false
+title, text_general,false, true, true
+type, string,false, true, true
+turing_entity_PN, text_general,true, true, true
+turing_entity_ON, text_general,true, true, true
+turing_entity_GL, text_general,true, true, true
+turing_entity_IPTC, text_general,true, true, true
+turing_entity_ComplexConcepts, text_general,true, true, true

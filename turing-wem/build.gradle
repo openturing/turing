@@ -1,0 +1,84 @@
+buildscript {
+	repositories {
+		mavenCentral()
+		 jcenter()
+	}
+	dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+    }
+}
+
+plugins {
+  id "org.sonarqube" version "3.1.1"
+}
+
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+
+sonarqube {
+  properties {
+    property "sonar.projectKey", "openturing_turing-wem"
+    property "sonar.organization", "openturing"
+    property "sonar.host.url", "https://sonarcloud.io"
+  }
+}
+
+sourceCompatibility = 1.8
+compileJava.options.encoding = "UTF-8"
+compileTestJava.options.encoding = "UTF-8"
+
+repositories {
+		maven { url 'https://jitpack.io' }
+        mavenCentral()
+}
+
+javadoc {
+    source = sourceSets.main.allJava
+    classpath = configurations.implementation
+    destinationDir = file("docs")
+}
+
+task compileOne (type: JavaCompile) {
+    source = fileTree(dir: 'src', include: '**/*.java')
+    classpath = files('build/classes/main')
+    destinationDir = file('build/classes/main')
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
+
+dependencies {
+    //implementation files(fileTree(dir: 'lib', includes: ['*.jar']))
+    implementation group: 'com.beust', name: 'jcommander', version: '1.47'	
+    implementation group: 'log4j', name: 'log4j', version: '1.2.7'
+    implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
+	implementation 'com.github.alegauss:dummy-vgn:1a42a92d66'
+	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: '0.3.3'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.viglet.turing.wem.TurWEMCommander'
+    }
+ }
+ 
+ shadowJar {
+   baseName = 'turing-wem'
+   classifier = null
+   version = 'all'
+   exclude 'vgn-*.jar'
+   exclude 'castor-*.jar'
+   exclude 'thirdparty-combined.jar'
+     dependencies {
+      exclude(dependency('log4j:log4j'))
+      exclude(dependency('org.apache.httpcomponents:httpcore'))
+      exclude(dependency('org.apache.httpcomponents:httpclient'))
+      exclude(dependency('commons-httpclient:commons-httpclient'))
+      exclude(dependency('com.github.alegauss:dummy-vgn'))
+      exclude(dependency('commons-codec:commons-codec'))
+      exclude(dependency('commons-logging:commons-logging'))
+      exclude(dependency('org.json:json'))
+   }
+}
+
+compileOne.options.compilerArgs = ["-sourcepath", "$projectDir/src/main/java"]

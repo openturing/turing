@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<configuration>
+    <property>
+        <name>http.robots.agents</name>
+        <value>nutch-solr-integration-test,*</value>
+        <description></description>
+    </property>
+    <property>
+        <name>http.agent.name</name>
+        <value>nutch-solr-integration-test</value>
+        <description>FreeCode AS Robots Name</description>
+    </property>
+    <property>
+        <name>http.agent.description</name>
+        <value>FreeCode Norway Web Crawler using Nutch 1.0</value>
+        <description></description>
+    </property>
+    <property>
+        <name>http.agent.url</name>
+        <value>http://www.freecode.no/</value>
+        <description></description>
+    </property>
+    <property>
+        <name>http.agent.email</name>
+        <value>alexandre.oliveira@gmail.com</value>
+        <description></description>
+    </property>
+    <property>
+        <name>http.agent.version</name>
+        <value></value>
+        <description></description>
+    </property>
+    <property>
+        <name>generate.max.per.host</name>
+        <value>100</value>
+    </property>
+    <property>
+        <name>plugin.includes</name>
+        <value>extractor|protocol-http|urlfilter-(regex|validator)|parse-(html|tika)|index-(basic|anchor|replace|static)|indexer-(viglet-turing)|scoring-opic|urlnormalizer-(pass|regex|basic)</value>
+        <description>Regular expression naming plugin directory names to
+  include.  Any plugin not matching this expression is excluded.
+  In any case you need at least include the nutch-extensionpoints plugin. By
+  default Nutch includes crawling just HTML and plain text via HTTP,
+  and basic indexing and search plugins. In order to use HTTPS please enable 
+  protocol-httpclient, but be aware of possible intermittent problems with the 
+  underlying commons-httpclient library. Set parsefilter-naivebayes for classification based focused crawler.
+  </description>
+    </property>
+    <property>
+        <name>extractor.file</name>
+        <value>extractors.xml</value>
+    </property>
+</configuration>
