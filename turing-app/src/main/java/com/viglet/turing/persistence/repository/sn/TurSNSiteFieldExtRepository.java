@@ -19,6 +19,7 @@ package com.viglet.turing.persistence.repository.sn;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.sn.TurSNFieldType;
 
 import java.util.List;
 import java.util.Optional;
@@ -75,4 +76,12 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled" }, allEntries = true)
 	void delete(String turSnSiteFieldId);
+	
+	@Modifying
+	@Query("delete from TurSNSiteFieldExt ssfe where turSNSite= ?1 and snType = ?2")
+	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",
+			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
+			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
+			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled" }, allEntries = true)
+	void deleteByTurSNSiteAndSnType(TurSNSite turSNSite, TurSNFieldType turSNFieldType);
 }

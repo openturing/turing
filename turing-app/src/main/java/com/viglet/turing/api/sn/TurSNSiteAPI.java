@@ -39,6 +39,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.sn.template.TurSNTemplate;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -53,6 +54,8 @@ public class TurSNSiteAPI {
 	TurSNSiteRepository turSNSiteRepository;
 	@Autowired
 	TurSNSiteExport turSNSiteExport;
+	@Autowired
+	TurSNTemplate turSNTemplate;
 	
 	@ApiOperation(value = "Semantic Navigation Site List")
 	@GetMapping
@@ -92,7 +95,7 @@ public class TurSNSiteAPI {
 		turSNSiteEdit.setDefaultImageField(turSNSite.getDefaultImageField());
 		turSNSiteEdit.setDefaultURLField(turSNSite.getDefaultURLField());
 		
-		this.turSNSiteRepository.save(turSNSiteEdit);
+		turSNSiteRepository.save(turSNSiteEdit);
 		return turSNSiteEdit;
 	}
 
@@ -100,14 +103,16 @@ public class TurSNSiteAPI {
 	@ApiOperation(value = "Delete a Semantic Navigation Site")
 	@DeleteMapping("/{id}")
 	public boolean turSNSiteDelete(@PathVariable String id) throws Exception {
-		this.turSNSiteRepository.delete(id);
+		turSNSiteRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Semantic Navigation Site")
 	@PostMapping
 	public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite) throws Exception {
-		this.turSNSiteRepository.save(turSNSite);
+		turSNSiteRepository.save(turSNSite);
+		turSNTemplate.defaultSNUI(turSNSite);
+		turSNTemplate.createSEFields(turSNSite);
 		return turSNSite;
 
 	}

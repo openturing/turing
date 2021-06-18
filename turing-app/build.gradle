@@ -1,6 +1,6 @@
 
 buildscript {
-    ext { springBootVersion = '2.5.0'
+    ext { springBootVersion = '2.5.1'
 	      hibernateVersion = '5.11.0.Final'
 		  httpClientVersion = '4.5.11'
 		  swaggerVersion = '3.0.0'
@@ -240,7 +240,7 @@ dependencies {
 	implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
 
 	// Spring
-  	implementation group: 'org.springframework', name: 'spring-test', version: '5.3.7'
+  	implementation group: 'org.springframework', name: 'spring-test', version: '5.3.8'
 
  	// Jackson
    	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.12.3'

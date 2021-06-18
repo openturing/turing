@@ -1,1 +1,1 @@
-web: java -jar build/libs/viglet-turing.jar
+web: java -jar turing-app/build/libs/viglet-turing.jar
