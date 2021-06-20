@@ -1,0 +1,98 @@
+<div style="padding: 15px">
+	<div class="pull-right">
+		<!-- <button ng-click="fieldNew()" type="button" class="btn btn-success">{{'SYNC'
+			| translate }}</button> -->
+		<button ng-click="fieldNew()" type="button" class="btn btn-viglet">{{'NEW'
+			| translate }}</button>
+	</div>
+	<h3>{{'FIELDS' | translate }}</h3>
+
+	<ul class="list-group">
+		<li class="list-group-item">
+			<div class="row">
+				<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">
+					<b>{{'TYPE' | translate }}</b>
+				</div>
+				<div class="col-lg-5 col-md-2 col-sm-2 col-xs-2">
+					<b>{{'FIELD' | translate }}</b>
+				</div>
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1">
+					<b>{{'ENABLED' | translate }}</b>
+				</div>
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1">
+					<b>{{'MLT' | translate }}</b>
+				</div>
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1">
+					<b>{{'FACETS' | translate }}</b>
+				</div>
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1">
+					<b>{{'HIGHLIGHTING' | translate }}</b>
+				</div>
+					<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1">
+					<b>{{'NLP' | translate }}</b>
+				</div>
+			</div>
+		</li>
+		<li class="list-group-item"
+			ng-repeat="turSNSiteFieldExt in turSNSiteFieldExts |orderBy:['snType','id']">
+
+			<div class="row">
+				<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2"
+					style="text-align: center">{{turSNSiteFieldExt.snType | translate }}</div>
+				<div class="col-lg-5 col-md-2 col-sm-2 col-xs-2">
+					<a
+						ui-sref="console.sn.site-edit.field-edit({snSiteFieldId:turSNSiteFieldExt.id})">{{turSNSiteFieldExt.name}}</a>
+				</div>
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"						
+							ng-model="turSNSiteFieldExt.enabled"
+							ng-true-value="1" ng-false-value="0"
+							ng-change="snSiteFieldUpdate(turSNSiteFieldExt)">
+
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"							
+							ng-model="turSNSiteFieldExt.mlt" ng-true-value="1"
+							ng-false-value="0"
+							ng-change="snSiteFieldUpdate(turSNSiteFieldExt)">
+
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"
+							ng-model="turSNSiteFieldExt.facet" ng-true-value="1"
+							ng-false-value="0"
+							ng-change="snSiteFieldUpdate(turSNSiteFieldExt)">
+
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"							
+							ng-model="turSNSiteFieldExt.hl" ng-true-value="1"
+							ng-false-value="0"
+							ng-change="snSiteFieldUpdate(turSNSiteFieldExt)">
+					</div>
+				</div>
+				<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
+					style="text-align: center">
+					<div class="input-group">
+						<input type="checkbox"							
+							ng-model="turSNSiteFieldExt.nlp" ng-true-value="1"
+							ng-false-value="0"
+							ng-change="snSiteFieldUpdate(turSNSiteFieldExt)">
+					</div>
+				</div>
+			</div>
+		</li>
+	</ul>
+</div>

@@ -1,0 +1,16 @@
+turing.url=http://192.168.144.1:2700
+turing.mappingsxml=/appl/viglet/turing/wem/conf/CTD-Turing-Mappings.xml
+turing.login=admin
+turing.password=admin
+
+cda.default.urlprefix=http://localhost
+cda.default.contextname=sites
+cda.default.hasContext=true
+cda.default.hasSiteName=true
+cda.default.hasFormat=true
+
+sn.default.site=Sample
+sn.en.site=Sample
+sn.it_IT.site=SampleIT
+
+sites.association.priority=SampleSite

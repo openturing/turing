@@ -1,4 +1,4 @@
-## 03.3
+## 0.3.3
 
 #### NEW FEATURES
 * Targeting Rules

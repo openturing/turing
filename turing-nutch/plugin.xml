@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin id="indexer-viglet-turing" name="TurNutchIndexWriter" version="1.0.0" provider-name="nutch.apache.org">
+
+  <runtime>
+    <library name="indexer-viglet-turing.jar">
+      <export name="*" />
+    </library>
+    <library name="commons-io-2.6.jar" />
+    <library name="httpclient-4.5.10.jar" />
+    <library name="httpcore-4.4.12.jar" />
+    <library name="httpmime-4.5.10.jar" />
+    <library name="solr-solrj-8.5.1.jar" />
+    <library name="turing-java-sdk-0.3.3.jar" />
+  </runtime>
+
+  <requires>
+    <import plugin="nutch-extensionpoints" />
+  </requires>
+
+  <extension id="org.apache.nutch.indexer.viglet.turing" name="Viglet Turing Index Writer" point="org.apache.nutch.indexer.IndexWriter">
+    <implementation id="VigletTuringIndexWriter" class="com.viglet.turing.nutch.indexwriter.TurNutchIndexWriter" />
+  </extension>
+
+</plugin>
