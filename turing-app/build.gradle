@@ -272,7 +272,7 @@ dependencies {
     implementation group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.9.2'
     
     // Tika
-    implementation group: 'org.apache.tika', name: 'tika-core', version:'1.26'
+    implementation group: 'org.apache.tika', name: 'tika-core', version:'2.0.0'
     implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.0.0'
     implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version:'2.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-core', version:'1.4.0'
