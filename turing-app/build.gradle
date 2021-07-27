@@ -1,6 +1,6 @@
 
 buildscript {
-    ext { springBootVersion = '2.5.1'
+    ext { springBootVersion = '2.5.2'
 	      hibernateVersion = '5.11.0.Final'
 		  httpClientVersion = '4.5.11'
 		  swaggerVersion = '3.0.0'
@@ -226,8 +226,6 @@ dependencies {
 
 	// SolrJ
 	implementation group: 'org.apache.solr', name: 'solr-solrj', version: '8.5.2'
-
-	implementation group: 'org.springframework.boot', name: 'spring-boot-properties-migrator', version:"${springBootVersion}"
 
     // Tensorflow   
 	implementation group: 'org.tensorflow', name: 'tensorflow', version: '1.15.0'
