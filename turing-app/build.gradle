@@ -189,7 +189,7 @@ dependencies {
 		exclude(module: 'jsp-api')
 		exclude(module: 'log4j')
 	}
-	implementation (group: 'org.apache.hadoop', name: 'hadoop-auth', version: '3.3.0') {
+	implementation (group: 'org.apache.hadoop', name: 'hadoop-auth', version: '3.3.1') {
 		exclude(module: 'commons-logging')
 		exclude(module: 'log4j')
 		exclude(module: 'slf4j-api')
