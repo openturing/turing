@@ -2,7 +2,6 @@
 [![Build](https://github.com/openturing/turing/actions/workflows/build.yml/badge.svg)](https://github.com/openturing/turing/actions/workflows/build.yml) [![codecov](https://codecov.io/gh/openturing/turing/branch/master/graph/badge.svg)](https://codecov.io/gh/openturing/turing) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=openturing_turing&metric=alert_status)](https://sonarcloud.io/dashboard/index/openturing_turing)
 [![Twitter](https://img.shields.io/twitter/follow/VigletTweet.svg?style=social&label=Follow)](https://twitter.com/intent/follow?screen_name=VigletTweet)
 
-[![viglet_logo.png](https://openturing.github.io/turing/img/banner/viglet_turing.png)](http://viglet.com/turing)
 ------
 
 **Viglet Turing** - Semantic Navigation, Chatbot using Search Engine and Many NLP Vendors.
