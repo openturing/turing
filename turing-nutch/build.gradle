@@ -82,7 +82,7 @@ build.mustRunAfter clean
 dependencies {
 
     implementation group: 'org.apache.nutch', name: 'nutch', version: '1.18'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.8'	    
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.4'	    
     implementation group: 'org.apache.solr', name: 'solr-solrj', version: "8.5.1"
     implementation group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.12"
     implementation group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.5.10"
