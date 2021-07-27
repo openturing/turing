@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,8 +23,11 @@ import java.util.List;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.pdf.PDFParser;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 
 import org.json.JSONException;
@@ -108,15 +111,22 @@ public class TurMLDataAPI {
 	public String turDataImport(@RequestParam("file") MultipartFile multipartFile)
 			throws JSONException, IOException, SAXException, TikaException {
 
+		AutoDetectParser parser = new AutoDetectParser();
 		BodyContentHandler handler = new BodyContentHandler(-1);
 		Metadata metadata = new Metadata();
 
-		ParseContext pcontext = new ParseContext();
+		TesseractOCRConfig config = new TesseractOCRConfig();
+		PDFParserConfig pdfConfig = new PDFParserConfig();
+		pdfConfig.setExtractInlineImages(true);
 
-		// parsing the document using PDF parser
-		PDFParser pdfparser = new PDFParser();
-		pdfparser.parse(multipartFile.getInputStream(), handler, metadata, pcontext);
+		ParseContext parseContext = new ParseContext();
+		parseContext.set(TesseractOCRConfig.class, config);
+		parseContext.set(PDFParserConfig.class, pdfConfig);
 
+		parseContext.set(Parser.class, parser);
+
+		parser.parse(multipartFile.getInputStream(), handler, metadata, parseContext);
+		
 
 		String sentences[] = turOpenNLPConnector.sentenceDetect(handler.toString());
 
