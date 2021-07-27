@@ -46,7 +46,7 @@ dependencies {
 	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.8'	
 	implementation group: 'org.json', name: 'json', version:'20140107'
 	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.2'
-	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.7'
+	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.14.1'
 		
 	// Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version:'1.20'
