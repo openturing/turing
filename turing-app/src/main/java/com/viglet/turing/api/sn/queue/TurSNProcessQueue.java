@@ -82,6 +82,24 @@ public class TurSNProcessQueue {
 			} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
 				this.desindexing(turSNJobItem, turSNSite);
 			}
+
+			processQueueInfo(turSNSite, turSNJobItem);
+		}
+
+	}
+
+	private void processQueueInfo(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
+		if (turSNSite != null && turSNJobItem != null && turSNJobItem.getAttributes() != null
+				&& turSNJobItem.getAttributes().containsKey("id")) {
+			String action = null;
+			if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
+				action = "Indexed";
+			} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
+				action = "Deindexed";
+			}
+			logger.info(String.format("%s the Object ID '%s' from '%s' SN Site.", action,
+					turSNJobItem.getAttributes().get("id"), turSNSite.getName()));
+
 		}
 	}
 

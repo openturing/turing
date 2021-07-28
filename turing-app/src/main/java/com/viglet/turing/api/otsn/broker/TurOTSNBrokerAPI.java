@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,16 +37,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.xml.sax.InputSource;
 
+import com.viglet.turing.api.sn.job.TurSNImportAPI;
 import com.viglet.turing.api.sn.job.TurSNJob;
 import com.viglet.turing.api.sn.job.TurSNJobAction;
 import com.viglet.turing.api.sn.job.TurSNJobItem;
 import com.viglet.turing.api.sn.job.TurSNJobItems;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
-import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
-import com.viglet.turing.solr.TurSolr;
 
 import io.swagger.annotations.Api;
 
@@ -59,21 +55,11 @@ import org.w3c.dom.NodeList;
 @RequestMapping("/api/otsn/broker")
 @Api(tags = "OTSN Broker", description = "OTSN Broker API")
 public class TurOTSNBrokerAPI {
-	static final Logger logger = LogManager.getLogger(TurOTSNBrokerAPI.class.getName());
+	private static final Logger logger = LogManager.getLogger(TurOTSNBrokerAPI.class.getName());
 	@Autowired
-	TurNLPInstanceRepository turNLPInstanceRepository;
+	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	TurConfigVarRepository turConfigVarRepository;
-	@Autowired
-	TurSolr turSolr;
-	@Autowired
-	TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private JmsMessagingTemplate jmsMessagingTemplate;
-
-	public static final String INDEXING_QUEUE = "indexing.queue";
+	private TurSNImportAPI turSNImportAPI;
 
 	@PostMapping
 	public String turOTSNBrokerAdd(@RequestParam("index") String siteName, @RequestParam("config") String config,
@@ -135,7 +121,7 @@ public class TurOTSNBrokerAPI {
 
 			turSNJob.setTurSNJobItems(turSNJobItems);
 			logger.debug("Indexed Job by Id");
-			sendIndexerJob(turSNJob);
+			turSNImportAPI.send(turSNJob);
 
 			return "Ok";
 		} else {
@@ -172,17 +158,11 @@ public class TurOTSNBrokerAPI {
 			TurSNJob turSNJob = new TurSNJob();
 			turSNJob.setSiteId(turSNSite.getId());
 			turSNJob.setTurSNJobItems(turSNJobItems);
-			sendIndexerJob(turSNJob);
+			turSNImportAPI.send(turSNJob);
 			return "Ok";
 
 		} else {
 			return "Failed";
 		}
-	}
-
-	public void sendIndexerJob(TurSNJob turSNJob) {
-		logger.debug("Sent Indexer Job - " + INDEXING_QUEUE);
-		this.jmsMessagingTemplate.convertAndSend(INDEXING_QUEUE, turSNJob);
-
 	}
 }

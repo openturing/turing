@@ -62,11 +62,32 @@ public class TurSNImportAPI {
 	}
 
 	public void send(TurSNJob turSNJob) {
+
+		sentQueueInfo(turSNJob);
+
 		if (logger.isDebugEnabled()) {
 			logger.debug("Sent job - " + INDEXING_QUEUE);
 			logger.debug("turSNJob: " + turSNJob.getTurSNJobItems().toString());
 		}
 		this.jmsMessagingTemplate.convertAndSend(INDEXING_QUEUE, turSNJob);
 
+	}
+
+	private void sentQueueInfo(TurSNJob turSNJob) {
+		TurSNSite turSNSite = turSNSiteRepository.findById(turSNJob.getSiteId()).orElse(null);
+		turSNJob.getTurSNJobItems().forEach(turJobItem -> {
+			if (turSNSite != null && turJobItem != null && turJobItem.getAttributes() != null
+					&& turJobItem.getAttributes().containsKey("id")) {
+				String action = null;
+				if (turJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
+					action = "index";
+				} else if (turJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
+					action = "deindex";
+				}
+				logger.info(String.format("Sent to queue to %s the Object ID '%s' from '%s' SN Site.", action,
+						turJobItem.getAttributes().get("id"), turSNSite.getName()));
+
+			}
+		});
 	}
 }
