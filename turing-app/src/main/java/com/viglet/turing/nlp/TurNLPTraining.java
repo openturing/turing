@@ -19,7 +19,6 @@ package com.viglet.turing.nlp;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -45,69 +44,67 @@ public class TurNLPTraining {
 		Map<String, ArrayList<String>> processedAttributes = new HashMap<String, ArrayList<String>>();
 		File userDir = new File(System.getProperty("user.dir"));
 		File trainingFile = new File(userDir.getAbsolutePath().concat("/store/nlp/train/train.json"));
-		try {
-			BufferedReader rd = new BufferedReader(new FileReader(trainingFile));
-			String jsonText;
-			jsonText = readAll(rd);
+		if (trainingFile.exists()) {
+			try (BufferedReader rd = new BufferedReader(new FileReader(trainingFile))) {
 
-			ObjectMapper mapper = new ObjectMapper();
-			TurNLPTrainingBeans turNLPTrainingBeans = mapper.readValue(jsonText, TurNLPTrainingBeans.class);
-			Map<String, TurNLPTrainingBean> terms = new HashMap<String, TurNLPTrainingBean>();
-			for (TurNLPTrainingBean turNLPTrainingBeanItem : turNLPTrainingBeans.getTerms()) {
-				terms.put(turNLPTrainingBeanItem.getTerm().toLowerCase(), turNLPTrainingBeanItem);
-			}
+				String jsonText;
+				jsonText = readAll(rd);
 
-			if (logger.isDebugEnabled()) {
+				ObjectMapper mapper = new ObjectMapper();
+				TurNLPTrainingBeans turNLPTrainingBeans = mapper.readValue(jsonText, TurNLPTrainingBeans.class);
+				Map<String, TurNLPTrainingBean> terms = new HashMap<String, TurNLPTrainingBean>();
 				for (TurNLPTrainingBean turNLPTrainingBeanItem : turNLPTrainingBeans.getTerms()) {
-					logger.debug(turNLPTrainingBeanItem.toString());
+					terms.put(turNLPTrainingBeanItem.getTerm().toLowerCase(), turNLPTrainingBeanItem);
 				}
-			}
-			if (attributes != null) {
-				for (Entry<String, Object> attribute : attributes.entrySet()) {
-					if (attribute.getValue() != null) {
-						logger.debug("attribute Value: " + attribute.getValue().toString());
-						if (attribute.getValue() instanceof ArrayList) {
-							if (!processedAttributes.containsKey(attribute.getKey()))
-								processedAttributes.put(attribute.getKey(), new ArrayList<String>());
-							ArrayList<?> attributeList = (ArrayList<?>) attribute.getValue();
-							if (attributeList.size() > 0) {
-								for (Object attributeItem : attributeList) {
-									if (terms.containsKey(attributeItem.toString().toLowerCase())) {
-										TurNLPTrainingBean term = terms.get(attributeItem.toString().toLowerCase());
-										if (!term.isIgnore()) {
-											if (term.getNer() != null) {
-												if (!processedAttributes.containsKey(term.getNer()))
-													processedAttributes.put(term.getNer(), new ArrayList<String>());
-												if (term.getConvertTo() != null)
-													processedAttributes.get(term.getNer()).add(term.getConvertTo());
-												else
-													processedAttributes.get(term.getNer())
-															.add(attributeItem.toString());
-											} else {
-												if (term.getConvertTo() != null)
-													processedAttributes.get(attribute.getKey())
-															.add(term.getConvertTo());
-												else
-													processedAttributes.get(attribute.getKey())
-															.add(attributeItem.toString());
-											}
-										}
 
-									} else {
-										processedAttributes.get(attribute.getKey()).add(attributeItem.toString());
+				if (logger.isDebugEnabled()) {
+					for (TurNLPTrainingBean turNLPTrainingBeanItem : turNLPTrainingBeans.getTerms()) {
+						logger.debug(turNLPTrainingBeanItem.toString());
+					}
+				}
+				if (attributes != null) {
+					for (Entry<String, Object> attribute : attributes.entrySet()) {
+						if (attribute.getValue() != null) {
+							logger.debug("attribute Value: " + attribute.getValue().toString());
+							if (attribute.getValue() instanceof ArrayList) {
+								if (!processedAttributes.containsKey(attribute.getKey()))
+									processedAttributes.put(attribute.getKey(), new ArrayList<String>());
+								ArrayList<?> attributeList = (ArrayList<?>) attribute.getValue();
+								if (attributeList.size() > 0) {
+									for (Object attributeItem : attributeList) {
+										if (terms.containsKey(attributeItem.toString().toLowerCase())) {
+											TurNLPTrainingBean term = terms.get(attributeItem.toString().toLowerCase());
+											if (!term.isIgnore()) {
+												if (term.getNer() != null) {
+													if (!processedAttributes.containsKey(term.getNer()))
+														processedAttributes.put(term.getNer(), new ArrayList<String>());
+													if (term.getConvertTo() != null)
+														processedAttributes.get(term.getNer()).add(term.getConvertTo());
+													else
+														processedAttributes.get(term.getNer())
+																.add(attributeItem.toString());
+												} else {
+													if (term.getConvertTo() != null)
+														processedAttributes.get(attribute.getKey())
+																.add(term.getConvertTo());
+													else
+														processedAttributes.get(attribute.getKey())
+																.add(attributeItem.toString());
+												}
+											}
+
+										} else {
+											processedAttributes.get(attribute.getKey()).add(attributeItem.toString());
+										}
 									}
 								}
 							}
 						}
 					}
 				}
+			} catch (IOException e) {
+				logger.error(e);
 			}
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		return processedAttributes;
 
