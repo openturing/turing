@@ -2,8 +2,11 @@
     <target name="packageDistribution">
         <delete dir="build" />
 
-        <mkdir dir="build/extracted_distrib/server"/>
-        <copy file="../turing-app/build/libs/viglet-turing.jar" todir="build/extracted_distrib/server"/>
+        <mkdir dir="build/extracted_distrib/server/conf/samples"/>
+        <copy file="../turing-app/build/libs/turing-app.jar" todir="build/extracted_distrib/server"/>
+        <copy todir="build/extracted_distrib/server/conf/samples">
+            <fileset dir="../utils/conf/samples"/>
+        </copy>
 
         <mkdir dir="build/extracted_distrib/bin"/>
         <mkdir dir="build/extracted_distrib/adm/solr"/>
@@ -37,6 +40,15 @@
         <copy todir="build/extracted_distrib/connectors/wordpress/turing4wp">
             <fileset dir="../turing-wordpress/"/>
         </copy>
+
+        <mkdir dir="build/extracted_distrib/models"/>
+        <copy todir="build/extracted_distrib/models">
+            <fileset dir="../turing-app/models"/>
+        </copy>
+
+        <mkdir dir="build/extracted_distrib/docs"/>
+        <get src="https://docs.viglet.com/turing/turing-developer-guide.pdf" dest="build/extracted_distrib/docs"/>
+        <get src="https://docs.viglet.com/turing/turing-installation-guide.pdf" dest="build/extracted_distrib/docs"/>
 
         <mkdir dir="build/dist"/>
         <zip destfile="build/dist/viglet-turing.zip" basedir="build/extracted_distrib"/>
