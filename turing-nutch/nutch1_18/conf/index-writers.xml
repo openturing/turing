@@ -16,7 +16,7 @@
 		</parameters>
 		<mapping>
 			<copy>
-				<!-- <field source="content" dest="search"/> -->
+				<field source="content" dest="text"/>
 				<!-- <field source="title" dest="title,search"/> -->
 			</copy>
 			<rename>

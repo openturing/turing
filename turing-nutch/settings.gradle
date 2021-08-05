@@ -1,0 +1,4 @@
+rootProject.name = 'turing-nutch'
+
+include ':nutch1_12'
+include ':nutch1_18'

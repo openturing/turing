@@ -44,6 +44,10 @@ tasks.withType(JavaCompile) {
 
 task stage(dependsOn: ['build', 'clean'])
 
+
+task cleanDistribution(type: Delete) {
+    delete "$buildDir/extracted_dist/"
+}
 task copyLibs(type: Copy) {
 	configurations.localDeps.setCanBeResolved(true)
     from configurations.localDeps
@@ -67,12 +71,13 @@ task copyConfs(type: Copy) {
 }
 
 task packageDistribution(type: Zip) {
-    archiveFileName = "turing-nutch.zip"
+    archiveFileName = "turing-nutch-1.18-bin.zip"
     destinationDirectory = file("$buildDir/dist")
     from "$buildDir/extracted_dist"
 }
 
-copyConfs.dependsOn build
+cleanDistribution.dependsOn build
+copyConfs.dependsOn cleanDistribution
 copyLibs.dependsOn copyConfs
 packageDistribution.dependsOn copyLibs
 

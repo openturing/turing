@@ -84,7 +84,7 @@ public class TurSNImportAPI {
 				} else if (turJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
 					action = "deindex";
 				}
-				logger.info(String.format("Sent to queue to %s the Object ID '%s' from '%s' SN Site.", action,
+				logger.info(String.format("Sent to queue to %s the Object ID '%s' of '%s' SN Site.", action,
 						turJobItem.getAttributes().get("id"), turSNSite.getName()));
 
 			}

@@ -85,7 +85,7 @@ public class TurSNProcessQueue {
 			} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
 				action = "Deindexed";
 			}
-			logger.info(String.format("%s the Object ID '%s' from '%s' SN Site.", action,
+			logger.info(String.format("%s the Object ID '%s' of '%s' SN Site.", action,
 					turSNJobItem.getAttributes().get("id"), turSNSite.getName()));
 
 		}

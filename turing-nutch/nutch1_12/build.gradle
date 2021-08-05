@@ -1,0 +1,107 @@
+buildscript {
+    ext { springBootVersion = '2.1.3.RELEASE'
+	      hibernateVersion = '5.11.0.Final'
+		  httpClientVersion = '4.5.6'
+		  swaggerVersion = '2.9.2'
+		  jgitVersion = '5.2.0.201812061821-r'
+		 }
+		repositories {
+		mavenCentral()
+		maven { url "https://repo.spring.io/snapshot" }
+		maven { url "https://repo.spring.io/milestone" }
+		maven { url 'https://jitpack.io' }
+		jcenter()
+		}
+}
+
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+jar {
+    baseName = 'turing-nutch'
+    version =  '0.3.3'
+}
+
+
+configurations {
+	localDeps
+    jar.archiveName = 'indexer-viglet-turing.jar'
+}
+repositories {
+	mavenCentral()
+	maven { url "https://repo.spring.io/snapshot" }
+	maven { url "https://repo.spring.io/milestone" }
+	maven { url 'https://jitpack.io' }
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+task stage(dependsOn: ['build', 'clean'])
+
+task cleanDistribution(type: Delete) {
+    delete "$buildDir/extracted_dist/"
+}
+
+task copyLibs(type: Copy) {
+	configurations.localDeps.setCanBeResolved(true)
+    from configurations.localDeps
+    into '$buildDir/extracted_dist/indexer-viglet-turing/'
+
+    from "plugin.xml"
+    into "$buildDir/extracted_dist/indexer-viglet-turing/"
+
+    from "$buildDir/libs/indexer-viglet-turing.jar"
+    into "$buildDir/extracted_dist/indexer-viglet-turing/"
+
+}
+
+task copyConfs(type: Copy) {
+	configurations.localDeps.setCanBeResolved(true)
+
+    from "conf"
+    into "$buildDir/extracted_dist/conf/"
+
+
+}
+
+task packageDistribution(type: Zip) {
+    archiveFileName = "turing-nutch-1.12-bin.zip"
+    destinationDirectory = file("$buildDir/dist")
+    from "$buildDir/extracted_dist"
+}
+cleanDistribution.dependsOn build
+copyConfs.dependsOn cleanDistribution
+copyLibs.dependsOn copyConfs
+packageDistribution.dependsOn copyLibs
+
+build.dependsOn 
+build.mustRunAfter clean
+
+dependencies {
+
+    implementation group: 'org.apache.nutch', name: 'nutch', version: '1.12'
+    implementation group: 'org.apache.solr', name: 'solr-solrj', version: '5.4.1'
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:"4.4.1", force:true
+    implementation group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.1", force:true
+    implementation group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.4.1"
+	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: '0.3.3'
+	
+	localDeps group: 'org.apache.solr', name: 'solr-solrj', version: "5.4.1"
+	localDeps group: 'org.apache.httpcomponents', name: 'httpclient', version:"4.4.1", force:true
+    localDeps group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.1", force:true
+    localDeps group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.4.1"
+    localDeps group: 'com.github.openturing', name: 'turing-java-sdk', version: '0.3.3'
+}
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+    
+}

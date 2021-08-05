@@ -15,5 +15,6 @@ public interface TurNutchConstants {
 	String USERNAME = "username";
 
 	String PASSWORD = "password";
-
+	
+	String TURING = "turing.";
 }
