@@ -12,8 +12,6 @@
             <fileset dir="../utils/solr"/>
         </copy>
 
-
-
         <mkdir dir="build/extracted_distrib/connectors/nutch"/>
         <mkdir dir="build/extracted_distrib/connectors/nutch/1.12"/>
         <mkdir dir="build/extracted_distrib/connectors/nutch/1.18"/>
