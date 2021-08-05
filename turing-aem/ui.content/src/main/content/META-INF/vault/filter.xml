@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <filter root="/conf/AemTuring"/>
+    <filter root="/content/AemTuring"/>
+    <filter root="/content/dam/AemTuring"/>
+</workspaceFilter>
