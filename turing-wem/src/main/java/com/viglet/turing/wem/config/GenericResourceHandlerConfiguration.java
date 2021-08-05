@@ -94,12 +94,6 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 	}
 
 	@Override
-	public String getCDAFormatName(String site) {
-		String formatName = getDynamicProperties("cda." + site + ".formatname");
-		return formatName != null ? formatName : getCDAFormatName();
-	}
-
-	@Override
 	public String getCDAURLPrefix() {
 		return cdaURLPrefix;
 	}
@@ -221,24 +215,6 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 		}
 
 		return snSite;
-	}
-
-	@Override
-	public boolean hasSiteName(String site) {
-		String hasSiteNameString = getDynamicProperties("cda." + site + ".hasSiteName");
-		return (hasSiteNameString == null) || Boolean.parseBoolean(hasSiteNameString);
-	}
-
-	@Override
-	public boolean hasContext(String site) {
-		String hasContextString = getDynamicProperties("cda." + site + ".hasContext");
-		return (hasContextString == null) || Boolean.parseBoolean(hasContextString);
-	}
-
-	@Override
-	public boolean hasFormat(String site) {
-		String hasFormatString = getDynamicProperties("cda." + site + ".hasFormat");
-		return (hasFormatString == null) || Boolean.parseBoolean(hasFormatString);
 	}
 
 	@Override

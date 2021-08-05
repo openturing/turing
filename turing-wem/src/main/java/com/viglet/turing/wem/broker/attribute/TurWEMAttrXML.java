@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.viglet.turing.wem.beans.TurAttrDef;
 import com.viglet.turing.wem.beans.TurAttrDefContext;
+import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.broker.relator.TurWEMRelator;
 import com.vignette.as.client.common.AttributeData;
@@ -34,13 +35,21 @@ public class TurWEMAttrXML {
 	private TurWEMAttrXML() {
 		throw new IllegalStateException("TurWEMAttrXML");
 	}
-	
+
 	public static List<TurAttrDef> attributeXML(TurAttrDefContext turAttrDefContext) throws Exception {
 		TuringTag turingTag = turAttrDefContext.getTuringTag();
-		if (turingTag.getSrcAttributeRelation() != null && !turingTag.getSrcAttributeRelation().isEmpty())
-			return addAttributeWithRelator(turAttrDefContext);
-		else
-			return addAttributeWithoutRelator(turAttrDefContext);
+		if (turingTag.getTextValue() != null && !turingTag.getTextValue().isEmpty()) {
+			List<TurAttrDef> attributesDefs = new ArrayList<TurAttrDef>();
+			TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(),
+					TurMultiValue.singleItem(turingTag.getTextValue()));
+			attributesDefs.add(turAttrDef);
+			return attributesDefs;
+		} else {
+			if (turingTag.getSrcAttributeRelation() != null && !turingTag.getSrcAttributeRelation().isEmpty())
+				return addAttributeWithRelator(turAttrDefContext);
+			else
+				return addAttributeWithoutRelator(turAttrDefContext);
+		}
 	}
 
 	public static List<TurAttrDef> attributeXMLUpdate(TurAttrDefContext turAttrDefContext, AttributeData attributeData)
@@ -62,10 +71,10 @@ public class TurWEMAttrXML {
 		String attributeName = turAttrDefContext.getTuringTag().getSrcXmlName();
 		AttributedObject[] relation = ci.getRelations(turingTag.getSrcAttributeRelation().get(0));
 		List<TurAttrDef> attributesDefs = new ArrayList<TurAttrDef>();
-		
+
 		relation = getRelationIfExists(turingTag, relation);
 		addRelationAttributes(turAttrDefContext, attributeName, relation, attributesDefs);
-		
+
 		return attributesDefs;
 	}
 

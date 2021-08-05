@@ -29,10 +29,13 @@ import com.vignette.as.client.common.ref.SiteRef;
 import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.exception.AuthorizationException;
 import com.vignette.as.client.exception.ValidationException;
+import com.vignette.as.client.javabean.AsLocale;
 import com.vignette.as.client.javabean.Channel;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.as.client.javabean.Site;
+import com.vignette.ext.furl.util.FurlUtil;
+import com.vignette.ext.templating.util.ContentUtil;
 import com.vignette.logging.context.ContextLogger;
 
 public class ETLTuringTranslator {
@@ -144,11 +147,12 @@ public class ETLTuringTranslator {
 		return moFurlName;
 	}
 
-	private Channel getChosenChannel(ChannelRef[] channelRefs, List<String> siteNames) throws ApplicationException, ValidationException, RemoteException {
+	private Channel getChosenChannel(ChannelRef[] channelRefs, List<String> siteNames)
+			throws ApplicationException, ValidationException, RemoteException {
 		String siteName = null;
 		if (!siteNames.isEmpty())
-			siteName = this.chosenSite(siteNames);
-		
+			siteName = this.chosenSiteName(siteNames);
+
 		boolean foundSite = false;
 		Channel chosenChannel = null;
 		if (siteName != null) {
@@ -198,6 +202,31 @@ public class ETLTuringTranslator {
 		return text.replace("-", "–").replace(" ", "-").replace("\\?", "%3F");
 	}
 
+	public Site getSite(ManagedObject mo)
+			throws ApplicationException, RemoteException, AuthorizationException, ValidationException {
+		ChannelRef[] channelRefs = null;
+		List<Site> sites = new ArrayList<Site>();
+		if (mo instanceof ContentInstance) {
+			ContentInstance ci = (ContentInstance) mo;
+			channelRefs = ci.getChannelAssociations();
+			for (ChannelRef channelRef : channelRefs) {
+				sites = this.getSitesFromChannel(channelRef.getChannel());
+
+			}
+		} else if (mo instanceof Channel) {
+			Channel channel = (Channel) mo;
+			sites = this.getSitesFromChannel(channel);
+		}
+
+		if (!sites.isEmpty()) {
+			return this.chosenSite(sites);
+		} else {
+			log.info("ETLTuringTranslator Content without Site:" + mo.getName().toString());
+			return null;
+		}
+
+	}
+
 	public String getSiteName(ManagedObject mo)
 			throws ApplicationException, RemoteException, AuthorizationException, ValidationException {
 		ChannelRef[] channelRefs = null;
@@ -214,7 +243,7 @@ public class ETLTuringTranslator {
 		}
 
 		if (!siteNames.isEmpty()) {
-			return this.chosenSite(siteNames);
+			return this.chosenSiteName(siteNames);
 		} else {
 			log.info("ETLTuringTranslator Content without Site:" + mo.getName().toString());
 			return null;
@@ -222,7 +251,32 @@ public class ETLTuringTranslator {
 
 	}
 
-	private String chosenSite(List<String> siteNames) {
+	private Site chosenSite(List<Site> sites) {
+		if (config.getSitesAssocPriority() != null && !config.getSitesAssocPriority().isEmpty()) {
+			Site selectedSite = null;
+			for (String siteAssocPriority : config.getSitesAssocPriority()) {
+				for (Site site : sites) {
+					try {
+						if (site.getName().equals(siteAssocPriority)) {
+							selectedSite = site;
+						}
+					} catch (ApplicationException e) {
+						log.error(e);
+					}
+				}
+			}
+			if (selectedSite != null)
+				return selectedSite;
+		}
+		if (sites.isEmpty()) {
+			return null;
+		} else {
+			return sites.get(0);
+		}
+
+	}
+
+	private String chosenSiteName(List<String> siteNames) {
 		String siteNameAssociated;
 		if (config.getSitesAssocPriority() != null && !config.getSitesAssocPriority().isEmpty()) {
 			boolean foundSite = false;
@@ -283,7 +337,7 @@ public class ETLTuringTranslator {
 		if (mo != null) {
 			String siteNameAssociated = getSiteNameFromContentInstance(mo);
 			if (siteNameAssociated != null) {
-				return createSiteURL(mo, siteNameAssociated);
+				return createSiteURL(mo);
 			} else {
 				if (log.isDebugEnabled()) {
 					log.debug("ETLTuringTranslator Content without channel:" + mo.getName().toString());
@@ -301,52 +355,65 @@ public class ETLTuringTranslator {
 
 	private String getSiteNameFromContentInstance(ManagedObject mo)
 			throws ApplicationException, RemoteException, AuthorizationException, ValidationException {
-		String siteNameAssociated = null;
-		ChannelRef[] channelRefs;
-		if (mo instanceof ContentInstance) {
-			ContentInstance ci = (ContentInstance) mo;
-			channelRefs = ci.getChannelAssociations();
-
-			List<String> siteNames = new ArrayList<String>();
-
-			for (ChannelRef channelRef : channelRefs) {
-				this.getSiteNames(siteNames, channelRef.getChannel());
-			}
-
-			if (!siteNames.isEmpty())
-				siteNameAssociated = this.chosenSite(siteNames);
-		}
-		
-		if (siteNameAssociated == null)
-			siteNameAssociated = getSiteName(mo);
-		
-		return siteNameAssociated;
+		return getSiteName(mo);
 	}
 
-	private String createSiteURL(ManagedObject mo, String siteNameAssociated)
+	private String createSiteURL(ManagedObject mo)
 			throws ApplicationException, RemoteException, AuthorizationException, ValidationException {
+		Site site = getSite(mo);
+		String siteName = site.getName();
 		if (log.isDebugEnabled()) {
-			log.debug("ETLTuringTranslator getSiteUrl:" + siteNameAssociated);
+			log.debug("ETLTuringTranslator getSiteUrl:" + siteName);
 		}
 
 		final String SLASH = "/";
 		StringBuilder url = new StringBuilder(getSiteDomain(mo));
 
-		if (config.getCDAContextName(siteNameAssociated) != null && config.hasContext(siteNameAssociated)) {
+		if (config.getCDAContextName(siteName) != null && FurlUtil.isIncludeContextName(site)) {
 			url.append(SLASH);
-			url.append(config.getCDAContextName(siteNameAssociated));
+			url.append(config.getCDAContextName(siteName));
 		}
 
-		if (config.hasSiteName(siteNameAssociated) && normalizeText(siteNameAssociated) != null) {
+		if (FurlUtil.isIncludeSiteName(site) && normalizeText(siteName) != null) {
 			url.append(SLASH);
-			url.append(normalizeText(siteNameAssociated));
+			url.append(normalizeText(siteName));
 		}
 
-		if (config.hasFormat(siteNameAssociated) && config.getCDAFormatName(siteNameAssociated) != null) {
+		if (FurlUtil.isFormatIncluded(site)) {
 			url.append(SLASH);
-			url.append(config.getCDAFormatName(siteNameAssociated));
+			url.append(ContentUtil.getDefaultFormatForSite(getSite(mo)));
 		}
-
+		if (FurlUtil.isIncludeLocaleName(site)) {
+			url.append(SLASH);
+			url.append(this.getLocale(mo));
+		}
 		return url.toString();
+	}
+
+	public String getLocale(ManagedObject mo) {
+		String locale = null;
+		if (mo != null && mo.getLocale() != null && mo.getLocale().getJavaLocale() != null) {
+			locale = mo.getLocale().getJavaLocale().toString();
+		}
+
+		if (locale == null) {
+			return getDefaultLocale(mo);
+		} else {
+			return locale;
+		}
+
+	}
+
+	private String getDefaultLocale(ManagedObject mo) {
+		try {
+			Site site = this.getSite(mo);
+			AsLocale asLocale = ContentUtil.getDefaultLocaleForSite(site);
+			if (asLocale != null && asLocale.getLocale() != null && asLocale.getLocale().getJavaLocale() != null) {
+				return asLocale.getLocale().getJavaLocale().toString();
+			}
+		} catch (ApplicationException | AuthorizationException | ValidationException | RemoteException e) {
+			log.error(e);
+		}
+		return null;
 	}
 }
