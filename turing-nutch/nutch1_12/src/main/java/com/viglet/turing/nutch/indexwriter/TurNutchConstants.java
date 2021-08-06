@@ -16,4 +16,6 @@ public interface TurNutchConstants {
 	public static final String PASSWORD = TUR_PREFIX + "password";
 	
 	public static final String FORCE_CONFIG = TUR_PREFIX + "force.config";
+	
+	public static final String SOLR_SERVER_URL = "solr.server.url";
 }

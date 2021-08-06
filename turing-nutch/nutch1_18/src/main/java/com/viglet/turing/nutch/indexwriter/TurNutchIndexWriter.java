@@ -1,15 +1,11 @@
 package com.viglet.turing.nutch.indexwriter;
 
 import java.lang.invoke.MethodHandles;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.time.format.DateTimeFormatter;
@@ -21,7 +17,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TimeZone;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.http.HttpHeaders;
@@ -318,10 +313,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 			String authHeader = "Basic " + encodedAuth;
 			httpPost.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
 		}
-	}
-
-	private static boolean isNumeric(String str) {
-		return str.matches("-?\\d+(\\.\\d+)?"); // match a number with optional '-' and decimal.
 	}
 
 	static String stripNonCharCodepoints(String input) {

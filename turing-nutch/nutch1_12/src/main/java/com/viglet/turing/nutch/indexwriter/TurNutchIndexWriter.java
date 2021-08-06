@@ -1,15 +1,11 @@
 package com.viglet.turing.nutch.indexwriter;
 
 import java.lang.invoke.MethodHandles;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.time.format.DateTimeFormatter;
@@ -19,13 +15,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TimeZone;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -45,6 +42,22 @@ import com.viglet.turing.client.sn.job.TurSNJobItems;
 public class TurNutchIndexWriter implements IndexWriter {
 
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+	private static final String CONTENT_FIELD = "content";
+	private static final String TITLE_FIELD = "title";
+	private static final String TEXT_FIELD = "text";
+	private static final String TIMESTAMP_FIELD = "tstamp";
+	private static final String TYPE_FIELD = "type";
+	private static final String CONNECTOR_FIELD = "source_app";
+	private static final String TYPE_DEFAULT_VALUE = "Page";
+	private static final String CONNECTOR_DEFAULT_VALUE = "Nutch";
+	private static final String USERNAME_DEFAULT_VALUE = "admin";
+	private static final String PASSWORD_DEFAULT_VALUE = "admin";
+	private static final String SITE_DEFAULT_VALUE = "Sample";
+	private static final String TURING_SERVER_DEFAULT_VALUE = "http://localhost:2700";
+	private static final String TIMESTAMP_PROPERTY = "turing.timestamp.field";
+	private static final String FIELD_PROPERTY = "turing.field.";
+	private static final char TAB = '\t';
+	private static final String SLASH = "/";
 	private final TurSNJobItems turSNJobItems = new TurSNJobItems();
 	private CloseableHttpClient client = HttpClients.createDefault();
 	private ModifiableSolrParams params;
@@ -100,22 +113,26 @@ public class TurNutchIndexWriter implements IndexWriter {
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 		Map<String, Object> attributes = new HashMap<String, Object>();
-		for (final Entry<String, NutchField> e : doc) {
-			for (final Object val : e.getValue().getValues()) {
+		Map<String, String> turCustomFields = this.config.getValByRegex("^" + FIELD_PROPERTY + "*");
+
+		for (final Entry<String, NutchField> fieldMap : doc) {
+			for (final Object originalValue : fieldMap.getValue().getValues()) {
 				// normalize the string representation for a Date
-				Object val2 = val;
+				Object normalizedValue = originalValue;
 
-				if (val instanceof Date) {
-					val2 = DateTimeFormatter.ISO_INSTANT.format(((Date) val).toInstant());
+				if (originalValue instanceof Date) {
+					normalizedValue = DateTimeFormatter.ISO_INSTANT.format(((Date) originalValue).toInstant());
 				}
 
-				if (e.getKey().equals("content") || e.getKey().equals("title")) {
-					val2 = stripNonCharCodepoints((String) val);
+				if (fieldMap.getKey().equals(CONTENT_FIELD) || fieldMap.getKey().equals(TITLE_FIELD)) {
+					normalizedValue = stripNonCharCodepoints((String) originalValue);
 				}
-				if (e.getKey().equals("content")) {
-					attributes.put("text", val2);
+				if (fieldMap.getKey().equals(CONTENT_FIELD)) {
+					attributes.put(TEXT_FIELD, normalizedValue);
+				} else if (fieldMap.getKey().equals(TIMESTAMP_FIELD)) {
+					attributes.put(this.config.get(TIMESTAMP_PROPERTY, TIMESTAMP_FIELD), normalizedValue);
 				} else {
-					attributes.put(e.getKey(), val2);
+					attributes.put(fieldMap.getKey(), normalizedValue);
 				}
 			}
 		}
@@ -124,8 +141,16 @@ public class TurNutchIndexWriter implements IndexWriter {
 			attributes.put(weightField, doc.getWeight());
 		}
 
-		attributes.put("type", "Page");
+		attributes.put(TYPE_FIELD, this.config.get(FIELD_PROPERTY + TYPE_FIELD, TYPE_DEFAULT_VALUE));
+		attributes.put(CONNECTOR_FIELD, this.config.get(FIELD_PROPERTY + CONNECTOR_FIELD, CONNECTOR_DEFAULT_VALUE));
 
+		turCustomFields.entrySet().forEach(turCustomField -> {
+			String[] keyFullName = turCustomField.getKey().split("\\.");
+			String key = keyFullName[keyFullName.length - 1];
+			if (!key.equals(TYPE_FIELD) && (!key.equals(CONNECTOR_FIELD))) {
+				attributes.put(key, turCustomField.getValue());
+			}
+		});
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 		totalAdds++;
@@ -163,13 +188,12 @@ public class TurNutchIndexWriter implements IndexWriter {
 			logger.info(String.format("Deleting %d documents", totalDelete));
 
 			boolean showOutput = false;
-			String encoding = "UTF-8";
 
 			ObjectMapper mapper = new ObjectMapper();
 			String jsonResult = mapper.writeValueAsString(turSNJobItems);
 
-			Charset utf8Charset = Charset.forName("UTF-8");
-			Charset customCharset = Charset.forName(encoding);
+			Charset utf8Charset = StandardCharsets.UTF_8;
+			Charset customCharset = StandardCharsets.UTF_8;
 
 			ByteBuffer inputBuffer = ByteBuffer.wrap(jsonResult.getBytes());
 
@@ -179,18 +203,18 @@ public class TurNutchIndexWriter implements IndexWriter {
 			// encode
 			ByteBuffer outputBuffer = customCharset.encode(data);
 
-			byte[] outputData = new String(outputBuffer.array()).getBytes("UTF-8");
+			byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
 			String jsonUTF8 = new String(outputData);
 
 			HttpPost httpPost = new HttpPost(String.format("%s/api/sn/%s/import", this.url, this.site));
 			if (showOutput) {
 				logger.info(jsonUTF8);
 			}
-			StringEntity entity = new StringEntity(new String(jsonUTF8), "UTF-8");
+			StringEntity entity = new StringEntity(new String(jsonUTF8), StandardCharsets.UTF_8);
 			httpPost.setEntity(entity);
-			httpPost.setHeader("Accept", "application/json");
-			httpPost.setHeader("Content-type", "application/json");
-			httpPost.setHeader("Accept-Encoding", "UTF-8");
+			httpPost.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+			httpPost.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+			httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
 
 			if (this.auth) {
 				basicAuth(httpPost);
@@ -223,32 +247,29 @@ public class TurNutchIndexWriter implements IndexWriter {
 		}
 	}
 
-	private static boolean isNumeric(String str) {
-		return str.matches("-?\\d+(\\.\\d+)?"); // match a number with optional '-' and decimal.
-	}
-
 	@Override
 	public void open(JobConf job, String name) throws IOException {
+
 		if (this.config.get(TurNutchConstants.FORCE_CONFIG) != null
-				&& this.config.get(TurNutchConstants.FORCE_CONFIG).equals("true")) {
+				&& this.config.get(TurNutchConstants.FORCE_CONFIG).equals(String.valueOf(true))) {
 			useTuringConfig();
 		} else {
-			if (this.config.get("solr.server.url") != null) {
+			if (this.config.get(TurNutchConstants.SOLR_SERVER_URL) != null) {
 				useSolrConfig();
 			} else {
 				useTuringConfig();
 			}
 		}
 		if (url == null) {
-			String message = "Missing Turing URL.\n" + describe();
+			String message = String.format("Missing Turing URL. %s %s", System.lineSeparator(), describe());
 			logger.error(message);
 			throw new RuntimeException(message);
 		}
-		
+
 		this.auth = this.config.getBoolean(TurNutchConstants.USE_AUTH, false);
-		this.username = this.config.get(TurNutchConstants.USERNAME, "admin");
-		this.password = this.config.get(TurNutchConstants.PASSWORD, "admin");
-		
+		this.username = this.config.get(TurNutchConstants.USERNAME, USERNAME_DEFAULT_VALUE);
+		this.password = this.config.get(TurNutchConstants.PASSWORD, PASSWORD_DEFAULT_VALUE);
+
 		init(job);
 
 		logger.info(describeText());
@@ -270,20 +291,20 @@ public class TurNutchIndexWriter implements IndexWriter {
 	}
 
 	private void useSolrConfig() {
-		String[] fullUrl = this.config.get("solr.server.url").split("/");
+		String[] fullUrl = this.config.get(TurNutchConstants.SOLR_SERVER_URL).split(SLASH);
 		this.site = fullUrl[fullUrl.length - 1];
 		String[] partialUrl = Arrays.copyOf(fullUrl, fullUrl.length - 1);
-		this.url = String.join("/", partialUrl);
+		this.url = String.join(SLASH, partialUrl);
 	}
 
 	private void useTuringConfig() {
-		this.url = this.config.get(TurNutchConstants.SERVER_URL, "https://localhost:2700");
-		this.site = this.config.get(TurNutchConstants.SITE, "Sample");
+		this.url = this.config.get(TurNutchConstants.SERVER_URL, TURING_SERVER_DEFAULT_VALUE);
+		this.site = this.config.get(TurNutchConstants.SITE, SITE_DEFAULT_VALUE);
 	}
 
 	private void init(JobConf job) {
 		delete = config.getBoolean(IndexerMapReduce.INDEXER_DELETE, false);
-		weightField = job.get(TurNutchConstants.WEIGHT_FIELD, "");
+		weightField = job.get(TurNutchConstants.WEIGHT_FIELD, StringUtils.EMPTY);
 		// parse optional params
 		params = new ModifiableSolrParams();
 		String paramString = config.get(IndexerMapReduce.INDEXER_PARAMS);
@@ -301,13 +322,13 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public String describe() {
-		StringBuffer sb = new StringBuffer("TurNutchIndexWriter\n");
-		sb.append("\t").append("Indexing to Viglet Turing Semantic Navigation");
+		StringBuffer sb = new StringBuffer("TurNutchIndexWriter");
+		sb.append(System.lineSeparator()).append(TAB).append("Indexing to Viglet Turing Semantic Navigation");
 		return sb.toString();
 	}
 
 	void describeLine(StringBuffer sb, String variable, String description, String value) {
-		sb.append("\n").append(variable).append("\t").append(description).append("\t").append(value);
+		sb.append(System.lineSeparator()).append(variable).append(TAB).append(description).append(TAB).append(value);
 
 	}
 
