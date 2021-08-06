@@ -114,14 +114,14 @@
     </property>
     <!--
     <property>
-    <name>turing.field.test</name>
+    <name>turing.field.hello</name>
     <value>foo</value>
     <description>
         This a test.
     </description>
     </property>
     <property>
-    <name>turing.field.abc</name>
+    <name>turing.field.world</name>
     <value>bar</value>
     <description>
         This is another test.
