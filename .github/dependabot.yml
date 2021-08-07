@@ -30,3 +30,8 @@ updates:
     schedule:
       interval: "daily"
     target-branch: "0.3.4"
+  - package-ecosystem: "npm" # See documentation for possible values
+    directory: "/ui" # Location of package manifests
+    schedule:
+      interval: "daily"
+    target-branch: "0.3.4"
