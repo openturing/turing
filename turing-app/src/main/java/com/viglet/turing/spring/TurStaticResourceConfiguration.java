@@ -31,7 +31,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @AutoConfigureAfter(DispatcherServletAutoConfiguration.class)
 public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 
-		@Override
+	@Override
 	public void addCorsMappings(CorsRegistry registry) {
 		registry.addMapping("/webjars/**").allowedOrigins("*").allowedMethods("PUT", "DELETE", "GET", "POST")
 				.allowCredentials(false).maxAge(3600);
@@ -49,9 +49,9 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 		registry.addViewController("/converse/").setViewName("forward:/converse/index.html");
 
 	}
-	
+
 	@Override
 	public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
-		configurer.setDefaultTimeout(-1);	
+		configurer.setDefaultTimeout(-1);
 	}
 }

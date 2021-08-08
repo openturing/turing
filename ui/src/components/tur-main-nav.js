@@ -25,27 +25,25 @@ class TurMainNav extends React.Component {
 
   render() {
     return (
-      <div>
-        <UnderlineNav aria-label="Main" mb={4}>
-          <UnderlineNav.Link as={NavLink} to="/home">
-            <RepoIcon verticalAlign="middle" mr={1} /> Repository{" "}
-            <CounterLabel>2</CounterLabel>
-          </UnderlineNav.Link>
-          <UnderlineNav.Link as={NavLink} to="/nlp">
-            <CommentDiscussionIcon verticalAlign="middle" mr={1} /> NLP{" "}
-            <CounterLabel>10</CounterLabel>
-          </UnderlineNav.Link>
-          <UnderlineNav.Link as={NavLink} to="/se">
-            <CodescanIcon verticalAlign="middle" mr={1} /> Search Engine
-          </UnderlineNav.Link>
-          <UnderlineNav.Link as={NavLink} to="/chatbot">
-            <HubotIcon verticalAlign="middle" mr={1} /> Chatbot
-          </UnderlineNav.Link>
-          <UnderlineNav.Link as={NavLink} to="/es">
-            <SearchIcon verticalAlign="middle" mr={1} /> Enterprise Search
-          </UnderlineNav.Link>
-        </UnderlineNav>
-      </div>
+      <UnderlineNav aria-label="Main" mb={4}>
+        <UnderlineNav.Link as={NavLink} to="/home">
+          <RepoIcon verticalAlign="middle" mr={1} /> Repository{" "}
+          <CounterLabel>2</CounterLabel>
+        </UnderlineNav.Link>
+        <UnderlineNav.Link as={NavLink} to="/nlp">
+          <CommentDiscussionIcon verticalAlign="middle" mr={1} /> NLP{" "}
+          <CounterLabel>10</CounterLabel>
+        </UnderlineNav.Link>
+        <UnderlineNav.Link as={NavLink} to="/se">
+          <CodescanIcon verticalAlign="middle" mr={1} /> Search Engine
+        </UnderlineNav.Link>
+        <UnderlineNav.Link as={NavLink} to="/chatbot">
+          <HubotIcon verticalAlign="middle" mr={1} /> Chatbot
+        </UnderlineNav.Link>
+        <UnderlineNav.Link as={NavLink} to="/sn">
+          <SearchIcon verticalAlign="middle" mr={1} /> Semantic Navigation
+        </UnderlineNav.Link>
+      </UnderlineNav>
     );
   }
 }

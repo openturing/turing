@@ -23,7 +23,7 @@ class VigHeader extends React.Component {
       <Header>
         <Header.Item>
           <Header.Link href="#" fontSize={2}>
-            <div style={{borderRadius: "6px", borderStyle: "solid", borderWidth: "thin", paddingRight: "5px", paddingLeft: "5px", paddingTop: "8px", paddingBottom: "1px", width: "23px", backgroundColor: "royalblue"}}>
+            <div style={{borderRadius: "4px", borderStyle: "solid", borderWidth: "thin", paddingRight: "5px", paddingLeft: "5px", paddingTop: "8px", paddingBottom: "1px", width: "35px", backgroundColor: "royalblue"}}>
             Tu
             </div>
           </Header.Link>

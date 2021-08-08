@@ -8,15 +8,15 @@ import {
   TextInput,Link
 } from "@primer/components";
 import { PackageIcon, SearchIcon, UploadIcon } from "@primer/styled-octicons";
-import TurNLPDataService from "../../services/tur-nlp.service";
-import VigJdenticon from "../../commons/vig-jdenticon";
+import TurSNDataService from "../services/tur-sn.service";
+import VigJdenticon from "../commons/vig-jdenticon";
 
-class TurNLPInstancePage extends React.Component {
+class TurSNPage extends React.Component {
   constructor(props) {
     super(props);
-    this.retrieveNLPs = this.retrieveNLP.bind(this);
+    this.retrieveSNSites = this.retrieveSNSites.bind(this);
     this.state = {
-      nlps: [],
+      snSites: [],
     };
   }
 
@@ -26,13 +26,13 @@ class TurNLPInstancePage extends React.Component {
     });
   }
   componentDidMount() {
-    this.retrieveNLP();
+    this.retrieveSNSites();
   }
-  retrieveNLP() {
-    TurNLPDataService.getInstances()
+  retrieveSNSites() {
+    TurSNDataService.getSites()
       .then((response) => {
         this.setState({
-          nlps: response.data,
+          snSites: response.data,
         });
         console.log(response.data);
       })
@@ -41,7 +41,7 @@ class TurNLPInstancePage extends React.Component {
       });
   }
   render() {
-    const { nlps } = this.state;
+    const { snSites } = this.state;
     return (
       <div>
         <Pagehead>
@@ -50,7 +50,7 @@ class TurNLPInstancePage extends React.Component {
               <TextInput
                 icon={SearchIcon}
                 width="50%"
-                placeholder="Find a NLP Instance..."
+                placeholder="Find a Semantic Navigation Site..."
               />
             </Box>
             <Box sx={{ textAlign: "right" }}>
@@ -63,14 +63,14 @@ class TurNLPInstancePage extends React.Component {
             </Box>
           </Box>
         </Pagehead>
-        {nlps &&
-          nlps.map((nlp, index) => (
+        {snSites &&
+          snSites.map((snSite, index) => (
             <Pagehead key={index} paddingTop={0}>
-              <VigJdenticon size="24" value={nlp.title.toLowerCase()} />
+              <VigJdenticon size="24" value={snSite.name.toLowerCase()} />
               <Link ml={1} href="#" fontSize={"large"} fontWeight={"bolder"}>
-                {nlp.title}
+                {snSite.name}
               </Link>
-              <Box marginTop={"5px"}>{nlp.description}</Box>
+              <Box marginTop={"5px"}>{snSite.description}</Box>
               <Label variant="medium" outline mt={2}>
                 Enabled
               </Label>
@@ -81,4 +81,4 @@ class TurNLPInstancePage extends React.Component {
   }
 }
 
-export default TurNLPInstancePage;
+export default TurSNPage;

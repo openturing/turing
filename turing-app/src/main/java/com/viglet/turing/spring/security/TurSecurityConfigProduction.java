@@ -60,6 +60,7 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf()
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
 		http.csrf().disable();
+		http.cors();
 	}
 
 	@Override
