@@ -8,6 +8,7 @@ import TurNLPPage from "./page/nlp.page";
 import TurSEPage from "./page/se.page";
 import TurChatbotPage from "./page/chatbot.page";
 import TurSNPage from "./page/sn.page";
+import TurSEInstancePage from "./page/se/se-instance.page";
 
 function App() {
   return (
@@ -20,11 +21,12 @@ function App() {
           <Route exact path="/">
             <Redirect to="/home" />
           </Route>
-          <Route path="/home" exact={true} component={VigRepositoryPage} />
-          <Route path="/nlp" component={TurNLPPage} />
-          <Route path="/se" component={TurSEPage} />
-          <Route path="/chatbot" component={TurChatbotPage} />
-          <Route path="/sn" component={TurSNPage} />
+          <Route exact path="/home" component={VigRepositoryPage} />
+          <Route exact path="/nlp" component={TurNLPPage} />
+          <Route exact path="/se" component={TurSEPage} />
+          <Route exact path="/se/instance/:id" component={TurSEInstancePage} />
+          <Route exact path="/chatbot" component={TurChatbotPage} />
+          <Route exact path="/sn" component={TurSNPage} />
         </Switch>
       </Box>
       </BaseStyles>

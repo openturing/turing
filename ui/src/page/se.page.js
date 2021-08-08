@@ -67,7 +67,7 @@ class TurSEPage extends React.Component {
           searchEngines.map((seInstance, index) => (
             <Pagehead key={index} paddingTop={0}>
               <VigJdenticon size="24" value={seInstance.title.toLowerCase()} />
-              <Link ml={1} href="#" fontSize={"large"} fontWeight={"bolder"}>
+              <Link ml={1} href={`/se/instance/${seInstance.id}`} fontSize={"large"} fontWeight={"bolder"}>
                 {seInstance.title}
               </Link>
               <Box marginTop={"5px"}>{seInstance.description}</Box>
