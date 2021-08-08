@@ -2,7 +2,6 @@ import React from 'react';
 import { TextInput, Header, Dropdown } from '@primer/components'
 import VigJdenticon from '../commons/vig-jdenticon';
 import { SearchIcon, PlusIcon } from '@primer/styled-octicons'
-import ShioLogo from '../commons/shio-logo'
 
 class VigHeader extends React.Component {
   constructor(props) {
