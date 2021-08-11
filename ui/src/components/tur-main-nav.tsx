@@ -9,15 +9,20 @@ import {
 } from "@primer/styled-octicons";
 import { NavLink } from "react-router-dom";
 
-class TurMainNav extends React.Component {
-  constructor(props) {
+interface IProps {
+}
+interface IState {
+  message?: String;
+}
+class TurMainNav extends React.Component<IProps, IState> {
+  constructor(props: IProps) {
     super(props);
     this.state = {
       message: "",
     };
   }
 
-  handleMessageChanged(event) {
+  handleMessageChanged(event?: any) {
     this.setState({
       message: event.target.value,
     });
@@ -25,7 +30,7 @@ class TurMainNav extends React.Component {
 
   render() {
     return (
-      <UnderlineNav aria-label="Main" mb={4}>
+      <UnderlineNav aria-label="Main">
         <UnderlineNav.Link as={NavLink} to="/home">
           <RepoIcon verticalAlign="middle" mr={1} /> Repository{" "}
           <CounterLabel>2</CounterLabel>

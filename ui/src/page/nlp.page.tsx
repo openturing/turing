@@ -1,5 +1,4 @@
 import { Box, SideNav, Text } from "@primer/components";
-import React from "react";
 import { NavLink, Redirect, Route, Switch } from "react-router-dom";
 import TurNLPInstancePage from "./nlp/tur-nlp-instance.page";
 import TurNLPEntityPage from "./nlp/tur-nlp-entity.page";
@@ -22,7 +21,7 @@ function TurNLPPage() {
       </Box>
       <Box>
         <Switch>
-          <Route exact path="/nlp/">
+          <Route exact path="/nlp">
             <Redirect to="/nlp/instance" />
           </Route>
           <Route exact path="/nlp/instance" component={TurNLPInstancePage} />

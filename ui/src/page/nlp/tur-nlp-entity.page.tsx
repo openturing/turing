@@ -9,30 +9,40 @@ import {
 } from "@primer/components";
 import { PackageIcon, SearchIcon, UploadIcon } from "@primer/styled-octicons";
 import TurNLPDataService from "../../services/tur-nlp.service";
-import VigJdenticon from "../../commons/vig-jdenticon";
 
-class TurNLPInstancePage extends React.Component {
-  constructor(props) {
+interface IProps {
+}
+
+interface NLPEntity {
+  name: String,
+  description: String
+}
+interface IState {
+  nlpEntities?: Array<NLPEntity>;
+  message?: String;
+}
+class TurNLPEntityPage extends React.Component<IProps, IState> {
+  constructor(props: IProps) {
     super(props);
-    this.retrieveNLPs = this.retrieveNLP.bind(this);
+    this.retrieveNLPEntities = this.retrieveNLPEntities.bind(this);
     this.state = {
-      nlps: [],
+      nlpEntities: [],
     };
   }
 
-  handleMessageChanged(event) {
+  handleMessageChanged(event?: any) {
     this.setState({
       message: event.target.value,
     });
   }
   componentDidMount() {
-    this.retrieveNLP();
+    this.retrieveNLPEntities();
   }
-  retrieveNLP() {
-    TurNLPDataService.getInstances()
+  retrieveNLPEntities() {
+    TurNLPDataService.getEntities()
       .then((response) => {
         this.setState({
-          nlps: response.data,
+          nlpEntities: response.data,
         });
         console.log(response.data);
       })
@@ -41,16 +51,16 @@ class TurNLPInstancePage extends React.Component {
       });
   }
   render() {
-    const { nlps } = this.state;
+    const { nlpEntities } = this.state;
     return (
       <div>
         <Pagehead>
-          <Box layout="grid" gridTemplateColumns="repeat(2, auto)" gridGap={3}>
+          <Box gridTemplateColumns="repeat(2, auto)" gridGap={3}>
             <Box>
-              <TextInput
+              <TextInput css
                 icon={SearchIcon}
                 width="50%"
-                placeholder="Find a NLP Instance..."
+                placeholder="Find a NLP Entity..."
               />
             </Box>
             <Box sx={{ textAlign: "right" }}>
@@ -63,14 +73,14 @@ class TurNLPInstancePage extends React.Component {
             </Box>
           </Box>
         </Pagehead>
-        {nlps &&
-          nlps.map((nlp, index) => (
+        {nlpEntities &&
+          nlpEntities.map((nlpEntity, index) => (
             <Pagehead key={index} paddingTop={0}>
-              <VigJdenticon size="24" value={nlp.title.toLowerCase()} />
+
               <Link ml={1} href="#" fontSize={"large"} fontWeight={"bolder"}>
-                {nlp.title}
+                {nlpEntity.name}
               </Link>
-              <Box marginTop={"5px"}>{nlp.description}</Box>
+              <Box marginTop={"5px"}>{nlpEntity.description}</Box>
               <Label variant="medium" outline mt={2}>
                 Enabled
               </Label>
@@ -81,4 +91,4 @@ class TurNLPInstancePage extends React.Component {
   }
 }
 
-export default TurNLPInstancePage;
+export default TurNLPEntityPage;

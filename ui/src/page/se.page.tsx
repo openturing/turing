@@ -8,31 +8,45 @@ import {
   TextInput,Link
 } from "@primer/components";
 import { PackageIcon, SearchIcon, UploadIcon } from "@primer/styled-octicons";
-import TurChatbotDataService from "../services/tur-chatbot.service";
-import VigJdenticon from "../commons/vig-jdenticon";
+import TurSEDataService from "../services/tur-se.service";
 
-class TurChatbotPage extends React.Component {
-  constructor(props) {
+interface SearchEngine {
+  id: String,
+  title: String,
+  description: String
+}
+
+interface IProps {
+  name: String,
+  description: String
+}
+interface IState {
+  searchEngines: Array<SearchEngine>
+  message?: String;
+}
+
+class TurSEPage extends React.Component<IProps, IState> {
+  constructor(props: IProps) {
     super(props);
-    this.retrieveChatbotAgents = this.retrieveChatbotAgents.bind(this);
+    this.retrieveSEInstances = this.retrieveSEInstances.bind(this);
     this.state = {
-      chatbotAgents: [],
+      searchEngines: [],
     };
   }
 
-  handleMessageChanged(event) {
+  handleMessageChanged(event?: any) {
     this.setState({
       message: event.target.value,
     });
   }
   componentDidMount() {
-    this.retrieveChatbotAgents();
+    this.retrieveSEInstances();
   }
-  retrieveChatbotAgents() {
-    TurChatbotDataService.getAgents()
+  retrieveSEInstances() {
+    TurSEDataService.getInstances()
       .then((response) => {
         this.setState({
-          chatbotAgents: response.data,
+          searchEngines: response.data,
         });
         console.log(response.data);
       })
@@ -41,16 +55,16 @@ class TurChatbotPage extends React.Component {
       });
   }
   render() {
-    const { chatbotAgents } = this.state;
+    const { searchEngines } = this.state;
     return (
       <div>
         <Pagehead>
-          <Box layout="grid" gridTemplateColumns="repeat(2, auto)" gridGap={3}>
+          <Box gridTemplateColumns="repeat(2, auto)" gridGap={3}>
             <Box>
-              <TextInput
+              <TextInput css
                 icon={SearchIcon}
                 width="50%"
-                placeholder="Find a Chatbot Agent..."
+                placeholder="Find a Search Engine Instance..."
               />
             </Box>
             <Box sx={{ textAlign: "right" }}>
@@ -63,14 +77,13 @@ class TurChatbotPage extends React.Component {
             </Box>
           </Box>
         </Pagehead>
-        {chatbotAgents &&
-          chatbotAgents.map((chatbotAgent, index) => (
+        {searchEngines &&
+          searchEngines.map((seInstance, index) => (
             <Pagehead key={index} paddingTop={0}>
-              <VigJdenticon size="24" value={chatbotAgent.name.toLowerCase()} />
-              <Link ml={1} href="#" fontSize={"large"} fontWeight={"bolder"}>
-                {chatbotAgent.name}
+              <Link ml={1} href={`/se/instance/${seInstance.id}`} fontSize={"large"} fontWeight={"bolder"}>
+                {seInstance.title}
               </Link>
-              <Box marginTop={"5px"}>{chatbotAgent.description}</Box>
+              <Box marginTop={"5px"}>{seInstance.description}</Box>
               <Label variant="medium" outline mt={2}>
                 Enabled
               </Label>
@@ -81,4 +94,4 @@ class TurChatbotPage extends React.Component {
   }
 }
 
-export default TurChatbotPage;
+export default TurSEPage;

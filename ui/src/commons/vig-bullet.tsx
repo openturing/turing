@@ -1,8 +1,7 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 
 const VigBullet = ({ value = 'test', color='black'}) => {
-  var bulletStyle = {
+  var bulletStyle : React.CSSProperties = {
     position: 'relative',
     top: '1px',
     display: 'inline-block',

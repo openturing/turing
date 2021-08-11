@@ -11,15 +11,23 @@ import {
 } from "@primer/components";
 import { SearchIcon, UploadIcon, PackageIcon } from "@primer/styled-octicons";
 
-class VigRepositoryPage extends React.Component {
-  constructor(props) {
+interface IProps {
+  name: String,
+  description: String
+}
+interface IState {
+  message?: String;
+}
+
+class VigRepositoryPage extends React.Component<IProps, IState> {
+  constructor(props: IProps) {
     super(props);
     this.state = {
       message: "",
     };
   }
 
-  handleMessageChanged(event) {
+  handleMessageChanged(event?: any) {
     this.setState({
       message: event.target.value,
     });
@@ -41,7 +49,7 @@ class VigRepositoryPage extends React.Component {
                     <Dropdown.Item>Media</Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
-                <TextInput
+                <TextInput css
                   icon={SearchIcon}
                   width="50%"
                   placeholder="Find a repository..."

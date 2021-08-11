@@ -1,10 +1,14 @@
 import React from 'react';
 import { TextInput, Header, Dropdown } from '@primer/components'
-import VigJdenticon from '../commons/vig-jdenticon';
 import { SearchIcon, PlusIcon } from '@primer/styled-octicons'
 
-class VigHeader extends React.Component {
-  constructor(props) {
+interface IProps {
+}
+interface IState {
+  message?: String;
+}
+class VigHeader extends React.Component<IProps, IState> {
+  constructor(props: IProps) {
     super(props);
 
     this.state = {
@@ -12,7 +16,7 @@ class VigHeader extends React.Component {
     }
   }
 
-  handleMessageChanged(event) {
+  handleMessageChanged(event?: any ) {
     this.setState({
       message: event.target.value
     });
@@ -29,7 +33,7 @@ class VigHeader extends React.Component {
           </Header.Link>
         </Header.Item>
         <Header.Item full>
-          <TextInput type="search" icon={SearchIcon} width={320} />
+          <TextInput css type="search" icon={SearchIcon} width={320} />
         </Header.Item>
         <Header.Item mr={3}>
           <Dropdown>
@@ -49,7 +53,7 @@ class VigHeader extends React.Component {
         <Header.Item mr={0}>
           <Dropdown>
             <summary>
-              <VigJdenticon size="20" value="admin" /> <Dropdown.Caret ml={0} />
+              <Dropdown.Caret ml={0} />
             </summary>
             <Dropdown.Menu direction='sw'>
               <Dropdown.Item>Signed in as admin</Dropdown.Item>

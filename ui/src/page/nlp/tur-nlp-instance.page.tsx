@@ -8,31 +8,42 @@ import {
   TextInput,Link
 } from "@primer/components";
 import { PackageIcon, SearchIcon, UploadIcon } from "@primer/styled-octicons";
-import TurSNDataService from "../services/tur-sn.service";
-import VigJdenticon from "../commons/vig-jdenticon";
+import TurNLPDataService from "../../services/tur-nlp.service";
 
-class TurSNPage extends React.Component {
-  constructor(props) {
+interface NLPInstance {
+  title: String,
+  description: String
+}
+interface IProps {
+  name: String,
+  description: String
+}
+interface IState {
+  nlps?: Array<NLPInstance>;
+  message?: String;
+} 
+class TurNLPInstancePage extends React.Component<IProps, IState> {
+  constructor(props: IProps) {
     super(props);
-    this.retrieveSNSites = this.retrieveSNSites.bind(this);
+    this.retrieveNLP.bind(this);
     this.state = {
-      snSites: [],
+      nlps: [],
     };
   }
 
-  handleMessageChanged(event) {
+  handleMessageChanged(event?: any) {
     this.setState({
       message: event.target.value,
     });
   }
   componentDidMount() {
-    this.retrieveSNSites();
+    this.retrieveNLP();
   }
-  retrieveSNSites() {
-    TurSNDataService.getSites()
+  retrieveNLP() {
+    TurNLPDataService.getInstances()
       .then((response) => {
         this.setState({
-          snSites: response.data,
+          nlps: response.data,
         });
         console.log(response.data);
       })
@@ -41,16 +52,16 @@ class TurSNPage extends React.Component {
       });
   }
   render() {
-    const { snSites } = this.state;
+    const { nlps } = this.state;
     return (
       <div>
         <Pagehead>
-          <Box layout="grid" gridTemplateColumns="repeat(2, auto)" gridGap={3}>
+          <Box gridTemplateColumns="repeat(2, auto)" gridGap={3}>
             <Box>
-              <TextInput
+              <TextInput css
                 icon={SearchIcon}
                 width="50%"
-                placeholder="Find a Semantic Navigation Site..."
+                placeholder="Find a NLP Instance..."
               />
             </Box>
             <Box sx={{ textAlign: "right" }}>
@@ -63,14 +74,13 @@ class TurSNPage extends React.Component {
             </Box>
           </Box>
         </Pagehead>
-        {snSites &&
-          snSites.map((snSite, index) => (
+        {nlps &&
+          nlps.map((nlp, index) => (
             <Pagehead key={index} paddingTop={0}>
-              <VigJdenticon size="24" value={snSite.name.toLowerCase()} />
               <Link ml={1} href="#" fontSize={"large"} fontWeight={"bolder"}>
-                {snSite.name}
+                {nlp.title}
               </Link>
-              <Box marginTop={"5px"}>{snSite.description}</Box>
+              <Box marginTop={"5px"}>{nlp.description}</Box>
               <Label variant="medium" outline mt={2}>
                 Enabled
               </Label>
@@ -81,4 +91,4 @@ class TurSNPage extends React.Component {
   }
 }
 
-export default TurSNPage;
+export default TurNLPInstancePage;

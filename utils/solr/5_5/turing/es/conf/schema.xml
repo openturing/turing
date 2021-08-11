@@ -55,6 +55,7 @@
 	<copyField source="type" dest="content" />
 	<copyField source="site" dest="content" />
 	<copyField source="url" dest="content" />
+	<copyField source="text" dest="content" />
 
 	<!-- Apache Nutch -->
 	<copyField source="tstamp" dest="content"/>
