@@ -1,6 +1,7 @@
 import React from 'react';
 import { TextInput, Header, Dropdown } from '@primer/components'
 import { SearchIcon, PlusIcon } from '@primer/styled-octicons'
+import { Button, Container, Form, FormControl, Nav, Navbar, NavDropdown } from 'react-bootstrap';
 
 interface IProps {
 }
@@ -16,7 +17,7 @@ class VigHeader extends React.Component<IProps, IState> {
     }
   }
 
-  handleMessageChanged(event?: any ) {
+  handleMessageChanged(event?: any) {
     this.setState({
       message: event.target.value
     });
@@ -24,44 +25,41 @@ class VigHeader extends React.Component<IProps, IState> {
 
   render() {
     return (
-      <Header>
-        <Header.Item>
-          <Header.Link href="#" fontSize={2}>
-            <div style={{borderRadius: "4px", borderStyle: "solid", borderWidth: "thin", paddingRight: "5px", paddingLeft: "5px", paddingTop: "8px", paddingBottom: "1px", width: "35px", backgroundColor: "royalblue"}}>
-            Tu
+      <Navbar collapseOnSelect expand="lg" bg="dark" variant="dark" >
+        <Container>
+          <Navbar.Brand href="/">
+            <div style={{ borderRadius: "4px", borderStyle: "solid", borderWidth: "thin", paddingRight: "5px", paddingLeft: "5px", paddingTop: "8px", paddingBottom: "1px", width: "41px", backgroundColor: "royalblue" }}>
+              Tu
             </div>
-          </Header.Link>
-        </Header.Item>
-        <Header.Item full>
-          <TextInput css type="search" icon={SearchIcon} width={320} />
-        </Header.Item>
-        <Header.Item mr={3}>
-          <Dropdown>
-            <summary>
-              <PlusIcon size={20}></PlusIcon> <Dropdown.Caret ml={0} />
-            </summary>
-            <Dropdown.Menu direction='sw'>
-              <Dropdown.Item>New Repository</Dropdown.Item>
-              <Dropdown.Item>Import Repository</Dropdown.Item>
-              <Dropdown.Item>New Organization</Dropdown.Item>
-              <Dropdown.Item>Import Organization</Dropdown.Item>
-              <Dropdown.Item>New Post Type</Dropdown.Item>
-              <Dropdown.Item>Import Post Type</Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
-        </Header.Item>
-        <Header.Item mr={0}>
-          <Dropdown>
-            <summary>
-              <Dropdown.Caret ml={0} />
-            </summary>
-            <Dropdown.Menu direction='sw'>
-              <Dropdown.Item>Signed in as admin</Dropdown.Item>
-              <Dropdown.Item>Sign out</Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
-        </Header.Item>
-      </Header>
+          </Navbar.Brand>
+          <Navbar.Toggle aria-controls="responsive-navbar-nav" />
+          <Navbar.Collapse id="responsive-navbar-nav">
+            <Nav className="me-auto">
+              <Form className="d-flex">
+                <FormControl
+                  type="search"
+                  placeholder="Search"
+                  className="mr-2"
+                  aria-label="Search"
+                />
+              </Form>
+            </Nav>
+            <Nav>
+              <NavDropdown title="+" id="navbarScrollingDropdown">
+                <NavDropdown.Item href="#action3">New Repository</NavDropdown.Item>
+                <NavDropdown.Item href="#action3">Import Repository</NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item href="#action5">New Organization</NavDropdown.Item>
+              </NavDropdown>
+              <NavDropdown title="admin" id="navbarScrollingDropdown">
+                <NavDropdown.Item href="#action3">Signed in as admin</NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item href="#action5">Sign out</NavDropdown.Item>
+              </NavDropdown>
+            </Nav>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
     );
   }
 }
