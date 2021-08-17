@@ -19,10 +19,10 @@ const routes: Routes = [
       { path: 'object', loadChildren: () => import('../object/shio-object.module').then(m => m.ShioObjectModule) },
       { path: 'repo', loadChildren: () => import('../repository/shio-repository.module').then(m => m.ShioRepositoryModule) },
       { path: 'nlp', loadChildren: () => import('../nlp/tur-nlp.module').then(m => m.TurNLPModule) },
-      { path: '', redirectTo: '/content/dashboard/repo', pathMatch: 'full' }
+      { path: '', redirectTo: '/console/dashboard/repo', pathMatch: 'full' }
     ]
   },
-  { path: '', redirectTo: '/content/dashboard/repo', pathMatch: 'full' }
+  { path: '', redirectTo: '/console/dashboard/repo', pathMatch: 'full' }
 ];
 @NgModule({
   imports: [RouterModule.forRoot(routes, { useHash: true, relativeLinkResolution: 'legacy' })],

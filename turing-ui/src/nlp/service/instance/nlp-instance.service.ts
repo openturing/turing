@@ -18,28 +18,22 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
-import { ShSite } from '../../repository/model/site.model';
-import { ShPostTypeReport } from '../../postType/model/postTypeReport.model';
+import { environment } from '../../../environments/environment';
+import { TurNLPInstance } from '../../model/instance/nlp-instance.model';
 
 @Injectable()
-export class ShSiteService {
+export class TurNLPInstanceService {
     constructor(private httpClient: HttpClient) { }
-    query(): Observable<ShSite[]> {
-        return this.httpClient.get<ShSite[]>(`${environment.apiUrl}/api/v2/site`);
+    query(): Observable<TurNLPInstance[]> {
+        return this.httpClient.get<TurNLPInstance[]>(`${environment.apiUrl}/api/nlp`);
     }
-    get(id: string): Observable<ShSite> {
-        return this.httpClient.get<ShSite>(`${environment.apiUrl}/api/v2/site/${id}`);
-    }
-    countPostType(id: string): Observable<ShPostTypeReport[]> {
-        return this.httpClient.get<ShPostTypeReport[]>(`${environment.apiUrl}/api/v2/site/${id}/type/count`);
+    get(id: string): Observable<TurNLPInstance> {
+        return this.httpClient.get<TurNLPInstance>(`${environment.apiUrl}/api/nlp/${id}`);
     }
 
-    public save(shSite: ShSite): Observable<Object> {
-
-
-        return this.httpClient.put(`${environment.apiUrl}/api/v2/site/${shSite.id}`,
-            JSON.stringify(shSite));
+    public save(turNLPInstance: TurNLPInstance): Observable<Object> {
+        return this.httpClient.put(`${environment.apiUrl}/api/v2/nlp/${turNLPInstance.id}`,
+            JSON.stringify(turNLPInstance));
 
     }
 
