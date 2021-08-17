@@ -88,7 +88,7 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 
 	@Bean
 	public HttpFirewall allowUrlEncodedSlaturHttpFirewall() {
-		// Allow double slatur in URL
+		// Allow double slash in URL
 		StrictHttpFirewall firewall = new StrictHttpFirewall();
 		firewall.setAllowUrlEncodedSlash(true);
 		return firewall;
