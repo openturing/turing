@@ -8,7 +8,7 @@ import { ShioContentPageComponent } from './page/shio-content-page/shio-content-
 const routes: Routes = [
   { path: 'login', component: ShioLoginPageComponent },
   {
-    path: 'content', component: ShioContentPageComponent, canActivate: [AuthGuard],
+    path: 'console', component: ShioContentPageComponent, canActivate: [AuthGuard],
     children: [
       { path: 'dashboard', loadChildren: () => import('../dashboard/shio-dashboard.module').then(m => m.ShioDashboardModule) },
       { path: 'post', loadChildren: () => import('../post/shio-post.module').then(m => m.ShioPostModule) },
@@ -18,6 +18,7 @@ const routes: Routes = [
       { path: 'post', loadChildren: () => import('../post/shio-post.module').then(m => m.ShioPostModule) },
       { path: 'object', loadChildren: () => import('../object/shio-object.module').then(m => m.ShioObjectModule) },
       { path: 'repo', loadChildren: () => import('../repository/shio-repository.module').then(m => m.ShioRepositoryModule) },
+      { path: 'nlp', loadChildren: () => import('../nlp/tur-nlp.module').then(m => m.TurNLPModule) },
       { path: '', redirectTo: '/content/dashboard/repo', pathMatch: 'full' }
     ]
   },

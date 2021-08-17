@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-shio-content-page',
@@ -6,9 +7,12 @@ import { Component, OnInit } from '@angular/core';
 })
 export class ShioContentPageComponent implements OnInit {
 
-  constructor() { }
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
+  }
+  getRouter(): Router {
+    return this.router;
   }
   imports: [
   ]
