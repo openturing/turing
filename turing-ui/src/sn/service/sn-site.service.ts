@@ -8,7 +8,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSN.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -20,21 +20,44 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { TurSNSite } from '../model/sn-site.model';
+import { TurSNSiteField } from '../model/sn-site-field.model';
+import { map } from 'rxjs/operators';
 
 @Injectable()
 export class TurSNSiteService {
-    constructor(private httpClient: HttpClient) { }
-    query(): Observable<TurSNSite[]> {
-        return this.httpClient.get<TurSNSite[]>(`${environment.apiUrl}/api/sn`);
-    }
-    get(id: string): Observable<TurSNSite> {
-        return this.httpClient.get<TurSNSite>(`${environment.apiUrl}/api/sn/${id}`);
-    }
+  constructor(private httpClient: HttpClient) { }
 
-    public save(turSNSite: TurSNSite): Observable<Object> {
-        return this.httpClient.put(`${environment.apiUrl}/api/sn/${turSNSite.id}`,
-            JSON.stringify(turSNSite));
+  query(): Observable<TurSNSite[]> {
+    return this.httpClient.get<TurSNSite[]>(`${environment.apiUrl}/api/sn`);
+  }
 
-    }
+  get(id: string): Observable<TurSNSite> {
+    return this.httpClient.get<TurSNSite>(`${environment.apiUrl}/api/sn/${id}`);
+  }
+
+  getFields(id: string): Observable<TurSNSiteField[]> {
+    return this.httpClient.get<TurSNSiteField[]>(`${environment.apiUrl}/api/sn/${id}/field/ext`);
+  }
+
+  getField(id: string, fieldId: string): Observable<TurSNSiteField> {
+    return this.httpClient.get<TurSNSiteField>(`${environment.apiUrl}/api/sn/${id}/field/ext/${fieldId}`);
+  }
+
+  getFieldsByType(id: string, type: string): Observable<TurSNSiteField[]> {
+    return this.httpClient.get<TurSNSiteField[]>(`${environment.apiUrl}/api/sn/${id}/field/ext`).pipe(map(items =>
+      items.filter(item => item.snType.toLowerCase() === type)));
+  }
+
+  public save(turSNSite: TurSNSite): Observable<Object> {
+    return this.httpClient.put(`${environment.apiUrl}/api/sn/${turSNSite.id}`,
+      JSON.stringify(turSNSite));
+
+  }
+
+  public saveField(siteId: string, turSNSiteField: TurSNSiteField): Observable<Object> {
+    return this.httpClient.put(`${environment.apiUrl}/api/sn/${siteId}/field/ext/${turSNSiteField.id}`,
+      JSON.stringify(turSNSiteField));
+
+  }
 
 }

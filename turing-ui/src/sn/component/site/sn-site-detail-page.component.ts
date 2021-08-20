@@ -13,14 +13,14 @@ import { TurNLPInstanceService } from 'src/nlp/service/nlp-instance.service';
 
 @Component({
   selector: 'sn-site-page',
-  templateUrl: './sn-site-page.component.html'
+  templateUrl: './sn-site-detail-page.component.html'
 })
-export class TurSNSitePageComponent implements OnInit {
+export class TurSNSiteDetailPageComponent implements OnInit {
   private turSNSite: Observable<TurSNSite>;
   private turLocales: Observable<TurLocale[]>;
   private turSEInstances: Observable<TurSEInstance[]>;
   private turNLPInstances: Observable<TurNLPInstance[]>;
-  private id: string;
+
   constructor(private readonly notifier: NotifierService,
     private turSNSiteService: TurSNSiteService,
     private turLocaleService: TurLocaleService,
@@ -30,13 +30,11 @@ export class TurSNSitePageComponent implements OnInit {
     this.turLocales = turLocaleService.query();
     this.turSEInstances = turSEInstanceService.query();
     this.turNLPInstances = turNLPInstanceService.query();
-    this.id = this.route.snapshot.paramMap.get('id');
-    this.turSNSite = this.turSNSiteService.get(this.id);
+    let id = this.route.parent.snapshot.paramMap.get('id');
+    this.turSNSite = this.turSNSiteService.get(id);
 
   }
-  getId(): string {
-    return this.id;
-  }
+
   getTurSNSite(): Observable<TurSNSite> {
     return this.turSNSite;
   }

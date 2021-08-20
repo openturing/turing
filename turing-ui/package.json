@@ -45,6 +45,7 @@
     "ngx-octicons": "^0.1.1",
     "ngx-smart-modal": "^7.4.1",
     "num2fraction": "^1.2.2",
+    "primer-table-object": "^2.0.0",
     "rxjs": "^6.6.3",
     "tinymce": "^5.8.2",
     "tslib": "^2.3.1"
