@@ -22,6 +22,7 @@ import { ShioRepositoryModule } from 'src/repository/shio-repository.module';
 import { ShioCommonsModule } from 'src/commons/shio-commons.module';
 import { ShioWidgetModule } from 'src/widget/shio-widget.module';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { RouterModule } from '@angular/router';
 
 registerLocaleData(localeEn, 'en');
 registerLocaleData(localePt, 'pt');
@@ -78,7 +79,7 @@ const notifierDefaultOptions: NotifierOptions = {
     ReactiveFormsModule,
     FormsModule,
     NotifierModule.withConfig(notifierDefaultOptions),
-    FontAwesomeModule,   
+    FontAwesomeModule,
     ShioWidgetModule,
     ShioLoginModule,
     ShioPostModule,
@@ -86,8 +87,9 @@ const notifierDefaultOptions: NotifierOptions = {
     ShioRepositoryModule,
     OcticonsModule,
     ShioCommonsModule,
-    DragDropModule
-    
+    DragDropModule,
+    RouterModule
+
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: BasicAuthInterceptor, multi: true },

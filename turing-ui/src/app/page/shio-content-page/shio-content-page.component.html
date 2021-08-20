@@ -1,15 +1,14 @@
 <shio-header></shio-header>
 <nav class="UnderlineNav overflow-hidden px-3 px-md-4 px-lg-5 bg-gray-light pt-3 mb-2" aria-label="Dashboard Tabs">
   <div class="UnderlineNav-body">
-    <a [routerLink]="['/console/dashboard/repo']" routerLinkActive="active"
-      [class.selected]="getRouter().url === '/console/dashboard/repo'"
+    <a [routerLink]="['/console/dashboard/repo']" [routerLinkActive]="['selected']"
       class="UnderlineNav-item d-flex flex-items-center">
       <span octicon="repo" size="16" class="mr-1"
         [style.color]="getRouter().url === '/console/dashboard/repo'?'':'#959da5'"></span>
       Repository <span class="Counter">2</span>
     </a>
 
-    <a [routerLink]="['/console/nlp/instance']" class="UnderlineNav-item d-flex flex-items-center">
+    <a [routerLink]="['/console/nlp']" class="UnderlineNav-item d-flex flex-items-center" [routerLinkActive]="['selected']">
       <span octicon="workflow" size="16" class="mr-1"
         [style.color]="getRouter().url === '/console/nlp'?'':'#959da5'"></span>
       NLP <span class="Counter">10</span>

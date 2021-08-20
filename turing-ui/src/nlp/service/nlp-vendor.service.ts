@@ -18,22 +18,22 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { TurNLPInstance } from '../../model/instance/nlp-instance.model';
+import { environment } from '../../environments/environment';
+import { TurNLPVendor } from '../model/nlp-vendor.model';
 
 @Injectable()
-export class TurNLPInstanceService {
+export class TurNLPVendorService {
     constructor(private httpClient: HttpClient) { }
-    query(): Observable<TurNLPInstance[]> {
-        return this.httpClient.get<TurNLPInstance[]>(`${environment.apiUrl}/api/nlp`);
+    query(): Observable<TurNLPVendor[]> {
+        return this.httpClient.get<TurNLPVendor[]>(`${environment.apiUrl}/api/nlp/vendor`);
     }
-    get(id: string): Observable<TurNLPInstance> {
-        return this.httpClient.get<TurNLPInstance>(`${environment.apiUrl}/api/nlp/${id}`);
+    get(id: string): Observable<TurNLPVendor> {
+        return this.httpClient.get<TurNLPVendor>(`${environment.apiUrl}/api/nlp/vendor/${id}`);
     }
 
-    public save(turNLPInstance: TurNLPInstance): Observable<Object> {
-        return this.httpClient.put(`${environment.apiUrl}/api/v2/nlp/${turNLPInstance.id}`,
-            JSON.stringify(turNLPInstance));
+    public save(turNLPVendor: TurNLPVendor): Observable<Object> {
+        return this.httpClient.put(`${environment.apiUrl}/api/nlp/vendor/${turNLPVendor.id}`,
+            JSON.stringify(turNLPVendor));
 
     }
 
