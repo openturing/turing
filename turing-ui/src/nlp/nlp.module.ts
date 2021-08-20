@@ -12,12 +12,14 @@ import { TurNLPEntityListPageComponent } from './component/entity/nlp-entity-lis
 import { TurNLPRootPageComponent } from './component/root/nlp-root-page.component';
 import { TurNLPEntityService } from './service/nlp-entity.service';
 import { TurNLPVendorService } from './service/nlp-vendor.service';
+import { TurNLPEntityPageComponent } from './component/entity/nlp-entity-page.component';
 import { TurNLPInstancePageComponent } from './component/instance/nlp-instance-page.component';
-
+import { TurLocaleService } from '../locale/service/locale.service';
 @NgModule({
   declarations: [
     TurNLPRootPageComponent,
     TurNLPInstancePageComponent,
+    TurNLPEntityPageComponent,
     TurNLPEntityListPageComponent,
     TurNLPInstanceListPageComponent
   ],
@@ -34,7 +36,8 @@ import { TurNLPInstancePageComponent } from './component/instance/nlp-instance-p
   providers: [
     TurNLPInstanceService,
     TurNLPEntityService,
-    TurNLPVendorService
+    TurNLPVendorService,
+    TurLocaleService
   ]
 })
 export class TurNLPModule { }

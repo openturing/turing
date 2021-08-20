@@ -19,6 +19,8 @@ const routes: Routes = [
       { path: 'object', loadChildren: () => import('../object/shio-object.module').then(m => m.ShioObjectModule) },
       { path: 'repo', loadChildren: () => import('../repository/shio-repository.module').then(m => m.ShioRepositoryModule) },
       { path: 'nlp', loadChildren: () => import('../nlp/nlp.module').then(m => m.TurNLPModule) },
+      { path: 'se', loadChildren: () => import('../se/se.module').then(m => m.TurSEModule) },
+      { path: 'sn', loadChildren: () => import('../sn/sn.module').then(m => m.TurSNModule) },
       { path: '', redirectTo: '/console/dashboard/repo', pathMatch: 'full' }
     ]
   },

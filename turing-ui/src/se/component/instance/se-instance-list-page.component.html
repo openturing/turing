@@ -3,8 +3,8 @@
     <div style="padding-bottom: 15px;">
       <div class="Subhead" style="padding-bottom: 20px;">
         <div style="flex: 1 1 auto;">
-          <input class="form-control" style="width: 50%;" type="text" placeholder="Find a NLP Entity..."
-            aria-label="Find a NLP Entity" />
+          <input class="form-control" style="width: 50%;" type="text" placeholder="Find a SE Instance..."
+            aria-label="Find a SE Instance" />
         </div>
         <div class="Subhead-actions">
           <button class="btn mr-2" role="button">
@@ -16,21 +16,20 @@
       </div>
     </div>
   </div>
-
-  <div *ngIf="(getTurNLPEntities() | async) as nlpEntities; else loading">
-    <div *ngFor="let nlpEntity of nlpEntities" class="border-bottom d-flex flex-items-center"
+  <div *ngIf="(getTurSEInstances() | async) as seInstances; else loading">
+    <div *ngFor="let seInstance of seInstances" class="border-bottom d-flex flex-items-center"
       style="margin-bottom: 20px;padding-bottom: 10px;">
       <div class="flex-auto">
         <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
           class="float-left">
-          <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="nlpEntity.name | lowercase">
+          <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="seInstance.title | lowercase">
             Avatar
           </svg>
-        </div><a [routerLink]="['/console/nlp/entity', nlpEntity.id]" routerLinkActive="active"
+        </div><a [routerLink]="['/console/se/instance', seInstance.id]" routerLinkActive="active"
           style="font-weight: bolder; font-size: large;">
-          {{nlpEntity.name}} </a>
+          {{seInstance.title}} </a>
         <div class="text-gray-light" style="margin-top: 5px;">
-          {{nlpEntity.description}}
+          {{seInstance.description}}
         </div>
         <div style="margin-top: 5px;">
           <span title="Label: green outline label" class="Label Label--outline Label--outline-green">Actived</span>
@@ -39,8 +38,8 @@
         <div class="text-gray-light d-flex flex-items-center" style="margin-top: 10px;">
           <div class="mr-3">
             <span
-              style="position: relative;top: 1px;display: inline-block;width: 12px;height: 12px;border-radius: 50%;background-color: tomato;"></span>
-            <span class="ml-1">Entity</span>
+              style="position: relative;top: 1px;display: inline-block;width: 12px;height: 12px;border-radius: 50%;background-color: #2b7489;"></span>
+            <span class="ml-1">SE</span>
           </div>
         </div>
       </div>

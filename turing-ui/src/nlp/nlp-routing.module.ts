@@ -6,6 +6,7 @@ import { TurNLPInstancePageComponent } from './component/instance/nlp-instance-p
 import { TurNLPInstanceListPageComponent } from './component/instance/nlp-instance-list-page.component';
 import { TurNLPEntityListPageComponent } from './component/entity/nlp-entity-list-page.component';
 import { TurNLPRootPageComponent } from './component/root/nlp-root-page.component';
+import { TurNLPEntityPageComponent } from './component/entity/nlp-entity-page.component';
 
 const routes: Routes = [
   {
@@ -14,6 +15,7 @@ const routes: Routes = [
       { path: 'instance', component: TurNLPInstanceListPageComponent, canActivate: [AuthGuard] },
       { path: 'instance/:id', component: TurNLPInstancePageComponent, canActivate: [AuthGuard] },
       { path: 'entity', component: TurNLPEntityListPageComponent, canActivate: [AuthGuard] },
+      { path: 'entity/:id', component: TurNLPEntityPageComponent, canActivate: [AuthGuard] },
       { path: '', redirectTo: '/console/nlp/instance', pathMatch: 'full' }
     ]
   }

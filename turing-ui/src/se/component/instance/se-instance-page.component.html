@@ -1,9 +1,9 @@
-<div *ngIf="(getTurNLPInstance() | async) as nlpInstance; else loading">
+<div *ngIf="(getTurSEInstance() | async) as seInstance; else loading">
   <div class="Subhead">
-    <div class="Subhead-heading">NLP Instance</div>
+    <div class="Subhead-heading">SE Instance</div>
     <div class="Subhead-actions">
       <button type="button" class="btn mr-2">Cancel</button>
-      <button (click)="saveSite(nlpInstance)" type="button" class="btn btn-primary">Save changes</button>
+      <button (click)="saveSite(seInstance)" type="button" class="btn btn-primary">Save changes</button>
     </div>
   </div>
   <div class="form-group">
@@ -11,9 +11,9 @@
       <label for="repo-name">Title</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="nlpInstance.title" class="form-control" type="text" id="repo-name" style="width: 100%;" />
+      <input [(ngModel)]="seInstance.title" class="form-control" type="text" id="repo-name" style="width: 100%;" />
       <p class="note" id="help-text-for-checkbox">
-        NLP instance title will appear on NLP list.
+        SE instance title will appear on SE list.
       </p>
     </div>
   </div>
@@ -22,10 +22,10 @@
       <label for="repo-description">Description</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="nlpInstance.description" class="form-control" type="text" id="repo-name"
+      <input [(ngModel)]="seInstance.description" class="form-control" type="text" id="repo-name"
         style="width: 100%;" />
       <p class="note" id="help-text-for-checkbox">
-        NLP instance description will appear on NLP list.
+        SE instance description will appear on SE list.
       </p>
     </div>
   </div>
@@ -34,13 +34,13 @@
       <label for="repo-description">Vendor</label>
     </div>
     <div class="form-group-body">
-      <select [(ngModel)]="nlpInstance.turNLPVendor.id" class="form-select" style="width: 100%;">
-        <option *ngFor="let nlpVendor of (getTurNLPVendors() | async)" [value]="nlpVendor.id">
-          {{nlpVendor.title}}
+      <select [(ngModel)]="seInstance.turSEVendor.id" class="form-select" style="width: 100%;">
+        <option *ngFor="let seVendor of (getTurSEVendors() | async)" [value]="seVendor.id">
+          {{seVendor.title}}
         </option>
       </select>
       <p class="note" id="help-text-for-checkbox">
-        NLP vendor that will be used.
+        SE vendor that will be used.
       </p>
     </div>
   </div>
@@ -49,9 +49,9 @@
       <label for="repo-description">Hostname</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="nlpInstance.host" class="form-control" type="text" id="repo-name" style="width: 100%;" />
+      <input [(ngModel)]="seInstance.host" class="form-control" type="text" id="repo-name" style="width: 100%;" />
       <p class="note" id="help-text-for-checkbox">
-        NLP instance hostname will be connected.
+        SE instance hostname will be connected.
       </p>
     </div>
   </div>
@@ -60,10 +60,10 @@
       <label for="repo-description">Port</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="nlpInstance.port" class="form-control" type="number" min="1" max="65535" id="repo-name" [formControl]="portControl"
+      <input [(ngModel)]="seInstance.port" class="form-control" type="number" min="1" max="65535" id="repo-name" [formControl]="portControl"
         style="width: 100%;" />
       <p class="note" id="help-text-for-checkbox">
-        NLP instance port will be connected.
+        SE instance port will be connected.
       </p>
     </div>
   </div>
@@ -72,25 +72,25 @@
       <label for="repo-description">Language</label>
     </div>
     <div class="form-group-body">
-      <select [(ngModel)]="nlpInstance.language" class="form-select" style="width: 100%;">
+      <select [(ngModel)]="seInstance.language" class="form-select" style="width: 100%;">
         <option *ngFor="let locale of (getTurLocales() | async)" [value]="locale.initials">
           {{locale.en}}
         </option>
       </select>
       <p class="note" id="help-text-for-checkbox">
-        Language that supports NLP.
+        Language that supports SE.
       </p>
     </div>
   </div>
   <form>
     <div class="form-checkbox">
       <label>
-        <input [(ngModel)]="nlpInstance.enabled" type="checkbox" [ngModelOptions]="{standalone: true}"
-          (ngModelChange)="nlpInstance.enabled = $event ? 1 : 0" aria-describedby="help-text-for-checkbox" />
+        <input [(ngModel)]="seInstance.enabled" type="checkbox" [ngModelOptions]="{standalone: true}"
+          (ngModelChange)="seInstance.enabled = $event ? 1 : 0" aria-describedby="help-text-for-checkbox" />
         Enabled
       </label>
       <p class="note" id="help-text-for-checkbox">
-        If this NLP Instance will be used in others Turing AI Components.
+        If this SE Instance will be used in others Turing AI Components.
       </p>
     </div>
   </form>
