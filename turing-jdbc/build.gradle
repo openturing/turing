@@ -25,7 +25,7 @@ tasks.withType(JavaCompile) {
 
 sonarqube {
   properties {
-    property "sonar.projectKey", "openturing_turing"
+    property "sonar.projectKey", "turing-jdbc"
     property "sonar.organization", "alegauss-github"
     property "sonar.host.url", "https://sonarcloud.io"
   }
