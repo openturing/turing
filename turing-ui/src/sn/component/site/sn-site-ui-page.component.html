@@ -1,7 +1,8 @@
 <div *ngIf="(getTurSNSite() | async) as snSite; else loading">
 
   <div class="Subhead">
-    <div class="Subhead-heading">Appearance</div>
+    <div class="Subhead-heading"><span octicon="paintbrush"
+      size="24" class="mr-1"></span> Appearance</div>
 
     <div class="Subhead-actions">
       <button type="button" class="btn mr-2">Cancel</button>
@@ -20,8 +21,9 @@
       </p>
     </div>
   </div>
-  <div class="Subhead">
-    <div class="Subhead-heading">Facet</div>
+  <div class="Subhead mt-5">
+    <div class="Subhead-heading"><span octicon="filter"
+      size="24" class="mr-1"> </span> Facet</div>
     <div class="Subhead-description">Behavior filter on search page.</div>
   </div>
   <div class="form-checkbox">
@@ -47,8 +49,9 @@
     </div>
   </div>
 
-  <div class="Subhead">
-    <div class="Subhead-heading">Highlighting</div>
+  <div class="Subhead mt-5">
+    <div class="Subhead-heading"><span octicon="pencil"
+      size="24" class="mr-1"> </span> Highlighting</div>
     <div class="Subhead-description">Highlighting terms of search on results.</div>
   </div>
   <div class="form-checkbox">
@@ -83,8 +86,9 @@
       </p>
     </div>
   </div>
-  <div class="Subhead">
-    <div class="Subhead-heading">MLT</div>
+  <div class="Subhead mt-5">
+    <div class="Subhead-heading"><span octicon="copy"
+      size="24" class="mr-1"> </span> MLT</div>
     <div class="Subhead-description">The More Like This Query finds other items that are "like" a given set of items of search results.</div>
   </div>
   <div class="form-checkbox">
@@ -97,8 +101,9 @@
       Use thesaurus to detect terms.
     </p>
   </div>
-  <div class="Subhead">
-    <div class="Subhead-heading">Default Fields</div>
+  <div class="Subhead mt-5">
+    <div class="Subhead-heading"><span octicon="tasklist"
+      size="24" class="mr-1"> </span> Default Fields</div>
     <div class="Subhead-description">What is the fields that will be used on search results display.</div>
   </div>
   <div class="form-group">

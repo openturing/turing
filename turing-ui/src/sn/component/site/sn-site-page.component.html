@@ -1,17 +1,91 @@
-<div class="Subhead">
-  <div class="Subhead-heading">Semantic Navigation Site</div>
+<div *ngIf="(getTurSNSite() | async) as snSite; else loading">
+  <div class="Subhead mt-4">
+    <div class="Subhead-heading">
+      <div class="d-flex">
+        <div style="background-color: whitesmoke; height: 32px; border-radius: 50%;">
+          <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="snSite.name | lowercase">
+          </svg>
+        </div>
+        <div class="ml-2">
+          <span>{{snSite.name}}</span>
+        </div>
+      </div>
+    </div>
+    <div class="Subhead-actions" style="display: inherit;">
+      <div class="mr-2">
+        <a class="btn btn-sm btn-with-count" href="#url" role="button">
+          <span octicon="milestone" size="16" class="mr-1"> </span> <span> Queue</span>
+        </a>
+        <a class="social-count" href="#url">6</a>
+      </div>
+      <div class="mr-2">
+        <a class="btn btn-sm btn-with-count" href="#url" role="button">
+          <span octicon="file-binary" size="16" class="mr-1"> </span> <span> Indexed</span>
+        </a>
+        <a class="social-count" href="#url">6</a>
+      </div>
+      <a href="/sn/{{snSite.name}}" target="_blank" class="btn btn-outline btn-sm" role="button"><span octicon="eye"
+          size="16" class="mr-1"></span> Open Site</a>
+    </div>
+    <div class="Subhead-description">{{snSite.description}}</div>
+  </div>
+
+  <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
+    <nav class="menu" aria-label="Site settings">
+      <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'detail']"
+        [routerLinkActive]="['selected']"><span octicon="gear"
+        size="16" class="mr-1"></span> Settings</a>
+    </nav>
+
+    <nav class="menu" aria-label="Site settings">
+      <span class="menu-heading" id="menu-heading"><span octicon="paintbrush"
+        size="16" class="mr-1"></span> Appearance</span>
+      <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'ui']"
+        [routerLinkActive]="['selected']"> Facet</a>
+        <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'ui']"
+        [routerLinkActive]="['selected']"> Highlighting</a>
+        <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'ui']"
+        [routerLinkActive]="['selected']"> MLT</a>
+        <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'ui']"
+        [routerLinkActive]="['selected']"> Default Fields</a>
+    </nav>
+    <nav class="menu" aria-label="Site settings">
+      <span class="menu-heading" id="menu-heading"><span octicon="rows"
+        size="16" class="mr-1"></span> Fields</span>
+      <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'field', 'se']"
+        [routerLinkActive]="['selected']"> Search Engine Fields</a>
+      <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'field', 'nlp']"
+        [routerLinkActive]="['selected']"> NLP Fields</a>
+      <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'field', 'thesaurus']"
+        [routerLinkActive]="['selected']"> Thesaurus Fields</a>
+    </nav>
+
+    <nav class="menu" aria-label="Site settings">
+        <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'advertising']"
+        [routerLinkActive]="['selected']"><span octicon="megaphone"
+        size="16" class="mr-1"></span> Advertising</a>
+    </nav>
+
+    <nav class="menu" aria-label="Site settings">
+      <span class="menu-heading" id="menu-heading"><span octicon="graph"
+        size="16" class="mr-1"></span> Insights</span>
+        <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'advertising', 'top search']"
+        [routerLinkActive]="['selected']"> Top searched terms</a>
+    </nav>
+    <nav class="menu" aria-label="Site settings">
+      <span class="menu-heading" id="menu-heading"><span octicon="pulse"
+        size="16" class="mr-1"></span> Monitoring</span>
+        <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'advertising', 'top search']"
+        [routerLinkActive]="['selected']"> Queue</a>
+        <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'advertising', 'top search']"
+        [routerLinkActive]="['selected']"> Indexing</a>
+    </nav>
+  </div>
+  <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
+    <router-outlet>
+    </router-outlet>
+  </div>
 </div>
-<div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
-  <nav class="menu" aria-label="Site settings">
-    <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'detail']"
-      [routerLinkActive]="['selected']">Detail</a>
-    <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'field']"
-      [routerLinkActive]="['selected']">Fields</a>
-    <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'ui']"
-      [routerLinkActive]="['selected']">Appearance</a>
-  </nav>
-</div>
-<div id="col-right" class="float-right" style="width: calc(100% - 300px);">
-  <router-outlet>
-  </router-outlet>
-</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

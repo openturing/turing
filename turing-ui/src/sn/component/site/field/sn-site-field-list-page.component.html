@@ -1,10 +1,11 @@
 <div *ngIf="(getTurSNSiteSEFields() | async) as snSiteFields; else loading">
   <div class="Subhead">
-    <div class="Subhead-heading">Search Engine Fields</div>
+    <div class="Subhead-heading"><span octicon="rows"
+      size="24" class="mr-1"></span> Search Engine Fields</div>
     <button (click)="saveSite(snSite)" type="button" class="btn btn-primary">New</button>
     <div class="Subhead-description">Solr fields customized.</div>
   </div>
-  <div data-view-component="true" class="Box">
+  <div class="Box">
     <div class="Box-header">
       <div class="d-table">
         <div class="d-table-cell col-4">
