@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { TurSEInstanceService } from './service/se-instance.service';
 import { TurSEInstanceListPageComponent } from './component/instance/se-instance-list-page.component';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { AceEditorModule } from 'ace-editor-ng9';
 import { TurSERoutingModule } from './se-routing.module';
 import { ShioCommonsModule } from 'src/commons/shio-commons.module';
 import { OcticonsModule } from 'ngx-octicons';
@@ -22,7 +21,6 @@ import { TurLocaleService } from '../locale/service/locale.service';
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
-    AceEditorModule,
     OcticonsModule,
     TurSERoutingModule,
     ShioCommonsModule,

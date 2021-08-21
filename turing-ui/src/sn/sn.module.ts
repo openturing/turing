@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { TurSNSiteService } from './service/sn-site.service';
 import { TurSNSiteListPageComponent } from './component/site/sn-site-list-page.component';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { AceEditorModule } from 'ace-editor-ng9';
 import { TurSNRoutingModule } from './sn-routing.module';
 import { ShioCommonsModule } from 'src/commons/shio-commons.module';
 import { OcticonsModule } from 'ngx-octicons';
@@ -33,7 +32,6 @@ import { TurSNSiteFieldPageComponent } from './component/site/field/sn-site-fiel
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
-    AceEditorModule,
     OcticonsModule,
     TurSNRoutingModule,
     ShioCommonsModule,

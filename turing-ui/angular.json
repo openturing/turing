@@ -28,22 +28,13 @@
             "aot": true,
             "assets": [
               "src/favicon.ico",
-              "src/assets",
-              { "glob": "**/*", "input": "node_modules/tinymce", "output": "/tinymce/" },
-              { "glob": "worker-javascript.js", "input": "node_modules/ace-builds/src-min/", "output": "/" },
-              { "glob": "worker-html.js", "input": "node_modules/ace-builds/src-min/", "output": "/" },
-              { "glob": "worker-json.js", "input": "node_modules/ace-builds/src-min/", "output": "/" }
+              "src/assets"
             ],
             "styles": [
               "node_modules/@primer/css/utilities/index.scss",
               "src/styles.scss"
             ],
-            "scripts": ["node_modules/tinymce/tinymce.min.js",
-              "node_modules/ace-builds/src-min/ace.js",
-              "node_modules/ace-builds/src-min/theme-eclipse.js",
-              "node_modules/ace-builds/src-min/mode-javascript.js",
-              "node_modules/ace-builds/src-min/mode-html.js",
-              "node_modules/ace-builds/src-min/mode-json.js"]
+            "scripts": []
           },
           "configurations": {
             "production": {
@@ -109,22 +100,12 @@
             "karmaConfig": "karma.conf.js",
             "assets": [
               "src/favicon.ico",
-              "src/assets",
-              { "glob": "**/*", "input": "node_modules/tinymce", "output": "/tinymce/" },
-              { "glob": "worker-javascript.js", "input": "node_modules/ace-builds/src-min/", "output": "/" },
-              { "glob": "worker-html.js", "input": "node_modules/ace-builds/src-min/", "output": "/" },
-              { "glob": "worker-json.js", "input": "node_modules/ace-builds/src-min/", "output": "/" }
+              "src/assets"
             ],
             "styles": [
               "src/styles.scss"
             ],
-            "scripts": ["node_modules/tinymce/tinymce.min.js",
-              "node_modules/ace-builds/src-min/ace.js",
-              "node_modules/ace-builds/src-min/theme-eclipse.js",
-              "node_modules/ace-builds/src-min/mode-javascript.js",
-              "node_modules/ace-builds/src-min/mode-html.js",
-              "node_modules/ace-builds/src-min/mode-json.js"
-            ]
+            "scripts": []
           }
         },
         "lint": {
