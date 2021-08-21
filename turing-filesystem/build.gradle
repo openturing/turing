@@ -11,6 +11,7 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'org.sonarqube'
 
 group = 'com.viglet.turing.filesystem'
 version = '0.3.3'
@@ -22,6 +23,14 @@ targetCompatibility = 1.8
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
+}
+
+sonarqube {
+  properties {
+    property "sonar.projectKey", "openturing_turing"
+    property "sonar.organization", "alegauss-github"
+    property "sonar.host.url", "https://sonarcloud.io"
+  }
 }
 
 jar {
