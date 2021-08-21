@@ -1,10 +1,20 @@
 <div *ngIf="(getTurNLPEntity() | async) as nlpEntity; else loading">
-  <div class="Subhead">
-    <div class="Subhead-heading">NLP Entity</div>
+  <div class="Subhead mt-4 mb-3">
+    <div class="Subhead-heading">
+      <div class="d-flex">
+        <div style="background-color: whitesmoke; height: 35px; border-radius: 50%;">
+          <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="nlpEntity.name | lowercase">
+          </svg>
+        </div>
+        <div class="ml-2">
+          <span>{{nlpEntity.name}}</span>
+        </div>
+      </div>
+    </div>
     <div class="Subhead-actions">
-      <button type="button" class="btn mr-2">Cancel</button>
       <button (click)="saveSite(nlpEntity)" type="button" class="btn btn-primary">Save changes</button>
     </div>
+    <div class="Subhead-description">{{nlpEntity.description}}</div>
   </div>
   <div class="form-group">
     <div class="form-group-header">

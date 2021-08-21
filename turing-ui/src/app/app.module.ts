@@ -13,14 +13,9 @@ import { NotifierModule, NotifierOptions } from "angular-notifier";
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 import { OcticonsModule } from 'ngx-octicons';
-import { ApiPlaygroundComponent } from './page/api-playground/api-playground.component';
-import { ShioContentPageComponent } from './page/shio-content-page/shio-content-page.component';
+import { TurConsolePageComponent } from 'src/console/console-page.component';
 import { ShioLoginModule } from 'src/login/shio-login.module';
-import { ShioPostModule } from 'src/post/shio-post.module';
-import { ShioPostTypeModule } from 'src/postType/shio-post-type.module';
-import { ShioRepositoryModule } from 'src/repository/shio-repository.module';
 import { ShioCommonsModule } from 'src/commons/shio-commons.module';
-import { ShioWidgetModule } from 'src/widget/shio-widget.module';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { RouterModule } from '@angular/router';
 
@@ -69,8 +64,7 @@ const notifierDefaultOptions: NotifierOptions = {
 @NgModule({
   declarations: [
     AppComponent,
-    ApiPlaygroundComponent,
-    ShioContentPageComponent
+    TurConsolePageComponent
   ],
   imports: [
     BrowserModule,
@@ -80,11 +74,7 @@ const notifierDefaultOptions: NotifierOptions = {
     FormsModule,
     NotifierModule.withConfig(notifierDefaultOptions),
     FontAwesomeModule,
-    ShioWidgetModule,
     ShioLoginModule,
-    ShioPostModule,
-    ShioPostTypeModule,
-    ShioRepositoryModule,
     OcticonsModule,
     ShioCommonsModule,
     DragDropModule,

@@ -2,10 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-shio-content-page',
-  templateUrl: './shio-content-page.component.html'
+  selector: 'console-page',
+  templateUrl: './console-page.component.html'
 })
-export class ShioContentPageComponent implements OnInit {
+export class TurConsolePageComponent implements OnInit {
 
   constructor(private router: Router) { }
 

@@ -1,0 +1,24 @@
+<shio-header></shio-header>
+<nav class="UnderlineNav overflow-hidden px-3 px-md-4 px-lg-5 bg-gray-light pt-3 mb-2" aria-label="Dashboard Tabs">
+  <div class="UnderlineNav-body">
+    <a [routerLink]="['/console/nlp']" [routerLinkActive]="['selected']" class="UnderlineNav-item">
+      <span octicon="comment-discussion" size="16" class="UnderlineNav-octicon octicon mr-1"
+        [style.color]="getRouter().url === '/console/nlp'?'':'#959da5'"></span>
+      NLP <span class="Counter">10</span>
+    </a>
+    <a [routerLink]="['/console/se']" [routerLinkActive]="['selected']" class="UnderlineNav-item">
+      <span octicon="codescan" size="16" class="UnderlineNav-octicon octicon mr-1"
+        [style.color]="getRouter().url === '/console/se'?'':'#959da5'"></span>
+      Search Engine
+    </a>
+    <a [routerLink]="['/console/sn']" [routerLinkActive]="['selected']" class="UnderlineNav-item">
+      <span octicon="search" size="16" class="UnderlineNav-octicon octicon mr-1"
+        [style.color]="getRouter().url === '/console/sn'?'':'#959da5'"></span>
+      Semantic Navigation
+    </a>
+  </div>
+</nav>
+<div class="clearfix container-xl p-0">
+  <router-outlet>
+  </router-outlet>
+</div>
