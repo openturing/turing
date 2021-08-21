@@ -37,7 +37,6 @@ import com.viglet.turing.wem.beans.TurCTDMappingMap;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.beans.TuringTagMap;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
-import com.viglet.turing.wem.config.TurXMLConstant;
 import com.vignette.logging.context.ContextLogger;
 
 // Open and process Mappping XML File structure
@@ -143,16 +142,15 @@ public class MappingDefinitionsProcess {
 		int index = 0;
 		for (Entry<String, CTDMappings> mappingEntry : mappings.entrySet()) {
 			log.debug(String.format("%d - MappingEntry CTD : %s", index, mappingEntry.getKey()));
-			for (Entry<String, ArrayList<TuringTag>> turingTagEntry : mappingEntry.getValue()
-					.getTuringTagMap().entrySet()) {
+			for (Entry<String, ArrayList<TuringTag>> turingTagEntry : mappingEntry.getValue().getTuringTagMap()
+					.entrySet()) {
 				log.debug("TuringTag Key (TagName): " + turingTagEntry.getKey());
 				for (TuringTag turingTag : turingTagEntry.getValue()) {
 					log.debug("TuringTag Item - getTagName : " + turingTag.getTagName());
 					log.debug("TuringTag Item - getSrcAttributeType : " + turingTag.getSrcAttributeType());
 					log.debug("TuringTag Item - getSrcClassName : " + turingTag.getSrcClassName());
 					log.debug("TuringTag Item - getSrcXmlName : " + turingTag.getSrcXmlName());
-					log.debug("TuringTag Item - getSrcAttributeRelation : "
-							+ turingTag.getSrcAttributeRelation());
+					log.debug("TuringTag Item - getSrcAttributeRelation : " + turingTag.getSrcAttributeRelation());
 					log.debug("TuringTag Item - getSrcMandatory : " + turingTag.getSrcMandatory());
 				}
 			}
@@ -222,7 +220,8 @@ public class MappingDefinitionsProcess {
 		for (int i = 0; i < srcNodeList.getLength(); i++) {
 			Element srcAttrNode = (Element) srcNodeList.item(i);
 			if (srcAttrNode.hasAttributes() && (srcAttrNode.hasAttribute(TurXMLConstant.XML_NAME_ATT)
-					|| srcAttrNode.hasAttribute(TurXMLConstant.CLASS_NAME_ATT))) {
+					|| srcAttrNode.hasAttribute(TurXMLConstant.CLASS_NAME_ATT)
+					|| srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT))) {
 				List<TuringTag> turingTags = loadSrcAttr(srcAttrNode);
 				if (turingTags != null)
 					turingTagsPerSrcAttr.addAll(turingTags);
@@ -235,7 +234,8 @@ public class MappingDefinitionsProcess {
 	public static List<TuringTag> loadSrcAttr(Element srcAttrNode) {
 		TuringTag turingTagCheck = detectXMLAttributesOfSrcAttr(srcAttrNode);
 
-		if ((turingTagCheck.getSrcXmlName() != null) || (turingTagCheck.getSrcClassName() != null)) {
+		if ((turingTagCheck.getSrcXmlName() != null) || (turingTagCheck.getSrcClassName() != null)
+				|| (turingTagCheck.getTextValue() != null)) {
 			ArrayList<TuringTag> turingTags = readTagList(srcAttrNode);
 			if (!turingTags.isEmpty()) {
 				return turingTags;
@@ -259,12 +259,14 @@ public class MappingDefinitionsProcess {
 			turingTag.setSrcAttributeRelation(
 					Arrays.asList(srcAttrNode.getAttribute(TurXMLConstant.RELATION_ATT).split("\\.")));
 
+		if (srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT)) {
+			turingTag.setTextValue(srcAttrNode.getAttribute(TurXMLConstant.TEXT_VALUE_ATT));
+		}
 		if (srcAttrNode.hasAttribute(TurXMLConstant.MANDATORY_ATT)) {
 			if (log.isDebugEnabled())
 				log.debug(String.format("MANDATORY: %s", srcAttrNode.getAttribute(TurXMLConstant.MANDATORY_ATT)));
 
-			turingTag.setSrcMandatory(
-					Boolean.parseBoolean(srcAttrNode.getAttribute(TurXMLConstant.MANDATORY_ATT)));
+			turingTag.setSrcMandatory(Boolean.parseBoolean(srcAttrNode.getAttribute(TurXMLConstant.MANDATORY_ATT)));
 
 		} else
 			turingTag.setSrcMandatory(false);
@@ -277,9 +279,9 @@ public class MappingDefinitionsProcess {
 	}
 
 	private static ArrayList<TuringTag> readTagList(Element srcAttrNode) {
-		
+
 		NodeList tagList = (srcAttrNode).getElementsByTagName("tag");
-		
+
 		ArrayList<TuringTag> turingTags = new ArrayList<TuringTag>();
 
 		for (int nodePos = 0; nodePos < tagList.getLength(); nodePos++) {

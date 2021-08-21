@@ -26,6 +26,7 @@ public class TuringTag {
 	private String srcClassName;
 	private boolean srcMandatory;
 	private boolean srcUniqueValues;
+	private String textValue;
 
 	@Override
 	public String toString() {
@@ -59,6 +60,10 @@ public class TuringTag {
 		return tagName;
 	}
 
+	public String getTextValue() {
+		return textValue;
+	}
+
 	public void setSrcAttributeType(String srcAttributeType) {
 		this.srcAttributeType = srcAttributeType;
 	}
@@ -85,6 +90,10 @@ public class TuringTag {
 
 	public void setSrcXmlName(String srcXmlName) {
 		this.srcXmlName = srcXmlName;
+	}
+
+	public void setTextValue(String textValue) {
+		this.textValue = textValue;
 	}
 
 	@Override

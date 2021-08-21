@@ -23,22 +23,31 @@ import com.vignette.as.client.common.AsLocaleData;
 public interface IHandlerConfiguration {
 
     String getTuringURL();
+
     String getSNSite();
+
     String getSNSite(String locale);
+
     String getSNSite(AsLocaleData asLocaleData);
+
     String getMappingsXML();
+
     List<String> getSitesAssocPriority();
-    String getCDAContextName(); 
+
+    String getCDAContextName();
+
     String getCDAFormatName();
+
     String getCDAURLPrefix();
+
     String getCDAURLPrefix(String site);
+
     String getCDAContextName(String site);
-    String getCDAFormatName(String site); 
-    boolean hasSiteName(String site);
-    boolean hasContext(String site);
-    boolean hasFormat(String site);
-	boolean isLive();
-	String getLogin();
-	String getPassword();
-   
+
+    boolean isLive();
+
+    String getLogin();
+
+    String getPassword();
+
 }

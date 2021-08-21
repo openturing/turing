@@ -1,17 +1,7 @@
 package com.viglet.turing.tool.filesystem;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -33,20 +23,16 @@ import java.util.TimeZone;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.api.sn.job.TurSNJobAction;
 import com.viglet.turing.api.sn.job.TurSNJobItem;
 import com.viglet.turing.api.sn.job.TurSNJobItems;
-import com.viglet.turing.tool.file.TurFileAttributes;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
@@ -55,20 +41,10 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.ooxml.POIXMLProperties;
-import org.apache.poi.util.IOUtils;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.SAXException;
 
 public class TurFSImportTool {
     static final Logger logger = LogManager.getLogger(TurFSImportTool.class.getName());
 
-    private final static String EOL = " ";
     int chunkCurrent = 0;
     int chunkTotal = 0;
     TurSNJobItems turSNJobItems = new TurSNJobItems();
@@ -171,8 +147,6 @@ public class TurFSImportTool {
         turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
         Map<String, Object> attributes = new HashMap<String, Object>();
 
-        List<String> imagesExtensions = new ArrayList<String>(
-                Arrays.asList("bmp", "pnm", "png", "jfif", "jpg", "jpeg", "tiff"));
         List<String> webImagesExtensions = new ArrayList<String>(
                 Arrays.asList("pnm", "png", "jpg", "jpeg", "gif"));
         String extension = FilenameUtils.getExtension(file.getAbsolutePath()).toLowerCase();

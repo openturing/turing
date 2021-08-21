@@ -55,11 +55,12 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 				.antMatchers("/index.html", "/welcome/**", "/", "/store/**", "/webjars/**", "/js/**", "/css/**",
 						"/template/**", "/img/**", "/sites/**", "/__tur/**", "/swagger-resources/**", "/h2/**",
 						"/images/**", "/login-page/**", "/logout-page/**", "/sn/**", "/fonts/**", "/api/sn/**",
-						"/api/nlp/**", "/favicon.ico")
+						"/api/nlp/**", "/favicon.ico","/*.png", "/manifest.json", "/browserconfig.xml")
 				.permitAll().anyRequest().authenticated().and()
 				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf()
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
 		http.csrf().disable();
+		http.cors();
 	}
 
 	@Override
@@ -87,7 +88,7 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 
 	@Bean
 	public HttpFirewall allowUrlEncodedSlaturHttpFirewall() {
-		// Allow double slatur in URL
+		// Allow double slash in URL
 		StrictHttpFirewall firewall = new StrictHttpFirewall();
 		firewall.setAllowUrlEncodedSlash(true);
 		return firewall;

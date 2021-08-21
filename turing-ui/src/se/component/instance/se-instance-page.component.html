@@ -1,0 +1,147 @@
+<div *ngIf="(getTurSEInstance() | async) as seInstance; else loading">
+
+  <div class="Subhead mt-4">
+    <div class="Subhead-heading">
+      <div class="d-flex">
+        <div style="background-color: whitesmoke; height: 32px; border-radius: 50%;">
+          <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="seInstance.title | lowercase">
+          </svg>
+        </div>
+        <div class="ml-2">
+          <span>{{seInstance.title}}</span>
+        </div>
+      </div>
+    </div>
+    <div style="position: relative;width: 100px;"><span class="Label mr-1 Label--success"
+        style="position: absolute;top: 50%; left: 50%;transform: translate(-50%,-50%);">Running</span></div>
+    <div class="Subhead-actions" style="display: inherit;">
+      <div class="mr-2">
+        <a class="btn btn-sm btn-with-count" href="http://{{seInstance.host}}:{{seInstance.port}}/solr" target="_blank"
+          role="button">
+          <span octicon="file-binary" size="16" class="mr-1"> </span> <span> Total Documents</span>
+        </a>
+        <a class="social-count" href="#url">6</a>
+      </div>
+    </div>
+    <div class="Subhead-description">{{seInstance.description}}</div>
+  </div>
+  <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
+    <nav class="menu" aria-label="Site settings">
+      <a class="menu-item" [routerLink]="['/console/sn/site', 'detail']"
+        [routerLinkActive]="['selected']"><span octicon="gear" size="16" class="mr-1"></span> Settings</a>
+    </nav>
+    <nav class="menu" aria-label="Site settings">
+      <span class="menu-heading" id="menu-heading"><span octicon="tools" size="16" class="mr-1"></span>
+      Maintenance</span>
+      <a class="menu-item" [routerLink]="['/console/sn/site', 'advertising', 'top search']"
+      [routerLinkActive]="['selected']"> Create core</a>
+      <a class="menu-item" [routerLink]="['/console/sn/site', 'advertising', 'top search']"
+        [routerLinkActive]="['selected']"> Create field</a>
+        <a class="menu-item" [routerLink]="['/console/sn/site', 'advertising', 'top search']"
+        [routerLinkActive]="['selected']"> Restart service</a>
+    </nav>
+    <nav class="menu" aria-label="Site settings">
+      <span class="menu-heading" id="menu-heading"><span octicon="pulse" size="16" class="mr-1"></span>
+        Monitoring</span>
+      <a class="menu-item" [routerLink]="['/console/sn/site', 'advertising', 'top search']"
+        [routerLinkActive]="['selected']"> Indexing</a>
+    </nav>
+  </div>
+  <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
+    <div class="Subhead">
+      <div class="Subhead-heading"><span octicon="gear"
+        size="24" class="mr-1"></span> Settings</div>
+      <button (click)="saveSite(seInstance)" type="button" class="btn btn-primary">Save changes</button>
+      <div class="Subhead-description">Search engine settings.</div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label for="repo-name">Title</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="seInstance.title" class="form-control" type="text" id="repo-name" style="width: 100%;" />
+        <p class="note" id="help-text-for-checkbox">
+          SE instance title will appear on SE list.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label for="repo-description">Description</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="seInstance.description" class="form-control" type="text" id="repo-name"
+          style="width: 100%;" />
+        <p class="note" id="help-text-for-checkbox">
+          SE instance description will appear on SE list.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label for="repo-description">Vendor</label>
+      </div>
+      <div class="form-group-body">
+        <select [(ngModel)]="seInstance.turSEVendor.id" class="form-select">
+          <option *ngFor="let seVendor of (getTurSEVendors() | async)" [value]="seVendor.id" style="width: 100%;">
+            {{seVendor.title}}
+          </option>
+        </select>
+        <p class="note" id="help-text-for-checkbox">
+          SE vendor that will be used.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label for="repo-description">Hostname</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="seInstance.host" class="form-control" type="text" id="repo-name" style="width: 100%;" />
+        <p class="note" id="help-text-for-checkbox">
+          SE instance hostname will be connected.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label for="repo-description">Port</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="seInstance.port" class="form-control" type="number" min="1" max="65535" id="repo-name"
+          [formControl]="portControl" style="width: 100%;" />
+        <p class="note" id="help-text-for-checkbox">
+          SE instance port will be connected.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label for="repo-description">Language</label>
+      </div>
+      <div class="form-group-body">
+        <select [(ngModel)]="seInstance.language" class="form-select" style="width: 100%;">
+          <option *ngFor="let locale of (getTurLocales() | async)" [value]="locale.initials">
+            {{locale.en}}
+          </option>
+        </select>
+        <p class="note" id="help-text-for-checkbox">
+          Language that supports SE.
+        </p>
+      </div>
+    </div>
+    <div class="form-checkbox">
+      <label>
+        <input [(ngModel)]="seInstance.enabled" type="checkbox" (ngModelChange)="seInstance.enabled = $event ? 1 : 0"
+          aria-describedby="help-text-for-checkbox" />
+        Enabled
+      </label>
+      <p class="note" id="help-text-for-checkbox">
+        If this SE Instance will be used in others Turing AI Components.
+      </p>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

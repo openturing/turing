@@ -35,38 +35,26 @@ import com.viglet.turing.api.sn.job.TurSNJob;
 import com.viglet.turing.api.sn.job.TurSNJobAction;
 import com.viglet.turing.api.sn.job.TurSNJobItem;
 import com.viglet.turing.nlp.TurNLP;
-import com.viglet.turing.nlp.TurNLPTraining;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
-import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.thesaurus.TurThesaurusProcessor;
 
 @Component
 public class TurSNProcessQueue {
-	static final Logger logger = LogManager.getLogger(TurSNProcessQueue.class.getName());
+	private static final Logger logger = LogManager.getLogger(TurSNProcessQueue.class.getName());
 	@Autowired
-	TurNLPInstanceRepository turNLPInstanceRepository;
+	private TurSolr turSolr;
 	@Autowired
-	TurSEInstanceRepository turSEInstanceRepository;
+	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	TurConfigVarRepository turConfigVarRepository;
+	private TurNLP turNLP;
 	@Autowired
-	TurSolr turSolr;
+	private TurThesaurusProcessor turThesaurusProcessor;
 	@Autowired
-	TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	TurNLP turNLP;
-	@Autowired
-	TurThesaurusProcessor turThesaurusProcessor;
-	@Autowired
-	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-	@Autowired
-	TurNLPTraining turNLPTraining;
+	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
 	public static final String INDEXING_QUEUE = "indexing.queue";
 
@@ -82,6 +70,24 @@ public class TurSNProcessQueue {
 			} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
 				this.desindexing(turSNJobItem, turSNSite);
 			}
+
+			processQueueInfo(turSNSite, turSNJobItem);
+		}
+
+	}
+
+	private void processQueueInfo(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
+		if (turSNSite != null && turSNJobItem != null && turSNJobItem.getAttributes() != null
+				&& turSNJobItem.getAttributes().containsKey("id")) {
+			String action = null;
+			if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
+				action = "Indexed";
+			} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
+				action = "Deindexed";
+			}
+			logger.info(String.format("%s the Object ID '%s' of '%s' SN Site.", action,
+					turSNJobItem.getAttributes().get("id"), turSNSite.getName()));
+
 		}
 	}
 
@@ -147,9 +153,9 @@ public class TurSNProcessQueue {
 			Map<String, Object> nlpResultsPreffix = new HashMap<String, Object>();
 
 			// Add prefix to attribute name
-			for (Entry<String, ArrayList<String>> nlpResult : turNLPTraining.processNLPTerms(nlpResults).entrySet()) {
+			/*for (Entry<String, ArrayList<String>> nlpResult : turNLPTraining.processNLPTerms(nlpResults).entrySet()) {
 				nlpResultsPreffix.put("turing_entity_" + nlpResult.getKey(), nlpResult.getValue());
-			}
+			} */
 
 			// Copy NLP attributes to consolidateResults
 			for (Entry<String, Object> nlpResultPreffix : nlpResultsPreffix.entrySet()) {

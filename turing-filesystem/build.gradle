@@ -3,30 +3,38 @@ buildscript {
 		mavenCentral()
 		 jcenter()
 	}
-	dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
-    }
+}
+plugins {
+  id 'com.github.johnrengelman.shadow' version "6.1.0"
+  id 'java'
+  id 'eclipse'
+  id "org.sonarqube" version "3.3"
 }
 
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'com.github.johnrengelman.shadow'
 
 group = 'com.viglet.turing.filesystem'
-version = '0.3.3'
+version = '0.3.4'
 
 description = "turing-filesystem"
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 14
+targetCompatibility = 14
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 }
 
+sonarqube {
+  properties {
+    property "sonar.projectKey", "openturing_turing"
+    property "sonar.organization", "alegauss-github"
+    property "sonar.host.url", "https://sonarcloud.io"
+  }
+}
+
 jar {
     baseName = 'turing-filesystem'
-    version =  '0.3.1'
+    version =  '0.3.4'
     manifest {
         attributes 'Main-Class': 'com.viglet.turing.tool.filesystem.TurFSImportTool'
     }
@@ -42,20 +50,22 @@ repositories {
 }
 
 dependencies {
-	implementation group: 'com.beust', name: 'jcommander', version: '1.72'	
-	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.8'	
-	implementation group: 'org.json', name: 'json', version:'20140107'
-	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.2'
-	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.7'
+	implementation group: 'com.beust', name: 'jcommander', version: '1.81'	
+	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.4'	
+	implementation group: 'org.json', name: 'json', version:'20210307'
+	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.13'
+	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.14.1'
+	implementation group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.13'
+	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.0.0'
 		
 	// Tika
-    implementation group: 'org.apache.tika', name: 'tika-core', version:'1.20'
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'1.20'
-    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.27.2.1'
-    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.3.0'
+    implementation group: 'org.apache.tika', name: 'tika-core', version:'2.0.0'
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.0.0'
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.36.0.1'
+    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
     
     // Commons
-    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
     
 	
 }
