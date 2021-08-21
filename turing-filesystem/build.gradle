@@ -24,6 +24,13 @@ tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 }
 
+sonarqube {
+  properties {
+    property "sonar.projectKey", "openturing_turing"
+    property "sonar.organization", "alegauss-github"
+    property "sonar.host.url", "https://sonarcloud.io"
+  }
+}
 
 jar {
     baseName = 'turing-filesystem'
