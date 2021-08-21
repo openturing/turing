@@ -3,16 +3,14 @@ buildscript {
 		mavenCentral()
 		 jcenter()
 	}
-	dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
-        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:3.3"
-    }
+}
+plugins {
+  id 'com.github.johnrengelman.shadow' version "6.1.0"
+  id 'java'
+  id 'eclipse'
+  id "org.sonarqube" version "3.3"
 }
 
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'com.github.johnrengelman.shadow'
-apply plugin: 'org.sonarqube'
 
 group = 'com.viglet.turing.filesystem'
 version = '0.3.4'
@@ -29,7 +27,7 @@ tasks.withType(JavaCompile) {
 
 jar {
     baseName = 'turing-filesystem'
-    version =  '0.3.1'
+    version =  '0.3.4'
     manifest {
         attributes 'Main-Class': 'com.viglet.turing.tool.filesystem.TurFSImportTool'
     }
