@@ -17,8 +17,8 @@ version = '0.3.4'
 
 description = "turing-filesystem"
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 14
+targetCompatibility = 14
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
