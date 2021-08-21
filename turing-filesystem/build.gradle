@@ -5,6 +5,7 @@ buildscript {
 	}
 	dependencies {
         classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:3.3"
     }
 }
 
@@ -14,7 +15,7 @@ apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'org.sonarqube'
 
 group = 'com.viglet.turing.filesystem'
-version = '0.3.3'
+version = '0.3.4'
 
 description = "turing-filesystem"
 
@@ -25,13 +26,6 @@ tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 }
 
-sonarqube {
-  properties {
-    property "sonar.projectKey", "openturing_turing"
-    property "sonar.organization", "alegauss-github"
-    property "sonar.host.url", "https://sonarcloud.io"
-  }
-}
 
 jar {
     baseName = 'turing-filesystem'
