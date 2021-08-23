@@ -23,6 +23,7 @@ plugins {
   id 'eclipse'
   id 'jacoco'
   id 'org.sonarqube' version '3.3'
+}
 
 sonarqube {
   properties {
