@@ -56,7 +56,31 @@ It can read PDFs and Documents and convert to plain text and also it uses OCR to
 
 Semantic Navigation uses Connectors to index the content from many sources.
 
-More information: <<#connectors>>
+==== Apache Nutch
+Plugin for Apache Nutch to index content using crawler.
+
+Learn more at https://docs.viglet.com/turing/connectors/#nutch
+
+==== Database
+Command line that uses the same concept as sqoop (https://sqoop.apache.org/), to create complex queries and map attributes to index based on the result.
+
+Learn more at https://docs.viglet.com/turing/connectors/#database
+
+==== File System
+Command line to index files, extracting text from files such as Word, Excel, PDF, including images, through OCR.
+
+Learn more at https://docs.viglet.com/turing/connectors/#file-system
+
+==== OpenText WEM Listener
+OpenText WEM Listener to publish content to Viglet Turing.
+
+Learn more at https://docs.viglet.com/turing/connectors/#wem
+
+==== Wordpress
+Wordpress plugin that allows you to index posts.
+
+Learn more at https://docs.viglet.com/turing/connectors/#wordpress
+
 
 === Named Entity Recognition (NER)
 With NLP it is possible to detect entities such as:

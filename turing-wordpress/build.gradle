@@ -27,13 +27,5 @@ sonarqube {
     property "sonar.organization", "viglet-turing"
     property "sonar.host.url", "https://sonarcloud.io"
     property "sonar.sources", "src"
-    property "sonar.tests", "src"
- 
-    //property "sonar.ts.tslint.configPath", "tslint.json"
-    //property "sonar.ts.coverage.lcovReportPath", "coverage/coverage.lcov"
-    // if using local tslint then enable the line below
-    // sonar.ts.tslint.outputPath=reports/lint_issues.json
-    //property "sonar.genericcoverage.unitTestReportPaths", "reports/ut_report.xml"
-
   }
 }
