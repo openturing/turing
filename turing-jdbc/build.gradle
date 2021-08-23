@@ -6,7 +6,7 @@ buildscript {
 }
 
 plugins {
-  id 'com.github.johnrengelman.shadow' version "6.1.0"
+  id 'com.github.johnrengelman.shadow' version "7.0.0"
   id 'java'
   id 'eclipse'
   id "org.sonarqube" version "3.3"
@@ -25,8 +25,8 @@ tasks.withType(JavaCompile) {
 
 sonarqube {
   properties {
-    property "sonar.projectKey", "openturing_turing"
-    property "sonar.organization", "alegauss-github"
+    property "sonar.projectKey", "turing-jdbc"
+    property "sonar.organization", "viglet-turing"
     property "sonar.host.url", "https://sonarcloud.io"
   }
 }
