@@ -27,10 +27,8 @@ sonarqube {
     property "sonar.organization", "viglet-turing"
     property "sonar.host.url", "https://sonarcloud.io"
     property "sonar.sources", "src"
-    property "sonar.exclusions", "**/node_modules/**,**/*.spec.ts"
     property "sonar.tests", "src"
-    property "sonar.test.inclusions", "**/*.spec.ts"
-
+ 
     //property "sonar.ts.tslint.configPath", "tslint.json"
     //property "sonar.ts.coverage.lcovReportPath", "coverage/coverage.lcov"
     // if using local tslint then enable the line below
