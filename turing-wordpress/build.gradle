@@ -1,0 +1,41 @@
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+}
+
+plugins {
+  id 'java'
+  id 'eclipse'
+  id "org.sonarqube" version "3.3"
+}
+
+group = 'com.viglet.turing.wordpress'
+
+description = "turing-wordpress"
+
+sourceCompatibility = 14
+targetCompatibility = 14
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+sonarqube {
+  properties {
+    property "sonar.projectKey", "turing-wordpress"
+    property "sonar.organization", "viglet-turing"
+    property "sonar.host.url", "https://sonarcloud.io"
+    property "sonar.sources", "src"
+    property "sonar.exclusions", "**/node_modules/**,**/*.spec.ts"
+    property "sonar.tests", "src"
+    property "sonar.test.inclusions", "**/*.spec.ts"
+
+    //property "sonar.ts.tslint.configPath", "tslint.json"
+    //property "sonar.ts.coverage.lcovReportPath", "coverage/coverage.lcov"
+    // if using local tslint then enable the line below
+    // sonar.ts.tslint.outputPath=reports/lint_issues.json
+    //property "sonar.genericcoverage.unitTestReportPaths", "reports/ut_report.xml"
+
+  }
+}
