@@ -14,14 +14,14 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
   private turSNSite: Observable<TurSNSite>;
   private turSNSiteSEFields: Observable<TurSNSiteField[]>;
   private turSNSiteNLPFields: Observable<TurSNSiteField[]>;
-  private id: string;
+  private siteId: string;
   constructor(private readonly notifier: NotifierService,
     private turSNSiteService: TurSNSiteService,
     private route: ActivatedRoute) {
-    this.id = this.route.parent.parent.snapshot.paramMap.get('id');
-    this.turSNSiteSEFields = turSNSiteService.getFieldsByType(this.id, "se");
-    this.turSNSiteNLPFields = turSNSiteService.getFieldsByType(this.id, "ner");
-    this.turSNSite = this.turSNSiteService.get(this.id);
+    this.siteId = this.route.parent.parent.snapshot.paramMap.get('id');
+    this.turSNSiteSEFields = turSNSiteService.getFieldsByType(this.siteId, "se");
+    this.turSNSiteNLPFields = turSNSiteService.getFieldsByType(this.siteId, "ner");
+    this.turSNSite = this.turSNSiteService.get(this.siteId);
 
   }
 
@@ -37,11 +37,24 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
     return this.turSNSiteNLPFields;
   }
   getId(): string {
-    return this.id;
+    return this.siteId;
   }
   ngOnInit(): void {
   }
-
+  public updateField(_turSNSiteField: TurSNSiteField, fieldName: string, event: Event) {
+    _turSNSiteField[fieldName] = event ? 1 : 0;
+    this.turSNSiteService.saveField(this.siteId, _turSNSiteField).subscribe(
+      (turSNSiteField: TurSNSiteField) => {
+        _turSNSiteField = turSNSiteField;
+        this.notifier.notify("success", turSNSiteField.name.concat(" semantic navigation field was updated."));
+      },
+      response => {
+        this.notifier.notify("error", "Semantic navigation field has a error: " + response);
+      },
+      () => {
+        // console.log('The POST observable is now completed.');
+      });
+  }
   public saveSite(_turSNSite: TurSNSite) {
     this.turSNSiteService.save(_turSNSite).subscribe(
       (turSNSite: TurSNSite) => {
@@ -49,7 +62,7 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
         this.notifier.notify("success", turSNSite.name.concat(" semantic navigation site was updated."));
       },
       response => {
-        this.notifier.notify("error", "SN site was error: " + response);
+        this.notifier.notify("error", "SN site has a error: " + response);
       },
       () => {
         // console.log('The POST observable is now completed.');

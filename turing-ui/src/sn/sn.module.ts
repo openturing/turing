@@ -14,6 +14,7 @@ import { TurSNSiteUIPageComponent } from './component/site/sn-site-ui-page.compo
 import { TurLocaleService } from '../locale/service/locale.service';
 import { TurSEInstanceService } from 'src/se/service/se-instance.service';
 import { TurNLPInstanceService } from 'src/nlp/service/nlp-instance.service';
+import { TurSNFieldTypeService } from 'src/sn/service/sn-field-type.service';
 import { TurSNSiteFieldRootPageComponent } from './component/site/field/sn-site-field-root-page.component';
 import { TurSNSiteFieldListPageComponent } from './component/site/field/sn-site-field-list-page.component';
 import { TurSNSiteFieldPageComponent } from './component/site/field/sn-site-field-page.component';
@@ -41,7 +42,8 @@ import { TurSNSiteFieldPageComponent } from './component/site/field/sn-site-fiel
     TurSNSiteService,
     TurSEInstanceService,
     TurNLPInstanceService,
-    TurLocaleService
+    TurLocaleService,
+    TurSNFieldTypeService
   ]
 })
 export class TurSNModule { }

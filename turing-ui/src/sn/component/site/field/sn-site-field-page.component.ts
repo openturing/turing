@@ -5,6 +5,8 @@ import { NotifierService } from 'angular-notifier';
 import { TurSNSiteService } from 'src/sn/service/sn-site.service';
 import { ActivatedRoute } from '@angular/router';
 import { TurSNSiteField } from 'src/sn/model/sn-site-field.model';
+import { TurSNFieldTypeService } from 'src/sn/service/sn-field-type.service';
+import { TurSNFieldType } from 'src/sn/model/sn-field-type.model';
 
 @Component({
   selector: 'sn-site-page',
@@ -13,15 +15,22 @@ import { TurSNSiteField } from 'src/sn/model/sn-site-field.model';
 export class TurSNSiteFieldPageComponent implements OnInit {
   private turSNSite: Observable<TurSNSite>;
   private turSNSiteField: Observable<TurSNSiteField>;
+  private turSNFieldTypes: Observable<TurSNFieldType[]>;
   private siteId: string;
 
   constructor(private readonly notifier: NotifierService,
     private turSNSiteService: TurSNSiteService,
+    private turSNFieldTypeService: TurSNFieldTypeService,
     private route: ActivatedRoute) {
     let siteId = this.route.parent.parent.snapshot.paramMap.get('id');
     let fieldId = this.route.snapshot.paramMap.get('fieldId');
     this.turSNSite = this.turSNSiteService.get(this.siteId);
     this.turSNSiteField = this.turSNSiteService.getField(this.siteId, fieldId);
+    this.turSNFieldTypes = this.turSNFieldTypeService.query();
+  }
+
+  getTurSNFieldTypes(): Observable<TurSNFieldType[]> {
+    return this.turSNFieldTypes;
   }
 
   getTurSNSite(): Observable<TurSNSite> {

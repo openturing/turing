@@ -43,19 +43,19 @@
         </div>
         <div class="d-table-cell col-2">
           <input [(ngModel)]="snSiteField.enabled" type="checkbox"
-            (ngModelChange)="snSiteField.enabled = $event ? 1 : 0" />
+            (ngModelChange)="updateField(snSiteField, 'enabled', $event)" />
         </div>
         <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.mlt" type="checkbox" (ngModelChange)="snSiteField.mlt = $event ? 1 : 0" />
+          <input [(ngModel)]="snSiteField.mlt" type="checkbox" (ngModelChange)="updateField(snSiteField, 'mlt', $event)" />
         </div>
         <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.facet" type="checkbox" (ngModelChange)="snSiteField.facet = $event ? 1 : 0" />
+          <input [(ngModel)]="snSiteField.facet" type="checkbox" (ngModelChange)="updateField(snSiteField, 'facet', $event)" />
         </div>
         <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.hl" type="checkbox" (ngModelChange)="snSiteField.hl = $event ? 1 : 0" />
+          <input [(ngModel)]="snSiteField.hl" type="checkbox" (ngModelChange)="updateField(snSiteField, 'hl', $event)" />
         </div>
         <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.nlp" type="checkbox" (ngModelChange)="snSiteField.nlp = $event ? 1 : 0" />
+          <input [(ngModel)]="snSiteField.nlp" type="checkbox" (ngModelChange)="updateField(snSiteField, 'nlp', $event)" />
         </div>
       </div>
     </div>
@@ -101,16 +101,16 @@
         </div>
         <div class="d-table-cell col-2">
           <input [(ngModel)]="snSiteField.enabled" type="checkbox"
-            (ngModelChange)="snSiteField.enabled = $event ? 1 : 0" />
+            (ngModelChange)="updateField(snSiteField, 'enabled', $event)" />
         </div>
         <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.mlt" type="checkbox" (ngModelChange)="snSiteField.mlt = $event ? 1 : 0" />
+          <input [(ngModel)]="snSiteField.mlt" type="checkbox" (ngModelChange)="updateField(snSiteField, 'mlt', $event)" />
         </div>
         <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.facet" type="checkbox" (ngModelChange)="snSiteField.facet = $event ? 1 : 0" />
+          <input [(ngModel)]="snSiteField.facet" type="checkbox" (ngModelChange)="updateField(snSiteField, 'facet', $event)" />
         </div>
         <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.hl" type="checkbox" (ngModelChange)="snSiteField.hl = $event ? 1 : 0" />
+          <input [(ngModel)]="snSiteField.hl" type="checkbox" (ngModelChange)="updateField(snSiteField, 'hl', $event)" />
         </div>
       </div>
     </div>
