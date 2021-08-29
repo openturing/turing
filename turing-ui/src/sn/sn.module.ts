@@ -18,6 +18,8 @@ import { TurSNFieldTypeService } from 'src/sn/service/sn-field-type.service';
 import { TurSNSiteFieldRootPageComponent } from './component/site/field/sn-site-field-root-page.component';
 import { TurSNSiteFieldListPageComponent } from './component/site/field/sn-site-field-list-page.component';
 import { TurSNSiteFieldPageComponent } from './component/site/field/sn-site-field-page.component';
+import { TurSNSiteAdvertisingRootPageComponent } from './component/site/advertising/sn-site-advertising-root-page.component';
+
 @NgModule({
   declarations: [
     TurSNRootPageComponent,
@@ -27,7 +29,8 @@ import { TurSNSiteFieldPageComponent } from './component/site/field/sn-site-fiel
     TurSNSiteFieldRootPageComponent,
     TurSNSiteFieldListPageComponent,
     TurSNSiteFieldPageComponent,
-    TurSNSiteListPageComponent
+    TurSNSiteListPageComponent,
+    TurSNSiteAdvertisingRootPageComponent
   ],
   imports: [
     CommonModule,

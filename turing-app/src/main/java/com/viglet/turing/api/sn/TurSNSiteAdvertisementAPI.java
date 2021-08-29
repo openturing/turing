@@ -17,56 +17,36 @@
 
 package com.viglet.turing.api.sn;
 
-import java.util.ArrayList;
 import java.util.List;
 
-
+import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.viglet.turing.bean.sn.field.type.TurSNFieldExtType;
-import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.sn.template.TurSNTemplate;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
-@RequestMapping("/api/sn/field/ext")
-@Api(tags = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
-public class TurSNFieldExtAPI {
+@RequestMapping("/api/sn/{snSiteId}/advertisement")
+@Api(tags = "Semantic Navigation Advertisement", description = "Semantic Navigation Advertisement API")
+public class TurSNSiteAdvertisementAPI {
 
 	@Autowired
 	TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-	@Autowired
 	TurSNSiteFieldRepository turSNSiteFieldRepository;
-	@Autowired
-	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
-	@Autowired
-	TurNLPEntityRepository turNLPEntityRepository;
-	@Autowired
-	TurSNTemplate turSNTemplate;
-	
-	
-	
-	@ApiOperation(value = "Show a Semantic Navigation Site Field Ext Types")
-	@GetMapping("/types")
-	public List<TurSNFieldExtType> TurSNFieldExtTypeGet() {
-		List<TurSNFieldExtType> types = new ArrayList<>();
-		types.add(new TurSNFieldExtType("BOOL", "Boolean"));
-		types.add(new TurSNFieldExtType("DATE", "Date"));
-		types.add(new TurSNFieldExtType("LONG", "Long"));
-		types.add(new TurSNFieldExtType("INT", "Number"));
-		types.add(new TurSNFieldExtType("STRING", "Text"));
 
-		return types;
+	@ApiOperation(value = "Semantic Navigation Site Advertisement List")
+	@GetMapping
+	public List<TurSNSiteField> turSNSiteFieldList(@PathVariable String snSiteId) throws JSONException {
+		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
+		return this.turSNSiteFieldRepository.findByTurSNSite(turSNSite);
 	}
 }

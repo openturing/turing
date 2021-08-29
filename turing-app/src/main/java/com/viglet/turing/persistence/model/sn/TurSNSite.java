@@ -31,6 +31,7 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 
 /**
  * The persistent class for the vigServices database table.
@@ -127,6 +128,13 @@ public class TurSNSite implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteFieldExt> turSNSiteFieldExts;
 
+	// bi-directional many-to-one association to TurSNSiteFieldExt
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
+	@Cascade({ CascadeType.ALL })
+	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNSiteSpotlight> turSNSiteSpotlights;
+	
 	public TurSNSite() {
 	}
 
