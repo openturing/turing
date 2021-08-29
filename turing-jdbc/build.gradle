@@ -50,7 +50,7 @@ repositories {
 
 dependencies {
 	implementation group: 'com.beust', name: 'jcommander', version: '1.81'	
-	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.4'	
+	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.5'	
 	implementation group: 'org.json', name: 'json', version:'20210307'
 	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.13'
 	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.14.1'
@@ -58,7 +58,7 @@ dependencies {
 	// Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version:'2.1.0'
     implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.1.0'
-    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.36.0.1'
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.36.0.2'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
     
     // Commons
