@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.bean.sn.field.type.TurSNFieldExtType;
+import com.viglet.turing.api.sn.bean.TurSNFieldExtType;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;

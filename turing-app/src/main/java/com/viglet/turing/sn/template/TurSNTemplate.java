@@ -24,9 +24,15 @@ import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
+import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
+import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
+import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
 import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 
@@ -37,13 +43,19 @@ import com.viglet.turing.sn.TurSNFieldType;
 
 @Component
 public class TurSNTemplate {
-	
+
 	@Autowired
 	private TurSNSiteFieldRepository turSNSiteFieldRepository;
 	@Autowired
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
+	@Autowired
+	private TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
+	@Autowired
+	private TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
+	@Autowired
+	private TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository;
 	
 	public void defaultSNUI(TurSNSite turSNSite) {
 		turSNSite.setRowsPerPage(10);
@@ -213,7 +225,7 @@ public class TurSNTemplate {
 		turSNSiteFieldExt.setTurSNSite(turSNSite);
 
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-		
+
 		// URL
 		turSNSiteField = new TurSNSiteField();
 		turSNSiteField.setName("url");
@@ -239,7 +251,7 @@ public class TurSNTemplate {
 		turSNSiteFieldExt.setTurSNSite(turSNSite);
 
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-		
+
 		// Publication Date
 		turSNSiteField = new TurSNSiteField();
 		turSNSiteField.setName("publication_date");
@@ -265,7 +277,7 @@ public class TurSNTemplate {
 		turSNSiteFieldExt.setTurSNSite(turSNSite);
 
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-		
+
 		// Modification Date
 		turSNSiteField = new TurSNSiteField();
 		turSNSiteField.setName("modification_date");
@@ -291,7 +303,7 @@ public class TurSNTemplate {
 		turSNSiteFieldExt.setTurSNSite(turSNSite);
 
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-		
+
 		// Site
 		turSNSiteField = new TurSNSiteField();
 		turSNSiteField.setName("site");
@@ -317,7 +329,7 @@ public class TurSNTemplate {
 		turSNSiteFieldExt.setTurSNSite(turSNSite);
 
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-		
+
 		// Author
 		turSNSiteField = new TurSNSiteField();
 		turSNSiteField.setName("author");
@@ -343,7 +355,7 @@ public class TurSNTemplate {
 		turSNSiteFieldExt.setTurSNSite(turSNSite);
 
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-		
+
 		// Section
 		turSNSiteField = new TurSNSiteField();
 		turSNSiteField.setName("section");
@@ -369,5 +381,25 @@ public class TurSNTemplate {
 		turSNSiteFieldExt.setTurSNSite(turSNSite);
 
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
+	}
+
+	public void createSpotlight(TurSNSite turSNSite) {
+		TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
+		turSNSiteSpotlight.setDescription("Spotlight Sample");
+		turSNSiteSpotlight.setName("Spotlight Sample");
+		turSNSiteSpotlight.setTurSNSite(turSNSite);
+		turSNSiteSpotlightRepository.save(turSNSiteSpotlight);
+
+		TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument();
+		turSNSiteSpotlightDocument.setPosition(1);
+		turSNSiteSpotlightDocument.setTitle("Sample Document");
+		turSNSiteSpotlightDocument.setTurSNSiteSpotlight(turSNSiteSpotlight);
+		turSNSiteSpotlightDocument.setType("News");
+		turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
+		
+		TurSNSiteSpotlightTerm turSNSiteSpotlightTerm = new TurSNSiteSpotlightTerm();
+		turSNSiteSpotlightTerm.setTerm("sample");
+		turSNSiteSpotlightTerm.setTurSNSiteSpotlight(turSNSiteSpotlight);
+		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm);
 	}
 }

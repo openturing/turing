@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,11 +31,12 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.se.field.TurSEFieldType;
 
 /**
- * The persistent class for the turSNSiteAdvertisement database table.
+ * The persistent class for the turSNSiteSpotlight database table.
  * 
+ * @author Alexandre Oliveira
+ * @since 0.3.4
  */
 @Entity
 @Table(name = "turSNSiteSpotlight")
@@ -55,14 +56,18 @@ public class TurSNSiteSpotlight implements Serializable {
 	@Column(nullable = true, length = 255)
 	private String description;
 
-	@Column(nullable = false)
-	private TurSEFieldType rule;
-
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)
-	@JsonBackReference (value="turSNSiteField-turSNSite")
+	@JsonBackReference (value="turSNSiteSpotlight-turSNSite")
 	private TurSNSite turSNSite;
+	
+	// bi-directional many-to-one association to TurSNSiteFieldExt
+	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true)
+	@Cascade({ CascadeType.ALL })
+	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms;
 	
 	// bi-directional many-to-one association to TurSNSiteFieldExt
 	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true)
@@ -95,14 +100,6 @@ public class TurSNSiteSpotlight implements Serializable {
 		this.description = description;
 	}
 
-	public TurSEFieldType getRule() {
-		return rule;
-	}
-
-	public void setRule(TurSEFieldType rule) {
-		this.rule = rule;
-	}
-
 	public TurSNSite getTurSNSite() {
 		return turSNSite;
 	}
@@ -117,6 +114,14 @@ public class TurSNSiteSpotlight implements Serializable {
 
 	public void setTurSNSiteSpotlightDocuments(Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments) {
 		this.turSNSiteSpotlightDocuments = turSNSiteSpotlightDocuments;
+	}
+
+	public Set<TurSNSiteSpotlightTerm> getTurSNSiteSpotlightTerms() {
+		return turSNSiteSpotlightTerms;
+	}
+
+	public void setTurSNSiteSpotlightTerms(Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms) {
+		this.turSNSiteSpotlightTerms = turSNSiteSpotlightTerms;
 	}
 
 

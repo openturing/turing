@@ -19,34 +19,38 @@ package com.viglet.turing.api.sn;
 
 import java.util.List;
 
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteField;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
+/**
+ * @author Alexandre Oliveira
+ * @since 0.3.4
+ */
+
 @RestController
-@RequestMapping("/api/sn/{snSiteId}/advertisement")
-@Api(tags = "Semantic Navigation Advertisement", description = "Semantic Navigation Advertisement API")
+@RequestMapping("/api/sn/{snSiteId}/spotlight")
+@Api(tags = "Semantic Navigation Spotlight", description = "Semantic Navigation Spotlight API")
 public class TurSNSiteAdvertisementAPI {
 
 	@Autowired
 	TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	TurSNSiteFieldRepository turSNSiteFieldRepository;
+	TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
 
-	@ApiOperation(value = "Semantic Navigation Site Advertisement List")
+	@ApiOperation(value = "Semantic Navigation Site Spotlight List")
 	@GetMapping
-	public List<TurSNSiteField> turSNSiteFieldList(@PathVariable String snSiteId) throws JSONException {
+	public List<TurSNSiteSpotlight> turSNSiteSpotlightList(@PathVariable String snSiteId) {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
-		return this.turSNSiteFieldRepository.findByTurSNSite(turSNSite);
+		return this.turSNSiteSpotlightRepository.findByTurSNSite(turSNSite);
 	}
 }

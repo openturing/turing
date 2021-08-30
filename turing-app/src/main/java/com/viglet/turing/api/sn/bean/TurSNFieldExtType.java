@@ -1,4 +1,4 @@
-package com.viglet.turing.bean.sn.field.type;
+package com.viglet.turing.api.sn.bean;
 
 public class TurSNFieldExtType {
 

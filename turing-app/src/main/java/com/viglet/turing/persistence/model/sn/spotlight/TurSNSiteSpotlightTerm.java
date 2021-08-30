@@ -33,9 +33,9 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
  * @since 0.3.4
  */
 @Entity
-@Table(name = "turSNSiteSpotlightDocument")
-@NamedQuery(name = "TurSNSiteSpotlightDocument.findAll", query = "SELECT snssd FROM TurSNSiteSpotlightDocument snssd")
-public class TurSNSiteSpotlightDocument implements Serializable {
+@Table(name = "turSNSiteSpotlightTerm")
+@NamedQuery(name = "TurSNSiteSpotlightTerm.findAll", query = "SELECT snsst FROM TurSNSiteSpotlightTerm snsst")
+public class TurSNSiteSpotlightTerm implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -44,19 +44,13 @@ public class TurSNSiteSpotlightDocument implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	@Column(nullable = true, length = 50)
-	private int position;
-
 	@Column(nullable = true, length = 255)
-	private String title;
-
-	@Column(nullable = true, length = 255)
-	private String type;
+	private String term;
 
 	// bi-directional many-to-one association to TurSNSiteSpotlight
 	@ManyToOne
 	@JoinColumn(name = "sn_site_spotlight_id", nullable = false)
-	@JsonBackReference (value="turSNSiteSpotlightDocument-turSNSiteSpotlight")
+	@JsonBackReference (value="turSNSiteSpotlightTerm-turSNSiteSpotlight")
 	private TurSNSiteSpotlight turSNSiteSpotlight;
 
 	public String getId() {
@@ -67,28 +61,12 @@ public class TurSNSiteSpotlightDocument implements Serializable {
 		this.id = id;
 	}
 
-	public int getPosition() {
-		return position;
+	public String getTerm() {
+		return term;
 	}
 
-	public void setPosition(int position) {
-		this.position = position;
-	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
+	public void setTerm(String term) {
+		this.term = term;
 	}
 
 	public TurSNSiteSpotlight getTurSNSiteSpotlight() {
@@ -98,4 +76,5 @@ public class TurSNSiteSpotlightDocument implements Serializable {
 	public void setTurSNSiteSpotlight(TurSNSiteSpotlight turSNSiteSpotlight) {
 		this.turSNSiteSpotlight = turSNSiteSpotlight;
 	}
+
 }
