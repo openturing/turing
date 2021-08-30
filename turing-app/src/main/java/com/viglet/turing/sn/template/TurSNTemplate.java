@@ -17,6 +17,8 @@
 
 package com.viglet.turing.sn.template;
 
+import java.util.Date;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -387,6 +389,7 @@ public class TurSNTemplate {
 		TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
 		turSNSiteSpotlight.setDescription("Spotlight Sample");
 		turSNSiteSpotlight.setName("Spotlight Sample");
+		turSNSiteSpotlight.setDate(new Date());
 		turSNSiteSpotlight.setTurSNSite(turSNSite);
 		turSNSiteSpotlightRepository.save(turSNSiteSpotlight);
 
@@ -398,8 +401,13 @@ public class TurSNTemplate {
 		turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
 		
 		TurSNSiteSpotlightTerm turSNSiteSpotlightTerm = new TurSNSiteSpotlightTerm();
-		turSNSiteSpotlightTerm.setTerm("sample");
+		turSNSiteSpotlightTerm.setName("sample");
 		turSNSiteSpotlightTerm.setTurSNSiteSpotlight(turSNSiteSpotlight);
 		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm);
+		
+		TurSNSiteSpotlightTerm turSNSiteSpotlightTerm2 = new TurSNSiteSpotlightTerm();
+		turSNSiteSpotlightTerm2.setName("sample2");
+		turSNSiteSpotlightTerm2.setTurSNSiteSpotlight(turSNSiteSpotlight);
+		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm2);
 	}
 }

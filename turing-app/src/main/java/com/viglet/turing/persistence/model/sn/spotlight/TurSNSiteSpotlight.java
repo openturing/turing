@@ -18,6 +18,7 @@
 package com.viglet.turing.persistence.model.sn.spotlight;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Set;
 
 import javax.persistence.*;
@@ -52,23 +53,26 @@ public class TurSNSiteSpotlight implements Serializable {
 
 	@Column(nullable = false, length = 50)
 	private String name;
-	
+
 	@Column(nullable = true, length = 255)
 	private String description;
-
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date date;
+	
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)
-	@JsonBackReference (value="turSNSiteSpotlight-turSNSite")
+	@JsonBackReference(value = "turSNSiteSpotlight-turSNSite")
 	private TurSNSite turSNSite;
-	
+
 	// bi-directional many-to-one association to TurSNSiteFieldExt
 	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true)
 	@Cascade({ CascadeType.ALL })
 	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms;
-	
+
 	// bi-directional many-to-one association to TurSNSiteFieldExt
 	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true)
 	@Cascade({ CascadeType.ALL })
@@ -124,5 +128,12 @@ public class TurSNSiteSpotlight implements Serializable {
 		this.turSNSiteSpotlightTerms = turSNSiteSpotlightTerms;
 	}
 
+	public Date getDate() {
+		return date;
+	}
+
+	public void setDate(Date date) {
+		this.date = date;
+	}
 
 }

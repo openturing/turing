@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MomentModule } from 'ngx-moment';
 import { TurSNSiteService } from './service/sn-site.service';
 import { TurSNSiteListPageComponent } from './component/site/sn-site-list-page.component';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -15,10 +16,11 @@ import { TurLocaleService } from '../locale/service/locale.service';
 import { TurSEInstanceService } from 'src/se/service/se-instance.service';
 import { TurNLPInstanceService } from 'src/nlp/service/nlp-instance.service';
 import { TurSNFieldTypeService } from 'src/sn/service/sn-field-type.service';
+import { TurSNSiteSpotlightService } from 'src/sn/service/sn-site-spotlight.service';
 import { TurSNSiteFieldRootPageComponent } from './component/site/field/sn-site-field-root-page.component';
 import { TurSNSiteFieldListPageComponent } from './component/site/field/sn-site-field-list-page.component';
 import { TurSNSiteFieldPageComponent } from './component/site/field/sn-site-field-page.component';
-import { TurSNSiteAdvertisingRootPageComponent } from './component/site/advertising/sn-site-advertising-root-page.component';
+import { TurSNSiteSpotlightRootPageComponent } from './component/site/spotlight/sn-site-spotlight-root-page.component';
 
 @NgModule({
   declarations: [
@@ -30,7 +32,7 @@ import { TurSNSiteAdvertisingRootPageComponent } from './component/site/advertis
     TurSNSiteFieldListPageComponent,
     TurSNSiteFieldPageComponent,
     TurSNSiteListPageComponent,
-    TurSNSiteAdvertisingRootPageComponent
+    TurSNSiteSpotlightRootPageComponent
   ],
   imports: [
     CommonModule,
@@ -39,14 +41,16 @@ import { TurSNSiteAdvertisingRootPageComponent } from './component/site/advertis
     OcticonsModule,
     TurSNRoutingModule,
     ShioCommonsModule,
-    RouterModule
+    RouterModule,
+    MomentModule
   ],
   providers: [
     TurSNSiteService,
     TurSEInstanceService,
     TurNLPInstanceService,
     TurLocaleService,
-    TurSNFieldTypeService
+    TurSNFieldTypeService,
+    TurSNSiteSpotlightService
   ]
 })
 export class TurSNModule { }

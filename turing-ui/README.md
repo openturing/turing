@@ -1,10 +1,3 @@
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=openturing_turing&metric=alert_status)](https://sonarcloud.io/dashboard?id=openturing_turing) [![Twitter](https://img.shields.io/twitter/follow/openturing.svg?style=social&label=Follow)](https://twitter.com/intent/follow?screen_name=openturing)
-
-
-**If you'd like to contribute to Turing AI UI Primer, be sure to review the [contribution
-guidelines](CONTRIBUTING.md).**
-
-**We use [GitHub issues](https://github.com/openturing/turing/issues) for tracking requests and bugs.**
 
 # Installation
 

@@ -10,7 +10,7 @@ import { TurSNSiteUIPageComponent } from './component/site/sn-site-ui-page.compo
 import { TurSNSiteFieldRootPageComponent } from './component/site/field/sn-site-field-root-page.component';
 import { TurSNSiteFieldListPageComponent } from './component/site/field/sn-site-field-list-page.component';
 import { TurSNSiteFieldPageComponent } from './component/site/field/sn-site-field-page.component';
-import { TurSNSiteAdvertisingRootPageComponent } from './component/site/advertising/sn-site-advertising-root-page.component';
+import { TurSNSiteSpotlightRootPageComponent } from './component/site/spotlight/sn-site-spotlight-root-page.component';
 
 const routes: Routes = [
   {
@@ -19,7 +19,7 @@ const routes: Routes = [
       { path: 'site', component: TurSNSiteListPageComponent, canActivate: [AuthGuard] },
       { path: 'site/:id', component: TurSNSitePageComponent, canActivate: [AuthGuard] ,
       children: [
-        { path: 'advertising', component: TurSNSiteAdvertisingRootPageComponent, canActivate: [AuthGuard] },
+        { path: 'spotlight', component: TurSNSiteSpotlightRootPageComponent, canActivate: [AuthGuard] },
         { path: 'detail', component: TurSNSiteDetailPageComponent, canActivate: [AuthGuard] },
         { path: 'field', component: TurSNSiteFieldRootPageComponent, canActivate: [AuthGuard],
         children: [

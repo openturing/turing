@@ -25,7 +25,6 @@ import org.hibernate.annotations.GenericGenerator;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
-
 /**
  * The persistent class for the turSNSiteSpotlightDocument database table.
  * 
@@ -45,12 +44,12 @@ public class TurSNSiteSpotlightTerm implements Serializable {
 	private String id;
 
 	@Column(nullable = true, length = 255)
-	private String term;
+	private String name;
 
 	// bi-directional many-to-one association to TurSNSiteSpotlight
 	@ManyToOne
 	@JoinColumn(name = "sn_site_spotlight_id", nullable = false)
-	@JsonBackReference (value="turSNSiteSpotlightTerm-turSNSiteSpotlight")
+	@JsonBackReference(value = "turSNSiteSpotlightTerm-turSNSiteSpotlight")
 	private TurSNSiteSpotlight turSNSiteSpotlight;
 
 	public String getId() {
@@ -61,12 +60,12 @@ public class TurSNSiteSpotlightTerm implements Serializable {
 		this.id = id;
 	}
 
-	public String getTerm() {
-		return term;
+	public String getName() {
+		return name;
 	}
 
-	public void setTerm(String term) {
-		this.term = term;
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public TurSNSiteSpotlight getTurSNSiteSpotlight() {
