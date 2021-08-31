@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,6 +50,12 @@ public class TurNLPEntityAPI {
 		return this.turNLPEntityRepository.findAll();
 	}
 
+	@ApiOperation(value = "Entity structure")
+	@GetMapping("/structure")
+	public TurNLPEntity turNLPEntityStructure() {
+		return new TurNLPEntity();
+
+	}
 	@ApiOperation(value = "Local Entity list")
 	@GetMapping("/local")
 	public List<TurNLPEntity> turNLPEntityLocal() throws JSONException {

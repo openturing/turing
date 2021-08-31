@@ -23,22 +23,32 @@ import { TurNLPInstance } from '../model/nlp-instance.model';
 
 @Injectable()
 export class TurNLPInstanceService {
-    constructor(private httpClient: HttpClient) { }
-    query(): Observable<TurNLPInstance[]> {
-        return this.httpClient.get<TurNLPInstance[]>(`${environment.apiUrl}/api/nlp`);
-    }
-    get(id: string): Observable<TurNLPInstance> {
-        return this.httpClient.get<TurNLPInstance>(`${environment.apiUrl}/api/nlp/${id}`);
-    }
+  constructor(private httpClient: HttpClient) { }
+  query(): Observable<TurNLPInstance[]> {
+    return this.httpClient.get<TurNLPInstance[]>(`${environment.apiUrl}/api/nlp`);
+  }
 
-    public save(turNLPInstance: TurNLPInstance): Observable<Object> {
-        return this.httpClient.put(`${environment.apiUrl}/api/nlp/${turNLPInstance.id}`,
-            JSON.stringify(turNLPInstance));
+  get(id: string): Observable<TurNLPInstance> {
+    return this.httpClient.get<TurNLPInstance>(`${environment.apiUrl}/api/nlp/${id}`);
+  }
 
+  getStructure(): Observable<TurNLPInstance> {
+    return this.httpClient.get<TurNLPInstance>(`${environment.apiUrl}/api/nlp/structure`);
+  }
+
+  public save(turNLPInstance: TurNLPInstance, newObject: boolean): Observable<Object> {
+    if (newObject) {
+      return this.httpClient.post(`${environment.apiUrl}/api/nlp`,
+        JSON.stringify(turNLPInstance));
     }
+    else {
+      return this.httpClient.put(`${environment.apiUrl}/api/nlp/${turNLPInstance.id}`,
+        JSON.stringify(turNLPInstance));
+    }
+  }
 
-    public delete(turNLPInstance: TurNLPInstance): Observable<Object> {
-      return this.httpClient.delete(`${environment.apiUrl}/api/nlp/${turNLPInstance.id}`);
+  public delete(turNLPInstance: TurNLPInstance): Observable<Object> {
+    return this.httpClient.delete(`${environment.apiUrl}/api/nlp/${turNLPInstance.id}`);
 
   }
 

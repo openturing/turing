@@ -1,7 +1,7 @@
 <div *ngIf="(getTurNLPEntity() | async) as nlpEntity; else loading">
   <div class="Subhead mt-4 mb-3">
     <div class="Subhead-heading">
-      <div class="d-flex">
+      <div *ngIf="!isNewObject()" class="d-flex">
         <div style="background-color: whitesmoke; height: 35px; border-radius: 50%;">
           <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="nlpEntity.name | lowercase">
           </svg>
@@ -10,15 +10,24 @@
           <span>{{nlpEntity.name}}</span>
         </div>
       </div>
+      <div *ngIf="isNewObject()" class="d-flex">
+        <div style="background-color: whitesmoke; height: 35px; border-radius: 50%;">
+          <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="'new'">
+          </svg>
+        </div>
+        <div class="ml-2">
+          <span>New Entity</span>
+        </div>
+      </div>
     </div>
     <div class="Subhead-actions">
-      <details #modalDelete id="modalDelete" class="details-reset details-overlay details-overlay-dark" style="display: unset;">
+      <details *ngIf="!isNewObject()" #modalDelete id="modalDelete"
+        class="details-reset details-overlay details-overlay-dark" style="display: unset;">
         <summary class="btn btn-sm btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" size="16"
             class="mr-1"></span>Delete</summary>
         <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast">
           <div class="Box-header">
-            <button
-              onclick='document.getElementById("modalDelete").removeAttribute("open");'
+            <button onclick='document.getElementById("modalDelete").removeAttribute("open");'
               class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
               <!-- <%= octicon "x" %> -->
               <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
@@ -66,8 +75,7 @@
       <label for="repo-description">Description</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="nlpEntity.description" class="form-control" type="text" id="repo-name"
-        style="width: 100%;" />
+      <input [(ngModel)]="nlpEntity.description" class="form-control" type="text" id="repo-name" style="width: 100%;" />
       <p class="note" id="help-text-for-checkbox">
         Description will appear on NLP entity list.
       </p>

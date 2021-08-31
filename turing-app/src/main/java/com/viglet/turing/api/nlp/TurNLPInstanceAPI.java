@@ -53,6 +53,7 @@ import com.viglet.turing.nlp.output.blazon.RedactionScript;
 import com.viglet.turing.nlp.output.blazon.SearchString;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 
@@ -94,6 +95,16 @@ public class TurNLPInstanceAPI {
 	@GetMapping("/{id}")
 	public TurNLPInstance turNLPInstanceGet(@PathVariable String id) throws JSONException {
 		return this.turNLPInstanceRepository.findById(id).get();
+	}
+
+	@ApiOperation(value = "Natural Language Processing structure")
+	@GetMapping("/structure")
+	public TurNLPInstance turNLPInstanceStructure() {
+		TurNLPInstance turNLPInstance = new TurNLPInstance();
+		turNLPInstance.setTurNLPVendor(new TurNLPVendor());
+		turNLPInstance.setLanguage("en_US");
+		return turNLPInstance;
+
 	}
 
 	@ApiOperation(value = "Update a Natural Language Processing")
@@ -179,10 +190,10 @@ public class TurNLPInstanceAPI {
 					try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
 						parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
 						contentFile.append(cleanTextContent(handlerInner.toString()));
-						
+
 					} catch (IOException | SAXException | TikaException e) {
 						logger.error(e);
-					} 
+					}
 					tempFile.deleteOnExit();
 				}
 			};
@@ -222,10 +233,10 @@ public class TurNLPInstanceAPI {
 				TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
 				for (String term : ((List<String>) entityType.getValue())) {
 					RedactionCommand redactionCommand = new RedactionCommand();
-					//redactionCommand.setComment(turNLPEntity.getName());
+					// redactionCommand.setComment(turNLPEntity.getName());
 					SearchString searchString = new SearchString();
 					searchString.setMatchWholeWord(true);
-					searchString.setString(String.format("%s",term));
+					searchString.setString(String.format("%s", term));
 					redactionCommand.setSearchString(searchString);
 					redactionCommands.add(redactionCommand);
 				}
@@ -244,14 +255,15 @@ public class TurNLPInstanceAPI {
 
 	private static String cleanTextContent(String text) {
 		if (logger.isDebugEnabled()) {
-			logger.debug(String.format("Original Text: %s", text.replaceAll("\n", "\\\\n \n").replaceAll("\t", "\\\\t \t")));
+			logger.debug(
+					String.format("Original Text: %s", text.replaceAll("\n", "\\\\n \n").replaceAll("\t", "\\\\t \t")));
 		}
 		// Remove 2 or more spaces
-		text = text.trim().replaceAll("\\t|\\r","\\n");
+		text = text.trim().replaceAll("\\t|\\r", "\\n");
 		text = text.trim().replaceAll(" +", " ");
-		
+
 		text = text.trim();
-		
+
 		if (logger.isDebugEnabled()) {
 			logger.debug(String.format("Cleaned Text: %s", text));
 		}

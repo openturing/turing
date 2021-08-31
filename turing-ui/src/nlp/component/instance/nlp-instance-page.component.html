@@ -2,7 +2,7 @@
 <div *ngIf="(getTurNLPInstance() | async) as nlpInstance; else loading">
   <div class="Subhead mt-4 mb-3">
     <div class="Subhead-heading">
-      <div class="d-flex">
+      <div *ngIf="!isNewObject()" class="d-flex">
         <div style="background-color: whitesmoke; height: 35px; border-radius: 50%;">
           <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="nlpInstance.title | lowercase">
           </svg>
@@ -11,16 +11,24 @@
           <span>{{nlpInstance.title}}</span>
         </div>
       </div>
+      <div *ngIf="isNewObject()" class="d-flex">
+        <div style="background-color: whitesmoke; height: 35px; border-radius: 50%;">
+          <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="'new'">
+          </svg>
+        </div>
+        <div class="ml-2">
+          <span>New Instance</span>
+        </div>
+      </div>
     </div>
     <div class="Subhead-actions">
-
-      <details id="modalDelete" class="details-reset details-overlay details-overlay-dark" style="display: unset;">
+      <details *ngIf="!isNewObject()" #modalDelete id="modalDelete"
+        class="details-reset details-overlay details-overlay-dark" style="display: unset;">
         <summary class="btn btn-sm btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" size="16"
             class="mr-1"></span>Delete</summary>
         <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast">
           <div class="Box-header">
-            <button
-              onclick='document.getElementById("modalDelete").removeAttribute("open");'
+            <button onclick='document.getElementById("modalDelete").removeAttribute("open");'
               class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
               <!-- <%= octicon "x" %> -->
               <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
@@ -49,9 +57,9 @@
         </details-dialog>
       </details>
 
-      <button (click)="save(nlpInstance)" type="button" class="btn btn-sm btn-primary">Update NLP instance</button>
+      <button (click)="save(nlpInstance)" type="button" class="btn btn-sm btn-primary">{{saveButtonCaption()}}</button>
     </div>
-    <div class="Subhead-description">{{nlpInstance.description}}</div>
+    <div *ngIf="!isNewObject()" class="Subhead-description">{{nlpInstance.description}}</div>
   </div>
   <div class="form-group">
     <div class="form-group-header">
