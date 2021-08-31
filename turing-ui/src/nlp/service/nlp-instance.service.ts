@@ -23,7 +23,9 @@ import { TurNLPInstance } from '../model/nlp-instance.model';
 
 @Injectable()
 export class TurNLPInstanceService {
+
   constructor(private httpClient: HttpClient) { }
+
   query(): Observable<TurNLPInstance[]> {
     return this.httpClient.get<TurNLPInstance[]>(`${environment.apiUrl}/api/nlp`);
   }

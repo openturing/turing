@@ -19,6 +19,7 @@ export class TurSEInstancePageComponent implements OnInit {
   private turSEInstance: Observable<TurSEInstance>;
   private turLocales: Observable<TurLocale[]>;
   private turSEVendors: Observable<TurSEVendor[]>;
+  private newObject: boolean = false;
 
   portControl = new FormControl(80, [Validators.max(100), Validators.min(0)])
 
@@ -30,11 +31,24 @@ export class TurSEInstancePageComponent implements OnInit {
     private turSEVendorService: TurSEVendorService,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
-    this.turSEVendors = turSEVendorService.query()
-    this.turLocales = turLocaleService.query()
-    let id = this.activatedRoute.snapshot.paramMap.get('id');
-    this.turSEInstance = this.turSEInstanceService.get(id);
 
+    this.turSEVendors = turSEVendorService.query();
+
+    this.turLocales = turLocaleService.query();
+
+    let id: string = this.activatedRoute.snapshot.paramMap.get('id');
+
+    this.newObject = (id.toLowerCase() === 'new');
+
+    this.turSEInstance = this.newObject ? this.turSEInstanceService.getStructure() : this.turSEInstanceService.get(id);
+  }
+
+  isNewObject(): boolean {
+    return this.newObject;
+  }
+
+  saveButtonCaption(): string {
+    return this.newObject ? "Create NLP instance" : "Update NLP instance";
   }
 
   getTurSEInstance(): Observable<TurSEInstance> {
@@ -56,10 +70,15 @@ export class TurSEInstancePageComponent implements OnInit {
   }
 
   public save(_turSEInstance: TurSEInstance) {
-    this.turSEInstanceService.save(_turSEInstance).subscribe(
+    this.turSEInstanceService.save(_turSEInstance, this.newObject).subscribe(
       (turSEInstance: TurSEInstance) => {
+        let message: string = this.newObject ? " Search engine instance was created." : " Search engine instance was updated.";
+
         _turSEInstance = turSEInstance;
-        this.notifier.notify("success", turSEInstance.title.concat(" SE instance was updated."));
+
+        this.notifier.notify("success", turSEInstance.title.concat(message));
+
+        this.router.navigate(['/console/se/instance']);
       },
       response => {
         this.notifier.notify("error", "SE instance was error: " + response);
@@ -72,7 +91,7 @@ export class TurSEInstancePageComponent implements OnInit {
   public delete(_turSEInstance: TurSEInstance) {
     this.turSEInstanceService.delete(_turSEInstance).subscribe(
       (turSEInstance: TurSEInstance) => {
-        this.notifier.notify("success", turSEInstance.title.concat(" SE instance was deleted."));
+        this.notifier.notify("success", _turSEInstance.title.concat(" SE instance was deleted."));
         this.modalDelete.nativeElement.removeAttribute("open");
         this.router.navigate(['/console/se/instance']);
       },

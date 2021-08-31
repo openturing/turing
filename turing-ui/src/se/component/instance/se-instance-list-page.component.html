@@ -3,15 +3,15 @@
     <div style="padding-bottom: 15px;">
       <div class="Subhead" style="padding-bottom: 20px;">
         <div style="flex: 1 1 auto;">
-          <input class="form-control" style="width: 50%;" type="text" placeholder="Find a SE Instance..."
-            aria-label="Find a SE Instance" />
+          <input class="form-control" style="width: 50%;" type="text" placeholder="Find a search engine instance..."
+            aria-label="Find a search engine instance" />
         </div>
         <div class="Subhead-actions">
           <button class="btn mr-2" role="button">
             <span octicon="upload" size="16" class="mr-1"></span> Import
-          </button> <button class="btn btn-primary" role="button">
+          </button> <a [routerLink]="['/console/se/instance/new']" class="btn btn-primary" role="button">
             <span octicon="package" size="16" class="mr-1"></span> New
-          </button>
+          </a>
         </div>
       </div>
     </div>

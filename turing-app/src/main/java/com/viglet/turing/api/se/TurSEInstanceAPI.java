@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.solr.TurSolr;
 
@@ -51,6 +52,16 @@ public class TurSEInstanceAPI {
 	@GetMapping
 	public List<TurSEInstance> turSEInstanceList() throws JSONException {
 		return this.turSEInstanceRepository.findAll();
+	}
+	
+	@ApiOperation(value = "Search Engine structure")
+	@GetMapping("/structure")
+	public TurSEInstance turNLPInstanceStructure() {
+		TurSEInstance turSEInstance = new TurSEInstance();
+		turSEInstance.setTurSEVendor(new TurSEVendor());
+		turSEInstance.setLanguage("en_US");
+		return turSEInstance;
+
 	}
 
 	@ApiOperation(value = "Show a Search Engine")

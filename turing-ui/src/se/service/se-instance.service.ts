@@ -23,22 +23,34 @@ import { TurSEInstance } from '../model/se-instance.model';
 
 @Injectable()
 export class TurSEInstanceService {
-    constructor(private httpClient: HttpClient) { }
-    query(): Observable<TurSEInstance[]> {
-        return this.httpClient.get<TurSEInstance[]>(`${environment.apiUrl}/api/se`);
-    }
-    get(id: string): Observable<TurSEInstance> {
-        return this.httpClient.get<TurSEInstance>(`${environment.apiUrl}/api/se/${id}`);
-    }
 
-    public save(turSEInstance: TurSEInstance): Observable<Object> {
-        return this.httpClient.put(`${environment.apiUrl}/api/se/${turSEInstance.id}`,
-            JSON.stringify(turSEInstance));
+  constructor(private httpClient: HttpClient) { }
 
+  query(): Observable<TurSEInstance[]> {
+    return this.httpClient.get<TurSEInstance[]>(`${environment.apiUrl}/api/se`);
+  }
+
+  get(id: string): Observable<TurSEInstance> {
+    return this.httpClient.get<TurSEInstance>(`${environment.apiUrl}/api/se/${id}`);
+  }
+
+  getStructure(): Observable<TurSEInstance> {
+    return this.httpClient.get<TurSEInstance>(`${environment.apiUrl}/api/se/structure`);
+  }
+
+  public save(turSEInstance: TurSEInstance, newObject: boolean): Observable<Object> {
+    if (newObject) {
+      return this.httpClient.post(`${environment.apiUrl}/api/se`,
+        JSON.stringify(turSEInstance));
     }
+    else {
+      return this.httpClient.put(`${environment.apiUrl}/api/se/${turSEInstance.id}`,
+        JSON.stringify(turSEInstance));
+    }
+  }
 
-    public delete(turSEInstance: TurSEInstance): Observable<Object> {
-      return this.httpClient.delete(`${environment.apiUrl}/api/se/${turSEInstance.id}`);
+  public delete(turSEInstance: TurSEInstance): Observable<Object> {
+    return this.httpClient.delete(`${environment.apiUrl}/api/se/${turSEInstance.id}`);
 
   }
 }
