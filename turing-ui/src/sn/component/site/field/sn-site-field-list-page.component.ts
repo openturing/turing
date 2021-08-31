@@ -58,18 +58,4 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
         // console.log('The POST observable is now completed.');
       });
   }
-  public saveSite(_turSNSite: TurSNSite) {
-    this.turSNSiteService.save(_turSNSite).subscribe(
-      (turSNSite: TurSNSite) => {
-        _turSNSite = turSNSite;
-        this.notifier.notify("success", turSNSite.name.concat(" semantic navigation site was updated."));
-      },
-      response => {
-        this.notifier.notify("error", "SN site has a error: " + response);
-      },
-      () => {
-        // console.log('The POST observable is now completed.');
-      });
-
-  }
 }

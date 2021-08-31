@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 the original author or authors.
+ * Copyright (C) 2016-2021 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@ export class TurSNSiteService {
     return this.httpClient.get<TurSNSite>(`${environment.apiUrl}/api/sn/${id}`);
   }
 
+  getStructure(): Observable<TurSNSite> {
+    return this.httpClient.get<TurSNSite>(`${environment.apiUrl}/api/sn/structure`);
+  }
+
   getFields(id: string): Observable<TurSNSiteField[]> {
     return this.httpClient.get<TurSNSiteField[]>(`${environment.apiUrl}/api/sn/${id}/field/ext`);
   }
@@ -48,10 +52,15 @@ export class TurSNSiteService {
       items.filter(item => item.snType.toLowerCase() === type)));
   }
 
-  public save(turSNSite: TurSNSite): Observable<Object> {
-    return this.httpClient.put(`${environment.apiUrl}/api/sn/${turSNSite.id}`,
-      JSON.stringify(turSNSite));
-
+  public save(turSNSite: TurSNSite, newObject: boolean): Observable<Object> {
+    if (newObject) {
+      return this.httpClient.post(`${environment.apiUrl}/api/sn`,
+        JSON.stringify(turSNSite));
+    }
+    else {
+      return this.httpClient.put(`${environment.apiUrl}/api/sn/${turSNSite.id}`,
+        JSON.stringify(turSNSite));
+    }
   }
   public delete(turSNSite: TurSNSite): Observable<Object> {
     return this.httpClient.delete(`${environment.apiUrl}/api/sn/${turSNSite.id}`);

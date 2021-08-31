@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.template.TurSNTemplate;
@@ -47,7 +49,7 @@ import io.swagger.annotations.ApiOperation;
 @RestController
 @RequestMapping("/api/sn")
 @Api(tags = "Semantic Navigation Site", description = "Semantic Navigation Site API")
-@ComponentScan("com.viglet.turing") 
+@ComponentScan("com.viglet.turing")
 public class TurSNSiteAPI {
 
 	@Autowired
@@ -56,16 +58,26 @@ public class TurSNSiteAPI {
 	TurSNSiteExport turSNSiteExport;
 	@Autowired
 	TurSNTemplate turSNTemplate;
-	
+
 	@ApiOperation(value = "Semantic Navigation Site List")
 	@GetMapping
-	public List<TurSNSite> list() throws JSONException {
+	public List<TurSNSite> turSNSiteList() throws JSONException {
 		return this.turSNSiteRepository.findAll();
+	}
+
+	@ApiOperation(value = "Semantic Navigation Site structure")
+	@GetMapping("/structure")
+	public TurSNSite turSNSiteStructure() {
+		TurSNSite turSNSite = new TurSNSite();
+		turSNSite.setLanguage("en_US");
+		turSNSite.setTurNLPInstance(new TurNLPInstance());
+		turSNSite.setTurSEInstance(new TurSEInstance());
+		return turSNSite;
 	}
 
 	@ApiOperation(value = "Show a Semantic Navigation Site")
 	@GetMapping("/{id}")
-	public TurSNSite dataGroup(@PathVariable String id) throws JSONException {
+	public TurSNSite turSNSiteGet(@PathVariable String id) throws JSONException {
 		return this.turSNSiteRepository.findById(id).get();
 	}
 
@@ -76,7 +88,7 @@ public class TurSNSiteAPI {
 		turSNSiteEdit.setName(turSNSite.getName());
 		turSNSiteEdit.setDescription(turSNSite.getDescription());
 		turSNSiteEdit.setLanguage(turSNSite.getLanguage());
-		turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());		
+		turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
 		turSNSiteEdit.setTurNLPInstance(turSNSite.getTurNLPInstance());
 		turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
 		turSNSiteEdit.setCore(turSNSite.getCore());
@@ -94,7 +106,7 @@ public class TurSNSiteAPI {
 		turSNSiteEdit.setDefaultDateField(turSNSite.getDefaultDateField());
 		turSNSiteEdit.setDefaultImageField(turSNSite.getDefaultImageField());
 		turSNSiteEdit.setDefaultURLField(turSNSite.getDefaultURLField());
-		
+
 		turSNSiteRepository.save(turSNSiteEdit);
 		return turSNSiteEdit;
 	}
@@ -120,7 +132,7 @@ public class TurSNSiteAPI {
 	@ResponseBody
 	@GetMapping(value = "/export", produces = "application/zip")
 	public StreamingResponseBody turSNSiteExport(HttpServletResponse response) throws Exception {
-		
+
 		return turSNSiteExport.exportObject(response);
 
 	}

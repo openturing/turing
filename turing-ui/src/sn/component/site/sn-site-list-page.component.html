@@ -1,22 +1,29 @@
-<div>
-  <div style="margin-top: 20px;">
-    <div style="padding-bottom: 15px;">
-      <div class="Subhead" style="padding-bottom: 20px;">
-        <div style="flex: 1 1 auto;">
-          <input class="form-control" style="width: 50%;" type="text" placeholder="Find a SN Site..."
-            aria-label="Find a SN Site" />
-        </div>
-        <div class="Subhead-actions">
-          <button class="btn mr-2" role="button">
-            <span octicon="upload" size="16" class="mr-1"></span> Import
-          </button> <button class="btn btn-primary" role="button">
-            <span octicon="package" size="16" class="mr-1"></span> New
-          </button>
+<div *ngIf="(getTurSNSites() | async) as snSites; else loading">
+  <div *ngIf="snSites.length < 1" class="blankslate">
+    <span octicon="search" size="48"  class="mb-3"></span>
+    <h3 class="mb-1">You don’t seem to have any semantic navigation site.</h3>
+    <p>Create a new site and use the full potential of semantic navigation.</p>
+    <a [routerLink]="['/console/sn/site/new']" class="btn btn-primary my-3" type="button">New semantic navigation site</a>
+    <p><button class="btn-link" type="button">Import from zip file</button></p>
+  </div>
+  <div *ngIf="snSites.length >= 1">
+    <div style="margin-top: 20px;">
+      <div style="padding-bottom: 15px;">
+        <div class="Subhead" style="padding-bottom: 20px;">
+          <div style="flex: 1 1 auto;">
+            <input class="form-control" style="width: 50%;" type="text" placeholder="Find a semantic navigation site..."
+              aria-label="Find a semantic navigation site" />
+          </div>
+          <div class="Subhead-actions">
+            <button class="btn mr-2" role="button">
+              <span octicon="upload" size="16" class="mr-1"></span> Import
+            </button> <a [routerLink]="['/console/sn/site/new']" class="btn btn-primary" role="button">
+              <span octicon="package" size="16" class="mr-1"></span> New
+            </a>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div *ngIf="(getTurSNSites() | async) as snSites; else loading">
     <div *ngFor="let snSite of snSites" class="border-bottom d-flex flex-items-center"
       style="margin-bottom: 20px;padding-bottom: 10px;">
       <div class="flex-auto">

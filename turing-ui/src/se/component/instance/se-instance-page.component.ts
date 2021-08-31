@@ -81,7 +81,7 @@ export class TurSEInstancePageComponent implements OnInit {
         this.router.navigate(['/console/se/instance']);
       },
       response => {
-        this.notifier.notify("error", "SE instance was error: " + response);
+        this.notifier.notify("error", "Search engine instance was error: " + response);
       },
       () => {
         // console.log('The POST observable is now completed.');

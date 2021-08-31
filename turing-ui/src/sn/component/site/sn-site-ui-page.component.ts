@@ -57,7 +57,7 @@ export class TurSNSiteUIPageComponent implements OnInit {
   }
 
   public saveSite(_turSNSite: TurSNSite) {
-    this.turSNSiteService.save(_turSNSite).subscribe(
+    this.turSNSiteService.save(_turSNSite, false).subscribe(
       (turSNSite: TurSNSite) => {
         _turSNSite = turSNSite;
         this.notifier.notify("success", turSNSite.name.concat(" semantic navigation site was updated."));

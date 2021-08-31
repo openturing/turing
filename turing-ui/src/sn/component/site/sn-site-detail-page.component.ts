@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { TurSNSite } from '../../model/sn-site.model';
 import { NotifierService } from 'angular-notifier';
 import { TurSNSiteService } from '../../service/sn-site.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TurLocale } from 'src/locale/model/locale.model';
 import { TurLocaleService } from 'src/locale/service/locale.service';
 import { TurSEInstance } from 'src/se/model/se-instance.model';
@@ -20,19 +20,35 @@ export class TurSNSiteDetailPageComponent implements OnInit {
   private turLocales: Observable<TurLocale[]>;
   private turSEInstances: Observable<TurSEInstance[]>;
   private turNLPInstances: Observable<TurNLPInstance[]>;
+  private newObject: boolean = false;
 
-  constructor(private readonly notifier: NotifierService,
+  constructor(
+    private readonly notifier: NotifierService,
     private turSNSiteService: TurSNSiteService,
     private turLocaleService: TurLocaleService,
     private turSEInstanceService: TurSEInstanceService,
     private turNLPInstanceService: TurNLPInstanceService,
-    private route: ActivatedRoute) {
+    private activatedRoute: ActivatedRoute,
+    private router: Router) {
     this.turLocales = turLocaleService.query();
-    this.turSEInstances = turSEInstanceService.query();
-    this.turNLPInstances = turNLPInstanceService.query();
-    let id = this.route.parent.snapshot.paramMap.get('id');
-    this.turSNSite = this.turSNSiteService.get(id);
 
+    this.turSEInstances = turSEInstanceService.query();
+
+    this.turNLPInstances = turNLPInstanceService.query();
+
+    let id: string = this.activatedRoute.parent.snapshot.paramMap.get('id');
+
+    this.newObject = (id.toLowerCase() === 'new');
+
+    this.turSNSite = this.newObject ? this.turSNSiteService.getStructure() : this.turSNSiteService.get(id);
+  }
+
+  isNewObject(): boolean {
+    return this.newObject;
+  }
+
+  saveButtonCaption(): string {
+    return this.newObject ? "Create site" : "Update site";
   }
 
   getTurSNSite(): Observable<TurSNSite> {
@@ -56,11 +72,16 @@ export class TurSNSiteDetailPageComponent implements OnInit {
     return this.turNLPInstances;
   }
 
-  public saveSite(_turSNSite: TurSNSite) {
-    this.turSNSiteService.save(_turSNSite).subscribe(
+  public save(_turSNSite: TurSNSite) {
+    this.turSNSiteService.save(_turSNSite, this.newObject).subscribe(
       (turSNSite: TurSNSite) => {
+        let message: string = this.newObject ? " semantic navigation site was created." : " semantic navigation site was updated.";
+
         _turSNSite = turSNSite;
-        this.notifier.notify("success", turSNSite.name.concat(" semantic navigation site was updated."));
+
+        this.notifier.notify("success", turSNSite.name.concat(message));
+
+        this.router.navigate(['/console/sn/site']);
       },
       response => {
         this.notifier.notify("error", "SN site was error: " + response);

@@ -1,7 +1,7 @@
 <div *ngIf="(getTurSNSite() | async) as snSite; else loading">
   <div class="Subhead mt-4">
     <div class="Subhead-heading">
-      <div class="d-flex">
+      <div *ngIf="!isNewObject()" class="d-flex">
         <div style="background-color: whitesmoke; height: 32px; border-radius: 50%;">
           <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="snSite.name | lowercase">
           </svg>
@@ -10,8 +10,17 @@
           <span>{{snSite.name}}</span>
         </div>
       </div>
+      <div *ngIf="isNewObject()" class="d-flex">
+        <div style="background-color: whitesmoke; height: 32px; border-radius: 50%;">
+          <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="'new'">
+          </svg>
+        </div>
+        <div class="ml-2">
+          <span>New Site</span>
+        </div>
+      </div>
     </div>
-    <div class="Subhead-actions" style="display: inherit;">
+    <div *ngIf="!isNewObject()" class="Subhead-actions" style="display: inherit;">
       <details #modalDelete id="modalDelete" class="details-reset details-overlay details-overlay-dark"
         style="display: unset;">
         <summary class="btn btn-sm btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" size="16"
@@ -46,22 +55,22 @@
           </div>
         </details-dialog>
       </details>
-      <div class="mr-2">
+      <div *ngIf="!isNewObject()" class="mr-2">
         <a class="btn btn-sm btn-with-count" href="#url" role="button">
           <span octicon="milestone" size="16" class="mr-1"> </span> <span> Queue</span>
         </a>
         <a class="social-count" href="#url">6</a>
       </div>
-      <div class="mr-2">
+      <div *ngIf="!isNewObject()" class="mr-2">
         <a class="btn btn-sm btn-with-count" href="#url" role="button">
           <span octicon="file-binary" size="16" class="mr-1"> </span> <span> Indexed</span>
         </a>
         <a class="social-count" href="#url">6</a>
       </div>
-      <a href="/sn/{{snSite.name}}" target="_blank" class="btn btn-outline btn-sm" role="button"><span octicon="eye"
+      <a *ngIf="!isNewObject()" href="/sn/{{snSite.name}}" target="_blank" class="btn btn-outline btn-sm" role="button"><span octicon="eye"
           size="16" class="mr-1"></span> Open Site</a>
     </div>
-    <div class="Subhead-description">{{snSite.description}}</div>
+    <div *ngIf="!isNewObject()" class="Subhead-description">{{snSite.description}}</div>
   </div>
 
   <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
@@ -70,7 +79,7 @@
         [routerLinkActive]="['selected']"><span octicon="gear" size="16" class="mr-1"></span> Settings</a>
     </nav>
 
-    <nav class="menu" aria-label="Site settings">
+    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
       <span class="menu-heading" id="menu-heading"><span octicon="paintbrush" size="16" class="mr-1"></span>
         Appearance</span>
       <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']">
@@ -81,7 +90,7 @@
       <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']"> Default
         Fields</a>
     </nav>
-    <nav class="menu" aria-label="Site settings">
+    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
       <span class="menu-heading" id="menu-heading"><span octicon="rows" size="16" class="mr-1"></span> Fields</span>
       <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'field']" [routerLinkActive]="['selected']">
         Search Engine Fields</a>
@@ -91,17 +100,17 @@
         [routerLinkActive]="['selected']"> Thesaurus Fields</a>
     </nav>
 
-    <nav class="menu" aria-label="Site settings">
+    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
       <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'spotlight']"
         [routerLinkActive]="['selected']"><span octicon="megaphone" size="16" class="mr-1"></span> Spotlight</a>
     </nav>
 
-    <nav class="menu" aria-label="Site settings">
+    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
       <span class="menu-heading" id="menu-heading"><span octicon="graph" size="16" class="mr-1"></span> Insights</span>
       <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'advertising', 'top search']"
         [routerLinkActive]="['selected']"> Top searched terms</a>
     </nav>
-    <nav class="menu" aria-label="Site settings">
+    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
       <span class="menu-heading" id="menu-heading"><span octicon="pulse" size="16" class="mr-1"></span>
         Monitoring</span>
       <a class="menu-item" [routerLink]="['/console/sn/site',getId() , 'advertising', 'top search']"

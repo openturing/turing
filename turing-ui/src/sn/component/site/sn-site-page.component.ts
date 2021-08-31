@@ -22,6 +22,8 @@ export class TurSNSitePageComponent implements OnInit {
   private turSEInstances: Observable<TurSEInstance[]>;
   private turNLPInstances: Observable<TurNLPInstance[]>;
   private id: string;
+  private newObject: boolean = false;
+
   constructor(private readonly notifier: NotifierService,
     private turSNSiteService: TurSNSiteService,
     private turLocaleService: TurLocaleService,
@@ -32,47 +34,24 @@ export class TurSNSitePageComponent implements OnInit {
     this.turLocales = turLocaleService.query();
     this.turSEInstances = turSEInstanceService.query();
     this.turNLPInstances = turNLPInstanceService.query();
-    this.id = this.activatedRoute.snapshot.paramMap.get('id');
-    this.turSNSite = this.turSNSiteService.get(this.id);
-
+    this.id= this.activatedRoute.snapshot.paramMap.get('id');
+    this.newObject = (this.id.toLowerCase() === 'new');
+    this.turSNSite = this.newObject ? this.turSNSiteService.getStructure() : this.turSNSiteService.get(this.id);
   }
+
   getId(): string {
     return this.id;
   }
-  getTurSNSite(): Observable<TurSNSite> {
-    return this.turSNSite;
+
+  isNewObject(): boolean {
+    return this.newObject;
   }
 
-  getTurLocales(): Observable<TurLocale[]> {
-
-    return this.turLocales;
-  }
-
-  getTurSEInstances(): Observable<TurSEInstance[]> {
-
-    return this.turSEInstances;
-  }
   ngOnInit(): void {
   }
 
-  getTurNLPInstances(): Observable<TurNLPInstance[]> {
-
-    return this.turNLPInstances;
-  }
-
-  public save(_turSNSite: TurSNSite) {
-    this.turSNSiteService.save(_turSNSite).subscribe(
-      (turSNSite: TurSNSite) => {
-        _turSNSite = turSNSite;
-        this.notifier.notify("success", turSNSite.name.concat(" semantic navigation site was updated."));
-      },
-      response => {
-        this.notifier.notify("error", "SN site was error: " + response);
-      },
-      () => {
-        // console.log('The POST observable is now completed.');
-      });
-
+  getTurSNSite(): Observable<TurSNSite> {
+    return this.turSNSite;
   }
 
   public delete(_turSNSite: TurSNSite) {
