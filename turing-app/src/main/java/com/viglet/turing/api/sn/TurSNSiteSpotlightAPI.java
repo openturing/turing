@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -40,7 +41,7 @@ import io.swagger.annotations.ApiOperation;
 @RestController
 @RequestMapping("/api/sn/{snSiteId}/spotlight")
 @Api(tags = "Semantic Navigation Spotlight", description = "Semantic Navigation Spotlight API")
-public class TurSNSiteAdvertisementAPI {
+public class TurSNSiteSpotlightAPI {
 
 	@Autowired
 	TurSNSiteRepository turSNSiteRepository;
@@ -52,5 +53,11 @@ public class TurSNSiteAdvertisementAPI {
 	public List<TurSNSiteSpotlight> turSNSiteSpotlightList(@PathVariable String snSiteId) {
 		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
 		return this.turSNSiteSpotlightRepository.findByTurSNSite(turSNSite);
+	}
+	
+	@ApiOperation(value = "Show a Semantic Navigation Site Spotlight")
+	@GetMapping("/{id}")
+	public TurSNSiteSpotlight turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
+		return turSNSiteSpotlightRepository.findById(id).get();
 	}
 }

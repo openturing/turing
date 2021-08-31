@@ -11,25 +11,38 @@ import { TurSNSiteFieldRootPageComponent } from './component/site/field/sn-site-
 import { TurSNSiteFieldListPageComponent } from './component/site/field/sn-site-field-list-page.component';
 import { TurSNSiteFieldPageComponent } from './component/site/field/sn-site-field-page.component';
 import { TurSNSiteSpotlightRootPageComponent } from './component/site/spotlight/sn-site-spotlight-root-page.component';
+import { TurSNSiteSpotlightListPageComponent } from './component/site/spotlight/sn-site-spotlight-list-page.component';
+import { TurSNSiteSpotlightPageComponent } from './component/site/spotlight/sn-site-spotlight-page.component';
 
 const routes: Routes = [
   {
     path: '', component: TurSNRootPageComponent, canActivate: [AuthGuard],
     children: [
       { path: 'site', component: TurSNSiteListPageComponent, canActivate: [AuthGuard] },
-      { path: 'site/:id', component: TurSNSitePageComponent, canActivate: [AuthGuard] ,
-      children: [
-        { path: 'spotlight', component: TurSNSiteSpotlightRootPageComponent, canActivate: [AuthGuard] },
-        { path: 'detail', component: TurSNSiteDetailPageComponent, canActivate: [AuthGuard] },
-        { path: 'field', component: TurSNSiteFieldRootPageComponent, canActivate: [AuthGuard],
+      {
+        path: 'site/:id', component: TurSNSitePageComponent, canActivate: [AuthGuard],
         children: [
-          { path: 'list', component: TurSNSiteFieldListPageComponent, canActivate: [AuthGuard] },
-          { path: 'edit/:fieldId', component: TurSNSiteFieldPageComponent, canActivate: [AuthGuard] },
-          { path: '', redirectTo: 'list', pathMatch: 'full' }
-        ] },
-        { path: 'ui', component: TurSNSiteUIPageComponent, canActivate: [AuthGuard] },
-        { path: '', redirectTo: 'detail', pathMatch: 'full' }
-      ]},
+          {
+            path: 'spotlight', component: TurSNSiteSpotlightRootPageComponent, canActivate: [AuthGuard],
+            children: [
+              { path: 'list', component: TurSNSiteSpotlightListPageComponent, canActivate: [AuthGuard] },
+              { path: 'edit/:spotlightId', component: TurSNSiteSpotlightPageComponent, canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' }
+            ]
+          },
+          { path: 'detail', component: TurSNSiteDetailPageComponent, canActivate: [AuthGuard] },
+          {
+            path: 'field', component: TurSNSiteFieldRootPageComponent, canActivate: [AuthGuard],
+            children: [
+              { path: 'list', component: TurSNSiteFieldListPageComponent, canActivate: [AuthGuard] },
+              { path: 'edit/:fieldId', component: TurSNSiteFieldPageComponent, canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' }
+            ]
+          },
+          { path: 'ui', component: TurSNSiteUIPageComponent, canActivate: [AuthGuard] },
+          { path: '', redirectTo: 'detail', pathMatch: 'full' }
+        ]
+      },
       { path: '', redirectTo: '/console/sn/site', pathMatch: 'full' }
     ]
   }

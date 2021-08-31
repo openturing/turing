@@ -1,0 +1,127 @@
+<div *ngIf="(getTurSNSiteSpotlight() | async) as snSiteSpotlight; else loading">
+  <div class="Subhead mt-4">
+    <div class="Subhead-heading">
+      <div class="d-flex">
+        <div style="background-color: whitesmoke; height: 32px; border-radius: 50%;">
+          <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="snSiteSpotlight.name | lowercase">
+          </svg>
+        </div>
+        <div class="ml-2">
+          <span>{{snSiteSpotlight.name}}</span>
+        </div>
+      </div>
+    </div>
+    <div class="Subhead-actions"><button (click)="saveSiteField(snSiteField)" type="button"
+        class="btn btn-primary">Save</button></div>
+    <div class="Subhead-description">{{snSiteSpotlight.description}}</div>
+  </div>
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="sn-field-name">Name</label>
+    </div>
+    <div class="form-group-body">
+      <input [(ngModel)]="snSiteSpotlight.name" class="form-control" type="text" id="sn-field-name"
+        style="width: 100%;" />
+      <p class="note" id="sn-field-name-tip">
+        Name will appear on semantic navigation site field list.
+      </p>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="sn-field-description">Description</label>
+    </div>
+    <div class="form-group-body">
+      <input [(ngModel)]="snSiteSpotlight.description" class="form-control" type="text" id="sn-field-description"
+        style="width: 100%;" />
+      <p class="note" id="sn-field-description-tip">
+        Description will appear on semantic navigation site field list.
+      </p>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="sn-field-description">Terms</label>
+    </div>
+    <div class="form-group-body">
+      <div style="margin-top: 15px;">
+        <div class="d-flex flex-items-center">
+          <span *ngFor="let snSiteSpotlightTerm of snSiteSpotlight.turSNSiteSpotlightTerms"
+            title="{{snSiteSpotlightTerm.name}}" class="Label Label--info mr-1">{{snSiteSpotlightTerm.name}}</span>
+        </div>
+      </div>
+      <p class="note" id="sn-field-description-tip">
+        Description will appear on semantic navigation site field list.
+      </p>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="sn-field-description">Spotlights</label>
+    </div>
+    <div class="form-group-body">
+      <p class="note" id="sn-field-description-tip">
+        Description will appear on semantic navigation site field list.
+      </p>
+    </div>
+  </div>
+
+  <div style="margin-top: 20px;">
+    <div class="Box Box--blue">
+      <ul>
+        <li *ngFor="let snSiteSpotlightDocument of snSiteSpotlight.turSNSiteSpotlightDocuments" class="Box-row ">
+          <div class="d-flex flex-items-center">
+            <input type="checkbox" class="mr-2" />
+            <a [routerLink]="['/console/sn/site', 'spotlight', 'edit', snSiteSpotlight.id]" routerLinkActive="active"
+              class="d-flex flex-items-center">
+              {{snSiteSpotlightDocument.position}}
+              <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
+                class="float-left">
+                <svg width="24" height="24" style="border-radius: 50%;"
+                  [identiconHash]="snSiteSpotlightDocument.title | lowercase">
+                  Avatar
+                </svg>
+              </div>
+              {{snSiteSpotlightDocument.title}}
+            </a>
+            <details class="details-reset details-overlay ml-3">
+              <summary aria-haspopup="true" class="ellipsis-expander" aria-expanded="false">
+                &hellip;
+              </summary>
+              <div class="SelectMenu">
+                <div class="SelectMenu-modal">
+                  <header class="SelectMenu-header">
+                    <h3 class="SelectMenu-title">{{'title'}}</h3>
+                  </header>
+                  <div class="SelectMenu-list">
+                    <button class="SelectMenu-item" role="menuitem">
+                      <span octicon="pencil" size="16" class="mr-1"></span> Edit
+                    </button>
+                    <button class="SelectMenu-item" role="menuitem"><svg class="octicon mr-1" width="16" height="16"
+                        viewBox="0 0 512 512">
+                        <path fill="currentColor"
+                          d="M464 0H144c-26.51 0-48 21.49-48 48v48H48c-26.51 0-48 21.49-48 48v320c0 26.51 21.49 48 48 48h320c26.51 0 48-21.49 48-48v-48h48c26.51 0 48-21.49 48-48V48c0-26.51-21.49-48-48-48zM362 464H54a6 6 0 0 1-6-6V150a6 6 0 0 1 6-6h42v224c0 26.51 21.49 48 48 48h224v42a6 6 0 0 1-6 6zm96-96H150a6 6 0 0 1-6-6V54a6 6 0 0 1 6-6h308a6 6 0 0 1 6 6v308a6 6 0 0 1-6 6z">
+                        </path>
+                      </svg>Clone</button>
+                    <button class="SelectMenu-item" role="menuitem">
+                      <span octicon="trash" size="16" class="mr-1"></span> Delete</button>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
+          <div style="margin-top: 15px;">
+            <div class="d-flex flex-items-center">
+              <span title="This post is published"
+                class="Label Label--success mr-1">{{snSiteSpotlightDocument.type}}</span>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

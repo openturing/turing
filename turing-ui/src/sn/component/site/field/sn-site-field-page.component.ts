@@ -9,7 +9,7 @@ import { TurSNFieldTypeService } from 'src/sn/service/sn-field-type.service';
 import { TurSNFieldType } from 'src/sn/model/sn-field-type.model';
 
 @Component({
-  selector: 'sn-site-page',
+  selector: 'sn-site-field-page',
   templateUrl: './sn-site-field-page.component.html'
 })
 export class TurSNSiteFieldPageComponent implements OnInit {
@@ -51,7 +51,7 @@ export class TurSNSiteFieldPageComponent implements OnInit {
         this.notifier.notify("success", turSNSiteField.name.concat(" semantic navigation site field was updated."));
       },
       response => {
-        this.notifier.notify("error", "SN site was error: " + response);
+        this.notifier.notify("error", "Semantic navigation site spotlight was error: " + response);
       },
       () => {
         // console.log('The POST observable is now completed.');

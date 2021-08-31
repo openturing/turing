@@ -21,6 +21,8 @@ import { TurSNSiteFieldRootPageComponent } from './component/site/field/sn-site-
 import { TurSNSiteFieldListPageComponent } from './component/site/field/sn-site-field-list-page.component';
 import { TurSNSiteFieldPageComponent } from './component/site/field/sn-site-field-page.component';
 import { TurSNSiteSpotlightRootPageComponent } from './component/site/spotlight/sn-site-spotlight-root-page.component';
+import { TurSNSiteSpotlightListPageComponent } from './component/site/spotlight/sn-site-spotlight-list-page.component';
+import { TurSNSiteSpotlightPageComponent } from './component/site/spotlight/sn-site-spotlight-page.component';
 
 @NgModule({
   declarations: [
@@ -32,7 +34,9 @@ import { TurSNSiteSpotlightRootPageComponent } from './component/site/spotlight/
     TurSNSiteFieldListPageComponent,
     TurSNSiteFieldPageComponent,
     TurSNSiteListPageComponent,
-    TurSNSiteSpotlightRootPageComponent
+    TurSNSiteSpotlightRootPageComponent,
+    TurSNSiteSpotlightListPageComponent,
+    TurSNSiteSpotlightPageComponent
   ],
   imports: [
     CommonModule,

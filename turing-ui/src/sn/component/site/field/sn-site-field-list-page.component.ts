@@ -36,11 +36,14 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
   getTurSNSiteNLPFields(): Observable<TurSNSiteField[]> {
     return this.turSNSiteNLPFields;
   }
+
   getId(): string {
     return this.siteId;
   }
+
   ngOnInit(): void {
   }
+
   public updateField(_turSNSiteField: TurSNSiteField, fieldName: string, event: Event) {
     _turSNSiteField[fieldName] = event ? 1 : 0;
     this.turSNSiteService.saveField(this.siteId, _turSNSiteField).subscribe(
