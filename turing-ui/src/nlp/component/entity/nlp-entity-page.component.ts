@@ -31,6 +31,10 @@ export class TurNLPEntityPageComponent implements OnInit {
     this.turNLPEntity = this.newObject ? this.turNLPEntityService.getStructure() : this.turNLPEntityService.get(id);
   }
 
+  saveButtonCaption(): string {
+    return this.newObject ? "Create NLP entity" : "Update NLP entity";
+  }
+
   getTurNLPEntity(): Observable<TurNLPEntity> {
     return this.turNLPEntity;
   }
