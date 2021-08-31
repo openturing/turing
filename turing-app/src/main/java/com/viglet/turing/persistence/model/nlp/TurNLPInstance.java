@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,13 +20,17 @@ package com.viglet.turing.persistence.model.nlp;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.List;
 
 /**
- * The persistent class for the vigServices database table.
+ * The persistent class for the turNLPInstance database table.
  * 
  */
 
@@ -67,10 +71,12 @@ public class TurNLPInstance implements Serializable {
 	private TurNLPVendor turNLPVendor;
 
 	// bi-directional many-to-one association to TurNLPInstanceEntity
-	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turNLPInstance", cascade = CascadeType.ALL)
-	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
+	@OneToMany(mappedBy = "turNLPInstance", orphanRemoval = true)
+	@Cascade({ CascadeType.ALL })
+	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
+	@OnDelete(action = OnDeleteAction.CASCADE)
 	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
-
+	
 	public TurNLPInstance() {
 	}
 

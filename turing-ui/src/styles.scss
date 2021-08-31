@@ -1,8 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
+/* NgxSmartModal */
+@import 'node_modules/ngx-smart-modal/ngx-smart-modal.scss';
+
 @import "node_modules/@primer/css/index.scss";
 
 @import "node_modules/@primer/octicons/index.scss";
 @import "node_modules/angular-notifier/styles.scss";
 @import "node_modules/ngx-smart-modal/ngx-smart-modal";
-
+@import "https://unpkg.com/@github/details-dialog-element/dist/index.css"
 

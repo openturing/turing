@@ -37,4 +37,9 @@ export class TurNLPInstanceService {
 
     }
 
+    public delete(turNLPInstance: TurNLPInstance): Observable<Object> {
+      return this.httpClient.delete(`${environment.apiUrl}/api/nlp/${turNLPInstance.id}`);
+
+  }
+
 }

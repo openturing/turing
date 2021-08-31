@@ -14,6 +14,8 @@ import { TurNLPVendorService } from './service/nlp-vendor.service';
 import { TurNLPEntityPageComponent } from './component/entity/nlp-entity-page.component';
 import { TurNLPInstancePageComponent } from './component/instance/nlp-instance-page.component';
 import { TurLocaleService } from '../locale/service/locale.service';
+import { NgxSmartModalModule } from 'ngx-smart-modal';
+
 @NgModule({
   declarations: [
     TurNLPRootPageComponent,
@@ -29,7 +31,8 @@ import { TurLocaleService } from '../locale/service/locale.service';
     OcticonsModule,
     TurNLPRoutingModule,
     ShioCommonsModule,
-    RouterModule
+    RouterModule,
+    NgxSmartModalModule.forRoot()
   ],
   providers: [
     TurNLPInstanceService,

@@ -36,5 +36,9 @@ export class TurNLPEntityService {
             JSON.stringify(turNLPEntity));
 
     }
+    public delete(turNLPEntity: TurNLPEntity): Observable<Object> {
+      return this.httpClient.delete(`${environment.apiUrl}/api/entity/${turNLPEntity.id}`);
+
+  }
 
 }
