@@ -1,0 +1,121 @@
+<div *ngIf="(getTurSNSiteSEFields() | async) as snSiteFields; else loading">
+  <div class="Subhead">
+    <div class="Subhead-heading"><span octicon="rows"
+      [size]="24" class="mr-1"></span> Search Engine Fields</div>
+    <button type="button" class="btn btn-primary">New</button>
+    <div class="Subhead-description">Solr fields customized.</div>
+  </div>
+  <div class="Box">
+    <div class="Box-header">
+      <div class="d-table">
+        <div class="d-table-cell col-4">
+          Seach Engine Field
+        </div>
+        <div class="d-table-cell col-2">
+          Enabled
+        </div>
+        <div class="d-table-cell col-2">
+          MLT
+        </div>
+        <div class="d-table-cell col-2">
+          Facet
+        </div>
+        <div class="d-table-cell col-2">
+          Highlighting
+        </div>
+        <div class="d-table-cell col-2">
+          NLP
+        </div>
+      </div>
+    </div>
+    <div *ngFor="let snSiteField of snSiteFields" data-view-component="true" class="Box-body">
+      <div class="d-table">
+        <div class="d-table-cell col-4">
+          <a [routerLink]="['/console/sn/site', getId(), 'field', 'edit', snSiteField.id ]">
+            <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
+              class="float-left">
+              <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSiteField.name | lowercase">
+                Avatar
+              </svg>
+            </div>
+            {{snSiteField.name}}
+          </a>
+        </div>
+        <div class="d-table-cell col-2">
+          <input [(ngModel)]="snSiteField.enabled" type="checkbox"
+            (ngModelChange)="updateField(snSiteField, 'enabled', $event)" />
+        </div>
+        <div class="d-table-cell col-2">
+          <input [(ngModel)]="snSiteField.mlt" type="checkbox" (ngModelChange)="updateField(snSiteField, 'mlt', $event)" />
+        </div>
+        <div class="d-table-cell col-2">
+          <input [(ngModel)]="snSiteField.facet" type="checkbox" (ngModelChange)="updateField(snSiteField, 'facet', $event)" />
+        </div>
+        <div class="d-table-cell col-2">
+          <input [(ngModel)]="snSiteField.hl" type="checkbox" (ngModelChange)="updateField(snSiteField, 'hl', $event)" />
+        </div>
+        <div class="d-table-cell col-2">
+          <input [(ngModel)]="snSiteField.nlp" type="checkbox" (ngModelChange)="updateField(snSiteField, 'nlp', $event)" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div *ngIf="(getTurSNSiteNLPFields() | async) as snSiteFields; else loading" class="mt-4">
+  <div class="Subhead">
+    <div class="Subhead-heading">NLP Fields</div>
+    <div class="Subhead-description">NLP fields that is used when detected entities, these fields are static.</div>
+  </div>
+  <div class="Box">
+    <div class="Box-header">
+      <div class="d-table  ">
+        <div class="d-table-cell col-6">
+          NLP Field
+        </div>
+        <div class="d-table-cell col-2">
+          Enabled
+        </div>
+        <div class="d-table-cell col-2">
+          MLT
+        </div>
+        <div class="d-table-cell col-2">
+          Facet
+        </div>
+        <div class="d-table-cell col-2">
+          Highlighting
+        </div>
+      </div>
+    </div>
+    <div *ngFor="let snSiteField of snSiteFields" class="Box-body">
+      <div class="d-table">
+        <div class="d-table-cell col-6">
+          <a [routerLink]="['/console/sn/site', getId(), 'field', 'edit', snSiteField.id ]">
+            <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
+              class="float-left">
+              <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSiteField.name | lowercase">
+                Avatar
+              </svg>
+            </div>
+            {{snSiteField.name}}
+          </a>
+        </div>
+        <div class="d-table-cell col-2">
+          <input [(ngModel)]="snSiteField.enabled" type="checkbox"
+            (ngModelChange)="updateField(snSiteField, 'enabled', $event)" />
+        </div>
+        <div class="d-table-cell col-2">
+          <input [(ngModel)]="snSiteField.mlt" type="checkbox" (ngModelChange)="updateField(snSiteField, 'mlt', $event)" />
+        </div>
+        <div class="d-table-cell col-2">
+          <input [(ngModel)]="snSiteField.facet" type="checkbox" (ngModelChange)="updateField(snSiteField, 'facet', $event)" />
+        </div>
+        <div class="d-table-cell col-2">
+          <input [(ngModel)]="snSiteField.hl" type="checkbox" (ngModelChange)="updateField(snSiteField, 'hl', $event)" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

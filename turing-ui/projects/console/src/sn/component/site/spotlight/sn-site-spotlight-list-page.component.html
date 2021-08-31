@@ -1,0 +1,82 @@
+<div *ngIf="(getTurSNSiteSpotlights() | async) as snSiteSpotlights; else loading">
+  <div class="Subhead">
+    <div class="Subhead-heading"><span octicon="megaphone" [size]="24" class="mr-1"></span> Spotlight Placement </div>
+    <div class="Subhead-description">Define content that will be featured in the term-based search.</div>
+  </div>
+  <div class="clearfix" style="padding: 5px 0px;">
+    <div class="float-left" style="flex: 1 1 auto;">
+      <input class="form-control input-sm" style="min-width: 250px;" type="text"
+        i18n-placeholder="@@FindObjectCurrentFolder" placeholder="Search advertising..."
+        aria-label="Search advertising..." />
+    </div>
+    <div class="float-right" style="display: inline-flex;">
+      <div class="d-flex flex-justify-end position-relative">
+        <button class="btn btn-primary" role="button">
+          <span octicon="megaphone" [size]=16 class="mr-1"></span> New
+        </button>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top: 20px;">
+    <div class="Box Box--blue">
+      <ul>
+        <li *ngFor="let snSiteSpotlight of snSiteSpotlights" class="Box-row ">
+          <div class="d-flex flex-items-center">
+            <input type="checkbox" class="mr-2" />
+            <a [routerLink]="['/console/sn/site', getId(), 'spotlight', 'edit', snSiteSpotlight.id]" routerLinkActive="active" class="d-flex flex-items-center">
+              <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
+              class="float-left">
+              <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSiteSpotlight.name | lowercase">
+                Avatar
+              </svg>
+            </div>
+              {{snSiteSpotlight.name}}</a>
+            <details class="details-reset details-overlay ml-3">
+              <summary aria-haspopup="true" class="ellipsis-expander" aria-expanded="false">
+                &hellip;
+              </summary>
+              <div class="SelectMenu">
+                <div class="SelectMenu-modal">
+                  <header class="SelectMenu-header">
+                    <h3 class="SelectMenu-title">{{'title'}}</h3>
+                  </header>
+                  <div class="SelectMenu-list">
+                    <button class="SelectMenu-item" role="menuitem">
+                      <span octicon="pencil" [size]=16 class="mr-1"></span> Edit
+                    </button>
+                    <button class="SelectMenu-item" role="menuitem"><svg class="octicon mr-1" width="16" height="16"
+                        viewBox="0 0 512 512">
+                        <path fill="currentColor"
+                          d="M464 0H144c-26.51 0-48 21.49-48 48v48H48c-26.51 0-48 21.49-48 48v320c0 26.51 21.49 48 48 48h320c26.51 0 48-21.49 48-48v-48h48c26.51 0 48-21.49 48-48V48c0-26.51-21.49-48-48-48zM362 464H54a6 6 0 0 1-6-6V150a6 6 0 0 1 6-6h42v224c0 26.51 21.49 48 48 48h224v42a6 6 0 0 1-6 6zm96-96H150a6 6 0 0 1-6-6V54a6 6 0 0 1 6-6h308a6 6 0 0 1 6 6v308a6 6 0 0 1-6 6z">
+                        </path>
+                      </svg>Clone</button>
+                    <button class="SelectMenu-item" role="menuitem">
+                      <span octicon="trash" [size]=16 class="mr-1"></span> Delete</button>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
+          <div class="d-flex flex-items-center mt-1" style="color: rgba(27, 31, 35, 0.6);">
+            <span octicon="clock" [size]=16 class="mr-1"></span>
+            <span>
+              <span style="font-size: smaller;"> Updated
+                {{snSiteSpotlight.date | amTimeAgo}}</span>
+              <span> - </span> {{snSiteSpotlight.description}}</span>
+          </div>
+
+          <div style="margin-top: 15px;">
+            <div class="d-flex flex-items-center">
+              <span title="This post is published" class="Label Label--success mr-1">Active</span>
+              <span *ngFor="let snSiteSpotlightTerm of snSiteSpotlight.turSNSiteSpotlightTerms"
+                title="{{snSiteSpotlightTerm.name}}" class="Label Label--info mr-1">{{snSiteSpotlightTerm.name}}</span>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

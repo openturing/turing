@@ -1,0 +1,62 @@
+<div *ngIf="(getTurNLPInstances() | async) as nlpInstances; else loading">
+
+  <div *ngIf="nlpInstances.length < 1" class="blankslate">
+    <span octicon="package" [size]=48 class="mb-3"></span>
+    <h3 class="mb-1">You don’t seem to have any NLP instance.</h3>
+    <p>Create a new NLP instance and use it in semantic navigation or as service.</p>
+    <a [routerLink]="['/console/nlp/instance/new']" class="btn btn-primary my-3" type="button">New NLP
+      instance</a>
+    <p><button class="btn-link" type="button">Import from zip file</button></p>
+  </div>
+  <div *ngIf="nlpInstances.length >= 1">
+    <div style="margin-top: 20px;">
+      <div style="padding-bottom: 15px;">
+        <div class="Subhead" style="padding-bottom: 20px;">
+          <div style="flex: 1 1 auto;">
+            <input class="form-control" style="width: 50%;" type="text" placeholder="Find a NLP Instance..."
+              aria-label="Find a NLP Instance" />
+          </div>
+          <div class="Subhead-actions">
+            <button class="btn mr-2" role="button">
+              <span octicon="upload" [size]=16 class="mr-1"></span> Import
+            </button> <a [routerLink]="['/console/nlp/instance/new']" class="btn btn-primary" role="button">
+              <span octicon="package" [size]=16 class="mr-1"></span> New
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div *ngFor="let nlpInstance of nlpInstances" class="border-bottom d-flex flex-items-center"
+        style="margin-bottom: 20px;padding-bottom: 10px;">
+        <div class="flex-auto">
+          <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
+            class="float-left">
+            <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="nlpInstance.title | lowercase">
+              Avatar
+            </svg>
+          </div><a [routerLink]="['/console/nlp/instance', nlpInstance.id]" routerLinkActive="active"
+            style="font-weight: bolder; font-size: large;">
+            {{nlpInstance.title}} </a>
+          <div class="text-gray-light" style="margin-top: 5px;">
+            {{nlpInstance.description}}
+          </div>
+          <div style="margin-top: 5px;">
+            <span title="Label: green outline label" class="Label Label--outline Label--outline-green">Actived</span>
+
+          </div>
+          <div class="text-gray-light d-flex flex-items-center" style="margin-top: 10px;">
+            <div class="mr-3">
+              <span
+                style="position: relative;top: 1px;display: inline-block;width: 12px;height: 12px;border-radius: 50%;background-color: #2b7489;"></span>
+              <span class="ml-1">NLP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>
