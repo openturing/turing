@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TurSNSite } from '../../model/sn-site.model';
 import { NotifierService } from 'angular-notifier';
 import { TurSNSiteService } from '../../service/sn-site.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TurLocale } from 'src/locale/model/locale.model';
 import { TurLocaleService } from 'src/locale/service/locale.service';
 import { TurSEInstance } from 'src/se/model/se-instance.model';
@@ -16,6 +16,7 @@ import { TurNLPInstanceService } from 'src/nlp/service/nlp-instance.service';
   templateUrl: './sn-site-page.component.html'
 })
 export class TurSNSitePageComponent implements OnInit {
+  @ViewChild('modalDelete') modalDelete: ElementRef;
   private turSNSite: Observable<TurSNSite>;
   private turLocales: Observable<TurLocale[]>;
   private turSEInstances: Observable<TurSEInstance[]>;
@@ -26,11 +27,12 @@ export class TurSNSitePageComponent implements OnInit {
     private turLocaleService: TurLocaleService,
     private turSEInstanceService: TurSEInstanceService,
     private turNLPInstanceService: TurNLPInstanceService,
-    private route: ActivatedRoute) {
+    private activatedRoute: ActivatedRoute,
+    private router: Router) {
     this.turLocales = turLocaleService.query();
     this.turSEInstances = turSEInstanceService.query();
     this.turNLPInstances = turNLPInstanceService.query();
-    this.id = this.route.snapshot.paramMap.get('id');
+    this.id = this.activatedRoute.snapshot.paramMap.get('id');
     this.turSNSite = this.turSNSiteService.get(this.id);
 
   }
@@ -58,11 +60,27 @@ export class TurSNSitePageComponent implements OnInit {
     return this.turNLPInstances;
   }
 
-  public saveSite(_turSNSite: TurSNSite) {
+  public save(_turSNSite: TurSNSite) {
     this.turSNSiteService.save(_turSNSite).subscribe(
       (turSNSite: TurSNSite) => {
         _turSNSite = turSNSite;
         this.notifier.notify("success", turSNSite.name.concat(" semantic navigation site was updated."));
+      },
+      response => {
+        this.notifier.notify("error", "SN site was error: " + response);
+      },
+      () => {
+        // console.log('The POST observable is now completed.');
+      });
+
+  }
+
+  public delete(_turSNSite: TurSNSite) {
+    this.turSNSiteService.delete(_turSNSite).subscribe(
+      (turSNSite: TurSNSite) => {
+        this.notifier.notify("success", _turSNSite.name.concat(" semantic navigation site was deleted."));
+        this.modalDelete.nativeElement.removeAttribute("open");
+        this.router.navigate(['/console/sn/site']);
       },
       response => {
         this.notifier.notify("error", "SN site was error: " + response);

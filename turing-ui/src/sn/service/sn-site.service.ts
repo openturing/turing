@@ -53,7 +53,10 @@ export class TurSNSiteService {
       JSON.stringify(turSNSite));
 
   }
+  public delete(turSNSite: TurSNSite): Observable<Object> {
+    return this.httpClient.delete(`${environment.apiUrl}/api/sn/${turSNSite.id}`);
 
+  }
   public saveField(siteId: string, turSNSiteField: TurSNSiteField): Observable<Object> {
     return this.httpClient.put(`${environment.apiUrl}/api/sn/${siteId}/field/ext/${turSNSiteField.id}`,
       JSON.stringify(turSNSiteField));

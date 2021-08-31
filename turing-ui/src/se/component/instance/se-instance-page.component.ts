@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TurSEInstance } from '../../model/se-instance.model';
 import { NotifierService } from 'angular-notifier';
 import { TurSEInstanceService } from '../../service/se-instance.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TurSEVendor } from 'src/se/model/se-vendor.model';
 import { TurSEVendorService } from 'src/se/service/se-vendor.service';
 import { TurLocale } from 'src/locale/model/locale.model';
@@ -15,6 +15,7 @@ import { FormControl, Validators } from '@angular/forms';
   templateUrl: './se-instance-page.component.html'
 })
 export class TurSEInstancePageComponent implements OnInit {
+  @ViewChild('modalDelete') modalDelete: ElementRef;
   private turSEInstance: Observable<TurSEInstance>;
   private turLocales: Observable<TurLocale[]>;
   private turSEVendors: Observable<TurSEVendor[]>;
@@ -22,14 +23,16 @@ export class TurSEInstancePageComponent implements OnInit {
   portControl = new FormControl(80, [Validators.max(100), Validators.min(0)])
 
 
-  constructor(private readonly notifier: NotifierService,
+  constructor(
+    private readonly notifier: NotifierService,
     private turSEInstanceService: TurSEInstanceService,
     private turLocaleService: TurLocaleService,
     private turSEVendorService: TurSEVendorService,
-    private route: ActivatedRoute) {
+    private activatedRoute: ActivatedRoute,
+    private router: Router) {
     this.turSEVendors = turSEVendorService.query()
     this.turLocales = turLocaleService.query()
-    let id = this.route.snapshot.paramMap.get('id');
+    let id = this.activatedRoute.snapshot.paramMap.get('id');
     this.turSEInstance = this.turSEInstanceService.get(id);
 
   }
@@ -52,7 +55,7 @@ export class TurSEInstancePageComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  public saveSite(_turSEInstance: TurSEInstance) {
+  public save(_turSEInstance: TurSEInstance) {
     this.turSEInstanceService.save(_turSEInstance).subscribe(
       (turSEInstance: TurSEInstance) => {
         _turSEInstance = turSEInstance;
@@ -64,6 +67,20 @@ export class TurSEInstancePageComponent implements OnInit {
       () => {
         // console.log('The POST observable is now completed.');
       });
+  }
 
+  public delete(_turSEInstance: TurSEInstance) {
+    this.turSEInstanceService.delete(_turSEInstance).subscribe(
+      (turSEInstance: TurSEInstance) => {
+        this.notifier.notify("success", turSEInstance.title.concat(" SE instance was deleted."));
+        this.modalDelete.nativeElement.removeAttribute("open");
+        this.router.navigate(['/console/se/instance']);
+      },
+      response => {
+        this.notifier.notify("error", "SE instance was error: " + response);
+      },
+      () => {
+        // console.log('The POST observable is now completed.');
+      });
   }
 }
