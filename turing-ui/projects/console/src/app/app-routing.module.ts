@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { ShioLoginPageComponent } from './../login/shio-login-page';
+import { TurLoginPageComponent } from '../login/login-page';
 import { AuthGuard } from './_helpers';
 import { TurConsolePageComponent } from './../console/console-page.component';
 
 const routes: Routes = [
-  { path: 'login', component: ShioLoginPageComponent },
+  { path: 'login', component: TurLoginPageComponent },
   {
     path: 'console', component: TurConsolePageComponent, canActivate: [AuthGuard],
     children: [

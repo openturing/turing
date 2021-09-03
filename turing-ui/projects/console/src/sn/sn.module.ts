@@ -5,7 +5,7 @@ import { TurSNSiteService } from './service/sn-site.service';
 import { TurSNSiteListPageComponent } from './component/site/sn-site-list-page.component';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { TurSNRoutingModule } from './sn-routing.module';
-import { ShioCommonsModule } from '../commons/shio-commons.module';
+import { TurCommonsModule } from '../commons/commons.module';
 import { OcticonsModule } from 'ngx-octicons';
 import { RouterModule } from '@angular/router';
 import { TurSNRootPageComponent } from './component/root/sn-root-page.component';
@@ -44,7 +44,7 @@ import { TurSNSiteSpotlightPageComponent } from './component/site/spotlight/sn-s
     FormsModule,
     OcticonsModule,
     TurSNRoutingModule,
-    ShioCommonsModule,
+    TurCommonsModule,
     RouterModule,
     MomentModule
   ],

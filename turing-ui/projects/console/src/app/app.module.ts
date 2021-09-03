@@ -10,8 +10,8 @@ import { NotifierModule, NotifierOptions } from "angular-notifier";
 
 import { OcticonsModule } from 'ngx-octicons';
 import { TurConsolePageComponent } from './../console/console-page.component';
-import { ShioLoginModule } from './../login/shio-login.module';
-import { ShioCommonsModule } from './../commons/shio-commons.module';
+import { TurLoginModule } from '../login/login.module';
+import { TurCommonsModule } from '../commons/commons.module';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { RouterModule } from '@angular/router';
 
@@ -67,9 +67,9 @@ const notifierDefaultOptions: NotifierOptions = {
     ReactiveFormsModule,
     FormsModule,
     NotifierModule.withConfig(notifierDefaultOptions),
-    ShioLoginModule,
+    TurLoginModule,
     OcticonsModule,
-    ShioCommonsModule,
+    TurCommonsModule,
     DragDropModule,
     RouterModule
 

@@ -1,18 +1,18 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ShioLoginPageComponent } from './shio-login-page';
+import { TurLoginPageComponent } from './login-page';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { ShioCommonsModule } from './../commons/shio-commons.module';
+import { TurCommonsModule } from '../commons/commons.module';
 
 
 
 @NgModule({
-  declarations: [ShioLoginPageComponent],
+  declarations: [TurLoginPageComponent],
   imports: [
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
-    ShioCommonsModule
+    TurCommonsModule
   ]
 })
-export class ShioLoginModule { }
+export class TurLoginModule { }

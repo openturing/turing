@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 
 @Component({
-  selector: 'shio-logo',
+  selector: 'tur-logo',
   template: `<svg class="mr-1" [style.width.px]="size" [style.height.px]="size" viewBox="0 0 549 549">
   <defs>
     <style>
@@ -31,7 +31,7 @@ import { Component, Input } from '@angular/core';
   <text id="Tu" class="cls-2" transform="translate(64.825 442.418) scale(2.74 2.741)">Tu</text>
 </svg>`,
 })
-export class ShioLogoComponent {
+export class TurLogoComponent {
   @Input()
   size!: number;
 }

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { NotifierService } from 'angular-notifier';
-import { Router, RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'sn-root-page',

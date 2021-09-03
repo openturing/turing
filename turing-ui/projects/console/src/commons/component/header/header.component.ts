@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
-import { User } from './../../../app/_models';
-import { UserService, AuthenticationService } from './../../../app/_services';
+import { User } from '../../../app/_models';
+import { UserService, AuthenticationService } from '../../../app/_services';
 
 @Component({
-  selector: 'shio-header',
-  templateUrl: './shio-header.component.html'
+  selector: 'tur-header',
+  templateUrl: './header.component.html'
 })
-export class ShioHeaderComponent implements OnInit {
+export class TurHeaderComponent implements OnInit {
 
   user!: Observable<User>;
 

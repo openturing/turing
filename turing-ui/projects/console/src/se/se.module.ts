@@ -4,7 +4,7 @@ import { TurSEInstanceService } from './service/se-instance.service';
 import { TurSEInstanceListPageComponent } from './component/instance/se-instance-list-page.component';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { TurSERoutingModule } from './se-routing.module';
-import { ShioCommonsModule } from '../commons/shio-commons.module';
+import { TurCommonsModule } from '../commons/commons.module';
 import { OcticonsModule } from 'ngx-octicons';
 import { RouterModule } from '@angular/router';
 import { TurSERootPageComponent } from './component/root/se-root-page.component';
@@ -23,7 +23,7 @@ import { TurLocaleService } from '../locale/service/locale.service';
     FormsModule,
     OcticonsModule,
     TurSERoutingModule,
-    ShioCommonsModule,
+    TurCommonsModule,
     RouterModule
   ],
   providers: [

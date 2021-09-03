@@ -4,7 +4,7 @@ import { TurNLPInstanceService } from './service/nlp-instance.service';
 import { TurNLPInstanceListPageComponent } from './component/instance/nlp-instance-list-page.component';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { TurNLPRoutingModule } from './nlp-routing.module';
-import { ShioCommonsModule } from './../commons/shio-commons.module';
+import { TurCommonsModule } from '../commons/commons.module';
 import { OcticonsModule } from 'ngx-octicons';
 import { RouterModule } from '@angular/router';
 import { TurNLPEntityListPageComponent } from './component/entity/nlp-entity-list-page.component';
@@ -30,7 +30,7 @@ import { NgxSmartModalModule } from 'ngx-smart-modal';
     FormsModule,
     OcticonsModule,
     TurNLPRoutingModule,
-    ShioCommonsModule,
+    TurCommonsModule,
     RouterModule,
     NgxSmartModalModule.forRoot()
   ],

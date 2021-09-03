@@ -3,10 +3,10 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { first } from 'rxjs/operators';
 
-import { AuthenticationService } from './../../app/_services';
+import { AuthenticationService } from '../../app/_services';
 
-@Component({ templateUrl: 'shio-login-page.component.html' })
-export class ShioLoginPageComponent implements OnInit {
+@Component({ templateUrl: 'login-page.component.html' })
+export class TurLoginPageComponent implements OnInit {
     loginForm!: FormGroup;
     loading = false;
     submitted = false;

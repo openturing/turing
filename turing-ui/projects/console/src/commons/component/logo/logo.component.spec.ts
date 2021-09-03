@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
-import { ShioLogoComponent } from './shio-logo.component';
+import { TurLogoComponent } from './logo.component';
 
-describe('ShioLogoComponent', () => {
-  let component: ShioLogoComponent;
-  let fixture: ComponentFixture<ShioLogoComponent>;
+describe('TurLogoComponent', () => {
+  let component: TurLogoComponent;
+  let fixture: ComponentFixture<TurLogoComponent>;
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ ShioLogoComponent ]
+      declarations: [ TurLogoComponent ]
     })
     .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(ShioLogoComponent);
+    fixture = TestBed.createComponent(TurLogoComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
