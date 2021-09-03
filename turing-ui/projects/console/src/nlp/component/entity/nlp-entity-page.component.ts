@@ -58,7 +58,7 @@ export class TurNLPEntityPageComponent implements OnInit {
 
         this.notifier.notify("success", turNLPEntity.name.concat(message));
 
-        this.router.navigate(['/console/nlp/entity']);
+        this.router.navigate(['/nlp/entity']);
       },
       response => {
         this.notifier.notify("error", "NLP entity was error: " + response);
@@ -74,7 +74,7 @@ export class TurNLPEntityPageComponent implements OnInit {
       () => {
         this.notifier.notify("success", _turNLPEntity.name.concat(" NLP entity was deleted."));
         this.modalDelete.nativeElement.removeAttribute("open");
-        this.router.navigate(['/console/nlp/entity']);
+        this.router.navigate(['/nlp/entity']);
       },
       response => {
         this.notifier.notify("error", "NLP entity was error: " + response);

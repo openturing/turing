@@ -16,7 +16,7 @@ const routes: Routes = [
       { path: 'instance/:id', component: TurNLPInstancePageComponent, canActivate: [AuthGuard] },
       { path: 'entity', component: TurNLPEntityListPageComponent, canActivate: [AuthGuard] },
       { path: 'entity/:id', component: TurNLPEntityPageComponent, canActivate: [AuthGuard] },
-      { path: '', redirectTo: '/console/nlp/instance', pathMatch: 'full' }
+      { path: '', redirectTo: '/nlp/instance', pathMatch: 'full' }
     ]
   }
 ];

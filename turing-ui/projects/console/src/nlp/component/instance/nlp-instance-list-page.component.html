@@ -4,7 +4,7 @@
     <span octicon="package" [size]=48 class="mb-3"></span>
     <h3 class="mb-1">You don’t seem to have any NLP instance.</h3>
     <p>Create a new NLP instance and use it in semantic navigation or as service.</p>
-    <a [routerLink]="['/console/nlp/instance/new']" class="btn btn-primary my-3" type="button">New NLP
+    <a [routerLink]="['/nlp/instance/new']" class="btn btn-primary my-3" type="button">New NLP
       instance</a>
     <p><button class="btn-link" type="button">Import from zip file</button></p>
   </div>
@@ -19,7 +19,7 @@
           <div class="Subhead-actions">
             <button class="btn mr-2" role="button">
               <span octicon="upload" [size]=16 class="mr-1"></span> Import
-            </button> <a [routerLink]="['/console/nlp/instance/new']" class="btn btn-primary" role="button">
+            </button> <a [routerLink]="['/nlp/instance/new']" class="btn btn-primary" role="button">
               <span octicon="package" [size]=16 class="mr-1"></span> New
             </a>
           </div>
@@ -35,7 +35,7 @@
             <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="nlpInstance.title | lowercase">
               Avatar
             </svg>
-          </div><a [routerLink]="['/console/nlp/instance', nlpInstance.id]" routerLinkActive="active"
+          </div><a [routerLink]="['/nlp/instance', nlpInstance.id]" routerLinkActive="active"
             style="font-weight: bolder; font-size: large;">
             {{nlpInstance.title}} </a>
           <div class="text-gray-light" style="margin-top: 5px;">

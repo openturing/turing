@@ -3,7 +3,7 @@
     <span octicon="codescan" [size]=48 class="mb-3"></span>
     <h3 class="mb-1">You don’t seem to have any search engine instance.</h3>
     <p>Create a new instance and use it in semantic navigation and chatbot.</p>
-    <a [routerLink]="['/console/se/instance/new']" class="btn btn-primary my-3" type="button">New search engine
+    <a [routerLink]="['/se/instance/new']" class="btn btn-primary my-3" type="button">New search engine
       instance</a>
     <p><button class="btn-link" type="button">Import from zip file</button></p>
   </div>
@@ -19,7 +19,7 @@
           <div class="Subhead-actions">
             <button class="btn mr-2" role="button">
               <span octicon="upload" [size]=16 class="mr-1"></span> Import
-            </button> <a [routerLink]="['/console/se/instance/new']" class="btn btn-primary" role="button">
+            </button> <a [routerLink]="['/se/instance/new']" class="btn btn-primary" role="button">
               <span octicon="package" [size]=16 class="mr-1"></span> New
             </a>
           </div>
@@ -35,7 +35,7 @@
             <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="seInstance.title | lowercase">
               Avatar
             </svg>
-          </div><a [routerLink]="['/console/se/instance', seInstance.id]" routerLinkActive="active"
+          </div><a [routerLink]="['/se/instance', seInstance.id]" routerLinkActive="active"
             style="font-weight: bolder; font-size: large;">
             {{seInstance.title}} </a>
           <div class="text-gray-light" style="margin-top: 5px;">

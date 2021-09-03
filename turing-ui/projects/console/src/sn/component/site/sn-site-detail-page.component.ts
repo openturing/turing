@@ -81,7 +81,7 @@ export class TurSNSiteDetailPageComponent implements OnInit {
 
         this.notifier.notify("success", turSNSite.name.concat(message));
 
-        this.router.navigate(['/console/sn/site']);
+        this.router.navigate(['/sn/site']);
       },
       response => {
         this.notifier.notify("error", "SN site was error: " + response);

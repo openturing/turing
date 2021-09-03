@@ -12,7 +12,7 @@ const routes: Routes = [
     children: [
       { path: 'instance', component: TurSEInstanceListPageComponent, canActivate: [AuthGuard] },
       { path: 'instance/:id', component: TurSEInstancePageComponent, canActivate: [AuthGuard] },
-      { path: '', redirectTo: '/console/se/instance', pathMatch: 'full' }
+      { path: '', redirectTo: '/se/instance', pathMatch: 'full' }
     ]
   }
 ];

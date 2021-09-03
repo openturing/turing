@@ -31,7 +31,7 @@
     <div *ngFor="let snSiteField of snSiteFields" data-view-component="true" class="Box-body">
       <div class="d-table">
         <div class="d-table-cell col-4">
-          <a [routerLink]="['/console/sn/site', getId(), 'field', 'edit', snSiteField.id ]">
+          <a [routerLink]="['/sn/site', getId(), 'field', 'edit', snSiteField.id ]">
             <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
               class="float-left">
               <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSiteField.name | lowercase">
@@ -89,7 +89,7 @@
     <div *ngFor="let snSiteField of snSiteFields" class="Box-body">
       <div class="d-table">
         <div class="d-table-cell col-6">
-          <a [routerLink]="['/console/sn/site', getId(), 'field', 'edit', snSiteField.id ]">
+          <a [routerLink]="['/sn/site', getId(), 'field', 'edit', snSiteField.id ]">
             <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
               class="float-left">
               <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSiteField.name | lowercase">

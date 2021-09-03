@@ -3,7 +3,7 @@
     <span octicon="search" [size]="48"  class="mb-3"></span>
     <h3 class="mb-1">You don’t seem to have any semantic navigation site.</h3>
     <p>Create a new site and use the full potential of semantic navigation.</p>
-    <a [routerLink]="['/console/sn/site/new']" class="btn btn-primary my-3" type="button">New semantic navigation site</a>
+    <a [routerLink]="['/sn/site/new']" class="btn btn-primary my-3" type="button">New semantic navigation site</a>
     <p><button class="btn-link" type="button">Import from zip file</button></p>
   </div>
   <div *ngIf="snSites.length >= 1">
@@ -17,7 +17,7 @@
           <div class="Subhead-actions">
             <button class="btn mr-2" role="button">
               <span octicon="upload" [size]=16 class="mr-1"></span> Import
-            </button> <a [routerLink]="['/console/sn/site/new']" class="btn btn-primary" role="button">
+            </button> <a [routerLink]="['/sn/site/new']" class="btn btn-primary" role="button">
               <span octicon="package" [size]=16 class="mr-1"></span> New
             </a>
           </div>
@@ -32,7 +32,7 @@
           <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSite.name | lowercase">
             Avatar
           </svg>
-        </div><a [routerLink]="['/console/sn/site', snSite.id]" routerLinkActive="active"
+        </div><a [routerLink]="['/sn/site', snSite.id]" routerLinkActive="active"
           style="font-weight: bolder; font-size: large;">
           {{snSite.name}} </a>
         <div class="text-gray-light" style="margin-top: 5px;">

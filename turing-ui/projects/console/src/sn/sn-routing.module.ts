@@ -43,7 +43,7 @@ const routes: Routes = [
           { path: '', redirectTo: 'detail', pathMatch: 'full' }
         ]
       },
-      { path: '', redirectTo: '/console/sn/site', pathMatch: 'full' }
+      { path: '', redirectTo: '/sn/site', pathMatch: 'full' }
     ]
   }
 ];

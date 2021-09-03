@@ -79,7 +79,7 @@ export class TurSEInstancePageComponent implements OnInit {
 
         this.notifier.notify("success", turSEInstance.title.concat(message));
 
-        this.router.navigate(['/console/se/instance']);
+        this.router.navigate(['/se/instance']);
       },
       response => {
         this.notifier.notify("error", "Search engine instance was error: " + response);
@@ -94,7 +94,7 @@ export class TurSEInstancePageComponent implements OnInit {
       () => {
         this.notifier.notify("success", _turSEInstance.title.concat(" SE instance was deleted."));
         this.modalDelete.nativeElement.removeAttribute("open");
-        this.router.navigate(['/console/se/instance']);
+        this.router.navigate(['/se/instance']);
       },
       response => {
         this.notifier.notify("error", "SE instance was error: " + response);

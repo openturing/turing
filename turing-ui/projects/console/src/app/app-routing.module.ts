@@ -7,18 +7,18 @@ import { TurConsolePageComponent } from './../console/console-page.component';
 const routes: Routes = [
   { path: 'login', component: TurLoginPageComponent },
   {
-    path: 'console', component: TurConsolePageComponent, canActivate: [AuthGuard],
+    path: '', component: TurConsolePageComponent, canActivate: [AuthGuard],
     children: [
       { path: 'nlp', loadChildren: () => import('../nlp/nlp.module').then(m => m.TurNLPModule) },
       { path: 'se', loadChildren: () => import('../se/se.module').then(m => m.TurSEModule) },
       { path: 'sn', loadChildren: () => import('../sn/sn.module').then(m => m.TurSNModule) },
-      { path: '', redirectTo: '/console/nlp', pathMatch: 'full' }
+      { path: '', redirectTo: '/nlp', pathMatch: 'full' }
     ]
   },
-  { path: '', redirectTo: '/console/nlp', pathMatch: 'full' }
+  { path: '', redirectTo: '/nlp', pathMatch: 'full' }
 ];
 @NgModule({
-  imports: [RouterModule.forRoot(routes, { useHash: true, relativeLinkResolution: 'legacy' })],
+  imports: [RouterModule.forRoot(routes, { useHash: false })],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }

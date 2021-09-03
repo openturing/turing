@@ -69,23 +69,23 @@
   </div>
   <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
     <nav class="menu" aria-label="Site settings">
-      <a class="menu-item" [routerLink]="['/console/sn/site', 'detail']"
+      <a class="menu-item" [routerLink]="['/sn/site', 'detail']"
         [routerLinkActive]="['selected']"><span octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
     </nav>
     <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
       <span class="menu-heading" id="menu-heading"><span octicon="tools" [size]=16 class="mr-1"></span>
       Maintenance</span>
-      <a class="menu-item" [routerLink]="['/console/sn/site', 'advertising', 'top search']"
+      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']"
       [routerLinkActive]="['selected']"> Create core</a>
-      <a class="menu-item" [routerLink]="['/console/sn/site', 'advertising', 'top search']"
+      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']"
         [routerLinkActive]="['selected']"> Create field</a>
-        <a class="menu-item" [routerLink]="['/console/sn/site', 'advertising', 'top search']"
+        <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']"
         [routerLinkActive]="['selected']"> Restart service</a>
     </nav>
     <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
       <span class="menu-heading" id="menu-heading"><span octicon="pulse" [size]=16 class="mr-1"></span>
         Monitoring</span>
-      <a class="menu-item" [routerLink]="['/console/sn/site', 'advertising', 'top search']"
+      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']"
         [routerLinkActive]="['selected']"> Indexing</a>
     </nav>
   </div>

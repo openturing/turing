@@ -23,7 +23,7 @@
         <li *ngFor="let snSiteSpotlight of snSiteSpotlights" class="Box-row ">
           <div class="d-flex flex-items-center">
             <input type="checkbox" class="mr-2" />
-            <a [routerLink]="['/console/sn/site', getId(), 'spotlight', 'edit', snSiteSpotlight.id]" routerLinkActive="active" class="d-flex flex-items-center">
+            <a [routerLink]="['/sn/site', getId(), 'spotlight', 'edit', snSiteSpotlight.id]" routerLinkActive="active" class="d-flex flex-items-center">
               <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
               class="float-left">
               <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSiteSpotlight.name | lowercase">
