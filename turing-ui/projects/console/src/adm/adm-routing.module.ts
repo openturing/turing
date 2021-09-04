@@ -2,15 +2,17 @@ import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
 import { AuthGuard } from '../app/_helpers';
-import { TurNLPInstancePageComponent } from './component/instance/nlp-instance-page.component';
-import { TurNLPInstanceListPageComponent } from './component/instance/nlp-instance-list-page.component';
-import { TurNLPEntityListPageComponent } from './component/entity/nlp-entity-list-page.component';
-import { TurNLPRootPageComponent } from './component/root/nlp-root-page.component';
-import { TurNLPEntityPageComponent } from './component/entity/nlp-entity-page.component';
+import { TurAdmRootPageComponent } from './component/root/adm-root-page.component';
+import { TurAdmUserListPageComponent } from './component/user/adm-user-list-page.component';
+
 
 const routes: Routes = [
   {
-    path: '', component: TurNLPRootPageComponent, canActivate: [AuthGuard],
+    path: '', component: TurAdmRootPageComponent, canActivate: [AuthGuard],
+    children: [
+      { path: 'user', component: TurAdmUserListPageComponent, canActivate: [AuthGuard] },
+      { path: '', redirectTo: '/adm/user', pathMatch: 'full' }
+    ]
   }
 ];
 

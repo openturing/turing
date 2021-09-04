@@ -14,6 +14,7 @@ import { TurLoginModule } from '../login/login.module';
 import { TurCommonsModule } from '../commons/commons.module';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { RouterModule } from '@angular/router';
+import { TurAdmRootPageComponent } from '../adm/component/root/adm-root-page.component';
 
 const notifierDefaultOptions: NotifierOptions = {
   position: {
