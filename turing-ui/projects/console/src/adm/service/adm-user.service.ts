@@ -30,8 +30,8 @@ export class TurAdmUserService {
   query(): Observable<TurAdmUser[]> {
     return this.httpClient.get<TurAdmUser[]>(`${environment.apiUrl}${this.PREFIX_URL}`);
   }
-  get(id: string): Observable<TurAdmUser> {
-    return this.httpClient.get<TurAdmUser>(`${environment.apiUrl}${this.PREFIX_URL}/${id}`);
+  get(username: string): Observable<TurAdmUser> {
+    return this.httpClient.get<TurAdmUser>(`${environment.apiUrl}${this.PREFIX_URL}/${username}`);
   }
 
   getStructure(): Observable<TurAdmUser> {

@@ -1,17 +1,23 @@
-<div class="Box" *ngIf="(getTurAdmUsers() | async) as admUsers; else loading">
-  <div class="Box-header Box-header--blue d-flex flex-items-center">
-    <h3 class="Box-title overflow-hidden flex-auto">
-      <span octicon="person" [size]=16 class="mr-1"></span> Users
-    </h3>
-    <button class="btn btn-primary btn-sm">
-      <span octicon="person" [size]=16 class="mr-1"></span> New user
-    </button>
+<div *ngIf="(getTurAdmUsers() | async) as admUsers; else loading">
+  <div style="margin-top: 20px;">
+    <div style="padding-bottom: 15px;">
+      <div class="Subhead" style="padding-bottom: 20px;">
+        <div style="flex: 1 1 auto;">
+          <input class="form-control" style="width: 50%;" type="text" placeholder="Find a user..."
+            aria-label="Find a user" />
+        </div>
+        <div class="Subhead-actions">
+          <a [routerLink]="['/adm/user/new']" class="btn btn-primary" role="button">
+            <span octicon="person" [size]=16 class="mr-1"></span> New user
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="Details">
+  <div class="Box Details">
     <div role="grid" aria-labelledby="files" class="d-md-block" data-pjax="">
-
       <div role="row"
-        class="Box-row Box-row--focus-gray py-2 d-flex position-relative js-navigation-item navigation-focus">
+        class="Box-row Box-row--focus-blue py-2 d-flex position-relative js-navigation-item navigation-focus">
         <div role="gridcell" class="mr-3 flex-shrink-0" style="width: 16px;">
           Username
         </div>
@@ -31,7 +37,8 @@
 
         </div>
       </div>
-      <div *ngFor="let admUser of admUsers" role="row" class="Box-row Box-row--focus-gray py-2 d-flex position-relative js-navigation-item ">
+      <div *ngFor="let admUser of admUsers" role="row"
+        class="Box-row Box-row--focus-gray py-2 d-flex position-relative js-navigation-item ">
         <div role="gridcell" class="mr-3 flex-shrink-0" style="width: 16px;">
           <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
             class="float-left">
@@ -42,7 +49,7 @@
         </div>
 
         <div role="rowheader" class="flex-auto min-width-0 col-md-2 mr-3">
-          {{admUser.username}}
+          <a [routerLink]="['/adm/user', admUser.username]" routerLinkActive="active">{{admUser.username}}</a>
         </div>
 
         <div role="gridcell" class="flex-auto min-width-0 d-none d-md-block col-5 mr-3">

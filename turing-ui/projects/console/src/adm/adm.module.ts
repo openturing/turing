@@ -9,11 +9,16 @@ import { TurAdmUserListPageComponent } from './component/user/adm-user-list-page
 import { TurAdmUserService } from './service/adm-user.service';
 import { TurAdmGroupService } from './service/adm-group.service';
 import { TurAdmGroupListPageComponent } from './component/group/adm-group-list-page.component';
+import { TurAdmUserPageComponent } from './component/user/adm-user-page.component';
+import { FormsModule } from '@angular/forms';
+import { TurAdmGroupPageComponent } from './component/group/adm-group-page.component';
 
 @NgModule({
   declarations: [
     TurAdmRootPageComponent,
+    TurAdmUserPageComponent,
     TurAdmUserListPageComponent,
+    TurAdmGroupPageComponent,
     TurAdmGroupListPageComponent
   ],
   imports: [
@@ -22,11 +27,12 @@ import { TurAdmGroupListPageComponent } from './component/group/adm-group-list-p
     TurAdmRoutingModule,
     TurCommonsModule,
     RouterModule,
+    FormsModule
   ],
   providers: [
     TurAdmUserService,
     TurAdmGroupService
   ],
-  schemas: [ CUSTOM_ELEMENTS_SCHEMA ]
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class TurAdmModule { }
