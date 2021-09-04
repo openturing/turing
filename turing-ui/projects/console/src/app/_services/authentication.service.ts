@@ -16,7 +16,7 @@ export class AuthenticationService {
         private router: Router,
         private http: HttpClient
     ) {
-        this.userSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('user') || ""));
+        this.userSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('user') || "{}"));
         this.user = this.userSubject.asObservable();
     }
 
@@ -25,6 +25,8 @@ export class AuthenticationService {
     }
 
     login(username: string, password: string) {
+      console.log(username);
+      console.log(password);
         const headers = new HttpHeaders({
             authorization : 'Basic ' + btoa(username + ':' + password)
         } );
