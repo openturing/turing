@@ -7,11 +7,14 @@ import { RouterModule } from '@angular/router';
 import { TurAdmRootPageComponent } from './component/root/adm-root-page.component';
 import { TurAdmUserListPageComponent } from './component/user/adm-user-list-page.component';
 import { TurAdmUserService } from './service/adm-user.service';
+import { TurAdmGroupService } from './service/adm-group.service';
+import { TurAdmGroupListPageComponent } from './component/group/adm-group-list-page.component';
 
 @NgModule({
   declarations: [
     TurAdmRootPageComponent,
-    TurAdmUserListPageComponent
+    TurAdmUserListPageComponent,
+    TurAdmGroupListPageComponent
   ],
   imports: [
     CommonModule,
@@ -21,7 +24,8 @@ import { TurAdmUserService } from './service/adm-user.service';
     RouterModule,
   ],
   providers: [
-    TurAdmUserService
+    TurAdmUserService,
+    TurAdmGroupService
   ],
   schemas: [ CUSTOM_ELEMENTS_SCHEMA ]
 })
