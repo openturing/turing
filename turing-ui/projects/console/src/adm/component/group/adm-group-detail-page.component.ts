@@ -7,10 +7,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormControl, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'adm-group-page',
-  templateUrl: './adm-group-page.component.html'
+  selector: 'adm-group-detail-page',
+  templateUrl: './adm-group-detail-page.component.html'
 })
-export class TurAdmGroupPageComponent implements OnInit {
+export class TurAdmGroupDetailPageComponent implements OnInit {
   @ViewChild('modalDelete')
   modalDelete!: ElementRef;
   private turAdmGroup: Observable<TurAdmGroup>;
@@ -25,7 +25,7 @@ export class TurAdmGroupPageComponent implements OnInit {
     private activatedRoute: ActivatedRoute,
     private router: Router) {
 
-    let id: string = this.activatedRoute.snapshot.paramMap.get('id') || "";
+    let id: string = this.activatedRoute.parent?.snapshot.paramMap.get('id') || "";
 
     this.newObject = ( id != null && id.toLowerCase() === 'new');
 

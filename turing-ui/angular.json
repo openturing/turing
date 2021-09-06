@@ -23,6 +23,8 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "baseHref": "/console/",
+            "deployUrl": "/console/",
             "outputPath": "dist/console",
             "index": "projects/console/src/index.html",
             "main": "projects/console/src/main.ts",
@@ -126,6 +128,8 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "baseHref": "/sn/",
+            "deployUrl": "/sn/",
             "outputPath": "dist/sn",
             "index": "projects/sn/src/index.html",
             "main": "projects/sn/src/main.ts",
@@ -229,6 +233,8 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "baseHref": "/converse/",
+            "deployUrl": "/converse/",
             "outputPath": "dist/converse",
             "index": "projects/converse/src/index.html",
             "main": "projects/converse/src/main.ts",

@@ -7,10 +7,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormControl, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'adm-group-page',
-  templateUrl: './adm-group-page.component.html'
+  selector: 'adm-group-users-page',
+  templateUrl: './adm-group-users-page.component.html'
 })
-export class TurAdmGroupPageComponent implements OnInit {
+export class TurAdmGroupUsersPageComponent implements OnInit {
   @ViewChild('modalDelete')
   modalDelete!: ElementRef;
   private turAdmGroup: Observable<TurAdmGroup>;
@@ -25,7 +25,7 @@ export class TurAdmGroupPageComponent implements OnInit {
     private activatedRoute: ActivatedRoute,
     private router: Router) {
 
-    let id: string = this.activatedRoute.snapshot.paramMap.get('id') || "";
+    let id: string = this.activatedRoute.parent?.snapshot.paramMap.get('id') || "";
 
     this.newObject = ( id != null && id.toLowerCase() === 'new');
 
@@ -57,7 +57,7 @@ export class TurAdmGroupPageComponent implements OnInit {
 
         this.notifier.notify("success", turAdmGroup.name.concat(message));
 
-        this.router.navigate(['/adm/group']);
+        this.router.navigate(['/console/adm/group']);
       },
       response => {
         this.notifier.notify("error", "group was error: " + response);

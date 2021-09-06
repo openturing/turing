@@ -7,15 +7,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormControl, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'adm-user-page',
-  templateUrl: './adm-user-page.component.html'
+  selector: 'adm-user-groups-page',
+  templateUrl: './adm-user-groups-page.component.html'
 })
-export class TurAdmUserPageComponent implements OnInit {
+export class TurAdmUserGroupsPageComponent implements OnInit {
   @ViewChild('modalDelete')
   modalDelete!: ElementRef;
   private turAdmUser: Observable<TurAdmUser>;
   private newObject: boolean = false;
-  private username: string;
+
   portControl = new FormControl(80, [Validators.max(100), Validators.min(0)])
 
 
@@ -25,12 +25,12 @@ export class TurAdmUserPageComponent implements OnInit {
     private activatedRoute: ActivatedRoute,
     private router: Router) {
 
-    this.username = this.activatedRoute.snapshot.paramMap.get('username') || "";
+    let username: string = this.activatedRoute.parent?.snapshot.paramMap.get('username') || "";
 
-    this.newObject = ( this.username != null && this.username.toLowerCase() === 'new');
+    this.newObject = ( username != null && username.toLowerCase() === 'new');
 
-    this.turAdmUser = this.newObject ? this.turAdmUserService.getStructure() : this.turAdmUserService.get(this.username);
-    console.log(this.activatedRoute.snapshot.data.user.username);
+    this.turAdmUser = this.newObject ? this.turAdmUserService.getStructure() : this.turAdmUserService.get(username);
+
   }
 
   isNewObject(): boolean {
@@ -57,7 +57,7 @@ export class TurAdmUserPageComponent implements OnInit {
 
         this.notifier.notify("success", turAdmUser.username.concat(message));
 
-        this.router.navigate(['adm/user']);
+        this.router.navigate(['/adm/user']);
       },
       response => {
         this.notifier.notify("error", "user was error: " + response);

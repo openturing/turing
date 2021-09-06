@@ -4,21 +4,33 @@ import { TurAdmRoutingModule } from './adm-routing.module';
 import { TurCommonsModule } from '../commons/commons.module';
 import { OcticonsModule } from 'ngx-octicons';
 import { RouterModule } from '@angular/router';
-import { TurAdmRootPageComponent } from './component/root/adm-root-page.component';
-import { TurAdmUserListPageComponent } from './component/user/adm-user-list-page.component';
+import { FormsModule } from '@angular/forms';
+
 import { TurAdmUserService } from './service/adm-user.service';
 import { TurAdmGroupService } from './service/adm-group.service';
-import { TurAdmGroupListPageComponent } from './component/group/adm-group-list-page.component';
+
+import { TurAdmRootPageComponent } from './component/root/adm-root-page.component';
+
 import { TurAdmUserPageComponent } from './component/user/adm-user-page.component';
-import { FormsModule } from '@angular/forms';
+import { TurAdmUserDetailPageComponent } from './component/user/adm-user-detail-page.component';
+import { TurAdmUserGroupsPageComponent } from './component/user/adm-user-groups-page.component';
+import { TurAdmUserListPageComponent } from './component/user/adm-user-list-page.component';
+
 import { TurAdmGroupPageComponent } from './component/group/adm-group-page.component';
+import { TurAdmGroupDetailPageComponent } from './component/group/adm-group-detail-page.component';
+import { TurAdmGroupUsersPageComponent } from './component/group/adm-group-users-page.component';
+import { TurAdmGroupListPageComponent } from './component/group/adm-group-list-page.component';
 
 @NgModule({
   declarations: [
     TurAdmRootPageComponent,
     TurAdmUserPageComponent,
+    TurAdmUserDetailPageComponent,
+    TurAdmUserGroupsPageComponent,
     TurAdmUserListPageComponent,
     TurAdmGroupPageComponent,
+    TurAdmGroupDetailPageComponent,
+    TurAdmGroupUsersPageComponent,
     TurAdmGroupListPageComponent
   ],
   imports: [
