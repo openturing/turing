@@ -25,8 +25,46 @@ import { TurSNSearch } from '../model/sn-search.model';
 export class TurSNSearchService {
 
   constructor(private httpClient: HttpClient) { }
+  query(turSiteName: string, q: string, p: string, _setlocale: string, sort: string, fq: string[], tr: string[]): Observable<TurSNSearch> {
 
-  query(turSiteName: string): Observable<TurSNSearch> {
-    return this.httpClient.get<TurSNSearch>(`${environment.apiUrl}/api/sn/${turSiteName}/search?q=*`);
+    let queryString: string = TurSNSearchService.generateQueryString(q, p, _setlocale, sort, fq, tr);
+    return this.httpClient.get<TurSNSearch>(`${environment.apiUrl}/api/sn/${turSiteName}/search?${queryString}`);
+  }
+
+  public static generateQueryString(q: string, p: string, _setlocale: string, sort: string, fq: string[], tr: string[]) {
+    let queryString = "";
+    if (q) {
+      queryString += `q=${q}`;
+    } else {
+      queryString += `q=*`;
+    }
+
+    if (p) {
+      queryString += `&p=${p}`;
+    }
+    else {
+      queryString += `&p=1`;
+    }
+
+    if (_setlocale) {
+      queryString += `&_setlocale=${_setlocale}`;
+    }
+
+    if (sort) {
+      queryString += `&sort=${sort}`;
+    }
+    else {
+      queryString += `&sort=relevance`;
+    }
+
+    if (fq) {
+      queryString += `&fq[]=${fq}`;
+    }
+
+    if (tr) {
+      queryString += `&tr[]=${tr}`;
+    }
+
+    return queryString;
   }
 }
