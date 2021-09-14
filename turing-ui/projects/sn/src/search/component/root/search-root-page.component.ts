@@ -1,11 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { NotifierService } from 'angular-notifier';
 import { ActivatedRoute, NavigationExtras, Params, Router, RouterModule } from '@angular/router';
 import { Location, LocationStrategy, PathLocationStrategy } from '@angular/common';
 import { Observable } from 'rxjs';
 import { TurSNSearch } from '../../model/sn-search.model';
 import { TurSNSearchService } from '../../service/sn-search.service';
-import { HttpParams } from '@angular/common/http';
 
 @Component({
   selector: 'search-root-page',
@@ -16,8 +14,7 @@ import { HttpParams } from '@angular/common/http';
 export class TurSNSearchRootPageComponent implements OnInit {
   private turSNSearchItems: Observable<TurSNSearch>;
   private turSiteName!: string;
-  private turQueryString!: string;
-  private turQuery!: string;
+  public turQuery!: string;
   private turPage!: string;
   private turLocale!: string;
   public turSort!: string;
@@ -28,7 +25,6 @@ export class TurSNSearchRootPageComponent implements OnInit {
   constructor(
     private turSNSearchService: TurSNSearchService,
     private router: Router,
-    private location: Location,
     private activatedRoute: ActivatedRoute) {
     this.sortOptions.set("relevance", "Relevance");
     this.sortOptions.set("newest", "Newest");
@@ -46,6 +42,9 @@ export class TurSNSearchRootPageComponent implements OnInit {
       this.turTargetingRule);
   }
 
+  generateQueryString(): string {
+    return TurSNSearchService.generateQueryString(this.turQuery, this.turPage, this.turLocale, this.turSort, this.turFilterQuery, this.turTargetingRule);
+  }
   getTurSNSearchItems(): Observable<TurSNSearch> {
     return this.turSNSearchItems;
   }
@@ -59,8 +58,6 @@ export class TurSNSearchRootPageComponent implements OnInit {
     let turSiteNameSplit = turPath.split('/');
     this.turSiteName = turSiteNameSplit[turSiteNameSplit.length - 1];
 
-
-
     this.turQuery = this.activatedRoute.snapshot.queryParams["q"] || "*";
     this.turPage = this.activatedRoute.snapshot.queryParams["p"] || "1";
     this.turLocale = this.activatedRoute.snapshot.queryParams["_setlocale"];
@@ -68,8 +65,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
     this.turFilterQuery = this.activatedRoute.snapshot.queryParams["fq[]"];
     this.turTargetingRule = this.activatedRoute.snapshot.queryParams["tr[]"];
 
-    this.turQueryString = TurSNSearchService.generateQueryString(this.turQuery, this.turPage, this.turLocale, this.turSort, this.turFilterQuery, this.turTargetingRule);
-
+    /**
     console.log(this.router.url);
     console.log(this.turQueryString);
     console.log(this.turQuery);
@@ -78,16 +74,25 @@ export class TurSNSearchRootPageComponent implements OnInit {
     console.log(this.turSort);
     console.log(this.turFilterQuery);
     console.log(this.turTargetingRule);
-
+   */
   }
 
 
   turRedirect(href: string) {
-    let result: { [key: string]: string } = {};
+    console.log(href);
+    let result: { [key: string]: string[] } = {};
+
     new URLSearchParams(href.split('?')[1]).forEach(function (value, key) {
-      result[key] = value;
+      console.log(key);
+      if (result.hasOwnProperty(key)) {
+        result[key].splice(0, 0, value);
+      }
+      else {
+        result[key] = [value];
+      }
     });
 
+    // console.log(result);
     let objToSend: NavigationExtras = {
       queryParams: result
     };
@@ -97,30 +102,8 @@ export class TurSNSearchRootPageComponent implements OnInit {
     });
   }
 
-  turChangeSort(event: Event) {
-    console.log("DDDD: " + this.turSort);
-    console.log("RRR");
-    // this.updateParameters();
-    console.log("VVV");
-    let browserURL: string = this.changeQueryStringParameter(
-      this.turQueryString, "sort",
-      this.turSort);
-    browserURL = this.changeQueryStringParameter(
-      browserURL, "q",
-      this.turQuery);
-    browserURL = this.changeQueryStringParameter(
-      browserURL, "p",
-      this.turPage);
-    //console.log(this.turSiteName);
-    //console.log(this.turSiteName + "?" + browserURL);
-    this.turRedirect(this.turSiteName + "?" + browserURL);
-
-  }
-
-  changeQueryStringParameter(uri: string, key: string, val: string): string {
-    var regex = new RegExp('(?<=[?|&])(' + key + '=)[^\&]+', 'i');
-    // return url.replace(regex, param + '=$1' + value);
-    return uri.replace(regex, key + '=' + val);
+  searchIt() {
+    this.turRedirect(this.turSiteName + "?" + this.generateQueryString());
   }
 
   camelize(str: string): string {

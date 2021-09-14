@@ -58,11 +58,25 @@ export class TurSNSearchService {
     }
 
     if (fq) {
-      queryString += `&fq[]=${fq}`;
+      if (Array.isArray(fq)) {
+        fq.forEach(function (fqItem) {
+          queryString += `&fq[]=${fqItem}`;
+        });
+      } else {
+        queryString += `&fq[]=${fq}`;
+      }
+
     }
 
     if (tr) {
-      queryString += `&tr[]=${tr}`;
+      if (Array.isArray(tr)) {
+        fq.forEach(function (trItem) {
+          queryString += `&tr[]=${trItem}`;
+        });
+      } else {
+        queryString += `&tr[]=${tr}`;
+      }
+
     }
 
     return queryString;

@@ -35,7 +35,8 @@
       </a>
     </div>
     <div class="Header-item">
-      <input type="search" class="form-control Header-input" style="width: 100%;" />
+      <input type="search" [(ngModel)]="turQuery" (keyup.enter)="searchIt()" class="form-control Header-input"
+        style="width: 100%;" />
     </div>
   </div>
 
@@ -81,7 +82,7 @@
           </form>
 
           <label for="sort" style="margin-right: 10px;">Order by: </label>
-          <select [(ngModel)]="turSort"  (change)="turChangeSort($event)" class="form-select" aria-label="Sort">
+          <select [(ngModel)]="turSort" (change)="searchIt()" class="form-select" aria-label="Sort">
             <option [ngValue]="option.key" *ngFor="let option of sortOptions  | keyvalue">{{option.value}}</option>
           </select>
 
@@ -100,7 +101,7 @@
               <div class="d-flex flex-items-center">
                 <a href="{{document.fields[snSearch.queryContext.defaultFields.url]}}" class="d-flex flex-items-center">
 
-                  <span class="f2">{{document.fields[snSearch.queryContext.defaultFields.title]}}</span>
+                  <span class="f2" [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></span>
                 </a>
               </div>
               <div class=" mt-1" style="color: rgba(27, 31, 35, 0.6);">
@@ -113,14 +114,15 @@
                     amDateFormat:'LL'}}</time>
                 </div>
                 <div
-                  style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
-                  {{document.fields[snSearch.queryContext.defaultFields.description]}}</div>
+                  style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
+                  [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]">
+                </div>
               </div>
 
               <div style="margin-top: 15px;">
                 <div class="d-flex flex-items-center">
                   <button (click)="turRedirect(metadata.href)" *ngFor="let metadata of document.metadata"
-                    title="{{metadata.text}}" class="Label Label--info mr-1">{{metadata.text}}</button>
+                    title="{{metadata.text}}" class="Label Label--info mr-1" [innerHTML]="metadata.text"></button>
                 </div>
               </div>
             </div>
