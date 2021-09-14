@@ -41,104 +41,115 @@
   </div>
 
   <div *ngIf="(getTurSNSearchItems() | async) as snSearch; else loading" class="clearfix container-xl p-0 mt-5">
-    <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
-      <div *ngIf="snSearch.widget.facetToRemove && snSearch.widget.facetToRemove.facets"
-        class="Box Box--condensed Box--blue mb-3">
-        <div class="Box-header">
-          <h3 class="Box-title">
-            Applied Filters
-          </h3>
-        </div>
-        <ul>
-          <li *ngFor="let facet of snSearch.widget.facetToRemove.facets" class="Box-row">
-            <button class="btn-link" (click)="turRedirect(facet.link)">
-              {{facet.label}} (Remove)</button>
-          </li>
-        </ul>
-      </div>
-      <div *ngFor="let facets of snSearch.widget.facet" class="Box Box--condensed Box--blue mb-3">
-        <div class="Box-header">
-          <h3 class="Box-title">
-            {{facets.label.text}}
-          </h3>
-        </div>
-        <ul>
-          <li *ngFor="let facet of facets.facets" class="Box-row">
-            <button class="btn-link" (click)="turRedirect(facet.link)">
-              {{facet.label}} <span class="Counter Counter--gray">{{facet.count}}</span></button>
-          </li>
-        </ul>
-      </div>
+
+    <div *ngIf="snSearch.results.document.length <= 0" class="blankslate blankslate-large">
+      <span octicon="search" [size]=48 class="mb-3"></span>
+      <h3 class="mb-1">We couldn’t find any results matching '{{turQuery}}'.</h3>
+      <p>You can try to see all the available content, maybe you have a new idea. :-)</p>
+      <button class="btn btn-primary my-3" type="button" (click)="showAll()">Show all the available content</button>
+
     </div>
-    <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
-
-      <div class="Box Box--blue Box--spacious f4">
-        <div class="Box-header d-flex flex-items-center">
-          <form class="flex-auto">
-            <label>
-              Showing {{snSearch.queryContext.pageStart}} - {{snSearch.queryContext.pageEnd}} of
-              {{snSearch.queryContext.count}} results
-            </label>
-          </form>
-
-          <label for="sort" style="margin-right: 10px;">Order by: </label>
-          <select [(ngModel)]="turSort" (change)="searchIt()" class="form-select" aria-label="Sort">
-            <option [ngValue]="option.key" *ngFor="let option of sortOptions  | keyvalue">{{option.value}}</option>
-          </select>
-
+    <div *ngIf="snSearch.results.document.length > 0">
+      <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
+        <div *ngIf="snSearch.widget.facetToRemove && snSearch.widget.facetToRemove.facets"
+          class="Box Box--condensed Box--blue mb-3">
+          <div class="Box-header">
+            <h3 class="Box-title">
+              Applied Filters
+            </h3>
+          </div>
+          <ul>
+            <li *ngFor="let facet of snSearch.widget.facetToRemove.facets" class="Box-row">
+              <button class="btn-link" (click)="turRedirect(facet.link)">
+                {{facet.label}} (Remove)</button>
+            </li>
+          </ul>
         </div>
-        <ul *ngIf="snSearch.results as snSearchResults;">
-          <li *ngFor="let document of snSearchResults.document" class="Box-row Truncate">
-            <div *ngIf="document.fields[snSearch.queryContext.defaultFields.title] != null">
-              <div
-                style="background-color: whitesmoke;width: 100px;height: 100px;margin-right: 20px;border-radius: 50%;"
-                class="float-left">
-                <svg width="100" height="100" style="border-radius: 50%;"
-                  [identiconHash]="document.fields[snSearch.queryContext.defaultFields.title] | lowercase">
-                  Avatar
-                </svg>
-              </div>
-              <div class="d-flex flex-items-center">
-                <a href="{{document.fields[snSearch.queryContext.defaultFields.url]}}" class="d-flex flex-items-center">
-
-                  <span class="f2" [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></span>
-                </a>
-              </div>
-              <div class=" mt-1" style="color: rgba(27, 31, 35, 0.6);">
-
-
-                <div class="d-flex flex-items-center mb-3">
-                  <time
-                    *ngFor="let displaydate of document.fields[snSearch.queryContext.defaultFields.date]">{{displaydate
-                    |
-                    amDateFormat:'LL'}}</time>
-                </div>
-                <div
-                  style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
-                  [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]">
-                </div>
-              </div>
-
-              <div style="margin-top: 15px;">
-                <div class="d-flex flex-items-center">
-                  <button (click)="turRedirect(metadata.href)" *ngFor="let metadata of document.metadata"
-                    title="{{metadata.text}}" class="Label Label--info mr-1" [innerHTML]="metadata.text"></button>
-                </div>
-              </div>
-            </div>
-          </li>
-        </ul>
+        <div *ngFor="let facets of snSearch.widget.facet" class="Box Box--condensed Box--blue mb-3">
+          <div class="Box-header">
+            <h3 class="Box-title">
+              {{facets.label.text}}
+            </h3>
+          </div>
+          <ul>
+            <li *ngFor="let facet of facets.facets" class="Box-row">
+              <button class="btn-link" (click)="turRedirect(facet.link)">
+                {{facet.label}} <span class="Counter Counter--gray">{{facet.count}}</span></button>
+            </li>
+          </ul>
+        </div>
       </div>
-      <nav class="paginate-container" aria-label="Pagination">
-        <div class="pagination">
-          <ng-container *ngFor="let page of snSearch.pagination">
-            <em *ngIf="page.type == 'current'" aria-current="page">{{camelize(page.text)}}</em>
-            <a *ngIf="page.type != 'current'"
-              [ngClass]="{'next_page': page.type === 'next' || page.type === 'last' , 'previous_page' : page.type === 'previous'  || page.type === 'first' }"
-              (click)="turRedirect(page.href)">{{camelize(page.text)}}</a>
-          </ng-container>
+      <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
+
+        <div class="Box Box--blue Box--spacious f4">
+          <div class="Box-header d-flex flex-items-center">
+            <form class="flex-auto">
+              <label>
+                Showing {{snSearch.queryContext.pageStart}} - {{snSearch.queryContext.pageEnd}} of
+                {{snSearch.queryContext.count}} results
+              </label>
+            </form>
+
+            <label for="sort" style="margin-right: 10px;">Order by: </label>
+            <select [(ngModel)]="turSort" (change)="searchIt()" class="form-select" aria-label="Sort">
+              <option [ngValue]="option.key" *ngFor="let option of sortOptions  | keyvalue">{{option.value}}</option>
+            </select>
+
+          </div>
+          <ul *ngIf="snSearch.results as snSearchResults;">
+            <li *ngFor="let document of snSearchResults.document" class="Box-row Truncate">
+              <div *ngIf="document.fields[snSearch.queryContext.defaultFields.title] != null">
+                <div
+                  style="background-color: whitesmoke;width: 100px;height: 100px;margin-right: 20px;border-radius: 50%;"
+                  class="float-left">
+                  <svg width="100" height="100" style="border-radius: 50%;"
+                    [identiconHash]="document.fields[snSearch.queryContext.defaultFields.title] | lowercase">
+                    Avatar
+                  </svg>
+                </div>
+                <div class="d-flex flex-items-center">
+                  <a href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
+                    class="d-flex flex-items-center">
+
+                    <span class="f2" [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></span>
+                  </a>
+                </div>
+                <div class=" mt-1" style="color: rgba(27, 31, 35, 0.6);">
+
+
+                  <div class="d-flex flex-items-center mb-3">
+                    <time
+                      *ngFor="let displaydate of document.fields[snSearch.queryContext.defaultFields.date]">{{displaydate
+                      |
+                      amDateFormat:'LL'}}</time>
+                  </div>
+                  <div
+                    style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
+                    [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]">
+                  </div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                  <div class="d-flex flex-items-center">
+                    <button (click)="turRedirect(metadata.href)" *ngFor="let metadata of document.metadata"
+                      title="{{metadata.text}}" class="Label Label--info mr-1" [innerHTML]="metadata.text"></button>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ul>
         </div>
-      </nav>
+        <nav class="paginate-container" aria-label="Pagination">
+          <div class="pagination">
+            <ng-container *ngFor="let page of snSearch.pagination">
+              <em *ngIf="page.type == 'current'" aria-current="page">{{camelize(page.text)}}</em>
+              <a *ngIf="page.type != 'current'"
+                [ngClass]="{'next_page': page.type === 'next' || page.type === 'last' , 'previous_page' : page.type === 'previous'  || page.type === 'first' }"
+                (click)="turRedirect(page.href)">{{camelize(page.text)}}</a>
+            </ng-container>
+          </div>
+        </nav>
+      </div>
     </div>
   </div>
 </div>

@@ -77,9 +77,10 @@ export class TurSNSearchRootPageComponent implements OnInit {
    */
   }
 
-
+  showAll() {
+    this.turRedirect("q=*");
+  }
   turRedirect(href: string) {
-    console.log(href);
     let result: { [key: string]: string[] } = {};
 
     new URLSearchParams(href.split('?')[1]).forEach(function (value, key) {
