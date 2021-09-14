@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,6 +81,7 @@ public class TurSNSiteSearchAPI {
 	public String addOrReplaceParameter(HttpServletRequest request, String paramName, String paramValue) {
 		StringBuffer sbQueryString = new StringBuffer();
 		boolean alreadyExists = false;
+		@SuppressWarnings("unchecked")
 		Map<String, String[]> queryParams = request.getParameterMap();
 		try {
 			for (Object queryParamObject : queryParams.keySet().toArray()) {
@@ -98,8 +99,7 @@ public class TurSNSiteSearchAPI {
 				sbQueryString.append(paramName + "=" + URLEncoder.encode(paramValue, "UTF-8") + "&");
 			}
 		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e);
 		}
 
 		String queryString = sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
@@ -111,6 +111,7 @@ public class TurSNSiteSearchAPI {
 	public String addFilterQuery(HttpServletRequest request, String fq) {
 		StringBuffer sbQueryString = new StringBuffer();
 		boolean alreadyExists = false;
+		@SuppressWarnings("unchecked")
 		Map<String, String[]> queryParams = request.getParameterMap();
 		try {
 			for (Object queryParamObject : queryParams.keySet().toArray()) {
@@ -131,8 +132,7 @@ public class TurSNSiteSearchAPI {
 				sbQueryString.append("fq[]=" + URLEncoder.encode(fq, "UTF-8") + "&");
 			}
 		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e);
 		}
 
 		String queryString = sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
@@ -144,6 +144,7 @@ public class TurSNSiteSearchAPI {
 	public String removeFilterQuery(HttpServletRequest request, String fq) {
 		StringBuffer sbQueryString = new StringBuffer();
 
+		@SuppressWarnings("unchecked")
 		Map<String, String[]> queryParams = request.getParameterMap();
 		try {
 			for (Object queryParamObject : queryParams.keySet().toArray()) {
@@ -160,8 +161,7 @@ public class TurSNSiteSearchAPI {
 				}
 			}
 		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e);
 		}
 
 		String queryString = sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
@@ -284,7 +284,7 @@ public class TurSNSiteSearchAPI {
 						if (turSEResultAttr.containsKey(facet)) {
 
 							if (turSEResultAttr.get(facet) instanceof ArrayList) {
-								for (Object facetValueObject : (ArrayList) turSEResultAttr.get(facet)) {
+								for (Object facetValueObject : (ArrayList<?>) turSEResultAttr.get(facet)) {
 									String facetValue = turSolrField.convertFieldToString(facetValueObject);
 									TurSNSiteSearchDocumentMetadataBean turSNSiteSearchDocumentMetadataBean = new TurSNSiteSearchDocumentMetadataBean();
 									turSNSiteSearchDocumentMetadataBean
@@ -534,11 +534,25 @@ public class TurSNSiteSearchAPI {
 			turSNSiteSearchQueryContextBean.setQuery(turSNSiteSearchQueryContextQueryBean);
 			turSNSiteSearchQueryContextBean.setDefaultFields(turSNSiteSearchDefaultFieldsBean);
 
-			turSNSiteSearchQueryContextBean.setPageEnd((int) turSEResults.getStart() + turSEResults.getLimit());
-			turSNSiteSearchQueryContextBean.setPageStart((int) turSEResults.getStart() + 1);
 			turSNSiteSearchQueryContextBean.setPageCount(turSEResults.getPageCount());
 			turSNSiteSearchQueryContextBean.setPage(turSEResults.getCurrentPage());
 			turSNSiteSearchQueryContextBean.setCount((int) turSEResults.getNumFound());
+
+			int lastItemOfFullPage = (int) turSEResults.getStart() + turSEResults.getLimit();
+
+			if (lastItemOfFullPage < turSNSiteSearchQueryContextBean.getCount()) {
+				turSNSiteSearchQueryContextBean.setPageEnd(lastItemOfFullPage);
+			} else {
+				turSNSiteSearchQueryContextBean.setPageEnd(turSNSiteSearchQueryContextBean.getCount());
+			}
+			int firstItemOfFullPage = (int) turSEResults.getStart() + 1;
+
+			if (firstItemOfFullPage < turSNSiteSearchQueryContextBean.getPageEnd()) {
+				turSNSiteSearchQueryContextBean.setPageStart(firstItemOfFullPage);
+			} else {
+				turSNSiteSearchQueryContextBean.setPageStart(turSNSiteSearchQueryContextBean.getPageEnd());
+			}
+
 			turSNSiteSearchQueryContextBean.setLimit(turSEResults.getLimit());
 			turSNSiteSearchQueryContextBean.setOffset(0); // Corrigir
 			turSNSiteSearchQueryContextBean.setResponseTime(turSEResults.getElapsedTime());
