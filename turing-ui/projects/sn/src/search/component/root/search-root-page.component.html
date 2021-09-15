@@ -62,16 +62,12 @@
       </button>
     </div>
     <div class="Header-item">
-      <label
-        class="form-control input-sm header-search-wrapper p-0 js-chromeless-input-container header-search-wrapper-jump-to position-relative d-flex flex-justify-between flex-items-center">
-        <input [(ngModel)]="turQuery" (keyup.enter)="searchIt()" type="text"style="width: 250px;"
-          class="form-control input-sm header-search-input"
-           data-test-selector="nav-search-input" placeholder="Search…"
-          autocapitalize="off"
-          aria-label="Search…"
-          spellcheck="false"
-          autocomplete="off">
-      </label>
+      <div class="subnav-search float-left">
+        <input [(ngModel)]="turQuery" (keyup.enter)="searchIt()" type="search" name="name"
+          class="form-control subnav-search-input" autocapitalize="off" aria-label="Search…" placeholder="Search…"
+          spellcheck="false" autocomplete="off" aria-label="Search site" />
+        <span octicon="search" [size]=16 class="subnav-search-icon octicon octicon-search"></span>
+      </div>
     </div>
   </div>
 
@@ -171,7 +167,7 @@
 
 
                 <div class="flex-shrink-0 mr-2">
-                  <svg width="16" height="16" style="border-radius: 50%;"
+                  <svg width="32" height="32" style="border-radius: 50%;"
                     [identiconHash]="document.fields[snSearch.queryContext.defaultFields.title] | lowercase">
                     Avatar
                   </svg>
@@ -182,7 +178,6 @@
                     <div class="f4 text-normal">
                       <a class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
                         [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></a>
-
                     </div>
 
                   </div>
