@@ -53,6 +53,9 @@ public class TurSNSiteSpotlightDocument implements Serializable {
 	@Column(nullable = true, length = 255)
 	private String type;
 
+	@Column(nullable = true, length = 255)
+	private String searchId;
+	
 	// bi-directional many-to-one association to TurSNSiteSpotlight
 	@ManyToOne
 	@JoinColumn(name = "sn_site_spotlight_id", nullable = false)
@@ -98,4 +101,13 @@ public class TurSNSiteSpotlightDocument implements Serializable {
 	public void setTurSNSiteSpotlight(TurSNSiteSpotlight turSNSiteSpotlight) {
 		this.turSNSiteSpotlight = turSNSiteSpotlight;
 	}
+
+	public String getSearchId() {
+		return searchId;
+	}
+
+	public void setSearchId(String searchId) {
+		this.searchId = searchId;
+	}
+	
 }

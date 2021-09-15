@@ -19,7 +19,9 @@ package com.viglet.turing.persistence.repository.sn.spotlight;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -36,6 +38,8 @@ public interface TurSNSiteSpotlightRepository extends JpaRepository<TurSNSiteSpo
 	TurSNSiteSpotlight save(TurSNSiteSpotlight turSNSiteSpotlight);
 	
 	List<TurSNSiteSpotlight> findByTurSNSite(TurSNSite turSNSite);
+	
+	List<TurSNSiteSpotlight> findDistinctByTurSNSiteAndTurSNSiteSpotlightTermsIn(TurSNSite turSNSite, Collection<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms);
 	
 	void delete(TurSNSiteSpotlight turSNSiteSpotlight);
 

@@ -102,7 +102,10 @@ export class TurSNSearchRootPageComponent implements OnInit {
       window.location.reload();
     });
   }
-
+  changeOrderBy(orderBy: string) {
+    this.turSort = orderBy;
+    this.searchIt();
+  }
   searchIt() {
     this.turRedirect(this.turSiteName + "?" + this.generateQueryString());
   }
@@ -112,6 +115,10 @@ export class TurSNSearchRootPageComponent implements OnInit {
       if (+match === 0) return ""; // or if (/\s+/.test(match)) for white spaces
       return index === 0 ? match.toUpperCase() : match.toLowerCase();
     });
+  }
+
+  currentDate(): number {
+    return (new Date()).getFullYear();
   }
   ngOnInit(): void {
   }

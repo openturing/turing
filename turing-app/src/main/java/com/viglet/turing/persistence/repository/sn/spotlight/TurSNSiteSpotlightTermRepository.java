@@ -19,6 +19,9 @@ package com.viglet.turing.persistence.repository.sn.spotlight;
 
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 
+import java.util.Collection;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -32,6 +35,8 @@ public interface TurSNSiteSpotlightTermRepository extends JpaRepository<TurSNSit
 	@SuppressWarnings("unchecked")
 	TurSNSiteSpotlightTerm save(TurSNSiteSpotlightTerm turSNSiteSpotlightTerm);
 
+	List<TurSNSiteSpotlightTerm> findByNameIn(Collection<String> names);
+	
 	void delete(TurSNSiteSpotlightTerm turSNSiteSpotlightTerm);
 
 	@Modifying

@@ -395,9 +395,10 @@ public class TurSNTemplate {
 
 		TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument();
 		turSNSiteSpotlightDocument.setPosition(1);
-		turSNSiteSpotlightDocument.setTitle("Sample Document");
+		turSNSiteSpotlightDocument.setTitle("Viglet Docs");
 		turSNSiteSpotlightDocument.setTurSNSiteSpotlight(turSNSiteSpotlight);
-		turSNSiteSpotlightDocument.setType("News");
+		turSNSiteSpotlightDocument.setSearchId("https://docs.viglet.com/");
+		turSNSiteSpotlightDocument.setType("Page");
 		turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
 		
 		TurSNSiteSpotlightTerm turSNSiteSpotlightTerm = new TurSNSiteSpotlightTerm();
