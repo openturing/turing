@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
+ * Copyright (C) 2016-2021 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as publitured by
@@ -16,7 +16,7 @@
  */
 
 package com.viglet.turing.api.auth;
- 
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -57,31 +57,35 @@ public class TurGroupAPI {
 
 	@GetMapping("/{id}")
 	public TurGroup turGroupEdit(@PathVariable String id) {
-		TurGroup turGroup = turGroupRepository.findById(id).get();
-		List<TurGroup> turGroups = new ArrayList<>();
-		turGroups.add(turGroup);
-		turGroup.setTurUsers(turUserRepository.findByTurGroupsIn(turGroups));
-		return turGroup;
+
+		return turGroupRepository.findById(id).map(turGroup -> {
+			List<TurGroup> turGroups = new ArrayList<>();
+			turGroups = new ArrayList<>();
+			turGroups.add(turGroup);
+			turGroup.setTurUsers(turUserRepository.findByTurGroupsIn(turGroups));
+			return turGroup;
+		}).orElse(new TurGroup());
 	}
 
 	@PutMapping("/{id}")
 	public TurGroup turGroupUpdate(@PathVariable String id, @RequestBody TurGroup turGroup) {
 		turGroupRepository.save(turGroup);
-		TurGroup turGroupRepos = turGroupRepository.findById(turGroup.getId()).get();
-		List<TurGroup> turGroups = new ArrayList<>();
-		turGroups.add(turGroup);
-		Set<TurUser> turUsers = turUserRepository.findByTurGroupsIn(turGroups);
-		for (TurUser turUser : turUsers) {
-			turUser.getTurGroups().remove(turGroupRepos);
-			turUserRepository.saveAndFlush(turUser);
-		}
-		for (TurUser turUser : turGroup.getTurUsers()) {
-			TurUser turUserRepos = turUserRepository.findByUsername(turUser.getUsername());
-			turUserRepos.getTurGroups().add(turGroup);
-			turUserRepository.saveAndFlush(turUserRepos);
-		}
+		return turGroupRepository.findById(turGroup.getId()).map(turGroupRepos -> {
+			List<TurGroup> turGroups = new ArrayList<>();
+			turGroups.add(turGroup);
+			Set<TurUser> turUsers = turUserRepository.findByTurGroupsIn(turGroups);
+			for (TurUser turUser : turUsers) {
+				turUser.getTurGroups().remove(turGroupRepos);
+				turUserRepository.saveAndFlush(turUser);
+			}
+			for (TurUser turUser : turGroup.getTurUsers()) {
+				TurUser turUserRepos = turUserRepository.findByUsername(turUser.getUsername());
+				turUserRepos.getTurGroups().add(turGroup);
+				turUserRepository.saveAndFlush(turUserRepos);
+			}
 
-		return turGroup;
+			return turGroup;
+		}).orElse(new TurGroup());
 	}
 
 	@Transactional

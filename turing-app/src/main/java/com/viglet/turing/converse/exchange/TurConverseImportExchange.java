@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 the original author or authors. 
+ * Copyright (C) 2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.viglet.turing.converse.exchange.agent.TurConverseAgentExchange;
 import com.viglet.turing.converse.exchange.entity.TurConverseEntityEntriesExchange;
 import com.viglet.turing.converse.exchange.entity.TurConverseEntityExchange;
@@ -50,13 +51,8 @@ import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
-import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityRepository;
-import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityTermRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseParameterRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConversePromptRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.utils.TurUtils;
@@ -72,21 +68,11 @@ public class TurConverseImportExchange {
 	@Autowired
 	private TurConverseIntentRepository turConverseIntentRepository;
 	@Autowired
-	private TurConverseContextRepository turConverseContextRepository;
-	@Autowired
 	private TurConversePhraseRepository turConversePhraseRepository;
 	@Autowired
 	private TurConverseResponseRepository turConverseResponseRepository;
 	@Autowired
-	private TurConverseParameterRepository turConverseParameterRepository;
-	@Autowired
-	private TurConversePromptRepository turConversePromptRepository;
-	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	private TurConverseEntityRepository turConverseEntityRepository;
-	@Autowired
-	private TurConverseEntityTermRepository turConverseEntityTermRepository;
 
 	private Map<String, Object> shObjects = new HashMap<String, Object>();
 	private Map<String, List<String>> shChildObjects = new HashMap<String, List<String>>();
@@ -115,7 +101,9 @@ public class TurConverseImportExchange {
 			System.out.println(turConverseAgentExchange.getDescription());
 
 			TurConverseAgent turConverseAgent = new TurConverseAgent();
-			turConverseAgent.setName(multipartFile.getOriginalFilename().replace(".zip", ""));
+			if (multipartFile.getOriginalFilename() != null) {
+				turConverseAgent.setName(multipartFile.getOriginalFilename().replace(".zip", ""));
+			}
 			turConverseAgent.setDescription(turConverseAgentExchange.getDescription());
 			turConverseAgent.setCore("converse");
 			turConverseAgent.setTurSEInstance(turSEInstanceRepository.findAll().get(0));

@@ -2,51 +2,111 @@
 <html lang="en">
 
 <head>
-	<meta charset="utf-8">
-	<title>Turing AI</title>
-	<base href="/console/">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="icon" type="image/x-icon" href="favicon.ico">
-	<link th:href=/favicon.ico" rel="shortcut icon" type="image/x-icon" />
-	<link rel="apple-touch-icon" sizes="57x57" th:href=/apple-icon-57x57.png">
-	<link rel="apple-touch-icon" sizes="60x60" th:href=/apple-icon-60x60.png">
-	<link rel="apple-touch-icon" sizes="72x72" th:href=/apple-icon-72x72.png">
-	<link rel="apple-touch-icon" sizes="76x76" th:href=/apple-icon-76x76.png">
-	<link rel="apple-touch-icon" sizes="114x114" th:href=/apple-icon-114x114.png">
-	<link rel="apple-touch-icon" sizes="120x120" th:href=/apple-icon-120x120.png">
-	<link rel="apple-touch-icon" sizes="144x144" th:href=/apple-icon-144x144.png">
-	<link rel="apple-touch-icon" sizes="152x152" th:href=/apple-icon-152x152.png">
-	<link rel="apple-touch-icon" sizes="180x180" th:href=/apple-icon-180x180.png">
-	<link rel="icon" type="image/png" sizes="192x192" th:href=/android-icon-192x192.png">
-	<link rel="icon" type="image/png" sizes="32x32" th:href=/favicon-32x32.png">
-	<link rel="icon" type="image/png" sizes="96x96" th:href=/favicon-96x96.png">
-	<link rel="icon" type="image/png" sizes="16x16" th:href=/favicon-16x16.png">
-	<link rel="manifest" th:href=/manifest.json">
-	<meta name="msapplication-TileColor" content="#ffffff">
-	<meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
-	<meta name="theme-color" content="#ffffff">
-	<script>
+  <meta charset="utf-8">
+  <title>Turing AI</title>
+  <base href="/console/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link th:href=/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+  <link rel="apple-touch-icon" sizes="57x57" th:href=/apple-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="60x60" th:href=/apple-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72" th:href=/apple-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76" th:href=/apple-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" th:href=/apple-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" th:href=/apple-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" th:href=/apple-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" th:href=/apple-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" th:href=/apple-icon-180x180.png">
+  <link rel="icon" type="image/png" sizes="192x192" th:href=/android-icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="32x32" th:href=/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="96x96" th:href=/favicon-96x96.png">
+  <link rel="icon" type="image/png" sizes="16x16" th:href=/favicon-16x16.png">
+  <link rel="manifest" th:href=/manifest.json">
+  <meta name="msapplication-TileColor" content="#ffffff">
+  <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+  <meta name="theme-color" content="#ffffff">
+  <script>
 
-		// Custom identicon style
-		// https://jdenticon.com/icon-designer.html?config=8644440010c4330a24461852
-		window.jdenticon_config = {
-			hues: [196],
-			lightness: {
-				color: [0.36, 0.70],
-				grayscale: [0.24, 0.82]
-			},
-			saturation: {
-				color: 0.51,
-				grayscale: 0.10
-			},
-			backColor: "#86444400"
-		};
+    // Custom identicon style
+    // https://jdenticon.com/icon-designer.html?config=8644440010c4330a24461852
+    window.jdenticon_config = {
+      hues: [196],
+      lightness: {
+        color: [0.36, 0.70],
+        grayscale: [0.24, 0.82]
+      },
+      saturation: {
+        color: 0.51,
+        grayscale: 0.10
+      },
+      backColor: "#86444400"
+    };
 
-		</script>
+  </script>
 </head>
 
 <body>
-	<app-root></app-root>
+  <div style="min-height: 500px;">
+    <app-root></app-root>
+  </div>
+
+  <div class="footer container-xl width-full p-responsive" role="contentinfo">
+    <div
+      class="position-relative d-flex flex-row-reverse flex-lg-row flex-wrap flex-lg-nowrap flex-justify-center flex-lg-justify-between pt-6 pb-2 mt-6 f6 color-text-secondary border-top color-border-secondary ">
+      <ul
+        class="list-style-none d-flex flex-wrap col-12 col-lg-5 flex-justify-center flex-lg-justify-between mb-2 mb-lg-0">
+        <li class="mr-3 mr-lg-0">© 2021 Turing AI.</li>
+        <li class="mr-3 mr-lg-0"><a href="https://github.com/openturing" target="_blank">Github</a></li>
+        <li class="mr-3 mr-lg-0"><a href="https://linkedin.com/company/viglet" target="_blank">LinkedIn</a></li>
+        <li class="mr-3 mr-lg-0"><a href="/swagger-ui.html" target="_blank">API</a></li>
+        <li class="mr-3 mr-lg-0"><a href="/console" target="_blank">Console</a></li>
+      </ul>
+
+      <a aria-label="Homepage" title="GitHub" class="footer-octicon d-none d-lg-block mx-lg-4"
+        href="https://viglet.com/turing" target="_blank">
+        <svg class="mr-3" style="width:24px; height:24px" viewBox="0 0 549 549">
+          <defs>
+            <style>
+              .cls-1a {
+                fill: #6e7781;
+                stroke: white;
+                stroke-width: 20px;
+                opacity: 1.0;
+              }
+
+              .cls-2a {
+                font-size: 98.505px;
+              }
+
+              .cls-2a,
+              .cls-3a {
+                fill: white;
+                font-family: "Proxima Nova";
+                font-weight: 500;
+              }
+
+              .cls-3a {
+                font-size: 25.538px;
+              }
+            </style>
+          </defs>
+          <rect class="cls-1a" x="0.063" width="548" height="548.188" rx="100" ry="100" />
+          <text id="Tu" class="cls-2a" transform="translate(64.825 442.418) scale(2.74 2.741)">Tu</text>
+
+        </svg>
+      </a>
+      <ul
+        class="list-style-none d-flex flex-wrap col-12 col-lg-5 flex-justify-center flex-lg-justify-between mb-2 mb-lg-0">
+        <li class="mr-3 mr-lg-0"><a href="https://viglet.com/#contact" target="_blank">Contact</a></li>
+        <li class="mr-3 mr-lg-0"><a href="https://viglet.com" target="_blank">Viglet</a></li>
+        <li class="mr-3 mr-lg-0"><a href="https://docs.viglet.com/turing" target="_blank">Documentation</a></li>
+        <li><a href="https://viglet.com/turing" target="_blank">Website</a></li>
+      </ul>
+    </div>
+    <div class="d-flex flex-justify-center pb-6">
+      <span class="f6 color-text-tertiary"></span>
+    </div>
+  </div>
 </body>
 
 </html>

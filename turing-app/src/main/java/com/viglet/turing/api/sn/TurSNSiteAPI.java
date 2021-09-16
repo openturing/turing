@@ -21,7 +21,9 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.json.JSONException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +53,7 @@ import io.swagger.annotations.ApiOperation;
 @Api(tags = "Semantic Navigation Site", description = "Semantic Navigation Site API")
 @ComponentScan("com.viglet.turing")
 public class TurSNSiteAPI {
-
+	private static final Log logger = LogFactory.getLog(TurSNSiteAPI.class);
 	@Autowired
 	TurSNSiteRepository turSNSiteRepository;
 	@Autowired
@@ -61,7 +63,7 @@ public class TurSNSiteAPI {
 
 	@ApiOperation(value = "Semantic Navigation Site List")
 	@GetMapping
-	public List<TurSNSite> turSNSiteList() throws JSONException {
+	public List<TurSNSite> turSNSiteList() {
 		return this.turSNSiteRepository.findAll();
 	}
 
@@ -77,51 +79,53 @@ public class TurSNSiteAPI {
 
 	@ApiOperation(value = "Show a Semantic Navigation Site")
 	@GetMapping("/{id}")
-	public TurSNSite turSNSiteGet(@PathVariable String id) throws JSONException {
-		return this.turSNSiteRepository.findById(id).get();
+	public TurSNSite turSNSiteGet(@PathVariable String id) {
+		return this.turSNSiteRepository.findById(id).orElse(new TurSNSite());
 	}
 
 	@ApiOperation(value = "Update a Semantic Navigation Site")
 	@PutMapping("/{id}")
-	public TurSNSite turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSite turSNSite) throws Exception {
-		TurSNSite turSNSiteEdit = this.turSNSiteRepository.findById(id).get();
-		turSNSiteEdit.setName(turSNSite.getName());
-		turSNSiteEdit.setDescription(turSNSite.getDescription());
-		turSNSiteEdit.setLanguage(turSNSite.getLanguage());
-		turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
-		turSNSiteEdit.setTurNLPInstance(turSNSite.getTurNLPInstance());
-		turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
-		turSNSiteEdit.setCore(turSNSite.getCore());
-		// UI
-		turSNSiteEdit.setFacet(turSNSite.getFacet());
-		turSNSiteEdit.setHl(turSNSite.getHl());
-		turSNSiteEdit.setHlPost(turSNSite.getHlPost());
-		turSNSiteEdit.setHlPre(turSNSite.getHlPre());
-		turSNSiteEdit.setItemsPerFacet(turSNSite.getItemsPerFacet());
-		turSNSiteEdit.setMlt(turSNSite.getMlt());
-		turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
-		turSNSiteEdit.setDefaultTitleField(turSNSite.getDefaultTitleField());
-		turSNSiteEdit.setDefaultTextField(turSNSite.getDefaultTextField());
-		turSNSiteEdit.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
-		turSNSiteEdit.setDefaultDateField(turSNSite.getDefaultDateField());
-		turSNSiteEdit.setDefaultImageField(turSNSite.getDefaultImageField());
-		turSNSiteEdit.setDefaultURLField(turSNSite.getDefaultURLField());
+	public TurSNSite turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSite turSNSite) {
+		return this.turSNSiteRepository.findById(id).map(turSNSiteEdit -> {
+			turSNSiteEdit.setName(turSNSite.getName());
+			turSNSiteEdit.setDescription(turSNSite.getDescription());
+			turSNSiteEdit.setLanguage(turSNSite.getLanguage());
+			turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
+			turSNSiteEdit.setTurNLPInstance(turSNSite.getTurNLPInstance());
+			turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
+			turSNSiteEdit.setCore(turSNSite.getCore());
+			// UI
+			turSNSiteEdit.setFacet(turSNSite.getFacet());
+			turSNSiteEdit.setHl(turSNSite.getHl());
+			turSNSiteEdit.setHlPost(turSNSite.getHlPost());
+			turSNSiteEdit.setHlPre(turSNSite.getHlPre());
+			turSNSiteEdit.setItemsPerFacet(turSNSite.getItemsPerFacet());
+			turSNSiteEdit.setMlt(turSNSite.getMlt());
+			turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
+			turSNSiteEdit.setDefaultTitleField(turSNSite.getDefaultTitleField());
+			turSNSiteEdit.setDefaultTextField(turSNSite.getDefaultTextField());
+			turSNSiteEdit.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
+			turSNSiteEdit.setDefaultDateField(turSNSite.getDefaultDateField());
+			turSNSiteEdit.setDefaultImageField(turSNSite.getDefaultImageField());
+			turSNSiteEdit.setDefaultURLField(turSNSite.getDefaultURLField());
 
-		turSNSiteRepository.save(turSNSiteEdit);
-		return turSNSiteEdit;
+			turSNSiteRepository.save(turSNSiteEdit);
+			return turSNSiteEdit;
+		}).orElse(new TurSNSite());
+
 	}
 
 	@Transactional
 	@ApiOperation(value = "Delete a Semantic Navigation Site")
 	@DeleteMapping("/{id}")
-	public boolean turSNSiteDelete(@PathVariable String id) throws Exception {
+	public boolean turSNSiteDelete(@PathVariable String id) {
 		turSNSiteRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Semantic Navigation Site")
 	@PostMapping
-	public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite) throws Exception {
+	public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite) {
 		turSNSiteRepository.save(turSNSite);
 		turSNTemplate.defaultSNUI(turSNSite);
 		turSNTemplate.createSEFields(turSNSite);
@@ -131,9 +135,14 @@ public class TurSNSiteAPI {
 
 	@ResponseBody
 	@GetMapping(value = "/export", produces = "application/zip")
-	public StreamingResponseBody turSNSiteExport(HttpServletResponse response) throws Exception {
+	public StreamingResponseBody turSNSiteExport(HttpServletResponse response) {
 
-		return turSNSiteExport.exportObject(response);
+		try {
+			return turSNSiteExport.exportObject(response);
+		} catch (Exception e) {
+			logger.error(e);
+		}
+		return null;
 
 	}
 

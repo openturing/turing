@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@ package com.viglet.turing.api.entity;
 
 import java.util.List;
 
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -43,27 +42,29 @@ import io.swagger.annotations.ApiOperation;
 public class TurNLPEntityTermAPI {
 	@Autowired
 	private TurTermRepository turTermRepository;
-	
+
 	@ApiOperation(value = "Entity Term list")
 	@GetMapping
-	public List<TurTerm> turTermList() throws JSONException {
+	public List<TurTerm> turTermList() {
 		return this.turTermRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Entity Term")
 	@GetMapping("/{id}")
-	public TurTerm turTermGet(@PathVariable String id) throws JSONException {
-		return this.turTermRepository.findById(id).get();
+	public TurTerm turTermGet(@PathVariable String id) {
+		return this.turTermRepository.findById(id).orElse(new TurTerm());
 	}
 
 	@ApiOperation(value = "Update a Entity Term")
 	@PutMapping("/{id}")
-	public TurTerm turTermUpdate(@PathVariable String id, @RequestBody TurTerm turTerm) throws Exception {
-		TurTerm turTermEdit = this.turTermRepository.findById(id).get();
-		turTermEdit.setName(turTerm.getName());
-		turTermEdit.setIdCustom(turTerm.getIdCustom());
-		this.turTermRepository.save(turTermEdit);
-		return turTermEdit;
+	public TurTerm turTermUpdate(@PathVariable String id, @RequestBody TurTerm turTerm) {
+		return this.turTermRepository.findById(id).map(turTermEdit -> {
+			turTermEdit.setName(turTerm.getName());
+			turTermEdit.setIdCustom(turTerm.getIdCustom());
+			this.turTermRepository.save(turTermEdit);
+			return turTermEdit;
+		}).orElse(new TurTerm());
+
 	}
 
 	@Transactional
@@ -76,7 +77,7 @@ public class TurNLPEntityTermAPI {
 
 	@ApiOperation(value = "Create a Entity Term")
 	@PostMapping
-	public TurTerm turTermAdd(@RequestBody TurTerm turTerm) throws Exception {
+	public TurTerm turTermAdd(@RequestBody TurTerm turTerm) {
 		this.turTermRepository.save(turTerm);
 		return turTerm;
 

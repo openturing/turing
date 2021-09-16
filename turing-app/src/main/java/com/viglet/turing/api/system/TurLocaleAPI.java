@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@ package com.viglet.turing.api.system;
 
 import java.util.List;
 
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -47,37 +46,39 @@ public class TurLocaleAPI {
 
 	@ApiOperation(value = "Locale List")
 	@GetMapping
-	public List<TurLocale> turLocaleList() throws JSONException {
+	public List<TurLocale> turLocaleList() {
 		return this.turLocaleRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Locale")
 	@GetMapping("/{id}")
-	public TurLocale turLocaleGet(@PathVariable String id) throws JSONException {
-		return this.turLocaleRepository.findById(id).get();
+	public TurLocale turLocaleGet(@PathVariable String id) {
+		return this.turLocaleRepository.findById(id).orElse(new TurLocale());
 	}
 
 	@ApiOperation(value = "Update a Locle")
 	@PutMapping("/{id}")
-	public TurLocale turLocaleUpdate(@PathVariable String id, @RequestBody TurLocale turLocale) throws Exception {
-		TurLocale turLocaleEdit = this.turLocaleRepository.findById(id).get();
-		turLocaleEdit.setEn(turLocale.getEn());
-		turLocaleEdit.setPt(turLocale.getPt());
-		this.turLocaleRepository.save(turLocaleEdit);
-		return turLocaleEdit;
+	public TurLocale turLocaleUpdate(@PathVariable String id, @RequestBody TurLocale turLocale) {
+		return this.turLocaleRepository.findById(id).map(turLocaleEdit -> {
+			turLocaleEdit.setEn(turLocale.getEn());
+			turLocaleEdit.setPt(turLocale.getPt());
+			this.turLocaleRepository.save(turLocaleEdit);
+			return turLocaleEdit;
+		}).orElse(new TurLocale());
+
 	}
 
 	@Transactional
 	@ApiOperation(value = "Delete a Locale")
 	@DeleteMapping("/{id}")
-	public boolean turLocaleDelete(@PathVariable String id) throws Exception {
+	public boolean turLocaleDelete(@PathVariable String id) {
 		this.turLocaleRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Locale")
 	@PostMapping
-	public TurLocale turLocaleAdd(@RequestBody TurLocale turLocale) throws Exception {
+	public TurLocale turLocaleAdd(@RequestBody TurLocale turLocale) {
 		this.turLocaleRepository.save(turLocale);
 		return turLocale;
 

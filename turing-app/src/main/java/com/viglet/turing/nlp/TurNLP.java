@@ -25,7 +25,6 @@ import javax.servlet.ServletContext;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
@@ -62,9 +61,8 @@ public class TurNLP {
 	TurNLPVendor turNLPVendor = null;
 
 	public void init() {
-		Optional<TurNLPInstance> turNLPInstance = turNLPInstanceRepository
-				.findById(turConfigVarRepository.findById("DEFAULT_NLP").get().getValue());
-		this.init(turNLPInstance.get());
+		turConfigVarRepository.findById("DEFAULT_NLP").ifPresent(turConfigVar -> turNLPInstanceRepository
+				.findById(turConfigVar.getValue()).ifPresent(turNLPInstance -> this.init(turNLPInstance)));
 
 	}
 
@@ -85,7 +83,7 @@ public class TurNLP {
 		this.setAttributes(attributes);
 	}
 
-	public void startup(TurNLPInstance turNLPInstance, Map<String, Object> attributes) throws JSONException {
+	public void startup(TurNLPInstance turNLPInstance, Map<String, Object> attributes) {
 		this.init(turNLPInstance);
 		this.setAttributes(attributes);
 
@@ -117,15 +115,16 @@ public class TurNLP {
 		TurNLPImpl nlpService;
 
 		try {
-			nlpService = (TurNLPImpl) Class.forName(turNLPVendor.getPlugin()).newInstance();
+			nlpService = (TurNLPImpl) Class.forName(turNLPVendor.getPlugin()).getDeclaredConstructor().newInstance();
 			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(context);
-			applicationContext.getAutowireCapableBeanFactory().autowireBean(nlpService);
-			nlpService.startup(turNLPInstance);
-			this.setNlpAttributes(nlpService.retrieve(this.getAttributes()));
+			if (applicationContext != null) {
+				applicationContext.getAutowireCapableBeanFactory().autowireBean(nlpService);
+				nlpService.startup(turNLPInstance);
+				this.setNlpAttributes(nlpService.retrieve(this.getAttributes()));
+			}
 
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e);
 		}
 
 		if (logger.isDebugEnabled() && this.getNlpAttributes() != null) {

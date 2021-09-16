@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@ package com.viglet.turing.api.se;
 
 import java.util.List;
 
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -41,34 +40,34 @@ import io.swagger.annotations.ApiOperation;
 @RequestMapping("/api/se/vendor")
 @Api(tags = "Search Engine Vendor", description = "Search Engine Vendor API")
 public class TurSEVendorAPI {
-	
+
 	@Autowired
 	TurSEVendorRepository turSEVendorRepository;
-	
-	
+
 	@ApiOperation(value = "Search Engine Vendor List")
 	@GetMapping
-	public List<TurSEVendor> turSEVendorList() throws JSONException {
+	public List<TurSEVendor> turSEVendorList() {
 		return this.turSEVendorRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Search Engine Vendor")
 	@GetMapping("/{id}")
-	public TurSEVendor turSEVendorGet(@PathVariable String id) throws JSONException {
-		return this.turSEVendorRepository.findById(id).get();
+	public TurSEVendor turSEVendorGet(@PathVariable String id) {
+		return this.turSEVendorRepository.findById(id).orElse(new TurSEVendor());
 	}
-	
 
 	@ApiOperation(value = "Update a Search Engine Vendor")
 	@PutMapping("/{id}")
-	public TurSEVendor turSEVendorUpdate(@PathVariable String id, @RequestBody TurSEVendor turSEVendor) throws Exception {
-		TurSEVendor turSEVendorEdit = this.turSEVendorRepository.findById(id).get();
-		turSEVendorEdit.setDescription(turSEVendor.getDescription());
-		turSEVendorEdit.setPlugin(turSEVendor.getPlugin());
-		turSEVendorEdit.setTitle(turSEVendor.getTitle());
-		turSEVendorEdit.setWebsite(turSEVendor.getWebsite());		
-		this.turSEVendorRepository.save(turSEVendorEdit);
-		return turSEVendorEdit;
+	public TurSEVendor turSEVendorUpdate(@PathVariable String id, @RequestBody TurSEVendor turSEVendor) {
+		return this.turSEVendorRepository.findById(id).map(turSEVendorEdit -> {
+			turSEVendorEdit.setDescription(turSEVendor.getDescription());
+			turSEVendorEdit.setPlugin(turSEVendor.getPlugin());
+			turSEVendorEdit.setTitle(turSEVendor.getTitle());
+			turSEVendorEdit.setWebsite(turSEVendor.getWebsite());
+			this.turSEVendorRepository.save(turSEVendorEdit);
+			return turSEVendorEdit;
+		}).orElse(new TurSEVendor());
+
 	}
 
 	@Transactional
@@ -81,7 +80,7 @@ public class TurSEVendorAPI {
 
 	@ApiOperation(value = "Create a Search Engine Vendor")
 	@PostMapping
-	public TurSEVendor turSEVendorAdd(@RequestBody TurSEVendor turSEVendor) throws Exception {
+	public TurSEVendor turSEVendorAdd(@RequestBody TurSEVendor turSEVendor) {
 		this.turSEVendorRepository.save(turSEVendor);
 		return turSEVendor;
 

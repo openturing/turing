@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 
 package com.viglet.turing.api.sn;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -51,28 +50,31 @@ public class TurSNSiteFieldAPI {
 
 	@ApiOperation(value = "Semantic Navigation Site Field List")
 	@GetMapping
-	public List<TurSNSiteField> turSNSiteFieldList(@PathVariable String snSiteId) throws JSONException {
-		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
-		return this.turSNSiteFieldRepository.findByTurSNSite(turSNSite);
+	public List<TurSNSiteField> turSNSiteFieldList(@PathVariable String snSiteId) {
+		return turSNSiteRepository.findById(snSiteId)
+				.map(turSNSite -> this.turSNSiteFieldRepository.findByTurSNSite(turSNSite)).orElse(new ArrayList<>());
+
 	}
 
 	@ApiOperation(value = "Show a Semantic Navigation Site Field")
 	@GetMapping("/{id}")
-	public TurSNSiteField turSNSiteFieldGet(@PathVariable String snSiteId, @PathVariable String id) throws JSONException {
-		return this.turSNSiteFieldRepository.findById(id).get();
+	public TurSNSiteField turSNSiteFieldGet(@PathVariable String snSiteId, @PathVariable String id) {
+		return this.turSNSiteFieldRepository.findById(id).orElse(new TurSNSiteField());
 	}
 
 	@ApiOperation(value = "Update a Semantic Navigation Site Field")
 	@PutMapping("/{id}")
 	public TurSNSiteField turSNSiteFieldUpdate(@PathVariable String snSiteId, @PathVariable String id,
-			@RequestBody TurSNSiteField turSNSiteField) throws Exception {
-		TurSNSiteField turSNSiteFieldEdit = this.turSNSiteFieldRepository.findById(id).get();
-		turSNSiteFieldEdit.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldEdit.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldEdit.setName(turSNSiteField.getName());
-		turSNSiteFieldEdit.setType(turSNSiteField.getType());
-		this.turSNSiteFieldRepository.save(turSNSiteFieldEdit);
-		return turSNSiteFieldEdit;
+			@RequestBody TurSNSiteField turSNSiteField) {
+		return this.turSNSiteFieldRepository.findById(id).map(turSNSiteFieldEdit -> {
+			turSNSiteFieldEdit.setDescription(turSNSiteField.getDescription());
+			turSNSiteFieldEdit.setMultiValued(turSNSiteField.getMultiValued());
+			turSNSiteFieldEdit.setName(turSNSiteField.getName());
+			turSNSiteFieldEdit.setType(turSNSiteField.getType());
+			this.turSNSiteFieldRepository.save(turSNSiteFieldEdit);
+			return turSNSiteFieldEdit;
+		}).orElse(new TurSNSiteField());
+
 	}
 
 	@Transactional
@@ -85,12 +87,11 @@ public class TurSNSiteFieldAPI {
 
 	@ApiOperation(value = "Create a Semantic Navigation Site Field")
 	@PostMapping
-	public TurSNSiteField turSNSiteFieldAdd(@PathVariable String snSiteId, @RequestBody TurSNSiteField turSNSiteField) throws Exception {
-		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
-		turSNSiteField.setTurSNSite(turSNSite);
-		this.turSNSiteFieldRepository.save(turSNSiteField);
-		return turSNSiteField;
-
+	public TurSNSiteField turSNSiteFieldAdd(@PathVariable String snSiteId, @RequestBody TurSNSiteField turSNSiteField) {
+		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
+			turSNSiteField.setTurSNSite(turSNSite);
+			this.turSNSiteFieldRepository.save(turSNSiteField);
+			return turSNSiteField;
+		}).orElse(new TurSNSiteField());
 	}
-
 }
