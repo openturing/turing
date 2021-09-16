@@ -64,6 +64,8 @@ public class TurSNSiteOnStartup {
 			turSNTemplate.createSEFields(turSNSite);
 
 			turSNTemplate.createNERFields(turSNSite);
+			
+			turSNTemplate.createSpotlight(turSNSite);
 		}
 	}
 

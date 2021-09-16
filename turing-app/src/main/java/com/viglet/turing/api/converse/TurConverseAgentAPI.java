@@ -20,6 +20,7 @@ package com.viglet.turing.api.converse;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -89,29 +90,32 @@ public class TurConverseAgentAPI {
 	@ApiOperation(value = "Show a Converse Agent")
 	@GetMapping("/{id}")
 	public TurConverseAgent turConverseAgentGet(@PathVariable String id) {
-		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
-		return turConverseAgent;
+		return turConverseAgentRepository.findById(id).orElse(new TurConverseAgent());
 	}
 
 	@ApiOperation(value = "Show a Converse Intent List")
 	@GetMapping("/{id}/intents")
 	public Set<TurConverseIntent> turConverseAgentIntentsGet(@PathVariable String id) {
-		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
-		return turConverseIntentRepository.findByAgent(turConverseAgent);
+		return turConverseAgentRepository.findById(id)
+				.map(turConverseAgent -> turConverseIntentRepository.findByAgent(turConverseAgent))
+				.orElse(new HashSet<TurConverseIntent>());
+
 	}
 
 	@ApiOperation(value = "Show a Converse Entity List")
 	@GetMapping("/{id}/entities")
 	public Set<TurConverseEntity> turConverseAgentEntitiesGet(@PathVariable String id) {
-		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
-		return turConverseEntityRepository.findByAgent(turConverseAgent);
+		return turConverseAgentRepository.findById(id)
+				.map(turConverseAgent -> turConverseEntityRepository.findByAgent(turConverseAgent))
+				.orElse(new HashSet<TurConverseEntity>());
 	}
 
 	@ApiOperation(value = "Show a Converse Context List")
 	@GetMapping("/{id}/contexts")
 	public Set<TurConverseContext> turConverseAgentContextsGet(@PathVariable String id) {
-		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
-		return turConverseContextRepository.findByAgent(turConverseAgent);
+		return turConverseAgentRepository.findById(id)
+				.map(turConverseAgent -> turConverseContextRepository.findByAgent(turConverseAgent))
+				.orElse(new HashSet<TurConverseContext>());
 	}
 
 	@ApiOperation(value = "Create a Converse Agent")
@@ -124,15 +128,17 @@ public class TurConverseAgentAPI {
 	@PutMapping("/{id}")
 	public TurConverseAgent turConverseAgentUpdate(@PathVariable String id,
 			@RequestBody TurConverseAgent turConverseAgent) {
-		TurConverseAgent turConverseAgentEdit = turConverseAgentRepository.findById(turConverseAgent.getId()).get();
+		return turConverseAgentRepository.findById(turConverseAgent.getId()).map(turConverseAgentEdit -> {
 
-		turConverseAgentEdit.setCore(turConverseAgent.getCore());
-		turConverseAgentEdit.setDescription(turConverseAgent.getDescription());
-		turConverseAgentEdit.setLanguage(turConverseAgent.getLanguage());
-		turConverseAgentEdit.setName(turConverseAgent.getName());
-		turConverseAgentEdit.setTurSEInstance(turConverseAgent.getTurSEInstance());
+			turConverseAgentEdit.setCore(turConverseAgent.getCore());
+			turConverseAgentEdit.setDescription(turConverseAgent.getDescription());
+			turConverseAgentEdit.setLanguage(turConverseAgent.getLanguage());
+			turConverseAgentEdit.setName(turConverseAgent.getName());
+			turConverseAgentEdit.setTurSEInstance(turConverseAgent.getTurSEInstance());
 
-		return turConverseAgentRepository.save(turConverseAgentEdit);
+			return turConverseAgentRepository.save(turConverseAgentEdit);
+
+		}).orElse(new TurConverseAgent());
 
 	}
 
@@ -140,15 +146,17 @@ public class TurConverseAgentAPI {
 	@ApiOperation(value = "Delete a Converse Agent")
 	@DeleteMapping("/{id}")
 	public boolean turConverseAgentDelete(@PathVariable String id) {
-		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
-		Set<TurConverseContext> turConverseContexts = turConverseContextRepository.findByAgent(turConverseAgent);
-		for (TurConverseContext context : turConverseContexts) {
-			context.setIntentInputs(null);
-			context.setIntentOutputs(null);
-			turConverseContextRepository.saveAndFlush(context);
-		}
-		this.turConverseAgentRepository.delete(id);
-		return true;
+		return turConverseAgentRepository.findById(id).map(turConverseAgent -> {
+			Set<TurConverseContext> turConverseContexts = turConverseContextRepository.findByAgent(turConverseAgent);
+			for (TurConverseContext context : turConverseContexts) {
+				context.setIntentInputs(null);
+				context.setIntentOutputs(null);
+				turConverseContextRepository.saveAndFlush(context);
+			}
+			this.turConverseAgentRepository.delete(id);
+			return true;
+		}).orElse(false);
+
 	}
 
 	@ApiOperation(value = "Converse Agent Model")
@@ -162,14 +170,16 @@ public class TurConverseAgentAPI {
 	@GetMapping("/{id}/rebuild")
 	public boolean turConverseAgentRebuild(@PathVariable String id) {
 
-		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(id).get();
-		Set<TurConverseIntent> turConverseIntents = turConverseIntentRepository.findByAgent(turConverseAgent);
-		turConverseSE.desindexAll(turConverseAgent);
+		return turConverseAgentRepository.findById(id).map(turConverseAgent -> {
+			Set<TurConverseIntent> turConverseIntents = turConverseIntentRepository.findByAgent(turConverseAgent);
+			turConverseSE.desindexAll(turConverseAgent);
 
-		for (TurConverseIntent turConverseIntent : turConverseIntents) {
-			turConverseSE.index(turConverseIntent);
-		}
-		return true;
+			for (TurConverseIntent turConverseIntent : turConverseIntents) {
+				turConverseSE.index(turConverseIntent);
+			}
+			return true;
+		}).orElse(false);
+
 	}
 
 	@ApiOperation(value = "Converse Chat")

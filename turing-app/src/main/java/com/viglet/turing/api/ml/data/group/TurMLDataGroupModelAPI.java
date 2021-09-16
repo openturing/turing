@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,10 +18,9 @@
 package com.viglet.turing.api.ml.data.group;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,8 +30,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.tika.exception.TikaException;
-import org.json.JSONException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -43,7 +42,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.xml.sax.SAXException;
 
 import com.viglet.turing.persistence.model.ml.TurMLModel;
 import com.viglet.turing.persistence.model.storage.TurDataGroup;
@@ -62,7 +60,6 @@ import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;
 import opennlp.tools.doccat.DocumentSample;
 import opennlp.tools.doccat.DocumentSampleStream;
-import opennlp.tools.tokenize.WhitespaceTokenizer;
 import opennlp.tools.util.InputStreamFactory;
 import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
@@ -72,7 +69,7 @@ import opennlp.tools.util.TrainingParameters;
 @RequestMapping("/api/ml/data/group/{dataGroupId}/model")
 @Api(tags = "Machine Learning Model by Group", description = "Machine Learning Model by Group API")
 public class TurMLDataGroupModelAPI {
-
+	private static final Log logger = LogFactory.getLog(TurMLDataGroupModelAPI.class);
 	@Autowired
 	TurDataGroupRepository turDataGroupRepository;
 	@Autowired
@@ -86,15 +83,14 @@ public class TurMLDataGroupModelAPI {
 
 	@ApiOperation(value = "Machine Learning Data Group Model List")
 	@GetMapping
-	public List<TurDataGroupModel> turDataGroupModelList(@PathVariable int dataGroupId) throws JSONException {
+	public List<TurDataGroupModel> turDataGroupModelList(@PathVariable int dataGroupId) {
 		TurDataGroup turDataGroup = turDataGroupRepository.findById(dataGroupId);
 		return this.turDataGroupModelRepository.findByTurDataGroup(turDataGroup);
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Data Group Model")
 	@GetMapping("/{id}")
-	public TurDataGroupModel turDataGroupModelGet(@PathVariable int dataGroupId,
-			@PathVariable int id) throws JSONException {
+	public TurDataGroupModel turDataGroupModelGet(@PathVariable int dataGroupId, @PathVariable int id) {
 		return this.turDataGroupModelRepository.findById(id);
 	}
 
@@ -118,7 +114,7 @@ public class TurMLDataGroupModelAPI {
 
 	@ApiOperation(value = "Create a Machine Learning Data Group Model")
 	@PostMapping
-	public TurDataGroupModel turDataGroupModelAdd(@PathVariable int dataGroupId, @RequestBody TurMLModel turMLModel) throws Exception {
+	public TurDataGroupModel turDataGroupModelAdd(@PathVariable int dataGroupId, @RequestBody TurMLModel turMLModel) {
 		TurDataGroupModel turDataGroupModel = new TurDataGroupModel();
 		TurDataGroup turDataGroup = this.turDataGroupRepository.findById(dataGroupId);
 		turDataGroupModel.setTurMLModel(turMLModel);
@@ -129,8 +125,7 @@ public class TurMLDataGroupModelAPI {
 	}
 
 	@GetMapping("/generate")
-	public TurDataGroupModel turDataGroupModelGenerate(@PathVariable int dataGroupId)
-			throws JSONException, IOException, SAXException, TikaException {
+	public TurDataGroupModel turDataGroupModelGenerate(@PathVariable int dataGroupId) {
 
 		TurDataGroup turDataGroup = turDataGroupRepository.findById(dataGroupId);
 		List<TurDataGroupSentence> turDataSentences = this.turDataGroupSentenceRepository
@@ -149,36 +144,19 @@ public class TurMLDataGroupModelAPI {
 				trainSB.append("\n");
 			}
 		}
-		PrintWriter out = new PrintWriter(trainFilePath);
-		out.println(trainSB.toString().trim());
-		out.close();
 
-		///////////////
-		try (BufferedReader br = new BufferedReader(new FileReader(trainFilePath))) {
-			String line;
-			while ((line = br.readLine()) != null) {
-
-				// Whitespace tokenize entire string
-
-				String tokens[] = WhitespaceTokenizer.INSTANCE.tokenize(line);
-
-				if (tokens.length > 1) {
-					///
-				} else {
-					// Empty lines: " + tokens.toString());
-				}
-			}
+		try (PrintWriter out = new PrintWriter(trainFilePath)) {
+			out.println(trainSB.toString().trim());
+		} catch (FileNotFoundException e) {
+			logger.error(e);
 		}
 
 		DoccatModel model = null;
 
-		InputStream dataIn = null;
 		try {
 			InputStreamFactory isf = new InputStreamFactory() {
 				public InputStream createInputStream() throws IOException {
 					return new FileInputStream(trainFilePath);
-					// return new
-					// ByteArrayInputStream(trainSB.toString().getBytes(StandardCharsets.UTF_8));
 				}
 			};
 
@@ -191,37 +169,18 @@ public class TurMLDataGroupModelAPI {
 			model = DocumentCategorizerME.train("en", sampleStream, TrainingParameters.defaultParams(), factory);
 
 		} catch (IOException e) {
-			// Failed to read or parse training data, training failed
-			e.printStackTrace();
-		} finally {
-			if (dataIn != null) {
-				try {
-					dataIn.close();
-				} catch (IOException e) {
-					// Not an issue, training already finished.
-					// The exception should be logged and investigated
-					// if part of a production system.
-					e.printStackTrace();
-				}
-			}
+			logger.error(e);
 		}
-		OutputStream modelOut = null;
-		try {
-			modelOut = new BufferedOutputStream(new FileOutputStream(modelFilePath));
-			model.serialize(modelOut);
-		} catch (IOException e) {
-			// Failed to save model
-			e.printStackTrace();
-		} finally {
-			if (modelOut != null) {
-				try {
-					modelOut.close();
-				} catch (IOException e) {
-					// Failed to correctly save model.
-					// Written model might be invalid.
-					e.printStackTrace();
-				}
+
+		if (model != null) {
+			try (OutputStream modelOut = new BufferedOutputStream(new FileOutputStream(modelFilePath))) {
+				model.serialize(modelOut);
+			} catch (FileNotFoundException e) {
+				logger.error(e);
+			} catch (IOException e) {
+				logger.error(e);
 			}
+
 		}
 
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");

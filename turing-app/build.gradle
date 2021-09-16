@@ -238,10 +238,10 @@ dependencies {
 	implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
 
 	// Spring
-  	implementation group: 'org.springframework', name: 'spring-test', version: '5.3.9'
+  	implementation group: 'org.springframework', name: 'spring-test', version: '5.3.10'
 
  	// Jackson
-   	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.12.4'
+   	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.12.5'
    	  	
   	// H2
     implementation group: 'com.h2database', name: 'h2', version:'1.4.200'
@@ -272,10 +272,10 @@ dependencies {
     implementation group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.9.2'
     
     // Tika
-    implementation group: 'org.apache.tika', name: 'tika-core', version:'2.0.0'
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.0.0'
-	implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: '2.0.0'
-	implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: '2.0.0'	
+    implementation group: 'org.apache.tika', name: 'tika-core', version:'2.1.0'
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.1.0'
+	implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: '2.1.0'
+	implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: '2.1.0'	
     implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version:'2.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-core', version:'1.4.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version:'1.4.0'

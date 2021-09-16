@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,21 +41,22 @@ public class TurConverseHistoryAPI {
 	private TurConverseChatRepository turConverseChatRepository;
 	@Autowired
 	private TurConverseChatResponseRepository turConverseChatResponseRepository;
-	
-	
+
 	@ApiOperation(value = "Converse Training List")
 	@GetMapping
-	public List<TurConverseChat> turConverseHistoryList(){
+	public List<TurConverseChat> turConverseHistoryList() {
 		return this.turConverseChatRepository.findAll();
 	}
-	
+
 	@ApiOperation(value = "Show a Converse Training")
 	@GetMapping("/{id}")
 	public TurConverseChat turConverseTrainingGet(@PathVariable String id) {
-		TurConverseChat turConverseChat = turConverseChatRepository.findById(id).get();
-		List<TurConverseChatResponse> responses = turConverseChatResponseRepository.findByChat(turConverseChat);
-		turConverseChat.setResponses(responses);
-		return turConverseChat;
+		return turConverseChatRepository.findById(id).map(turConverseChat -> {
+			List<TurConverseChatResponse> responses = turConverseChatResponseRepository.findByChat(turConverseChat);
+			turConverseChat.setResponses(responses);
+			return turConverseChat;
+		}).orElse(new TurConverseChat());
+
 	}
-	
+
 }

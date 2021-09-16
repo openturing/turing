@@ -78,11 +78,13 @@ public class TurConverseTrainingAPI {
 	@ApiOperation(value = "Show a Converse Training")
 	@GetMapping("/{id}")
 	public TurConverseChat turConverseTrainingGet(@PathVariable String id) {
-		TurConverseChat turConverseChat = turConverseChatRepository.findById(id).get();
-		List<TurConverseChatResponse> responses = turConverseChatResponseRepository.findByChatAndIsUser(turConverseChat,
-				true);
-		turConverseChat.setResponses(responses);
-		return turConverseChat;
+		return turConverseChatRepository.findById(id).map(turConverseChat -> {
+			List<TurConverseChatResponse> responses = turConverseChatResponseRepository
+					.findByChatAndIsUser(turConverseChat, true);
+			turConverseChat.setResponses(responses);
+			return turConverseChat;
+		}).orElse(new TurConverseChat());
+
 	}
 
 	@ApiOperation(value = "Update a Converse Training")
@@ -91,8 +93,8 @@ public class TurConverseTrainingAPI {
 			@RequestBody TurConverseChat turConverseChat) {
 		for (TurConverseChatResponse response : turConverseChat.getResponses()) {
 			if (response.isTrainingToIntent() && response.getIntentId() != null) {
-				TurConverseIntent intent = turConverseIntentRepository.findById(response.getIntentId()).get();
-				addNewPhrase(response, intent);
+				turConverseIntentRepository.findById(response.getIntentId())
+						.ifPresent(intent -> addNewPhrase(response, intent));
 			}
 			if (response.isTrainingToFallback()) {
 				List<TurConverseIntent> intents = turConverseIntentRepository

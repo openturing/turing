@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -96,91 +96,92 @@ public class TurConverseIntentAPI {
 	}
 
 	private TurConverseIntent getIntent(String id) {
-		TurConverseIntent turConverseIntent = this.turConverseIntentRepository.findById(id).get();
-		turConverseIntent.setContextInputs(
-				turConverseContextRepository.findByIntentInputs_Id(turConverseIntent.getId()));
-		turConverseIntent.setContextOutputs(
-				turConverseContextRepository.findByIntentOutputs_Id(turConverseIntent.getId()));
-		turConverseIntent.setEvents(turConverseEventRepository.findByIntent(turConverseIntent));
-		turConverseIntent.setParameters(turConverseParameterRepository.findByIntent(turConverseIntent));
+		return this.turConverseIntentRepository.findById(id).map(turConverseIntent -> {
+			turConverseIntent
+					.setContextInputs(turConverseContextRepository.findByIntentInputs_Id(turConverseIntent.getId()));
+			turConverseIntent
+					.setContextOutputs(turConverseContextRepository.findByIntentOutputs_Id(turConverseIntent.getId()));
+			turConverseIntent.setEvents(turConverseEventRepository.findByIntent(turConverseIntent));
+			turConverseIntent.setParameters(turConverseParameterRepository.findByIntent(turConverseIntent));
 
-		for (TurConverseParameter parameter : turConverseIntent.getParameters()) {
-			parameter.setPrompts(turConversePromptRepository.findByParameter(parameter));
-		}
-		turConverseIntent.setPhrases(turConversePhraseRepository.findByIntent(turConverseIntent));
-		turConverseIntent.setResponses(turConverseResponseRepository.findByIntent(turConverseIntent));
-		return turConverseIntent;
+			for (TurConverseParameter parameter : turConverseIntent.getParameters()) {
+				parameter.setPrompts(turConversePromptRepository.findByParameter(parameter));
+			}
+			turConverseIntent.setPhrases(turConversePhraseRepository.findByIntent(turConverseIntent));
+			turConverseIntent.setResponses(turConverseResponseRepository.findByIntent(turConverseIntent));
+			return turConverseIntent;
+		}).orElse(new TurConverseIntent());
+
 	}
 
 	@ApiOperation(value = "Update a Converse Intent")
 	@PutMapping("/{id}")
 	public TurConverseIntent turConverseIntentUpdate(@JsonProperty("agent") String agent, @PathVariable String id,
 			@RequestBody TurConverseIntent turConverseIntent) throws Exception {
-		TurConverseIntent turConverseIntentEdit = turConverseIntentRepository.findById(id).get();
+		return turConverseIntentRepository.findById(id).map(turConverseIntentEdit -> {
+			turConverseIntentEdit.setActionName(turConverseIntent.getActionName());
+			turConverseIntentEdit.setParameters(turConverseIntent.getParameters());
+			turConverseIntentEdit.setContextInputs(turConverseIntent.getContextInputs());
+			turConverseIntentEdit.setContextOutputs(turConverseIntent.getContextOutputs());
+			turConverseIntentEdit.setEvents(turConverseIntent.getEvents());
+			turConverseIntentEdit.setName(turConverseIntent.getName());
+			turConverseIntentEdit.setParameters(turConverseIntent.getParameters());
+			turConverseIntentEdit.setPhrases(turConverseIntent.getPhrases());
+			turConverseIntentEdit.setResponses(turConverseIntent.getResponses());
 
-		turConverseIntentEdit.setActionName(turConverseIntent.getActionName());
-		turConverseIntentEdit.setParameters(turConverseIntent.getParameters());
-		turConverseIntentEdit.setContextInputs(turConverseIntent.getContextInputs());
-		turConverseIntentEdit.setContextOutputs(turConverseIntent.getContextOutputs());
-		turConverseIntentEdit.setEvents(turConverseIntent.getEvents());
-		turConverseIntentEdit.setName(turConverseIntent.getName());
-		turConverseIntentEdit.setParameters(turConverseIntent.getParameters());
-		turConverseIntentEdit.setPhrases(turConverseIntent.getPhrases());
-		turConverseIntentEdit.setResponses(turConverseIntent.getResponses());
+			this.turConverseIntentRepository.save(turConverseIntentEdit);
 
-		this.turConverseIntentRepository.save(turConverseIntentEdit);
+			List<String> inputsIds = this.addInputContexts(id, turConverseIntent, turConverseIntentEdit);
 
-		List<String> inputsIds = this.addInputContexts(id, turConverseIntent, turConverseIntentEdit);
+			this.removeInputContexts(id, turConverseIntentEdit, inputsIds);
 
-		this.removeInputContexts(id, turConverseIntentEdit, inputsIds);
+			List<String> outputsIds = addOutputContext(id, turConverseIntent, turConverseIntentEdit);
 
-		List<String> outputsIds = addOutputContext(id, turConverseIntent, turConverseIntentEdit);
+			this.removeOutputContexts(id, turConverseIntentEdit, outputsIds);
 
-		this.removeOutputContexts(id, turConverseIntentEdit, outputsIds);
-
-		Set<TurConverseEvent> events = turConverseIntent.getEvents();
-		for (TurConverseEvent event : events) {
-			if (event != null) {
-				event.setIntent(turConverseIntentEdit);
-				turConverseEventRepository.save(event);
-			}
-		}
-
-		Set<TurConverseParameter> parameters = turConverseIntent.getParameters();
-		for (TurConverseParameter parameter : parameters) {
-			if (parameter != null) {
-				parameter.setIntent(turConverseIntentEdit);
-				turConverseParameterRepository.save(parameter);
-			}
-
-			Set<TurConversePrompt> prompts = parameter.getPrompts();
-			for (TurConversePrompt prompt : prompts) {
-				if (prompt != null) {
-					prompt.setParameter(parameter);
-					turConversePromptRepository.save(prompt);
+			Set<TurConverseEvent> events = turConverseIntent.getEvents();
+			for (TurConverseEvent event : events) {
+				if (event != null) {
+					event.setIntent(turConverseIntentEdit);
+					turConverseEventRepository.save(event);
 				}
 			}
 
-		}
+			Set<TurConverseParameter> parameters = turConverseIntent.getParameters();
+			for (TurConverseParameter parameter : parameters) {
+				if (parameter != null) {
+					parameter.setIntent(turConverseIntentEdit);
+					turConverseParameterRepository.save(parameter);
 
-		Set<TurConversePhrase> phrases = turConverseIntent.getPhrases();
-		for (TurConversePhrase phrase : phrases) {
-			if (phrase != null) {
-				phrase.setIntent(turConverseIntentEdit);
-				turConversePhraseRepository.save(phrase);
+					Set<TurConversePrompt> prompts = parameter.getPrompts();
+					for (TurConversePrompt prompt : prompts) {
+						if (prompt != null) {
+							prompt.setParameter(parameter);
+							turConversePromptRepository.save(prompt);
+						}
+					}
+				}
 			}
-		}
 
-		Set<TurConverseResponse> responses = turConverseIntent.getResponses();
-		for (TurConverseResponse response : responses) {
-			if (response != null) {
-				response.setIntent(turConverseIntentEdit);
-				turConverseResponseRepository.save(response);
+			Set<TurConversePhrase> phrases = turConverseIntent.getPhrases();
+			for (TurConversePhrase phrase : phrases) {
+				if (phrase != null) {
+					phrase.setIntent(turConverseIntentEdit);
+					turConversePhraseRepository.save(phrase);
+				}
 			}
-		}
 
-		turConverseSE.index(turConverseIntentEdit);
-		return this.getIntent(turConverseIntentEdit.getId());
+			Set<TurConverseResponse> responses = turConverseIntent.getResponses();
+			for (TurConverseResponse response : responses) {
+				if (response != null) {
+					response.setIntent(turConverseIntentEdit);
+					turConverseResponseRepository.save(response);
+				}
+			}
+
+			turConverseSE.index(turConverseIntentEdit);
+			return this.getIntent(turConverseIntentEdit.getId());
+		}).orElse(new TurConverseIntent());
 	}
 
 	private List<String> addOutputContext(String id, TurConverseIntent turConverseIntent,
@@ -280,7 +281,8 @@ public class TurConverseIntentAPI {
 	}
 
 	private void removeInputContexts(String id, TurConverseIntent turConverseIntentEdit, List<String> inputsIds) {
-		Set<TurConverseContext> contextInputs = turConverseContextRepository.findByIntentInputs_Id(turConverseIntentEdit.getId());
+		Set<TurConverseContext> contextInputs = turConverseContextRepository
+				.findByIntentInputs_Id(turConverseIntentEdit.getId());
 		for (TurConverseContext contextInput : contextInputs) {
 			if (!inputsIds.contains(contextInput.getId())) {
 				Set<TurConverseIntent> newIntentInput = new HashSet<>();
@@ -295,7 +297,8 @@ public class TurConverseIntentAPI {
 	}
 
 	private void removeOutputContexts(String id, TurConverseIntent turConverseIntentEdit, List<String> outputsIds) {
-		Set<TurConverseContext> contextOutputs = turConverseContextRepository.findByIntentOutputs_Id(turConverseIntentEdit.getId());
+		Set<TurConverseContext> contextOutputs = turConverseContextRepository
+				.findByIntentOutputs_Id(turConverseIntentEdit.getId());
 		for (TurConverseContext contextOutput : contextOutputs) {
 			if (!outputsIds.contains(contextOutput.getId())) {
 				Set<TurConverseIntent> newIntentOutput = new HashSet<>();
@@ -360,22 +363,21 @@ public class TurConverseIntentAPI {
 			response.setIntent(turConverseIntent);
 			turConverseResponseRepository.save(response);
 		}
-		
+
 		Set<TurConverseParameter> parameters = turConverseIntent.getParameters();
 		for (TurConverseParameter parameter : parameters) {
 			if (parameter != null) {
 				parameter.setIntent(turConverseIntent);
 				turConverseParameterRepository.save(parameter);
-			}
 
-			Set<TurConversePrompt> prompts = parameter.getPrompts();
-			for (TurConversePrompt prompt : prompts) {
-				if (prompt != null) {
-					prompt.setParameter(parameter);
-					turConversePromptRepository.save(prompt);
+				Set<TurConversePrompt> prompts = parameter.getPrompts();
+				for (TurConversePrompt prompt : prompts) {
+					if (prompt != null) {
+						prompt.setParameter(parameter);
+						turConversePromptRepository.save(prompt);
+					}
 				}
 			}
-
 		}
 		turConverseSE.index(turConverseIntent);
 		return turConverseIntent;

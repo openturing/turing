@@ -20,13 +20,18 @@ package com.viglet.turing.persistence.model.nlp;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * The persistent class for the turEntities database table.
@@ -63,20 +68,28 @@ public class TurNLPEntity implements Serializable {
 	@Column
 	private int enabled;		
 
-	// bi-directional many-to-one association to TurServicesNLPEntity
-	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turNLPEntity", cascade = CascadeType.ALL)
-	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
-	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
+	// bi-directional many-to-one association to TurNLPInstanceEntity
+	@OneToMany(mappedBy = "turNLPEntity", orphanRemoval = true)
+	@Cascade({ CascadeType.ALL })
+	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurNLPInstanceEntity> turNLPInstanceEntities;
+	
 
-	// bi-directional many-to-one association to TurServicesNLPEntity
-	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turNLPEntity", cascade = CascadeType.ALL)
-	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
-	private List<TurNLPVendorEntity> turNLPVendorEntities;
-
+	// bi-directional many-to-one association to TurNLPVendorEntity
+	@OneToMany(mappedBy = "turNLPEntity", orphanRemoval = true)
+	@Cascade({ CascadeType.ALL })
+	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurNLPVendorEntity> turNLPVendorEntities;
+	
+	
 	// bi-directional many-to-one association to TurTerm
-	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turNLPEntity", cascade = CascadeType.ALL)
-	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
-	private List<TurTerm> turTerms;
+	@OneToMany(mappedBy = "turNLPEntity", orphanRemoval = true)
+	@Cascade({ CascadeType.ALL })
+	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurTerm> turTerms;
 
 	public TurNLPEntity() {
 	}
@@ -129,11 +142,11 @@ public class TurNLPEntity implements Serializable {
 		this.name = name;
 	}
 
-	public List<TurNLPInstanceEntity> getTurNLPInstanceEntities() {
+	public Set<TurNLPInstanceEntity> getTurNLPInstanceEntities() {
 		return this.turNLPInstanceEntities;
 	}
 
-	public void setTurNLPInstanceEntities(List<TurNLPInstanceEntity> turNLPInstanceEntities) {
+	public void setTurNLPInstanceEntities(Set<TurNLPInstanceEntity> turNLPInstanceEntities) {
 		this.turNLPInstanceEntities = turNLPInstanceEntities;
 	}
 
@@ -153,11 +166,11 @@ public class TurNLPEntity implements Serializable {
 
 	
 	
-	public List<TurNLPVendorEntity> getTurNLPVendorEntities() {
+	public Set<TurNLPVendorEntity> getTurNLPVendorEntities() {
 		return this.turNLPVendorEntities;
 	}
 
-	public void setTurNLPVendorEntities(List<TurNLPVendorEntity> turNLPVendorEntities) {
+	public void setTurNLPVendorEntities(Set<TurNLPVendorEntity> turNLPVendorEntities) {
 		this.turNLPVendorEntities = turNLPVendorEntities;
 	}
 
@@ -174,11 +187,11 @@ public class TurNLPEntity implements Serializable {
 
 		return turNLPVendorEntity;
 	}
-	public List<TurTerm> getTurTerms() {
+	public Set<TurTerm> getTurTerms() {
 		return this.turTerms;
 	}
 
-	public void setTurTerms(List<TurTerm> turTerms) {
+	public void setTurTerms(Set<TurTerm> turTerms) {
 		this.turTerms = turTerms;
 	}
 

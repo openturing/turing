@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,18 +61,19 @@ public class TurSNProcessQueue {
 	@JmsListener(destination = INDEXING_QUEUE)
 	public void receiveIndexingQueue(TurSNJob turSNJob) {
 
-		TurSNSite turSNSite = this.turSNSiteRepository.findById(turSNJob.getSiteId()).get();
-		for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
-			logger.debug("receiveQueue TurSNJobItem: " + turSNJobItem.toString());
-			if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
-				this.indexing(turSNJobItem, turSNSite);
+		this.turSNSiteRepository.findById(turSNJob.getSiteId()).ifPresent(turSNSite -> {
+			for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
+				logger.debug("receiveQueue TurSNJobItem: " + turSNJobItem.toString());
+				if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
+					this.indexing(turSNJobItem, turSNSite);
 
-			} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
-				this.desindexing(turSNJobItem, turSNSite);
+				} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
+					this.desindexing(turSNJobItem, turSNSite);
+				}
+
+				processQueueInfo(turSNSite, turSNJobItem);
 			}
-
-			processQueueInfo(turSNSite, turSNJobItem);
-		}
+		});
 
 	}
 
@@ -149,13 +150,15 @@ public class TurSNProcessQueue {
 			}
 
 			turNLP.startup(turSNSite.getTurNLPInstance(), nlpAttributes);
-			Map<String, Object> nlpResults = turNLP.retrieveNLP();
 			Map<String, Object> nlpResultsPreffix = new HashMap<String, Object>();
 
 			// Add prefix to attribute name
-			/*for (Entry<String, ArrayList<String>> nlpResult : turNLPTraining.processNLPTerms(nlpResults).entrySet()) {
-				nlpResultsPreffix.put("turing_entity_" + nlpResult.getKey(), nlpResult.getValue());
-			} */
+			/*
+			 * for (Entry<String, ArrayList<String>> nlpResult :
+			 * turNLPTraining.processNLPTerms(nlpResults).entrySet()) {
+			 * nlpResultsPreffix.put("turing_entity_" + nlpResult.getKey(),
+			 * nlpResult.getValue()); }
+			 */
 
 			// Copy NLP attributes to consolidateResults
 			for (Entry<String, Object> nlpResultPreffix : nlpResultsPreffix.entrySet()) {

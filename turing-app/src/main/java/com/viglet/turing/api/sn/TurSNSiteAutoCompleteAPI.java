@@ -23,8 +23,10 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
-import org.json.JSONException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,18 +36,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrField;
-
-import io.swagger.annotations.Api;
-
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.TurSEStopword;
+
+import io.swagger.annotations.Api;
 
 @RestController
 @RequestMapping("/api/sn/{siteName}/ac")
 @Api(tags = "Semantic Navigation Auto Complete", description = "Semantic Navigation Auto Complete API")
 public class TurSNSiteAutoCompleteAPI {
-
+	private static final Log logger = LogFactory.getLog(TurSNSiteAutoCompleteAPI.class);
 	@Autowired
 	TurSolr turSolr;
 	@Autowired
@@ -54,12 +55,11 @@ public class TurSNSiteAutoCompleteAPI {
 	TurSolrField turSolrField;
 	@Autowired
 	TurSEStopword turSEStopword;
-	
 
 	@GetMapping
 	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,
-			@RequestParam(required = false, name = "q") String q, HttpServletRequest request)
-			throws JSONException, IOException {
+			@RequestParam(required = false, name = "q") String q, HttpServletRequest request) {
+		List<String> termListShrink = new ArrayList<>();
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		SpellCheckResponse turSEResults = null;
 		turSolr.init(turSNSite);
@@ -69,71 +69,75 @@ public class TurSNSiteAutoCompleteAPI {
 			e.printStackTrace();
 		}
 		List<String> termList = turSEResults.getSuggestions().get(0).getAlternatives();
-		List<String> stopWords = turSEStopword.getStopWords("pt");
-		List<String> termListFormatted = new ArrayList<String>();
-		int tokenQSize = q.split(" ").length;
-		String previousTerm = null;
-		boolean previousFinishedStopWords = false;
-		for (String term : termList) {
-			String[] token = term.split(" ");
-			String lastToken = token[token.length - 1];
-			if (token.length > tokenQSize) {
-				if (previousTerm == null) {
-					if (!stopWords.contains(lastToken)) {
-						termListFormatted.add(term);
-						previousFinishedStopWords = false;
-					} else {
-						previousFinishedStopWords = true;
-					}
-					previousTerm = term;
+		List<String> stopWords;
+		try {
+			stopWords = turSEStopword.getStopWords("pt");
 
-				} else if (!term.contains(previousTerm)) {
-					if (!stopWords.contains(lastToken)) {
-						termListFormatted.add(term);
-						previousFinishedStopWords = false;
-					} else {
-						previousFinishedStopWords = true;
-					}
-					previousTerm = term;
-
-				} else {
-					if (previousFinishedStopWords) {
+			List<String> termListFormatted = new ArrayList<String>();
+			int tokenQSize = q.split(" ").length;
+			String previousTerm = null;
+			boolean previousFinishedStopWords = false;
+			for (String term : termList) {
+				String[] token = term.split(" ");
+				String lastToken = token[token.length - 1];
+				if (token.length > tokenQSize) {
+					if (previousTerm == null) {
 						if (!stopWords.contains(lastToken)) {
 							termListFormatted.add(term);
 							previousFinishedStopWords = false;
+						} else {
+							previousFinishedStopWords = true;
 						}
+						previousTerm = term;
+
+					} else if (!term.contains(previousTerm)) {
+						if (!stopWords.contains(lastToken)) {
+							termListFormatted.add(term);
+							previousFinishedStopWords = false;
+						} else {
+							previousFinishedStopWords = true;
+						}
+						previousTerm = term;
+
 					} else {
-						previousFinishedStopWords = true;
+						if (previousFinishedStopWords) {
+							if (!stopWords.contains(lastToken)) {
+								termListFormatted.add(term);
+								previousFinishedStopWords = false;
+							}
+						} else {
+							previousFinishedStopWords = true;
+						}
+
 					}
 
-				}
-
-			} else {
-				termListFormatted.add(term);
-				previousTerm = term + "";
-			}
-		}
-
-		List<String> termListShrink = new ArrayList<String>();
-		previousTerm = null;
-		int i = 0;
-		for (String term : termListFormatted) {
-			int currentIndex = termListFormatted.indexOf(term);
-			String[] token = term.split(" ");
-			if ((token.length <= tokenQSize + 1) || previousTerm == null) {
-				termListShrink.add(term);
-				previousTerm = term;
-			} else {
-				if (!term.contains(previousTerm)) {
-					termListShrink.add(term);
 				} else {
-					if ((termListFormatted.size() > currentIndex + 1)
-							&& (!termListFormatted.get(currentIndex + 1).contains(term))) {
+					termListFormatted.add(term);
+					previousTerm = term + "";
+				}
+			}
+
+			previousTerm = null;
+
+			for (String term : termListFormatted) {
+				int currentIndex = termListFormatted.indexOf(term);
+				String[] token = term.split(" ");
+				if ((token.length <= tokenQSize + 1) || previousTerm == null) {
+					termListShrink.add(term);
+					previousTerm = term;
+				} else {
+					if (!term.contains(previousTerm)) {
 						termListShrink.add(term);
+					} else {
+						if ((termListFormatted.size() > currentIndex + 1)
+								&& (!termListFormatted.get(currentIndex + 1).contains(term))) {
+							termListShrink.add(term);
+						}
 					}
 				}
 			}
-			i = i++;
+		} catch (IOException e) {
+			logger.error(e);
 		}
 		return termListShrink;
 	}

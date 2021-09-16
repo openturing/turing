@@ -1,0 +1,283 @@
+<style>
+  .header-search-wrapper {
+    display: table;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    font-size: inherit;
+    font-weight: 400;
+    color: var(--color-text-white);
+    vertical-align: middle;
+    background-color: var(--color-header-search-bg);
+    border: 1px solid var(--color-header-search-border);
+    box-shadow: none;
+  }
+
+  .header-search-input {
+    display: table-cell;
+    width: 100%;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    box-shadow: none;
+  }
+</style>
+
+<div class="clearfix">
+  <div class="Header ">
+    <div class="Header-item ">
+      <button (click)="showAll()" class="btn-link Header-link f4 d-flex flex-items-center">
+        <svg class="mr-3" style="width:30px; height:30px" viewBox="0 0 549 549">
+          <defs>
+            <style>
+              .cls-1 {
+                fill: royalblue;
+                stroke: #ffc;
+                stroke-width: 20px;
+                opacity: 1.0;
+              }
+
+              .cls-2 {
+                font-size: 98.505px;
+              }
+
+              .cls-2,
+              .cls-3 {
+                fill: #ffc;
+                font-family: "Proxima Nova";
+                font-weight: 500;
+              }
+
+              .cls-3 {
+                font-size: 25.538px;
+              }
+            </style>
+          </defs>
+          <rect class="cls-1" x="0.063" width="548" height="548.188" rx="100" ry="100" />
+          <text id="Tu" class="cls-2" transform="translate(64.825 442.418) scale(2.74 2.741)">Tu</text>
+        </svg> <span> Sample Site</span>
+      </button>
+    </div>
+    <div class="Header-item">
+      <div class="subnav-search float-left">
+        <input [(ngModel)]="turQuery" (keyup.enter)="searchIt()" type="search" name="name"
+          class="form-control subnav-search-input" autocapitalize="off" aria-label="Search…" placeholder="Search…"
+          spellcheck="false" autocomplete="off" aria-label="Search site" />
+        <span octicon="search" [size]=16 class="subnav-search-icon octicon octicon-search"></span>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="(getTurSNSearchItems() | async) as snSearch; else loading" class="container-lg px-md-2 mt-lg-4 clearfix">
+
+    <div *ngIf="snSearch.results.document.length <= 0" class="blankslate blankslate-large">
+      <span octicon="search" [size]=48 class="mb-3"></span>
+      <h3 class="mb-1">We couldn’t find any results matching '{{turQuery}}'.</h3>
+      <p>You can try to see all the available content, maybe you have a new idea. :-)</p>
+      <button class="btn btn-primary my-3" type="button" (click)="showAll()">Show all the available content</button>
+
+    </div>
+    <div *ngIf="snSearch.results.document.length > 0">
+      <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
+        <div *ngIf="snSearch.widget.facetToRemove && snSearch.widget.facetToRemove.facets"
+          class="Box Box--condensed Box--blue mb-3">
+          <div class="Box-header">
+            <h3 class="Box-title">
+              Applied Filters
+            </h3>
+          </div>
+          <ul>
+            <li *ngFor="let facet of snSearch.widget.facetToRemove.facets" class="Box-row">
+              <button class="btn-link" (click)="turRedirect(facet.link)">
+                {{facet.label}} (Remove)</button>
+            </li>
+          </ul>
+        </div>
+        <div *ngFor="let facets of snSearch.widget.facet" class="Box Box--condensed Box--blue mb-3">
+          <div class="Box-header">
+            <h3 class="Box-title">
+              {{facets.label.text}}
+            </h3>
+          </div>
+          <ul>
+            <li *ngFor="let facet of facets.facets" class="Box-row">
+              <button class="btn-link" (click)="turRedirect(facet.link)">
+                {{facet.label}} <span class="Counter Counter--gray">{{facet.count}}</span></button>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
+        <div class="d-flex flex-column flex-md-row flex-justify-between pb-3 position-relative">
+          <h3>
+            Showing {{snSearch.queryContext.pageStart}} - {{snSearch.queryContext.pageEnd}} of
+            {{snSearch.queryContext.count}} results
+          </h3>
+
+          <details class="details-reset details-overlay">
+            <summary class="btn btn-sm" aria-haspopup="true">
+              <i>Order by:</i>
+              <span> {{camelize(turSort)}}</span>
+            </summary>
+            <div class="SelectMenu">
+              <div class="SelectMenu-modal">
+                <header class="SelectMenu-header">
+                  <h3 class="SelectMenu-title">Order by options</h3>
+                </header>
+                <div class="SelectMenu-list">
+                  <button *ngFor="let option of sortOptions  | keyvalue" class="SelectMenu-item"
+                    (click)="changeOrderBy(option.key)" role="menuitem">
+                    <svg [ngStyle]="{'visibility':turSort == option.key ? 'visible' : 'hidden'}"
+                      class="SelectMenu-icon octicon octicon-pin" viewBox="0 0 16 16" version="1.1" width="16"
+                      height="16" aria-hidden="true">
+                      <path fill-rule="evenodd"
+                        d="M10 1.2V2l.5 1L6 6H2.2c-.44 0-.67.53-.34.86L5 10l-4 5 5-4 3.14 3.14a.5.5 0 00.86-.34V10l3-4.5 1 .5h.8c.44 0 .67-.53.34-.86L10.86.86a.5.5 0 00-.86.34z">
+                      </path>
+                    </svg>
+                    {{option.value}}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+        <div>
+          <ul *ngIf="snSearch.results as snSearchResults;" class="repo-list">
+            <ng-container *ngFor="let document of snSearchResults.document">
+              <div *ngIf="document.elevate" style="border-top: 1px solid var(--color-border-primary);">
+                <div class="blankslate">
+                  <svg width="40" height="40" style="border-radius: 50%;" class="mb-3"
+                    [identiconHash]="document.fields[snSearch.queryContext.defaultFields.title] | lowercase">
+                    Avatar
+                  </svg>
+
+                  <h3 class="mb-1" [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></h3>
+                  <p [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]"></p>
+                  <a href="{{document.fields[snSearch.queryContext.defaultFields.url]}}" class="btn btn-primary my-3"
+                    type="button">Read More</a>
+                </div>
+              </div>
+
+
+              <li *ngIf="!document.elevate" style="border-top: 1px solid var(--color-border-primary);"
+                class="repo-list-item hx_hit-repo d-flex flex-justify-start py-4 public source">
+
+
+                <div class="flex-shrink-0 mr-2">
+                  <svg width="32" height="32" style="border-radius: 50%;"
+                    [identiconHash]="document.fields[snSearch.queryContext.defaultFields.title] | lowercase">
+                    Avatar
+                  </svg>
+                </div>
+
+                <div class="mt-n1 flex-auto">
+                  <div class="d-flex">
+                    <div class="f4 text-normal">
+                      <a class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
+                        [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></a>
+                    </div>
+
+                  </div>
+
+                  <p class="mb-1"
+                    style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"
+                    [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]"></p>
+                  <div>
+                    <div>
+
+                      <button *ngFor="let metadata of document.metadata" (click)="turRedirect(metadata.href)"
+                        class="mr-3" title="{{metadata.text}}" class="btn-link branch-name px-2 mx-0"
+                        [innerHTML]="metadata.text">
+                      </button>
+                    </div>
+
+                    <div class="d-flex flex-wrap text-small color-text-secondary mt-1">
+                      <div class="mr-3">
+                        Updated <time
+                          *ngFor="let displaydate of document.fields[snSearch.queryContext.defaultFields.date]">{{displaydate
+                          | amDateFormat:'LL'}}</time>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ng-container>
+          </ul>
+        </div>
+        <nav class="paginate-container" aria-label="Pagination">
+          <div class="pagination">
+            <ng-container *ngFor="let page of snSearch.pagination">
+              <em *ngIf="page.type == 'current'" aria-current="page">{{camelize(page.text)}}</em>
+              <a *ngIf="page.type != 'current'"
+                [ngClass]="{'next_page': page.type === 'next' || page.type === 'last' , 'previous_page' : page.type === 'previous'  || page.type === 'first' }"
+                (click)="turRedirect(page.href)">{{camelize(page.text)}}</a>
+            </ng-container>
+          </div>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>
+<div class="footer container-xl width-full p-responsive" role="contentinfo">
+  <div
+    class="position-relative d-flex flex-row-reverse flex-lg-row flex-wrap flex-lg-nowrap flex-justify-center flex-lg-justify-between pt-6 pb-2 mt-6 f6 color-text-secondary border-top color-border-secondary ">
+    <ul
+      class="list-style-none d-flex flex-wrap col-12 col-lg-5 flex-justify-center flex-lg-justify-between mb-2 mb-lg-0">
+      <li class="mr-3 mr-lg-0">© {{currentDate()}} Turing AI.</li>
+      <li class="mr-3 mr-lg-0"><a href="https://github.com/openturing" target="_blank">Github</a></li>
+      <li class="mr-3 mr-lg-0"><a href="https://linkedin.com/company/viglet" target="_blank">LinkedIn</a></li>
+      <li class="mr-3 mr-lg-0"><a href="/swagger-ui.html" target="_blank">API</a></li>
+      <li class="mr-3 mr-lg-0"><a href="/console" target="_blank">Console</a></li>
+    </ul>
+
+    <a aria-label="Homepage" title="GitHub" class="footer-octicon d-none d-lg-block mx-lg-4"
+      href="https://viglet.com/turing" target="_blank">
+      <svg class="mr-3" style="width:24px; height:24px" viewBox="0 0 549 549">
+        <defs>
+          <style>
+            .cls-1a {
+              fill: #6e7781;
+              stroke: white;
+              stroke-width: 20px;
+              opacity: 1.0;
+            }
+
+            .cls-2a {
+              font-size: 98.505px;
+            }
+
+            .cls-2a,
+            .cls-3a {
+              fill: white;
+              font-family: "Proxima Nova";
+              font-weight: 500;
+            }
+
+            .cls-3a {
+              font-size: 25.538px;
+            }
+          </style>
+        </defs>
+        <rect class="cls-1a" x="0.063" width="548" height="548.188" rx="100" ry="100" />
+        <text id="Tu" class="cls-2a" transform="translate(64.825 442.418) scale(2.74 2.741)">Tu</text>
+
+      </svg>
+    </a>
+    <ul
+      class="list-style-none d-flex flex-wrap col-12 col-lg-5 flex-justify-center flex-lg-justify-between mb-2 mb-lg-0">
+      <li class="mr-3 mr-lg-0"><a href="https://viglet.com/#contact" target="_blank">Contact</a></li>
+      <li class="mr-3 mr-lg-0"><a href="https://viglet.com" target="_blank">Viglet</a></li>
+      <li class="mr-3 mr-lg-0"><a href="https://docs.viglet.com/turing" target="_blank">Documentation</a></li>
+      <li><a href="https://viglet.com/turing" target="_blank">Website</a></li>
+    </ul>
+  </div>
+  <div class="d-flex flex-justify-center pb-6">
+    <span class="f6 color-text-tertiary"></span>
+  </div>
+</div>

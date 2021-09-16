@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@ package com.viglet.turing.api.entity;
 
 import java.util.List;
 
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -46,44 +45,55 @@ public class TurNLPEntityAPI {
 
 	@ApiOperation(value = "Entity List")
 	@GetMapping
-	public List<TurNLPEntity> turNLPEntityList() throws JSONException {
+	public List<TurNLPEntity> turNLPEntityList() {
 		return this.turNLPEntityRepository.findAll();
+	}
+
+	@ApiOperation(value = "Entity structure")
+	@GetMapping("/structure")
+	public TurNLPEntity turNLPEntityStructure() {
+		return new TurNLPEntity();
+
 	}
 
 	@ApiOperation(value = "Local Entity list")
 	@GetMapping("/local")
-	public List<TurNLPEntity> turNLPEntityLocal() throws JSONException {
+	public List<TurNLPEntity> turNLPEntityLocal() {
 		return this.turNLPEntityRepository.findByLocal(1);
 	}
-	
+
 	@ApiOperation(value = "Show a entity")
 	@GetMapping("/{id}")
-	public TurNLPEntity turNLPEntityGet(@PathVariable String id) throws JSONException {
-		return this.turNLPEntityRepository.findById(id).get();
+	public TurNLPEntity turNLPEntityGet(@PathVariable String id) {
+		return this.turNLPEntityRepository.findById(id).orElse(new TurNLPEntity());
 	}
 
 	@ApiOperation(value = "Update a entity")
 	@PutMapping("/{id}")
-	public TurNLPEntity turNLPEntityUpdate(@PathVariable String id, @RequestBody TurNLPEntity turNLPEntity) throws Exception {
-		TurNLPEntity turNLPEntityEdit =  this.turNLPEntityRepository.findById(id).get();
-		turNLPEntityEdit.setName(turNLPEntity.getName());
-		turNLPEntityEdit.setDescription(turNLPEntity.getDescription());
-		this.turNLPEntityRepository.save(turNLPEntityEdit);
-		return turNLPEntityEdit;
+	public TurNLPEntity turNLPEntityUpdate(@PathVariable String id, @RequestBody TurNLPEntity turNLPEntity) {
+		return this.turNLPEntityRepository.findById(id).map(turNLPEntityEdit -> {
+			turNLPEntityEdit.setName(turNLPEntity.getName());
+			turNLPEntityEdit.setDescription(turNLPEntity.getDescription());
+			this.turNLPEntityRepository.save(turNLPEntityEdit);
+			return turNLPEntityEdit;
+		}).orElse(new TurNLPEntity());
+
 	}
 
 	@Transactional
 	@ApiOperation(value = "Delete a entity")
 	@DeleteMapping("/{id}")
 	public boolean turNLPEntityDelete(@PathVariable String id) {
-		TurNLPEntity turNLPEntity =  this.turNLPEntityRepository.findById(id).get();
-		this.turNLPEntityRepository.delete(turNLPEntity);
-		return true;
+		return this.turNLPEntityRepository.findById(id).map(turNLPEntity -> {
+			this.turNLPEntityRepository.delete(turNLPEntity);
+			return true;
+		}).orElse(false);
+
 	}
 
 	@ApiOperation(value = "Create a entity")
 	@PostMapping
-	public TurNLPEntity turNLPEntityAdd(@RequestBody TurNLPEntity turNLPEntity) throws Exception {
+	public TurNLPEntity turNLPEntityAdd(@RequestBody TurNLPEntity turNLPEntity) {
 		this.turNLPEntityRepository.save(turNLPEntity);
 		return turNLPEntity;
 

@@ -66,8 +66,8 @@ public class TurSNSiteImport {
 				turSNSite.setName(turSNSiteExchange.getName());
 				turSNSite.setRowsPerPage(turSNSiteExchange.getRowsPerPage());
 				turSNSite.setThesaurus(turSNSiteExchange.getThesaurus() ? (byte) 1 : (byte) 0);
-				turSNSite.setTurNLPInstance(turNLPInstanceRepository.findById(turSNSiteExchange.getTurNLPInstance()).get());
-				turSNSite.setTurSEInstance(turSEInstanceRepository.findById(turSNSiteExchange.getTurSEInstance()).get());
+				turSNSite.setTurNLPInstance(turNLPInstanceRepository.findById(turSNSiteExchange.getTurNLPInstance()).orElse(null));
+				turSNSite.setTurSEInstance(turSEInstanceRepository.findById(turSNSiteExchange.getTurSEInstance()).orElse(null));
 
 				turSNSiteRepository.save(turSNSite);
 

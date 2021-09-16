@@ -91,19 +91,21 @@ public class TurOnStartup implements ApplicationRunner {
 
 			turLocaleOnStartup.createDefaultRows();
 			turGroupOnStartup.createDefaultRows();
-			turUserOnStartup.createDefaultRows();			
+			turUserOnStartup.createDefaultRows();		
+			turNLPFeatureOnStartup.createDefaultRows();
 			turNLPVendorOnStartup.createDefaultRows();
+			turMLVendorOnStartup.createDefaultRows();
+			turSEVendorOnStartup.createDefaultRows();
+
 			turNLPEntityOnStartup.createDefaultRows();
 			turNLPVendorEntityOnStartup.createDefaultRows();
-			turNLPFeatureOnStartup.createDefaultRows();
 			turNLPInstanceOnStartup.createDefaultRows();
-			turMLVendorOnStartup.createDefaultRows();
 			turMLInstanceOnStartup.createDefaultRows();
-			turSEVendorOnStartup.createDefaultRows();
 			turSEInstanceOnStartup.createDefaultRows();
 			turDataGroupStartup.createDefaultRows();
 			turSNSiteOnStartup.createDefaultRows();
 			turConverseAgentOnStartup.createDefaultRows();
+			
 			turConfigVarOnStartup.createDefaultRows();
 
 			System.out.println("Configuration finished.");

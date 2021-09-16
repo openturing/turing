@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ import java.util.Map.Entry;
 
 import javax.xml.bind.JAXB;
 
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +52,7 @@ import com.viglet.turing.nlp.output.blazon.RedactionScript;
 import com.viglet.turing.nlp.output.blazon.SearchString;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 
@@ -86,43 +86,54 @@ public class TurNLPInstanceAPI {
 
 	@ApiOperation(value = "Natural Language Processing List")
 	@GetMapping
-	public List<TurNLPInstance> turNLPInstanceList() throws JSONException {
+	public List<TurNLPInstance> turNLPInstanceList() {
 		return this.turNLPInstanceRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Natural Language Processing")
 	@GetMapping("/{id}")
-	public TurNLPInstance turNLPInstanceGet(@PathVariable String id) throws JSONException {
-		return this.turNLPInstanceRepository.findById(id).get();
+	public TurNLPInstance turNLPInstanceGet(@PathVariable String id) {
+		return this.turNLPInstanceRepository.findById(id).orElse(new TurNLPInstance());
+	}
+
+	@ApiOperation(value = "Natural Language Processing structure")
+	@GetMapping("/structure")
+	public TurNLPInstance turNLPInstanceStructure() {
+		TurNLPInstance turNLPInstance = new TurNLPInstance();
+		turNLPInstance.setTurNLPVendor(new TurNLPVendor());
+		turNLPInstance.setLanguage("en_US");
+		return turNLPInstance;
+
 	}
 
 	@ApiOperation(value = "Update a Natural Language Processing")
 	@PutMapping("/{id}")
-	public TurNLPInstance turNLPInstanceUpdate(@PathVariable String id, @RequestBody TurNLPInstance turNLPInstance)
-			throws Exception {
-		TurNLPInstance turNLPInstanceEdit = turNLPInstanceRepository.findById(id).get();
-		turNLPInstanceEdit.setTitle(turNLPInstance.getTitle());
-		turNLPInstanceEdit.setDescription(turNLPInstance.getDescription());
-		turNLPInstanceEdit.setTurNLPVendor(turNLPInstance.getTurNLPVendor());
-		turNLPInstanceEdit.setHost(turNLPInstance.getHost());
-		turNLPInstanceEdit.setPort(turNLPInstance.getPort());
-		turNLPInstanceEdit.setEnabled(turNLPInstance.getEnabled());
-		turNLPInstanceEdit.setLanguage(turNLPInstance.getLanguage());
-		this.turNLPInstanceRepository.save(turNLPInstanceEdit);
-		return turNLPInstanceEdit;
+	public TurNLPInstance turNLPInstanceUpdate(@PathVariable String id, @RequestBody TurNLPInstance turNLPInstance) {
+		return turNLPInstanceRepository.findById(id).map(turNLPInstanceEdit -> {
+			turNLPInstanceEdit.setTitle(turNLPInstance.getTitle());
+			turNLPInstanceEdit.setDescription(turNLPInstance.getDescription());
+			turNLPInstanceEdit.setTurNLPVendor(turNLPInstance.getTurNLPVendor());
+			turNLPInstanceEdit.setHost(turNLPInstance.getHost());
+			turNLPInstanceEdit.setPort(turNLPInstance.getPort());
+			turNLPInstanceEdit.setEnabled(turNLPInstance.getEnabled());
+			turNLPInstanceEdit.setLanguage(turNLPInstance.getLanguage());
+			this.turNLPInstanceRepository.save(turNLPInstanceEdit);
+			return turNLPInstanceEdit;
+		}).orElse(new TurNLPInstance());
+
 	}
 
 	@Transactional
 	@ApiOperation(value = "Delete a Natural Language Processing")
 	@DeleteMapping("/{id}")
-	public boolean turNLPInstanceDelete(@PathVariable String id) throws Exception {
+	public boolean turNLPInstanceDelete(@PathVariable String id) {
 		this.turNLPInstanceRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Natural Language Processing")
 	@PostMapping
-	public TurNLPInstance turNLPInstanceAdd(@RequestBody TurNLPInstance turNLPInstance) throws Exception {
+	public TurNLPInstance turNLPInstanceAdd(@RequestBody TurNLPInstance turNLPInstance) {
 		this.turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 		return turNLPInstance;
 
@@ -179,10 +190,10 @@ public class TurNLPInstanceAPI {
 					try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
 						parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
 						contentFile.append(cleanTextContent(handlerInner.toString()));
-						
+
 					} catch (IOException | SAXException | TikaException e) {
 						logger.error(e);
-					} 
+					}
 					tempFile.deleteOnExit();
 				}
 			};
@@ -195,15 +206,11 @@ public class TurNLPInstanceAPI {
 			contentFile.append(cleanTextContent(handler.toString()));
 			textValidate.setText(contentFile.toString());
 
-			if (this.turNLPInstanceRepository.findById(id).isPresent()) {
-				TurNLPInstance turNLPInstance = this.turNLPInstanceRepository.findById(id).get();
+			return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
 				turNLP.startup(turNLPInstance, textValidate.getText());
+				return blazonEntity();
+			}).orElse(new RedactionScript());
 
-				RedactionScript redationScript = blazonEntity();
-
-				return redationScript;
-
-			}
 		} catch (IOException | SAXException | TikaException e) {
 			logger.error(e);
 		}
@@ -219,13 +226,12 @@ public class TurNLPInstanceAPI {
 		redationScript.setVersion("1");
 		for (Entry<String, Object> entityType : turNLP.validate().entrySet()) {
 			if (entityType.getValue() != null) {
-				TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
 				for (String term : ((List<String>) entityType.getValue())) {
 					RedactionCommand redactionCommand = new RedactionCommand();
-					//redactionCommand.setComment(turNLPEntity.getName());
+					// redactionCommand.setComment(turNLPEntity.getName());
 					SearchString searchString = new SearchString();
 					searchString.setMatchWholeWord(true);
-					searchString.setString(String.format("%s",term));
+					searchString.setString(String.format("%s", term));
 					redactionCommand.setSearchString(searchString);
 					redactionCommands.add(redactionCommand);
 				}
@@ -244,14 +250,15 @@ public class TurNLPInstanceAPI {
 
 	private static String cleanTextContent(String text) {
 		if (logger.isDebugEnabled()) {
-			logger.debug(String.format("Original Text: %s", text.replaceAll("\n", "\\\\n \n").replaceAll("\t", "\\\\t \t")));
+			logger.debug(
+					String.format("Original Text: %s", text.replaceAll("\n", "\\\\n \n").replaceAll("\t", "\\\\t \t")));
 		}
 		// Remove 2 or more spaces
-		text = text.trim().replaceAll("\\t|\\r","\\n");
+		text = text.trim().replaceAll("\\t|\\r", "\\n");
 		text = text.trim().replaceAll(" +", " ");
-		
+
 		text = text.trim();
-		
+
 		if (logger.isDebugEnabled()) {
 			logger.debug(String.format("Cleaned Text: %s", text));
 		}
@@ -263,8 +270,7 @@ public class TurNLPInstanceAPI {
 		final String WEB_FORMAT = "web";
 		final String BLAZON_FORMAT = "blazon";
 
-		if (this.turNLPInstanceRepository.findById(id).isPresent()) {
-			TurNLPInstance turNLPInstance = this.turNLPInstanceRepository.findById(id).get();
+		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
 			turNLP.startup(turNLPInstance, textValidate.getText());
 			if (format.equals(WEB_FORMAT)) {
 				TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
@@ -291,13 +297,9 @@ public class TurNLPInstanceAPI {
 				String xmlString = sw.toString();
 				return xmlString;
 			} else {
-
 				return null;
 			}
-
-		} else {
-			return null;
-		}
+		}).orElse(null);
 	}
 
 	public boolean isNumeric(String str) {

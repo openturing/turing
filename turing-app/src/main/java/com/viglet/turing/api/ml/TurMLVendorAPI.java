@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@ package com.viglet.turing.api.ml;
 
 import java.util.List;
 
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,7 +29,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 
 import com.viglet.turing.persistence.model.ml.TurMLVendor;
 import com.viglet.turing.persistence.repository.ml.TurMLVendorRepository;
@@ -48,26 +46,28 @@ public class TurMLVendorAPI {
 
 	@ApiOperation(value = "Machine Learning Vendor List")
 	@GetMapping
-	public List<TurMLVendor> turMLVendorList() throws JSONException {
+	public List<TurMLVendor> turMLVendorList() {
 		return this.turMLVendorRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Vendor")
 	@GetMapping("/{id}")
-	public TurMLVendor turMLVendorGet(@PathVariable String id) throws JSONException {
-		return this.turMLVendorRepository.findById(id).get();
+	public TurMLVendor turMLVendorGet(@PathVariable String id) {
+		return this.turMLVendorRepository.findById(id).orElse(new TurMLVendor());
 	}
 
 	@ApiOperation(value = "Update a Machine Learning Vendor")
 	@PutMapping("/{id}")
-	public TurMLVendor turMLVendorUpdate(@PathVariable String id, @RequestBody TurMLVendor turMLVendor) throws Exception {
-		TurMLVendor turMLVendorEdit = this.turMLVendorRepository.findById(id).get();
-		turMLVendorEdit.setDescription(turMLVendor.getDescription());
-		turMLVendorEdit.setPlugin(turMLVendor.getPlugin());
-		turMLVendorEdit.setTitle(turMLVendor.getTitle());
-		turMLVendorEdit.setWebsite(turMLVendor.getWebsite());
-		this.turMLVendorRepository.save(turMLVendorEdit);
-		return turMLVendorEdit;
+	public TurMLVendor turMLVendorUpdate(@PathVariable String id, @RequestBody TurMLVendor turMLVendor) {
+		return this.turMLVendorRepository.findById(id).map(turMLVendorEdit -> {
+			turMLVendorEdit.setDescription(turMLVendor.getDescription());
+			turMLVendorEdit.setPlugin(turMLVendor.getPlugin());
+			turMLVendorEdit.setTitle(turMLVendor.getTitle());
+			turMLVendorEdit.setWebsite(turMLVendor.getWebsite());
+			this.turMLVendorRepository.save(turMLVendorEdit);
+			return turMLVendorEdit;
+		}).orElse(new TurMLVendor());
+
 	}
 
 	@Transactional
@@ -80,7 +80,7 @@ public class TurMLVendorAPI {
 
 	@ApiOperation(value = "Create a Machine Learning Vendor")
 	@PostMapping
-	public TurMLVendor turMLVendorAdd(@RequestBody TurMLVendor turMLVendor) throws Exception {
+	public TurMLVendor turMLVendorAdd(@RequestBody TurMLVendor turMLVendor) {
 		this.turMLVendorRepository.save(turMLVendor);
 		return turMLVendor;
 

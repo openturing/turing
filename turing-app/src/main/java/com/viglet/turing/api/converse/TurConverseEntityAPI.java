@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,9 +58,10 @@ public class TurConverseEntityAPI {
 	@ApiOperation(value = "Show a Converse Entity")
 	@GetMapping("/{id}")
 	public TurConverseEntity turConverseEntityGet(@PathVariable String id) {
-		TurConverseEntity turConverseEntity = this.turConverseEntityRepository.findById(id).get();
-		turConverseEntity.setTerms(turConverseEntityTermRepository.findByEntity(turConverseEntity));
-		return turConverseEntity;
+		return this.turConverseEntityRepository.findById(id).map(turConverseEntity -> {
+			turConverseEntity.setTerms(turConverseEntityTermRepository.findByEntity(turConverseEntity));
+			return turConverseEntity;
+		}).orElse(new TurConverseEntity());
 	}
 
 	@ApiOperation(value = "Create a Converse Entity")
@@ -82,7 +83,7 @@ public class TurConverseEntityAPI {
 
 		Set<TurConverseEntityTerm> terms = turConverseEntity.getTerms();
 		for (TurConverseEntityTerm term : terms) {
-			if (term != null) {			
+			if (term != null) {
 				term.setEntity(turConverseEntity);
 				turConverseEntityTermRepository.save(term);
 			}

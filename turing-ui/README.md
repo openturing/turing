@@ -1,64 +1,27 @@
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=openturing_turing&metric=alert_status)](https://sonarcloud.io/dashboard?id=openturing_turing) [![Twitter](https://img.shields.io/twitter/follow/openturing.svg?style=social&label=Follow)](https://twitter.com/intent/follow?screen_name=openturing)
+# TuringUi2
 
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 12.2.3.
 
-**If you'd like to contribute to Turing AI UI Primer, be sure to review the [contribution
-guidelines](CONTRIBUTING.md).**
+## Development server
 
-**We use [GitHub issues](https://github.com/openturing/turing/issues) for tracking requests and bugs.**
+Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
-# Installation
+## Code scaffolding
 
-## Download
+Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
 
-```shell
-$ cd turing-ui
-```
+## Build
 
-## Deploy 
+Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
-### 1. Install NPM Modules
+## Running unit tests
 
-Use NPM to install the modules.
+Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
-```shell
-$ npm install
-```
+## Running end-to-end tests
 
-### 2. Start Turing AI
+Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
 
-Start Turing AI using the ui-dev profile.
+## Further help
 
-#### Linux
-
-```shell
-export SPRING_PROFILES_ACTIVE=ui-dev
-$ cd ..
-$ ./gradlew turing-app:bootrun
-```
-#### Windows
-
-```shell
-set SPRING_PROFILES_ACTIVE=ui-dev
-gradlew turing-app:bootrun
-```
-
-
-### 3. Runtime
-
-Use ng to execute Turing AI UI.
-
-```shell
-$ npx ng serve --open
-```
-
-### 4. Build
-
-Use ng to build Turing AI UI.
-
-```shell
-$ npx ng build --prod
-```
-
-## URL
-
-Home: http://localhost:4200
+To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
