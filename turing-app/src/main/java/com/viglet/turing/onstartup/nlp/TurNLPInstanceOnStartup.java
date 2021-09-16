@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.nlp.TurNLPVendorsConstant;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
@@ -47,9 +46,7 @@ public class TurNLPInstanceOnStartup {
 
 		if (turNLPInstanceRepository.findAll().isEmpty()) {
 
-			TurNLPVendor turNLPVendorOpenNLP = turNLPVendorRepository.findById(TurNLPVendorsConstant.OPENNLP).get();
-
-			if (turNLPVendorOpenNLP != null) {
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.OPENNLP).ifPresent(turNLPVendorOpenNLP -> {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("OpenNLP English");
 				turNLPInstance.setDescription("OpenNLP Production - English");
@@ -74,11 +71,9 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setLanguage(TurLocaleRepository.PT_BR);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+			});
 
-			}
-
-			TurNLPVendor turNLPVendorCoreNLP = turNLPVendorRepository.findById(TurNLPVendorsConstant.CORENLP).get();
-			if (turNLPVendorCoreNLP != null) {
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.CORENLP).ifPresent(turNLPVendorCoreNLP -> {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("CoreNLP");
 				turNLPInstance.setDescription("CoreNLP Production - English");
@@ -88,11 +83,9 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+			});
 
-			}
-
-			TurNLPVendor turNLPVendorSpaCy = turNLPVendorRepository.findById(TurNLPVendorsConstant.SPACY).get();
-			if (turNLPVendorCoreNLP != null) {
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.SPACY).ifPresent(turNLPVendorSpaCy -> {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("SpaCy");
 				turNLPInstance.setDescription("SpaCy Production - English");
@@ -102,11 +95,9 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+			});
 
-			}
-
-			TurNLPVendor turNLPVendorPolyglot = turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).get();
-			if (turNLPVendorCoreNLP != null) {
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).ifPresent(turNLPVendorPolyglot -> {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
 				turNLPInstance.setTitle("Polyglot");
 				turNLPInstance.setDescription("Polyglot Production - Catalan");
@@ -116,8 +107,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setLanguage(TurLocaleRepository.CA);
 				turNLPInstance.setEnabled(1);
 				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
-
-			}
+			});
 		}
 
 	}

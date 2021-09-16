@@ -187,9 +187,8 @@ public class TurSolr {
 	}
 
 	public void init() {
-		TurSEInstance turSEInstance = turSEInstanceRepository
-				.findById(turConfigVarRepository.findById("DEFAULT_SE").get().getValue()).get();
-		init(turSEInstance);
+		turConfigVarRepository.findById("DEFAULT_SE").ifPresent(
+				turConfigVar -> turSEInstanceRepository.findById(turConfigVar.getValue()).ifPresent(this::init));
 	}
 
 	public void indexing() {
@@ -267,10 +266,10 @@ public class TurSolr {
 				if (attribute != null) {
 					if (turSNSiteFieldMap.get(key) != null) {
 					}
-					if (attribute.getClass().getName().equals("java.lang.Integer")) {
+					if (attribute instanceof Integer) {
 						int intValue = (Integer) attribute;
 						document.addField(key, intValue);
-					} else if (attribute.getClass().getName().equals("org.json.JSONArray")) {
+					} else if (attribute instanceof org.json.JSONArray) {
 						JSONArray value = (JSONArray) attribute;
 						if (key.startsWith("turing_entity_") || (turSNSiteFieldMap.get(key) != null
 								&& turSNSiteFieldMap.get(key).getMultiValued() == 1)) {
@@ -458,8 +457,7 @@ public class TurSolr {
 		// TODO: Implement AND or OR choice
 		if (tr != null && tr.size() > 0)
 			query.addFilterQuery(turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, tr));
-
-		// System.out.println("Solr Query:" + query.toString());
+		
 		QueryResponse queryResponse;
 		try {
 			queryResponse = solrClient.query(query);
@@ -486,7 +484,7 @@ public class TurSolr {
 					turSEFacetResult.setFacet(facet.getName());
 					for (Count item : facet.getValues()) {
 						turSEFacetResult.add(item.getName(),
-								new TurSEFacetResultAttr(item.getName(), Long.valueOf(item.getCount()).intValue()));
+								new TurSEFacetResultAttr(item.getName(), (int) item.getCount()));
 					}
 					facetResults.add(turSEFacetResult);
 				}

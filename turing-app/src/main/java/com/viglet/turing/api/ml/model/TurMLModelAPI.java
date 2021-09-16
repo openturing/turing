@@ -18,12 +18,10 @@
 package com.viglet.turing.api.ml.model;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -57,7 +55,6 @@ import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;
 import opennlp.tools.doccat.DocumentSample;
 import opennlp.tools.doccat.DocumentSampleStream;
-import opennlp.tools.tokenize.WhitespaceTokenizer;
 import opennlp.tools.util.InputStreamFactory;
 import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
@@ -153,38 +150,14 @@ public class TurMLModelAPI {
 		try (PrintWriter out = new PrintWriter("store/ml/train/generate.train")) {
 			out.println(trainSB.toString().trim());
 		} catch (FileNotFoundException e) {
-			logger.error(e);
-		}
-		///////////////
-		try (BufferedReader br = new BufferedReader(new FileReader("store/ml/train/generate.train"))) {
-			String line;
-			while ((line = br.readLine()) != null) {
-
-				// Whitespace tokenize entire string
-
-				String tokens[] = WhitespaceTokenizer.INSTANCE.tokenize(line);
-
-				if (tokens.length > 1) {
-					///
-				} else {
-					// Empty lines: " + tokens.toString());
-				}
-			}
-		} catch (FileNotFoundException e) {
-			logger.error(e);
-		} catch (IOException e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 
-		DoccatModel model = null;
-
-	
-		try {
+		String modelFile = "store/ml/model/generate.bin";
+		try (OutputStream modelOut = new BufferedOutputStream(new FileOutputStream(modelFile))) {
 			InputStreamFactory isf = new InputStreamFactory() {
 				public InputStream createInputStream() throws IOException {
 					return new FileInputStream("store/ml/train/generate.train");
-					// return new
-					// ByteArrayInputStream(trainSB.toString().getBytes(StandardCharsets.UTF_8));
 				}
 			};
 
@@ -194,18 +167,14 @@ public class TurMLModelAPI {
 
 			DoccatFactory factory = new DoccatFactory();
 
-			model = DocumentCategorizerME.train("en", sampleStream, TrainingParameters.defaultParams(), factory);
-
-		} catch (IOException e) {
-			logger.error(e);
-		} 
-		String modelFile = "store/ml/model/generate.bin";
-		try (OutputStream modelOut = new BufferedOutputStream(new FileOutputStream(modelFile))) {
+			DoccatModel model = DocumentCategorizerME.train("en", sampleStream, TrainingParameters.defaultParams(),
+					factory);
 			model.serialize(modelOut);
+
 		} catch (FileNotFoundException e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		} catch (IOException e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 		return null;
 	}

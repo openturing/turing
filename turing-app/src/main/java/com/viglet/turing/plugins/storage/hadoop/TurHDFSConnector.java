@@ -33,126 +33,111 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 public class TurHDFSConnector {
-	 public TurHDFSConnector() {
+	public TurHDFSConnector() {
 
-	  }
+	}
 
-	  /**
-	   * create a existing file from local filesystem to hdfs
-	   * @param source
-	   * @param dest
-	   * @param conf
-	   * @throws IOException
-	   */
-	  public void addFile(String source, String dest, Configuration conf) throws IOException {
+	/**
+	 * create a existing file from local filesystem to hdfs
+	 * 
+	 * @param source
+	 * @param dest
+	 * @param conf
+	 * @throws IOException
+	 */
+	public void addFile(String source, String dest, Configuration conf) throws IOException {
 
-	    FileSystem fileSystem = FileSystem.get(conf);
+		// Get the filename out of the file path
+		String filename = source.substring(source.lastIndexOf('/') + 1, source.length());
 
-	    // Get the filename out of the file path
-	    String filename = source.substring(source.lastIndexOf('/') + 1,source.length());
+		// Create the destination path including the filename.
+		if (dest.charAt(dest.length() - 1) != '/') {
+			dest = dest + "/" + filename;
+		} else {
+			dest = dest + filename;
+		}
 
-	    // Create the destination path including the filename.
-	    if (dest.charAt(dest.length() - 1) != '/') {
-	      dest = dest + "/" + filename;
-	    } else {
-	      dest = dest + filename;
-	    }
+		// System.out.println("Adding file to " + destination);
 
-	    // System.out.println("Adding file to " + destination);
+		// Check if the file already exists
+		Path path = new Path(dest);
+		try (FileSystem fileSystem = FileSystem.get(conf);
+				FSDataOutputStream out = fileSystem.create(path);
+				InputStream in = new BufferedInputStream(new FileInputStream(new File(source)))) {
+			if (fileSystem.exists(path)) {
+				System.out.println("File " + dest + " already exists");
+				return;
+			}
 
-	    // Check if the file already exists
-	    Path path = new Path(dest);
-	    if (fileSystem.exists(path)) {
-	      System.out.println("File " + dest + " already exists");
-	      return;
-	    }
+			// Create a new file and write data to it.
 
-	    // Create a new file and write data to it.
-	    FSDataOutputStream out = fileSystem.create(path);
-	    InputStream in = new BufferedInputStream(new FileInputStream(new File(
-	        source)));
+			byte[] b = new byte[1024];
+			int numBytes = 0;
+			while ((numBytes = in.read(b)) > 0) {
+				out.write(b, 0, numBytes);
+			}
+		}
+	}
 
-	    byte[] b = new byte[1024];
-	    int numBytes = 0;
-	    while ((numBytes = in.read(b)) > 0) {
-	      out.write(b, 0, numBytes);
-	    }
+	/**
+	 * read a file from hdfs
+	 * 
+	 * @param file
+	 * @param conf
+	 * @throws IOException
+	 */
+	public void readFile(String file, Configuration conf) throws IOException {
+		Path path = new Path(file);
+		String filename = file.substring(file.lastIndexOf('/') + 1, file.length());
 
-	    // Close all the file descriptors
-	    in.close();
-	    out.close();
-	    fileSystem.close();
-	  }
+		try (FileSystem fileSystem = FileSystem.get(conf);
+				FSDataInputStream in = fileSystem.open(path);
+				OutputStream out = new BufferedOutputStream(new FileOutputStream(new File(filename)))) {
+			if (!fileSystem.exists(path)) {
+				System.out.println("File " + file + " does not exists");
+				return;
+			}
 
-	  /**
-	   * read a file from hdfs
-	   * @param file
-	   * @param conf
-	   * @throws IOException
-	   */
-	  public void readFile(String file, Configuration conf) throws IOException {
-	    FileSystem fileSystem = FileSystem.get(conf);
+			byte[] b = new byte[1024];
+			int numBytes = 0;
+			while ((numBytes = in.read(b)) > 0) {
+				out.write(b, 0, numBytes);
+			}
+		}
+	}
 
-	    Path path = new Path(file);
-	    if (!fileSystem.exists(path)) {
-	      System.out.println("File " + file + " does not exists");
-	      return;
-	    }
+	/**
+	 * delete a directory in hdfs
+	 * 
+	 * @param file
+	 * @throws IOException
+	 */
+	public void deleteFile(String file, Configuration conf) throws IOException {
+		try (FileSystem fileSystem = FileSystem.get(conf)) {
+			Path path = new Path(file);
+			if (!fileSystem.exists(path)) {
+				System.out.println("File " + file + " does not exists");
+				return;
+			}
 
-	    FSDataInputStream in = fileSystem.open(path);
+			fileSystem.delete(new Path(file), true);
+		}
+	}
 
-	    String filename = file.substring(file.lastIndexOf('/') + 1,
-	        file.length());
-
-	    OutputStream out = new BufferedOutputStream(new FileOutputStream(
-	        new File(filename)));
-
-	    byte[] b = new byte[1024];
-	    int numBytes = 0;
-	    while ((numBytes = in.read(b)) > 0) {
-	      out.write(b, 0, numBytes);
-	    }
-
-	    in.close();
-	    out.close();
-	    fileSystem.close();
-	  }
-
-	  /**
-	   * delete a directory in hdfs
-	   * @param file
-	   * @throws IOException
-	   */
-	  public void deleteFile(String file, Configuration conf) throws IOException {
-	    FileSystem fileSystem = FileSystem.get(conf);
-
-	    Path path = new Path(file);
-	    if (!fileSystem.exists(path)) {
-	      System.out.println("File " + file + " does not exists");
-	      return;
-	    }
-
-	    fileSystem.delete(new Path(file), true);
-
-	    fileSystem.close();
-	  }
-
-	  /**
-	   * create directory in hdfs
-	   * @param dir
-	   * @throws IOException
-	   */
-	  public void mkdir(String dir, Configuration conf) throws IOException {
-	    FileSystem fileSystem = FileSystem.get(conf);
-
-	    Path path = new Path(dir);
-	    if (fileSystem.exists(path)) {
-	      System.out.println("Dir " + dir + " already not exists");
-	      return;
-	    }
-
-	    fileSystem.mkdirs(path);
-
-	    fileSystem.close();
-	  }
+	/**
+	 * create directory in hdfs
+	 * 
+	 * @param dir
+	 * @throws IOException
+	 */
+	public void mkdir(String dir, Configuration conf) throws IOException {
+		try (FileSystem fileSystem = FileSystem.get(conf)) {
+			Path path = new Path(dir);
+			if (fileSystem.exists(path)) {
+				System.out.println("Dir " + dir + " already not exists");
+				return;
+			}
+			fileSystem.mkdirs(path);
+		}
+	}
 }

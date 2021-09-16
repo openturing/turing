@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,15 +27,17 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.transform.TransformerException;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,7 +53,6 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityReposito
 import com.viglet.turing.plugins.nlp.TurNLPImpl;
 import com.viglet.turing.solr.TurSolrField;
 
-import java.util.*;
 
 @Component
 public class TurCoreNLPConnector implements TurNLPImpl {
@@ -96,36 +97,35 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 
 		URL serverURL = new URL("http", turNLPInstance.getHost(), turNLPInstance.getPort(), "/?" + queryParams);
 
-		// System.out.println("URL:" + serverURL.toString());
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
 
-		HttpClient httpclient = HttpClients.createDefault();
-		HttpPost httppost = new HttpPost(serverURL.toString());
+			HttpPost httppost = new HttpPost(serverURL.toString());
 
-		for (Object attrValue : attributes.values()) {
-			StringEntity stringEntity = new StringEntity(turSolrField.convertFieldToString(attrValue));
-			httppost.setEntity(stringEntity);
+			for (Object attrValue : attributes.values()) {
+				StringEntity stringEntity = new StringEntity(turSolrField.convertFieldToString(attrValue));
+				httppost.setEntity(stringEntity);
 
-			HttpResponse response = httpclient.execute(httppost);
-			HttpEntity entity = response.getEntity();
+				HttpResponse response = httpclient.execute(httppost);
+				HttpEntity entity = response.getEntity();
 
-			if (entity != null) {
-				InputStream instream = entity.getContent();
-				BufferedReader rd = new BufferedReader(new InputStreamReader(instream, Charset.forName("UTF-8")));
-				String jsonResponse = readAll(rd);			
-				if (this.isJSONValid(jsonResponse)) {
-					this.getEntities(new JSONObject(jsonResponse));
-				}
-				try {
-				} finally {
-					instream.close();
+				if (entity != null) {
+					try (InputStream instream = entity.getContent();
+							BufferedReader rd = new BufferedReader(
+									new InputStreamReader(instream, Charset.forName("UTF-8")))) {
+						String jsonResponse = readAll(rd);
+						if (this.isJSONValid(jsonResponse)) {
+							this.getEntities(new JSONObject(jsonResponse));
+						}
+					}
 				}
 			}
 		}
+
 		return this.getAttributes();
 
 	}
 
-	public Map<String, Object> getAttributes() throws JSONException {
+	public Map<String, Object> getAttributes(){
 		Map<String, Object> entityAttributes = new HashMap<String, Object>();
 
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
@@ -138,7 +138,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 		return entityAttributes;
 	}
 
-	public void getEntities(JSONObject json) throws JSONException {
+	public void getEntities(JSONObject json) {
 		JSONArray sentences = json.getJSONArray("sentences");
 
 		StringBuilder sb = new StringBuilder();

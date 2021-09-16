@@ -17,6 +17,7 @@
 
 package com.viglet.turing.api.sn;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
@@ -51,13 +51,13 @@ public class TurSNSiteSpotlightAPI {
 	@ApiOperation(value = "Semantic Navigation Site Spotlight List")
 	@GetMapping
 	public List<TurSNSiteSpotlight> turSNSiteSpotlightList(@PathVariable String snSiteId) {
-		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
-		return this.turSNSiteSpotlightRepository.findByTurSNSite(turSNSite);
+		return turSNSiteRepository.findById(snSiteId).map(this.turSNSiteSpotlightRepository::findByTurSNSite)
+				.orElse(new ArrayList<>());
 	}
-	
+
 	@ApiOperation(value = "Show a Semantic Navigation Site Spotlight")
 	@GetMapping("/{id}")
 	public TurSNSiteSpotlight turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
-		return turSNSiteSpotlightRepository.findById(id).get();
+		return turSNSiteSpotlightRepository.findById(id).orElse(new TurSNSiteSpotlight());
 	}
 }

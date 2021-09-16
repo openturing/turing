@@ -109,8 +109,8 @@ public class TurPolyglotConnector implements TurNLPImpl {
 				for (Object attrValue : attributes.values()) {
 					JSONObject jsonBody = new JSONObject();
 					String atributeValueFullText = removeUrl(turSolrField.convertFieldToString(attrValue))
-							.replaceAll("\\n|:|;", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("”", " ")
-							.replaceAll("“", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
+							.replaceAll("\\n|:|;", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("â€�", " ")
+							.replaceAll("â€œ", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
 
 					for (String atributeValue : atributeValueFullText.split("\\.")) {
 						if (logger.isDebugEnabled()) {
@@ -247,7 +247,7 @@ public class TurPolyglotConnector implements TurNLPImpl {
 	}
 
 	private String removeUrl(String commentstr) {
-		String urlPattern = "((https?|ftp|gopher|telnet|file|Unsure|http):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)";
+		String urlPattern = "((https?|ftp|gopher|telnet|file|Unsure):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)";
 		Pattern p = Pattern.compile(urlPattern, Pattern.CASE_INSENSITIVE);
 		Matcher m = p.matcher(commentstr);
 		int i = 0;

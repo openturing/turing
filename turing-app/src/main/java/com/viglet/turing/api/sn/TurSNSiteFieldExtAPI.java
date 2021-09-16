@@ -184,13 +184,13 @@ public class TurSNSiteFieldExtAPI {
 	@ApiOperation(value = "Show a Semantic Navigation Site Field Ext")
 	@GetMapping("/{id}")
 	public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
-		return turSNSiteFieldExtRepository.findById(id).get();
+		return turSNSiteFieldExtRepository.findById(id).orElse(new TurSNSiteFieldExt());
 	}
 
 	@ApiOperation(value = "Update a Semantic Navigation Site Field Ext")
 	@PutMapping("/{id}")
 	public TurSNSiteFieldExt turSNSiteFieldExtUpdate(@PathVariable String snSiteId, @PathVariable String id,
-			@RequestBody TurSNSiteFieldExt turSNSiteFieldExt) throws Exception {
+			@RequestBody TurSNSiteFieldExt turSNSiteFieldExt) {
 		return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExtEdit -> {
 			turSNSiteFieldExtEdit.setFacetName(turSNSiteFieldExt.getFacetName());
 			turSNSiteFieldExtEdit.setMultiValued(turSNSiteFieldExt.getMultiValued());
@@ -302,15 +302,12 @@ public class TurSNSiteFieldExtAPI {
 
 	@GetMapping("/create")
 	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String snSiteId) {
-		TurSNSite turSNSite = turSNSiteRepository.findById(snSiteId).get();
-		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,
-				1);
-		for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExts) {
-			this.createField(turSNSite, turSNSiteFieldExt);
-
-		}
-
-		return this.turSNSiteRepository.findAll();
+		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
+			List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository
+					.findByTurSNSiteAndEnabled(turSNSite, 1);
+			turSNSiteFieldExts.forEach(turSNSiteFieldExt -> this.createField(turSNSite, turSNSiteFieldExt));
+			return this.turSNSiteRepository.findAll();
+		}).orElse(new ArrayList<>());
 	}
 
 	public void createField(TurSNSite turSNSite, TurSNSiteFieldExt turSNSiteFieldExts) {

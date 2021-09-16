@@ -45,9 +45,7 @@ public class TurNLPVendorEntityOnStartup {
 	public void createDefaultRows() {
 
 		if (turNLPVendorEntityRepository.findAll().isEmpty()) {
-			TurNLPVendor turNLPVendor = turNLPVendorRepository.findById(TurNLPVendorsConstant.CORENLP).get();
-			
-			if (turNLPVendor != null) {
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.CORENLP).ifPresent(turNLPVendor -> {
 				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.EN_US);
 				this.addNLPVendor(turNLPVendor, "GL", "LOCATION", TurLocaleRepository.EN_US);
 				this.addNLPVendor(turNLPVendor, "ON", "ORGANIZATION", TurLocaleRepository.EN_US);
@@ -56,11 +54,9 @@ public class TurNLPVendorEntityOnStartup {
 				this.addNLPVendor(turNLPVendor, "MISC", "MISC", TurLocaleRepository.EN_US);
 				this.addNLPVendor(turNLPVendor, "ORDINAL", "ORDINAL", TurLocaleRepository.EN_US);
 				this.addNLPVendor(turNLPVendor, "TIME", "TIME", TurLocaleRepository.EN_US);
-			}
+			});
 
-			turNLPVendor = turNLPVendorRepository.findById(TurNLPVendorsConstant.OPENNLP).get();
-
-			if (turNLPVendor != null) {
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.OPENNLP).ifPresent(turNLPVendor -> {
 				TurOpenNLPModelsOnStartup.downloadModels();
 				File userDir = new File(System.getProperty("user.dir"));
 				if (userDir.exists() && userDir.isDirectory()) {
@@ -109,11 +105,9 @@ public class TurNLPVendorEntityOnStartup {
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-time.bin"),
 							TurLocaleRepository.PT_BR);
 				}
-			}
+			});
 
-			turNLPVendor = turNLPVendorRepository.findById(TurNLPVendorsConstant.OTCA).get();
-			
-			if (turNLPVendor != null) {
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.OTCA).ifPresent(turNLPVendor -> {
 				this.addNLPVendor(turNLPVendor, "PN", "PN", TurLocaleRepository.EN_US);
 				this.addNLPVendor(turNLPVendor, "GL", "GL", TurLocaleRepository.EN_US);
 				this.addNLPVendor(turNLPVendor, "ON", "ON", TurLocaleRepository.EN_US);
@@ -121,11 +115,9 @@ public class TurNLPVendorEntityOnStartup {
 				this.addNLPVendor(turNLPVendor, "PN", "PN", TurLocaleRepository.PT_BR);
 				this.addNLPVendor(turNLPVendor, "GL", "GL", TurLocaleRepository.PT_BR);
 				this.addNLPVendor(turNLPVendor, "ON", "ON", TurLocaleRepository.PT_BR);
-			}
-			
-			turNLPVendor = turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).get();
+			});
 
-			if (turNLPVendor != null) {
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).ifPresent(turNLPVendor -> {
 				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.CA);
 				this.addNLPVendor(turNLPVendor, "GL", "LOC", TurLocaleRepository.CA);
 				this.addNLPVendor(turNLPVendor, "ON", "ORG", TurLocaleRepository.CA);
@@ -136,12 +128,9 @@ public class TurNLPVendorEntityOnStartup {
 				this.addNLPVendor(turNLPVendor, "CIF", "CIF", TurLocaleRepository.CA);
 				this.addNLPVendor(turNLPVendor, "DNI", "DNI", TurLocaleRepository.CA);
 				this.addNLPVendor(turNLPVendor, "PASSPORT", "PASSPORT", TurLocaleRepository.CA);
+			});
 
-			}
-			
-			turNLPVendor = turNLPVendorRepository.findById(TurNLPVendorsConstant.SPACY).get();
-
-			if (turNLPVendor != null) {
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.SPACY).ifPresent(turNLPVendor -> {
 				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.EN_US);
 				this.addNLPVendor(turNLPVendor, "GL", "LOC", TurLocaleRepository.EN_US);
 				this.addNLPVendor(turNLPVendor, "ON", "ORG", TurLocaleRepository.EN_US);
@@ -183,7 +172,7 @@ public class TurNLPVendorEntityOnStartup {
 				this.addNLPVendor(turNLPVendor, "LANGUAGE", "LANGUAGE", TurLocaleRepository.PT_BR);
 				this.addNLPVendor(turNLPVendor, "QUANTITY", "QUANTITY", TurLocaleRepository.PT_BR);
 				this.addNLPVendor(turNLPVendor, "CARDINAL", "CARDINAL", TurLocaleRepository.PT_BR);
-			}
+			});
 
 		}
 	}

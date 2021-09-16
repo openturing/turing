@@ -48,13 +48,17 @@ public class TurNLPListKey<T> {
 
 	@Override
 	public boolean equals(Object obj) {
+		if (obj == null)
+			return false;
+
 		StringBuffer hashCodeObjectSb = new StringBuffer();
 		@SuppressWarnings("unchecked")
 		TurNLPListKey<T> objList = (TurNLPListKey<T>) obj;
-		for (int i = 0; i < objList.list.size(); i++) {
-			T item = objList.list.get(i);
-			hashCodeObjectSb.append(item);
-			hashCodeObjectSb.append(",");
+		if (obj != null) {
+			objList.list.forEach(item -> {
+				hashCodeObjectSb.append(item);
+				hashCodeObjectSb.append(",");
+			});
 		}
 		return hashCodeSb.toString().equals(hashCodeObjectSb.toString());
 	}

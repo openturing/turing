@@ -70,7 +70,7 @@ public class TurTMEConnector implements TurNLPImpl {
 	TurSolrField turSolrField;
 
 	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
-	Map<String, List<Object>> hmEntities = new HashMap<String,  List<Object>>();
+	Map<String, List<Object>> hmEntities = new HashMap<String, List<Object>>();
 	TurNLPInstance turNLPInstance = null;
 	public JSONObject json;
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
@@ -84,8 +84,7 @@ public class TurTMEConnector implements TurNLPImpl {
 	/**
 	 * Send XML request to TME
 	 * 
-	 * @param request
-	 *            XML request
+	 * @param request XML request
 	 * @return XML response
 	 */
 	public String request(TurNLPInstance turNLPInstance, String request) {
@@ -98,10 +97,9 @@ public class TurTMEConnector implements TurNLPImpl {
 			if (length == 0) {
 				return null;
 			}
-			Socket socket = new Socket(turNLPInstance.getHost(), turNLPInstance.getPort());
-			OutputStream output = socket.getOutputStream();
-			InputStream input = socket.getInputStream();
-			try {
+			try (Socket socket = new Socket(turNLPInstance.getHost(), turNLPInstance.getPort());
+					OutputStream output = socket.getOutputStream();
+					InputStream input = socket.getInputStream()) {
 				// Header (4 bytes little-endian data length)
 				byte[] header = new byte[4];
 				header[3] = (byte) ((length & 0xFF000000) >> 24);
@@ -132,10 +130,6 @@ public class TurTMEConnector implements TurNLPImpl {
 					}
 				}
 				return new String(data, "UTF-8");
-			} finally {
-				output.close();
-				input.close();
-				socket.close();
 			}
 		} catch (Exception e) {
 			logger.debug("Server not reached: " + e.getMessage());

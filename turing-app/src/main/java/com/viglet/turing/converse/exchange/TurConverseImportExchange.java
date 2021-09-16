@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.annotation.Nonnull;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -77,7 +79,7 @@ public class TurConverseImportExchange {
 	private Map<String, Object> shObjects = new HashMap<String, Object>();
 	private Map<String, List<String>> shChildObjects = new HashMap<String, List<String>>();
 
-	public TurConverseAgentExchange importFromMultipartFile(MultipartFile multipartFile)
+	public TurConverseAgentExchange importFromMultipartFile(@Nonnull MultipartFile multipartFile)
 			throws IllegalStateException, IOException {
 		File extractFolder = this.extractZipFile(multipartFile);
 		File parentExtractFolder = null;

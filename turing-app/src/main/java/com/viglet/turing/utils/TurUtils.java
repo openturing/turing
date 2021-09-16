@@ -34,7 +34,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Component;
- 
+
 @Component
 public class TurUtils {
 	public String stripAccents(String s) {
@@ -57,25 +57,25 @@ public class TurUtils {
 	 */
 	public void addFilesToZip(File source, File destination) throws IOException, ArchiveException {
 		OutputStream archiveStream = new FileOutputStream(destination);
-		ArchiveOutputStream archive = new ArchiveStreamFactory().createArchiveOutputStream(ArchiveStreamFactory.ZIP,
-				archiveStream);
+		try (ArchiveOutputStream archive = new ArchiveStreamFactory()
+				.createArchiveOutputStream(ArchiveStreamFactory.ZIP, archiveStream)) {
 
-		Collection<File> fileList = FileUtils.listFiles(source, null, true);
+			Collection<File> fileList = FileUtils.listFiles(source, null, true);
 
-		for (File file : fileList) {
-			String entryName = getEntryName(source, file);
-			ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
-			archive.putArchiveEntry(entry);
+			for (File file : fileList) {
+				String entryName = getEntryName(source, file);
+				ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
+				archive.putArchiveEntry(entry);
 
-			BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
+				BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
 
-			IOUtils.copy(input, archive);
-			input.close();
-			archive.closeArchiveEntry();
+				IOUtils.copy(input, archive);
+				input.close();
+				archive.closeArchiveEntry();
+			}
+
+			archive.finish();
 		}
-
-		archive.finish();
-		archiveStream.close();
 	}
 
 	/**
@@ -92,7 +92,7 @@ public class TurUtils {
 
 		return path.substring(index);
 	}
-	
+
 	/**
 	 * Unzip it
 	 * 
