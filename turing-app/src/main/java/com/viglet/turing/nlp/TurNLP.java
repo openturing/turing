@@ -19,7 +19,6 @@ package com.viglet.turing.nlp;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.servlet.ServletContext;
 
@@ -62,7 +61,7 @@ public class TurNLP {
 
 	public void init() {
 		turConfigVarRepository.findById("DEFAULT_NLP").ifPresent(turConfigVar -> turNLPInstanceRepository
-				.findById(turConfigVar.getValue()).ifPresent(turNLPInstance -> this.init(turNLPInstance)));
+				.findById(turConfigVar.getValue()).ifPresent(this::init));
 
 	}
 

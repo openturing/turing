@@ -152,14 +152,6 @@ public class TurSNProcessQueue {
 			turNLP.startup(turSNSite.getTurNLPInstance(), nlpAttributes);
 			Map<String, Object> nlpResultsPreffix = new HashMap<String, Object>();
 
-			// Add prefix to attribute name
-			/*
-			 * for (Entry<String, ArrayList<String>> nlpResult :
-			 * turNLPTraining.processNLPTerms(nlpResults).entrySet()) {
-			 * nlpResultsPreffix.put("turing_entity_" + nlpResult.getKey(),
-			 * nlpResult.getValue()); }
-			 */
-
 			// Copy NLP attributes to consolidateResults
 			for (Entry<String, Object> nlpResultPreffix : nlpResultsPreffix.entrySet()) {
 				consolidateResults.put(nlpResultPreffix.getKey(), nlpResultPreffix.getValue());
@@ -192,8 +184,7 @@ public class TurSNProcessQueue {
 
 		// SE
 		turSolr.init(turSNSite, attributesWithUniqueTerms);
-		turSolr.indexing();
-		// turSolr.close();
+		turSolr.indexing();;
 	}
 
 	public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {

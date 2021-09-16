@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -44,7 +45,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.ml.TurMLModel;
-import com.viglet.turing.persistence.model.storage.TurDataGroup;
 import com.viglet.turing.persistence.model.storage.TurDataGroupModel;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
@@ -84,8 +84,9 @@ public class TurMLDataGroupModelAPI {
 	@ApiOperation(value = "Machine Learning Data Group Model List")
 	@GetMapping
 	public List<TurDataGroupModel> turDataGroupModelList(@PathVariable int dataGroupId) {
-		TurDataGroup turDataGroup = turDataGroupRepository.findById(dataGroupId);
-		return this.turDataGroupModelRepository.findByTurDataGroup(turDataGroup);
+		return turDataGroupRepository.findById(dataGroupId).map(this.turDataGroupModelRepository::findByTurDataGroup)
+				.orElse(new ArrayList<>());
+
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Data Group Model")
@@ -97,7 +98,7 @@ public class TurMLDataGroupModelAPI {
 	@ApiOperation(value = "Update a Machine Learning Data Group Model")
 	@PutMapping("/{id}")
 	public TurDataGroupModel turDataGroupModelUpdate(@PathVariable int dataGroupId, @PathVariable int id,
-			@RequestBody TurDataGroupModel turDataGroupModel) throws Exception {
+			@RequestBody TurDataGroupModel turDataGroupModel) {
 		TurDataGroupModel turDataGroupModelEdit = this.turDataGroupModelRepository.findById(id);
 		turDataGroupModelEdit.setTurMLModel(turDataGroupModel.getTurMLModel());
 		this.turDataGroupModelRepository.save(turDataGroupModelEdit);
@@ -116,88 +117,91 @@ public class TurMLDataGroupModelAPI {
 	@PostMapping
 	public TurDataGroupModel turDataGroupModelAdd(@PathVariable int dataGroupId, @RequestBody TurMLModel turMLModel) {
 		TurDataGroupModel turDataGroupModel = new TurDataGroupModel();
-		TurDataGroup turDataGroup = this.turDataGroupRepository.findById(dataGroupId);
-		turDataGroupModel.setTurMLModel(turMLModel);
-		turDataGroupModel.setTurDataGroup(turDataGroup);
-		this.turDataGroupModelRepository.save(turDataGroupModel);
-		return turDataGroupModel;
+		return this.turDataGroupRepository.findById(dataGroupId).map(turDataGroup -> {
+			turDataGroupModel.setTurMLModel(turMLModel);
+			turDataGroupModel.setTurDataGroup(turDataGroup);
+			this.turDataGroupModelRepository.save(turDataGroupModel);
+			return turDataGroupModel;
+		}).orElse(turDataGroupModel);
 
 	}
 
 	@GetMapping("/generate")
 	public TurDataGroupModel turDataGroupModelGenerate(@PathVariable int dataGroupId) {
 
-		TurDataGroup turDataGroup = turDataGroupRepository.findById(dataGroupId);
-		List<TurDataGroupSentence> turDataSentences = this.turDataGroupSentenceRepository
-				.findByTurDataGroup(turDataGroup);
+		return turDataGroupRepository.findById(dataGroupId).map(turDataGroup -> {
+			List<TurDataGroupSentence> turDataSentences = this.turDataGroupSentenceRepository
+					.findByTurDataGroup(turDataGroup);
 
-		String modelFileName = Integer.toString(turDataGroup.getId());
-		String trainFilePath = String.format("store/ml/train/%s.train", modelFileName);
-		String modelFilePath = String.format("store/ml/model/%s.model", modelFileName);
+			String modelFileName = Integer.toString(turDataGroup.getId());
+			String trainFilePath = String.format("store/ml/train/%s.train", modelFileName);
+			String modelFilePath = String.format("store/ml/model/%s.model", modelFileName);
 
-		StringBuffer trainSB = new StringBuffer();
+			StringBuffer trainSB = new StringBuffer();
 
-		for (TurDataGroupSentence vigTrainDocSentence : turDataSentences) {
-			if (vigTrainDocSentence.getTurMLCategory() != null) {
-				trainSB.append(vigTrainDocSentence.getTurMLCategory().getInternalName() + " ");
-				trainSB.append(vigTrainDocSentence.getSentence().toString().replaceAll("[\\t\\n\\r]", " ").trim());
-				trainSB.append("\n");
-			}
-		}
-
-		try (PrintWriter out = new PrintWriter(trainFilePath)) {
-			out.println(trainSB.toString().trim());
-		} catch (FileNotFoundException e) {
-			logger.error(e);
-		}
-
-		DoccatModel model = null;
-
-		try {
-			InputStreamFactory isf = new InputStreamFactory() {
-				public InputStream createInputStream() throws IOException {
-					return new FileInputStream(trainFilePath);
+			for (TurDataGroupSentence vigTrainDocSentence : turDataSentences) {
+				if (vigTrainDocSentence.getTurMLCategory() != null) {
+					trainSB.append(vigTrainDocSentence.getTurMLCategory().getInternalName() + " ");
+					trainSB.append(vigTrainDocSentence.getSentence().toString().replaceAll("[\\t\\n\\r]", " ").trim());
+					trainSB.append("\n");
 				}
-			};
+			}
 
-			Charset charset = Charset.forName("UTF-8");
-			ObjectStream<String> lineStream = new PlainTextByLineStream(isf, charset);
-			ObjectStream<DocumentSample> sampleStream = new DocumentSampleStream(lineStream);
-
-			DoccatFactory factory = new DoccatFactory();
-
-			model = DocumentCategorizerME.train("en", sampleStream, TrainingParameters.defaultParams(), factory);
-
-		} catch (IOException e) {
-			logger.error(e);
-		}
-
-		if (model != null) {
-			try (OutputStream modelOut = new BufferedOutputStream(new FileOutputStream(modelFilePath))) {
-				model.serialize(modelOut);
+			try (PrintWriter out = new PrintWriter(trainFilePath)) {
+				out.println(trainSB.toString().trim());
 			} catch (FileNotFoundException e) {
 				logger.error(e);
+			}
+
+			DoccatModel model = null;
+
+			try {
+				InputStreamFactory isf = new InputStreamFactory() {
+					public InputStream createInputStream() throws IOException {
+						return new FileInputStream(trainFilePath);
+					}
+				};
+
+				Charset charset = Charset.forName("UTF-8");
+				ObjectStream<String> lineStream = new PlainTextByLineStream(isf, charset);
+				ObjectStream<DocumentSample> sampleStream = new DocumentSampleStream(lineStream);
+
+				DoccatFactory factory = new DoccatFactory();
+
+				model = DocumentCategorizerME.train("en", sampleStream, TrainingParameters.defaultParams(), factory);
+
 			} catch (IOException e) {
 				logger.error(e);
 			}
 
-		}
+			if (model != null) {
+				try (OutputStream modelOut = new BufferedOutputStream(new FileOutputStream(modelFilePath))) {
+					model.serialize(modelOut);
+				} catch (FileNotFoundException e) {
+					logger.error(e);
+				} catch (IOException e) {
+					logger.error(e);
+				}
 
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-		Date now = new Date();
-		String strDate = sdf.format(now);
+			}
 
-		TurMLModel turMLModel = new TurMLModel();
-		turMLModel.setInternalName(Integer.toString(turDataGroup.getId()));
-		turMLModel.setName(turDataGroup.getName());
-		turMLModel.setDescription(strDate);
-		turMLModelRepository.save(turMLModel);
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+			Date now = new Date();
+			String strDate = sdf.format(now);
 
-		TurDataGroupModel turDataGroupModel = new TurDataGroupModel();
-		turDataGroupModel.setTurDataGroup(turDataGroup);
-		turDataGroupModel.setTurMLModel(turMLModel);
-		turDataGroupModelRepository.save(turDataGroupModel);
+			TurMLModel turMLModel = new TurMLModel();
+			turMLModel.setInternalName(Integer.toString(turDataGroup.getId()));
+			turMLModel.setName(turDataGroup.getName());
+			turMLModel.setDescription(strDate);
+			turMLModelRepository.save(turMLModel);
 
-		return turDataGroupModel;
+			TurDataGroupModel turDataGroupModel = new TurDataGroupModel();
+			turDataGroupModel.setTurDataGroup(turDataGroup);
+			turDataGroupModel.setTurMLModel(turMLModel);
+			turDataGroupModelRepository.save(turDataGroupModel);
+
+			return turDataGroupModel;
+		}).orElse(new TurDataGroupModel());
+
 	}
 }

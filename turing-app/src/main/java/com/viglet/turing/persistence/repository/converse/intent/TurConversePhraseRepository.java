@@ -17,8 +17,6 @@
 
 package com.viglet.turing.persistence.repository.converse.intent;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,15 +28,9 @@ import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
 
 public interface TurConversePhraseRepository extends JpaRepository<TurConversePhrase, String> {
 
-	List<TurConversePhrase> findAll();
-
 	Set<TurConversePhrase> findByIntent(TurConverseIntent turConverseIntent);
 	
 	Set<TurConversePhrase> findByText(String text);
-	
-	Optional<TurConversePhrase> findById(String id);
-	
-	TurConversePhrase save(TurConversePhrase turConversePhrase);
 
 	@Modifying
 	@Query("delete from  TurConversePhrase cp where cp.id = ?1")

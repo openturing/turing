@@ -98,7 +98,7 @@ public class TurConverseAgentAPI {
 	public Set<TurConverseIntent> turConverseAgentIntentsGet(@PathVariable String id) {
 		return turConverseAgentRepository.findById(id)
 				.map(turConverseAgent -> turConverseIntentRepository.findByAgent(turConverseAgent))
-				.orElse(new HashSet<TurConverseIntent>());
+				.orElse(new HashSet<>());
 
 	}
 
@@ -107,7 +107,7 @@ public class TurConverseAgentAPI {
 	public Set<TurConverseEntity> turConverseAgentEntitiesGet(@PathVariable String id) {
 		return turConverseAgentRepository.findById(id)
 				.map(turConverseAgent -> turConverseEntityRepository.findByAgent(turConverseAgent))
-				.orElse(new HashSet<TurConverseEntity>());
+				.orElse(new HashSet<>());
 	}
 
 	@ApiOperation(value = "Show a Converse Context List")
@@ -115,7 +115,7 @@ public class TurConverseAgentAPI {
 	public Set<TurConverseContext> turConverseAgentContextsGet(@PathVariable String id) {
 		return turConverseAgentRepository.findById(id)
 				.map(turConverseAgent -> turConverseContextRepository.findByAgent(turConverseAgent))
-				.orElse(new HashSet<TurConverseContext>());
+				.orElse(new HashSet<>());
 	}
 
 	@ApiOperation(value = "Create a Converse Agent")

@@ -17,8 +17,6 @@
 
 package com.viglet.turing.persistence.repository.converse.intent;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,13 +28,7 @@ import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 
 public interface TurConverseEventRepository extends JpaRepository<TurConverseEvent, String> {
 
-	List<TurConverseEvent> findAll();
-
 	Set<TurConverseEvent> findByIntent(TurConverseIntent turConverseIntent);
-	
-	Optional<TurConverseEvent> findById(String id);
-
-	TurConverseEvent save(TurConverseEvent turConverseEvent);
 
 	@Modifying
 	@Query("delete from  TurConverseEvent ce where ce.id = ?1")

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 
 package com.viglet.turing.api.ml.data.group;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,7 +32,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
-import com.viglet.turing.persistence.model.storage.TurDataGroup;
 import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupCategoryRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
@@ -46,31 +45,33 @@ import io.swagger.annotations.ApiOperation;
 public class TurMLDataGroupCategoryAPI {
 
 	@Autowired
-	TurDataGroupRepository turDataGroupRepository;
+	private TurDataGroupRepository turDataGroupRepository;
 	@Autowired
-	TurDataGroupCategoryRepository turDataGroupCategoryRepository;
+	private TurDataGroupCategoryRepository turDataGroupCategoryRepository;
 
 	@ApiOperation(value = "Machine Learning Data Group Category List")
 	@GetMapping
-	public List<TurDataGroupCategory> turDataGroupCategoryList(@PathVariable int dataGroupId) throws JSONException {
-		TurDataGroup turDataGroup = turDataGroupRepository.getOne(dataGroupId);
-		return this.turDataGroupCategoryRepository.findByTurDataGroup(turDataGroup);
+	public List<TurDataGroupCategory> turDataGroupCategoryList(@PathVariable int dataGroupId) {
+		return turDataGroupRepository.findById(dataGroupId).map(this.turDataGroupCategoryRepository::findByTurDataGroup)
+				.orElse(new ArrayList<>());
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Data Group Category")
 	@GetMapping("/{id}")
-	public TurDataGroupCategory turDataGroupCategoryGet(@PathVariable int dataGroupId, @PathVariable int id) throws JSONException {
-		return this.turDataGroupCategoryRepository.getOne(id);
+	public TurDataGroupCategory turDataGroupCategoryGet(@PathVariable int dataGroupId, @PathVariable int id) {
+		return this.turDataGroupCategoryRepository.findById(id).orElse(new TurDataGroupCategory());
 	}
 
 	@ApiOperation(value = "Update a Machine Learning Data Group Category")
 	@PutMapping("/{id}")
 	public TurDataGroupCategory turDataGroupCategoryUpdate(@PathVariable int dataGroupId, @PathVariable int id,
-			@RequestBody TurMLCategory turMLCategory) throws Exception {
-		TurDataGroupCategory turDataGroupCategoryEdit = this.turDataGroupCategoryRepository.getOne(id);
-		turDataGroupCategoryEdit.setTurMLCategory(turMLCategory);
-		this.turDataGroupCategoryRepository.save(turDataGroupCategoryEdit);
-		return turDataGroupCategoryEdit;
+			@RequestBody TurMLCategory turMLCategory) {
+		return this.turDataGroupCategoryRepository.findById(id).map(turDataGroupCategoryEdit -> {
+			turDataGroupCategoryEdit.setTurMLCategory(turMLCategory);
+			this.turDataGroupCategoryRepository.save(turDataGroupCategoryEdit);
+			return turDataGroupCategoryEdit;
+		}).orElse(new TurDataGroupCategory());
+
 	}
 
 	@Transactional
@@ -84,11 +85,12 @@ public class TurMLDataGroupCategoryAPI {
 	@ApiOperation(value = "Create a Machine Learning Data Group Category")
 	@PostMapping
 	public TurDataGroupCategory turDataGroupCategoryAdd(@PathVariable int dataGroupId,
-			@RequestBody TurDataGroupCategory turDataGroupCategory) throws Exception {
-		TurDataGroup turDataGroup = turDataGroupRepository.getOne(dataGroupId);
-		turDataGroupCategory.setTurDataGroup(turDataGroup);
-		this.turDataGroupCategoryRepository.save(turDataGroupCategory);
-		return turDataGroupCategory;
+			@RequestBody TurDataGroupCategory turDataGroupCategory) {
+		return turDataGroupRepository.findById(dataGroupId).map(turDataGroup -> {
+			turDataGroupCategory.setTurDataGroup(turDataGroup);
+			this.turDataGroupCategoryRepository.save(turDataGroupCategory);
+			return turDataGroupCategory;
+		}).orElse(new TurDataGroupCategory());
 
 	}
 }

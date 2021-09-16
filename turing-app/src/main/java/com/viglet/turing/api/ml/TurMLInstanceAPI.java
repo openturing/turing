@@ -19,7 +19,6 @@ package com.viglet.turing.api.ml;
 
 import java.util.List;
 
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -47,28 +46,30 @@ public class TurMLInstanceAPI {
 
 	@ApiOperation(value = "Machine Learning List")
 	@GetMapping
-	public List<TurMLInstance> turMLInstanceList() throws JSONException {
+	public List<TurMLInstance> turMLInstanceList() {
 		return this.turMLInstanceRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Machine Learning")
 	@GetMapping("/{id}")
-	public TurMLInstance turMLInstanceGEt(@PathVariable int id) throws JSONException {
-		return this.turMLInstanceRepository.findById(id);
+	public TurMLInstance turMLInstanceGEt(@PathVariable int id) {
+		return this.turMLInstanceRepository.findById(id).orElse(new TurMLInstance());
 	}
 
 	@ApiOperation(value = "Update a Machine Learning")
 	@PutMapping("/{id}")
-	public TurMLInstance turMLInstanceUpdate(@PathVariable int id, @RequestBody TurMLInstance turMLInstance) throws Exception {
-		TurMLInstance turMLInstanceEdit = this.turMLInstanceRepository.findById(id);
-		turMLInstanceEdit.setTitle(turMLInstance.getTitle());
-		turMLInstanceEdit.setDescription(turMLInstance.getDescription());
-		turMLInstanceEdit.setTurMLVendor(turMLInstance.getTurMLVendor());
-		turMLInstanceEdit.setHost(turMLInstance.getHost());
-		turMLInstanceEdit.setPort(turMLInstance.getPort());
-		turMLInstanceEdit.setEnabled(turMLInstance.getEnabled());
-		this.turMLInstanceRepository.save(turMLInstanceEdit);
-		return turMLInstanceEdit;
+	public TurMLInstance turMLInstanceUpdate(@PathVariable int id, @RequestBody TurMLInstance turMLInstance) {
+		return this.turMLInstanceRepository.findById(id).map(turMLInstanceEdit -> {
+			turMLInstanceEdit.setTitle(turMLInstance.getTitle());
+			turMLInstanceEdit.setDescription(turMLInstance.getDescription());
+			turMLInstanceEdit.setTurMLVendor(turMLInstance.getTurMLVendor());
+			turMLInstanceEdit.setHost(turMLInstance.getHost());
+			turMLInstanceEdit.setPort(turMLInstance.getPort());
+			turMLInstanceEdit.setEnabled(turMLInstance.getEnabled());
+			this.turMLInstanceRepository.save(turMLInstanceEdit);
+			return turMLInstanceEdit;
+		}).orElse(new TurMLInstance());
+
 	}
 
 	@Transactional
@@ -81,7 +82,7 @@ public class TurMLInstanceAPI {
 
 	@ApiOperation(value = "Create a Machine Learning")
 	@PostMapping
-	public TurMLInstance turMLInstanceAdd(@RequestBody TurMLInstance turMLInstance) throws Exception {
+	public TurMLInstance turMLInstanceAdd(@RequestBody TurMLInstance turMLInstance) {
 		this.turMLInstanceRepository.save(turMLInstance);
 		return turMLInstance;
 
