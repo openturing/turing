@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ package com.viglet.turing.api;
 import java.io.UnsupportedEncodingException;
 
 import org.json.JSONException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,7 +43,7 @@ public class TurAPITemp {
 
 		      // Construct the computation graph with a single operation, a constant
 		      // named "MyConst" with a value "value".
-		      try (Tensor t = Tensor.create(value.getBytes("UTF-8"))) {
+		      try (Tensor<?> t = Tensor.create(value.getBytes("UTF-8"))) {
 		        // The Java API doesn't yet include convenience functions for adding operations.
 		        g.opBuilder("Const", "MyConst").setAttr("dtype", t.dataType()).setAttr("value", t).build();
 		      }
@@ -53,7 +52,7 @@ public class TurAPITemp {
 		      try (Session s = new Session(g);
 		          // Generally, there may be multiple output tensors,
 		          // all of them must be closed to prevent resource leaks.
-		          Tensor output = s.runner().fetch("MyConst").run().get(0)) {
+		          Tensor<?> output = s.runner().fetch("MyConst").run().get(0)) {
 		        System.out.println(new String(output.bytesValue(), "UTF-8"));
 		      }
 		    }

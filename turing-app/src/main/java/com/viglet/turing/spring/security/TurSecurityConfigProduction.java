@@ -32,8 +32,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
-import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 
@@ -73,12 +71,6 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 	@Autowired
 	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
 		auth.userDetailsService(userDetailsService).passwordEncoder(passwordencoder());
-	}
-
-	private CsrfTokenRepository csrfTokenRepository() {
-		HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
-		repository.setHeaderName("X-XSRF-TOKEN");
-		return repository;
 	}
 
 	@Bean(name = "passwordEncoder")

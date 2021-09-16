@@ -28,10 +28,6 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface TurDataGroupCategoryRepository extends JpaRepository<TurDataGroupCategory, Integer> {
 
-	List<TurDataGroupCategory> findAll();
-
-	TurDataGroupCategory findById(int id);
-
 	List<TurDataGroupCategory> findByTurDataGroup(TurDataGroup turDataGroup);
 
 	TurDataGroupCategory save(TurDataGroupCategory turDataGroupCategory);

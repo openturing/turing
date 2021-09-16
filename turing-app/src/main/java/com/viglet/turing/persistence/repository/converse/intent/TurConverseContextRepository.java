@@ -17,8 +17,6 @@
 
 package com.viglet.turing.persistence.repository.converse.intent;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,8 +28,6 @@ import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 
 public interface TurConverseContextRepository extends JpaRepository<TurConverseContext, String> {
 
-	List<TurConverseContext> findAll();
-
 	Set<TurConverseContext> findByIntentInputs_Id(String intentId);
 	
 	Set<TurConverseContext> findByIntentOutputs_Id(String intentId);
@@ -40,9 +36,6 @@ public interface TurConverseContextRepository extends JpaRepository<TurConverseC
 	
 	Set<TurConverseContext> findByAgentAndText(TurConverseAgent agent, String text);
 	
-	Optional<TurConverseContext> findById(String id);
-
-	TurConverseContext save(TurConverseContext turConverseContext);
 
 	@Modifying
 	@Query("delete from  TurConverseContext cc where cc.id = ?1")

@@ -17,8 +17,6 @@
 
 package com.viglet.turing.persistence.repository.converse.intent;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,13 +28,7 @@ import com.viglet.turing.persistence.model.converse.intent.TurConversePrompt;
 
 public interface TurConversePromptRepository extends JpaRepository<TurConversePrompt, String> {
 
-	List<TurConversePrompt> findAll();
-
-	Optional<TurConversePrompt> findById(String id);
-	
 	Set<TurConversePrompt> findByParameter(TurConverseParameter turConverseParameter);
-	
-	TurConversePrompt save(TurConversePrompt turConversePrompt);
 
 	@Modifying
 	@Query("delete from  TurConversePrompt cp where cp.id = ?1")

@@ -19,7 +19,6 @@ package com.viglet.turing.api.ml.category;
 
 import java.util.List;
 
-import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -47,27 +46,30 @@ public class TurMLCategoryAPI {
 
 	@ApiOperation(value = "Machine Learning Category List")
 	@GetMapping
-	public List<TurMLCategory> turMLCategoryList() throws JSONException {
+	public List<TurMLCategory> turMLCategoryList() {
 		return this.turMLCategoryRepository.findAll();
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Category")
 	@GetMapping("/{id}")
-	public TurMLCategory turMLCategoryGet(@PathVariable int id) throws JSONException {
-		return this.turMLCategoryRepository.findById(id);
+	public TurMLCategory turMLCategoryGet(@PathVariable int id) {
+		return this.turMLCategoryRepository.findById(id).orElse(new TurMLCategory());
 	}
 
 	@ApiOperation(value = "Update a Machine Learning Category")
 	@PutMapping("/{id}")
-	public TurMLCategory turMLCategoryUpdate(@PathVariable int id, @RequestBody TurMLCategory turMLCategory) throws Exception {
-		TurMLCategory turMLCategoryEdit = this.turMLCategoryRepository.findById(id);
-		turMLCategoryEdit.setInternalName(turMLCategory.getInternalName());
-		turMLCategoryEdit.setName(turMLCategory.getName());
-		turMLCategoryEdit.setDescription(turMLCategory.getDescription());
-		this.turMLCategoryRepository.save(turMLCategoryEdit);
-		this.turMLCategoryRepository.flush();
+	public TurMLCategory turMLCategoryUpdate(@PathVariable int id, @RequestBody TurMLCategory turMLCategory)
+			throws Exception {
+		return this.turMLCategoryRepository.findById(id).map(turMLCategoryEdit -> {
+			turMLCategoryEdit.setInternalName(turMLCategory.getInternalName());
+			turMLCategoryEdit.setName(turMLCategory.getName());
+			turMLCategoryEdit.setDescription(turMLCategory.getDescription());
+			this.turMLCategoryRepository.save(turMLCategoryEdit);
+			this.turMLCategoryRepository.flush();
 
-		return turMLCategoryEdit;
+			return turMLCategoryEdit;
+		}).orElse(new TurMLCategory());
+
 	}
 
 	@Transactional

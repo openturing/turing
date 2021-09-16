@@ -17,8 +17,6 @@
 
 package com.viglet.turing.persistence.repository.converse.intent;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,13 +28,7 @@ import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
 
 public interface TurConverseResponseRepository extends JpaRepository<TurConverseResponse, String> {
 
-	List<TurConverseResponse> findAll();
-
-	Optional<TurConverseResponse> findById(String id);
-
 	Set<TurConverseResponse> findByIntent(TurConverseIntent turConverseIntent);
-	
-	TurConverseResponse save(TurConverseResponse turConverseResponse);
 
 	@Modifying
 	@Query("delete from  TurConverseResponse cr where cr.id = ?1")

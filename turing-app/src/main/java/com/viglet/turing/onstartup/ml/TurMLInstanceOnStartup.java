@@ -22,7 +22,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.persistence.model.ml.TurMLInstance;
-import com.viglet.turing.persistence.model.ml.TurMLVendor;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.repository.ml.TurMLInstanceRepository;
 import com.viglet.turing.persistence.repository.ml.TurMLVendorRepository;
@@ -44,9 +43,7 @@ public class TurMLInstanceOnStartup {
 		TurConfigVar turConfigVar = new TurConfigVar();
 
 		if (turMLInstanceRepository.findAll().isEmpty()) {
-
-			TurMLVendor turMLVendor = turMLVendorRepository.getOne("OPENNLP");
-			if (turMLVendor != null) {
+			turMLVendorRepository.findById("OPENNLP").ifPresent(turMLVendor -> {
 				TurMLInstance turMLInstance = new TurMLInstance();
 				turMLInstance.setTitle("OpenNLP");
 				turMLInstance.setDescription("OpenNLP Production");
@@ -61,7 +58,7 @@ public class TurMLInstanceOnStartup {
 				turConfigVar.setPath("/ml");
 				turConfigVar.setValue(Integer.toString(turMLInstance.getId()));
 				turConfigVarRepository.save(turConfigVar);
-			}
+			});
 		}
 
 	}

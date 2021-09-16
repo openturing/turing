@@ -75,9 +75,6 @@ public class TurTMEConnector implements TurNLPImpl {
 	public JSONObject json;
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
 
-	private static String request = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<Nserver>" + "       <Methods>"
-			+ "               <Ping/>" + "       </Methods>" + "</Nserver>";
-
 	public void startup(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
 
@@ -179,38 +176,38 @@ public class TurTMEConnector implements TurNLPImpl {
 			sb.append("<nfFullTextSearch>");
 			sb.append("<Cartridges>");
 			sb.append("<Cartridge>APICULTURA</Cartridge>");
-			sb.append(" <Cartridge>CONFECÇÃO</Cartridge>");
+			sb.append(" <Cartridge>CONFECÃ‡ÃƒO</Cartridge>");
 			sb.append("<Cartridge>ARTESANATO</Cartridge>");
 			sb.append(" <Cartridge>AQUICULTURA</Cartridge>");
-			sb.append("<Cartridge>COURO E CALÇADOS</Cartridge>");
-			sb.append("<Cartridge>CONSTRUÇÃO CIVIL</Cartridge>");
+			sb.append("<Cartridge>COURO E CALÃ‡ADOS</Cartridge>");
+			sb.append("<Cartridge>CONSTRUÃ‡ÃƒO CIVIL</Cartridge>");
 			sb.append("<Cartridge>ALIMENTO</Cartridge>");
 			sb.append("<Cartridge>ROCHA ORNAMENTAL</Cartridge>");
 			sb.append("<Cartridge>AGRICULTURA</Cartridge>");
-			sb.append("<Cartridge>GRÁFICA E EDITORA</Cartridge>");
+			sb.append("<Cartridge>GRÃ�FICA E EDITORA</Cartridge>");
 			sb.append("<Cartridge>TURISMO</Cartridge>");
-			sb.append("<Cartridge>TÊXTIL</Cartridge>");
-			sb.append("<Cartridge>CERÂMICA</Cartridge>");
+			sb.append("<Cartridge>TÃŠXTIL</Cartridge>");
+			sb.append("<Cartridge>CERÃ‚MICA</Cartridge>");
 			sb.append("<Cartridge>BEBIDA</Cartridge>");
 			sb.append("<Cartridge>CULTURA, ENTRETENIMENTO E LAZER</Cartridge>");
 			sb.append("<Cartridge>RECICLAGEM</Cartridge>");
-			sb.append("<Cartridge>PLÁSTICO E BORRACHA</Cartridge>");
-			sb.append("<Cartridge>METALURGIA, METAL MECÂNICA E AUTO PEÇAS</Cartridge>");
-			sb.append("<Cartridge>HIGIENE PESSOAL, PERFUMARIA E COSMÉTICO</Cartridge>");
-			sb.append("<Cartridge>ELETRO-ELETRÔNICA</Cartridge>");
-			sb.append("<Cartridge>PETRÓLEO, GÁS E ENERGIA</Cartridge>");
-			sb.append("<Cartridge>QUÍMICA</Cartridge>");
-			sb.append("<Cartridge>GEMA, JÓIA E BIJUTERIA</Cartridge>");
+			sb.append("<Cartridge>PLÃ�STICO E BORRACHA</Cartridge>");
+			sb.append("<Cartridge>METALURGIA, METAL MECÃ‚NICA E AUTO PEÃ‡AS</Cartridge>");
+			sb.append("<Cartridge>HIGIENE PESSOAL, PERFUMARIA E COSMÃ‰TICO</Cartridge>");
+			sb.append("<Cartridge>ELETRO-ELETRÃ”NICA</Cartridge>");
+			sb.append("<Cartridge>PETRÃ“LEO, GÃ�S E ENERGIA</Cartridge>");
+			sb.append("<Cartridge>QUÃ�MICA</Cartridge>");
+			sb.append("<Cartridge>GEMA, JÃ“IA E BIJUTERIA</Cartridge>");
 			sb.append("<Cartridge>EMPREENDEDORISMO</Cartridge>");
-			sb.append("<Cartridge>GESTÃO EMPRESARIAL</Cartridge>");
-			sb.append("<Cartridge>AMBIENTE ECONÔMICO E SOCIAL</Cartridge>");
-			sb.append("<Cartridge>COMÉRCIO VAREJISTA E ATACADISTA</Cartridge>");
-			sb.append("<Cartridge>SAÚDE, BELEZA E MEDICINA</Cartridge>");
+			sb.append("<Cartridge>GESTÃƒO EMPRESARIAL</Cartridge>");
+			sb.append("<Cartridge>AMBIENTE ECONÃ”MICO E SOCIAL</Cartridge>");
+			sb.append("<Cartridge>COMÃ‰RCIO VAREJISTA E ATACADISTA</Cartridge>");
+			sb.append("<Cartridge>SAÃšDE, BELEZA E MEDICINA</Cartridge>");
 			sb.append("<Cartridge>BIOTECNOLOGIA</Cartridge>");
-			sb.append("<Cartridge>PECUÁRIA</Cartridge>");
-			sb.append("<Cartridge>MADEIRA E MOBILIÁRIO</Cartridge>");
+			sb.append("<Cartridge>PECUÃ�RIA</Cartridge>");
+			sb.append("<Cartridge>MADEIRA E MOBILIÃ�RIO</Cartridge>");
 			sb.append("<Cartridge>AMBIENTE NORMATIVO</Cartridge>");
-			sb.append("<Cartridge>TECNOLOGIA DA INFORMAÇÃO E COMUNICAÇÃO</Cartridge>");
+			sb.append("<Cartridge>TECNOLOGIA DA INFORMAÃ‡ÃƒO E COMUNICAÃ‡ÃƒO</Cartridge>");
 			sb.append("<Cartridge>TABELAS AUXILIARES</Cartridge>");
 			sb.append("<Cartridge>VITIVINICULTURA</Cartridge>");
 			sb.append("<Cartridge>OUTROS</Cartridge>");
@@ -253,6 +250,7 @@ public class TurTMEConnector implements TurNLPImpl {
 		try {
 			logger.debug(xml);
 			jaxbContext = JAXBContext.newInstance(com.viglet.turing.plugins.otca.response.xml.ObjectFactory.class);
+			@SuppressWarnings("unchecked")
 			ServerResponseType serverResponseType = ((JAXBElement<ServerResponseType>) jaxbContext.createUnmarshaller()
 					.unmarshal(is)).getValue();
 			logger.debug("getErrorDescription: " + serverResponseType.getErrorDescription());
@@ -266,8 +264,7 @@ public class TurTMEConnector implements TurNLPImpl {
 			}
 
 		} catch (JAXBException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e);
 		}
 		try {
 			this.json = XML.toJSONObject(xml);
@@ -275,8 +272,8 @@ public class TurTMEConnector implements TurNLPImpl {
 			String jsonPrettyPrintString = json.toString(PRETTY_PRINT_INDENT_FACTOR);
 			jsonResult = jsonPrettyPrintString;
 			// System.out.println(jsonResult);
-		} catch (JSONException je) {
-			je.printStackTrace();
+		} catch (JSONException e) {
+			logger.error(e);
 		}
 		return jsonResult;
 	}

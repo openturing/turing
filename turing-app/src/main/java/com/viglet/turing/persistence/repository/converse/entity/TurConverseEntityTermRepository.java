@@ -17,8 +17,6 @@
 
 package com.viglet.turing.persistence.repository.converse.entity;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,14 +27,8 @@ import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
 import com.viglet.turing.persistence.model.converse.entity.TurConverseEntityTerm;
 
 public interface TurConverseEntityTermRepository extends JpaRepository<TurConverseEntityTerm, String> {
-
-	List<TurConverseEntityTerm> findAll();
-
-	Optional<TurConverseEntityTerm> findById(String id);
 	
 	Set<TurConverseEntityTerm> findByEntity(TurConverseEntity entity);
-	
-	TurConverseEntityTerm save(TurConverseEntityTerm turConverseEntityTerm);
 
 	@Modifying
 	@Query("delete from  TurConverseEntityTerm cet where cet.id = ?1")

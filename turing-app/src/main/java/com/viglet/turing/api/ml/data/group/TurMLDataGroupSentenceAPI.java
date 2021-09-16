@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 
 package com.viglet.turing.api.ml.data.group;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONException;
@@ -33,8 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.bean.ml.sentence.TurMLSentenceBean;
 import com.viglet.turing.persistence.bean.storage.TurDataGroupSentenceBean;
-import com.viglet.turing.persistence.model.ml.TurMLCategory;
-import com.viglet.turing.persistence.model.storage.TurDataGroup;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
@@ -57,27 +56,26 @@ public class TurMLDataGroupSentenceAPI {
 
 	@ApiOperation(value = "Machine Learning Data Group Sentence List")
 	@GetMapping
-	public List<TurDataGroupSentence> turDataGroupSentenceList(@PathVariable int dataGroupId) throws JSONException {
-		TurDataGroup turDataGroup = turDataGroupRepository.findById(dataGroupId);
-		return this.turDataGroupSentenceRepository.findByTurDataGroup(turDataGroup);
+	public List<TurDataGroupSentence> turDataGroupSentenceList(@PathVariable int dataGroupId) {
+		return turDataGroupRepository.findById(dataGroupId).map(this.turDataGroupSentenceRepository::findByTurDataGroup)
+				.orElse(new ArrayList<>());
 	}
 
 	@ApiOperation(value = "Show a Machine Learning Data Group Sentence")
 	@GetMapping("/{id}")
-	public TurDataGroupSentence turDataGroupSentenceGet(@PathVariable int dataGroupId,
-			@PathVariable int id) throws JSONException {
+	public TurDataGroupSentence turDataGroupSentenceGet(@PathVariable int dataGroupId, @PathVariable int id)
+			throws JSONException {
 		return this.turDataGroupSentenceRepository.findById(id);
 	}
 
 	@ApiOperation(value = "Update a Machine Learning Data Group Sentence")
 	@PutMapping("/{id}")
-	public TurDataGroupSentence turDataGroupSentenceUpdate(@PathVariable int dataGroupId,
-			@PathVariable int id, @RequestBody TurDataGroupSentenceBean turDataGroupSentenceBean)
-			throws Exception {
+	public TurDataGroupSentence turDataGroupSentenceUpdate(@PathVariable int dataGroupId, @PathVariable int id,
+			@RequestBody TurDataGroupSentenceBean turDataGroupSentenceBean) {
 		TurDataGroupSentence turDataGroupSentenceEdit = this.turDataGroupSentenceRepository.findById(id);
 		turDataGroupSentenceEdit.setSentence(turDataGroupSentenceBean.getSentence());
-		turDataGroupSentenceEdit
-				.setTurMLCategory(turMLCategoryRepository.findById(turDataGroupSentenceBean.getTurMLCategory()));
+		turDataGroupSentenceEdit.setTurMLCategory(
+				turMLCategoryRepository.findById(turDataGroupSentenceBean.getTurMLCategory()).orElse(null));
 		this.turDataGroupSentenceRepository.save(turDataGroupSentenceEdit);
 		return turDataGroupSentenceEdit;
 	}
@@ -85,28 +83,26 @@ public class TurMLDataGroupSentenceAPI {
 	@Transactional
 	@ApiOperation(value = "Delete a Machine Learning Data Group Sentence")
 	@DeleteMapping("/{id}")
-	public boolean turDataGroupSentenceDelete(@PathVariable int dataGroupId, @PathVariable int id) throws Exception  {
+	public boolean turDataGroupSentenceDelete(@PathVariable int dataGroupId, @PathVariable int id) throws Exception {
 		this.turDataGroupSentenceRepository.delete(id);
 		return true;
 	}
 
 	@ApiOperation(value = "Create a Machine Learning Data Group Sentence")
 	@PostMapping
-	public TurDataGroupSentence turDataGroupSentenceAdd(@PathVariable int dataGroupId, @RequestBody TurMLSentenceBean turMLSentenceBean)
-			throws Exception {
+	public TurDataGroupSentence turDataGroupSentenceAdd(@PathVariable int dataGroupId,
+			@RequestBody TurMLSentenceBean turMLSentenceBean) {
 		TurDataGroupSentence turDataGroupSentence = new TurDataGroupSentence();
-		TurDataGroup turDataGroup = this.turDataGroupRepository.findById(dataGroupId);
+		return this.turDataGroupRepository.findById(dataGroupId).map(turDataGroup -> {
+			turDataGroupSentence.setSentence(turMLSentenceBean.getSentence());
+			turDataGroupSentence.setTurDataGroup(turDataGroup);
 
-		turDataGroupSentence.setSentence(turMLSentenceBean.getSentence());
-		turDataGroupSentence.setTurDataGroup(turDataGroup);
+			this.turMLCategoryRepository.findById(turMLSentenceBean.getTurMLCategoryId())
+					.ifPresent(turDataGroupSentence::setTurMLCategory);
 
-		TurMLCategory turMLCategory = this.turMLCategoryRepository.findById(turMLSentenceBean.getTurMLCategoryId());
-		if (turMLCategory != null) {
-			turDataGroupSentence.setTurMLCategory(turMLCategory);
-		}
-		
-		this.turDataGroupSentenceRepository.save(turDataGroupSentence);
-		return turDataGroupSentence;
+			this.turDataGroupSentenceRepository.save(turDataGroupSentence);
+			return turDataGroupSentence;
+		}).orElse(turDataGroupSentence);
 
 	}
 }

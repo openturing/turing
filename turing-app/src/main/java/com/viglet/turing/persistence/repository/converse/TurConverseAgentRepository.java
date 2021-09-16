@@ -17,9 +17,6 @@
 
 package com.viglet.turing.persistence.repository.converse;
 
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -27,12 +24,6 @@ import org.springframework.data.jpa.repository.Query;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 public interface TurConverseAgentRepository extends JpaRepository<TurConverseAgent, String> {
-
-	List<TurConverseAgent> findAll();
-
-	Optional<TurConverseAgent> findById(String id);
-	//TurConverseAgent findByIntents()
-	TurConverseAgent save(TurConverseAgent turConverseAgent);
 
 	@Modifying
 	@Query("delete from  TurConverseAgent ca where ca.id = ?1")

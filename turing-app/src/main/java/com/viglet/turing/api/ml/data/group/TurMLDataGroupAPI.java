@@ -54,17 +54,19 @@ public class TurMLDataGroupAPI {
 	@ApiOperation(value = "Show a Machine Learning Data Group")
 	@GetMapping("/{id}")
 	public TurDataGroup turDataGroupGet(@PathVariable int id) throws JSONException {
-		return this.turDataGroupRepository.findById(id);
+		return this.turDataGroupRepository.findById(id).orElse(new TurDataGroup());
 	}
 
 	@ApiOperation(value = "Update a Machine Learning Data Group")
 	@PutMapping("/{id}")
 	public TurDataGroup turDataGroupUpdate(@PathVariable int id, @RequestBody TurDataGroup turDataGroup) throws Exception {
-		TurDataGroup turDataGroupEdit = this.turDataGroupRepository.findById(id);
-		turDataGroupEdit.setName(turDataGroup.getName());
-		turDataGroupEdit.setDescription(turDataGroup.getDescription());
-		this.turDataGroupRepository.save(turDataGroupEdit);
-		return turDataGroupEdit;
+		return this.turDataGroupRepository.findById(id).map(turDataGroupEdit -> {
+			turDataGroupEdit.setName(turDataGroup.getName());
+			turDataGroupEdit.setDescription(turDataGroup.getDescription());
+			this.turDataGroupRepository.save(turDataGroupEdit);
+			return turDataGroupEdit;
+		}).orElse(new TurDataGroup());
+
 	}
 
 	@Transactional

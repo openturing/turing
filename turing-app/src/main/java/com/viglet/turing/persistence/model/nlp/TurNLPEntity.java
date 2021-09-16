@@ -30,7 +30,6 @@ import org.hibernate.annotations.OnDeleteAction;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 
-import java.util.List;
 import java.util.Set;
 
 /**
