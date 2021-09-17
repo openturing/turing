@@ -168,7 +168,7 @@
 
                 <div class="flex-shrink-0 mr-2">
                   <svg width="32" height="32" style="border-radius: 50%;"
-                    [identiconHash]="document.fields[snSearch.queryContext.defaultFields.title] | lowercase">
+                    [identiconHash]="document.fields[snSearch.queryContext.defaultFields.url] | lowercase">
                     Avatar
                   </svg>
                 </div>
@@ -176,8 +176,12 @@
                 <div class="mt-n1 flex-auto">
                   <div class="d-flex">
                     <div class="f4 text-normal">
-                      <a class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
+                      <a *ngIf="document.fields[snSearch.queryContext.defaultFields.title] != null"
+                        class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
                         [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></a>
+                      <a *ngIf="document.fields[snSearch.queryContext.defaultFields.title] == null"
+                        class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
+                        [innerHTML]="document.fields[snSearch.queryContext.defaultFields.url]"></a>
                     </div>
 
                   </div>
@@ -196,8 +200,7 @@
 
                     <div class="d-flex flex-wrap text-small color-text-secondary mt-1">
                       <div class="mr-3">
-                        Updated <time
-                          *ngFor="let displaydate of document.fields[snSearch.queryContext.defaultFields.date]">{{displaydate
+                        Updated <time>{{document.fields[snSearch.queryContext.defaultFields.date]
                           | amDateFormat:'LL'}}</time>
                       </div>
                     </div>
