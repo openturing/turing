@@ -17,6 +17,7 @@
 package com.viglet.turing.converse;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Date;
@@ -25,6 +26,8 @@ import java.util.Random;
 
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -38,6 +41,7 @@ import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatRes
 
 @Component
 public class TurConverse {
+	private static final Log logger = LogFactory.getLog(TurConverse.class);
 	@Autowired
 	private TurConverseChatResponseRepository turConverseChatResponseRepository;
 	@Autowired
@@ -156,9 +160,9 @@ public class TurConverse {
 				this.getIntentWhenFinishParameters(chat, session, turConverseAgentResponse, intent);
 			}
 		} catch (SolrServerException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		}
 	}
 
@@ -251,7 +255,7 @@ public class TurConverse {
 			List<String> responses = (List<String>) fallbackIntent.getFieldValue("responses");
 
 			if (responses != null && !responses.isEmpty()) {
-				int rnd = new Random().nextInt(responses.size());
+				int rnd = new SecureRandom().nextInt(responses.size());
 				return responses.get(rnd).toString();
 			} else {
 				return FALLBACK_DEFAULT_MESSAGE;

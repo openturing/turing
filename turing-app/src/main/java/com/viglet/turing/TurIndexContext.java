@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,14 +24,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-
+import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class TurIndexContext {
 
-	@RequestMapping("/")
+	@GetMapping("/")
 	private void index(HttpServletRequest request, HttpServletResponse response, final Principal principal)
 			throws IOException {
 		if (principal != null) {

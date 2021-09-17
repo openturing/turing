@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,8 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -72,6 +74,7 @@ import io.swagger.annotations.Api;
 @RequestMapping("/api/otca/af")
 @Api(tags = "OTCA", description = "OTCA API")
 public class TurOTCAAutorityFileAPI {
+	private static final Log logger = LogFactory.getLog(TurOTCAAutorityFileAPI.class);
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
@@ -257,9 +260,9 @@ public class TurOTCAAutorityFileAPI {
 			this.setTerms(turNLPEntity, documentType.getTerms());
 
 		} catch (JAXBException ejaxb) {
-			ejaxb.printStackTrace();
+			logger.error(ejaxb.getMessage(), ejaxb);
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			logger.error(ex.getMessage(), ex);
 		}
 		String redirect = "/turing/#entity/import";
 

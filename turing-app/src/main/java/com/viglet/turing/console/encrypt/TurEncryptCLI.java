@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 the original author or authors. 
+ * Copyright (C) 2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 
 package com.viglet.turing.console.encrypt;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.jasypt.encryption.StringEncryptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,7 +27,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TurEncryptCLI {
-
+	private static final Log logger = LogFactory.getLog(TurEncryptCLI.class);
 	@Qualifier("turEncryptor")
 	@Autowired
 	StringEncryptor stringEncryptor;
@@ -36,7 +38,7 @@ public class TurEncryptCLI {
 			return stringEncryptor.encrypt(input);
 
 		} catch (Throwable t) {
-			t.printStackTrace();
+			logger.error(t.getMessage(), t);
 		}
 		return result;
 	}

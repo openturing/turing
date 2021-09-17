@@ -33,11 +33,11 @@ public class TurSEStopword {
 	@Autowired
 	private ResourceLoader resourceloader;
 	
-	@Cacheable("stopwords")
+	//@Cacheable("stopwords")
 	public List<String> getStopWords(String locale) throws IOException {	
 		List<String> stopWords = new ArrayList<String>();
 		InputStreamReader isr = new InputStreamReader(
-				resourceloader.getResource("classpath:/solr/conf/lang/stopwords_pt.txt").getInputStream());
+				resourceloader.getResource("classpath:/solr/conf/lang/stopwords.txt").getInputStream());
 		BufferedReader br = new BufferedReader(isr);
 	
 		String st;

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Solr managed schema - automatically generated - DO NOT EDIT -->
 <schema name="default-config" version="1.6">
   <uniqueKey>id</uniqueKey>
   <fieldType name="ancestor_path" class="solr.TextField">
@@ -477,11 +476,12 @@
   <field name="_root_" type="string" docValues="false" indexed="true" stored="false"/>
   <field name="_text_" type="text_general" multiValued="true" indexed="true" stored="false"/>
   <field name="_version_" type="plong" indexed="false" stored="false"/>
+  <!-- Viglet Turing Fields -->
   <field name="description" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="image" type="text_general" multiValued="false" indexed="true" stored="true"/>
-  <field name="modificationDate" type="pdate" multiValued="false" indexed="true" stored="true"/>
-  <field name="publicationDate" type="pdate" multiValued="false" indexed="true" stored="true"/>
+  <field name="modification_date" type="pdate" multiValued="false" indexed="true" stored="true"/>
+  <field name="publication_date" type="pdate" multiValued="false" indexed="true" stored="true"/>
   <field name="author" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="section" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="provider" type="string" multiValued="false" indexed="true" stored="true"/>
@@ -496,6 +496,16 @@
   <field name="turing_entity_PN" type="string" multiValued="true" indexed="true" stored="true"/>
   <field name="turing_entity_TIME" type="string" multiValued="true" indexed="true" stored="true"/>
   <field name="type" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="abstract" type="text_general" multiValued="true" indexed="true" stored="true"/>
+  <field name="text" type="text_general" multiValued="true" indexed="true" stored="true"/>
+  <!-- Viglet Turing Fields - Apache Nutch -->
+  <field name="tstamp" type="pdate" multiValued="false" indexed="true" stored="true"/>
+  <field name="digest" type="text_general" multiValued="false" indexed="false" stored="true" />
+  <field name="host" type="text_general" multiValued="false" indexed="true" stored="true" />
+  <field name="boost" type="pdouble" multiValued="false" indexed="true" stored="true"/>
+  <field name="segment" type="text_general" indexed="false" stored="true"/>
+  <field name="anchor" type="text_general" indexed="true" stored="false" multiValued="true"/>
+
   <dynamicField name="*_txt_en_split_tight" type="text_en_splitting_tight" indexed="true" stored="true"/>
   <dynamicField name="*_descendent_path" type="descendent_path" indexed="true" stored="true"/>
   <dynamicField name="*_ancestor_path" type="ancestor_path" indexed="true" stored="true"/>
@@ -562,10 +572,11 @@
   <dynamicField name="*_f" type="pfloat" indexed="true" stored="true"/>
   <dynamicField name="*_d" type="pdouble" indexed="true" stored="true"/>
   <dynamicField name="*_p" type="location" indexed="true" stored="true"/>
+  <!-- Turing Field Copy -->
   <copyField source="description" dest="_text_"/>
   <copyField source="image" dest="_text_"/>
-  <copyField source="modificationDate" dest="_text_"/>
-  <copyField source="publicationDate" dest="_text_"/>
+  <copyField source="modification_date" dest="_text_"/>
+  <copyField source="publication_date" dest="_text_"/>
   <copyField source="author" dest="_text_"/>
   <copyField source="section" dest="_text_"/>
   <copyField source="title" dest="_text_"/>
@@ -577,4 +588,24 @@
   <copyField source="turing_entity_PN" dest="_text_"/>
   <copyField source="turing_entity_TIME" dest="_text_"/>
   <copyField source="type" dest="_text_"/>
+  <copyField source="text" dest="_text_"/>
+  <copyField source="abstract" dest="_text_"/>
+  
+  <!-- Turing Field Copy - Apache Nutch -->
+  <copyField source="tstamp" dest="_text_"/>
+  <copyField source="host" dest="_text_" />
+  <copyField source="anchor" dest="_text_"/>
+
+
+  <!-- Turing Field Copy to Suggester -->
+  <copyField source="description" dest="text_suggest"/>
+  <copyField source="title" dest="text_suggest"/>
+  <copyField source="text" dest="text_suggest"/>
+  <copyField source="abstract" dest="text_suggest"/>
+
+  <!-- Turing Field Copy to Spell Check-->
+  <copyField source="description" dest="text_spellcheck"/>
+  <copyField source="title" dest="text_spellcheck"/>
+  <copyField source="text" dest="text_spellcheck"/>
+  <copyField source="abstract" dest="text_spellcheck"/>
 </schema>
