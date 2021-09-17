@@ -13,6 +13,10 @@ Viglet Turing AI (https://viglet.com/turing) is an open source solution (https:/
 
 == Development
 
+=== Documentation
+
+Technical documentation on Turing AI is available at https://docs.viglet.com/turing.
+
 === Run
 
 To run Turing AI, just execute the following lines:
