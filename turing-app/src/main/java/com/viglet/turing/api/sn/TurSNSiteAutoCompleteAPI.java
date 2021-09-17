@@ -20,6 +20,7 @@ package com.viglet.turing.api.sn;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -58,7 +59,9 @@ public class TurSNSiteAutoCompleteAPI {
 
 	@GetMapping
 	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,
-			@RequestParam(required = false, name = "q") String q, HttpServletRequest request) {
+			@RequestParam(required = true, name = "q") String q,
+			@RequestParam(required = false, defaultValue = "20", name = "rows") long rows, HttpServletRequest request) {
+
 		List<String> termListShrink = new ArrayList<>();
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		SpellCheckResponse turSEResults = null;
@@ -139,6 +142,6 @@ public class TurSNSiteAutoCompleteAPI {
 		} catch (IOException e) {
 			logger.error(e);
 		}
-		return termListShrink;
+		return termListShrink.stream().limit(rows).collect(Collectors.toList());
 	}
 }
