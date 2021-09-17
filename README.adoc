@@ -12,13 +12,16 @@ Viglet Turing AI (https://viglet.com/turing) is an open source solution (https:/
 :numbered:
 
 == Development
+
 === Run
-To run Turing AI, just execute the following line:
+
+To run Turing AI, just execute the following lines:
+
 ```shell
 # Turing App
 ./gradlew turing-app:bootrun
 
-# New Turing AI UI using Angular 12 and Primer CSS
+# New Turing AI UI using Angular 12 and Primer CSS.
 
 cd turing-ui
 
@@ -32,12 +35,15 @@ ng serve sn
 ng serve converse
 ```
 === Docker Compose
-You can start the Turing AI using MariaDB, Solr and Nginx
+
+You can start the Turing AI using MariaDB, Solr and Nginx.
+
 ```shell
 docker-compose up
 ```
 
 === URLs
+
 * Administration Console: http://localhost:2700. (admin/admin)
 * Semantic Navigation Sample: http://localhost:2700/sn/Sample.
 
