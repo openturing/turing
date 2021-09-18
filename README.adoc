@@ -12,6 +12,7 @@ image:https://img.shields.io/github/last-commit/openturing/turing.svg?style=for-
 image:https://img.shields.io/github/workflow/status/openturing/turing/Build?style=for-the-badge&logo=GitHub[link="https://github.com/openturing/turing/actions/workflows/build.yml"]
 image:https://img.shields.io/badge/Sonar-Code%20Quality-brightgreen?style=for-the-badge&logo=SonarCloud[link="https://sonarcloud.io/organizations/viglet-turing/projects"]
 image:https://img.shields.io/twitter/follow/VigletTweet.svg?style=for-the-badge&logo=twitter[link="https://twitter.com/VigletTweet"]
+image:https://img.shields.io/badge/LinkedIn-Follow-blue?style=for-the-badge&logo=LinkedIn[link="https://www.linkedin.com/company/viglet"]
 
 = Preface
 
