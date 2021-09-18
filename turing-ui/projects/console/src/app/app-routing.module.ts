@@ -10,6 +10,7 @@ const routes: Routes = [
   {
     path: '', component: TurConsolePageComponent, canActivate: [AuthGuard],
     children: [
+      { path: 'converse', loadChildren: () => import('../converse/converse.module').then(m => m.TurConverseModule) },
       { path: 'nlp', loadChildren: () => import('../nlp/nlp.module').then(m => m.TurNLPModule) },
       { path: 'se', loadChildren: () => import('../se/se.module').then(m => m.TurSEModule) },
       { path: 'sn', loadChildren: () => import('../sn/sn.module').then(m => m.TurSNModule) },

@@ -1,0 +1,58 @@
+<div *ngIf="(getTurConverseAgents() | async) as converseAgents; else loading">
+  <div *ngIf="converseAgents.length < 1" class="blankslate">
+    <span octicon="search" [size]="48"  class="mb-3"></span>
+    <h3 class="mb-1">You don’t seem to have any converse agent.</h3>
+    <p>Create a new site and use the full potential of semantic navigation.</p>
+    <a [routerLink]="['/converse/agent/new']" class="btn btn-primary my-3" type="button">New converse agent</a>
+    <p><button class="btn-link" type="button">Import from zip file</button></p>
+  </div>
+  <div *ngIf="converseAgents.length >= 1">
+    <div style="margin-top: 20px;">
+      <div style="padding-bottom: 15px;">
+        <div class="Subhead" style="padding-bottom: 20px;">
+          <div style="flex: 1 1 auto;">
+            <input class="form-control" style="width: 50%;" type="text" placeholder="Find a converse agent..."
+              aria-label="Find a converse agent" />
+          </div>
+          <div class="Subhead-actions">
+            <button class="btn mr-2" role="button">
+              <span octicon="upload" [size]=16 class="mr-1"></span> Import
+            </button> <a [routerLink]="['/converse/agent/new']" class="btn btn-primary" role="button">
+              <span octicon="package" [size]=16 class="mr-1"></span> New
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngFor="let converseAgent of converseAgents" class="border-bottom d-flex flex-items-center"
+      style="margin-bottom: 20px;padding-bottom: 10px;">
+      <div class="flex-auto">
+        <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
+          class="float-left">
+          <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="converseAgent.name | lowercase">
+            Avatar
+          </svg>
+        </div><a [routerLink]="['/converse/agent', converseAgent.id]" routerLinkActive="active"
+          style="font-weight: bolder; font-size: large;">
+          {{converseAgent.name}} </a>
+        <div class="text-gray-light" style="margin-top: 5px;">
+          {{converseAgent.description}}
+        </div>
+        <div style="margin-top: 5px;">
+          <span title="Label: green outline label" class="Label Label--outline Label--outline-green">Actived</span>
+
+        </div>
+        <div class="text-gray-light d-flex flex-items-center" style="margin-top: 10px;">
+          <div class="mr-3">
+            <span
+              style="position: relative;top: 1px;display: inline-block;width: 12px;height: 12px;border-radius: 50%;background-color: #2b7489;"></span>
+            <span class="ml-1">Converse Agent</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

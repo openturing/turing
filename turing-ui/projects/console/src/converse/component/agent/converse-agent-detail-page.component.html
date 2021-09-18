@@ -1,0 +1,79 @@
+<div *ngIf="(getTurConverseAgent() | async) as converseAgent; else loading">
+
+  <div class="Subhead">
+    <div class="Subhead-heading"><span octicon="gear"
+      [size]="24" class="mr-1"></span> Settings</div>
+    <div class="Subhead-actions">
+      <button type="button" class="btn mr-2">Cancel</button>
+      <button (click)="save(converseAgent)" type="button" class="btn btn-primary">{{saveButtonCaption()}}</button>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="converse-agent-name">Name</label>
+    </div>
+    <div class="form-group-body">
+      <input [(ngModel)]="converseAgent.name" class="form-control" type="text" id="converse-agent-name" style="width: 100%;" />
+      <p class="note" id="help-text-for-checkbox">
+        Name will appear on converse agent list.
+      </p>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="converse-agent-description">Description</label>
+    </div>
+    <div class="form-group-body">
+      <input [(ngModel)]="converseAgent.description" class="form-control" type="text" id="converse-agent-description"
+        style="width: 100%;" />
+      <p class="note" id="help-text-for-checkbox">
+        Description will appear on converse agent list.
+      </p>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="converse-agent-se">Search Engine</label>
+    </div>
+    <div class="form-group-body">
+      <select [(ngModel)]="converseAgent.turSEInstance.id" id="converse-agent-se" class="form-select" style="width: 100%;">
+        <option *ngFor="let seInstance of (getTurSEInstances() | async)" [value]="seInstance.id">
+          {{seInstance.title}}
+        </option>
+      </select>
+      <p class="note" id="help-text-for-checkbox">
+        Search engine that supports converse agent.
+      </p>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="converse-agent-language">Language</label>
+    </div>
+    <div class="form-group-body">
+      <select [(ngModel)]="converseAgent.language" id="converse-agent-language" class="form-select" style="width: 100%;">
+        <option *ngFor="let locale of (getTurLocales() | async)" [value]="locale.initials">
+          {{locale.en}}
+        </option>
+      </select>
+      <p class="note" id="help-text-for-checkbox">
+        Language that supports converse agent.
+      </p>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="converse-agent-core">Core</label>
+    </div>
+    <div class="form-group-body">
+      <input [(ngModel)]="converseAgent.core" id="converse-agent-core" class="form-control" type="text" id="repo-name"
+        style="width: 100%;" />
+      <p class="note" id="help-text-for-checkbox">
+        Solr core that is used by converse agent.
+      </p>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

@@ -1,0 +1,88 @@
+<div *ngIf="(getTurConverseAgent() | async) as converseAgent; else loading">
+  <div class="Subhead mt-4">
+    <div class="Subhead-heading">
+      <div *ngIf="!isNewObject()" class="d-flex">
+        <div style="height: 32px; border-radius: 50%;">
+          <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="converseAgent.name | lowercase">
+          </svg>
+        </div>
+        <div class="ml-2">
+          <span>{{converseAgent.name}}</span>
+        </div>
+      </div>
+      <div *ngIf="isNewObject()" class="d-flex">
+        <div style="height: 32px; border-radius: 50%;">
+          <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="'new'">
+          </svg>
+        </div>
+        <div class="ml-2">
+          <span>New Converse Agent</span>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="!isNewObject()" class="Subhead-actions" style="display: inherit;">
+      <details #modalDelete id="modalDelete" class="details-reset details-overlay details-overlay-dark"
+        style="display: unset;">
+        <summary class="btn btn-sm btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
+            class="mr-1"></span>Delete</summary>
+        <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast">
+          <div class="Box-header">
+            <button onclick='document.getElementById("modalDelete").removeAttribute("open");'
+              class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
+              <!-- <%= octicon "x" %> -->
+              <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
+                aria-hidden="true">
+                <path fill-rule="evenodd"
+                  d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
+                </path>
+              </svg>
+            </button>
+            <h3 class="Box-title">Are you absolutely sure?</h3>
+
+          </div>
+          <div class="flash flash-warn flash-full">
+            Unexpected bad things will happen if you don’t read this!
+          </div>
+
+          <div class="Box-body overflow-auto">
+            <p>
+              This action <strong>cannot</strong> be undone. This will permanently delete the
+              <strong>{{converseAgent.name}}</strong> converse agent.
+            </p>
+            <button (click)="delete(converseAgent)" class="btn-danger btn btn-block">
+              <span class="d-md-inline-block d-none">I understand the consequences, delete this site</span>
+            </button>
+          </div>
+        </details-dialog>
+      </details>
+      <a *ngIf="!isNewObject()" href="/converse/agent/{{converseAgent.name}}" target="_blank" class="btn btn-outline btn-sm" role="button"><span octicon="eye"
+          [size]=16 class="mr-1"></span> Open Chat Room</a>
+    </div>
+    <div *ngIf="!isNewObject()" class="Subhead-description">{{converseAgent.description}}</div>
+  </div>
+
+  <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
+    <nav class="menu" aria-label="Converse Agent settings">
+      <a class="menu-item" [routerLink]="['/converse/agent',getId() , 'detail']"
+        [routerLinkActive]="['selected']"><span octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
+      <a class="menu-item" [routerLink]="['/converse/agent',getId() , 'intents']"
+        [routerLinkActive]="['selected']"><span octicon="workflow" [size]=16 class="mr-1"></span> Intents</a>
+        <a class="menu-item" [routerLink]="['/converse/agent',getId() , 'entities']"
+        [routerLinkActive]="['selected']"><span octicon="container" [size]=16 class="mr-1"></span> Entities</a>
+    </nav>
+
+    <nav *ngIf="!isNewObject()" class="menu" aria-label="Converse Agent settings">
+       <a class="menu-item" [routerLink]="['/converse/agent',getId() , 'training']" [routerLinkActive]="['selected']">
+        <span octicon="dependabot" [size]=16 class="mr-1"></span>Training</a>
+      <a class="menu-item" [routerLink]="['/converse/agent',getId() , 'history']" [routerLinkActive]="['selected']">
+        <span octicon="history" [size]=16 class="mr-1"></span>History</a>
+    </nav>
+  </div>
+  <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
+    <router-outlet>
+    </router-outlet>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>
