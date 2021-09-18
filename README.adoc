@@ -3,11 +3,15 @@ Viglet Team <opensource@viglet.com>
 :organization: Viglet Turing
 :toclevels: 5
 :toc-title: Table of Content
+:viglet-version: 0.3.4
 
 [preface]
-image:https://img.shields.io/github/release/openturing/turing.svg?style=for-the-badge&logo=java["GitHub"]
-image:https://img.shields.io/github/license/openturing/turing.svg?style=for-the-badge&logo=java["GitHub release"]
+image:https://img.shields.io/badge/Download-Release%20{viglet-version}-blue?style=for-the-badge&logo=Java[link="https://github.com/openturing/turing/releases/tag/v{viglet-version}""]
+image:https://img.shields.io/github/license/openturing/turing.svg?style=for-the-badge&logo=java["License"]
 image:https://img.shields.io/github/last-commit/openturing/turing.svg?style=for-the-badge&logo=java)[GitHub last commit]
+image:https://img.shields.io/github/workflow/status/openturing/turing/Build?style=for-the-badge&logo=GitHub[link="https://github.com/openturing/turing/actions/workflows/build.yml"]
+image:https://img.shields.io/badge/Sonar-Code%20Quality-brightgreen?style=for-the-badge&logo=SonarCloud[link="https://sonarcloud.io/organizations/viglet-turing/projects"]
+image:https://img.shields.io/twitter/follow/VigletTweet.svg?style=for-the-badge&logo=twitter[link="https://twitter.com/VigletTweet"]
 
 = Preface
 
