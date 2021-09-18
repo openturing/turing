@@ -3,13 +3,62 @@ Viglet Team <opensource@viglet.com>
 :organization: Viglet Turing
 :toclevels: 5
 :toc-title: Table of Content
+:viglet-version: 0.3.4
 
 [preface]
+image:https://img.shields.io/badge/Download-Release%20{viglet-version}-blue?style=for-the-badge&logo=Java[link="https://viglet.com/turing/download/"]
+image:https://img.shields.io/github/license/openturing/turing.svg?style=for-the-badge&logo=Apache["License"]
+image:https://img.shields.io/github/last-commit/openturing/turing.svg?style=for-the-badge&logo=java)[GitHub last commit]
+image:https://img.shields.io/github/workflow/status/openturing/turing/Build?style=for-the-badge&logo=GitHub[link="https://github.com/openturing/turing/actions/workflows/build.yml"]
+image:https://img.shields.io/badge/Sonar-Code%20Quality-brightgreen?style=for-the-badge&logo=SonarCloud[link="https://sonarcloud.io/organizations/viglet-turing/projects"]
+image:https://img.shields.io/twitter/follow/VigletTweet.svg?style=for-the-badge&logo=twitter[link="https://twitter.com/VigletTweet"]
+image:https://img.shields.io/badge/LinkedIn-Follow-blue?style=for-the-badge&logo=LinkedIn[link="https://www.linkedin.com/company/viglet"]
+
 = Preface
 
 Viglet Turing AI (https://viglet.com/turing) is an open source solution (https://github.com/openturing), which has Semantic Navigation and Chatbot as its main features. You can choose from several NLPs to enrich the data. All content is indexed in Solr as search engine.
 
 :numbered:
+
+== Development
+
+=== Documentation
+
+Technical documentation on Turing AI is available at https://docs.viglet.com/turing.
+
+=== Run
+
+To run Turing AI, just execute the following lines:
+
+```shell
+# Turing App
+./gradlew turing-app:bootrun
+
+# New Turing AI UI using Angular 12 and Primer CSS.
+
+cd turing-ui
+
+## Console
+ng serve console
+
+## Search
+ng serve sn
+
+## Chatbot
+ng serve converse
+```
+=== Docker Compose
+
+You can start the Turing AI using MariaDB, Solr and Nginx.
+
+```shell
+docker-compose up
+```
+
+=== URLs
+
+* Administration Console: http://localhost:2700. (admin/admin)
+* Semantic Navigation Sample: http://localhost:2700/sn/Sample.
 
 == Architecture
 
