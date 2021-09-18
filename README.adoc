@@ -5,9 +5,9 @@ Viglet Team <opensource@viglet.com>
 :toc-title: Table of Content
 
 [preface]
-image:https://img.shields.io/github/release/openturing/turing.svg?style=for-the-badge&logo=appveyor["GitHub"]
-image:https://img.shields.io/github/license/openturing/turing.svg?style=for-the-badge&logo=appveyor["GitHub release"]
-image:https://img.shields.io/github/last-commit/openturing/turing.svg?style=for-the-badge&logo=appveyor)[GitHub last commit]
+image:https://img.shields.io/github/release/openturing/turing.svg?style=for-the-badge&logo=java["GitHub"]
+image:https://img.shields.io/github/license/openturing/turing.svg?style=for-the-badge&logo=java["GitHub release"]
+image:https://img.shields.io/github/last-commit/openturing/turing.svg?style=for-the-badge&logo=java)[GitHub last commit]
 
 = Preface
 
