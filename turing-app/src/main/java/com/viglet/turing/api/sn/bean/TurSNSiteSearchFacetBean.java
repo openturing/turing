@@ -21,22 +21,67 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.se.field.TurSEFieldType;
+
 @Component
 public class TurSNSiteSearchFacetBean {
 
 	private List<TurSNSiteSearchFacetItemBean> facets;
 	private TurSNSiteSearchFacetLabelBean label;
+	private String name;
+	private String description;
+	private TurSEFieldType type;
+	private boolean multiValued;
+
 	public List<TurSNSiteSearchFacetItemBean> getFacets() {
 		return facets;
 	}
+
 	public void setFacets(List<TurSNSiteSearchFacetItemBean> facets) {
 		this.facets = facets;
 	}
+
 	public TurSNSiteSearchFacetLabelBean getLabel() {
 		return label;
 	}
+
 	public void setLabel(TurSNSiteSearchFacetLabelBean label) {
 		this.label = label;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public TurSEFieldType getType() {
+		return type;
+	}
+
+	public void setType(TurSEFieldType type) {
+		this.type = type;
+	}
+
+	public boolean isMultiValued() {
+		return multiValued;
+	}
+
+	public void setMultiValued(boolean multiValued) {
+		this.multiValued = multiValued;
+	}
+	public void setMultiValued(int multiValued) {
+		this.multiValued = multiValued == 1 ? true: false;
 	}
 
 }

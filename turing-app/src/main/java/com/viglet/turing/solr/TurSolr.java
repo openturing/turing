@@ -477,9 +477,10 @@ public class TurSolr {
 			List<TurSEResult> results = new ArrayList<TurSEResult>();
 
 			// Facet
-			if (turSNSite.getFacet() == 1 && turSNSiteFacetFieldExts != null && turSNSiteFacetFieldExts.size() > 0) {
-				List<TurSEFacetResult> facetResults = new ArrayList<TurSEFacetResult>();
+			if (turSNSite.getFacet() == 1 && turSNSiteFacetFieldExts != null && !turSNSiteFacetFieldExts.isEmpty()) {
+				List<TurSEFacetResult> facetResults = new ArrayList<>();
 				for (FacetField facet : queryResponse.getFacetFields()) {
+
 					TurSEFacetResult turSEFacetResult = new TurSEFacetResult();
 					turSEFacetResult.setFacet(facet.getName());
 					for (Count item : facet.getValues()) {
