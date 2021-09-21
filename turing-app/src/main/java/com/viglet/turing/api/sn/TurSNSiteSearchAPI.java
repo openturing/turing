@@ -518,17 +518,17 @@ public class TurSNSiteSearchAPI {
 		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
 		if (turSEResults.getCurrentPage() > 1) {
 
-			turSNSiteSearchPaginationBean.setType("first");
+			turSNSiteSearchPaginationBean.setType(TurSNPaginationType.FIRST);
 			turSNSiteSearchPaginationBean.setHref(this.addOrReplaceParameter(request, "p", Integer.toString(1)));
-			turSNSiteSearchPaginationBean.setText("FIRST");
+			turSNSiteSearchPaginationBean.setText("First");
 			turSNSiteSearchPaginationBean.setPage(1);
 			turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
 			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
 				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-				turSNSiteSearchPaginationBean.setType("previous");
+				turSNSiteSearchPaginationBean.setType(TurSNPaginationType.PREVIOUS);
 				turSNSiteSearchPaginationBean.setHref(
 						this.addOrReplaceParameter(request, "p", Integer.toString(turSEResults.getCurrentPage() - 1)));
-				turSNSiteSearchPaginationBean.setText("PREVIOUS");
+				turSNSiteSearchPaginationBean.setText("Previous");
 				turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() - 1);
 				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
 			}
@@ -539,7 +539,8 @@ public class TurSNSiteSearchAPI {
 
 			if (page == turSEResults.getCurrentPage()) {
 				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-				turSNSiteSearchPaginationBean.setType("current");
+				turSNSiteSearchPaginationBean.setHref(this.addOrReplaceParameter(request, "p", Integer.toString(page)));
+				turSNSiteSearchPaginationBean.setType(TurSNPaginationType.CURRENT);
 				turSNSiteSearchPaginationBean.setText(Integer.toString(page));
 				turSNSiteSearchPaginationBean.setPage(page);
 				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
@@ -548,6 +549,7 @@ public class TurSNSiteSearchAPI {
 				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
 				turSNSiteSearchPaginationBean.setHref(this.addOrReplaceParameter(request, "p", Integer.toString(page)));
 				turSNSiteSearchPaginationBean.setText(Integer.toString(page));
+				turSNSiteSearchPaginationBean.setType(TurSNPaginationType.PAGE);
 				turSNSiteSearchPaginationBean.setPage(page);
 				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
 
@@ -557,20 +559,20 @@ public class TurSNSiteSearchAPI {
 			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
 				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
 			
-				turSNSiteSearchPaginationBean.setType("next");
+				turSNSiteSearchPaginationBean.setType(TurSNPaginationType.NEXT);
 				turSNSiteSearchPaginationBean.setHref(
 						this.addOrReplaceParameter(request, "p", Integer.toString(turSEResults.getCurrentPage() + 1)));
-				turSNSiteSearchPaginationBean.setText("NEXT");
+				turSNSiteSearchPaginationBean.setText("Next");
 				turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() + 1);
 				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
 
 			}
 
 			turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-			turSNSiteSearchPaginationBean.setType("last");
+			turSNSiteSearchPaginationBean.setType(TurSNPaginationType.LAST);
 			turSNSiteSearchPaginationBean
 					.setHref(this.addOrReplaceParameter(request, "p", Integer.toString(turSEResults.getPageCount())));
-			turSNSiteSearchPaginationBean.setText("LAST");
+			turSNSiteSearchPaginationBean.setText("Last");
 			turSNSiteSearchPaginationBean.setPage(turSEResults.getPageCount());
 			turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
 		}
