@@ -19,17 +19,19 @@ package com.viglet.turing.api.sn.bean;
 
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.api.sn.TurSNPaginationType;
+
 @Component
 public class TurSNSiteSearchPaginationBean {
 
-	private String type;
+	private TurSNPaginationType type;
 	private String text;
 	private String href;
 	private int page;
-	public String getType() {
+	public TurSNPaginationType getType() {
 		return type;
 	}
-	public void setType(String type) {
+	public void setType(TurSNPaginationType type) {
 		this.type = type;
 	}
 	public String getText() {
