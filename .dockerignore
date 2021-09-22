@@ -1,0 +1,13 @@
+turing-installer
+.bloop
+.github
+.gradle
+.metals
+.vscode
+activemq-data
+bin
+build
+containers
+gradle
+img
+volumes
