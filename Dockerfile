@@ -1,11 +1,3 @@
-FROM adoptopenjdk/openjdk14:latest as turingbuild
-WORKDIR /turing-src
-
-VOLUME /root/.gradle
-
-COPY . .
-RUN ./gradlew turing-app:build -x test -i --stacktrace
-
 FROM adoptopenjdk/openjdk14:jre
 WORKDIR /turing 
 ENV JAVA_OPTS=${JAVA_OPTS:-'-Xmx512m'}
@@ -22,7 +14,7 @@ RUN useradd --system --create-home --uid 1001 --gid 0 java
 RUN sh -c 'mkdir -p /turing/store'
 RUN sh -c 'mkdir -p /turing/models'
 RUN sh -c 'chown -R java /turing'
-#COPY --from=turingbuild  /turing-src/turing-app/build/libs/turing-app.jar /turing/turing-app.jar
+
 COPY /turing-app/build/libs/turing-app.jar /turing/turing-app.jar
 
 RUN sh -c 'touch /turing/turing-app.jar'
