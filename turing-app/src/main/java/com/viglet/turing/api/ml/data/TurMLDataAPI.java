@@ -51,7 +51,7 @@ import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataRepository;
-import com.viglet.turing.plugins.opennlp.TurOpenNLPConnector;
+import com.viglet.turing.plugins.nlp.opennlp.TurOpenNLPConnector;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
