@@ -147,6 +147,7 @@
         <div>
           <ul *ngIf="snSearch.results as snSearchResults;" class="repo-list">
             <ng-container *ngFor="let document of snSearchResults.document">
+              <ng-container *ngIf="document.fields[snSearch.queryContext.defaultFields.url]">
               <div *ngIf="document.elevate" style="border-top: 1px solid var(--color-border-primary);">
                 <div class="blankslate">
                   <svg width="40" height="40" style="border-radius: 50%;" class="mb-3"
@@ -207,6 +208,7 @@
                   </div>
                 </div>
               </li>
+            </ng-container>
             </ng-container>
           </ul>
         </div>
