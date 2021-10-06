@@ -7,7 +7,10 @@ buildscript {
 		  jasyptVersion = '2.1.1'
 		 }
 		repositories {
-			mavenCentral()		
+			mavenCentral()	
+			 maven {
+        		url "https://packages.atlassian.com/mvn/maven-external/"
+    		}	
 		}
     dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     			   classpath files("lib/gradle-js-plugin-2.14.2-SNAPSHOT.jar") }
@@ -64,6 +67,9 @@ bootJar {
 
 repositories {
 	mavenCentral()
+	 maven {
+        		url "https://packages.atlassian.com/mvn/maven-external/"
+    		}	
 }
 
 group = 'com.viglet.turing'
@@ -286,6 +292,12 @@ dependencies {
 	// Swagger 2
 	implementation group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
 	implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"	
+	
+	// Confluence
+	implementation group: 'com.atlassian.confluence', name: 'confluence-java-api', version: '7.9.1-tc-m30'
+	
+	// Schema.org
+	implementation group: 'com.squins.google.fork.schema-org-client', name: 'schema-org-client', version: '1.0.1'
 	
 	// WebJars
 	implementation 'org.webjars.bower:jquery:3.6.0'

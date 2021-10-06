@@ -54,18 +54,18 @@ import com.viglet.turing.persistence.repository.nlp.term.TurTermRepository;
 import com.viglet.turing.persistence.repository.nlp.term.TurTermVariationLanguageRepository;
 import com.viglet.turing.persistence.repository.nlp.term.TurTermVariationRepository;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
-import com.viglet.turing.plugins.otca.af.xml.AFAttributeType;
-import com.viglet.turing.plugins.otca.af.xml.AFTermRelationType;
-import com.viglet.turing.plugins.otca.af.xml.AFTermRelationTypeEnum;
-import com.viglet.turing.plugins.otca.af.xml.AFTermType;
-import com.viglet.turing.plugins.otca.af.xml.AFTermType.Attributes;
-import com.viglet.turing.plugins.otca.af.xml.AFTermType.Relations;
-import com.viglet.turing.plugins.otca.af.xml.AFTermType.Variations;
-import com.viglet.turing.plugins.otca.af.xml.AFTermVariationAccentEnum;
-import com.viglet.turing.plugins.otca.af.xml.AFTermVariationCaseEnum;
-import com.viglet.turing.plugins.otca.af.xml.AFTermVariationType;
-import com.viglet.turing.plugins.otca.af.xml.AFType;
-import com.viglet.turing.plugins.otca.af.xml.AFType.Terms;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFAttributeType;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermRelationType;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermRelationTypeEnum;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermType;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermType.Attributes;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermType.Relations;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermType.Variations;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermVariationAccentEnum;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermVariationCaseEnum;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermVariationType;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFType;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFType.Terms;
 import com.viglet.turing.utils.TurUtils;
 
 import io.swagger.annotations.Api;
@@ -252,7 +252,7 @@ public class TurOTCAAutorityFileAPI {
 
 		try {
 			JAXBContext jaxbContext = JAXBContext
-					.newInstance(com.viglet.turing.plugins.otca.af.xml.ObjectFactory.class);
+					.newInstance(com.viglet.turing.plugins.nlp.otca.af.xml.ObjectFactory.class);
 			AFType documentType = ((JAXBElement<AFType>) jaxbContext.createUnmarshaller()
 					.unmarshal(multipartFile.getInputStream())).getValue();
 
