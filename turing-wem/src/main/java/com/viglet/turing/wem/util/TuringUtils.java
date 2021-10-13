@@ -75,7 +75,7 @@ public class TuringUtils {
 
 	// Old turIndexAttMapToSet
 	public static Set<TuringTag> turingTagMapToSet(TuringTagMap turingTagMap) {
-		Set<TuringTag> turingTags = new HashSet<TuringTag>();
+		Set<TuringTag> turingTags = new HashSet<>();
 		for (Entry<String, ArrayList<TuringTag>> entryCtd : turingTagMap.entrySet()) {
 			for (TuringTag turingTag : entryCtd.getValue()) {
 				turingTags.add(turingTag);
@@ -131,51 +131,53 @@ public class TuringUtils {
 
 	public static void sendToTuring(TurSNJobItems turSNJobItems, IHandlerConfiguration config, AsLocaleData asLocale)
 			throws IOException {
-		CloseableHttpClient client = HttpClients.createDefault();
-		if (turSNJobItems.getTuringDocuments().size() > 0) {
+		try (CloseableHttpClient client = HttpClients.createDefault()) {
+			if (!turSNJobItems.getTuringDocuments().isEmpty()) {
 
-			String encoding = "UTF-8";
+				String encoding = StandardCharsets.UTF_8.name();
 
-			ObjectMapper mapper = new ObjectMapper();
-			String jsonResult = mapper.writeValueAsString(turSNJobItems);
+				ObjectMapper mapper = new ObjectMapper();
+				String jsonResult = mapper.writeValueAsString(turSNJobItems);
 
-			Charset utf8Charset = Charset.forName("UTF-8");
-			Charset customCharset = Charset.forName(encoding);
+				Charset utf8Charset = StandardCharsets.UTF_8;
+				Charset customCharset = Charset.forName(encoding);
 
-			ByteBuffer inputBuffer = ByteBuffer.wrap(jsonResult.getBytes());
+				ByteBuffer inputBuffer = ByteBuffer.wrap(jsonResult.getBytes());
 
-			// decode UTF-8
-			CharBuffer data = utf8Charset.decode(inputBuffer);
+				// decode UTF-8
+				CharBuffer data = utf8Charset.decode(inputBuffer);
 
-			// encode
-			ByteBuffer outputBuffer = customCharset.encode(data);
+				// encode
+				ByteBuffer outputBuffer = customCharset.encode(data);
 
-			byte[] outputData = new String(outputBuffer.array()).getBytes("UTF-8");
-			String jsonUTF8 = new String(outputData);
+				byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
+				String jsonUTF8 = new String(outputData);
 
-			HttpPost httpPost = new HttpPost(
-					String.format("%s/api/sn/%s/import", config.getTuringURL(), config.getSNSite(asLocale)));
+				HttpPost httpPost = new HttpPost(
+						String.format("%s/api/sn/%s/import", config.getTuringURL(), config.getSNSite(asLocale)));
 
-			StringEntity entity = new StringEntity(new String(jsonUTF8), "UTF-8");
-			httpPost.setEntity(entity);
-			httpPost.setHeader("Accept", "application/json");
-			httpPost.setHeader("Content-type", "application/json");
-			httpPost.setHeader("Accept-Encoding", "UTF-8");
+				StringEntity entity = new StringEntity(jsonUTF8, StandardCharsets.UTF_8);
+				httpPost.setEntity(entity);
+				httpPost.setHeader("Accept", "application/json");
+				httpPost.setHeader("Content-type", "application/json");
+				httpPost.setHeader("Accept-Encoding", StandardCharsets.UTF_8.name());
 
-			basicAuth(config, httpPost);
+				basicAuth(config, httpPost);
 
-			CloseableHttpResponse response = client.execute(httpPost);
+				try (CloseableHttpResponse response = client.execute(httpPost)) {
 
-			if (log.isDebugEnabled()) {
-				log.debug(String.format("Viglet Turing Index Request URI: %s", httpPost.getURI()));
-				log.debug(String.format("JSON: %s", jsonResult));
-				log.debug(String.format("Viglet Turing indexer response HTTP result is: %s, for request uri: %s",
-						response.getStatusLine().getStatusCode(), httpPost.getURI()));
-				log.debug(String.format("Viglet Turing indexer response HTTP result is: %s",
-						((HttpMethod) httpPost).getResponseBodyAsString()));
+					if (log.isDebugEnabled()) {
+						log.debug(String.format("Viglet Turing Index Request URI: %s", httpPost.getURI()));
+						log.debug(String.format("JSON: %s", jsonResult));
+						log.debug(
+								String.format("Viglet Turing indexer response HTTP result is: %s, for request uri: %s",
+										response.getStatusLine().getStatusCode(), httpPost.getURI()));
+						log.debug(String.format("Viglet Turing indexer response HTTP result is: %s",
+								((HttpMethod) httpPost).getResponseBodyAsString()));
+					}
+					turSNJobItems.getTuringDocuments().clear();
+				}
 			}
-			turSNJobItems.getTuringDocuments().clear();
-
 		}
 	}
 

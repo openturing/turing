@@ -203,18 +203,18 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 
 	@Override
 	public String getSNSite(AsLocaleData asLocaleData) {
-		String snSite = null;
+		String snSiteInternal = null;
 		if (asLocaleData != null && asLocaleData.getCountry() != null && asLocaleData.getLanguage() != null) {
 			String locale = String.format("%s_%s", asLocaleData.getLanguage(), asLocaleData.getCountry());
-			snSite = getSNSite(locale);
+			snSiteInternal = getSNSite(locale);
 		} else if (asLocaleData != null && asLocaleData.getLanguage() != null) {
-			snSite = getSNSite(asLocaleData.getCountry());
+			snSiteInternal = getSNSite(asLocaleData.getCountry());
 		}
-		if (snSite == null) {
-			snSite = getSNSite("default");
+		if (snSiteInternal == null) {
+			snSiteInternal = getSNSite("default");
 		}
 
-		return snSite;
+		return snSiteInternal;
 	}
 
 	@Override
@@ -222,7 +222,7 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 		if (sitesAssociationPriority != null) {
 			String[] sites = sitesAssociationPriority.split(",");
 
-			List<String> siteList = new ArrayList<String>();
+			List<String> siteList = new ArrayList<>();
 			for (String site : sites) {
 				siteList.add(site.trim());
 			}

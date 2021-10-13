@@ -50,6 +50,6 @@ public class TurParentChannel implements ExtAttributeInterface {
 
 		}
 
-		return null;
+		return new TurMultiValue();
 	}
 }

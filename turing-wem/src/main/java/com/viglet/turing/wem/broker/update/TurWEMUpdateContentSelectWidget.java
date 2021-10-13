@@ -44,7 +44,7 @@ public class TurWEMUpdateContentSelectWidget {
 			AttributeData attributeData) throws Exception {
 
 		MappingDefinitions mappingDefinitions = turAttrDefContext.getMappingDefinitions();
-		List<TurAttrDef> attributesDefs = new ArrayList<TurAttrDef>();
+		List<TurAttrDef> attributesDefs = new ArrayList<>();
 
 		ContentInstance ciRelated = (ContentInstance) ManagedObject
 				.findByContentManagementId(new ManagedObjectVCMRef(attributeData.getValue().toString()));

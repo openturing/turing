@@ -23,13 +23,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
@@ -129,7 +132,7 @@ public class TurWEMIndex {
 
 	private static List<TurAttrDef> prepareAttributeDefs(ContentInstance ci, IHandlerConfiguration config,
 			MappingDefinitions mappingDefinitions, CTDMappings ctdMappings) throws Exception {
-		List<TurAttrDef> attributesDefs = new ArrayList<TurAttrDef>();
+		List<TurAttrDef> attributesDefs = new ArrayList<>();
 
 		for (String tag : ctdMappings.getTagList()) {
 			if (log.isDebugEnabled()) {
@@ -207,59 +210,64 @@ public class TurWEMIndex {
 		}
 	}
 
-	public static boolean postIndex(String xml, AsLocaleData asLocaleData, IHandlerConfiguration config)
-			throws IOException {
+	public static boolean postIndex(String xml, AsLocaleData asLocaleData, IHandlerConfiguration config) {
 
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder builder;
-		Document document = null;
 		try {
+			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+			factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+			factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+
+			DocumentBuilder builder;
+			Document document = null;
 			builder = factory.newDocumentBuilder();
 			document = builder.parse(new InputSource(new StringReader(xml)));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 
-		if (document != null) {
-			Element element = document.getDocumentElement();
+			if (document != null) {
+				Element element = document.getDocumentElement();
 
-			NodeList nodes = element.getChildNodes();
-			TurSNJobItems turSNJobItems = new TurSNJobItems();
-			TurSNJobItem turSNJobItem = new TurSNJobItem();
-			Map<String, Object> attributes = new HashMap<String, Object>();
-			for (int i = 0; i < nodes.getLength(); i++) {
+				NodeList nodes = element.getChildNodes();
+				TurSNJobItems turSNJobItems = new TurSNJobItems();
+				TurSNJobItem turSNJobItem = new TurSNJobItem();
+				Map<String, Object> attributes = new HashMap<>();
+				for (int i = 0; i < nodes.getLength(); i++) {
 
-				String nodeName = nodes.item(i).getNodeName();
-				if (attributes.containsKey(nodeName)) {
-					if (!(attributes.get(nodeName) instanceof ArrayList)) {
-						List<Object> attributeValues = new ArrayList<Object>();
-						attributeValues.add(attributes.get(nodeName));
-						attributeValues.add(nodes.item(i).getTextContent());
+					String nodeName = nodes.item(i).getNodeName();
+					if (attributes.containsKey(nodeName)) {
+						if (!(attributes.get(nodeName) instanceof ArrayList)) {
+							List<Object> attributeValues = new ArrayList<>();
+							attributeValues.add(attributes.get(nodeName));
+							attributeValues.add(nodes.item(i).getTextContent());
 
-						attributes.put(nodeName, attributeValues);
-						turSNJobItem.setAttributes(attributes);
+							attributes.put(nodeName, attributeValues);
+							turSNJobItem.setAttributes(attributes);
+						} else {
+							@SuppressWarnings("unchecked")
+							List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
+							attributeValues.add(nodes.item(i).getTextContent());
+							attributes.put(nodeName, attributeValues);
+						}
 					} else {
-						@SuppressWarnings("unchecked")
-						List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
-						attributeValues.add(nodes.item(i).getTextContent());
-						attributes.put(nodeName, attributeValues);
-					}
-				} else {
-					attributes.put(nodeName, nodes.item(i).getTextContent());
+						attributes.put(nodeName, nodes.item(i).getTextContent());
 
+					}
 				}
+
+				turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+				turSNJobItem.setAttributes(attributes);
+				turSNJobItems.add(turSNJobItem);
+
+				TuringUtils.sendToTuring(turSNJobItems, config, asLocaleData);
 			}
 
-			turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-			turSNJobItem.setAttributes(attributes);
-			turSNJobItems.add(turSNJobItem);
-
-			TuringUtils.sendToTuring(turSNJobItems, config, asLocaleData);
-			;
+			log.info("Viglet Turing indexer Processed Content Type.");
+			return true;
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			log.error(e.getMessage(), e);
 		}
-
-		log.info("Viglet Turing indexer Processed Content Type.");
-		return true;
+		return false;
 	}
 
 	private static String createXMLAttribute(String tag, String value) {

@@ -33,7 +33,7 @@ public class TurWEMRelator {
 	
 	public static AttributedObject[] nestedRelators(List<String> relationTag, List<AttributedObject[]> currentRelation,
 			int currentPosition) {
-		List<AttributedObject> relators = new ArrayList<AttributedObject>();
+		List<AttributedObject> relators = new ArrayList<>();
 
 		int nextPosition = currentPosition + 1;
 
@@ -60,7 +60,7 @@ public class TurWEMRelator {
 
 	private static AttributedObject[] detectAttributesFromRelator(List<String> relationTag,
 			List<AttributedObject[]> currentRelation, int currentPosition, int nextPosition) {
-		List<AttributedObject[]> nestedRelationChild = new ArrayList<AttributedObject[]>();
+		List<AttributedObject[]> nestedRelationChild = new ArrayList<>();
 		for (AttributedObject[] attributesFromRelation : currentRelation) {
 
 			for (AttributedObject attributeFromRelation : Arrays.asList(attributesFromRelation)) {

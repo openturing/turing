@@ -91,10 +91,7 @@ public class MappingDefinitionsProcess {
 	}
 
 	private static List<TuringTag> readCommonIndexAttrs(Element rootElement) {
-		// Read <common-index-attrs/>
-		List<TuringTag> commonIndexAttrs = readIndexAttributeMappings(rootElement,
-				TurXMLConstant.TAG_COMMON_INDEX_DATA);
-		return commonIndexAttrs;
+		return readIndexAttributeMappings(rootElement, TurXMLConstant.TAG_COMMON_INDEX_DATA);
 	}
 
 	private static void readMappingDefinitions(Element rootElement, TurCTDMappingMap mappings,
@@ -162,7 +159,7 @@ public class MappingDefinitionsProcess {
 
 		TuringTagMap indexAttrsMapMerged = new TuringTagMap();
 
-		Map<String, TuringTag> commonIndexAttrMap = new HashMap<String, TuringTag>();
+		Map<String, TuringTag> commonIndexAttrMap = new HashMap<>();
 		for (TuringTag turingTag : commonIndexAttrs)
 			commonIndexAttrMap.put(turingTag.getTagName(), turingTag);
 
@@ -176,7 +173,7 @@ public class MappingDefinitionsProcess {
 				}
 
 				if (!indexAttrsMapMerged.containsKey(turingTag.getTagName()))
-					indexAttrsMapMerged.put(turingTag.getTagName(), new ArrayList<TuringTag>());
+					indexAttrsMapMerged.put(turingTag.getTagName(), new ArrayList<>());
 				indexAttrsMapMerged.get(turingTag.getTagName()).add(turingTag);
 			}
 		}
@@ -185,7 +182,7 @@ public class MappingDefinitionsProcess {
 		for (TuringTag commonTuringTag : commonIndexAttrs) {
 			// Doesn't repeat tags that exist in Ctd
 			if (commonTuringTag.getSrcMandatory() && !indexAttrsMapMerged.containsKey(commonTuringTag.getTagName())) {
-				ArrayList<TuringTag> turingTags = new ArrayList<TuringTag>();
+				ArrayList<TuringTag> turingTags = new ArrayList<>();
 				turingTags.add(commonTuringTag);
 				indexAttrsMapMerged.put(commonTuringTag.getTagName(), turingTags);
 			}
@@ -196,7 +193,7 @@ public class MappingDefinitionsProcess {
 
 	// Read <index-attrs/> or <common-index-attrs/>
 	public static List<TuringTag> readIndexAttributeMappings(Element rootElement, String genericIndexAttrsTag) {
-		List<TuringTag> turingTagMap = new ArrayList<TuringTag>();
+		List<TuringTag> turingTagMap = new ArrayList<>();
 		NodeList attributes = rootElement.getElementsByTagName(genericIndexAttrsTag);
 		for (int i = 0; i < attributes.getLength(); i++) {
 			// Load <srcAttr/> List
@@ -215,7 +212,7 @@ public class MappingDefinitionsProcess {
 	// Load <srcAttr/> List
 	public static List<TuringTag> loadAtributesFromAttrsElement(Element attrsElement) {
 		NodeList srcNodeList = attrsElement.getElementsByTagName("srcAttr");
-		List<TuringTag> turingTagsPerSrcAttr = new ArrayList<TuringTag>();
+		List<TuringTag> turingTagsPerSrcAttr = new ArrayList<>();
 
 		for (int i = 0; i < srcNodeList.getLength(); i++) {
 			Element srcAttrNode = (Element) srcNodeList.item(i);
@@ -282,7 +279,7 @@ public class MappingDefinitionsProcess {
 
 		NodeList tagList = (srcAttrNode).getElementsByTagName("tag");
 
-		ArrayList<TuringTag> turingTags = new ArrayList<TuringTag>();
+		ArrayList<TuringTag> turingTags = new ArrayList<>();
 
 		for (int nodePos = 0; nodePos < tagList.getLength(); nodePos++) {
 			TuringTag turingTag = detectXMLAttributesOfSrcAttr(srcAttrNode);
