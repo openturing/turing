@@ -41,7 +41,7 @@ public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 	TurLocale findByInitials(String initials);
 
 	@CacheEvict(value = { "turLocalefindAll", "turLocalefindByInitials" }, allEntries = true)
-	<S extends TurLocale> S save(TurLocale turLocale);
+	TurLocale save(TurLocale turLocale);
 
 	void delete(TurLocale turConfigVar);
 

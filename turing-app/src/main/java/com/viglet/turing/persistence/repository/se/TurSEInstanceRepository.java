@@ -37,7 +37,7 @@ public interface TurSEInstanceRepository extends JpaRepository<TurSEInstance, St
 	Optional<TurSEInstance> findById(String id);
 
 	@CacheEvict(value = { "turSEInstancefindAll", "turSEInstancefindById" }, allEntries = true)
-	<S extends TurSEInstance> S save(TurSEInstance turSEInstance);
+	TurSEInstance save(TurSEInstance turSEInstance);
 
 	@Modifying
 	@Query("delete from  TurSEInstance si where si.id = ?1")
