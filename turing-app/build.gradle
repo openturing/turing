@@ -262,10 +262,10 @@ dependencies {
     implementation group: 'org.json', name: 'json', version:'20210307'
       
     // CoreNLP
-    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'4.2.2'
+    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'4.3.0'
     
     //ASM
-    implementation group: 'asm', name: 'asm', version:'3.3.1'
+    implementation group: 'asm', name: 'asm', version:'4.0_RC2'
     
     // OpenNLP
     implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.9.3'
@@ -275,7 +275,7 @@ dependencies {
     implementation group: 'commons-lang', name: 'commons-lang', version:'2.6'
   
     // EhCache
-    implementation group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.9.2'
+    implementation group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.9.4.10'
     
     // Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version:'2.1.0'
@@ -294,10 +294,18 @@ dependencies {
 	implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"	
 	
 	// Confluence
-	implementation group: 'com.atlassian.confluence', name: 'confluence-java-api', version: '7.9.1-tc-m30'
+	implementation group: 'com.atlassian.confluence', name: 'confluence-java-api', version: '7.15.0-zdu-m100'
 	
 	// Schema.org
 	implementation group: 'com.squins.google.fork.schema-org-client', name: 'schema-org-client', version: '1.0.1'
+	
+	//PDFBox
+	implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.24'
+	
+	//Language Tool
+	implementation group: 'org.languagetool', name: 'language-all', version: '5.5'
+
+
 	
 	// WebJars
 	implementation 'org.webjars.bower:jquery:3.6.0'

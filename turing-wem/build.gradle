@@ -18,8 +18,8 @@ apply plugin: 'com.github.johnrengelman.shadow'
 
 sonarqube {
   properties {
-    property "sonar.projectKey", "openturing_turing-wem"
-    property "sonar.organization", "openturing"
+    property "sonar.projectKey", "turing-wem"
+    property "sonar.organization", "viglet-turing"
     property "sonar.host.url", "https://sonarcloud.io"
   }
 }
@@ -52,7 +52,7 @@ dependencies {
     implementation group: 'com.beust', name: 'jcommander', version: '1.81'	
     implementation group: 'log4j', name: 'log4j', version: '1.2.7'
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
-	implementation 'com.github.alegauss:dummy-vgn:1a42a92d66'
+	implementation group: 'com.github.alegauss' , name: 'dummy-vgn', version: '8e2eb9b874'
 	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: '0.3.3'
 }
 

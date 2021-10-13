@@ -25,8 +25,6 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface TurDataGroupRepository extends JpaRepository<TurDataGroup, Integer> {
 
-	TurDataGroup save(TurDataGroup turDataGroup);
-
 	void delete(TurDataGroup turDataGroup);
 	
 	@Modifying

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ package com.viglet.turing.thesaurus;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,7 +129,7 @@ public class TurThesaurusProcessor {
 			lhWords.put(wordLowerCase, hmResults);
 		}
 
-		LinkedHashMap<TurNLPListKey<Integer>, List<String>> matches = new LinkedHashMap<TurNLPListKey<Integer>, List<String>>();
+		LinkedHashMap<TurNLPListKey<Integer>, List<String>> matches = new LinkedHashMap<>();
 		TurNLPWord turNLPWordPrev = null;
 		LinkedHashMap<String, TurTermVariation> prevVariations = null;
 		for (Object wordObject : turNLPSentence.getWords().values().toArray()) {
@@ -220,9 +219,7 @@ public class TurThesaurusProcessor {
 		}
 		logger.debug("Matches...");
 
-		Iterator<?> it = matches.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry) it.next();
+		for (Entry<TurNLPListKey<Integer>, List<String>> pair : matches.entrySet()) {
 			ArrayList<Integer> positions = ((TurNLPListKey<Integer>) pair.getKey()).getList();
 			List<String> ids = (List<String>) pair.getValue();
 			this.mergeEntityResultsFromTo(this.checkTermIdBetweenPositions(turNLPSentence, positions, ids, matches),

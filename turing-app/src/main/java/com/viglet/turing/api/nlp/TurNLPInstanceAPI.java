@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -30,6 +31,27 @@ import java.util.Map.Entry;
 
 import javax.xml.bind.JAXB;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.pdfbox.cos.COSArray;
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSString;
+import org.apache.pdfbox.pdfparser.PDFStreamParser;
+import org.apache.pdfbox.pdfwriter.ContentStreamWriter;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDStream;
+import org.apache.pdfbox.contentstream.operator.Operator;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,18 +77,6 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ocr.TesseractOCRConfig;
-import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.sax.BodyContentHandler;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -137,6 +147,96 @@ public class TurNLPInstanceAPI {
 		this.turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
 		return turNLPInstance;
 
+	}
+
+	@GetMapping(value = "/detect-entities")
+	public void detectEntitiesFromDocument() {
+
+		try (PDDocument document = PDDocument.load(new File("D:/temp/test123.pdf"))) {
+
+			if (document.isEncrypted()) {
+				System.err.println("Error: Encrypted documents are not supported for this example.");
+				System.exit(1);
+			}
+
+			try (PDDocument document2 = _ReplaceText(document, "Shio", "Shiohara")) {
+				document2.save("D:/temp/test123_modified2.pdf");
+			}
+			
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		} 
+
+	}
+
+	private static PDDocument _ReplaceText(PDDocument document, String searchString, String replacement)
+			throws IOException {
+		if (StringUtils.isEmpty(searchString) || StringUtils.isEmpty(replacement)) {
+			return document;
+		}
+
+		for (PDPage page : document.getPages()) {
+			PDFStreamParser parser = new PDFStreamParser(page);
+			parser.parse();
+			List<Object>  tokens = parser.getTokens();
+
+			for (int j = 0; j < tokens.size(); j++) {
+				Object next = tokens.get(j);
+				if (next instanceof Operator) {
+					Operator op = (Operator) next;
+
+					String pstring = "";
+					int prej = 0;
+
+					// Tj and TJ are the two operators that display strings in a PDF
+					if (op.getName().equals("Tj")) {
+						// Tj takes one operator and that is the string to display so lets update that
+						// operator
+						COSString previous = (COSString) tokens.get(j - 1);
+						String string = previous.getString();
+						System.out.println(string);
+						string = string.replaceFirst(searchString, replacement);
+						previous.setValue(string.getBytes());
+					} else if (op.getName().equals("TJ")) {
+						COSArray previous = (COSArray) tokens.get(j - 1);
+						for (int k = 0; k < previous.size(); k++) {
+							Object arrElement = previous.getObject(k);
+							if (arrElement instanceof COSString) {
+								COSString cosString = (COSString) arrElement;
+								String string = cosString.getString();
+
+								if (j == prej) {
+									pstring += string;
+								} else {
+									prej = j;
+									pstring = string;
+								}
+							}
+						}
+
+						if (searchString.equals(pstring.trim())) {
+							COSString cosString2 = (COSString) previous.getObject(0);
+							cosString2.setValue(replacement.getBytes());
+
+							int total = previous.size() - 1;
+							for (int k = total; k > 0; k--) {
+								previous.remove(k);
+							}
+						}
+					}
+				}
+			}
+
+			// now that the tokens are updated we will replace the page content stream.
+			PDStream updatedStream = new PDStream(document);
+			OutputStream out = updatedStream.createOutputStream(COSName.FLATE_DECODE);
+			ContentStreamWriter tokenWriter = new ContentStreamWriter(out);
+			tokenWriter.writeTokens(tokens);
+			out.close();
+			page.setContents(updatedStream);
+		}
+
+		return document;
 	}
 
 	@PostMapping(value = "/{id}/validate/file/blazon", produces = MediaType.APPLICATION_XML_VALUE)

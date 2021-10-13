@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,10 +33,22 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+
+import com.viglet.turing.spring.security.auth.ITurAuthenticationFacade;
 
 @Component
 public class TurUtils {
+	@Autowired
+	private ITurAuthenticationFacade authenticationFacade;
+
+	public String getCurrentUsername () {
+		Authentication authentication = authenticationFacade.getAuthentication();
+        return authentication.getName();
+	}
+	
 	public String stripAccents(String s) {
 		s = Normalizer.normalize(s, Normalizer.Form.NFD);
 		s = s.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
