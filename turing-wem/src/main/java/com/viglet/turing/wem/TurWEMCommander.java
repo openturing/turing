@@ -70,6 +70,7 @@ import com.vignette.util.VgnException;
 import com.vignette.util.VgnIllegalArgumentException;
 
 public class TurWEMCommander {
+	private static JCommander jCommander = new JCommander();
 	private static ContextLogger logger = LoggingManager.getContextLogger(TurWEMCommander.class);
 
 	private static final String WORKING_DIR = "com.vignette.workingDir";
@@ -115,7 +116,7 @@ public class TurWEMCommander {
 
 	public static void main(String... argv) {
 		TurWEMCommander main = new TurWEMCommander();
-		JCommander jCommander = new JCommander();
+		
 		jCommander.addObject(main);
 
 		try {
@@ -124,8 +125,7 @@ public class TurWEMCommander {
 				jCommander.usage();
 				return;
 			}
-
-			System.out.println("Viglet Turing WEM Indexer Tool.");
+			jCommander.getConsole().println("Viglet Turing WEM Indexer Tool.");
 
 			main.run();
 		} catch (ParameterException e) {
@@ -160,7 +160,7 @@ public class TurWEMCommander {
 			if (logger.isDebugEnabled())
 				logger.debug("Error into ConfigSpace configuration", exception);
 		} catch (VgnException vgnException) {
-			System.out.println("Logging does not started");
+			jCommander.getConsole().println("Logging does not started");
 		} catch (Exception e) {
 			logger.error("Viglet Turing Index Error: ", e);
 
@@ -207,10 +207,10 @@ public class TurWEMCommander {
 		List<Object> contentTypes = contentTypeIPagingList.asList();
 		contentTypes.add(StaticFile.getTypeObjectTypeRef().getObjectType());
 
-		System.out.println(String.format("Total number of Object Types: %d", contentTypes.size()));
+		jCommander.getConsole().println(String.format("Total number of Object Types: %d", contentTypes.size()));
 		for (Object objectType : contentTypes) {
 			ObjectType ot = (ObjectType) objectType;
-			System.out.println(String.format("Retrieved Object Type: %s %s", ot.getData().getName(),
+			jCommander.getConsole().println(String.format("Retrieved Object Type: %s %s", ot.getData().getName(),
 					ot.getContentManagementId().toString()));
 			this.indexByContentType(ot);
 		}
@@ -235,7 +235,7 @@ public class TurWEMCommander {
 				results = queryContentInstanceList(objectType, rp, instance);
 			}
 			totalEntries = results.size();
-			System.out.println(String.format("Number of Content Instances of type %s %s = %d",
+			jCommander.getConsole().println(String.format("Number of Content Instances of type %s %s = %d",
 					objectType.getData().getName(), objectType.getContentManagementId().toString(), totalEntries));
 			totalPages = totalEntries > 0 ? (totalEntries + pageSize - 1) / pageSize : totalEntries / pageSize;
 			
@@ -276,7 +276,7 @@ public class TurWEMCommander {
 		if (it != null) {
 			while (it.hasNext()) {
 				List<?> managedObjects = (List<?>) it.next();
-				System.out.println(String.format("Processing Page %d of %d pages", currentPage++, totalPages));
+				jCommander.getConsole().println(String.format("Processing Page %d of %d pages", currentPage++, totalPages));
 				long start = System.currentTimeMillis();
 				try {
 					HashSet<ManagedObjectVCMRef> validGuids = new HashSet<ManagedObjectVCMRef>();
@@ -297,13 +297,13 @@ public class TurWEMCommander {
 					if (!validGuids.isEmpty())
 						guids = validGuids.toArray(new ManagedObjectVCMRef[0]);
 
-					System.out.println(String.format("Processing the registration of %d assets", validGuids.size()));
+					jCommander.getConsole().println(String.format("Processing the registration of %d assets", validGuids.size()));
 					this.indexContentInstances(guids, objectMap);
 				} catch (Exception e) {
 					logger.error(e);
 				}
 				long elapsed = System.currentTimeMillis() - start;
-				System.out.println(String.format("%d items processed in %dms", managedObjects.size(), elapsed));
+				jCommander.getConsole().println(String.format("%d items processed in %dms", managedObjects.size(), elapsed));
 
 			}
 		}
@@ -311,7 +311,7 @@ public class TurWEMCommander {
 
 	private void indexGUIDList(List<String> guids)
 			throws ValidationException, ApplicationException, ContentIndexException, ConfigException {
-		System.out.println(String.format("Processing a total of %d GUID Strings", guids.size()));
+		jCommander.getConsole().println(String.format("Processing a total of %d GUID Strings", guids.size()));
 
 		ArrayList<ManagedObjectVCMRef> validGuids = new ArrayList<>();
 		for (String guid : guids) {
@@ -340,7 +340,7 @@ public class TurWEMCommander {
 				ManagedObject mo = (ManagedObject) object;
 				objectMap.put(mo.getContentManagementId().getId(), mo);
 			}
-			System.out.println(String.format("Processing the registration of %d assets", managedObjects.size()));
+			jCommander.getConsole().println(String.format("Processing the registration of %d assets", managedObjects.size()));
 			this.indexContentInstances(managedObjectVCMRefs, objectMap);
 		}
 	}
