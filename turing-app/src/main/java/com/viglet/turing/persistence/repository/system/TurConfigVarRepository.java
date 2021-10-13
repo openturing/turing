@@ -35,7 +35,7 @@ public interface TurConfigVarRepository extends JpaRepository<TurConfigVar, Stri
 	Optional<TurConfigVar> findById(String id);
 
 	@CacheEvict(value = { "turConfigVarfindAll", "turConfigVarfindById" }, allEntries = true)
-	TurConfigVar save(TurConfigVar turConfigVar);
+	 <S extends TurConfigVar> S save(TurConfigVar turConfigVar);
 
 	@CacheEvict(value = { "turConfigVarfindAll", "turConfigVarfindById" }, allEntries = true)
 	void delete(TurConfigVar turConfigVar);

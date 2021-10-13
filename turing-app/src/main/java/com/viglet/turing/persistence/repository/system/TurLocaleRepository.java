@@ -33,7 +33,7 @@ public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 	static final String EN_GB = "en_GB";
 	static final String PT_BR = "pt_BR";
 	static final String CA = "ca";
-	
+
 	@Cacheable("turLocalefindAll")
 	List<TurLocale> findAll();
 
@@ -41,10 +41,10 @@ public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 	TurLocale findByInitials(String initials);
 
 	@CacheEvict(value = { "turLocalefindAll", "turLocalefindByInitials" }, allEntries = true)
-	TurLocale save(TurLocale turLocale);
+	<S extends TurLocale> S save(TurLocale turLocale);
 
 	void delete(TurLocale turConfigVar);
-	
+
 	@Modifying
 	@Query("delete from  TurLocale l where l.id = ?1")
 	@CacheEvict(value = { "turLocalefindAll", "turLocalefindByInitials" }, allEntries = true)

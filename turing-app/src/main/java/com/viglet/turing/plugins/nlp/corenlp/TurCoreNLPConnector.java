@@ -142,7 +142,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 		JSONArray sentences = json.getJSONArray("sentences");
 
 		StringBuilder sb = new StringBuilder();
-		List tokenList = new ArrayList<>();
+		List<EmbeddedToken> tokenList = new ArrayList<>();
 
 		for (int i = 0; i < sentences.length(); i++) {
 			JSONObject sentence = (JSONObject) sentences.get(i);
@@ -207,7 +207,7 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 		return entityList.get(entity);
 	}
 
-	private void handleEntity(String inKey, StringBuilder inSb, List inTokens) {
+	private void handleEntity(String inKey, StringBuilder inSb, List<EmbeddedToken> inTokens) {
 		// System.out.println(inSb + " is a " + inKey);
 		inTokens.add(new EmbeddedToken(inKey, inSb.toString()));
 

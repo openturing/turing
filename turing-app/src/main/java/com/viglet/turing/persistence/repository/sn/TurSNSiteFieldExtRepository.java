@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled" }, allEntries = true)
-	TurSNSiteFieldExt save(TurSNSiteFieldExt turSNSiteFieldExt);
+	<S extends TurSNSiteFieldExt> S save(TurSNSiteFieldExt turSNSiteFieldExt);
 
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
@@ -76,7 +76,7 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled" }, allEntries = true)
 	void delete(String turSnSiteFieldId);
-	
+
 	@Modifying
 	@Query("delete from TurSNSiteFieldExt ssfe where turSNSite= ?1 and snType = ?2")
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",

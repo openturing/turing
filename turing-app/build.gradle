@@ -299,6 +299,14 @@ dependencies {
 	// Schema.org
 	implementation group: 'com.squins.google.fork.schema-org-client', name: 'schema-org-client', version: '1.0.1'
 	
+	//PDFBox
+	implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.24'
+	
+	//Language Tool
+	implementation group: 'org.languagetool', name: 'language-all', version: '5.5'
+
+
+	
 	// WebJars
 	implementation 'org.webjars.bower:jquery:3.6.0'
 	implementation 'org.webjars.bower:jquery.ui:1.12.1'

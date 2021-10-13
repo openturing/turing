@@ -37,7 +37,7 @@ public interface TurSEVendorRepository extends JpaRepository<TurSEVendor, String
 	Optional<TurSEVendor> findById(String id);
 
 	@CacheEvict(value = { "turSEVendorfindAll", "turSEVendorfindById" }, allEntries = true)
-	TurSEVendor save(TurSEVendor turSEVendor);
+	<S extends TurSEVendor> S save(TurSEVendor turSEVendor);
 
 	@Modifying
 	@Query("delete from  TurSEVendor sv where sv.id = ?1")

@@ -47,17 +47,15 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		// Prevent the HTTP response header of "Pragma: no-cache".
 		http.headers().frameOptions().disable().cacheControl().disable();
 		http.httpBasic().authenticationEntryPoint(turAuthenticationEntryPoint).and().authorizeRequests()
-				.antMatchers("/index.html", "/welcome/**", "/", "/store/**", "/webjars/**", "/js/**", "/css/**",
-						"/template/**", "/img/**", "/sites/**", "/__tur/**", "/swagger-resources/**", "/h2/**",
-						"/images/**", "/login-page/**", "/logout-page/**", "/sn/**", "/fonts/**", "/api/sn/**",
-						"/api/nlp/**", "/favicon.ico","/*.png", "/manifest.json", "/browserconfig.xml")
+				.antMatchers("/index.html", "/welcome/**", "/", "/webjars/**", "/js/**", "/css/**",
+						"/template/**", "/img/**", "/sites/**", "/swagger-resources/**", "/h2/**", "/images/**",
+						"/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
+						"/browserconfig.xml")
 				.permitAll().anyRequest().authenticated().and()
 				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf()
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
-		http.csrf().disable();
 		http.cors();
 	}
 

@@ -29,9 +29,7 @@ import org.springframework.data.jpa.repository.Query;
 public interface TurDataGroupCategoryRepository extends JpaRepository<TurDataGroupCategory, Integer> {
 
 	List<TurDataGroupCategory> findByTurDataGroup(TurDataGroup turDataGroup);
-
-	TurDataGroupCategory save(TurDataGroupCategory turDataGroupCategory);
-
+	
 	@Modifying
 	@Query("delete from  TurDataGroupCategory dgc where dgc.id = ?1")
 	void delete(int id);

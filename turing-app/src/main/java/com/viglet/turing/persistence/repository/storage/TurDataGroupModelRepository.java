@@ -34,8 +34,6 @@ public interface TurDataGroupModelRepository extends JpaRepository<TurDataGroupM
 
 	TurDataGroupModel findById(int id);
 
-	TurDataGroupModel save(TurDataGroupModel turDataGroupModel);
-
 	@Modifying
 	@Query("delete from  TurDataGroupModel dgm where dgm.id = ?1")
 	void delete(int id);
