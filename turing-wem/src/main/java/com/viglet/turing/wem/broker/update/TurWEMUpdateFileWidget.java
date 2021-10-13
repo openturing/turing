@@ -49,7 +49,7 @@ public class TurWEMUpdateFileWidget {
 		}
 
 		ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
-		List<TurAttrDef> attributesDefs = new ArrayList<TurAttrDef>();
+		List<TurAttrDef> attributesDefs = new ArrayList<>();
 
 		if (turingTag.getSrcClassName() == null) {
 

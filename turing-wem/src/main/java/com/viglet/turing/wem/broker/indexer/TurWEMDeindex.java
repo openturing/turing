@@ -17,24 +17,9 @@
 package com.viglet.turing.wem.broker.indexer;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -58,7 +43,7 @@ public class TurWEMDeindex {
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 
-		Map<String, Object> attributes = new HashMap<String, Object>();
+		Map<String, Object> attributes = new HashMap<>();
 		String guid = mo.getContentManagementId().getId();
 		attributes.put("id", guid);
 		turSNJobItem.setAttributes(attributes);
@@ -80,7 +65,7 @@ public class TurWEMDeindex {
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 
-		Map<String, Object> attributes = new HashMap<String, Object>();
+		Map<String, Object> attributes = new HashMap<>();
 		attributes.put("type", typeName);
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);

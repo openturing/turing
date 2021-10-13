@@ -39,7 +39,7 @@ public class TurWEMAttrXML {
 	public static List<TurAttrDef> attributeXML(TurAttrDefContext turAttrDefContext) throws Exception {
 		TuringTag turingTag = turAttrDefContext.getTuringTag();
 		if (turingTag.getTextValue() != null && !turingTag.getTextValue().isEmpty()) {
-			List<TurAttrDef> attributesDefs = new ArrayList<TurAttrDef>();
+			List<TurAttrDef> attributesDefs = new ArrayList<>();
 			TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(),
 					TurMultiValue.singleItem(turingTag.getTextValue()));
 			attributesDefs.add(turAttrDef);
@@ -62,7 +62,7 @@ public class TurWEMAttrXML {
 				&& attributeData.getValue().toString().trim().length() > 0)
 			return TurWEMAttrWidget.attributeByWidget(turAttrDefContext, attributeData);
 
-		return new ArrayList<TurAttrDef>();
+		return new ArrayList<>();
 	}
 
 	private static List<TurAttrDef> addAttributeWithRelator(TurAttrDefContext turAttrDefContext) throws Exception {
@@ -70,7 +70,7 @@ public class TurWEMAttrXML {
 		ContentInstance ci = turAttrDefContext.getContentInstance();
 		String attributeName = turAttrDefContext.getTuringTag().getSrcXmlName();
 		AttributedObject[] relation = ci.getRelations(turingTag.getSrcAttributeRelation().get(0));
-		List<TurAttrDef> attributesDefs = new ArrayList<TurAttrDef>();
+		List<TurAttrDef> attributesDefs = new ArrayList<>();
 
 		relation = getRelationIfExists(turingTag, relation);
 		addRelationAttributes(turAttrDefContext, attributeName, relation, attributesDefs);
@@ -81,7 +81,7 @@ public class TurWEMAttrXML {
 	private static AttributedObject[] getRelationIfExists(TuringTag turingTag, AttributedObject[] relation) {
 		if (turingTag.getSrcAttributeRelation().size() > 1) {
 			log.debug("Attribute has nested relator");
-			List<AttributedObject[]> nestedRelation = new ArrayList<AttributedObject[]>();
+			List<AttributedObject[]> nestedRelation = new ArrayList<>();
 			nestedRelation.add(relation);
 			relation = TurWEMRelator.nestedRelators(turingTag.getSrcAttributeRelation(), nestedRelation, 0);
 		}
@@ -116,7 +116,7 @@ public class TurWEMAttrXML {
 			AttributeData attributeData = ci.getAttribute(attributeName);
 			return TurWEMAttrClass.attributeByClass(turAttrDefContext, attributeData);
 		} else {
-			return new ArrayList<TurAttrDef>();
+			return new ArrayList<>();
 		}
 	}
 

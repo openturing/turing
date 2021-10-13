@@ -176,12 +176,10 @@ public class TurWEMCommander {
 
 	private void runByGuidList()
 			throws ValidationException, ApplicationException, ContentIndexException, ConfigException {
-		ArrayList<String> contentInstances = new ArrayList<String>();
-		BufferedReader br = null;
-		FileReader fr = null;
-		try {
-			fr = new FileReader(guidFilePath);
-			br = new BufferedReader(fr);
+		ArrayList<String> contentInstances = new ArrayList<>();
+		try (FileReader fr = new FileReader(guidFilePath);
+				BufferedReader br = new BufferedReader(fr)){
+			
 			String sCurrentLine;
 
 			while ((sCurrentLine = br.readLine()) != null) {
@@ -192,7 +190,7 @@ public class TurWEMCommander {
 					continue;
 				if (!contentInstances.isEmpty()) {
 					this.indexGUIDList(contentInstances);
-					contentInstances = new ArrayList<String>();
+					contentInstances = new ArrayList<>();
 				}
 			}
 			if (!contentInstances.isEmpty())
@@ -200,15 +198,6 @@ public class TurWEMCommander {
 
 		} catch (IOException e) {
 			logger.error(e);
-		} finally {
-			try {
-				if (br != null)
-					br.close();
-				if (fr != null)
-					fr.close();
-			} catch (IOException ex) {
-				logger.error(ex);
-			}
 		}
 	}
 
@@ -324,7 +313,7 @@ public class TurWEMCommander {
 			throws ValidationException, ApplicationException, ContentIndexException, ConfigException {
 		System.out.println(String.format("Processing a total of %d GUID Strings", guids.size()));
 
-		ArrayList<ManagedObjectVCMRef> validGuids = new ArrayList<ManagedObjectVCMRef>();
+		ArrayList<ManagedObjectVCMRef> validGuids = new ArrayList<>();
 		for (String guid : guids) {
 			if (guid != null && guid.length() > 0) {
 				try {
@@ -346,7 +335,7 @@ public class TurWEMCommander {
 			params.setTopRelationOnly(false);
 			IPagingList managedObjects = ManagedObject.findByContentManagementIds(managedObjectVCMRefs, params);
 			List<?> moList = managedObjects.asList();
-			HashMap<String, ManagedObject> objectMap = new HashMap<String, ManagedObject>(moList.size());
+			HashMap<String, ManagedObject> objectMap = new HashMap<>(moList.size());
 			for (Object object : moList) {
 				ManagedObject mo = (ManagedObject) object;
 				objectMap.put(mo.getContentManagementId().getId(), mo);

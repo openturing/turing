@@ -133,7 +133,7 @@ public class ETLTuringTranslator {
 		channelRefs = ci.getChannelAssociations();
 		ciFurlName = ci.getFurlName();
 
-		List<String> siteNames = new ArrayList<String>();
+		List<String> siteNames = new ArrayList<>();
 
 		for (ChannelRef channelRef : channelRefs) {
 			this.getSiteNames(siteNames, channelRef.getChannel());
@@ -205,7 +205,7 @@ public class ETLTuringTranslator {
 	public Site getSite(ManagedObject mo)
 			throws ApplicationException, RemoteException, AuthorizationException, ValidationException {
 		ChannelRef[] channelRefs = null;
-		List<Site> sites = new ArrayList<Site>();
+		List<Site> sites = new ArrayList<>();
 		if (mo instanceof ContentInstance) {
 			ContentInstance ci = (ContentInstance) mo;
 			channelRefs = ci.getChannelAssociations();
@@ -221,7 +221,7 @@ public class ETLTuringTranslator {
 		if (!sites.isEmpty()) {
 			return this.chosenSite(sites);
 		} else {
-			log.info("ETLTuringTranslator Content without Site:" + mo.getName().toString());
+			log.info("ETLTuringTranslator Content without Site:" + mo.getName());
 			return null;
 		}
 
@@ -230,7 +230,7 @@ public class ETLTuringTranslator {
 	public String getSiteName(ManagedObject mo)
 			throws ApplicationException, RemoteException, AuthorizationException, ValidationException {
 		ChannelRef[] channelRefs = null;
-		List<String> siteNames = new ArrayList<String>();
+		List<String> siteNames = new ArrayList<>();
 		if (mo instanceof ContentInstance) {
 			ContentInstance ci = (ContentInstance) mo;
 			channelRefs = ci.getChannelAssociations();
@@ -245,7 +245,7 @@ public class ETLTuringTranslator {
 		if (!siteNames.isEmpty()) {
 			return this.chosenSiteName(siteNames);
 		} else {
-			log.info("ETLTuringTranslator Content without Site:" + mo.getName().toString());
+			log.info("ETLTuringTranslator Content without Site:" + mo.getName());
 			return null;
 		}
 
@@ -340,7 +340,7 @@ public class ETLTuringTranslator {
 				return createSiteURL(mo);
 			} else {
 				if (log.isDebugEnabled()) {
-					log.debug("ETLTuringTranslator Content without channel:" + mo.getName().toString());
+					log.debug("ETLTuringTranslator Content without channel:" + mo.getName());
 				}
 				return null;
 			}

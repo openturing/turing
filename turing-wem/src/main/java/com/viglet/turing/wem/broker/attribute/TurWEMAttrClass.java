@@ -32,7 +32,7 @@ import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMAttrClass {
 
-	private static final ContextLogger log = ContextLogger.getLogger(TurWEMAttrXML.class);
+	private static final ContextLogger log = ContextLogger.getLogger(TurWEMAttrClass.class);
 
 	private TurWEMAttrClass() {
 		throw new IllegalStateException("TurWEMAttrClass");
@@ -44,7 +44,7 @@ public class TurWEMAttrClass {
 		TuringTag turingTag = turAttrDefContext.getTuringTag();
 		ContentInstance ci = turAttrDefContext.getContentInstance();
 		IHandlerConfiguration config = turAttrDefContext.getiHandlerConfiguration();
-		List<TurAttrDef> attributesDefs = new ArrayList<TurAttrDef>();
+		List<TurAttrDef> attributesDefs = new ArrayList<>();
 
 		if (turingTag.getSrcClassName() != null) {
 			String className = turingTag.getSrcClassName();

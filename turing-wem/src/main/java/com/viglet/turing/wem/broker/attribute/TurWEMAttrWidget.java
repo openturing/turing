@@ -80,7 +80,7 @@ public class TurWEMAttrWidget {
 		AttributedObject[] relation = ci.getRelations(turingTag.getSrcAttributeRelation().get(0));
 
 		if (turingTag.getSrcAttributeRelation().size() > 1) {
-			List<AttributedObject[]> nestedRelation = new ArrayList<AttributedObject[]>();
+			List<AttributedObject[]> nestedRelation = new ArrayList<>();
 			nestedRelation.add(relation);
 			relation = TurWEMRelator.nestedRelators(turingTag.getSrcAttributeRelation(), nestedRelation, 0);
 		}

@@ -34,7 +34,7 @@ public class CTDMappings {
 	// OLD getIndexAttrTag
 	public List<TuringTag> getTuringTagBySrcAttr(String srcAttrName) {
 
-		List<TuringTag> turingTags = new ArrayList<TuringTag>();
+		List<TuringTag> turingTags = new ArrayList<>();
 		if (log.isDebugEnabled())
 			log.debug("CTDMappings attribute: " + srcAttrName);
 
@@ -50,7 +50,7 @@ public class CTDMappings {
 
 	// Get TagList
 	public Set<String> getTagList() {
-		Set<String> tagNames = new HashSet<String>();
+		Set<String> tagNames = new HashSet<>();
 
 		for (TuringTag turingTag : TuringUtils.turingTagMapToSet(turingTagMap)) {
 			tagNames.add(turingTag.getTagName());

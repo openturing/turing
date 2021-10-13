@@ -2,3 +2,4 @@ SolrPhpClient
 .project
 .buildpath
 .settings
+build/*
