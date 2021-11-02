@@ -294,7 +294,7 @@ dependencies {
 	implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"	
 	
 	// Confluence
-	implementation group: 'com.atlassian.confluence', name: 'confluence-java-api', version: '7.16.0-m12'
+	implementation group: 'com.atlassian.confluence', name: 'confluence-java-api', version: '7.16.0-m13'
 	
 	// Schema.org
 	implementation group: 'com.squins.google.fork.schema-org-client', name: 'schema-org-client', version: '1.0.1'
