@@ -268,7 +268,7 @@ dependencies {
     implementation group: 'asm', name: 'asm', version:'4.0_RC2'
     
     // OpenNLP
-    implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.9.3'
+    implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.9.4'
     
     // Apache Commons
     implementation group: 'commons-io', name: 'commons-io', version:'2.11.0'
