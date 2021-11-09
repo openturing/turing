@@ -3,19 +3,14 @@ import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { MomentModule } from 'ngx-moment';
 import { OcticonsModule } from 'ngx-octicons';
-import { TurSNSearchRootPageComponent } from '../search/component/root/search-root-page.component';
 import { AppRoutingModule } from './app-routing.module';
-import { IdenticonHashDirective } from './directive/identicon-hash.directive';
-import { TurSNSearchService } from '../search/service/sn-search.service';
 import { AppComponent } from './app.component';
 import { FormsModule } from '@angular/forms';
-import { APP_BASE_HREF, Location } from '@angular/common';
+import { TurLoginModule } from './login/login.module';
 
 @NgModule({
   declarations: [
-    AppComponent,
-    IdenticonHashDirective,
-    TurSNSearchRootPageComponent
+    AppComponent
   ],
   imports: [
     BrowserModule,
@@ -23,11 +18,10 @@ import { APP_BASE_HREF, Location } from '@angular/common';
     OcticonsModule,
     HttpClientModule,
     MomentModule,
-    FormsModule
+    FormsModule,
+    TurLoginModule
   ],
   providers: [
-    TurSNSearchService,
-    { provide: APP_BASE_HREF, useValue: (window as any)['_app_base'] || '/' }
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent]

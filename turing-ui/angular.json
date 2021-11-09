@@ -23,9 +23,12 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "allowedCommonJsDependencies": [
+              "@primer/octicons"
+            ],
             "baseHref": "/console/",
             "deployUrl": "/console/",
-            "outputPath": "dist/console",
+            "outputPath": "../turing-app/src/main/resources/public/console",
             "index": "projects/console/src/index.html",
             "main": "projects/console/src/main.ts",
             "polyfills": "projects/console/src/polyfills.ts",
@@ -45,8 +48,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
+                  "maximumWarning": "10mb",
+                  "maximumError": "10mb"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -128,9 +131,11 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "baseHref": "/sn/",
-            "deployUrl": "/sn/",
-            "outputPath": "dist/sn",
+            "allowedCommonJsDependencies": [
+              "@primer/octicons"
+            ],
+            "deployUrl": "/sn/templates/",
+            "outputPath": "../turing-app/src/main/resources/public/sn/templates",
             "index": "projects/sn/src/index.html",
             "main": "projects/sn/src/main.ts",
             "polyfills": "projects/sn/src/polyfills.ts",
@@ -150,8 +155,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
+                  "maximumWarning": "10mb",
+                  "maximumError": "10mb"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -216,6 +221,113 @@
         }
       }
     },
+    "welcome": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        },
+        "@schematics/angular:application": {
+          "strict": true
+        }
+      },
+      "root": "projects/welcome",
+      "sourceRoot": "projects/welcome/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "allowedCommonJsDependencies": [
+              "@primer/octicons"
+            ],
+            "deployUrl": "/welcome/",
+            "outputPath": "../turing-app/src/main/resources/public/welcome",
+            "index": "projects/welcome/src/index.html",
+            "main": "projects/welcome/src/main.ts",
+            "polyfills": "projects/welcome/src/polyfills.ts",
+            "tsConfig": "projects/welcome/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "projects/welcome/src/favicon.ico",
+              "projects/welcome/src/assets"
+            ],
+            "styles": [
+              "projects/welcome/src/styles.scss"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "10mb",
+                  "maximumError": "10mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "projects/welcome/src/environments/environment.ts",
+                  "with": "projects/welcome/src/environments/environment.prod.ts"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "welcome:build:production"
+            },
+            "development": {
+              "browserTarget": "welcome:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "welcome:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/sn/src/test.ts",
+            "polyfills": "projects/welcome/src/polyfills.ts",
+            "tsConfig": "projects/welcome/tsconfig.spec.json",
+            "karmaConfig": "projects/welcome/karma.conf.js",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "projects/welcome/src/favicon.ico",
+              "projects/welcome/src/assets"
+            ],
+            "styles": [
+              "projects/welcome/src/styles.scss"
+            ],
+            "scripts": []
+          }
+        }
+      }
+    },
     "converse": {
       "projectType": "application",
       "schematics": {
@@ -233,9 +345,12 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "allowedCommonJsDependencies": [
+              "@primer/octicons"
+            ],
             "baseHref": "/converse/",
             "deployUrl": "/converse/",
-            "outputPath": "dist/converse",
+            "outputPath": "../turing-app/src/main/resources/public/converse",
             "index": "projects/converse/src/index.html",
             "main": "projects/converse/src/main.ts",
             "polyfills": "projects/converse/src/polyfills.ts",
@@ -255,8 +370,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
+                  "maximumWarning": "10mb",
+                  "maximumError": "10mb"
                 },
                 {
                   "type": "anyComponentStyle",

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationExtras, Params, Router, RouterModule } from '@angular/router';
-import { Location, LocationStrategy, PathLocationStrategy } from '@angular/common';
+import { Location, LocationStrategy, PathLocationStrategy, PlatformLocation } from '@angular/common';
 import { Observable } from 'rxjs';
 import { TurSNSearch } from '../../model/sn-search.model';
 import { TurSNSearchService } from '../../service/sn-search.service';
@@ -25,12 +25,12 @@ export class TurSNSearchRootPageComponent implements OnInit {
   constructor(
     private turSNSearchService: TurSNSearchService,
     private router: Router,
-    private activatedRoute: ActivatedRoute) {
+    private activatedRoute: ActivatedRoute,
+    private platformLocation: PlatformLocation) {
     this.sortOptions.set("relevance", "Relevance");
     this.sortOptions.set("newest", "Newest");
     this.sortOptions.set("oldest", "Oldest");
-
-    this.updateParameters();
+    this.updateParameters(platformLocation.pathname);
 
     this.turSNSearchItems = turSNSearchService.query(
       this.turSiteName,
@@ -49,8 +49,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
     return this.turSNSearchItems;
   }
 
-  updateParameters() {
-    let turPath: string = this.router.url.split('?')[0];
+  updateParameters(turPath: string) {
     if (turPath.endsWith("/")) {
       turPath = turPath.substring(0, turPath.length - 1);
     }
@@ -98,7 +97,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
       queryParams: result
     };
 
-    this.router.navigate([this.turSiteName], objToSend).then(() => {
+    this.router.navigate(["/"], objToSend).then(() => {
       window.location.reload();
     });
   }
@@ -107,7 +106,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
     this.searchIt();
   }
   searchIt() {
-    this.turRedirect(this.turSiteName + "?" + this.generateQueryString());
+    this.turRedirect("?" + this.generateQueryString());
   }
 
   camelize(str: string): string {
