@@ -34,32 +34,32 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.storage.TurDataGroup;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/ml/data/group")
-@Api(tags = "Machine Learning Group", description = "Machine Learning Group API")
+@Tag(name = "Machine Learning Group", description = "Machine Learning Group API")
 public class TurMLDataGroupAPI {
 
 	@Autowired
 	TurDataGroupRepository turDataGroupRepository;
 
-	@ApiOperation(value = "Machine Learning Data Group List")
+	@Operation(summary = "Machine Learning Data Group List")
 	@GetMapping
 	public List<TurDataGroup> turDataGroupList() throws JSONException {
 		return this.turDataGroupRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Machine Learning Data Group")
+	@Operation(summary = "Show a Machine Learning Data Group")
 	@GetMapping("/{id}")
 	public TurDataGroup turDataGroupGet(@PathVariable int id) throws JSONException {
 		return this.turDataGroupRepository.findById(id).orElse(new TurDataGroup());
 	}
 
-	@ApiOperation(value = "Update a Machine Learning Data Group")
+	@Operation(summary = "Update a Machine Learning Data Group")
 	@PutMapping("/{id}")
-	public TurDataGroup turDataGroupUpdate(@PathVariable int id, @RequestBody TurDataGroup turDataGroup) throws Exception {
+	public TurDataGroup turDataGroupUpdate(@PathVariable int id, @RequestBody TurDataGroup turDataGroup) {
 		return this.turDataGroupRepository.findById(id).map(turDataGroupEdit -> {
 			turDataGroupEdit.setName(turDataGroup.getName());
 			turDataGroupEdit.setDescription(turDataGroup.getDescription());
@@ -70,17 +70,17 @@ public class TurMLDataGroupAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning Data Group")
+	@Operation(summary = "Delete a Machine Learning Data Group")
 	@DeleteMapping("/{id}")
-	public boolean turDataGroupDelete(@PathVariable int id) throws Exception {
+	public boolean turDataGroupDelete(@PathVariable int id) {
 		this.turDataGroupRepository.delete(id);
 		return true;
 
 	}
 
-	@ApiOperation(value = "Create a Machine Learning Data Group")
+	@Operation(summary = "Create a Machine Learning Data Group")
 	@PostMapping
-	public TurDataGroup turDataGroupAdd(@RequestBody TurDataGroup turDataGroup) throws Exception {
+	public TurDataGroup turDataGroupAdd(@RequestBody TurDataGroup turDataGroup) {
 		this.turDataGroupRepository.save(turDataGroup);
 		return turDataGroup;
 

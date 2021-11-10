@@ -41,7 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrField;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.viglet.turing.api.sn.bean.TurSNSiteFilterQueryBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
@@ -73,7 +73,7 @@ import com.viglet.turing.sn.TurSNFieldType;
 
 @RestController
 @RequestMapping("/api/sn/{siteName}/search")
-@Api(tags = "Semantic Navigation Search", description = "Semantic Navigation Search API")
+@Tag(name = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
 	static final Logger logger = LogManager.getLogger(TurSNSiteSearchAPI.class.getName());
 	@Autowired

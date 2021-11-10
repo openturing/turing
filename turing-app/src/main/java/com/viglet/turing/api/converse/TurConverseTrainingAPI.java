@@ -37,12 +37,12 @@ import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatRes
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/converse/training")
-@Api(tags = "Converse Training", description = "Converse Training API")
+@Tag(name ="Converse Training", description = "Converse Training API")
 public class TurConverseTrainingAPI {
 	@Autowired
 	private TurConverseChatRepository turConverseChatRepository;
@@ -53,7 +53,7 @@ public class TurConverseTrainingAPI {
 	@Autowired
 	private TurConversePhraseRepository turConversePhraseRepository;
 
-	@ApiOperation(value = "Converse Training List")
+	@Operation(summary = "Converse Training List")
 	@GetMapping
 	public List<TurConverseChat> turConverseTrainingList() {
 		List<TurConverseChat> turConverseChats = this.turConverseChatRepository.findAll();
@@ -75,7 +75,7 @@ public class TurConverseTrainingAPI {
 		return turConverseChats;
 	}
 
-	@ApiOperation(value = "Show a Converse Training")
+	@Operation(summary = "Show a Converse Training")
 	@GetMapping("/{id}")
 	public TurConverseChat turConverseTrainingGet(@PathVariable String id) {
 		return turConverseChatRepository.findById(id).map(turConverseChat -> {
@@ -87,7 +87,7 @@ public class TurConverseTrainingAPI {
 
 	}
 
-	@ApiOperation(value = "Update a Converse Training")
+	@Operation(summary = "Update a Converse Training")
 	@PutMapping("/{id}")
 	public TurConverseChat turConverseEntityUpdate(@PathVariable String id,
 			@RequestBody TurConverseChat turConverseChat) {

@@ -34,11 +34,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.auth.TurRole;
 import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v2/role")
-@Api(tags = "Role", description = "Role API")
+@Tag( name = "Role", description = "Role API")
 public class TurRoleAPI {
 
 	@Autowired
@@ -55,7 +55,7 @@ public class TurRoleAPI {
 	}
 
 	@PutMapping("/{id}")
-	public TurRole turRoleUpdate(@PathVariable String id, @RequestBody TurRole turRole) throws Exception {
+	public TurRole turRoleUpdate(@PathVariable String id, @RequestBody TurRole turRole) {
 		turRoleRepository.save(turRole);
 		return turRole;
 	}

@@ -33,39 +33,37 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
 import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/ml/category")
-@Api(tags = "Category", description = "Category API")
+@Tag(name ="Category", description = "Category API")
 public class TurMLCategoryAPI {
 
 	@Autowired
 	TurMLCategoryRepository turMLCategoryRepository;
 
-	@ApiOperation(value = "Machine Learning Category List")
+	@Operation(summary = "Machine Learning Category List")
 	@GetMapping
 	public List<TurMLCategory> turMLCategoryList() {
 		return this.turMLCategoryRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Machine Learning Category")
+	@Operation(summary = "Show a Machine Learning Category")
 	@GetMapping("/{id}")
 	public TurMLCategory turMLCategoryGet(@PathVariable int id) {
 		return this.turMLCategoryRepository.findById(id).orElse(new TurMLCategory());
 	}
 
-	@ApiOperation(value = "Update a Machine Learning Category")
+	@Operation(summary = "Update a Machine Learning Category")
 	@PutMapping("/{id}")
-	public TurMLCategory turMLCategoryUpdate(@PathVariable int id, @RequestBody TurMLCategory turMLCategory)
-			throws Exception {
+	public TurMLCategory turMLCategoryUpdate(@PathVariable int id, @RequestBody TurMLCategory turMLCategory) {
 		return this.turMLCategoryRepository.findById(id).map(turMLCategoryEdit -> {
 			turMLCategoryEdit.setInternalName(turMLCategory.getInternalName());
 			turMLCategoryEdit.setName(turMLCategory.getName());
 			turMLCategoryEdit.setDescription(turMLCategory.getDescription());
 			this.turMLCategoryRepository.save(turMLCategoryEdit);
-			this.turMLCategoryRepository.flush();
 
 			return turMLCategoryEdit;
 		}).orElse(new TurMLCategory());
@@ -73,16 +71,16 @@ public class TurMLCategoryAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning Category")
+	@Operation(summary = "Delete a Machine Learning Category")
 	@DeleteMapping("/{id}")
 	public boolean turMLCategoryDelete(@PathVariable int id) {
 		this.turMLCategoryRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Machine Learning Category")
+	@Operation(summary = "Create a Machine Learning Category")
 	@PostMapping
-	public TurMLCategory turMLCategoryAdd(@RequestBody TurMLCategory turMLCategory) throws Exception {
+	public TurMLCategory turMLCategoryAdd(@RequestBody TurMLCategory turMLCategory) {
 		this.turMLCategoryRepository.save(turMLCategory);
 		return turMLCategory;
 

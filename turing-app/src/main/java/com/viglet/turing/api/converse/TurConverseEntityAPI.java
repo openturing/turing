@@ -36,12 +36,12 @@ import com.viglet.turing.persistence.model.converse.entity.TurConverseEntityTerm
 import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityRepository;
 import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityTermRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/converse/entity")
-@Api(tags = "Converse Entity", description = "Converse Entity API")
+@Tag(name ="Converse Entity", description = "Converse Entity API")
 public class TurConverseEntityAPI {
 
 	@Autowired
@@ -49,13 +49,13 @@ public class TurConverseEntityAPI {
 	@Autowired
 	private TurConverseEntityTermRepository turConverseEntityTermRepository;
 
-	@ApiOperation(value = "Converse Entity List")
+	@Operation(summary = "Converse Entity List")
 	@GetMapping
 	public List<TurConverseEntity> turConverseEntityList() {
 		return this.turConverseEntityRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Converse Entity")
+	@Operation(summary = "Show a Converse Entity")
 	@GetMapping("/{id}")
 	public TurConverseEntity turConverseEntityGet(@PathVariable String id) {
 		return this.turConverseEntityRepository.findById(id).map(turConverseEntity -> {
@@ -64,13 +64,13 @@ public class TurConverseEntityAPI {
 		}).orElse(new TurConverseEntity());
 	}
 
-	@ApiOperation(value = "Create a Converse Entity")
+	@Operation(summary = "Create a Converse Entity")
 	@PostMapping
 	public TurConverseEntity turConverseEntityAdd(@RequestBody TurConverseEntity turConverseEntity) {
 		return this.saveEntity(turConverseEntity);
 	}
 
-	@ApiOperation(value = "Update a Converse Entity")
+	@Operation(summary = "Update a Converse Entity")
 	@PutMapping("/{id}")
 	public TurConverseEntity turConverseEntityUpdate(@PathVariable String id,
 			@RequestBody TurConverseEntity turConverseEntity) {
@@ -92,17 +92,16 @@ public class TurConverseEntityAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Converse Entity")
+	@Operation(summary = "Delete a Converse Entity")
 	@DeleteMapping("/{id}")
 	public boolean turConverseEntityDelete(@PathVariable String id) {
 		this.turConverseEntityRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Converse Entity Model")
+	@Operation(summary = "Converse Entity Model")
 	@GetMapping("/model")
 	public TurConverseEntity turConverseEntityModel() {
-		TurConverseEntity turConverseEntity = new TurConverseEntity();
-		return turConverseEntity;
+		return new TurConverseEntity();
 	}
 }

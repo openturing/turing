@@ -33,30 +33,30 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.system.TurLocale;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/api/locale")
-@Api(tags = "Locale", description = "Locale API")
+@Tag(name = "Locale", description = "Locale API")
 public class TurLocaleAPI {
 
 	@Autowired
 	TurLocaleRepository turLocaleRepository;
 
-	@ApiOperation(value = "Locale List")
+	@Operation(summary = "Locale List")
 	@GetMapping
 	public List<TurLocale> turLocaleList() {
 		return this.turLocaleRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Locale")
+	@Operation(summary = "Show a Locale")
 	@GetMapping("/{id}")
 	public TurLocale turLocaleGet(@PathVariable String id) {
 		return this.turLocaleRepository.findById(id).orElse(new TurLocale());
 	}
 
-	@ApiOperation(value = "Update a Locle")
+	@Operation(summary = "Update a Locle")
 	@PutMapping("/{id}")
 	public TurLocale turLocaleUpdate(@PathVariable String id, @RequestBody TurLocale turLocale) {
 		return this.turLocaleRepository.findById(id).map(turLocaleEdit -> {
@@ -69,14 +69,14 @@ public class TurLocaleAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Locale")
+	@Operation(summary = "Delete a Locale")
 	@DeleteMapping("/{id}")
 	public boolean turLocaleDelete(@PathVariable String id) {
 		this.turLocaleRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Locale")
+	@Operation(summary = "Create a Locale")
 	@PostMapping
 	public TurLocale turLocaleAdd(@RequestBody TurLocale turLocale) {
 		this.turLocaleRepository.save(turLocale);

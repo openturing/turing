@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -48,8 +49,8 @@ import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.repository.ml.TurMLModelRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import opennlp.tools.doccat.DoccatFactory;
 import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;
@@ -62,7 +63,7 @@ import opennlp.tools.util.TrainingParameters;
 
 @RestController
 @RequestMapping("/api/ml/model")
-@Api(tags = "Machine Learning Model", description = "Machine Learning Model API")
+@Tag(name ="Machine Learning Model", description = "Machine Learning Model API")
 public class TurMLModelAPI {
 	private static final Log logger = LogFactory.getLog(TurMLModelAPI.class);
 	@Autowired
@@ -70,19 +71,19 @@ public class TurMLModelAPI {
 	@Autowired
 	TurMLModelRepository turMLModelRepository;
 
-	@ApiOperation(value = "Machine Learning Model List")
+	@Operation(summary = "Machine Learning Model List")
 	@GetMapping
 	public List<TurMLModel> turMLModelList() {
 		return this.turMLModelRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Machine Learning Model")
+	@Operation(summary = "Show a Machine Learning Model")
 	@GetMapping("/{id}")
 	public TurMLModel turMLModelGet(@PathVariable int id) {
 		return this.turMLModelRepository.findById(id).orElse(new TurMLModel());
 	}
 
-	@ApiOperation(value = "Update a Machine Learning Model")
+	@Operation(summary = "Update a Machine Learning Model")
 	@PutMapping("/{id}")
 	public TurMLModel turMLModelUpdate(@PathVariable int id, @RequestBody TurMLModel turMLModel) {
 		return this.turMLModelRepository.findById(id).map(turMLModelEdit -> {
@@ -96,14 +97,14 @@ public class TurMLModelAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning Model")
+	@Operation(summary = "Delete a Machine Learning Model")
 	@DeleteMapping("/{id}")
 	public boolean turMLModelDelete(@PathVariable int id) {
 		this.turMLModelRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Machine Learning Model")
+	@Operation(summary = "Create a Machine Learning Model")
 	@PostMapping
 	public TurMLModel turMLModelAdd(@RequestBody TurMLModel turMLModel) {
 		this.turMLModelRepository.save(turMLModel);
@@ -138,12 +139,12 @@ public class TurMLModelAPI {
 
 		List<TurDataGroupSentence> turDataSentences = turDataGroupSentenceRepository.findAll();
 
-		StringBuffer trainSB = new StringBuffer();
+		StringBuilder trainSB = new StringBuilder();
 
 		for (TurDataGroupSentence vigTrainDocSentence : turDataSentences) {
 			if (vigTrainDocSentence.getTurMLCategory() != null) {
 				trainSB.append(vigTrainDocSentence.getTurMLCategory().getInternalName() + " ");
-				trainSB.append(vigTrainDocSentence.getSentence().toString().replaceAll("[\\t\\n\\r]", " ").trim());
+				trainSB.append(vigTrainDocSentence.getSentence().replaceAll("[\\t\\n\\r]", " ").trim());
 				trainSB.append("\n");
 			}
 		}
@@ -161,7 +162,7 @@ public class TurMLModelAPI {
 				}
 			};
 
-			Charset charset = Charset.forName("UTF-8");
+			Charset charset = StandardCharsets.UTF_8;
 			ObjectStream<String> lineStream = new PlainTextByLineStream(isf, charset);
 			ObjectStream<DocumentSample> sampleStream = new DocumentSampleStream(lineStream);
 
@@ -171,8 +172,6 @@ public class TurMLModelAPI {
 					factory);
 			model.serialize(modelOut);
 
-		} catch (FileNotFoundException e) {
-			logger.error(e.getMessage(), e);
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}

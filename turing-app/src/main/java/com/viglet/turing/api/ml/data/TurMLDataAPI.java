@@ -53,36 +53,36 @@ import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepo
 import com.viglet.turing.persistence.repository.storage.TurDataRepository;
 import com.viglet.turing.plugins.nlp.opennlp.TurOpenNLPConnector;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/ml/data")
-@Api(tags = "Machine Learning Data", description = "Machine Learning Data API")
+@Tag(name = "Machine Learning Data", description = "Machine Learning Data API")
 public class TurMLDataAPI {
-	
+
 	@Autowired
 	TurDataRepository turDataRepository;
 	@Autowired
 	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 	@Autowired
 	TurOpenNLPConnector turOpenNLPConnector;
-	
-	@ApiOperation(value = "Machine Learning Data List")
+
+	@Operation(summary = "Machine Learning Data List")
 	@GetMapping
 	public List<TurData> turDataList() throws JSONException {
 		return this.turDataRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Machine Learning Data")
+	@Operation(summary = "Show a Machine Learning Data")
 	@GetMapping("/{id}")
 	public TurData turDataGet(@PathVariable int id) throws JSONException {
 		return this.turDataRepository.findById(id);
 	}
 
-	@ApiOperation(value = "Update a Machine Learning Data")
+	@Operation(summary = "Update a Machine Learning Data")
 	@PutMapping("/{id}")
-	public TurData turDataUpdate(@PathVariable int id, @RequestBody TurData turData) throws Exception {
+	public TurData turDataUpdate(@PathVariable int id, @RequestBody TurData turData) {
 		TurData turDataEdit = this.turDataRepository.findById(id);
 		turDataEdit.setName(turData.getName());
 		turDataEdit.setType(turData.getType());
@@ -91,22 +91,22 @@ public class TurMLDataAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning Data")
+	@Operation(summary = "Delete a Machine Learning Data")
 	@DeleteMapping("/{id}")
-	public boolean turDataDelete(@PathVariable int id) throws Exception {
+	public boolean turDataDelete(@PathVariable int id) {
 		this.turDataRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Machine Learning Data")
+	@Operation(summary = "Create a Machine Learning Data")
 	@PostMapping
-	public TurData turDataAdd(@RequestBody TurData turData) throws Exception {
+	public TurData turDataAdd(@RequestBody TurData turData) {
 		this.turDataRepository.save(turData);
 		return turData;
 
 	}
 
-	@PostMapping("/import")	
+	@PostMapping("/import")
 	@Transactional
 	public String turDataImport(@RequestParam("file") MultipartFile multipartFile)
 			throws JSONException, IOException, SAXException, TikaException {
@@ -126,9 +126,8 @@ public class TurMLDataAPI {
 		parseContext.set(Parser.class, parser);
 
 		parser.parse(multipartFile.getInputStream(), handler, metadata, parseContext);
-		
 
-		String sentences[] = turOpenNLPConnector.sentenceDetect(handler.toString());
+		String[] sentences = turOpenNLPConnector.sentenceDetect(handler.toString());
 
 		TurData turData = new TurData();
 
@@ -142,7 +141,7 @@ public class TurMLDataAPI {
 			turDataGroupSentence.setSentence(sentence);
 			this.turDataGroupSentenceRepository.save(turDataGroupSentence);
 		}
-		
+
 		JSONObject jsonTraining = new JSONObject();
 		jsonTraining.put("sentences", sentences);
 		return jsonTraining.toString();

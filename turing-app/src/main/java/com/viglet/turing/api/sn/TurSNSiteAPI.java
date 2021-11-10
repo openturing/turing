@@ -45,12 +45,12 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.template.TurSNTemplate;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/api/sn")
-@Api(tags = "Semantic Navigation Site", description = "Semantic Navigation Site API")
+@Tag(name = "Semantic Navigation Site", description = "Semantic Navigation Site API")
 @ComponentScan("com.viglet.turing")
 public class TurSNSiteAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteAPI.class);
@@ -61,13 +61,13 @@ public class TurSNSiteAPI {
 	@Autowired
 	TurSNTemplate turSNTemplate;
 
-	@ApiOperation(value = "Semantic Navigation Site List")
+	@Operation(summary = "Semantic Navigation Site List")
 	@GetMapping
 	public List<TurSNSite> turSNSiteList() {
 		return this.turSNSiteRepository.findAll();
 	}
 
-	@ApiOperation(value = "Semantic Navigation Site structure")
+	@Operation(summary = "Semantic Navigation Site structure")
 	@GetMapping("/structure")
 	public TurSNSite turSNSiteStructure() {
 		TurSNSite turSNSite = new TurSNSite();
@@ -77,13 +77,13 @@ public class TurSNSiteAPI {
 		return turSNSite;
 	}
 
-	@ApiOperation(value = "Show a Semantic Navigation Site")
+	@Operation(summary = "Show a Semantic Navigation Site")
 	@GetMapping("/{id}")
 	public TurSNSite turSNSiteGet(@PathVariable String id) {
 		return this.turSNSiteRepository.findById(id).orElse(new TurSNSite());
 	}
 
-	@ApiOperation(value = "Update a Semantic Navigation Site")
+	@Operation(summary = "Update a Semantic Navigation Site")
 	@PutMapping("/{id}")
 	public TurSNSite turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSite turSNSite) {
 		return this.turSNSiteRepository.findById(id).map(turSNSiteEdit -> {
@@ -116,14 +116,14 @@ public class TurSNSiteAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Semantic Navigation Site")
+	@Operation(summary = "Delete a Semantic Navigation Site")
 	@DeleteMapping("/{id}")
 	public boolean turSNSiteDelete(@PathVariable String id) {
 		turSNSiteRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Semantic Navigation Site")
+	@Operation(summary = "Create a Semantic Navigation Site")
 	@PostMapping
 	public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite) {
 		turSNSiteRepository.save(turSNSite);

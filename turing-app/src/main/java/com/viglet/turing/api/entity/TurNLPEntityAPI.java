@@ -33,42 +33,42 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/entity")
-@Api(tags = "Entity", description = "Entity API")
+@Tag(name ="Entity", description = "Entity API")
 public class TurNLPEntityAPI {
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
 
-	@ApiOperation(value = "Entity List")
+	@Operation(summary = "Entity List")
 	@GetMapping
 	public List<TurNLPEntity> turNLPEntityList() {
 		return this.turNLPEntityRepository.findAll();
 	}
 
-	@ApiOperation(value = "Entity structure")
+	@Operation(summary = "Entity structure")
 	@GetMapping("/structure")
 	public TurNLPEntity turNLPEntityStructure() {
 		return new TurNLPEntity();
 
 	}
 
-	@ApiOperation(value = "Local Entity list")
+	@Operation(summary = "Local Entity list")
 	@GetMapping("/local")
 	public List<TurNLPEntity> turNLPEntityLocal() {
 		return this.turNLPEntityRepository.findByLocal(1);
 	}
 
-	@ApiOperation(value = "Show a entity")
+	@Operation(summary = "Show a entity")
 	@GetMapping("/{id}")
 	public TurNLPEntity turNLPEntityGet(@PathVariable String id) {
 		return this.turNLPEntityRepository.findById(id).orElse(new TurNLPEntity());
 	}
 
-	@ApiOperation(value = "Update a entity")
+	@Operation(summary = "Update a entity")
 	@PutMapping("/{id}")
 	public TurNLPEntity turNLPEntityUpdate(@PathVariable String id, @RequestBody TurNLPEntity turNLPEntity) {
 		return this.turNLPEntityRepository.findById(id).map(turNLPEntityEdit -> {
@@ -81,7 +81,7 @@ public class TurNLPEntityAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a entity")
+	@Operation(summary = "Delete a entity")
 	@DeleteMapping("/{id}")
 	public boolean turNLPEntityDelete(@PathVariable String id) {
 		return this.turNLPEntityRepository.findById(id).map(turNLPEntity -> {
@@ -91,7 +91,7 @@ public class TurNLPEntityAPI {
 
 	}
 
-	@ApiOperation(value = "Create a entity")
+	@Operation(summary = "Create a entity")
 	@PostMapping
 	public TurNLPEntity turNLPEntityAdd(@RequestBody TurNLPEntity turNLPEntity) {
 		this.turNLPEntityRepository.save(turNLPEntity);

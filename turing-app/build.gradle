@@ -159,10 +159,7 @@ dependencies {
 	// SolrJ
 	implementation group: 'org.apache.solr', name: 'solr-solrj', version: '8.5.2'
 
-    // Tensorflow   
-	implementation group: 'org.tensorflow', name: 'tensorflow', version: '1.15.0'
-	
-	// Oracle	
+   	// Oracle	
 	implementation group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
 	
 	// Jasypt

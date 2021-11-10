@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class TurIndexContext {
 
 	@GetMapping("/")
-	private void index(HttpServletRequest request, HttpServletResponse response, final Principal principal)
+	public void index(HttpServletRequest request, HttpServletResponse response, final Principal principal)
 			throws IOException {
 		if (principal != null) {
 			response.sendRedirect("/console");

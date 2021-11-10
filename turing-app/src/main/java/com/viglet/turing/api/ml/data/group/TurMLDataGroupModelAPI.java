@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,8 +54,8 @@ import com.viglet.turing.persistence.repository.storage.TurDataGroupModelReposit
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import opennlp.tools.doccat.DoccatFactory;
 import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;
@@ -67,7 +68,7 @@ import opennlp.tools.util.TrainingParameters;
 
 @RestController
 @RequestMapping("/api/ml/data/group/{dataGroupId}/model")
-@Api(tags = "Machine Learning Model by Group", description = "Machine Learning Model by Group API")
+@Tag(name = "Machine Learning Model by Group", description = "Machine Learning Model by Group API")
 public class TurMLDataGroupModelAPI {
 	private static final Log logger = LogFactory.getLog(TurMLDataGroupModelAPI.class);
 	@Autowired
@@ -81,7 +82,7 @@ public class TurMLDataGroupModelAPI {
 	@Autowired
 	TurDataGroupModelRepository turDataGroupModelRepository;
 
-	@ApiOperation(value = "Machine Learning Data Group Model List")
+	@Operation(summary = "Machine Learning Data Group Model List")
 	@GetMapping
 	public List<TurDataGroupModel> turDataGroupModelList(@PathVariable int dataGroupId) {
 		return turDataGroupRepository.findById(dataGroupId).map(this.turDataGroupModelRepository::findByTurDataGroup)
@@ -89,13 +90,13 @@ public class TurMLDataGroupModelAPI {
 
 	}
 
-	@ApiOperation(value = "Show a Machine Learning Data Group Model")
+	@Operation(summary = "Show a Machine Learning Data Group Model")
 	@GetMapping("/{id}")
 	public TurDataGroupModel turDataGroupModelGet(@PathVariable int dataGroupId, @PathVariable int id) {
 		return this.turDataGroupModelRepository.findById(id);
 	}
 
-	@ApiOperation(value = "Update a Machine Learning Data Group Model")
+	@Operation(summary = "Update a Machine Learning Data Group Model")
 	@PutMapping("/{id}")
 	public TurDataGroupModel turDataGroupModelUpdate(@PathVariable int dataGroupId, @PathVariable int id,
 			@RequestBody TurDataGroupModel turDataGroupModel) {
@@ -106,14 +107,14 @@ public class TurMLDataGroupModelAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning Data Group Model")
+	@Operation(summary = "Delete a Machine Learning Data Group Model")
 	@DeleteMapping("/{id}")
 	public boolean turDataGroupModelDelete(@PathVariable int dataGroupId, @PathVariable int id) {
 		this.turDataGroupModelRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Machine Learning Data Group Model")
+	@Operation(summary = "Create a Machine Learning Data Group Model")
 	@PostMapping
 	public TurDataGroupModel turDataGroupModelAdd(@PathVariable int dataGroupId, @RequestBody TurMLModel turMLModel) {
 		TurDataGroupModel turDataGroupModel = new TurDataGroupModel();
@@ -137,12 +138,12 @@ public class TurMLDataGroupModelAPI {
 			String trainFilePath = String.format("store/ml/train/%s.train", modelFileName);
 			String modelFilePath = String.format("store/ml/model/%s.model", modelFileName);
 
-			StringBuffer trainSB = new StringBuffer();
+			StringBuilder trainSB = new StringBuilder();
 
 			for (TurDataGroupSentence vigTrainDocSentence : turDataSentences) {
 				if (vigTrainDocSentence.getTurMLCategory() != null) {
 					trainSB.append(vigTrainDocSentence.getTurMLCategory().getInternalName() + " ");
-					trainSB.append(vigTrainDocSentence.getSentence().toString().replaceAll("[\\t\\n\\r]", " ").trim());
+					trainSB.append(vigTrainDocSentence.getSentence().replaceAll("[\\t\\n\\r]", " ").trim());
 					trainSB.append("\n");
 				}
 			}
@@ -162,7 +163,7 @@ public class TurMLDataGroupModelAPI {
 					}
 				};
 
-				Charset charset = Charset.forName("UTF-8");
+				Charset charset = StandardCharsets.UTF_8;
 				ObjectStream<String> lineStream = new PlainTextByLineStream(isf, charset);
 				ObjectStream<DocumentSample> sampleStream = new DocumentSampleStream(lineStream);
 
@@ -177,8 +178,6 @@ public class TurMLDataGroupModelAPI {
 			if (model != null) {
 				try (OutputStream modelOut = new BufferedOutputStream(new FileOutputStream(modelFilePath))) {
 					model.serialize(modelOut);
-				} catch (FileNotFoundException e) {
-					logger.error(e);
 				} catch (IOException e) {
 					logger.error(e);
 				}

@@ -55,12 +55,12 @@ import com.viglet.turing.persistence.repository.converse.intent.TurConversePhras
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePromptRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/converse/intent")
-@Api(tags = "Converse Intent", description = "Converse Intent API")
+@Tag(name = "Converse Intent", description = "Converse Intent API")
 public class TurConverseIntentAPI {
 
 	@Autowired
@@ -82,17 +82,16 @@ public class TurConverseIntentAPI {
 	@Autowired
 	private TurConverseSE turConverseSE;
 
-	@ApiOperation(value = "Converse Intent List")
+	@Operation(summary = "Converse Intent List")
 	@GetMapping
 	public List<TurConverseIntent> turConverseIntentList() throws JSONException {
 		return this.turConverseIntentRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Converse Intent")
+	@Operation(summary = "Show a Converse Intent")
 	@GetMapping("/{id}")
 	public TurConverseIntent turConverseIntentGet(@PathVariable String id) {
-		TurConverseIntent turConverseIntent = getIntent(id);
-		return turConverseIntent;
+		return getIntent(id);
 	}
 
 	private TurConverseIntent getIntent(String id) {
@@ -114,7 +113,7 @@ public class TurConverseIntentAPI {
 
 	}
 
-	@ApiOperation(value = "Update a Converse Intent")
+	@Operation(summary = "Update a Converse Intent")
 	@PutMapping("/{id}")
 	public TurConverseIntent turConverseIntentUpdate(@JsonProperty("agent") String agent, @PathVariable String id,
 			@RequestBody TurConverseIntent turConverseIntent) throws Exception {
@@ -313,17 +312,17 @@ public class TurConverseIntentAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Converse Intent")
+	@Operation(summary = "Delete a Converse Intent")
 	@DeleteMapping("/{id}")
 	public boolean turConverseIntentDelete(@PathVariable String id) {
 		this.turConverseIntentRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Converse Intent")
+	@Operation(summary = "Create a Converse Intent")
 	@PostMapping
 	public TurConverseIntent turConverseIntentAdd(@JsonProperty("agent") String agent,
-			@RequestBody TurConverseIntent turConverseIntent) throws Exception {
+			@RequestBody TurConverseIntent turConverseIntent) {
 
 		TurConverseAgent turConverseAgent = turConverseAgentRepository.findById(turConverseIntent.getAgent().getId())
 				.orElse(null);
@@ -384,11 +383,10 @@ public class TurConverseIntentAPI {
 
 	}
 
-	@ApiOperation(value = "Converse Intent Model")
+	@Operation(summary = "Converse Intent Model")
 	@GetMapping("/model")
 	public TurConverseIntent turConverseIntentModel() {
-		TurConverseIntent turConverseIntent = new TurConverseIntent();
-		return turConverseIntent;
+		return new TurConverseIntent();
 	}
 
 }
