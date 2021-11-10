@@ -35,12 +35,12 @@
     "ngx-smart-modal": "7.4.1",
     "num2fraction": "1.2.2",
     "rxjs": "6.6.3",
-    "sass": "^1.39.2",
+    "sass": "^1.43.4",
     "tslib": "2.3.1",
     "zone.js": "~0.11.4"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^12.2.5",
+    "@angular-devkit/build-angular": "^12.2.13",
     "@angular/cli": "12.2.3",
     "@angular/compiler-cli": "12.2.3",
     "@angular/language-service": "12.2.3",
