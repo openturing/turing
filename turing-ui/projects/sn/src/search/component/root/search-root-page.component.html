@@ -71,7 +71,8 @@
     </div>
   </div>
 
-  <div *ngIf="(getTurSNSearchItems() | async) as snSearch; else loading" class="container-lg px-md-2 mt-lg-4 clearfix">
+  <div *ngIf="(getTurSNSearchItems() | async) as snSearch; else loading" class="container-lg px-md-2 mt-lg-4 clearfix"
+    style="min-height: 600px;">
 
     <div *ngIf="snSearch.results.document.length <= 0" class="blankslate blankslate-large">
       <span octicon="search" [size]=48 class="mb-3"></span>
@@ -148,67 +149,69 @@
           <ul *ngIf="snSearch.results as snSearchResults;" class="repo-list">
             <ng-container *ngFor="let document of snSearchResults.document">
               <ng-container *ngIf="document.fields[snSearch.queryContext.defaultFields.url]">
-              <div *ngIf="document.elevate" style="border-top: 1px solid var(--color-border-primary);">
-                <div class="blankslate">
-                  <svg width="40" height="40" style="border-radius: 50%;" class="mb-3"
-                    [identiconHash]="document.fields[snSearch.queryContext.defaultFields.title] | lowercase">
-                    Avatar
-                  </svg>
+                <div *ngIf="document.elevate" style="border-top: 1px solid var(--color-border-primary);">
+                  <div class="blankslate">
+                    <svg width="40" height="40" style="border-radius: 50%;" class="mb-3"
+                      [identiconHash]="document.fields[snSearch.queryContext.defaultFields.title] | lowercase">
+                      Avatar
+                    </svg>
 
-                  <h3 class="mb-1" [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></h3>
-                  <p [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]"></p>
-                  <a href="{{document.fields[snSearch.queryContext.defaultFields.url]}}" class="btn btn-primary my-3"
-                    type="button">Read More</a>
-                </div>
-              </div>
-
-
-              <li *ngIf="!document.elevate" style="border-top: 1px solid var(--color-border-primary);"
-                class="repo-list-item hx_hit-repo d-flex flex-justify-start py-4 public source">
-
-
-                <div class="flex-shrink-0 mr-2">
-                  <svg width="32" height="32" style="border-radius: 50%;"
-                    [identiconHash]="document.fields[snSearch.queryContext.defaultFields.url] | lowercase">
-                    Avatar
-                  </svg>
+                    <h3 class="mb-1" [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></h3>
+                    <p [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]"></p>
+                    <a href="{{document.fields[snSearch.queryContext.defaultFields.url]}}" class="btn btn-primary my-3"
+                      type="button">Read More</a>
+                  </div>
                 </div>
 
-                <div class="mt-n1 flex-auto">
-                  <div class="d-flex">
-                    <div class="f4 text-normal">
-                      <a *ngIf="document.fields[snSearch.queryContext.defaultFields.title] != null"
-                        class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
-                        [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></a>
-                      <a *ngIf="document.fields[snSearch.queryContext.defaultFields.title] == null"
-                        class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
-                        [innerHTML]="document.fields[snSearch.queryContext.defaultFields.url]"></a>
-                    </div>
 
+                <li *ngIf="!document.elevate" style="border-top: 1px solid var(--color-border-primary);"
+                  class="repo-list-item hx_hit-repo d-flex flex-justify-start py-4 public source">
+
+
+                  <div class="flex-shrink-0 mr-2">
+                    <svg width="32" height="32" style="border-radius: 50%;"
+                      [identiconHash]="document.fields[snSearch.queryContext.defaultFields.url] | lowercase">
+                      Avatar
+                    </svg>
                   </div>
 
-                  <p class="mb-1"
-                    style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"
-                    [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]"></p>
-                  <div>
-                    <div>
-                      <img *ngIf="document.fields[snSearch.queryContext.defaultFields.url].endsWith('svg')" style="width: 50px;display: block;" src={{document.fields[snSearch.queryContext.defaultFields.url]}}>
-                      <button *ngFor="let metadata of document.metadata" (click)="turRedirect(metadata.href)"
-                        title="{{metadata.text}}" class="btn-link branch-name px-2 mx-0 mr-2"
-                        [innerHTML]="metadata.text">
-                      </button>
+                  <div class="mt-n1 flex-auto">
+                    <div class="d-flex">
+                      <div class="f4 text-normal">
+                        <a *ngIf="document.fields[snSearch.queryContext.defaultFields.title] != null"
+                          class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
+                          [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></a>
+                        <a *ngIf="document.fields[snSearch.queryContext.defaultFields.title] == null"
+                          class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
+                          [innerHTML]="document.fields[snSearch.queryContext.defaultFields.url]"></a>
+                      </div>
+
                     </div>
 
-                    <div class="d-flex flex-wrap text-small color-text-secondary mt-1">
-                      <div class="mr-3">
-                        Updated <time>{{document.fields[snSearch.queryContext.defaultFields.date]
-                          | amDateFormat:'LL'}}</time>
+                    <p class="mb-1"
+                      style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"
+                      [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]"></p>
+                    <div>
+                      <div>
+                        <img *ngIf="document.fields[snSearch.queryContext.defaultFields.url].endsWith('svg')"
+                          style="width: 50px;display: block;"
+                          src={{document.fields[snSearch.queryContext.defaultFields.url]}}>
+                        <button *ngFor="let metadata of document.metadata" (click)="turRedirect(metadata.href)"
+                          title="{{metadata.text}}" class="btn-link branch-name px-2 mx-0 mr-2"
+                          [innerHTML]="metadata.text">
+                        </button>
+                      </div>
+
+                      <div class="d-flex flex-wrap text-small color-text-secondary mt-1">
+                        <div class="mr-3">
+                          Updated <time>{{document.fields[snSearch.queryContext.defaultFields.date]
+                            | amDateFormat:'LL'}}</time>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </li>
-            </ng-container>
+                </li>
+              </ng-container>
             </ng-container>
           </ul>
         </div>
@@ -227,7 +230,9 @@
   </div>
 </div>
 <ng-template #loading>
-  <span>Loading</span><span class="AnimatedEllipsis"></span>
+  <div style="min-height: 600px;">
+    <span>Loading</span><span class="AnimatedEllipsis"></span>
+  </div>
 </ng-template>
 <div class="footer container-xl width-full p-responsive" role="contentinfo">
   <div

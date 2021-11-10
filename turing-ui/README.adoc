@@ -1,0 +1,7 @@
+# Turing UI
+
+```shell
+ng serve --project=console
+ng serve --project=sn
+ng serve --project=converse
+```

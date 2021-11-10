@@ -1,10 +1,10 @@
 {
-  "name": "turing-ui2",
+  "name": "turing-ui",
   "version": "0.3.4",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --prod",
+    "build": "ng build --project=welcome && ng build --project=console && ng build --project=sn && ng build --project=converse",
     "buildpt": "ng build --aot --i18n-file=src/locale/messages.pt.xlf --i18n-locale=pt --i18n-format=xlf",
     "lint": "ng lint",
     "e2e": "ng e2e",
