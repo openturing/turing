@@ -50,7 +50,8 @@ public class TurNLPListKey<T> {
 	public boolean equals(Object obj) {
 		if (obj == null)
 			return false;
-
+		if (this.getClass() != obj.getClass())
+			return false;
 		StringBuffer hashCodeObjectSb = new StringBuffer();
 		@SuppressWarnings("unchecked")
 		TurNLPListKey<T> objList = (TurNLPListKey<T>) obj;

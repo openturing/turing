@@ -20,11 +20,14 @@ package com.viglet.turing.utils;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.Normalizer;
 import java.util.Collection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
@@ -33,6 +36,11 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -41,14 +49,15 @@ import com.viglet.turing.spring.security.auth.ITurAuthenticationFacade;
 
 @Component
 public class TurUtils {
+	private static final Log logger = LogFactory.getLog(TurUtils.class);
 	@Autowired
 	private ITurAuthenticationFacade authenticationFacade;
 
-	public String getCurrentUsername () {
+	public String getCurrentUsername() {
 		Authentication authentication = authenticationFacade.getAuthentication();
-        return authentication.getName();
+		return authentication.getName();
 	}
-	
+
 	public String stripAccents(String s) {
 		s = Normalizer.normalize(s, Normalizer.Form.NFD);
 		s = s.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
@@ -67,26 +76,34 @@ public class TurUtils {
 	 * @throws IOException      if the io fails
 	 * @throws ArchiveException if creating or adding to the archive fails
 	 */
-	public void addFilesToZip(File source, File destination) throws IOException, ArchiveException {
-		OutputStream archiveStream = new FileOutputStream(destination);
-		try (ArchiveOutputStream archive = new ArchiveStreamFactory()
-				.createArchiveOutputStream(ArchiveStreamFactory.ZIP, archiveStream)) {
+	public void addFilesToZip(File source, File destination) {
+		OutputStream archiveStream;
+		try {
+			archiveStream = new FileOutputStream(destination);
 
-			Collection<File> fileList = FileUtils.listFiles(source, null, true);
+			try (ArchiveOutputStream archive = new ArchiveStreamFactory()
+					.createArchiveOutputStream(ArchiveStreamFactory.ZIP, archiveStream)) {
 
-			for (File file : fileList) {
-				String entryName = getEntryName(source, file);
-				ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
-				archive.putArchiveEntry(entry);
+				Collection<File> fileList = FileUtils.listFiles(source, null, true);
 
-				BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
+				for (File file : fileList) {
+					String entryName = getEntryName(source, file);
+					ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
+					archive.putArchiveEntry(entry);
 
-				IOUtils.copy(input, archive);
-				input.close();
-				archive.closeArchiveEntry();
+					BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
+
+					IOUtils.copy(input, archive);
+					input.close();
+					archive.closeArchiveEntry();
+				}
+
+				archive.finish();
+			} catch (IOException | ArchiveException e) {
+				logger.error(e.getMessage(), e);
 			}
-
-			archive.finish();
+		} catch (FileNotFoundException e) {
+			logger.error(e.getMessage(), e);
 		}
 	}
 
@@ -130,5 +147,32 @@ public class TurUtils {
 				IOUtils.copy(zin, new FileOutputStream(curfile));
 			}
 		}
+	}
+
+	public boolean isJSONValid(String test) {
+		try {
+			new JSONObject(test);
+		} catch (JSONException ex) {
+			// edited, to include @Arthur's comment
+			// e.g. in case JSONArray is valid as well...
+			try {
+				new JSONArray(test);
+			} catch (JSONException ex1) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public String removeUrl(String commentstr) {
+		String urlPattern = "((https?|ftp|gopher|telnet|file|Unsure):([(//)(\\\\\\\\)])+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)";
+		Pattern p = Pattern.compile(urlPattern, Pattern.CASE_INSENSITIVE);
+		Matcher m = p.matcher(commentstr);
+		int i = 0;
+		while (m.find()) {
+			commentstr = commentstr.replaceAll(m.group(i), "").trim();
+			i++;
+		}
+		return commentstr;
 	}
 }

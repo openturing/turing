@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,26 +36,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrField;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.TurSEStopword;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/sn/{siteName}/ac")
-@Api(tags = "Semantic Navigation Auto Complete", description = "Semantic Navigation Auto Complete API")
+@Tag(name = "Semantic Navigation Auto Complete", description = "Semantic Navigation Auto Complete API")
 public class TurSNSiteAutoCompleteAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteAutoCompleteAPI.class);
 	@Autowired
-	TurSolr turSolr;
+	private TurSolr turSolr;
 	@Autowired
-	TurSNSiteRepository turSNSiteRepository;
+	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	TurSolrField turSolrField;
-	@Autowired
-	TurSEStopword turSEStopword;
+	private TurSEStopword turSEStopword;
 
 	@GetMapping
 	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,
@@ -69,7 +66,7 @@ public class TurSNSiteAutoCompleteAPI {
 		try {
 			turSEResults = turSolr.autoComplete(q);
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		}
 		List<String> termList = turSEResults.getSuggestions().get(0).getAlternatives();
 		List<String> stopWords;
@@ -140,7 +137,7 @@ public class TurSNSiteAutoCompleteAPI {
 				}
 			}
 		} catch (IOException e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 		return termListShrink.stream().limit(rows).collect(Collectors.toList());
 	}

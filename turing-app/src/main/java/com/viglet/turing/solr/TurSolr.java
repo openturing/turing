@@ -44,11 +44,13 @@ import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.MoreLikeThisParams;
 import org.apache.solr.common.util.SimpleOrderedMap;
+import org.apache.tika.utils.StringUtils;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.api.sn.bean.TurSNSiteSpellCheckBean;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
@@ -346,6 +348,24 @@ public class TurSolr {
 		return null;
 	}
 
+	public TurSNSiteSpellCheckBean spellCheck(String term) {
+		SolrQuery query = new SolrQuery();
+		query.setRequestHandler("/tur_spell");
+		query.setQuery(term.replace("\"", ""));
+		QueryResponse queryResponse;
+		try {
+			queryResponse = solrClient.query(query);
+			String correctedText = queryResponse.getSpellCheckResponse().getCollatedResult();
+			if (!StringUtils.isEmpty(correctedText)) {
+				return new TurSNSiteSpellCheckBean(true, correctedText);
+			}
+
+		} catch (IOException | SolrServerException e) {
+			logger.error(e);
+		}
+		return new TurSNSiteSpellCheckBean();
+	}
+
 	public TurSEResult findById(String id) {
 
 		Map<String, TurSNSiteFieldExt> fieldExtMap = getFieldExtMap();
@@ -457,7 +477,7 @@ public class TurSolr {
 		// TODO: Implement AND or OR choice
 		if (tr != null && tr.size() > 0)
 			query.addFilterQuery(turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, tr));
-		
+
 		QueryResponse queryResponse;
 		try {
 			queryResponse = solrClient.query(query);

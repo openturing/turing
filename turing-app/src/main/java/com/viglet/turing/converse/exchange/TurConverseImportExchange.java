@@ -76,8 +76,8 @@ public class TurConverseImportExchange {
 	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
 
-	private Map<String, Object> shObjects = new HashMap<String, Object>();
-	private Map<String, List<String>> shChildObjects = new HashMap<String, List<String>>();
+	private Map<String, Object> shObjects = new HashMap<>();
+	private Map<String, List<String>> shChildObjects = new HashMap<>();
 
 	public TurConverseAgentExchange importFromMultipartFile(@Nonnull MultipartFile multipartFile)
 			throws IllegalStateException, IOException {
@@ -100,7 +100,7 @@ public class TurConverseImportExchange {
 			turConverseAgentExchange = mapper.readValue(
 					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + "agent.json")),
 					TurConverseAgentExchange.class);
-			System.out.println(turConverseAgentExchange.getDescription());
+			logger.debug(turConverseAgentExchange.getDescription());
 
 			TurConverseAgent turConverseAgent = new TurConverseAgent();
 			if (multipartFile.getOriginalFilename() != null) {
@@ -122,14 +122,14 @@ public class TurConverseImportExchange {
 							.concat(File.separator + "entities" + File.separator + "pessoa.json")),
 					TurConverseEntityExchange.class);
 
-			System.out.println(turConverseEntityExchange.getName());
+			logger.debug(turConverseEntityExchange.getName());
 
 			TurConverseEntityEntriesExchange turConverseEntityEntriesExchange = mapper.readValue(
 					new FileInputStream(extractFolder.getAbsolutePath()
 							.concat(File.separator + "entities" + File.separator + "pessoa_entries_pt-br.json")),
 					TurConverseEntityEntriesExchange.class);
 
-			System.out.println(turConverseEntityEntriesExchange.get(0).getValue());
+			logger.debug(turConverseEntityEntriesExchange.get(0).getValue());
 
 			final File folder = new File(extractFolder.getAbsolutePath().concat(File.separator + "intents"));
 
@@ -156,22 +156,21 @@ public class TurConverseImportExchange {
 		for (final File fileEntry : folder.listFiles()) {
 
 			try {
-				System.out.println(fileEntry.getName());
+				logger.debug(fileEntry.getName());
 				if (fileEntry.getName().contains("_usersays_")) {
 					TurConverseIntentPhrasesExchange turConverseIntentPhrasesExchange = mapper
 							.readValue(new FileInputStream(fileEntry), TurConverseIntentPhrasesExchange.class);
-					System.out.println(turConverseIntentPhrasesExchange.get(0).getId());
+					logger.debug(turConverseIntentPhrasesExchange.get(0).getId());
 				} else {
 
 					TurConverseIntentExchange turConverseIntentExchange = mapper
 							.readValue(new FileInputStream(fileEntry), TurConverseIntentExchange.class);
-					System.out.println(turConverseIntentExchange.getName());
+					logger.debug(turConverseIntentExchange.getName());
 
 					// Intent
 					TurConverseIntent turConverseIntent = new TurConverseIntent();
 					turConverseIntent.setName(turConverseIntentExchange.getName());
 					turConverseIntent.setAgent(turConverseAgent);
-//					turConverseIntent.setActionName();
 					turConverseIntentRepository.save(turConverseIntent);
 
 					// Responses
@@ -201,11 +200,11 @@ public class TurConverseImportExchange {
 						}
 
 					} else {
-						System.out.println("Usersays not exists: " + phrasesFile.getAbsolutePath());
+						logger.debug("Usersays not exists: " + phrasesFile.getAbsolutePath());
 					}
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				logger.error(e.getMessage(), e);
 			}
 
 		}
