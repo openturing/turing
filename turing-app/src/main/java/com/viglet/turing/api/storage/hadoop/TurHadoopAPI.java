@@ -38,11 +38,11 @@ import org.apache.commons.logging.LogFactory;
 
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/storage/hadoop")
-@Api(tags = "Hadoop", description = "Hadoop API")
+@Tag(name = "Hadoop", description = "Hadoop API")
 public class TurHadoopAPI {
 	private static final Log logger = LogFactory.getLog(TurHadoopAPI.class);
 	@Autowired

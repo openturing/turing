@@ -26,7 +26,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.compress.archivers.ArchiveException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -56,14 +55,16 @@ import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntit
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/converse/agent")
-@Api(tags = "Converse Agent", description = "Converse Agent API")
+@Tag(name = "Converse Agent", description = "Converse Agent API")
 public class TurConverseAgentAPI {
 
+	private static final String CONVERSATION_ID = "conversationId";
+	private static final String HAS_PARAMETER = "hasParameter";
 	@Autowired
 	private TurConverseAgentRepository turConverseAgentRepository;
 	@Autowired
@@ -81,19 +82,19 @@ public class TurConverseAgentAPI {
 	@Autowired
 	private TurConverseSE turConverseSE;
 
-	@ApiOperation(value = "Converse Agent List")
+	@Operation(summary = "Converse Agent List")
 	@GetMapping
 	public List<TurConverseAgent> turConverseAgentList() {
 		return this.turConverseAgentRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Converse Agent")
+	@Operation(summary = "Show a Converse Agent")
 	@GetMapping("/{id}")
 	public TurConverseAgent turConverseAgentGet(@PathVariable String id) {
 		return turConverseAgentRepository.findById(id).orElse(new TurConverseAgent());
 	}
 
-	@ApiOperation(value = "Show a Converse Intent List")
+	@Operation(summary = "Show a Converse Intent List")
 	@GetMapping("/{id}/intents")
 	public Set<TurConverseIntent> turConverseAgentIntentsGet(@PathVariable String id) {
 		return turConverseAgentRepository.findById(id)
@@ -102,7 +103,7 @@ public class TurConverseAgentAPI {
 
 	}
 
-	@ApiOperation(value = "Show a Converse Entity List")
+	@Operation(summary = "Show a Converse Entity List")
 	@GetMapping("/{id}/entities")
 	public Set<TurConverseEntity> turConverseAgentEntitiesGet(@PathVariable String id) {
 		return turConverseAgentRepository.findById(id)
@@ -110,7 +111,7 @@ public class TurConverseAgentAPI {
 				.orElse(new HashSet<>());
 	}
 
-	@ApiOperation(value = "Show a Converse Context List")
+	@Operation(summary = "Show a Converse Context List")
 	@GetMapping("/{id}/contexts")
 	public Set<TurConverseContext> turConverseAgentContextsGet(@PathVariable String id) {
 		return turConverseAgentRepository.findById(id)
@@ -118,13 +119,13 @@ public class TurConverseAgentAPI {
 				.orElse(new HashSet<>());
 	}
 
-	@ApiOperation(value = "Create a Converse Agent")
+	@Operation(summary = "Create a Converse Agent")
 	@PostMapping
 	public TurConverseAgent turConverseAgentAdd(@RequestBody TurConverseAgent turConverseAgent) {
 		return turConverseAgentRepository.save(turConverseAgent);
 	}
 
-	@ApiOperation(value = "Update a Converse Agent")
+	@Operation(summary = "Update a Converse Agent")
 	@PutMapping("/{id}")
 	public TurConverseAgent turConverseAgentUpdate(@PathVariable String id,
 			@RequestBody TurConverseAgent turConverseAgent) {
@@ -143,7 +144,7 @@ public class TurConverseAgentAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Converse Agent")
+	@Operation(summary = "Delete a Converse Agent")
 	@DeleteMapping("/{id}")
 	public boolean turConverseAgentDelete(@PathVariable String id) {
 		return turConverseAgentRepository.findById(id).map(turConverseAgent -> {
@@ -159,14 +160,13 @@ public class TurConverseAgentAPI {
 
 	}
 
-	@ApiOperation(value = "Converse Agent Model")
+	@Operation(summary = "Converse Agent Model")
 	@GetMapping("/model")
 	public TurConverseAgent turConverseAgentModel() {
-		TurConverseAgent turConverseAgent = new TurConverseAgent();
-		return turConverseAgent;
+		return new TurConverseAgent();
 	}
 
-	@ApiOperation(value = "Rebuild Chat")
+	@Operation(summary = "Rebuild Chat")
 	@GetMapping("/{id}/rebuild")
 	public boolean turConverseAgentRebuild(@PathVariable String id) {
 
@@ -182,7 +182,7 @@ public class TurConverseAgentAPI {
 
 	}
 
-	@ApiOperation(value = "Converse Chat")
+	@Operation(summary = "Converse Chat")
 	@GetMapping("/{id}/chat")
 	public TurConverseAgentResponse turConverseAgentChat(@PathVariable String id,
 			@RequestParam(required = false, name = "q") String q,
@@ -190,22 +190,21 @@ public class TurConverseAgentAPI {
 
 		String conversationId = null;
 
-		if (start || session.getAttribute("conversationId") == null) {
+		if (start || session.getAttribute(CONVERSATION_ID) == null) {
 			turConverse.cleanSession(session);
 			SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyyyyHHmmss");
 			conversationId = dateFormat.format(new Date());
 
-			session.setAttribute("conversationId", conversationId);
+			session.setAttribute(CONVERSATION_ID, conversationId);
 		} else {
-			conversationId = (String) session.getAttribute("conversationId");
+			conversationId = (String) session.getAttribute(CONVERSATION_ID);
 		}
 
 		String sessionId = String.format("%s.%s", session.getId(), conversationId);
 		turConverse.showSession(session);
 
-		boolean hasParameter = session.getAttribute("hasParameter") != null
-				? (boolean) session.getAttribute("hasParameter")
-				: false;
+		boolean hasParameter = session.getAttribute(HAS_PARAMETER) != null
+				&& (boolean) session.getAttribute(HAS_PARAMETER);
 
 		TurConverseChat chat = null;
 		if (session != null && session.getId() != null) {
@@ -238,7 +237,7 @@ public class TurConverseAgentAPI {
 	@PostMapping("/import")
 	@Transactional
 	public TurConverseAgentExchange shImport(@RequestParam("file") MultipartFile multipartFile)
-			throws IllegalStateException, IOException, ArchiveException {
+			throws IllegalStateException, IOException {
 		return turConverseImportExchange.importFromMultipartFile(multipartFile);
 	}
 }

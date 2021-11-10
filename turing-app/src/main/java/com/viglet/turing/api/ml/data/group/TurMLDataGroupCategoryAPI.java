@@ -36,12 +36,12 @@ import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupCategoryRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/ml/data/group/{dataGroupId}/category")
-@Api(tags = "Machine Learning Category by Group", description = "Machine Learning Category by Group API")
+@Tag(name ="Machine Learning Category by Group", description = "Machine Learning Category by Group API")
 public class TurMLDataGroupCategoryAPI {
 
 	@Autowired
@@ -49,20 +49,20 @@ public class TurMLDataGroupCategoryAPI {
 	@Autowired
 	private TurDataGroupCategoryRepository turDataGroupCategoryRepository;
 
-	@ApiOperation(value = "Machine Learning Data Group Category List")
+	@Operation(summary = "Machine Learning Data Group Category List")
 	@GetMapping
 	public List<TurDataGroupCategory> turDataGroupCategoryList(@PathVariable int dataGroupId) {
 		return turDataGroupRepository.findById(dataGroupId).map(this.turDataGroupCategoryRepository::findByTurDataGroup)
 				.orElse(new ArrayList<>());
 	}
 
-	@ApiOperation(value = "Show a Machine Learning Data Group Category")
+	@Operation(summary = "Show a Machine Learning Data Group Category")
 	@GetMapping("/{id}")
 	public TurDataGroupCategory turDataGroupCategoryGet(@PathVariable int dataGroupId, @PathVariable int id) {
 		return this.turDataGroupCategoryRepository.findById(id).orElse(new TurDataGroupCategory());
 	}
 
-	@ApiOperation(value = "Update a Machine Learning Data Group Category")
+	@Operation(summary = "Update a Machine Learning Data Group Category")
 	@PutMapping("/{id}")
 	public TurDataGroupCategory turDataGroupCategoryUpdate(@PathVariable int dataGroupId, @PathVariable int id,
 			@RequestBody TurMLCategory turMLCategory) {
@@ -75,14 +75,14 @@ public class TurMLDataGroupCategoryAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning Data Group Category")
+	@Operation(summary = "Delete a Machine Learning Data Group Category")
 	@DeleteMapping("/{id}")
 	public boolean turDataGroupCategoryDelete(@PathVariable int dataGroupId, @PathVariable int id) {
 		this.turDataGroupCategoryRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Machine Learning Data Group Category")
+	@Operation(summary = "Create a Machine Learning Data Group Category")
 	@PostMapping
 	public TurDataGroupCategory turDataGroupCategoryAdd(@PathVariable int dataGroupId,
 			@RequestBody TurDataGroupCategory turDataGroupCategory) {

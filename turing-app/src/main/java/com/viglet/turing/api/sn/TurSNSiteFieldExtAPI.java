@@ -55,28 +55,28 @@ import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.template.TurSNTemplate;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/api/sn/{snSiteId}/field/ext")
-@Api(tags = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
+@Tag(name = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
 public class TurSNSiteFieldExtAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteFieldExtAPI.class);
 	@Autowired
-	TurSNSiteRepository turSNSiteRepository;
+	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
-	TurSNSiteFieldRepository turSNSiteFieldRepository;
+	private TurSNSiteFieldRepository turSNSiteFieldRepository;
 	@Autowired
-	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
+	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
 	@Autowired
-	TurNLPEntityRepository turNLPEntityRepository;
+	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
-	TurSNTemplate turSNTemplate;
+	private TurSNTemplate turSNTemplate;
 
-	@ApiOperation(value = "Semantic Navigation Site Field Ext List")
+	@Operation(summary = "Semantic Navigation Site Field Ext List")
 	@Transactional
 	@GetMapping
 	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String snSiteId) {
@@ -181,13 +181,13 @@ public class TurSNSiteFieldExtAPI {
 		turSNSiteFieldExts.add(turSNSiteFieldExt);
 	}
 
-	@ApiOperation(value = "Show a Semantic Navigation Site Field Ext")
+	@Operation(summary = "Show a Semantic Navigation Site Field Ext")
 	@GetMapping("/{id}")
 	public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
 		return turSNSiteFieldExtRepository.findById(id).orElse(new TurSNSiteFieldExt());
 	}
 
-	@ApiOperation(value = "Update a Semantic Navigation Site Field Ext")
+	@Operation(summary = "Update a Semantic Navigation Site Field Ext")
 	@PutMapping("/{id}")
 	public TurSNSiteFieldExt turSNSiteFieldExtUpdate(@PathVariable String snSiteId, @PathVariable String id,
 			@RequestBody TurSNSiteFieldExt turSNSiteFieldExt) {
@@ -216,7 +216,7 @@ public class TurSNSiteFieldExtAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Semantic Navigation Site Field Ext")
+	@Operation(summary = "Delete a Semantic Navigation Site Field Ext")
 	@DeleteMapping("/{id}")
 	public boolean turSNSiteFieldExtDelete(@PathVariable String snSiteId, @PathVariable String id) {
 		return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExtEdit -> {
@@ -236,7 +236,7 @@ public class TurSNSiteFieldExtAPI {
 
 	}
 
-	@ApiOperation(value = "Create a Semantic Navigation Site Field Ext")
+	@Operation(summary = "Create a Semantic Navigation Site Field Ext")
 	@PostMapping
 	public TurSNSiteFieldExt turSNSiteFieldExtAdd(@PathVariable String snSiteId,
 			@RequestBody TurSNSiteFieldExt turSNSiteFieldExt) {
@@ -338,7 +338,6 @@ public class TurSNSiteFieldExtAPI {
 		}
 		JSONObject json = new JSONObject();
 		json.put("add-field", jsonAddField);
-		// json.put("replace-field", jsonAddField);
 		HttpPost httpPost = new HttpPost(String.format("http://%s:%d/solr/%s/schema",
 				turSNSite.getTurSEInstance().getHost(), turSNSite.getTurSEInstance().getPort(), turSNSite.getCore()));
 		StringEntity entity;

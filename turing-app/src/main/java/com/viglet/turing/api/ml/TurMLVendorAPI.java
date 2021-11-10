@@ -33,30 +33,30 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.ml.TurMLVendor;
 import com.viglet.turing.persistence.repository.ml.TurMLVendorRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/ml/vendor")
-@Api(tags = "Machine Learning Vendor", description = "Machine Learning Vendor API")
+@Tag(name ="Machine Learning Vendor", description = "Machine Learning Vendor API")
 public class TurMLVendorAPI {
 
 	@Autowired
 	TurMLVendorRepository turMLVendorRepository;
 
-	@ApiOperation(value = "Machine Learning Vendor List")
+	@Operation(summary = "Machine Learning Vendor List")
 	@GetMapping
 	public List<TurMLVendor> turMLVendorList() {
 		return this.turMLVendorRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Machine Learning Vendor")
+	@Operation(summary = "Show a Machine Learning Vendor")
 	@GetMapping("/{id}")
 	public TurMLVendor turMLVendorGet(@PathVariable String id) {
 		return this.turMLVendorRepository.findById(id).orElse(new TurMLVendor());
 	}
 
-	@ApiOperation(value = "Update a Machine Learning Vendor")
+	@Operation(summary = "Update a Machine Learning Vendor")
 	@PutMapping("/{id}")
 	public TurMLVendor turMLVendorUpdate(@PathVariable String id, @RequestBody TurMLVendor turMLVendor) {
 		return this.turMLVendorRepository.findById(id).map(turMLVendorEdit -> {
@@ -71,14 +71,14 @@ public class TurMLVendorAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning Vendor")
+	@Operation(summary = "Delete a Machine Learning Vendor")
 	@DeleteMapping("/{id}")
 	public boolean turMLVendorDelete(@PathVariable String id) {
 		this.turMLVendorRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Machine Learning Vendor")
+	@Operation(summary = "Create a Machine Learning Vendor")
 	@PostMapping
 	public TurMLVendor turMLVendorAdd(@RequestBody TurMLVendor turMLVendor) {
 		this.turMLVendorRepository.save(turMLVendor);

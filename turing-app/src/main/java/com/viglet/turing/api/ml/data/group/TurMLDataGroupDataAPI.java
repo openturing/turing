@@ -53,12 +53,12 @@ import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepo
 import com.viglet.turing.persistence.repository.storage.TurDataRepository;
 import com.viglet.turing.plugins.nlp.opennlp.TurOpenNLPConnector;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/ml/data/group/{dataGroupId}/data")
-@Api(tags = "Machine Learning Data by Group", description = "Machine Learning Data by Group API")
+@Tag(name ="Machine Learning Data by Group", description = "Machine Learning Data by Group API")
 public class TurMLDataGroupDataAPI {
 	private static final Log logger = LogFactory.getLog(TurMLDataGroupDataAPI.class);
 	@Autowired
@@ -72,20 +72,20 @@ public class TurMLDataGroupDataAPI {
 	@Autowired
 	TurOpenNLPConnector turOpenNLPConnector;
 
-	@ApiOperation(value = "Machine Learning Data Group Data List")
+	@Operation(summary = "Machine Learning Data Group Data List")
 	@GetMapping
 	public List<TurDataGroupData> turDataGroupDataList(@PathVariable int dataGroupId) {
 		return this.turDataGroupRepository.findById(dataGroupId)
 				.map(this.turDataGroupDataRepository::findByTurDataGroup).orElse(new ArrayList<>());
 	}
 
-	@ApiOperation(value = "Show a Machine Learning Data Group Data")
+	@Operation(summary = "Show a Machine Learning Data Group Data")
 	@GetMapping("/{id}")
 	public TurDataGroupData turDataGroupDataGet(@PathVariable int dataGroupId, @PathVariable int id) {
 		return this.turDataGroupDataRepository.findById(id).orElse(new TurDataGroupData());
 	}
 
-	@ApiOperation(value = "Update a Machine Learning Data Group Data")
+	@Operation(summary = "Update a Machine Learning Data Group Data")
 	@PutMapping("/{id}")
 	public TurDataGroupData turDataGroupDataUpdate(@PathVariable int dataGroupId, @PathVariable int id,
 			@RequestBody TurData turMLData) {
@@ -98,14 +98,14 @@ public class TurMLDataGroupDataAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning Data Group Data")
+	@Operation(summary = "Delete a Machine Learning Data Group Data")
 	@DeleteMapping("/{id}")
 	public boolean turDataGroupDataDelete(@PathVariable int dataGroupId, @PathVariable int id) {
 		this.turDataGroupDataRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Machine Learning Data Group Data")
+	@Operation(summary = "Create a Machine Learning Data Group Data")
 	@PostMapping
 	public TurDataGroupData turDataGroupDataAdd(@PathVariable int dataGroupId,
 			@RequestBody TurDataGroupData turDataGroupData) {
@@ -136,7 +136,7 @@ public class TurMLDataGroupDataAPI {
 				logger.error(e);
 			}
 
-			String sentences[] = turOpenNLPConnector.sentenceDetect(handler.toString());
+			String[] sentences = turOpenNLPConnector.sentenceDetect(handler.toString());
 
 			TurData turData = new TurData();
 

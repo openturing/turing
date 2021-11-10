@@ -76,7 +76,7 @@ public class TurSNSiteAutoCompleteAPI {
 		try {
 			stopWords = turSEStopword.getStopWords("pt");
 
-			List<String> termListFormatted = new ArrayList<String>();
+			List<String> termListFormatted = new ArrayList<>();
 			int tokenQSize = q.split(" ").length;
 			String previousTerm = null;
 			boolean previousFinishedStopWords = false;

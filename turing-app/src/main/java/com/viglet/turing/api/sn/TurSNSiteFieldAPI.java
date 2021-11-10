@@ -35,12 +35,12 @@ import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/api/sn/{snSiteId}/field")
-@Api(tags = "Semantic Navigation Field", description = "Semantic Navigation Field API")
+@Tag(name = "Semantic Navigation Field", description = "Semantic Navigation Field API")
 public class TurSNSiteFieldAPI {
 
 	@Autowired
@@ -48,7 +48,7 @@ public class TurSNSiteFieldAPI {
 	@Autowired
 	TurSNSiteFieldRepository turSNSiteFieldRepository;
 
-	@ApiOperation(value = "Semantic Navigation Site Field List")
+	@Operation(summary = "Semantic Navigation Site Field List")
 	@GetMapping
 	public List<TurSNSiteField> turSNSiteFieldList(@PathVariable String snSiteId) {
 		return turSNSiteRepository.findById(snSiteId)
@@ -56,13 +56,13 @@ public class TurSNSiteFieldAPI {
 
 	}
 
-	@ApiOperation(value = "Show a Semantic Navigation Site Field")
+	@Operation(summary = "Show a Semantic Navigation Site Field")
 	@GetMapping("/{id}")
 	public TurSNSiteField turSNSiteFieldGet(@PathVariable String snSiteId, @PathVariable String id) {
 		return this.turSNSiteFieldRepository.findById(id).orElse(new TurSNSiteField());
 	}
 
-	@ApiOperation(value = "Update a Semantic Navigation Site Field")
+	@Operation(summary = "Update a Semantic Navigation Site Field")
 	@PutMapping("/{id}")
 	public TurSNSiteField turSNSiteFieldUpdate(@PathVariable String snSiteId, @PathVariable String id,
 			@RequestBody TurSNSiteField turSNSiteField) {
@@ -78,14 +78,14 @@ public class TurSNSiteFieldAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Semantic Navigation Site Field")
+	@Operation(summary = "Delete a Semantic Navigation Site Field")
 	@DeleteMapping("/{id}")
 	public boolean turSNSiteFieldDelete(@PathVariable String snSiteId, @PathVariable String id) {
 		this.turSNSiteFieldRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Semantic Navigation Site Field")
+	@Operation(summary = "Create a Semantic Navigation Site Field")
 	@PostMapping
 	public TurSNSiteField turSNSiteFieldAdd(@PathVariable String snSiteId, @RequestBody TurSNSiteField turSNSiteField) {
 		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {

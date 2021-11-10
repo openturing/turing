@@ -45,8 +45,6 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 		registry.addViewController("/console/").setViewName("forward:/console/index.html");
 		registry.addViewController("/welcome").setViewName("forward:/welcome/index.html");
 		registry.addViewController("/welcome/").setViewName("forward:/welcome/index.html");
-		//registry.addViewController("/sn").setViewName("forward:/sn/index.html");
-		//registry.addViewController("/sn/").setViewName("forward:/sn/index.html");
 		registry.addViewController("/converse").setViewName("forward:/converse/index.html");
 		registry.addViewController("/converse/").setViewName("forward:/converse/index.html");
 

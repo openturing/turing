@@ -78,12 +78,12 @@ import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/nlp")
-@Api(tags = "Natural Language Processing", description = "Natural Language Processing API")
+@Tag(name = "Natural Language Processing", description = "Natural Language Processing API")
 public class TurNLPInstanceAPI {
 	private static final Logger logger = LogManager.getLogger(TurNLPInstanceAPI.class);
 	private static final String NLP_TEMP_FILE = "nlp_temp";
@@ -94,19 +94,19 @@ public class TurNLPInstanceAPI {
 	@Autowired
 	TurNLP turNLP;
 
-	@ApiOperation(value = "Natural Language Processing List")
+	@Operation(summary = "Natural Language Processing List")
 	@GetMapping
 	public List<TurNLPInstance> turNLPInstanceList() {
 		return this.turNLPInstanceRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Natural Language Processing")
+	@Operation(summary = "Show a Natural Language Processing")
 	@GetMapping("/{id}")
 	public TurNLPInstance turNLPInstanceGet(@PathVariable String id) {
 		return this.turNLPInstanceRepository.findById(id).orElse(new TurNLPInstance());
 	}
 
-	@ApiOperation(value = "Natural Language Processing structure")
+	@Operation(summary = "Natural Language Processing structure")
 	@GetMapping("/structure")
 	public TurNLPInstance turNLPInstanceStructure() {
 		TurNLPInstance turNLPInstance = new TurNLPInstance();
@@ -116,7 +116,7 @@ public class TurNLPInstanceAPI {
 
 	}
 
-	@ApiOperation(value = "Update a Natural Language Processing")
+	@Operation(summary = "Update a Natural Language Processing")
 	@PutMapping("/{id}")
 	public TurNLPInstance turNLPInstanceUpdate(@PathVariable String id, @RequestBody TurNLPInstance turNLPInstance) {
 		return turNLPInstanceRepository.findById(id).map(turNLPInstanceEdit -> {
@@ -134,14 +134,14 @@ public class TurNLPInstanceAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Natural Language Processing")
+	@Operation(summary = "Delete a Natural Language Processing")
 	@DeleteMapping("/{id}")
 	public boolean turNLPInstanceDelete(@PathVariable String id) {
 		this.turNLPInstanceRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Natural Language Processing")
+	@Operation(summary = "Create a Natural Language Processing")
 	@PostMapping
 	public TurNLPInstance turNLPInstanceAdd(@RequestBody TurNLPInstance turNLPInstance) {
 		this.turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);

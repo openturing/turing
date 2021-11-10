@@ -38,24 +38,24 @@ import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.solr.TurSolr;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/se")
-@Api(tags = "Search Engine", description = "Search Engine API")
+@Tag(name = "Search Engine", description = "Search Engine API")
 public class TurSEInstanceAPI {
 	private static final Log logger = LogFactory.getLog(TurSEInstanceAPI.class);
 	@Autowired
 	TurSEInstanceRepository turSEInstanceRepository;
 
-	@ApiOperation(value = "Search Engine List")
+	@Operation(summary = "Search Engine List")
 	@GetMapping
 	public List<TurSEInstance> turSEInstanceList() {
 		return this.turSEInstanceRepository.findAll();
 	}
 
-	@ApiOperation(value = "Search Engine structure")
+	@Operation(summary = "Search Engine structure")
 	@GetMapping("/structure")
 	public TurSEInstance turNLPInstanceStructure() {
 		TurSEInstance turSEInstance = new TurSEInstance();
@@ -65,16 +65,15 @@ public class TurSEInstanceAPI {
 
 	}
 
-	@ApiOperation(value = "Show a Search Engine")
+	@Operation(summary = "Show a Search Engine")
 	@GetMapping("/{id}")
 	public TurSEInstance turSEInstanceGet(@PathVariable String id) {
 		return this.turSEInstanceRepository.findById(id).orElse(new TurSEInstance());
 	}
 
-	@ApiOperation(value = "Update a Search Engine")
+	@Operation(summary = "Update a Search Engine")
 	@PutMapping("/{id}")
-	public TurSEInstance turSEInstanceUpdate(@PathVariable String id, @RequestBody TurSEInstance turSEInstance)
-			throws Exception {
+	public TurSEInstance turSEInstanceUpdate(@PathVariable String id, @RequestBody TurSEInstance turSEInstance) {
 		return turSEInstanceRepository.findById(id).map(turSEInstanceEdit -> {
 			turSEInstanceEdit.setTitle(turSEInstance.getTitle());
 			turSEInstanceEdit.setDescription(turSEInstance.getDescription());
@@ -89,14 +88,14 @@ public class TurSEInstanceAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Search Engine")
+	@Operation(summary = "Delete a Search Engine")
 	@DeleteMapping("/{id}")
 	public boolean turSEInstanceDelete(@PathVariable String id) {
 		this.turSEInstanceRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Search Engine")
+	@Operation(summary = "Create a Search Engine")
 	@PostMapping
 	public TurSEInstance turSEInstanceAdd(@RequestBody TurSEInstance turSEInstance) {
 		this.turSEInstanceRepository.save(turSEInstance);

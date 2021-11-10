@@ -33,12 +33,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
 
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/nlp/vendor")
-@Api(tags = "Natural Language Processing Vendor", description = "Natural Language Processing Vendor API")
+@Tag(name = "Natural Language Processing Vendor", description = "Natural Language Processing Vendor API")
 public class TurNLPVendorAPI {
 
 	@Autowired

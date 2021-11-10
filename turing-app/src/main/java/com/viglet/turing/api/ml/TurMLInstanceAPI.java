@@ -33,30 +33,30 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.ml.TurMLInstance;
 import com.viglet.turing.persistence.repository.ml.TurMLInstanceRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/ml")
-@Api(tags = "Machine Learning", description = "Machine Learning API")
+@Tag(name ="Machine Learning", description = "Machine Learning API")
 public class TurMLInstanceAPI {
 
 	@Autowired
 	TurMLInstanceRepository turMLInstanceRepository;
 
-	@ApiOperation(value = "Machine Learning List")
+	@Operation(summary = "Machine Learning List")
 	@GetMapping
 	public List<TurMLInstance> turMLInstanceList() {
 		return this.turMLInstanceRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Machine Learning")
+	@Operation(summary = "Show a Machine Learning")
 	@GetMapping("/{id}")
 	public TurMLInstance turMLInstanceGEt(@PathVariable int id) {
 		return this.turMLInstanceRepository.findById(id).orElse(new TurMLInstance());
 	}
 
-	@ApiOperation(value = "Update a Machine Learning")
+	@Operation(summary = "Update a Machine Learning")
 	@PutMapping("/{id}")
 	public TurMLInstance turMLInstanceUpdate(@PathVariable int id, @RequestBody TurMLInstance turMLInstance) {
 		return this.turMLInstanceRepository.findById(id).map(turMLInstanceEdit -> {
@@ -73,14 +73,14 @@ public class TurMLInstanceAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning")
+	@Operation(summary = "Delete a Machine Learning")
 	@DeleteMapping("/{id}")
 	public boolean turMLInstanceDelete(@PathVariable int id) {
 		this.turMLInstanceRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Machine Learning")
+	@Operation(summary = "Create a Machine Learning")
 	@PostMapping
 	public TurMLInstance turMLInstanceAdd(@RequestBody TurMLInstance turMLInstance) {
 		this.turMLInstanceRepository.save(turMLInstance);

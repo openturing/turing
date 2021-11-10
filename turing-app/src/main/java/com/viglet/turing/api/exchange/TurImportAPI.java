@@ -32,11 +32,11 @@ import org.springframework.web.multipart.MultipartFile;
 import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.exchange.TurImportExchange;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/import")
-@Api(tags = "Import", description = "Import objects into Viglet Turing")
+@Tag(name ="Import", description = "Import objects into Viglet Turing")
 public class TurImportAPI {
 
 	@Autowired

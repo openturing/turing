@@ -18,7 +18,7 @@
 package com.viglet.turing.api.otca.af;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -68,11 +68,11 @@ import com.viglet.turing.plugins.nlp.otca.af.xml.AFType;
 import com.viglet.turing.plugins.nlp.otca.af.xml.AFType.Terms;
 import com.viglet.turing.utils.TurUtils;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/otca/af")
-@Api(tags = "OTCA", description = "OTCA API")
+@Tag(name = "OTCA", description = "OTCA API")
 public class TurOTCAAutorityFileAPI {
 	private static final Log logger = LogFactory.getLog(TurOTCAAutorityFileAPI.class);
 	@Autowired
@@ -94,10 +94,10 @@ public class TurOTCAAutorityFileAPI {
 	@Autowired
 	TurUtils turUtils;
 
-	final String EMPTY_TERM_NAME = "<EMPTY>";
+	private static final String EMPTY_TERM_NAME = "<EMPTY>";
 
 	public String normalizeEntity(String s) {
-		s = turUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "").replaceAll(" ", "_");
+		s = turUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "").replace(" ", "_");
 		return s;
 	}
 
@@ -193,11 +193,11 @@ public class TurOTCAAutorityFileAPI {
 
 			if (afTermVariationType.getPrefix() != null) {
 				turTermVariation.setRulePrefix(afTermVariationType.getPrefix().getValue());
-				turTermVariation.setRulePrefixRequired(afTermVariationType.getPrefix().isRequired() ? 1 : 0);
+				turTermVariation.setRulePrefixRequired(Boolean.TRUE.equals(afTermVariationType.getPrefix().isRequired()) ? 1 : 0);
 			}
 			if (afTermVariationType.getSuffix() != null) {
 				turTermVariation.setRuleSuffix(afTermVariationType.getSuffix().getValue());
-				turTermVariation.setRuleSuffixRequired(afTermVariationType.getSuffix().isRequired() ? 1 : 0);
+				turTermVariation.setRuleSuffixRequired(Boolean.TRUE.equals(afTermVariationType.getSuffix().isRequired()) ? 1 : 0);
 			}
 			turTermVariation.setWeight(afTermVariationType.getWeight());
 			turTermVariation.setTurTerm(turTerm);
@@ -224,7 +224,7 @@ public class TurOTCAAutorityFileAPI {
 			if (turTerm != null) {
 				// Term that was created during relation but the parent
 				// wasn't created yet
-				overwrite = turTerm.getName().equals(EMPTY_TERM_NAME) ? true : false;
+				overwrite = turTerm.getName().equals(EMPTY_TERM_NAME);
 			} else {
 				turTerm = new TurTerm();
 				overwrite = true;
@@ -248,7 +248,7 @@ public class TurOTCAAutorityFileAPI {
 	@PostMapping("/import")
 	@Transactional
 	public RedirectView turOTCAAutorityFileImport(@RequestParam("file") MultipartFile multipartFile,
-			HttpServletRequest request) throws URISyntaxException, UnsupportedEncodingException {
+			HttpServletRequest request) throws UnsupportedEncodingException {
 
 		try {
 			JAXBContext jaxbContext = JAXBContext
@@ -266,7 +266,7 @@ public class TurOTCAAutorityFileAPI {
 		}
 		String redirect = "/turing/#entity/import";
 
-		RedirectView redirectView = new RedirectView(new String(redirect.getBytes("UTF-8"), "ISO-8859-1"));
+		RedirectView redirectView = new RedirectView(new String(redirect.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));
 		redirectView.setHttp10Compatible(false);
 		return redirectView;
 	}

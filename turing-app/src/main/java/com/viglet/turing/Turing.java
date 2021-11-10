@@ -48,7 +48,7 @@ import com.viglet.turing.console.TurConsole;
 @EnableEncryptableProperties
 public class Turing {
 
-	public static void main(String... args) throws Exception {
+	public static void main(String... args) {
 
 		if (args != null && args.length > 0 && args[0].equals("console")) {
 			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
@@ -63,7 +63,7 @@ public class Turing {
 
 	@Bean
 	public FilterRegistrationBean<CharacterEncodingFilter> filterRegistrationBean() {
-		FilterRegistrationBean<CharacterEncodingFilter> registrationBean = new FilterRegistrationBean<CharacterEncodingFilter>();
+		FilterRegistrationBean<CharacterEncodingFilter> registrationBean = new FilterRegistrationBean<>();
 		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
 		characterEncodingFilter.setForceEncoding(true);
 		characterEncodingFilter.setEncoding("UTF-8");
@@ -79,7 +79,6 @@ public class Turing {
 	@Bean(initMethod = "start", destroyMethod = "stop")
 	public BrokerService broker() throws Exception {
 		final BrokerService broker = new BrokerService();
-		// broker.addConnector("tcp://localhost:61616");
 		broker.addConnector("vm://localhost");
 		PersistenceAdapter persistenceAdapter = new KahaDBPersistenceAdapter();
 

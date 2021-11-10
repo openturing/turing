@@ -30,8 +30,8 @@ import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * @author Alexandre Oliveira
@@ -40,7 +40,7 @@ import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/sn/{snSiteId}/spotlight")
-@Api(tags = "Semantic Navigation Spotlight", description = "Semantic Navigation Spotlight API")
+@Tag(name = "Semantic Navigation Spotlight", description = "Semantic Navigation Spotlight API")
 public class TurSNSiteSpotlightAPI {
 
 	@Autowired
@@ -48,14 +48,14 @@ public class TurSNSiteSpotlightAPI {
 	@Autowired
 	TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
 
-	@ApiOperation(value = "Semantic Navigation Site Spotlight List")
+	@Operation(summary = "Semantic Navigation Site Spotlight List")
 	@GetMapping
 	public List<TurSNSiteSpotlight> turSNSiteSpotlightList(@PathVariable String snSiteId) {
 		return turSNSiteRepository.findById(snSiteId).map(this.turSNSiteSpotlightRepository::findByTurSNSite)
 				.orElse(new ArrayList<>());
 	}
 
-	@ApiOperation(value = "Show a Semantic Navigation Site Spotlight")
+	@Operation(summary = "Show a Semantic Navigation Site Spotlight")
 	@GetMapping("/{id}")
 	public TurSNSiteSpotlight turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
 		return turSNSiteSpotlightRepository.findById(id).orElse(new TurSNSiteSpotlight());

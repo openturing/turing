@@ -30,25 +30,25 @@ import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse
 import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatRepository;
 import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatResponseRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/converse/history")
-@Api(tags = "Converse History", description = "Converse History API")
+@Tag(name ="Converse History", description = "Converse History API")
 public class TurConverseHistoryAPI {
 	@Autowired
 	private TurConverseChatRepository turConverseChatRepository;
 	@Autowired
 	private TurConverseChatResponseRepository turConverseChatResponseRepository;
 
-	@ApiOperation(value = "Converse Training List")
+	@Operation(summary = "Converse Training List")
 	@GetMapping
 	public List<TurConverseChat> turConverseHistoryList() {
 		return this.turConverseChatRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Converse Training")
+	@Operation(summary = "Show a Converse Training")
 	@GetMapping("/{id}")
 	public TurConverseChat turConverseTrainingGet(@PathVariable String id) {
 		return turConverseChatRepository.findById(id).map(turConverseChat -> {

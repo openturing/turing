@@ -33,30 +33,30 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEVendorRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/se/vendor")
-@Api(tags = "Search Engine Vendor", description = "Search Engine Vendor API")
+@Tag(name = "Search Engine Vendor", description = "Search Engine Vendor API")
 public class TurSEVendorAPI {
 
 	@Autowired
 	TurSEVendorRepository turSEVendorRepository;
 
-	@ApiOperation(value = "Search Engine Vendor List")
+	@Operation(summary = "Search Engine Vendor List")
 	@GetMapping
 	public List<TurSEVendor> turSEVendorList() {
 		return this.turSEVendorRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Search Engine Vendor")
+	@Operation(summary = "Show a Search Engine Vendor")
 	@GetMapping("/{id}")
 	public TurSEVendor turSEVendorGet(@PathVariable String id) {
 		return this.turSEVendorRepository.findById(id).orElse(new TurSEVendor());
 	}
 
-	@ApiOperation(value = "Update a Search Engine Vendor")
+	@Operation(summary = "Update a Search Engine Vendor")
 	@PutMapping("/{id}")
 	public TurSEVendor turSEVendorUpdate(@PathVariable String id, @RequestBody TurSEVendor turSEVendor) {
 		return this.turSEVendorRepository.findById(id).map(turSEVendorEdit -> {
@@ -71,14 +71,14 @@ public class TurSEVendorAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Search Engine Vendor")
+	@Operation(summary = "Delete a Search Engine Vendor")
 	@DeleteMapping("/{id}")
 	public boolean turSEVendorDelete(@PathVariable String id) {
 		this.turSEVendorRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Search Engine Vendor")
+	@Operation(summary = "Create a Search Engine Vendor")
 	@PostMapping
 	public TurSEVendor turSEVendorAdd(@RequestBody TurSEVendor turSEVendor) {
 		this.turSEVendorRepository.save(turSEVendor);

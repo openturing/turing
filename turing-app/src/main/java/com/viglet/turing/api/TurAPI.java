@@ -23,16 +23,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v2")
-@Api(value="/", tags="Heartbeat", description="Heartbeat")
+@Tag(name = "Heartbeat", description = "Heartbeat")
 public class TurAPI {
 	@Autowired
 	TurAPIBean turAPIBean;
 
-	//@PreAuthorize("#oauth2.hasScope('read')")
 	@GetMapping
 	public TurAPIBean info() throws JSONException {
 

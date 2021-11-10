@@ -20,46 +20,23 @@ package com.viglet.turing.api.sn;
 import java.util.ArrayList;
 import java.util.List;
 
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.sn.bean.TurSNFieldExtType;
-import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.sn.template.TurSNTemplate;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/api/sn/field/ext")
-@Api(tags = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
+@Tag(name = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
 public class TurSNFieldExtAPI {
 
-	@Autowired
-	TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-	@Autowired
-	TurSNSiteFieldRepository turSNSiteFieldRepository;
-	@Autowired
-	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
-	@Autowired
-	TurNLPEntityRepository turNLPEntityRepository;
-	@Autowired
-	TurSNTemplate turSNTemplate;
-	
-	
-	
-	@ApiOperation(value = "Show a Semantic Navigation Site Field Ext Types")
+	@Operation(summary = "Show a Semantic Navigation Site Field Ext Types")
 	@GetMapping("/types")
-	public List<TurSNFieldExtType> TurSNFieldExtTypeGet() {
+	public List<TurSNFieldExtType> turSNFieldExtTypeGet() {
 		List<TurSNFieldExtType> types = new ArrayList<>();
 		types.add(new TurSNFieldExtType("BOOL", "Boolean"));
 		types.add(new TurSNFieldExtType("DATE", "Date"));

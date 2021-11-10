@@ -45,7 +45,7 @@ import com.viglet.turing.api.sn.job.TurSNJobItems;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -53,7 +53,7 @@ import org.w3c.dom.NodeList;
 
 @RestController
 @RequestMapping("/api/otsn/broker")
-@Api(tags = "OTSN Broker", description = "OTSN Broker API")
+@Tag(name = "OTSN Broker", description = "OTSN Broker API")
 public class TurOTSNBrokerAPI {
 	private static final Logger logger = LogManager.getLogger(TurOTSNBrokerAPI.class.getName());
 	@Autowired
@@ -86,13 +86,13 @@ public class TurOTSNBrokerAPI {
 			NodeList nodes = element.getChildNodes();
 
 			TurSNJobItem turSNJobItem = new TurSNJobItem();
-			Map<String, Object> attributes = new HashMap<String, Object>();
+			Map<String, Object> attributes = new HashMap<>();
 			for (int i = 0; i < nodes.getLength(); i++) {
 
 				String nodeName = nodes.item(i).getNodeName();
 				if (attributes.containsKey(nodeName)) {
 					if (!(attributes.get(nodeName) instanceof ArrayList)) {
-						List<Object> attributeValues = new ArrayList<Object>();
+						List<Object> attributeValues = new ArrayList<>();
 						attributeValues.add(attributes.get(nodeName));
 						attributeValues.add(nodes.item(i).getTextContent());
 
@@ -145,7 +145,7 @@ public class TurOTSNBrokerAPI {
 				siteName = siteNames[0];
 			}
 			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
-			Map<String, Object> attributes = new HashMap<String, Object>();
+			Map<String, Object> attributes = new HashMap<>();
 			if (id.isPresent()) {
 				logger.debug("Deindexed Job by Id");
 				attributes.put("id", id.get());

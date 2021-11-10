@@ -42,11 +42,11 @@ import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v2/user")
-@Api(tags = "User", description = "User API")
+@Tag( name = "User", description = "User API")
 public class TurUserAPI {
 
 	@Autowired

@@ -21,17 +21,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.google.common.collect.Lists;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/cognitive")
-@Api(tags = "Cognitive", description = "Cognitive API")
+@Tag( name = "Cognitive", description = "Cognitive API")
 
 public class TurCognitiveAPI {
 	private static final Logger logger = LogManager.getLogger(TurCognitiveAPI.class);
 
-	@ApiOperation(value = "Cognitive Detect Language")
+	@Operation(summary = "Cognitive Detect Language")
 	@GetMapping("/detect-language/")
 	public String turCognitiveDetectLanguage(@RequestParam(required = false, name = "text") String text) {
 		LanguageIdentifier languageIdentifier = new LanguageIdentifier();
@@ -40,12 +40,12 @@ public class TurCognitiveAPI {
 		return locale.toString();
 	}
 
-	@ApiOperation(value = "Cognitive Spell Checker")
+	@Operation(summary = "Cognitive Spell Checker")
 	@GetMapping("/spell-checker/{locale}")
 	public List<String> turCognitiveSpellChecker(@PathVariable String locale,
 			@RequestParam(required = false, name = "text") String text) {
 		JLanguageTool langTool = new JLanguageTool(new BritishEnglish());
-		if (locale.toLowerCase().equals("pt-br")) {
+		if (locale.equalsIgnoreCase("pt-br")) {
 			langTool = new JLanguageTool(new BrazilianPortuguese());
 		}
 		List<RuleMatch> matches;
@@ -55,7 +55,7 @@ public class TurCognitiveAPI {
 			for (RuleMatch match : Lists.reverse(matches)) {
 				if (suggesterPhrases.isEmpty()) {
 					for (String term : match.getSuggestedReplacements()) {
-						StringBuffer buf = new StringBuffer(text);
+						StringBuilder buf = new StringBuilder(text);
 						buf.replace(match.getFromPos(), match.getToPos(), term);
 						suggesterPhrases.add(buf.toString());
 					}
@@ -63,17 +63,16 @@ public class TurCognitiveAPI {
 					List<String> suggesterPhrasesNew = new ArrayList<>();
 					for (String suggesterPhrase : suggesterPhrases) {
 						for (String term : match.getSuggestedReplacements()) {
-							StringBuffer buf = new StringBuffer(suggesterPhrase);
+							StringBuilder buf = new StringBuilder(suggesterPhrase);
 							buf.replace(match.getFromPos(), match.getToPos(), term);
 							suggesterPhrasesNew.add(buf.toString());
-							System.out.println(buf.toString());
 						}
 					}
 					suggesterPhrases = suggesterPhrasesNew;
 				}
-				System.out.println("Potential error at characters " + match.getFromPos() + "-" + match.getToPos() + ": "
+				logger.debug("Potential error at characters " + match.getFromPos() + "-" + match.getToPos() + ": "
 						+ match.getMessage());
-				System.out.println("Suggested correction(s): " + match.getSuggestedReplacements());
+				logger.debug("Suggested correction(s): " + match.getSuggestedReplacements());
 			}
 			return suggesterPhrases;
 		} catch (IOException e) {
