@@ -1,6 +1,15 @@
 plugins {
   id 'java'
   id "com.github.node-gradle.node" version "3.1.1"
+  id "org.sonarqube" version "3.3"
+}
+
+sonarqube {
+  properties {
+    property "sonar.projectKey", "turing-ui"
+    property "sonar.organization", "viglet-turing"
+    property "sonar.host.url", "https://sonarcloud.io"
+  }
 }
 
 node {
@@ -13,16 +22,4 @@ jar.dependsOn 'npm_run_build'
 
 jar {
   from 'dist' into 'public'
-}
-
-plugins {
-  id "org.sonarqube" version "3.3"
-}
-
-sonarqube {
-  properties {
-    property "sonar.projectKey", "turing-ui"
-    property "sonar.organization", "viglet-turing"
-    property "sonar.host.url", "https://sonarcloud.io"
-  }
 }
