@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.api.sn;
+package com.viglet.turing.api.sn.search;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,6 +36,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.solr.TurSolr;
+import com.viglet.turing.solr.TurSolrInstance;
+import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.TurSEStopword;
@@ -43,7 +45,7 @@ import com.viglet.turing.se.TurSEStopword;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/sn/{siteName}/ac")
+@RequestMapping("/api/sn/{siteName}/locale/ac")
 @Tag(name = "Semantic Navigation Auto Complete", description = "Semantic Navigation Auto Complete API")
 public class TurSNSiteAutoCompleteAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteAutoCompleteAPI.class);
@@ -53,18 +55,22 @@ public class TurSNSiteAutoCompleteAPI {
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
 	private TurSEStopword turSEStopword;
-
+	@Autowired
+	private TurSolrInstanceProcess turSolrInstanceProcess;
+	
 	@GetMapping
 	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,
-			@RequestParam(required = true, name = "q") String q,
-			@RequestParam(required = false, defaultValue = "20", name = "rows") long rows, HttpServletRequest request) {
+			@PathVariable String locale,
+			@RequestParam(required = true, name = TurSNParamType.QUERY) String q,
+			@RequestParam(required = false, defaultValue = "20", name = TurSNParamType.ROWS) long rows, 
+			HttpServletRequest request) {
 
 		List<String> termListShrink = new ArrayList<>();
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		SpellCheckResponse turSEResults = null;
-		turSolr.init(turSNSite);
+		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
 		try {
-			turSEResults = turSolr.autoComplete(q);
+			turSEResults = turSolr.autoComplete(turSolrInstance, q);
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}

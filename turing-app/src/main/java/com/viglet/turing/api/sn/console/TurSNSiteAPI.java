@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.api.sn;
+package com.viglet.turing.api.sn.console;
 
 import java.util.List;
 
@@ -42,6 +42,7 @@ import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.template.TurSNTemplate;
 
@@ -54,6 +55,7 @@ import io.swagger.v3.oas.annotations.Operation;
 @ComponentScan("com.viglet.turing")
 public class TurSNSiteAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteAPI.class);
+	private static final String DEFAULT_LANGUAGE = "en_US";
 	@Autowired
 	TurSNSiteRepository turSNSiteRepository;
 	@Autowired
@@ -70,10 +72,16 @@ public class TurSNSiteAPI {
 	@Operation(summary = "Semantic Navigation Site structure")
 	@GetMapping("/structure")
 	public TurSNSite turSNSiteStructure() {
+
+		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
+		turSNSiteLocale.setLanguage(DEFAULT_LANGUAGE);
+		turSNSiteLocale.setTurNLPInstance(new TurNLPInstance());
+
 		TurSNSite turSNSite = new TurSNSite();
-		turSNSite.setLanguage("en_US");
-		turSNSite.setTurNLPInstance(new TurNLPInstance());
+
 		turSNSite.setTurSEInstance(new TurSEInstance());
+		turSNSite.addTurSNSiteLocale(turSNSiteLocale);
+
 		return turSNSite;
 	}
 
@@ -89,17 +97,17 @@ public class TurSNSiteAPI {
 		return this.turSNSiteRepository.findById(id).map(turSNSiteEdit -> {
 			turSNSiteEdit.setName(turSNSite.getName());
 			turSNSiteEdit.setDescription(turSNSite.getDescription());
-			turSNSiteEdit.setLanguage(turSNSite.getLanguage());
 			turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
-			turSNSiteEdit.setTurNLPInstance(turSNSite.getTurNLPInstance());
 			turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
-			turSNSiteEdit.setCore(turSNSite.getCore());
+
 			// UI
 			turSNSiteEdit.setFacet(turSNSite.getFacet());
 			turSNSiteEdit.setHl(turSNSite.getHl());
 			turSNSiteEdit.setHlPost(turSNSite.getHlPost());
 			turSNSiteEdit.setHlPre(turSNSite.getHlPre());
 			turSNSiteEdit.setItemsPerFacet(turSNSite.getItemsPerFacet());
+			turSNSiteEdit.setSpellCheck(turSNSite.getSpellCheck());
+			turSNSiteEdit.setSpellCheckFixes(turSNSite.getSpellCheckFixes());
 			turSNSiteEdit.setMlt(turSNSite.getMlt());
 			turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
 			turSNSiteEdit.setDefaultTitleField(turSNSite.getDefaultTitleField());

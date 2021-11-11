@@ -26,15 +26,19 @@ import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
+import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
+import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 
@@ -58,6 +62,10 @@ public class TurSNTemplate {
 	private TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
 	@Autowired
 	private TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository;
+	@Autowired
+	private TurNLPInstanceRepository turNLPInstanceRepository;
+	@Autowired
+	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 	
 	public void defaultSNUI(TurSNSite turSNSite) {
 		turSNSite.setRowsPerPage(10);
@@ -67,6 +75,8 @@ public class TurSNTemplate {
 		turSNSite.setHlPre("<mark>");
 		turSNSite.setHlPost("</mark>");
 		turSNSite.setMlt(1);
+		turSNSite.setSpellCheck(1);
+		turSNSite.setSpellCheckFixes(1);
 		turSNSite.setThesaurus(0);
 		turSNSite.setDefaultTitleField("title");
 		turSNSite.setDefaultTextField("text");
@@ -78,7 +88,6 @@ public class TurSNTemplate {
 
 	public void createNERFields(TurSNSite turSNSite) {
 		TurSNSiteFieldExt turSNSiteFieldExt;
-		// PN
 		TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName("PN");
 		turSNSiteFieldExt = new TurSNSiteFieldExt();
 		turSNSiteFieldExt.setEnabled(1);
@@ -410,5 +419,23 @@ public class TurSNTemplate {
 		turSNSiteSpotlightTerm2.setName("sample2");
 		turSNSiteSpotlightTerm2.setTurSNSiteSpotlight(turSNSiteSpotlight);
 		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm2);
+	}
+	
+	public void createLocale(TurSNSite turSNSite) {
+		
+		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
+		turSNSiteLocale.setLanguage(TurLocaleRepository.EN_US);
+		turSNSiteLocale.setCore("turing");
+		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
+		turSNSiteLocale.setTurSNSite(turSNSite);
+		turSNSiteLocaleRepository.save(turSNSiteLocale);
+		
+
+		TurSNSiteLocale turSNSiteLocale2 = new TurSNSiteLocale();
+		turSNSiteLocale2.setLanguage(TurLocaleRepository.PT_BR);
+		turSNSiteLocale2.setCore("turing_pt");
+		turSNSiteLocale2.setTurNLPInstance(turNLPInstanceRepository.findAll().get(1));
+		turSNSiteLocale2.setTurSNSite(turSNSite);
+		turSNSiteLocaleRepository.save(turSNSiteLocale2);		
 	}
 }

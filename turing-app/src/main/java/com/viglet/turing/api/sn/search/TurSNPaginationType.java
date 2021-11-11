@@ -1,4 +1,4 @@
-package com.viglet.turing.api.sn;
+package com.viglet.turing.api.sn.search;
 
 public enum TurSNPaginationType {
 

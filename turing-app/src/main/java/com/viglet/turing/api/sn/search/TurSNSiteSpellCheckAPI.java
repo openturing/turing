@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.api.sn;
+package com.viglet.turing.api.sn.search;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -27,28 +27,36 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.api.sn.bean.TurSNSiteSpellCheckBean;
+import com.viglet.turing.solr.TurSolrInstance;
+import com.viglet.turing.solr.TurSolrInstanceProcess;
+import com.viglet.turing.api.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.sn.TurSNUtils;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/sn/{siteName}/spell-check")
+@RequestMapping("/api/sn/{siteName}/{locale}/spell-check")
 @Tag(name = "Semantic Navigation Spell Check", description = "Semantic Navigation Spell Check API")
 public class TurSNSiteSpellCheckAPI {
 	@Autowired
 	private TurSolr turSolr;
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
+	@Autowired
+	private TurSolrInstanceProcess turSolrInstanceProcess;
 
 	@GetMapping
-	public TurSNSiteSpellCheckBean turSNSiteSpellCheck(@PathVariable String siteName,
-			@RequestParam(required = true, name = "q") String q, HttpServletRequest request) {
+	public TurSNSiteSpellCheckBean turSNSiteSpellCheck(@PathVariable String siteName, 
+			@PathVariable String locale,
+			@RequestParam(required = true, name = TurSNParamType.QUERY) String q, 
+			HttpServletRequest request) {
 
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
-		turSolr.init(turSNSite);
+		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
 
-		return turSolr.spellCheck(q);
+		return new TurSNSiteSpellCheckBean(TurSNUtils.requestToURI(request), turSNSite, q,
+				turSolr.spellCheckTerm(turSolrInstance, q));
 	}
 }

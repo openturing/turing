@@ -57,6 +57,7 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 	@Cacheable("turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndNlpAndEnabled(TurSNSite turSNSite, int nlp, int enabled);
 
+	@SuppressWarnings("unchecked")
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",

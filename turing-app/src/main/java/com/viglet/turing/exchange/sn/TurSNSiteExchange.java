@@ -75,7 +75,6 @@ public class TurSNSiteExchange {
 	}
 
 	public TurSNSiteExchange(TurSNSite turSNSite) {
-		this.setCore(turSNSite.getCore());
 		this.setDefaultDateField(turSNSite.getDefaultDateField());
 		this.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
 		this.setDefaultImageField(turSNSite.getDefaultImageField());
@@ -89,14 +88,10 @@ public class TurSNSiteExchange {
 		this.setHlPre(turSNSite.getHlPre());
 		this.setId(turSNSite.getId());
 		this.setItemsPerFacet(turSNSite.getItemsPerFacet());
-		this.setLanguage(turSNSite.getLanguage());
 		this.setMlt(turSNSite.getMlt() == 1);
 		this.setName(turSNSite.getName());
 		this.setRowsPerPage(turSNSite.getRowsPerPage());
 		this.setThesaurus(turSNSite.getThesaurus() == 1);
-		if (turSNSite.getTurNLPInstance() != null) {
-			this.setTurNLPInstance(turSNSite.getTurNLPInstance().getId());
-		}
 		if (turSNSite.getTurSEInstance() != null) {
 			this.setTurSEInstance(turSNSite.getTurSEInstance().getId());
 		}

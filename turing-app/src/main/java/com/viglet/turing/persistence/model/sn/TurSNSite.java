@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,12 +29,12 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 
 /**
- * The persistent class for the vigServices database table.
+ * The persistent class for the TurSNSite database table.
  * 
  */
 @Entity
@@ -55,12 +55,6 @@ public class TurSNSite implements Serializable {
 
 	@Column(nullable = false, length = 255)
 	private String description;
-
-	@Column(nullable = false, length = 5)
-	private String language;
-
-	@Column(nullable = false, length = 50)
-	private String core;
 
 	@Column(nullable = true)
 	private int rowsPerPage;
@@ -104,15 +98,16 @@ public class TurSNSite implements Serializable {
 	@Column(nullable = true)
 	private String defaultURLField;
 
+	@Column(nullable = true)
+	private int spellCheck;
+
+	@Column(nullable = true)
+	private int spellCheckFixes;
+
 	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
 	private TurSEInstance turSEInstance;
-
-	// bi-directional many-to-one association to TurNLPInstance
-	@ManyToOne
-	@JoinColumn(name = "nlp_instance_id", nullable = true)
-	private TurNLPInstance turNLPInstance;
 
 	// bi-directional many-to-one association to TurSNSiteField
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
@@ -128,13 +123,20 @@ public class TurSNSite implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteFieldExt> turSNSiteFieldExts;
 
-	// bi-directional many-to-one association to TurSNSiteFieldExt
+	// bi-directional many-to-one association to TurSNSiteSpotlight
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
 	@Cascade({ CascadeType.ALL })
 	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteSpotlight> turSNSiteSpotlights;
-	
+
+	// bi-directional many-to-one association to TurSNSiteLocale
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
+	@Cascade({ CascadeType.ALL })
+	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNSiteLocale> turSNSiteLocales;
+
 	public TurSNSite() {
 	}
 
@@ -162,28 +164,12 @@ public class TurSNSite implements Serializable {
 		this.description = description;
 	}
 
-	public String getLanguage() {
-		return language;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
-	}
-
 	public TurSEInstance getTurSEInstance() {
 		return turSEInstance;
 	}
 
 	public void setTurSEInstance(TurSEInstance turSEInstance) {
 		this.turSEInstance = turSEInstance;
-	}
-
-	public TurNLPInstance getTurNLPInstance() {
-		return turNLPInstance;
-	}
-
-	public void setTurNLPInstance(TurNLPInstance turNLPInstance) {
-		this.turNLPInstance = turNLPInstance;
 	}
 
 	public Set<TurSNSiteField> getTurSNSiteFields() {
@@ -201,19 +187,33 @@ public class TurSNSite implements Serializable {
 		return turSNSiteField;
 	}
 
-	public TurSNSiteField removeTurNLPInstanceEntity(TurSNSiteField turSNSiteField) {
+	public TurSNSiteField removeTurSNSiteField(TurSNSiteField turSNSiteField) {
 		getTurSNSiteFields().remove(turSNSiteField);
 		turSNSiteField.setTurSNSite(this);
 
 		return turSNSiteField;
 	}
 
-	public String getCore() {
-		return core;
+	public Set<TurSNSiteLocale> getTurSNSiteLocales() {
+		return turSNSiteLocales;
 	}
 
-	public void setCore(String core) {
-		this.core = core;
+	public void setTurSNSiteLocales(Set<TurSNSiteLocale> turSNSiteLocales) {
+		this.turSNSiteLocales = turSNSiteLocales;
+	}
+
+	public TurSNSiteLocale addTurSNSiteLocale(TurSNSiteLocale turSNSiteLocale) {
+		getTurSNSiteLocales().add(turSNSiteLocale);
+		turSNSiteLocale.setTurSNSite(this);
+
+		return turSNSiteLocale;
+	}
+
+	public TurSNSiteLocale removeTurSNSiteLocale(TurSNSiteLocale turSNSiteLocale) {
+		getTurSNSiteLocales().remove(turSNSiteLocale);
+		turSNSiteLocale.setTurSNSite(this);
+
+		return turSNSiteLocale;
 	}
 
 	public int getRowsPerPage() {
@@ -328,4 +328,19 @@ public class TurSNSite implements Serializable {
 		this.defaultImageField = defaultImageField;
 	}
 
+	public int getSpellCheck() {
+		return spellCheck;
+	}
+
+	public void setSpellCheck(int spellCheck) {
+		this.spellCheck = spellCheck;
+	}
+
+	public int getSpellCheckFixes() {
+		return spellCheckFixes;
+	}
+
+	public void setSpellCheckFixes(int spellCheckFixes) {
+		this.spellCheckFixes = spellCheckFixes;
+	}
 }

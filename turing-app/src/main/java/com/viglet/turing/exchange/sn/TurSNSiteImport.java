@@ -47,7 +47,6 @@ public class TurSNSiteImport {
 			if (!turSNSiteRepository.findById(turSNSiteExchange.getId()).isPresent()) {
 				
 				TurSNSite turSNSite = new TurSNSite();
-				turSNSite.setCore(turSNSiteExchange.getCore());
 				turSNSite.setDefaultDateField(turSNSiteExchange.getDefaultDateField());
 				turSNSite.setDefaultDescriptionField(turSNSiteExchange.getDefaultDescriptionField());
 				turSNSite.setDefaultImageField(turSNSiteExchange.getDefaultImageField());
@@ -61,12 +60,10 @@ public class TurSNSiteImport {
 				turSNSite.setHlPre(turSNSiteExchange.getHlPre());
 				turSNSite.setId(turSNSiteExchange.getId());
 				turSNSite.setItemsPerFacet(turSNSiteExchange.getItemsPerFacet());
-				turSNSite.setLanguage(turSNSiteExchange.getLanguage());
 				turSNSite.setMlt(turSNSiteExchange.getMlt() ? (byte) 1 : (byte) 0);
 				turSNSite.setName(turSNSiteExchange.getName());
 				turSNSite.setRowsPerPage(turSNSiteExchange.getRowsPerPage());
 				turSNSite.setThesaurus(turSNSiteExchange.getThesaurus() ? (byte) 1 : (byte) 0);
-				turSNSite.setTurNLPInstance(turNLPInstanceRepository.findById(turSNSiteExchange.getTurNLPInstance()).orElse(null));
 				turSNSite.setTurSEInstance(turSEInstanceRepository.findById(turSNSiteExchange.getTurSEInstance()).orElse(null));
 
 				turSNSiteRepository.save(turSNSite);

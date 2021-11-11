@@ -67,25 +67,26 @@
         </a>
         <a class="social-count" href="#url">6</a>
       </div>
-      <a *ngIf="!isNewObject()" href="/sn/{{snSite.name}}" target="_blank" class="btn btn-outline btn-sm" role="button"><span octicon="eye"
-          [size]=16 class="mr-1"></span> Open Site</a>
+      <a *ngIf="!isNewObject()" href="/sn/{{snSite.name}}" target="_blank" class="btn btn-outline btn-sm"
+        role="button"><span octicon="eye" [size]=16 class="mr-1"></span> Open Site</a>
     </div>
     <div *ngIf="!isNewObject()" class="Subhead-description">{{snSite.description}}</div>
   </div>
 
   <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
     <nav class="menu" aria-label="Site settings">
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'detail']"
-        [routerLinkActive]="['selected']"><span octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
+      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'detail']" [routerLinkActive]="['selected']"><span
+          octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
     </nav>
 
     <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
-      <span class="menu-heading" id="menu-heading"><span octicon="paintbrush" [size]=16 class="mr-1"></span>
-        Appearance</span>
+      <span class="menu-heading" id="menu-heading"><span octicon="law" [size]=16 class="mr-1"></span>
+        Behavior</span>
       <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']">
         Facet</a>
       <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']">
         Highlighting</a>
+      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']"> Did you mean?</a>
       <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']"> MLT</a>
       <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']"> Default
         Fields</a>
@@ -94,15 +95,15 @@
       <span class="menu-heading" id="menu-heading"><span octicon="rows" [size]=16 class="mr-1"></span> Fields</span>
       <a class="menu-item" [routerLink]="['/sn/site',getId() , 'field']" [routerLinkActive]="['selected']">
         Search Engine Fields</a>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'field', 'nlp']"
-        [routerLinkActive]="['selected']"> NLP Fields</a>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'field', 'thesaurus']"
-        [routerLinkActive]="['selected']"> Thesaurus Fields</a>
+      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'field', 'nlp']" [routerLinkActive]="['selected']"> NLP
+        Fields</a>
+      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'field', 'thesaurus']" [routerLinkActive]="['selected']">
+        Thesaurus Fields</a>
     </nav>
 
     <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'spotlight']"
-        [routerLinkActive]="['selected']"><span octicon="megaphone" [size]=16 class="mr-1"></span> Spotlight</a>
+      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'spotlight']" [routerLinkActive]="['selected']"><span
+          octicon="megaphone" [size]=16 class="mr-1"></span> Spotlight</a>
     </nav>
 
     <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">

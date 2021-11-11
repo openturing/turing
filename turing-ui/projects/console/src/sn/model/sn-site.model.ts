@@ -23,4 +23,6 @@ export interface TurSNSite {
   turNLPInstance: TurNLPInstance;
   language: string;
   rowsPerPage: number;
+  spellCheck: number;
+  spellCheckFixes: number;
 }

@@ -81,6 +81,7 @@
       <button class="btn btn-primary my-3" type="button" (click)="showAll()">Show all the available content</button>
 
     </div>
+
     <div *ngIf="snSearch.results.document.length > 0">
       <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
         <div *ngIf="snSearch.widget.facetToRemove && snSearch.widget.facetToRemove.facets"
@@ -146,6 +147,15 @@
           </details>
         </div>
         <div>
+          <div *ngIf="snSearch.widget.spellCheck.correctedText">
+            <h4 class="mb-1">Showing results for <button class="btn-link"
+                (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
+                style="font-style: italic;font-weight: bold;">{{snSearch.widget.spellCheck.corrected.text}}</button>.
+            </h4>
+            <p>Instead, search for <button class="btn-link"
+                (click)="turRedirect(snSearch.widget.spellCheck.original.link)"
+                style="font-weight: bold;">{{snSearch.widget.spellCheck.original.text}}</button></p>
+          </div>
           <ul *ngIf="snSearch.results as snSearchResults;" class="repo-list">
             <ng-container *ngFor="let document of snSearchResults.document">
               <ng-container *ngIf="document.fields[snSearch.queryContext.defaultFields.url]">
@@ -218,9 +228,9 @@
         <nav class="paginate-container" aria-label="Pagination">
           <div class="pagination">
             <ng-container *ngFor="let page of snSearch.pagination">
-              <em *ngIf="page.type == 'current'" aria-current="page">{{camelize(page.text)}}</em>
-              <a *ngIf="page.type != 'current'"
-                [ngClass]="{'next_page': page.type === 'next' || page.type === 'last' , 'previous_page' : page.type === 'previous'  || page.type === 'first' }"
+              <em *ngIf="page.type == 'CURRENT'" aria-current="page">{{camelize(page.text)}}</em>
+              <a *ngIf="page.type != 'CURRENT'"
+                [ngClass]="{'next_page': page.type === 'NEXT' || page.type === 'LAST' , 'previous_page' : page.type === 'PREVIOUS'  || page.type === 'FIRST' }"
                 (click)="turRedirect(page.href)">{{camelize(page.text)}}</a>
             </ng-container>
           </div>

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.api.sn;
+package com.viglet.turing.api.sn.console;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,14 +43,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.template.TurSNTemplate;
@@ -59,7 +62,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
-@RequestMapping("/api/sn/{snSiteId}/field/ext")
+@RequestMapping("/api/sn/{snSiteId}/{locale}/field/ext")
 @Tag(name = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
 public class TurSNSiteFieldExtAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteFieldExtAPI.class);
@@ -74,22 +77,24 @@ public class TurSNSiteFieldExtAPI {
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
+	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+	@Autowired
 	private TurSNTemplate turSNTemplate;
 
 	@Operation(summary = "Semantic Navigation Site Field Ext List")
 	@Transactional
 	@GetMapping
-	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String snSiteId) {
+	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String snSiteId, @PathVariable String locale) {
 		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
 			Map<String, TurSNSiteField> fieldMap = new HashMap<>();
 			Map<String, TurNLPEntity> nerMap = new HashMap<>();
 			Map<String, TurNLPEntity> thesaurusMap = new HashMap<>();
 
 			List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
-
-			if (turSNSite.getTurNLPInstance() != null) {
+			TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
+			if (turSNSiteLocale.getTurNLPInstance() != null) {
 				List<TurNLPInstanceEntity> turNLPInstanceEntities = turNLPInstanceEntityRepository
-						.findByTurNLPInstanceAndEnabled(turSNSite.getTurNLPInstance(), 1);
+						.findByTurNLPInstanceAndEnabled(turSNSiteLocale.getTurNLPInstance(), 1);
 				turNLPInstanceEntities.forEach(turNLPInstanceEntity -> {
 					TurNLPEntity turNLPEntity = turNLPInstanceEntity.getTurNLPEntity();
 					nerMap.put(turNLPEntity.getId(), turNLPEntity);
@@ -301,17 +306,17 @@ public class TurSNSiteFieldExtAPI {
 	}
 
 	@GetMapping("/create")
-	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String snSiteId) {
+	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String snSiteId, @PathVariable String locale) {
 		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
 			List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository
 					.findByTurSNSiteAndEnabled(turSNSite, 1);
-			turSNSiteFieldExts.forEach(turSNSiteFieldExt -> this.createField(turSNSite, turSNSiteFieldExt));
+			turSNSiteFieldExts.forEach(turSNSiteFieldExt -> this.createField(turSNSite, locale, turSNSiteFieldExt));
 			return this.turSNSiteRepository.findAll();
 		}).orElse(new ArrayList<>());
 	}
 
-	public void createField(TurSNSite turSNSite, TurSNSiteFieldExt turSNSiteFieldExts) {
-
+	public void createField(TurSNSite turSNSite, String locale, TurSNSiteFieldExt turSNSiteFieldExts) {
+		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
 		JSONObject jsonAddField = new JSONObject();
 		String fieldName = null;
 
@@ -338,8 +343,9 @@ public class TurSNSiteFieldExtAPI {
 		}
 		JSONObject json = new JSONObject();
 		json.put("add-field", jsonAddField);
-		HttpPost httpPost = new HttpPost(String.format("http://%s:%d/solr/%s/schema",
-				turSNSite.getTurSEInstance().getHost(), turSNSite.getTurSEInstance().getPort(), turSNSite.getCore()));
+		HttpPost httpPost = new HttpPost(
+				String.format("http://%s:%d/solr/%s/schema", turSNSite.getTurSEInstance().getHost(),
+						turSNSite.getTurSEInstance().getPort(), turSNSiteLocale.getCore()));
 		StringEntity entity;
 		try {
 			entity = new StringEntity(json.toString());
@@ -351,13 +357,13 @@ public class TurSNSiteFieldExtAPI {
 				client.execute(httpPost);
 			}
 
-			this.copyField(turSNSite, fieldName, "_text_");
+			this.copyField(turSNSiteLocale, fieldName, "_text_");
 		} catch (IOException e) {
 			logger.error(e);
 		}
 	}
 
-	public void copyField(TurSNSite turSNSite, String field, String dest) {
+	public void copyField(TurSNSiteLocale turSNSiteLocale, String field, String dest) {
 
 		JSONObject jsonAddField = new JSONObject();
 		jsonAddField.put("source", field);
@@ -365,9 +371,9 @@ public class TurSNSiteFieldExtAPI {
 		jsonAddField.put("dest", dest);
 		JSONObject json = new JSONObject();
 		json.put("add-copy-field", jsonAddField);
-
-		HttpPost httpPost = new HttpPost(String.format("http://%s:%d/solr/%s/schema",
-				turSNSite.getTurSEInstance().getHost(), turSNSite.getTurSEInstance().getPort(), turSNSite.getCore()));
+		TurSEInstance turSEInstance = turSNSiteLocale.getTurSNSite().getTurSEInstance();
+		HttpPost httpPost = new HttpPost(String.format("http://%s:%d/solr/%s/schema", turSEInstance.getHost(),
+				turSEInstance.getPort(), turSNSiteLocale.getCore()));
 		try {
 			StringEntity entity = new StringEntity(json.toString());
 			httpPost.setEntity(entity);

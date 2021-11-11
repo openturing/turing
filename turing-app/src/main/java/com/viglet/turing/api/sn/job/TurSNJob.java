@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,13 +22,14 @@ import java.io.Serializable;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TurSNJob implements Serializable{
+public class TurSNJob implements Serializable {
 
 	private static final long serialVersionUID = 1L;
+
 	private String siteId;
-	
+
 	private TurSNJobItems turSNJobItems;
-	
+
 	public String getSiteId() {
 		return siteId;
 	}
@@ -44,8 +45,4 @@ public class TurSNJob implements Serializable{
 	public void setTurSNJobItems(TurSNJobItems turSNJobItems) {
 		this.turSNJobItems = turSNJobItems;
 	}
-
-
-
-	
 }

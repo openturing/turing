@@ -51,14 +51,12 @@ import com.viglet.turing.persistence.repository.converse.intent.TurConverseParam
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePromptRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
-import com.viglet.turing.solr.TurSolr;
+import com.viglet.turing.solr.TurSolrInstanceProcess;
 
 @Component
 public class TurConverseSE {
-	static final Logger logger = LogManager.getLogger(TurConverseSE.class.getName());
+	static final Logger logger = LogManager.getLogger(TurConverseSE.class);
 
-	@Autowired
-	private TurSolr turSolr;
 	@Autowired
 	private TurConversePhraseRepository turConversePhraseRepository;
 	@Autowired
@@ -71,11 +69,13 @@ public class TurConverseSE {
 	private TurConversePromptRepository turConversePromptRepository;
 	@Autowired
 	private TurConverseEntityRepository turConverseEntityRepository;
+	@Autowired
+	private TurSolrInstanceProcess turSolrInstanceProcess;
 
 	private SolrClient getSolrClient(TurConverseAgent turConverseAgent) {
 		TurSEInstance turSEInstance = turConverseAgent.getTurSEInstance();
 		String core = turConverseAgent.getCore();
-		return turSolr.getSolrClient(turSEInstance, core);
+		return turSolrInstanceProcess.initSolrInstance(turSEInstance, core).getSolrClient();
 	}
 
 	SolrDocumentList solrAskPhrase(TurConverseAgent turConverseAgent, String q, String nextContext) {
@@ -230,7 +230,7 @@ public class TurConverseSE {
 		TurSEInstance turSEInstance = turConverseIntent.getAgent().getTurSEInstance();
 		String core = turConverseIntent.getAgent().getCore();
 
-		SolrClient solrClient = turSolr.getSolrClient(turSEInstance, core);
+		SolrClient solrClient = turSolrInstanceProcess.initSolrInstance(turSEInstance, core).getSolrClient();
 		this.indexIntent(turConverseIntent, solrClient);
 		this.indexParameters(turConverseIntent, solrClient);
 
@@ -349,7 +349,7 @@ public class TurConverseSE {
 		TurSEInstance turSEInstance = turConverseIntent.getAgent().getTurSEInstance();
 		String core = turConverseIntent.getAgent().getCore();
 
-		SolrClient solrClient = turSolr.getSolrClient(turSEInstance, core);
+		SolrClient solrClient = turSolrInstanceProcess.initSolrInstance(turSEInstance, core).getSolrClient();
 
 		try {
 			solrClient.deleteByQuery("id:" + turConverseIntent.getId());
