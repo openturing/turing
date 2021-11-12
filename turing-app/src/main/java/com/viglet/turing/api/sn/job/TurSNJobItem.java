@@ -31,7 +31,7 @@ public class TurSNJobItem implements Serializable{
 	
 	private TurSNJobAction turSNJobAction;
 	
-	private Map<String, Object> attributes;
+	private transient Map<String, Object> attributes;
 
 	public String getLocale() {
 		return locale;

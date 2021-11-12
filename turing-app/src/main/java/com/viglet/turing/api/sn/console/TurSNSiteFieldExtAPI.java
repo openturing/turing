@@ -25,12 +25,14 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -225,13 +227,8 @@ public class TurSNSiteFieldExtAPI {
 	@DeleteMapping("/{id}")
 	public boolean turSNSiteFieldExtDelete(@PathVariable String snSiteId, @PathVariable String id) {
 		return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExtEdit -> {
-			switch (turSNSiteFieldExtEdit.getSnType()) {
-			case SE:
+			if (turSNSiteFieldExtEdit.getSnType().equals(TurSNFieldType.SE)) {
 				this.turSNSiteFieldRepository.delete(turSNSiteFieldExtEdit.getExternalId());
-
-				break;
-			default:
-				break;
 			}
 
 			this.turSNSiteFieldExtRepository.delete(id);
@@ -346,21 +343,8 @@ public class TurSNSiteFieldExtAPI {
 		HttpPost httpPost = new HttpPost(
 				String.format("http://%s:%d/solr/%s/schema", turSNSite.getTurSEInstance().getHost(),
 						turSNSite.getTurSEInstance().getPort(), turSNSiteLocale.getCore()));
-		StringEntity entity;
-		try {
-			entity = new StringEntity(json.toString());
-
-			httpPost.setEntity(entity);
-			httpPost.setHeader("Accept", "application/json");
-			httpPost.setHeader("Content-type", "application/json");
-			try (CloseableHttpClient client = HttpClients.createDefault()) {
-				client.execute(httpPost);
-			}
-
-			this.copyField(turSNSiteLocale, fieldName, "_text_");
-		} catch (IOException e) {
-			logger.error(e);
-		}
+		executeHttpPost(json, httpPost);
+		this.copyField(turSNSiteLocale, fieldName, "_text_");
 	}
 
 	public void copyField(TurSNSiteLocale turSNSiteLocale, String field, String dest) {
@@ -374,11 +358,15 @@ public class TurSNSiteFieldExtAPI {
 		TurSEInstance turSEInstance = turSNSiteLocale.getTurSNSite().getTurSEInstance();
 		HttpPost httpPost = new HttpPost(String.format("http://%s:%d/solr/%s/schema", turSEInstance.getHost(),
 				turSEInstance.getPort(), turSNSiteLocale.getCore()));
+		executeHttpPost(json, httpPost);
+	}
+
+	private void executeHttpPost(JSONObject json, HttpPost httpPost) {
 		try {
 			StringEntity entity = new StringEntity(json.toString());
 			httpPost.setEntity(entity);
-			httpPost.setHeader("Accept", "application/json");
-			httpPost.setHeader("Content-type", "application/json");
+			httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+			httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
 			try (CloseableHttpClient client = HttpClients.createDefault()) {
 				client.execute(httpPost);
 			}

@@ -71,7 +71,7 @@ public class TurSNProcessQueue {
 
 		this.turSNSiteRepository.findById(turSNJob.getSiteId()).ifPresent(turSNSite -> {
 			for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
-				logger.debug("receiveQueue TurSNJobItem: " + turSNJobItem.toString());
+				logger.debug("receiveQueue TurSNJobItem: {}", turSNJobItem.toString());
 				if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
 					this.indexing(turSNJobItem, turSNSite);
 
@@ -94,8 +94,8 @@ public class TurSNProcessQueue {
 			} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
 				action = "Deindexed";
 			}
-			logger.info(String.format("%s the Object ID '%s' of '%s' SN Site.", action,
-					turSNJobItem.getAttributes().get("id"), turSNSite.getName()));
+			logger.info("{} the Object ID '{}' of '{}' SN Site.", action, turSNJobItem.getAttributes().get("id"),
+					turSNSite.getName());
 
 		}
 	}
@@ -112,15 +112,15 @@ public class TurSNProcessQueue {
 
 	public void indexing(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
 		logger.debug("Indexing");
-		Map<String, Object> consolidateResults = new HashMap<String, Object>();
+		Map<String, Object> consolidateResults = new HashMap<>();
 
 		// SE
 		for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
 			if (logger.isDebugEnabled())
-				logger.debug("SE Consolidate Value: " + attribute.getValue());
+				logger.debug("SE Consolidate Value: {}", attribute.getValue());
 			if (attribute.getValue() != null) {
 				if (logger.isDebugEnabled())
-					logger.debug("SE Consolidate Class: " + attribute.getValue().getClass().getName());
+					logger.debug("SE Consolidate Class: {}", attribute.getValue().getClass().getName());
 				consolidateResults.put(attribute.getKey(), attribute.getValue());
 			}
 		}
@@ -145,14 +145,14 @@ public class TurSNProcessQueue {
 					.findByTurSNSiteAndNlpAndEnabled(turSNSite, 1, 1);
 
 			// Convert List to HashMap
-			Map<String, TurSNSiteFieldExt> turSNSiteFieldsExtMap = new HashMap<String, TurSNSiteFieldExt>();
+			Map<String, TurSNSiteFieldExt> turSNSiteFieldsExtMap = new HashMap<>();
 			for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldsExt) {
 				turSNSiteFieldsExtMap.put(turSNSiteFieldExt.getName().toLowerCase(), turSNSiteFieldExt);
 			}
 
 			// Select only fields that is checked as NLP. These attributes will be processed
 			// by NLP
-			HashMap<String, Object> nlpAttributes = new HashMap<String, Object>();
+			HashMap<String, Object> nlpAttributes = new HashMap<>();
 			for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
 				if (turSNSiteFieldsExtMap.containsKey(attribute.getKey().toLowerCase())) {
 					nlpAttributes.put(attribute.getKey(), attribute.getValue());
@@ -160,7 +160,7 @@ public class TurSNProcessQueue {
 			}
 
 			turNLP.startup(turSNSiteLocale.getTurNLPInstance(), nlpAttributes);
-			Map<String, Object> nlpResultsPreffix = new HashMap<String, Object>();
+			Map<String, Object> nlpResultsPreffix = new HashMap<>();
 
 			// Copy NLP attributes to consolidateResults
 			for (Entry<String, Object> nlpResultPreffix : nlpResultsPreffix.entrySet()) {
@@ -181,10 +181,10 @@ public class TurSNProcessQueue {
 			turThesaurusProcessor.startup();
 			Map<String, Object> thesaurusResults = turThesaurusProcessor.detectTerms(turSNJobItem.getAttributes());
 
-			logger.debug("thesaurusResults.size(): " + thesaurusResults.size());
+			logger.debug("thesaurusResults.size(): {}", thesaurusResults.size());
 			for (Entry<String, Object> thesaurusResult : thesaurusResults.entrySet()) {
-				logger.debug("thesaurusResult Key: " + thesaurusResult.getKey());
-				logger.debug("thesaurusResult Value: " + thesaurusResult.getValue());
+				logger.debug("thesaurusResult Key: {}", thesaurusResult.getKey());
+				logger.debug("thesaurusResult Value: {}", thesaurusResult.getValue());
 				consolidateResults.put(thesaurusResult.getKey(), thesaurusResult.getValue());
 			}
 		}
@@ -195,7 +195,6 @@ public class TurSNProcessQueue {
 		// SE
 		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale());
 		turSolr.indexing(turSolrInstance, turSNSite, attributesWithUniqueTerms);
-		;
 	}
 
 	public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {
@@ -204,24 +203,24 @@ public class TurSNProcessQueue {
 			for (Entry<String, Object> attribute : attributes.entrySet()) {
 				if (attribute.getValue() != null) {
 
-					logger.debug("removeDuplicateTerms: attribute Value: " + attribute.getValue().toString());
-					logger.debug("removeDuplicateTerms: attribute Class: " + attribute.getValue().getClass().getName());
+					logger.debug("removeDuplicateTerms: attribute Value: {}", attribute.getValue().toString());
+					logger.debug("removeDuplicateTerms: attribute Class: {}",
+							attribute.getValue().getClass().getName());
 					if (attribute.getValue() instanceof ArrayList) {
 
 						ArrayList<?> nlpAttributeArray = (ArrayList<?>) attribute.getValue();
-						if (nlpAttributeArray.size() > 0) {
-							List<String> list = new ArrayList<String>();
+						if (!nlpAttributeArray.isEmpty()) {
+							List<String> list = new ArrayList<>();
 							for (Object nlpAttributeItem : nlpAttributeArray) {
 								list.add((String) nlpAttributeItem);
 							}
-							Set<String> termsUnique = new HashSet<String>(list);
-							List<Object> arrayValue = new ArrayList<Object>();
+							Set<String> termsUnique = new HashSet<>(list);
+							List<Object> arrayValue = new ArrayList<>();
 							arrayValue.addAll(termsUnique);
 							attributesWithUniqueTerms.put(attribute.getKey(), arrayValue);
-							for (Object term : termsUnique) {
-								logger.debug("removeDuplicateTerms: attributesWithUniqueTerms Array Value: "
-										+ (String) term);
-							}
+							termsUnique.forEach(term -> logger.debug(
+									"removeDuplicateTerms: attributesWithUniqueTerms Array Value: {}", (String) term));
+
 						}
 					} else {
 
@@ -229,7 +228,7 @@ public class TurSNProcessQueue {
 					}
 				}
 			}
-			logger.debug("removeDuplicateTerms: attributesWithUniqueTerms: " + attributesWithUniqueTerms.toString());
+			logger.debug("removeDuplicateTerms: attributesWithUniqueTerms: {}", attributesWithUniqueTerms.toString());
 
 		}
 		return attributesWithUniqueTerms;

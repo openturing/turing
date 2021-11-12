@@ -108,25 +108,24 @@ public class TurSNSiteSearchAPI {
 			@RequestParam(required = false, name = TurSNParamType.ROWS) Integer rows,
 			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0") Integer autoCorrectionDisabled,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale, HttpServletRequest request) {
-		URI uri = TurSNUtils.requestToURI(request);
 
+		TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName, q, currentPage, fq,
+				requestTargetingRules(tr), sort, rows, autoCorrectionDisabled, locale,
+				TurSNUtils.requestToURI(request));
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
-
-		List<String> targetingRuleModified = requestTargetingRules(tr);
 
 		TurSNSiteFilterQueryBean turSNSiteFilterQueryBean = requestFilterQuery(fq);
 
 		TurSNSiteSearchBean turSNSiteSearchBean = new TurSNSiteSearchBean();
 		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
 
-		
-		requestSolr(turSolrInstance, q, currentPage, sort, rows, turSNSite, turSNSiteFilterQueryBean,
-				targetingRuleModified, autoCorrectionDisabled).ifPresent(turSEResults -> {
-					URI modifiedURI = uri;
-					if (TurSNUtils.isAutoCorrectionEnabled(currentPage, autoCorrectionDisabled, turSNSite)) {
+		requestSolr(turSolrInstance, turSNSiteSearchContext, turSNSite)
+				.ifPresent(turSEResults -> {
+					if (TurSNUtils.isAutoCorrectionEnabled(turSNSiteSearchContext, turSNSite)) {
 						TurSESpellCheckResult turSESpellCheckResult = turSolr.spellCheckTerm(turSolrInstance, q);
 						if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
-							modifiedURI = TurSNUtils.addOrReplaceParameter(uri, "q", turSESpellCheckResult.getCorrectedText());
+							turSNSiteSearchContext.setUri(TurSNUtils.addOrReplaceParameter(
+									turSNSiteSearchContext.getUri(), "q", turSESpellCheckResult.getCorrectedText()));
 						}
 					}
 					List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
@@ -134,18 +133,17 @@ public class TurSNSiteSearchAPI {
 
 					Map<String, TurSNSiteFieldExt> facetMap = setFacetMap(turSNSiteFacetFieldExts);
 
+					turSNSiteSearchBean.setResults(responseDocuments(turSNSiteSearchContext, turSolrInstance, turSNSite,
+							facetMap, turSEResults));
 					turSNSiteSearchBean
-							.setResults(responseDocuments(q, modifiedURI, turSolrInstance, turSNSite, facetMap, turSEResults));
-					turSNSiteSearchBean.setPagination(responsePagination(modifiedURI, turSEResults));
-					turSNSiteSearchBean.setWidget(responseWidget(q, fq, modifiedURI, turSNSite, turSNSiteFilterQueryBean,
-							turSNSiteFacetFieldExts, facetMap, turSEResults));
+							.setPagination(responsePagination(turSNSiteSearchContext.getUri(), turSEResults));
+					turSNSiteSearchBean.setWidget(responseWidget(turSNSiteSearchContext, turSNSite,
+							turSNSiteFilterQueryBean, turSNSiteFacetFieldExts, facetMap, turSEResults));
 					turSNSiteSearchBean.setQueryContext(responseQueryContext(turSNSite, turSEResults));
 				});
 
 		return turSNSiteSearchBean;
 	}
-
-	
 
 	private Map<String, TurSNSiteFieldExt> setFacetMap(List<TurSNSiteFieldExt> turSNSiteFacetFieldExts) {
 		Map<String, TurSNSiteFieldExt> facetMap = new HashMap<>();
@@ -164,15 +162,13 @@ public class TurSNSiteSearchAPI {
 		return facetMap;
 	}
 
-	private Optional<TurSEResults> requestSolr(TurSolrInstance turSolrInstance, String q, Integer currentPage,
-			String sort, Integer rows, TurSNSite turSNSite, TurSNSiteFilterQueryBean turSNSiteFilterQueryBean,
-			List<String> targetingRuleModified, int autoCorrectionDisabled) {
-		currentPage = currentPage == null || currentPage <= 0 ? 1 : currentPage;
-		rows = rows == null ? 0 : rows;
+	private Optional<TurSEResults> requestSolr(TurSolrInstance turSolrInstance, TurSNSiteSearchContext context,
+			TurSNSite turSNSite) {
+		context.setCurrentPage(
+				context.getCurrentPage() == null || context.getCurrentPage() <= 0 ? 1 : context.getCurrentPage());
+		context.setRows(context.getRows() == null ? 0 : context.getRows());
 		try {
-			TurSEResults turSEResults = turSolr.retrieveSolrFromSN(turSolrInstance, turSNSite, q,
-					turSNSiteFilterQueryBean.getItems(), targetingRuleModified, currentPage.intValue(), sort,
-					rows.intValue(), autoCorrectionDisabled);
+			TurSEResults turSEResults = turSolr.retrieveSolrFromSN(turSolrInstance, turSNSite, context);
 			return Optional.ofNullable(turSEResults);
 		} catch (Exception e) {
 			logger.error(e);
@@ -210,7 +206,7 @@ public class TurSNSiteSearchAPI {
 	}
 
 	private List<String> requestTargetingRules(List<String> tr) {
-		List<String> targetingRuleModified = new ArrayList<String>();
+		List<String> targetingRuleModified = new ArrayList<>();
 		if (tr != null) {
 			for (String targetingRule : tr) {
 				String[] targetingRuleParts = targetingRule.split(":");
@@ -228,8 +224,9 @@ public class TurSNSiteSearchAPI {
 		return targetingRuleModified;
 	}
 
-	private TurSNSiteSearchResultsBean responseDocuments(String q, URI uri, TurSolrInstance turSolrInstance,
-			TurSNSite turSNSite, Map<String, TurSNSiteFieldExt> facetMap, TurSEResults turSEResults) {
+	private TurSNSiteSearchResultsBean responseDocuments(TurSNSiteSearchContext context,
+			TurSolrInstance turSolrInstance, TurSNSite turSNSite, Map<String, TurSNSiteFieldExt> facetMap,
+			TurSEResults turSEResults) {
 
 		Map<String, TurSNSiteFieldExt> fieldExtMap = new HashMap<>();
 		List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,
@@ -240,7 +237,7 @@ public class TurSNSiteSearchAPI {
 		TurSNSiteSearchResultsBean turSNSiteSearchResultsBean = new TurSNSiteSearchResultsBean();
 		List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean = new ArrayList<TurSNSiteSearchDocumentBean>();
 		List<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = turSNSiteSpotlightTermRepository
-				.findByNameIn(Arrays.asList(q.split(" ")));
+				.findByNameIn(Arrays.asList(context.getQuery().split(" ")));
 
 		List<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
 				.findDistinctByTurSNSiteAndTurSNSiteSpotlightTermsIn(turSNSite, turSNSiteSpotlightTerms);
@@ -266,12 +263,13 @@ public class TurSNSiteSearchAPI {
 				turSNSiteSpotlightDocuments.forEach(document -> {
 					TurSEResult turSEResult = turSolr.findById(turSolrInstance, turSNSite, document.getSearchId());
 					if (turSEResult != null) {
-						addSNDocument(uri, fieldExtMap, facetMap, turSNSiteSearchDocumentsBean, turSEResult, true);
+						addSNDocument(context.getUri(), fieldExtMap, facetMap, turSNSiteSearchDocumentsBean,
+								turSEResult, true);
 					}
 				});
 			}
 
-			addSNDocument(uri, fieldExtMap, facetMap, turSNSiteSearchDocumentsBean, result, false);
+			addSNDocument(context.getUri(), fieldExtMap, facetMap, turSNSiteSearchDocumentsBean, result, false);
 
 			position++;
 		}
@@ -280,22 +278,22 @@ public class TurSNSiteSearchAPI {
 
 	}
 
-	private TurSNSiteSearchWidgetBean responseWidget(String q, List<String> fq, URI uri, TurSNSite turSNSite,
+	private TurSNSiteSearchWidgetBean responseWidget(TurSNSiteSearchContext context, TurSNSite turSNSite,
 			TurSNSiteFilterQueryBean turSNSiteFilterQueryBean, List<TurSNSiteFieldExt> turSNSiteFacetFieldExts,
 			Map<String, TurSNSiteFieldExt> facetMap, TurSEResults turSEResults) {
 		TurSNSiteSearchWidgetBean turSNSiteSearchWidgetBean = new TurSNSiteSearchWidgetBean();
-		turSNSiteSearchWidgetBean.setFacet(responseFacet(uri, turSNSite, turSNSiteFilterQueryBean.getHiddenItems(),
-				turSNSiteFacetFieldExts, facetMap, turSEResults));
-		turSNSiteSearchWidgetBean.setFacetToRemove(responseFacetToRemove(fq, uri));
+		turSNSiteSearchWidgetBean.setFacet(responseFacet(context.getUri(), turSNSite,
+				turSNSiteFilterQueryBean.getHiddenItems(), turSNSiteFacetFieldExts, facetMap, turSEResults));
+		turSNSiteSearchWidgetBean.setFacetToRemove(responseFacetToRemove(context));
 		turSNSiteSearchWidgetBean.setSimilar(responseMLT(turSNSite, turSEResults));
-		turSNSiteSearchWidgetBean.setSpellCheck(responseSpellCheck(uri, turSNSite, q, turSEResults.getSpellCheck()));
+		turSNSiteSearchWidgetBean.setSpellCheck(responseSpellCheck(context, turSEResults.getSpellCheck()));
 		return turSNSiteSearchWidgetBean;
 
 	}
 
-	private TurSNSiteSpellCheckBean responseSpellCheck(URI uri, TurSNSite turSNSite, String q,
+	private TurSNSiteSpellCheckBean responseSpellCheck(TurSNSiteSearchContext context,
 			TurSESpellCheckResult turSESpellCheckResult) {
-		return new TurSNSiteSpellCheckBean(uri, turSNSite, q, turSESpellCheckResult);
+		return new TurSNSiteSpellCheckBean(context, turSESpellCheckResult);
 
 	}
 
@@ -398,12 +396,12 @@ public class TurSNSiteSearchAPI {
 		return null;
 	}
 
-	private TurSNSiteSearchFacetBean responseFacetToRemove(List<String> fq, URI uri) {
+	private TurSNSiteSearchFacetBean responseFacetToRemove(TurSNSiteSearchContext context) {
 
-		if (fq != null && !fq.isEmpty()) {
+		if (context.getFilterQueries() != null && !context.getFilterQueries().isEmpty()) {
 
 			List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<>();
-			fq.forEach(facetToRemove -> {
+			context.getFilterQueries().forEach(facetToRemove -> {
 				String[] facetToRemoveParts = facetToRemove.split(":");
 				if (facetToRemoveParts.length == 2) {
 					String facetToRemoveValue = facetToRemoveParts[1].replaceAll("\"", "");
@@ -411,7 +409,7 @@ public class TurSNSiteSearchAPI {
 					TurSNSiteSearchFacetItemBean turSNSiteSearchFacetToRemoveItemBean = new TurSNSiteSearchFacetItemBean();
 					turSNSiteSearchFacetToRemoveItemBean.setLabel(facetToRemoveValue);
 					turSNSiteSearchFacetToRemoveItemBean
-							.setLink(TurSNUtils.removeFilterQuery(uri, facetToRemove).toString());
+							.setLink(TurSNUtils.removeFilterQuery(context.getUri(), facetToRemove).toString());
 					turSNSiteSearchFacetToRemoveItemBeans.add(turSNSiteSearchFacetToRemoveItemBean);
 				}
 			});

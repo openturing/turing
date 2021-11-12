@@ -1,8 +1,6 @@
 package com.viglet.turing.api.sn.bean.spellcheck;
 
-import java.net.URI;
-
-import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
 
 public class TurSNSiteSpellCheckBean {
@@ -11,11 +9,11 @@ public class TurSNSiteSpellCheckBean {
 	private TurSNSiteSpellCheckText original;
 	private TurSNSiteSpellCheckText corrected;
 
-	public TurSNSiteSpellCheckBean(URI uri, TurSNSite turSNSite, String originalText, TurSESpellCheckResult turSESpellCheckResult) {
+	public TurSNSiteSpellCheckBean(TurSNSiteSearchContext context, TurSESpellCheckResult turSESpellCheckResult) {
 		super();
 		this.correctedText = turSESpellCheckResult.isCorrected();
-		this.original = new TurSNSiteSpellCheckText(uri, turSNSite.getName(), originalText, true);
-		this.corrected = new TurSNSiteSpellCheckText(uri, turSNSite.getName(), turSESpellCheckResult.getCorrectedText(), false);
+		this.original = new TurSNSiteSpellCheckText(context.getUri(),  context.getQuery(), true);
+		this.corrected = new TurSNSiteSpellCheckText(context.getUri(), turSESpellCheckResult.getCorrectedText(), false);
 	}
 	
 	public TurSNSiteSpellCheckText getOriginal() {

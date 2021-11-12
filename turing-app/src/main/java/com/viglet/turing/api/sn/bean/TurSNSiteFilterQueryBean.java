@@ -6,7 +6,7 @@ public class TurSNSiteFilterQueryBean {
 
 	private List<String> hiddenItems;
 
-	private List<String> Items;
+	private List<String> items;
 
 	public List<String> getHiddenItems() {
 		return hiddenItems;
@@ -17,11 +17,11 @@ public class TurSNSiteFilterQueryBean {
 	}
 
 	public List<String> getItems() {
-		return Items;
+		return items;
 	}
 
 	public void setItems(List<String> items) {
-		Items = items;
+		this.items = items;
 	}
 
 }

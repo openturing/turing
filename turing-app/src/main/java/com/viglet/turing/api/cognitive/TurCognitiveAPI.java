@@ -70,9 +70,8 @@ public class TurCognitiveAPI {
 					}
 					suggesterPhrases = suggesterPhrasesNew;
 				}
-				logger.debug("Potential error at characters " + match.getFromPos() + "-" + match.getToPos() + ": "
-						+ match.getMessage());
-				logger.debug("Suggested correction(s): " + match.getSuggestedReplacements());
+				logger.debug("Potential error at characters {} - {}: {}", match.getFromPos(), match.getToPos(), match.getMessage());
+				logger.debug("Suggested correction(s): {}", match.getSuggestedReplacements());
 			}
 			return suggesterPhrases;
 		} catch (IOException e) {

@@ -17,7 +17,6 @@
 
 package com.viglet.turing.api.otca.af;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
 import javax.servlet.ServletContext;
@@ -253,7 +252,7 @@ public class TurOTCAAutorityFileAPI {
 	@PostMapping("/import")
 	@Transactional
 	public RedirectView turOTCAAutorityFileImport(@RequestParam("file") MultipartFile multipartFile,
-			HttpServletRequest request) throws UnsupportedEncodingException {
+			HttpServletRequest request) {
 
 		try {
 			JAXBContext jaxbContext = JAXBContext

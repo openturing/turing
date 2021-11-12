@@ -28,27 +28,27 @@ import org.springframework.stereotype.Component;
 @Component
 public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 	private static final long serialVersionUID = 1L;
-	private List<TurSNJobItem> turSNJobItems = new ArrayList<TurSNJobItem>();
+	private List<TurSNJobItem> jobItems = new ArrayList<>();
 
 	@Override
 	public Iterator<TurSNJobItem> iterator() {
-		return turSNJobItems.iterator();
+		return jobItems.iterator();
 	}
 
 	public List<TurSNJobItem> getTuringDocuments() {
-		return turSNJobItems;
+		return jobItems;
 	}
 
-	public void setTuringDocuments(List<TurSNJobItem> turSNJobItems) {
-		this.turSNJobItems = turSNJobItems;
+	public void setTuringDocuments(List<TurSNJobItem> jobItems) {
+		this.jobItems = jobItems;
 	}
 
 	public boolean add(TurSNJobItem turSNJobItem) {
-		return turSNJobItems.add(turSNJobItem);
+		return jobItems.add(turSNJobItem);
 	}
 
 	public boolean remove(TurSNJobItem turSNJobItem) {
-		return turSNJobItems.remove(turSNJobItem);
+		return jobItems.remove(turSNJobItem);
 	}
 	
 	public String toString() {

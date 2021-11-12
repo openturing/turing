@@ -33,6 +33,7 @@ import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.viglet.turing.api.sn.search.TurSNParamType;
+import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
 
@@ -43,9 +44,9 @@ public class TurSNUtils {
 		return turSESpellCheckResult.isCorrected() && !StringUtils.isEmpty(turSESpellCheckResult.getCorrectedText());
 	}
 
-	public static boolean isAutoCorrectionEnabled(Integer currentPage, Integer autoCorrectionDisabled,
+	public static boolean isAutoCorrectionEnabled(TurSNSiteSearchContext context,
 			TurSNSite turSNSite) {
-		return autoCorrectionDisabled != 1 && currentPage == 1 && turSNSite.getSpellCheck() == 1
+		return context.getAutoCorrectionDisabled() != 1 && context.getCurrentPage() == 1 && turSNSite.getSpellCheck() == 1
 				&& turSNSite.getSpellCheckFixes() == 1;
 	}
 
