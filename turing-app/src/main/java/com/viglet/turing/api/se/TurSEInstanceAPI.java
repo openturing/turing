@@ -37,6 +37,8 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.solr.TurSolr;
+import com.viglet.turing.solr.TurSolrInstance;
+import com.viglet.turing.solr.TurSolrInstanceProcess;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,8 +49,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurSEInstanceAPI {
 	private static final Log logger = LogFactory.getLog(TurSEInstanceAPI.class);
 	@Autowired
-	TurSEInstanceRepository turSEInstanceRepository;
-
+	private TurSEInstanceRepository turSEInstanceRepository;
+	@Autowired
+	private TurSolrInstanceProcess turSolrInstanceProcess;
+	@Autowired
+	private TurSolr turSolr;
 	@Operation(summary = "Search Engine List")
 	@GetMapping
 	public List<TurSEInstance> turSEInstanceList() {
@@ -118,9 +123,11 @@ public class TurSEInstanceAPI {
 			rows = 0;
 
 		String result = null;
-		TurSolr turSolr = new TurSolr();
+
+		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance();
+		
 		try {
-			result = turSolr.retrieveSolr(q, fq, tr, currentPage, sort, rows).toString();
+			result = turSolr.retrieveSolr(turSolrInstance, q, fq, tr, currentPage, sort, rows, "text").toString();
 
 		} catch (Exception e) {
 			logger.error(e);

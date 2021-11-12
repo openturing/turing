@@ -44,9 +44,9 @@ public class TurImportExchange {
 	private TurUtils turUtils;
 	@Autowired
 	private TurSNSiteImport turSNSiteImport;
-
-	private Map<String, Object> shObjects = new HashMap<String, Object>();
-	private Map<String, List<String>> shChildObjects = new HashMap<String, List<String>>();
+	private static final String EXPORT_FILE ="export.json";
+	private Map<String, Object> shObjects = new HashMap<>();
+	private Map<String, List<String>> shChildObjects = new HashMap<>();
 
 	public TurExchange importFromMultipartFile(MultipartFile multipartFile)
 			throws IllegalStateException, IOException, ArchiveException {
@@ -55,9 +55,9 @@ public class TurImportExchange {
 
 		if (extractFolder != null) {
 			// Check if export.json exists, if it is not exist try access a sub directory
-			if (!(new File(extractFolder, "export.json").exists()) && (extractFolder.listFiles().length == 1)) {
+			if (!(new File(extractFolder, EXPORT_FILE).exists()) && (extractFolder.listFiles().length == 1)) {
 				for (File fileOrDirectory : extractFolder.listFiles()) {
-					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, "export.json").exists()) {
+					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, EXPORT_FILE).exists()) {
 						parentExtractFolder = extractFolder;
 						extractFolder = fileOrDirectory;
 					}
@@ -66,10 +66,10 @@ public class TurImportExchange {
 			ObjectMapper mapper = new ObjectMapper();
 
 			TurExchange turExchange = mapper.readValue(
-					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + "export.json")),
+					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + EXPORT_FILE)),
 					TurExchange.class);
 
-			if (turExchange.getSnSites() != null && turExchange.getSnSites().size() > 0) {
+			if (turExchange.getSnSites() != null && !turExchange.getSnSites().isEmpty()) {
 				turSNSiteImport.importSNSite(turExchange);
 			}
 
@@ -95,7 +95,7 @@ public class TurImportExchange {
 		return this.importFromMultipartFile(multipartFile);
 	}
 
-	public File extractZipFile(MultipartFile file) throws IllegalStateException, IOException, ArchiveException {
+	public File extractZipFile(MultipartFile file) throws IllegalStateException, IOException {
 		shObjects.clear();
 		shChildObjects.clear();
 

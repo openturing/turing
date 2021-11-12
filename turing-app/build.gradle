@@ -82,13 +82,13 @@ task stage(dependsOn: ['build', 'clean'])
 
 build.mustRunAfter clean
 
-compileJava.dependsOn(':turing-ui:build'); 
+if (!project.hasProperty('no-ui')) {
+	compileJava.dependsOn(':turing-ui:build'); 
+}
 
 dependencies {
 	compileOnly group: 'javax.servlet', name: 'servlet-api', version: '2.5'
 
-	// implementation(project(':turing-ui'))
-	
 	implementation (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.3.1') {
 		exclude(module: 'guava')
 		exclude(module: 'commons-logging')
@@ -105,8 +105,7 @@ dependencies {
 		exclude(module: 'servlet-api')
 		exclude(module: 'jsp-api')
 		exclude(module: 'commons-el')
-		
-
+	
 	}
 	
 	implementation (group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.3.1') {

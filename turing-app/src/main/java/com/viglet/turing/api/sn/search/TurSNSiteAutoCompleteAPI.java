@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.api.sn;
+package com.viglet.turing.api.sn.search;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,40 +36,43 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrField;
+import com.viglet.turing.solr.TurSolrInstance;
+import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.TurSEStopword;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/sn/{siteName}/ac")
-@Api(tags = "Semantic Navigation Auto Complete", description = "Semantic Navigation Auto Complete API")
+@RequestMapping("/api/sn/{siteName}/locale/ac")
+@Tag(name = "Semantic Navigation Auto Complete", description = "Semantic Navigation Auto Complete API")
 public class TurSNSiteAutoCompleteAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteAutoCompleteAPI.class);
 	@Autowired
-	TurSolr turSolr;
+	private TurSolr turSolr;
 	@Autowired
-	TurSNSiteRepository turSNSiteRepository;
+	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	TurSolrField turSolrField;
+	private TurSEStopword turSEStopword;
 	@Autowired
-	TurSEStopword turSEStopword;
-
+	private TurSolrInstanceProcess turSolrInstanceProcess;
+	
 	@GetMapping
 	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,
-			@RequestParam(required = true, name = "q") String q,
-			@RequestParam(required = false, defaultValue = "20", name = "rows") long rows, HttpServletRequest request) {
+			@PathVariable String locale,
+			@RequestParam(required = true, name = TurSNParamType.QUERY) String q,
+			@RequestParam(required = false, defaultValue = "20", name = TurSNParamType.ROWS) long rows, 
+			HttpServletRequest request) {
 
 		List<String> termListShrink = new ArrayList<>();
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		SpellCheckResponse turSEResults = null;
-		turSolr.init(turSNSite);
+		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
 		try {
-			turSEResults = turSolr.autoComplete(q);
+			turSEResults = turSolr.autoComplete(turSolrInstance, q);
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		}
 		List<String> termList = turSEResults.getSuggestions().get(0).getAlternatives();
 		List<String> stopWords;
@@ -140,7 +143,7 @@ public class TurSNSiteAutoCompleteAPI {
 				}
 			}
 		} catch (IOException e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 		return termListShrink.stream().limit(rows).collect(Collectors.toList());
 	}

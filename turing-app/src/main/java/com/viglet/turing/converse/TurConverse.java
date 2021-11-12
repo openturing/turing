@@ -47,12 +47,11 @@ public class TurConverse {
 	@Autowired
 	private TurConverseSE turConverseSE;
 
-	final static String FALLBACK_DEFAULT_MESSAGE = "I do not know what to say";
+	private Random rand = new Random();
 
 	public void saveChatResponseUser(String q, TurConverseChat chat, HttpSession session) {
-		boolean hasParameter = session.getAttribute("hasParameter") != null
-				? (boolean) session.getAttribute("hasParameter")
-				: false;
+		boolean hasParameter = session.getAttribute(TurConverseConstants.HAS_PARAMETER) != null
+				&& (boolean) session.getAttribute(TurConverseConstants.HAS_PARAMETER);
 
 		TurConverseChatResponse chatResponseUser = new TurConverseChatResponse();
 		chatResponseUser.setDate(new Date());
@@ -60,14 +59,15 @@ public class TurConverse {
 		chatResponseUser.setText(q);
 		chatResponseUser.setChat(chat);
 
-		TurConverseChatResponse chatResponseBot = (TurConverseChatResponse) session.getAttribute("previousResponseBot");
+		TurConverseChatResponse chatResponseBot = (TurConverseChatResponse) session
+				.getAttribute(TurConverseConstants.PREVIOUS_RESPONSE_BOT);
 		if (hasParameter && chatResponseBot != null) {
 			chatResponseUser.setIntentId(chatResponseBot.getIntentId());
 			chatResponseUser.setActionName(chatResponseBot.getActionName());
 			chatResponseUser.setParameterName(chatResponseBot.getParameterName());
 			chatResponseUser.setParameterValue(q);
 		} else {
-			String nextContext = (String) session.getAttribute("nextContext");
+			String nextContext = (String) session.getAttribute(TurConverseConstants.NEXT_CONTEXT);
 			SolrDocumentList results = turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
 			if (!results.isEmpty()) {
 				SolrDocument firstResult = results.get(0);
@@ -90,13 +90,11 @@ public class TurConverse {
 			String intentId) {
 		SolrDocumentList termDocumentList = turConverseSE.sorlGetParameterValue(text, turConverseChat, intentId);
 		if (!termDocumentList.isEmpty()) {
-			String parameter = (String) termDocumentList.get(0).getFirstValue("parameters");
+			String parameter = (String) termDocumentList.get(0).getFirstValue(TurConverseConstants.PARAMETERS);
 
 			String[] parameterKV = parameter.split(":");
-			AbstractMap.SimpleEntry<String, String> entry = new AbstractMap.SimpleEntry<>(parameterKV[0],
-					parameterKV[1]);
 
-			return entry;
+			return new AbstractMap.SimpleEntry<>(parameterKV[0], parameterKV[1]);
 
 		}
 		return null;
@@ -113,13 +111,13 @@ public class TurConverse {
 		chatResponseBot.setParameterName(turConverseAgentResponse.getParameterName());
 		chatResponseBot.setActionName(turConverseAgentResponse.getActionName());
 
-		session.setAttribute("previousResponseBot", chatResponseBot);
+		session.setAttribute(TurConverseConstants.PREVIOUS_RESPONSE_BOT, chatResponseBot);
 
 		turConverseChatResponseRepository.save(chatResponseBot);
 
-		if (session.getAttribute("previousResponseUser") != null) {
+		if (session.getAttribute(TurConverseConstants.PREVIOUS_RESPONSE_USER) != null) {
 			TurConverseChatResponse chatResponseUser = (TurConverseChatResponse) session
-					.getAttribute("previousResponseUser");
+					.getAttribute(TurConverseConstants.PREVIOUS_RESPONSE_USER);
 			if (chatResponseUser.getActionName() == null && chatResponseUser.getIntentId() == null) {
 				chatResponseUser.setIntentId(turConverseAgentResponse.getIntentId());
 				turConverseChatResponseRepository.save(chatResponseUser);
@@ -132,24 +130,29 @@ public class TurConverse {
 	public void getChatParameter(TurConverseChat chat, HttpSession session,
 			TurConverseAgentResponse turConverseAgentResponse) {
 
-		int nextParameter = session.getAttribute("nextParameter") != null ? (int) session.getAttribute("nextParameter")
+		int nextParameter = session.getAttribute(TurConverseConstants.NEXT_PARAMETER) != null
+				? (int) session.getAttribute(TurConverseConstants.NEXT_PARAMETER)
 				: 0;
 
-		String intent = session.getAttribute("intent") != null ? (String) session.getAttribute("intent") : null;
+		String intent = session.getAttribute(TurConverseConstants.INTENT) != null
+				? (String) session.getAttribute(TurConverseConstants.INTENT)
+				: null;
 
 		try {
 			SolrDocumentList resultsParameter = turConverseSE.solrGetActionAndParameters(chat.getAgent(), intent);
 			if (resultsParameter.size() > nextParameter) {
 				SolrDocument firstResultParameter = resultsParameter.get(nextParameter);
 				if (!resultsParameter.isEmpty()) {
-					List<String> prompts = (List<String>) firstResultParameter.getFieldValue("prompts");
+					List<String> prompts = (List<String>) firstResultParameter
+							.getFieldValue(TurConverseConstants.PROMPTS);
 					if (!prompts.isEmpty()) {
-						int rnd = new Random().nextInt(prompts.size());
-						turConverseAgentResponse.setResponse(prompts.get(rnd).toString());
+						int rnd = rand.nextInt(prompts.size());
+						turConverseAgentResponse.setResponse(prompts.get(rnd));
 						turConverseAgentResponse.setIntentId(intent);
-						turConverseAgentResponse.setActionName(firstResultParameter.getFieldValue("action").toString());
-						turConverseAgentResponse
-								.setParameterName(firstResultParameter.getFieldValue("name").toString());
+						turConverseAgentResponse.setActionName(
+								firstResultParameter.getFieldValue(TurConverseConstants.ACTION).toString());
+						turConverseAgentResponse.setParameterName(
+								firstResultParameter.getFieldValue(TurConverseConstants.NAME).toString());
 					}
 
 				}
@@ -177,9 +180,9 @@ public class TurConverse {
 		if (!results.isEmpty()) {
 			SolrDocument firstResult = results.get(0);
 
-			if ((boolean) firstResult.getFieldValue("hasParameters")) {
-				session.setAttribute("intent", firstResult.getFieldValue("id"));
-				session.setAttribute("hasParameter", true);
+			if ((boolean) firstResult.getFieldValue(TurConverseConstants.HAS_PARAMETER)) {
+				session.setAttribute(TurConverseConstants.INTENT, firstResult.getFieldValue(TurConverseConstants.ID));
+				session.setAttribute(TurConverseConstants.HAS_PARAMETER, true);
 				this.getChatParameter(chat, session, turConverseAgentResponse);
 			} else {
 				this.getIntentFlow(chat, session, turConverseAgentResponse, firstResult);
@@ -199,29 +202,28 @@ public class TurConverse {
 	private void getIntentFlow(TurConverseChat chat, HttpSession session,
 			TurConverseAgentResponse turConverseAgentResponse, SolrDocument firstResult) {
 
-		List<String> contextOutputs = (List<String>) firstResult.getFieldValue("contextOutput");
+		List<String> contextOutputs = (List<String>) firstResult.getFieldValue(TurConverseConstants.CONTEXT_OUTPUT);
 
-		turConverseAgentResponse.setResponse(this.getIntentResponse(chat, session, firstResult));
-		turConverseAgentResponse.setIntentId(firstResult.getFieldValue("id").toString());
-		turConverseAgentResponse.setIntentName(firstResult.getFieldValue("name").toString());
+		turConverseAgentResponse.setResponse(this.getIntentResponse(chat, firstResult));
+		turConverseAgentResponse.setIntentId(firstResult.getFieldValue(TurConverseConstants.ID).toString());
+		turConverseAgentResponse.setIntentName(firstResult.getFieldValue(TurConverseConstants.NAME).toString());
 
 		if (contextOutputs != null && !contextOutputs.isEmpty()) {
-			session.setAttribute("nextContext", contextOutputs.get(0).toString());
+			session.setAttribute(TurConverseConstants.NEXT_CONTEXT, contextOutputs.get(0));
 		}
 	}
 
 	@SuppressWarnings("unchecked")
-	private String getIntentResponse(TurConverseChat chat, HttpSession session, SolrDocument firstResult) {
-		List<String> responses = (List<String>) firstResult.getFieldValue("responses");
-		int rnd = new Random().nextInt(responses.size());
-		String response = responses.get(rnd).toString();
+	private String getIntentResponse(TurConverseChat chat, SolrDocument firstResult) {
+		List<String> responses = (List<String>) firstResult.getFieldValue(TurConverseConstants.RESPONSES);
+		int rnd = rand.nextInt(responses.size());
+		String response = responses.get(rnd);
 
 		String[] words = response.split(" ");
-		StringBuffer responseModified = new StringBuffer();
+		StringBuilder responseModified = new StringBuilder();
 		for (String word : words) {
 			if (word.startsWith("$")) {
-				String parameterName = word.replaceAll("\\$", "").replaceAll(",", "").replaceAll(";", "")
-						.replaceAll("\\.", "");
+				String parameterName = word.replace("\\$", "").replace(",", "").replace(";", "").replace("\\.", "");
 
 				List<TurConverseChatResponse> values = turConverseChatResponseRepository
 						.findByChatAndIsUserAndParameterNameOrderByDateDesc(chat, true, parameterName);
@@ -239,7 +241,7 @@ public class TurConverse {
 			TurConverseAgentResponse turConverseAgentResponse) {
 		this.cleanSession(session);
 		turConverseAgentResponse.setResponse(this.getFallbackResponse(chat));
-		turConverseAgentResponse.setIntentName("empty");
+		turConverseAgentResponse.setIntentName(TurConverseConstants.EMPTY);
 
 		return turConverseAgentResponse;
 	}
@@ -247,18 +249,18 @@ public class TurConverse {
 	private String getFallbackResponse(TurConverseChat chat) {
 		SolrDocumentList fallbackList = turConverseSE.solrGetFallbackIntent(chat.getAgent());
 		if (fallbackList.isEmpty())
-			return FALLBACK_DEFAULT_MESSAGE;
+			return TurConverseConstants.FALLBACK_DEFAULT_MESSAGE;
 		else {
 			SolrDocument fallbackIntent = fallbackList.get(0);
 
 			@SuppressWarnings("unchecked")
-			List<String> responses = (List<String>) fallbackIntent.getFieldValue("responses");
+			List<String> responses = (List<String>) fallbackIntent.getFieldValue(TurConverseConstants.RESPONSES);
 
 			if (responses != null && !responses.isEmpty()) {
 				int rnd = new SecureRandom().nextInt(responses.size());
-				return responses.get(rnd).toString();
+				return responses.get(rnd);
 			} else {
-				return FALLBACK_DEFAULT_MESSAGE;
+				return TurConverseConstants.FALLBACK_DEFAULT_MESSAGE;
 			}
 		}
 	}
@@ -276,19 +278,19 @@ public class TurConverse {
 	}
 
 	public void showSession(HttpSession session) {
-		System.out.println("hasParameter: " + (Boolean) session.getAttribute("hasParameter"));
-		System.out.println("nextParameter: " + (Integer) session.getAttribute("nextParameter"));
-		System.out.println("nextContext: " + (String) session.getAttribute("nextContext"));
-		System.out.println("intent: " + (String) session.getAttribute("intent"));
-		System.out.println("-----");
+		logger.debug("hasParameter: " + (Boolean) session.getAttribute(TurConverseConstants.HAS_PARAMETER));
+		logger.debug("nextParameter: " + (Integer) session.getAttribute(TurConverseConstants.NEXT_PARAMETER));
+		logger.debug("nextContext: " + (String) session.getAttribute(TurConverseConstants.NEXT_CONTEXT));
+		logger.debug("intent: " + (String) session.getAttribute(TurConverseConstants.INTENT));
+		logger.debug("-----");
 	}
 
 	public void cleanSession(HttpSession session) {
-		System.out.println("Clean Session");
-		session.removeAttribute("hasParameter");
-		session.removeAttribute("nextParameter");
-		session.removeAttribute("nextContext");
-		session.removeAttribute("intent");
+		logger.debug("Clean Session");
+		session.removeAttribute(TurConverseConstants.HAS_PARAMETER);
+		session.removeAttribute(TurConverseConstants.NEXT_PARAMETER);
+		session.removeAttribute(TurConverseConstants.NEXT_CONTEXT);
+		session.removeAttribute(TurConverseConstants.INTENT);
 
 	}
 

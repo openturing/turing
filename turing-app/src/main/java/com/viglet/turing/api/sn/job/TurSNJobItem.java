@@ -27,9 +27,19 @@ public class TurSNJobItem implements Serializable{
 
 	private static final long serialVersionUID = 1L;
 	
+	private String locale;
+	
 	private TurSNJobAction turSNJobAction;
 	
 	private Map<String, Object> attributes;
+
+	public String getLocale() {
+		return locale;
+	}
+
+	public void setLocale(String locale) {
+		this.locale = locale;
+	}
 
 	public Map<String, Object> getAttributes() {
 		return attributes;

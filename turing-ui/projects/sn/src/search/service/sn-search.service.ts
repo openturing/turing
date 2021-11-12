@@ -25,13 +25,13 @@ import { TurSNSearch } from '../model/sn-search.model';
 export class TurSNSearchService {
 
   constructor(private httpClient: HttpClient) { }
-  query(turSiteName: string, q: string, p: string, _setlocale: string, sort: string, fq: string[], tr: string[]): Observable<TurSNSearch> {
+  query(turSiteName: string, q: string, p: string, _setlocale: string, sort: string, fq: string[], tr: string[], nfpr: string): Observable<TurSNSearch> {
 
-    let queryString: string = TurSNSearchService.generateQueryString(q, p, _setlocale, sort, fq, tr);
+    let queryString: string = TurSNSearchService.generateQueryString(q, p, _setlocale, sort, fq, tr, nfpr);
     return this.httpClient.get<TurSNSearch>(`${environment.apiUrl}/api/sn/${turSiteName}/search?${queryString}`);
   }
 
-  public static generateQueryString(q: string, p: string, _setlocale: string, sort: string, fq: string[], tr: string[]) {
+  public static generateQueryString(q: string, p: string, _setlocale: string, sort: string, fq: string[], tr: string[], nfpr: string) {
     let queryString = "";
     if (q) {
       queryString += `q=${q}`;
@@ -77,6 +77,10 @@ export class TurSNSearchService {
         queryString += `&tr[]=${tr}`;
       }
 
+    }
+
+    if (nfpr) {
+      queryString += `&nfpr=${nfpr}`;
     }
 
     return queryString;

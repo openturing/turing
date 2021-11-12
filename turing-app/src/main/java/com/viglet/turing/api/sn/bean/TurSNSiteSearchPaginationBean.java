@@ -19,7 +19,7 @@ package com.viglet.turing.api.sn.bean;
 
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.api.sn.TurSNPaginationType;
+import com.viglet.turing.api.sn.search.TurSNPaginationType;
 
 @Component
 public class TurSNSiteSearchPaginationBean {

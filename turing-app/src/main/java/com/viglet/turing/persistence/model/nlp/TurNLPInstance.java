@@ -27,6 +27,8 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
 /**
@@ -37,10 +39,10 @@ import java.util.List;
 @Entity
 @Table(name = "turNLPInstance")
 @NamedQuery(name = "TurNLPInstance.findAll", query = "SELECT n FROM TurNLPInstance n")
+@JsonIgnoreProperties({ "turNLPInstanceEntities" })
 public class TurNLPInstance implements Serializable {
 	private static final long serialVersionUID = 1L;
 
-	
 	@Id
 	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
 	@GeneratedValue(generator = "UUID")
@@ -76,7 +78,7 @@ public class TurNLPInstance implements Serializable {
 	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
-	
+
 	public TurNLPInstance() {
 	}
 
@@ -127,7 +129,7 @@ public class TurNLPInstance implements Serializable {
 	public void setPort(int port) {
 		this.port = port;
 	}
-	
+
 	public String getTitle() {
 		return this.title;
 	}
@@ -165,5 +167,4 @@ public class TurNLPInstance implements Serializable {
 
 		return turNLPInstanceEntity;
 	}
-
 }

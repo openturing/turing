@@ -20,6 +20,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
   public turSort!: string;
   private turFilterQuery!: string[];
   private turTargetingRule!: string[];
+  private turAutoCorrectionDisabled!: string;
   public sortOptions: Map<string, string> = new Map();
 
   constructor(
@@ -39,11 +40,18 @@ export class TurSNSearchRootPageComponent implements OnInit {
       this.turLocale,
       this.turSort,
       this.turFilterQuery,
-      this.turTargetingRule);
+      this.turTargetingRule,
+      this.turAutoCorrectionDisabled);
   }
 
   generateQueryString(): string {
-    return TurSNSearchService.generateQueryString(this.turQuery, this.turPage, this.turLocale, this.turSort, this.turFilterQuery, this.turTargetingRule);
+    return TurSNSearchService.generateQueryString(this.turQuery,
+      this.turPage,
+      this.turLocale,
+      this.turSort,
+      this.turFilterQuery,
+      this.turTargetingRule,
+      this.turAutoCorrectionDisabled);
   }
   getTurSNSearchItems(): Observable<TurSNSearch> {
     return this.turSNSearchItems;
@@ -55,14 +63,20 @@ export class TurSNSearchRootPageComponent implements OnInit {
     }
 
     let turSiteNameSplit = turPath.split('/');
-    this.turSiteName = turSiteNameSplit[turSiteNameSplit.length - 1];
-
+    let turForceSiteName = this.activatedRoute.snapshot.queryParams["_setsite"];
+    if (turForceSiteName != null) {
+      this.turSiteName = turForceSiteName;
+    }
+    else {
+      this.turSiteName = turSiteNameSplit[turSiteNameSplit.length - 1];
+    }
     this.turQuery = this.activatedRoute.snapshot.queryParams["q"] || "*";
     this.turPage = this.activatedRoute.snapshot.queryParams["p"] || "1";
     this.turLocale = this.activatedRoute.snapshot.queryParams["_setlocale"];
     this.turSort = this.activatedRoute.snapshot.queryParams["sort"] || "relevance";
     this.turFilterQuery = this.activatedRoute.snapshot.queryParams["fq[]"];
     this.turTargetingRule = this.activatedRoute.snapshot.queryParams["tr[]"];
+    this.turAutoCorrectionDisabled = this.activatedRoute.snapshot.queryParams["nfpr"];
 
     /**
     console.log(this.router.url);
@@ -73,6 +87,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
     console.log(this.turSort);
     console.log(this.turFilterQuery);
     console.log(this.turTargetingRule);
+    console.log(this.turAutoCorrectionDisabled);
    */
   }
 
@@ -91,8 +106,6 @@ export class TurSNSearchRootPageComponent implements OnInit {
         result[key] = [value];
       }
     });
-
-    // console.log(result);
     let objToSend: NavigationExtras = {
       queryParams: result
     };

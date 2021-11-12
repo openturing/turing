@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.xml.transform.TransformerException;
 
@@ -54,6 +52,7 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.plugins.nlp.TurNLPImpl;
 import com.viglet.turing.solr.TurSolrField;
+import com.viglet.turing.utils.TurUtils;
 
 import java.util.*;
 
@@ -62,9 +61,11 @@ public class TurSpaCyConnector implements TurNLPImpl {
 	static final Logger logger = LogManager.getLogger(TurSpaCyConnector.class);
 
 	@Autowired
-	TurNLPEntityRepository turNLPEntityRepository;
+	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
-	TurSolrField turSolrField;
+	private TurSolrField turSolrField;
+	@Autowired
+	private TurUtils turUtils;
 	private String encoding = "UTF-8";
 
 	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
@@ -100,8 +101,8 @@ public class TurSpaCyConnector implements TurNLPImpl {
 			logger.debug("URL:" + serverURL.toString());
 		}
 
-		CloseableHttpClient httpclient = HttpClients.createDefault();
-		try {
+		
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()){
 			HttpPost httpPost = new HttpPost(serverURL.toString());
 			Charset utf8Charset = Charset.forName("UTF-8");
 			Charset customCharset = Charset.forName(encoding);
@@ -109,9 +110,10 @@ public class TurSpaCyConnector implements TurNLPImpl {
 			if (attributes != null) {
 				for (Object attrValue : attributes.values()) {
 					JSONObject jsonBody = new JSONObject();
-					String atributeValueFullText = removeUrl(turSolrField.convertFieldToString(attrValue))
-							.replaceAll("\\n|:|;", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("â€�", " ")
-							.replaceAll("â€œ", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
+					String atributeValueFullText = turUtils.removeUrl(turSolrField.convertFieldToString(attrValue))
+							.replaceAll("\\n|:|;", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ")
+							.replaceAll("â€�", " ").replaceAll("â€œ", " ").replaceAll("\\.+", ". ")
+							.replaceAll(" +", " ").trim();
 
 					for (String atributeValue : atributeValueFullText.split("\\.")) {
 						if (logger.isDebugEnabled()) {
@@ -145,35 +147,26 @@ public class TurSpaCyConnector implements TurNLPImpl {
 						StringEntity stringEntity = new StringEntity(new String(jsonBody.toString()), "UTF-8");
 						httpPost.setEntity(stringEntity);
 
-						CloseableHttpResponse response = httpclient.execute(httpPost);
-						try {
+						try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
 							HttpEntity entity = response.getEntity();
 
 							if (entity != null) {
-								InputStream instream = entity.getContent();
-								BufferedReader rd = new BufferedReader(
-										new InputStreamReader(instream, Charset.forName("UTF-8")));
-								String jsonResponse = readAll(rd);
-								if (this.isJSONValid(jsonResponse)) {
-									if (logger.isDebugEnabled()) {
-										logger.debug("SpaCy JSONResponse: " + jsonResponse);
+								try (InputStream instream = entity.getContent()) {
+									BufferedReader rd = new BufferedReader(
+											new InputStreamReader(instream, Charset.forName("UTF-8")));
+									String jsonResponse = readAll(rd);
+									if (turUtils.isJSONValid(jsonResponse)) {
+										if (logger.isDebugEnabled()) {
+											logger.debug("SpaCy JSONResponse: " + jsonResponse);
+										}
+										this.getEntities(atributeValue, new JSONArray(jsonResponse));
 									}
-									this.getEntities(atributeValue, new JSONArray(jsonResponse));
-								}
-								try {
-								} finally {
-									instream.close();
 								}
 							}
-						} finally {
-							response.close();
 						}
 					}
 				}
-
 			}
-		} finally {
-			httpclient.close();
 		}
 		return this.getAttributes();
 
@@ -241,32 +234,5 @@ public class TurSpaCyConnector implements TurNLPImpl {
 			entityList.put(entityType, valueList);
 		}
 
-	}
-
-	public boolean isJSONValid(String test) {
-		try {
-			new JSONObject(test);
-		} catch (JSONException ex) {
-			// edited, to include @Arthur's comment
-			// e.g. in case JSONArray is valid as well...
-			try {
-				new JSONArray(test);
-			} catch (JSONException ex1) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	private String removeUrl(String commentstr) {
-		String urlPattern = "((https?|ftp|gopher|telnet|file|Unsure|http):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)";
-		Pattern p = Pattern.compile(urlPattern, Pattern.CASE_INSENSITIVE);
-		Matcher m = p.matcher(commentstr);
-		int i = 0;
-		while (m.find()) {
-			commentstr = commentstr.replaceAll(m.group(i), "").trim();
-			i++;
-		}
-		return commentstr;
 	}
 }

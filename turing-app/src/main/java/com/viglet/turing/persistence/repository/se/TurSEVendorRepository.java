@@ -36,6 +36,7 @@ public interface TurSEVendorRepository extends JpaRepository<TurSEVendor, String
 	@Cacheable("turSEVendorfindById")
 	Optional<TurSEVendor> findById(String id);
 
+	@SuppressWarnings("unchecked")
 	@CacheEvict(value = { "turSEVendorfindAll", "turSEVendorfindById" }, allEntries = true)
 	TurSEVendor save(TurSEVendor turSEVendor);
 

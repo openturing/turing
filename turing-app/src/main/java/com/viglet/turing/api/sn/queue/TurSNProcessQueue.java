@@ -37,24 +37,32 @@ import com.viglet.turing.api.sn.job.TurSNJobItem;
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.solr.TurSolr;
+import com.viglet.turing.solr.TurSolrInstance;
+import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.thesaurus.TurThesaurusProcessor;
 
 @Component
 public class TurSNProcessQueue {
-	private static final Logger logger = LogManager.getLogger(TurSNProcessQueue.class.getName());
+	private static final Logger logger = LogManager.getLogger(TurSNProcessQueue.class);
 	@Autowired
 	private TurSolr turSolr;
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
+	@Autowired
+	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 	@Autowired
 	private TurNLP turNLP;
 	@Autowired
 	private TurThesaurusProcessor turThesaurusProcessor;
 	@Autowired
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+	@Autowired
+	private TurSolrInstanceProcess turSolrInstanceProcess;
 
 	public static final String INDEXING_QUEUE = "indexing.queue";
 
@@ -94,12 +102,11 @@ public class TurSNProcessQueue {
 
 	public void desindexing(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
 		logger.debug("Deindexing");
-
-		turSolr.init(turSNSite);
+		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale());
 		if (turSNJobItem.getAttributes().containsKey("id")) {
-			turSolr.desindexing((String) turSNJobItem.getAttributes().get("id"));
+			turSolr.desindexing(turSolrInstance, (String) turSNJobItem.getAttributes().get("id"));
 		} else if (turSNJobItem.getAttributes().containsKey("type")) {
-			turSolr.desindexingByType((String) turSNJobItem.getAttributes().get("type"));
+			turSolr.desindexingByType(turSolrInstance, (String) turSNJobItem.getAttributes().get("type"));
 		}
 	}
 
@@ -120,7 +127,10 @@ public class TurSNProcessQueue {
 
 		// NLP
 		boolean nlp = true;
-		if (turSNSite.getTurNLPInstance() != null) {
+		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite,
+				turSNJobItem.getLocale());
+
+		if (turSNSiteLocale != null && turSNSiteLocale.getTurNLPInstance() != null) {
 			if (logger.isDebugEnabled())
 				logger.debug("It is using NLP to process attributes");
 			nlp = true;
@@ -149,7 +159,7 @@ public class TurSNProcessQueue {
 				}
 			}
 
-			turNLP.startup(turSNSite.getTurNLPInstance(), nlpAttributes);
+			turNLP.startup(turSNSiteLocale.getTurNLPInstance(), nlpAttributes);
 			Map<String, Object> nlpResultsPreffix = new HashMap<String, Object>();
 
 			// Copy NLP attributes to consolidateResults
@@ -183,8 +193,9 @@ public class TurSNProcessQueue {
 		Map<String, Object> attributesWithUniqueTerms = this.removeDuplicateTerms(consolidateResults);
 
 		// SE
-		turSolr.init(turSNSite, attributesWithUniqueTerms);
-		turSolr.indexing();;
+		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale());
+		turSolr.indexing(turSolrInstance, turSNSite, attributesWithUniqueTerms);
+		;
 	}
 
 	public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {

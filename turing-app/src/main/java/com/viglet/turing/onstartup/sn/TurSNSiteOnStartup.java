@@ -22,10 +22,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 
 import com.viglet.turing.sn.template.TurSNTemplate;
 
@@ -35,8 +33,6 @@ public class TurSNSiteOnStartup {
 
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
 	@Autowired
@@ -51,12 +47,9 @@ public class TurSNSiteOnStartup {
 			// Detail
 			turSNSite.setName("Sample");
 			turSNSite.setDescription("Semantic Sample Site");
-			turSNSite.setLanguage(TurLocaleRepository.EN_US);
-			turSNSite.setCore("turing");
-
-			turSNSite.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
+		
 			turSNSite.setTurSEInstance(turSEInstanceRepository.findAll().get(0));
-
+						
 			turSNTemplate.defaultSNUI(turSNSite);
 
 			turSNSiteRepository.save(turSNSite);
@@ -64,7 +57,9 @@ public class TurSNSiteOnStartup {
 			turSNTemplate.createSEFields(turSNSite);
 
 			turSNTemplate.createNERFields(turSNSite);
-			
+
+			turSNTemplate.createLocale(turSNSite);
+
 			turSNTemplate.createSpotlight(turSNSite);
 		}
 	}
