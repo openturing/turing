@@ -90,9 +90,6 @@ public class TurNLPEntity implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurTerm> turTerms;
 
-	public TurNLPEntity() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

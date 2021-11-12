@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,19 +18,22 @@
 package com.viglet.turing.nlp;
 
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.springframework.stereotype.Component;
+
 @Component
 public class TurNLPSentence {
-	LinkedHashMap<String, TurNLPWord> words = new LinkedHashMap<String, TurNLPWord>();
+	private Map<String, TurNLPWord> words = new LinkedHashMap<>();
 
-	public LinkedHashMap<String, TurNLPWord> getWords() {
+	public Map<String, TurNLPWord> getWords() {
 		return words;
 	}
 
-	public void setWords(LinkedHashMap<String, TurNLPWord> words) {
+	public void setWords(Map<String, TurNLPWord> words) {
 		this.words = words;
 	}
+
 	public void addWord(TurNLPWord word) {
 		this.words.put(word.getWord(), word);
 	}

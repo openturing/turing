@@ -54,9 +54,6 @@ public class TurNLPVendorEntity implements Serializable {
 	@JoinColumn(name="nlp_vendor_id", nullable=false)
 	private TurNLPVendor turNLPVendor;
 
-	public TurNLPVendorEntity() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

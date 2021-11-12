@@ -79,9 +79,6 @@ public class TurNLPInstance implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
 
-	public TurNLPInstance() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

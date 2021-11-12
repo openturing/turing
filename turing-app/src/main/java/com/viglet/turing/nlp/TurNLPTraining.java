@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -39,9 +40,9 @@ import com.viglet.turing.nlp.bean.TurNLPTrainingBeans;
 public class TurNLPTraining {
 	static final Logger logger = LogManager.getLogger(TurNLPTraining.class.getName());
 
-	public Map<String, ArrayList<String>> processNLPTerms(Map<String, Object> attributes) {
+	public Map<String, List<String>> processNLPTerms(Map<String, Object> attributes) {
 		logger.debug("Executing processNLPTerms");
-		Map<String, ArrayList<String>> processedAttributes = new HashMap<String, ArrayList<String>>();
+		Map<String, List<String>> processedAttributes = new HashMap<>();
 		File userDir = new File(System.getProperty("user.dir"));
 		File trainingFile = new File(userDir.getAbsolutePath().concat("/store/nlp/train/train.json"));
 		if (trainingFile.exists()) {
@@ -52,32 +53,32 @@ public class TurNLPTraining {
 
 				ObjectMapper mapper = new ObjectMapper();
 				TurNLPTrainingBeans turNLPTrainingBeans = mapper.readValue(jsonText, TurNLPTrainingBeans.class);
-				Map<String, TurNLPTrainingBean> terms = new HashMap<String, TurNLPTrainingBean>();
+				Map<String, TurNLPTrainingBean> terms = new HashMap<>();
 				for (TurNLPTrainingBean turNLPTrainingBeanItem : turNLPTrainingBeans.getTerms()) {
 					terms.put(turNLPTrainingBeanItem.getTerm().toLowerCase(), turNLPTrainingBeanItem);
 				}
 
 				if (logger.isDebugEnabled()) {
 					for (TurNLPTrainingBean turNLPTrainingBeanItem : turNLPTrainingBeans.getTerms()) {
-						logger.debug(turNLPTrainingBeanItem.toString());
+						logger.debug(turNLPTrainingBeanItem);
 					}
 				}
 				if (attributes != null) {
 					for (Entry<String, Object> attribute : attributes.entrySet()) {
 						if (attribute.getValue() != null) {
-							logger.debug("attribute Value: " + attribute.getValue().toString());
+							logger.debug("attribute Value: {}" ,attribute.getValue());
 							if (attribute.getValue() instanceof ArrayList) {
 								if (!processedAttributes.containsKey(attribute.getKey()))
-									processedAttributes.put(attribute.getKey(), new ArrayList<String>());
+									processedAttributes.put(attribute.getKey(), new ArrayList<>());
 								ArrayList<?> attributeList = (ArrayList<?>) attribute.getValue();
-								if (attributeList.size() > 0) {
+								if (!attributeList.isEmpty()) {
 									for (Object attributeItem : attributeList) {
 										if (terms.containsKey(attributeItem.toString().toLowerCase())) {
 											TurNLPTrainingBean term = terms.get(attributeItem.toString().toLowerCase());
 											if (!term.isIgnore()) {
 												if (term.getNer() != null) {
 													if (!processedAttributes.containsKey(term.getNer()))
-														processedAttributes.put(term.getNer(), new ArrayList<String>());
+														processedAttributes.put(term.getNer(), new ArrayList<>());
 													if (term.getConvertTo() != null)
 														processedAttributes.get(term.getNer()).add(term.getConvertTo());
 													else

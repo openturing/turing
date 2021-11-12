@@ -220,7 +220,7 @@ public class TurThesaurusProcessor {
 		logger.debug("Matches...");
 
 		for (Entry<TurNLPListKey<Integer>, List<String>> pair : matches.entrySet()) {
-			ArrayList<Integer> positions = ((TurNLPListKey<Integer>) pair.getKey()).getList();
+			List<Integer> positions = ((TurNLPListKey<Integer>) pair.getKey()).getList();
 			List<String> ids = (List<String>) pair.getValue();
 			this.mergeEntityResultsFromTo(this.checkTermIdBetweenPositions(turNLPSentence, positions, ids, matches),
 					entityResults);
@@ -234,8 +234,8 @@ public class TurThesaurusProcessor {
 		return entityResults;
 	}
 
-	public TurEntityResults checkTermIdBetweenPositions(TurNLPSentence turNLPSentence, ArrayList<Integer> positions,
-			List<String> ids, LinkedHashMap<TurNLPListKey<Integer>, List<String>> matches) {
+	public TurEntityResults checkTermIdBetweenPositions(TurNLPSentence turNLPSentence, List<Integer> positions,
+			List<String> ids, Map<TurNLPListKey<Integer>, List<String>> matches) {
 		TurEntityResults entityResults = new TurEntityResults();
 		logger.debug("Current Positions: " + positions.toString());
 		if ((positions.get(0).intValue() > 0) && (ids.size() > 0)) {
@@ -358,14 +358,14 @@ public class TurThesaurusProcessor {
 	}
 
 	public String getWordsByPosition(TurNLPSentence turNLPSentence, Integer position) {
-		ArrayList<Integer> positions = new ArrayList<Integer>();
+		List<Integer> positions = new ArrayList<>();
 		positions.add(position);
 		return this.getWordsByPosition(turNLPSentence, positions);
 	}
 
-	public String getWordsByPosition(TurNLPSentence turNLPSentence, ArrayList<Integer> positions) {
+	public String getWordsByPosition(TurNLPSentence turNLPSentence, List<Integer> positions) {
 		StringBuffer words = new StringBuffer();
-		ArrayList<TurNLPWord> wordsbyPosition = new ArrayList<TurNLPWord>(turNLPSentence.getWords().values());
+		List<TurNLPWord> wordsbyPosition = new ArrayList<>(turNLPSentence.getWords().values());
 		for (Integer position : positions) {
 			TurNLPWord turNLPWord = wordsbyPosition.get(position);
 			words.append(turNLPWord.getWord() + " ");

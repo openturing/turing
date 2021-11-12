@@ -52,9 +52,6 @@ public class TurDataGroupModel implements Serializable {
 	@JsonIdentityReference(alwaysAsId = true)
 	private TurDataGroup turDataGroup;
 
-	public TurDataGroupModel() {
-	}
-
 	public int getId() {
 		return this.id;
 	}

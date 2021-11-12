@@ -59,26 +59,6 @@ public class TurMLInstance implements Serializable {
 	@JoinColumn(name = "ml_vendor_id", nullable = false)
 	private TurMLVendor turMLVendor;
 
-	/*@Transient
-	private boolean isSelected;
-*/
-	public TurMLInstance() {
-	}
-
-/*	public boolean isSelected() {
-		TurConfigVarService turConfigVarService = new TurConfigVarService();
-		if (Integer.parseInt(turConfigVarService.get("DEFAULT_ML").getValue()) == this.getId()) {
-			isSelected = true;
-		} else {
-			isSelected = false;
-		}
-		return isSelected;
-	}
-
-	public void setSelected(boolean isSelected) {
-		this.isSelected = isSelected;
-	}*/
-
 	public int getId() {
 		return this.id;
 	}

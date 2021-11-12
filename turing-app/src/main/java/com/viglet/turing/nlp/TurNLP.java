@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,29 +35,21 @@ import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.plugins.nlp.TurNLPImpl;
-import com.viglet.turing.solr.TurSolrField;
 
 @ComponentScan
 @Component
 public class TurNLP {
-
+	private static final Logger logger = LogManager.getLogger(TurNLP.class.getName());
 	@Autowired
 	private TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
 	@Autowired
-	ServletContext context;
-	@Autowired
-	TurSolrField turSolrField;
-
+	private ServletContext context;
 	private Map<String, Object> nlpAttributes;
-
-	static final Logger logger = LogManager.getLogger(TurNLP.class.getName());
-
 	private Map<String, Object> attributes = null;
-
-	TurNLPInstance turNLPInstance = null;
-	TurNLPVendor turNLPVendor = null;
+	private TurNLPInstance turNLPInstance = null;
+	private TurNLPVendor turNLPVendor = null;
 
 	public void init() {
 		turConfigVarRepository.findById("DEFAULT_NLP").ifPresent(turConfigVar -> turNLPInstanceRepository
@@ -77,9 +69,9 @@ public class TurNLP {
 
 	public void startup(TurNLPInstance turNLPInstance, String text) {
 		this.init(turNLPInstance);
-		Map<String, Object> attributes = new HashMap<String, Object>();
-		attributes.put("text", text);
-		this.setAttributes(attributes);
+		Map<String, Object> attribs = new HashMap<>();
+		attribs.put("text", text);
+		this.setAttributes(attribs);
 	}
 
 	public void startup(TurNLPInstance turNLPInstance, Map<String, Object> attributes) {
@@ -89,8 +81,7 @@ public class TurNLP {
 	}
 
 	public Map<String, Object> validate() {
-		Map<String, Object> turNLPResults = this.retrieveNLP();
-		return turNLPResults;
+		return this.retrieveNLP();
 	}
 
 	public Map<String, Object> getAttributes() {
@@ -127,7 +118,7 @@ public class TurNLP {
 		}
 
 		if (logger.isDebugEnabled() && this.getNlpAttributes() != null) {
-			logger.debug("Result retrieveNLP: " + this.getNlpAttributes().toString());
+			logger.debug("Result retrieveNLP: {}", this.getNlpAttributes());
 		}
 
 		return this.getNlpAttributes();

@@ -61,26 +61,6 @@ public class TurSEInstance implements Serializable {
 	@JoinColumn(name = "se_vendor_id", nullable = false)
 	private TurSEVendor turSEVendor;
 
-	/*@Transient
-	private boolean isSelected;*/
-
-	public TurSEInstance() {
-	}
-
-	/*public boolean isSelected() {
-		TurConfigVarService turConfigVarService = new TurConfigVarService();
-		if (Integer.parseInt(turConfigVarService.get("DEFAULT_SE").getValue()) == this.getId()) {
-			isSelected = true;
-		} else {
-			isSelected = false;
-		}
-		return isSelected;
-	}
-
-	public void setSelected(boolean isSelected) {
-		this.isSelected = isSelected;
-	}*/
-
 	public String getId() {
 		return this.id;
 	}

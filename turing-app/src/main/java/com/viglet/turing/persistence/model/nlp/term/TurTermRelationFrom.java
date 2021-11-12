@@ -56,9 +56,6 @@ public class TurTermRelationFrom implements Serializable {
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTermRelationFrom", cascade = CascadeType.ALL)
 	private List<TurTermRelationTo> turTermRelationTos;
 
-	public TurTermRelationFrom() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

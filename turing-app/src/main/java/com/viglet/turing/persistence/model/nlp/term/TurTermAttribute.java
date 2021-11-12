@@ -50,9 +50,6 @@ public class TurTermAttribute implements Serializable {
 	@JoinColumn(name="term_id", nullable=false)
 	private TurTerm turTerm;
 
-	public TurTermAttribute() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

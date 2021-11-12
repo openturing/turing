@@ -59,9 +59,6 @@ public class TurNLPInstanceEntity implements Serializable {
 	@JsonBackReference (value="turNLPInstanceEntity-turNLPInstance")
 	private TurNLPInstance turNLPInstance;
 
-	public TurNLPInstanceEntity() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

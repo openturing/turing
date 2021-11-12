@@ -47,9 +47,6 @@ public class TurNLPVendor implements Serializable {
 	@Column(nullable = true, length = 255)
 	private String website;
 
-	public TurNLPVendor() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

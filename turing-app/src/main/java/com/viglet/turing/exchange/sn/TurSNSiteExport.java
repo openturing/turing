@@ -120,8 +120,6 @@ public class TurSNSiteExport {
 	}
 
 	public TurSNSiteExchange exportSNSite(TurSNSite turSNSite) {
-		TurSNSiteExchange turSNSiteExchange = new TurSNSiteExchange(turSNSite);
-
-		return turSNSiteExchange;
+		return new TurSNSiteExchange(turSNSite);
 	}
 }
