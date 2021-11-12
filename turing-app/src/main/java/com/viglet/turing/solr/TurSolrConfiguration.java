@@ -7,7 +7,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.solr.client.solrj.impl.HttpClientUtil;
-import org.apache.solr.client.solrj.impl.HttpClientUtil.SchemaRegistryProvider;
+import org.apache.solr.client.solrj.impl.HttpClientUtil.SocketFactoryRegistryProvider;
 import org.apache.solr.client.solrj.impl.SolrHttpRequestRetryHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,9 +17,10 @@ public class TurSolrConfiguration {
 
 	@Bean
 	public CloseableHttpClient closeableHttpClient() {
-		SchemaRegistryProvider schemaRegistry = HttpClientUtil.getSchemaRegisteryProvider();
-		
-		PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(schemaRegistry.getSchemaRegistry());
+		SocketFactoryRegistryProvider socketFactoryRegistryProvider = HttpClientUtil.getSocketFactoryRegistryProvider();
+
+		PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(
+				socketFactoryRegistryProvider.getSocketFactoryRegistry());
 		cm.setMaxTotal(10000);
 		cm.setDefaultMaxPerRoute(10000);
 		cm.setValidateAfterInactivity(3000);
