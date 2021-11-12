@@ -71,7 +71,7 @@ public class TurSNProcessQueue {
 
 		this.turSNSiteRepository.findById(turSNJob.getSiteId()).ifPresent(turSNSite -> {
 			for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
-				logger.debug("receiveQueue TurSNJobItem: {}", turSNJobItem.toString());
+				logger.debug("receiveQueue TurSNJobItem: {}", turSNJobItem);
 				if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
 					this.indexing(turSNJobItem, turSNSite);
 
@@ -198,12 +198,12 @@ public class TurSNProcessQueue {
 	}
 
 	public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {
-		Map<String, Object> attributesWithUniqueTerms = new HashMap<String, Object>();
+		Map<String, Object> attributesWithUniqueTerms = new HashMap<>();
 		if (attributes != null) {
 			for (Entry<String, Object> attribute : attributes.entrySet()) {
 				if (attribute.getValue() != null) {
 
-					logger.debug("removeDuplicateTerms: attribute Value: {}", attribute.getValue().toString());
+					logger.debug("removeDuplicateTerms: attribute Value: {}", attribute.getValue());
 					logger.debug("removeDuplicateTerms: attribute Class: {}",
 							attribute.getValue().getClass().getName());
 					if (attribute.getValue() instanceof ArrayList) {
@@ -219,7 +219,7 @@ public class TurSNProcessQueue {
 							arrayValue.addAll(termsUnique);
 							attributesWithUniqueTerms.put(attribute.getKey(), arrayValue);
 							termsUnique.forEach(term -> logger.debug(
-									"removeDuplicateTerms: attributesWithUniqueTerms Array Value: {}", (String) term));
+									"removeDuplicateTerms: attributesWithUniqueTerms Array Value: {}", term));
 
 						}
 					} else {
@@ -228,7 +228,7 @@ public class TurSNProcessQueue {
 					}
 				}
 			}
-			logger.debug("removeDuplicateTerms: attributesWithUniqueTerms: {}", attributesWithUniqueTerms.toString());
+			logger.debug("removeDuplicateTerms: attributesWithUniqueTerms: {}", attributesWithUniqueTerms);
 
 		}
 		return attributesWithUniqueTerms;

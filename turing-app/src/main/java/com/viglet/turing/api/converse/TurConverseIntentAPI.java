@@ -116,7 +116,7 @@ public class TurConverseIntentAPI {
 	@Operation(summary = "Update a Converse Intent")
 	@PutMapping("/{id}")
 	public TurConverseIntent turConverseIntentUpdate(@JsonProperty("agent") String agent, @PathVariable String id,
-			@RequestBody TurConverseIntent turConverseIntent) throws Exception {
+			@RequestBody TurConverseIntent turConverseIntent) {
 		return turConverseIntentRepository.findById(id).map(turConverseIntentEdit -> {
 			turConverseIntentEdit.setActionName(turConverseIntent.getActionName());
 			turConverseIntentEdit.setParameters(turConverseIntent.getParameters());

@@ -36,9 +36,8 @@ public class TurEncryptCLI {
 		String result = null;
 		try {
 			return stringEncryptor.encrypt(input);
-
-		} catch (Throwable t) {
-			logger.error(t.getMessage(), t);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
 		}
 		return result;
 	}

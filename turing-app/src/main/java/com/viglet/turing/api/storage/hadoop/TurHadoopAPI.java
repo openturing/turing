@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileStatus;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,15 +63,11 @@ public class TurHadoopAPI {
 					conf.set("hadoop.job.ugi", "root");
 					FileSystem fs = FileSystem.get(conf);
 					String pathUnescape = StringEscapeUtils.unescapeHtml4(path);
-					System.out.println("Teste");
-
-					System.out.println(pathUnescape);
-					List<org.apache.hadoop.fs.Path> turFileStatuses = new ArrayList<org.apache.hadoop.fs.Path>();
-					FileStatus[] status = fs.listStatus(new org.apache.hadoop.fs.Path(pathUnescape));
+					logger.info(pathUnescape);
+					List<Path> turFileStatuses = new ArrayList<>();
+					FileStatus[] status = fs.listStatus(new Path(pathUnescape));
 					for (int i = 0; i < status.length; i++) {
-
 						turFileStatuses.add(status[i].getPath());
-
 					}
 					TurChildPath turChildPath = new TurChildPath();
 					turChildPath.setDir(turFileStatuses);

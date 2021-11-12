@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */ 
+ */
 
 package com.viglet.turing.console;
 
@@ -32,13 +32,9 @@ public class TurConsole implements ApplicationRunner {
 	private TurEncryptCLI turEncryptCLI;
 
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
-		if (args.getNonOptionArgs().size() > 1) {
-			if (args.getNonOptionArgs().get(1).equals("encrypt")) {
-				if (args.getNonOptionArgs().get(1).equals("encrypt")) {
-					System.out.println(turEncryptCLI.encrypt(args.getOptionValues("input").get(0)));
-				}
-			}
+	public void run(ApplicationArguments args) {
+		if (!args.getNonOptionArgs().isEmpty() && args.getNonOptionArgs().get(1).equals("encrypt")) {
+			System.console().writer().println(turEncryptCLI.encrypt(args.getOptionValues("input").get(0)));
 		}
 	}
 }
