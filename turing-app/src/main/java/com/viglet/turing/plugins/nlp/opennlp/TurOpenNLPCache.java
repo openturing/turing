@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ public class TurOpenNLPCache {
 
 	@Cacheable("nlpName")
 	public TurNameFinderME nameFinderMe(String entityPath) {
-		logger.debug("Creating OpenNLP Entity: " + entityPath);
+		logger.debug("Creating OpenNLP Entity: {}", entityPath);
 		File modelIn = new File(entityPath);
 
 		TokenNameFinderModel model;
@@ -47,8 +47,7 @@ public class TurOpenNLPCache {
 			NameFinderME nameFinderME = new NameFinderME(model);
 			return new TurNameFinderME(nameFinderME);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		}
 
 		return null;
@@ -70,7 +69,7 @@ public class TurOpenNLPCache {
 			return new TurSentenceDetectorME(sentenceDetectorME);
 
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		}
 		return null;
 	}
@@ -89,7 +88,7 @@ public class TurOpenNLPCache {
 			TokenizerME tokenizerME = new TokenizerME(model);
 			return new TurTokenizerME(tokenizerME);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		}
 		return null;
 	}

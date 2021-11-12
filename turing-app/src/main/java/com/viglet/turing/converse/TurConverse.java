@@ -48,7 +48,7 @@ public class TurConverse {
 	@Autowired
 	private TurConverseSE turConverseSE;
 
-	private Random rand = new Random();
+	private SecureRandom random = new SecureRandom();
 
 	public void saveChatResponseUser(String q, TurConverseChat chat, HttpSession session) {
 		boolean hasParameter = session.getAttribute(TurConverseConstants.HAS_PARAMETER) != null
@@ -145,7 +145,7 @@ public class TurConverse {
 			if (!resultsParameter.isEmpty()) {
 				List<String> prompts = (List<String>) firstResultParameter.getFieldValue(TurConverseConstants.PROMPTS);
 				if (!prompts.isEmpty()) {
-					int rnd = rand.nextInt(prompts.size());
+					int rnd = random.nextInt(prompts.size());
 					turConverseAgentResponse.setResponse(prompts.get(rnd));
 					turConverseAgentResponse.setIntentId(intent);
 					turConverseAgentResponse
@@ -210,7 +210,7 @@ public class TurConverse {
 	@SuppressWarnings("unchecked")
 	private String getIntentResponse(TurConverseChat chat, SolrDocument firstResult) {
 		List<String> responses = (List<String>) firstResult.getFieldValue(TurConverseConstants.RESPONSES);
-		int rnd = rand.nextInt(responses.size());
+		int rnd = random.nextInt(responses.size());
 		String response = responses.get(rnd);
 
 		String[] words = response.split(" ");
