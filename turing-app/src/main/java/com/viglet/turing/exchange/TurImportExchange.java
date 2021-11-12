@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.io.FileUtils;
@@ -40,8 +39,6 @@ import com.viglet.turing.utils.TurUtils;
 @Component
 public class TurImportExchange {
 
-	@Autowired
-	private TurUtils turUtils;
 	@Autowired
 	private TurSNSiteImport turSNSiteImport;
 	private static final String EXPORT_FILE ="export.json";
@@ -99,23 +96,6 @@ public class TurImportExchange {
 		shObjects.clear();
 		shChildObjects.clear();
 
-		File userDir = new File(System.getProperty("user.dir"));
-		if (userDir.exists() && userDir.isDirectory()) {
-			File tmpDir = new File(userDir.getAbsolutePath().concat(File.separator + "store" + File.separator + "tmp"));
-			if (!tmpDir.exists()) {
-				tmpDir.mkdirs();
-			}
-
-			File zipFile = new File(tmpDir.getAbsolutePath()
-					.concat(File.separator + "imp_" + file.getOriginalFilename() + UUID.randomUUID()));
-
-			file.transferTo(zipFile);
-			File extractFolder = new File(tmpDir.getAbsolutePath().concat(File.separator + "imp_" + UUID.randomUUID()));
-			turUtils.unZipIt(zipFile, extractFolder);
-			FileUtils.deleteQuietly(zipFile);
-			return extractFolder;
-		} else {
-			return null;
-		}
+		return TurUtils.extractZipFile(file);
 	}
 }

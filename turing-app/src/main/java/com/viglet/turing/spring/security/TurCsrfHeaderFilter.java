@@ -39,6 +39,7 @@ public class TurCsrfHeaderFilter extends OncePerRequestFilter {
 			String token = csrf.getToken();
 			if (cookie == null || token != null && !token.equals(cookie.getValue())) {
 				cookie = new Cookie("XSRF-TOKEN", token);
+				cookie.setSecure(true);
 				cookie.setPath("/");
 				response.addCookie(cookie);
 			}

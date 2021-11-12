@@ -29,9 +29,12 @@ import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.sax.SAXSource;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,6 +43,9 @@ import org.json.JSONObject;
 import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
@@ -244,9 +250,17 @@ public class TurTMEConnector implements TurNLPImpl {
 		try {
 			logger.debug(xml);
 			jaxbContext = JAXBContext.newInstance(com.viglet.turing.plugins.nlp.otca.response.xml.ObjectFactory.class);
-			@SuppressWarnings("unchecked")
-			ServerResponseType serverResponseType = ((JAXBElement<ServerResponseType>) jaxbContext.createUnmarshaller()
-					.unmarshal(is)).getValue();
+			SAXParserFactory spf = SAXParserFactory.newInstance();
+			spf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			spf.setFeature("http://xml.org/sax/features/validation", false);
+
+			XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+			SAXSource source = new SAXSource(xmlReader, new InputSource(is));
+
+			Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+
+			ServerResponseType serverResponseType = unmarshaller.unmarshal(source, ServerResponseType.class).getValue();
+
 			logger.debug("getErrorDescription: " + serverResponseType.getErrorDescription());
 			logger.debug("getVersion: " + serverResponseType.getVersion());
 			for (Object result : serverResponseType.getResults().getPingOrGetSupportedEncodingsOrLanguagedetector()) {
@@ -257,7 +271,7 @@ public class TurTMEConnector implements TurNLPImpl {
 				this.getResult(result);
 			}
 
-		} catch (JAXBException e) {
+		} catch (JAXBException | SAXException | ParserConfigurationException e) {
 			logger.error(e);
 		}
 		try {
@@ -265,7 +279,6 @@ public class TurTMEConnector implements TurNLPImpl {
 
 			String jsonPrettyPrintString = json.toString(PRETTY_PRINT_INDENT_FACTOR);
 			jsonResult = jsonPrettyPrintString;
-			// System.out.println(jsonResult);
 		} catch (JSONException e) {
 			logger.error(e);
 		}
@@ -341,16 +354,10 @@ public class TurTMEConnector implements TurNLPImpl {
 
 						logger.debug("getId: " + term.getId());
 						logger.debug("getNfinderNormalized: " + term.getNfinderNormalized());
-						if (term.getMainTerm() != null) {
-							// System.out.println("getMainTerm: " +
-							// term.getMainTerm().getValue());
-						}
 						if (term.getSubterms() != null) {
 							for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
 									.getSubterm()) {
 								hmEntities.get(term.getCartridgeID()).add(subterm.getValue());
-								// System.out.println("getSubTerm: " +
-								// subterm.getValue());
 							}
 
 						}
@@ -361,16 +368,10 @@ public class TurTMEConnector implements TurNLPImpl {
 						if (!hmEntities.containsKey(term.getCartridgeID())) {
 							hmEntities.put(term.getCartridgeID(), new ArrayList<Object>());
 						}
-						if (term.getMainTerm() != null) {
-							// System.out.println("getMainTerm: " +
-							// term.getMainTerm().getValue());
-						}
 						if (term.getSubterms() != null) {
 							for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
 									.getSubterm()) {
 								hmEntities.get(term.getCartridgeID()).add(subterm.getValue());
-								// System.out.println("getSubTerm: " +
-								// subterm.getValue());
 							}
 
 						}
@@ -403,9 +404,6 @@ public class TurTMEConnector implements TurNLPImpl {
 					if (!hmEntities.containsKey(kb.getKBid())) {
 						hmEntities.put(kb.getKBid(), new ArrayList<Object>());
 					}
-					// System.out.println("KB Id:" + kb.getKBid());
-					// System.out.println("KB Relevance:" +
-					// kb.getRelevancyScore());
 					if (kb.getCategories() != null) {
 						for (ServerResponseCategorizerResultCategoryType category : kb.getCategories().getCategory()) {
 
@@ -414,9 +412,6 @@ public class TurTMEConnector implements TurNLPImpl {
 								hmEntities.get(kb.getKBid())
 										.add(content.toString().replaceAll(category.getId() + " - ", ""));
 							}
-							// System.out.println("KB ID: " + category.getId());
-							// System.out.println("KB Weight: " +
-							// category.getWeight());
 						}
 					}
 					if (kb.getRejectedCategories() != null) {

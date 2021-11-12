@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,7 +56,7 @@ import org.w3c.dom.NodeList;
 @RequestMapping("/api/otsn/broker")
 @Tag(name = "OTSN Broker", description = "OTSN Broker API")
 public class TurOTSNBrokerAPI {
-	private static final Logger logger = LogManager.getLogger(TurOTSNBrokerAPI.class.getName());
+	private static final Logger logger = LogManager.getLogger(TurOTSNBrokerAPI.class);
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
@@ -71,13 +72,18 @@ public class TurOTSNBrokerAPI {
 
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		try {
+			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		} catch (ParserConfigurationException e) {
+			logger.error(e.getMessage(), e);
+		}
 		DocumentBuilder builder;
 		Document document = null;
 		try {
 			builder = factory.newDocumentBuilder();
 			document = builder.parse(new InputSource(new StringReader(data)));
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		}
 
 		if (document != null) {

@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.annotation.Nonnull;
 
@@ -64,8 +63,6 @@ public class TurConverseImportExchange {
 	static final Logger logger = LogManager.getLogger(TurConverseImportExchange.class.getName());
 
 	@Autowired
-	private TurUtils turUtils;
-	@Autowired
 	private TurConverseAgentRepository turConverseAgentRepository;
 	@Autowired
 	private TurConverseIntentRepository turConverseIntentRepository;
@@ -104,7 +101,7 @@ public class TurConverseImportExchange {
 
 			TurConverseAgent turConverseAgent = new TurConverseAgent();
 			if (multipartFile.getOriginalFilename() != null) {
-				turConverseAgent.setName(multipartFile.getOriginalFilename().replace(".zip", ""));
+				turConverseAgent.setName(multipartFile.getOriginalFilename().replace(".zip", "")); // NOSONAR
 			}
 			turConverseAgent.setDescription(turConverseAgentExchange.getDescription());
 			turConverseAgent.setCore("converse");
@@ -218,27 +215,12 @@ public class TurConverseImportExchange {
 		return this.importFromMultipartFile(multipartFile);
 	}
 
-	public File extractZipFile(MultipartFile file) throws IllegalStateException, IOException {
+	public File extractZipFile(MultipartFile file) {
 		shObjects.clear();
 		shChildObjects.clear();
 
-		File userDir = new File(System.getProperty("user.dir"));
-		if (userDir.exists() && userDir.isDirectory()) {
-			File tmpDir = new File(userDir.getAbsolutePath().concat(File.separator + "store" + File.separator + "tmp"));
-			if (!tmpDir.exists()) {
-				tmpDir.mkdirs();
-			}
-
-			File zipFile = new File(tmpDir.getAbsolutePath()
-					.concat(File.separator + "imp_" + file.getOriginalFilename() + UUID.randomUUID()));
-
-			file.transferTo(zipFile);
-			File extractFolder = new File(tmpDir.getAbsolutePath().concat(File.separator + "imp_" + UUID.randomUUID()));
-			turUtils.unZipIt(zipFile, extractFolder);
-			FileUtils.deleteQuietly(zipFile);
-			return extractFolder;
-		} else {
-			return null;
-		}
+		return TurUtils.extractZipFile(file);
 	}
+
+	
 }

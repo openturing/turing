@@ -20,12 +20,11 @@ package com.viglet.turing.utils;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.Normalizer;
-import java.util.Collection;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +43,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.spring.security.auth.ITurAuthenticationFacade;
 
@@ -77,32 +77,33 @@ public class TurUtils {
 	 * @throws ArchiveException if creating or adding to the archive fails
 	 */
 	public void addFilesToZip(File source, File destination) {
-		OutputStream archiveStream;
+
+		try (OutputStream archiveStream = new FileOutputStream(destination);
+				ArchiveOutputStream archive = new ArchiveStreamFactory()
+						.createArchiveOutputStream(ArchiveStreamFactory.ZIP, archiveStream)) {
+
+			FileUtils.listFiles(source, null, true).forEach(file -> {
+				addFileToZip(source, archive, file);
+			});
+
+			archive.finish();
+		} catch (IOException | ArchiveException e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
+
+	private void addFileToZip(File source, ArchiveOutputStream archive, File file) {
+		String entryName;
 		try {
-			archiveStream = new FileOutputStream(destination);
+			entryName = getEntryName(source, file);
+			ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
+			archive.putArchiveEntry(entry);
 
-			try (ArchiveOutputStream archive = new ArchiveStreamFactory()
-					.createArchiveOutputStream(ArchiveStreamFactory.ZIP, archiveStream)) {
-
-				Collection<File> fileList = FileUtils.listFiles(source, null, true);
-
-				for (File file : fileList) {
-					String entryName = getEntryName(source, file);
-					ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
-					archive.putArchiveEntry(entry);
-
-					BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
-
-					IOUtils.copy(input, archive);
-					input.close();
-					archive.closeArchiveEntry();
-				}
-
-				archive.finish();
-			} catch (IOException | ArchiveException e) {
-				logger.error(e.getMessage(), e);
+			try (BufferedInputStream input = new BufferedInputStream(new FileInputStream(file))) {
+				IOUtils.copy(input, archive);
+				archive.closeArchiveEntry();
 			}
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
 	}
@@ -122,14 +123,39 @@ public class TurUtils {
 		return path.substring(index);
 	}
 
+	public static File extractZipFile(MultipartFile file) {
+		File userDir = new File(System.getProperty("user.dir"));
+		if (userDir.exists() && userDir.isDirectory()) {
+			File tmpDir = new File(userDir.getAbsolutePath().concat(File.separator + "store" + File.separator + "tmp"));
+			if (!tmpDir.exists()) {
+				tmpDir.mkdirs();
+			}
+
+			File zipFile = new File(tmpDir.getAbsolutePath().concat(File.separator + "imp_"
+					+ file.getOriginalFilename().replace(".", "").replace("/", "") + UUID.randomUUID()));
+			try {
+				file.transferTo(zipFile);
+				File extractFolder = new File(
+						tmpDir.getAbsolutePath().concat(File.separator + "imp_" + UUID.randomUUID()));
+
+				unZipIt(zipFile, extractFolder);
+
+				FileUtils.deleteQuietly(zipFile);
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
+		return null;
+	}
+
 	/**
 	 * Unzip it
 	 * 
 	 * @param zipFile      input zip file
 	 * @param outputFolder output Folder
-	 * @throws IOException if the IO fails
+	 * @throws Exception
 	 */
-	public void unZipIt(File zipFile, File outputFolder) throws IOException {
+	public static void unZipIt(File zipFile, File outputFolder) throws Exception {
 
 		try (ZipArchiveInputStream zin = new ZipArchiveInputStream(new FileInputStream(zipFile))) {
 			ZipArchiveEntry entry;
@@ -138,6 +164,8 @@ public class TurUtils {
 					continue;
 				}
 				File curfile = new File(outputFolder, entry.getName());
+				if (!curfile.toPath().normalize().startsWith(outputFolder.toPath()))
+					throw new Exception("Bad zip entry");
 				File parent = curfile.getParentFile();
 				if (!parent.exists()) {
 					if (!parent.mkdirs()) {
@@ -153,8 +181,6 @@ public class TurUtils {
 		try {
 			new JSONObject(test);
 		} catch (JSONException ex) {
-			// edited, to include @Arthur's comment
-			// e.g. in case JSONArray is valid as well...
 			try {
 				new JSONArray(test);
 			} catch (JSONException ex1) {
