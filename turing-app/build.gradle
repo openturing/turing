@@ -156,7 +156,7 @@ dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
 
 	// SolrJ
-	implementation group: 'org.apache.solr', name: 'solr-solrj', version: '8.5.2'
+	implementation group: 'org.apache.solr', name: 'solr-solrj', version: '8.10.1'
 
    	// Oracle	
 	implementation group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
