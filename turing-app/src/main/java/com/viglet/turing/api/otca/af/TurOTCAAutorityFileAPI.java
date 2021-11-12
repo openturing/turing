@@ -23,8 +23,10 @@ import java.nio.charset.StandardCharsets;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,6 +38,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.view.RedirectView;
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
 
 import com.viglet.turing.nlp.TurNLPRelationType;
 import com.viglet.turing.nlp.TurNLPTermAccent;
@@ -193,11 +197,13 @@ public class TurOTCAAutorityFileAPI {
 
 			if (afTermVariationType.getPrefix() != null) {
 				turTermVariation.setRulePrefix(afTermVariationType.getPrefix().getValue());
-				turTermVariation.setRulePrefixRequired(Boolean.TRUE.equals(afTermVariationType.getPrefix().isRequired()) ? 1 : 0);
+				turTermVariation.setRulePrefixRequired(
+						Boolean.TRUE.equals(afTermVariationType.getPrefix().isRequired()) ? 1 : 0);
 			}
 			if (afTermVariationType.getSuffix() != null) {
 				turTermVariation.setRuleSuffix(afTermVariationType.getSuffix().getValue());
-				turTermVariation.setRuleSuffixRequired(Boolean.TRUE.equals(afTermVariationType.getSuffix().isRequired()) ? 1 : 0);
+				turTermVariation.setRuleSuffixRequired(
+						Boolean.TRUE.equals(afTermVariationType.getSuffix().isRequired()) ? 1 : 0);
 			}
 			turTermVariation.setWeight(afTermVariationType.getWeight());
 			turTermVariation.setTurTerm(turTerm);
@@ -244,7 +250,6 @@ public class TurOTCAAutorityFileAPI {
 
 	}
 
-	@SuppressWarnings("unchecked")
 	@PostMapping("/import")
 	@Transactional
 	public RedirectView turOTCAAutorityFileImport(@RequestParam("file") MultipartFile multipartFile,
@@ -253,8 +258,16 @@ public class TurOTCAAutorityFileAPI {
 		try {
 			JAXBContext jaxbContext = JAXBContext
 					.newInstance(com.viglet.turing.plugins.nlp.otca.af.xml.ObjectFactory.class);
-			AFType documentType = ((JAXBElement<AFType>) jaxbContext.createUnmarshaller()
-					.unmarshal(multipartFile.getInputStream())).getValue();
+			SAXParserFactory spf = SAXParserFactory.newInstance();
+			spf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			spf.setFeature("http://xml.org/sax/features/validation", false);
+
+			XMLReader xmlReader = spf.newSAXParser().getXMLReader();
+			SAXSource source = new SAXSource(xmlReader, new InputSource(multipartFile.getInputStream()));
+
+			Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+
+			AFType documentType = unmarshaller.unmarshal(source, AFType.class).getValue();
 
 			TurNLPEntity turNLPEntity = this.setEntity(documentType.getName(), documentType.getDescription());
 			this.setTerms(turNLPEntity, documentType.getTerms());
@@ -266,7 +279,8 @@ public class TurOTCAAutorityFileAPI {
 		}
 		String redirect = "/turing/#entity/import";
 
-		RedirectView redirectView = new RedirectView(new String(redirect.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));
+		RedirectView redirectView = new RedirectView(
+				new String(redirect.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));
 		redirectView.setHttp10Compatible(false);
 		return redirectView;
 	}

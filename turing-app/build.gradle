@@ -36,7 +36,7 @@ sonarqube {
 
 jar {
     archiveBaseName = 'viglet-turing'
-    archiveVersion =  '0.3.4'
+    archiveVersion =  '0.3.5'
 }
 
 eclipse {
@@ -84,6 +84,10 @@ build.mustRunAfter clean
 
 if (!project.hasProperty('no-ui')) {
 	compileJava.dependsOn(':turing-ui:build'); 
+}
+
+configurations {
+    all*.exclude group: 'xml-apis'
 }
 
 dependencies {
@@ -156,14 +160,16 @@ dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
 
 	// SolrJ
-	implementation group: 'org.apache.solr', name: 'solr-solrj', version: '8.10.1'
+	implementation (group: 'org.apache.solr', name: 'solr-solrj', version: '8.10.1') {
+		exclude(module: 'xml-apis')
+	}
 
    	// Oracle	
 	implementation group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
 	
 	// Jasypt
 	implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
-
+	
 	// Spring
   	implementation group: 'org.springframework', name: 'spring-test', version: '5.3.13'
 
