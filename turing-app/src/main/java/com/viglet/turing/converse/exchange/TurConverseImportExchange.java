@@ -60,8 +60,8 @@ import com.viglet.turing.utils.TurUtils;
 
 @Component
 public class TurConverseImportExchange {
-	static final Logger logger = LogManager.getLogger(TurConverseImportExchange.class.getName());
-
+	private static final Logger logger = LogManager.getLogger(TurConverseImportExchange.class);
+	private static final String AGENT_FILE = "agent.json";
 	@Autowired
 	private TurConverseAgentRepository turConverseAgentRepository;
 	@Autowired
@@ -83,9 +83,9 @@ public class TurConverseImportExchange {
 
 		if (extractFolder != null) {
 			// Check if agent.json exists, if it is not exist try access a sub directory
-			if (!(new File(extractFolder, "agent.json").exists()) && (extractFolder.listFiles().length == 1)) {
+			if (!(new File(extractFolder, AGENT_FILE).exists()) && (extractFolder.listFiles().length == 1)) {
 				for (File fileOrDirectory : extractFolder.listFiles()) {
-					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, "agent.json").exists()) {
+					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, AGENT_FILE).exists()) {
 						parentExtractFolder = extractFolder;
 						extractFolder = fileOrDirectory;
 					}
@@ -95,7 +95,7 @@ public class TurConverseImportExchange {
 			TurConverseAgentExchange turConverseAgentExchange = null;
 
 			turConverseAgentExchange = mapper.readValue(
-					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + "agent.json")),
+					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + AGENT_FILE)),
 					TurConverseAgentExchange.class);
 			logger.debug(turConverseAgentExchange.getDescription());
 
@@ -173,7 +173,7 @@ public class TurConverseImportExchange {
 					// Responses
 					for (TurConverseIntentResponseExchange response : turConverseIntentExchange.getResponses()) {
 						for (TurConverseIntentMessageExchange message : response.getMessages()) {
-							if (message.getSpeech().size() > 0) {
+							if (!message.getSpeech().isEmpty()) {
 								TurConverseResponse turConverseResponse = new TurConverseResponse(
 										message.getSpeech().get(0));
 								turConverseResponse.setIntent(turConverseIntent);
@@ -197,7 +197,7 @@ public class TurConverseImportExchange {
 						}
 
 					} else {
-						logger.debug("Usersays not exists: " + phrasesFile.getAbsolutePath());
+						logger.debug("Usersays not exists: {}", phrasesFile.getAbsolutePath());
 					}
 				}
 			} catch (IOException e) {

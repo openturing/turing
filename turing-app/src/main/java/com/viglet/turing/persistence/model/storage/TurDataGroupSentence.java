@@ -63,9 +63,6 @@ public class TurDataGroupSentence implements Serializable {
 	@JsonIdentityReference(alwaysAsId = true)
 	private TurData turData;
 
-	public TurDataGroupSentence() {
-	}
-
 	public int getId() {
 		return this.id;
 	}

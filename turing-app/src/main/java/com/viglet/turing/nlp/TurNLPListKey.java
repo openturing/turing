@@ -18,22 +18,23 @@
 package com.viglet.turing.nlp;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class TurNLPListKey<T> {
-	private ArrayList<T> list;
-	StringBuffer hashCodeSb = new StringBuffer();
+	private List<T> list;
+	private StringBuilder hashCodeSb = new StringBuilder();
 
-	public ArrayList<T> getList() {
+	public List<T> getList() {
 		return list;
 	}
 
-	public void setList(ArrayList<T> list) {
+	public void setList(List<T> list) {
 		this.list = list;
 	}
 
 	@SuppressWarnings("unchecked")
-	public TurNLPListKey(ArrayList<T> list) {
-		this.list = (ArrayList<T>) list.clone();
+	public TurNLPListKey(List<T> list) {
+		this.list = (List<T>) ((ArrayList<T>) list).clone();
 		for (int i = 0; i < this.list.size(); i++) {
 			T item = this.list.get(i);
 			hashCodeSb.append(item);
@@ -52,15 +53,14 @@ public class TurNLPListKey<T> {
 			return false;
 		if (this.getClass() != obj.getClass())
 			return false;
-		StringBuffer hashCodeObjectSb = new StringBuffer();
+		StringBuilder hashCodeObjectSb = new StringBuilder();
 		@SuppressWarnings("unchecked")
 		TurNLPListKey<T> objList = (TurNLPListKey<T>) obj;
-		if (obj != null) {
-			objList.list.forEach(item -> {
-				hashCodeObjectSb.append(item);
-				hashCodeObjectSb.append(",");
-			});
-		}
+
+		objList.list.forEach(item -> {
+			hashCodeObjectSb.append(item);
+			hashCodeObjectSb.append(",");
+		});
 		return hashCodeSb.toString().equals(hashCodeObjectSb.toString());
 	}
 

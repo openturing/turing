@@ -17,15 +17,12 @@
 
 package com.viglet.turing.exchange.sn;
 
-import java.io.IOException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -34,15 +31,13 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 public class TurSNSiteImport {
 
 	@Autowired
-	TurSNSiteRepository turSNSiteRepository;
+	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	TurNLPInstanceRepository turNLPInstanceRepository;
+	private TurSEInstanceRepository turSEInstanceRepository;
 	@Autowired
-	TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	TurSNSiteFieldRepository turSNSiteFieldRepository;
+	private TurSNSiteFieldRepository turSNSiteFieldRepository;
 
-	public void importSNSite(TurExchange turExchange) throws IOException {
+	public void importSNSite(TurExchange turExchange){
 		for (TurSNSiteExchange turSNSiteExchange : turExchange.getSnSites()) {
 			if (!turSNSiteRepository.findById(turSNSiteExchange.getId()).isPresent()) {
 				

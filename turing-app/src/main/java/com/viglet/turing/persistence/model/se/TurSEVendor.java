@@ -46,9 +46,6 @@ public class TurSEVendor implements Serializable {
 	@Column(nullable = true, length = 255)
 	private String website;
 
-	public TurSEVendor() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

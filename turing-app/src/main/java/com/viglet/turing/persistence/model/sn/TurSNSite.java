@@ -137,9 +137,6 @@ public class TurSNSite implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteLocale> turSNSiteLocales;
 
-	public TurSNSite() {
-	}
-
 	public String getId() {
 		return id;
 	}

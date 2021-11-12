@@ -35,9 +35,6 @@ public class TurRole implements Serializable {
 	@ManyToMany
 	private Set<TurGroup> turGroups = new HashSet<>();
 
-	public TurRole() {
-	}
-
 	public String getId() {
 		return id;
 	}

@@ -32,7 +32,7 @@ import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 @Component
 @Transactional
 public class TurNLPInstanceOnStartup {
-
+	private static final String LOCALHOST = "localhost";
 	@Autowired
 	private TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
@@ -51,7 +51,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTitle("OpenNLP English");
 				turNLPInstance.setDescription("OpenNLP Production - English");
 				turNLPInstance.setTurNLPVendor(turNLPVendorOpenNLP);
-				turNLPInstance.setHost("localhost");
+				turNLPInstance.setHost(LOCALHOST);
 				turNLPInstance.setPort(0);
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
@@ -66,7 +66,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTitle("OpenNLP Portuguese");
 				turNLPInstance.setDescription("OpenNLP Production - Portuguese");
 				turNLPInstance.setTurNLPVendor(turNLPVendorOpenNLP);
-				turNLPInstance.setHost("localhost");
+				turNLPInstance.setHost(LOCALHOST);
 				turNLPInstance.setPort(0);
 				turNLPInstance.setLanguage(TurLocaleRepository.PT_BR);
 				turNLPInstance.setEnabled(1);
@@ -78,7 +78,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTitle("CoreNLP");
 				turNLPInstance.setDescription("CoreNLP Production - English");
 				turNLPInstance.setTurNLPVendor(turNLPVendorCoreNLP);
-				turNLPInstance.setHost("localhost");
+				turNLPInstance.setHost(LOCALHOST);
 				turNLPInstance.setPort(9001);
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
@@ -90,7 +90,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTitle("SpaCy");
 				turNLPInstance.setDescription("SpaCy Production - English");
 				turNLPInstance.setTurNLPVendor(turNLPVendorSpaCy);
-				turNLPInstance.setHost("localhost");
+				turNLPInstance.setHost(LOCALHOST);
 				turNLPInstance.setPort(2800);
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
@@ -102,7 +102,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTitle("Polyglot");
 				turNLPInstance.setDescription("Polyglot Production - Catalan");
 				turNLPInstance.setTurNLPVendor(turNLPVendorPolyglot);
-				turNLPInstance.setHost("localhost");
+				turNLPInstance.setHost(LOCALHOST);
 				turNLPInstance.setPort(2810);
 				turNLPInstance.setLanguage(TurLocaleRepository.CA);
 				turNLPInstance.setEnabled(1);

@@ -70,15 +70,15 @@ public class TurUser implements Serializable {
 	@ManyToMany
 	private Set<TurGroup> turGroups = new HashSet<>();
 	
-	public TurUser() {
-
-	}
-
 	public TurUser(TurUser turUser) {
 		this.username = turUser.username;
 		this.email = turUser.email;
 		this.password = turUser.password;
 		this.enabled = turUser.enabled;
+	}
+
+	public TurUser() {
+		super();
 	}
 
 	public String getConfirmEmail() {

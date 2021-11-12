@@ -40,14 +40,14 @@ public class TurLocale implements Serializable {
 	@Column(nullable = true, length = 255)
 	private String pt;
 
-	public TurLocale() {
-
-	}
-
 	public TurLocale(String initials, String en, String pt) {
 		setInitials(initials);
 		setEn(en);
 		setPt(pt);
+	}
+
+	public TurLocale() {
+		super();
 	}
 
 	public String getInitials() {

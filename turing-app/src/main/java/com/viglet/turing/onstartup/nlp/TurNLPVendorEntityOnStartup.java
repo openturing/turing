@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.nlp.TurNLPEntityConstant;
 import com.viglet.turing.nlp.TurNLPVendorsConstant;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
@@ -45,14 +46,22 @@ public class TurNLPVendorEntityOnStartup {
 	public void createDefaultRows() {
 		if (turNLPVendorEntityRepository.findAll().isEmpty()) {
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.CORENLP).ifPresent(turNLPVendor -> {
-				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "GL", "LOCATION", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "ON", "ORGANIZATION", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "DURATION", "DURATION", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "DATE", "DATE", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "MISC", "MISC", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "ORDINAL", "ORDINAL", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "TIME", "TIME", TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL, TurNLPEntityConstant.PERSON_CORENLP,
+						TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL, TurNLPEntityConstant.LOCATION_CORENLP,
+						TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL,
+						TurNLPEntityConstant.ORGANIZATION_CORENLP, TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.DURATION_INTERNAL, TurNLPEntityConstant.DURATION_CORENLP,
+						TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.DATE_INTERNAL, TurNLPEntityConstant.DATE_CORENLP,
+						TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.MISC_INTERNAL, TurNLPEntityConstant.MISC_CORENLP,
+						TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORDINAL_INTERNAL, TurNLPEntityConstant.ORDINAL_CORENLP,
+						TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.TIME_INTERNAL, TurNLPEntityConstant.TIME_CORENLP,
+						TurLocaleRepository.EN_US);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.OPENNLP).ifPresent(turNLPVendor -> {
@@ -61,121 +70,106 @@ public class TurNLPVendorEntityOnStartup {
 
 				if (userDir.exists() && userDir.isDirectory()) {
 
-					this.addNLPVendor(turNLPVendor, "PN",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-person.bin"),
 							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, "GL",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-location.bin"),
 							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, "ON",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-organization.bin"),
 							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, "MONEY",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.MONEY_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-money.bin"),
 							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, "DATE",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.DATE_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-date.bin"),
 							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, "PERCENTAGE",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERCENTAGE_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-percentage.bin"),
 							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, "TIME",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.TIME_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-time.bin"),
 							TurLocaleRepository.EN_US);
 
-					this.addNLPVendor(turNLPVendor, "PN",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-person.bin"),
 							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, "GL",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-location.bin"),
 							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, "ON",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-organization.bin"),
 							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, "MONEY",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.MONEY_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-money.bin"),
 							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, "DATE",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.DATE_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-date.bin"),
 							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, "PERCENTAGE",
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERCENTAGE_INTERNAL,
 							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-percentage.bin"),
 							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, "TIME",
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-time.bin"),
+					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.TIME_INTERNAL,
+							userDir.getAbsolutePath()
+									.concat("/models/opennlp/en/en-ner-time.bin"),
 							TurLocaleRepository.PT_BR);
 
 				}
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.OTCA).ifPresent(turNLPVendor -> {
-				this.addNLPVendor(turNLPVendor, "PN", "PN", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "GL", "GL", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "ON", "ON", TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL, TurNLPEntityConstant.PERSON_OTCA, TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL, TurNLPEntityConstant.LOCATION_OTCA, TurLocaleRepository.EN_US);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL, TurNLPEntityConstant.ORGANIZATION_OTCA, TurLocaleRepository.EN_US);
 
-				this.addNLPVendor(turNLPVendor, "PN", "PN", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "GL", "GL", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "ON", "ON", TurLocaleRepository.PT_BR);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL, TurNLPEntityConstant.PERSON_OTCA, TurLocaleRepository.PT_BR);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL, TurNLPEntityConstant.LOCATION_OTCA, TurLocaleRepository.PT_BR);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL, TurNLPEntityConstant.ORGANIZATION_OTCA, TurLocaleRepository.PT_BR);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).ifPresent(turNLPVendor -> {
-				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.CA);
-				this.addNLPVendor(turNLPVendor, "GL", "LOC", TurLocaleRepository.CA);
-				this.addNLPVendor(turNLPVendor, "ON", "ORG", TurLocaleRepository.CA);
-				this.addNLPVendor(turNLPVendor, "FIRST_NAME", "FIRST_NAME", TurLocaleRepository.CA);
-				this.addNLPVendor(turNLPVendor, "LAST_NAME", "LAST_NAME", TurLocaleRepository.CA);
-				this.addNLPVendor(turNLPVendor, "EMAIL", "EMAIL", TurLocaleRepository.CA);
-				this.addNLPVendor(turNLPVendor, "NIE", "NIE", TurLocaleRepository.CA);
-				this.addNLPVendor(turNLPVendor, "CIF", "CIF", TurLocaleRepository.CA);
-				this.addNLPVendor(turNLPVendor, "DNI", "DNI", TurLocaleRepository.CA);
-				this.addNLPVendor(turNLPVendor, "PASSPORT", "PASSPORT", TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL, TurNLPEntityConstant.PERSON_POLYGLOT, TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL, TurNLPEntityConstant.LOCATION_POLYGLOT, TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL, TurNLPEntityConstant.ORGANIZATION_POLYGLOT, TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.FIRST_NAME_INTERNAL, TurNLPEntityConstant.FIRST_NAME_POLYGLOT, TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LAST_NAME_INTERNAL, TurNLPEntityConstant.LAST_NAME_POLYGLOT, TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.EMAIL_INTERNAL, TurNLPEntityConstant.EMAIL_POLYGLOT, TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.NIE_INTERNAL, TurNLPEntityConstant.NIE_POLYGLOT, TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.CIF_INTERNAL, TurNLPEntityConstant.CIF_POLYGLOT, TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.DNI_INTERNAL, TurNLPEntityConstant.DNI_POLYGLOT, TurLocaleRepository.CA);
+				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PASSPORT_INTERNAL, TurNLPEntityConstant.PASSPORT_POLYGLOT, TurLocaleRepository.CA);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.SPACY).ifPresent(turNLPVendor -> {
-				this.addNLPVendor(turNLPVendor, "PN", "PERSON", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "GL", "LOC", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "ON", "ORG", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "DURATION", "DURATION", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "DATE", "DATE", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "MISC", "MISC", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "ORDINAL", "ORDINAL", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "TIME", "TIME", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "PERCENTAGE", "PERCENT", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "MONEY", "MONEY", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "NORP", "NORP", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "FAC", "FAC", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "GPE", "GPE", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "PRODUCT", "PRODUCT", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "EVENT", "EVENT", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "WORK_OF_ART", "WORK_OF_ART", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "LAW", "LAW", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "LANGUAGE", "LANGUAGE", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "QUANTITY", "QUANTITY", TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, "CARDINAL", "CARDINAL", TurLocaleRepository.EN_US);
-
-				this.addNLPVendor(turNLPVendor, "PN", "PER", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "GL", "LOC", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "ON", "ORG", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "DURATION", "DURATION", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "DATE", "DATE", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "MISC", "MISC", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "ORDINAL", "ORDINAL", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "TIME", "TIME", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "PERCENTAGE", "PERCENT", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "MONEY", "MONEY", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "NORP", "NORP", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "FAC", "FAC", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "GPE", "GPE", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "PRODUCT", "PRODUCT", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "EVENT", "EVENT", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "WORK_OF_ART", "WORK_OF_ART", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "LAW", "LAW", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "LANGUAGE", "LANGUAGE", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "QUANTITY", "QUANTITY", TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, "CARDINAL", "CARDINAL", TurLocaleRepository.PT_BR);
+				spacyEntities(turNLPVendor, TurLocaleRepository.EN_US);
+				spacyEntities(turNLPVendor, TurLocaleRepository.PT_BR);
 			});
 
 		}
+	}
+
+	private void spacyEntities(TurNLPVendor turNLPVendor, String language) {
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL, TurNLPEntityConstant.PERSON_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL, TurNLPEntityConstant.LOCATION_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL, TurNLPEntityConstant.ORGANIZATION_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.DURATION_INTERNAL, TurNLPEntityConstant.DURATION_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.DATE_INTERNAL, TurNLPEntityConstant.DATE_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.MISC_INTERNAL, TurNLPEntityConstant.MISC_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORDINAL_INTERNAL, TurNLPEntityConstant.ORDINAL_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.TIME_INTERNAL, TurNLPEntityConstant.TIME_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERCENTAGE_INTERNAL,TurNLPEntityConstant.PERCENTAGE_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.MONEY_INTERNAL, TurNLPEntityConstant.MONEY_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.NORP_INTERNAL, TurNLPEntityConstant.NORP_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.FAC_INTERNAL, TurNLPEntityConstant.FAC_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.GPE_INTERNAL,TurNLPEntityConstant.GPE_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PRODUCT_INTERNAL, TurNLPEntityConstant.PRODUCT_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.EVENT_INTERNAL, TurNLPEntityConstant.EVENT_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.WORK_OF_ART_INTERNAL, TurNLPEntityConstant.WORK_OF_ART_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LAW_INTERNAL, TurNLPEntityConstant.LAW_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LANGUAGE_INTERNAL, TurNLPEntityConstant.LANGUAGE_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.QUANTITY_INTERNAL, TurNLPEntityConstant.QUANTITY_SPACY, language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.CARDINAL_INTERNAL, TurNLPEntityConstant.CARDINAL_SPACY, language);
 	}
 
 	public void addNLPVendor(TurNLPVendor turNLPVendor, String internalName, String name, String language) {

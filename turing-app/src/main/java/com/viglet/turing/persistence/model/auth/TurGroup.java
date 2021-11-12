@@ -34,9 +34,6 @@ public class TurGroup implements Serializable {
 	@ManyToMany(mappedBy = "turGroups")
 	private Set<TurUser> turUsers = new HashSet<>();
 
-	public TurGroup() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

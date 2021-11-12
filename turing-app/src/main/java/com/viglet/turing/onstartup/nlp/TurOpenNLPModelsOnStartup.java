@@ -28,6 +28,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @Transactional
 public class TurOpenNLPModelsOnStartup {
+	public TurOpenNLPModelsOnStartup() {
+		super();
+	}
+
 	private static final String LOCALE_EN = "en";
 	private static final String LOCALE_PT = "pt";
 	private static int numberOfDonwloads = 0;
@@ -66,12 +70,13 @@ public class TurOpenNLPModelsOnStartup {
 
 		File userDir = new File(System.getProperty("user.dir"));
 		if (userDir.exists() && userDir.isDirectory()) {
-			File modelDir = new File(userDir.getAbsolutePath().concat("/models/opennlp/" + locale));
+			File modelDir = new File(userDir.getAbsolutePath().concat(File.separator).concat("models")
+					.concat(File.separator).concat("opennlp").concat(File.separator).concat(locale));
 			if (!modelDir.exists()) {
 				modelDir.mkdirs();
 			}
 
-			String toFileFullPath = modelDir.getAbsolutePath().concat("/" + toFile);
+			String toFileFullPath = modelDir.getAbsolutePath().concat(File.separator).concat(toFile);
 			System.out.println("Path: " + toFileFullPath);
 			File file = new File(toFileFullPath);
 			if (!file.exists()) {
