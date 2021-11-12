@@ -26,8 +26,8 @@ import java.util.Random;
 
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -41,7 +41,7 @@ import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatRes
 
 @Component
 public class TurConverse {
-	private static final Log logger = LogFactory.getLog(TurConverse.class);
+	private static final Logger logger = LogManager.getLogger(TurConverse.class);
 	@Autowired
 	private TurConverseChatResponseRepository turConverseChatResponseRepository;
 	@Autowired
@@ -68,7 +68,7 @@ public class TurConverse {
 			chatResponseUser.setParameterValue(q);
 		} else {
 			String nextContext = (String) session.getAttribute(TurConverseConstants.NEXT_CONTEXT);
-			SolrDocumentList results = turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
+			SolrDocumentList results = turConverseSE.askPhrase(chat.getAgent(), q, nextContext);
 			if (!results.isEmpty()) {
 				SolrDocument firstResult = results.get(0);
 				String intentId = (String) firstResult.getFieldValue("id");
@@ -162,9 +162,7 @@ public class TurConverse {
 			if (resultsParameter.size() == nextParameter) {
 				this.getIntentWhenFinishParameters(chat, session, turConverseAgentResponse, intent);
 			}
-		} catch (SolrServerException e) {
-			logger.error(e.getMessage(), e);
-		} catch (IOException e) {
+		} catch (SolrServerException | IOException e) {
 			logger.error(e.getMessage(), e);
 		}
 	}
@@ -173,9 +171,9 @@ public class TurConverse {
 			HttpSession session) {
 
 		TurConverseAgentResponse turConverseAgentResponse = new TurConverseAgentResponse();
-		SolrDocumentList results = turConverseSE.solrAskPhraseFallback(chat.getAgent(), q, nextContext);
+		SolrDocumentList results = turConverseSE.askPhraseFallback(chat.getAgent(), q, nextContext);
 		if (results.isEmpty())
-			results = turConverseSE.solrAskPhrase(chat.getAgent(), q, nextContext);
+			results = turConverseSE.askPhrase(chat.getAgent(), q, nextContext);
 
 		if (!results.isEmpty()) {
 			SolrDocument firstResult = results.get(0);
@@ -191,7 +189,7 @@ public class TurConverse {
 			if (nextContext != null) {
 				turConverseAgentResponse = this.interactionNested(chat, q, null, session);
 			} else {
-				turConverseAgentResponse = this.getFallback(chat, session, turConverseAgentResponse);
+				this.getFallback(chat, session, turConverseAgentResponse);
 			}
 		}
 
@@ -237,13 +235,11 @@ public class TurConverse {
 		return responseModified.toString();
 	}
 
-	private TurConverseAgentResponse getFallback(TurConverseChat chat, HttpSession session,
+	private void getFallback(TurConverseChat chat, HttpSession session,
 			TurConverseAgentResponse turConverseAgentResponse) {
 		this.cleanSession(session);
 		turConverseAgentResponse.setResponse(this.getFallbackResponse(chat));
 		turConverseAgentResponse.setIntentName(TurConverseConstants.EMPTY);
-
-		return turConverseAgentResponse;
 	}
 
 	private String getFallbackResponse(TurConverseChat chat) {
@@ -278,10 +274,10 @@ public class TurConverse {
 	}
 
 	public void showSession(HttpSession session) {
-		logger.debug("hasParameter: " + (Boolean) session.getAttribute(TurConverseConstants.HAS_PARAMETER));
-		logger.debug("nextParameter: " + (Integer) session.getAttribute(TurConverseConstants.NEXT_PARAMETER));
-		logger.debug("nextContext: " + (String) session.getAttribute(TurConverseConstants.NEXT_CONTEXT));
-		logger.debug("intent: " + (String) session.getAttribute(TurConverseConstants.INTENT));
+		logger.debug("hasParameter: {}", session.getAttribute(TurConverseConstants.HAS_PARAMETER));
+		logger.debug("nextParameter: {} ", session.getAttribute(TurConverseConstants.NEXT_PARAMETER));
+		logger.debug("nextContext: {}", session.getAttribute(TurConverseConstants.NEXT_CONTEXT));
+		logger.debug("intent: {}", session.getAttribute(TurConverseConstants.INTENT));
 		logger.debug("-----");
 	}
 
