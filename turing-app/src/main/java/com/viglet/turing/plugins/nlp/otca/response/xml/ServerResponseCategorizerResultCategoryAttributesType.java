@@ -77,7 +77,7 @@ public class ServerResponseCategorizerResultCategoryAttributesType {
      */
     public List<ServerResponseCategorizerResultCategoryAttributeType> getAttribute() {
         if (attribute == null) {
-            attribute = new ArrayList<ServerResponseCategorizerResultCategoryAttributeType>();
+            attribute = new ArrayList<>();
         }
         return this.attribute;
     }

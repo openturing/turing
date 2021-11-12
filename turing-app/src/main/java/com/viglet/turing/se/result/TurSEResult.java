@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class TurSEResult {
 
-	Map<String, Object> fields = new HashMap<String, Object>();
+	private Map<String, Object> fields = new HashMap<>();
 
 	public Map<String, Object> getFields() {
 		return fields;

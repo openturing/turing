@@ -309,7 +309,7 @@ public class ServerResponseType {
          */
         public List<String> getWarning() {
             if (warning == null) {
-                warning = new ArrayList<String>();
+                warning = new ArrayList<>();
             }
             return this.warning;
         }

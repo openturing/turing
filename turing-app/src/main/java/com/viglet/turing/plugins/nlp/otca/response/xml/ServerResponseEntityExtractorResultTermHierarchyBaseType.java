@@ -178,7 +178,7 @@ public class ServerResponseEntityExtractorResultTermHierarchyBaseType {
          */
         public List<ServerResponseEntityExtractorResultTermAttributeType> getAttribute() {
             if (attribute == null) {
-                attribute = new ArrayList<ServerResponseEntityExtractorResultTermAttributeType>();
+                attribute = new ArrayList<>();
             }
             return this.attribute;
         }
@@ -238,7 +238,7 @@ public class ServerResponseEntityExtractorResultTermHierarchyBaseType {
          */
         public List<ServerResponseEntityExtractorResultTermParentType> getParent() {
             if (parent == null) {
-                parent = new ArrayList<ServerResponseEntityExtractorResultTermParentType>();
+                parent = new ArrayList<>();
             }
             return this.parent;
         }

@@ -206,7 +206,7 @@ public class ServerResponseLanguageDetectorResultType {
          */
         public List<ServerResponseLanguageDetectorResultCandidateType> getLanguage() {
             if (language == null) {
-                language = new ArrayList<ServerResponseLanguageDetectorResultCandidateType>();
+                language = new ArrayList<>();
             }
             return this.language;
         }
@@ -266,7 +266,7 @@ public class ServerResponseLanguageDetectorResultType {
          */
         public List<ServerResponseLanguageDetectorResultParagraphType> getParagraph() {
             if (paragraph == null) {
-                paragraph = new ArrayList<ServerResponseLanguageDetectorResultParagraphType>();
+                paragraph = new ArrayList<>();
             }
             return this.paragraph;
         }

@@ -53,42 +53,39 @@ import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 @ComponentScan
 @Transactional
 public class TurThesaurusProcessor {
-	static final Logger logger = LogManager.getLogger(TurThesaurusProcessor.class.getName());
+	private static final Logger logger = LogManager.getLogger(TurThesaurusProcessor.class);
 
 	@Autowired
-	TurTermVariationRepository turTermVariationRepository;
+	private TurTermVariationRepository turTermVariationRepository;
 	@Autowired
-	TurSolrField turSolrField;
+	private TurSolrField turSolrField;
 	@Autowired
-	TurUtils turUtils;
+	private TurUtils turUtils;
 
-	// LinkedHashMap<String, List<String>> entityResults = new LinkedHashMap<String,
-	// List<String>>();
-
-	LinkedHashMap<String, TurTermVariation> terms = new LinkedHashMap<String, TurTermVariation>();
+	Map<String, TurTermVariation> terms = new LinkedHashMap<>();
 
 	public void startup() {
 		List<TurTermVariation> turTermVariations = turTermVariationRepository.findAll();
 
-		logger.debug("Carregando termos..");
+		logger.debug("Loading terms..");
 		for (TurTermVariation turTermVariation : turTermVariations) {
 			terms.put(turTermVariation.getId(), turTermVariation);
 		}
-		logger.debug("Fim Carregando termos..");
+		logger.debug("Loading of terms was finished..");
 	}
 
 	public Map<String, Object> detectTerms(Map<String, Object> attributes) {
-		Map<String, List<String>> entityResults = new HashMap<String, List<String>>();
+		Map<String, List<String>> entityResults = new HashMap<>();
 		if (attributes != null) {
 			for (Object attrValue : attributes.values()) {
-				LinkedHashMap<String, List<String>> termsDetected = this
+				Map<String, List<String>> termsDetected = this
 						.detectTerms(turSolrField.convertFieldToString(attrValue));
 				for (Entry<String, List<String>> termDetected : termsDetected.entrySet()) {
 					if (entityResults.containsKey(String.format("turing_entity_%s", termDetected.getKey()))) {
 						entityResults.get(String.format("turing_entity_%s", termDetected.getKey()))
 								.addAll(termDetected.getValue());
 					} else {
-						List<String> terms = new ArrayList<String>();
+						List<String> terms = new ArrayList<>();
 						terms.addAll(termDetected.getValue());
 						entityResults.put(String.format("turing_entity_%s", termDetected.getKey()), terms);
 					}
@@ -97,7 +94,7 @@ public class TurThesaurusProcessor {
 			}
 		}
 
-		Map<String, Object> entityObjectResults = new HashMap<String, Object>();
+		Map<String, Object> entityObjectResults = new HashMap<>();
 		for (Entry<String, List<String>> entityResult : entityResults.entrySet()) {
 			entityObjectResults.put(entityResult.getKey(), entityResult.getValue());
 		}
@@ -113,67 +110,67 @@ public class TurThesaurusProcessor {
 		int[] idx = { 0 };
 		Arrays.stream(words).forEach(w -> turNLPSentence.addWord(new TurNLPWord(w, idx[0]++)));
 
-		LinkedHashMap<String, LinkedHashMap<String, TurTermVariation>> lhWords = new LinkedHashMap<String, LinkedHashMap<String, TurTermVariation>>();
+		Map<String, Map<String, TurTermVariation>> lhWords = new LinkedHashMap<>();
 		TurTermVariation[] stringTerms = terms.values().toArray(new TurTermVariation[terms.size()]);
 
 		for (String word : words) {
 			String wordLowerCase = turUtils.stripAccents(word).toLowerCase();
-			logger.debug("word: " + word);
+			logger.debug("word: {}", word);
 			List<TurTermVariation> results = (List<TurTermVariation>) Arrays.stream(stringTerms)
 					.filter(t -> t.getNameLower().contains(wordLowerCase)).collect(Collectors.toList());
 
-			LinkedHashMap<String, TurTermVariation> hmResults = new LinkedHashMap<String, TurTermVariation>();
+			Map<String, TurTermVariation> hmResults = new LinkedHashMap<>();
 			Arrays.stream(results.toArray())
 					.forEach(r -> hmResults.put(((TurTermVariation) r).getId(), (TurTermVariation) r));
-			logger.debug("hmResults.size():" + hmResults.size());
+			logger.debug("hmResults.size(): {}", hmResults.size());
 			lhWords.put(wordLowerCase, hmResults);
 		}
 
-		LinkedHashMap<TurNLPListKey<Integer>, List<String>> matches = new LinkedHashMap<>();
+		Map<TurNLPListKey<Integer>, List<String>> matches = new LinkedHashMap<>();
 		TurNLPWord turNLPWordPrev = null;
-		LinkedHashMap<String, TurTermVariation> prevVariations = null;
+		Map<String, TurTermVariation> prevVariations = null;
 		for (Object wordObject : turNLPSentence.getWords().values().toArray()) {
 			TurNLPWord turNLPWord = (TurNLPWord) wordObject;
-			logger.debug("word2: " + turNLPWord.getWord());
-			LinkedHashMap<String, TurTermVariation> variations = lhWords
+			logger.debug("word2: {}", turNLPWord.getWord());
+			Map<String, TurTermVariation> variations = lhWords
 					.get(turUtils.stripAccents(turNLPWord.getWord()).toLowerCase());
 
 			if (prevVariations != null) {
-				logger.debug("variations.size(): " + variations.size());
+				logger.debug("variations.size(): {}", variations.size());
 				for (Object variationObject : variations.values().toArray()) {
 					TurTermVariation variation = (TurTermVariation) variationObject;
-					logger.debug("variation.getId(): " + variation.getId());
+					logger.debug("variation.getId(): {}", variation.getId());
 
 					// Validate single word
 					if (this.validateTerm(turNLPWord.getWord(), variation)) {
-						logger.debug("Single Term was validaded: " + turNLPWord.getWord());
+						logger.debug("Single Term was validaded: {}", turNLPWord.getWord());
 						TurNLPEntity turNLPEntity = this.getEntity(variation);
 						if (turNLPEntity != null) {
-							logger.debug("turNLPEntity: " + turNLPEntity.getName());
+							logger.debug("turNLPEntity: {}", turNLPEntity.getName());
 							if (!entityResults.containsKey(turNLPEntity.getCollectionName())) {
-								logger.debug(
-										"First Item into collection for results: " + turNLPEntity.getCollectionName());
-								List<String> lstTerm = new ArrayList<String>();
+								logger.debug("First Item into collection for results: {}",
+										turNLPEntity.getCollectionName());
+								List<String> lstTerm = new ArrayList<>();
 								lstTerm.add(variation.getName());
 								entityResults.put(turNLPEntity.getCollectionName(), lstTerm);
 							} else {
-								logger.debug(
-										"Contains the collection for results: " + turNLPEntity.getCollectionName());
+								logger.debug("Contains the collection for results: {}",
+										turNLPEntity.getCollectionName());
 								entityResults.get(turNLPEntity.getCollectionName()).add(variation.getName());
 							}
 
 							mergeEntityResultsFromTo(this.getParentTerm(variation.getTurTerm()), entityResults);
-							logger.debug("prevVariations not null, entityResults.size(): " + entityResults.size());
+							logger.debug("prevVariations not null, entityResults.size(): {}", entityResults.size());
 						} else {
 							logger.debug("turNLPEntity is null");
 						}
 
 					} else {
-						logger.debug("Single Term wasn't validaded: " + turNLPWord.getWord());
+						logger.debug("Single Term wasn't validaded: {}", turNLPWord.getWord());
 					}
 					if (prevVariations.containsKey(variation.getId())) {
-						logger.debug("Found!!! " + turNLPWordPrev.getWord() + " " + turNLPWord.getWord() + ":"
-								+ variation.getId());
+						logger.debug("Found {} {}: {} ", turNLPWordPrev.getWord(), turNLPWord.getWord(),
+								variation.getId());
 						String wordVariaton = turNLPWordPrev.getWord() + " " + turNLPWord.getWord();
 
 						// Validate 2 or more words
@@ -181,25 +178,25 @@ public class TurThesaurusProcessor {
 							TurNLPEntity turNLPEntity = this.getEntity(variation);
 							if (turNLPEntity != null) {
 								if (!entityResults.containsKey(turNLPEntity.getCollectionName())) {
-									List<String> lstTerm = new ArrayList<String>();
+									List<String> lstTerm = new ArrayList<>();
 									lstTerm.add(variation.getName());
 									entityResults.put(turNLPEntity.getCollectionName(), lstTerm);
 								} else {
 									entityResults.get(turNLPEntity.getCollectionName()).add(variation.getName());
 								}
 								mergeEntityResultsFromTo(this.getParentTerm(variation.getTurTerm()), entityResults);
-								logger.debug("prevVariations, entityResults.size(): " + entityResults.size());
+								logger.debug("prevVariations, entityResults.size(): {}", entityResults.size());
 							}
 						}
 
-						ArrayList<Integer> positionArr = new ArrayList<Integer>();
+						ArrayList<Integer> positionArr = new ArrayList<>();
 						positionArr.add(turNLPWordPrev.getPosition());
 						positionArr.add(turNLPWord.getPosition());
 
-						TurNLPListKey<Integer> positions = new TurNLPListKey<Integer>(positionArr);
+						TurNLPListKey<Integer> positions = new TurNLPListKey<>(positionArr);
 
 						if (!matches.containsKey(positions)) {
-							List<String> matchArray = new ArrayList<String>();
+							List<String> matchArray = new ArrayList<>();
 							matchArray.add(variation.getId());
 							matches.put(positions, matchArray);
 						} else {
@@ -214,7 +211,7 @@ public class TurThesaurusProcessor {
 			turNLPWordPrev = turNLPWord;
 			prevVariations = variations;
 			for (String prevariation : prevVariations.keySet()) {
-				logger.debug("prevariation key:" + prevariation);
+				logger.debug("prevariation key: {}", prevariation);
 			}
 		}
 		logger.debug("Matches...");
@@ -226,10 +223,10 @@ public class TurThesaurusProcessor {
 					entityResults);
 		}
 
-		logger.debug("entityResults.size(): " + entityResults.size());
+		logger.debug("entityResults.size(): {}", entityResults.size());
 		for (Entry<String, List<String>> entry : entityResults.entrySet()) {
-			logger.debug("entityREsults entry Key: " + entry.getKey());
-			logger.debug("entityREsults entry Value: " + entry.getValue());
+			logger.debug("entityREsults entry Key: {}", entry.getKey());
+			logger.debug("entityREsults entry Value: {}", entry.getValue());
 		}
 		return entityResults;
 	}
@@ -237,31 +234,30 @@ public class TurThesaurusProcessor {
 	public TurEntityResults checkTermIdBetweenPositions(TurNLPSentence turNLPSentence, List<Integer> positions,
 			List<String> ids, Map<TurNLPListKey<Integer>, List<String>> matches) {
 		TurEntityResults entityResults = new TurEntityResults();
-		logger.debug("Current Positions: " + positions.toString());
+		logger.debug("Current Positions: {}", positions);
 		if ((positions.get(0).intValue() > 0) && (ids.size() > 0)) {
 			logger.debug("Brief Matches...");
-			ArrayList<Integer> positionPrevArr = new ArrayList<Integer>();
+			ArrayList<Integer> positionPrevArr = new ArrayList<>();
 			positionPrevArr.add(positions.get(0) - 1);
 			positionPrevArr.add(positions.get(0));
 
-			logger.debug(positions.toString() + " = " + ids.toString());
+			logger.debug("{} = {}", positions.toString(), ids.toString());
 
 			TurNLPListKey<Integer> positionsPrev = new TurNLPListKey<Integer>(positionPrevArr);
-			logger.debug("PositionPrev ... " + positionsPrev.toString());
+			logger.debug("PositionPrev ... {}", positionsPrev);
 			if (matches.containsKey(positionsPrev)) {
-				List<String> filteredIds = new ArrayList<String>();
-				logger.debug("Contains PositionPrev ... " + positionsPrev.toString());
+				List<String> filteredIds = new ArrayList<>();
+				logger.debug("Contains PositionPrev ... {}", positionsPrev);
 				for (String id : ids) {
 					if (matches.containsKey(positionsPrev) && matches.get(positionsPrev).contains(id)) {
-						logger.debug("Between matches found:" + positionsPrev.toString() + "|" + positions.toString()
-								+ ":" + id);
+						logger.debug("Between matches found: {} | {} : {}", positionsPrev, positions, id);
 						filteredIds.add(id);
 
 						StringBuffer wordMatched = new StringBuffer();
 						wordMatched.append(this.getWordsByPosition(turNLPSentence, positions.get(0) - 1));
 						wordMatched.append(" ");
 						wordMatched.append(this.getWordsByPosition(turNLPSentence, positions));
-						logger.debug("Compare " + wordMatched.toString() + " : " + terms.get(id).getNameLower());
+						logger.debug("Compare {}: {}", wordMatched, terms.get(id).getNameLower());
 						if (validateTerm(wordMatched.toString(), terms.get(id))) {
 							logger.debug("Match Found");
 							String entity = this.getEntity(terms.get(id)).getName().toLowerCase();
@@ -270,7 +266,7 @@ public class TurThesaurusProcessor {
 							if (entityResults.containsKey(entity)) {
 								entityResults.get(entity).add(wordMatched.toString());
 							} else {
-								List<String> values = new ArrayList<String>();
+								List<String> values = new ArrayList<>();
 								values.add(wordMatched.toString());
 								entityResults.put(entity, values);
 							}
@@ -279,7 +275,7 @@ public class TurThesaurusProcessor {
 							logger.debug("Match doesn't Found");
 						}
 					}
-					ArrayList<Integer> positionCurrArr = new ArrayList<Integer>();
+					ArrayList<Integer> positionCurrArr = new ArrayList<>();
 					positionCurrArr.add(positions.get(0) - 1);
 					positionCurrArr.addAll(positions);
 					this.mergeEntityResultsFromTo(
@@ -287,7 +283,7 @@ public class TurThesaurusProcessor {
 							entityResults);
 				}
 			} else {
-				logger.debug("Not Contains PositionPrev ... " + positionsPrev.toString());
+				logger.debug("Not Contains PositionPrev ... {}", positionsPrev);
 			}
 		} else {
 			logger.debug("End. First Position or Empty Ids");
@@ -296,24 +292,24 @@ public class TurThesaurusProcessor {
 	}
 
 	private TurEntityResults mergeEntityResultsFromTo(TurEntityResults from, TurEntityResults to) {
-		logger.debug("mergeEntity From Size: " + from.size());
-		logger.debug("mergeEntity To Size Before: " + to.size());
+		logger.debug("mergeEntity From Size: {}", from.size());
+		logger.debug("mergeEntity To Size Before: {}", to.size());
 		Set<Entry<String, List<String>>> fromEntries = from.entrySet();
 		for (Entry<String, List<String>> fromEntry : fromEntries) {
 			if (to.containsKey(fromEntry.getKey())) {
 				logger.debug("mergeEntity Contains");
-				logger.debug("mergeEntity To Before: " + to.get(fromEntry.getKey()).toString());
-				logger.debug("mergeEntity From: " + fromEntry.getValue());
+				logger.debug("mergeEntity To Before: {}", to.get(fromEntry.getKey()));
+				logger.debug("mergeEntity From: {}", fromEntry.getValue());
 				to.get(fromEntry.getKey()).addAll(fromEntry.getValue());
-				logger.debug("mergeEntity To After: " + to.get(fromEntry.getKey()).toString());
+				logger.debug("mergeEntity To After: {}", to.get(fromEntry.getKey()));
 			} else {
 				logger.debug("mergeEntity Not Contains");
-				List<String> values = new ArrayList<String>();
+				List<String> values = new ArrayList<>();
 				values.addAll(fromEntry.getValue());
 				to.put(fromEntry.getKey(), values);
 			}
 		}
-		logger.debug("mergeEntity To Size After: " + to.size());
+		logger.debug("mergeEntity To Size After: {}", to.size());
 		return to;
 	}
 

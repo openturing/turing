@@ -68,17 +68,17 @@ import com.viglet.turing.solr.TurSolrField;
 
 @Component
 public class TurTMEConnector implements TurNLPImpl {
-	static final Logger logger = LogManager.getLogger(TurTMEConnector.class.getName());
+	private static final Logger logger = LogManager.getLogger(TurTMEConnector.class);
 	@Autowired
-	TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
+	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
 	@Autowired
-	TurSolrField turSolrField;
+	private TurSolrField turSolrField;
 
-	List<TurNLPInstanceEntity> nlpInstanceEntities = null;
-	Map<String, List<Object>> hmEntities = new HashMap<String, List<Object>>();
-	TurNLPInstance turNLPInstance = null;
-	public JSONObject json;
-	public static int PRETTY_PRINT_INDENT_FACTOR = 4;
+	private List<TurNLPInstanceEntity> nlpInstanceEntities = null;
+	private Map<String, List<Object>> hmEntities = new HashMap<>();
+	private TurNLPInstance turNLPInstance = null;
+	private JSONObject json;
+	private static final int PRETTY_PRINT_INDENT_FACTOR = 4;
 
 	public void startup(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
@@ -97,7 +97,7 @@ public class TurTMEConnector implements TurNLPImpl {
 			if (request == null) {
 				return null;
 			}
-			byte[] data = request.trim().getBytes("UTF-8");
+			byte[] data = request.trim().getBytes( StandardCharsets.UTF_8);
 			int length = data.length;
 			if (length == 0) {
 				return null;
@@ -134,10 +134,10 @@ public class TurTMEConnector implements TurNLPImpl {
 						throw (new RuntimeException("Invalid response"));
 					}
 				}
-				return new String(data, "UTF-8");
+				return new String(data,StandardCharsets.UTF_8);
 			}
 		} catch (Exception e) {
-			logger.debug("Server not reached: " + e.getMessage());
+			logger.debug("Server not reached: {}" , e.getMessage());
 			return null;
 		}
 	}
@@ -296,15 +296,15 @@ public class TurTMEConnector implements TurNLPImpl {
 
 	public void getResult(Object result) {
 
-		logger.debug("iterateResults... " + result.toString());
+		logger.debug("iterateResults... {}", result.toString());
 
 		if (result instanceof ServerResponseConceptExtractorResultType) {
 			ServerResponseConceptExtractorResultType concepts = (ServerResponseConceptExtractorResultType) result;
-			logger.debug("Concepts:" + concepts.getName());
+			logger.debug("Concepts: {}", concepts.getName());
 			if (concepts.getComplexConcepts() != null) {
 				logger.debug("ComplexConcept");
 				if (!hmEntities.containsKey("ComplexConcepts")) {
-					hmEntities.put("ComplexConcepts", new ArrayList<Object>());
+					hmEntities.put("ComplexConcepts", new ArrayList<>());
 				}
 
 				for (Object complexConcept : concepts.getComplexConcepts().getConceptOrExtractedTerm()) {
@@ -346,9 +346,9 @@ public class TurTMEConnector implements TurNLPImpl {
 				if (nf instanceof ServerResponseEntityExtractorResultExtractResultType) {
 					ServerResponseEntityExtractorResultExtractResultType extractor = (ServerResponseEntityExtractorResultExtractResultType) nf;
 					for (ServerResponseEntityExtractorResultTermType term : extractor.getExtractedTerm()) {
-						logger.debug("getCartridgeID: " + term.getCartridgeID());
+						logger.debug("getCartridgeID: {}", term.getCartridgeID());
 						if (!hmEntities.containsKey(term.getCartridgeID())) {
-							hmEntities.put(term.getCartridgeID(), new ArrayList<Object>());
+							hmEntities.put(term.getCartridgeID(), new ArrayList<>());
 						}
 
 						logger.debug("getId: " + term.getId());
@@ -365,7 +365,7 @@ public class TurTMEConnector implements TurNLPImpl {
 					ServerResponseEntityExtractorResultFullTextSearchResultType fullText = (ServerResponseEntityExtractorResultFullTextSearchResultType) nf;
 					for (ServerResponseEntityExtractorResultTermType term : fullText.getExtractedTerm()) {
 						if (!hmEntities.containsKey(term.getCartridgeID())) {
-							hmEntities.put(term.getCartridgeID(), new ArrayList<Object>());
+							hmEntities.put(term.getCartridgeID(), new ArrayList<>());
 						}
 						if (term.getSubterms() != null) {
 							for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
@@ -392,22 +392,22 @@ public class TurTMEConnector implements TurNLPImpl {
 			if (categorizer.getCategories() != null) {
 				for (ServerResponseCategorizerResultCategoryType category : categorizer.getCategories().getCategory()) {
 					for (Serializable content : category.getContent()) {
-						logger.debug("Category Content: " + content.toString());
+						logger.debug("Category Content: {}", content.toString());
 					}
-					logger.debug("Category ID: " + category.getId());
-					logger.debug("Category Weight: " + category.getWeight());
+					logger.debug("Category ID: {}", category.getId());
+					logger.debug("Category Weight: {}", category.getWeight());
 				}
 			}
 			if (categorizer.getKnowledgeBase() != null) {
 				for (ServerResponseCategorizerResultKnowledgeBaseType kb : categorizer.getKnowledgeBase()) {
 					if (!hmEntities.containsKey(kb.getKBid())) {
-						hmEntities.put(kb.getKBid(), new ArrayList<Object>());
+						hmEntities.put(kb.getKBid(), new ArrayList<>());
 					}
 					if (kb.getCategories() != null) {
 						for (ServerResponseCategorizerResultCategoryType category : kb.getCategories().getCategory()) {
 
 							for (Serializable content : category.getContent()) {
-								logger.debug("KB Content: " + content.toString());
+								logger.debug("KB Content: {}", content);
 								hmEntities.get(kb.getKBid())
 										.add(content.toString().replaceAll(category.getId() + " - ", ""));
 							}
@@ -417,10 +417,10 @@ public class TurTMEConnector implements TurNLPImpl {
 						for (ServerResponseCategorizerResultCategoryType category : kb.getRejectedCategories()
 								.getRejectedCategory()) {
 							for (Serializable content : category.getContent()) {
-								logger.debug("KB Content Rejected: " + content.toString());
+								logger.debug("KB Content Rejected: {}", content);
 							}
-							logger.debug("KB ID Rejected: " + category.getId());
-							logger.debug("KB Weight Rejected: " + category.getWeight());
+							logger.debug("KB ID Rejected: {}", category.getId());
+							logger.debug("KB Weight Rejected: {}", category.getWeight());
 
 						}
 					}

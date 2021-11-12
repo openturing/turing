@@ -40,18 +40,19 @@ import javax.xml.namespace.QName;
 @XmlRegistry
 public class ObjectFactory {
 
-    private final static QName _Nserver_QNAME = new QName("", "Nserver");
-    private final static QName _ServerResponseCategorizerResultCategoryTypeParents_QNAME = new QName("", "Parents");
-    private final static QName _ServerResponseCategorizerResultCategoryTypeAttributes_QNAME = new QName("", "Attributes");
-    private final static QName _ServerResponseCategorizerResultCategoryTypeName_QNAME = new QName("", "Name");
-    private final static QName _ServerResponseConceptExtractorResultConcept2TypeSubterms_QNAME = new QName("", "Subterms");
-    private final static QName _ServerResponseConceptExtractorResultConcept2TypeGenericForm_QNAME = new QName("", "GenericForm");
+    private static final QName _Nserver_QNAME = new QName("", "Nserver");
+    private static final QName _ServerResponseCategorizerResultCategoryTypeParents_QNAME = new QName("", "Parents");
+    private static final QName _ServerResponseCategorizerResultCategoryTypeAttributes_QNAME = new QName("", "Attributes");
+    private static final QName _ServerResponseCategorizerResultCategoryTypeName_QNAME = new QName("", "Name");
+    private static final QName _ServerResponseConceptExtractorResultConcept2TypeSubterms_QNAME = new QName("", "Subterms");
+    private static final QName _ServerResponseConceptExtractorResultConcept2TypeGenericForm_QNAME = new QName("", "GenericForm");
 
     /**
      * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: com.viglet.turing.plugins.otca.response.xml
      * 
      */
     public ObjectFactory() {
+    	//empty
     }
 
     /**
@@ -604,7 +605,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "", name = "Nserver")
     public JAXBElement<ServerResponseType> createNserver(ServerResponseType value) {
-        return new JAXBElement<ServerResponseType>(_Nserver_QNAME, ServerResponseType.class, null, value);
+        return new JAXBElement<>(_Nserver_QNAME, ServerResponseType.class, null, value);
     }
 
     /**
@@ -613,7 +614,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "", name = "Parents", scope = ServerResponseCategorizerResultCategoryType.class)
     public JAXBElement<ServerResponseCategorizerResultCategoryParentsType> createServerResponseCategorizerResultCategoryTypeParents(ServerResponseCategorizerResultCategoryParentsType value) {
-        return new JAXBElement<ServerResponseCategorizerResultCategoryParentsType>(_ServerResponseCategorizerResultCategoryTypeParents_QNAME, ServerResponseCategorizerResultCategoryParentsType.class, ServerResponseCategorizerResultCategoryType.class, value);
+        return new JAXBElement<>(_ServerResponseCategorizerResultCategoryTypeParents_QNAME, ServerResponseCategorizerResultCategoryParentsType.class, ServerResponseCategorizerResultCategoryType.class, value);
     }
 
     /**
@@ -622,7 +623,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "", name = "Attributes", scope = ServerResponseCategorizerResultCategoryType.class)
     public JAXBElement<ServerResponseCategorizerResultCategoryAttributesType> createServerResponseCategorizerResultCategoryTypeAttributes(ServerResponseCategorizerResultCategoryAttributesType value) {
-        return new JAXBElement<ServerResponseCategorizerResultCategoryAttributesType>(_ServerResponseCategorizerResultCategoryTypeAttributes_QNAME, ServerResponseCategorizerResultCategoryAttributesType.class, ServerResponseCategorizerResultCategoryType.class, value);
+        return new JAXBElement<>(_ServerResponseCategorizerResultCategoryTypeAttributes_QNAME, ServerResponseCategorizerResultCategoryAttributesType.class, ServerResponseCategorizerResultCategoryType.class, value);
     }
 
     /**
@@ -631,7 +632,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "", name = "Name", scope = ServerResponseCategorizerResultCategoryType.class)
     public JAXBElement<String> createServerResponseCategorizerResultCategoryTypeName(String value) {
-        return new JAXBElement<String>(_ServerResponseCategorizerResultCategoryTypeName_QNAME, String.class, ServerResponseCategorizerResultCategoryType.class, value);
+        return new JAXBElement<>(_ServerResponseCategorizerResultCategoryTypeName_QNAME, String.class, ServerResponseCategorizerResultCategoryType.class, value);
     }
 
     /**
@@ -640,7 +641,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "", name = "Subterms", scope = ServerResponseConceptExtractorResultConcept2Type.class)
     public JAXBElement<ServerResponseConceptExtractorResultConceptOccurencesType> createServerResponseConceptExtractorResultConcept2TypeSubterms(ServerResponseConceptExtractorResultConceptOccurencesType value) {
-        return new JAXBElement<ServerResponseConceptExtractorResultConceptOccurencesType>(_ServerResponseConceptExtractorResultConcept2TypeSubterms_QNAME, ServerResponseConceptExtractorResultConceptOccurencesType.class, ServerResponseConceptExtractorResultConcept2Type.class, value);
+        return new JAXBElement<>(_ServerResponseConceptExtractorResultConcept2TypeSubterms_QNAME, ServerResponseConceptExtractorResultConceptOccurencesType.class, ServerResponseConceptExtractorResultConcept2Type.class, value);
     }
 
     /**
@@ -649,7 +650,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "", name = "GenericForm", scope = ServerResponseConceptExtractorResultConcept2Type.class)
     public JAXBElement<String> createServerResponseConceptExtractorResultConcept2TypeGenericForm(String value) {
-        return new JAXBElement<String>(_ServerResponseConceptExtractorResultConcept2TypeGenericForm_QNAME, String.class, ServerResponseConceptExtractorResultConcept2Type.class, value);
+        return new JAXBElement<>(_ServerResponseConceptExtractorResultConcept2TypeGenericForm_QNAME, String.class, ServerResponseConceptExtractorResultConcept2Type.class, value);
     }
 
 }

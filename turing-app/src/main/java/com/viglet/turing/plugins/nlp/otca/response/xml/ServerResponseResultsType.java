@@ -126,7 +126,7 @@ public class ServerResponseResultsType {
      */
     public List<Object> getPingOrGetSupportedEncodingsOrLanguagedetector() {
         if (pingOrGetSupportedEncodingsOrLanguagedetector == null) {
-            pingOrGetSupportedEncodingsOrLanguagedetector = new ArrayList<Object>();
+            pingOrGetSupportedEncodingsOrLanguagedetector = new ArrayList<>();
         }
         return this.pingOrGetSupportedEncodingsOrLanguagedetector;
     }
@@ -161,7 +161,7 @@ public class ServerResponseResultsType {
      */
     public List<Object> getLanguageDetectorOrNConceptExtractorOrNCategorizer() {
         if (languageDetectorOrNConceptExtractorOrNCategorizer == null) {
-            languageDetectorOrNConceptExtractorOrNCategorizer = new ArrayList<Object>();
+            languageDetectorOrNConceptExtractorOrNCategorizer = new ArrayList<>();
         }
         return this.languageDetectorOrNConceptExtractorOrNCategorizer;
     }

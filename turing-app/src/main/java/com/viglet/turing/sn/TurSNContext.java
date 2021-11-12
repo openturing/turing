@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 public class TurSNContext {
 	@GetMapping("/sn/{siteName}")
-	String sn(@PathVariable("siteName") String siteName) {
+	public String sn(@PathVariable("siteName") String siteName) {
 		return "sn/templates/index";
 	}
 }

@@ -18,6 +18,7 @@
 package com.viglet.turing.plugins.nlp.opennlp;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,8 +66,8 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 	public Map<String, Object> retrieve(Map<String, Object> attributes) {
 
 		for (Object attrValue : attributes.values()) {
-			String sentences[] = this.sentenceDetect(
-					turSolrField.convertFieldToString(attrValue).replace("\"", "").replace("'", ""));
+			String[] sentences = this
+					.sentenceDetect(turSolrField.convertFieldToString(attrValue).replace("\"", "").replace("'", ""));
 
 			for (String sentence : sentences) {
 
@@ -79,11 +80,8 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 					sentencesFormatted = sentencesFormatted + " .";
 
 				logger.debug("OpenNLP Sentence: {}", sentencesFormatted);
-				String tokens[] = this.tokenDetect(sentencesFormatted + ".");
-				for (String token : tokens) {
-					sentencesTokens.add(token);
-				}
-
+				String[] tokens = this.tokenDetect(sentencesFormatted + ".");
+				Collections.addAll(sentencesTokens, tokens);
 			}
 		}
 
@@ -94,9 +92,9 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 		Map<String, Object> entityAttributes = new HashMap<>();
 
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
-			logger.debug("TurNLPInstanceEntity : " + nlpInstanceEntity.getName());
+			logger.debug("TurNLPInstanceEntity : {}", nlpInstanceEntity.getName());
 
-			if (this.getEntity(nlpInstanceEntity.getName()).size() > 0) {
+			if (!this.getEntity(nlpInstanceEntity.getName()).isEmpty()) {
 				entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
 						this.getEntity(nlpInstanceEntity.getName()));
 			}
@@ -114,16 +112,16 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 
 			String[] tokens = this.sentencesTokens.toArray(new String[0]);
 			if (tokens != null) {
-				Span nameSpans[] = nameFinder.find(tokens);
+				Span[] nameSpans = nameFinder.find(tokens);
 
 				for (Span nameSpan : nameSpans) {
-					String name = "";
+					StringBuilder name = new StringBuilder();
 					for (int i = nameSpan.getStart(); i < nameSpan.getEnd(); i++) {
-						name += tokens[i];
+						name.append(tokens[i]);
 						if (i < nameSpan.getEnd() - 1)
-							name += " ";
+							name.append(" ");
 					}
-					entities.add(name);
+					entities.add(name.toString());
 				}
 
 				return entities;
@@ -134,7 +132,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 			logger.error(e.getMessage(), e);
 		}
 
-		return null;
+		return Collections.emptyList();
 
 	}
 

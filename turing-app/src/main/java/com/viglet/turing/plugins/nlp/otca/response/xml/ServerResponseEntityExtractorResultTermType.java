@@ -696,7 +696,7 @@ public class ServerResponseEntityExtractorResultTermType {
          */
         public List<ServerResponseEntityExtractorResultTermHomonymType> getHomonym() {
             if (homonym == null) {
-                homonym = new ArrayList<ServerResponseEntityExtractorResultTermHomonymType>();
+                homonym = new ArrayList<>();
             }
             return this.homonym;
         }
@@ -756,7 +756,7 @@ public class ServerResponseEntityExtractorResultTermType {
          */
         public List<ServerResponseEntityExtractorResultTermOccurenceType> getSubterm() {
             if (subterm == null) {
-                subterm = new ArrayList<ServerResponseEntityExtractorResultTermOccurenceType>();
+                subterm = new ArrayList<>();
             }
             return this.subterm;
         }

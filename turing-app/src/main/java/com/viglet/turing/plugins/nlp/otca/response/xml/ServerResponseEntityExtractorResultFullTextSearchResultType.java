@@ -77,7 +77,7 @@ public class ServerResponseEntityExtractorResultFullTextSearchResultType {
      */
     public List<ServerResponseEntityExtractorResultTermType> getExtractedTerm() {
         if (extractedTerm == null) {
-            extractedTerm = new ArrayList<ServerResponseEntityExtractorResultTermType>();
+            extractedTerm = new ArrayList<>();
         }
         return this.extractedTerm;
     }

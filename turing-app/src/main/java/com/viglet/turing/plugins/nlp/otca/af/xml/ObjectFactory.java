@@ -40,19 +40,20 @@ import javax.xml.namespace.QName;
 @XmlRegistry
 public class ObjectFactory {
 
-    private final static QName _Languages_QNAME = new QName("http://dev.nstein.com/common/1.3", "languages");
-    private final static QName _AuthorityFiles_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "authorityFiles");
-    private final static QName _Config_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "config");
-    private final static QName _Term_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "term");
-    private final static QName _AuthorityFile_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "authorityFile");
-    private final static QName _Terms_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "terms");
-    private final static QName _Names_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "names");
+    private static final  QName _Languages_QNAME = new QName("http://dev.nstein.com/common/1.3", "languages");
+    private static final QName _AuthorityFiles_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "authorityFiles");
+    private static final QName _Config_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "config");
+    private static final QName _Term_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "term");
+    private static final QName _AuthorityFile_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "authorityFile");
+    private static final QName _Terms_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "terms");
+    private static final QName _Names_QNAME = new QName("http://dev.nstein.com/tme-authority-file/4.10", "names");
 
     /**
      * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: com.viglet.turing.plugins.otca.af.xml
      * 
      */
     public ObjectFactory() {
+    	//EMPTY
     }
 
     /**
@@ -341,7 +342,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "http://dev.nstein.com/common/1.3", name = "languages")
     public JAXBElement<LanguagesType> createLanguages(LanguagesType value) {
-        return new JAXBElement<LanguagesType>(_Languages_QNAME, LanguagesType.class, null, value);
+        return new JAXBElement<>(_Languages_QNAME, LanguagesType.class, null, value);
     }
 
     /**
@@ -350,7 +351,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "http://dev.nstein.com/tme-authority-file/4.10", name = "authorityFiles")
     public JAXBElement<AFObjectsType> createAuthorityFiles(AFObjectsType value) {
-        return new JAXBElement<AFObjectsType>(_AuthorityFiles_QNAME, AFObjectsType.class, null, value);
+        return new JAXBElement<>(_AuthorityFiles_QNAME, AFObjectsType.class, null, value);
     }
 
     /**
@@ -359,7 +360,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "http://dev.nstein.com/tme-authority-file/4.10", name = "config")
     public JAXBElement<AFConfigType> createConfig(AFConfigType value) {
-        return new JAXBElement<AFConfigType>(_Config_QNAME, AFConfigType.class, null, value);
+        return new JAXBElement<>(_Config_QNAME, AFConfigType.class, null, value);
     }
 
     /**
@@ -368,7 +369,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "http://dev.nstein.com/tme-authority-file/4.10", name = "term")
     public JAXBElement<AFTermType> createTerm(AFTermType value) {
-        return new JAXBElement<AFTermType>(_Term_QNAME, AFTermType.class, null, value);
+        return new JAXBElement<>(_Term_QNAME, AFTermType.class, null, value);
     }
 
     /**
@@ -377,7 +378,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "http://dev.nstein.com/tme-authority-file/4.10", name = "authorityFile")
     public JAXBElement<AFType> createAuthorityFile(AFType value) {
-        return new JAXBElement<AFType>(_AuthorityFile_QNAME, AFType.class, null, value);
+        return new JAXBElement<>(_AuthorityFile_QNAME, AFType.class, null, value);
     }
 
     /**
@@ -386,7 +387,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "http://dev.nstein.com/tme-authority-file/4.10", name = "terms")
     public JAXBElement<AFTermsType> createTerms(AFTermsType value) {
-        return new JAXBElement<AFTermsType>(_Terms_QNAME, AFTermsType.class, null, value);
+        return new JAXBElement<>(_Terms_QNAME, AFTermsType.class, null, value);
     }
 
     /**
@@ -395,7 +396,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "http://dev.nstein.com/tme-authority-file/4.10", name = "names")
     public JAXBElement<AFNamesType> createNames(AFNamesType value) {
-        return new JAXBElement<AFNamesType>(_Names_QNAME, AFNamesType.class, null, value);
+        return new JAXBElement<>(_Names_QNAME, AFNamesType.class, null, value);
     }
 
 }

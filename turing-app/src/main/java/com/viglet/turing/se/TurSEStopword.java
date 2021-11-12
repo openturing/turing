@@ -21,34 +21,40 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 
 @Component
 public class TurSEStopword {
+	private static final Logger logger = LogManager.getLogger(TurSEStopword.class);
 	@Autowired
 	private ResourceLoader resourceloader;
-	
-	//@Cacheable("stopwords")
-	public List<String> getStopWords(String locale) throws IOException {	
-		List<String> stopWords = new ArrayList<String>();
-		InputStreamReader isr = new InputStreamReader(
-				resourceloader.getResource("classpath:/solr/conf/lang/stopwords.txt").getInputStream());
-		BufferedReader br = new BufferedReader(isr);
-	
-		String st;
-		while ((st = br.readLine()) != null) {
-			String line[] = st.split("\\|");
-			if (line.length == 0) {
-				stopWords.add(st.trim());
-			} else {
-				stopWords.add(line[0].trim());
-			}
-		}
 
-		return stopWords;
+	public List<String> getStopWords() {
+		List<String> stopWords = new ArrayList<>();
+		try (InputStreamReader isr = new InputStreamReader(
+				resourceloader.getResource("classpath:/solr/conf/lang/stopwords.txt").getInputStream());
+				BufferedReader br = new BufferedReader(isr);) {
+			String st;
+			while ((st = br.readLine()) != null) {
+				String[] line = st.split("\\|");
+				if (line.length == 0) {
+					stopWords.add(st.trim());
+				} else {
+					stopWords.add(line[0].trim());
+				}
+			}
+
+			return stopWords;
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return Collections.emptyList();
 	}
 }

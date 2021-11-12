@@ -81,7 +81,7 @@ public class AFTermVariationType {
     protected AFTermVariationAffixType prefix;
     protected AFTermVariationAffixType suffix;
     @XmlElement(name = "case")
-    protected AFTermVariationCaseEnum _case;
+    protected AFTermVariationCaseEnum _case; //NOSONAR
     protected AFTermVariationAccentEnum accent;
     protected AFTermVariationType.Languages languages;
 
@@ -297,7 +297,7 @@ public class AFTermVariationType {
          */
         public List<String> getLanguage() {
             if (language == null) {
-                language = new ArrayList<String>();
+                language = new ArrayList<>();
             }
             return this.language;
         }

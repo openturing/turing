@@ -77,7 +77,7 @@ public class ServerResponseConceptExtractorResultConceptOccurencesType {
      */
     public List<ServerResponseConceptExtractorResultConceptOccurenceType> getSubterm() {
         if (subterm == null) {
-            subterm = new ArrayList<ServerResponseConceptExtractorResultConceptOccurenceType>();
+            subterm = new ArrayList<>();
         }
         return this.subterm;
     }

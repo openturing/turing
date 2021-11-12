@@ -77,7 +77,7 @@ public class ServerResponseCategorizerResultCategoriesType {
      */
     public List<ServerResponseCategorizerResultCategoryType> getCategory() {
         if (category == null) {
-            category = new ArrayList<ServerResponseCategorizerResultCategoryType>();
+            category = new ArrayList<>();
         }
         return this.category;
     }
