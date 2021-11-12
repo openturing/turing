@@ -21,9 +21,6 @@ import java.io.Serializable;
 
 import javax.persistence.*;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.viglet.turing.utils.MD5Util;
-
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -167,16 +164,6 @@ public class TurUser implements Serializable {
 
 	public void setUsername(String username) {
 		this.username = username;
-	}
-
-	@JsonProperty("gravatar")
-	private String getGravatar() {
-		if (this.email != null) {
-			String imageUrl = "https://www.gravatar.com/avatar/" + MD5Util.md5Hex(this.email);
-			return imageUrl;
-		} else {
-			return null;
-		}
 	}
 
 	public int getEnabled() {

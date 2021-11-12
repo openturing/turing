@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileStatus;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,8 +37,6 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
@@ -46,8 +44,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Hadoop", description = "Hadoop API")
 public class TurHadoopAPI {
 	private static final Log logger = LogFactory.getLog(TurHadoopAPI.class);
-	@Autowired
-	TurSNSiteRepository turSNSiteRepository;
+	@Value("${turing.hadoop.endpoint:hdfs://localhost:8020}")
+	private String hadoopEndpoint;
 
 	@GetMapping
 	public TurChildPath turHadoopPath(@RequestParam String path) {
@@ -55,11 +53,11 @@ public class TurHadoopAPI {
 		UserGroupInformation ugi = UserGroupInformation.createRemoteUser("root");
 
 		try {
-			return ugi.doAs(new PrivilegedExceptionAction<TurChildPath>() {
+			return ugi.doAs(new PrivilegedExceptionAction<>() {
 
 				public TurChildPath run() throws Exception {
 					Configuration conf = new Configuration();
-					conf.set("fs.defaultFS", "hdfs://192.168.0.6:8020");
+					conf.set("fs.defaultFS", hadoopEndpoint);
 					conf.set("hadoop.job.ugi", "root");
 					FileSystem fs = FileSystem.get(conf);
 					String pathUnescape = StringEscapeUtils.unescapeHtml4(path);

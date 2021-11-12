@@ -22,12 +22,15 @@ import java.io.IOException;
 import java.net.URL;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @Transactional
 public class TurOpenNLPModelsOnStartup {
+	private static final Logger logger = LogManager.getLogger(TurOpenNLPModelsOnStartup.class);
 	public TurOpenNLPModelsOnStartup() {
 		super();
 	}
@@ -90,7 +93,7 @@ public class TurOpenNLPModelsOnStartup {
 					FileUtils.copyURLToFile(new URL(fromFile), new File(toFileFullPath), 100000, 100000);
 
 				} catch (IOException e) {
-					e.printStackTrace();
+					logger.error(e.getMessage(), e);
 				}
 
 				System.out.print("[ OK ]");

@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.transform.TransformerException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +51,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 
 	private List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 
-	private List<String> sentencesTokens = new ArrayList<String>();
+	private List<String> sentencesTokens = new ArrayList<>();
 
 	private TurNLPInstance turNLPInstance;
 
@@ -64,11 +62,11 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 	}
 
 	@Override
-	public Map<String, Object> retrieve(Map<String, Object> attributes) throws TransformerException, Exception {
+	public Map<String, Object> retrieve(Map<String, Object> attributes) {
 
 		for (Object attrValue : attributes.values()) {
 			String sentences[] = this.sentenceDetect(
-					turSolrField.convertFieldToString(attrValue).replaceAll("\"", "").replaceAll("'", ""));
+					turSolrField.convertFieldToString(attrValue).replace("\"", "").replace("'", ""));
 
 			for (String sentence : sentences) {
 
@@ -80,7 +78,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 				} else
 					sentencesFormatted = sentencesFormatted + " .";
 
-				logger.debug("OpenNLP Sentence: " + sentencesFormatted);
+				logger.debug("OpenNLP Sentence: {}", sentencesFormatted);
 				String tokens[] = this.tokenDetect(sentencesFormatted + ".");
 				for (String token : tokens) {
 					sentencesTokens.add(token);
@@ -93,7 +91,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 	}
 
 	public Map<String, Object> getAttributes() {
-		Map<String, Object> entityAttributes = new HashMap<String, Object>();
+		Map<String, Object> entityAttributes = new HashMap<>();
 
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
 			logger.debug("TurNLPInstanceEntity : " + nlpInstanceEntity.getName());
@@ -110,7 +108,7 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 	public List<String> getEntity(String entityPath) {
 		try {
 			NameFinderME nameFinder = null;
-			List<String> entities = new ArrayList<String>();
+			List<String> entities = new ArrayList<>();
 
 			nameFinder = turOpenNLPCache.nameFinderMe(entityPath).getNameFinderME();
 
@@ -130,10 +128,10 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 
 				return entities;
 			} else {
-				logger.debug("Sentences returns null of OpenNLP Entity " + entityPath);
+				logger.debug("Sentences returns null of OpenNLP Entity {}", entityPath);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		}
 
 		return null;
