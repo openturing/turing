@@ -48,15 +48,13 @@ public class TurSNSiteSpellCheckAPI {
 	private TurSolrInstanceProcess turSolrInstanceProcess;
 
 	@GetMapping
-	public TurSNSiteSpellCheckBean turSNSiteSpellCheck(@PathVariable String siteName, 
-			@PathVariable String locale,
-			@RequestParam(required = true, name = TurSNParamType.QUERY) String q, 
-			HttpServletRequest request) {
+	public TurSNSiteSpellCheckBean turSNSiteSpellCheck(@PathVariable String siteName, @PathVariable String locale,
+			@RequestParam(required = true, name = TurSNParamType.QUERY) String q, HttpServletRequest request) {
 
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
-
-		return new TurSNSiteSpellCheckBean(TurSNUtils.requestToURI(request), turSNSite, q,
-				turSolr.spellCheckTerm(turSolrInstance, q));
+		TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName, q, 1, null, null,
+				"relevance", 10, 0, locale, TurSNUtils.requestToURI(request));
+		return new TurSNSiteSpellCheckBean(turSNSiteSearchContext, turSolr.spellCheckTerm(turSolrInstance, q));
 	}
 }

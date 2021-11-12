@@ -27,11 +27,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/sn/{id}/deindex")
-@Api(tags = "Semantic Navigation Deindexing", description = "Semantic Navigation Deindexing API")
+@Tag(name = "Semantic Navigation Deindexing", description = "Semantic Navigation Deindexing API")
 public class TurSNDeindexingAPI {
 	static final Logger logger = LogManager.getLogger(TurSNDeindexingAPI.class.getName());
 	@Autowired

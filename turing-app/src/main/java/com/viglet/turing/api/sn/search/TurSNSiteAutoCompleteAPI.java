@@ -88,23 +88,13 @@ public class TurSNSiteAutoCompleteAPI {
 				String lastToken = token[token.length - 1];
 				if (token.length > tokenQSize) {
 					if (previousTerm == null) {
-						if (!stopWords.contains(lastToken)) {
+						if (!stopWords.contains(lastToken) || !term.contains(previousTerm)) {
 							termListFormatted.add(term);
 							previousFinishedStopWords = false;
 						} else {
 							previousFinishedStopWords = true;
 						}
 						previousTerm = term;
-
-					} else if (!term.contains(previousTerm)) {
-						if (!stopWords.contains(lastToken)) {
-							termListFormatted.add(term);
-							previousFinishedStopWords = false;
-						} else {
-							previousFinishedStopWords = true;
-						}
-						previousTerm = term;
-
 					} else {
 						if (previousFinishedStopWords) {
 							if (!stopWords.contains(lastToken)) {
@@ -114,7 +104,6 @@ public class TurSNSiteAutoCompleteAPI {
 						} else {
 							previousFinishedStopWords = true;
 						}
-
 					}
 
 				} else {

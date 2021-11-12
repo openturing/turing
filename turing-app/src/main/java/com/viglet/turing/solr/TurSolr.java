@@ -46,6 +46,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
@@ -187,7 +188,7 @@ public class TurSolr {
 			addSolrDocument(turSolrInstance, document);
 		}
 	}
-	
+
 	public void addDocumentWithText(TurSolrInstance turSolrInstance, String currText) {
 		SolrInputDocument document = new SolrInputDocument();
 		document.addField("id", UUID.randomUUID());
@@ -195,7 +196,7 @@ public class TurSolr {
 
 		addSolrDocument(turSolrInstance, document);
 	}
-	
+
 	private void addSolrDocument(TurSolrInstance turSolrInstance, SolrInputDocument document) {
 		try {
 			turSolrInstance.getSolrClient().add(document);
@@ -203,7 +204,6 @@ public class TurSolr {
 			logger.error(e);
 		}
 	}
-
 
 	public SpellCheckResponse autoComplete(TurSolrInstance turSolrInstance, String term) {
 		SolrQuery query = new SolrQuery();
@@ -261,46 +261,46 @@ public class TurSolr {
 		return turSEResult;
 	}
 
-	public TurSEResults retrieveSolrFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite, String txtQuery,
-			List<String> fq, List<String> tr, int currentPage, String sort, int rows, int autoCorrectionDisabled) {
+	public TurSEResults retrieveSolrFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
+			TurSNSiteSearchContext context) {
 
 		Map<String, TurSNSiteFieldExt> fieldExtMap = getFieldExtMap(turSNSite);
 
 		Map<String, Object> requiredFields = getRequiredFields(turSNSite);
 
 		TurSEResults turSEResults = new TurSEResults();
-		if (rows <= 0) {
-			rows = turSNSite.getRowsPerPage();
+		if (context.getRows() <= 0) {
+			context.setRows(turSNSite.getRowsPerPage());
 		}
 		SimpleEntry<String, String> sortEntry = null;
-		if (sort != null) {
-			if (sort.toLowerCase().equals("relevance")) {
+		if (context.getSort() != null) {
+			if (context.getSort().toLowerCase().equals("relevance")) {
 				sortEntry = null;
-			} else if (sort.toLowerCase().equals("newest")) {
+			} else if (context.getSort().toLowerCase().equals("newest")) {
 				sortEntry = new SimpleEntry<String, String>(turSNSite.getDefaultDateField(), "desc");
-			} else if (sort.toLowerCase().equals("oldest")) {
+			} else if (context.getSort().toLowerCase().equals("oldest")) {
 				sortEntry = new SimpleEntry<String, String>(turSNSite.getDefaultDateField(), "asc");
 			}
 		}
 		SolrQuery query = new SolrQuery();
-		if (TurSNUtils.isAutoCorrectionEnabled(currentPage, autoCorrectionDisabled, turSNSite)) {
-			TurSESpellCheckResult turSESpellCheckResult = spellCheckTerm(turSolrInstance, txtQuery);
+		if (TurSNUtils.isAutoCorrectionEnabled(context, turSNSite)) {
+			TurSESpellCheckResult turSESpellCheckResult = spellCheckTerm(turSolrInstance, context.getQuery());
 			if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
 				query.setQuery(turSESpellCheckResult.getCorrectedText());
 			} else {
-				query.setQuery(txtQuery);
+				query.setQuery(context.getQuery());
 			}
 		} else {
 
-			query.setQuery(txtQuery);
+			query.setQuery(context.getQuery());
 		}
 
 		if (sortEntry != null) {
 			query.setSort(sortEntry.getKey(), sortEntry.getValue().equals("asc") ? ORDER.asc : ORDER.desc);
 		}
 
-		query.setRows(rows);
-		query.setStart((currentPage * rows) - rows);
+		query.setRows(context.getRows());
+		query.setStart((context.getCurrentPage() * context.getRows()) - context.getRows());
 
 		// Facet
 		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
@@ -329,7 +329,7 @@ public class TurSolr {
 		// MLT
 		List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = turSNSiteFieldExtRepository
 				.findByTurSNSiteAndMltAndEnabled(turSNSite, 1, 1);
-		if (turSNSite.getMlt() == 1 && turSNSiteMLTFieldExts != null && turSNSiteMLTFieldExts.size() > 0) {
+		if (turSNSite.getMlt() == 1 && turSNSiteMLTFieldExts != null && !turSNSiteMLTFieldExts.isEmpty()) {
 
 			StringBuilder mltFields = new StringBuilder();
 			for (TurSNSiteFieldExt turSNSiteMltFieldExt : turSNSiteMLTFieldExts) {
@@ -350,14 +350,16 @@ public class TurSolr {
 		}
 
 		// Filter Query
-		String[] filterQueryArr = new String[fq.size()];
-		filterQueryArr = fq.toArray(filterQueryArr);
-		query.setFilterQueries(filterQueryArr);
+		if (context.getFilterQueries() != null && !context.getFilterQueries().isEmpty()) {
+			String[] filterQueryArr = new String[context.getFilterQueries().size()];
+			filterQueryArr = context.getFilterQueries().toArray(filterQueryArr);
+			query.setFilterQueries(filterQueryArr);
+		}
 
 		// Targeting Rule
 		// TODO: Implement AND or OR choice
-		if (tr != null && tr.size() > 0)
-			query.addFilterQuery(turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, tr));
+		if (context.getTargetingRules() != null && !context.getTargetingRules().isEmpty())
+			query.addFilterQuery(turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, context.getTargetingRules()));
 
 		QueryResponse queryResponse;
 		try {
@@ -368,12 +370,12 @@ public class TurSolr {
 			turSEResults.setqTime(queryResponse.getQTime());
 			turSEResults.setStart(queryResponse.getResults().getStart());
 			turSEResults.setQueryString(query.getQuery());
-			turSEResults.setSort(sort);
-			turSEResults.setLimit(rows);
+			turSEResults.setSort(context.getSort());
+			turSEResults.setLimit(context.getRows());
 
 			int pageCount = (int) Math.ceil(turSEResults.getNumFound() / (double) turSEResults.getLimit());
 			turSEResults.setPageCount(pageCount);
-			turSEResults.setCurrentPage(currentPage);
+			turSEResults.setCurrentPage(context.getCurrentPage());
 
 			List<TurSEResult> results = new ArrayList<TurSEResult>();
 
@@ -423,7 +425,7 @@ public class TurSolr {
 			}
 
 			// Spell Check
-			turSEResults.setSpellCheck(spellCheckTerm(turSolrInstance, txtQuery));
+			turSEResults.setSpellCheck(spellCheckTerm(turSolrInstance, context.getQuery()));
 
 			turSEResults.setResults(results);
 

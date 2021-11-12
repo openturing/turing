@@ -10,7 +10,7 @@ public class TurSNSiteSpellCheckText {
 	private String text;
 	private String link;
 
-	public TurSNSiteSpellCheckText(URI uri, String siteName, String text, boolean isOriginal) {
+	public TurSNSiteSpellCheckText(URI uri, String text, boolean isOriginal) {
 		super();
 		URI uriModified = TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.QUERY, text);
 		if (isOriginal) {

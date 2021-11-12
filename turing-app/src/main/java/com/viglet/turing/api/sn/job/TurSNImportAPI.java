@@ -31,11 +31,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/sn/{siteName}/import")
-@Api(tags = "Semantic Navigation Import", description = "Semantic Navigation Import API")
+@Tag(name = "Semantic Navigation Import", description = "Semantic Navigation Import API")
 public class TurSNImportAPI {
 	static final Logger logger = LogManager.getLogger(TurSNImportAPI.class.getName());
 	@Autowired
@@ -66,8 +66,8 @@ public class TurSNImportAPI {
 		sentQueueInfo(turSNJob);
 
 		if (logger.isDebugEnabled()) {
-			logger.debug("Sent job - " + INDEXING_QUEUE);
-			logger.debug("turSNJob: " + turSNJob.getTurSNJobItems().toString());
+			logger.debug("Sent job - {}", INDEXING_QUEUE);
+			logger.debug("turSNJob: {}", turSNJob.getTurSNJobItems().toString());
 		}
 		this.jmsMessagingTemplate.convertAndSend(INDEXING_QUEUE, turSNJob);
 
@@ -84,8 +84,8 @@ public class TurSNImportAPI {
 				} else if (turJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
 					action = "deindex";
 				}
-				logger.info(String.format("Sent to queue to %s the Object ID '%s' of '%s' SN Site.", action,
-						turJobItem.getAttributes().get("id"), turSNSite.getName()));
+				logger.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site.", action,
+						turJobItem.getAttributes().get("id"), turSNSite.getName());
 
 			}
 		});

@@ -81,7 +81,7 @@ public class TurSNSiteSearchFacetBean {
 		this.multiValued = multiValued;
 	}
 	public void setMultiValued(int multiValued) {
-		this.multiValued = multiValued == 1 ? true: false;
+		this.multiValued = multiValued == 1;
 	}
 
 }

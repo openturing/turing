@@ -72,14 +72,14 @@ public class TurMLDataSentenceAPI {
 	@Transactional
 	@Operation(summary = "Delete a Machine Learning Data Sentence")
 	@DeleteMapping("/{id}")
-	public boolean turDataSentenceDelete(@PathVariable int id) throws Exception {
+	public boolean turDataSentenceDelete(@PathVariable int id) {
 		this.turDataGroupSentenceRepository.delete(id);
 		return true;
 	}
 
 	@Operation(summary = "Create a Machine Learning Data Sentence")
 	@PostMapping
-	public TurDataGroupSentence turDataSentenceAdd(@RequestBody TurDataGroupSentence turDataSentence) throws Exception {
+	public TurDataGroupSentence turDataSentenceAdd(@RequestBody TurDataGroupSentence turDataSentence) {
 		this.turDataGroupSentenceRepository.save(turDataSentence);
 		return turDataSentence;
 
