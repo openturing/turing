@@ -54,9 +54,9 @@ public class Turing {
 			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
 					.run(args);
 		} else {
-			System.console().writer().println("Viglet Turing starting...");
+			System.out.println("Viglet Turing starting...");
 			SpringApplication.run(Turing.class, args);
-			System.console().writer().println("Viglet Turing started");
+			System.out.println("Viglet Turing started");
 		}
 
 	}
