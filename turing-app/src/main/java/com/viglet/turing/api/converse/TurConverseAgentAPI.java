@@ -207,7 +207,7 @@ public class TurConverseAgentAPI {
 				&& (boolean) session.getAttribute(HAS_PARAMETER);
 
 		TurConverseChat chat = null;
-		if (session != null && session.getId() != null) {
+		if (session.getId() != null) {
 			chat = turConverseChatRepository.findBySession(sessionId);
 			if (chat == null) {
 

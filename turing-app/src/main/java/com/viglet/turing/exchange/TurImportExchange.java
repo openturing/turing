@@ -46,7 +46,7 @@ public class TurImportExchange {
 	private Map<String, Object> shObjects = new HashMap<>();
 	private Map<String, List<String>> shChildObjects = new HashMap<>();
 
-	public TurExchange importFromMultipartFile(MultipartFile multipartFile) throws IllegalStateException, IOException {
+	public TurExchange importFromMultipartFile(MultipartFile multipartFile) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		File parentExtractFolder = null;
 
@@ -61,33 +61,33 @@ public class TurImportExchange {
 				}
 			}
 			ObjectMapper mapper = new ObjectMapper();
-
+			try {
 			TurExchange turExchange = mapper.readValue(
-					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + EXPORT_FILE)),
+					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator).concat(EXPORT_FILE)),
 					TurExchange.class);
 
 			if (turExchange.getSnSites() != null && !turExchange.getSnSites().isEmpty()) {
 				turSNSiteImport.importSNSite(turExchange);
 			}
 
-			try {
+		
 				FileUtils.deleteDirectory(extractFolder);
 				if (parentExtractFolder != null) {
 					FileUtils.deleteDirectory(parentExtractFolder);
 				}
+			
+			return turExchange;
 			} catch (IOException e) {
 				logger.error(e.getMessage(), e);
 			}
-			return turExchange;
-		} else {
-			return new TurExchange();
 		}
+		return new TurExchange();
+	
 	}
 
 	public TurExchange importFromFile(File file) {
-		
-		try {
-			FileInputStream input = new FileInputStream(file);
+
+		try (FileInputStream input = new FileInputStream(file)) {
 			MultipartFile multipartFile = new MockMultipartFile(file.getName(), IOUtils.toByteArray(input));
 			return this.importFromMultipartFile(multipartFile);
 		} catch (IOException | IllegalStateException e) {

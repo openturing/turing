@@ -33,7 +33,6 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.sax.SAXSource;
 
 import org.apache.logging.log4j.LogManager;
@@ -143,7 +142,7 @@ public class TurTMEConnector implements TurNLPImpl {
 		}
 	}
 
-	public Map<String, Object> retrieve(Map<String, Object> attributes) throws TransformerException, Exception {
+	public Map<String, Object> retrieve(Map<String, Object> attributes) {
 
 		for (Object attrValue : attributes.values()) {
 			StringBuilder sb = new StringBuilder();
