@@ -4,7 +4,7 @@ buildscript {
 	      hibernateVersion = '5.11.0.Final'
 		  httpClientVersion = '4.5.11'
 		  swaggerVersion = '3.0.0'
-		  jasyptVersion = '2.1.1'
+		  jasyptVersion = '3.0.4'
 		 }
 		repositories {
 			mavenCentral()	
