@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
@@ -30,8 +29,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.xml.transform.TransformerException;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -53,7 +50,6 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityReposito
 import com.viglet.turing.plugins.nlp.TurNLPImpl;
 import com.viglet.turing.solr.TurSolrField;
 
-
 @Component
 public class TurCoreNLPConnector implements TurNLPImpl {
 	static final Logger logger = LogManager.getLogger(TurCoreNLPConnector.class.getName());
@@ -71,11 +67,10 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 
 	public void startup(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
-
 		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstanceAndEnabled(turNLPInstance, 1);
 	}
 
-	public Map<String, Object> retrieve(Map<String, Object> attributes) throws TransformerException, Exception {
+	public Map<String, Object> retrieve(Map<String, Object> attributes) {
 		return this.request(this.turNLPInstance, attributes);
 	}
 
@@ -88,16 +83,14 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 		return sb.toString();
 	}
 
-	public Map<String, Object> request(TurNLPInstance turNLPInstance, Map<String, Object> attributes)
-			throws MalformedURLException, IOException, JSONException {
-
-		String props = "{\"tokenize.whitespace\":\"true\",\"annotators\":\"tokenize,ssplit,pos,ner\",\"outputFormat\":\"json\"}";
-
-		String queryParams = String.format("properties=%s", URLEncoder.encode(props, "utf-8"));
-
-		URL serverURL = new URL("http", turNLPInstance.getHost(), turNLPInstance.getPort(), "/?" + queryParams);
+	public Map<String, Object> request(TurNLPInstance turNLPInstance, Map<String, Object> attributes) {
 
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			String props = "{\"tokenize.whitespace\":\"true\",\"annotators\":\"tokenize,ssplit,pos,ner\",\"outputFormat\":\"json\"}";
+
+			String queryParams = String.format("properties=%s", URLEncoder.encode(props, "utf-8"));
+
+			URL serverURL = new URL("http", turNLPInstance.getHost(), turNLPInstance.getPort(), "/?" + queryParams);
 
 			HttpPost httppost = new HttpPost(serverURL.toString());
 
@@ -119,13 +112,15 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 					}
 				}
 			}
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
 		}
 
 		return this.getAttributes();
 
 	}
 
-	public Map<String, Object> getAttributes(){
+	public Map<String, Object> getAttributes() {
 		Map<String, Object> entityAttributes = new HashMap<String, Object>();
 
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {

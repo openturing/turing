@@ -28,9 +28,9 @@ import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 
 public interface TurConverseContextRepository extends JpaRepository<TurConverseContext, String> {
 
-	Set<TurConverseContext> findByIntentInputs_Id(String intentId);
+	Set<TurConverseContext> findByIntentInputs_Id(String intentId); //NOSONAR
 	
-	Set<TurConverseContext> findByIntentOutputs_Id(String intentId);
+	Set<TurConverseContext> findByIntentOutputs_Id(String intentId); //NOSONAR
 	
 	Set<TurConverseContext> findByAgent(TurConverseAgent agent);
 	

@@ -17,10 +17,6 @@
 
 package com.viglet.turing.api.exchange;
 
-import java.io.IOException;
-
-import org.apache.commons.compress.archivers.ArchiveException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,8 +40,7 @@ public class TurImportAPI {
 
 	@PostMapping
 	@Transactional
-	public TurExchange shImport(@RequestParam("file") MultipartFile multipartFile)
-			throws IllegalStateException, IOException, ArchiveException {
+	public TurExchange shImport(@RequestParam("file") MultipartFile multipartFile) {
 		return turImportExchange.importFromMultipartFile(multipartFile);
 	}
 

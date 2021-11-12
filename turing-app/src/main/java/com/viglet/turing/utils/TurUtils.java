@@ -132,7 +132,7 @@ public class TurUtils {
 			}
 
 			File zipFile = new File(tmpDir.getAbsolutePath().concat(File.separator + "imp_"
-					+ file.getOriginalFilename().replace(".", "").replace("/", "") + UUID.randomUUID()));
+					+ file.getOriginalFilename().replace(".", "").replace("/", "") + UUID.randomUUID())); //NOSONAR
 			try {
 				file.transferTo(zipFile);
 				File extractFolder = new File(
