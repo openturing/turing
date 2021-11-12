@@ -175,7 +175,7 @@ public class AFConfigRuleActionMergeRangeType {
          */
         public List<String> getSeparator() {
             if (separator == null) {
-                separator = new ArrayList<String>();
+                separator = new ArrayList<>();
             }
             return this.separator;
         }

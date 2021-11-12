@@ -75,7 +75,7 @@ public class AFTermsType {
      */
     public List<AFTermType> getTerm() {
         if (term == null) {
-            term = new ArrayList<AFTermType>();
+            term = new ArrayList<>();
         }
         return this.term;
     }

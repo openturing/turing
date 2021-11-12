@@ -193,7 +193,7 @@ public class ServerResponseCategorizerResultType {
      */
     public List<ServerResponseCategorizerResultKnowledgeBaseType> getKnowledgeBase() {
         if (knowledgeBase == null) {
-            knowledgeBase = new ArrayList<ServerResponseCategorizerResultKnowledgeBaseType>();
+            knowledgeBase = new ArrayList<>();
         }
         return this.knowledgeBase;
     }

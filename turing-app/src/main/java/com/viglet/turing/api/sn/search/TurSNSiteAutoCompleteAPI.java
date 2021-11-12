@@ -17,7 +17,6 @@
 
 package com.viglet.turing.api.sn.search;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,12 +56,11 @@ public class TurSNSiteAutoCompleteAPI {
 	private TurSEStopword turSEStopword;
 	@Autowired
 	private TurSolrInstanceProcess turSolrInstanceProcess;
-	
+
 	@GetMapping
-	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,
-			@PathVariable String locale,
+	public List<String> turSNSiteAutoComplete(@PathVariable String siteName, @PathVariable String locale,
 			@RequestParam(required = true, name = TurSNParamType.QUERY) String q,
-			@RequestParam(required = false, defaultValue = "20", name = TurSNParamType.ROWS) long rows, 
+			@RequestParam(required = false, defaultValue = "20", name = TurSNParamType.ROWS) long rows,
 			HttpServletRequest request) {
 
 		List<String> termListShrink = new ArrayList<>();
@@ -76,63 +74,60 @@ public class TurSNSiteAutoCompleteAPI {
 		}
 		List<String> termList = turSEResults.getSuggestions().get(0).getAlternatives();
 		List<String> stopWords;
-		try {
-			stopWords = turSEStopword.getStopWords("pt");
 
-			List<String> termListFormatted = new ArrayList<>();
-			int tokenQSize = q.split(" ").length;
-			String previousTerm = null;
-			boolean previousFinishedStopWords = false;
-			for (String term : termList) {
-				String[] token = term.split(" ");
-				String lastToken = token[token.length - 1];
-				if (token.length > tokenQSize) {
-					if (previousTerm == null) {
-						if (!stopWords.contains(lastToken) || !term.contains(previousTerm)) {
-							termListFormatted.add(term);
-							previousFinishedStopWords = false;
-						} else {
-							previousFinishedStopWords = true;
-						}
-						previousTerm = term;
+		stopWords = turSEStopword.getStopWords();
+
+		List<String> termListFormatted = new ArrayList<>();
+		int tokenQSize = q.split(" ").length;
+		String previousTerm = null;
+		boolean previousFinishedStopWords = false;
+		for (String term : termList) {
+			String[] token = term.split(" ");
+			String lastToken = token[token.length - 1];
+			if (token.length > tokenQSize) {
+				if (previousTerm == null) {
+					if (!stopWords.contains(lastToken) || !term.contains(previousTerm)) {
+						termListFormatted.add(term);
+						previousFinishedStopWords = false;
 					} else {
-						if (previousFinishedStopWords) {
-							if (!stopWords.contains(lastToken)) {
-								termListFormatted.add(term);
-								previousFinishedStopWords = false;
-							}
-						} else {
-							previousFinishedStopWords = true;
-						}
+						previousFinishedStopWords = true;
 					}
-
-				} else {
-					termListFormatted.add(term);
-					previousTerm = term + "";
-				}
-			}
-
-			previousTerm = null;
-
-			for (String term : termListFormatted) {
-				int currentIndex = termListFormatted.indexOf(term);
-				String[] token = term.split(" ");
-				if ((token.length <= tokenQSize + 1) || previousTerm == null) {
-					termListShrink.add(term);
 					previousTerm = term;
 				} else {
-					if (!term.contains(previousTerm)) {
-						termListShrink.add(term);
-					} else {
-						if ((termListFormatted.size() > currentIndex + 1)
-								&& (!termListFormatted.get(currentIndex + 1).contains(term))) {
-							termListShrink.add(term);
+					if (previousFinishedStopWords) {
+						if (!stopWords.contains(lastToken)) {
+							termListFormatted.add(term);
+							previousFinishedStopWords = false;
 						}
+					} else {
+						previousFinishedStopWords = true;
+					}
+				}
+
+			} else {
+				termListFormatted.add(term);
+				previousTerm = term + "";
+			}
+		}
+
+		previousTerm = null;
+
+		for (String term : termListFormatted) {
+			int currentIndex = termListFormatted.indexOf(term);
+			String[] token = term.split(" ");
+			if ((token.length <= tokenQSize + 1) || previousTerm == null) {
+				termListShrink.add(term);
+				previousTerm = term;
+			} else {
+				if (!term.contains(previousTerm)) {
+					termListShrink.add(term);
+				} else {
+					if ((termListFormatted.size() > currentIndex + 1)
+							&& (!termListFormatted.get(currentIndex + 1).contains(term))) {
+						termListShrink.add(term);
 					}
 				}
 			}
-		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
 		}
 		return termListShrink.stream().limit(rows).collect(Collectors.toList());
 	}

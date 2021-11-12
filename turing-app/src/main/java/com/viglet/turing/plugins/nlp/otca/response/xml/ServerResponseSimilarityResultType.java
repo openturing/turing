@@ -95,7 +95,7 @@ public class ServerResponseSimilarityResultType {
      */
     public List<Object> getIsTextIndexedOrCompareOrGetAllIds() {
         if (isTextIndexedOrCompareOrGetAllIds == null) {
-            isTextIndexedOrCompareOrGetAllIds = new ArrayList<Object>();
+            isTextIndexedOrCompareOrGetAllIds = new ArrayList<>();
         }
         return this.isTextIndexedOrCompareOrGetAllIds;
     }

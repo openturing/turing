@@ -208,7 +208,7 @@ public class ServerResponseLanguageDetectorResultParagraphType {
          */
         public List<ServerResponseLanguageDetectorResultCandidateType> getLanguage() {
             if (language == null) {
-                language = new ArrayList<ServerResponseLanguageDetectorResultCandidateType>();
+                language = new ArrayList<>();
             }
             return this.language;
         }

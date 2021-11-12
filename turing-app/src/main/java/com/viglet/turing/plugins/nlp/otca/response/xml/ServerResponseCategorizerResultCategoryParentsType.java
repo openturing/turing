@@ -77,7 +77,7 @@ public class ServerResponseCategorizerResultCategoryParentsType {
      */
     public List<ServerResponseCategorizerResultCategoryParentType> getParent() {
         if (parent == null) {
-            parent = new ArrayList<ServerResponseCategorizerResultCategoryParentType>();
+            parent = new ArrayList<>();
         }
         return this.parent;
     }

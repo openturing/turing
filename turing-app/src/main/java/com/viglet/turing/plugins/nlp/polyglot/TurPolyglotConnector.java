@@ -40,7 +40,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -92,7 +91,7 @@ public class TurPolyglotConnector implements TurNLPImpl {
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
 			URL serverURL = new URL("http", turNLPInstance.getHost(), turNLPInstance.getPort(), "/ent");
 			if (logger.isDebugEnabled()) {
-				logger.debug("URL: {}" ,serverURL.toString());
+				logger.debug("URL: {}" ,serverURL);
 			}
 
 			HttpPost httpPost = new HttpPost(serverURL.toString());
@@ -103,8 +102,8 @@ public class TurPolyglotConnector implements TurNLPImpl {
 				for (Object attrValue : attributes.values()) {
 					JSONObject jsonBody = new JSONObject();
 					String atributeValueFullText = turUtils.removeUrl(turSolrField.convertFieldToString(attrValue))
-							.replaceAll("\\n|:|;", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ")
-							.replaceAll("â€�", " ").replaceAll("â€œ", " ").replaceAll("\\.+", ". ")
+							.replaceAll("[\\n:;]", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ")
+							.replaceAll("\\.+", ". ")
 							.replaceAll(" +", " ").trim();
 
 					for (String atributeValue : atributeValueFullText.split("\\.")) {
@@ -132,7 +131,7 @@ public class TurPolyglotConnector implements TurNLPImpl {
 						httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 						httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
 						httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
-						StringEntity stringEntity = new StringEntity(new String(jsonBody.toString()), StandardCharsets.UTF_8);
+						StringEntity stringEntity = new StringEntity(jsonBody.toString(), StandardCharsets.UTF_8);
 						httpPost.setEntity(stringEntity);
 
 						try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
@@ -143,11 +142,11 @@ public class TurPolyglotConnector implements TurNLPImpl {
 									BufferedReader rd = new BufferedReader(
 											new InputStreamReader(instream, StandardCharsets.UTF_8));
 									String jsonResponse = readAll(rd);
-									if (turUtils.isJSONValid(jsonResponse)) {
+									if (TurUtils.isJSONValid(jsonResponse)) {
 										if (logger.isDebugEnabled()) {
 											logger.debug("Polyglot JSONResponse: {}", jsonResponse);
 										}
-										this.getEntities(atributeValue, new JSONArray(jsonResponse));
+										this.getEntities(new JSONArray(jsonResponse));
 									}
 								}
 							}
@@ -163,20 +162,20 @@ public class TurPolyglotConnector implements TurNLPImpl {
 
 	}
 
-	public Map<String, Object> getAttributes() throws JSONException {
-		Map<String, Object> entityAttributes = new HashMap<String, Object>();
+	public Map<String, Object> getAttributes() {
+		Map<String, Object> entityAttributes = new HashMap<>();
 
 		for (TurNLPEntity nlpEntity : nlpEntities) {
 			entityAttributes.put(nlpEntity.getInternalName(), this.getEntity(nlpEntity.getInternalName()));
 		}
 
 		if (logger.isDebugEnabled()) {
-			logger.debug("Polyglot getAttributes: {}", entityAttributes.toString());
+			logger.debug("Polyglot getAttributes: {}", entityAttributes);
 		}
 		return entityAttributes;
 	}
 
-	public void getEntities(String text, JSONArray json) throws JSONException {
+	public void getEntities(JSONArray json) {
 
 		for (int i = 0; i < json.length(); i++) {
 			boolean add = true;
@@ -211,7 +210,7 @@ public class TurPolyglotConnector implements TurNLPImpl {
 				entityList.get(entityType).add(entity.trim());
 			}
 		} else {
-			List<Object> valueList = new ArrayList<Object>();
+			List<Object> valueList = new ArrayList<>();
 			valueList.add(entity.trim());
 			entityList.put(entityType, valueList);
 		}

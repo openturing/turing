@@ -77,7 +77,7 @@ public class ServerResponseEntitySimilarityMethodListMethodType {
      */
     public List<String> getId() {
         if (id == null) {
-            id = new ArrayList<String>();
+            id = new ArrayList<>();
         }
         return this.id;
     }

@@ -85,7 +85,7 @@ public class ServerResponseConceptExtractorResultConceptsType {
      */
     public List<Object> getConceptOrExtractedTerm() {
         if (conceptOrExtractedTerm == null) {
-            conceptOrExtractedTerm = new ArrayList<Object>();
+            conceptOrExtractedTerm = new ArrayList<>();
         }
         return this.conceptOrExtractedTerm;
     }

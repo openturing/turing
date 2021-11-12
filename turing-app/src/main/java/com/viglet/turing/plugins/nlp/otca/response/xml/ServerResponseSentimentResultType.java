@@ -196,7 +196,7 @@ public class ServerResponseSentimentResultType {
          */
         public List<ServerResponseSentimentResultSentenceType> getSentence() {
             if (sentence == null) {
-                sentence = new ArrayList<ServerResponseSentimentResultSentenceType>();
+                sentence = new ArrayList<>();
             }
             return this.sentence;
         }

@@ -234,7 +234,7 @@ public class ServerResponseCategorizerResultCategoryParentType {
          */
         public List<ServerResponseCategorizerResultCategoryAttributeType> getAttribute() {
             if (attribute == null) {
-                attribute = new ArrayList<ServerResponseCategorizerResultCategoryAttributeType>();
+                attribute = new ArrayList<>();
             }
             return this.attribute;
         }
@@ -294,7 +294,7 @@ public class ServerResponseCategorizerResultCategoryParentType {
          */
         public List<ServerResponseCategorizerResultCategoryParentType> getParent() {
             if (parent == null) {
-                parent = new ArrayList<ServerResponseCategorizerResultCategoryParentType>();
+                parent = new ArrayList<>();
             }
             return this.parent;
         }

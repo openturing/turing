@@ -67,7 +67,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 	@Autowired
 	private TurUtils turUtils;
 	private List<TurNLPEntity> nlpEntities = null;
-	private Map<String, List<Object>> entityList = new HashMap<String, List<Object>>();
+	private Map<String, List<Object>> entityList = new HashMap<>();
 	private TurNLPInstance turNLPInstance = null;
 
 	public void startup(TurNLPInstance turNLPInstance) {
@@ -93,7 +93,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()){
 		URL serverURL = new URL("http", turNLPInstance.getHost(), turNLPInstance.getPort(), "/ent");
 		if (logger.isDebugEnabled()) {
-			logger.debug("URL: {}", serverURL.toString());
+			logger.debug("URL: {}", serverURL);
 		}
 
 		
@@ -106,8 +106,8 @@ public class TurSpaCyConnector implements TurNLPImpl {
 				for (Object attrValue : attributes.values()) {
 					JSONObject jsonBody = new JSONObject();
 					String atributeValueFullText = turUtils.removeUrl(turSolrField.convertFieldToString(attrValue))
-							.replaceAll("\\n|:|;", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ")
-							.replaceAll("â€�", " ").replaceAll("â€œ", " ").replaceAll("\\.+", ". ")
+							.replaceAll("[\\n:;]", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ")
+							.replaceAll("\\.+", ". ")
 							.replaceAll(" +", " ").trim();
 
 					for (String atributeValue : atributeValueFullText.split("\\.")) {
@@ -139,7 +139,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 						httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 						httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
 						httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
-						StringEntity stringEntity = new StringEntity(new String(jsonBody.toString()),StandardCharsets.UTF_8);
+						StringEntity stringEntity = new StringEntity(jsonBody.toString(),StandardCharsets.UTF_8);
 						httpPost.setEntity(stringEntity);
 
 						try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
@@ -150,7 +150,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 									BufferedReader rd = new BufferedReader(
 											new InputStreamReader(instream, StandardCharsets.UTF_8));
 									String jsonResponse = readAll(rd);
-									if (turUtils.isJSONValid(jsonResponse)) {
+									if (TurUtils.isJSONValid(jsonResponse)) {
 										if (logger.isDebugEnabled()) {
 											logger.debug("SpaCy JSONResponse: {}" , jsonResponse);
 										}
@@ -163,21 +163,20 @@ public class TurSpaCyConnector implements TurNLPImpl {
 				}
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e.getMessage(), e);
 		}
 		return this.getAttributes();
 
 	}
 
 	public Map<String, Object> getAttributes() throws JSONException {
-		Map<String, Object> entityAttributes = new HashMap<String, Object>();
+		Map<String, Object> entityAttributes = new HashMap<>();
 
 		for (TurNLPEntity nlpEntity : nlpEntities) {
 			entityAttributes.put(nlpEntity.getInternalName(), this.getEntity(nlpEntity.getInternalName()));
 		}
 		if (logger.isDebugEnabled()) {
-			logger.debug("SpaCy getAttributes: {}", entityAttributes.toString());
+			logger.debug("SpaCy getAttributes: {}", entityAttributes);
 		}
 		return entityAttributes;
 	}
@@ -225,7 +224,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 				entityList.get(entityType).add(entity.trim());
 			}
 		} else {
-			List<Object> valueList = new ArrayList<Object>();
+			List<Object> valueList = new ArrayList<>();
 			valueList.add(entity.trim());
 			entityList.put(entityType, valueList);
 		}

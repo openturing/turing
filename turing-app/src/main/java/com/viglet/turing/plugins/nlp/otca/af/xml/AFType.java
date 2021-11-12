@@ -233,7 +233,7 @@ public class AFType {
          */
         public List<AFAttributeDefType> getAttribute() {
             if (attribute == null) {
-                attribute = new ArrayList<AFAttributeDefType>();
+                attribute = new ArrayList<>();
             }
             return this.attribute;
         }
@@ -292,7 +292,7 @@ public class AFType {
          */
         public List<AFTermType> getTerm() {
             if (term == null) {
-                term = new ArrayList<AFTermType>();
+                term = new ArrayList<>();
             }
             return this.term;
         }

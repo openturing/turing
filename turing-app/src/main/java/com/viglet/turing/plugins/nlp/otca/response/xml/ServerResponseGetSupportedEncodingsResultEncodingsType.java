@@ -78,7 +78,7 @@ public class ServerResponseGetSupportedEncodingsResultEncodingsType {
      */
     public List<ServerResponseGetSupportedEncodingsResultEncodingType> getEncoding() {
         if (encoding == null) {
-            encoding = new ArrayList<ServerResponseGetSupportedEncodingsResultEncodingType>();
+            encoding = new ArrayList<>();
         }
         return this.encoding;
     }

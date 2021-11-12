@@ -77,7 +77,7 @@ public class ServerResponseEntitySimilarityMethodCompareMethodType {
      */
     public List<ServerResponseEntitySimilarityMethodCompareMethodTextType> getText() {
         if (text == null) {
-            text = new ArrayList<ServerResponseEntitySimilarityMethodCompareMethodTextType>();
+            text = new ArrayList<>();
         }
         return this.text;
     }

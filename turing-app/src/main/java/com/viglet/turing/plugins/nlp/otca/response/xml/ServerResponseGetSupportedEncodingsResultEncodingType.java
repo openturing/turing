@@ -81,7 +81,7 @@ public class ServerResponseGetSupportedEncodingsResultEncodingType {
      */
     public List<ServerResponseGetSupportedEncodingsResultEncodingAliasType> getAlias() {
         if (alias == null) {
-            alias = new ArrayList<ServerResponseGetSupportedEncodingsResultEncodingAliasType>();
+            alias = new ArrayList<>();
         }
         return this.alias;
     }

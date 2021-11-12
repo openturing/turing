@@ -196,7 +196,7 @@ public class AFConfigRuleType {
          */
         public List<AFConfigRuleUnitType> getUnit() {
             if (unit == null) {
-                unit = new ArrayList<AFConfigRuleUnitType>();
+                unit = new ArrayList<>();
             }
             return this.unit;
         }

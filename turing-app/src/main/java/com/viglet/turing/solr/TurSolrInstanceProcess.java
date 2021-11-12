@@ -1,5 +1,7 @@
 package com.viglet.turing.solr;
 
+import java.util.Optional;
+
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,7 @@ public class TurSolrInstanceProcess {
 	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
+
 	private TurSolrInstance getSolrClient(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
 
 		return getSolrClient(turSNSite.getTurSEInstance(), turSNSiteLocale.getCore());
@@ -39,8 +42,7 @@ public class TurSolrInstanceProcess {
 		return new TurSolrInstance(closeableHttpClient, httpSolrClient, core);
 
 	}
-	
-	
+
 	public TurSolrInstance initSolrInstance(String siteName, String locale) {
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		return this.initSolrInstance(turSNSite, locale);
@@ -61,11 +63,10 @@ public class TurSolrInstanceProcess {
 	}
 
 	public TurSolrInstance initSolrInstance() {
-		turConfigVarRepository.findById("DEFAULT_SE").ifPresent(
-				turConfigVar -> turSEInstanceRepository.findById(turConfigVar.getValue()).map(turSEInstance -> {
-					return getSolrClient(turSEInstance, "turing");
-				}));
-		return null;
+		return turConfigVarRepository.findById("DEFAULT_SE")
+				.map(turConfigVar -> turSEInstanceRepository.findById(turConfigVar.getValue())
+						.map(turSEInstance -> getSolrClient(turSEInstance, "turing")).orElse(null))
+				.orElse(null);
 	}
 
 }

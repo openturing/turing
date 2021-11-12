@@ -89,7 +89,7 @@ public class ServerResponseEntityExtractorResultType {
      */
     public List<Object> getNfExtractOrNfFullTextSearch() {
         if (nfExtractOrNfFullTextSearch == null) {
-            nfExtractOrNfFullTextSearch = new ArrayList<Object>();
+            nfExtractOrNfFullTextSearch = new ArrayList<>();
         }
         return this.nfExtractOrNfFullTextSearch;
     }

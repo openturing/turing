@@ -300,7 +300,7 @@ public class AFTermType {
          */
         public List<AFAttributeType> getAttribute() {
             if (attribute == null) {
-                attribute = new ArrayList<AFAttributeType>();
+                attribute = new ArrayList<>();
             }
             return this.attribute;
         }
@@ -359,7 +359,7 @@ public class AFTermType {
          */
         public List<AFTermRelationType> getRelation() {
             if (relation == null) {
-                relation = new ArrayList<AFTermRelationType>();
+                relation = new ArrayList<>();
             }
             return this.relation;
         }
@@ -418,7 +418,7 @@ public class AFTermType {
          */
         public List<AFTermVariationType> getVariation() {
             if (variation == null) {
-                variation = new ArrayList<AFTermVariationType>();
+                variation = new ArrayList<>();
             }
             return this.variation;
         }

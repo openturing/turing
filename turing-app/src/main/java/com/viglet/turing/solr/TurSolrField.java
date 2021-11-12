@@ -144,20 +144,12 @@ public class TurSolrField {
 			if (arrAttValue.get(0) instanceof String) {
 				return Boolean.parseBoolean((String) arrAttValue.get(0));
 			} else if (arrAttValue.get(0) instanceof Long) {
-				if (((Long) arrAttValue.get(0)) > 0) {
-					return true;
-				} else {
-					return false;
-				}
+				return (((Long) arrAttValue.get(0)) > 0);
 			} else {
 				return (boolean) attrValue;
 			}
 		} else if (attrValue instanceof Long) {
-			if (((Long) attrValue) > 0) {
-				return true;
-			} else {
-				return false;
-			}
+			return (((Long) attrValue) > 0);
 		} else {
 			return (boolean) attrValue;
 		}
@@ -171,8 +163,6 @@ public class TurSolrField {
 			return this.convertFieldToLong(attrValue);
 		case STRING:
 			return this.convertFieldToString(attrValue);
-		//case ARRAY:
-		//	return this.convertFieldToArray(attrValue);
 		case DATE:
 			return this.convertFieldToDate(attrValue);
 		case BOOL:

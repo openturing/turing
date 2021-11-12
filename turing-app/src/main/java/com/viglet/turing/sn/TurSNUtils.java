@@ -40,14 +40,17 @@ import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
 public class TurSNUtils {
 	private static final Logger logger = LogManager.getLogger(TurSNUtils.class);
 
+	private TurSNUtils() {
+		throw new IllegalStateException("SN Utility class");
+	}
+
 	public static boolean hasCorrectedText(TurSESpellCheckResult turSESpellCheckResult) {
 		return turSESpellCheckResult.isCorrected() && !StringUtils.isEmpty(turSESpellCheckResult.getCorrectedText());
 	}
 
-	public static boolean isAutoCorrectionEnabled(TurSNSiteSearchContext context,
-			TurSNSite turSNSite) {
-		return context.getAutoCorrectionDisabled() != 1 && context.getCurrentPage() == 1 && turSNSite.getSpellCheck() == 1
-				&& turSNSite.getSpellCheckFixes() == 1;
+	public static boolean isAutoCorrectionEnabled(TurSNSiteSearchContext context, TurSNSite turSNSite) {
+		return context.getAutoCorrectionDisabled() != 1 && context.getCurrentPage() == 1
+				&& turSNSite.getSpellCheck() == 1 && turSNSite.getSpellCheckFixes() == 1;
 	}
 
 	public static URI requestToURI(HttpServletRequest request) {
@@ -58,7 +61,7 @@ public class TurSNUtils {
 
 		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
 
-		StringBuffer sbQueryString = new StringBuffer();
+		StringBuilder sbQueryString = new StringBuilder();
 		boolean alreadyExists = false;
 
 		for (NameValuePair nameValuePair : params) {
@@ -78,7 +81,7 @@ public class TurSNUtils {
 
 	public static URI addFilterQuery(URI uri, String fq) {
 		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
-		StringBuffer sbQueryString = new StringBuffer();
+		StringBuilder sbQueryString = new StringBuilder();
 		boolean alreadyExists = false;
 		for (NameValuePair nameValuePair : params) {
 			if ((nameValuePair.getValue().equals(fq)
@@ -96,7 +99,7 @@ public class TurSNUtils {
 
 	public static URI removeFilterQuery(URI uri, String fq) {
 		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
-		StringBuffer sbQueryString = new StringBuffer();
+		StringBuilder sbQueryString = new StringBuilder();
 
 		for (NameValuePair nameValuePair : params) {
 			if (!(nameValuePair.getValue().equals(fq)
@@ -108,7 +111,7 @@ public class TurSNUtils {
 		return modifiedURI(uri, sbQueryString);
 	}
 
-	private static URI modifiedURI(URI uri, StringBuffer sbQueryString) {
+	private static URI modifiedURI(URI uri, StringBuilder sbQueryString) {
 		try {
 			return new URI(uri.getRawPath() + "?" + removeAmpersand(sbQueryString));
 		} catch (URISyntaxException e) {
@@ -117,16 +120,15 @@ public class TurSNUtils {
 		return uri;
 	}
 
-	private static String removeAmpersand(StringBuffer sbQueryString) {
-		String queryString = sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
-		return queryString;
+	private static String removeAmpersand(StringBuilder sbQueryString) {
+		return sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
 	}
 
-	private static void addParameterToQueryString(StringBuffer sbQueryString, String name, String value) {
+	private static void addParameterToQueryString(StringBuilder sbQueryString, String name, String value) {
 		sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, StandardCharsets.UTF_8)));
 	}
 
-	private static void resetPagination(StringBuffer sbQueryString, NameValuePair nameValuePair) {
+	private static void resetPagination(StringBuilder sbQueryString, NameValuePair nameValuePair) {
 		if ((nameValuePair.getName().equals(TurSNParamType.PAGE))) {
 			addParameterToQueryString(sbQueryString, nameValuePair.getName(), "1");
 		} else {

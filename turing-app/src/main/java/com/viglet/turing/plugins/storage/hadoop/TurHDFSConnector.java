@@ -34,7 +34,7 @@ import org.apache.hadoop.fs.Path;
 
 public class TurHDFSConnector {
 	public TurHDFSConnector() {
-
+		super();
 	}
 
 	/**
@@ -56,8 +56,6 @@ public class TurHDFSConnector {
 		} else {
 			dest = dest + filename;
 		}
-
-		// System.out.println("Adding file to " + destination);
 
 		// Check if the file already exists
 		Path path = new Path(dest);
@@ -94,7 +92,6 @@ public class TurHDFSConnector {
 				FSDataInputStream in = fileSystem.open(path);
 				OutputStream out = new BufferedOutputStream(new FileOutputStream(new File(filename)))) {
 			if (!fileSystem.exists(path)) {
-				System.out.println("File " + file + " does not exists");
 				return;
 			}
 
@@ -116,7 +113,6 @@ public class TurHDFSConnector {
 		try (FileSystem fileSystem = FileSystem.get(conf)) {
 			Path path = new Path(file);
 			if (!fileSystem.exists(path)) {
-				System.out.println("File " + file + " does not exists");
 				return;
 			}
 
@@ -134,7 +130,6 @@ public class TurHDFSConnector {
 		try (FileSystem fileSystem = FileSystem.get(conf)) {
 			Path path = new Path(dir);
 			if (fileSystem.exists(path)) {
-				System.out.println("Dir " + dir + " already not exists");
 				return;
 			}
 			fileSystem.mkdirs(path);

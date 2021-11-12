@@ -75,7 +75,7 @@ public class LanguagesType {
      */
     public List<LanguageType> getLanguage() {
         if (language == null) {
-            language = new ArrayList<LanguageType>();
+            language = new ArrayList<>();
         }
         return this.language;
     }

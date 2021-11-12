@@ -177,7 +177,7 @@ public class TurUtils {
 		}
 	}
 
-	public boolean isJSONValid(String test) {
+	public static boolean isJSONValid(String test) {
 		try {
 			new JSONObject(test);
 		} catch (JSONException ex) {

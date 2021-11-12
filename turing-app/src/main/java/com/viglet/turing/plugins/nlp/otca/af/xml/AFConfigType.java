@@ -443,7 +443,7 @@ public class AFConfigType {
          */
         public List<AFConfigRuleType> getRule() {
             if (rule == null) {
-                rule = new ArrayList<AFConfigRuleType>();
+                rule = new ArrayList<>();
             }
             return this.rule;
         }
@@ -502,7 +502,7 @@ public class AFConfigType {
          */
         public List<AFConfigRuleType> getRule() {
             if (rule == null) {
-                rule = new ArrayList<AFConfigRuleType>();
+                rule = new ArrayList<>();
             }
             return this.rule;
         }
@@ -562,7 +562,7 @@ public class AFConfigType {
          */
         public List<AFConfigParameterType> getParameter() {
             if (parameter == null) {
-                parameter = new ArrayList<AFConfigParameterType>();
+                parameter = new ArrayList<>();
             }
             return this.parameter;
         }
@@ -621,7 +621,7 @@ public class AFConfigType {
          */
         public List<SearchTypeType> getSearchType() {
             if (searchType == null) {
-                searchType = new ArrayList<SearchTypeType>();
+                searchType = new ArrayList<>();
             }
             return this.searchType;
         }

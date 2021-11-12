@@ -75,7 +75,7 @@ public class AFObjectsType {
      */
     public List<AFType> getAuthorityFile() {
         if (authorityFile == null) {
-            authorityFile = new ArrayList<AFType>();
+            authorityFile = new ArrayList<>();
         }
         return this.authorityFile;
     }
