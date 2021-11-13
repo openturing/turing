@@ -180,13 +180,19 @@ public class TurSNSiteSearchAPI {
 		TurSNSiteFilterQueryBean turSNSiteFilterQueryBean = new TurSNSiteFilterQueryBean();
 		List<String> hiddenFilterQuery = new ArrayList<>();
 		List<String> filterQueryModified = new ArrayList<>();
+		processFilterQuery(fq, hiddenFilterQuery, filterQueryModified);
+
+		turSNSiteFilterQueryBean.setHiddenItems(hiddenFilterQuery);
+		turSNSiteFilterQueryBean.setItems(filterQueryModified);
+		return turSNSiteFilterQueryBean;
+	}
+
+	private void processFilterQuery(List<String> fq, List<String> hiddenFilterQuery, List<String> filterQueryModified) {
 		if (fq != null) {
 			for (String filterQuery : fq) {
 				String[] filterParts = filterQuery.split(":");
 				if (filterParts.length == 2) {
-					if (!hiddenFilterQuery.contains(filterParts[0])) {
-						hiddenFilterQuery.add(filterParts[0]);
-					}
+					addHidddenFilterQuery(hiddenFilterQuery, filterParts);
 					if (!filterParts[1].startsWith("\"") && !filterParts[1].startsWith("[")) {
 						filterParts[1] = "\"" + filterParts[1] + "\"";
 						filterQueryModified.add(filterParts[0] + ":" + filterParts[1]);
@@ -197,10 +203,12 @@ public class TurSNSiteSearchAPI {
 
 			}
 		}
+	}
 
-		turSNSiteFilterQueryBean.setHiddenItems(hiddenFilterQuery);
-		turSNSiteFilterQueryBean.setItems(filterQueryModified);
-		return turSNSiteFilterQueryBean;
+	private void addHidddenFilterQuery(List<String> hiddenFilterQuery, String[] filterParts) {
+		if (!hiddenFilterQuery.contains(filterParts[0])) {
+			hiddenFilterQuery.add(filterParts[0]);
+		}
 	}
 
 	private List<String> requestTargetingRules(List<String> tr) {
@@ -426,16 +434,8 @@ public class TurSNSiteSearchAPI {
 		int firstPagination = 1;
 		int lastPagination = turSEResults.getPageCount();
 
-		if (turSEResults.getCurrentPage() - 3 > 0) {
-			firstPagination = turSEResults.getCurrentPage() - 3;
-		} else if (turSEResults.getCurrentPage() - 3 <= 0) {
-			firstPagination = 1;
-		}
-		if (turSEResults.getCurrentPage() + 3 <= turSEResults.getPageCount()) {
-			lastPagination = turSEResults.getCurrentPage() + 3;
-		} else if (turSEResults.getCurrentPage() + 3 > turSEResults.getPageCount()) {
-			lastPagination = turSEResults.getPageCount();
-		}
+		firstPagination = setFirstPagination(turSEResults, firstPagination);
+		lastPagination = setLastPagination(turSEResults, lastPagination);
 
 		if (turSEResults.getCurrentPage() > turSEResults.getPageCount()) {
 			lastPagination = turSEResults.getPageCount();
@@ -447,74 +447,118 @@ public class TurSNSiteSearchAPI {
 		}
 		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
 		if (turSEResults.getCurrentPage() > 1) {
-
-			turSNSiteSearchPaginationBean.setType(TurSNPaginationType.FIRST);
-			turSNSiteSearchPaginationBean.setHref(
-					TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(1)).toString());
-			turSNSiteSearchPaginationBean.setText("First");
-			turSNSiteSearchPaginationBean.setPage(1);
-			turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
-			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
-				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-				turSNSiteSearchPaginationBean.setType(TurSNPaginationType.PREVIOUS);
-				turSNSiteSearchPaginationBean.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
-						Integer.toString(turSEResults.getCurrentPage() - 1)).toString());
-				turSNSiteSearchPaginationBean.setText("Previous");
-				turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() - 1);
-				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
-			}
-
+			setFirstPage(uri, turSNSiteSearchPaginationBeans, turSNSiteSearchPaginationBean);
+			setPreviousPage(uri, turSEResults, turSNSiteSearchPaginationBeans);
 		}
 
 		for (int page = firstPagination; page <= lastPagination; page++) {
-
 			if (page == turSEResults.getCurrentPage()) {
-				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-				turSNSiteSearchPaginationBean.setHref(
-						TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
-				turSNSiteSearchPaginationBean.setType(TurSNPaginationType.CURRENT);
-				turSNSiteSearchPaginationBean.setText(Integer.toString(page));
-				turSNSiteSearchPaginationBean.setPage(page);
-				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
-
+				setCurrentPage(uri, turSNSiteSearchPaginationBeans, page);
 			} else {
-				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-				turSNSiteSearchPaginationBean.setHref(
-						TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
-				turSNSiteSearchPaginationBean.setText(Integer.toString(page));
-				turSNSiteSearchPaginationBean.setType(TurSNPaginationType.PAGE);
-				turSNSiteSearchPaginationBean.setPage(page);
-				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
-
+				setOthersPages(uri, turSNSiteSearchPaginationBeans, page);
 			}
 		}
 		if (turSEResults.getCurrentPage() != turSEResults.getPageCount() && turSEResults.getPageCount() > 1) {
-			if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
-				turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-
-				turSNSiteSearchPaginationBean.setType(TurSNPaginationType.NEXT);
-				turSNSiteSearchPaginationBean.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
-						Integer.toString(turSEResults.getCurrentPage() + 1)).toString());
-				turSNSiteSearchPaginationBean.setText("Next");
-				turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() + 1);
-				turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
-
-			}
-
-			turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-			turSNSiteSearchPaginationBean.setType(TurSNPaginationType.LAST);
-			turSNSiteSearchPaginationBean.setHref(TurSNUtils
-					.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(turSEResults.getPageCount()))
-					.toString());
-			turSNSiteSearchPaginationBean.setText("Last");
-			turSNSiteSearchPaginationBean.setPage(turSEResults.getPageCount());
-			turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+			setNextPage(uri, turSEResults, turSNSiteSearchPaginationBeans);
+			setLastPage(uri, turSEResults, turSNSiteSearchPaginationBeans);
 		}
 		return turSNSiteSearchPaginationBeans;
 
 	}
 
-	@SuppressWarnings("unchecked")
+	private void setPreviousPage(URI uri, TurSEResults turSEResults,
+			List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans) {
+		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
+		if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
+			turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+			turSNSiteSearchPaginationBean.setType(TurSNPaginationType.PREVIOUS);
+			turSNSiteSearchPaginationBean.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
+					Integer.toString(turSEResults.getCurrentPage() - 1)).toString());
+			turSNSiteSearchPaginationBean.setText("Previous");
+			turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() - 1);
+			turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+		}
+	}
+
+	private void setFirstPage(URI uri, List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans,
+			TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean) {
+		turSNSiteSearchPaginationBean.setType(TurSNPaginationType.FIRST);
+		turSNSiteSearchPaginationBean
+				.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(1)).toString());
+		turSNSiteSearchPaginationBean.setText("First");
+		turSNSiteSearchPaginationBean.setPage(1);
+		turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+	}
+
+	private void setLastPage(URI uri, TurSEResults turSEResults,
+			List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans) {
+		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
+		turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+		turSNSiteSearchPaginationBean.setType(TurSNPaginationType.LAST);
+		turSNSiteSearchPaginationBean.setHref(TurSNUtils
+				.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(turSEResults.getPageCount()))
+				.toString());
+		turSNSiteSearchPaginationBean.setText("Last");
+		turSNSiteSearchPaginationBean.setPage(turSEResults.getPageCount());
+		turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+	}
+
+	private void setNextPage(URI uri, TurSEResults turSEResults,
+			List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans) {
+		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
+		if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
+			turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+
+			turSNSiteSearchPaginationBean.setType(TurSNPaginationType.NEXT);
+			turSNSiteSearchPaginationBean.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
+					Integer.toString(turSEResults.getCurrentPage() + 1)).toString());
+			turSNSiteSearchPaginationBean.setText("Next");
+			turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() + 1);
+			turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+
+		}
+	}
+
+	private void setOthersPages(URI uri, List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans, int page) {
+		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
+		turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+		turSNSiteSearchPaginationBean
+				.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
+		turSNSiteSearchPaginationBean.setText(Integer.toString(page));
+		turSNSiteSearchPaginationBean.setType(TurSNPaginationType.PAGE);
+		turSNSiteSearchPaginationBean.setPage(page);
+		turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+	}
+
+	private void setCurrentPage(URI uri, List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans, int page) {
+		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
+		turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+		turSNSiteSearchPaginationBean
+				.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
+		turSNSiteSearchPaginationBean.setType(TurSNPaginationType.CURRENT);
+		turSNSiteSearchPaginationBean.setText(Integer.toString(page));
+		turSNSiteSearchPaginationBean.setPage(page);
+		turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+	}
+
+	private int setLastPagination(TurSEResults turSEResults, int lastPagination) {
+		if (turSEResults.getCurrentPage() + 3 <= turSEResults.getPageCount()) {
+			lastPagination = turSEResults.getCurrentPage() + 3;
+		} else if (turSEResults.getCurrentPage() + 3 > turSEResults.getPageCount()) {
+			lastPagination = turSEResults.getPageCount();
+		}
+		return lastPagination;
+	}
+
+	private int setFirstPagination(TurSEResults turSEResults, int firstPagination) {
+		if (turSEResults.getCurrentPage() - 3 > 0) {
+			firstPagination = turSEResults.getCurrentPage() - 3;
+		} else if (turSEResults.getCurrentPage() - 3 <= 0) {
+			firstPagination = 1;
+		}
+		return firstPagination;
+	}
+
 	private void addSNDocument(URI uri, Map<String, TurSNSiteFieldExt> fieldExtMap,
 			Map<String, TurSNSiteFieldExt> facetMap, List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean,
 			TurSEResult result, boolean isElevate) {
@@ -523,8 +567,22 @@ public class TurSNSiteSearchAPI {
 		Set<String> attribs = turSEResultAttr.keySet();
 
 		turSNSiteSearchDocumentBean.setElevate(isElevate);
-		List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans = new ArrayList<>();
 
+		List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans = addMetadataFromDocument(uri,
+				facetMap, turSEResultAttr);
+
+		turSNSiteSearchDocumentBean.setMetadata(turSNSiteSearchDocumentMetadataBeans);
+
+		setSourcefromDocument(turSNSiteSearchDocumentBean, turSEResultAttr);
+
+		Map<String, Object> fields = addFieldsFromDocument(fieldExtMap, turSEResultAttr, attribs);
+		turSNSiteSearchDocumentBean.setFields(fields);
+		turSNSiteSearchDocumentsBean.add(turSNSiteSearchDocumentBean);
+	}
+
+	private List<TurSNSiteSearchDocumentMetadataBean> addMetadataFromDocument(URI uri,
+			Map<String, TurSNSiteFieldExt> facetMap, Map<String, Object> turSEResultAttr) {
+		List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans = new ArrayList<>();
 		facetMap.keySet().forEach(facet -> {
 			if (turSEResultAttr.containsKey(facet)) {
 				if (turSEResultAttr.get(facet) instanceof ArrayList) {
@@ -537,12 +595,12 @@ public class TurSNSiteSearchAPI {
 			}
 		});
 
-		turSNSiteSearchDocumentBean.setMetadata(turSNSiteSearchDocumentMetadataBeans);
+		return turSNSiteSearchDocumentMetadataBeans;
+	}
 
-		if (turSEResultAttr.containsKey(URL)) {
-			turSNSiteSearchDocumentBean.setSource((String) turSEResultAttr.get(URL));
-		}
-
+	@SuppressWarnings("unchecked")
+	private Map<String, Object> addFieldsFromDocument(Map<String, TurSNSiteFieldExt> fieldExtMap,
+			Map<String, Object> turSEResultAttr, Set<String> attribs) {
 		Map<String, Object> fields = new HashMap<>();
 		for (String attribute : attribs) {
 			if (!attribute.startsWith(TURING_ENTITY)) {
@@ -569,8 +627,14 @@ public class TurSNSiteSearchAPI {
 			}
 
 		}
-		turSNSiteSearchDocumentBean.setFields(fields);
-		turSNSiteSearchDocumentsBean.add(turSNSiteSearchDocumentBean);
+		return fields;
+	}
+
+	private void setSourcefromDocument(TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean,
+			Map<String, Object> turSEResultAttr) {
+		if (turSEResultAttr.containsKey(URL)) {
+			turSNSiteSearchDocumentBean.setSource((String) turSEResultAttr.get(URL));
+		}
 	}
 
 	private void addFilterQueryByType(URI uri,

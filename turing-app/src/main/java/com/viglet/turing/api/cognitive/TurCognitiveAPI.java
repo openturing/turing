@@ -44,31 +44,29 @@ public class TurCognitiveAPI {
 	@GetMapping("/spell-checker/{locale}")
 	public List<String> turCognitiveSpellChecker(@PathVariable String locale,
 			@RequestParam(required = false, name = "text") String text) {
+		JLanguageTool langTool = loadSpellCheckByLocale(locale);
+		return createSpellCheckList(text, langTool);
+		
+	}
+
+	private JLanguageTool loadSpellCheckByLocale(String locale) {
 		JLanguageTool langTool = new JLanguageTool(new BritishEnglish());
 		if (locale.equalsIgnoreCase("pt-br")) {
 			langTool = new JLanguageTool(new BrazilianPortuguese());
 		}
+		return langTool;
+	}
+
+	private List<String> createSpellCheckList(String text, JLanguageTool langTool) {
 		List<RuleMatch> matches;
 		try {
 			matches = langTool.check(text);
 			List<String> suggesterPhrases = new ArrayList<>();
 			for (RuleMatch match : Lists.reverse(matches)) {
 				if (suggesterPhrases.isEmpty()) {
-					for (String term : match.getSuggestedReplacements()) {
-						StringBuilder buf = new StringBuilder(text);
-						buf.replace(match.getFromPos(), match.getToPos(), term);
-						suggesterPhrases.add(buf.toString());
-					}
+					createListwithFirstMatch(text, suggesterPhrases, match);
 				} else {
-					List<String> suggesterPhrasesNew = new ArrayList<>();
-					for (String suggesterPhrase : suggesterPhrases) {
-						for (String term : match.getSuggestedReplacements()) {
-							StringBuilder buf = new StringBuilder(suggesterPhrase);
-							buf.replace(match.getFromPos(), match.getToPos(), term);
-							suggesterPhrasesNew.add(buf.toString());
-						}
-					}
-					suggesterPhrases = suggesterPhrasesNew;
+					suggesterPhrases = addToListOtherMatches(suggesterPhrases, match);
 				}
 				logger.debug("Potential error at characters {} - {}: {}", match.getFromPos(), match.getToPos(), match.getMessage());
 				logger.debug("Suggested correction(s): {}", match.getSuggestedReplacements());
@@ -78,5 +76,22 @@ public class TurCognitiveAPI {
 			logger.error(e.getMessage(), e);
 		}
 		return new ArrayList<>();
+	}
+
+	private List<String> addToListOtherMatches(List<String> suggesterPhrases, RuleMatch match) {
+		List<String> suggesterPhrasesNew = new ArrayList<>();
+		for (String suggesterPhrase : suggesterPhrases) {
+			createListwithFirstMatch(suggesterPhrase, suggesterPhrasesNew, match);
+		}
+		suggesterPhrases = suggesterPhrasesNew;
+		return suggesterPhrases;
+	}
+
+	private void createListwithFirstMatch(String text, List<String> suggesterPhrases, RuleMatch match) {
+		for (String term : match.getSuggestedReplacements()) {
+			StringBuilder buf = new StringBuilder(text);
+			buf.replace(match.getFromPos(), match.getToPos(), term);
+			suggesterPhrases.add(buf.toString());
+		}
 	}
 }

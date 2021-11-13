@@ -144,7 +144,7 @@ public class TurNLPInstanceAPI {
 		InputStream inputStream;
 		try {
 			inputStream = multipartFile.getInputStream();
-			StringBuffer contentFile = new StringBuffer();
+			StringBuilder contentFile = new StringBuilder();
 			AutoDetectParser parser = new AutoDetectParser();
 			// -1 = no limit of number of characters
 			BodyContentHandler handler = new BodyContentHandler(-1);
@@ -227,7 +227,6 @@ public class TurNLPInstanceAPI {
 			if (entityType.getValue() != null) {
 				for (String term : ((List<String>) entityType.getValue())) {
 					RedactionCommand redactionCommand = new RedactionCommand();
-					// redactionCommand.setComment(turNLPEntity.getName());
 					SearchString searchString = new SearchString();
 					searchString.setMatchWholeWord(true);
 					searchString.setString(String.format("%s", term));
