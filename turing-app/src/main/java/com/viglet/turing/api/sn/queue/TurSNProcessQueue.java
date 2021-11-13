@@ -114,6 +114,21 @@ public class TurSNProcessQueue {
 		logger.debug("Indexing");
 		Map<String, Object> consolidateResults = new HashMap<>();
 
+		processSEAttributes(turSNJobItem, consolidateResults);
+
+		processNLP(turSNJobItem, turSNSite, consolidateResults);
+
+		processThesaurus(turSNJobItem, turSNSite, consolidateResults);
+
+		// Remove Duplicate Terms
+		Map<String, Object> attributesWithUniqueTerms = this.removeDuplicateTerms(consolidateResults);
+
+		// SE
+		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale());
+		turSolr.indexing(turSolrInstance, turSNSite, attributesWithUniqueTerms);
+	}
+
+	private void processSEAttributes(TurSNJobItem turSNJobItem, Map<String, Object> consolidateResults) {
 		// SE
 		for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
 			if (logger.isDebugEnabled())
@@ -124,7 +139,33 @@ public class TurSNProcessQueue {
 				consolidateResults.put(attribute.getKey(), attribute.getValue());
 			}
 		}
+	}
 
+	private void processThesaurus(TurSNJobItem turSNJobItem, TurSNSite turSNSite,
+			Map<String, Object> consolidateResults) {
+		// Thesaurus
+		boolean thesaurus = false;
+		if (turSNSite.getThesaurus() < 1) {
+			logger.debug("It is not using Thesaurus to process attributes");
+			thesaurus = false;
+		} else {
+			logger.debug("It is using Thesaurus to process attributes");
+			thesaurus = true;
+		}
+		if (thesaurus) {
+			turThesaurusProcessor.startup();
+			Map<String, Object> thesaurusResults = turThesaurusProcessor.detectTerms(turSNJobItem.getAttributes());
+
+			logger.debug("thesaurusResults.size(): {}", thesaurusResults.size());
+			for (Entry<String, Object> thesaurusResult : thesaurusResults.entrySet()) {
+				logger.debug("thesaurusResult Key: {}", thesaurusResult.getKey());
+				logger.debug("thesaurusResult Value: {}", thesaurusResult.getValue());
+				consolidateResults.put(thesaurusResult.getKey(), thesaurusResult.getValue());
+			}
+		}
+	}
+
+	private void processNLP(TurSNJobItem turSNJobItem, TurSNSite turSNSite, Map<String, Object> consolidateResults) {
 		// NLP
 		boolean nlp = true;
 		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite,
@@ -167,34 +208,6 @@ public class TurSNProcessQueue {
 				consolidateResults.put(nlpResultPreffix.getKey(), nlpResultPreffix.getValue());
 			}
 		}
-
-		// Thesaurus
-		boolean thesaurus = false;
-		if (turSNSite.getThesaurus() < 1) {
-			logger.debug("It is not using Thesaurus to process attributes");
-			thesaurus = false;
-		} else {
-			logger.debug("It is using Thesaurus to process attributes");
-			thesaurus = true;
-		}
-		if (thesaurus) {
-			turThesaurusProcessor.startup();
-			Map<String, Object> thesaurusResults = turThesaurusProcessor.detectTerms(turSNJobItem.getAttributes());
-
-			logger.debug("thesaurusResults.size(): {}", thesaurusResults.size());
-			for (Entry<String, Object> thesaurusResult : thesaurusResults.entrySet()) {
-				logger.debug("thesaurusResult Key: {}", thesaurusResult.getKey());
-				logger.debug("thesaurusResult Value: {}", thesaurusResult.getValue());
-				consolidateResults.put(thesaurusResult.getKey(), thesaurusResult.getValue());
-			}
-		}
-
-		// Remove Duplicate Terms
-		Map<String, Object> attributesWithUniqueTerms = this.removeDuplicateTerms(consolidateResults);
-
-		// SE
-		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale());
-		turSolr.indexing(turSolrInstance, turSNSite, attributesWithUniqueTerms);
 	}
 
 	public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {
@@ -208,20 +221,7 @@ public class TurSNProcessQueue {
 							attribute.getValue().getClass().getName());
 					if (attribute.getValue() instanceof ArrayList) {
 
-						ArrayList<?> nlpAttributeArray = (ArrayList<?>) attribute.getValue();
-						if (!nlpAttributeArray.isEmpty()) {
-							List<String> list = new ArrayList<>();
-							for (Object nlpAttributeItem : nlpAttributeArray) {
-								list.add((String) nlpAttributeItem);
-							}
-							Set<String> termsUnique = new HashSet<>(list);
-							List<Object> arrayValue = new ArrayList<>();
-							arrayValue.addAll(termsUnique);
-							attributesWithUniqueTerms.put(attribute.getKey(), arrayValue);
-							termsUnique.forEach(term -> logger.debug(
-									"removeDuplicateTerms: attributesWithUniqueTerms Array Value: {}", term));
-
-						}
+						removeDuplicateTermsFromMultiValue(attributesWithUniqueTerms, attribute);
 					} else {
 
 						attributesWithUniqueTerms.put(attribute.getKey(), attribute.getValue());
@@ -232,5 +232,28 @@ public class TurSNProcessQueue {
 
 		}
 		return attributesWithUniqueTerms;
+	}
+
+	private void removeDuplicateTermsFromMultiValue(Map<String, Object> attributesWithUniqueTerms,
+			Entry<String, Object> attribute) {
+		List<?> nlpAttributeArray = (ArrayList<?>) attribute.getValue();
+		if (!nlpAttributeArray.isEmpty()) {
+			List<String> list = cloneListOfTermsAsString(nlpAttributeArray);
+			Set<String> termsUnique = new HashSet<>(list);
+			List<Object> arrayValue = new ArrayList<>();
+			arrayValue.addAll(termsUnique);
+			attributesWithUniqueTerms.put(attribute.getKey(), arrayValue);
+			termsUnique.forEach(term -> logger.debug(
+					"removeDuplicateTerms: attributesWithUniqueTerms Array Value: {}", term));
+
+		}
+	}
+
+	private List<String> cloneListOfTermsAsString(List<?> nlpAttributeArray) {
+		List<String> list = new ArrayList<>();
+		for (Object nlpAttributeItem : nlpAttributeArray) {
+			list.add((String) nlpAttributeItem);
+		}
+		return list;
 	}
 }

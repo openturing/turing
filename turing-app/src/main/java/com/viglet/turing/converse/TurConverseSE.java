@@ -107,7 +107,7 @@ public class TurConverseSE {
 
 		return executeSolrQuery(turConverseAgent, query);
 	}
-	
+
 	private SolrDocumentList executeSolrQuery(TurConverseAgent turConverseAgent, SolrQuery queryParameter) {
 		SolrDocumentList results = null;
 		try {
@@ -143,17 +143,16 @@ public class TurConverseSE {
 
 	SolrDocumentList solrGetFallbackIntent(TurConverseAgent turConverseAgent) {
 		SolrQuery query = new SolrQuery();
-		query.addFilterQuery(
-				keyValueQuery(TurConverseConstants.TYPE, TurConverseConstants.FALLBACK_INTENT_TYPE, true));
+		query.addFilterQuery(keyValueQuery(TurConverseConstants.TYPE, TurConverseConstants.FALLBACK_INTENT_TYPE, true));
 		query.addFilterQuery(keyValueQuery(TurConverseConstants.AGENT, turConverseAgent.getId(), true));
 		query.setQuery(SOLR_FULL_QUERY);
 		return executeSolrQuery(turConverseAgent, query);
-		
+
 	}
 
 	public SolrDocumentList sorlGetParameterValue(String text, TurConverseChat turConverseChat, String intentId) {
 		logger.debug("sorlGetParameterValue");
-		
+
 		SolrQuery query = new SolrQuery();
 		query.setParam("defType", "edismax");
 		query.setParam("pf", "phrase^100");
@@ -269,37 +268,53 @@ public class TurConverseSE {
 	private void indexTerms(TurConverseIntent turConverseIntent, SolrClient solrClient, SolrInputDocument document,
 			Set<TurConverseEntity> entities, TurConversePhrase phrase) {
 		for (TurConverseEntity entity : entities) {
-			if (phrase.getText().contains(entityName(entity.getName()))) {
-				for (TurConverseEntityTerm term : entity.getTerms()) {
-					Set<TurConverseParameter> parameters = turConverseParameterRepository
-							.findByIntentAndEntity(turConverseIntent, entityName(entity.getName()));
-					for (String synonym : term.getSynonyms()) {
-						String phraseFormatted = phrase.getText().replaceAll(entityName(entity.getName()), synonym);
+			indextTermsFromEntity(turConverseIntent, solrClient, document, phrase, entity);
+		}
+	}
 
-						document.addField("phrases", phraseFormatted);
+	private void indextTermsFromEntity(TurConverseIntent turConverseIntent, SolrClient solrClient,
+			SolrInputDocument document, TurConversePhrase phrase, TurConverseEntity entity) {
+		if (phrase.getText().contains(entityName(entity.getName()))) {
+			for (TurConverseEntityTerm term : entity.getTerms()) {
+				Set<TurConverseParameter> parameters = turConverseParameterRepository
+						.findByIntentAndEntity(turConverseIntent, entityName(entity.getName()));
+				phrasesVariationfromSynonyms(turConverseIntent, solrClient, document, phrase, entity, term, parameters);
+			}
+		}
+	}
 
-						if (!parameters.isEmpty()) {
-							for (TurConverseParameter parameter : parameters) {
-								if (logger.isDebugEnabled())
-									logger.debug("Have parameters to Entity: {}", entity.getName());
-								SolrInputDocument termDocument = new SolrInputDocument();
-								termDocument.addField(TurConverseConstants.ID,
-										String.format("%s.%s:%s", turConverseIntent.getId(), term.getId(), synonym));
-								termDocument.addField(TurConverseConstants.AGENT, turConverseIntent.getAgent().getId());
-								termDocument.addField(TurConverseConstants.INTENT, turConverseIntent.getId());
-								termDocument.addField(TurConverseConstants.TYPE, TurConverseConstants.TERM_TYPE);
-								termDocument.addField(TurConverseConstants.PARAMETERS,
-										keyValueQuery(parameter.getName(), term.getName(), false));
-								termDocument.addField(TurConverseConstants.PHRASE, phraseFormatted);
-								if (logger.isDebugEnabled())
-									logger.debug("Term parameters {}:{}", parameter.getName(), entity.getName());
-								this.indexToSolr(solrClient, termDocument);
-							}
-						}
-					}
+	private void phrasesVariationfromSynonyms(TurConverseIntent turConverseIntent, SolrClient solrClient,
+			SolrInputDocument document, TurConversePhrase phrase, TurConverseEntity entity, TurConverseEntityTerm term,
+			Set<TurConverseParameter> parameters) {
+		for (String synonym : term.getSynonyms()) {
+			String phraseFormatted = phrase.getText().replaceAll(entityName(entity.getName()), synonym);
+
+			document.addField("phrases", phraseFormatted);
+
+			if (!parameters.isEmpty()) {
+				for (TurConverseParameter parameter : parameters) {
+					indexTerm(turConverseIntent, solrClient, entity, term, synonym, phraseFormatted, parameter);
 				}
 			}
 		}
+	}
+
+	private void indexTerm(TurConverseIntent turConverseIntent, SolrClient solrClient, TurConverseEntity entity,
+			TurConverseEntityTerm term, String synonym, String phraseFormatted, TurConverseParameter parameter) {
+		if (logger.isDebugEnabled())
+			logger.debug("Have parameters to Entity: {}", entity.getName());
+		SolrInputDocument termDocument = new SolrInputDocument();
+		termDocument.addField(TurConverseConstants.ID,
+				String.format("%s.%s:%s", turConverseIntent.getId(), term.getId(), synonym));
+		termDocument.addField(TurConverseConstants.AGENT, turConverseIntent.getAgent().getId());
+		termDocument.addField(TurConverseConstants.INTENT, turConverseIntent.getId());
+		termDocument.addField(TurConverseConstants.TYPE, TurConverseConstants.TERM_TYPE);
+		termDocument.addField(TurConverseConstants.PARAMETERS,
+				keyValueQuery(parameter.getName(), term.getName(), false));
+		termDocument.addField(TurConverseConstants.PHRASE, phraseFormatted);
+		if (logger.isDebugEnabled())
+			logger.debug("Term parameters {}:{}", parameter.getName(), entity.getName());
+		this.indexToSolr(solrClient, termDocument);
 	}
 
 	public void desindex(TurConverseIntent turConverseIntent) {

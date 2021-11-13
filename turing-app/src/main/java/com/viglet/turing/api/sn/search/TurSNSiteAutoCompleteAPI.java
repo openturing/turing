@@ -63,7 +63,14 @@ public class TurSNSiteAutoCompleteAPI {
 			@RequestParam(required = false, defaultValue = "20", name = TurSNParamType.ROWS) long rows,
 			HttpServletRequest request) {
 
-		List<String> termListShrink = new ArrayList<>();
+		SpellCheckResponse turSEResults = executeAutoCompleteFromSE(siteName, locale, q);
+		int tokenQSize = q.split(" ").length;
+		List<String> termListFormatted = createFormattedList(turSEResults, tokenQSize);
+		List<String> termListShrink = removeDuplicatedTerms(termListFormatted, tokenQSize);
+		return termListShrink.stream().limit(rows).collect(Collectors.toList());
+	}
+
+	private SpellCheckResponse executeAutoCompleteFromSE(String siteName, String locale, String q) {
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		SpellCheckResponse turSEResults = null;
 		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
@@ -72,13 +79,17 @@ public class TurSNSiteAutoCompleteAPI {
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
+		return turSEResults;
+	}
+
+	private List<String> createFormattedList(SpellCheckResponse turSEResults, int tokenQSize) {
 		List<String> termList = turSEResults.getSuggestions().get(0).getAlternatives();
 		List<String> stopWords;
 
 		stopWords = turSEStopword.getStopWords();
 
 		List<String> termListFormatted = new ArrayList<>();
-		int tokenQSize = q.split(" ").length;
+
 		String previousTerm = null;
 		boolean previousFinishedStopWords = false;
 		for (String term : termList) {
@@ -109,9 +120,12 @@ public class TurSNSiteAutoCompleteAPI {
 				previousTerm = term + "";
 			}
 		}
+		return termListFormatted;
+	}
 
-		previousTerm = null;
-
+	private List<String> removeDuplicatedTerms(List<String> termListFormatted, int tokenQSize) {
+		List<String> termListShrink = new ArrayList<>();
+		String previousTerm = null;
 		for (String term : termListFormatted) {
 			int currentIndex = termListFormatted.indexOf(term);
 			String[] token = term.split(" ");
@@ -129,6 +143,6 @@ public class TurSNSiteAutoCompleteAPI {
 				}
 			}
 		}
-		return termListShrink.stream().limit(rows).collect(Collectors.toList());
+		return termListShrink;
 	}
 }

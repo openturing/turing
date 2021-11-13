@@ -182,40 +182,67 @@ public class TurOTCAAutorityFileAPI {
 			TurTermVariation turTermVariation = new TurTermVariation();
 			turTermVariation.setName(turUtils.removeDuplicateWhiteSpaces(afTermVariationType.getName()));
 			turTermVariation.setNameLower(turUtils.stripAccents(turTermVariation.getName()).toLowerCase());
-			if (afTermVariationType.getAccent().equals(AFTermVariationAccentEnum.AI))
-				turTermVariation.setRuleAccent(TurNLPTermAccent.AI.id());
-			else
-				turTermVariation.setRuleAccent(TurNLPTermAccent.AS.id());
+			
+			setRuleAccent(afTermVariationType, turTermVariation);
 
-			if (afTermVariationType.getCase().equals(AFTermVariationCaseEnum.CI))
-				turTermVariation.setRuleCase(TurNLPTermCase.CI.id());
-			else if (afTermVariationType.getCase().equals(AFTermVariationCaseEnum.CS))
-				turTermVariation.setRuleCase(TurNLPTermCase.CS.id());
-			else if (afTermVariationType.getCase().equals(AFTermVariationCaseEnum.UCS))
-				turTermVariation.setRuleCase(TurNLPTermCase.UCS.id());
+			setRuleCase(afTermVariationType, turTermVariation);
 
-			if (afTermVariationType.getPrefix() != null) {
-				turTermVariation.setRulePrefix(afTermVariationType.getPrefix().getValue());
-				turTermVariation.setRulePrefixRequired(
-						Boolean.TRUE.equals(afTermVariationType.getPrefix().isRequired()) ? 1 : 0);
-			}
-			if (afTermVariationType.getSuffix() != null) {
-				turTermVariation.setRuleSuffix(afTermVariationType.getSuffix().getValue());
-				turTermVariation.setRuleSuffixRequired(
-						Boolean.TRUE.equals(afTermVariationType.getSuffix().isRequired()) ? 1 : 0);
-			}
-			turTermVariation.setWeight(afTermVariationType.getWeight());
-			turTermVariation.setTurTerm(turTerm);
-			this.turTermVariationRepository.save(turTermVariation);
+			saveTermVariation(turTerm, afTermVariationType, turTermVariation);
 
-			for (String language : afTermVariationType.getLanguages().getLanguage()) {
-				TurTermVariationLanguage turTermVariationLanguage = new TurTermVariationLanguage();
-				turTermVariationLanguage.setLanguage(language);
-				turTermVariationLanguage.setTurTerm(turTerm);
-				turTermVariationLanguage.setTurTermVariation(turTermVariation);
-				this.turTermVariationLanguageRepository.save(turTermVariationLanguage);
-			}
+			saveTermVariationLanguages(turTerm, afTermVariationType, turTermVariation);
 
+		}
+	}
+
+	private void setRuleAccent(AFTermVariationType afTermVariationType, TurTermVariation turTermVariation) {
+		if (afTermVariationType.getAccent().equals(AFTermVariationAccentEnum.AI))
+			turTermVariation.setRuleAccent(TurNLPTermAccent.AI.id());
+		else
+			turTermVariation.setRuleAccent(TurNLPTermAccent.AS.id());
+	}
+
+	private void setRuleCase(AFTermVariationType afTermVariationType, TurTermVariation turTermVariation) {
+		if (afTermVariationType.getCase().equals(AFTermVariationCaseEnum.CI))
+			turTermVariation.setRuleCase(TurNLPTermCase.CI.id());
+		else if (afTermVariationType.getCase().equals(AFTermVariationCaseEnum.CS))
+			turTermVariation.setRuleCase(TurNLPTermCase.CS.id());
+		else if (afTermVariationType.getCase().equals(AFTermVariationCaseEnum.UCS))
+			turTermVariation.setRuleCase(TurNLPTermCase.UCS.id());
+	}
+
+	private void saveTermVariation(TurTerm turTerm, AFTermVariationType afTermVariationType,
+			TurTermVariation turTermVariation) {
+		setVariationRulePrefix(afTermVariationType, turTermVariation);
+		setVariationRuleSuffix(afTermVariationType, turTermVariation);
+		turTermVariation.setWeight(afTermVariationType.getWeight());
+		turTermVariation.setTurTerm(turTerm);
+		this.turTermVariationRepository.save(turTermVariation);
+	}
+
+	private void saveTermVariationLanguages(TurTerm turTerm, AFTermVariationType afTermVariationType,
+			TurTermVariation turTermVariation) {
+		for (String language : afTermVariationType.getLanguages().getLanguage()) {
+			TurTermVariationLanguage turTermVariationLanguage = new TurTermVariationLanguage();
+			turTermVariationLanguage.setLanguage(language);
+			turTermVariationLanguage.setTurTerm(turTerm);
+			turTermVariationLanguage.setTurTermVariation(turTermVariation);
+			this.turTermVariationLanguageRepository.save(turTermVariationLanguage);
+		}
+	}
+
+	private void setVariationRuleSuffix(AFTermVariationType afTermVariationType, TurTermVariation turTermVariation) {
+		if (afTermVariationType.getSuffix() != null) {
+			turTermVariation.setRuleSuffix(afTermVariationType.getSuffix().getValue());
+			turTermVariation.setRuleSuffixRequired(
+					Boolean.TRUE.equals(afTermVariationType.getSuffix().isRequired()) ? 1 : 0);
+		}
+	}
+
+	private void setVariationRulePrefix(AFTermVariationType afTermVariationType, TurTermVariation turTermVariation) {
+		if (afTermVariationType.getPrefix() != null) {
+			turTermVariation.setRulePrefix(afTermVariationType.getPrefix().getValue());
+			turTermVariation.setRulePrefixRequired(
+					Boolean.TRUE.equals(afTermVariationType.getPrefix().isRequired()) ? 1 : 0);
 		}
 	}
 

@@ -65,12 +65,81 @@ public class TurOTSNBrokerAPI {
 	@PostMapping
 	public String turOTSNBrokerAdd(@RequestParam("index") String siteName, @RequestParam("config") String config,
 			@RequestParam("data") String data) {
-		if (siteName.contains(",")) {
-			String[] siteNames = siteName.split(",");
-			siteName = siteNames[0];
-		}
+		siteName = getFirstSiteName(siteName);
 
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
+		Document document = readXML(data);
+
+		return indexItem(turSNSite, document);
+
+	}
+
+	private String indexItem(TurSNSite turSNSite, Document document) {
+		if (document != null) {
+			Element element = document.getDocumentElement();
+
+			NodeList nodes = element.getChildNodes();
+
+			TurSNJobItem turSNJobItem = createJobItem(nodes);
+
+			TurSNJobItems turSNJobItems = new TurSNJobItems();
+
+			turSNJobItems.add(turSNJobItem);
+
+			TurSNJob turSNJob = createSNJob(turSNSite, turSNJobItems);
+			logger.debug("Indexed Job by Id");
+			turSNImportAPI.send(turSNJob);
+
+			return "Ok";
+		} else {
+			return "Failed";
+		}
+	}
+
+	private TurSNJob createSNJob(TurSNSite turSNSite, TurSNJobItems turSNJobItems) {
+		TurSNJob turSNJob = new TurSNJob();
+		turSNJob.setSiteId(turSNSite.getId());
+
+		turSNJob.setTurSNJobItems(turSNJobItems);
+		return turSNJob;
+	}
+
+	private TurSNJobItem createJobItem(NodeList nodes) {
+		TurSNJobItem turSNJobItem = new TurSNJobItem();
+		Map<String, Object> attributes = addAtributesToJobItem(nodes, turSNJobItem);
+		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+		turSNJobItem.setAttributes(attributes);
+		return turSNJobItem;
+	}
+
+	private Map<String, Object> addAtributesToJobItem(NodeList nodes, TurSNJobItem turSNJobItem) {
+		Map<String, Object> attributes = new HashMap<>();
+		for (int i = 0; i < nodes.getLength(); i++) {
+
+			String nodeName = nodes.item(i).getNodeName();
+			if (attributes.containsKey(nodeName)) {
+				if (!(attributes.get(nodeName) instanceof ArrayList)) {
+					List<Object> attributeValues = new ArrayList<>();
+					attributeValues.add(attributes.get(nodeName));
+					attributeValues.add(nodes.item(i).getTextContent());
+
+					attributes.put(nodeName, attributeValues);
+					turSNJobItem.setAttributes(attributes);
+				} else {
+					@SuppressWarnings("unchecked")
+					List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
+					attributeValues.add(nodes.item(i).getTextContent());
+					attributes.put(nodeName, attributeValues);
+				}
+			} else {
+				attributes.put(nodeName, nodes.item(i).getTextContent());
+
+			}
+		}
+		return attributes;
+	}
+
+	private Document readXML(String data) {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		try {
 			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
@@ -85,55 +154,15 @@ public class TurOTSNBrokerAPI {
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
+		return document;
+	}
 
-		if (document != null) {
-			Element element = document.getDocumentElement();
-
-			NodeList nodes = element.getChildNodes();
-
-			TurSNJobItem turSNJobItem = new TurSNJobItem();
-			Map<String, Object> attributes = new HashMap<>();
-			for (int i = 0; i < nodes.getLength(); i++) {
-
-				String nodeName = nodes.item(i).getNodeName();
-				if (attributes.containsKey(nodeName)) {
-					if (!(attributes.get(nodeName) instanceof ArrayList)) {
-						List<Object> attributeValues = new ArrayList<>();
-						attributeValues.add(attributes.get(nodeName));
-						attributeValues.add(nodes.item(i).getTextContent());
-
-						attributes.put(nodeName, attributeValues);
-						turSNJobItem.setAttributes(attributes);
-					} else {
-						@SuppressWarnings("unchecked")
-						List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
-						attributeValues.add(nodes.item(i).getTextContent());
-						attributes.put(nodeName, attributeValues);
-					}
-				} else {
-					attributes.put(nodeName, nodes.item(i).getTextContent());
-
-				}
-			}
-			turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-			turSNJobItem.setAttributes(attributes);
-
-			TurSNJobItems turSNJobItems = new TurSNJobItems();
-
-			turSNJobItems.add(turSNJobItem);
-
-			TurSNJob turSNJob = new TurSNJob();
-			turSNJob.setSiteId(turSNSite.getId());
-
-			turSNJob.setTurSNJobItems(turSNJobItems);
-			logger.debug("Indexed Job by Id");
-			turSNImportAPI.send(turSNJob);
-
-			return "Ok";
-		} else {
-			return "Failed";
+	private String getFirstSiteName(String siteName) {
+		if (siteName.contains(",")) {
+			String[] siteNames = siteName.split(",");
+			siteName = siteNames[0];
 		}
-
+		return siteName;
 	}
 
 	@GetMapping
@@ -146,10 +175,7 @@ public class TurOTSNBrokerAPI {
 			TurSNJobItem turSNJobItem = new TurSNJobItem();
 			turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 
-			if (siteName.contains(",")) {
-				String[] siteNames = siteName.split(",");
-				siteName = siteNames[0];
-			}
+			siteName = getFirstSiteName(siteName);
 			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 			Map<String, Object> attributes = new HashMap<>();
 			if (id.isPresent()) {
