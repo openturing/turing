@@ -575,13 +575,13 @@ public class TurSolr {
 				TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
 
 				if (turSNSiteFieldExt.getType() == TurSEFieldType.STRING && hl != null && hl.containsKey(attribute))
-					attrValue = (String) hl.get(attribute).get(0);
+					attrValue = hl.get(attribute).get(0);
 
 			}
 
 			if (attribute != null && fields.containsKey(attribute)) {
 				if (!(fields.get(attribute) instanceof List)) {
-					List<Object> attributeValues = new ArrayList<Object>();
+					List<Object> attributeValues = new ArrayList<>();
 					attributeValues.add(fields.get(attribute));
 					attributeValues.add(attrValue);
 					fields.put(attribute, attributeValues);
@@ -600,7 +600,7 @@ public class TurSolr {
 	private TurSEResult createTurSEResult(SolrDocument document) {
 		TurSEResult turSEResult = new TurSEResult();
 
-		Map<String, Object> fields = new HashMap<String, Object>();
+		Map<String, Object> fields = new HashMap<>();
 		for (String attribute : document.getFieldNames()) {
 			Object attrValue = document.getFieldValue(attribute);
 			fields.put(attribute, attrValue);

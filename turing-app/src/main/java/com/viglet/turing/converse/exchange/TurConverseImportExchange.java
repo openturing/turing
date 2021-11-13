@@ -19,7 +19,6 @@ package com.viglet.turing.converse.exchange;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -36,9 +35,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.viglet.turing.converse.exchange.agent.TurConverseAgentExchange;
@@ -114,24 +111,32 @@ public class TurConverseImportExchange {
 		}
 	}
 
-	private void extractEntityEntriesExchange(File extractFolder, ObjectMapper mapper)
-			throws IOException, JsonParseException, JsonMappingException, FileNotFoundException {
-		TurConverseEntityEntriesExchange turConverseEntityEntriesExchange = mapper.readValue(
-				new FileInputStream(extractFolder.getAbsolutePath()
-						.concat(File.separator + "entities" + File.separator + "pessoa_entries_pt-br.json")),
-				TurConverseEntityEntriesExchange.class);
+	private void extractEntityEntriesExchange(File extractFolder, ObjectMapper mapper) {
+		TurConverseEntityEntriesExchange turConverseEntityEntriesExchange;
+		try {
+			turConverseEntityEntriesExchange = mapper.readValue(
+					new FileInputStream(extractFolder.getAbsolutePath()
+							.concat(File.separator + "entities" + File.separator + "pessoa_entries_pt-br.json")),
+					TurConverseEntityEntriesExchange.class);
+			logger.debug(turConverseEntityEntriesExchange.get(0).getValue());
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
 
-		logger.debug(turConverseEntityEntriesExchange.get(0).getValue());
 	}
 
-	private void extractEntityExchange(File extractFolder, ObjectMapper mapper)
-			throws IOException, JsonParseException, JsonMappingException, FileNotFoundException {
-		TurConverseEntityExchange turConverseEntityExchange = mapper.readValue(
-				new FileInputStream(extractFolder.getAbsolutePath()
-						.concat(File.separator + "entities" + File.separator + "pessoa.json")),
-				TurConverseEntityExchange.class);
+	private void extractEntityExchange(File extractFolder, ObjectMapper mapper) {
+		TurConverseEntityExchange turConverseEntityExchange;
+		try {
+			turConverseEntityExchange = mapper.readValue(
+					new FileInputStream(extractFolder.getAbsolutePath()
+							.concat(File.separator + "entities" + File.separator + "pessoa.json")),
+					TurConverseEntityExchange.class);
+			logger.debug(turConverseEntityExchange.getName());
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
 
-		logger.debug(turConverseEntityExchange.getName());
 	}
 
 	private TurConverseAgent saveConverseAgent(MultipartFile multipartFile,
@@ -153,14 +158,18 @@ public class TurConverseImportExchange {
 		return turConverseAgent;
 	}
 
-	private TurConverseAgentExchange extractAgentExchange(File extractFolder, ObjectMapper mapper)
-			throws IOException, JsonParseException, JsonMappingException, FileNotFoundException {
+	private TurConverseAgentExchange extractAgentExchange(File extractFolder, ObjectMapper mapper) {
 		TurConverseAgentExchange turConverseAgentExchange = null;
 
-		turConverseAgentExchange = mapper.readValue(
-				new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + AGENT_FILE)),
-				TurConverseAgentExchange.class);
-		logger.debug(turConverseAgentExchange.getDescription());
+		try {
+			turConverseAgentExchange = mapper.readValue(
+					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + AGENT_FILE)),
+					TurConverseAgentExchange.class);
+			logger.debug(turConverseAgentExchange.getDescription());
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+
 		return turConverseAgentExchange;
 	}
 
@@ -186,50 +195,58 @@ public class TurConverseImportExchange {
 
 	private void readFileFromFolder(TurConverseAgent turConverseAgent, final ObjectMapper mapper,
 			final File fileEntry) {
-		try {
-			logger.debug(fileEntry.getName());
-			if (fileEntry.getName().contains("_usersays_")) {
-				extractIntentPhrasesExchange(mapper, fileEntry);
-			} else {
-				TurConverseIntentExchange turConverseIntentExchange = extractIntentExchange(mapper, fileEntry);
-				TurConverseIntent turConverseIntent = saveIntent(turConverseAgent, turConverseIntentExchange);
-				saveResponses(turConverseIntentExchange, turConverseIntent);
-				savePhrases(mapper, fileEntry, turConverseIntent);
-			}
-		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+		logger.debug(fileEntry.getName());
+		if (fileEntry.getName().contains("_usersays_")) {
+			extractIntentPhrasesExchange(mapper, fileEntry);
+		} else {
+			TurConverseIntentExchange turConverseIntentExchange = extractIntentExchange(mapper, fileEntry);
+			TurConverseIntent turConverseIntent = saveIntent(turConverseAgent, turConverseIntentExchange);
+			saveResponses(turConverseIntentExchange, turConverseIntent);
+			savePhrases(mapper, fileEntry, turConverseIntent);
 		}
 	}
 
-	private TurConverseIntentExchange extractIntentExchange(final ObjectMapper mapper, final File fileEntry)
-			throws IOException, JsonParseException, JsonMappingException, FileNotFoundException {
-		TurConverseIntentExchange turConverseIntentExchange = mapper
-				.readValue(new FileInputStream(fileEntry), TurConverseIntentExchange.class);
-		logger.debug(turConverseIntentExchange.getName());
+	private TurConverseIntentExchange extractIntentExchange(final ObjectMapper mapper, final File fileEntry) {
+		TurConverseIntentExchange turConverseIntentExchange = new TurConverseIntentExchange();
+		try {
+			turConverseIntentExchange = mapper.readValue(new FileInputStream(fileEntry),
+					TurConverseIntentExchange.class);
+			logger.debug(turConverseIntentExchange.getName());
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+
 		return turConverseIntentExchange;
 	}
 
-	private void extractIntentPhrasesExchange(final ObjectMapper mapper, final File fileEntry)
-			throws IOException, JsonParseException, JsonMappingException, FileNotFoundException {
-		TurConverseIntentPhrasesExchange turConverseIntentPhrasesExchange = mapper
-				.readValue(new FileInputStream(fileEntry), TurConverseIntentPhrasesExchange.class);
-		logger.debug(turConverseIntentPhrasesExchange.get(0).getId());
+	private void extractIntentPhrasesExchange(final ObjectMapper mapper, final File fileEntry) {
+		TurConverseIntentPhrasesExchange turConverseIntentPhrasesExchange;
+		try {
+			turConverseIntentPhrasesExchange = mapper.readValue(new FileInputStream(fileEntry),
+					TurConverseIntentPhrasesExchange.class);
+			logger.debug(turConverseIntentPhrasesExchange.get(0).getId());
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+
 	}
 
-	private void savePhrases(final ObjectMapper mapper, final File fileEntry, TurConverseIntent turConverseIntent)
-			throws IOException, JsonParseException, JsonMappingException, FileNotFoundException {
+	private void savePhrases(final ObjectMapper mapper, final File fileEntry, TurConverseIntent turConverseIntent) {
 		File phrasesFile = new File(fileEntry.getAbsolutePath().replace(".json", "_usersays_pt-br.json"));
 		if (phrasesFile.exists()) {
-			TurConverseIntentPhrasesExchange turConverseIntentPhrasesExchange = mapper
-					.readValue(new FileInputStream(phrasesFile), TurConverseIntentPhrasesExchange.class);
-
-			// Phrases
-			for (TurConverseIntentPhraseExchange phrase : turConverseIntentPhrasesExchange) {
-				for (TurConverseIntentPhraseDataExchange data : phrase.getData()) {
-					TurConversePhrase turConversePhrase = new TurConversePhrase(data.getText());
-					turConversePhrase.setIntent(turConverseIntent);
-					turConversePhraseRepository.save(turConversePhrase);
+			TurConverseIntentPhrasesExchange turConverseIntentPhrasesExchange;
+			try {
+				turConverseIntentPhrasesExchange = mapper.readValue(new FileInputStream(phrasesFile),
+						TurConverseIntentPhrasesExchange.class);
+				for (TurConverseIntentPhraseExchange phrase : turConverseIntentPhrasesExchange) {
+					for (TurConverseIntentPhraseDataExchange data : phrase.getData()) {
+						TurConversePhrase turConversePhrase = new TurConversePhrase(data.getText());
+						turConversePhrase.setIntent(turConverseIntent);
+						turConversePhraseRepository.save(turConversePhrase);
+					}
 				}
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
 			}
 
 		} else {
@@ -239,12 +256,10 @@ public class TurConverseImportExchange {
 
 	private void saveResponses(TurConverseIntentExchange turConverseIntentExchange,
 			TurConverseIntent turConverseIntent) {
-		// Responses
 		for (TurConverseIntentResponseExchange response : turConverseIntentExchange.getResponses()) {
 			for (TurConverseIntentMessageExchange message : response.getMessages()) {
 				if (!message.getSpeech().isEmpty()) {
-					TurConverseResponse turConverseResponse = new TurConverseResponse(
-							message.getSpeech().get(0));
+					TurConverseResponse turConverseResponse = new TurConverseResponse(message.getSpeech().get(0));
 					turConverseResponse.setIntent(turConverseIntent);
 					turConverseResponseRepository.save(turConverseResponse);
 				}
@@ -255,7 +270,6 @@ public class TurConverseImportExchange {
 
 	private TurConverseIntent saveIntent(TurConverseAgent turConverseAgent,
 			TurConverseIntentExchange turConverseIntentExchange) {
-		// Intent
 		TurConverseIntent turConverseIntent = new TurConverseIntent();
 		turConverseIntent.setName(turConverseIntentExchange.getName());
 		turConverseIntent.setAgent(turConverseAgent);
@@ -263,12 +277,17 @@ public class TurConverseImportExchange {
 		return turConverseIntent;
 	}
 
-	public TurConverseAgentExchange importFromFile(File file) throws IOException, IllegalStateException {
+	public TurConverseAgentExchange importFromFile(File file) {
 
-		FileInputStream input = new FileInputStream(file);
-		MultipartFile multipartFile = new MockMultipartFile(file.getName(), IOUtils.toByteArray(input));
-
-		return this.importFromMultipartFile(multipartFile);
+		FileInputStream input;
+		try {
+			input = new FileInputStream(file);
+			MultipartFile multipartFile = new MockMultipartFile(file.getName(), IOUtils.toByteArray(input));
+			return this.importFromMultipartFile(multipartFile);
+		} catch (IOException | IllegalStateException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return new TurConverseAgentExchange();
 	}
 
 	public File extractZipFile(MultipartFile file) {
@@ -278,5 +297,4 @@ public class TurConverseImportExchange {
 		return TurUtils.extractZipFile(file);
 	}
 
-	
 }

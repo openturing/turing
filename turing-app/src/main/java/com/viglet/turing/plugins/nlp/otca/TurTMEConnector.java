@@ -77,7 +77,7 @@ public class TurTMEConnector implements TurNLPImpl {
 	private List<TurNLPInstanceEntity> nlpInstanceEntities = null;
 	private Map<String, List<Object>> hmEntities = new HashMap<>();
 	private TurNLPInstance turNLPInstance = null;
-	private JSONObject json;
+
 	private static final int PRETTY_PRINT_INDENT_FACTOR = 4;
 
 	public void startup(TurNLPInstance turNLPInstance) {
@@ -97,7 +97,7 @@ public class TurTMEConnector implements TurNLPImpl {
 			if (request == null) {
 				return null;
 			}
-			byte[] data = request.trim().getBytes( StandardCharsets.UTF_8);
+			byte[] data = request.trim().getBytes(StandardCharsets.UTF_8);
 			int length = data.length;
 			if (length == 0) {
 				return null;
@@ -134,10 +134,10 @@ public class TurTMEConnector implements TurNLPImpl {
 						throw (new RuntimeException("Invalid response"));
 					}
 				}
-				return new String(data,StandardCharsets.UTF_8);
+				return new String(data, StandardCharsets.UTF_8);
 			}
 		} catch (Exception e) {
-			logger.debug("Server not reached: {}" , e.getMessage());
+			logger.debug("Server not reached: {}", e.getMessage());
 			return null;
 		}
 	}
@@ -175,38 +175,38 @@ public class TurTMEConnector implements TurNLPImpl {
 			sb.append("<nfFullTextSearch>");
 			sb.append("<Cartridges>");
 			sb.append("<Cartridge>APICULTURA</Cartridge>");
-			sb.append(" <Cartridge>CONFECÃƒâ€¡ÃƒÆ’O</Cartridge>");
+			sb.append(" <Cartridge>CONFECÇÃO</Cartridge>");
 			sb.append("<Cartridge>ARTESANATO</Cartridge>");
 			sb.append(" <Cartridge>AQUICULTURA</Cartridge>");
-			sb.append("<Cartridge>COURO E CALÃƒâ€¡ADOS</Cartridge>");
-			sb.append("<Cartridge>CONSTRUÃƒâ€¡ÃƒÆ’O CIVIL</Cartridge>");
+			sb.append("<Cartridge>COURO E CALÇADOS</Cartridge>");
+			sb.append("<Cartridge>CONSTRUCAO CIVIL</Cartridge>");
 			sb.append("<Cartridge>ALIMENTO</Cartridge>");
 			sb.append("<Cartridge>ROCHA ORNAMENTAL</Cartridge>");
 			sb.append("<Cartridge>AGRICULTURA</Cartridge>");
-			sb.append("<Cartridge>GRÃƒï¿½FICA E EDITORA</Cartridge>");
+			sb.append("<Cartridge>GRÁFICA E EDITORA</Cartridge>");
 			sb.append("<Cartridge>TURISMO</Cartridge>");
-			sb.append("<Cartridge>TÃƒÅ XTIL</Cartridge>");
-			sb.append("<Cartridge>CERÃƒâ€šMICA</Cartridge>");
+			sb.append("<Cartridge>TÊXTIL</Cartridge>");
+			sb.append("<Cartridge>CERÂMICA</Cartridge>");
 			sb.append("<Cartridge>BEBIDA</Cartridge>");
 			sb.append("<Cartridge>CULTURA, ENTRETENIMENTO E LAZER</Cartridge>");
 			sb.append("<Cartridge>RECICLAGEM</Cartridge>");
-			sb.append("<Cartridge>PLÃƒï¿½STICO E BORRACHA</Cartridge>");
-			sb.append("<Cartridge>METALURGIA, METAL MECÃƒâ€šNICA E AUTO PEÃƒâ€¡AS</Cartridge>");
-			sb.append("<Cartridge>HIGIENE PESSOAL, PERFUMARIA E COSMÃƒâ€°TICO</Cartridge>");
-			sb.append("<Cartridge>ELETRO-ELETRÃƒâ€�NICA</Cartridge>");
-			sb.append("<Cartridge>PETRÃƒâ€œLEO, GÃƒï¿½S E ENERGIA</Cartridge>");
-			sb.append("<Cartridge>QUÃƒï¿½MICA</Cartridge>");
-			sb.append("<Cartridge>GEMA, JÃƒâ€œIA E BIJUTERIA</Cartridge>");
+			sb.append("<Cartridge>PLÁSTICO E BORRACHA</Cartridge>");
+			sb.append("<Cartridge>METALURGIA, METAL MECÂNICA E AUTO PEÇAS</Cartridge>");
+			sb.append("<Cartridge>HIGIENE PESSOAL, PERFUMARIA E COSMÉTICO</Cartridge>");
+			sb.append("<Cartridge>ELETRO-ELETRÔNICA</Cartridge>");
+			sb.append("<Cartridge>PETRÓLEO, GÁS E ENERGIA</Cartridge>");
+			sb.append("<Cartridge>QUÍMICA</Cartridge>");
+			sb.append("<Cartridge>GEMA, JÓIA E BIJUTERIA</Cartridge>");
 			sb.append("<Cartridge>EMPREENDEDORISMO</Cartridge>");
-			sb.append("<Cartridge>GESTÃƒÆ’O EMPRESARIAL</Cartridge>");
-			sb.append("<Cartridge>AMBIENTE ECONÃƒâ€�MICO E SOCIAL</Cartridge>");
+			sb.append("<Cartridge>GESTÃO EMPRESARIAL</Cartridge>");
+			sb.append("<Cartridge>AMBIENTE ECONÔMICO E SOCIAL</Cartridge>");
 			sb.append("<Cartridge>COMÃƒâ€°RCIO VAREJISTA E ATACADISTA</Cartridge>");
-			sb.append("<Cartridge>SAÃƒÅ¡DE, BELEZA E MEDICINA</Cartridge>");
+			sb.append("<Cartridge>SAÚDE, BELEZA E MEDICINA</Cartridge>");
 			sb.append("<Cartridge>BIOTECNOLOGIA</Cartridge>");
-			sb.append("<Cartridge>PECUÃƒï¿½RIA</Cartridge>");
-			sb.append("<Cartridge>MADEIRA E MOBILIÃƒï¿½RIO</Cartridge>");
+			sb.append("<Cartridge>PECUÁRIA</Cartridge>");
+			sb.append("<Cartridge>MADEIRA E MOBILIÁRIO</Cartridge>");
 			sb.append("<Cartridge>AMBIENTE NORMATIVO</Cartridge>");
-			sb.append("<Cartridge>TECNOLOGIA DA INFORMAÃƒâ€¡ÃƒÆ’O E COMUNICAÃƒâ€¡ÃƒÆ’O</Cartridge>");
+			sb.append("<Cartridge>TECNOLOGIA DA INFORMAÇÃO E COMUNICAÇÃO</Cartridge>");
 			sb.append("<Cartridge>TABELAS AUXILIARES</Cartridge>");
 			sb.append("<Cartridge>VITIVINICULTURA</Cartridge>");
 			sb.append("<Cartridge>OUTROS</Cartridge>");
@@ -260,8 +260,8 @@ public class TurTMEConnector implements TurNLPImpl {
 
 			ServerResponseType serverResponseType = unmarshaller.unmarshal(source, ServerResponseType.class).getValue();
 
-			logger.debug("getErrorDescription: " + serverResponseType.getErrorDescription());
-			logger.debug("getVersion: " + serverResponseType.getVersion());
+			logger.debug("getErrorDescription: {} ", serverResponseType.getErrorDescription());
+			logger.debug("getVersion: {}", serverResponseType.getVersion());
 			for (Object result : serverResponseType.getResults().getPingOrGetSupportedEncodingsOrLanguagedetector()) {
 				this.getResult(result);
 			}
@@ -274,7 +274,7 @@ public class TurTMEConnector implements TurNLPImpl {
 			logger.error(e);
 		}
 		try {
-			this.json = XML.toJSONObject(xml);
+			JSONObject json = XML.toJSONObject(xml);
 
 			String jsonPrettyPrintString = json.toString(PRETTY_PRINT_INDENT_FACTOR);
 			jsonResult = jsonPrettyPrintString;
@@ -296,7 +296,7 @@ public class TurTMEConnector implements TurNLPImpl {
 
 	public void getResult(Object result) {
 
-		logger.debug("iterateResults... {}", result.toString());
+		logger.debug("iterateResults... {}", result);
 
 		if (result instanceof ServerResponseConceptExtractorResultType) {
 			ServerResponseConceptExtractorResultType concepts = (ServerResponseConceptExtractorResultType) result;
@@ -392,7 +392,7 @@ public class TurTMEConnector implements TurNLPImpl {
 			if (categorizer.getCategories() != null) {
 				for (ServerResponseCategorizerResultCategoryType category : categorizer.getCategories().getCategory()) {
 					for (Serializable content : category.getContent()) {
-						logger.debug("Category Content: {}", content.toString());
+						logger.debug("Category Content: {}", content);
 					}
 					logger.debug("Category ID: {}", category.getId());
 					logger.debug("Category Weight: {}", category.getWeight());
@@ -432,17 +432,16 @@ public class TurTMEConnector implements TurNLPImpl {
 
 	}
 
-	public Map<String, Object> getAttributes() throws JSONException {
-		logger.debug("getAttributes() hmEntities: " + hmEntities.toString());
-		logger.debug("getAttributes() nlpInstanceEntities: " + nlpInstanceEntities.toString());
-		Map<String, Object> entityAttributes = new HashMap<String, Object>();
-
+	public Map<String, Object> getAttributes() {
+		logger.debug("getAttributes() hmEntities: {}", hmEntities);
+		logger.debug("getAttributes() nlpInstanceEntities: {}", nlpInstanceEntities);
+		Map<String, Object> entityAttributes = new HashMap<>();
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
 			entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
 					hmEntities.get(nlpInstanceEntity.getTurNLPEntity().getInternalName()));
 		}
 
-		logger.debug("getAttributes() entityAttributes: " + entityAttributes.toString());
+		logger.debug("getAttributes() entityAttributes: {}", entityAttributes);
 		return entityAttributes;
 	}
 

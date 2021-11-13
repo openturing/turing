@@ -1,7 +1,5 @@
 package com.viglet.turing.solr;
 
-import java.util.Optional;
-
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.springframework.beans.factory.annotation.Autowired;
