@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.text.Normalizer;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
@@ -186,17 +184,5 @@ public class TurUtils {
 			}
 		}
 		return true;
-	}
-
-	public String removeUrl(String commentstr) {
-		String urlPattern = "((https?|ftp|gopher|telnet|file|Unsure):([(//)(\\\\\\\\)])+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)";
-		Pattern p = Pattern.compile(urlPattern, Pattern.CASE_INSENSITIVE);
-		Matcher m = p.matcher(commentstr);
-		int i = 0;
-		while (m.find()) {
-			commentstr = commentstr.replaceAll(m.group(i), "").trim();
-			i++;
-		}
-		return commentstr;
 	}
 }

@@ -141,19 +141,19 @@ public class TurConverseImportExchange {
 	private TurConverseAgent saveConverseAgent(MultipartFile multipartFile,
 			TurConverseAgentExchange turConverseAgentExchange) {
 		TurConverseAgent turConverseAgent = new TurConverseAgent();
-		if (multipartFile.getOriginalFilename() != null) {
+		if (multipartFile.getOriginalFilename() != null && turConverseAgentExchange != null) {
 			turConverseAgent.setName(multipartFile.getOriginalFilename().replace(".zip", "")); // NOSONAR
-		}
-		turConverseAgent.setDescription(turConverseAgentExchange.getDescription());
-		turConverseAgent.setCore("converse");
-		turConverseAgent.setTurSEInstance(turSEInstanceRepository.findAll().get(0));
-		if (turConverseAgentExchange.getLanguage().equals("pt-br")) {
-			turConverseAgent.setLanguage("pt_BR");
-		} else {
-			turConverseAgent.setLanguage(turConverseAgentExchange.getLanguage());
-		}
-
+			turConverseAgent.setDescription(turConverseAgentExchange.getDescription());
+			turConverseAgent.setCore("converse");
+			turConverseAgent.setTurSEInstance(turSEInstanceRepository.findAll().get(0));
+			if (turConverseAgentExchange.getLanguage().equals("pt-br")) {
+				turConverseAgent.setLanguage("pt_BR");
+			} else {
+				turConverseAgent.setLanguage(turConverseAgentExchange.getLanguage());
+			}
+		
 		turConverseAgentRepository.save(turConverseAgent);
+		}
 		return turConverseAgent;
 	}
 
@@ -278,12 +278,10 @@ public class TurConverseImportExchange {
 
 	public TurConverseAgentExchange importFromFile(File file) {
 
-		FileInputStream input;
-		try {
-			input = new FileInputStream(file);
+		try (FileInputStream input = new FileInputStream(file)) {
 			MultipartFile multipartFile = new MockMultipartFile(file.getName(), IOUtils.toByteArray(input));
 			return this.importFromMultipartFile(multipartFile);
-		} catch (IOException | IllegalStateException e) {
+		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
 		return new TurConverseAgentExchange();

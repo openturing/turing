@@ -17,7 +17,6 @@
 
 package com.viglet.turing.api.converse;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
@@ -236,8 +235,7 @@ public class TurConverseAgentAPI {
 
 	@PostMapping("/import")
 	@Transactional
-	public TurConverseAgentExchange shImport(@RequestParam("file") MultipartFile multipartFile)
-			throws IllegalStateException, IOException {
+	public TurConverseAgentExchange shImport(@RequestParam("file") MultipartFile multipartFile) {
 		return turConverseImportExchange.importFromMultipartFile(multipartFile);
 	}
 }

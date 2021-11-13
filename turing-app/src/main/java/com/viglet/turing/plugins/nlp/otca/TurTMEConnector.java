@@ -71,6 +71,7 @@ public class TurTMEConnector implements TurNLPImpl {
 	private static final Logger logger = LogManager.getLogger(TurTMEConnector.class);
 	private static final String COMPLEX_CONCEPTS = "ComplexConcepts";
 	private static final String SIMPLE_CONCEPTS = "SimpleConcepts";
+	private static final String LOG_KV = "{}: {}";
 	@Autowired
 	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
 	@Autowired
@@ -313,13 +314,13 @@ public class TurTMEConnector implements TurNLPImpl {
 					if (complexConcept instanceof ServerResponseConceptExtractorResultConcept1Type) {
 						hmEntities.get(COMPLEX_CONCEPTS)
 								.add(((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
-						logger.debug("{}: {}", COMPLEX_CONCEPTS,
+						logger.debug(LOG_KV, COMPLEX_CONCEPTS,
 								((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
 					}
 					if (complexConcept instanceof ServerResponseConceptExtractorResultConcept2Type) {
 						hmEntities.get(COMPLEX_CONCEPTS)
 								.add(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
-						logger.debug("{}: {}", COMPLEX_CONCEPTS,
+						logger.debug(LOG_KV, COMPLEX_CONCEPTS,
 								((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
 					}
 				}
@@ -337,7 +338,7 @@ public class TurTMEConnector implements TurNLPImpl {
 					if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept2Type) {
 						hmEntities.get(SIMPLE_CONCEPTS)
 								.add(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
-						logger.debug("{}: {}", SIMPLE_CONCEPTS,
+						logger.debug(LOG_KV, SIMPLE_CONCEPTS,
 								((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
 					}
 				}

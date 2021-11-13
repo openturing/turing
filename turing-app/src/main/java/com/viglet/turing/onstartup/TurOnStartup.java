@@ -87,7 +87,7 @@ public class TurOnStartup implements ApplicationRunner {
 
 		if (!turConfigVarRepository.findById(FIRST_TIME).isPresent()) {
 
-			System.out.println("First Time Configuration ...");
+			System.out.println("First Time Configuration ..."); //NOSONAR
 
 			turLocaleOnStartup.createDefaultRows();
 			turGroupOnStartup.createDefaultRows();
@@ -108,7 +108,7 @@ public class TurOnStartup implements ApplicationRunner {
 			
 			turConfigVarOnStartup.createDefaultRows();
 
-			System.out.println("Configuration finished.");
+			System.out.println("Configuration finished."); //NOSONAR
 		}
 
 	}

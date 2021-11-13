@@ -24,16 +24,12 @@ import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
-@Component
-@Transactional
 public class TurOpenNLPModelsOnStartup {
 	private static final Logger logger = LogManager.getLogger(TurOpenNLPModelsOnStartup.class);
-	public TurOpenNLPModelsOnStartup() {
-		super();
-	}
+	private TurOpenNLPModelsOnStartup() {
+	    throw new IllegalStateException("OpenNLP Models class");
+	  }
 
 	private static final String LOCALE_EN = "en";
 	private static final String LOCALE_PT = "pt";
