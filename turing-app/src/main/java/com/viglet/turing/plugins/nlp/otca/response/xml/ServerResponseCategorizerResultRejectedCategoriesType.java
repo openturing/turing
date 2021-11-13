@@ -77,7 +77,7 @@ public class ServerResponseCategorizerResultRejectedCategoriesType {
      */
     public List<ServerResponseCategorizerResultCategoryType> getRejectedCategory() {
         if (rejectedCategory == null) {
-            rejectedCategory = new ArrayList<ServerResponseCategorizerResultCategoryType>();
+            rejectedCategory = new ArrayList<>();
         }
         return this.rejectedCategory;
     }

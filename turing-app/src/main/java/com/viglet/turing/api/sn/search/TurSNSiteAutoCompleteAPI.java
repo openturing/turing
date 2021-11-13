@@ -83,41 +83,39 @@ public class TurSNSiteAutoCompleteAPI {
 	}
 
 	private List<String> createFormattedList(SpellCheckResponse turSEResults, int tokenQSize) {
-		List<String> termList = turSEResults.getSuggestions().get(0).getAlternatives();
-		List<String> stopWords;
-
-		stopWords = turSEStopword.getStopWords();
-
 		List<String> termListFormatted = new ArrayList<>();
-
-		String previousTerm = null;
-		boolean previousFinishedStopWords = false;
-		for (String term : termList) {
-			String[] token = term.split(" ");
-			String lastToken = token[token.length - 1];
-			if (token.length > tokenQSize) {
-				if (previousTerm == null) {
-					if (!stopWords.contains(lastToken) || !term.contains(previousTerm)) {
-						termListFormatted.add(term);
-						previousFinishedStopWords = false;
-					} else {
-						previousFinishedStopWords = true;
-					}
-					previousTerm = term;
-				} else {
-					if (previousFinishedStopWords) {
-						if (!stopWords.contains(lastToken)) {
+		if (turSEResults != null && turSEResults.getSuggestions() != null && !turSEResults.getSuggestions().isEmpty()) {
+			List<String> termList = turSEResults.getSuggestions().get(0).getAlternatives();
+			List<String> stopWords = turSEStopword.getStopWords();
+			String previousTerm = null;
+			boolean previousFinishedStopWords = false;
+			for (String term : termList) {
+				String[] token = term.split(" ");
+				String lastToken = token[token.length - 1];
+				if (token.length > tokenQSize) {
+					if (previousTerm == null) {
+						if (!stopWords.contains(lastToken) || !term.contains(previousTerm)) {
 							termListFormatted.add(term);
 							previousFinishedStopWords = false;
+						} else {
+							previousFinishedStopWords = true;
 						}
+						previousTerm = term;
 					} else {
-						previousFinishedStopWords = true;
+						if (previousFinishedStopWords) {
+							if (!stopWords.contains(lastToken)) {
+								termListFormatted.add(term);
+								previousFinishedStopWords = false;
+							}
+						} else {
+							previousFinishedStopWords = true;
+						}
 					}
-				}
 
-			} else {
-				termListFormatted.add(term);
-				previousTerm = term + "";
+				} else {
+					termListFormatted.add(term);
+					previousTerm = term + "";
+				}
 			}
 		}
 		return termListFormatted;
