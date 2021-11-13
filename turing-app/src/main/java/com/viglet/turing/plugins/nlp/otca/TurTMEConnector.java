@@ -354,8 +354,8 @@ public class TurTMEConnector implements TurNLPImpl {
 							hmEntities.put(term.getCartridgeID(), new ArrayList<>());
 						}
 
-						logger.debug("getId: " + term.getId());
-						logger.debug("getNfinderNormalized: " + term.getNfinderNormalized());
+						logger.debug("getId: {}", term.getId());
+						logger.debug("getNfinderNormalized: {}", term.getNfinderNormalized());
 						if (term.getSubterms() != null) {
 							for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
 									.getSubterm()) {
