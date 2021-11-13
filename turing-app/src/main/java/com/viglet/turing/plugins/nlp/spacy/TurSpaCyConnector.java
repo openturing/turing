@@ -64,8 +64,6 @@ public class TurSpaCyConnector implements TurNLPImpl {
 	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
 	private TurSolrField turSolrField;
-	@Autowired
-	private TurUtils turUtils;
 	private List<TurNLPEntity> nlpEntities = null;
 	private Map<String, List<Object>> entityList = new HashMap<>();
 	private TurNLPInstance turNLPInstance = null;
@@ -105,7 +103,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 			if (attributes != null) {
 				for (Object attrValue : attributes.values()) {
 					JSONObject jsonBody = new JSONObject();
-					String atributeValueFullText = turUtils.removeUrl(turSolrField.convertFieldToString(attrValue))
+					String atributeValueFullText = turSolrField.convertFieldToString(attrValue)
 							.replaceAll("[\\n:;]", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ")
 							.replaceAll("\\.+", ". ")
 							.replaceAll(" +", " ").trim();

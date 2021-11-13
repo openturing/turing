@@ -34,7 +34,6 @@ public class TurSEVendorOnStartup {
 	public void createDefaultRows() {
 
 		if (turSEVendorRepository.findAll().isEmpty()) {
-			
 			TurSEVendor turSEVendor = new TurSEVendor();
 			turSEVendor.setId("SOLR");
 			turSEVendor.setDescription("Apache Solr");
@@ -42,23 +41,6 @@ public class TurSEVendorOnStartup {
 			turSEVendor.setTitle("Apache Solr");
 			turSEVendor.setWebsite("http://lucene.apache.org/solr");
 			turSEVendorRepository.save(turSEVendor);
-			
-			turSEVendor = new TurSEVendor();
-			turSEVendor.setId("SPHINX");
-			turSEVendor.setDescription("Sphinx");
-			turSEVendor.setPlugin("");
-			turSEVendor.setTitle("Sphinx");
-			turSEVendor.setWebsite("http://sphinxsearch.com");
-			turSEVendorRepository.save(turSEVendor);
-			
-			turSEVendor = new TurSEVendor();
-			turSEVendor.setId("ELASTIC");
-			turSEVendor.setDescription("ElasticSearch");
-			turSEVendor.setPlugin("");
-			turSEVendor.setTitle("ElasticSearch");
-			turSEVendor.setWebsite("https://www.elastic.co/products/elasticsearch");
-			turSEVendorRepository.save(turSEVendor);
-			
 		}
 	}
 }
