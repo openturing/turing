@@ -17,6 +17,8 @@
 
 package com.viglet.turing.onstartup;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -44,7 +46,7 @@ import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 @Component
 @Transactional
 public class TurOnStartup implements ApplicationRunner {
-
+	private static final Logger logger = LogManager.getLogger(TurOnStartup.class);
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
 
@@ -87,7 +89,7 @@ public class TurOnStartup implements ApplicationRunner {
 
 		if (!turConfigVarRepository.findById(FIRST_TIME).isPresent()) {
 
-			System.out.println("First Time Configuration ..."); //NOSONAR
+			logger.info("First Time Configuration ...");
 
 			turLocaleOnStartup.createDefaultRows();
 			turGroupOnStartup.createDefaultRows();
@@ -108,7 +110,7 @@ public class TurOnStartup implements ApplicationRunner {
 			
 			turConfigVarOnStartup.createDefaultRows();
 
-			System.out.println("Configuration finished."); //NOSONAR
+			logger.info("Configuration finished.");
 		}
 
 	}

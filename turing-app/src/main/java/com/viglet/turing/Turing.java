@@ -50,9 +50,7 @@ public class Turing {
 			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
 					.run(args);
 		} else {
-			System.out.println("Viglet Turing starting..."); //NOSONAR
 			SpringApplication.run(Turing.class, args);
-			System.out.println("Viglet Turing started"); //NOSONAR
 		}
 
 	}
