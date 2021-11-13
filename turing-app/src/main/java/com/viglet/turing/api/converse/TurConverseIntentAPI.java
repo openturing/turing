@@ -208,38 +208,47 @@ public class TurConverseIntentAPI {
 		Set<TurConverseContext> outputs = turConverseIntent.getContextOutputs();
 		List<String> outputsIds = new ArrayList<>();
 		for (TurConverseContext output : outputs) {
-			if (output != null) {
-				if (output.getId() != null) {
-					outputsIds.add(output.getId());
-					Optional<TurConverseContext> contextOutput = turConverseContextRepository.findById(output.getId());
-					if (contextOutput.isPresent()) {
-						Set<TurConverseIntent> intents = contextOutput.get().getIntentOutputs();
-						boolean found = false;
-						for (TurConverseIntent intent : intents) {
-							if (intent.getId().equals(id))
-								found = true;
-						}
-						if (!found)
-							contextOutput.get().getIntentOutputs().add(turConverseIntentEdit);
-
-						turConverseContextRepository.save(contextOutput.get());
-					}
-				} else {
-
-					Set<TurConverseContext> contextOutputs = turConverseContextRepository
-							.findByAgentAndText(turConverseIntentEdit.getAgent(), output.getText());
-					if (contextOutputs.isEmpty()) {
-						TurConverseContext turConverseContext = saveConverseContext(turConverseIntentEdit, output);
-						outputsIds.add(turConverseContext.getId());
-					} else {
-						TurConverseContext contextOutput = saveContextOutput(turConverseIntentEdit, contextOutputs);
-						outputsIds.add(contextOutput.getId());
-					}
-
-				}
-			}
+			analyzeConverseContext(id, turConverseIntentEdit, outputsIds, output);
 		}
 		return outputsIds;
+	}
+
+	private void analyzeConverseContext(String id, TurConverseIntent turConverseIntentEdit, List<String> outputsIds,
+			TurConverseContext output) {
+		if (output != null) {
+			if (output.getId() != null) {
+				addIntentOutputToConverseContext(id, turConverseIntentEdit, outputsIds, output);
+			} else {
+				Set<TurConverseContext> contextOutputs = turConverseContextRepository
+						.findByAgentAndText(turConverseIntentEdit.getAgent(), output.getText());
+				if (contextOutputs.isEmpty()) {
+					TurConverseContext turConverseContext = saveConverseContext(turConverseIntentEdit, output);
+					outputsIds.add(turConverseContext.getId());
+				} else {
+					TurConverseContext contextOutput = saveContextOutput(turConverseIntentEdit, contextOutputs);
+					outputsIds.add(contextOutput.getId());
+				}
+
+			}
+		}
+	}
+
+	private void addIntentOutputToConverseContext(String id, TurConverseIntent turConverseIntentEdit,
+			List<String> outputsIds, TurConverseContext output) {
+		outputsIds.add(output.getId());
+		Optional<TurConverseContext> contextOutput = turConverseContextRepository.findById(output.getId());
+		if (contextOutput.isPresent()) {
+			Set<TurConverseIntent> intents = contextOutput.get().getIntentOutputs();
+			boolean found = false;
+			for (TurConverseIntent intent : intents) {
+				if (intent.getId().equals(id))
+					found = true;
+			}
+			if (!found)
+				contextOutput.get().getIntentOutputs().add(turConverseIntentEdit);
+
+			turConverseContextRepository.save(contextOutput.get());
+		}
 	}
 
 	private TurConverseContext saveContextOutput(TurConverseIntent turConverseIntentEdit,

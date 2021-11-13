@@ -69,6 +69,8 @@ import com.viglet.turing.solr.TurSolrField;
 @Component
 public class TurTMEConnector implements TurNLPImpl {
 	private static final Logger logger = LogManager.getLogger(TurTMEConnector.class);
+	private static final String COMPLEX_CONCEPTS = "ComplexConcepts";
+	private static final String SIMPLE_CONCEPTS = "SimpleConcepts";
 	@Autowired
 	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
 	@Autowired
@@ -302,41 +304,41 @@ public class TurTMEConnector implements TurNLPImpl {
 			ServerResponseConceptExtractorResultType concepts = (ServerResponseConceptExtractorResultType) result;
 			logger.debug("Concepts: {}", concepts.getName());
 			if (concepts.getComplexConcepts() != null) {
-				logger.debug("ComplexConcept");
-				if (!hmEntities.containsKey("ComplexConcepts")) {
-					hmEntities.put("ComplexConcepts", new ArrayList<>());
+				logger.debug(COMPLEX_CONCEPTS);
+				if (!hmEntities.containsKey(COMPLEX_CONCEPTS)) {
+					hmEntities.put(COMPLEX_CONCEPTS, new ArrayList<>());
 				}
 
 				for (Object complexConcept : concepts.getComplexConcepts().getConceptOrExtractedTerm()) {
 					if (complexConcept instanceof ServerResponseConceptExtractorResultConcept1Type) {
-						hmEntities.get("ComplexConcepts")
+						hmEntities.get(COMPLEX_CONCEPTS)
 								.add(((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
-						logger.debug("ComplexConcept: "
-								+ ((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
+						logger.debug("{}: {}", COMPLEX_CONCEPTS,
+								((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
 					}
 					if (complexConcept instanceof ServerResponseConceptExtractorResultConcept2Type) {
-						hmEntities.get("ComplexConcepts")
+						hmEntities.get(COMPLEX_CONCEPTS)
 								.add(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
-						logger.debug("ComplexConcept: "
-								+ ((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
+						logger.debug("{}: {}", COMPLEX_CONCEPTS,
+								((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
 					}
 				}
 			}
 			if (concepts.getSimpleConcepts() != null) {
-				logger.debug("SimpleConcept");
-				if (!hmEntities.containsKey("SimpleConcepts")) {
-					hmEntities.put("SimpleConcepts", new ArrayList<Object>());
+				logger.debug(SIMPLE_CONCEPTS);
+				if (!hmEntities.containsKey(SIMPLE_CONCEPTS)) {
+					hmEntities.put(SIMPLE_CONCEPTS, new ArrayList<>());
 				}
 				for (Object simpleConcepts : concepts.getSimpleConcepts().getConceptOrExtractedTerm()) {
 					if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept1Type) {
-						hmEntities.get("SimpleConcepts")
+						hmEntities.get(SIMPLE_CONCEPTS)
 								.add(((ServerResponseConceptExtractorResultConcept1Type) simpleConcepts).getValue());
 					}
 					if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept2Type) {
-						hmEntities.get("SimpleConcepts")
+						hmEntities.get(SIMPLE_CONCEPTS)
 								.add(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
-						logger.debug("SimpleConcept: "
-								+ ((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
+						logger.debug("{}: {}", SIMPLE_CONCEPTS,
+								((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
 					}
 				}
 			}

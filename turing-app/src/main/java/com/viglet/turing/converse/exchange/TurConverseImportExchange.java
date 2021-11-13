@@ -76,8 +76,7 @@ public class TurConverseImportExchange {
 	private Map<String, Object> shObjects = new HashMap<>();
 	private Map<String, List<String>> shChildObjects = new HashMap<>();
 
-	public TurConverseAgentExchange importFromMultipartFile(@Nonnull MultipartFile multipartFile)
-			throws IllegalStateException, IOException {
+	public TurConverseAgentExchange importFromMultipartFile(@Nonnull MultipartFile multipartFile) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		File parentExtractFolder = null;
 
