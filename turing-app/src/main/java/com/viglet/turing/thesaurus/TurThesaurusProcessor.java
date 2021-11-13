@@ -81,13 +81,13 @@ public class TurThesaurusProcessor {
 				Map<String, List<String>> termsDetected = this
 						.detectTerms(turSolrField.convertFieldToString(attrValue));
 				for (Entry<String, List<String>> termDetected : termsDetected.entrySet()) {
-					if (entityResults.containsKey(String.format("turing_entity_%s", termDetected.getKey()))) {
-						entityResults.get(String.format("turing_entity_%s", termDetected.getKey()))
+					if (entityResults.containsKey(nlpEntityAttribute(termDetected))) {
+						entityResults.get(nlpEntityAttribute(termDetected))
 								.addAll(termDetected.getValue());
 					} else {
-						List<String> terms = new ArrayList<>();
-						terms.addAll(termDetected.getValue());
-						entityResults.put(String.format("turing_entity_%s", termDetected.getKey()), terms);
+						List<String> termList = new ArrayList<>();
+						termList.addAll(termDetected.getValue());
+						entityResults.put(nlpEntityAttribute(termDetected), termList);
 					}
 
 				}
@@ -99,6 +99,10 @@ public class TurThesaurusProcessor {
 			entityObjectResults.put(entityResult.getKey(), entityResult.getValue());
 		}
 		return entityObjectResults;
+	}
+
+	private String nlpEntityAttribute(Entry<String, List<String>> termDetected) {
+		return String.format("turing_entity_%s", termDetected.getKey());
 	}
 
 	public TurEntityResults detectTerms(String text) {
@@ -116,7 +120,7 @@ public class TurThesaurusProcessor {
 		for (String word : words) {
 			String wordLowerCase = turUtils.stripAccents(word).toLowerCase();
 			logger.debug("word: {}", word);
-			List<TurTermVariation> results = (List<TurTermVariation>) Arrays.stream(stringTerms)
+			List<TurTermVariation> results = Arrays.stream(stringTerms)
 					.filter(t -> t.getNameLower().contains(wordLowerCase)).collect(Collectors.toList());
 
 			Map<String, TurTermVariation> hmResults = new LinkedHashMap<>();
@@ -217,8 +221,8 @@ public class TurThesaurusProcessor {
 		logger.debug("Matches...");
 
 		for (Entry<TurNLPListKey<Integer>, List<String>> pair : matches.entrySet()) {
-			List<Integer> positions = ((TurNLPListKey<Integer>) pair.getKey()).getList();
-			List<String> ids = (List<String>) pair.getValue();
+			List<Integer> positions =  pair.getKey().getList();
+			List<String> ids = pair.getValue();
 			this.mergeEntityResultsFromTo(this.checkTermIdBetweenPositions(turNLPSentence, positions, ids, matches),
 					entityResults);
 		}
@@ -235,15 +239,15 @@ public class TurThesaurusProcessor {
 			List<String> ids, Map<TurNLPListKey<Integer>, List<String>> matches) {
 		TurEntityResults entityResults = new TurEntityResults();
 		logger.debug("Current Positions: {}", positions);
-		if ((positions.get(0).intValue() > 0) && (ids.size() > 0)) {
+		if ((positions.get(0).intValue() > 0) && !ids.isEmpty()) {
 			logger.debug("Brief Matches...");
 			ArrayList<Integer> positionPrevArr = new ArrayList<>();
 			positionPrevArr.add(positions.get(0) - 1);
 			positionPrevArr.add(positions.get(0));
 
-			logger.debug("{} = {}", positions.toString(), ids.toString());
+			logger.debug("{} = {}", positions, ids);
 
-			TurNLPListKey<Integer> positionsPrev = new TurNLPListKey<Integer>(positionPrevArr);
+			TurNLPListKey<Integer> positionsPrev = new TurNLPListKey<>(positionPrevArr);
 			logger.debug("PositionPrev ... {}", positionsPrev);
 			if (matches.containsKey(positionsPrev)) {
 				List<String> filteredIds = new ArrayList<>();
@@ -253,7 +257,7 @@ public class TurThesaurusProcessor {
 						logger.debug("Between matches found: {} | {} : {}", positionsPrev, positions, id);
 						filteredIds.add(id);
 
-						StringBuffer wordMatched = new StringBuffer();
+						StringBuilder wordMatched = new StringBuilder();
 						wordMatched.append(this.getWordsByPosition(turNLPSentence, positions.get(0) - 1));
 						wordMatched.append(" ");
 						wordMatched.append(this.getWordsByPosition(turNLPSentence, positions));
@@ -315,29 +319,29 @@ public class TurThesaurusProcessor {
 
 	public TurEntityResults getParentTerm(TurTerm turTerm) {
 		TurEntityResults entityResults = new TurEntityResults();
-		logger.debug("getParentTerm() from " + turTerm.getName());
+		logger.debug("getParentTerm() from {}", turTerm.getName());
 		for (TurTermRelationFrom relationFrom : turTerm.getTurTermRelationFroms()) {
-			logger.debug("getParentTerm() relationFrom Id: " + relationFrom.getId());
+			logger.debug("getParentTerm() relationFrom Id: {}", relationFrom.getId());
 			if (relationFrom.getRelationType() == TurNLPRelationType.BT.id()) {
 				logger.debug("getParentTerm() is BT");
 				for (TurTermRelationTo relationTo : relationFrom.getTurTermRelationTos()) {
-					logger.debug("getParentTerm() relationTo Id" + relationTo.getId());
+					logger.debug("getParentTerm() relationTo Id {}", relationTo.getId());
 					TurTerm parentTerm = relationTo.getTurTerm();
 					logger.debug("Parent Term is " + parentTerm.getName());
 					String parentCollection = parentTerm.getTurNLPEntity().getCollectionName();
 					if (entityResults.containsKey(parentCollection)) {
-						logger.debug("Parent Term Collection: " + parentCollection);
+						logger.debug("Parent Term Collection: {}", parentCollection);
 						logger.debug(
-								"Parent Term Collection size before: " + entityResults.get(parentCollection).size());
+								"Parent Term Collection size before: {}", entityResults.get(parentCollection).size());
 						entityResults.get(parentCollection).add(parentTerm.getName());
 						logger.debug(
-								"Parent Term Collection size after: " + entityResults.get(parentCollection).size());
+								"Parent Term Collection size after: {}", entityResults.get(parentCollection).size());
 					} else {
-						logger.debug("Parent Term Collection is new: " + parentCollection);
-						List<String> lstTerm = new ArrayList<String>();
+						logger.debug("Parent Term Collection is new: {}", parentCollection);
+						List<String> lstTerm = new ArrayList<>();
 						lstTerm.add(parentTerm.getName());
 						entityResults.put(parentCollection, lstTerm);
-						logger.debug("Parent Term Collection size: " + entityResults.get(parentCollection).size());
+						logger.debug("Parent Term Collection size: {}", entityResults.get(parentCollection).size());
 					}
 					mergeEntityResultsFromTo(this.getParentTerm(relationTo.getTurTerm()), entityResults);
 				}
@@ -349,7 +353,7 @@ public class TurThesaurusProcessor {
 	}
 
 	public TurNLPEntity getEntity(TurTermVariation variation) {
-		logger.debug("Entity is " + variation.getTurTerm().getTurNLPEntity().getName());
+		logger.debug("Entity is {}", variation.getTurTerm().getTurNLPEntity().getName());
 		return variation.getTurTerm().getTurNLPEntity();
 	}
 
@@ -381,10 +385,10 @@ public class TurThesaurusProcessor {
 
 		logger.debug("Validating..");
 		if (terms.containsKey(variation.getId())) {
-			logger.debug("variation.getId()).getNameLower():" + termNameLower);
+			logger.debug("variation.getId()).getNameLower(): {}" , termNameLower);
 			logger.debug("word:" + word);
 			if (termNameLower.equals(wordLowerCaseNoAccent)) {
-				logger.debug("Validate..." + word + ":" + variation.getId());
+				logger.debug("Validate... {}: {}" , word , variation.getId());
 
 				if (variation.getRuleCase() == TurNLPTermCase.CI.id()) {
 					logger.debug("Variation is CI");
@@ -393,7 +397,7 @@ public class TurThesaurusProcessor {
 						return true;
 					} else {
 						logger.debug(
-								"Variation is CI and AS = " + termName.toLowerCase().equals(wordLowerCaseWithAccent));
+								"Variation is CI and AS = {}" , termName.toLowerCase().equals(wordLowerCaseWithAccent));
 						return termName.toLowerCase().equals(wordLowerCaseWithAccent);
 					}
 
@@ -405,7 +409,7 @@ public class TurThesaurusProcessor {
 							logger.debug("Variation is CS and AI = true");
 							return true;
 						} else {
-							logger.debug("Variation is CS and AS = " + termName.equals(word));
+							logger.debug("Variation is CS and AS = {}", termName.equals(word));
 							return termName.equals(word);
 						}
 					} else {
@@ -419,7 +423,7 @@ public class TurThesaurusProcessor {
 							logger.debug("Variation is UCS and AI = true");
 							return true;
 						} else {
-							logger.debug("Variation is UCS and AS = " + termName.toUpperCase().equals(word));
+							logger.debug("Variation is UCS and AS = {}" , termName.toUpperCase().equals(word));
 							return termName.toUpperCase().equals(word);
 						}
 					} else {

@@ -118,14 +118,14 @@ public class TurCoreNLPConnector implements TurNLPImpl {
 	}
 
 	public Map<String, Object> getAttributes() {
-		Map<String, Object> entityAttributes = new HashMap<String, Object>();
+		Map<String, Object> entityAttributes = new HashMap<>();
 
 		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
 			entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
 					this.getEntity(nlpInstanceEntity.getName()));
 		}
 
-		logger.debug("CoreNLP getAttributes: {}", entityAttributes.toString());
+		logger.debug("CoreNLP getAttributes: {}", entityAttributes);
 		return entityAttributes;
 	}
 

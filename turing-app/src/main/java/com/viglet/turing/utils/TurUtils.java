@@ -20,6 +20,7 @@ package com.viglet.turing.utils;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -82,9 +83,7 @@ public class TurUtils {
 				ArchiveOutputStream archive = new ArchiveStreamFactory()
 						.createArchiveOutputStream(ArchiveStreamFactory.ZIP, archiveStream)) {
 
-			FileUtils.listFiles(source, null, true).forEach(file -> {
-				addFileToZip(source, archive, file);
-			});
+			FileUtils.listFiles(source, null, true).forEach(file -> addFileToZip(source, archive, file));
 
 			archive.finish();
 		} catch (IOException | ArchiveException e) {
@@ -132,7 +131,7 @@ public class TurUtils {
 			}
 
 			File zipFile = new File(tmpDir.getAbsolutePath().concat(File.separator + "imp_"
-					+ file.getOriginalFilename().replace(".", "").replace("/", "") + UUID.randomUUID())); //NOSONAR
+					+ file.getOriginalFilename().replace(".", "").replace("/", "") + UUID.randomUUID())); // NOSONAR
 			try {
 				file.transferTo(zipFile);
 				File extractFolder = new File(
@@ -155,7 +154,7 @@ public class TurUtils {
 	 * @param outputFolder output Folder
 	 * @throws Exception
 	 */
-	public static void unZipIt(File zipFile, File outputFolder) throws Exception {
+	public static void unZipIt(File zipFile, File outputFolder) {
 
 		try (ZipArchiveInputStream zin = new ZipArchiveInputStream(new FileInputStream(zipFile))) {
 			ZipArchiveEntry entry;
@@ -167,13 +166,13 @@ public class TurUtils {
 				if (!curfile.toPath().normalize().startsWith(outputFolder.toPath()))
 					throw new Exception("Bad zip entry");
 				File parent = curfile.getParentFile();
-				if (!parent.exists()) {
-					if (!parent.mkdirs()) {
-						throw new RuntimeException("could not create directory: " + parent.getPath());
-					}
+				if (!parent.exists() && !parent.mkdirs()) {
+					throw new RuntimeException("could not create directory: " + parent.getPath());
 				}
 				IOUtils.copy(zin, new FileOutputStream(curfile));
 			}
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
 		}
 	}
 
