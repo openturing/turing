@@ -161,20 +161,30 @@ public class TurNLPProcess {
 			Map<String, List<String>> processedAttributes, Map<String, TurNLPTrainingBean> terms) {
 		if (entityMapWithProcessedValues != null) {
 			for (Entry<String, List<String>> attribute : entityMapWithProcessedValues.entrySet()) {
-				if (attribute.getValue() != null) {
-					logger.debug("attribute Value: {}", attribute.getValue());
-
-					if (!processedAttributes.containsKey(attribute.getKey()))
-						processedAttributes.put(attribute.getKey(), new ArrayList<>());
-					for (Object attributeValueItem : attribute.getValue()) {
-						if (terms.containsKey(attributeValueItem.toString().toLowerCase())) {
-							useTermOfManualEntityAndRemap(processedAttributes, terms, attribute, attributeValueItem);
-						} else {
-							processedAttributes.get(attribute.getKey()).add(attributeValueItem.toString());
-						}
-					}
-				}
+				processAttributeOfEntityMap(processedAttributes, terms, attribute);
 			}
+		}
+	}
+
+	private void processAttributeOfEntityMap(Map<String, List<String>> processedAttributes,
+			Map<String, TurNLPTrainingBean> terms, Entry<String, List<String>> attribute) {
+		if (attribute.getValue() != null) {
+			logger.debug("attribute Value: {}", attribute.getValue());
+
+			if (!processedAttributes.containsKey(attribute.getKey()))
+				processedAttributes.put(attribute.getKey(), new ArrayList<>());
+			for (Object attributeValueItem : attribute.getValue()) {
+				changeAttribute(processedAttributes, terms, attribute, attributeValueItem);
+			}
+		}
+	}
+
+	private void changeAttribute(Map<String, List<String>> processedAttributes, Map<String, TurNLPTrainingBean> terms,
+			Entry<String, List<String>> attribute, Object attributeValueItem) {
+		if (terms.containsKey(attributeValueItem.toString().toLowerCase())) {
+			useTermOfManualEntityAndRemap(processedAttributes, terms, attribute, attributeValueItem);
+		} else {
+			processedAttributes.get(attribute.getKey()).add(attributeValueItem.toString());
 		}
 	}
 
