@@ -134,9 +134,8 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 	}
 
 	private String cleanFullText(Object attrValue) {
-		String atributeValueFullText = turSolrField.convertFieldToString(attrValue).replaceAll("[\\n:;]", ". ")
+		return turSolrField.convertFieldToString(attrValue).replaceAll("[\\n:;]", ". ")
 				.replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
-		return atributeValueFullText;
 	}
 
 	private JSONObject createJSONRequest(TurNLP turNLP, String atributeValue) {

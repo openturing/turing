@@ -327,8 +327,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 			logger.debug("getId: {}", term.getId());
 			logger.debug("getNfinderNormalized: {}", term.getNfinderNormalized());
 			if (term.getSubterms() != null) {
-				for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
-						.getSubterm()) {
+				for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms().getSubterm()) {
 					hmEntities.get(term.getCartridgeID()).add(subterm.getValue());
 				}
 
@@ -343,8 +342,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 				hmEntities.put(term.getCartridgeID(), new ArrayList<>());
 			}
 			if (term.getSubterms() != null) {
-				for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
-						.getSubterm()) {
+				for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms().getSubterm()) {
 					hmEntities.get(term.getCartridgeID()).add(subterm.getValue());
 				}
 
@@ -352,8 +350,8 @@ public class TurTMEConnector implements TurNLPPlugin {
 			if (term.getHierarchy() != null && term.getHierarchy().getBase() != null
 					&& term.getHierarchy().getBase().getParents() != null) {
 
-				for (ServerResponseEntityExtractorResultTermParentType parent : term.getHierarchy()
-						.getBase().getParents().getParent()) {
+				for (ServerResponseEntityExtractorResultTermParentType parent : term.getHierarchy().getBase()
+						.getParents().getParent()) {
 					hmEntities.get(term.getCartridgeID()).add(parent.getTerm());
 					getParentTerms(parent.getParents(), hmEntities, term.getCartridgeID());
 				}
@@ -363,6 +361,53 @@ public class TurTMEConnector implements TurNLPPlugin {
 
 	private void setCategorizer(Object result, Map<String, List<String>> hmEntities) {
 		ServerResponseCategorizerResultType categorizer = (ServerResponseCategorizerResultType) result;
+		setCategory(categorizer);
+		setKnowledgeBase(hmEntities, categorizer);
+	}
+
+	private void setKnowledgeBase(Map<String, List<String>> hmEntities,
+			ServerResponseCategorizerResultType categorizer) {
+		if (categorizer.getKnowledgeBase() != null) {
+			for (ServerResponseCategorizerResultKnowledgeBaseType kb : categorizer.getKnowledgeBase()) {
+				if (!hmEntities.containsKey(kb.getKBid())) {
+					hmEntities.put(kb.getKBid(), new ArrayList<>());
+				}
+				kbCategories(hmEntities, kb);
+				kbRejectedCategories(kb);
+			}
+
+		}
+	}
+
+	private void kbCategories(Map<String, List<String>> hmEntities,
+			ServerResponseCategorizerResultKnowledgeBaseType kb) {
+		if (kb.getCategories() != null) {
+			for (ServerResponseCategorizerResultCategoryType category : kb.getCategories().getCategory()) {
+
+				for (Serializable content : category.getContent()) {
+					logger.debug("KB Content: {}", content);
+					hmEntities.get(kb.getKBid())
+							.add(content.toString().replaceAll(category.getId() + " - ", ""));
+				}
+			}
+		}
+	}
+
+	private void kbRejectedCategories(ServerResponseCategorizerResultKnowledgeBaseType kb) {
+		if (kb.getRejectedCategories() != null) {
+			for (ServerResponseCategorizerResultCategoryType category : kb.getRejectedCategories()
+					.getRejectedCategory()) {
+				for (Serializable content : category.getContent()) {
+					logger.debug("KB Content Rejected: {}", content);
+				}
+				logger.debug("KB ID Rejected: {}", category.getId());
+				logger.debug("KB Weight Rejected: {}", category.getWeight());
+
+			}
+		}
+	}
+
+	private void setCategory(ServerResponseCategorizerResultType categorizer) {
 		if (categorizer.getCategories() != null) {
 			for (ServerResponseCategorizerResultCategoryType category : categorizer.getCategories().getCategory()) {
 				for (Serializable content : category.getContent()) {
@@ -372,44 +417,13 @@ public class TurTMEConnector implements TurNLPPlugin {
 				logger.debug("Category Weight: {}", category.getWeight());
 			}
 		}
-		if (categorizer.getKnowledgeBase() != null) {
-			for (ServerResponseCategorizerResultKnowledgeBaseType kb : categorizer.getKnowledgeBase()) {
-				if (!hmEntities.containsKey(kb.getKBid())) {
-					hmEntities.put(kb.getKBid(), new ArrayList<>());
-				}
-				if (kb.getCategories() != null) {
-					for (ServerResponseCategorizerResultCategoryType category : kb.getCategories().getCategory()) {
-
-						for (Serializable content : category.getContent()) {
-							logger.debug("KB Content: {}", content);
-							hmEntities.get(kb.getKBid())
-									.add(content.toString().replaceAll(category.getId() + " - ", ""));
-						}
-					}
-				}
-				if (kb.getRejectedCategories() != null) {
-					for (ServerResponseCategorizerResultCategoryType category : kb.getRejectedCategories()
-							.getRejectedCategory()) {
-						for (Serializable content : category.getContent()) {
-							logger.debug("KB Content Rejected: {}", content);
-						}
-						logger.debug("KB ID Rejected: {}", category.getId());
-						logger.debug("KB Weight Rejected: {}", category.getWeight());
-
-					}
-				}
-			}
-
-		}
 	}
 
 	private void setSimpleConcepts(Map<String, List<String>> hmEntities,
 			ServerResponseConceptExtractorResultType concepts) {
 		if (concepts.getSimpleConcepts() != null) {
 			logger.debug(SIMPLE_CONCEPTS);
-			if (!hmEntities.containsKey(SIMPLE_CONCEPTS)) {
-				hmEntities.put(SIMPLE_CONCEPTS, new ArrayList<>());
-			}
+			hmEntities.computeIfAbsent(SIMPLE_CONCEPTS, k -> hmEntities.put(k, new ArrayList<>()));
 			for (Object simpleConcepts : concepts.getSimpleConcepts().getConceptOrExtractedTerm()) {
 				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept1Type) {
 					hmEntities.get(SIMPLE_CONCEPTS)
@@ -417,7 +431,8 @@ public class TurTMEConnector implements TurNLPPlugin {
 				}
 				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept2Type) {
 					hmEntities.get(SIMPLE_CONCEPTS)
-							.add(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent().toString());
+							.add(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent()
+									.toString());
 					logger.debug(LOG_KV, SIMPLE_CONCEPTS,
 							((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
 				}
@@ -429,10 +444,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 			ServerResponseConceptExtractorResultType concepts) {
 		if (concepts.getComplexConcepts() != null) {
 			logger.debug(COMPLEX_CONCEPTS);
-			if (!hmEntities.containsKey(COMPLEX_CONCEPTS)) {
-				hmEntities.put(COMPLEX_CONCEPTS, new ArrayList<>());
-			}
-
+			hmEntities.computeIfAbsent(COMPLEX_CONCEPTS, k -> hmEntities.put(k, new ArrayList<>()));
 			for (Object complexConcept : concepts.getComplexConcepts().getConceptOrExtractedTerm()) {
 				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept1Type) {
 					hmEntities.get(COMPLEX_CONCEPTS)
@@ -442,7 +454,8 @@ public class TurTMEConnector implements TurNLPPlugin {
 				}
 				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept2Type) {
 					hmEntities.get(COMPLEX_CONCEPTS)
-							.add(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent().toString());
+							.add(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent()
+									.toString());
 					logger.debug(LOG_KV, COMPLEX_CONCEPTS,
 							((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
 				}
@@ -451,7 +464,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 	}
 
 	public Map<String, List<String>> getAttributes(TurNLP turNLP, Map<String, List<String>> hmEntities) {
-		
+
 		logger.debug("getAttributes() hmEntities: {}", hmEntities);
 		logger.debug("getAttributes() nlpInstanceEntities: {}", turNLP.getNlpInstanceEntities());
 		Map<String, List<String>> entityAttributes = new HashMap<>();
