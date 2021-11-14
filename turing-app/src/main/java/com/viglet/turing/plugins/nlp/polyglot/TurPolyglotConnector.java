@@ -91,7 +91,7 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 							if (logger.isDebugEnabled()) {
 								logger.debug("Polyglot JSONResponse: {}", jsonResponse);
 							}
-							this.getEntities(new JSONArray(jsonResponse), entityList);
+							this.getEntitiesPolyglot(new JSONArray(jsonResponse), entityList);
 						}
 					}
 				}
@@ -154,6 +154,20 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 		return null;
 	}
 
+
+	private void handleEntityPolyglot(String entityType, String entity, Map<String, List<String>> entityList) {
+		if (entityList.containsKey(entityType)) {
+			if (!entityList.get(entityType).contains(entity) && entity.trim().length() > 1) {
+				entityList.get(entityType).add(entity.trim());
+			}
+		} else {
+			List<String> valueList = new ArrayList<>();
+			valueList.add(entity.trim());
+			entityList.put(entityType, valueList);
+		}
+
+	}
+	
 	private String[] createSentences(Object attrValue) {
 		return cleanFullText(attrValue).split("\\.");
 	}
@@ -170,14 +184,17 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 			entityAttributes.put(turNLPInstanceEntity.getTurNLPEntity().getInternalName(),
 					this.getEntity(turNLPInstanceEntity.getTurNLPEntity().getInternalName(), entityList));
 		}
-
-		if (logger.isDebugEnabled()) {
-			logger.debug("Polyglot getAttributes: {}", entityAttributes);
-		}
 		return entityAttributes;
 	}
 
-	public void getEntities(JSONArray json, Map<String, List<String>> entityList) {
+	public List<String> getEntity(String entity, Map<String, List<String>> entityList) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("getEntity: {}", entity);
+		}
+		return entityList.get(entity);
+	}
+	
+	public void getEntitiesPolyglot(JSONArray json, Map<String, List<String>> entityList) {
 
 		for (int i = 0; i < json.length(); i++) {
 			boolean add = true;
@@ -189,34 +206,12 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 			if (label.equals("NAME"))
 				add = false;
 
-			if (logger.isDebugEnabled()) {
-				logger.debug("Polyglot Term (NER): {} ({})", term, label);
-			}
-
 			if (add)
-				this.handleEntity(label, term, entityList);
+				this.handleEntityPolyglot(label, term, entityList);
 		}
 
 	}
 
-	public List<String> getEntity(String entity, Map<String, List<String>> entityList) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("getEntity: {}", entity);
-		}
-		return entityList.get(entity);
-	}
 
-	private void handleEntity(String entityType, String entity, Map<String, List<String>> entityList) {
-		if (entityList.containsKey(entityType)) {
-			if (!entityList.get(entityType).contains(entity) && entity.trim().length() > 1) {
-				entityList.get(entityType).add(entity.trim());
-			}
-		} else {
-			List<String> valueList = new ArrayList<>();
-			valueList.add(entity.trim());
-			entityList.put(entityType, valueList);
-		}
-
-	}
 
 }
