@@ -159,9 +159,8 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 	}
 
 	private String cleanFullText(Object attrValue) {
-		String atributeValueFullText = turSolrField.convertFieldToString(attrValue).replaceAll("[\\n:;]", ". ")
+		return turSolrField.convertFieldToString(attrValue).replaceAll("[\\n:;]", ". ")
 				.replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
-		return atributeValueFullText;
 	}
 
 	public Map<String, List<String>> getAttributes(TurNLP turNLP, Map<String, List<String>> entityList) {
