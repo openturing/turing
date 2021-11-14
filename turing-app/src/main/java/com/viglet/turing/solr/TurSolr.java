@@ -287,7 +287,7 @@ public class TurSolr {
 		TurSEParameters turSEParameters = context.getTurSEParameters();
 		setRows(turSNSite, turSEParameters);
 		setSortEntry(turSNSite, query, turSEParameters);
-		
+
 		if (TurSNUtils.isAutoCorrectionEnabled(context, turSNSite)) {
 			TurSESpellCheckResult turSESpellCheckResult = spellCheckTerm(turSolrInstance, turSEParameters.getQuery());
 			if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
@@ -307,7 +307,7 @@ public class TurSolr {
 
 		processTargetingRules(turSEParameters, query);
 		TurSEResults turSEResults = new TurSEResults();
-		
+
 		try {
 			QueryResponse queryResponse = turSolrInstance.getSolrClient().query(query);
 
@@ -317,8 +317,8 @@ public class TurSolr {
 
 			List<TurSESimilarResult> similarResults = new ArrayList<>();
 
-			turSEResults.setResults(addSolrDocumentsToSEResults(turSNSite,
-					query, turSNSiteMLTFieldExts, queryResponse, similarResults));
+			turSEResults.setResults(addSolrDocumentsToSEResults(turSNSite, query, turSNSiteMLTFieldExts, queryResponse,
+					similarResults));
 
 			setMLT(turSNSite, turSNSiteMLTFieldExts, turSEResults, similarResults);
 
@@ -347,9 +347,7 @@ public class TurSolr {
 	private void setSortEntry(TurSNSite turSNSite, SolrQuery query, TurSEParameters turSEParameters) {
 		SimpleEntry<String, String> sortEntry = null;
 		if (turSEParameters.getSort() != null) {
-			if (turSEParameters.getSort().equalsIgnoreCase("relevance")) {
-				sortEntry = null;
-			} else if (turSEParameters.getSort().equalsIgnoreCase("newest")) {
+			if (turSEParameters.getSort().equalsIgnoreCase("newest")) {
 				sortEntry = new SimpleEntry<>(turSNSite.getDefaultDateField(), "desc");
 			} else if (turSEParameters.getSort().equalsIgnoreCase("oldest")) {
 				sortEntry = new SimpleEntry<>(turSNSite.getDefaultDateField(), "asc");
@@ -379,28 +377,20 @@ public class TurSolr {
 		return turSNSite.getMlt() == 1 && turSNSiteMLTFieldExts != null && !turSNSiteMLTFieldExts.isEmpty();
 	}
 
-	private List<TurSEResult> addSolrDocumentsToSEResults(TurSNSite turSNSite,
-			SolrQuery query, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts,
-			QueryResponse queryResponse, List<TurSESimilarResult> similarResults) {
+	private List<TurSEResult> addSolrDocumentsToSEResults(TurSNSite turSNSite, SolrQuery query,
+			List<TurSNSiteFieldExt> turSNSiteMLTFieldExts, QueryResponse queryResponse,
+			List<TurSESimilarResult> similarResults) {
 		Map<String, Object> requiredFields = getRequiredFields(turSNSite);
 		Map<String, TurSNSiteFieldExt> fieldExtMap = getFieldExtMap(turSNSite);
 		List<TurSNSiteFieldExt> turSNSiteHlFieldExts = setHLinQuery(turSNSite, query);
 		List<TurSEResult> results = new ArrayList<>();
 		for (SolrDocument document : queryResponse.getResults()) {
-			addSolrDocumentToSEResults(turSNSite, fieldExtMap, requiredFields, turSNSiteHlFieldExts,
-					turSNSiteMLTFieldExts, queryResponse, results, similarResults, document);
+			Map<String, List<String>> hl = getHL(turSNSite, turSNSiteHlFieldExts, queryResponse, document);
+			processSEResultsMLT(turSNSite, turSNSiteMLTFieldExts, similarResults, document, queryResponse);
+			TurSEResult turSEResult = createTurSEResult(fieldExtMap, requiredFields, document, hl);
+			results.add(turSEResult);
 		}
 		return results;
-	}
-
-	private void addSolrDocumentToSEResults(TurSNSite turSNSite, Map<String, TurSNSiteFieldExt> fieldExtMap,
-			Map<String, Object> requiredFields, List<TurSNSiteFieldExt> turSNSiteHlFieldExts,
-			List<TurSNSiteFieldExt> turSNSiteMLTFieldExts, QueryResponse queryResponse, List<TurSEResult> results,
-			List<TurSESimilarResult> similarResults, SolrDocument document) {
-		Map<String, List<String>> hl = getHL(turSNSite, turSNSiteHlFieldExts, queryResponse, document);
-		processSEResultsMLT(turSNSite, turSNSiteMLTFieldExts, similarResults, document, queryResponse);
-		TurSEResult turSEResult = createTurSEResult(fieldExtMap, requiredFields, document, hl);
-		results.add(turSEResult);
 	}
 
 	private void processSEResultsMLT(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts,
