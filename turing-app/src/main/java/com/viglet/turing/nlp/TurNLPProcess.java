@@ -43,6 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBean;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBeans;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
@@ -66,10 +67,15 @@ public class TurNLPProcess {
 	}
 
 	private Optional<TurNLP> init() {
-		return turConfigVarRepository.findById("DEFAULT_NLP")
-				.map(turConfigVar -> turNLPInstanceRepository.findById(turConfigVar.getValue()).orElse(null))
-				.map(this::init).orElse(null);
-
+		Optional<TurConfigVar> turConfigVar = turConfigVarRepository.findById("DEFAULT_NLP");
+		
+		if (turConfigVar.isPresent()) {
+			Optional<TurNLPInstance> turNLPInstance = turNLPInstanceRepository.findById(turConfigVar.get().getValue());
+			if (turNLPInstance.isPresent()) {
+				return init(turNLPInstance.get());
+			}
+		}
+		return Optional.empty();
 	}
 
 	private Optional<TurNLP> init(TurNLPInstance turNLPInstance) {
