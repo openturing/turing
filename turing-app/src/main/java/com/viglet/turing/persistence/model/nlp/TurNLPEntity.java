@@ -67,6 +67,19 @@ public class TurNLPEntity implements Serializable {
 	@Column
 	private int enabled;		
 
+	public TurNLPEntity() {
+		super();
+	}
+	public TurNLPEntity(String internalName, String name, String description,  String collectionName, int local, int enabled) {
+		super();
+		this.collectionName = collectionName;
+		this.description = description;
+		this.internalName = internalName;
+		this.local = local;
+		this.name = name;
+		this.enabled = enabled;
+	}
+
 	// bi-directional many-to-one association to TurNLPInstanceEntity
 	@OneToMany(mappedBy = "turNLPEntity", orphanRemoval = true)
 	@Cascade({ CascadeType.ALL })

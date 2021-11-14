@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import javax.servlet.ServletContext;
 
@@ -61,48 +62,51 @@ public class TurNLPProcess {
 	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
 
 	public TurNLPInstance getDefaultNLPInstance() {
-		return init().getTurNLPInstance();
+		return init().map(turNLP -> turNLP.getTurNLPInstance()).orElse(null);
 	}
-	private TurNLP init() {
+
+	private Optional<TurNLP> init() {
 		return turConfigVarRepository.findById("DEFAULT_NLP")
 				.map(turConfigVar -> turNLPInstanceRepository.findById(turConfigVar.getValue()).orElse(null))
 				.map(this::init).orElse(null);
 
 	}
 
-	private TurNLP init(TurNLPInstance turNLPInstance) {
+	private Optional<TurNLP> init(TurNLPInstance turNLPInstance) {
 		TurNLP turNLP = new TurNLP();
 		turNLP.setTurNLPInstance(turNLPInstance);
 		turNLP.setTurNLPVendor(turNLPInstance.getTurNLPVendor());
 		turNLP.setNlpInstanceEntities(turNLPInstanceEntityRepository.findByTurNLPInstanceAndEnabled(turNLPInstance, 1));
-		return turNLP;
+		return Optional.ofNullable(turNLP);
 	}
 
-	public TurNLP processTextByDefaultNLP(String text) {
-		TurNLP turNLP = this.init();
+	public Optional<TurNLP> processTextByDefaultNLP(String text) {
+		Optional<TurNLP> turNLP = this.init();
+
 		Map<String, Object> attribs = new HashMap<>();
 		attribs.put("text", text);
-		turNLP.setAttributeMapToBeProcessed(attribs);
-		createEntityMapFromAttributesMapToBeProcessed(turNLP);
-		fixEntityMapBasedInManualEntity(turNLP.getEntityMapWithProcessedValues());
+		setNLPAttribs(turNLP, attribs);
 		return turNLP;
 	}
 
-	public TurNLP processTextByNLP(TurNLPInstance turNLPInstance, String text) {
-		TurNLP turNLP = this.init(turNLPInstance);
+	private void setNLPAttribs(Optional<TurNLP> turNLPOptional, Map<String, Object> attribs) {
+		turNLPOptional.ifPresent(turNLP -> {
+			turNLP.setAttributeMapToBeProcessed(attribs);
+			createEntityMapFromAttributesMapToBeProcessed(turNLP);
+		});
+	}
+
+	public Optional<TurNLP> processTextByNLP(TurNLPInstance turNLPInstance, String text) {
+		Optional<TurNLP> turNLP = this.init(turNLPInstance);
 		Map<String, Object> attribs = new HashMap<>();
 		attribs.put("text", text);
-		turNLP.setAttributeMapToBeProcessed(attribs);
-		createEntityMapFromAttributesMapToBeProcessed(turNLP);
-		fixEntityMapBasedInManualEntity(turNLP.getEntityMapWithProcessedValues());
+		setNLPAttribs(turNLP, attribs);
 		return turNLP;
 	}
 
-	public TurNLP processAttribsByNLP(TurNLPInstance turNLPInstance, Map<String, Object> attributes) {
-		TurNLP turNLP = this.init(turNLPInstance);
-		turNLP.setAttributeMapToBeProcessed(attributes);
-		createEntityMapFromAttributesMapToBeProcessed(turNLP);
-		fixEntityMapBasedInManualEntity(turNLP.getEntityMapWithProcessedValues());
+	public Optional<TurNLP> processAttribsByNLP(TurNLPInstance turNLPInstance, Map<String, Object> attributes) {
+		Optional<TurNLP> turNLP = this.init(turNLPInstance);
+		setNLPAttribs(turNLP, attributes);
 		return turNLP;
 
 	}
@@ -129,10 +133,7 @@ public class TurNLPProcess {
 
 	}
 
-	
-
-	public void fixEntityMapBasedInManualEntity(
-			Map<String, List<String>> entityMapWithProcessedValues) {
+	public void fixEntityMapBasedInManualEntity(Map<String, List<String>> entityMapWithProcessedValues) {
 		logger.debug("Executing processNLPTerms");
 		Map<String, List<String>> processedAttributes = new HashMap<>();
 		File userDir = new File(System.getProperty("user.dir"));

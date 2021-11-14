@@ -27,6 +27,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import javax.xml.bind.JAXB;
 
@@ -207,7 +208,7 @@ public class TurNLPInstanceAPI {
 			textValidate.setText(contentFile.toString());
 
 			return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-				TurNLP turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+				Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
 				return blazonEntity(turNLP);
 			}).orElse(new RedactionScript());
 
@@ -218,23 +219,24 @@ public class TurNLPInstanceAPI {
 		return null;
 	}
 
-
-	private RedactionScript blazonEntity(TurNLP turNLP) {
+	private RedactionScript blazonEntity(Optional<TurNLP> turNLP) {
 		List<RedactionCommand> redactionCommands = new ArrayList<>();
 		RedactionScript redationScript = new RedactionScript();
 		redationScript.setVersion("1");
-		for (Entry<String, List<String>> entityType : turNLP.getEntityMapWithProcessedValues().entrySet()) {
-			if (entityType.getValue() != null) {
-				for (String term : entityType.getValue()) {
-					RedactionCommand redactionCommand = new RedactionCommand();
-					SearchString searchString = new SearchString();
-					searchString.setMatchWholeWord(true);
-					searchString.setString(String.format("%s", term));
-					redactionCommand.setSearchString(searchString);
-					redactionCommands.add(redactionCommand);
+		turNLP.ifPresent(nlp -> {
+			nlp.getEntityMapWithProcessedValues().entrySet().forEach(entityType -> {
+				if (entityType.getValue() != null) {
+					entityType.getValue().forEach(term -> {
+						RedactionCommand redactionCommand = new RedactionCommand();
+						SearchString searchString = new SearchString();
+						searchString.setMatchWholeWord(true);
+						searchString.setString(String.format("%s", term));
+						redactionCommand.setSearchString(searchString);
+						redactionCommands.add(redactionCommand);
+					});
 				}
-			}
-		}
+			});
+		});
 
 		redationScript.setRedactionCommands(redactionCommands);
 		return redationScript;
@@ -267,20 +269,24 @@ public class TurNLPInstanceAPI {
 		final String BLAZON_FORMAT = "blazon";
 
 		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-			TurNLP turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
 			if (format.equals(WEB_FORMAT)) {
+
 				TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
 				turNLPValidateResponse.setVendor(turNLPInstance.getTurNLPVendor().getTitle());
 				turNLPValidateResponse.setLocale(turNLPInstance.getLanguage());
-				for (Entry<String, List<String>> entityType : turNLP.getEntityMapWithProcessedValues().entrySet()) {
-					if (entityType.getValue() != null) {
-						TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
-						TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
+				if (turNLP.isPresent()) {
+					for (Entry<String, List<String>> entityType : turNLP.get().getEntityMapWithProcessedValues()
+							.entrySet()) {
+						if (entityType.getValue() != null) {
+							TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
+							TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
 
-						turNLPEntityValidateResponse.setType(turNLPEntity);
+							turNLPEntityValidateResponse.setType(turNLPEntity);
 
-						turNLPEntityValidateResponse.setTerms(entityType.getValue());
-						turNLPValidateResponse.getEntities().add(turNLPEntityValidateResponse);
+							turNLPEntityValidateResponse.setTerms(entityType.getValue());
+							turNLPValidateResponse.getEntities().add(turNLPEntityValidateResponse);
+						}
 					}
 				}
 				return turNLPValidateResponse.toString();
