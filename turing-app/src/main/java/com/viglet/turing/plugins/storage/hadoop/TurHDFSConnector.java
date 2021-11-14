@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,8 +31,11 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class TurHDFSConnector {
+	private static final Logger logger = LogManager.getLogger(TurHDFSConnector.class);
 	public TurHDFSConnector() {
 		super();
 	}
@@ -63,7 +66,7 @@ public class TurHDFSConnector {
 				FSDataOutputStream out = fileSystem.create(path);
 				InputStream in = new BufferedInputStream(new FileInputStream(new File(source)))) {
 			if (fileSystem.exists(path)) {
-				System.out.println("File " + dest + " already exists");
+				logger.info("File " + dest + " already exists");
 				return;
 			}
 

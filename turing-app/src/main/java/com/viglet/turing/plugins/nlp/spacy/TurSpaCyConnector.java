@@ -19,9 +19,7 @@ package com.viglet.turing.plugins.nlp.spacy;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -43,6 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
+import com.google.common.io.CharStreams;
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
@@ -60,30 +59,19 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 	private TurSolrField turSolrField;
 
 	@Override
-	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP){
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
 		return this.request(turNLP);
 	}
 
-	private static String readAll(Reader rd) throws IOException {
-		StringBuilder sb = new StringBuilder();
-		int cp;
-		while ((cp = rd.read()) != -1) {
-			sb.append((char) cp);
-		}
-		return sb.toString();
-	}
-
-	
-	public Map<String, List<String>> request(TurNLP turNLP){
+	public Map<String, List<String>> request(TurNLP turNLP) {
 		Map<String, List<String>> entityList = new HashMap<>();
-		try (CloseableHttpClient httpclient = HttpClients.createDefault()){
-		URL serverURL = new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(), "/ent");
-		if (logger.isDebugEnabled()) {
-			logger.debug("URL: {}", serverURL);
-		}
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			URL serverURL = new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(),
+					"/ent");
+			if (logger.isDebugEnabled()) {
+				logger.debug("URL: {}", serverURL);
+			}
 
-		
-		
 			HttpPost httpPost = new HttpPost(serverURL.toString());
 			Charset utf8Charset = StandardCharsets.UTF_8;
 			Charset customCharset = StandardCharsets.UTF_8;
@@ -93,8 +81,7 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 					JSONObject jsonBody = new JSONObject();
 					String atributeValueFullText = turSolrField.convertFieldToString(attrValue)
 							.replaceAll("[\\n:;]", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ")
-							.replaceAll("\\.+", ". ")
-							.replaceAll(" +", " ").trim();
+							.replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
 
 					for (String atributeValue : atributeValueFullText.split("\\.")) {
 						if (logger.isDebugEnabled()) {
@@ -120,25 +107,24 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 						String jsonUTF8 = new String(outputData);
 
 						if (logger.isDebugEnabled()) {
-							logger.debug("SpaCy JSONBody: {}" , jsonUTF8);
+							logger.debug("SpaCy JSONBody: {}", jsonUTF8);
 						}
 						httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 						httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
 						httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
-						StringEntity stringEntity = new StringEntity(jsonBody.toString(),StandardCharsets.UTF_8);
+						StringEntity stringEntity = new StringEntity(jsonBody.toString(), StandardCharsets.UTF_8);
 						httpPost.setEntity(stringEntity);
 
 						try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
 							HttpEntity entity = response.getEntity();
 
 							if (entity != null) {
-								try (InputStream instream = entity.getContent()) {
-									BufferedReader rd = new BufferedReader(
-											new InputStreamReader(instream, StandardCharsets.UTF_8));
-									String jsonResponse = readAll(rd);
+								try (BufferedReader rd = new BufferedReader(
+										new InputStreamReader(entity.getContent(), StandardCharsets.UTF_8))) {
+									String jsonResponse = CharStreams.toString(rd);
 									if (TurUtils.isJSONValid(jsonResponse)) {
 										if (logger.isDebugEnabled()) {
-											logger.debug("SpaCy JSONResponse: {}" , jsonResponse);
+											logger.debug("SpaCy JSONResponse: {}", jsonResponse);
 										}
 										this.getEntities(atributeValue, new JSONArray(jsonResponse), entityList);
 									}
@@ -159,7 +145,8 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 		Map<String, List<String>> entityAttributes = new HashMap<>();
 
 		for (TurNLPInstanceEntity turNLPInstanceEntity : turNLP.getNlpInstanceEntities()) {
-			entityAttributes.put(turNLPInstanceEntity.getTurNLPEntity().getInternalName(), this.getEntity(turNLPInstanceEntity.getTurNLPEntity().getInternalName(), entityList));
+			entityAttributes.put(turNLPInstanceEntity.getTurNLPEntity().getInternalName(),
+					this.getEntity(turNLPInstanceEntity.getTurNLPEntity().getInternalName(), entityList));
 		}
 		if (logger.isDebugEnabled()) {
 			logger.debug("SpaCy getAttributes: {}", entityAttributes);

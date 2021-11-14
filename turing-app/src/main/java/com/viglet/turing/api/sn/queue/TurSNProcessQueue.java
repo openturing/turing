@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -64,7 +65,7 @@ public class TurSNProcessQueue {
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
 	private TurSolrInstanceProcess turSolrInstanceProcess;
-	
+
 	public static final String INDEXING_QUEUE = "indexing.queue";
 
 	@JmsListener(destination = INDEXING_QUEUE)
@@ -177,26 +178,32 @@ public class TurSNProcessQueue {
 
 			// Select only fields that is checked as NLP. These attributes will be processed
 			// by NLP
-			HashMap<String, Object> seAttributes = defineSEAttribsToBeProcessedByNLP(turSNJobItem, turSNSiteFieldsExtMap);
+			HashMap<String, Object> seAttributes = defineSEAttribsToBeProcessedByNLP(turSNJobItem,
+					turSNSiteFieldsExtMap);
 
-			TurNLP turNLP = turNLPProcess.processAttribsByNLP(turSNSiteLocale.getTurNLPInstance(), seAttributes);
-			
+			Optional<TurNLP> turNLP = turNLPProcess.processAttribsByNLP(turSNSiteLocale.getTurNLPInstance(),
+					seAttributes);
+
 			// Add prefix to attribute name
-			Map<String, Object> nlpAttributesToSearchEngine = createNLPAttributestoSEFromNLPEntityMap(turNLP);
+			Map<String, Object> nlpAttributesToSearchEngine = turNLP.isPresent()
+					? createNLPAttributestoSEFromNLPEntityMap(turNLP.get())
+					: null;
 
 			// Copy NLP attributes to consolidateResults
 			copyNLPAttribsToConsolidateResults(consolidateResults, nlpAttributesToSearchEngine);
 		}
 	}
+
 	private Map<String, Object> createNLPAttributestoSEFromNLPEntityMap(TurNLP turNLP) {
-		Map<String, Object> nlpAttributesToSearchEngine = new HashMap<String, Object>();
-		
+		Map<String, Object> nlpAttributesToSearchEngine = new HashMap<>();
+
 		for (Entry<String, List<String>> nlpResult : turNLP.getEntityMapWithProcessedValues().entrySet()) {
 			nlpAttributesToSearchEngine.put("turing_entity_" + nlpResult.getKey(), nlpResult.getValue());
 		}
 
 		return nlpAttributesToSearchEngine;
 	}
+
 	private HashMap<String, Object> defineSEAttribsToBeProcessedByNLP(TurSNJobItem turSNJobItem,
 			Map<String, TurSNSiteFieldExt> turSNSiteFieldsExtMap) {
 		HashMap<String, Object> nlpAttributes = new HashMap<>();
@@ -214,8 +221,6 @@ public class TurSNProcessQueue {
 			consolidateResults.put(nlpResultPreffix.getKey(), nlpResultPreffix.getValue());
 		}
 	}
-
-	
 
 	private Map<String, TurSNSiteFieldExt> converFieldsExtListToMap(List<TurSNSiteFieldExt> turSNSiteFieldsExt) {
 		Map<String, TurSNSiteFieldExt> turSNSiteFieldsExtMap = new HashMap<>();
@@ -238,7 +243,7 @@ public class TurSNProcessQueue {
 		}
 		return nlp;
 	}
-	
+
 	public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {
 		Map<String, Object> attributesWithUniqueTerms = new HashMap<>();
 		if (attributes != null) {

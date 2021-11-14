@@ -43,6 +43,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.viglet.turing.exception.TurException;
 import com.viglet.turing.spring.security.auth.ITurAuthenticationFacade;
 
 @Component
@@ -161,10 +162,10 @@ public class TurUtils {
 				}
 				File curfile = new File(outputFolder, entry.getName());
 				if (!curfile.toPath().normalize().startsWith(outputFolder.toPath()))
-					throw new Exception("Bad zip entry");
+					throw new TurException("Bad zip entry");
 				File parent = curfile.getParentFile();
 				if (!parent.exists() && !parent.mkdirs()) {
-					throw new RuntimeException("could not create directory: " + parent.getPath());
+					throw new TurException("could not create directory: " + parent.getPath());
 				}
 				IOUtils.copy(zin, new FileOutputStream(curfile));
 			}
