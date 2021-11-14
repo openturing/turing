@@ -428,12 +428,9 @@ public class TurThesaurusProcessor {
 			logger.debug("word: {}", word);
 			if (termNameLower.equals(wordLowerCaseNoAccent)) {
 				logger.debug("Validate... {}: {}", word, variation.getId());
-
 				if (variation.getRuleCase() == TurNLPTermCase.CI.id()) {
 					return validateCIRuleCase(variation, wordLowerCaseWithAccent, termName);
-
 				} else if (variation.getRuleCase() == TurNLPTermCase.CS.id()) {
-
 					return validateCSRuleCase(word, variation, wordNoAccent, termName, termNameNoAccent);
 				} else if (variation.getRuleCase() == TurNLPTermCase.UCS.id()) {
 					return validateUCSRuleCase(word, variation, wordNoAccent, termName, termNameLower);

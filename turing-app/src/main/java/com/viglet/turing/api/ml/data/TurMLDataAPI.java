@@ -156,7 +156,7 @@ public class TurMLDataAPI {
 		try {
 			autoDetectParser.parse(multipartFile.getInputStream(), bodyContentHandler, metadata, parseContext);
 		} catch (IOException | SAXException | TikaException e) {
-			logger.error(e.getMessage(), null, multipartFile, parser, handler, metadata, tesseractOCRConfig, pdfParserConfig, parseContext, e);
+			logger.error(e.getMessage(), null, multipartFile, autoDetectParser, bodyContentHandler, metadata, tesseractOCRConfig, pdfParserConfig, parseContext, e);
 		}
 		return bodyContentHandler;
 	}
