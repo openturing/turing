@@ -556,18 +556,19 @@ public class TurSolr {
 		return requiredFields;
 	}
 
-	@SuppressWarnings("unchecked")
 	private TurSEResult createTurSEResult(Map<String, TurSNSiteFieldExt> fieldExtMap,
 			Map<String, Object> requiredFields, SolrDocument document, Map<String, List<String>> hl) {
-		TurSEResult turSEResult = new TurSEResult();
+		
 
-		for (Object requiredFieldObject : requiredFields.keySet().toArray()) {
-			String requiredField = (String) requiredFieldObject;
-			if (!document.containsKey(requiredField)) {
-				document.addField(requiredField, requiredFields.get(requiredField));
-			}
-		}
+		addRequiredFieldsToDocument(requiredFields, document);
 		Map<String, Object> fields = new HashMap<>();
+		return createTurSEResultFromDocument(fieldExtMap, document, hl, fields);
+	}
+
+	@SuppressWarnings("unchecked")
+	private TurSEResult createTurSEResultFromDocument(Map<String, TurSNSiteFieldExt> fieldExtMap, SolrDocument document,
+			Map<String, List<String>> hl, Map<String, Object> fields) {
+		TurSEResult turSEResult = new TurSEResult();
 		for (String attribute : document.getFieldNames()) {
 			Object attrValue = document.getFieldValue(attribute);
 
@@ -595,6 +596,15 @@ public class TurSolr {
 			turSEResult.setFields(fields);
 		}
 		return turSEResult;
+	}
+
+	private void addRequiredFieldsToDocument(Map<String, Object> requiredFields, SolrDocument document) {
+		for (Object requiredFieldObject : requiredFields.keySet().toArray()) {
+			String requiredField = (String) requiredFieldObject;
+			if (!document.containsKey(requiredField)) {
+				document.addField(requiredField, requiredFields.get(requiredField));
+			}
+		}
 	}
 
 	private TurSEResult createTurSEResult(SolrDocument document) {

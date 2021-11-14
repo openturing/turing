@@ -62,7 +62,7 @@ public class TurNLPProcess {
 	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
 
 	public TurNLPInstance getDefaultNLPInstance() {
-		return init().map(turNLP -> turNLP.getTurNLPInstance()).orElse(null);
+		return init().map(TurNLP::getTurNLPInstance).orElse(null);
 	}
 
 	private Optional<TurNLP> init() {
