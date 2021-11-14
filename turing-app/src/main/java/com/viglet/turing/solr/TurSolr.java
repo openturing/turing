@@ -584,9 +584,8 @@ public class TurSolr {
 
 	private Map<String, List<String>> getHL(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteHlFieldExts,
 			QueryResponse queryResponse, SolrDocument document) {
-		// HL
 		Map<String, List<String>> hl = null;
-		if (turSNSite.getHl() == 1 && !turSNSiteHlFieldExts.isEmpty()) {
+		if (turSNSite.getHl() == 1 && turSNSiteHlFieldExts != null && !turSNSiteHlFieldExts.isEmpty()) {
 			hl = queryResponse.getHighlighting().get(document.get("id"));
 		}
 		return hl;
