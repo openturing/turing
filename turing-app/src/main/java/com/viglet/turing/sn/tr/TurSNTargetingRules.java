@@ -76,7 +76,7 @@ public class TurSNTargetingRules {
 	}
 
 	private String orMethod(List<String> trs) {
-		// Sample: "(groups:Group1 OR groups:Group2) OR (*:* NOT groups:*)");
+		// This is a example: "(groups:Group1 OR groups:Group2) OR (*:* NOT groups:*)"); //NOSONAR
 		List<String> emptyTargetingRules = new ArrayList<>();
 		StringBuilder targetingRuleQuery = new StringBuilder();
 		targetingRuleQuery.append("(");
