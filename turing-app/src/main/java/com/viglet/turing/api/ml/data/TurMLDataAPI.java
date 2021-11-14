@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -61,7 +63,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/ml/data")
 @Tag(name = "Machine Learning Data", description = "Machine Learning Data API")
 public class TurMLDataAPI {
-
+	private static final Logger logger = LogManager.getLogger(TurMLDataAPI.class);
 	@Autowired
 	private TurDataRepository turDataRepository;
 	@Autowired
@@ -137,26 +139,25 @@ public class TurMLDataAPI {
 	}
 
 	private BodyContentHandler processMultifileAsPDF(MultipartFile multipartFile) {
-		AutoDetectParser parser = new AutoDetectParser();
-		BodyContentHandler handler = new BodyContentHandler(-1);
+		AutoDetectParser autoDetectParser = new AutoDetectParser();
+		BodyContentHandler bodyContentHandler = new BodyContentHandler(-1);
 		Metadata metadata = new Metadata();
 
-		TesseractOCRConfig config = new TesseractOCRConfig();
-		PDFParserConfig pdfConfig = new PDFParserConfig();
-		pdfConfig.setExtractInlineImages(true);
+		TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
+		PDFParserConfig pdfParserConfig = new PDFParserConfig();
+		pdfParserConfig.setExtractInlineImages(true);
 
 		ParseContext parseContext = new ParseContext();
-		parseContext.set(TesseractOCRConfig.class, config);
-		parseContext.set(PDFParserConfig.class, pdfConfig);
+		parseContext.set(TesseractOCRConfig.class, tesseractOCRConfig);
+		parseContext.set(PDFParserConfig.class, pdfParserConfig);
 
-		parseContext.set(Parser.class, parser);
+		parseContext.set(Parser.class, autoDetectParser);
 
 		try {
-			parser.parse(multipartFile.getInputStream(), handler, metadata, parseContext);
+			autoDetectParser.parse(multipartFile.getInputStream(), bodyContentHandler, metadata, parseContext);
 		} catch (IOException | SAXException | TikaException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e.getMessage(), null, multipartFile, parser, handler, metadata, tesseractOCRConfig, pdfParserConfig, parseContext, e);
 		}
-		return handler;
+		return bodyContentHandler;
 	}
 }
