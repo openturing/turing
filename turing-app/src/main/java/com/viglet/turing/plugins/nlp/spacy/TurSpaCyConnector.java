@@ -20,6 +20,7 @@ package com.viglet.turing.plugins.nlp.spacy;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -64,81 +65,108 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 	}
 
 	public Map<String, List<String>> request(TurNLP turNLP) {
+		Map<String, List<String>> entityList = processAttributes(turNLP, getServerURL(turNLP));
+		return this.getAttributes(turNLP, entityList);
+	}
+
+	private URL getServerURL(TurNLP turNLP) {
+		try {
+			return new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(), "/ent");
+		} catch (MalformedURLException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return null;
+	}
+
+	private Map<String, List<String>> processAttributes(TurNLP turNLP, URL serverURL) {
 		Map<String, List<String>> entityList = new HashMap<>();
-		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
-			URL serverURL = new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(),
-					"/ent");
-			if (logger.isDebugEnabled()) {
-				logger.debug("URL: {}", serverURL);
+		if (turNLP.getAttributeMapToBeProcessed() != null) {
+			for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
+				for (String sentence : createSentences(attrValue)) {
+					
+						processSentence(turNLP, entityList, serverURL, sentence);
+				}
 			}
+		}
+		return entityList;
+	}
 
-			HttpPost httpPost = new HttpPost(serverURL.toString());
-			Charset utf8Charset = StandardCharsets.UTF_8;
-			Charset customCharset = StandardCharsets.UTF_8;
+	private void processSentence(TurNLP turNLP, Map<String, List<String>> entityList, URL serverURL, String sentence) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("SpaCy Text: {}", sentence);
+		}
+		HttpPost httpPost = prepareHttpPost(turNLP, serverURL, sentence);
 
-			if (turNLP.getAttributeMapToBeProcessed() != null) {
-				for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
-					JSONObject jsonBody = new JSONObject();
-					String atributeValueFullText = turSolrField.convertFieldToString(attrValue)
-							.replaceAll("[\\n:;]", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ")
-							.replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
+		try (CloseableHttpClient httpclient = HttpClients.createDefault();
+				CloseableHttpResponse response = httpclient.execute(httpPost)) {
+			HttpEntity entity = response.getEntity();
 
-					for (String atributeValue : atributeValueFullText.split("\\.")) {
+			if (entity != null) {
+				try (BufferedReader rd = new BufferedReader(
+						new InputStreamReader(entity.getContent(), StandardCharsets.UTF_8))) {
+					String jsonResponse = CharStreams.toString(rd);
+					if (TurUtils.isJSONValid(jsonResponse)) {
 						if (logger.isDebugEnabled()) {
-							logger.debug("SpaCy Text: {}", atributeValue);
+							logger.debug("SpaCy JSONResponse: {}", jsonResponse);
 						}
-						jsonBody.put("text", atributeValue);
-
-						if (turNLP.getTurNLPInstance().getLanguage().equals(TurLocaleRepository.PT_BR)) {
-							jsonBody.put("model", "pt_core_news_sm");
-						} else {
-							jsonBody.put("model", turNLP.getTurNLPInstance().getLanguage());
-						}
-
-						ByteBuffer inputBuffer = ByteBuffer.wrap(jsonBody.toString().getBytes());
-
-						// decode UTF-8
-						CharBuffer data = utf8Charset.decode(inputBuffer);
-
-						// encode
-						ByteBuffer outputBuffer = customCharset.encode(data);
-
-						byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
-						String jsonUTF8 = new String(outputData);
-
-						if (logger.isDebugEnabled()) {
-							logger.debug("SpaCy JSONBody: {}", jsonUTF8);
-						}
-						httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-						httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-						httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
-						StringEntity stringEntity = new StringEntity(jsonBody.toString(), StandardCharsets.UTF_8);
-						httpPost.setEntity(stringEntity);
-
-						try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
-							HttpEntity entity = response.getEntity();
-
-							if (entity != null) {
-								try (BufferedReader rd = new BufferedReader(
-										new InputStreamReader(entity.getContent(), StandardCharsets.UTF_8))) {
-									String jsonResponse = CharStreams.toString(rd);
-									if (TurUtils.isJSONValid(jsonResponse)) {
-										if (logger.isDebugEnabled()) {
-											logger.debug("SpaCy JSONResponse: {}", jsonResponse);
-										}
-										this.getEntities(atributeValue, new JSONArray(jsonResponse), entityList);
-									}
-								}
-							}
-						}
+						this.getEntities(sentence, new JSONArray(jsonResponse), entityList);
 					}
 				}
 			}
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
-		return this.getAttributes(turNLP, entityList);
+	}
 
+	private HttpPost prepareHttpPost(TurNLP turNLP, URL serverURL, String sentence) {
+		JSONObject jsonBody = createJSONRequest(turNLP, sentence);
+		HttpPost httpPost = new HttpPost(serverURL.toString());
+		httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+		httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+		httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
+		StringEntity stringEntity = new StringEntity(jsonBody.toString(), StandardCharsets.UTF_8);
+		httpPost.setEntity(stringEntity);
+		return httpPost;
+	}
+
+	private String[] createSentences(Object attrValue) {
+		return cleanFullText(attrValue).split("\\.");
+	}
+
+	private String cleanFullText(Object attrValue) {
+		String atributeValueFullText = turSolrField.convertFieldToString(attrValue).replaceAll("[\\n:;]", ". ")
+				.replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
+		return atributeValueFullText;
+	}
+
+	private JSONObject createJSONRequest(TurNLP turNLP, String atributeValue) {
+		JSONObject jsonBody = new JSONObject();
+		jsonBody.put("text", atributeValue);
+
+		if (turNLP.getTurNLPInstance().getLanguage().equals(TurLocaleRepository.PT_BR)) {
+			jsonBody.put("model", "pt_core_news_sm");
+		} else {
+			jsonBody.put("model", turNLP.getTurNLPInstance().getLanguage());
+		}
+
+		ByteBuffer inputBuffer = ByteBuffer.wrap(jsonBody.toString().getBytes());
+
+		Charset utf8Charset = StandardCharsets.UTF_8;
+		Charset customCharset = StandardCharsets.UTF_8;
+
+		// decode UTF-8
+		CharBuffer data = utf8Charset.decode(inputBuffer);
+
+		// encode
+		ByteBuffer outputBuffer = customCharset.encode(data);
+
+		byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
+		String jsonUTF8 = new String(outputData);
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("SpaCy JSONBody: {}", jsonUTF8);
+		}
+		return jsonBody;
 	}
 
 	public Map<String, List<String>> getAttributes(TurNLP turNLP, Map<String, List<String>> entityList) {
