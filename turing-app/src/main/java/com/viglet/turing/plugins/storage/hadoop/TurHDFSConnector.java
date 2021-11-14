@@ -66,7 +66,7 @@ public class TurHDFSConnector {
 				FSDataOutputStream out = fileSystem.create(path);
 				InputStream in = new BufferedInputStream(new FileInputStream(new File(source)))) {
 			if (fileSystem.exists(path)) {
-				logger.info("File " + dest + " already exists");
+				logger.info("File {} already exists", dest);
 				return;
 			}
 
