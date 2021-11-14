@@ -68,6 +68,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
+import com.viglet.turing.se.TurSEParameters;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
@@ -109,8 +110,8 @@ public class TurSNSiteSearchAPI {
 			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0") Integer autoCorrectionDisabled,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale, HttpServletRequest request) {
 
-		TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName, q, currentPage, fq,
-				requestTargetingRules(tr), sort, rows, autoCorrectionDisabled, locale,
+		TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName, new TurSEParameters(q, fq, requestTargetingRules(tr), currentPage,
+				sort, rows, autoCorrectionDisabled), locale,
 				TurSNUtils.requestToURI(request));
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 
@@ -162,9 +163,10 @@ public class TurSNSiteSearchAPI {
 
 	private Optional<TurSEResults> requestSolr(TurSolrInstance turSolrInstance, TurSNSiteSearchContext context,
 			TurSNSite turSNSite) {
-		context.setCurrentPage(
-				context.getCurrentPage() == null || context.getCurrentPage() <= 0 ? 1 : context.getCurrentPage());
-		context.setRows(context.getRows() == null ? 0 : context.getRows());
+		TurSEParameters turSEParameters = context.getTurSEParameters();
+		turSEParameters.setCurrentPage(
+				turSEParameters.getCurrentPage() == null || turSEParameters.getCurrentPage() <= 0 ? 1 : turSEParameters.getCurrentPage());
+		turSEParameters.setRows(turSEParameters.getRows() == null ? 0 : turSEParameters.getRows());
 		try {
 			TurSEResults turSEResults = turSolr.retrieveSolrFromSN(turSolrInstance, turSNSite, context);
 			return Optional.ofNullable(turSEResults);
@@ -243,7 +245,7 @@ public class TurSNSiteSearchAPI {
 		TurSNSiteSearchResultsBean turSNSiteSearchResultsBean = new TurSNSiteSearchResultsBean();
 		List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean = new ArrayList<>();
 		List<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = turSNSiteSpotlightTermRepository
-				.findByNameIn(Arrays.asList(context.getQuery().split(" ")));
+				.findByNameIn(Arrays.asList(context.getTurSEParameters().getQuery().split(" ")));
 
 		List<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
 				.findDistinctByTurSNSiteAndTurSNSiteSpotlightTermsIn(turSNSite, turSNSiteSpotlightTerms);
@@ -400,10 +402,10 @@ public class TurSNSiteSearchAPI {
 
 	private TurSNSiteSearchFacetBean responseFacetToRemove(TurSNSiteSearchContext context) {
 
-		if (context.getFilterQueries() != null && !context.getFilterQueries().isEmpty()) {
+		if (context.getTurSEParameters().getFilterQueries() != null && !context.getTurSEParameters().getFilterQueries().isEmpty()) {
 
 			List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<>();
-			context.getFilterQueries().forEach(facetToRemove -> {
+			context.getTurSEParameters().getFilterQueries().forEach(facetToRemove -> {
 				String[] facetToRemoveParts = facetToRemove.split(":");
 				if (facetToRemoveParts.length == 2) {
 					String facetToRemoveValue = facetToRemoveParts[1].replace("\"", "");

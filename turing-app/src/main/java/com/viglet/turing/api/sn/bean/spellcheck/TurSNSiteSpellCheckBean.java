@@ -12,10 +12,10 @@ public class TurSNSiteSpellCheckBean {
 	public TurSNSiteSpellCheckBean(TurSNSiteSearchContext context, TurSESpellCheckResult turSESpellCheckResult) {
 		super();
 		this.correctedText = turSESpellCheckResult.isCorrected();
-		this.original = new TurSNSiteSpellCheckText(context.getUri(),  context.getQuery(), true);
+		this.original = new TurSNSiteSpellCheckText(context.getUri(), context.getTurSEParameters().getQuery(), true);
 		this.corrected = new TurSNSiteSpellCheckText(context.getUri(), turSESpellCheckResult.getCorrectedText(), false);
 	}
-	
+
 	public TurSNSiteSpellCheckText getOriginal() {
 		return original;
 	}

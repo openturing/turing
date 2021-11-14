@@ -32,6 +32,7 @@ import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.api.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.se.TurSEParameters;
 import com.viglet.turing.sn.TurSNUtils;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -53,8 +54,8 @@ public class TurSNSiteSpellCheckAPI {
 
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
-		TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName, q, 1, null, null,
-				"relevance", 10, 0, locale, TurSNUtils.requestToURI(request));
+		TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName,
+				new TurSEParameters(q, null, null, 1, "relevance", 10, 0), locale, TurSNUtils.requestToURI(request));
 		return new TurSNSiteSpellCheckBean(turSNSiteSearchContext, turSolr.spellCheckTerm(turSolrInstance, q));
 	}
 }
