@@ -58,6 +58,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.nlp.output.blazon.RedactionCommand;
 import com.viglet.turing.nlp.output.blazon.RedactionScript;
 import com.viglet.turing.nlp.output.blazon.SearchString;
@@ -77,11 +78,11 @@ public class TurNLPInstanceAPI {
 	private static final Logger logger = LogManager.getLogger(TurNLPInstanceAPI.class);
 	private static final String NLP_TEMP_FILE = "nlp_temp";
 	@Autowired
-	TurNLPInstanceRepository turNLPInstanceRepository;
+	private TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
-	TurNLPEntityRepository turNLPEntityRepository;
+	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
-	TurNLP turNLP;
+	private TurNLPProcess turNLPProcess;
 
 	@Operation(summary = "Natural Language Processing List")
 	@GetMapping
@@ -206,8 +207,8 @@ public class TurNLPInstanceAPI {
 			textValidate.setText(contentFile.toString());
 
 			return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-				turNLP.startup(turNLPInstance, textValidate.getText());
-				return blazonEntity();
+				TurNLP turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+				return blazonEntity(turNLP);
 			}).orElse(new RedactionScript());
 
 		} catch (IOException | SAXException | TikaException e) {
@@ -217,15 +218,14 @@ public class TurNLPInstanceAPI {
 		return null;
 	}
 
-	@SuppressWarnings("unchecked")
-	private RedactionScript blazonEntity() {
+
+	private RedactionScript blazonEntity(TurNLP turNLP) {
 		List<RedactionCommand> redactionCommands = new ArrayList<>();
 		RedactionScript redationScript = new RedactionScript();
-
 		redationScript.setVersion("1");
-		for (Entry<String, Object> entityType : turNLP.validate().entrySet()) {
+		for (Entry<String, List<String>> entityType : turNLP.getEntityMapWithProcessedValues().entrySet()) {
 			if (entityType.getValue() != null) {
-				for (String term : ((List<String>) entityType.getValue())) {
+				for (String term : entityType.getValue()) {
 					RedactionCommand redactionCommand = new RedactionCommand();
 					SearchString searchString = new SearchString();
 					searchString.setMatchWholeWord(true);
@@ -262,32 +262,31 @@ public class TurNLPInstanceAPI {
 		return text;
 	}
 
-	@SuppressWarnings("unchecked")
 	private String validateText(String id, String format, TurNLPTextValidate textValidate) {
 		final String WEB_FORMAT = "web";
 		final String BLAZON_FORMAT = "blazon";
 
 		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-			turNLP.startup(turNLPInstance, textValidate.getText());
+			TurNLP turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
 			if (format.equals(WEB_FORMAT)) {
 				TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
 				turNLPValidateResponse.setVendor(turNLPInstance.getTurNLPVendor().getTitle());
 				turNLPValidateResponse.setLocale(turNLPInstance.getLanguage());
-				for (Entry<String, Object> entityType : turNLP.validate().entrySet()) {
+				for (Entry<String, List<String>> entityType : turNLP.getEntityMapWithProcessedValues().entrySet()) {
 					if (entityType.getValue() != null) {
 						TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
 						TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
 
 						turNLPEntityValidateResponse.setType(turNLPEntity);
 
-						turNLPEntityValidateResponse.setTerms((List<Object>) entityType.getValue());
+						turNLPEntityValidateResponse.setTerms(entityType.getValue());
 						turNLPValidateResponse.getEntities().add(turNLPEntityValidateResponse);
 					}
 				}
 				return turNLPValidateResponse.toString();
 			} else if (format.equals(BLAZON_FORMAT)) {
 
-				RedactionScript redationScript = blazonEntity();
+				RedactionScript redationScript = blazonEntity(turNLP);
 
 				StringWriter sw = new StringWriter();
 				JAXB.marshal(redationScript, sw);

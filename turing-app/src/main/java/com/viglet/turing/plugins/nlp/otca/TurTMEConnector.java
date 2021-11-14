@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,10 +46,10 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
+import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
-import com.viglet.turing.plugins.nlp.TurNLPImpl;
+import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultCategoryType;
 import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultKnowledgeBaseType;
 import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultType;
@@ -67,27 +67,15 @@ import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseType;
 import com.viglet.turing.solr.TurSolrField;
 
 @Component
-public class TurTMEConnector implements TurNLPImpl {
+public class TurTMEConnector implements TurNLPPlugin {
 	private static final Logger logger = LogManager.getLogger(TurTMEConnector.class);
 	private static final String COMPLEX_CONCEPTS = "ComplexConcepts";
 	private static final String SIMPLE_CONCEPTS = "SimpleConcepts";
 	private static final String LOG_KV = "{}: {}";
 	@Autowired
-	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
-	@Autowired
 	private TurSolrField turSolrField;
 
-	private List<TurNLPInstanceEntity> nlpInstanceEntities = null;
-	private Map<String, List<Object>> hmEntities = new HashMap<>();
-	private TurNLPInstance turNLPInstance = null;
-
 	private static final int PRETTY_PRINT_INDENT_FACTOR = 4;
-
-	public void startup(TurNLPInstance turNLPInstance) {
-		this.turNLPInstance = turNLPInstance;
-
-		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstanceAndEnabled(turNLPInstance, 1);
-	}
 
 	/**
 	 * Send XML request to TME
@@ -145,9 +133,10 @@ public class TurTMEConnector implements TurNLPImpl {
 		}
 	}
 
-	public Map<String, Object> retrieve(Map<String, Object> attributes) {
-
-		for (Object attrValue : attributes.values()) {
+	@Override
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
+		Map<String, List<String>> hmEntities = new HashMap<>();
+		for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("<Nserver>");
 			sb.append("<Methods>");
@@ -166,7 +155,7 @@ public class TurTMEConnector implements TurNLPImpl {
 			sb.append("<nfExtract>");
 			sb.append("<Cartridges>");
 
-			for (TurNLPInstanceEntity entity : nlpInstanceEntities) {
+			for (TurNLPInstanceEntity entity : turNLP.getNlpInstanceEntities()) {
 				sb.append("<Cartridge>" + entity.getName() + "</Cartridge>");
 			}
 
@@ -236,14 +225,14 @@ public class TurTMEConnector implements TurNLPImpl {
 			sb.append("</Texts>");
 			sb.append("</Nserver>");
 
-			this.toJSON(this.request(turNLPInstance, sb.toString()));
+			this.toJSON(this.request(turNLP.getTurNLPInstance(), sb.toString()), hmEntities);
 		}
 
-		return this.getAttributes();
+		return this.getAttributes(turNLP, hmEntities);
 
 	}
 
-	public String toJSON(String xml) {
+	public String toJSON(String xml, Map<String, List<String>> hmEntities) {
 		String jsonResult = null;
 
 		InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
@@ -266,11 +255,11 @@ public class TurTMEConnector implements TurNLPImpl {
 			logger.debug("getErrorDescription: {} ", serverResponseType.getErrorDescription());
 			logger.debug("getVersion: {}", serverResponseType.getVersion());
 			for (Object result : serverResponseType.getResults().getPingOrGetSupportedEncodingsOrLanguagedetector()) {
-				this.getResult(result);
+				this.getResult(result, hmEntities);
 			}
 			for (Object result : serverResponseType.getResults()
 					.getLanguageDetectorOrNConceptExtractorOrNCategorizer()) {
-				this.getResult(result);
+				this.getResult(result, hmEntities);
 			}
 
 		} catch (JAXBException | SAXException | ParserConfigurationException e) {
@@ -287,7 +276,7 @@ public class TurTMEConnector implements TurNLPImpl {
 		return jsonResult;
 	}
 
-	public void getParentTerms(Parents parents, Map<String, List<Object>> hmEntities, String cartridgeID) {
+	public void getParentTerms(Parents parents, Map<String, List<String>> hmEntities, String cartridgeID) {
 		if (parents != null) {
 			for (ServerResponseEntityExtractorResultTermParentType parent : parents.getParent()) {
 				hmEntities.get(cartridgeID).add(parent.getTerm());
@@ -297,7 +286,7 @@ public class TurTMEConnector implements TurNLPImpl {
 
 	}
 
-	public void getResult(Object result) {
+	public void getResult(Object result, Map<String, List<String>> hmEntities) {
 
 		logger.debug("iterateResults... {}", result);
 
@@ -319,7 +308,7 @@ public class TurTMEConnector implements TurNLPImpl {
 					}
 					if (complexConcept instanceof ServerResponseConceptExtractorResultConcept2Type) {
 						hmEntities.get(COMPLEX_CONCEPTS)
-								.add(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
+								.add(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent().toString());
 						logger.debug(LOG_KV, COMPLEX_CONCEPTS,
 								((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
 					}
@@ -337,7 +326,7 @@ public class TurTMEConnector implements TurNLPImpl {
 					}
 					if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept2Type) {
 						hmEntities.get(SIMPLE_CONCEPTS)
-								.add(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
+								.add(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent().toString());
 						logger.debug(LOG_KV, SIMPLE_CONCEPTS,
 								((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
 					}
@@ -383,7 +372,7 @@ public class TurTMEConnector implements TurNLPImpl {
 							for (ServerResponseEntityExtractorResultTermParentType parent : term.getHierarchy()
 									.getBase().getParents().getParent()) {
 								hmEntities.get(term.getCartridgeID()).add(parent.getTerm());
-								this.getParentTerms(parent.getParents(), hmEntities, term.getCartridgeID());
+								getParentTerms(parent.getParents(), hmEntities, term.getCartridgeID());
 							}
 						}
 					}
@@ -435,11 +424,12 @@ public class TurTMEConnector implements TurNLPImpl {
 
 	}
 
-	public Map<String, Object> getAttributes() {
+	public Map<String, List<String>> getAttributes(TurNLP turNLP, Map<String, List<String>> hmEntities) {
+		
 		logger.debug("getAttributes() hmEntities: {}", hmEntities);
-		logger.debug("getAttributes() nlpInstanceEntities: {}", nlpInstanceEntities);
-		Map<String, Object> entityAttributes = new HashMap<>();
-		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
+		logger.debug("getAttributes() nlpInstanceEntities: {}", turNLP.getNlpInstanceEntities());
+		Map<String, List<String>> entityAttributes = new HashMap<>();
+		for (TurNLPInstanceEntity nlpInstanceEntity : turNLP.getNlpInstanceEntities()) {
 			entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
 					hmEntities.get(nlpInstanceEntity.getTurNLPEntity().getInternalName()));
 		}

@@ -28,21 +28,18 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
-import com.viglet.turing.plugins.nlp.TurNLPImpl;
+import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
 
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.util.Span;
 
 @Component
-public class TurOpenNLPConnector implements TurNLPImpl {
+public class TurOpenNLPConnector implements TurNLPPlugin {
 	static final Logger logger = LogManager.getLogger(TurOpenNLPConnector.class.getName());
-
-	@Autowired
-	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
 
 	@Autowired
 	private TurSolrField turSolrField;
@@ -50,24 +47,12 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 	@Autowired
 	private TurOpenNLPCache turOpenNLPCache;
 
-	private List<TurNLPInstanceEntity> nlpInstanceEntities = null;
-
-	private List<String> sentencesTokens = new ArrayList<>();
-
-	private TurNLPInstance turNLPInstance;
-
-	public void startup(TurNLPInstance turNLPInstance) {
-
-		this.turNLPInstance = turNLPInstance;
-		nlpInstanceEntities = turNLPInstanceEntityRepository.findByTurNLPInstanceAndEnabled(turNLPInstance, 1);
-	}
-
 	@Override
-	public Map<String, Object> retrieve(Map<String, Object> attributes) {
-
-		for (Object attrValue : attributes.values()) {
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
+		List<String> sentencesTokens = new ArrayList<>();
+		for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
 			String[] sentences = this
-					.sentenceDetect(turSolrField.convertFieldToString(attrValue).replace("\"", "").replace("'", ""));
+					.sentenceDetect(turNLP.getTurNLPInstance(), turSolrField.convertFieldToString(attrValue).replace("\"", "").replace("'", ""));
 
 			for (String sentence : sentences) {
 
@@ -80,37 +65,36 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 					sentencesFormatted = sentencesFormatted + " .";
 
 				logger.debug("OpenNLP Sentence: {}", sentencesFormatted);
-				String[] tokens = this.tokenDetect(sentencesFormatted + ".");
+				String[] tokens = tokenDetect(turNLP.getTurNLPInstance(), sentencesFormatted + ".");
 				Collections.addAll(sentencesTokens, tokens);
 			}
 		}
 
-		return this.getAttributes();
+		return generateEntityMapFromSentenceTokens(turNLP, sentencesTokens);
 	}
 
-	public Map<String, Object> getAttributes() {
-		Map<String, Object> entityAttributes = new HashMap<>();
+	private Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLP turNLP, List<String> sentencesTokens) {
+		Map<String, List<String>> entityMap = new HashMap<>();
 
-		for (TurNLPInstanceEntity nlpInstanceEntity : nlpInstanceEntities) {
+		for (TurNLPInstanceEntity nlpInstanceEntity : turNLP.getNlpInstanceEntities()) {
 			logger.debug("TurNLPInstanceEntity : {}", nlpInstanceEntity.getName());
-
-			if (!this.getEntity(nlpInstanceEntity.getName()).isEmpty()) {
-				entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
-						this.getEntity(nlpInstanceEntity.getName()));
+			List<String> entityList = this.getEntityList(nlpInstanceEntity.getName(), sentencesTokens);
+			if (!entityList.isEmpty()) {
+				entityMap.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(), entityList);
 			}
 		}
 
-		return entityAttributes;
+		return entityMap;
 	}
 
-	public List<String> getEntity(String entityPath) {
+	private List<String> getEntityList(String entityPath, List<String> sentencesTokens) {
 		try {
 			NameFinderME nameFinder = null;
 			List<String> entities = new ArrayList<>();
 
 			nameFinder = turOpenNLPCache.nameFinderMe(entityPath).getNameFinderME();
 
-			String[] tokens = this.sentencesTokens.toArray(new String[0]);
+			String[] tokens = sentencesTokens.toArray(new String[0]);
 			if (tokens != null) {
 				Span[] nameSpans = nameFinder.find(tokens);
 
@@ -136,13 +120,13 @@ public class TurOpenNLPConnector implements TurNLPImpl {
 
 	}
 
-	public String[] sentenceDetect(String text) {
-		return turOpenNLPCache.sentenceDetectorME(this.turNLPInstance.getLanguage()).getSentenceDetectorME()
+	public String[] sentenceDetect(TurNLPInstance turNLPInstance, String text) {
+		return turOpenNLPCache.sentenceDetectorME(turNLPInstance.getLanguage()).getSentenceDetectorME()
 				.sentDetect(text);
 
 	}
 
-	public String[] tokenDetect(String sentence) {
-		return turOpenNLPCache.tokenizerME(this.turNLPInstance.getLanguage()).getTokenizerME().tokenize(sentence);
+	private String[] tokenDetect(TurNLPInstance turNLPInstance, String sentence) {
+		return turOpenNLPCache.tokenizerME(turNLPInstance.getLanguage()).getTokenizerME().tokenize(sentence);
 	}
 }

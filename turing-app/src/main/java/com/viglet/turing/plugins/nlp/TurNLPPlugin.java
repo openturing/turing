@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,12 +17,11 @@
 
 package com.viglet.turing.plugins.nlp;
 
+import java.util.List;
 import java.util.Map;
 
-import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.nlp.TurNLP;
 
-public interface TurNLPImpl {
-	public Map<String, Object> retrieve(Map<String, Object> attributes);
-
-	public void startup(TurNLPInstance turNLPInstance);
+public interface TurNLPPlugin {
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP);
 }
