@@ -187,7 +187,7 @@ public class TurSNProcessQueue {
 			// Add prefix to attribute name
 			Map<String, Object> nlpAttributesToSearchEngine = turNLP.isPresent()
 					? createNLPAttributestoSEFromNLPEntityMap(turNLP.get())
-					: null;
+					: new HashMap<>();
 
 			// Copy NLP attributes to consolidateResults
 			copyNLPAttribsToConsolidateResults(consolidateResults, nlpAttributesToSearchEngine);
