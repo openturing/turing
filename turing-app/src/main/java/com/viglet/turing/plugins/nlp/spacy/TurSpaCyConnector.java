@@ -27,8 +27,6 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -40,42 +38,30 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
+import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
-import com.viglet.turing.plugins.nlp.TurNLPImpl;
+import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
 import com.viglet.turing.utils.TurUtils;
 
 import java.util.*;
 
 @Component
-public class TurSpaCyConnector implements TurNLPImpl {
+public class TurSpaCyConnector implements TurNLPPlugin {
 	static final Logger logger = LogManager.getLogger(TurSpaCyConnector.class);
 
 	@Autowired
-	private TurNLPEntityRepository turNLPEntityRepository;
-	@Autowired
 	private TurSolrField turSolrField;
-	private List<TurNLPEntity> nlpEntities = null;
-	private Map<String, List<Object>> entityList = new HashMap<>();
-	private TurNLPInstance turNLPInstance = null;
 
-	public void startup(TurNLPInstance turNLPInstance) {
-		this.turNLPInstance = turNLPInstance;
-
-		nlpEntities = turNLPEntityRepository.findByEnabled(1);
-	}
-
-	public Map<String, Object> retrieve(Map<String, Object> attributes) {
-		return this.request(this.turNLPInstance, attributes);
+	@Override
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP){
+		return this.request(turNLP);
 	}
 
 	private static String readAll(Reader rd) throws IOException {
@@ -87,9 +73,11 @@ public class TurSpaCyConnector implements TurNLPImpl {
 		return sb.toString();
 	}
 
-	public Map<String, Object> request(TurNLPInstance turNLPInstance, Map<String, Object> attributes){
+	
+	public Map<String, List<String>> request(TurNLP turNLP){
+		Map<String, List<String>> entityList = new HashMap<>();
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()){
-		URL serverURL = new URL("http", turNLPInstance.getHost(), turNLPInstance.getPort(), "/ent");
+		URL serverURL = new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(), "/ent");
 		if (logger.isDebugEnabled()) {
 			logger.debug("URL: {}", serverURL);
 		}
@@ -100,8 +88,8 @@ public class TurSpaCyConnector implements TurNLPImpl {
 			Charset utf8Charset = StandardCharsets.UTF_8;
 			Charset customCharset = StandardCharsets.UTF_8;
 
-			if (attributes != null) {
-				for (Object attrValue : attributes.values()) {
+			if (turNLP.getAttributeMapToBeProcessed() != null) {
+				for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
 					JSONObject jsonBody = new JSONObject();
 					String atributeValueFullText = turSolrField.convertFieldToString(attrValue)
 							.replaceAll("[\\n:;]", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ")
@@ -114,10 +102,10 @@ public class TurSpaCyConnector implements TurNLPImpl {
 						}
 						jsonBody.put("text", atributeValue);
 
-						if (turNLPInstance.getLanguage().equals(TurLocaleRepository.PT_BR)) {
+						if (turNLP.getTurNLPInstance().getLanguage().equals(TurLocaleRepository.PT_BR)) {
 							jsonBody.put("model", "pt_core_news_sm");
 						} else {
-							jsonBody.put("model", turNLPInstance.getLanguage());
+							jsonBody.put("model", turNLP.getTurNLPInstance().getLanguage());
 						}
 
 						ByteBuffer inputBuffer = ByteBuffer.wrap(jsonBody.toString().getBytes());
@@ -152,7 +140,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 										if (logger.isDebugEnabled()) {
 											logger.debug("SpaCy JSONResponse: {}" , jsonResponse);
 										}
-										this.getEntities(atributeValue, new JSONArray(jsonResponse));
+										this.getEntities(atributeValue, new JSONArray(jsonResponse), entityList);
 									}
 								}
 							}
@@ -163,15 +151,15 @@ public class TurSpaCyConnector implements TurNLPImpl {
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
-		return this.getAttributes();
+		return this.getAttributes(turNLP, entityList);
 
 	}
 
-	public Map<String, Object> getAttributes() throws JSONException {
-		Map<String, Object> entityAttributes = new HashMap<>();
+	public Map<String, List<String>> getAttributes(TurNLP turNLP, Map<String, List<String>> entityList) {
+		Map<String, List<String>> entityAttributes = new HashMap<>();
 
-		for (TurNLPEntity nlpEntity : nlpEntities) {
-			entityAttributes.put(nlpEntity.getInternalName(), this.getEntity(nlpEntity.getInternalName()));
+		for (TurNLPInstanceEntity turNLPInstanceEntity : turNLP.getNlpInstanceEntities()) {
+			entityAttributes.put(turNLPInstanceEntity.getTurNLPEntity().getInternalName(), this.getEntity(turNLPInstanceEntity.getTurNLPEntity().getInternalName(), entityList));
 		}
 		if (logger.isDebugEnabled()) {
 			logger.debug("SpaCy getAttributes: {}", entityAttributes);
@@ -179,7 +167,7 @@ public class TurSpaCyConnector implements TurNLPImpl {
 		return entityAttributes;
 	}
 
-	public void getEntities(String text, JSONArray json) throws JSONException {
+	public void getEntities(String text, JSONArray json, Map<String, List<String>> entityList) {
 
 		for (int i = 0; i < json.length(); i++) {
 			boolean add = true;
@@ -204,25 +192,25 @@ public class TurSpaCyConnector implements TurNLPImpl {
 			}
 
 			if (add)
-				this.handleEntity(label, term);
+				this.handleEntity(label, term, entityList);
 		}
 
 	}
 
-	public List<Object> getEntity(String entity) {
+	public List<String> getEntity(String entity, Map<String, List<String>> entityList) {
 		if (logger.isDebugEnabled()) {
 			logger.debug("getEntity: {}", entity);
 		}
 		return entityList.get(entity);
 	}
 
-	private void handleEntity(String entityType, String entity) {
+	private void handleEntity(String entityType, String entity, Map<String, List<String>> entityList) {
 		if (entityList.containsKey(entityType)) {
 			if (!entityList.get(entityType).contains(entity) && entity.trim().length() > 1) {
 				entityList.get(entityType).add(entity.trim());
 			}
 		} else {
-			List<Object> valueList = new ArrayList<>();
+			List<String> valueList = new ArrayList<>();
 			valueList.add(entity.trim());
 			entityList.put(entityType, valueList);
 		}

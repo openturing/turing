@@ -46,6 +46,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
 
+import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.persistence.model.storage.TurData;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 
@@ -62,12 +63,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurMLDataAPI {
 
 	@Autowired
-	TurDataRepository turDataRepository;
+	private TurDataRepository turDataRepository;
 	@Autowired
-	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 	@Autowired
-	TurOpenNLPConnector turOpenNLPConnector;
-
+	private TurOpenNLPConnector turOpenNLPConnector;
+	@Autowired
+	private TurNLPProcess turNLPProcess;
+	
 	@Operation(summary = "Machine Learning Data List")
 	@GetMapping
 	public List<TurData> turDataList() throws JSONException {
@@ -127,7 +130,7 @@ public class TurMLDataAPI {
 
 		parser.parse(multipartFile.getInputStream(), handler, metadata, parseContext);
 
-		String[] sentences = turOpenNLPConnector.sentenceDetect(handler.toString());
+		String[] sentences = turOpenNLPConnector.sentenceDetect(turNLPProcess.getDefaultNLPInstance(), handler.toString());
 
 		TurData turData = new TurData();
 

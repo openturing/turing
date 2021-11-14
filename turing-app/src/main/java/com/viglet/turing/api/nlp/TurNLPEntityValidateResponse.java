@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ public class TurNLPEntityValidateResponse {
 
 	private TurNLPEntity type;
 	
-	private List<Object> terms;
+	private List<String> terms;
 
 	public TurNLPEntity getType() {
 		return type;
@@ -35,13 +35,11 @@ public class TurNLPEntityValidateResponse {
 		this.type = type;
 	}
 
-	public List<Object> getTerms() {
+	public List<String> getTerms() {
 		return terms;
 	}
 
-	public void setTerms(List<Object> terms) {
+	public void setTerms(List<String> terms) {
 		this.terms = terms;
 	}
-
-	
 }
