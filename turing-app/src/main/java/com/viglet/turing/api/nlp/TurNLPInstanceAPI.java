@@ -21,15 +21,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
-
-import javax.xml.bind.JAXB;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -209,7 +206,7 @@ public class TurNLPInstanceAPI {
 
 			return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
 				Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
-				return blazonEntity(turNLP);
+				return createRedactionScript(turNLP);
 			}).orElse(new RedactionScript());
 
 		} catch (IOException | SAXException | TikaException e) {
@@ -219,33 +216,43 @@ public class TurNLPInstanceAPI {
 		return null;
 	}
 
-	private RedactionScript blazonEntity(Optional<TurNLP> turNLP) {
+	private RedactionScript createRedactionScript(Optional<TurNLP> turNLP) {
 		List<RedactionCommand> redactionCommands = new ArrayList<>();
 		RedactionScript redationScript = new RedactionScript();
 		redationScript.setVersion("1");
-		turNLP.ifPresent(nlp -> {
-			nlp.getEntityMapWithProcessedValues().entrySet().forEach(entityType -> {
-				if (entityType.getValue() != null) {
-					entityType.getValue().forEach(term -> {
-						RedactionCommand redactionCommand = new RedactionCommand();
-						SearchString searchString = new SearchString();
-						searchString.setMatchWholeWord(true);
-						searchString.setString(String.format("%s", term));
-						redactionCommand.setSearchString(searchString);
-						redactionCommands.add(redactionCommand);
-					});
-				}
-			});
-		});
+		turNLP.ifPresent(nlp -> nlp.getEntityMapWithProcessedValues().entrySet().forEach(entityType -> {
+			if (entityType.getValue() != null) {
+				entityType.getValue().forEach(term -> {
+					RedactionCommand redactionCommand = new RedactionCommand();
+					SearchString searchString = new SearchString();
+					searchString.setMatchWholeWord(true);
+					searchString.setString(String.format("%s", term));
+					redactionCommand.setSearchString(searchString);
+					redactionCommands.add(redactionCommand);
+				});
+			}
+		}));
 
 		redationScript.setRedactionCommands(redactionCommands);
 		return redationScript;
 	}
 
-	@PostMapping("/{id}/validate/text/{format}")
-	public String validate(@PathVariable String id, @PathVariable String format,
+	@PostMapping("/{id}/validate/text/web")
+	public TurNLPValidateResponse validateWeb(@PathVariable String id, @PathVariable String format,
 			@RequestBody TurNLPTextValidate textValidate) {
-		return validateText(id, format, textValidate);
+		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
+			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+			return createNLPValidateResponse(turNLPInstance, turNLP);
+		}).orElse(null);
+	}
+
+	@PostMapping("/{id}/validate/text/blazon")
+	public RedactionScript validateBlazon(@PathVariable String id, @PathVariable String format,
+			@RequestBody TurNLPTextValidate textValidate) {
+		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
+			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+			return createRedactionScript(turNLP);
+		}).orElse(null);
 	}
 
 	private static String cleanTextContent(String text) {
@@ -264,43 +271,24 @@ public class TurNLPInstanceAPI {
 		return text;
 	}
 
-	private String validateText(String id, String format, TurNLPTextValidate textValidate) {
-		final String WEB_FORMAT = "web";
-		final String BLAZON_FORMAT = "blazon";
+	private TurNLPValidateResponse createNLPValidateResponse(TurNLPInstance turNLPInstance, Optional<TurNLP> turNLP) {
+		TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
+		turNLPValidateResponse.setVendor(turNLPInstance.getTurNLPVendor().getTitle());
+		turNLPValidateResponse.setLocale(turNLPInstance.getLanguage());
+		if (turNLP.isPresent()) {
+			for (Entry<String, List<String>> entityType : turNLP.get().getEntityMapWithProcessedValues().entrySet()) {
+				if (entityType.getValue() != null) {
+					TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
+					TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
 
-		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
-			if (format.equals(WEB_FORMAT)) {
+					turNLPEntityValidateResponse.setType(turNLPEntity);
 
-				TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
-				turNLPValidateResponse.setVendor(turNLPInstance.getTurNLPVendor().getTitle());
-				turNLPValidateResponse.setLocale(turNLPInstance.getLanguage());
-				if (turNLP.isPresent()) {
-					for (Entry<String, List<String>> entityType : turNLP.get().getEntityMapWithProcessedValues()
-							.entrySet()) {
-						if (entityType.getValue() != null) {
-							TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
-							TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
-
-							turNLPEntityValidateResponse.setType(turNLPEntity);
-
-							turNLPEntityValidateResponse.setTerms(entityType.getValue());
-							turNLPValidateResponse.getEntities().add(turNLPEntityValidateResponse);
-						}
-					}
+					turNLPEntityValidateResponse.setTerms(entityType.getValue());
+					turNLPValidateResponse.getEntities().add(turNLPEntityValidateResponse);
 				}
-				return turNLPValidateResponse.toString();
-			} else if (format.equals(BLAZON_FORMAT)) {
-
-				RedactionScript redationScript = blazonEntity(turNLP);
-
-				StringWriter sw = new StringWriter();
-				JAXB.marshal(redationScript, sw);
-				return sw.toString();
-			} else {
-				return null;
 			}
-		}).orElse(null);
+		}
+		return turNLPValidateResponse;
 	}
 
 	public boolean isNumeric(String str) {
