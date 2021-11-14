@@ -112,23 +112,9 @@ public class TurMLDataAPI {
 	@PostMapping("/import")
 	@Transactional
 	public String turDataImport(@RequestParam("file") MultipartFile multipartFile)
-			throws JSONException, IOException, SAXException, TikaException {
+			 {
 
-		AutoDetectParser parser = new AutoDetectParser();
-		BodyContentHandler handler = new BodyContentHandler(-1);
-		Metadata metadata = new Metadata();
-
-		TesseractOCRConfig config = new TesseractOCRConfig();
-		PDFParserConfig pdfConfig = new PDFParserConfig();
-		pdfConfig.setExtractInlineImages(true);
-
-		ParseContext parseContext = new ParseContext();
-		parseContext.set(TesseractOCRConfig.class, config);
-		parseContext.set(PDFParserConfig.class, pdfConfig);
-
-		parseContext.set(Parser.class, parser);
-
-		parser.parse(multipartFile.getInputStream(), handler, metadata, parseContext);
+		BodyContentHandler handler = processMultifileAsPDF(multipartFile);
 
 		String[] sentences = turOpenNLPConnector.sentenceDetect(turNLPProcess.getDefaultNLPInstance(), handler.toString());
 
@@ -148,5 +134,29 @@ public class TurMLDataAPI {
 		JSONObject jsonTraining = new JSONObject();
 		jsonTraining.put("sentences", sentences);
 		return jsonTraining.toString();
+	}
+
+	private BodyContentHandler processMultifileAsPDF(MultipartFile multipartFile) {
+		AutoDetectParser parser = new AutoDetectParser();
+		BodyContentHandler handler = new BodyContentHandler(-1);
+		Metadata metadata = new Metadata();
+
+		TesseractOCRConfig config = new TesseractOCRConfig();
+		PDFParserConfig pdfConfig = new PDFParserConfig();
+		pdfConfig.setExtractInlineImages(true);
+
+		ParseContext parseContext = new ParseContext();
+		parseContext.set(TesseractOCRConfig.class, config);
+		parseContext.set(PDFParserConfig.class, pdfConfig);
+
+		parseContext.set(Parser.class, parser);
+
+		try {
+			parser.parse(multipartFile.getInputStream(), handler, metadata, parseContext);
+		} catch (IOException | SAXException | TikaException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return handler;
 	}
 }
