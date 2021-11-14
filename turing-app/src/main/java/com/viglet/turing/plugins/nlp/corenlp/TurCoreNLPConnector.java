@@ -77,7 +77,8 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 
 			String queryParams = String.format("properties=%s", URLEncoder.encode(props, StandardCharsets.UTF_8));
 
-			URL serverURL = new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(), "/?" + queryParams);
+			URL serverURL = new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(),
+					"/?" + queryParams);
 
 			HttpPost httppost = new HttpPost(serverURL.toString());
 
@@ -102,12 +103,13 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
-		
+
 		return this.generateEntityMapFromSentenceTokens(turNLP, entityList);
 
 	}
 
-	public Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLP turNLP, Map<String, List<String>> entityList) {
+	public Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLP turNLP,
+			Map<String, List<String>> entityList) {
 		Map<String, List<String>> entityAttributes = new HashMap<>();
 
 		for (TurNLPInstanceEntity nlpInstanceEntity : turNLP.getNlpInstanceEntities()) {
@@ -125,62 +127,57 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 		StringBuilder sb = new StringBuilder();
 		List<EmbeddedToken> tokenList = new ArrayList<>();
 
-		for (int i = 0; i < sentences.length(); i++) {
-			JSONObject sentence = (JSONObject) sentences.get(i);
-			JSONArray tokens = sentence.getJSONArray("tokens");
+		sentences.forEach(obj -> {
+			JSONObject sentence = (JSONObject) obj;
+			detectEntityFromSentence(entityList, sb, tokenList, sentence);
+		});
+	}
 
-			// traversing the words in the current sentence, "O" is a sensible
-			// default to initialize
-			// tokens to since we're not interested in unclassified / unknown
-			// things..
-			String prevNeToken = "O";
-			String currNeToken = "O";
-			boolean newToken = true;
-		
-			for (int t = 0; t < tokens.length(); t++) {
+	private void detectEntityFromSentence(Map<String, List<String>> entityList, StringBuilder sb,
+			List<EmbeddedToken> tokenList, JSONObject sentence) {
 
-				JSONObject token = (JSONObject) tokens.get(t);
-
-				currNeToken = token.getString("ner");
-				String word = token.getString("word");
-				if (currNeToken.equals("O")) {
-
-					if (!prevNeToken.equals("O") && (sb.length() > 0)) {
-						handleEntity(entityList, prevNeToken, sb, tokenList);
-						newToken = true;
-					}
-					continue;
+		JSONArray tokens = sentence.getJSONArray("tokens");
+		TokenPositon tokenPositon = new TokenPositon();
+		tokens.forEach(obj -> {
+			JSONObject token = (JSONObject) obj;
+			tokenPositon.setCurrent(token.getString("ner"));
+			String word = token.getString("word");
+			if (tokenPositon.getCurrent().equals("O")) {
+				if (!tokenPositon.getPrevious().equals("O") && (sb.length() > 0)) {
+					handleEntity(entityList, tokenPositon.getPrevious(), sb, tokenList);
+					tokenPositon.setNewToken(true);
 				}
-
-				if (newToken) {
-					prevNeToken = currNeToken;
-					newToken = false;
-					sb.append(word);
-					continue;
-				}
-
-				if (currNeToken.equals(prevNeToken)) {
-					sb.append(" " + word);
-				} else {
-					this.handleEntity(entityList, prevNeToken, sb, tokenList);
-					newToken = true;
-				}
-				prevNeToken = currNeToken;
-
+				return;
 			}
-			if (!newToken && (sb.length() > 0)) {
-				this.handleEntity(entityList, prevNeToken, sb, tokenList);
+
+			if (tokenPositon.isNewToken()) {
+				tokenPositon.setPrevious(tokenPositon.getCurrent());
+				tokenPositon.setNewToken(false);
+				sb.append(word);
+				return;
 			}
+
+			if (tokenPositon.getCurrent().equals(tokenPositon.getPrevious())) {
+				sb.append(" " + word);
+			} else {
+				this.handleEntity(entityList, tokenPositon.getPrevious(), sb, tokenList);
+				tokenPositon.setNewToken(true);
+			}
+			tokenPositon.setPrevious(tokenPositon.getCurrent());
+
+		});
+		if (!tokenPositon.isNewToken() && (sb.length() > 0)) {
+			this.handleEntity(entityList, tokenPositon.getPrevious(), sb, tokenList);
 		}
-
 	}
 
 	public List<String> getEntity(Map<String, List<String>> entityList, String entity) {
 		return entityList.get(entity);
 	}
 
-	private void handleEntity(Map<String, List<String>> entityList , String inKey, StringBuilder inSb, List<EmbeddedToken> inTokens) {
-		
+	private void handleEntity(Map<String, List<String>> entityList, String inKey, StringBuilder inSb,
+			List<EmbeddedToken> inTokens) {
+
 		inTokens.add(new EmbeddedToken(inKey, inSb.toString()));
 
 		if (entityList.containsKey(inKey)) {
@@ -212,5 +209,43 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 			this.name = name;
 			this.value = value;
 		}
+	}
+
+	class TokenPositon {
+		private String current;
+		private String previous;
+		private boolean newToken;
+
+		public TokenPositon() {
+			super();
+			this.current = "O";
+			this.previous = "O";
+			this.newToken = true;
+		}
+
+		public String getCurrent() {
+			return current;
+		}
+
+		public void setCurrent(String current) {
+			this.current = current;
+		}
+
+		public String getPrevious() {
+			return previous;
+		}
+
+		public void setPrevious(String previous) {
+			this.previous = previous;
+		}
+
+		public boolean isNewToken() {
+			return newToken;
+		}
+
+		public void setNewToken(boolean newToken) {
+			this.newToken = newToken;
+		}
+
 	}
 }
