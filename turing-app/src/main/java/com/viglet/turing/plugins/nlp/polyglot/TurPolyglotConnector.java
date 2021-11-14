@@ -20,6 +20,7 @@ package com.viglet.turing.plugins.nlp.polyglot;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -56,91 +57,115 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 	@Autowired
 	private TurSolrField turSolrField;
 
-
 	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
 		return this.request(turNLP);
 	}
-	
+
 	public Map<String, List<String>> request(TurNLP turNLP) {
 		Map<String, List<String>> entityList = new HashMap<>();
-		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
-			URL serverURL = new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(), "/ent");
-			if (logger.isDebugEnabled()) {
-				logger.debug("URL: {}" ,serverURL);
+
+		if (turNLP.getAttributeMapToBeProcessed() != null) {
+			for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
+
+				for (String atributeValue : createSentences(attrValue)) {
+					processSentence(turNLP, entityList, atributeValue);
+				}
 			}
 
-			HttpPost httpPost = new HttpPost(serverURL.toString());
-			Charset utf8Charset = StandardCharsets.UTF_8;
-			Charset customCharset = StandardCharsets.UTF_8;
+		}
+		return this.getAttributes(turNLP, entityList);
 
-			if (turNLP.getAttributeMapToBeProcessed() != null) {
-				for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
-					JSONObject jsonBody = new JSONObject();
-					String atributeValueFullText = turSolrField.convertFieldToString(attrValue)
-							.replaceAll("[\\n:;]", ". ").replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ")
-							.replaceAll("\\.+", ". ")
-							.replaceAll(" +", " ").trim();
+	}
 
-					for (String atributeValue : atributeValueFullText.split("\\.")) {
+	private void processSentence(TurNLP turNLP, Map<String, List<String>> entityList, String atributeValue) {
+		try (CloseableHttpClient httpclient = HttpClients.createDefault();
+				CloseableHttpResponse response = httpclient.execute(prepareHttpPost(turNLP, atributeValue))) {
+			HttpEntity entity = response.getEntity();
+
+			if (entity != null) {
+				try (BufferedReader rd = new BufferedReader(
+						new InputStreamReader(entity.getContent(), StandardCharsets.UTF_8))) {
+					String jsonResponse = CharStreams.toString(rd);
+					if (TurUtils.isJSONValid(jsonResponse)) {
 						if (logger.isDebugEnabled()) {
-							logger.debug("Polyglot Text: {}" , atributeValue);
+							logger.debug("Polyglot JSONResponse: {}", jsonResponse);
 						}
-						jsonBody.put("text", atributeValue);
-
-						jsonBody.put("model", turNLP.getTurNLPInstance().getLanguage());
-
-						ByteBuffer inputBuffer = ByteBuffer.wrap(jsonBody.toString().getBytes());
-
-						// decode UTF-8
-						CharBuffer data = utf8Charset.decode(inputBuffer);
-
-						// encode
-						ByteBuffer outputBuffer = customCharset.encode(data);
-
-						byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
-						String jsonUTF8 = new String(outputData);
-
-						if (logger.isDebugEnabled()) {
-							logger.debug("Polyglot JSONBody: {}", jsonUTF8);
-						}
-						httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-						httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-						httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
-						StringEntity stringEntity = new StringEntity(jsonBody.toString(), StandardCharsets.UTF_8);
-						httpPost.setEntity(stringEntity);
-
-						try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
-							HttpEntity entity = response.getEntity();
-
-							if (entity != null) {
-								try (BufferedReader rd = new BufferedReader(
-												new InputStreamReader(entity.getContent(), StandardCharsets.UTF_8))) {
-									String jsonResponse = CharStreams.toString(rd);
-									if (TurUtils.isJSONValid(jsonResponse)) {
-										if (logger.isDebugEnabled()) {
-											logger.debug("Polyglot JSONResponse: {}", jsonResponse);
-										}
-										this.getEntities(new JSONArray(jsonResponse), entityList);
-									}
-								}
-							}
-						}
+						this.getEntities(new JSONArray(jsonResponse), entityList);
 					}
 				}
-
 			}
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
-		return this.getAttributes(turNLP, entityList);
+	}
 
+	private HttpPost prepareHttpPost(TurNLP turNLP, String atributeValue) {
+		JSONObject jsonBody = prepareJSONResponse(turNLP, atributeValue);
+
+		HttpPost httpPost = new HttpPost(getServerURL(turNLP).toString());
+
+		httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+		httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+		httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
+		StringEntity stringEntity = new StringEntity(jsonBody.toString(), StandardCharsets.UTF_8);
+		httpPost.setEntity(stringEntity);
+		return httpPost;
+	}
+
+	private JSONObject prepareJSONResponse(TurNLP turNLP, String atributeValue) {
+		Charset utf8Charset = StandardCharsets.UTF_8;
+		Charset customCharset = StandardCharsets.UTF_8;
+		if (logger.isDebugEnabled()) {
+			logger.debug("Polyglot Text: {}", atributeValue);
+		}
+		JSONObject jsonBody = new JSONObject();
+		jsonBody.put("text", atributeValue);
+
+		jsonBody.put("model", turNLP.getTurNLPInstance().getLanguage());
+
+		ByteBuffer inputBuffer = ByteBuffer.wrap(jsonBody.toString().getBytes());
+
+		// decode UTF-8
+		CharBuffer data = utf8Charset.decode(inputBuffer);
+
+		// encode
+		ByteBuffer outputBuffer = customCharset.encode(data);
+
+		byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
+		String jsonUTF8 = new String(outputData);
+
+		logger.debug("Polyglot JSONBody: {}", jsonUTF8);
+		return jsonBody;
+	}
+
+	private URL getServerURL(TurNLP turNLP) {
+		URL serverURL = null;
+		try {
+			serverURL = new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(),
+					"/ent");
+			logger.debug("URL: {}", serverURL);
+		} catch (MalformedURLException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return serverURL;
+	}
+
+	private String[] createSentences(Object attrValue) {
+		return cleanFullText(attrValue).split("\\.");
+	}
+
+	private String cleanFullText(Object attrValue) {
+		String atributeValueFullText = turSolrField.convertFieldToString(attrValue).replaceAll("[\\n:;]", ". ")
+				.replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
+		return atributeValueFullText;
 	}
 
 	public Map<String, List<String>> getAttributes(TurNLP turNLP, Map<String, List<String>> entityList) {
 		Map<String, List<String>> entityAttributes = new HashMap<>();
 
 		for (TurNLPInstanceEntity turNLPInstanceEntity : turNLP.getNlpInstanceEntities()) {
-			entityAttributes.put(turNLPInstanceEntity.getTurNLPEntity().getInternalName(), this.getEntity(turNLPInstanceEntity.getTurNLPEntity().getInternalName(), entityList));
+			entityAttributes.put(turNLPInstanceEntity.getTurNLPEntity().getInternalName(),
+					this.getEntity(turNLPInstanceEntity.getTurNLPEntity().getInternalName(), entityList));
 		}
 
 		if (logger.isDebugEnabled()) {
