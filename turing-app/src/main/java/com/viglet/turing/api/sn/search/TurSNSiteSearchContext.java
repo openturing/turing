@@ -17,7 +17,7 @@ public class TurSNSiteSearchContext {
 
 	public TurSNSiteSearchContext(String siteName, String query, Integer currentPage, List<String> filterQueries,
 			List<String> targetingRules, String sort, Integer rows, Integer autoCorrectionDisabled, String locale,
-			URI uri) {
+			URI uri) { //NOSONAR
 		super();
 		this.siteName = siteName;
 		this.query = query;
