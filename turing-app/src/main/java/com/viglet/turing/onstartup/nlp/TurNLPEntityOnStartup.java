@@ -46,7 +46,6 @@ public class TurNLPEntityOnStartup {
 			saveTurNLPEntity("ORDINAL", "Ordinal", "Ordinal Entity.","ordinals", 0, 1);
 			saveTurNLPEntity("MISC", "Misc", "Misc Entity.","miscs", 0, 1);
 			saveTurNLPEntity("DATE", "Date", "Date Entity.","dates", 0, 1);
-			saveTurNLPEntity("DATE", "Date", "Date Entity.","dates", 0, 1);
 			saveTurNLPEntity("TIME", "Time", "Time Entity.","times", 0, 1);
 			saveTurNLPEntity("MONEY", "Money", "Money Entity.","moneys", 0, 1);
 			saveTurNLPEntity("PERCENTAGE", "Percentage", "Percentage Entity.","percentages", 0, 1);

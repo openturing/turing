@@ -598,36 +598,49 @@ public class TurSNSiteSearchAPI {
 		return turSNSiteSearchDocumentMetadataBeans;
 	}
 
-	@SuppressWarnings("unchecked")
 	private Map<String, Object> addFieldsFromDocument(Map<String, TurSNSiteFieldExt> fieldExtMap,
 			Map<String, Object> turSEResultAttr, Set<String> attribs) {
 		Map<String, Object> fields = new HashMap<>();
-		for (String attribute : attribs) {
+		attribs.forEach(attribute -> {
 			if (!attribute.startsWith(TURING_ENTITY)) {
-				String nodeName = null;
-				if (fieldExtMap.containsKey(attribute)) {
-					TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
-					nodeName = turSNSiteFieldExt.getName();
-				} else {
-					nodeName = attribute;
-				}
-				if (nodeName != null && fields.containsKey(nodeName)) {
-					if (!(fields.get(nodeName) instanceof List)) {
-						List<Object> attributeValues = new ArrayList<>();
-						attributeValues.add(fields.get(nodeName));
-						attributeValues.add(turSEResultAttr.get(attribute));
-						fields.put(nodeName, attributeValues);
-					} else {
-						((List<Object>) fields.get(nodeName)).add(turSEResultAttr.get(attribute));
-					}
-				} else {
-					fields.put(nodeName, turSEResultAttr.get(attribute));
-
-				}
+				addFieldandValueToMap(turSEResultAttr, fields, attribute, getFieldName(fieldExtMap, attribute));
 			}
+		});
+		return fields;
+	}
+
+	private String getFieldName(Map<String, TurSNSiteFieldExt> fieldExtMap, String attribute) {
+		String nodeName;
+		if (fieldExtMap.containsKey(attribute)) {
+			TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
+			nodeName = turSNSiteFieldExt.getName();
+		} else {
+			nodeName = attribute;
+		}
+		return nodeName;
+	}
+
+	private void addFieldandValueToMap(Map<String, Object> turSEResultAttr, Map<String, Object> fields,
+			String attribute, String nodeName) {
+		if (nodeName != null && fields.containsKey(nodeName)) {
+			addValueToExistingFieldMap(turSEResultAttr, fields, attribute, nodeName);
+		} else {
+			fields.put(nodeName, turSEResultAttr.get(attribute));
 
 		}
-		return fields;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void addValueToExistingFieldMap(Map<String, Object> turSEResultAttr, Map<String, Object> fields,
+			String attribute, String nodeName) {
+		if (!(fields.get(nodeName) instanceof List)) {
+			List<Object> attributeValues = new ArrayList<>();
+			attributeValues.add(fields.get(nodeName));
+			attributeValues.add(turSEResultAttr.get(attribute));
+			fields.put(nodeName, attributeValues);
+		} else {
+			((List<Object>) fields.get(nodeName)).add(turSEResultAttr.get(attribute));
+		}
 	}
 
 	private void setSourcefromDocument(TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean,
