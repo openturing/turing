@@ -49,7 +49,7 @@ public class TurSNUtils {
 	}
 
 	public static boolean isAutoCorrectionEnabled(TurSNSiteSearchContext context, TurSNSite turSNSite) {
-		return context.getAutoCorrectionDisabled() != 1 && context.getCurrentPage() == 1
+		return context.getTurSEParameters().getAutoCorrectionDisabled() != 1 && context.getTurSEParameters().getCurrentPage() == 1
 				&& turSNSite.getSpellCheck() == 1 && turSNSite.getSpellCheckFixes() == 1;
 	}
 

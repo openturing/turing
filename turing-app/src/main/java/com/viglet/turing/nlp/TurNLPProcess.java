@@ -21,7 +21,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +39,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.CharStreams;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBean;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBeans;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
@@ -146,57 +146,10 @@ public class TurNLPProcess {
 		File trainingFile = new File(userDir.getAbsolutePath().concat("/store/nlp/train/train.json"));
 		if (trainingFile.exists()) {
 			try (BufferedReader rd = new BufferedReader(new FileReader(trainingFile))) {
-
-				String jsonText;
-				jsonText = readAll(rd);
-
-				ObjectMapper mapper = new ObjectMapper();
-				TurNLPTrainingBeans turNLPTrainingBeans = mapper.readValue(jsonText, TurNLPTrainingBeans.class);
-				Map<String, TurNLPTrainingBean> terms = new HashMap<>();
-				for (TurNLPTrainingBean turNLPTrainingBeanItem : turNLPTrainingBeans.getTerms()) {
-					terms.put(turNLPTrainingBeanItem.getTerm().toLowerCase(), turNLPTrainingBeanItem);
-				}
-
-				if (logger.isDebugEnabled()) {
-					for (TurNLPTrainingBean turNLPTrainingBeanItem : turNLPTrainingBeans.getTerms()) {
-						logger.debug(turNLPTrainingBeanItem);
-					}
-				}
-				if (entityMapWithProcessedValues != null) {
-					for (Entry<String, List<String>> attribute : entityMapWithProcessedValues.entrySet()) {
-						if (attribute.getValue() != null) {
-							logger.debug("attribute Value: {}", attribute.getValue());
-
-							if (!processedAttributes.containsKey(attribute.getKey()))
-								processedAttributes.put(attribute.getKey(), new ArrayList<>());
-							for (Object attributeValueItem : attribute.getValue()) {
-								if (terms.containsKey(attributeValueItem.toString().toLowerCase())) {
-									TurNLPTrainingBean term = terms.get(attributeValueItem.toString().toLowerCase());
-									if (!term.isIgnore()) {
-										if (term.getNer() != null) {
-											if (!processedAttributes.containsKey(term.getNer()))
-												processedAttributes.put(term.getNer(), new ArrayList<>());
-											if (term.getConvertTo() != null)
-												processedAttributes.get(term.getNer()).add(term.getConvertTo());
-											else
-												processedAttributes.get(term.getNer())
-														.add(attributeValueItem.toString());
-										} else {
-											if (term.getConvertTo() != null)
-												processedAttributes.get(attribute.getKey()).add(term.getConvertTo());
-											else
-												processedAttributes.get(attribute.getKey())
-														.add(attributeValueItem.toString());
-										}
-									}
-
-								} else {
-									processedAttributes.get(attribute.getKey()).add(attributeValueItem.toString());
-								}
-							}
-						}
-					}
-				}
+				TurNLPTrainingBeans turNLPTrainingBeans = new ObjectMapper().readValue(CharStreams.toString(rd), TurNLPTrainingBeans.class);
+				Map<String, TurNLPTrainingBean> terms = termMapOfTraining(turNLPTrainingBeans);
+				logTermsOfTraining(turNLPTrainingBeans);
+				remapEntityMap(entityMapWithProcessedValues, processedAttributes, terms);
 			} catch (IOException e) {
 				logger.error(e);
 			}
@@ -204,12 +157,73 @@ public class TurNLPProcess {
 		}
 	}
 
-	private static String readAll(Reader rd) throws IOException {
-		StringBuilder sb = new StringBuilder();
-		int cp;
-		while ((cp = rd.read()) != -1) {
-			sb.append((char) cp);
+	private void remapEntityMap(Map<String, List<String>> entityMapWithProcessedValues,
+			Map<String, List<String>> processedAttributes, Map<String, TurNLPTrainingBean> terms) {
+		if (entityMapWithProcessedValues != null) {
+			for (Entry<String, List<String>> attribute : entityMapWithProcessedValues.entrySet()) {
+				if (attribute.getValue() != null) {
+					logger.debug("attribute Value: {}", attribute.getValue());
+
+					if (!processedAttributes.containsKey(attribute.getKey()))
+						processedAttributes.put(attribute.getKey(), new ArrayList<>());
+					for (Object attributeValueItem : attribute.getValue()) {
+						if (terms.containsKey(attributeValueItem.toString().toLowerCase())) {
+							useTermOfManualEntityAndRemap(processedAttributes, terms, attribute, attributeValueItem);
+						} else {
+							processedAttributes.get(attribute.getKey()).add(attributeValueItem.toString());
+						}
+					}
+				}
+			}
 		}
-		return sb.toString();
+	}
+
+	private void useTermOfManualEntityAndRemap(Map<String, List<String>> processedAttributes,
+			Map<String, TurNLPTrainingBean> terms, Entry<String, List<String>> attribute, Object attributeValueItem) {
+		TurNLPTrainingBean term = terms.get(attributeValueItem.toString().toLowerCase());
+		if (!term.isIgnore()) {
+			if (term.getNer() != null) {
+				remapToNewNer(processedAttributes, attributeValueItem, term);
+			} else {
+				changeValueBasedOnConvertTo(processedAttributes, attribute, attributeValueItem, term);
+			}
+		}
+	}
+
+	private void changeValueBasedOnConvertTo(Map<String, List<String>> processedAttributes,
+			Entry<String, List<String>> attribute, Object attributeValueItem, TurNLPTrainingBean term) {
+		if (term.getConvertTo() != null)
+			processedAttributes.get(attribute.getKey()).add(term.getConvertTo());
+		else
+			processedAttributes.get(attribute.getKey())
+					.add(attributeValueItem.toString());
+	}
+
+	private void remapToNewNer(Map<String, List<String>> processedAttributes, Object attributeValueItem,
+			TurNLPTrainingBean term) {
+		if (!processedAttributes.containsKey(term.getNer()))
+			processedAttributes.put(term.getNer(), new ArrayList<>());
+		if (term.getConvertTo() != null)
+			processedAttributes.get(term.getNer()).add(term.getConvertTo());
+		else
+			processedAttributes.get(term.getNer())
+					.add(attributeValueItem.toString());
+	}
+
+	private Map<String, TurNLPTrainingBean> termMapOfTraining(TurNLPTrainingBeans turNLPTrainingBeans) {
+		Map<String, TurNLPTrainingBean> terms = new HashMap<>();
+		for (TurNLPTrainingBean turNLPTrainingBeanItem : turNLPTrainingBeans.getTerms()) {
+			terms.put(turNLPTrainingBeanItem.getTerm().toLowerCase(), turNLPTrainingBeanItem);
+		}
+		
+		return terms;
+	}
+
+	private void logTermsOfTraining(TurNLPTrainingBeans turNLPTrainingBeans) {
+		if (logger.isDebugEnabled()) {
+			for (TurNLPTrainingBean turNLPTrainingBeanItem : turNLPTrainingBeans.getTerms()) {
+				logger.debug(turNLPTrainingBeanItem);
+			}
+		}
 	}
 }

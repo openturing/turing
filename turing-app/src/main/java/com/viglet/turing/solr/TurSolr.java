@@ -50,6 +50,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
+import com.viglet.turing.se.TurSEParameters;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.field.TurSEFieldType;
@@ -254,44 +255,44 @@ public class TurSolr {
 
 	public TurSEResults retrieveSolrFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
 			TurSNSiteSearchContext context) {
-
+		TurSEParameters turSEParameters = context.getTurSEParameters();
 		Map<String, TurSNSiteFieldExt> fieldExtMap = getFieldExtMap(turSNSite);
 
 		Map<String, Object> requiredFields = getRequiredFields(turSNSite);
 
 		TurSEResults turSEResults = new TurSEResults();
-		if (context.getRows() <= 0) {
-			context.setRows(turSNSite.getRowsPerPage());
+		if (turSEParameters.getRows() <= 0) {
+			turSEParameters.setRows(turSNSite.getRowsPerPage());
 		}
 		SimpleEntry<String, String> sortEntry = null;
-		if (context.getSort() != null) {
-			if (context.getSort().equalsIgnoreCase("relevance")) {
+		if (turSEParameters.getSort() != null) {
+			if (turSEParameters.getSort().equalsIgnoreCase("relevance")) {
 				sortEntry = null;
-			} else if (context.getSort().equalsIgnoreCase("newest")) {
+			} else if (turSEParameters.getSort().equalsIgnoreCase("newest")) {
 				sortEntry = new SimpleEntry<>(turSNSite.getDefaultDateField(), "desc");
-			} else if (context.getSort().equalsIgnoreCase("oldest")) {
+			} else if (turSEParameters.getSort().equalsIgnoreCase("oldest")) {
 				sortEntry = new SimpleEntry<>(turSNSite.getDefaultDateField(), "asc");
 			}
 		}
 		SolrQuery query = new SolrQuery();
 		if (TurSNUtils.isAutoCorrectionEnabled(context, turSNSite)) {
-			TurSESpellCheckResult turSESpellCheckResult = spellCheckTerm(turSolrInstance, context.getQuery());
+			TurSESpellCheckResult turSESpellCheckResult = spellCheckTerm(turSolrInstance, turSEParameters.getQuery());
 			if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
 				query.setQuery(turSESpellCheckResult.getCorrectedText());
 			} else {
-				query.setQuery(context.getQuery());
+				query.setQuery(turSEParameters.getQuery());
 			}
 		} else {
 
-			query.setQuery(context.getQuery());
+			query.setQuery(turSEParameters.getQuery());
 		}
 
 		if (sortEntry != null) {
 			query.setSort(sortEntry.getKey(), sortEntry.getValue().equals("asc") ? ORDER.asc : ORDER.desc);
 		}
 
-		query.setRows(context.getRows());
-		query.setStart((context.getCurrentPage() * context.getRows()) - context.getRows());
+		query.setRows(turSEParameters.getRows());
+		query.setStart((turSEParameters.getCurrentPage() * turSEParameters.getRows()) - turSEParameters.getRows());
 
 		// Facet
 		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
@@ -341,15 +342,15 @@ public class TurSolr {
 		}
 
 		// Filter Query
-		if (context.getFilterQueries() != null && !context.getFilterQueries().isEmpty()) {
-			String[] filterQueryArr = new String[context.getFilterQueries().size()];
-			filterQueryArr = context.getFilterQueries().toArray(filterQueryArr);
+		if (turSEParameters.getFilterQueries() != null && !turSEParameters.getFilterQueries().isEmpty()) {
+			String[] filterQueryArr = new String[turSEParameters.getFilterQueries().size()];
+			filterQueryArr = turSEParameters.getFilterQueries().toArray(filterQueryArr);
 			query.setFilterQueries(filterQueryArr);
 		}
 
 		// Targeting Rule
-		if (context.getTargetingRules() != null && !context.getTargetingRules().isEmpty())
-			query.addFilterQuery(turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, context.getTargetingRules()));
+		if (turSEParameters.getTargetingRules() != null && !turSEParameters.getTargetingRules().isEmpty())
+			query.addFilterQuery(turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, turSEParameters.getTargetingRules()));
 
 		QueryResponse queryResponse;
 		try {
@@ -360,12 +361,12 @@ public class TurSolr {
 			turSEResults.setqTime(queryResponse.getQTime());
 			turSEResults.setStart(queryResponse.getResults().getStart());
 			turSEResults.setQueryString(query.getQuery());
-			turSEResults.setSort(context.getSort());
-			turSEResults.setLimit(context.getRows());
+			turSEResults.setSort(turSEParameters.getSort());
+			turSEResults.setLimit(turSEParameters.getRows());
 
 			int pageCount = (int) Math.ceil(turSEResults.getNumFound() / (double) turSEResults.getLimit());
 			turSEResults.setPageCount(pageCount);
-			turSEResults.setCurrentPage(context.getCurrentPage());
+			turSEResults.setCurrentPage(turSEParameters.getCurrentPage());
 
 			List<TurSEResult> results = new ArrayList<>();
 
@@ -415,7 +416,7 @@ public class TurSolr {
 			}
 
 			// Spell Check
-			turSEResults.setSpellCheck(spellCheckTerm(turSolrInstance, context.getQuery()));
+			turSEResults.setSpellCheck(spellCheckTerm(turSolrInstance, turSEParameters.getQuery()));
 
 			turSEResults.setResults(results);
 
@@ -426,37 +427,36 @@ public class TurSolr {
 		return null;
 	}
 
-	public TurSEResults retrieveSolr(TurSolrInstance turSolrInstance, String txtQuery, List<String> fq, List<String> tr,
-			int currentPage, String sort, int rows, String defaultSortField) {
+	public TurSEResults retrieveSolr(TurSolrInstance turSolrInstance, TurSEParameters turSEParameters, String defaultSortField) {
 
 		TurSEResults turSEResults = new TurSEResults();
 		SimpleEntry<String, String> sortEntry = null;
-		if (sort != null) {
-			if (sort.equalsIgnoreCase("newest")) {
+		if (turSEParameters.getSort() != null) {
+			if (turSEParameters.getSort().equalsIgnoreCase("newest")) {
 				sortEntry = new SimpleEntry<>(defaultSortField, "desc");
-			} else if (sort.equalsIgnoreCase("oldest")) {
+			} else if (turSEParameters.getSort().equalsIgnoreCase("oldest")) {
 				sortEntry = new SimpleEntry<>(defaultSortField, "asc");
 			}
 		}
 		SolrQuery query = new SolrQuery();
 
-		query.setQuery(txtQuery);
+		query.setQuery(turSEParameters.getQuery());
 
 		if (sortEntry != null) {
 			query.setSort(sortEntry.getKey(), sortEntry.getValue().equals("asc") ? ORDER.asc : ORDER.desc);
 		}
 
-		query.setRows(rows);
-		query.setStart((currentPage * rows) - rows);
+		query.setRows(turSEParameters.getRows());
+		query.setStart((turSEParameters.getCurrentPage() * turSEParameters.getRows()) - turSEParameters.getRows());
 
 		// Filter Query
-		String[] filterQueryArr = new String[fq.size()];
-		filterQueryArr = fq.toArray(filterQueryArr);
+		String[] filterQueryArr = new String[turSEParameters.getFilterQueries().size()];
+		filterQueryArr = turSEParameters.getFilterQueries().toArray(filterQueryArr);
 		query.setFilterQueries(filterQueryArr);
 
 		// Targeting Rule
-		if (tr != null && !tr.isEmpty())
-			query.addFilterQuery(turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, tr));
+		if (turSEParameters.getTargetingRules() != null && !turSEParameters.getTargetingRules().isEmpty())
+			query.addFilterQuery(turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, turSEParameters.getTargetingRules()));
 
 		QueryResponse queryResponse;
 		try {
@@ -467,12 +467,12 @@ public class TurSolr {
 			turSEResults.setqTime(queryResponse.getQTime());
 			turSEResults.setStart(queryResponse.getResults().getStart());
 			turSEResults.setQueryString(query.getQuery());
-			turSEResults.setSort(sort);
-			turSEResults.setLimit(rows);
+			turSEResults.setSort(turSEParameters.getSort());
+			turSEResults.setLimit(turSEParameters.getRows());
 
 			int pageCount = (int) Math.ceil(turSEResults.getNumFound() / (double) turSEResults.getLimit());
 			turSEResults.setPageCount(pageCount);
-			turSEResults.setCurrentPage(currentPage);
+			turSEResults.setCurrentPage(turSEParameters.getCurrentPage());
 
 			List<TurSEResult> results = new ArrayList<>();
 
@@ -482,7 +482,7 @@ public class TurSolr {
 			}
 
 			// Spell Check
-			turSEResults.setSpellCheck(spellCheckTerm(turSolrInstance, txtQuery));
+			turSEResults.setSpellCheck(spellCheckTerm(turSolrInstance, turSEParameters.getQuery()));
 
 			turSEResults.setResults(results);
 

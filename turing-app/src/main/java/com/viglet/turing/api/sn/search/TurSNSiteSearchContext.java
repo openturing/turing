@@ -1,32 +1,23 @@
 package com.viglet.turing.api.sn.search;
 
 import java.net.URI;
-import java.util.List;
+
+import javax.annotation.Nonnull;
+
+import com.viglet.turing.se.TurSEParameters;
 
 public class TurSNSiteSearchContext {
 	private String siteName;
-	private String query;
-	private Integer currentPage;
-	private List<String> filterQueries;
-	private List<String> targetingRules;
-	private String sort;
-	private Integer rows;
-	private Integer autoCorrectionDisabled;
+	@Nonnull
+	private TurSEParameters turSEParameters;
 	private String locale;
 	private URI uri;
 
-	public TurSNSiteSearchContext(String siteName, String query, Integer currentPage, List<String> filterQueries,
-			List<String> targetingRules, String sort, Integer rows, Integer autoCorrectionDisabled, String locale,
-			URI uri) { //NOSONAR
+	public TurSNSiteSearchContext(String siteName, TurSEParameters turSEParameters,
+			String locale, URI uri) {
 		super();
 		this.siteName = siteName;
-		this.query = query;
-		this.currentPage = currentPage;
-		this.filterQueries = filterQueries;
-		this.targetingRules = targetingRules;
-		this.sort = sort;
-		this.rows = rows;
-		this.autoCorrectionDisabled = autoCorrectionDisabled;
+		this.turSEParameters = turSEParameters;
 		this.locale = locale;
 		this.uri = uri;
 	}
@@ -39,60 +30,12 @@ public class TurSNSiteSearchContext {
 		this.siteName = siteName;
 	}
 
-	public String getQuery() {
-		return query;
+	public TurSEParameters getTurSEParameters() {
+		return turSEParameters;
 	}
 
-	public void setQuery(String query) {
-		this.query = query;
-	}
-
-	public Integer getCurrentPage() {
-		return currentPage;
-	}
-
-	public void setCurrentPage(Integer currentPage) {
-		this.currentPage = currentPage;
-	}
-
-	public List<String> getFilterQueries() {
-		return filterQueries;
-	}
-
-	public void setFilterQueries(List<String> filterQueries) {
-		this.filterQueries = filterQueries;
-	}
-
-	public List<String> getTargetingRules() {
-		return targetingRules;
-	}
-
-	public void setTargetingRules(List<String> targetingRules) {
-		this.targetingRules = targetingRules;
-	}
-
-	public String getSort() {
-		return sort;
-	}
-
-	public void setSort(String sort) {
-		this.sort = sort;
-	}
-
-	public Integer getRows() {
-		return rows;
-	}
-
-	public void setRows(Integer rows) {
-		this.rows = rows;
-	}
-
-	public Integer getAutoCorrectionDisabled() {
-		return autoCorrectionDisabled;
-	}
-
-	public void setAutoCorrectionDisabled(Integer autoCorrectionDisabled) {
-		this.autoCorrectionDisabled = autoCorrectionDisabled;
+	public void setTurSEParameters(TurSEParameters turSEParameters) {
+		this.turSEParameters = turSEParameters;
 	}
 
 	public String getLocale() {
@@ -110,4 +53,6 @@ public class TurSNSiteSearchContext {
 	public void setUri(URI uri) {
 		this.uri = uri;
 	}
+
+	
 }

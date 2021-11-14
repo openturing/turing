@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
+import com.viglet.turing.se.TurSEParameters;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
@@ -127,7 +128,7 @@ public class TurSEInstanceAPI {
 		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance();
 		
 		try {
-			result = turSolr.retrieveSolr(turSolrInstance, q, fq, tr, currentPage, sort, rows, "text").toString();
+			result = turSolr.retrieveSolr(turSolrInstance, new TurSEParameters( q, fq, tr, currentPage, sort, rows, 0), "text").toString();
 
 		} catch (Exception e) {
 			logger.error(e);
