@@ -78,38 +78,45 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 	}
 
 	private void processSentence(TurNLP turNLP, Map<String, List<String>> entityList, String atributeValue) {
-		try (CloseableHttpClient httpclient = HttpClients.createDefault();
-				CloseableHttpResponse response = httpclient.execute(prepareHttpPost(turNLP, atributeValue))) {
-			HttpEntity entity = response.getEntity();
-
-			if (entity != null) {
-				try (BufferedReader rd = new BufferedReader(
-						new InputStreamReader(entity.getContent(), StandardCharsets.UTF_8))) {
-					String jsonResponse = CharStreams.toString(rd);
-					if (TurUtils.isJSONValid(jsonResponse)) {
-						if (logger.isDebugEnabled()) {
-							logger.debug("Polyglot JSONResponse: {}", jsonResponse);
+		HttpPost httpPost = prepareHttpPost(turNLP, atributeValue);
+		if (httpPost != null) {
+			try (CloseableHttpClient httpclient = HttpClients.createDefault();
+					CloseableHttpResponse response = httpclient.execute(httpPost)) {
+				HttpEntity entity = response.getEntity();
+				if (entity != null) {
+					try (BufferedReader rd = new BufferedReader(
+							new InputStreamReader(entity.getContent(), StandardCharsets.UTF_8))) {
+						String jsonResponse = CharStreams.toString(rd);
+						if (TurUtils.isJSONValid(jsonResponse)) {
+							if (logger.isDebugEnabled()) {
+								logger.debug("Polyglot JSONResponse: {}", jsonResponse);
+							}
+							this.getEntities(new JSONArray(jsonResponse), entityList);
 						}
-						this.getEntities(new JSONArray(jsonResponse), entityList);
 					}
 				}
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
 			}
-		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
 		}
 	}
 
 	private HttpPost prepareHttpPost(TurNLP turNLP, String atributeValue) {
-		JSONObject jsonBody = prepareJSONResponse(turNLP, atributeValue);
+		URL serverURL = getServerURL(turNLP);
+		if (serverURL != null) {
+			JSONObject jsonBody = prepareJSONResponse(turNLP, atributeValue);
 
-		HttpPost httpPost = new HttpPost(getServerURL(turNLP).toString());
+			HttpPost httpPost = new HttpPost(serverURL.toString());
 
-		httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-		httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
-		StringEntity stringEntity = new StringEntity(jsonBody.toString(), StandardCharsets.UTF_8);
-		httpPost.setEntity(stringEntity);
-		return httpPost;
+			httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+			httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+			httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
+			StringEntity stringEntity = new StringEntity(jsonBody.toString(), StandardCharsets.UTF_8);
+			httpPost.setEntity(stringEntity);
+			return httpPost;
+		} else {
+			return null;
+		}
 	}
 
 	private JSONObject prepareJSONResponse(TurNLP turNLP, String atributeValue) {
@@ -139,15 +146,12 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 	}
 
 	private URL getServerURL(TurNLP turNLP) {
-		URL serverURL = null;
 		try {
-			serverURL = new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(),
-					"/ent");
-			logger.debug("URL: {}", serverURL);
+			return new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(), "/ent");
 		} catch (MalformedURLException e) {
 			logger.error(e.getMessage(), e);
 		}
-		return serverURL;
+		return null;
 	}
 
 	private String[] createSentences(Object attrValue) {
