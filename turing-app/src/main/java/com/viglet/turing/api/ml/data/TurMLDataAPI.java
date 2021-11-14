@@ -65,11 +65,11 @@ public class TurMLDataAPI {
 	@Autowired
 	private TurDataRepository turDataRepository;
 	@Autowired
+	private TurNLPProcess turNLPProcess;
+	@Autowired
 	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 	@Autowired
 	private TurOpenNLPConnector turOpenNLPConnector;
-	@Autowired
-	private TurNLPProcess turNLPProcess;
 	
 	@Operation(summary = "Machine Learning Data List")
 	@GetMapping
