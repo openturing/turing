@@ -293,135 +293,161 @@ public class TurTMEConnector implements TurNLPPlugin {
 		if (result instanceof ServerResponseConceptExtractorResultType) {
 			ServerResponseConceptExtractorResultType concepts = (ServerResponseConceptExtractorResultType) result;
 			logger.debug("Concepts: {}", concepts.getName());
-			if (concepts.getComplexConcepts() != null) {
-				logger.debug(COMPLEX_CONCEPTS);
-				if (!hmEntities.containsKey(COMPLEX_CONCEPTS)) {
-					hmEntities.put(COMPLEX_CONCEPTS, new ArrayList<>());
-				}
-
-				for (Object complexConcept : concepts.getComplexConcepts().getConceptOrExtractedTerm()) {
-					if (complexConcept instanceof ServerResponseConceptExtractorResultConcept1Type) {
-						hmEntities.get(COMPLEX_CONCEPTS)
-								.add(((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
-						logger.debug(LOG_KV, COMPLEX_CONCEPTS,
-								((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
-					}
-					if (complexConcept instanceof ServerResponseConceptExtractorResultConcept2Type) {
-						hmEntities.get(COMPLEX_CONCEPTS)
-								.add(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent().toString());
-						logger.debug(LOG_KV, COMPLEX_CONCEPTS,
-								((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
-					}
-				}
-			}
-			if (concepts.getSimpleConcepts() != null) {
-				logger.debug(SIMPLE_CONCEPTS);
-				if (!hmEntities.containsKey(SIMPLE_CONCEPTS)) {
-					hmEntities.put(SIMPLE_CONCEPTS, new ArrayList<>());
-				}
-				for (Object simpleConcepts : concepts.getSimpleConcepts().getConceptOrExtractedTerm()) {
-					if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept1Type) {
-						hmEntities.get(SIMPLE_CONCEPTS)
-								.add(((ServerResponseConceptExtractorResultConcept1Type) simpleConcepts).getValue());
-					}
-					if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept2Type) {
-						hmEntities.get(SIMPLE_CONCEPTS)
-								.add(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent().toString());
-						logger.debug(LOG_KV, SIMPLE_CONCEPTS,
-								((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
-					}
-				}
-			}
+			setComplexConcepts(hmEntities, concepts);
+			setSimpleConcepts(hmEntities, concepts);
 		} else if (result instanceof ServerResponseEntityExtractorResultType) {
-			ServerResponseEntityExtractorResultType entities = (ServerResponseEntityExtractorResultType) result;
-			for (Object nf : entities.getNfExtractOrNfFullTextSearch()) {
-				if (nf instanceof ServerResponseEntityExtractorResultExtractResultType) {
-					ServerResponseEntityExtractorResultExtractResultType extractor = (ServerResponseEntityExtractorResultExtractResultType) nf;
-					for (ServerResponseEntityExtractorResultTermType term : extractor.getExtractedTerm()) {
-						logger.debug("getCartridgeID: {}", term.getCartridgeID());
-						if (!hmEntities.containsKey(term.getCartridgeID())) {
-							hmEntities.put(term.getCartridgeID(), new ArrayList<>());
-						}
-
-						logger.debug("getId: {}", term.getId());
-						logger.debug("getNfinderNormalized: {}", term.getNfinderNormalized());
-						if (term.getSubterms() != null) {
-							for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
-									.getSubterm()) {
-								hmEntities.get(term.getCartridgeID()).add(subterm.getValue());
-							}
-
-						}
-					}
-				} else if (nf instanceof ServerResponseEntityExtractorResultFullTextSearchResultType) {
-					ServerResponseEntityExtractorResultFullTextSearchResultType fullText = (ServerResponseEntityExtractorResultFullTextSearchResultType) nf;
-					for (ServerResponseEntityExtractorResultTermType term : fullText.getExtractedTerm()) {
-						if (!hmEntities.containsKey(term.getCartridgeID())) {
-							hmEntities.put(term.getCartridgeID(), new ArrayList<>());
-						}
-						if (term.getSubterms() != null) {
-							for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
-									.getSubterm()) {
-								hmEntities.get(term.getCartridgeID()).add(subterm.getValue());
-							}
-
-						}
-						if (term.getHierarchy() != null && term.getHierarchy().getBase() != null
-								&& term.getHierarchy().getBase().getParents() != null) {
-
-							for (ServerResponseEntityExtractorResultTermParentType parent : term.getHierarchy()
-									.getBase().getParents().getParent()) {
-								hmEntities.get(term.getCartridgeID()).add(parent.getTerm());
-								getParentTerms(parent.getParents(), hmEntities, term.getCartridgeID());
-							}
-						}
-					}
-				}
-
-			}
+			setEntities(result, hmEntities);
 		} else if (result instanceof ServerResponseCategorizerResultType) {
-			ServerResponseCategorizerResultType categorizer = (ServerResponseCategorizerResultType) result;
-			if (categorizer.getCategories() != null) {
-				for (ServerResponseCategorizerResultCategoryType category : categorizer.getCategories().getCategory()) {
-					for (Serializable content : category.getContent()) {
-						logger.debug("Category Content: {}", content);
-					}
-					logger.debug("Category ID: {}", category.getId());
-					logger.debug("Category Weight: {}", category.getWeight());
-				}
-			}
-			if (categorizer.getKnowledgeBase() != null) {
-				for (ServerResponseCategorizerResultKnowledgeBaseType kb : categorizer.getKnowledgeBase()) {
-					if (!hmEntities.containsKey(kb.getKBid())) {
-						hmEntities.put(kb.getKBid(), new ArrayList<>());
-					}
-					if (kb.getCategories() != null) {
-						for (ServerResponseCategorizerResultCategoryType category : kb.getCategories().getCategory()) {
-
-							for (Serializable content : category.getContent()) {
-								logger.debug("KB Content: {}", content);
-								hmEntities.get(kb.getKBid())
-										.add(content.toString().replaceAll(category.getId() + " - ", ""));
-							}
-						}
-					}
-					if (kb.getRejectedCategories() != null) {
-						for (ServerResponseCategorizerResultCategoryType category : kb.getRejectedCategories()
-								.getRejectedCategory()) {
-							for (Serializable content : category.getContent()) {
-								logger.debug("KB Content Rejected: {}", content);
-							}
-							logger.debug("KB ID Rejected: {}", category.getId());
-							logger.debug("KB Weight Rejected: {}", category.getWeight());
-
-						}
-					}
-				}
-
-			}
+			setCategorizer(result, hmEntities);
 
 		}
 
+	}
+
+	private void setEntities(Object result, Map<String, List<String>> hmEntities) {
+		ServerResponseEntityExtractorResultType entities = (ServerResponseEntityExtractorResultType) result;
+		for (Object nf : entities.getNfExtractOrNfFullTextSearch()) {
+			if (nf instanceof ServerResponseEntityExtractorResultExtractResultType) {
+				setTerms(hmEntities, nf);
+			} else if (nf instanceof ServerResponseEntityExtractorResultFullTextSearchResultType) {
+				setFullText(hmEntities, nf);
+			}
+
+		}
+	}
+
+	private void setTerms(Map<String, List<String>> hmEntities, Object nf) {
+		ServerResponseEntityExtractorResultExtractResultType extractor = (ServerResponseEntityExtractorResultExtractResultType) nf;
+		for (ServerResponseEntityExtractorResultTermType term : extractor.getExtractedTerm()) {
+			logger.debug("getCartridgeID: {}", term.getCartridgeID());
+			if (!hmEntities.containsKey(term.getCartridgeID())) {
+				hmEntities.put(term.getCartridgeID(), new ArrayList<>());
+			}
+
+			logger.debug("getId: {}", term.getId());
+			logger.debug("getNfinderNormalized: {}", term.getNfinderNormalized());
+			if (term.getSubterms() != null) {
+				for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
+						.getSubterm()) {
+					hmEntities.get(term.getCartridgeID()).add(subterm.getValue());
+				}
+
+			}
+		}
+	}
+
+	private void setFullText(Map<String, List<String>> hmEntities, Object nf) {
+		ServerResponseEntityExtractorResultFullTextSearchResultType fullText = (ServerResponseEntityExtractorResultFullTextSearchResultType) nf;
+		for (ServerResponseEntityExtractorResultTermType term : fullText.getExtractedTerm()) {
+			if (!hmEntities.containsKey(term.getCartridgeID())) {
+				hmEntities.put(term.getCartridgeID(), new ArrayList<>());
+			}
+			if (term.getSubterms() != null) {
+				for (ServerResponseEntityExtractorResultTermOccurenceType subterm : term.getSubterms()
+						.getSubterm()) {
+					hmEntities.get(term.getCartridgeID()).add(subterm.getValue());
+				}
+
+			}
+			if (term.getHierarchy() != null && term.getHierarchy().getBase() != null
+					&& term.getHierarchy().getBase().getParents() != null) {
+
+				for (ServerResponseEntityExtractorResultTermParentType parent : term.getHierarchy()
+						.getBase().getParents().getParent()) {
+					hmEntities.get(term.getCartridgeID()).add(parent.getTerm());
+					getParentTerms(parent.getParents(), hmEntities, term.getCartridgeID());
+				}
+			}
+		}
+	}
+
+	private void setCategorizer(Object result, Map<String, List<String>> hmEntities) {
+		ServerResponseCategorizerResultType categorizer = (ServerResponseCategorizerResultType) result;
+		if (categorizer.getCategories() != null) {
+			for (ServerResponseCategorizerResultCategoryType category : categorizer.getCategories().getCategory()) {
+				for (Serializable content : category.getContent()) {
+					logger.debug("Category Content: {}", content);
+				}
+				logger.debug("Category ID: {}", category.getId());
+				logger.debug("Category Weight: {}", category.getWeight());
+			}
+		}
+		if (categorizer.getKnowledgeBase() != null) {
+			for (ServerResponseCategorizerResultKnowledgeBaseType kb : categorizer.getKnowledgeBase()) {
+				if (!hmEntities.containsKey(kb.getKBid())) {
+					hmEntities.put(kb.getKBid(), new ArrayList<>());
+				}
+				if (kb.getCategories() != null) {
+					for (ServerResponseCategorizerResultCategoryType category : kb.getCategories().getCategory()) {
+
+						for (Serializable content : category.getContent()) {
+							logger.debug("KB Content: {}", content);
+							hmEntities.get(kb.getKBid())
+									.add(content.toString().replaceAll(category.getId() + " - ", ""));
+						}
+					}
+				}
+				if (kb.getRejectedCategories() != null) {
+					for (ServerResponseCategorizerResultCategoryType category : kb.getRejectedCategories()
+							.getRejectedCategory()) {
+						for (Serializable content : category.getContent()) {
+							logger.debug("KB Content Rejected: {}", content);
+						}
+						logger.debug("KB ID Rejected: {}", category.getId());
+						logger.debug("KB Weight Rejected: {}", category.getWeight());
+
+					}
+				}
+			}
+
+		}
+	}
+
+	private void setSimpleConcepts(Map<String, List<String>> hmEntities,
+			ServerResponseConceptExtractorResultType concepts) {
+		if (concepts.getSimpleConcepts() != null) {
+			logger.debug(SIMPLE_CONCEPTS);
+			if (!hmEntities.containsKey(SIMPLE_CONCEPTS)) {
+				hmEntities.put(SIMPLE_CONCEPTS, new ArrayList<>());
+			}
+			for (Object simpleConcepts : concepts.getSimpleConcepts().getConceptOrExtractedTerm()) {
+				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept1Type) {
+					hmEntities.get(SIMPLE_CONCEPTS)
+							.add(((ServerResponseConceptExtractorResultConcept1Type) simpleConcepts).getValue());
+				}
+				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept2Type) {
+					hmEntities.get(SIMPLE_CONCEPTS)
+							.add(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent().toString());
+					logger.debug(LOG_KV, SIMPLE_CONCEPTS,
+							((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
+				}
+			}
+		}
+	}
+
+	private void setComplexConcepts(Map<String, List<String>> hmEntities,
+			ServerResponseConceptExtractorResultType concepts) {
+		if (concepts.getComplexConcepts() != null) {
+			logger.debug(COMPLEX_CONCEPTS);
+			if (!hmEntities.containsKey(COMPLEX_CONCEPTS)) {
+				hmEntities.put(COMPLEX_CONCEPTS, new ArrayList<>());
+			}
+
+			for (Object complexConcept : concepts.getComplexConcepts().getConceptOrExtractedTerm()) {
+				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept1Type) {
+					hmEntities.get(COMPLEX_CONCEPTS)
+							.add(((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
+					logger.debug(LOG_KV, COMPLEX_CONCEPTS,
+							((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
+				}
+				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept2Type) {
+					hmEntities.get(COMPLEX_CONCEPTS)
+							.add(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent().toString());
+					logger.debug(LOG_KV, COMPLEX_CONCEPTS,
+							((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
+				}
+			}
+		}
 	}
 
 	public Map<String, List<String>> getAttributes(TurNLP turNLP, Map<String, List<String>> hmEntities) {
