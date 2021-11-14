@@ -100,11 +100,9 @@ public class TurSolrField {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Object[] convertFieldToArray(Object attrValue) {
 		if (attrValue instanceof String) {
-			String[] array = { (String) attrValue };
-			return array;
+			return new String[] { (String) attrValue };
 		} else if (attrValue instanceof Long) {
-			Long[] array = { (Long) attrValue };
-			return array;
+			return new Long[] { (Long) attrValue };
 		} else if (attrValue instanceof ArrayList) {
 			return ((ArrayList) attrValue).toArray(new Object[0]);
 		} else {

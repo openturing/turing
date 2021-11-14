@@ -98,7 +98,7 @@ public class TurSNTemplate {
 		turSNSiteFieldExt.setHl(0);
 		turSNSiteFieldExt.setMultiValued(1);
 		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turNLPEntity.getId());
+		turSNSiteFieldExt.setExternalId(turNLPEntity.getInternalName());
 		turSNSiteFieldExt.setSnType(TurSNFieldType.NER);
 		turSNSiteFieldExt.setType(TurSEFieldType.STRING);
 		turSNSiteFieldExt.setTurSNSite(turSNSite);

@@ -128,7 +128,7 @@ public class TurSNSiteFieldExtAPI {
 				.findByTurNLPInstanceAndEnabled(turSNSiteLocale.getTurNLPInstance(), 1);
 		turNLPInstanceEntities.forEach(turNLPInstanceEntity -> {
 			TurNLPEntity turNLPEntity = turNLPInstanceEntity.getTurNLPEntity();
-			nerMap.put(turNLPEntity.getId(), turNLPEntity);
+			nerMap.put(turNLPEntity.getInternalName(), turNLPEntity);
 		});
 		
 		return nerMap;
@@ -137,7 +137,7 @@ public class TurSNSiteFieldExtAPI {
 	private Map<String, TurNLPEntity> createThesaurusMap(List<TurNLPEntity> turNLPEntityThesaurus) {
 		Map<String, TurNLPEntity> thesaurusMap = new HashMap<>();
 		turNLPEntityThesaurus.forEach(turNLPEntityThesaurusSingle -> thesaurusMap
-				.put(turNLPEntityThesaurusSingle.getId(), turNLPEntityThesaurusSingle));
+				.put(turNLPEntityThesaurusSingle.getInternalName(), turNLPEntityThesaurusSingle));
 		return thesaurusMap;
 	}
 
@@ -205,7 +205,7 @@ public class TurSNSiteFieldExtAPI {
 		turSNSiteFieldExt.setHl(0);
 		turSNSiteFieldExt.setMultiValued(1);
 		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turNLPEntity.getId());
+		turSNSiteFieldExt.setExternalId(turNLPEntity.getInternalName());
 		turSNSiteFieldExt.setSnType(turSNFieldType);
 		turSNSiteFieldExt.setType(TurSEFieldType.STRING);
 		turSNSiteFieldExt.setTurSNSite(turSNSite);

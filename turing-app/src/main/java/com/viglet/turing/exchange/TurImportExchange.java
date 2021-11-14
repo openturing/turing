@@ -60,8 +60,14 @@ public class TurImportExchange {
 					}
 				}
 			}
-			ObjectMapper mapper = new ObjectMapper();
-			try {
+			importSNSiteFromExportFile(extractFolder, parentExtractFolder);
+		}
+		return new TurExchange();
+	}
+
+	private TurExchange importSNSiteFromExportFile(File extractFolder, File parentExtractFolder) {
+		ObjectMapper mapper = new ObjectMapper();
+		try {
 			TurExchange turExchange = mapper.readValue(
 					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator).concat(EXPORT_FILE)),
 					TurExchange.class);
@@ -70,19 +76,16 @@ public class TurImportExchange {
 				turSNSiteImport.importSNSite(turExchange);
 			}
 
-		
-				FileUtils.deleteDirectory(extractFolder);
-				if (parentExtractFolder != null) {
-					FileUtils.deleteDirectory(parentExtractFolder);
-				}
-			
-			return turExchange;
-			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
+			FileUtils.deleteDirectory(extractFolder);
+			if (parentExtractFolder != null) {
+				FileUtils.deleteDirectory(parentExtractFolder);
 			}
+
+			return turExchange;
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
 		}
 		return new TurExchange();
-	
 	}
 
 	public TurExchange importFromFile(File file) {

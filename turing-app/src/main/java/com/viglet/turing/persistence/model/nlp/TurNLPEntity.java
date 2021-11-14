@@ -23,7 +23,6 @@ import javax.persistence.*;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -44,19 +43,15 @@ public class TurNLPEntity implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
-	@GeneratedValue(generator = "UUID")
-	@Column(name = "id", updatable = false, nullable = false)
-	private String id;
-
+	@Column(name = "internal_name", nullable = false, length = 50)
+	private String internalName;
+	
 	@Column(name = "collection_name", nullable = false, length = 50)
 	private String collectionName;
 
 	@Column(nullable = false, length = 255)
 	private String description;
 
-	@Column(name = "internal_name", nullable = false, length = 50)
-	private String internalName;
 
 	@Column(nullable = false)
 	private int local;
@@ -102,14 +97,6 @@ public class TurNLPEntity implements Serializable {
 	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurTerm> turTerms;
-
-	public String getId() {
-		return this.id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
 
 	public String getCollectionName() {
 		return this.collectionName;
