@@ -287,7 +287,7 @@ public class TurOTCAAutorityFileAPI {
 			SAXParserFactory spf = SAXParserFactory.newInstance();
 			spf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
 			spf.setFeature("http://xml.org/sax/features/validation", false);
-
+			spf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 			XMLReader xmlReader = spf.newSAXParser().getXMLReader();
 			SAXSource source = new SAXSource(xmlReader, new InputSource(multipartFile.getInputStream()));
 
