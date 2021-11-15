@@ -46,6 +46,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
+import com.viglet.turing.exception.TurException;
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
@@ -119,10 +120,14 @@ public class TurTMEConnector implements TurNLPPlugin {
 				}
 				// Retrieve response content
 				data = new byte[length];
-				for (int pos = 0, size = 0; length > 0; pos += size, length -= size) {
+				int pos = 0;
+				int size = 0;
+				while (length > 0) {
 					size = input.read(data, pos, length);
+					pos += size;
+					length -= size;
 					if (size == -1) {
-						throw (new RuntimeException("Invalid response"));
+						throw (new TurException("Invalid response"));
 					}
 				}
 				return new String(data, StandardCharsets.UTF_8);
@@ -386,8 +391,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 
 				for (Serializable content : category.getContent()) {
 					logger.debug("KB Content: {}", content);
-					hmEntities.get(kb.getKBid())
-							.add(content.toString().replaceAll(category.getId() + " - ", ""));
+					hmEntities.get(kb.getKBid()).add(content.toString().replaceAll(category.getId() + " - ", ""));
 				}
 			}
 		}
