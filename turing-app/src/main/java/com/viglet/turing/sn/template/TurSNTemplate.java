@@ -66,7 +66,7 @@ public class TurSNTemplate {
 	private TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
 	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-	
+
 	public void defaultSNUI(TurSNSite turSNSite) {
 		turSNSite.setRowsPerPage(10);
 		turSNSite.setFacet(1);
@@ -106,13 +106,13 @@ public class TurSNTemplate {
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
 	}
 
-	public void createSEFields(TurSNSite turSNSite) {
-		// Title
+	private TurSNSiteField createSNSiteField(TurSNSite turSNSite, String name, String description, TurSEFieldType type,
+			int multiValued, String facetName, int hl) {
 		TurSNSiteField turSNSiteField = new TurSNSiteField();
-		turSNSiteField.setName("title");
-		turSNSiteField.setDescription("Title Field");
-		turSNSiteField.setType(TurSEFieldType.STRING);
-		turSNSiteField.setMultiValued(0);
+		turSNSiteField.setName(name);
+		turSNSiteField.setDescription(description);
+		turSNSiteField.setType(type);
+		turSNSiteField.setMultiValued(multiValued);
 		turSNSiteField.setTurSNSite(turSNSite);
 
 		turSNSiteFieldRepository.save(turSNSiteField);
@@ -122,8 +122,8 @@ public class TurSNTemplate {
 		turSNSiteFieldExt.setName(turSNSiteField.getName());
 		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
 		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName("Title");
-		turSNSiteFieldExt.setHl(1);
+		turSNSiteFieldExt.setFacetName(facetName);
+		turSNSiteFieldExt.setHl(hl);
 		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
 		turSNSiteFieldExt.setMlt(0);
 		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
@@ -133,265 +133,24 @@ public class TurSNTemplate {
 
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
 
-		// Text
-		turSNSiteField = new TurSNSiteField();
-		turSNSiteField.setName("text");
-		turSNSiteField.setDescription("Text Field");
-		turSNSiteField.setMultiValued(0);
-		turSNSiteField.setTurSNSite(turSNSite);
-		turSNSiteField.setType(TurSEFieldType.STRING);
+		return turSNSiteField;
+	}
 
-		turSNSiteFieldRepository.save(turSNSiteField);
+	public void createSEFields(TurSNSite turSNSite) {
+		createSNSiteField(turSNSite, "title", "Title Field", TurSEFieldType.STRING, 0, "Titles", 1);
+		createSNSiteField(turSNSite, "text", "Text Field", TurSEFieldType.STRING, 0, "Texts", 1);
+		createSNSiteField(turSNSite, "abstract", "Short Description Field", TurSEFieldType.STRING, 0, "Abstracts", 1);
+		createSNSiteField(turSNSite, "type", "Content Type Field", TurSEFieldType.STRING, 0, "Types", 1);
+		createSNSiteField(turSNSite, "image", "Image Field", TurSEFieldType.STRING, 0, "Images", 0);
+		createSNSiteField(turSNSite, "url", "URL Field", TurSEFieldType.STRING, 0, "URLs", 0);
+		createSNSiteField(turSNSite, "publication_date", "Publication Date", TurSEFieldType.DATE, 0,
+				"Publication Dates", 0);
+		createSNSiteField(turSNSite, "modification_date", "Modification Date", TurSEFieldType.DATE, 0,
+				"Modification Dates", 0);
+		createSNSiteField(turSNSite, "site", "Site Name", TurSEFieldType.STRING, 0, "Sites", 0);
+		createSNSiteField(turSNSite, "author", "Author", TurSEFieldType.STRING, 0, "Authors", 0);
+		createSNSiteField(turSNSite, "section", "Section", TurSEFieldType.STRING, 0, "Sections", 0);
 
-		turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName("Text");
-		turSNSiteFieldExt.setHl(1);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-		// Abstract
-		turSNSiteField = new TurSNSiteField();
-		turSNSiteField.setName("abstract");
-		turSNSiteField.setDescription("Short Description Field");
-		turSNSiteField.setMultiValued(0);
-		turSNSiteField.setTurSNSite(turSNSite);
-		turSNSiteField.setType(TurSEFieldType.STRING);
-
-		turSNSiteFieldRepository.save(turSNSiteField);
-
-		turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName("Abstract");
-		turSNSiteFieldExt.setHl(1);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-		// Type
-		turSNSiteField = new TurSNSiteField();
-		turSNSiteField.setName("type");
-		turSNSiteField.setDescription("Content Type Field");
-		turSNSiteField.setMultiValued(0);
-		turSNSiteField.setTurSNSite(turSNSite);
-		turSNSiteField.setType(TurSEFieldType.STRING);
-
-		turSNSiteFieldRepository.save(turSNSiteField);
-
-		turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(1);
-		turSNSiteFieldExt.setFacetName("Types");
-		turSNSiteFieldExt.setHl(1);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-		// Image
-		turSNSiteField = new TurSNSiteField();
-		turSNSiteField.setName("image");
-		turSNSiteField.setDescription("Image Field");
-		turSNSiteField.setMultiValued(0);
-		turSNSiteField.setTurSNSite(turSNSite);
-		turSNSiteField.setType(TurSEFieldType.STRING);
-
-		turSNSiteFieldRepository.save(turSNSiteField);
-
-		turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(1);
-		turSNSiteFieldExt.setFacetName("Images");
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-		// URL
-		turSNSiteField = new TurSNSiteField();
-		turSNSiteField.setName("url");
-		turSNSiteField.setDescription("URL Field");
-		turSNSiteField.setMultiValued(0);
-		turSNSiteField.setTurSNSite(turSNSite);
-		turSNSiteField.setType(TurSEFieldType.STRING);
-
-		turSNSiteFieldRepository.save(turSNSiteField);
-
-		turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName("URLs");
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-		// Publication Date
-		turSNSiteField = new TurSNSiteField();
-		turSNSiteField.setName("publication_date");
-		turSNSiteField.setDescription("Publication Date");
-		turSNSiteField.setMultiValued(0);
-		turSNSiteField.setTurSNSite(turSNSite);
-		turSNSiteField.setType(TurSEFieldType.DATE);
-
-		turSNSiteFieldRepository.save(turSNSiteField);
-
-		turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName("Publication Dates");
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-		// Modification Date
-		turSNSiteField = new TurSNSiteField();
-		turSNSiteField.setName("modification_date");
-		turSNSiteField.setDescription("Modification Date");
-		turSNSiteField.setMultiValued(0);
-		turSNSiteField.setTurSNSite(turSNSite);
-		turSNSiteField.setType(TurSEFieldType.DATE);
-
-		turSNSiteFieldRepository.save(turSNSiteField);
-
-		turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName("Modification Dates");
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-		// Site
-		turSNSiteField = new TurSNSiteField();
-		turSNSiteField.setName("site");
-		turSNSiteField.setDescription("Site Name");
-		turSNSiteField.setMultiValued(0);
-		turSNSiteField.setTurSNSite(turSNSite);
-		turSNSiteField.setType(TurSEFieldType.STRING);
-
-		turSNSiteFieldRepository.save(turSNSiteField);
-
-		turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName("Sites");
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-		// Author
-		turSNSiteField = new TurSNSiteField();
-		turSNSiteField.setName("author");
-		turSNSiteField.setDescription("Author");
-		turSNSiteField.setMultiValued(0);
-		turSNSiteField.setTurSNSite(turSNSite);
-		turSNSiteField.setType(TurSEFieldType.STRING);
-
-		turSNSiteFieldRepository.save(turSNSiteField);
-
-		turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName("Authors");
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-		// Section
-		turSNSiteField = new TurSNSiteField();
-		turSNSiteField.setName("section");
-		turSNSiteField.setDescription("Section");
-		turSNSiteField.setMultiValued(0);
-		turSNSiteField.setTurSNSite(turSNSite);
-		turSNSiteField.setType(TurSEFieldType.STRING);
-
-		turSNSiteFieldRepository.save(turSNSiteField);
-
-		turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName("Sections");
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
 	}
 
 	public void createSpotlight(TurSNSite turSNSite) {
@@ -409,33 +168,32 @@ public class TurSNTemplate {
 		turSNSiteSpotlightDocument.setSearchId("https://docs.viglet.com/");
 		turSNSiteSpotlightDocument.setType("Page");
 		turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
-		
+
 		TurSNSiteSpotlightTerm turSNSiteSpotlightTerm = new TurSNSiteSpotlightTerm();
 		turSNSiteSpotlightTerm.setName("sample");
 		turSNSiteSpotlightTerm.setTurSNSiteSpotlight(turSNSiteSpotlight);
 		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm);
-		
+
 		TurSNSiteSpotlightTerm turSNSiteSpotlightTerm2 = new TurSNSiteSpotlightTerm();
 		turSNSiteSpotlightTerm2.setName("sample2");
 		turSNSiteSpotlightTerm2.setTurSNSiteSpotlight(turSNSiteSpotlight);
 		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm2);
 	}
-	
+
 	public void createLocale(TurSNSite turSNSite) {
-		
+
 		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
 		turSNSiteLocale.setLanguage(TurLocaleRepository.EN_US);
 		turSNSiteLocale.setCore("turing");
 		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
 		turSNSiteLocale.setTurSNSite(turSNSite);
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
-		
 
 		TurSNSiteLocale turSNSiteLocale2 = new TurSNSiteLocale();
 		turSNSiteLocale2.setLanguage(TurLocaleRepository.PT_BR);
 		turSNSiteLocale2.setCore("turing_pt");
 		turSNSiteLocale2.setTurNLPInstance(turNLPInstanceRepository.findAll().get(1));
 		turSNSiteLocale2.setTurSNSite(turSNSite);
-		turSNSiteLocaleRepository.save(turSNSiteLocale2);		
+		turSNSiteLocaleRepository.save(turSNSiteLocale2);
 	}
 }
