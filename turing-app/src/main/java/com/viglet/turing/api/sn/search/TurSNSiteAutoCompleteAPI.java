@@ -84,41 +84,62 @@ public class TurSNSiteAutoCompleteAPI {
 
 	private List<String> createFormattedList(SpellCheckResponse turSEResults, int tokenQSize) {
 		List<String> termListFormatted = new ArrayList<>();
-		if (turSEResults != null && turSEResults.getSuggestions() != null && !turSEResults.getSuggestions().isEmpty()) {
+		if (hasSuggestions(turSEResults)) {
 			List<String> termList = turSEResults.getSuggestions().get(0).getAlternatives();
-			List<String> stopWords = turSEStopword.getStopWords();
-			String previousTerm = null;
-			boolean previousFinishedStopWords = false;
-			for (String term : termList) {
-				String[] token = term.split(" ");
-				String lastToken = token[token.length - 1];
-				if (token.length > tokenQSize) {
-					if (previousTerm == null) {
-						if (!stopWords.contains(lastToken) || !term.contains(previousTerm)) {
-							termListFormatted.add(term);
-							previousFinishedStopWords = false;
-						} else {
-							previousFinishedStopWords = true;
-						}
-						previousTerm = term;
-					} else {
-						if (previousFinishedStopWords) {
-							if (!stopWords.contains(lastToken)) {
-								termListFormatted.add(term);
-								previousFinishedStopWords = false;
-							}
-						} else {
-							previousFinishedStopWords = true;
-						}
-					}
-
-				} else {
-					termListFormatted.add(term);
-					previousTerm = term + "";
-				}
-			}
+			FormatteListData formatteListData = new FormatteListData();
+			termList.forEach(term -> processTern(tokenQSize, termListFormatted, formatteListData, term));
 		}
 		return termListFormatted;
+	}
+
+	private void processTern(int tokenQSize, List<String> termListFormatted, FormatteListData formatteListData,
+			String term) {
+		String[] token = term.split(" ");
+		String lastToken = token[token.length - 1];
+		if (token.length > tokenQSize) {
+			if (formatteListData.getPreviousTerm() == null) {
+				firstIter(termListFormatted, formatteListData, term, lastToken);
+			} else {
+				otherIter(termListFormatted, formatteListData, term, lastToken);
+			}
+
+		} else {
+			finishTermList(termListFormatted, formatteListData, term);
+		}
+	}
+
+	private void finishTermList(List<String> termListFormatted, FormatteListData formatteListData, String term) {
+		termListFormatted.add(term);
+		formatteListData.setPreviousTerm(term + "");
+	}
+
+	private void otherIter(List<String> termListFormatted, FormatteListData formatteListData, String term,
+			String lastToken) {
+		if (formatteListData.isPreviousFinishedStopWords()) {
+			if (!formatteListData.getStopWords().contains(lastToken)) {
+				termListFormatted.add(term);
+				formatteListData.setPreviousFinishedStopWords(false);
+			}
+		} else {
+			formatteListData.setPreviousFinishedStopWords(true);
+		}
+	}
+
+	private void firstIter(List<String> termListFormatted, FormatteListData formatteListData, String term,
+			String lastToken) {
+		if (!formatteListData.getStopWords().contains(lastToken)
+				|| !term.contains(formatteListData.getPreviousTerm())) {
+			termListFormatted.add(term);
+			formatteListData.setPreviousFinishedStopWords(false);
+		} else {
+			formatteListData.setPreviousFinishedStopWords(true);
+		}
+		formatteListData.setPreviousTerm(term);
+	}
+
+	private boolean hasSuggestions(SpellCheckResponse turSEResults) {
+		return turSEResults != null && turSEResults.getSuggestions() != null
+				&& !turSEResults.getSuggestions().isEmpty();
 	}
 
 	private List<String> removeDuplicatedTerms(List<String> termListFormatted, int tokenQSize) {
@@ -142,5 +163,36 @@ public class TurSNSiteAutoCompleteAPI {
 			}
 		}
 		return termListShrink;
+	}
+
+	class FormatteListData {
+		private List<String> stopWords = turSEStopword.getStopWords();
+		private String previousTerm = null;
+		private boolean previousFinishedStopWords = false;
+
+		public List<String> getStopWords() {
+			return stopWords;
+		}
+
+		public void setStopWords(List<String> stopWords) {
+			this.stopWords = stopWords;
+		}
+
+		public String getPreviousTerm() {
+			return previousTerm;
+		}
+
+		public void setPreviousTerm(String previousTerm) {
+			this.previousTerm = previousTerm;
+		}
+
+		public boolean isPreviousFinishedStopWords() {
+			return previousFinishedStopWords;
+		}
+
+		public void setPreviousFinishedStopWords(boolean previousFinishedStopWords) {
+			this.previousFinishedStopWords = previousFinishedStopWords;
+		}
+
 	}
 }
