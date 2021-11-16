@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.AbstractMap.SimpleEntry;
 
@@ -281,7 +282,7 @@ public class TurSolr {
 		return turSEResult;
 	}
 
-	public TurSEResults retrieveSolrFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
+	public Optional<TurSEResults> retrieveSolrFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
 			TurSNSiteSearchContext context) {
 		
 		TurSEParameters turSEParameters = context.getTurSEParameters();
@@ -314,7 +315,7 @@ public class TurSolr {
 				turSNSiteFacetFieldExts, turSNSiteHlFieldExts);
 	}
 
-	private TurSEResults executeSolrQueryFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
+	private Optional<TurSEResults> executeSolrQueryFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
 			TurSEParameters turSEParameters, SolrQuery query, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts,
 			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts, List<TurSNSiteFieldExt> turSNSiteHlFieldExts) {
 		TurSEResults turSEResults = new TurSEResults();
@@ -335,11 +336,11 @@ public class TurSolr {
 
 			turSEResults.setSpellCheck(spellCheckTerm(turSolrInstance, turSEParameters.getQuery()));
 
-			return turSEResults;
+			return Optional.of(turSEResults);
 		} catch (IOException | SolrServerException e) {
 			logger.error(e);
 		}
-		return null;
+		return Optional.empty();
 	}
 
 	private void setMLT(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts, TurSEResults turSEResults,
