@@ -43,6 +43,7 @@ import com.viglet.turing.solr.TurSolrInstanceProcess;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.viglet.turing.api.sn.bean.TurSNSiteFilterQueryBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchDefaultFieldsBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentBean;
@@ -126,9 +127,9 @@ public class TurSNSiteSearchAPI {
 			turSNSiteSearchBean.setResults(
 					responseDocuments(turSNSiteSearchContext, turSolrInstance, turSNSite, facetMap, turSEResults));
 			turSNSiteSearchBean.setPagination(responsePagination(turSNSiteSearchContext.getUri(), turSEResults));
-			turSNSiteSearchBean.setWidget(responseWidget(turSNSiteSearchContext, turSNSite,
-					turSNSiteFacetFieldExts, facetMap, turSEResults));
-			turSNSiteSearchBean.setQueryContext(responseQueryContext(turSNSite, turSEResults));
+			turSNSiteSearchBean.setWidget(
+					responseWidget(turSNSiteSearchContext, turSNSite, turSNSiteFacetFieldExts, facetMap, turSEResults));
+			turSNSiteSearchBean.setQueryContext(responseQueryContext(turSNSite, turSEResults, locale));
 		});
 
 		return turSNSiteSearchBean;
@@ -289,8 +290,23 @@ public class TurSNSiteSearchAPI {
 		turSNSiteSearchWidgetBean.setFacetToRemove(responseFacetToRemove(context));
 		turSNSiteSearchWidgetBean.setSimilar(responseMLT(turSNSite, turSEResults));
 		turSNSiteSearchWidgetBean.setSpellCheck(responseSpellCheck(context, turSEResults.getSpellCheck()));
+		turSNSiteSearchWidgetBean.setLocales(responseLocales(turSNSite, context));
 		return turSNSiteSearchWidgetBean;
 
+	}
+
+	private List<TurSNSiteLocaleBean> responseLocales(TurSNSite turSNSite, TurSNSiteSearchContext context) {
+		List<TurSNSiteLocaleBean> turSNSiteLocaleBeans = new ArrayList<>();
+		turSNSite.getTurSNSiteLocales().forEach(turSNSiteLocale -> {
+			TurSNSiteLocaleBean turSNSiteLocaleBean = new TurSNSiteLocaleBean();
+			turSNSiteLocaleBean.setLocale(turSNSiteLocale.getLanguage());
+			turSNSiteLocaleBean.setLink(TurSNUtils
+					.addOrReplaceParameter(context.getUri(), TurSNParamType.LOCALE, turSNSiteLocale.getLanguage())
+					.toString());
+			turSNSiteLocaleBeans.add(turSNSiteLocaleBean);
+		});
+
+		return turSNSiteLocaleBeans;
 	}
 
 	private TurSNSiteSpellCheckBean responseSpellCheck(TurSNSiteSearchContext context,
@@ -299,12 +315,13 @@ public class TurSNSiteSearchAPI {
 
 	}
 
-	private TurSNSiteSearchQueryContextBean responseQueryContext(TurSNSite turSNSite, TurSEResults turSEResults) {
+	private TurSNSiteSearchQueryContextBean responseQueryContext(TurSNSite turSNSite, TurSEResults turSEResults,
+			String locale) {
 		TurSNSiteSearchQueryContextQueryBean turSNSiteSearchQueryContextQueryBean = new TurSNSiteSearchQueryContextQueryBean();
 
 		turSNSiteSearchQueryContextQueryBean.setQueryString(turSEResults.getQueryString());
 		turSNSiteSearchQueryContextQueryBean.setSort(turSEResults.getSort());
-
+		turSNSiteSearchQueryContextQueryBean.setLocale(locale);
 		TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContextBean = new TurSNSiteSearchQueryContextBean();
 		turSNSiteSearchQueryContextBean.setQuery(turSNSiteSearchQueryContextQueryBean);
 		turSNSiteSearchQueryContextBean.setDefaultFields(defaultFields(turSNSite));

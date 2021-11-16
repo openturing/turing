@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ public class TurSNSiteSearchWidgetBean {
 	private TurSNSiteSearchFacetBean facetToRemove;
 	private List<TurSESimilarResult> similar;
 	private TurSNSiteSpellCheckBean spellCheck;
-
+	private List<TurSNSiteLocaleBean> locales;
 	public List<TurSNSiteSearchFacetBean> getFacet() {
 		return facet;
 	}
@@ -62,6 +62,14 @@ public class TurSNSiteSearchWidgetBean {
 
 	public void setSpellCheck(TurSNSiteSpellCheckBean spellCheck) {
 		this.spellCheck = spellCheck;
+	}
+
+	public List<TurSNSiteLocaleBean> getLocales() {
+		return locales;
+	}
+
+	public void setLocales(List<TurSNSiteLocaleBean> locales) {
+		this.locales = locales;
 	}
 
 }

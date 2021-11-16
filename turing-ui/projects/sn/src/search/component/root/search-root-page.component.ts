@@ -118,6 +118,12 @@ export class TurSNSearchRootPageComponent implements OnInit {
     this.turSort = orderBy;
     this.searchIt();
   }
+
+  changeLocale(locale: string) {
+    this.turLocale = locale;
+    this.searchIt();
+  }
+
   searchIt() {
     this.turRedirect("?" + this.generateQueryString());
   }
