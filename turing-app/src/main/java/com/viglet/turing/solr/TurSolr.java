@@ -284,7 +284,7 @@ public class TurSolr {
 
 	public Optional<TurSEResults> retrieveSolrFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
 			TurSNSiteSearchContext context) {
-		
+
 		TurSEParameters turSEParameters = context.getTurSEParameters();
 		SolrQuery query = new SolrQuery();
 		setRows(turSNSite, turSEParameters);
@@ -306,11 +306,11 @@ public class TurSolr {
 		prepareQueryFilterQuery(turSEParameters, query);
 
 		prepareQueryTargetingRules(turSEParameters, query);
-		
+
 		List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = prepareQueryMLT(turSNSite, query);
 		List<TurSNSiteFieldExt> turSNSiteHlFieldExts = prepareQueryHL(turSNSite, query);
 		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = prepareQueryFacet(turSNSite, query);
-		
+
 		return executeSolrQueryFromSN(turSolrInstance, turSNSite, turSEParameters, query, turSNSiteMLTFieldExts,
 				turSNSiteFacetFieldExts, turSNSiteHlFieldExts);
 	}
@@ -325,7 +325,7 @@ public class TurSolr {
 
 			turSEResultsParameters(turSEParameters, query, turSEResults, queryResponse);
 
-			processSEResultsFacet(turSNSite, query, turSEResults, queryResponse, turSNSiteFacetFieldExts);
+			processSEResultsFacet(turSNSite, turSEResults, queryResponse, turSNSiteFacetFieldExts);
 
 			List<TurSESimilarResult> similarResults = new ArrayList<>();
 
@@ -423,13 +423,12 @@ public class TurSolr {
 		}
 	}
 
-	private void processSEResultsFacet(TurSNSite turSNSite, SolrQuery query, TurSEResults turSEResults,
-			QueryResponse queryResponse, List<TurSNSiteFieldExt> turSNSiteFacetFieldExts) {
-		
+	private void processSEResultsFacet(TurSNSite turSNSite, TurSEResults turSEResults, QueryResponse queryResponse,
+			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts) {
 
 		if (wasFacetConfigured(turSNSite, turSNSiteFacetFieldExts)) {
 			List<TurSEFacetResult> facetResults = new ArrayList<>();
-			
+
 			for (FacetField facet : queryResponse.getFacetFields()) {
 
 				TurSEFacetResult turSEFacetResult = new TurSEFacetResult();
