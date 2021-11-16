@@ -26,7 +26,7 @@
   }
 </style>
 
-<div class="clearfix"  *ngIf="(getTurSNSearchItems() | async) as snSearch; else loading">
+<div class="clearfix" *ngIf="(getTurSNSearchItems() | async) as snSearch; else loading">
   <div class="Header ">
     <div class="Header-item ">
       <button (click)="showAll()" class="btn-link Header-link f4 d-flex flex-items-center">
@@ -64,10 +64,18 @@
     <div class="Header-item">
       <div class="subnav-search float-left mr-2">
         <input [(ngModel)]="turQuery" (keyup.enter)="searchIt()" type="search" name="name"
-          class="form-control subnav-search-input" autocapitalize="off" aria-label="Search…" placeholder="Search…"
-          spellcheck="false" autocomplete="off" aria-label="Search site" />
+          (input)="retrieveAutoComplete()" class="form-control subnav-search-input" autocapitalize="off"
+          aria-label="Search…" placeholder="Search…" spellcheck="false" autocomplete="off" aria-label="Search site" />
         <span octicon="search" [size]=16 class="subnav-search-icon octicon octicon-search"></span>
+        <div *ngIf="(getAutoComplete() | async) as autoComplete;">
+          <ul *ngIf="autoComplete.length > 0" class="autocomplete-results">
+            <li *ngFor="let autoCompleteTerm of autoComplete" class="autocomplete-item"
+              (click)="turQuery = autoCompleteTerm;retrieveAutoComplete()">
+              {{autoCompleteTerm}}</li>
+          </ul>
+        </div>
       </div>
+
       <details class="details-reset details-overlay">
         <summary class="btn btn-sm" aria-haspopup="true">
           <i>Language:</i>
@@ -79,7 +87,8 @@
               <h3 class="SelectMenu-title">Locale options</h3>
             </header>
             <div class="SelectMenu-list">
-              <button *ngFor="let locale of snSearch.widget.locales" class="SelectMenu-item" role="menuitem"  (click)="changeLocale(locale.locale)">
+              <button *ngFor="let locale of snSearch.widget.locales" class="SelectMenu-item" role="menuitem"
+                (click)="changeLocale(locale.locale)">
                 {{locale.locale}}
               </button>
             </div>
@@ -89,8 +98,7 @@
     </div>
   </div>
 
-  <div class="container-lg px-md-2 mt-lg-4 clearfix"
-    style="min-height: 600px;">
+  <div class="container-lg px-md-2 mt-lg-4 clearfix" style="min-height: 600px;">
 
     <div *ngIf="snSearch.results.document.length <= 0" class="blankslate blankslate-large">
       <span octicon="search" [size]=48 class="mb-3"></span>

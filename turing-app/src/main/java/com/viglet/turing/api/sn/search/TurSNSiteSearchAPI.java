@@ -221,7 +221,6 @@ public class TurSNSiteSearchAPI {
 				} else {
 					targetingRuleModified.add(targetingRule);
 				}
-
 			}
 		}
 		return targetingRuleModified;

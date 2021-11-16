@@ -22,6 +22,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
   private turTargetingRule!: string[];
   private turAutoCorrectionDisabled!: string;
   public sortOptions: Map<string, string> = new Map();
+  private autoCompleteList!: Observable<string[]>;
 
   constructor(
     private turSNSearchService: TurSNSearchService,
@@ -56,7 +57,21 @@ export class TurSNSearchRootPageComponent implements OnInit {
   getTurSNSearchItems(): Observable<TurSNSearch> {
     return this.turSNSearchItems;
   }
+  retrieveAutoComplete(): void {
+    this.autoCompleteList = this.turSNSearchService.autoComplete(
+      this.turSiteName,
+      this.turQuery,
+      this.turPage,
+      this.turLocale,
+      this.turSort,
+      this.turFilterQuery,
+      this.turTargetingRule,
+      this.turAutoCorrectionDisabled);
+  }
 
+  getAutoComplete(): Observable<string[]> {
+    return this.autoCompleteList;
+  }
   updateParameters(turPath: string) {
     if (turPath.endsWith("/")) {
       turPath = turPath.substring(0, turPath.length - 1);

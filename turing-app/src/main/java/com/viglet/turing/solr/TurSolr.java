@@ -329,7 +329,7 @@ public class TurSolr {
 
 			List<TurSESimilarResult> similarResults = new ArrayList<>();
 
-			turSEResults.setResults(addSolrDocumentsToSEResults(turSNSite, query, turSNSiteMLTFieldExts, queryResponse,
+			turSEResults.setResults(addSolrDocumentsToSEResults(turSNSite, turSNSiteMLTFieldExts, queryResponse,
 					similarResults, turSNSiteHlFieldExts));
 
 			setMLT(turSNSite, turSNSiteMLTFieldExts, turSEResults, similarResults);
@@ -389,7 +389,7 @@ public class TurSolr {
 		return turSNSite.getMlt() == 1 && turSNSiteMLTFieldExts != null && !turSNSiteMLTFieldExts.isEmpty();
 	}
 
-	private List<TurSEResult> addSolrDocumentsToSEResults(TurSNSite turSNSite, SolrQuery query,
+	private List<TurSEResult> addSolrDocumentsToSEResults(TurSNSite turSNSite,
 			List<TurSNSiteFieldExt> turSNSiteMLTFieldExts, QueryResponse queryResponse,
 			List<TurSESimilarResult> similarResults, List<TurSNSiteFieldExt> turSNSiteHlFieldExts) {
 		Map<String, Object> requiredFields = getRequiredFields(turSNSite);
