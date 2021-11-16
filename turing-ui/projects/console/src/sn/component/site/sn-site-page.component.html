@@ -21,7 +21,7 @@
       </div>
     </div>
     <div *ngIf="!isNewObject()" class="Subhead-actions" style="display: inherit;">
-      <details #modalDelete id="modalDelete" class="details-reset details-overlay details-overlay-dark"
+      <details #modalDelete id="modalDelete" class="details-reset details-overlay details-overlay-dark mr-2"
         style="display: unset;">
         <summary class="btn btn-sm btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
             class="mr-1"></span>Delete</summary>
@@ -67,8 +67,6 @@
         </a>
         <a class="social-count" href="#url">6</a>
       </div>
-      <a *ngIf="!isNewObject()" href="/sn/{{snSite.name}}" target="_blank" class="btn btn-outline btn-sm"
-        role="button"><span octicon="eye" [size]=16 class="mr-1"></span> Open Site</a>
     </div>
     <div *ngIf="!isNewObject()" class="Subhead-description">{{snSite.description}}</div>
   </div>
@@ -79,6 +77,12 @@
           octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
     </nav>
 
+    <nav *ngIf="!isNewObject()" class="menu" aria-label="Mult Languages">
+      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'languages']" [routerLinkActive]="['selected']"><span
+          octicon="typography" [size]=16 class="mr-1"></span>
+        Languages</a>
+    </nav>
+
     <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
       <span class="menu-heading" id="menu-heading"><span octicon="law" [size]=16 class="mr-1"></span>
         Behavior</span>
@@ -86,7 +90,8 @@
         Facet</a>
       <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']">
         Highlighting</a>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']"> Did you mean?</a>
+      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']"> Did you
+        mean?</a>
       <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']"> MLT</a>
       <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']"> Default
         Fields</a>

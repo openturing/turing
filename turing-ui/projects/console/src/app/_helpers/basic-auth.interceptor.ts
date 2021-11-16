@@ -13,12 +13,14 @@ export class BasicAuthInterceptor implements HttpInterceptor {
         const user = this.authenticationService.userValue;
         const isLoggedIn = user && Object.keys(user).length != 0 && user.authdata;
         const isApiUrl = request.url.startsWith(environment.apiUrl);
+        const token = this.xsrfTokenExtractor.getToken() as string;
         if (isLoggedIn && isApiUrl) {
             request = request.clone({
                 setHeaders: {
                     Authorization: `Basic ${user.authdata}`,
                     'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': token
                 }
             });
 

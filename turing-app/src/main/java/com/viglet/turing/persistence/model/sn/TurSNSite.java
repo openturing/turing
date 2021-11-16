@@ -29,6 +29,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
@@ -109,6 +110,11 @@ public class TurSNSite implements Serializable {
 	@JoinColumn(name = "se_instance_id", nullable = false)
 	private TurSEInstance turSEInstance;
 
+	// bi-directional many-to-one association to TurSEInstance
+	@ManyToOne
+	@JoinColumn(name = "nlp_vendor_id", nullable = false)
+	private TurNLPVendor turNLPVendor;
+
 	// bi-directional many-to-one association to TurSNSiteField
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
 	@Cascade({ CascadeType.ALL })
@@ -167,6 +173,14 @@ public class TurSNSite implements Serializable {
 
 	public void setTurSEInstance(TurSEInstance turSEInstance) {
 		this.turSEInstance = turSEInstance;
+	}
+
+	public TurNLPVendor getTurNLPVendor() {
+		return turNLPVendor;
+	}
+
+	public void setTurNLPVendor(TurNLPVendor turNLPVendor) {
+		this.turNLPVendor = turNLPVendor;
 	}
 
 	public Set<TurSNSiteField> getTurSNSiteFields() {

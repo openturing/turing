@@ -1,5 +1,5 @@
-import { TurNLPInstance } from "../../nlp/model/nlp-instance.model";
 import { TurSEInstance } from "../../se/model/se-instance.model";
+import { TurSNSiteLocale } from "./sn-site-locale.model";
 
 export interface TurSNSite {
   id: string;
@@ -17,11 +17,9 @@ export interface TurSNSite {
   hlPre: string;
   hlPost: string;
   mlt: number;
-  core: string;
   thesaurus: number;
   turSEInstance: TurSEInstance;
-  turNLPInstance: TurNLPInstance;
-  language: string;
+  turSNSiteLocales: TurSNSiteLocale[];
   rowsPerPage: number;
   spellCheck: number;
   spellCheckFixes: number;

@@ -121,6 +121,7 @@ public class TurSNSiteSearchAPI {
 		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
 
 		requestSolr(turSolrInstance, turSNSiteSearchContext, turSNSite).ifPresent(turSEResults -> {
+			System.out.println("turSEResults: " + turSEResults.getQueryString());
 			if (TurSNUtils.isAutoCorrectionEnabled(turSNSiteSearchContext, turSNSite)) {
 				TurSESpellCheckResult turSESpellCheckResult = turSolr.spellCheckTerm(turSolrInstance, q);
 				if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
@@ -169,7 +170,7 @@ public class TurSNSiteSearchAPI {
 		turSEParameters.setRows(turSEParameters.getRows() == null ? 0 : turSEParameters.getRows());
 		try {
 			TurSEResults turSEResults = turSolr.retrieveSolrFromSN(turSolrInstance, turSNSite, context);
-			return Optional.ofNullable(turSEResults);
+			return Optional.of(turSEResults);
 		} catch (Exception e) {
 			logger.error(e);
 		}

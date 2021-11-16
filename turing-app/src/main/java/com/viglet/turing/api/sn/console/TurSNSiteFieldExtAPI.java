@@ -44,14 +44,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
+import com.viglet.turing.persistence.repository.nlp.TurNLPVendorEntityRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -64,7 +64,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
-@RequestMapping("/api/sn/{snSiteId}/{locale}/field/ext")
+@RequestMapping("/api/sn/{snSiteId}/field/ext")
 @Tag(name = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
 public class TurSNSiteFieldExtAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteFieldExtAPI.class);
@@ -75,23 +75,22 @@ public class TurSNSiteFieldExtAPI {
 	@Autowired
 	private TurSNSiteFieldRepository turSNSiteFieldRepository;
 	@Autowired
-	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
-	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
 	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 	@Autowired
+	private TurNLPVendorEntityRepository turNLPVendorEntityRepository;
+	@Autowired
 	private TurSNTemplate turSNTemplate;
-
+	
 	@Operation(summary = "Semantic Navigation Site Field Ext List")
 	@Transactional
 	@GetMapping
-	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String snSiteId, @PathVariable String locale) {
+	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String snSiteId) {
 		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
-			TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
 			Map<String, TurNLPEntity> nerMap = new HashMap<>();
-			if (turSNSiteLocale.getTurNLPInstance() != null) {
-				nerMap = createNERMap(turSNSiteLocale);
+			if (turSNSite.getTurNLPVendor() != null) {
+				nerMap = createNERMap(turSNSite.getTurNLPVendor());
 			} else {
 				turSNSiteFieldExtRepository.deleteByTurSNSiteAndSnType(turSNSite, TurSNFieldType.NER);
 			}
@@ -122,12 +121,10 @@ public class TurSNSiteFieldExtAPI {
 
 	}
 
-	private Map<String, TurNLPEntity> createNERMap(TurSNSiteLocale turSNSiteLocale) {
+	private Map<String, TurNLPEntity> createNERMap(TurNLPVendor turNLPVendor) {
 		Map<String, TurNLPEntity> nerMap = new HashMap<>();
-		List<TurNLPInstanceEntity> turNLPInstanceEntities = turNLPInstanceEntityRepository
-				.findByTurNLPInstanceAndEnabled(turSNSiteLocale.getTurNLPInstance(), 1);
-		turNLPInstanceEntities.forEach(turNLPInstanceEntity -> {
-			TurNLPEntity turNLPEntity = turNLPInstanceEntity.getTurNLPEntity();
+		turNLPVendorEntityRepository.findByTurNLPVendor(turNLPVendor).forEach(turNLPVendorEntity -> {
+			TurNLPEntity turNLPEntity = turNLPVendorEntity.getTurNLPEntity();
 			nerMap.put(turNLPEntity.getInternalName(), turNLPEntity);
 		});
 		
