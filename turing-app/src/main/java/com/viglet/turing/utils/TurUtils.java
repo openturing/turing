@@ -51,6 +51,8 @@ public class TurUtils {
 	private static final Log logger = LogFactory.getLog(TurUtils.class);
 	@Autowired
 	private ITurAuthenticationFacade authenticationFacade;
+	private static final String USER_DIR = "user.dir";
+	private static final File userDir = new File(System.getProperty(USER_DIR));
 
 	public String getCurrentUsername() {
 		Authentication authentication = authenticationFacade.getAuthentication();
@@ -120,29 +122,43 @@ public class TurUtils {
 		return path.substring(index);
 	}
 
-	public static File extractZipFile(MultipartFile file) {
-		File userDir = new File(System.getProperty("user.dir"));
-		if (userDir.exists() && userDir.isDirectory()) {
-			File tmpDir = new File(userDir.getAbsolutePath().concat(File.separator + "store" + File.separator + "tmp"));
-			if (!tmpDir.exists()) {
-				tmpDir.mkdirs();
-			}
-
-			File zipFile = new File(tmpDir.getAbsolutePath().concat(File.separator + "imp_"
-					+ file.getOriginalFilename().replace(".", "").replace("/", "") + UUID.randomUUID())); // NOSONAR
-			try {
-				file.transferTo(zipFile);
-				File extractFolder = new File(
-						tmpDir.getAbsolutePath().concat(File.separator + "imp_" + UUID.randomUUID()));
-
-				unZipIt(zipFile, extractFolder);
-
-				FileUtils.deleteQuietly(zipFile);
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-			}
+	public static File getStoreDir() {
+		File store = new File(userDir.getAbsolutePath().concat(File.separator + "store"));
+		if (!store.exists()) {
+			store.mkdirs();
 		}
-		return null;
+		return store;
+	}
+
+	public static File addSubDirToStoreDir(String directoryName) {
+		File storeDir = getStoreDir();
+		File newDir = new File(storeDir.getAbsolutePath().concat(File.separator + directoryName));
+		if (!newDir.exists()) {
+			newDir.mkdirs();
+		}
+		return newDir;
+	}
+
+	public static File extractZipFile(MultipartFile file) {
+		File tmpDir = addSubDirToStoreDir("tmp");
+
+		File zipFile = new File(tmpDir.getAbsolutePath().concat(File.separator + "imp_"
+				+ file.getOriginalFilename().replace(".", "").replace("/", "") + UUID.randomUUID())); // NOSONAR
+
+		try {
+			file.transferTo(zipFile);
+		} catch (IllegalStateException | IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+		File extractFolder = new File(tmpDir.getAbsolutePath().concat(File.separator + "imp_" + UUID.randomUUID()));
+		try {
+			unZipIt(zipFile, extractFolder);
+			FileUtils.deleteQuietly(zipFile);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
+
+		return extractFolder;
 	}
 
 	/**

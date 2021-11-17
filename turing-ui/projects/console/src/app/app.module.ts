@@ -2,7 +2,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 
 import { AppRoutingModule } from './app-routing.module';
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AppComponent } from './page/app/app.component';
 import { BasicAuthInterceptor, ErrorInterceptor } from './_helpers';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -63,6 +63,10 @@ const notifierDefaultOptions: NotifierOptions = {
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
+    HttpClientXsrfModule.withOptions({
+      cookieName: 'XSRF-TOKEN',
+      headerName: 'X-CSRF-TOKEN'
+    }),
     ReactiveFormsModule,
     FormsModule,
     NotifierModule.withConfig(notifierDefaultOptions),

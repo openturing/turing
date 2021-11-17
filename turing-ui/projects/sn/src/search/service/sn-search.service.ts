@@ -31,6 +31,10 @@ export class TurSNSearchService {
     return this.httpClient.get<TurSNSearch>(`${environment.apiUrl}/api/sn/${turSiteName}/search?${queryString}`);
   }
 
+  autoComplete(turSiteName: string, q: string, p: string, _setlocale: string, sort: string, fq: string[], tr: string[], nfpr: string) {
+    let queryString: string = TurSNSearchService.generateQueryString(q, p, _setlocale, sort, fq, tr, nfpr);
+    return this.httpClient.get<string[]>(`${environment.apiUrl}/api/sn/${turSiteName}/ac?${queryString}`);
+  }
   public static generateQueryString(q: string, p: string, _setlocale: string, sort: string, fq: string[], tr: string[], nfpr: string) {
     let queryString = "";
     if (q) {

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<schema name="turing" version="1.5">
+
+	<fields>
+		<field name="_root_" type="string" docValues="false" indexed="true" stored="false" />
+		<field name="_version_" type="long" indexed="true" stored="true" />
+		
+		<field name="content" type="text_general" multiValued="true" indexed="true" stored="false" />
+		<field name="abstract" type="text_general" multiValued="false" indexed="true" stored="true" />
+		<field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true" />
+		<field name="image" type="text_general" multiValued="false" indexed="true" stored="true" />
+		<field name="modification_date" type="tdate" multiValued="false" indexed="true" stored="true" />
+		<field name="publication_date" type="tdate" multiValued="false" indexed="true" stored="true" />
+		<field name="author" type="string" multiValued="false" indexed="true" stored="true" />
+		<field name="section" type="string" multiValued="false" indexed="true" stored="true" />
+		<field name="text_spellcheck" type="text_spellcheck" multiValued="true" indexed="true" stored="false" />
+		<field name="text_suggest" type="text_suggest" multiValued="true" indexed="true" stored="false" />
+		<field name="title" type="text_general" multiValued="false" indexed="true" stored="true" />
+		<field name="turing_entity_DATE" type="string" multiValued="true" indexed="true" stored="true" />
+		<field name="turing_entity_GL" type="string" multiValued="true" indexed="true" stored="true" />
+		<field name="turing_entity_MONEY" type="string" multiValued="true" indexed="true" stored="true" />
+		<field name="turing_entity_ON" type="string" multiValued="true" indexed="true" stored="true" />
+		<field name="turing_entity_PERCENTAGE" type="string" multiValued="true" indexed="true" stored="true" />
+		<field name="turing_entity_PN" type="string" multiValued="true" indexed="true" stored="true" />
+		<field name="turing_entity_TIME" type="string" multiValued="true" indexed="true" stored="true" />
+		<field name="type" type="string" multiValued="false" indexed="true" stored="true" />
+		<field name="url" type="string" multiValued="false" indexed="true" stored="true" />
+		<field name="site" type="string" multiValued="false" indexed="true" stored="true" />
+		<field name="text" type="text_general" multiValued="false" indexed="true" stored="true" />
+		<field name="source_app" type="string" multiValued="false" indexed="true" stored="true" />
+
+		<!-- Apache Nutch -->
+		<field name="tstamp" type="tdate" multiValued="false" indexed="true" stored="true"/>
+		<field name="digest" type="text_general" multiValued="false" indexed="false" stored="true" />
+		<field name="host" type="text_general" multiValued="false" indexed="true" stored="true" />
+		<field name="boost" type="double" multiValued="false" indexed="true" stored="true"/>
+		<field name="segment" type="text_general" indexed="false" stored="true"/>
+		<field name="anchor" type="text_general" indexed="true" stored="false" multiValued="true"/>
+	</fields>
+
+	<copyField source="abstract" dest="content" />
+	<copyField source="image" dest="content" />
+	<copyField source="modification_date" dest="content" />
+	<copyField source="publication_date" dest="content" />
+	<copyField source="author" dest="content" />
+	<copyField source="section" dest="content" />
+	<copyField source="title" dest="content" />
+	<copyField source="turing_entity_DATE" dest="content" />
+	<copyField source="turing_entity_GL" dest="content" />
+	<copyField source="turing_entity_MONEY" dest="content" />
+	<copyField source="turing_entity_ON" dest="content" />
+	<copyField source="turing_entity_PERCENTAGE" dest="content" />
+	<copyField source="turing_entity_PN" dest="content" />
+	<copyField source="turing_entity_TIME" dest="content" />
+	<copyField source="type" dest="content" />
+	<copyField source="site" dest="content" />
+	<copyField source="url" dest="content" />
+	<copyField source="text" dest="content" />
+
+	<!-- Apache Nutch -->
+	<copyField source="tstamp" dest="content"/>
+	<copyField source="host" dest="content" />
+	<copyField source="anchor" dest="content"/>
+
+	<uniqueKey>id</uniqueKey>
+
+	<defaultSearchField>content</defaultSearchField>
+
+	<types>
+		<fieldType name="string" class="solr.StrField" sortMissingLast="true" omitNorms="true" />
+		<fieldType name="boolean" class="solr.BoolField" sortMissingLast="true" omitNorms="true" />
+		<fieldType name="int" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0" />
+		<fieldType name="float" class="solr.TrieFloatField" precisionStep="0" omitNorms="true" positionIncrementGap="0" />
+		<fieldType name="long" class="solr.TrieLongField" precisionStep="0" omitNorms="true" positionIncrementGap="0" />
+		<fieldType name="double" class="solr.TrieDoubleField" precisionStep="0" omitNorms="true" positionIncrementGap="0" />
+		<fieldType name="date" class="solr.TrieDateField" omitNorms="true" precisionStep="0" positionIncrementGap="0" />
+		<fieldType name="tdate" class="solr.TrieDateField" omitNorms="true" precisionStep="6" positionIncrementGap="0" />
+		<fieldType name="random" class="solr.RandomSortField" />
+		<fieldType name="text" class="solr.TextField" positionIncrementGap="100">
+			<analyzer type="index">
+				<tokenizer class="solr.WhitespaceTokenizerFactory" />
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
+				<filter class="solr.WordDelimiterFilterFactory" preserveOriginal="1" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0" />
+				<charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt" />
+				<filter class="solr.ReversedWildcardFilterFactory" withOriginal="true" maxPosAsterisk="1" maxPosQuestion="0" />
+				<filter class="solr.SnowballPorterFilterFactory" language="Portuguese" protected="protwords.txt" />
+			</analyzer>
+			<analyzer type="query">
+				<tokenizer class="solr.WhitespaceTokenizerFactory" />
+				<filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true" />
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
+				<charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt" />
+				<filter class="solr.SnowballPorterFilterFactory" language="Portuguese" protected="protwords.txt" />
+			</analyzer>
+		</fieldType>
+		<fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
+			<analyzer>
+				<charFilter class="solr.MappingCharFilterFactory" mapping="mapping-ISOLatin1Accent.txt" />
+				<tokenizer class="solr.WhitespaceTokenizerFactory" />
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.SynonymFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt" />
+				<filter class="solr.RemoveDuplicatesTokenFilterFactory" />
+				<filter class="solr.PatternReplaceFilterFactory" pattern="\p{Punct}" replace="all" replacement="" />
+			</analyzer>
+		</fieldType>
+		<fieldType name="text_spellcheck" class="solr.TextField" positionIncrementGap="100">
+			<analyzer type="index">
+				<charFilter class="solr.HTMLStripCharFilterFactory" />
+				<tokenizer class="solr.StandardTokenizerFactory" />
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.SynonymFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt" />
+				<filter class="solr.StandardFilterFactory" />
+				<filter class="solr.RemoveDuplicatesTokenFilterFactory" />
+			</analyzer>
+			<analyzer type="query">
+				<charFilter class="solr.HTMLStripCharFilterFactory" />
+				<tokenizer class="solr.StandardTokenizerFactory" />
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.SynonymFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt" />
+				<filter class="solr.StandardFilterFactory" />
+				<filter class="solr.RemoveDuplicatesTokenFilterFactory" />
+			</analyzer>
+		</fieldType>
+		<fieldType name="text_suggest" class="solr.TextField" positionIncrementGap="100">
+			<analyzer type="index">
+				<charFilter class="solr.HTMLStripCharFilterFactory" />
+				<tokenizer class="solr.StandardTokenizerFactory" />
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.StandardFilterFactory" />
+				<filter class="solr.RemoveDuplicatesTokenFilterFactory" />
+				<filter class="solr.ShingleFilterFactory" outputUnigrams="true" maxShingleSize="10" tokenSeparator=" " />
+			</analyzer>
+			<analyzer type="query">
+				<charFilter class="solr.HTMLStripCharFilterFactory" />
+				<tokenizer class="solr.StandardTokenizerFactory" />
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.StandardFilterFactory" />
+				<filter class="solr.RemoveDuplicatesTokenFilterFactory" />
+			</analyzer>
+		</fieldType>
+		<fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />
+	</types>
+</schema>

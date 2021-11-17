@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
@@ -36,6 +37,8 @@ public class TurSNSiteOnStartup {
 	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
 	@Autowired
+	private TurNLPVendorRepository turNLPVendorRepository;
+	@Autowired
 	private TurSNTemplate turSNTemplate;
 	
 	public void createDefaultRows() {
@@ -47,7 +50,7 @@ public class TurSNSiteOnStartup {
 			// Detail
 			turSNSite.setName("Sample");
 			turSNSite.setDescription("Semantic Sample Site");
-		
+			turSNSite.setTurNLPVendor(turNLPVendorRepository.findAll().get(0));
 			turSNSite.setTurSEInstance(turSEInstanceRepository.findAll().get(0));
 						
 			turSNTemplate.defaultSNUI(turSNSite);

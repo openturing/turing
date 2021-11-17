@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.AbstractMap.SimpleEntry;
 
@@ -264,7 +265,7 @@ public class TurSolr {
 		Map<String, Object> requiredFields = getRequiredFields(turSNSite);
 
 		SolrQuery query = new SolrQuery();
-		List<TurSNSiteFieldExt> turSNSiteHlFieldExts = setHLinQuery(turSNSite, query);
+		List<TurSNSiteFieldExt> turSNSiteHlFieldExts = prepareQueryHL(turSNSite, query);
 		query.setQuery("id: \"" + id + "\"");
 
 		TurSEResult turSEResult = null;
@@ -281,10 +282,11 @@ public class TurSolr {
 		return turSEResult;
 	}
 
-	public TurSEResults retrieveSolrFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
+	public Optional<TurSEResults> retrieveSolrFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
 			TurSNSiteSearchContext context) {
-		SolrQuery query = new SolrQuery();
+
 		TurSEParameters turSEParameters = context.getTurSEParameters();
+		SolrQuery query = new SolrQuery();
 		setRows(turSNSite, turSEParameters);
 		setSortEntry(turSNSite, query, turSEParameters);
 
@@ -301,11 +303,21 @@ public class TurSolr {
 		query.setRows(turSEParameters.getRows());
 		query.setStart((turSEParameters.getCurrentPage() * turSEParameters.getRows()) - turSEParameters.getRows());
 
-		List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = processMLT(turSNSite, query);
+		prepareQueryFilterQuery(turSEParameters, query);
 
-		processFilterQuery(turSEParameters, query);
+		prepareQueryTargetingRules(turSEParameters, query);
 
-		processTargetingRules(turSEParameters, query);
+		List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = prepareQueryMLT(turSNSite, query);
+		List<TurSNSiteFieldExt> turSNSiteHlFieldExts = prepareQueryHL(turSNSite, query);
+		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = prepareQueryFacet(turSNSite, query);
+
+		return executeSolrQueryFromSN(turSolrInstance, turSNSite, turSEParameters, query, turSNSiteMLTFieldExts,
+				turSNSiteFacetFieldExts, turSNSiteHlFieldExts);
+	}
+
+	private Optional<TurSEResults> executeSolrQueryFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
+			TurSEParameters turSEParameters, SolrQuery query, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts,
+			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts, List<TurSNSiteFieldExt> turSNSiteHlFieldExts) {
 		TurSEResults turSEResults = new TurSEResults();
 
 		try {
@@ -313,22 +325,22 @@ public class TurSolr {
 
 			turSEResultsParameters(turSEParameters, query, turSEResults, queryResponse);
 
-			processSEResultsFacet(turSNSite, query, turSEResults, queryResponse);
+			processSEResultsFacet(turSNSite, turSEResults, queryResponse, turSNSiteFacetFieldExts);
 
 			List<TurSESimilarResult> similarResults = new ArrayList<>();
 
-			turSEResults.setResults(addSolrDocumentsToSEResults(turSNSite, query, turSNSiteMLTFieldExts, queryResponse,
-					similarResults));
+			turSEResults.setResults(addSolrDocumentsToSEResults(turSNSite, turSNSiteMLTFieldExts, queryResponse,
+					similarResults, turSNSiteHlFieldExts));
 
 			setMLT(turSNSite, turSNSiteMLTFieldExts, turSEResults, similarResults);
 
 			turSEResults.setSpellCheck(spellCheckTerm(turSolrInstance, turSEParameters.getQuery()));
 
-			return turSEResults;
+			return Optional.of(turSEResults);
 		} catch (IOException | SolrServerException e) {
 			logger.error(e);
 		}
-		return null;
+		return Optional.empty();
 	}
 
 	private void setMLT(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts, TurSEResults turSEResults,
@@ -377,12 +389,12 @@ public class TurSolr {
 		return turSNSite.getMlt() == 1 && turSNSiteMLTFieldExts != null && !turSNSiteMLTFieldExts.isEmpty();
 	}
 
-	private List<TurSEResult> addSolrDocumentsToSEResults(TurSNSite turSNSite, SolrQuery query,
+	private List<TurSEResult> addSolrDocumentsToSEResults(TurSNSite turSNSite,
 			List<TurSNSiteFieldExt> turSNSiteMLTFieldExts, QueryResponse queryResponse,
-			List<TurSESimilarResult> similarResults) {
+			List<TurSESimilarResult> similarResults, List<TurSNSiteFieldExt> turSNSiteHlFieldExts) {
 		Map<String, Object> requiredFields = getRequiredFields(turSNSite);
 		Map<String, TurSNSiteFieldExt> fieldExtMap = getFieldExtMap(turSNSite);
-		List<TurSNSiteFieldExt> turSNSiteHlFieldExts = setHLinQuery(turSNSite, query);
+
 		List<TurSEResult> results = new ArrayList<>();
 		for (SolrDocument document : queryResponse.getResults()) {
 			Map<String, List<String>> hl = getHL(turSNSite, turSNSiteHlFieldExts, queryResponse, document);
@@ -411,12 +423,12 @@ public class TurSolr {
 		}
 	}
 
-	private void processSEResultsFacet(TurSNSite turSNSite, SolrQuery query, TurSEResults turSEResults,
-			QueryResponse queryResponse) {
-		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = processFacet(turSNSite, query);
+	private void processSEResultsFacet(TurSNSite turSNSite, TurSEResults turSEResults, QueryResponse queryResponse,
+			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts) {
 
-		if (turSNSite.getFacet() == 1 && turSNSiteFacetFieldExts != null && !turSNSiteFacetFieldExts.isEmpty()) {
+		if (wasFacetConfigured(turSNSite, turSNSiteFacetFieldExts)) {
 			List<TurSEFacetResult> facetResults = new ArrayList<>();
+
 			for (FacetField facet : queryResponse.getFacetFields()) {
 
 				TurSEFacetResult turSEFacetResult = new TurSEFacetResult();
@@ -432,14 +444,18 @@ public class TurSolr {
 		}
 	}
 
-	private void processTargetingRules(TurSEParameters turSEParameters, SolrQuery query) {
+	private boolean wasFacetConfigured(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteFacetFieldExts) {
+		return turSNSite.getFacet() == 1 && turSNSiteFacetFieldExts != null && !turSNSiteFacetFieldExts.isEmpty();
+	}
+
+	private void prepareQueryTargetingRules(TurSEParameters turSEParameters, SolrQuery query) {
 		// Targeting Rule
 		if (turSEParameters.getTargetingRules() != null && !turSEParameters.getTargetingRules().isEmpty())
 			query.addFilterQuery(
 					turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, turSEParameters.getTargetingRules()));
 	}
 
-	private void processFilterQuery(TurSEParameters turSEParameters, SolrQuery query) {
+	private void prepareQueryFilterQuery(TurSEParameters turSEParameters, SolrQuery query) {
 		// Filter Query
 		if (turSEParameters.getFilterQueries() != null && !turSEParameters.getFilterQueries().isEmpty()) {
 			String[] filterQueryArr = new String[turSEParameters.getFilterQueries().size()];
@@ -448,7 +464,7 @@ public class TurSolr {
 		}
 	}
 
-	private List<TurSNSiteFieldExt> processMLT(TurSNSite turSNSite, SolrQuery query) {
+	private List<TurSNSiteFieldExt> prepareQueryMLT(TurSNSite turSNSite, SolrQuery query) {
 		// MLT
 		List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = turSNSiteFieldExtRepository
 				.findByTurSNSiteAndMltAndEnabled(turSNSite, 1, 1);
@@ -474,12 +490,12 @@ public class TurSolr {
 		return turSNSiteMLTFieldExts;
 	}
 
-	private List<TurSNSiteFieldExt> processFacet(TurSNSite turSNSite, SolrQuery query) {
+	private List<TurSNSiteFieldExt> prepareQueryFacet(TurSNSite turSNSite, SolrQuery query) {
 		// Facet
 		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
 				.findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
 
-		if (turSNSite.getFacet() == 1 && turSNSiteFacetFieldExts != null && !turSNSiteFacetFieldExts.isEmpty()) {
+		if (wasFacetConfigured(turSNSite, turSNSiteFacetFieldExts)) {
 			query.setFacet(true);
 			query.setFacetLimit(turSNSite.getItemsPerFacet());
 			query.setFacetMinCount(1);
@@ -527,7 +543,7 @@ public class TurSolr {
 		filterQueryArr = turSEParameters.getFilterQueries().toArray(filterQueryArr);
 		query.setFilterQueries(filterQueryArr);
 
-		processTargetingRules(turSEParameters, query);
+		prepareQueryTargetingRules(turSEParameters, query);
 
 		QueryResponse queryResponse;
 		try {
@@ -554,7 +570,7 @@ public class TurSolr {
 		return null;
 	}
 
-	private List<TurSNSiteFieldExt> setHLinQuery(TurSNSite turSNSite, SolrQuery query) {
+	private List<TurSNSiteFieldExt> prepareQueryHL(TurSNSite turSNSite, SolrQuery query) {
 		// Highlighting
 		List<TurSNSiteFieldExt> turSNSiteHlFieldExts = getHLFields(turSNSite);
 

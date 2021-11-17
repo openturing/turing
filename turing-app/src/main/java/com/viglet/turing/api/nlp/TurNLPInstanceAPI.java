@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,6 +66,7 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
+import com.viglet.turing.utils.TurUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -168,7 +170,6 @@ public class TurNLPInstanceAPI {
 				@Override
 				public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
 						boolean outputHtml) throws SAXException, IOException {
-					File tempFile = File.createTempFile(NLP_TEMP_FILE, null);
 
 					BodyContentHandler handlerInner = new BodyContentHandler(-1);
 					AutoDetectParser parserInner = new AutoDetectParser();
@@ -184,6 +185,8 @@ public class TurNLPInstanceAPI {
 					parseContextInner.set(PDFParserConfig.class, pdfConfigInner);
 
 					parseContextInner.set(Parser.class, parserInner);
+					
+					File tempFile = File.createTempFile(NLP_TEMP_FILE + UUID.randomUUID(), null, TurUtils.addSubDirToStoreDir("tmp"));
 					Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 					try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
 						parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);

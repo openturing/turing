@@ -44,7 +44,7 @@ import com.viglet.turing.se.TurSEStopword;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/sn/{siteName}/locale/ac")
+@RequestMapping("/api/sn/{siteName}/ac")
 @Tag(name = "Semantic Navigation Auto Complete", description = "Semantic Navigation Auto Complete API")
 public class TurSNSiteAutoCompleteAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteAutoCompleteAPI.class);
@@ -58,9 +58,10 @@ public class TurSNSiteAutoCompleteAPI {
 	private TurSolrInstanceProcess turSolrInstanceProcess;
 
 	@GetMapping
-	public List<String> turSNSiteAutoComplete(@PathVariable String siteName, @PathVariable String locale,
+	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,
 			@RequestParam(required = true, name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, defaultValue = "20", name = TurSNParamType.ROWS) long rows,
+			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale,
 			HttpServletRequest request) {
 
 		SpellCheckResponse turSEResults = executeAutoCompleteFromSE(siteName, locale, q);
