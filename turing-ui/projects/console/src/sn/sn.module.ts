@@ -23,6 +23,10 @@ import { TurSNSiteFieldPageComponent } from './component/site/field/sn-site-fiel
 import { TurSNSiteSpotlightRootPageComponent } from './component/site/spotlight/sn-site-spotlight-root-page.component';
 import { TurSNSiteSpotlightListPageComponent } from './component/site/spotlight/sn-site-spotlight-list-page.component';
 import { TurSNSiteSpotlightPageComponent } from './component/site/spotlight/sn-site-spotlight-page.component';
+import { TurSNSiteLocaleService } from './service/sn-site-locale.service';
+import { TurSNSiteLocalePageComponent } from './component/site/locale/sn-site-locale-page.component';
+import { TurSNSiteLocaleRootPageComponent } from './component/site/locale/sn-site-locale-root-page.component';
+import { TurSNSiteLocaleListPageComponent } from './component/site/locale/sn-site-locale-list-page.component';
 
 @NgModule({
   declarations: [
@@ -36,7 +40,10 @@ import { TurSNSiteSpotlightPageComponent } from './component/site/spotlight/sn-s
     TurSNSiteListPageComponent,
     TurSNSiteSpotlightRootPageComponent,
     TurSNSiteSpotlightListPageComponent,
-    TurSNSiteSpotlightPageComponent
+    TurSNSiteSpotlightPageComponent,
+    TurSNSiteLocaleRootPageComponent,
+    TurSNSiteLocaleListPageComponent,
+    TurSNSiteLocalePageComponent
   ],
   imports: [
     CommonModule,
@@ -54,7 +61,8 @@ import { TurSNSiteSpotlightPageComponent } from './component/site/spotlight/sn-s
     TurNLPInstanceService,
     TurLocaleService,
     TurSNFieldTypeService,
-    TurSNSiteSpotlightService
+    TurSNSiteSpotlightService,
+    TurSNSiteLocaleService
   ],
   schemas: [ CUSTOM_ELEMENTS_SCHEMA ]
 })

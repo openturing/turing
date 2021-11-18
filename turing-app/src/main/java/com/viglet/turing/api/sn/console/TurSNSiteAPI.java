@@ -57,11 +57,11 @@ public class TurSNSiteAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteAPI.class);
 	private static final String DEFAULT_LANGUAGE = "en_US";
 	@Autowired
-	TurSNSiteRepository turSNSiteRepository;
+	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	TurSNSiteExport turSNSiteExport;
+	private TurSNSiteExport turSNSiteExport;
 	@Autowired
-	TurSNTemplate turSNTemplate;
+	private TurSNTemplate turSNTemplate;
 
 	@Operation(summary = "Semantic Navigation Site List")
 	@GetMapping

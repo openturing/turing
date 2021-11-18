@@ -30,7 +30,6 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.GenericGenerator;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 
@@ -43,7 +42,6 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 @Entity
 @Table(name = "turSNSiteLocale")
 @NamedQuery(name = "TurSNSiteLocale.findAll", query = "SELECT snsl FROM TurSNSiteLocale snsl")
-@JsonIgnoreProperties({ "turSNSite" })
 public class TurSNSiteLocale implements Serializable {
 	private static final long serialVersionUID = 1L;
 

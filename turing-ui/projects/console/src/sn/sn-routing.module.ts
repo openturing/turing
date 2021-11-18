@@ -13,6 +13,9 @@ import { TurSNSiteFieldPageComponent } from './component/site/field/sn-site-fiel
 import { TurSNSiteSpotlightRootPageComponent } from './component/site/spotlight/sn-site-spotlight-root-page.component';
 import { TurSNSiteSpotlightListPageComponent } from './component/site/spotlight/sn-site-spotlight-list-page.component';
 import { TurSNSiteSpotlightPageComponent } from './component/site/spotlight/sn-site-spotlight-page.component';
+import { TurSNSiteLocaleRootPageComponent } from './component/site/locale/sn-site-locale-root-page.component';
+import { TurSNSiteLocaleListPageComponent } from './component/site/locale/sn-site-locale-list-page.component';
+import { TurSNSiteLocalePageComponent } from './component/site/locale/sn-site-locale-page.component';
 
 const routes: Routes = [
   {
@@ -27,6 +30,14 @@ const routes: Routes = [
             children: [
               { path: 'list', component: TurSNSiteSpotlightListPageComponent, canActivate: [AuthGuard] },
               { path: 'edit/:spotlightId', component: TurSNSiteSpotlightPageComponent, canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' }
+            ]
+          },
+          {
+            path: 'locale', component: TurSNSiteLocaleRootPageComponent, canActivate: [AuthGuard],
+            children: [
+              { path: 'list', component: TurSNSiteLocaleListPageComponent, canActivate: [AuthGuard] },
+              { path: 'edit/:localeId', component: TurSNSiteLocalePageComponent, canActivate: [AuthGuard] },
               { path: '', redirectTo: 'list', pathMatch: 'full' }
             ]
           },
