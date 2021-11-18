@@ -57,6 +57,7 @@ public class TurSNSiteSpotlight implements Serializable {
 	@Column(nullable = true, length = 255)
 	private String description;
 	
+	@Column(name = "dateChat")
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date date;
 	

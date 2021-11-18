@@ -49,14 +49,13 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 		http.headers().frameOptions().disable().cacheControl().disable();
 		http.httpBasic().authenticationEntryPoint(turAuthenticationEntryPoint).and().authorizeRequests()
-				.antMatchers("/index.html", "/welcome/**", "/", "/webjars/**", "/js/**", "/css/**",
-						"/template/**", "/img/**", "/sites/**", "/swagger-resources/**", "/h2/**", "/images/**",
+				.antMatchers("/index.html", "/welcome/**", "/", "/assets/**", "/swagger-resources/**", "/h2/**",
 						"/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
 						"/browserconfig.xml", "/console/**")
 				.permitAll().anyRequest().authenticated().and()
 				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf()
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
-		http.csrf().disable();
+	//	http.csrf().disable();
 		http.cors();
 	}
 
