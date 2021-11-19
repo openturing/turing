@@ -41,9 +41,9 @@ public class TurSecurityConfigUIDev extends TurSecurityConfigProduction {
 	protected void configure(HttpSecurity http) throws Exception {
 		http.headers().frameOptions().disable().cacheControl().disable();
 		http.cors().and().httpBasic().authenticationEntryPoint(shAuthenticationEntryPoint).and().authorizeRequests()
-				.antMatchers("/index.html", "/welcome/**", "/", "/store/**", "/thirdparty/**", "/js/**", "/css/**",
-						"/template/**", "/img/**", "/sites/**", "/swagger-resources/**", "/h2/**", "/image/**",
-						"/manifest.json", "/*.png", "/*.ico")
+				.antMatchers("/index.html", "/welcome/**", "/", "/assets/**", "/swagger-resources/**", "/h2/**",
+						"/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
+						"/browserconfig.xml", "/console/**")
 				.permitAll().anyRequest().authenticated().and().logout();
 
 	}

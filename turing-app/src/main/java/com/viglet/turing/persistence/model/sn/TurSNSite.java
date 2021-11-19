@@ -29,6 +29,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -41,6 +42,7 @@ import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 @Entity
 @Table(name = "turSNSite")
 @NamedQuery(name = "TurSNSite.findAll", query = "SELECT sns FROM TurSNSite sns")
+@JsonIgnoreProperties({ "turSNSiteLocales" })
 public class TurSNSite implements Serializable {
 
 	private static final long serialVersionUID = 1L;

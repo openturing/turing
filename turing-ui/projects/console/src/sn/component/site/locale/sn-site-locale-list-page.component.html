@@ -1,0 +1,49 @@
+<div>
+  <div class="Subhead">
+    <div class="Subhead-heading"><span octicon="typography" [size]="24" class="mr-1"></span> Multi Languages</div>
+    <div class="Subhead-actions">
+      <button (click)="newLanguage()" type="button" class="btn btn-primary">New Language</button>
+    </div>
+  </div>
+  <div *ngIf="(getTurSNSiteLocales() | async) as snSiteLocales; else loading" class="Box">
+    <div class="Box-header">
+      <div class="d-table" style="width: 100%;">
+        <div class="d-table-cell col-2">
+          Language
+        </div>
+        <div class="d-table-cell col-2">
+          Core
+        </div>
+        <div class="d-table-cell col-4">
+          NLP Instance
+        </div>
+        <div class="d-table-cell col-4">
+        </div>
+      </div>
+    </div>
+    <div *ngFor="let turSNSiteLocale of snSiteLocales" data-view-component="true" class="Box-body">
+      <div class="d-table" style="width: 100%;">
+        <div class="d-table-cell col-2">
+          <a [routerLink]="['/sn/site', getId(),'locale', 'edit', turSNSiteLocale.id ]">
+            {{turSNSiteLocale.language}}
+          </a>
+        </div>
+        <div class="d-table-cell col-2">
+          {{turSNSiteLocale.core}}
+        </div>
+        <div class="d-table-cell col-4">
+          {{turSNSiteLocale.turNLPInstance.title}}
+        </div>
+        <div class="d-table-cell col-4" style="text-align: right;">
+          <button class="btn btn-sm btn-danger mr-2"><span octicon="trash" [size]=16 class="mr-1"></span>Delete</button>
+          <a target="_blank" href="/sn/{{turSNSiteLocale.turSNSite.name}}?_setlocale={{turSNSiteLocale.language}}"
+            class="btn btn-outline btn-sm" role="button"><span octicon="eye" [size]=16 class="mr-1"></span> Open
+            Search</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

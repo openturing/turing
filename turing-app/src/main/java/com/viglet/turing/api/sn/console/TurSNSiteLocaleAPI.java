@@ -26,38 +26,38 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * @author Alexandre Oliveira
- * @since 0.3.4
+ * @since 0.3.5
  */
 
 @RestController
-@RequestMapping("/api/sn/{snSiteId}/spotlight")
-@Tag(name = "Semantic Navigation Spotlight", description = "Semantic Navigation Spotlight API")
-public class TurSNSiteSpotlightAPI {
+@RequestMapping("/api/sn/{snSiteId}/locale")
+@Tag(name = "Semantic Navigation Locale", description = "Semantic Navigation Locale API")
+public class TurSNSiteLocaleAPI {
 
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	private TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
+	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
-	@Operation(summary = "Semantic Navigation Site Spotlight List")
+	@Operation(summary = "Semantic Navigation Site Locale List")
 	@GetMapping
-	public List<TurSNSiteSpotlight> turSNSiteSpotlightList(@PathVariable String snSiteId) {
-		return turSNSiteRepository.findById(snSiteId).map(this.turSNSiteSpotlightRepository::findByTurSNSite)
+	public List<TurSNSiteLocale> turSNSiteLocaleList(@PathVariable String snSiteId) {
+		return turSNSiteRepository.findById(snSiteId).map(this.turSNSiteLocaleRepository::findByTurSNSite)
 				.orElse(new ArrayList<>());
 	}
 
-	@Operation(summary = "Show a Semantic Navigation Site Spotlight")
+	@Operation(summary = "Show a Semantic Navigation Site Locale")
 	@GetMapping("/{id}")
-	public TurSNSiteSpotlight turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
-		return turSNSiteSpotlightRepository.findById(id).orElse(new TurSNSiteSpotlight());
+	public TurSNSiteLocale turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
+		return turSNSiteLocaleRepository.findById(id).orElse(new TurSNSiteLocale());
 	}
 }

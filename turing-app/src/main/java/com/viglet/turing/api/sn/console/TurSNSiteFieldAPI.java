@@ -44,9 +44,9 @@ import io.swagger.v3.oas.annotations.Operation;
 public class TurSNSiteFieldAPI {
 
 	@Autowired
-	TurSNSiteRepository turSNSiteRepository;
+	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	TurSNSiteFieldRepository turSNSiteFieldRepository;
+	private TurSNSiteFieldRepository turSNSiteFieldRepository;
 
 	@Operation(summary = "Semantic Navigation Site Field List")
 	@GetMapping
