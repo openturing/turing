@@ -84,7 +84,7 @@ public class TurSNSiteAPI {
 
 		return turSNSite;
 	}
-
+	
 	@Operation(summary = "Show a Semantic Navigation Site")
 	@GetMapping("/{id}")
 	public TurSNSite turSNSiteGet(@PathVariable String id) {

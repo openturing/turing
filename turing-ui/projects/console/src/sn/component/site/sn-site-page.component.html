@@ -25,7 +25,7 @@
         style="display: unset;">
         <summary class="btn btn-sm btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
             class="mr-1"></span>Delete</summary>
-        <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast">
+        <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast" style="overflow: hidden;">
           <div class="Box-header">
             <button onclick='document.getElementById("modalDelete").removeAttribute("open");'
               class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
@@ -75,54 +75,19 @@
     <nav class="menu" aria-label="Site settings">
       <a class="menu-item" [routerLink]="['/sn/site',getId() , 'detail']" [routerLinkActive]="['selected']"><span
           octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
-    </nav>
-
-    <nav *ngIf="!isNewObject()" class="menu" aria-label="Multi Languages">
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'locale']" [routerLinkActive]="['selected']"><span
-          octicon="typography" [size]=16 class="mr-1"></span>
-        Languages</a>
-    </nav>
-
-    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
-      <span class="menu-heading" id="menu-heading"><span octicon="law" [size]=16 class="mr-1"></span>
-        Behavior</span>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']">
-        Facet</a>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']">
-        Highlighting</a>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']"> Did you
-        mean?</a>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']"> MLT</a>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']" [routerLinkActive]="['selected']"> Default
+      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'locale']"
+        [routerLinkActive]="['selected']"><span octicon="typography" [size]=16 class="mr-1"></span>
+        Multi Languages</a>
+      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']"
+        [routerLinkActive]="['selected']">
+        <span octicon="law" [size]=16 class="mr-1"></span>
+        Behavior</a>
+      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'field']"
+        [routerLinkActive]="['selected']">
+        <span octicon="rows" [size]=16 class="mr-1"></span>
         Fields</a>
-    </nav>
-    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
-      <span class="menu-heading" id="menu-heading"><span octicon="rows" [size]=16 class="mr-1"></span> Fields</span>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'field']" [routerLinkActive]="['selected']">
-        Search Engine Fields</a>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'field', 'nlp']" [routerLinkActive]="['selected']"> NLP
-        Fields</a>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'field', 'thesaurus']" [routerLinkActive]="['selected']">
-        Thesaurus Fields</a>
-    </nav>
-
-    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'spotlight']" [routerLinkActive]="['selected']"><span
-          octicon="megaphone" [size]=16 class="mr-1"></span> Spotlight</a>
-    </nav>
-
-    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
-      <span class="menu-heading" id="menu-heading"><span octicon="graph" [size]=16 class="mr-1"></span> Insights</span>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'advertising', 'top search']"
-        [routerLinkActive]="['selected']"> Top searched terms</a>
-    </nav>
-    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
-      <span class="menu-heading" id="menu-heading"><span octicon="pulse" [size]=16 class="mr-1"></span>
-        Monitoring</span>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'advertising', 'top search']"
-        [routerLinkActive]="['selected']"> Queue</a>
-      <a class="menu-item" [routerLink]="['/sn/site',getId() , 'advertising', 'top search']"
-        [routerLinkActive]="['selected']"> Indexing</a>
+      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'spotlight']"
+        [routerLinkActive]="['selected']"><span octicon="megaphone" [size]=16 class="mr-1"></span> Spotlight</a>
     </nav>
   </div>
   <div id="col-right" class="float-right" style="width: calc(100% - 300px);">

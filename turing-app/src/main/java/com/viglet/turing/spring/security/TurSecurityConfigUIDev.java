@@ -45,6 +45,6 @@ public class TurSecurityConfigUIDev extends TurSecurityConfigProduction {
 						"/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
 						"/browserconfig.xml", "/console/**")
 				.permitAll().anyRequest().authenticated().and().logout();
-
+		http.csrf().disable();
 	}
 }

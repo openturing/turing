@@ -37,7 +37,7 @@ const routes: Routes = [
             path: 'locale', component: TurSNSiteLocaleRootPageComponent, canActivate: [AuthGuard],
             children: [
               { path: 'list', component: TurSNSiteLocaleListPageComponent, canActivate: [AuthGuard] },
-              { path: 'edit/:localeId', component: TurSNSiteLocalePageComponent, canActivate: [AuthGuard] },
+              { path: ':localeId', component: TurSNSiteLocalePageComponent, canActivate: [AuthGuard] },
               { path: '', redirectTo: 'list', pathMatch: 'full' }
             ]
           },

@@ -21,11 +21,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -42,7 +48,7 @@ import io.swagger.v3.oas.annotations.Operation;
 @RequestMapping("/api/sn/{snSiteId}/locale")
 @Tag(name = "Semantic Navigation Locale", description = "Semantic Navigation Locale API")
 public class TurSNSiteLocaleAPI {
-
+	private static final String DEFAULT_LANGUAGE = "en_US";
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
@@ -59,5 +65,48 @@ public class TurSNSiteLocaleAPI {
 	@GetMapping("/{id}")
 	public TurSNSiteLocale turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
 		return turSNSiteLocaleRepository.findById(id).orElse(new TurSNSiteLocale());
+	}
+
+	@Operation(summary = "Update a Semantic Navigation Site Locale")
+	@PutMapping("/{id}")
+	public TurSNSiteLocale turSNSiteLocaleUpdate(@PathVariable String id,
+			@RequestBody TurSNSiteLocale turSNSiteLocale) {
+		return this.turSNSiteLocaleRepository.findById(id).map(turSNSiteLocaleEdit -> {
+			turSNSiteLocaleEdit.setCore(turSNSiteLocale.getCore());
+			turSNSiteLocaleEdit.setLanguage(turSNSiteLocale.getLanguage());
+			turSNSiteLocaleEdit.setTurNLPInstance(turSNSiteLocale.getTurNLPInstance());
+			turSNSiteLocaleEdit.setTurSNSite(turSNSiteLocale.getTurSNSite());
+
+			turSNSiteLocaleRepository.save(turSNSiteLocaleEdit);
+			return turSNSiteLocaleEdit;
+		}).orElse(new TurSNSiteLocale());
+
+	}
+
+	@Transactional
+	@Operation(summary = "Delete a Semantic Navigation Site Locale")
+	@DeleteMapping("/{id}")
+	public boolean turSNSiteLocaleDelete(@PathVariable String id) {
+		turSNSiteLocaleRepository.delete(id);
+		return true;
+	}
+
+	@Operation(summary = "Create a Semantic Navigation Site Locale")
+	@PostMapping
+	public TurSNSiteLocale turSNSiteLocaleAdd(@RequestBody TurSNSiteLocale turSNSiteLocale) {
+		turSNSiteLocaleRepository.save(turSNSiteLocale);
+		return turSNSiteLocale;
+	}
+
+	@Operation(summary = "Semantic Navigation Site Locale structure")
+	@GetMapping("structure")
+	public TurSNSiteLocale turSNSiteLocaleStructure(@PathVariable String snSiteId) {
+		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
+			TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
+			turSNSiteLocale.setLanguage(DEFAULT_LANGUAGE);
+			turSNSiteLocale.setTurNLPInstance(new TurNLPInstance());
+			turSNSiteLocale.setTurSNSite(turSNSite);
+			return turSNSiteLocale;
+		}).orElse(new TurSNSiteLocale());
 	}
 }
