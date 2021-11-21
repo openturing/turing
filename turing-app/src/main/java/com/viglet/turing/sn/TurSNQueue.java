@@ -14,24 +14,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+package com.viglet.turing.sn;
 
-package com.viglet.turing.api.sn.queue;
+import java.util.Enumeration;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.stereotype.Component;
 
-import com.viglet.turing.sn.TurSNQueue;
-
-@RestController
-@RequestMapping("/api/queue")
-public class TurSNMonitoringQueue {
+@Component
+public class TurSNQueue {
 	@Autowired
-	private TurSNQueue turSNQueue;
+	JmsTemplate jmsTemplate;
 
-	@GetMapping
-	public String turMonitoringQueue() {
-		return String.format("Total %d elements waiting in queue", turSNQueue.getQueueSize());
+	public static final String INDEXING_QUEUE = "indexing.queue";
+
+	public int getQueueSize() {
+		return jmsTemplate.browse(INDEXING_QUEUE, (session, browser) -> {
+			Enumeration<?> messages = browser.getEnumeration();
+			int total = 0;
+			while (messages.hasMoreElements()) {
+				messages.nextElement();
+				total++;
+			}
+			return total;
+		});
+
 	}
 }

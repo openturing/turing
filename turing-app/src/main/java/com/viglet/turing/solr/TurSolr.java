@@ -72,11 +72,26 @@ public class TurSolr {
 
 	@Autowired
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-
 	@Autowired
 	private TurSolrField turSolrField;
 	@Autowired
 	private TurSNTargetingRules turSNTargetingRules;
+
+	public long getDocumentTotal(TurSolrInstance turSolrInstance) {
+		SolrQuery query = new SolrQuery();
+		query.setQuery("*:*");
+		query.setRows(0);
+
+		try {
+			QueryResponse queryResponse = turSolrInstance.getSolrClient().query(query);
+			return queryResponse.getResults().getNumFound();
+		} catch (SolrServerException | IOException e) {
+			logger.error(e);
+		}
+
+		return 0l;
+
+	}
 
 	public void indexing(TurSolrInstance turSolrInstance, TurSNSite turSNSite, Map<String, Object> attributes) {
 		logger.debug("Executing indexing ...");

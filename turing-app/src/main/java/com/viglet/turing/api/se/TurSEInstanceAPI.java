@@ -18,6 +18,7 @@
 package com.viglet.turing.api.se;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -125,13 +126,15 @@ public class TurSEInstanceAPI {
 
 		String result = null;
 
-		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance();
+		Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance();
 		
+		if (turSolrInstanceProcess.initSolrInstance().isPresent()) {
 		try {
-			result = turSolr.retrieveSolr(turSolrInstance, new TurSEParameters( q, fq, tr, currentPage, sort, rows, 0), "text").toString();
+			result = turSolr.retrieveSolr(turSolrInstance.get(), new TurSEParameters( q, fq, tr, currentPage, sort, rows, 0), "text").toString();
 
 		} catch (Exception e) {
 			logger.error(e);
+		}
 		}
 		return result;
 	}

@@ -1,3 +1,4 @@
+import { TurNLPVendor } from "../../nlp/model/nlp-vendor.model";
 import { TurSEInstance } from "../../se/model/se-instance.model";
 import { TurSNSiteLocale } from "./sn-site-locale.model";
 
@@ -19,6 +20,7 @@ export interface TurSNSite {
   mlt: number;
   thesaurus: number;
   turSEInstance: TurSEInstance;
+  turNLPVendor: TurNLPVendor;
   turSNSiteLocales: TurSNSiteLocale[];
   rowsPerPage: number;
   spellCheck: number;

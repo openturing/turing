@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.api.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -53,9 +52,12 @@ public class TurSNSiteSpellCheckAPI {
 			@RequestParam(required = true, name = TurSNParamType.QUERY) String q, HttpServletRequest request) {
 
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
-		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
-		TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName,
-				new TurSEParameters(q, null, null, 1, "relevance", 10, 0), locale, TurSNUtils.requestToURI(request));
-		return new TurSNSiteSpellCheckBean(turSNSiteSearchContext, turSolr.spellCheckTerm(turSolrInstance, q));
+		return turSolrInstanceProcess.initSolrInstance(turSNSite, locale).map(turSolrInstance -> {
+			TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName,
+					new TurSEParameters(q, null, null, 1, "relevance", 10, 0), locale,
+					TurSNUtils.requestToURI(request));
+			return new TurSNSiteSpellCheckBean(turSNSiteSearchContext, turSolr.spellCheckTerm(turSolrInstance, q));
+		}).orElse(null);
+
 	}
 }

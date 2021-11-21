@@ -20,6 +20,7 @@ package com.viglet.turing.converse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -74,10 +75,11 @@ public class TurConverseSE {
 	@Autowired
 	private TurSolrInstanceProcess turSolrInstanceProcess;
 
-	private SolrClient getSolrClient(TurConverseAgent turConverseAgent) {
+	private Optional<SolrClient> getSolrClient(TurConverseAgent turConverseAgent) {
 		TurSEInstance turSEInstance = turConverseAgent.getTurSEInstance();
 		String core = turConverseAgent.getCore();
-		return turSolrInstanceProcess.initSolrInstance(turSEInstance, core).getSolrClient();
+		return turSolrInstanceProcess.initSolrInstance(turSEInstance, core)
+				.map(solrInstance -> Optional.of(solrInstance.getSolrClient())).orElse(Optional.empty());
 	}
 
 	private String keyValueQuery(String key, String value, boolean exact) {
@@ -111,9 +113,11 @@ public class TurConverseSE {
 	private SolrDocumentList executeSolrQuery(TurConverseAgent turConverseAgent, SolrQuery queryParameter) {
 		SolrDocumentList results = null;
 		try {
-			SolrClient solrClient = this.getSolrClient(turConverseAgent);
-			QueryResponse queryResponseParameter = solrClient.query(queryParameter);
-			return queryResponseParameter.getResults();
+			Optional<SolrClient> solrClient = this.getSolrClient(turConverseAgent);
+			if (solrClient.isPresent()) {
+				QueryResponse queryResponseParameter = solrClient.get().query(queryParameter);
+				return queryResponseParameter.getResults();
+			}
 		} catch (SolrServerException | IOException e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -165,12 +169,15 @@ public class TurConverseSE {
 
 	public void desindexAll(TurConverseAgent turConverseAgent) {
 
-		SolrClient solrClient = this.getSolrClient(turConverseAgent);
-		try {
-			solrClient.deleteByQuery(keyValueQuery(TurConverseConstants.AGENT, turConverseAgent.getId(), true));
-			solrClient.commit();
-		} catch (SolrServerException | IOException e) {
-			logger.error(e.getMessage(), e);
+		Optional<SolrClient> solrClient = this.getSolrClient(turConverseAgent);
+		if (solrClient.isPresent()) {
+			try {
+				solrClient.get()
+						.deleteByQuery(keyValueQuery(TurConverseConstants.AGENT, turConverseAgent.getId(), true));
+				solrClient.get().commit();
+			} catch (SolrServerException | IOException e) {
+				logger.error(e.getMessage(), e);
+			}
 		}
 	}
 
@@ -186,11 +193,11 @@ public class TurConverseSE {
 		for (TurConverseParameter parameter : turConverseIntent.getParameters()) {
 			parameter.setPrompts(turConversePromptRepository.findByParameter(parameter));
 		}
-		SolrClient solrClient = turSolrInstanceProcess.initSolrInstance(turConverseIntent.getAgent().getTurSEInstance(),
-				turConverseIntent.getAgent().getCore()).getSolrClient();
-		this.indexIntent(turConverseIntent, solrClient);
-		this.indexParameters(turConverseIntent, solrClient);
-
+		turSolrInstanceProcess.initSolrInstance(turConverseIntent.getAgent().getTurSEInstance(),
+				turConverseIntent.getAgent().getCore()).ifPresent(solrInstance -> {
+					this.indexIntent(turConverseIntent, solrInstance.getSolrClient());
+					this.indexParameters(turConverseIntent, solrInstance.getSolrClient());
+				});
 	}
 
 	private void indexParameters(TurConverseIntent turConverseIntent, SolrClient solrClient) {
@@ -318,14 +325,16 @@ public class TurConverseSE {
 	}
 
 	public void desindex(TurConverseIntent turConverseIntent) {
-		SolrClient solrClient = turSolrInstanceProcess.initSolrInstance(turConverseIntent.getAgent().getTurSEInstance(),
-				turConverseIntent.getAgent().getCore()).getSolrClient();
+		turSolrInstanceProcess.initSolrInstance(turConverseIntent.getAgent().getTurSEInstance(),
+				turConverseIntent.getAgent().getCore()).ifPresent(solrInstance -> {
+					try {
+						solrInstance.getSolrClient()
+								.deleteByQuery(keyValueQuery(TurConverseConstants.ID, turConverseIntent.getId(), true));
+						solrInstance.getSolrClient().commit();
+					} catch (SolrServerException | IOException e) {
+						logger.error(e.getMessage(), e);
+					}
+				});
 
-		try {
-			solrClient.deleteByQuery(keyValueQuery(TurConverseConstants.ID, turConverseIntent.getId(), true));
-			solrClient.commit();
-		} catch (SolrServerException | IOException e) {
-			logger.error(e.getMessage(), e);
-		}
 	}
 }

@@ -10,6 +10,7 @@ import { TurSEInstance } from '../../../se/model/se-instance.model';
 import { TurSEInstanceService } from '../../../se/service/se-instance.service';
 import { TurNLPInstance } from '../../../nlp/model/nlp-instance.model';
 import { TurNLPInstanceService } from '../../../nlp/service/nlp-instance.service';
+import { TurSNSiteStatus } from '../../model/sn-site.-monitoring.model';
 
 @Component({
   selector: 'sn-site-page',
@@ -19,6 +20,7 @@ export class TurSNSitePageComponent implements OnInit {
   @ViewChild('modalDelete')
   modalDelete!: ElementRef;
   private turSNSite: Observable<TurSNSite>;
+  private turSNSiteStatus: Observable<TurSNSiteStatus>;
   private turLocales: Observable<TurLocale[]>;
   private turSEInstances: Observable<TurSEInstance[]>;
   private turNLPInstances: Observable<TurNLPInstance[]>;
@@ -35,8 +37,10 @@ export class TurSNSitePageComponent implements OnInit {
     this.turLocales = turLocaleService.query();
     this.turSEInstances = turSEInstanceService.query();
     this.turNLPInstances = turNLPInstanceService.query();
+
     this.id= this.activatedRoute.snapshot.paramMap.get('id') || "";
     this.newObject = (this.id.toLowerCase() === 'new');
+    this.turSNSiteStatus = turSNSiteService.getStatus(this.id);
     this.turSNSite = this.newObject ? this.turSNSiteService.getStructure() : this.turSNSiteService.get(this.id);
   }
 
@@ -49,6 +53,10 @@ export class TurSNSitePageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+  }
+
+  getStatus(): Observable<TurSNSiteStatus> {
+    return this.turSNSiteStatus;
   }
 
   getTurSNSite(): Observable<TurSNSite> {

@@ -1,6 +1,13 @@
 package com.viglet.turing.solr;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Optional;
+
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,6 +22,8 @@ import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 
 @Component
 public class TurSolrInstanceProcess {
+	private static final Logger logger = LogManager.getLogger(TurSolrInstanceProcess.class);
+
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
 	@Autowired
@@ -26,41 +35,52 @@ public class TurSolrInstanceProcess {
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 
-	private TurSolrInstance getSolrClient(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
+	private Optional<TurSolrInstance> getSolrClient(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
 
 		return getSolrClient(turSNSite.getTurSEInstance(), turSNSiteLocale.getCore());
 
 	}
 
-	private TurSolrInstance getSolrClient(TurSEInstance turSEInstance, String core) {
+	private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
+		int responseCode = 0;
 		String urlString = "http://" + turSEInstance.getHost() + ":" + turSEInstance.getPort() + "/solr/" + core;
-		HttpSolrClient httpSolrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
-				.withConnectionTimeout(30000).withSocketTimeout(30000).build();
+		URL url;
+		try {
+			url = new URL(urlString.concat("/select"));
+			HttpURLConnection huc = (HttpURLConnection) url.openConnection();
+			responseCode = huc.getResponseCode();
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+		if (responseCode == 200) {
+			HttpSolrClient httpSolrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
+					.withConnectionTimeout(30000).withSocketTimeout(30000).build();
 
-		return new TurSolrInstance(closeableHttpClient, httpSolrClient, core);
-
+			return Optional.of(new TurSolrInstance(closeableHttpClient, httpSolrClient, core));
+		}
+		return Optional.empty();
 	}
 
-	public TurSolrInstance initSolrInstance(String siteName, String locale) {
+	public Optional<TurSolrInstance> initSolrInstance(String siteName, String locale) {
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		return this.initSolrInstance(turSNSite, locale);
 	}
 
-	public TurSolrInstance initSolrInstance(TurSNSite turSNSite, String locale) {
+	public Optional<TurSolrInstance> initSolrInstance(TurSNSite turSNSite, String locale) {
 		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
 		return this.initSolrInstance(turSNSiteLocale);
 	}
 
-	public TurSolrInstance initSolrInstance(TurSEInstance turSEInstance, String core) {
+	public Optional<TurSolrInstance> initSolrInstance(TurSEInstance turSEInstance, String core) {
 		return this.getSolrClient(turSEInstance, core);
 	}
 
-	public TurSolrInstance initSolrInstance(TurSNSiteLocale turSNSiteLocale) {
+	public Optional<TurSolrInstance> initSolrInstance(TurSNSiteLocale turSNSiteLocale) {
 		return this.getSolrClient(turSNSiteLocale.getTurSNSite(), turSNSiteLocale);
 
 	}
 
-	public TurSolrInstance initSolrInstance() {
+	public Optional<TurSolrInstance> initSolrInstance() {
 		return turConfigVarRepository.findById("DEFAULT_SE")
 				.map(turConfigVar -> turSEInstanceRepository.findById(turConfigVar.getValue())
 						.map(turSEInstance -> getSolrClient(turSEInstance, "turing")).orElse(null))

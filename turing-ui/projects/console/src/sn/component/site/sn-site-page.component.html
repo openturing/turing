@@ -55,17 +55,19 @@
           </div>
         </details-dialog>
       </details>
-      <div *ngIf="!isNewObject()" class="mr-2">
-        <a class="btn btn-sm btn-with-count" href="#url" role="button">
-          <span octicon="milestone" [size]=16 class="mr-1"> </span> <span> Queue</span>
-        </a>
-        <a class="social-count" href="#url">6</a>
-      </div>
-      <div *ngIf="!isNewObject()" class="mr-2">
-        <a class="btn btn-sm btn-with-count" href="#url" role="button">
-          <span octicon="file-binary" [size]=16 class="mr-1"> </span> <span> Indexed</span>
-        </a>
-        <a class="social-count" href="#url">6</a>
+      <div *ngIf="(getStatus() | async) as snStatus" style="display: inherit;">
+        <div *ngIf="!isNewObject()" class="mr-2">
+          <a class="btn btn-sm btn-with-count" href="#url" role="button">
+            <span octicon="milestone" [size]=16 class="mr-1"> </span> <span> Queue</span>
+          </a>
+          <a class="social-count" href="#url">{{snStatus.queue}}</a>
+        </div>
+        <div *ngIf="!isNewObject()" class="mr-2">
+          <a class="btn btn-sm btn-with-count" href="#url" role="button">
+            <span octicon="file-binary" [size]=16 class="mr-1"> </span> <span> Indexed</span>
+          </a>
+          <a class="social-count" href="#url">{{snStatus.documents}}</a>
+        </div>
       </div>
     </div>
     <div *ngIf="!isNewObject()" class="Subhead-description">{{snSite.description}}</div>

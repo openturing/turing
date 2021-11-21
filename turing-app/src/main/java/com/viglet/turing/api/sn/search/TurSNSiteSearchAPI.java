@@ -113,25 +113,24 @@ public class TurSNSiteSearchAPI {
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 
 		TurSNSiteSearchBean turSNSiteSearchBean = new TurSNSiteSearchBean();
-		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
+		turSolrInstanceProcess.initSolrInstance(turSNSite, locale).ifPresent(turSolrInstance -> {
+			TurSEParameters turSEParameters = turSNSiteSearchContext.getTurSEParameters();
+			turSEParameters.setCurrentPage(prepareQueryCurrentPage(turSEParameters));
+			turSEParameters.setRows(prepareQueryRows(turSEParameters));
+			prepareQueryAutoCorrection(q, turSNSiteSearchContext, turSNSite, turSolrInstance);
+			turSolr.retrieveSolrFromSN(turSolrInstance, turSNSite, turSNSiteSearchContext).ifPresent(turSEResults -> {
+				List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
+						.findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
+				Map<String, TurSNSiteFieldExt> facetMap = setFacetMap(turSNSiteFacetFieldExts);
 
-		TurSEParameters turSEParameters = turSNSiteSearchContext.getTurSEParameters();
-		turSEParameters.setCurrentPage(prepareQueryCurrentPage(turSEParameters));
-		turSEParameters.setRows(prepareQueryRows(turSEParameters));
-		prepareQueryAutoCorrection(q, turSNSiteSearchContext, turSNSite, turSolrInstance);
-		turSolr.retrieveSolrFromSN(turSolrInstance, turSNSite, turSNSiteSearchContext).ifPresent(turSEResults -> {
-			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
-					.findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
-			Map<String, TurSNSiteFieldExt> facetMap = setFacetMap(turSNSiteFacetFieldExts);
-
-			turSNSiteSearchBean.setResults(
-					responseDocuments(turSNSiteSearchContext, turSolrInstance, turSNSite, facetMap, turSEResults));
-			turSNSiteSearchBean.setPagination(responsePagination(turSNSiteSearchContext.getUri(), turSEResults));
-			turSNSiteSearchBean.setWidget(
-					responseWidget(turSNSiteSearchContext, turSNSite, turSNSiteFacetFieldExts, facetMap, turSEResults));
-			turSNSiteSearchBean.setQueryContext(responseQueryContext(turSNSite, turSEResults, locale));
+				turSNSiteSearchBean.setResults(
+						responseDocuments(turSNSiteSearchContext, turSolrInstance, turSNSite, facetMap, turSEResults));
+				turSNSiteSearchBean.setPagination(responsePagination(turSNSiteSearchContext.getUri(), turSEResults));
+				turSNSiteSearchBean.setWidget(responseWidget(turSNSiteSearchContext, turSNSite, turSNSiteFacetFieldExts,
+						facetMap, turSEResults));
+				turSNSiteSearchBean.setQueryContext(responseQueryContext(turSNSite, turSEResults, locale));
+			});
 		});
-
 		return turSNSiteSearchBean;
 	}
 

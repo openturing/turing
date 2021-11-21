@@ -44,7 +44,6 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.thesaurus.TurThesaurusProcessor;
 
@@ -104,12 +103,13 @@ public class TurSNProcessQueue {
 
 	public void desindexing(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
 		logger.debug("Deindexing");
-		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale());
-		if (turSNJobItem.getAttributes().containsKey("id")) {
-			turSolr.desindexing(turSolrInstance, (String) turSNJobItem.getAttributes().get("id"));
-		} else if (turSNJobItem.getAttributes().containsKey("type")) {
-			turSolr.desindexingByType(turSolrInstance, (String) turSNJobItem.getAttributes().get("type"));
-		}
+		turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale()).ifPresent(turSolrInstance -> {
+			if (turSNJobItem.getAttributes().containsKey("id")) {
+				turSolr.desindexing(turSolrInstance, (String) turSNJobItem.getAttributes().get("id"));
+			} else if (turSNJobItem.getAttributes().containsKey("type")) {
+				turSolr.desindexingByType(turSolrInstance, (String) turSNJobItem.getAttributes().get("type"));
+			}
+		});
 	}
 
 	public void indexing(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
@@ -126,8 +126,9 @@ public class TurSNProcessQueue {
 		Map<String, Object> attributesWithUniqueTerms = this.removeDuplicateTerms(consolidateResults);
 
 		// SE
-		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale());
-		turSolr.indexing(turSolrInstance, turSNSite, attributesWithUniqueTerms);
+		turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale())
+				.ifPresent(turSolrInstance -> turSolr.indexing(turSolrInstance, turSNSite, attributesWithUniqueTerms));
+
 	}
 
 	private void processSEAttributes(TurSNJobItem turSNJobItem, Map<String, Object> consolidateResults) {

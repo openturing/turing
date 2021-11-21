@@ -27,6 +27,7 @@ import { TurSNSiteLocaleService } from './service/sn-site-locale.service';
 import { TurSNSiteLocalePageComponent } from './component/site/locale/sn-site-locale-page.component';
 import { TurSNSiteLocaleRootPageComponent } from './component/site/locale/sn-site-locale-root-page.component';
 import { TurSNSiteLocaleListPageComponent } from './component/site/locale/sn-site-locale-list-page.component';
+import { TurNLPVendorService } from '../nlp/service/nlp-vendor.service';
 
 @NgModule({
   declarations: [
@@ -59,6 +60,7 @@ import { TurSNSiteLocaleListPageComponent } from './component/site/locale/sn-sit
     TurSNSiteService,
     TurSEInstanceService,
     TurNLPInstanceService,
+    TurNLPVendorService,
     TurLocaleService,
     TurSNFieldTypeService,
     TurSNSiteSpotlightService,

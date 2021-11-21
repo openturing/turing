@@ -22,6 +22,7 @@ import { environment } from '../../environments/environment';
 import { TurSNSite } from '../model/sn-site.model';
 import { TurSNSiteField } from '../model/sn-site-field.model';
 import { map } from 'rxjs/operators';
+import { TurSNSiteStatus } from '../model/sn-site.-monitoring.model';
 
 @Injectable()
 export class TurSNSiteService {
@@ -47,6 +48,9 @@ export class TurSNSiteService {
     return this.httpClient.get<TurSNSiteField>(`${environment.apiUrl}/api/sn/${id}/field/ext/${fieldId}`);
   }
 
+  getStatus(id: string): Observable<TurSNSiteStatus> {
+    return this.httpClient.get<TurSNSiteStatus>(`${environment.apiUrl}/api/sn/${id}/monitoring`);
+  }
   getFieldsByType(id: string, type: string): Observable<TurSNSiteField[]> {
     return this.httpClient.get<TurSNSiteField[]>(`${environment.apiUrl}/api/sn/${id}/field/ext`).pipe(map(items =>
       items.filter(item => item.snType.toLowerCase() === type)));

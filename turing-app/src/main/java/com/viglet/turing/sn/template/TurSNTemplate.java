@@ -188,12 +188,5 @@ public class TurSNTemplate {
 		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
 		turSNSiteLocale.setTurSNSite(turSNSite);
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
-
-		TurSNSiteLocale turSNSiteLocale2 = new TurSNSiteLocale();
-		turSNSiteLocale2.setLanguage(TurLocaleRepository.PT_BR);
-		turSNSiteLocale2.setCore("turing_pt");
-		turSNSiteLocale2.setTurNLPInstance(turNLPInstanceRepository.findAll().get(1));
-		turSNSiteLocale2.setTurSNSite(turSNSite);
-		turSNSiteLocaleRepository.save(turSNSiteLocale2);
 	}
 }

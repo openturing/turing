@@ -44,6 +44,21 @@
       </p>
     </div>
   </div>
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="repo-description">NLP Vendor</label>
+    </div>
+    <div class="form-group-body">
+      <select [(ngModel)]="snSite.turNLPVendor.id" class="form-select" style="width: 100%;">
+        <option *ngFor="let nlpVendor of (getTurNLPVendors() | async)" [value]="nlpVendor.id">
+          {{nlpVendor.title}}
+        </option>
+      </select>
+      <p class="note" id="help-text-for-checkbox">
+        NLP vendor that will be used.
+      </p>
+    </div>
+  </div>
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSite.thesaurus" type="checkbox" [ngModelOptions]="{standalone: true}"
