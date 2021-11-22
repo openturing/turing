@@ -134,7 +134,7 @@ public class TurNLPInstanceAPI {
 	@Operation(summary = "Create a Natural Language Processing")
 	@PostMapping
 	public TurNLPInstance turNLPInstanceAdd(@RequestBody TurNLPInstance turNLPInstance) {
-		this.turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+		turNLPProcess.saveAndAssocEntity(turNLPInstance);
 		return turNLPInstance;
 
 	}

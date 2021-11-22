@@ -24,7 +24,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TurNLPInstanceRepository
-		extends JpaRepository<TurNLPInstance, String>, TurNLPInstanceRepositoryCustom {
+		extends JpaRepository<TurNLPInstance, String> {
 
 	@Modifying
 	@Query("delete from  TurNLPInstance ni where ni.id = ?1")
