@@ -19,7 +19,6 @@ package com.viglet.turing.wem.mappers;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 
 import java.util.ArrayList;
@@ -52,8 +51,8 @@ public class MappingDefinitionsProcess {
 
 		try {
 			DocumentBuilderFactory dlf = DocumentBuilderFactory.newInstance();
-			dlf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-			dlf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+			//dlf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+			//dlf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
 			DocumentBuilder db = dlf.newDocumentBuilder();
 
 			File f = new File(resourceXml);
