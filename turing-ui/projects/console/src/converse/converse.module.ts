@@ -1,6 +1,5 @@
 import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MomentModule } from 'ngx-moment';
 import { TurConverseAgentService } from './service/converse-agent.service';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { TurCommonsModule } from '../commons/commons.module';
@@ -28,8 +27,7 @@ import { TurConverseAgentDetailPageComponent } from './component/agent/converse-
     OcticonsModule,
     TurConverseRoutingModule,
     TurCommonsModule,
-    RouterModule,
-    MomentModule
+    RouterModule
   ],
   providers: [
     TurConverseAgentService,
