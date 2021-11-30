@@ -10,29 +10,3 @@ updates:
     schedule:
       interval: "daily"
     open-pull-requests-limit: 15
-  - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/turing-filesystem" # Location of package manifests
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 15
-  - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/turing-jdbc" # Location of package manifests
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 15
-  - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/turing-filesystem" # Location of package manifests
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/turing-nutch" # Location of package manifests
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/turing-wem" # Location of package manifests
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/turing-ui" # Location of package manifests
-    schedule:
-      interval: "daily"
