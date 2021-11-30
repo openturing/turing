@@ -50,8 +50,8 @@ task compileOne (type: JavaCompile) {
 dependencies {
     //implementation files(fileTree(dir: 'lib', includes: ['*.jar']))
     implementation group: 'com.beust', name: 'jcommander', version: '1.81'	
-    implementation group: 'log4j', name: 'log4j', version: '1.2.17-atlassian-1'
-    implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1-jenkins-1'
+    implementation group: 'log4j', name: 'log4j', version: '1.2.17'
+    implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
 	implementation group: 'com.github.alegauss' , name: 'dummy-vgn', version: '8e2eb9b874'
 	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: '0.3.3'
 }
