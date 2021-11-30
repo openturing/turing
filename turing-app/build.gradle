@@ -161,7 +161,7 @@ dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
 
 	// SolrJ
-	implementation (group: 'org.apache.solr', name: 'solr-solrj', version: '8.10.1') {
+	implementation (group: 'org.apache.solr', name: 'solr-solrj', version: '8.11.0') {
 		exclude(module: 'xml-apis')
 	}
 
