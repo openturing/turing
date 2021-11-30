@@ -24,7 +24,13 @@ updates:
     target-branch: "0.3.5"
     open-pull-requests-limit: 15
   - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/turing-nutch" # Location of package manifests
+    directory: "/turing-nutch/nutch1_12" # Location of package manifests
+    schedule:
+      interval: "daily"
+    target-branch: "0.3.5"
+    open-pull-requests-limit: 15
+  - package-ecosystem: "gradle" # See documentation for possible values
+    directory: "/turing-nutch/nutch1_18" # Location of package manifests
     schedule:
       interval: "daily"
     target-branch: "0.3.5"
