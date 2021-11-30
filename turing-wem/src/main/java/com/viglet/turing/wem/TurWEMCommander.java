@@ -204,6 +204,7 @@ public class TurWEMCommander {
 	private void runAllObjectTypes()
 			throws ApplicationException, ContentIndexException, ConfigException, MalformedURLException, ValidationException {
 		IPagingList contentTypeIPagingList = ContentType.findAll();
+		@SuppressWarnings("unchecked")
 		List<Object> contentTypes = contentTypeIPagingList.asList();
 		contentTypes.add(StaticFile.getTypeObjectTypeRef().getObjectType());
 

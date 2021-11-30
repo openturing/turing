@@ -117,6 +117,11 @@ public class TurWEMIndex {
 			xml.append(createXMLAttribute("id", ci.getContentManagementId().getId()));
 
 			List<TurAttrDef> attributeDefs = prepareAttributeDefs(ci, config, mappingDefinitions, ctdMappings);
+			if (log.isDebugEnabled()) {
+				attributeDefs.forEach(attributeDef -> {
+					log.debug("attributeDef in generateXMLToIndex(): " + attributeDef.toString());
+				});
+			}
 
 			addAttributeDefsToXML(xml, attributeDefs);
 			addCategoriesToXML(ci, xml);
@@ -136,19 +141,16 @@ public class TurWEMIndex {
 
 		for (String tag : ctdMappings.getTagList()) {
 			if (log.isDebugEnabled()) {
-				log.debug("generateXMLToIndex: TagList");
-				for (String tags : ctdMappings.getTagList()) {
-					log.debug("generateXMLToIndex: Tags: " + tags);
-				}
+				log.debug(String.format("generateXMLToIndex: Tag: %s", tag));
 			}
 			for (TuringTag turingTag : ctdMappings.getTuringTagMap().get(tag)) {
 				if (tag != null && turingTag != null && turingTag.getTagName() != null) {
 
 					if (log.isDebugEnabled()) {
 						String debugRelation = turingTag.getSrcAttributeRelation() != null
-								? TuringUtils.listToString(turingTag.getSrcAttributeRelation())
+								? turingTag.getSrcAttributeRelation().toString()
 								: null;
-						log.debug(String.format("Tag:  %s, relation: %s, content Type: %s", turingTag.getTagName(),
+						log.debug(String.format("Tag: %s, relation: %s, content Type: %s", turingTag.getTagName(),
 								debugRelation, turingTag.getSrcAttributeType()));
 					}
 

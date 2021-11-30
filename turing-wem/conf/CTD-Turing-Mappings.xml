@@ -19,13 +19,13 @@
 			mandatory="true">
 			<tag>site</tag>
 		</srcAttr>
-		<srcAttr className="com.viglet.turing.wem.ext.HTML2Text">
+		<srcAttr className="com.viglet.turing.wem.ext.TurHTML2Text">
 			<tag>text</tag>
 		</srcAttr>
-		<srcAttr className="com.viglet.turing.wem.ext.HTML2Text">
+		<srcAttr className="com.viglet.turing.wem.ext.TurHTML2Text">
 			<tag>description</tag>
 		</srcAttr>
-		<srcAttr className="com.viglet.turing.wem.ext.DPSUrl"
+		<srcAttr className="com.viglet.turing.wem.ext.TurDPSUrl"
 			mandatory="true">
 			<tag>url</tag>
 		</srcAttr>
@@ -44,4 +44,18 @@
 			</srcAttr>
 		</index-attrs>
 	</mappingDefinition>
+	<mappingDefinition contentType="TUR_SPOTLIGHT">
+		<index-attrs>
+			<srcAttr xmlName="NAME-TUR-SPOTLIGHT">
+				<tag>name</tag>
+			</srcAttr>
+			<srcAttr xmlName="TERMS-TUR-SPOTLIGHT">
+				<tag>terms</tag>
+			</srcAttr>
+			<srcAttr relation="WEMSYS-TUR-SPOTLIGHT-CONTENT" className="com.viglet.turing.wem.ext.TurSpotlightExtraFields">
+				<tag>text</tag>
+			</srcAttr>
+		</index-attrs>
+	</mappingDefinition>
+
 </mappingDefinitions>

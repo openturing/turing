@@ -19,34 +19,39 @@ package com.viglet.turing.wem.ext;
 import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
+import com.viglet.turing.wem.util.ETLTuringTranslator;
 import com.vignette.as.client.common.AttributeData;
-import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
-import com.vignette.as.client.javabean.Channel;
 import com.vignette.as.client.javabean.ContentInstance;
-import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
-public class ChannelDescription implements ExtAttributeInterface {
-	private static final ContextLogger log = ContextLogger.getLogger(ChannelDescription.class);
+public class TurDPSUrl implements ExtAttributeInterface {
+	private static final ContextLogger log = ContextLogger.getLogger(TurDPSUrl.class);
 
 	@Override
-	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config)
-			throws Exception {
-		String description = "";
+	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
+			IHandlerConfiguration config) throws Exception {
+		ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
+
 		if (log.isDebugEnabled()) {
-			log.debug("Executing ChannelDescription");
+			log.debug("Executing DPSUrl");
 		}
-		for (ManagedObjectVCMRef mo : ManagedObject.getReferringManagedObjects(ci.getContentManagementId())) {
-			if (mo.getObjectTypeRef().getObjectType().getName().equals("Channel")) {
-				Channel channel = (Channel) mo.asManagedObjectRef().retrieveManagedObject();
-				description = channel.getDescription();
 
-			}
-
+		String attribContent = null;
+		if (attributeData != null) {
+			attribContent = attributeData.getValue().toString();
 		}
 		TurMultiValue turMultiValue = new TurMultiValue();
-		turMultiValue.add(description);
-		
+
+		if (attribContent == null) {
+			turMultiValue.add(etlTranslator.translateByGUID(ci.getContentManagementId().getId()));
+			return turMultiValue;
+		} else {
+			if (attribContent.toLowerCase().startsWith("http"))
+				turMultiValue.add(attribContent);
+			else
+				turMultiValue.add(etlTranslator.translate(attribContent));
+		}
 		return turMultiValue;
-	}	
+	}
+
 }

@@ -217,7 +217,8 @@ public class MappingDefinitionsProcess {
 			Element srcAttrNode = (Element) srcNodeList.item(i);
 			if (srcAttrNode.hasAttributes() && (srcAttrNode.hasAttribute(TurXMLConstant.XML_NAME_ATT)
 					|| srcAttrNode.hasAttribute(TurXMLConstant.CLASS_NAME_ATT)
-					|| srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT))) {
+					|| srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT)
+					|| srcAttrNode.hasAttribute(TurXMLConstant.RELATION_ATT))) {
 				List<TuringTag> turingTags = loadSrcAttr(srcAttrNode);
 				if (turingTags != null)
 					turingTagsPerSrcAttr.addAll(turingTags);
@@ -244,6 +245,8 @@ public class MappingDefinitionsProcess {
 		TuringTag turingTag = new TuringTag();
 		if (srcAttrNode.hasAttribute(TurXMLConstant.XML_NAME_ATT))
 			turingTag.setSrcXmlName(srcAttrNode.getAttribute(TurXMLConstant.XML_NAME_ATT));
+		else if (srcAttrNode.hasAttribute(TurXMLConstant.RELATION_ATT)) // No XMLName, but it has relation attribute
+			turingTag.setSrcXmlName(srcAttrNode.getAttribute(TurXMLConstant.RELATION_ATT));
 
 		if (srcAttrNode.hasAttribute(TurXMLConstant.CLASS_NAME_ATT))
 			turingTag.setSrcClassName(srcAttrNode.getAttribute(TurXMLConstant.CLASS_NAME_ATT));
@@ -258,14 +261,12 @@ public class MappingDefinitionsProcess {
 		if (srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT)) {
 			turingTag.setTextValue(srcAttrNode.getAttribute(TurXMLConstant.TEXT_VALUE_ATT));
 		}
-		if (srcAttrNode.hasAttribute(TurXMLConstant.MANDATORY_ATT)) {
-			if (log.isDebugEnabled())
-				log.debug(String.format("MANDATORY: %s", srcAttrNode.getAttribute(TurXMLConstant.MANDATORY_ATT)));
 
+		if (srcAttrNode.hasAttribute(TurXMLConstant.MANDATORY_ATT))
 			turingTag.setSrcMandatory(Boolean.parseBoolean(srcAttrNode.getAttribute(TurXMLConstant.MANDATORY_ATT)));
-
-		} else
+		else
 			turingTag.setSrcMandatory(false);
+	
 		if (log.isDebugEnabled())
 			log.debug(String.format("Mandatory: %b", turingTag.getSrcMandatory()));
 

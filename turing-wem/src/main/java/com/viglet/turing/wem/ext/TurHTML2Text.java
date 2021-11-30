@@ -19,39 +19,29 @@ package com.viglet.turing.wem.ext;
 import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
-import com.viglet.turing.wem.util.ETLTuringTranslator;
+import com.viglet.turing.wem.util.HtmlManipulator;
 import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
-public class DPSUrl implements ExtAttributeInterface {
-	private static final ContextLogger log = ContextLogger.getLogger(DPSUrl.class);
+public class TurHTML2Text implements ExtAttributeInterface {
+	private static final ContextLogger log = ContextLogger.getLogger(TurDPSUrl.class);
+	private static final String EMPTY_STRING = "";
 
 	@Override
 	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
 			IHandlerConfiguration config) throws Exception {
-		ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
-
 		if (log.isDebugEnabled()) {
-			log.debug("Executing DPSUrl");
+			log.debug("Executing HTML2Text");
 		}
 
-		String attribContent = null;
-		if (attributeData != null) {
-			attribContent = attributeData.getValue().toString();
-		}
 		TurMultiValue turMultiValue = new TurMultiValue();
 
-		if (attribContent == null) {
-			turMultiValue.add(etlTranslator.translateByGUID(ci.getContentManagementId().getId()));
-			return turMultiValue;
-		} else {
-			if (attribContent.toLowerCase().startsWith("http"))
-				turMultiValue.add(attribContent);
-			else
-				turMultiValue.add(etlTranslator.translate(attribContent));
-		}
+		if (attributeData != null && attributeData.getValue() != null)
+			turMultiValue.add(HtmlManipulator.html2Text(attributeData.getValue().toString()));		
+		else
+			turMultiValue.add(EMPTY_STRING);
+	
 		return turMultiValue;
 	}
-
 }

@@ -26,8 +26,8 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
-public class ChannelPageUrl implements ExtAttributeInterface {
-	private static final ContextLogger log = ContextLogger.getLogger(ChannelPageUrl.class);
+public class TurChannelPageUrl implements ExtAttributeInterface {
+	private static final ContextLogger log = ContextLogger.getLogger(TurChannelPageName.class);
 
 	@Override
 	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config)

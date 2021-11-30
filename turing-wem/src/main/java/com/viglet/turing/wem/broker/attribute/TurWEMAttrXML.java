@@ -45,7 +45,13 @@ public class TurWEMAttrXML {
 			attributesDefs.add(turAttrDef);
 			return attributesDefs;
 		} else {
-			if (turingTag.getSrcAttributeRelation() != null && !turingTag.getSrcAttributeRelation().isEmpty())
+			if (log.isDebugEnabled()) {
+				log.debug(
+						String.format("attributeXML getSrcAttributeRelation(): ", turingTag.getSrcAttributeRelation()));
+				log.debug(String.format("attributeXML getSrcXmlName(): ", turingTag.getSrcXmlName()));
+			}
+			if (turingTag.getSrcAttributeRelation() != null && !turingTag.getSrcAttributeRelation().isEmpty()
+					&& !turingTag.getSrcXmlName().equals(turingTag.getSrcAttributeRelation().get(0)))
 				return addAttributeWithRelator(turAttrDefContext);
 			else
 				return addAttributeWithoutRelator(turAttrDefContext);

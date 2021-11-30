@@ -26,26 +26,26 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
-public class ChannelPageName implements ExtAttributeInterface {
-	private static final ContextLogger log = ContextLogger.getLogger(ChannelPageName.class);
+public class TurChannelDescription implements ExtAttributeInterface {
+	private static final ContextLogger log = ContextLogger.getLogger(TurChannelDescription.class);
 
 	@Override
 	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config)
 			throws Exception {
-		String name = "";
+		String description = "";
 		if (log.isDebugEnabled()) {
-			log.debug("Executing ChannelPageName");
+			log.debug("Executing ChannelDescription");
 		}
 		for (ManagedObjectVCMRef mo : ManagedObject.getReferringManagedObjects(ci.getContentManagementId())) {
 			if (mo.getObjectTypeRef().getObjectType().getName().equals("Channel")) {
 				Channel channel = (Channel) mo.asManagedObjectRef().retrieveManagedObject();
-				name = channel.getName();
+				description = channel.getDescription();
 
 			}
 
 		}
 		TurMultiValue turMultiValue = new TurMultiValue();
-		turMultiValue.add(name);
+		turMultiValue.add(description);
 		
 		return turMultiValue;
 	}	
