@@ -158,6 +158,8 @@ public class TurSNTemplate {
 		turSNSiteSpotlight.setDescription("Spotlight Sample");
 		turSNSiteSpotlight.setName("Spotlight Sample");
 		turSNSiteSpotlight.setDate(new Date());
+		turSNSiteSpotlight.setManaged(1);
+		turSNSiteSpotlight.setProvider("TURING");
 		turSNSiteSpotlight.setTurSNSite(turSNSite);
 		turSNSiteSpotlightRepository.save(turSNSiteSpotlight);
 
@@ -165,7 +167,8 @@ public class TurSNTemplate {
 		turSNSiteSpotlightDocument.setPosition(1);
 		turSNSiteSpotlightDocument.setTitle("Viglet Docs");
 		turSNSiteSpotlightDocument.setTurSNSiteSpotlight(turSNSiteSpotlight);
-		turSNSiteSpotlightDocument.setSearchId("https://docs.viglet.com/");
+		turSNSiteSpotlightDocument.setReferenceId("https://docs.viglet.com/");
+		turSNSiteSpotlightDocument.setLink("https://docs.viglet.com/");
 		turSNSiteSpotlightDocument.setType("Page");
 		turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
 

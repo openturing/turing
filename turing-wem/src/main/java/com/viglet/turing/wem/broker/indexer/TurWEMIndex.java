@@ -115,7 +115,7 @@ public class TurWEMIndex {
 			log.info(String.format("Indexing Content ID: %s (%s)", ci.getContentManagementId().getId(),
 					contentTypeName));
 			xml.append(createXMLAttribute("id", ci.getContentManagementId().getId()));
-
+			xml.append(createXMLAttribute("provider", "WEM"));
 			List<TurAttrDef> attributeDefs = prepareAttributeDefs(ci, config, mappingDefinitions, ctdMappings);
 			if (log.isDebugEnabled()) {
 				attributeDefs.forEach(attributeDef -> {
@@ -258,6 +258,7 @@ public class TurWEMIndex {
 				}
 
 				turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+				turSNJobItem.setLocale("en_US");
 				turSNJobItem.setAttributes(attributes);
 				turSNJobItems.add(turSNJobItem);
 

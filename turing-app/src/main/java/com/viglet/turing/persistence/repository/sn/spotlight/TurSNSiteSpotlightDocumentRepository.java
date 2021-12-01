@@ -17,7 +17,10 @@
 
 package com.viglet.turing.persistence.repository.sn.spotlight;
 
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
+
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -31,7 +34,9 @@ public interface TurSNSiteSpotlightDocumentRepository extends JpaRepository<TurS
 
 	@SuppressWarnings("unchecked")
 	TurSNSiteSpotlightDocument save(TurSNSiteSpotlightDocument turSNSiteSpotlightDocument);
-
+	
+	Set<TurSNSiteSpotlightDocument> findByTurSNSiteSpotlight(TurSNSiteSpotlight turSNSiteSpotlight);
+	
 	void delete(TurSNSiteSpotlightDocument turSNSiteSpotlightDocument);
 
 	@Modifying

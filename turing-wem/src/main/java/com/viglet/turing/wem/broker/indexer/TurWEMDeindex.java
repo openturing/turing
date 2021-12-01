@@ -42,7 +42,7 @@ public class TurWEMDeindex {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-
+		turSNJobItem.setLocale("en_US");
 		Map<String, Object> attributes = new HashMap<>();
 		String guid = mo.getContentManagementId().getId();
 		attributes.put("id", guid);
@@ -64,9 +64,10 @@ public class TurWEMDeindex {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-
+		turSNJobItem.setLocale("en_US");
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put("type", typeName);
+		attributes.put("provider", "WEM");
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 		try {

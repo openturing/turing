@@ -260,7 +260,7 @@ public class TurSNSiteSearchAPI {
 				List<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = turSNSiteSpotlightDocumentMap
 						.get(position);
 				turSNSiteSpotlightDocuments.forEach(document -> {
-					TurSEResult turSEResult = turSolr.findById(turSolrInstance, turSNSite, document.getSearchId());
+					TurSEResult turSEResult = turSolr.findById(turSolrInstance, turSNSite, document.getReferenceId());
 					if (turSEResult != null) {
 						addSNDocument(context.getUri(), fieldExtMap, facetMap, turSNSiteSearchDocumentsBean,
 								turSEResult, true);

@@ -19,13 +19,13 @@ package com.viglet.turing.persistence.model.sn.spotlight;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.*;
 
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -56,30 +56,34 @@ public class TurSNSiteSpotlight implements Serializable {
 
 	@Column(nullable = true, length = 255)
 	private String description;
-	
+
 	@Column(name = "dateChat")
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date date;
-	
+
+	@Column
+	private int managed = 1;
+
+	@Column
+	private String provider = "TURING";
+
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)
 	@JsonBackReference(value = "turSNSiteSpotlight-turSNSite")
 	private TurSNSite turSNSite;
 
-	// bi-directional many-to-one association to TurSNSiteFieldExt
-	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true)
+	// bi-directional many-to-one association to turSNSiteSpotlightTerms
+	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms;
+	private Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = new HashSet<>();
 
-	// bi-directional many-to-one association to TurSNSiteFieldExt
-	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true)
+	// bi-directional many-to-one association to turSNSiteSpotlightDocuments
+	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments;
+	private Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = new HashSet<>();
 
 	public String getId() {
 		return id;
@@ -135,6 +139,22 @@ public class TurSNSiteSpotlight implements Serializable {
 
 	public void setDate(Date date) {
 		this.date = date;
+	}
+
+	public int getManaged() {
+		return managed;
+	}
+
+	public void setManaged(int managed) {
+		this.managed = managed;
+	}
+
+	public String getProvider() {
+		return provider;
+	}
+
+	public void setProvider(String provider) {
+		this.provider = provider;
 	}
 
 }

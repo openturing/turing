@@ -52,8 +52,11 @@
 			<srcAttr xmlName="TERMS-TUR-SPOTLIGHT">
 				<tag>terms</tag>
 			</srcAttr>
+			<srcAttr textValue="WEM">
+				<tag>provider</tag>
+			</srcAttr>
 			<srcAttr relation="WEMSYS-TUR-SPOTLIGHT-CONTENT" className="com.viglet.turing.wem.ext.TurSpotlightExtraFields">
-				<tag>text</tag>
+				<tag>content</tag>
 			</srcAttr>
 		</index-attrs>
 	</mappingDefinition>

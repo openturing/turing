@@ -63,12 +63,22 @@ public class TurSolrInstanceProcess {
 
 	public Optional<TurSolrInstance> initSolrInstance(String siteName, String locale) {
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
-		return this.initSolrInstance(turSNSite, locale);
+		if (turSNSite != null) {
+			return this.initSolrInstance(turSNSite, locale);
+		} else {
+			logger.warn("{} site not found", siteName);
+			return Optional.empty();
+		}
 	}
 
 	public Optional<TurSolrInstance> initSolrInstance(TurSNSite turSNSite, String locale) {
 		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
-		return this.initSolrInstance(turSNSiteLocale);
+		if (turSNSiteLocale != null) {
+			return this.initSolrInstance(turSNSiteLocale);
+		} else {
+			logger.warn("{} site with {} locale not found", turSNSite.getName(), locale);
+			return Optional.empty();
+		}
 	}
 
 	public Optional<TurSolrInstance> initSolrInstance(TurSEInstance turSEInstance, String core) {

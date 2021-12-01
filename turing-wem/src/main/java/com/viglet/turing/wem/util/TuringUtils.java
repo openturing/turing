@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import org.apache.commons.httpclient.HttpMethod;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -163,7 +162,6 @@ public class TuringUtils {
 				httpPost.setHeader("Accept-Encoding", StandardCharsets.UTF_8.name());
 
 				basicAuth(config, httpPost);
-
 				try (CloseableHttpResponse response = client.execute(httpPost)) {
 
 					if (log.isDebugEnabled()) {
@@ -172,8 +170,8 @@ public class TuringUtils {
 						log.debug(
 								String.format("Viglet Turing indexer response HTTP result is: %s, for request uri: %s",
 										response.getStatusLine().getStatusCode(), httpPost.getURI()));
-						log.debug(String.format("Viglet Turing indexer response HTTP result is: %s",
-								((HttpMethod) httpPost).getResponseBodyAsString()));
+						log.debug(String.format("Viglet Turing indexer response HTTP result is: %s", 
+								httpPost.getEntity().toString()));
 					}
 					turSNJobItems.getTuringDocuments().clear();
 				}

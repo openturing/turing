@@ -23,7 +23,7 @@ import javax.persistence.*;
 
 import org.hibernate.annotations.GenericGenerator;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 
 /**
@@ -35,6 +35,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 @Entity
 @Table(name = "turSNSiteSpotlightDocument")
 @NamedQuery(name = "TurSNSiteSpotlightDocument.findAll", query = "SELECT snssd FROM TurSNSiteSpotlightDocument snssd")
+@JsonIgnoreProperties({ "turSNSiteSpotlight"})
 public class TurSNSiteSpotlightDocument implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -54,12 +55,17 @@ public class TurSNSiteSpotlightDocument implements Serializable {
 	private String type;
 
 	@Column(nullable = true, length = 255)
-	private String searchId;
+	private String referenceId;
+	
+	@Column(nullable = true, length = 2000)
+	private String content;
+	
+	@Column(nullable = true, length = 255)
+	private String link;
 	
 	// bi-directional many-to-one association to TurSNSiteSpotlight
-	@ManyToOne
-	@JoinColumn(name = "sn_site_spotlight_id", nullable = false)
-	@JsonBackReference (value="turSNSiteSpotlightDocument-turSNSiteSpotlight")
+	@ManyToOne(fetch = FetchType.LAZY) // (cascade = {CascadeType.ALL})
+	@JoinColumn(name = "sn_site_spotlight_id")
 	private TurSNSiteSpotlight turSNSiteSpotlight;
 
 	public String getId() {
@@ -94,20 +100,36 @@ public class TurSNSiteSpotlightDocument implements Serializable {
 		this.type = type;
 	}
 
+	public String getReferenceId() {
+		return referenceId;
+	}
+
+	public void setReferenceId(String referenceId) {
+		this.referenceId = referenceId;
+	}
+
+	public String getContent() {
+		return content;
+	}
+
+	public void setContent(String content) {
+		this.content = content;
+	}
+
+	public String getLink() {
+		return link;
+	}
+
+	public void setLink(String link) {
+		this.link = link;
+	}
+
 	public TurSNSiteSpotlight getTurSNSiteSpotlight() {
 		return turSNSiteSpotlight;
 	}
 
 	public void setTurSNSiteSpotlight(TurSNSiteSpotlight turSNSiteSpotlight) {
 		this.turSNSiteSpotlight = turSNSiteSpotlight;
-	}
-
-	public String getSearchId() {
-		return searchId;
-	}
-
-	public void setSearchId(String searchId) {
-		this.searchId = searchId;
 	}
 	
 }
