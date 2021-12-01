@@ -193,7 +193,7 @@
                     </svg>
 
                     <h3 class="mb-1" [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></h3>
-                    <p [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]"></p>
+                    <p [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description] | safeHtml"></p>
                     <a href="{{document.fields[snSearch.queryContext.defaultFields.url]}}" class="btn btn-primary my-3"
                       type="button">Read More</a>
                   </div>

@@ -10,12 +10,14 @@ import { TurSNSearchService } from '../search/service/sn-search.service';
 import { AppComponent } from './app.component';
 import { FormsModule } from '@angular/forms';
 import { APP_BASE_HREF, Location } from '@angular/common';
+import { SafeHtmlPipe } from './safe-html.pipe';
 
 @NgModule({
   declarations: [
     AppComponent,
     IdenticonHashDirective,
-    TurSNSearchRootPageComponent
+    TurSNSearchRootPageComponent,
+    SafeHtmlPipe
   ],
   imports: [
     BrowserModule,

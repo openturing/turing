@@ -239,10 +239,10 @@ public class TurSNSiteSearchAPI {
 		List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean = new ArrayList<>();
 		List<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = turSNSiteSpotlightTermRepository
 				.findByNameIn(Arrays.asList(context.getTurSEParameters().getQuery().split(" ")));
-
+		System.out.println("AA: " + context.getTurSEParameters().getQuery().split(" ") + " " + turSNSiteSpotlightTerms.size());
 		List<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
 				.findDistinctByTurSNSiteAndTurSNSiteSpotlightTermsIn(turSNSite, turSNSiteSpotlightTerms);
-
+		System.out.println("BB: " + turSNSiteSpotlights.size() + " " + turSNSiteSpotlights.get(0).getName());
 		List<TurSEResult> seResults = turSEResults.getResults();
 
 		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = new HashMap<>();
@@ -262,6 +262,18 @@ public class TurSNSiteSearchAPI {
 				turSNSiteSpotlightDocuments.forEach(document -> {
 					TurSEResult turSEResult = turSolr.findById(turSolrInstance, turSNSite, document.getReferenceId());
 					if (turSEResult != null) {
+						addSNDocument(context.getUri(), fieldExtMap, facetMap, turSNSiteSearchDocumentsBean,
+								turSEResult, true);
+					}else {
+						turSEResult = new TurSEResult();
+						Map<String, Object> fields = new HashMap<>();
+						fields.put("id", document.getId());
+						fields.put("description", document.getContent());
+						fields.put("url", document.getLink());
+						fields.put("referenceId", document.getReferenceId());
+						fields.put("title", document.getTitle());
+						fields.put("type", document.getType());
+						turSEResult.setFields(fields);
 						addSNDocument(context.getUri(), fieldExtMap, facetMap, turSNSiteSearchDocumentsBean,
 								turSEResult, true);
 					}
