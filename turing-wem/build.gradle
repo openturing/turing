@@ -55,7 +55,7 @@ dependencies {
 	//implementation group: 'com.github.alegauss' , name: 'dummy-vgn', version: '8e2eb9b874'
 	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: 'f752da72b7'
 	// Jackson
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.0'
     // HTTP Client
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
 }
