@@ -239,10 +239,8 @@ public class TurSNSiteSearchAPI {
 		List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean = new ArrayList<>();
 		List<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = turSNSiteSpotlightTermRepository
 				.findByNameIn(Arrays.asList(context.getTurSEParameters().getQuery().split(" ")));
-		System.out.println("AA: " + context.getTurSEParameters().getQuery().split(" ") + " " + turSNSiteSpotlightTerms.size());
 		List<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
 				.findDistinctByTurSNSiteAndTurSNSiteSpotlightTermsIn(turSNSite, turSNSiteSpotlightTerms);
-		System.out.println("BB: " + turSNSiteSpotlights.size() + " " + turSNSiteSpotlights.get(0).getName());
 		List<TurSEResult> seResults = turSEResults.getResults();
 
 		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = new HashMap<>();
