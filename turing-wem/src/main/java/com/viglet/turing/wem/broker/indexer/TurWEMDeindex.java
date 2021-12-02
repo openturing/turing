@@ -17,6 +17,7 @@
 package com.viglet.turing.wem.broker.indexer;
 
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,6 +45,12 @@ public class TurWEMDeindex {
 
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
+		String siteName = null;
+		try {
+			siteName = TuringUtils.getSiteName(managedObjectVCMRef.retrieveManagedObject(), config);
+		} catch (ApplicationException | RemoteException e) {
+			logger.error(e.getMessage(), e);
+		}
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 		turSNJobItem.setLocale("en_US");
 		Map<String, Object> attributes = new HashMap<>();
@@ -60,15 +67,16 @@ public class TurWEMDeindex {
 			if (mo != null && mo.getLocale() != null && mo.getLocale().getAsLocale() != null
 					&& mo.getLocale().getAsLocale().getData() != null)
 				asLocaleData = mo.getLocale().getAsLocale().getData();
-			TuringUtils.sendToTuring(turSNJobItems, config, asLocaleData);
+			TuringUtils.sendToTuring(turSNJobItems, config, siteName, asLocaleData);
 		} catch (IOException | ApplicationException e) {
 			logger.error(e.getMessage(), e);
 		}
 	}
 
-	public static void indexDeleteByType(String typeName, IHandlerConfiguration config) {
+	public static void indexDeleteByType(String siteName, String typeName, IHandlerConfiguration config) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
+		
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 		turSNJobItem.setLocale("en_US");
 		Map<String, Object> attributes = new HashMap<>();
@@ -78,7 +86,7 @@ public class TurWEMDeindex {
 		turSNJobItems.add(turSNJobItem);
 		try {
 			AsLocaleData asLocaleData = null;
-			TuringUtils.sendToTuring(turSNJobItems, config, asLocaleData);
+			TuringUtils.sendToTuring(turSNJobItems, config, siteName, asLocaleData);
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}

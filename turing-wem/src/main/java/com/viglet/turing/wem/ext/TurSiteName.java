@@ -19,7 +19,7 @@ package com.viglet.turing.wem.ext;
 import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
-import com.viglet.turing.wem.util.ETLTuringTranslator;
+import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
@@ -33,10 +33,8 @@ public class TurSiteName implements ExtAttributeInterface {
 		if (log.isDebugEnabled())
 			log.debug("Executing TurSiteName");
 
-		ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
-
 		TurMultiValue turMultiValue = new TurMultiValue();
-		turMultiValue.add(etlTranslator.getSiteName(ci));
+		turMultiValue.add(TuringUtils.getSiteName(ci, config));
 		
 		return turMultiValue;
 	}

@@ -18,7 +18,7 @@ package com.viglet.turing.wem.broker.indexer;
 
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.javabean.ManagedObject;
-import com.vignette.as.server.event.AsDeploymentEvent;
+import com.vignette.as.server.event.AsPrePersistenceEvent;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMIndexer {
@@ -45,20 +45,20 @@ public class TurWEMIndexer {
 		return true;
 	}
 
-	public static boolean indexDelete(ManagedObject mo, AsDeploymentEvent deploymentEvent,
+	public static boolean indexDelete(ManagedObject mo, AsPrePersistenceEvent prePersistenceEvent,
 			IHandlerConfiguration config) {
 		if (log.isDebugEnabled()) {
 			log.debug("Deleting Object in Viglet Turing index");
 		}
-		TurWEMDeindex.indexDelete(deploymentEvent.getManagedObjectVCMRef(), config);
+		TurWEMDeindex.indexDelete(prePersistenceEvent.getManagedObject().getContentManagementId() , config);
 		return true;
 	}
 
-	public static boolean indexDeleteByType(String typeName, IHandlerConfiguration config) {
+	public static boolean indexDeleteByType(String siteName, String typeName, IHandlerConfiguration config) {
 		if (log.isDebugEnabled()) {
 			log.debug("Deleting Object in Viglet Turing index");
 		}
-		TurWEMDeindex.indexDeleteByType(typeName, config);
+		TurWEMDeindex.indexDeleteByType(siteName, typeName, config);
 		return true;
 	}
 }

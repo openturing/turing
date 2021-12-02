@@ -67,6 +67,8 @@ public class TurWEMIndex {
 			try {
 				ContentInstance contentInstance = (ContentInstance) mo;
 
+				String siteName = TuringUtils.getSiteName(contentInstance, config);
+				
 				String contentTypeName = contentInstance.getObjectType().getData().getName();
 
 				AsLocaleData asLocaleData = null;
@@ -75,7 +77,7 @@ public class TurWEMIndex {
 					asLocaleData = contentInstance.getLocale().getAsLocale().getData();
 				if (mappingDefinitions.isClassValidToIndex(contentInstance, config)) {
 					log.info(String.format("Viglet Turing indexer Processing Content Type: %s", contentTypeName));
-					return postIndex(generateXMLToIndex(contentInstance, config), asLocaleData, config);
+					return postIndex(generateXMLToIndex(contentInstance, config), siteName, asLocaleData, config);
 
 				} else {
 					if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
@@ -99,7 +101,7 @@ public class TurWEMIndex {
 		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
 		if (log.isDebugEnabled())
 			log.debug("Generating Viglet Turing XML for a content instance");
-
+		
 		String contentTypeName = ci.getObjectType().getData().getName();
 
 		StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" ?><document>");
@@ -212,7 +214,7 @@ public class TurWEMIndex {
 		}
 	}
 
-	public static boolean postIndex(String xml, AsLocaleData asLocaleData, IHandlerConfiguration config) {
+	public static boolean postIndex(String xml, String siteName, AsLocaleData asLocaleData, IHandlerConfiguration config) {
 
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		try {
@@ -262,7 +264,7 @@ public class TurWEMIndex {
 				turSNJobItem.setAttributes(attributes);
 				turSNJobItems.add(turSNJobItem);
 
-				TuringUtils.sendToTuring(turSNJobItems, config, asLocaleData);
+				TuringUtils.sendToTuring(turSNJobItems, config, siteName, asLocaleData);
 			}
 
 			log.info("Viglet Turing indexer Processed Content Type.");

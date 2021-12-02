@@ -19,27 +19,22 @@ package com.viglet.turing.wem.listener;
 import com.viglet.turing.wem.broker.indexer.TurWEMIndexer;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.javabean.ManagedObject;
-import com.vignette.as.server.event.AsDeploymentEvent;
+import com.vignette.as.server.event.AsPrePersistenceEvent;
 import com.vignette.logging.context.ContextLogger;
 
-public class DeploymentHandler {
+public class PrePersistenceHandler {
 
-	private static final ContextLogger log = ContextLogger.getLogger(DeploymentHandler.class);
+	private static final ContextLogger log = ContextLogger.getLogger(PrePersistenceHandler.class);
 
-    private IHandlerConfiguration config;
+	private IHandlerConfiguration config;
 
-    public DeploymentHandler(IHandlerConfiguration config) {
-        this.config = config;
-    }
+	public PrePersistenceHandler(IHandlerConfiguration config) {
+		this.config = config;
+	}
 
-    public void onManagedObjectCreate(ManagedObject mo, AsDeploymentEvent deploymentEvent) {
-        boolean result = TurWEMIndexer.indexCreate(mo, config);
-        log.debug("Viglet Turing Indexing Create: " + result);
-     }
-
-    public void onManagedObjectUpdate(ManagedObject mo, AsDeploymentEvent deploymentEvent) {
-        boolean result = TurWEMIndexer.indexUpdate(mo, config);
-        log.debug("Viglet Turing Indexing Update: " + result);
-    }
+	public void onPrePersistenceDelete(ManagedObject mo, AsPrePersistenceEvent prePersistenceEvent) {
+		boolean result = TurWEMIndexer.indexDelete(mo, prePersistenceEvent, config);
+		log.debug("Viglet Turing Indexing Delete: " + result);
+	}
 
 }

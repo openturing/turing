@@ -41,9 +41,7 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 	private String mappingsXML;
 	private String cdaContextName;
 	private String cdaURLPrefix;
-	private String cdaFormatName;
 	private String sitesAssociationPriority;
-	private boolean isLive;
 	private String login;
 	private String password;
 
@@ -64,7 +62,7 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 	}
 
 	@Override
-	public String getSNSite() {
+	public String getDefaultSNSite() {
 		return snSite;
 	}
 
@@ -80,17 +78,12 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 
 	@Override
 	public String getCDAContextName(String site) {
-		String contextName = getDynamicProperties("cda." + site + ".contextname");
+		String contextName = getDynamicProperties("dps.site." + site + ".contextname");
 		return contextName != null ? contextName : getCDAContextName();
 	}
 
 	public void setCDAContextName(String cdaContextName) {
 		this.cdaContextName = cdaContextName;
-	}
-
-	@Override
-	public String getCDAFormatName() {
-		return cdaFormatName;
 	}
 
 	@Override
@@ -100,7 +93,7 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 
 	@Override
 	public String getCDAURLPrefix(String site) {
-		String urlPrefix = getDynamicProperties("cda." + site + ".urlprefix");
+		String urlPrefix = getDynamicProperties("dps.site." + site + ".urlprefix");
 		return urlPrefix != null ? urlPrefix : getCDAURLPrefix();
 	}
 
@@ -174,44 +167,43 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 
 	private void parseProperties(Properties properties) {
 
+		// Turing
 		turingURL = properties.getProperty("turing.url");
-		mappingsXML = properties.getProperty("turing.mappingsxml", "/CTD-Turing-Mappings.xml");
-		snSite = properties.getProperty("sn.default.site");
-
-		cdaContextName = properties.getProperty("cda.default.contextname");
-		cdaURLPrefix = properties.getProperty("cda.default.urlprefix");
-		cdaFormatName = properties.getProperty("cda.default.formatname");
-		sitesAssociationPriority = properties.getProperty("sites.association.priority");
-		isLive = Boolean.parseBoolean(properties.getProperty("otsn.isLive", "false"));
 		login = properties.getProperty("turing.login");
 		password = properties.getProperty("turing.password");
+		mappingsXML = properties.getProperty("turing.mappingsxml", "/CTD-Turing-Mappings.xml");
+
+		// DPS
+		snSite = properties.getProperty("dps.site.default.snsite");
+		cdaContextName = properties.getProperty("dps.site.default.contextname");
+		cdaURLPrefix = properties.getProperty("dps.site.default.urlprefix");
+		sitesAssociationPriority = properties.getProperty("dps.config.association.priority");
+
 	}
 
 	@Override
-	public boolean isLive() {
-		return isLive;
-	}
-
-	public void setLive(boolean isLive) {
-		this.isLive = isLive;
+	public String getSNSite(String site) {
+		String snSite = getDynamicProperties(String.format("dps.site.%s.snsite", site));
+		return snSite != null ? snSite : getDefaultSNSite();
 	}
 
 	@Override
-	public String getSNSite(String locale) {
-		return getDynamicProperties("sn." + locale + ".site");
+	public String getSNSite(String site, String locale) {
+		String snSite = getDynamicProperties(String.format("dps.site.%s.%s.snsite", site, locale));
+		return snSite != null ? snSite : getSNSite(site);
 	}
 
 	@Override
-	public String getSNSite(AsLocaleData asLocaleData) {
+	public String getSNSite(String site, AsLocaleData asLocaleData) {
 		String snSiteInternal = null;
 		if (asLocaleData != null && asLocaleData.getCountry() != null && asLocaleData.getLanguage() != null) {
 			String locale = String.format("%s_%s", asLocaleData.getLanguage(), asLocaleData.getCountry());
-			snSiteInternal = getSNSite(locale);
+			snSiteInternal = getSNSite(site, locale);
 		} else if (asLocaleData != null && asLocaleData.getLanguage() != null) {
-			snSiteInternal = getSNSite(asLocaleData.getCountry());
+			snSiteInternal = getSNSite(site, asLocaleData.getCountry());
 		}
 		if (snSiteInternal == null) {
-			snSiteInternal = getSNSite("default");
+			snSiteInternal = getSNSite(site);
 		}
 
 		return snSiteInternal;

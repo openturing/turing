@@ -22,34 +22,31 @@ import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.exception.AuthorizationException;
 import com.vignette.as.client.exception.ValidationException;
 import com.vignette.as.client.javabean.ManagedObject;
-import com.vignette.as.server.event.AsDeploymentEvent;
+import com.vignette.as.server.event.AsPrePersistenceEvent;
 import com.vignette.as.server.event.AsEvent;
 import com.vignette.as.server.event.IAsEventListener;
 import com.vignette.logging.context.ContextLogger;
 
-public class DeploymentEventListener implements IAsEventListener {
+public class PrePersistenceEventListener implements IAsEventListener {
 
-	private static final ContextLogger log = ContextLogger.getLogger(DeploymentEventListener.class);
+	private static final ContextLogger log = ContextLogger.getLogger(PrePersistenceEventListener.class);
 
 	public void consume(AsEvent event) throws ApplicationException, AuthorizationException, ValidationException {
 		try {
 			// If this is an actual item being deployed, process the item
-			if (event instanceof AsDeploymentEvent) {
-				AsDeploymentEvent deploymentEvent = (AsDeploymentEvent) event;
-				String type = deploymentEvent.getType();
-				ManagedObject mo = deploymentEvent.getManagedObject();
+			if (event instanceof AsPrePersistenceEvent) {
+				AsPrePersistenceEvent prePersistenceEvent = (AsPrePersistenceEvent) event;
+				String type = prePersistenceEvent.getType();
+				ManagedObject mo = prePersistenceEvent.getManagedObject();
 
 				IHandlerConfiguration config = new GenericResourceHandlerConfiguration();
 
-				DeploymentHandler handler = new DeploymentHandler(config);
+				PrePersistenceHandler handler = new PrePersistenceHandler(config);
 
 				// Call out to the appropriate method depending on event type
-				if (type.equals(AsDeploymentEvent.MANAGED_OBJECT_CREATE)) {
-					log.debug("Viglet Turing DeploymentEvent() - Create object");
-					handler.onManagedObjectCreate(mo, deploymentEvent);
-				} else if (type.equals(AsDeploymentEvent.MANAGED_OBJECT_UPDATE)) {
-					log.debug("Viglet Turing DeploymentEvent() - Update object");
-					handler.onManagedObjectUpdate(mo, deploymentEvent);
+				if (type.equals(AsPrePersistenceEvent.PRE_DELETE)) {
+					log.debug("Viglet Turing PrePersistenceEvent() - Delete object");
+					handler.onPrePersistenceDelete(mo, prePersistenceEvent);
 				}
 			}
 		} catch (Exception e) {

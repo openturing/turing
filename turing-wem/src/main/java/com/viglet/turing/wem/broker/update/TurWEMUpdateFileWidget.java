@@ -24,7 +24,7 @@ import com.viglet.turing.wem.beans.TurAttrDefContext;
 import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
-import com.viglet.turing.wem.util.ETLTuringTranslator;
+import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.javabean.ContentInstance;
 
@@ -48,12 +48,11 @@ public class TurWEMUpdateFileWidget {
 			log.debug("TurWEMUpdateFileWidget started");
 		}
 
-		ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
 		List<TurAttrDef> attributesDefs = new ArrayList<>();
 
 		if (turingTag.getSrcClassName() == null) {
 
-			String url = etlTranslator.getSiteDomain(ci) + attributeData.getValue().toString();
+			String url = TuringUtils.getSiteDomain(ci, config) + attributeData.getValue().toString();
 			if (log.isDebugEnabled())
 				log.debug("TurWEMUpdateFileWidget url" + url);
 
