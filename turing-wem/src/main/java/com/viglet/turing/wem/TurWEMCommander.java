@@ -197,7 +197,7 @@ public class TurWEMCommander {
 				this.indexGUIDList(contentInstances);
 
 		} catch (IOException e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 	}
 
@@ -241,7 +241,7 @@ public class TurWEMCommander {
 			totalPages = totalEntries > 0 ? (totalEntries + pageSize - 1) / pageSize : totalEntries / pageSize;
 			
 		} catch (Exception e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 		indexByContentTypeProcess(totalPages, results);
 	}
@@ -321,7 +321,7 @@ public class TurWEMCommander {
 					ManagedObjectVCMRef ref = new ManagedObjectVCMRef(guid);
 					validGuids.add(ref);
 				} catch (VgnIllegalArgumentException e) {
-					logger.error(e);
+					logger.error(e.getMessage(), e);
 				}
 			}
 		}

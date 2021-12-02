@@ -93,7 +93,7 @@ public class MappingDefinitions {
 				return instance;
 			}
 		} catch (Exception e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 		return null;
 
@@ -104,7 +104,7 @@ public class MappingDefinitions {
 			IValidToIndex iValidToIndex = validToIndex(ci.getObjectType(), config);
 			return !(iValidToIndex != null && !iValidToIndex.isValid(ci, config));
 		} catch (Exception e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 		return false;
 	}

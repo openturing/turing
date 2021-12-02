@@ -412,7 +412,7 @@ public class ETLTuringTranslator {
 				return asLocale.getLocale().getJavaLocale().toString();
 			}
 		} catch (ApplicationException | AuthorizationException | ValidationException | RemoteException e) {
-			log.error(e);
+			log.error(e.getMessage(), e);
 		}
 		return null;
 	}

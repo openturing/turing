@@ -26,8 +26,10 @@ import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AsLocaleData;
+import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
 import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.javabean.ManagedObject;
+
 import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMDeindex {
@@ -38,25 +40,29 @@ public class TurWEMDeindex {
 	}
 
 	// This method deletes the content to the Viglet Turing broker
-	public static void indexDelete(ManagedObject mo, IHandlerConfiguration config) {
+	public static void indexDelete(ManagedObjectVCMRef managedObjectVCMRef, IHandlerConfiguration config) {
+
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 		turSNJobItem.setLocale("en_US");
 		Map<String, Object> attributes = new HashMap<>();
-		String guid = mo.getContentManagementId().getId();
+
+		String guid = managedObjectVCMRef.getId();
 		attributes.put("id", guid);
+		attributes.put("provider", "WEM");
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
-		try {
 
+		try {
+			ManagedObject mo = managedObjectVCMRef.retrieveManagedObject();
 			AsLocaleData asLocaleData = null;
-			if (mo.getLocale() != null && mo.getLocale().getAsLocale() != null
+			if (mo != null && mo.getLocale() != null && mo.getLocale().getAsLocale() != null
 					&& mo.getLocale().getAsLocale().getData() != null)
 				asLocaleData = mo.getLocale().getAsLocale().getData();
 			TuringUtils.sendToTuring(turSNJobItems, config, asLocaleData);
 		} catch (IOException | ApplicationException e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 	}
 
@@ -74,7 +80,7 @@ public class TurWEMDeindex {
 			AsLocaleData asLocaleData = null;
 			TuringUtils.sendToTuring(turSNJobItems, config, asLocaleData);
 		} catch (IOException e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 	}
 }

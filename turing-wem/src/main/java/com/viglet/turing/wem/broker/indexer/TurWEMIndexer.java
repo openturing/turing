@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
+ * Copyright (C) 2016-2021 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 package com.viglet.turing.wem.broker.indexer;
 
 import com.viglet.turing.wem.config.IHandlerConfiguration;
-import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.as.client.javabean.ManagedObject;
+import com.vignette.as.server.event.AsDeploymentEvent;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMIndexer {
@@ -28,7 +28,7 @@ public class TurWEMIndexer {
 	private TurWEMIndexer() {
 		throw new IllegalStateException("TurWEMIndexer");
 	}
-	
+
 	public static boolean indexCreate(ManagedObject mo, IHandlerConfiguration config) {
 		if (log.isDebugEnabled()) {
 			log.debug("Creating Object in Viglet Turing index");
@@ -45,11 +45,12 @@ public class TurWEMIndexer {
 		return true;
 	}
 
-	public static boolean indexDelete(ManagedObject mo, IHandlerConfiguration config) {
+	public static boolean indexDelete(ManagedObject mo, AsDeploymentEvent deploymentEvent,
+			IHandlerConfiguration config) {
 		if (log.isDebugEnabled()) {
 			log.debug("Deleting Object in Viglet Turing index");
 		}
-		TurWEMDeindex.indexDelete((ContentInstance)mo, config);
+		TurWEMDeindex.indexDelete(deploymentEvent.getManagedObjectVCMRef(), config);
 		return true;
 	}
 

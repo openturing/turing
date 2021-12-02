@@ -80,7 +80,7 @@ public class TurWEMIndex {
 				} else {
 					if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
 							&& mo.getContentManagementId() != null) {
-						TurWEMDeindex.indexDelete(mo, config);
+						TurWEMDeindex.indexDelete(mo.getContentManagementId(), config);
 					}
 					if (log.isDebugEnabled())
 						log.debug(String.format(

@@ -44,8 +44,7 @@ public class DeploymentHandler {
     }
 
     public void onManagedObjectDelete(ManagedObject mo, AsDeploymentEvent deploymentEvent) {
-       
-        boolean result = TurWEMIndexer.indexDelete(mo, config);
+        boolean result = TurWEMIndexer.indexDelete(mo, deploymentEvent, config);
         log.debug("Viglet Turing Indexing Delete: " + result);
     }
 
