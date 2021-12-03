@@ -21,78 +21,83 @@
         </div>
       </div>
     </div>
+    <!--
     <div *ngIf="!isNewObject()" style="position: relative;width: 100px;"><span class="Label mr-1 Label--success"
         style="position: absolute;top: 50%; left: 50%;transform: translate(-50%,-50%);">Running</span></div>
+        -->
     <div class="Subhead-actions" style="display: inherit;">
-      <details *ngIf="!isNewObject()" #modalDelete id="modalDelete" class="details-reset details-overlay details-overlay-dark"
-      style="display: unset;">
-      <summary class="btn btn-sm btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
-          class="mr-1"></span>Delete</summary>
-      <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast">
-        <div class="Box-header">
-          <button onclick='document.getElementById("modalDelete").removeAttribute("open");'
-            class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
-            <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
-              aria-hidden="true">
-              <path fill-rule="evenodd"
-                d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
-              </path>
-            </svg>
-          </button>
-          <h3 class="Box-title">Are you absolutely sure?</h3>
+      <details *ngIf="!isNewObject()" #modalDelete id="modalDelete"
+        class="details-reset details-overlay details-overlay-dark" style="display: unset;">
+        <summary class="btn btn-sm btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
+            class="mr-1"></span>Delete</summary>
+        <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast">
+          <div class="Box-header">
+            <button onclick='document.getElementById("modalDelete").removeAttribute("open");'
+              class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
+              <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
+                aria-hidden="true">
+                <path fill-rule="evenodd"
+                  d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
+                </path>
+              </svg>
+            </button>
+            <h3 class="Box-title">Are you absolutely sure?</h3>
 
-        </div>
-        <div class="flash flash-warn flash-full">
-          Unexpected bad things will happen if you don’t read this!
-        </div>
+          </div>
+          <div class="flash flash-warn flash-full">
+            Unexpected bad things will happen if you don’t read this!
+          </div>
 
-        <div class="Box-body overflow-auto">
-          <p>
-            This action <strong>cannot</strong> be undone. This will permanently delete the
-            <strong>{{seInstance.title}}</strong> search engine.
-          </p>
-          <button (click)="delete(seInstance)" class="btn-danger btn btn-block">
-            <span class="d-md-inline-block d-none">I understand the consequences, delete this search engine</span>
-          </button>
-        </div>
-      </details-dialog>
-    </details>
+          <div class="Box-body overflow-auto">
+            <p>
+              This action <strong>cannot</strong> be undone. This will permanently delete the
+              <strong>{{seInstance.title}}</strong> search engine.
+            </p>
+            <button (click)="delete(seInstance)" class="btn-danger btn btn-block">
+              <span class="d-md-inline-block d-none">I understand the consequences, delete this search engine</span>
+            </button>
+          </div>
+        </details-dialog>
+      </details>
+      <!--
       <div *ngIf="!isNewObject()" class="mr-2">
-        <a class="btn btn-sm btn-with-count" href="http://{{seInstance.host}}:{{seInstance.port}}/solr" target="_blank" rel="noopener noreferrer"
-          role="button">
+        <a class="btn btn-sm btn-with-count" href="http://{{seInstance.host}}:{{seInstance.port}}/solr" target="_blank"
+          rel="noopener noreferrer" role="button">
           <span octicon="file-binary" [size]=16 class="mr-1"> </span> <span> Total Documents</span>
         </a>
         <a class="social-count" href="#url">6</a>
       </div>
+      -->
     </div>
     <div *ngIf="!isNewObject()" class="Subhead-description">{{seInstance.description}}</div>
   </div>
   <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
     <nav class="menu" aria-label="Site settings">
-      <a class="menu-item" [routerLink]="['/sn/site', 'detail']"
-        [routerLinkActive]="['selected']"><span octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
+      <a class="menu-item" [routerLink]="['/se/instance/', seInstance.id]" [routerLinkActive]="['selected']"><span
+          octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
     </nav>
+    <!--
     <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
       <span class="menu-heading" id="menu-heading"><span octicon="tools" [size]=16 class="mr-1"></span>
-      Maintenance</span>
-      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']"
-      [routerLinkActive]="['selected']"> Create core</a>
-      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']"
-        [routerLinkActive]="['selected']"> Create field</a>
-        <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']"
-        [routerLinkActive]="['selected']"> Restart service</a>
+        Maintenance</span>
+      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']" [routerLinkActive]="['selected']">
+        Create core</a>
+      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']" [routerLinkActive]="['selected']">
+        Create field</a>
+      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']" [routerLinkActive]="['selected']">
+        Restart service</a>
     </nav>
     <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
       <span class="menu-heading" id="menu-heading"><span octicon="pulse" [size]=16 class="mr-1"></span>
         Monitoring</span>
-      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']"
-        [routerLinkActive]="['selected']"> Indexing</a>
+      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']" [routerLinkActive]="['selected']">
+        Indexing</a>
     </nav>
+    -->
   </div>
   <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
     <div class="Subhead">
-      <div class="Subhead-heading"><span octicon="gear"
-        [size]="24" class="mr-1"></span> Settings</div>
+      <div class="Subhead-heading"><span octicon="gear" [size]="24" class="mr-1"></span> Settings</div>
       <button (click)="save(seInstance)" type="button" class="btn btn-primary">{{saveButtonCaption()}}</button>
       <div class="Subhead-description">Search engine settings.</div>
     </div>
@@ -154,21 +159,6 @@
           [formControl]="portControl" style="width: 100%;" />
         <p class="note" id="help-text-for-checkbox">
           SE instance port will be connected.
-        </p>
-      </div>
-    </div>
-    <div class="form-group">
-      <div class="form-group-header">
-        <label for="repo-description">Language</label>
-      </div>
-      <div class="form-group-body">
-        <select [(ngModel)]="seInstance.language" class="form-select" style="width: 100%;">
-          <option *ngFor="let locale of (getTurLocales() | async)" [value]="locale.initials">
-            {{locale.en}}
-          </option>
-        </select>
-        <p class="note" id="help-text-for-checkbox">
-          Language that supports SE.
         </p>
       </div>
     </div>

@@ -49,7 +49,7 @@ export class TurSEInstancePageComponent implements OnInit {
   }
 
   saveButtonCaption(): string {
-    return this.newObject ? "Create NLP instance" : "Update NLP instance";
+    return this.newObject ? "Create search engine instance" : "Update search engine instance";
   }
 
   getTurSEInstance(): Observable<TurSEInstance> {

@@ -18,13 +18,13 @@
 package com.viglet.turing.persistence.model.sn;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.*;
 
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -42,7 +42,7 @@ import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 @Entity
 @Table(name = "turSNSite")
 @NamedQuery(name = "TurSNSite.findAll", query = "SELECT sns FROM TurSNSite sns")
-@JsonIgnoreProperties({ "turSNSiteLocales" })
+@JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights", "turSNSiteLocales" })
 public class TurSNSite implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -117,33 +117,29 @@ public class TurSNSite implements Serializable {
 	@JoinColumn(name = "nlp_vendor_id", nullable = false)
 	private TurNLPVendor turNLPVendor;
 
-	// bi-directional many-to-one association to TurSNSiteField
-	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
+	// bi-directional many-to-one association to turSNSiteFields
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteField> turSNSiteFields;
+	private Set<TurSNSiteField> turSNSiteFields = new HashSet<>();
 
-	// bi-directional many-to-one association to TurSNSiteFieldExt
-	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
+	// bi-directional many-to-one association to turSNSiteFieldExts
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteFieldExt> turSNSiteFieldExts;
+	private Set<TurSNSiteFieldExt> turSNSiteFieldExts = new HashSet<>();
 
-	// bi-directional many-to-one association to TurSNSiteSpotlight
-	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
+	// bi-directional many-to-one association to turSNSiteSpotlights
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteSpotlight> turSNSiteSpotlights;
+	private Set<TurSNSiteSpotlight> turSNSiteSpotlights = new HashSet<>();
 
-	// bi-directional many-to-one association to TurSNSiteLocale
-	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
+	// bi-directional many-to-one association to turSNSiteLocales
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteLocale> turSNSiteLocales;
+	private Set<TurSNSiteLocale> turSNSiteLocales = new HashSet<>();
 
 	public String getId() {
 		return id;

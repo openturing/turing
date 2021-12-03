@@ -67,7 +67,6 @@ public class TurSEInstanceAPI {
 	public TurSEInstance turNLPInstanceStructure() {
 		TurSEInstance turSEInstance = new TurSEInstance();
 		turSEInstance.setTurSEVendor(new TurSEVendor());
-		turSEInstance.setLanguage("en_US");
 		return turSEInstance;
 
 	}

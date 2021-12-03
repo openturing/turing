@@ -50,9 +50,6 @@ public class TurSEInstance implements Serializable {
 	@Column(nullable = false, length = 255)
 	private String host;
 
-	@Column(nullable = false, length = 5)
-	private String language;
-
 	@Column(nullable = false)
 	private int port;
 
@@ -91,14 +88,6 @@ public class TurSEInstance implements Serializable {
 
 	public void setHost(String host) {
 		this.host = host;
-	}
-
-	public String getLanguage() {
-		return this.language;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
 	}
 
 	public int getPort() {

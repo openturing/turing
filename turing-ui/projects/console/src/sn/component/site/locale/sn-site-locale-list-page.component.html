@@ -33,7 +33,12 @@
           {{turSNSiteLocale.core}}
         </div>
         <div class="d-table-cell col-4">
-          {{turSNSiteLocale.turNLPInstance.title}}
+          <span *ngIf="turSNSiteLocale.turNLPInstance">
+            {{turSNSiteLocale.turNLPInstance.title}}
+          </span>
+          <span *ngIf="turSNSiteLocale.turNLPInstance == null">
+            --
+          </span>
         </div>
         <div class="d-table-cell col-4" style="text-align: right;">
           <a target="_blank" href="/sn/{{turSNSiteLocale.turSNSite.name}}?_setlocale={{turSNSiteLocale.language}}"
