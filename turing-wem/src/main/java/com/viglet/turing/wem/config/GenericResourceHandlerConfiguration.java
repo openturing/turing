@@ -46,7 +46,7 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 	private static final String DEFAULT_SN_SITE = "Sample";
 	private static final String DEFAULT_SN_LOCALE = "en_US";
 	private static final String DEFAULT_DPS_CONTEXT = "sites";
-	
+
 	private String turingURL;
 	private String snSite;
 	private String snLocale;
@@ -193,18 +193,24 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 	public TurSNSiteConfig getSNSiteConfig(String site, String locale) {
 		TurSNSiteConfig turSNSiteConfig = getDefaultSNSiteConfig();
 		// For example: dps.site.Intranet.en.sn.site=Intra
-		String snSite = getDynamicProperties(String.format("dps.site.%s.%s.sn.site", site, locale));
-		if (snSite == null) {
+		String snSiteInternal = getDynamicProperties(String.format("dps.site.%s.%s.sn.site", site, locale));
+		if (snSiteInternal == null) {
 			turSNSiteConfig = getSNSiteConfig(site);
 		} else {
-			turSNSiteConfig.setName(snSite);
+			turSNSiteConfig.setName(snSiteInternal);
 		}
-		// For example: dps.site.Intranet.en.sn.locale=en_US
-		String snLocale = getDynamicProperties(String.format("dps.site.%s.%s.sn.locale", site, locale));
-		if (snLocale == null) {
-			turSNSiteConfig.setLocale(locale);
-		} else {
+
+		if (locale == null) {
+			// For example: dps.site.default.sn.locale=en_US
 			turSNSiteConfig.setLocale(snLocale);
+		} else {
+			// For example: dps.site.Intranet.en.sn.locale=en_US
+			String snLocaleInternal = getDynamicProperties(String.format("dps.site.%s.%s.sn.locale", site, locale));
+			if (snLocaleInternal == null) {
+				turSNSiteConfig.setLocale(locale);
+			} else {
+				turSNSiteConfig.setLocale(snLocaleInternal);
+			}
 		}
 		return turSNSiteConfig;
 	}
@@ -212,10 +218,10 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 	@Override
 	public TurSNSiteConfig getSNSiteConfig(String site) {
 		TurSNSiteConfig turSNSiteConfig = getDefaultSNSiteConfig();
-		// For example: dps.site.Intranet.default.sn.site=Intra
-		String snSite = getDynamicProperties(String.format("dps.site.%s.default.sn.site", site));
-		if (snSite != null) {
-			turSNSiteConfig.setName(snSite);
+		// For example: dps.site.Intranet.sn.site=Intra
+		String snSiteInternal = getDynamicProperties(String.format("dps.site.%s.sn.site", site));
+		if (snSiteInternal != null) {
+			turSNSiteConfig.setName(snSiteInternal);
 		}
 		return turSNSiteConfig;
 	}
@@ -279,8 +285,11 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 
 	@Override
 	public String getProviderName() {
-		// TODO Auto-generated method stub
-		return null;
+		return providerName;
+	}
+
+	public void setProviderName(String providerName) {
+		this.providerName = providerName;
 	}
 
 }

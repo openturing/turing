@@ -69,16 +69,20 @@ public class TurWEMIndex {
 				ContentInstance contentInstance = (ContentInstance) mo;
 
 				String siteName = TuringUtils.getSiteName(contentInstance, config);
-				
+
 				String contentTypeName = contentInstance.getObjectType().getData().getName();
 
 				AsLocaleData asLocaleData = null;
 				if ((contentInstance.getLocale() != null) && (contentInstance.getLocale().getAsLocale() != null)
 						&& (contentInstance.getLocale().getAsLocale().getData() != null))
 					asLocaleData = contentInstance.getLocale().getAsLocale().getData();
+
+				TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
 				if (mappingDefinitions.isClassValidToIndex(contentInstance, config)) {
-					log.info(String.format("Viglet Turing indexer Processing Content Type: %s", contentTypeName));
-					return postIndex(generateXMLToIndex(contentInstance, config), siteName, asLocaleData, config);
+					log.info(String.format(
+							"Viglet Turing indexer Processing Content Type: %s, WEM Site: %s, SNSite: %s, Locale: %s",
+							contentTypeName, siteName, turSNSiteConfig.getName(), turSNSiteConfig.getLocale()));
+					return postIndex(generateXMLToIndex(contentInstance, config), turSNSiteConfig, config);
 
 				} else {
 					if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
@@ -102,7 +106,7 @@ public class TurWEMIndex {
 		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
 		if (log.isDebugEnabled())
 			log.debug("Generating Viglet Turing XML for a content instance");
-		
+
 		String contentTypeName = ci.getObjectType().getData().getName();
 
 		StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" ?><document>");
@@ -215,7 +219,7 @@ public class TurWEMIndex {
 		}
 	}
 
-	public static boolean postIndex(String xml, String siteName, AsLocaleData asLocaleData, IHandlerConfiguration config) {
+	public static boolean postIndex(String xml, TurSNSiteConfig turSNSiteConfig, IHandlerConfiguration config) {
 
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		try {
@@ -259,7 +263,7 @@ public class TurWEMIndex {
 
 					}
 				}
-				TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
+
 				turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 				turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 				turSNJobItem.setAttributes(attributes);

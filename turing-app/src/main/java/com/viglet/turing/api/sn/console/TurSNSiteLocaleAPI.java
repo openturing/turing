@@ -74,6 +74,9 @@ public class TurSNSiteLocaleAPI {
 		return this.turSNSiteLocaleRepository.findById(id).map(turSNSiteLocaleEdit -> {
 			turSNSiteLocaleEdit.setCore(turSNSiteLocale.getCore());
 			turSNSiteLocaleEdit.setLanguage(turSNSiteLocale.getLanguage());
+			if (turSNSiteLocale.getTurNLPInstance() != null && turSNSiteLocale.getTurNLPInstance().getId() == null) {
+				turSNSiteLocale.setTurNLPInstance(null);
+			}
 			turSNSiteLocaleEdit.setTurNLPInstance(turSNSiteLocale.getTurNLPInstance());
 			turSNSiteLocaleEdit.setTurSNSite(turSNSiteLocale.getTurSNSite());
 
@@ -94,6 +97,9 @@ public class TurSNSiteLocaleAPI {
 	@Operation(summary = "Create a Semantic Navigation Site Locale")
 	@PostMapping
 	public TurSNSiteLocale turSNSiteLocaleAdd(@RequestBody TurSNSiteLocale turSNSiteLocale) {
+		if (turSNSiteLocale.getTurNLPInstance() != null && turSNSiteLocale.getTurNLPInstance().getId() == null) {
+			turSNSiteLocale.setTurNLPInstance(null);
+		}
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
 		return turSNSiteLocale;
 	}
