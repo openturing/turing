@@ -44,6 +44,7 @@ import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.broker.attribute.TurWEMAttrXML;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
+import com.viglet.turing.wem.config.TurSNSiteConfig;
 import com.viglet.turing.wem.mappers.CTDMappings;
 import com.viglet.turing.wem.mappers.MappingDefinitions;
 import com.viglet.turing.wem.mappers.MappingDefinitionsProcess;
@@ -116,8 +117,8 @@ public class TurWEMIndex {
 		} else {
 			log.info(String.format("Indexing Content ID: %s (%s)", ci.getContentManagementId().getId(),
 					contentTypeName));
-			xml.append(createXMLAttribute("id", ci.getContentManagementId().getId()));
-			xml.append(createXMLAttribute("provider", "WEM"));
+			xml.append(createXMLAttribute(IHandlerConfiguration.ID_ATTRIBUTE, ci.getContentManagementId().getId()));
+			xml.append(createXMLAttribute(IHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName()));
 			List<TurAttrDef> attributeDefs = prepareAttributeDefs(ci, config, mappingDefinitions, ctdMappings);
 			if (log.isDebugEnabled()) {
 				attributeDefs.forEach(attributeDef -> {
@@ -258,13 +259,13 @@ public class TurWEMIndex {
 
 					}
 				}
-
+				TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
 				turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-				turSNJobItem.setLocale("en_US");
+				turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 				turSNJobItem.setAttributes(attributes);
 				turSNJobItems.add(turSNJobItem);
 
-				TuringUtils.sendToTuring(turSNJobItems, config, siteName, asLocaleData);
+				TuringUtils.sendToTuring(turSNJobItems, config, turSNSiteConfig);
 			}
 
 			log.info("Viglet Turing indexer Processed Content Type.");

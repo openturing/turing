@@ -42,12 +42,14 @@ import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.beans.TuringTagMap;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
+import com.viglet.turing.wem.config.TurSNSiteConfig;
 import com.vignette.as.client.common.AsLocaleData;
 import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.common.AttributeDefinitionData;
 import com.vignette.as.client.common.DataType;
 import com.vignette.as.client.common.ref.ChannelRef;
 import com.vignette.as.client.common.ref.ManagedObjectRef;
+import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
 import com.vignette.as.client.common.ref.ObjectTypeRef;
 import com.vignette.as.client.common.ref.SiteRef;
 import com.vignette.as.client.exception.ApplicationException;
@@ -138,8 +140,7 @@ public class TuringUtils {
 		}
 	}
 
-	public static void sendToTuring(TurSNJobItems turSNJobItems, IHandlerConfiguration config, String siteName,
-			AsLocaleData asLocale) throws IOException {
+	public static void sendToTuring(TurSNJobItems turSNJobItems, IHandlerConfiguration config, TurSNSiteConfig turSNSiteConfig) {
 		try (CloseableHttpClient client = HttpClients.createDefault()) {
 			if (!turSNJobItems.getTuringDocuments().isEmpty()) {
 
@@ -161,9 +162,8 @@ public class TuringUtils {
 
 				byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
 				String jsonUTF8 = new String(outputData);
-
 				HttpPost httpPost = new HttpPost(String.format("%s/api/sn/%s/import", config.getTuringURL(),
-						config.getSNSite(siteName, asLocale)));
+						turSNSiteConfig.getName()));
 
 				StringEntity entity = new StringEntity(jsonUTF8, StandardCharsets.UTF_8);
 				httpPost.setEntity(entity);
@@ -186,6 +186,8 @@ public class TuringUtils {
 					turSNJobItems.getTuringDocuments().clear();
 				}
 			}
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -462,5 +464,31 @@ public class TuringUtils {
 			log.error(e.getMessage(), e);
 		}
 		return null;
+	}
+	
+	public static AsLocaleData getAsLocaleDataFromManagedObject(ManagedObjectVCMRef managedObjectVCMRef)  {
+		ManagedObject mo;
+		AsLocaleData asLocaleData = null;
+		try {
+			mo = managedObjectVCMRef.retrieveManagedObject();
+		
+		if (mo != null && mo.getLocale() != null && mo.getLocale().getAsLocale() != null
+				&& mo.getLocale().getAsLocale().getData() != null)
+			asLocaleData = mo.getLocale().getAsLocale().getData();
+		} catch (ApplicationException | RemoteException e) {
+			log.error(e.getMessage(), e);
+		}
+		return asLocaleData;
+	}
+	
+	public static String getSiteNameFromManagedObjectVCMRef(ManagedObjectVCMRef managedObjectVCMRef,
+			IHandlerConfiguration config) {
+		String siteName = null;
+		try {
+			siteName = TuringUtils.getSiteName(managedObjectVCMRef.retrieveManagedObject(), config);
+		} catch (ApplicationException | RemoteException e) {
+			log.error(e.getMessage(), e);
+		}
+		return siteName;
 	}
 }

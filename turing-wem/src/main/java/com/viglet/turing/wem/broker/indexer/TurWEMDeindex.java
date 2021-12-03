@@ -16,8 +16,6 @@
  */
 package com.viglet.turing.wem.broker.indexer;
 
-import java.io.IOException;
-import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,16 +23,12 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
+import com.viglet.turing.wem.config.TurSNSiteConfig;
 import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AsLocaleData;
 import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
-import com.vignette.as.client.exception.ApplicationException;
-import com.vignette.as.client.javabean.ManagedObject;
-
-import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMDeindex {
-	private static final ContextLogger logger = ContextLogger.getLogger(TurWEMDeindex.class);
 
 	private TurWEMDeindex() {
 		throw new IllegalStateException("TurWEMDeindex");
@@ -45,50 +39,33 @@ public class TurWEMDeindex {
 
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		String siteName = null;
-		try {
-			siteName = TuringUtils.getSiteName(managedObjectVCMRef.retrieveManagedObject(), config);
-		} catch (ApplicationException | RemoteException e) {
-			logger.error(e.getMessage(), e);
-		}
+		String siteName = TuringUtils.getSiteNameFromManagedObjectVCMRef(managedObjectVCMRef, config);
+		AsLocaleData asLocaleData = TuringUtils.getAsLocaleDataFromManagedObject(managedObjectVCMRef);
+		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-		turSNJobItem.setLocale("en_US");
+		turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 		Map<String, Object> attributes = new HashMap<>();
 
 		String guid = managedObjectVCMRef.getId();
-		attributes.put("id", guid);
-		attributes.put("provider", "WEM");
+		attributes.put(IHandlerConfiguration.ID_ATTRIBUTE, guid);
+		attributes.put(IHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 
-		try {
-			ManagedObject mo = managedObjectVCMRef.retrieveManagedObject();
-			AsLocaleData asLocaleData = null;
-			if (mo != null && mo.getLocale() != null && mo.getLocale().getAsLocale() != null
-					&& mo.getLocale().getAsLocale().getData() != null)
-				asLocaleData = mo.getLocale().getAsLocale().getData();
-			TuringUtils.sendToTuring(turSNJobItems, config, siteName, asLocaleData);
-		} catch (IOException | ApplicationException e) {
-			logger.error(e.getMessage(), e);
-		}
+		TuringUtils.sendToTuring(turSNJobItems, config, turSNSiteConfig);
 	}
 
 	public static void indexDeleteByType(String siteName, String typeName, IHandlerConfiguration config) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		
+		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName);
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-		turSNJobItem.setLocale("en_US");
+		turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 		Map<String, Object> attributes = new HashMap<>();
-		attributes.put("type", typeName);
-		attributes.put("provider", "WEM");
+		attributes.put(IHandlerConfiguration.TYPE_ATTRIBUTE, typeName);
+		attributes.put(IHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
-		try {
-			AsLocaleData asLocaleData = null;
-			TuringUtils.sendToTuring(turSNJobItems, config, siteName, asLocaleData);
-		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
-		}
+		TuringUtils.sendToTuring(turSNJobItems, config, turSNSiteConfig);
 	}
 }

@@ -21,16 +21,21 @@ import java.util.List;
 import com.vignette.as.client.common.AsLocaleData;
 
 public interface IHandlerConfiguration {
-
+	public final static String ID_ATTRIBUTE = "id";
+	public final static String TYPE_ATTRIBUTE = "type";
+	public final static String PROVIDER_ATTRIBUTE = "provider";
+	
 	String getTuringURL();
 	
-	String getDefaultSNSite();
+	String getProviderName();
+	
+	TurSNSiteConfig getDefaultSNSiteConfig();
 
-	String getSNSite(String site);
+	TurSNSiteConfig getSNSiteConfig(String site);
 
-	String getSNSite(String site, String locale);
+	TurSNSiteConfig getSNSiteConfig(String site, String locale);
 
-	String getSNSite(String site, AsLocaleData asLocaleData);
+	TurSNSiteConfig getSNSiteConfig(String site, AsLocaleData asLocaleData);
 
 	String getMappingsXML();
 

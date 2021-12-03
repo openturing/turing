@@ -35,16 +35,28 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 
 	public static final String RESOURCE_TYPE = "Properties";
 	public static final String RESOURCE_NAME = "VigletTuring";
-
+	public static final String ID_ATTRIBUTE = "id";
+	public static final String TYPE_ATTRIBUTE = "type";
+	public static final String PROVIDER_ATTRIBUTE = "provider";
+	private static final String DEFAULT_PROVIDER = "WEM";
+	private static final String DEFAULT_TURING_URL = "http://localhost:2700";
+	private static final String DEFAULT_TURING_USERNAME = "admin";
+	private static final String DEFAULT_TURING_PASSWORD = "admin";
+	private static final String DEFAULT_CTD_MAPPING_FILE = "/CTD-Turing-Mappings.xml";
+	private static final String DEFAULT_SN_SITE = "Sample";
+	private static final String DEFAULT_SN_LOCALE = "en_US";
+	private static final String DEFAULT_DPS_CONTEXT = "sites";
+	
 	private String turingURL;
 	private String snSite;
+	private String snLocale;
 	private String mappingsXML;
 	private String cdaContextName;
 	private String cdaURLPrefix;
 	private String sitesAssociationPriority;
 	private String login;
 	private String password;
-
+	private String providerName;
 	private static final ContextLogger log = ContextLogger.getLogger(GenericResourceHandlerConfiguration.class);
 
 	// Load up from Generic Resource
@@ -59,11 +71,6 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 
 	public void setTuringURL(String turingURL) {
 		this.turingURL = turingURL;
-	}
-
-	@Override
-	public String getDefaultSNSite() {
-		return snSite;
 	}
 
 	@Override
@@ -168,45 +175,69 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 	private void parseProperties(Properties properties) {
 
 		// Turing
-		turingURL = properties.getProperty("turing.url");
-		login = properties.getProperty("turing.login");
-		password = properties.getProperty("turing.password");
-		mappingsXML = properties.getProperty("turing.mappingsxml", "/CTD-Turing-Mappings.xml");
-
+		turingURL = properties.getProperty("turing.url", DEFAULT_TURING_URL);
+		login = properties.getProperty("turing.login", DEFAULT_TURING_USERNAME);
+		password = properties.getProperty("turing.password", DEFAULT_TURING_PASSWORD);
+		mappingsXML = properties.getProperty("turing.mappingsxml", DEFAULT_CTD_MAPPING_FILE);
+		providerName = properties.getProperty("turing.provider.name", DEFAULT_PROVIDER);
 		// DPS
-		snSite = properties.getProperty("dps.site.default.snsite");
-		cdaContextName = properties.getProperty("dps.site.default.contextname");
+		snSite = properties.getProperty("dps.site.default.sn.site", DEFAULT_SN_SITE);
+		snLocale = properties.getProperty("dps.site.default.sn.locale", DEFAULT_SN_LOCALE);
+		cdaContextName = properties.getProperty("dps.site.default.contextname", DEFAULT_DPS_CONTEXT);
 		cdaURLPrefix = properties.getProperty("dps.site.default.urlprefix");
 		sitesAssociationPriority = properties.getProperty("dps.config.association.priority");
 
 	}
 
 	@Override
-	public String getSNSite(String site) {
-		String snSite = getDynamicProperties(String.format("dps.site.%s.snsite", site));
-		return snSite != null ? snSite : getDefaultSNSite();
+	public TurSNSiteConfig getSNSiteConfig(String site, String locale) {
+		TurSNSiteConfig turSNSiteConfig = getDefaultSNSiteConfig();
+		// For example: dps.site.Intranet.en.sn.site=Intra
+		String snSite = getDynamicProperties(String.format("dps.site.%s.%s.sn.site", site, locale));
+		if (snSite == null) {
+			turSNSiteConfig = getSNSiteConfig(site);
+		} else {
+			turSNSiteConfig.setName(snSite);
+		}
+		// For example: dps.site.Intranet.en.sn.locale=en_US
+		String snLocale = getDynamicProperties(String.format("dps.site.%s.%s.sn.locale", site, locale));
+		if (snLocale == null) {
+			turSNSiteConfig.setLocale(locale);
+		} else {
+			turSNSiteConfig.setLocale(snLocale);
+		}
+		return turSNSiteConfig;
 	}
 
 	@Override
-	public String getSNSite(String site, String locale) {
-		String snSite = getDynamicProperties(String.format("dps.site.%s.%s.snsite", site, locale));
-		return snSite != null ? snSite : getSNSite(site);
+	public TurSNSiteConfig getSNSiteConfig(String site) {
+		TurSNSiteConfig turSNSiteConfig = getDefaultSNSiteConfig();
+		// For example: dps.site.Intranet.default.sn.site=Intra
+		String snSite = getDynamicProperties(String.format("dps.site.%s.default.sn.site", site));
+		if (snSite != null) {
+			turSNSiteConfig.setName(snSite);
+		}
+		return turSNSiteConfig;
 	}
 
 	@Override
-	public String getSNSite(String site, AsLocaleData asLocaleData) {
-		String snSiteInternal = null;
+	public TurSNSiteConfig getDefaultSNSiteConfig() {
+		return new TurSNSiteConfig(snSite, snLocale);
+	}
+
+	@Override
+	public TurSNSiteConfig getSNSiteConfig(String site, AsLocaleData asLocaleData) {
+		TurSNSiteConfig snSiteConfig = null;
 		if (asLocaleData != null && asLocaleData.getCountry() != null && asLocaleData.getLanguage() != null) {
 			String locale = String.format("%s_%s", asLocaleData.getLanguage(), asLocaleData.getCountry());
-			snSiteInternal = getSNSite(site, locale);
+			snSiteConfig = getSNSiteConfig(site, locale);
 		} else if (asLocaleData != null && asLocaleData.getLanguage() != null) {
-			snSiteInternal = getSNSite(site, asLocaleData.getCountry());
+			snSiteConfig = getSNSiteConfig(site, asLocaleData.getCountry());
 		}
-		if (snSiteInternal == null) {
-			snSiteInternal = getSNSite(site);
+		if (snSiteConfig == null) {
+			snSiteConfig = getSNSiteConfig(site);
 		}
-
-		return snSiteInternal;
+		return snSiteConfig;
 	}
 
 	@Override
@@ -244,6 +275,12 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+
+	@Override
+	public String getProviderName() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
