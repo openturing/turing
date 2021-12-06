@@ -188,7 +188,20 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 		sitesAssociationPriority = properties.getProperty("dps.config.association.priority");
 
 	}
-
+	@Override
+	public TurSNSiteConfig getSNSiteConfig(String site, AsLocaleData asLocaleData) {
+		TurSNSiteConfig snSiteConfig = null;
+		if (asLocaleData != null && asLocaleData.getCountry() != null && asLocaleData.getLanguage() != null) {
+			String locale = String.format("%s_%s", asLocaleData.getLanguage(), asLocaleData.getCountry());
+			snSiteConfig = getSNSiteConfig(site, locale);
+		} else if (asLocaleData != null && asLocaleData.getLanguage() != null) {
+			snSiteConfig = getSNSiteConfig(site, asLocaleData.getLanguage());
+		}
+		if (snSiteConfig == null) {
+			snSiteConfig = getSNSiteConfig(site);
+		}
+		return snSiteConfig;
+	}
 	@Override
 	public TurSNSiteConfig getSNSiteConfig(String site, String locale) {
 		TurSNSiteConfig turSNSiteConfig = getDefaultSNSiteConfig();
@@ -204,6 +217,7 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 			// For example: dps.site.default.sn.locale=en_US
 			turSNSiteConfig.setLocale(snLocale);
 		} else {
+			
 			// For example: dps.site.Intranet.en.sn.locale=en_US
 			String snLocaleInternal = getDynamicProperties(String.format("dps.site.%s.%s.sn.locale", site, locale));
 			if (snLocaleInternal == null) {
@@ -229,21 +243,6 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 	@Override
 	public TurSNSiteConfig getDefaultSNSiteConfig() {
 		return new TurSNSiteConfig(snSite, snLocale);
-	}
-
-	@Override
-	public TurSNSiteConfig getSNSiteConfig(String site, AsLocaleData asLocaleData) {
-		TurSNSiteConfig snSiteConfig = null;
-		if (asLocaleData != null && asLocaleData.getCountry() != null && asLocaleData.getLanguage() != null) {
-			String locale = String.format("%s_%s", asLocaleData.getLanguage(), asLocaleData.getCountry());
-			snSiteConfig = getSNSiteConfig(site, locale);
-		} else if (asLocaleData != null && asLocaleData.getLanguage() != null) {
-			snSiteConfig = getSNSiteConfig(site, asLocaleData.getCountry());
-		}
-		if (snSiteConfig == null) {
-			snSiteConfig = getSNSiteConfig(site);
-		}
-		return snSiteConfig;
 	}
 
 	@Override

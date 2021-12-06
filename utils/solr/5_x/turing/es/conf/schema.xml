@@ -5,7 +5,7 @@
 	<fields>
 		<field name="_root_" type="string" docValues="false" indexed="true" stored="false" />
 		<field name="_version_" type="long" indexed="true" stored="true" />
-		
+
 		<field name="content" type="text_general" multiValued="true" indexed="true" stored="false" />
 		<field name="abstract" type="text_general" multiValued="false" indexed="true" stored="true" />
 		<field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true" />
@@ -29,7 +29,8 @@
 		<field name="site" type="string" multiValued="false" indexed="true" stored="true" />
 		<field name="text" type="text_general" multiValued="false" indexed="true" stored="true" />
 		<field name="source_app" type="string" multiValued="false" indexed="true" stored="true" />
-
+		<field name="provider" type="string" multiValued="false" indexed="true" stored="true" />
+		
 		<!-- Apache Nutch -->
 		<field name="tstamp" type="tdate" multiValued="false" indexed="true" stored="true"/>
 		<field name="digest" type="text_general" multiValued="false" indexed="false" stored="true" />
@@ -139,6 +140,14 @@
 				<filter class="solr.LowerCaseFilterFactory" />
 				<filter class="solr.StandardFilterFactory" />
 				<filter class="solr.RemoveDuplicatesTokenFilterFactory" />
+			</analyzer>
+		</fieldType>
+		<fieldType name="phrase_suggest" class="solr.TextField">
+			<analyzer>
+				<tokenizer class="solr.KeywordTokenizerFactory"/>
+				<filter class="solr.PatternReplaceFilterFactory" pattern="([^\p{L}\p{M}\p{N}\p{Cs}]*[\p{L}\p{M}\p{N}\p{Cs}\_]+:)|([^\p{L}\p{M}\p{N}\p{Cs}])+" replace="all" replacement=" "/>
+				<filter class="solr.LowerCaseFilterFactory"/>
+				<filter class="solr.TrimFilterFactory"/>
 			</analyzer>
 		</fieldType>
 		<fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />

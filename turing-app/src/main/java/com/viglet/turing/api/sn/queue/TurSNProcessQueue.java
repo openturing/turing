@@ -103,7 +103,7 @@ public class TurSNProcessQueue {
 
 					} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
 						String id = (String) turSNJobItem.getAttributes().get("id");
-						status = turSNSiteSpotlightRepository.findById(id).isPresent() ? deleteSpotlight(turSNJobItem)
+						status = (id != null && turSNSiteSpotlightRepository.findById(id).isPresent()) ? deleteSpotlight(turSNJobItem)
 								: desindexing(turSNJobItem, turSNSite);
 
 					}

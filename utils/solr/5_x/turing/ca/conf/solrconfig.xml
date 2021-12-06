@@ -1197,5 +1197,68 @@
 	<admin>
 		<defaultQuery>*:*</defaultQuery>
 	</admin>
+<searchComponent class="solr.SpellCheckComponent" name="tur_suggest">
+    <lst name="spellchecker">
+      <str name="name">suggest</str>
+      <str name="classname">org.apache.solr.spelling.suggest.Suggester</str>
+      <str name="lookupImpl">org.apache.solr.spelling.suggest.fst.WFSTLookupFactory</str>
+      <str name="buildOnCommit">true</str>
+      <bool name="exactMatchFirst">true</bool>
+      <str name="field">text_suggest</str> 
+    </lst>
 
+    <str name="queryAnalyzerFieldType">phrase_suggest</str>
+  </searchComponent>
+
+  <searchComponent name="tur_spellcheck" class="solr.SpellCheckComponent">
+    <str name="queryAnalyzerFieldType">textSpell</str>
+    <lst name="spellchecker">
+      <str name="name">default</str>
+      <str name="field">text_spellcheck</str>
+      <str name="classname">solr.DirectSolrSpellChecker</str>
+      <str name="distanceMeasure">internal</str>
+      <float name="accuracy">0.0</float>
+      <int name="maxEdits">2</int>
+      <int name="minPrefix">1</int>
+      <int name="maxInspections">5</int>
+      <int name="minQueryLength">4</int>
+      <float name="maxQueryFrequency">0.00</float>
+      <float name="thresholdTokenFrequency">.0000</float>
+    </lst>
+  </searchComponent>
+
+  <queryConverter name="queryConverter" class="org.apache.solr.spelling.SuggestQueryConverter"/>
+
+  <requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/tur_suggest">
+    <lst name="defaults">
+      <str name="spellcheck">true</str>
+      <str name="spellcheck.dictionary">suggest</str>
+      <str name="spellcheck.onlyMorePopular">true</str>
+      <str name="spellcheck.count">50</str>
+      <str name="spellcheck.collate">false</str>
+    </lst>
+    <arr name="components">
+      <str>tur_suggest</str>
+    </arr>
+  </requestHandler>
+
+
+  <requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/tur_spell" startup="lazy">
+    <lst name="defaults">
+      <str name="df">text_spellcheck</str>
+      <str name="spellcheck.dictionary">default</str>
+      <str name="spellcheck">on</str>
+      <str name="spellcheck.extendedResults">true</str>
+      <str name="spellcheck.count">10</str>
+      <str name="spellcheck.alternativeTermCount">5</str>
+      <str name="spellcheck.maxResultsForSuggest">5</str>
+      <str name="spellcheck.collate">true</str>
+      <str name="spellcheck.collateExtendedResults">true</str>
+      <str name="spellcheck.maxCollationTries">10</str>
+      <str name="spellcheck.maxCollations">1</str>
+    </lst>
+    <arr name="last-components">
+      <str>tur_spellcheck</str>
+    </arr>
+  </requestHandler>
 </config>
