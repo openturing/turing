@@ -23,9 +23,9 @@ import java.util.TimeZone;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
-import com.viglet.turing.api.sn.job.TurSNJobAction;
-import com.viglet.turing.api.sn.job.TurSNJobItem;
-import com.viglet.turing.api.sn.job.TurSNJobItems;
+import com.viglet.turing.client.sn.job.TurSNJobAction;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNJobItems;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;

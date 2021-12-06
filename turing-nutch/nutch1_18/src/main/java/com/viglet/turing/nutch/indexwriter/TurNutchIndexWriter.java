@@ -38,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.nutch.commons.TurNutchCommons;
 
 public class TurNutchIndexWriter implements IndexWriter {
 
@@ -170,7 +171,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 				}
 
 				if (e.getKey().equals("content") || e.getKey().equals("title")) {
-					val2 = stripNonCharCodepoints((String) val);
+					val2 = TurNutchCommons.stripNonCharCodepoints((String) val);
 				}
 				if (e.getKey().equals("content")) {
 					attributes.put("text", val2);
@@ -313,28 +314,5 @@ public class TurNutchIndexWriter implements IndexWriter {
 			String authHeader = "Basic " + encodedAuth;
 			httpPost.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
 		}
-	}
-
-	static String stripNonCharCodepoints(String input) {
-		StringBuilder retval = new StringBuilder();
-		char ch;
-
-		for (int i = 0; i < input.length(); i++) {
-			ch = input.charAt(i);
-
-			// Strip all non-characters
-			// http://unicode.org/cldr/utility/list-unicodeset.jsp?a=[:Noncharacter_Code_Point=True:]
-			// and non-printable control characters except tabulator, new line and
-			// carriage return
-			if (ch % 0x10000 != 0xffff && // 0xffff - 0x10ffff range step 0x10000
-					ch % 0x10000 != 0xfffe && // 0xfffe - 0x10fffe range
-					(ch <= 0xfdd0 || ch >= 0xfdef) && // 0xfdd0 - 0xfdef
-					(ch > 0x1F || ch == 0x9 || ch == 0xa || ch == 0xd)) {
-
-				retval.append(ch);
-			}
-		}
-
-		return retval.toString();
 	}
 }

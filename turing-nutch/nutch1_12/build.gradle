@@ -101,12 +101,15 @@ dependencies {
     implementation group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.1", force:true
     implementation group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.4.1"
 	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: '0.3.3'
-	
+    implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: '0.3.3'
+	implementation project(':turing-nutch:nutch-commons')
+
 	localDeps group: 'org.apache.solr', name: 'solr-solrj', version: "5.4.1"
 	localDeps group: 'org.apache.httpcomponents', name: 'httpclient', version:"4.4.1", force:true
     localDeps group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.1", force:true
     localDeps group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.4.1"
     localDeps group: 'com.github.openturing', name: 'turing-java-sdk', version: '0.3.3'
+    localDeps project(':turing-nutch:nutch-commons')
 }
 test {
     testLogging {
