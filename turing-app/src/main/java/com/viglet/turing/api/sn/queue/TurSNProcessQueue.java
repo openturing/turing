@@ -35,6 +35,7 @@ import com.viglet.turing.api.sn.job.TurSNJob;
 import com.viglet.turing.api.sn.job.TurSNJobAction;
 import com.viglet.turing.api.sn.job.TurSNJobItem;
 import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.nlp.TurNLPTraining;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
@@ -55,7 +56,9 @@ public class TurSNProcessQueue {
 	private TurThesaurusProcessor turThesaurusProcessor;
 	@Autowired
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-
+	@Autowired
+	private TurNLPTraining turNLPTraining;
+	
 	public static final String INDEXING_QUEUE = "indexing.queue";
 
 	@JmsListener(destination = INDEXING_QUEUE)
@@ -153,9 +156,9 @@ public class TurSNProcessQueue {
 			Map<String, Object> nlpResultsPreffix = new HashMap<String, Object>();
 
 			// Add prefix to attribute name
-			/*for (Entry<String, ArrayList<String>> nlpResult : turNLPTraining.processNLPTerms(nlpResults).entrySet()) {
+			for (Entry<String, ArrayList<String>> nlpResult : turNLPTraining.processNLPTerms(nlpResults).entrySet()) {
 				nlpResultsPreffix.put("turing_entity_" + nlpResult.getKey(), nlpResult.getValue());
-			} */
+			}
 
 			// Copy NLP attributes to consolidateResults
 			for (Entry<String, Object> nlpResultPreffix : nlpResultsPreffix.entrySet()) {

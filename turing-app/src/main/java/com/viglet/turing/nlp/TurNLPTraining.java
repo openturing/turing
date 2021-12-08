@@ -44,6 +44,7 @@ public class TurNLPTraining {
 		Map<String, ArrayList<String>> processedAttributes = new HashMap<String, ArrayList<String>>();
 		File userDir = new File(System.getProperty("user.dir"));
 		File trainingFile = new File(userDir.getAbsolutePath().concat("/store/nlp/train/train.json"));
+		Map<String, TurNLPTrainingBean> terms = new HashMap<String, TurNLPTrainingBean>();
 		if (trainingFile.exists()) {
 			try (BufferedReader rd = new BufferedReader(new FileReader(trainingFile))) {
 
@@ -52,7 +53,7 @@ public class TurNLPTraining {
 
 				ObjectMapper mapper = new ObjectMapper();
 				TurNLPTrainingBeans turNLPTrainingBeans = mapper.readValue(jsonText, TurNLPTrainingBeans.class);
-				Map<String, TurNLPTrainingBean> terms = new HashMap<String, TurNLPTrainingBean>();
+				
 				for (TurNLPTrainingBean turNLPTrainingBeanItem : turNLPTrainingBeans.getTerms()) {
 					terms.put(turNLPTrainingBeanItem.getTerm().toLowerCase(), turNLPTrainingBeanItem);
 				}
@@ -62,6 +63,10 @@ public class TurNLPTraining {
 						logger.debug(turNLPTrainingBeanItem.toString());
 					}
 				}
+			} catch (IOException e) {
+				logger.error(e);
+			}
+		}
 				if (attributes != null) {
 					for (Entry<String, Object> attribute : attributes.entrySet()) {
 						if (attribute.getValue() != null) {
@@ -102,10 +107,7 @@ public class TurNLPTraining {
 						}
 					}
 				}
-			} catch (IOException e) {
-				logger.error(e);
-			}
-		}
+			
 		return processedAttributes;
 
 	}
