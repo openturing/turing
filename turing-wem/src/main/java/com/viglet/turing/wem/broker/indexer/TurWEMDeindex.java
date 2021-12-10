@@ -22,6 +22,7 @@ import java.util.Map;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.wem.config.GenericResourceHandlerConfiguration;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.viglet.turing.wem.config.TurSNSiteConfig;
 import com.viglet.turing.wem.util.TuringUtils;
@@ -47,8 +48,8 @@ public class TurWEMDeindex {
 		Map<String, Object> attributes = new HashMap<>();
 
 		String guid = managedObjectVCMRef.getId();
-		attributes.put(IHandlerConfiguration.ID_ATTRIBUTE, guid);
-		attributes.put(IHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
+		attributes.put(GenericResourceHandlerConfiguration.ID_ATTRIBUTE, guid);
+		attributes.put(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 
@@ -62,8 +63,8 @@ public class TurWEMDeindex {
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 		turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 		Map<String, Object> attributes = new HashMap<>();
-		attributes.put(IHandlerConfiguration.TYPE_ATTRIBUTE, typeName);
-		attributes.put(IHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
+		attributes.put(GenericResourceHandlerConfiguration.TYPE_ATTRIBUTE, typeName);
+		attributes.put(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 		TuringUtils.sendToTuring(turSNJobItems, config, turSNSiteConfig);

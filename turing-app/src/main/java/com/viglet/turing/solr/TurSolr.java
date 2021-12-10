@@ -148,19 +148,10 @@ public class TurSolr {
 		SolrInputDocument document = new SolrInputDocument();
 
 		if (attributes != null) {
-			processAttributes(attributes, turSNSiteFieldMap, document);
-
+			attributes.entrySet().forEach(entry -> processAttribute(turSNSiteFieldMap, document, entry));
 			addSolrDocument(turSolrInstance, document);
 		}
 	}
-
-	private void processAttributes(Map<String, Object> attributes, Map<String, TurSNSiteField> turSNSiteFieldMap,
-			SolrInputDocument document) {
-		for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-			processAttribute(turSNSiteFieldMap, document, entry);
-		}
-	}
-
 	private void processAttribute(Map<String, TurSNSiteField> turSNSiteFieldMap, SolrInputDocument document,
 			Map.Entry<String, Object> entry) {
 		String key = entry.getKey();
@@ -241,6 +232,24 @@ public class TurSolr {
 		}
 	}
 
+	public SolrDocumentList solrResultAnd(TurSolrInstance turSolrInstance, Map<String, Object> attributes) {
+		
+		SolrQuery query = new SolrQuery();
+
+		query.setQuery("*:*");
+		String[] fqs = attributes.entrySet().stream().map(entry -> entry.getKey() + ":\"" + entry.getValue() + "\"").toArray(String[]::new);
+		query.setFilterQueries(fqs);
+		QueryResponse queryResponse;
+		try {
+			queryResponse = turSolrInstance.getSolrClient().query(query);
+			return queryResponse.getResults();
+		} catch (IOException | SolrServerException e) {
+			logger.error(e);
+		}
+		return new SolrDocumentList();
+
+	}
+	
 	public SpellCheckResponse autoComplete(TurSolrInstance turSolrInstance, String term) {
 		SolrQuery query = new SolrQuery();
 		query.setRequestHandler("/tur_suggest");
@@ -696,7 +705,7 @@ public class TurSolr {
 		}
 	}
 
-	private TurSEResult createTurSEResult(SolrDocument document) {
+	public TurSEResult createTurSEResult(SolrDocument document) {
 		TurSEResult turSEResult = new TurSEResult();
 
 		Map<String, Object> fields = new HashMap<>();

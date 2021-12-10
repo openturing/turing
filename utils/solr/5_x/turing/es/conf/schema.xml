@@ -28,7 +28,7 @@
 		<field name="url" type="string" multiValued="false" indexed="true" stored="true" />
 		<field name="site" type="string" multiValued="false" indexed="true" stored="true" />
 		<field name="text" type="text_general" multiValued="false" indexed="true" stored="true" />
-		<field name="source_app" type="string" multiValued="false" indexed="true" stored="true" />
+		<field name="source_apps" type="string" multiValued="true" indexed="true" stored="true" />
 		<field name="provider" type="string" multiValued="false" indexed="true" stored="true" />
 		
 		<!-- Apache Nutch -->

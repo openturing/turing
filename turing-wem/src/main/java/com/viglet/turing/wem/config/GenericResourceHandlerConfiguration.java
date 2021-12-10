@@ -37,7 +37,7 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 	public static final String RESOURCE_NAME = "VigletTuring";
 	public static final String ID_ATTRIBUTE = "id";
 	public static final String TYPE_ATTRIBUTE = "type";
-	public static final String PROVIDER_ATTRIBUTE = "provider";
+	public static final String PROVIDER_ATTRIBUTE = "source_apps";
 	private static final String DEFAULT_PROVIDER = "WEM";
 	private static final String DEFAULT_TURING_URL = "http://localhost:2700";
 	private static final String DEFAULT_TURING_USERNAME = "admin";

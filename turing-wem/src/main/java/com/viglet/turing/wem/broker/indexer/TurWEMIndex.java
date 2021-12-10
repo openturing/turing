@@ -43,6 +43,7 @@ import com.viglet.turing.wem.beans.TurCTDMappingMap;
 import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.broker.attribute.TurWEMAttrXML;
+import com.viglet.turing.wem.config.GenericResourceHandlerConfiguration;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.viglet.turing.wem.config.TurSNSiteConfig;
 import com.viglet.turing.wem.mappers.CTDMappings;
@@ -121,8 +122,8 @@ public class TurWEMIndex {
 		} else {
 			log.info(String.format("Indexing Content ID: %s (%s)", ci.getContentManagementId().getId(),
 					contentTypeName));
-			xml.append(createXMLAttribute(IHandlerConfiguration.ID_ATTRIBUTE, ci.getContentManagementId().getId()));
-			xml.append(createXMLAttribute(IHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName()));
+			xml.append(createXMLAttribute(GenericResourceHandlerConfiguration.ID_ATTRIBUTE, ci.getContentManagementId().getId()));
+			xml.append(createXMLAttribute(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName()));
 			List<TurAttrDef> attributeDefs = prepareAttributeDefs(ci, config, mappingDefinitions, ctdMappings);
 			if (log.isDebugEnabled()) {
 				attributeDefs.forEach(attributeDef -> {

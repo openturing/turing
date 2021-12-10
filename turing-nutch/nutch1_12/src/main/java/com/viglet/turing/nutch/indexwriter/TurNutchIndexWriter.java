@@ -2,15 +2,10 @@ package com.viglet.turing.nutch.indexwriter;
 
 import java.lang.invoke.MethodHandles;
 import java.net.URLDecoder;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,13 +14,6 @@ import java.util.Map.Entry;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.nutch.indexer.IndexWriter;
 import org.apache.nutch.indexer.IndexerMapReduce;
 import org.apache.nutch.indexer.NutchDocument;
@@ -34,7 +22,6 @@ import org.apache.solr.common.params.ModifiableSolrParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -43,24 +30,12 @@ import com.viglet.turing.nutch.commons.TurNutchCommons;
 public class TurNutchIndexWriter implements IndexWriter {
 
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-	private static final String CONTENT_FIELD = "content";
-	private static final String TITLE_FIELD = "title";
-	private static final String TEXT_FIELD = "text";
-	private static final String TIMESTAMP_FIELD = "tstamp";
-	private static final String TYPE_FIELD = "type";
-	private static final String CONNECTOR_FIELD = "source_app";
-	private static final String TYPE_DEFAULT_VALUE = "Page";
-	private static final String CONNECTOR_DEFAULT_VALUE = "Nutch";
-	private static final String USERNAME_DEFAULT_VALUE = "admin";
-	private static final String PASSWORD_DEFAULT_VALUE = "admin";
-	private static final String SITE_DEFAULT_VALUE = "Sample";
-	private static final String TURING_SERVER_DEFAULT_VALUE = "http://localhost:2700";
+
 	private static final String TIMESTAMP_PROPERTY = "turing.timestamp.field";
 	private static final String FIELD_PROPERTY = "turing.field.";
-	private static final char TAB = '\t';
-	private static final String SLASH = "/";
+	private static final String LOCALE_PROPERTY = "turing.locale";
+
 	private final TurSNJobItems turSNJobItems = new TurSNJobItems();
-	private CloseableHttpClient client = HttpClients.createDefault();
 	private ModifiableSolrParams params;
 
 	private Configuration config;
@@ -100,7 +75,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 			turSNJobItems.add(turSNJobItem);
 		}
 
-		push();
+		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
 
 	}
 
@@ -112,6 +87,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 	@Override
 	public void write(NutchDocument doc) throws IOException {
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
+		turSNJobItem.setLocale(this.config.get(LOCALE_PROPERTY, TurNutchCommons.LOCALE_DEFAULT_VALUE));
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 		Map<String, Object> attributes = new HashMap<String, Object>();
 		Map<String, String> turCustomFields = this.config.getValByRegex("^" + FIELD_PROPERTY + "*");
@@ -125,13 +101,17 @@ public class TurNutchIndexWriter implements IndexWriter {
 					normalizedValue = DateTimeFormatter.ISO_INSTANT.format(((Date) originalValue).toInstant());
 				}
 
-				if (fieldMap.getKey().equals(CONTENT_FIELD) || fieldMap.getKey().equals(TITLE_FIELD)) {
+				if (fieldMap.getKey().equals(TurNutchCommons.CONTENT_FIELD)
+						|| fieldMap.getKey().equals(TurNutchCommons.TITLE_FIELD)) {
 					normalizedValue = TurNutchCommons.stripNonCharCodepoints((String) originalValue);
 				}
-				if (fieldMap.getKey().equals(CONTENT_FIELD)) {
-					attributes.put(TEXT_FIELD, normalizedValue);
-				} else if (fieldMap.getKey().equals(TIMESTAMP_FIELD)) {
-					attributes.put(this.config.get(TIMESTAMP_PROPERTY, TIMESTAMP_FIELD), normalizedValue);
+				if (fieldMap.getKey().startsWith("metatag.")) {
+					attributes.put(fieldMap.getKey().replace("metatag.", ""), normalizedValue);
+				} else if (fieldMap.getKey().equals(TurNutchCommons.CONTENT_FIELD)) {
+					attributes.put(TurNutchCommons.TEXT_FIELD, normalizedValue);
+				} else if (fieldMap.getKey().equals(TurNutchCommons.TIMESTAMP_FIELD)) {
+					attributes.put(this.config.get(TIMESTAMP_PROPERTY, TurNutchCommons.TIMESTAMP_FIELD),
+							normalizedValue);
 				} else {
 					attributes.put(fieldMap.getKey(), normalizedValue);
 				}
@@ -142,20 +122,22 @@ public class TurNutchIndexWriter implements IndexWriter {
 			attributes.put(weightField, doc.getWeight());
 		}
 
-		attributes.put(TYPE_FIELD, this.config.get(FIELD_PROPERTY + TYPE_FIELD, TYPE_DEFAULT_VALUE));
-		attributes.put(CONNECTOR_FIELD, this.config.get(FIELD_PROPERTY + CONNECTOR_FIELD, CONNECTOR_DEFAULT_VALUE));
+		attributes.put(TurNutchCommons.TYPE_FIELD,
+				this.config.get(FIELD_PROPERTY + TurNutchCommons.TYPE_FIELD, TurNutchCommons.TYPE_DEFAULT_VALUE));
+		attributes.put(TurNutchCommons.CONNECTOR_FIELD, this.config
+				.get(FIELD_PROPERTY + TurNutchCommons.CONNECTOR_FIELD, TurNutchCommons.CONNECTOR_DEFAULT_VALUE));
 
 		turCustomFields.entrySet().forEach(turCustomField -> {
 			String[] keyFullName = turCustomField.getKey().split("\\.");
 			String key = keyFullName[keyFullName.length - 1];
-			if (!key.equals(TYPE_FIELD) && (!key.equals(CONNECTOR_FIELD))) {
+			if (!key.equals(TurNutchCommons.TYPE_FIELD) && (!key.equals(TurNutchCommons.CONNECTOR_FIELD))) {
 				attributes.put(key, turCustomField.getValue());
 			}
 		});
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 		totalAdds++;
-		push();
+		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
 	}
 
 	@Override
@@ -165,68 +147,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void commit() throws IOException {
-		push();
-	}
-
-	private void push() throws IOException {
-		if (turSNJobItems.getTuringDocuments().size() > 0) {
-			int totalCreate = 0;
-			int totalDelete = 0;
-
-			for (TurSNJobItem turSNJobItem : turSNJobItems.getTuringDocuments()) {
-				TurSNJobAction turSNJobAction = turSNJobItem.getTurSNJobAction();
-				switch (turSNJobAction) {
-				case CREATE:
-					totalCreate++;
-					break;
-				case DELETE:
-					totalDelete++;
-					break;
-				}
-			}
-
-			logger.info(String.format("Indexing %d/%d documents", totalCreate, totalAdds));
-			logger.info(String.format("Deleting %d documents", totalDelete));
-
-			boolean showOutput = false;
-
-			ObjectMapper mapper = new ObjectMapper();
-			String jsonResult = mapper.writeValueAsString(turSNJobItems);
-
-			Charset utf8Charset = StandardCharsets.UTF_8;
-			Charset customCharset = StandardCharsets.UTF_8;
-
-			ByteBuffer inputBuffer = ByteBuffer.wrap(jsonResult.getBytes());
-
-			// decode UTF-8
-			CharBuffer data = utf8Charset.decode(inputBuffer);
-
-			// encode
-			ByteBuffer outputBuffer = customCharset.encode(data);
-
-			byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
-			String jsonUTF8 = new String(outputData);
-
-			HttpPost httpPost = new HttpPost(String.format("%s/api/sn/%s/import", this.url, this.site));
-			if (showOutput) {
-				logger.info(jsonUTF8);
-			}
-			StringEntity entity = new StringEntity(new String(jsonUTF8), StandardCharsets.UTF_8);
-			httpPost.setEntity(entity);
-			httpPost.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-			httpPost.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
-			httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
-
-			if (this.auth) {
-				basicAuth(httpPost);
-			}
-
-			try (CloseableHttpResponse response = client.execute(httpPost)) {
-				turSNJobItems.getTuringDocuments().clear();
-			} catch (IOException e) {
-				logger.error("Error", e);
-			}
-		}
+		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
 	}
 
 	@Override
@@ -237,15 +158,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 	@Override
 	public void setConf(Configuration conf) {
 		config = conf;
-	}
-
-	private void basicAuth(HttpPost httpPost) {
-		if (this.username != null) {
-			String auth = String.format("%s:%s", this.username, this.password);
-			String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
-			String authHeader = "Basic " + encodedAuth;
-			httpPost.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
-		}
 	}
 
 	@Override
@@ -268,8 +180,8 @@ public class TurNutchIndexWriter implements IndexWriter {
 		}
 
 		this.auth = this.config.getBoolean(TurNutchConstants.USE_AUTH, false);
-		this.username = this.config.get(TurNutchConstants.USERNAME, USERNAME_DEFAULT_VALUE);
-		this.password = this.config.get(TurNutchConstants.PASSWORD, PASSWORD_DEFAULT_VALUE);
+		this.username = this.config.get(TurNutchConstants.USERNAME, TurNutchCommons.USERNAME_DEFAULT_VALUE);
+		this.password = this.config.get(TurNutchConstants.PASSWORD, TurNutchCommons.PASSWORD_DEFAULT_VALUE);
 
 		init(job);
 
@@ -292,15 +204,15 @@ public class TurNutchIndexWriter implements IndexWriter {
 	}
 
 	private void useSolrConfig() {
-		String[] fullUrl = this.config.get(TurNutchConstants.SOLR_SERVER_URL).split(SLASH);
+		String[] fullUrl = this.config.get(TurNutchConstants.SOLR_SERVER_URL).split(TurNutchCommons.SLASH);
 		this.site = fullUrl[fullUrl.length - 1];
 		String[] partialUrl = Arrays.copyOf(fullUrl, fullUrl.length - 1);
-		this.url = String.join(SLASH, partialUrl);
+		this.url = String.join(TurNutchCommons.SLASH, partialUrl);
 	}
 
 	private void useTuringConfig() {
-		this.url = this.config.get(TurNutchConstants.SERVER_URL, TURING_SERVER_DEFAULT_VALUE);
-		this.site = this.config.get(TurNutchConstants.SITE, SITE_DEFAULT_VALUE);
+		this.url = this.config.get(TurNutchConstants.SERVER_URL, TurNutchCommons.TURING_SERVER_DEFAULT_VALUE);
+		this.site = this.config.get(TurNutchConstants.SITE, TurNutchCommons.SITE_DEFAULT_VALUE);
 	}
 
 	private void init(JobConf job) {
@@ -324,14 +236,15 @@ public class TurNutchIndexWriter implements IndexWriter {
 	@Override
 	public String describe() {
 		StringBuffer sb = new StringBuffer("TurNutchIndexWriter");
-		sb.append(System.lineSeparator()).append(TAB).append("Indexing to Viglet Turing Semantic Navigation");
+		sb.append(System.lineSeparator()).append(TurNutchCommons.TAB)
+				.append("Indexing to Viglet Turing Semantic Navigation");
 		return sb.toString();
 	}
 
 	void describeLine(StringBuffer sb, String variable, String description, String value) {
-		sb.append(System.lineSeparator()).append(variable).append(TAB).append(description).append(TAB).append(value);
+		sb.append(System.lineSeparator()).append(variable).append(TurNutchCommons.TAB).append(description)
+				.append(TurNutchCommons.TAB).append(value);
 
 	}
-
 
 }

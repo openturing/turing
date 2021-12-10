@@ -475,7 +475,6 @@
   <field name="_root_" type="string" docValues="false" indexed="true" stored="false"/>
   <field name="_text_" type="text_general" multiValued="true" indexed="true" stored="false"/>
   <field name="_version_" type="plong" indexed="false" stored="false"/>
-  <field name="attachments" type="string" multiValued="true" indexed="true" stored="true"/>
   <field name="author" type="string" multiValued="true" indexed="true" stored="true"/>
   <field name="description" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
@@ -493,7 +492,20 @@
   <field name="turing_entity_PERCENTAGE" type="string" multiValued="true" indexed="true" stored="true"/>
   <field name="turing_entity_PN" type="string" multiValued="true" indexed="true" stored="true"/>
   <field name="turing_entity_TIME" type="string" multiValued="true" indexed="true" stored="true"/>
-  <field name="url" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="type" type="string" multiValued="false" indexed="true" stored="true" />
+  <field name="url" type="string" multiValued="false" indexed="true" stored="true" />
+  <field name="site" type="string" multiValued="false" indexed="true" stored="true" />
+  <field name="text" type="text_general" multiValued="false" indexed="true" stored="true" />
+  <field name="source_apps" type="string" multiValued="true" indexed="true" stored="true" />
+
+  <!-- Apache Nutch -->
+  <field name="tstamp" type="tdate" multiValued="false" indexed="true" stored="true"/>
+  <field name="digest" type="text_general" multiValued="false" indexed="false" stored="true" />
+  <field name="host" type="text_general" multiValued="false" indexed="true" stored="true" />
+  <field name="boost" type="double" multiValued="false" indexed="true" stored="true"/>
+  <field name="segment" type="text_general" indexed="false" stored="true"/>
+  <field name="anchor" type="text_general" indexed="true" stored="false" multiValued="true"/>
+
   <dynamicField name="*_txt_en_split_tight" type="text_en_splitting_tight" indexed="true" stored="true"/>
   <dynamicField name="*_descendent_path" type="descendent_path" indexed="true" stored="true"/>
   <dynamicField name="*_ancestor_path" type="ancestor_path" indexed="true" stored="true"/>

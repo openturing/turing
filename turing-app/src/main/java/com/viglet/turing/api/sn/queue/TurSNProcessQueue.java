@@ -85,7 +85,9 @@ public class TurSNProcessQueue {
 	private TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository;
 	@Autowired
 	private TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
-
+	@Autowired
+	private TurSNMergeProcess turSNMergeProcess;
+	
 	public static final String INDEXING_QUEUE = "indexing.queue";
 
 	@JmsListener(destination = INDEXING_QUEUE)
@@ -103,7 +105,8 @@ public class TurSNProcessQueue {
 
 					} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
 						String id = (String) turSNJobItem.getAttributes().get("id");
-						status = (id != null && turSNSiteSpotlightRepository.findById(id).isPresent()) ? deleteSpotlight(turSNJobItem)
+						status = (id != null && turSNSiteSpotlightRepository.findById(id).isPresent())
+								? deleteSpotlight(turSNJobItem)
 								: desindexing(turSNJobItem, turSNSite);
 
 					}
@@ -248,15 +251,19 @@ public class TurSNProcessQueue {
 		processThesaurus(turSNJobItem, turSNSite, consolidateResults);
 
 		// Remove Duplicate Terms
-		Map<String, Object> attributesWithUniqueTerms = this.removeDuplicateTerms(consolidateResults);
+		Map<String, Object> attributes = this.removeDuplicateTerms(consolidateResults);
+
+		turSNMergeProcess.mergeDocuments(turSNSite, turSNJobItem.getLocale(), attributes);
 
 		// SE
 		return turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale()).map(turSolrInstance -> {
-			turSolr.indexing(turSolrInstance, turSNSite, attributesWithUniqueTerms);
+			turSolr.indexing(turSolrInstance, turSNSite, attributes);
 			return true;
 		}).orElse(false);
 
 	}
+
+	
 
 	private void processSEAttributes(TurSNJobItem turSNJobItem, Map<String, Object> consolidateResults) {
 		for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
