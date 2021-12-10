@@ -1,8 +1,8 @@
 buildscript {
     ext { jsonVersion = '20140107'
-    	  jacksonVersion = '2.9.7'
-	      log4jVersion = '1.2.7'
-		  httpClientVersion = '4.5.2'
+    	    jacksonVersion = '2.9.7'
+	        log4jVersion = '1.2.7'
+		    httpClientVersion = '4.5.2'
 		 }
 	
 	repositories {
@@ -17,7 +17,7 @@ buildscript {
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'com.github.johnrengelman.shadow'
 
 group = 'com.github.openviglet'
@@ -26,7 +26,7 @@ sourceCompatibility = 1.8
 
 jar {
     baseName = 'turing-java-sdk'
-    version =  '0.3.4'
+    version =  '0.3.5'
 }
 
 repositories {		
@@ -67,24 +67,4 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 artifacts {
     archives sourcesJar
     archives javadocJar
-}
-
-// To specify a license in the pom:
-install {
-  repositories.mavenInstaller {
-    pom.project {
-      licenses {
-        license {
-          name 'The Apache Software License, Version 2.0'
-          url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-          distribution 'repo'
-        }
-      }
-    }
-  }
-}
-
-wrapper {
-    gradleVersion = "6.1.1"
-    distributionType = Wrapper.DistributionType.ALL
 }
