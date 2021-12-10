@@ -1,0 +1,90 @@
+buildscript {
+    ext { jsonVersion = '20140107'
+    	  jacksonVersion = '2.9.7'
+	      log4jVersion = '1.2.7'
+		  httpClientVersion = '4.5.2'
+		 }
+	
+	repositories {
+		mavenCentral()
+		jcenter()
+	}
+	
+	dependencies {
+    	classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'maven'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+group = 'com.github.openviglet'
+
+sourceCompatibility = 1.8
+
+jar {
+    baseName = 'turing-java-sdk'
+    version =  '0.3.4'
+}
+
+repositories {		
+        mavenCentral()
+}
+
+ shadowJar {
+   baseName = 'turing-java-sdk'
+   classifier = null
+   version = 'all'
+}
+
+dependencies {
+   	// JSON
+    implementation group: 'org.json', name: 'json', version:"${jsonVersion}"
+    
+    // Jackson
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
+    
+    // Log4J
+    implementation group: 'log4j', name: 'log4j', version: "${log4jVersion}"
+    
+    // HTTP Client
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:"${httpClientVersion}"
+}
+
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+// To specify a license in the pom:
+install {
+  repositories.mavenInstaller {
+    pom.project {
+      licenses {
+        license {
+          name 'The Apache Software License, Version 2.0'
+          url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+          distribution 'repo'
+        }
+      }
+    }
+  }
+}
+
+wrapper {
+    gradleVersion = "6.1.1"
+    distributionType = Wrapper.DistributionType.ALL
+}
