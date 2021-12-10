@@ -22,7 +22,7 @@
     "@angular/forms": "13.0.3",
     "@angular/localize": "13.0.1",
     "@angular/platform-browser": "13.0.3",
-    "@angular/platform-browser-dynamic": "13.0.3",
+    "@angular/platform-browser-dynamic": "13.1.0",
     "@angular/router": "13.0.3",
     "@primer/css": "19.0.0",
     "@primer/octicons": "16.1.1",
