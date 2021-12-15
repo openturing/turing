@@ -93,18 +93,13 @@ public class TurSNMergeProvidersProcess {
 		List<SolrDocument> resultsTo = solrDocumentsTo(turSNSiteMergeProviders, relationValue);
 		List<SolrDocument> resultsFromAndTo = solrDocumentsFromAndTo(turSNSiteMergeProviders,
 				turSNSiteMergeProviders.getRelationTo(), relationValue);
-		System.out.println("AAA19");
-
 		if (hasSolrDocuments(resultsFromAndTo)) {
-			System.out.println("AAA20");
 			TurSEResult turSEResultFromAndTo = TurSolrUtils
 					.createTurSEResultFromDocument(resultsFromAndTo.iterator().next());
 			Map<String, Object> mergedDocumentAttribs = doMergeContent(queueDocumentAttrs,
 					turSEResultFromAndTo.getFields(), turSNSiteMergeProviders);
 			return mergedDocumentAttribs;
 		} else {
-			System.out.println("AAA21");
-
 			if (hasSolrDocuments(resultsFrom) && hasSolrDocuments(resultsTo)) {
 				desindexSolrDocuments(turSNSiteMergeProviders, resultsFrom);
 			}
@@ -113,9 +108,6 @@ public class TurSNMergeProvidersProcess {
 				return doMergeContent(queueDocumentAttrs, turSEResultTo.getFields(), turSNSiteMergeProviders);
 			}
 		}
-
-		System.out.println("AAA22");
-
 		return queueDocumentAttrs;
 	}
 
@@ -200,12 +192,9 @@ public class TurSNMergeProvidersProcess {
 
 	private void addOverwrittenAttributesToSolrDocument(Map<String, Object> queueDocumentAttrs,
 			Map<String, Object> attributesTo, Set<TurSNSiteMergeProvidersField> overwrittenFields) {
-		System.out.println("AAA30");
 		queueDocumentAttrs.entrySet().forEach(attributeFrom -> {
-			System.out.println("AAA31 " + attributeFrom.getKey());
 			if (overwrittenFields != null && overwrittenFields.stream()
 					.filter(o -> o.getName().equals(attributeFrom.getKey())).findFirst().isPresent()) {
-				System.out.println("AAA32");
 				attributesTo.put(attributeFrom.getKey(), attributeFrom.getValue());
 
 			}

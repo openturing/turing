@@ -37,9 +37,9 @@ import org.springframework.security.web.firewall.StrictHttpFirewall;
 
 @Configuration
 @EnableWebSecurity
-@Profile("production")
+@Profile("dev-ui")
 @ComponentScan(basePackageClasses = TurCustomUserDetailsService.class)
-public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
+public class TurSecurityConfigDevUI extends WebSecurityConfigurerAdapter {
 	@Autowired
 	UserDetailsService userDetailsService;
 	@Autowired
@@ -55,6 +55,7 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 				.permitAll().anyRequest().authenticated().and()
 				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf().ignoringAntMatchers("/api/sn/**")
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
+		http.csrf().disable();
 		http.cors();
 	}
 

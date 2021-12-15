@@ -4,12 +4,10 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --project=welcome && ng build --project=console && ng build --project=sn && ng build --project=converse",
-    "buildpt": "ng build --aot --i18n-file=src/locale/messages.pt.xlf --i18n-locale=pt --i18n-format=xlf",
+    "build": "ng build welcome && ng build console && ng build sn && ng build converse",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "sonar": "sonar-scanner",
-    "i18n": "ng xi18n --output-path src/locale --i18n-locale en; ng xi18n --output-path src/locale --i18n-locale pt",
     "test": "ng test --code-coverage --single-run --browsers=Chrome --reporters=progress,junit"
   },
   "private": true,
