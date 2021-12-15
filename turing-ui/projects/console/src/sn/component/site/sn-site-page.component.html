@@ -29,7 +29,6 @@
           <div class="Box-header">
             <button onclick='document.getElementById("modalDelete").removeAttribute("open");'
               class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
-              <!-- <%= octicon "x" %> -->
               <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
                 aria-hidden="true">
                 <path fill-rule="evenodd"
@@ -84,6 +83,10 @@
         [routerLinkActive]="['selected']">
         <span octicon="law" [size]=16 class="mr-1"></span>
         Behavior</a>
+      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'merge']"
+        [routerLinkActive]="['selected']">
+        <span octicon="git-merge" [size]=16 class="mr-1"></span>
+        Merge Providers</a>
       <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'field']"
         [routerLinkActive]="['selected']">
         <span octicon="rows" [size]=16 class="mr-1"></span>

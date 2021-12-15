@@ -61,6 +61,7 @@ import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightT
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.thesaurus.TurThesaurusProcessor;
+import com.viglet.turing.utils.TurUtils;
 
 @Component
 public class TurSNProcessQueue {
@@ -86,8 +87,9 @@ public class TurSNProcessQueue {
 	@Autowired
 	private TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
 	@Autowired
-	private TurSNMergeProcess turSNMergeProcess;
-	
+	private TurSNMergeProvidersProcess turSNMergeProvidersProcess;
+	@Autowired
+	private TurUtils turUtils;
 	public static final String INDEXING_QUEUE = "indexing.queue";
 
 	@JmsListener(destination = INDEXING_QUEUE)
@@ -148,10 +150,11 @@ public class TurSNProcessQueue {
 
 		if (turSNJobItem.getAttributes().containsKey("id")) {
 			turSNSiteSpotlightRepository.delete((String) turSNJobItem.getAttributes().get("id"));
-		} else if (turSNJobItem.getAttributes().containsKey("provider")) {
-			System.out.println("Contem provider: " + (String) turSNJobItem.getAttributes().get("provider"));
+		} else if (turSNJobItem.getAttributes().containsKey(TurSNMergeProvidersProcess.PROVIDER_ATTRIBUTE)) {
+			logger.info("Provider Value: "
+					+ (String) turSNJobItem.getAttributes().get(TurSNMergeProvidersProcess.PROVIDER_ATTRIBUTE));
 			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
-					.findByProvider((String) turSNJobItem.getAttributes().get("provider"));
+					.findByProvider((String) turSNJobItem.getAttributes().get(TurSNMergeProvidersProcess.PROVIDER_ATTRIBUTE));
 			turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
 		}
 		return true;
@@ -171,7 +174,7 @@ public class TurSNProcessQueue {
 			}
 
 			String name = (String) turSNJobItem.getAttributes().get("name");
-			String provider = (String) turSNJobItem.getAttributes().get("provider");
+			String provider = (String) turSNJobItem.getAttributes().get(TurSNMergeProvidersProcess.PROVIDER_ATTRIBUTE);
 			List<String> terms = Arrays.asList(((String) turSNJobItem.getAttributes().get("terms")).split(","));
 			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 			simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -250,10 +253,8 @@ public class TurSNProcessQueue {
 
 		processThesaurus(turSNJobItem, turSNSite, consolidateResults);
 
-		// Remove Duplicate Terms
-		Map<String, Object> attributes = this.removeDuplicateTerms(consolidateResults);
-
-		turSNMergeProcess.mergeDocuments(turSNSite, turSNJobItem.getLocale(), attributes);
+		Map<String, Object> attributes = this.removeDuplicateTerms(
+				turSNMergeProvidersProcess.mergeDocuments(turSNSite, turSNJobItem.getLocale(), consolidateResults));
 
 		// SE
 		return turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale()).map(turSolrInstance -> {
@@ -262,8 +263,6 @@ public class TurSNProcessQueue {
 		}).orElse(false);
 
 	}
-
-	
 
 	private void processSEAttributes(TurSNJobItem turSNJobItem, Map<String, Object> consolidateResults) {
 		for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
@@ -384,7 +383,6 @@ public class TurSNProcessQueue {
 		if (attributes != null) {
 			for (Entry<String, Object> attribute : attributes.entrySet()) {
 				if (attribute.getValue() != null) {
-
 					logger.debug("removeDuplicateTerms: attribute Value: {}", attribute.getValue());
 					logger.debug("removeDuplicateTerms: attribute Class: {}",
 							attribute.getValue().getClass().getName());
@@ -407,7 +405,7 @@ public class TurSNProcessQueue {
 			Entry<String, Object> attribute) {
 		List<?> nlpAttributeArray = (ArrayList<?>) attribute.getValue();
 		if (!nlpAttributeArray.isEmpty()) {
-			List<String> list = cloneListOfTermsAsString(nlpAttributeArray);
+			List<String> list = turUtils.cloneListOfTermsAsString(nlpAttributeArray);
 			Set<String> termsUnique = new HashSet<>(list);
 			List<Object> arrayValue = new ArrayList<>();
 			arrayValue.addAll(termsUnique);
@@ -418,11 +416,4 @@ public class TurSNProcessQueue {
 		}
 	}
 
-	private List<String> cloneListOfTermsAsString(List<?> nlpAttributeArray) {
-		List<String> list = new ArrayList<>();
-		for (Object nlpAttributeItem : nlpAttributeArray) {
-			list.add((String) nlpAttributeItem);
-		}
-		return list;
-	}
 }

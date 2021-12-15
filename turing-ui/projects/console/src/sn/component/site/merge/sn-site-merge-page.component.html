@@ -1,0 +1,156 @@
+<div *ngIf="(getTurSNSiteMerge() | async) as snSiteMerge; else loading">
+  <div class="Subhead mt-4">
+    <div class="Subhead-heading">
+      <div *ngIf="isNewObject()" class="d-flex">
+        <div class="ml-2">
+          <span>New Merge Provider</span>
+        </div>
+      </div>
+
+      <div *ngIf="!isNewObject()" class="d-flex">
+        <div style="height: 32px;">
+          <svg width="35" height="35" [identiconHash]="snSiteMerge.locale  | lowercase">
+          </svg>
+        </div>
+        <div class="ml-2">
+          <span>{{snSiteMerge.providerFrom}} <span octicon="arrow-right" [size]="24" class="mr-1"> </span>
+            {{snSiteMerge.providerTo}}</span>
+        </div>
+      </div>
+    </div>
+    <div class="Subhead-actions" style="display: inherit;">
+      <details *ngIf="!isNewObject()" #modalDeleteMerge id="modalDeleteMerge"
+        class="details-reset details-overlay details-overlay-dark mr-2" style="display: unset;">
+        <summary class="btn btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
+            class="mr-1"></span>Delete merge provider</summary>
+        <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast" style="overflow: hidden;">
+          <div class="Box-header">
+            <button onclick='document.getElementById("modalDeleteMerge").removeAttribute("open");'
+              class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
+              <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
+                aria-hidden="true">
+                <path fill-rule="evenodd"
+                  d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
+                </path>
+              </svg>
+            </button>
+            <h3 class="Box-title">Are you absolutely sure?</h3>
+
+          </div>
+          <div class="flash flash-warn flash-full">
+            Unexpected bad things will happen if you don’t read this!
+          </div>
+
+          <div class="Box-body overflow-auto">
+            <p>
+              This action <strong>cannot</strong> be undone. This will permanently delete the
+              <strong>{{snSiteMerge.providerFrom}} <span octicon="arrow-right" [size]="16" class="mr-1"> </span>
+                {{snSiteMerge.providerTo}}</strong> merge provider.
+            </p>
+            <button (click)="delete(snSiteMerge)" class="btn-danger btn btn-block">
+              <span class="d-md-inline-block d-none">I understand the consequences, delete this language</span>
+            </button>
+          </div>
+        </details-dialog>
+      </details>
+      <button type="button" (click)="save(snSiteMerge)" class="btn btn-primary">{{saveButtonCaption()}}</button>
+    </div>
+  </div>
+  <div>
+    <h3 class="mt-4 mb-2">Providers</h3>
+    <label for="name" class="mr-2">Source:</label>
+    <input [(ngModel)]="snSiteMerge.providerFrom" class="form-control mr-3" type="text" id="provider-from" />
+
+    <label for="email" class="mr-2">Destination:</label>
+    <input [(ngModel)]="snSiteMerge.providerTo" class="form-control" type="text" id="provider-to" />
+  </div>
+
+  <div>
+    <h3 class="mt-4 mb-2">Relations</h3>
+    <label for="name" class="mr-2">Source:</label>
+    <input [(ngModel)]="snSiteMerge.relationFrom" class="form-control mr-3" type="text" id="relation-from" />
+
+    <label for="email" class="mr-2">Destination:</label>
+    <input [(ngModel)]="snSiteMerge.relationTo" class="form-control" type="text" id="relation-to" />
+  </div>
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="sn-name">Description</label>
+    </div>
+    <div class="form-group-body">
+      <input [(ngModel)]="snSiteMerge.description" class="form-control" type="text" id="sn-name" style="width: 100%;" />
+      <p class="note" id="help-text-for-checkbox">
+        More about this merge provider.
+      </p>
+    </div>
+  </div>
+  <div>
+    <div class="Subhead mt-2">
+      <h3 style="flex: 1 1 auto;padding-top: 7px;"> Overwritten Fields</h3>
+      <div class="Subhead-actions">
+        <details #modalAddOverwrittenField id="modalAddOverwrittenField"
+          class="details-reset details-overlay details-overlay-dark mr-2" style="display: unset;">
+          <summary class="btn btn-primary mr-1" aria-haspopup="dialog"><span octicon="plus" [size]=16
+              class="mr-1"></span>Add field</summary>
+          <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast" style="overflow: hidden;">
+            <div class="Box-header">
+              <button onclick='document.getElementById("modalAddOverwrittenField").removeAttribute("open");'
+                class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog"
+                data-close-dialog>
+                <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
+                  aria-hidden="true">
+                  <path fill-rule="evenodd"
+                    d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
+                  </path>
+                </svg>
+              </button>
+              <h3 class="Box-title">Add overwritten field</h3>
+            </div>
+            <div class="Box-body overflow-auto">
+              <div class="form-group">
+                <div class="form-group-header">
+                  <label for="sn-name">Field Name</label>
+                </div>
+                <div class="form-group-body">
+                  <input [(ngModel)]="fieldModal" class="form-control" type="text" id="sn-name" style="width: 100%;" />
+                  <p class="note" id="help-text-for-checkbox">
+                    This source field will overwrite the destination field.
+                  </p>
+                </div>
+              </div>
+              <button (click)="addField(snSiteMerge, fieldModal)" class="btn-primary btn btn-block">
+                <span class="d-md-inline-block d-none">Add</span>
+              </button>
+            </div>
+          </details-dialog>
+        </details>
+      </div>
+    </div>
+    <div *ngIf="(snSiteMerge.overwrittenFields) as overwrittenFields; else loading">
+      <div *ngIf="overwrittenFields.length >= 1" class="Box">
+        <div class="Box-header">
+          <div class="d-table" style="width: 100%;">
+            <div class="d-table-cell col-2">
+              Name
+            </div>
+          </div>
+        </div>
+        <div *ngFor="let overwrittenField of overwrittenFields" data-view-component="true" class="Box-body">
+          <div class="d-table" style="width: 100%;">
+            <div class="d-table-cell col-2">
+              {{overwrittenField.name}}
+            </div>
+            <div class="d-table-cell col-2" style="text-align: right;">
+              <button (click)="deleteField(snSiteMerge, overwrittenField)" class="btn-danger btn btn-sm">
+                <span octicon="trash" [size]=16 class="mr-1"></span> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

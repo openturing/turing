@@ -1,0 +1,46 @@
+<div *ngIf="(getTurSNSiteMerges() | async) as snSiteMerges; else loading">
+  <div *ngIf="snSiteMerges.length < 1" class="blankslate">
+    <span octicon="git-merge" [size]="48" class="mb-3"></span>
+    <h3 class="mb-1">You don’t seem to have any merge provider.</h3>
+    <p>Create a new merge provider and allow to merge documents from different providers during indexing.</p>
+    <a [routerLink]="['/sn/site', getId(), 'merge', 'new']" class="btn btn-primary my-3" type="button">New merge provider</a>
+  </div>
+  <div *ngIf="snSiteMerges.length >= 1">
+    <div class="Subhead">
+      <div class="Subhead-heading"><span octicon="git-merge" [size]="24" class="mr-1"></span> Merge Providers</div>
+      <div class="Subhead-actions">
+        <a [routerLink]="['/sn/site', getId(), 'merge', 'new']" type="button" class="btn btn-primary"><span
+            octicon="git-merge" [size]="16" class="mr-1"></span> New</a>
+      </div>
+    </div>
+    <div>
+      <div *ngFor="let turSNSiteMerge of snSiteMerges" class="border-bottom d-flex flex-items-center"
+        style="margin-bottom: 20px;padding-bottom: 10px;">
+        <div class="flex-auto">
+          <div style="width: 24px;height: 24px;margin-right: 7px" class="float-left">
+            <svg width="24" height="24" style="border-radius: 50%;"
+              [identiconHash]="turSNSiteMerge.providerFrom + turSNSiteMerge.providerTo | lowercase">
+              Avatar
+            </svg>
+          </div><a [routerLink]="['/sn/site', getId(),'merge', turSNSiteMerge.id ]" routerLinkActive="active"
+            style="font-weight: bolder; font-size: large;">
+            {{turSNSiteMerge.providerFrom}} <span octicon="arrow-right" [size]="20" class="mr-1"> </span>
+            {{turSNSiteMerge.providerTo}} </a>
+          <div class="text-gray-light" style="margin-top: 5px;">
+            {{turSNSiteMerge.description}}
+          </div>
+          <div class="text-gray-light d-flex flex-items-center" style="margin-top: 10px;">
+            <div class="mr-3">
+              <span
+                style="position: relative;top: 1px;display: inline-block;width: 12px;height: 12px;border-radius: 50%;background-color: tomato;"></span>
+              <span class="ml-1">Merge Provider</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

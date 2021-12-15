@@ -25,7 +25,6 @@ import org.hibernate.annotations.GenericGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-
 /**
  * The persistent class for the turSNSiteSpotlightDocument database table.
  * 
@@ -35,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Entity
 @Table(name = "turSNSiteSpotlightDocument")
 @NamedQuery(name = "TurSNSiteSpotlightDocument.findAll", query = "SELECT snssd FROM TurSNSiteSpotlightDocument snssd")
-@JsonIgnoreProperties({ "turSNSiteSpotlight"})
+@JsonIgnoreProperties({ "turSNSiteSpotlight" })
 public class TurSNSiteSpotlightDocument implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -56,13 +55,13 @@ public class TurSNSiteSpotlightDocument implements Serializable {
 
 	@Column(nullable = true, length = 255)
 	private String referenceId;
-	
+
 	@Column(nullable = true, length = 2000)
 	private String content;
-	
+
 	@Column(nullable = true, length = 255)
 	private String link;
-	
+
 	// bi-directional many-to-one association to TurSNSiteSpotlight
 	@ManyToOne(fetch = FetchType.LAZY) // (cascade = {CascadeType.ALL})
 	@JoinColumn(name = "sn_site_spotlight_id")
@@ -131,5 +130,5 @@ public class TurSNSiteSpotlightDocument implements Serializable {
 	public void setTurSNSiteSpotlight(TurSNSiteSpotlight turSNSiteSpotlight) {
 		this.turSNSiteSpotlight = turSNSiteSpotlight;
 	}
-	
+
 }

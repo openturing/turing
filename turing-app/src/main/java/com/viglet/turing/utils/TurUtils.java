@@ -24,6 +24,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.compress.archivers.ArchiveException;
@@ -54,6 +56,14 @@ public class TurUtils {
 	private static final String USER_DIR = "user.dir";
 	private static final File userDir = new File(System.getProperty(USER_DIR));
 
+	public List<String> cloneListOfTermsAsString(List<?> nlpAttributeArray) {
+		List<String> list = new ArrayList<>();
+		for (Object nlpAttributeItem : nlpAttributeArray) {
+			list.add((String) nlpAttributeItem);
+		}
+		return list;
+	}
+	
 	public String getCurrentUsername() {
 		Authentication authentication = authenticationFacade.getAuthentication();
 		return authentication.getName();

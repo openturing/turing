@@ -152,6 +152,7 @@ public class TurSolr {
 			addSolrDocument(turSolrInstance, document);
 		}
 	}
+
 	private void processAttribute(Map<String, TurSNSiteField> turSNSiteFieldMap, SolrInputDocument document,
 			Map.Entry<String, Object> entry) {
 		String key = entry.getKey();
@@ -233,11 +234,12 @@ public class TurSolr {
 	}
 
 	public SolrDocumentList solrResultAnd(TurSolrInstance turSolrInstance, Map<String, Object> attributes) {
-		
+
 		SolrQuery query = new SolrQuery();
 
 		query.setQuery("*:*");
-		String[] fqs = attributes.entrySet().stream().map(entry -> entry.getKey() + ":\"" + entry.getValue() + "\"").toArray(String[]::new);
+		String[] fqs = attributes.entrySet().stream().map(entry -> entry.getKey() + ":\"" + entry.getValue() + "\"")
+				.toArray(String[]::new);
 		query.setFilterQueries(fqs);
 		QueryResponse queryResponse;
 		try {
@@ -249,7 +251,7 @@ public class TurSolr {
 		return new SolrDocumentList();
 
 	}
-	
+
 	public SpellCheckResponse autoComplete(TurSolrInstance turSolrInstance, String term) {
 		SolrQuery query = new SolrQuery();
 		query.setRequestHandler("/tur_suggest");
@@ -578,7 +580,7 @@ public class TurSolr {
 			List<TurSEResult> results = new ArrayList<>();
 
 			for (SolrDocument document : queryResponse.getResults()) {
-				TurSEResult turSEResult = createTurSEResult(document);
+				TurSEResult turSEResult = TurSolrUtils.createTurSEResultFromDocument(document);
 				results.add(turSEResult);
 			}
 
@@ -690,12 +692,12 @@ public class TurSolr {
 			} else {
 				fields.put(attribute, attrValue);
 			}
-
-			turSEResult.setFields(fields);
 		}
+		turSEResult.setFields(fields);
 		return turSEResult;
 	}
 
+	
 	private void addRequiredFieldsToDocument(Map<String, Object> requiredFields, SolrDocument document) {
 		for (Object requiredFieldObject : requiredFields.keySet().toArray()) {
 			String requiredField = (String) requiredFieldObject;
@@ -703,18 +705,5 @@ public class TurSolr {
 				document.addField(requiredField, requiredFields.get(requiredField));
 			}
 		}
-	}
-
-	public TurSEResult createTurSEResult(SolrDocument document) {
-		TurSEResult turSEResult = new TurSEResult();
-
-		Map<String, Object> fields = new HashMap<>();
-		for (String attribute : document.getFieldNames()) {
-			Object attrValue = document.getFieldValue(attribute);
-			fields.put(attribute, attrValue);
-
-			turSEResult.setFields(fields);
-		}
-		return turSEResult;
 	}
 }
