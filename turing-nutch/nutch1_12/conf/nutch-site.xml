@@ -84,6 +84,13 @@
 		</description>
 	</property>
 	<property>
+		<name>turing.locale.field</name>
+		<value>language</value>
+		<description>
+			Defines the Turing Semantic Navigation Locale based in existing field
+		</description>
+	</property>
+	<property>
 		<name>turing.auth</name>
 		<value>true</value>
 		<description>

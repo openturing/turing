@@ -26,9 +26,11 @@ import com.viglet.turing.client.sn.job.TurSNJobItems;
 public class TurNutchCommons {
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 	
+	public static final String ID_FIELD = "id";
 	public static final String CONTENT_FIELD = "content";
 	public static final String TITLE_FIELD = "title";
 	public static final String TEXT_FIELD = "text";
+	public static final String LANG_FIELD = "lang";
 	public static final String TIMESTAMP_FIELD = "tstamp";
 	public static final String TYPE_FIELD = "type";
 	public static final String CONNECTOR_FIELD = "source_apps";
@@ -38,6 +40,7 @@ public class TurNutchCommons {
 	public static final String USERNAME_DEFAULT_VALUE = "admin";
 	public static final String PASSWORD_DEFAULT_VALUE = "admin";
 	public static final String SITE_DEFAULT_VALUE = "Sample";
+	public static final String META_TAG_VALUE = "metatag.";
 	public static final String TURING_SERVER_DEFAULT_VALUE = "http://localhost:2700";
 	public static final char TAB = '\t';
 	public static final String SLASH = "/";

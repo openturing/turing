@@ -2,8 +2,8 @@ package com.viglet.turing.nutch.indexwriter;
 
 import java.lang.invoke.MethodHandles;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
@@ -33,8 +33,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	private static final String TIMESTAMP_PROPERTY = "turing.timestamp.field";
 	private static final String FIELD_PROPERTY = "turing.field.";
-	private static final String LOCALE_PROPERTY = "turing.locale";
-
 	private final TurSNJobItems turSNJobItems = new TurSNJobItems();
 	private ModifiableSolrParams params;
 
@@ -57,10 +55,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 
 		try {
-			key = URLDecoder.decode(key, "UTF8");
-		} catch (UnsupportedEncodingException e) {
-			logger.error("Error decoding: " + key);
-			throw new IOException("UnsupportedEncodingException for " + key);
+			key = URLDecoder.decode(key, StandardCharsets.UTF_8);
 		} catch (IllegalArgumentException e) {
 			logger.warn("Could not decode: " + key + ", it probably wasn't encoded in the first place..");
 		}
@@ -70,7 +65,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 		if (delete) {
 			Map<String, Object> attributes = new HashMap<String, Object>();
-			attributes.put("id", key);
+			attributes.put(TurNutchCommons.ID_FIELD, key);
 			turSNJobItem.setAttributes(attributes);
 			turSNJobItems.add(turSNJobItem);
 		}
@@ -87,11 +82,11 @@ public class TurNutchIndexWriter implements IndexWriter {
 	@Override
 	public void write(NutchDocument doc) throws IOException {
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setLocale(this.config.get(LOCALE_PROPERTY, TurNutchCommons.LOCALE_DEFAULT_VALUE));
+		turSNJobItem.setLocale(this.config.get(TurNutchConstants.LOCALE_PROPERTY, TurNutchCommons.LOCALE_DEFAULT_VALUE));
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 		Map<String, Object> attributes = new HashMap<String, Object>();
 		Map<String, String> turCustomFields = this.config.getValByRegex("^" + FIELD_PROPERTY + "*");
-
+		String localeField = this.config.get(TurNutchConstants.LOCALE_FIELD_PROPERTY);
 		for (final Entry<String, NutchField> fieldMap : doc) {
 			for (final Object originalValue : fieldMap.getValue().getValues()) {
 				// normalize the string representation for a Date
@@ -105,8 +100,10 @@ public class TurNutchIndexWriter implements IndexWriter {
 						|| fieldMap.getKey().equals(TurNutchCommons.TITLE_FIELD)) {
 					normalizedValue = TurNutchCommons.stripNonCharCodepoints((String) originalValue);
 				}
-				if (fieldMap.getKey().startsWith("metatag.")) {
-					attributes.put(fieldMap.getKey().replace("metatag.", ""), normalizedValue);
+				if (localeField != null && fieldMap.getKey().equals(TurNutchCommons.META_TAG_VALUE + localeField)) {
+					turSNJobItem.setLocale(TurNutchCommons.stripNonCharCodepoints((String) originalValue));
+				} else if (fieldMap.getKey().startsWith(TurNutchCommons.META_TAG_VALUE)) {
+					attributes.put(fieldMap.getKey().replace(TurNutchCommons.META_TAG_VALUE, ""), normalizedValue);
 				} else if (fieldMap.getKey().equals(TurNutchCommons.CONTENT_FIELD)) {
 					attributes.put(TurNutchCommons.TEXT_FIELD, normalizedValue);
 				} else if (fieldMap.getKey().equals(TurNutchCommons.TIMESTAMP_FIELD)) {
@@ -173,6 +170,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 				useTuringConfig();
 			}
 		}
+
 		if (url == null) {
 			String message = String.format("Missing Turing URL. %s %s", System.lineSeparator(), describe());
 			logger.error(message);

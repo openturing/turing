@@ -17,5 +17,11 @@ public interface TurNutchConstants {
 	
 	public static final String FORCE_CONFIG = TUR_PREFIX + "force.config";
 	
+	public static final String LOCALE_PROPERTY = TUR_PREFIX + "locale";
+	
+	public static final String LOCALE_FIELD_PROPERTY = TUR_PREFIX + "locale.field";
+
+	public static final String TIMESTAMP_PROPERTY = TUR_PREFIX + "timestamp.field";
+	
 	public static final String SOLR_SERVER_URL = "solr.server.url";
 }
