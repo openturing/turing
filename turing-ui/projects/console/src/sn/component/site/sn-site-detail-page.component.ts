@@ -92,4 +92,8 @@ export class TurSNSiteDetailPageComponent implements OnInit {
       });
 
   }
+
+  public compareNLPVendor(n1: TurNLPVendor, n2: TurNLPVendor): boolean {
+    return n1 && n2 ? n1.id === n2.id : n1 === n2;
+  }
 }

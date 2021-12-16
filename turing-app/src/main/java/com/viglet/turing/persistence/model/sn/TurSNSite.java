@@ -114,7 +114,7 @@ public class TurSNSite implements Serializable {
 
 	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
-	@JoinColumn(name = "nlp_vendor_id", nullable = false)
+	@JoinColumn(name = "nlp_vendor_id", nullable = true)
 	private TurNLPVendor turNLPVendor;
 
 	// bi-directional many-to-one association to turSNSiteFields

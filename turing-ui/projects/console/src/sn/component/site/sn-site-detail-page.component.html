@@ -49,8 +49,9 @@
       <label for="repo-description">NLP Vendor</label>
     </div>
     <div class="form-group-body">
-      <select [(ngModel)]="snSite.turNLPVendor.id" class="form-select" style="width: 100%;">
-        <option *ngFor="let nlpVendor of (getTurNLPVendors() | async)" [value]="nlpVendor.id">
+      <select [(ngModel)]="snSite.turNLPVendor" [compareWith]="compareNLPVendor" class="form-select" style="width: 100%;">
+        <option [ngValue]=null>-- No NLP Vendor --</option>
+        <option *ngFor="let nlpVendor of (getTurNLPVendors() | async)" [ngValue]="nlpVendor">
           {{nlpVendor.title}}
         </option>
       </select>

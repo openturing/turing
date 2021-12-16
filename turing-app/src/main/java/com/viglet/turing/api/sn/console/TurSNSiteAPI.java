@@ -102,6 +102,7 @@ public class TurSNSiteAPI {
 			turSNSiteEdit.setName(turSNSite.getName());
 			turSNSiteEdit.setDescription(turSNSite.getDescription());
 			turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
+			turSNSiteEdit.setTurNLPVendor(turSNSite.getTurNLPVendor());
 			turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
 
 			// UI

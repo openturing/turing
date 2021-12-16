@@ -32,6 +32,7 @@ import org.apache.log4j.LogManager;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.viglet.turing.wem.broker.indexer.TurWEMIndex;
 import com.viglet.turing.wem.broker.indexer.TurWEMIndexer;
 import com.viglet.turing.wem.config.GenericResourceHandlerConfiguration;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
@@ -103,10 +104,9 @@ public class TurWEMCommander {
 			"-g" }, description = "The path to a file containing the GUID(s) of content instances or static files to be indexed.")
 	private String guidFilePath = null;
 
-	@Parameter(names = { "--siteName",
-			"-s" }, description = "WEM site name.", required = true)
+	@Parameter(names = { "--siteName", "-s" }, description = "WEM site name.", required = true)
 	private String siteName = "Sample";
-	
+
 	@Parameter(names = { "--page-size",
 			"-z" }, description = "The page size. After processing a page the processed count is written to an offset file."
 					+ " This helps the indexer to resume from that page even after failure. ")
@@ -211,42 +211,51 @@ public class TurWEMCommander {
 		List<Object> contentTypes = contentTypeIPagingList.asList();
 		contentTypes.add(StaticFile.getTypeObjectTypeRef().getObjectType());
 
-		jCommander.getConsole().println(String.format("Total number of Object Types: %d", contentTypes.size()));
+		jCommander.getConsole().println(
+				String.format("Total number of Object Types: %d", TurWEMIndex.countCTDIntoMapping(turingConfig)));
 		for (Object objectType : contentTypes) {
 			ObjectType ot = (ObjectType) objectType;
-			jCommander.getConsole().println(String.format("Retrieved Object Type: %s %s", ot.getData().getName(),
-					ot.getContentManagementId().toString()));
-			this.indexByContentType(siteName, ot);
+			if (TurWEMIndex.isCTDIntoMapping(ot.getData().getName(), turingConfig)) {
+				jCommander.getConsole().println(String.format("\nRetrieved Object Type: %s %s", ot.getData().getName(),
+						ot.getContentManagementId().toString()));
+				this.indexByContentType(siteName, ot);
+			}
 		}
 	}
 
 	private void indexByContentType(String siteName, ObjectType objectType)
 			throws ApplicationException, ContentIndexException, ConfigException, MalformedURLException {
-		int totalPages = 0;
-		IPagingList results = null;
-		int totalEntries;
-		try {
-			TurWEMIndexer.indexDeleteByType(siteName, objectType.getData().getName(), turingConfig);
-			MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(turingConfig);
-			RequestParameters rp = new RequestParameters();
-			rp.setTopRelationOnly(false);
+		if (TurWEMIndex.isCTDIntoMapping(objectType.getData().getName(), turingConfig)) {
+			int totalPages = 0;
+			IPagingList results = null;
+			int totalEntries;
+			try {
+				TurWEMIndexer.indexDeleteByType(siteName, objectType.getData().getName(), turingConfig);
+				MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(turingConfig);
+				RequestParameters rp = new RequestParameters();
+				rp.setTopRelationOnly(false);
 
-			AsObjectType aot = AsObjectType.getInstance(new ObjectTypeRef((ManagedObject) objectType));
-			IValidToIndex instance = mappingDefinitions.validToIndex(objectType, turingConfig);
-			if (aot.isStaticFile()) {
-				results = queryStaticFilesList(rp, instance);
-			} else {
-				results = queryContentInstanceList(objectType, rp, instance);
+				AsObjectType aot = AsObjectType.getInstance(new ObjectTypeRef((ManagedObject) objectType));
+				IValidToIndex instance = mappingDefinitions.validToIndex(objectType, turingConfig);
+				if (aot.isStaticFile()) {
+					results = queryStaticFilesList(rp, instance);
+				} else {
+					results = queryContentInstanceList(objectType, rp, instance);
+				}
+				totalEntries = results.size();
+				jCommander.getConsole().println(String.format("Number of Content Instances of type %s %s = %d",
+						objectType.getData().getName(), objectType.getContentManagementId().toString(), totalEntries));
+				totalPages = totalEntries > 0 ? (totalEntries + pageSize - 1) / pageSize : totalEntries / pageSize;
+
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
 			}
-			totalEntries = results.size();
-			jCommander.getConsole().println(String.format("Number of Content Instances of type %s %s = %d",
-					objectType.getData().getName(), objectType.getContentManagementId().toString(), totalEntries));
-			totalPages = totalEntries > 0 ? (totalEntries + pageSize - 1) / pageSize : totalEntries / pageSize;
-
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
+			indexByContentTypeProcess(totalPages, results);
+		} else {
+			jCommander.getConsole().println(String.format("%s type is not configured in CTD Mapping XML file.",
+					objectType.getData().getName()));
 		}
-		indexByContentTypeProcess(totalPages, results);
+
 	}
 
 	private IPagingList queryContentInstanceList(ObjectType objectType, RequestParameters rp, IValidToIndex instance)

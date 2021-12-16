@@ -108,4 +108,8 @@ export class TurSNSiteLocalePageComponent implements OnInit {
       });
 
   }
+
+  public compareNLPInstance(n1: TurNLPInstance, n2: TurNLPInstance): boolean {
+    return n1 && n2 ? n1.id === n2.id : n1 === n2;
+  }
 }

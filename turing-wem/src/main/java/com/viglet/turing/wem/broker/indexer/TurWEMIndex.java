@@ -79,17 +79,21 @@ public class TurWEMIndex {
 					asLocaleData = contentInstance.getLocale().getAsLocale().getData();
 
 				TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
-				if (mappingDefinitions.isClassValidToIndex(contentInstance, config)) {
-					log.info(String.format(
-							"Viglet Turing indexer Processing Content Type: %s, WEM Site: %s, SNSite: %s, Locale: %s",
-							contentTypeName, siteName, turSNSiteConfig.getName(), turSNSiteConfig.getLocale()));
-					return postIndex(generateXMLToIndex(contentInstance, config), turSNSiteConfig, config);
+				if (isCTDIntoMapping(contentTypeName, config)) {
+					if (mappingDefinitions.isClassValidToIndex(contentInstance, config)) {
+						log.info(String.format(
+								"Viglet Turing indexer Processing Content Type: %s, WEM Site: %s, SNSite: %s, Locale: %s",
+								contentTypeName, siteName, turSNSiteConfig.getName(), turSNSiteConfig.getLocale()));
+						return postIndex(generateXMLToIndex(contentInstance, config), turSNSiteConfig, config);
 
-				} else {
-					if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
-							&& mo.getContentManagementId() != null) {
-						TurWEMDeindex.indexDelete(mo.getContentManagementId(), config);
+					} else {
+						if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
+								&& mo.getContentManagementId() != null) {
+							TurWEMDeindex.indexDelete(mo.getContentManagementId(), config);
+						}
+
 					}
+				} else {
 					if (log.isDebugEnabled())
 						log.debug(String.format(
 								"Mapping definition is not found in the mappingXML for the CTD and ignoring: %s",
@@ -116,14 +120,13 @@ public class TurWEMIndex {
 
 		CTDMappings ctdMappings = mappings.get(contentTypeName);
 
-		if (ctdMappings == null) {
-			log.error(String.format("Mapping definition is not found in the mappingXML for the CTD: %s",
-					contentTypeName));
-		} else {
+		if (isCTDIntoMapping(contentTypeName, config)) {
 			log.info(String.format("Indexing Content ID: %s (%s)", ci.getContentManagementId().getId(),
 					contentTypeName));
-			xml.append(createXMLAttribute(GenericResourceHandlerConfiguration.ID_ATTRIBUTE, ci.getContentManagementId().getId()));
-			xml.append(createXMLAttribute(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName()));
+			xml.append(createXMLAttribute(GenericResourceHandlerConfiguration.ID_ATTRIBUTE,
+					ci.getContentManagementId().getId()));
+			xml.append(createXMLAttribute(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE,
+					config.getProviderName()));
 			List<TurAttrDef> attributeDefs = prepareAttributeDefs(ci, config, mappingDefinitions, ctdMappings);
 			if (log.isDebugEnabled()) {
 				attributeDefs.forEach(attributeDef -> {
@@ -138,8 +141,27 @@ public class TurWEMIndex {
 
 			if (log.isDebugEnabled())
 				log.debug(String.format("Viglet Turing XML content: %s", xml.toString()));
+		} else {
+			log.info(String.format("Mapping definition is not found in the mappingXML for the CTD: %s",
+					contentTypeName));
 		}
 		return xml.toString();
+
+	}
+
+	public static boolean isCTDIntoMapping(String contentTypeName, IHandlerConfiguration config) {
+		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
+		TurCTDMappingMap mappings = mappingDefinitions.getMappingDefinitions();
+		CTDMappings ctdMappings = mappings.get(contentTypeName);
+		return ctdMappings == null ? false : true;
+
+	}
+	
+	public static int countCTDIntoMapping(IHandlerConfiguration config) {
+		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
+		TurCTDMappingMap mappings = mappingDefinitions.getMappingDefinitions();
+	
+		return mappings.size();
 
 	}
 
@@ -230,10 +252,8 @@ public class TurWEMIndex {
 			factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
 			factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
 
-			DocumentBuilder builder;
-			Document document = null;
-			builder = factory.newDocumentBuilder();
-			document = builder.parse(new InputSource(new StringReader(xml)));
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			Document document = builder.parse(new InputSource(new StringReader(xml)));
 
 			if (document != null) {
 				Element element = document.getDocumentElement();
