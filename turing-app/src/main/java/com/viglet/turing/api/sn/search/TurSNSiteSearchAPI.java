@@ -18,6 +18,7 @@
 package com.viglet.turing.api.sn.search;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,6 +29,8 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -78,6 +81,7 @@ import com.viglet.turing.sn.TurSNUtils;
 @RequestMapping("/api/sn/{siteName}/search")
 @Tag(name = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
+	private static final Logger logger = LogManager.getLogger(TurSNSiteSearchAPI.class);
 	private static final String TURING_ENTITY = "turing_entity";
 	private static final String DEFAULT_LANGUAGE = "en";
 	private static final String URL = "url";
@@ -132,6 +136,18 @@ public class TurSNSiteSearchAPI {
 			});
 		});
 		return turSNSiteSearchBean;
+	}
+
+	@GetMapping("locales")
+	public List<TurSNSiteLocaleBean> turSNSiteSearchLocale(@PathVariable String siteName, HttpServletRequest request) {
+	
+		try {
+			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
+			return responseLocales(turSNSite, new URI(String.format("/api/sn/%s/search", siteName)));
+		} catch (URISyntaxException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return Collections.emptyList();
 	}
 
 	private void prepareQueryAutoCorrection(String q, TurSNSiteSearchContext turSNSiteSearchContext,
@@ -262,7 +278,7 @@ public class TurSNSiteSearchAPI {
 					if (turSEResult != null) {
 						addSNDocument(context.getUri(), fieldExtMap, facetMap, turSNSiteSearchDocumentsBean,
 								turSEResult, true);
-					}else {
+					} else {
 						turSEResult = new TurSEResult();
 						Map<String, Object> fields = new HashMap<>();
 						fields.put("id", document.getId());
@@ -298,19 +314,18 @@ public class TurSNSiteSearchAPI {
 		turSNSiteSearchWidgetBean.setFacetToRemove(responseFacetToRemove(context));
 		turSNSiteSearchWidgetBean.setSimilar(responseMLT(turSNSite, turSEResults));
 		turSNSiteSearchWidgetBean.setSpellCheck(responseSpellCheck(context, turSEResults.getSpellCheck()));
-		turSNSiteSearchWidgetBean.setLocales(responseLocales(turSNSite, context));
+		turSNSiteSearchWidgetBean.setLocales(responseLocales(turSNSite, context.getUri()));
 		return turSNSiteSearchWidgetBean;
 
 	}
 
-	private List<TurSNSiteLocaleBean> responseLocales(TurSNSite turSNSite, TurSNSiteSearchContext context) {
+	private List<TurSNSiteLocaleBean> responseLocales(TurSNSite turSNSite, URI uri) {
 		List<TurSNSiteLocaleBean> turSNSiteLocaleBeans = new ArrayList<>();
 		turSNSite.getTurSNSiteLocales().forEach(turSNSiteLocale -> {
 			TurSNSiteLocaleBean turSNSiteLocaleBean = new TurSNSiteLocaleBean();
 			turSNSiteLocaleBean.setLocale(turSNSiteLocale.getLanguage());
 			turSNSiteLocaleBean.setLink(TurSNUtils
-					.addOrReplaceParameter(context.getUri(), TurSNParamType.LOCALE, turSNSiteLocale.getLanguage())
-					.toString());
+					.addOrReplaceParameter(uri, TurSNParamType.LOCALE, turSNSiteLocale.getLanguage()).toString());
 			turSNSiteLocaleBeans.add(turSNSiteLocaleBean);
 		});
 
