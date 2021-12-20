@@ -19,7 +19,7 @@
     "@angular/core": "13.1.1",
     "@angular/forms": "13.1.1",
     "@angular/localize": "13.1.0",
-    "@angular/platform-browser": "13.1.0",
+    "@angular/platform-browser": "13.1.1",
     "@angular/platform-browser-dynamic": "13.1.0",
     "@angular/router": "13.1.0",
     "@primer/css": "19.1.1",
