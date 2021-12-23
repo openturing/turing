@@ -5,7 +5,7 @@
 	<fields>
 		<field name="_root_" type="string" docValues="false" indexed="true" stored="false" />
 		<field name="_version_" type="long" indexed="true" stored="true" />
-		
+
 		<field name="content" type="text_general" multiValued="true" indexed="true" stored="false" />
 		<field name="abstract" type="text_general" multiValued="false" indexed="true" stored="true" />
 		<field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true" />
@@ -31,12 +31,12 @@
 		<field name="source_apps" type="string" multiValued="true" indexed="true" stored="true" />
 
 		<!-- Apache Nutch -->
-		<field name="tstamp" type="tdate" multiValued="false" indexed="true" stored="true"/>
+		<field name="tstamp" type="tdate" multiValued="false" indexed="true" stored="true" />
 		<field name="digest" type="text_general" multiValued="false" indexed="false" stored="true" />
 		<field name="host" type="text_general" multiValued="false" indexed="true" stored="true" />
-		<field name="boost" type="double" multiValued="false" indexed="true" stored="true"/>
-		<field name="segment" type="text_general" indexed="false" stored="true"/>
-		<field name="anchor" type="text_general" indexed="true" stored="false" multiValued="true"/>
+		<field name="boost" type="double" multiValued="false" indexed="true" stored="true" />
+		<field name="segment" type="text_general" indexed="false" stored="true" />
+		<field name="anchor" type="text_general" indexed="true" stored="false" multiValued="true" />
 	</fields>
 
 	<copyField source="abstract" dest="content" />
@@ -59,9 +59,19 @@
 	<copyField source="text" dest="content" />
 
 	<!-- Apache Nutch -->
-	<copyField source="tstamp" dest="content"/>
+	<copyField source="tstamp" dest="content" />
 	<copyField source="host" dest="content" />
-	<copyField source="anchor" dest="content"/>
+	<copyField source="anchor" dest="content" />
+
+	<!-- Suggest -->
+	<copyField source="abstract" dest="text_suggest" />
+	<copyField source="text" dest="text_suggest" />
+	<copyField source="title" dest="text_suggest" />
+
+	<!-- Spellcheck -->
+	<copyField source="abstract" dest="text_spellcheck" />
+	<copyField source="text" dest="text_spellcheck" />
+	<copyField source="title" dest="text_spellcheck" />
 
 	<uniqueKey>id</uniqueKey>
 

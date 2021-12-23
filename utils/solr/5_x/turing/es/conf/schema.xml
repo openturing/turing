@@ -30,14 +30,14 @@
 		<field name="text" type="text_general" multiValued="false" indexed="true" stored="true" />
 		<field name="source_apps" type="string" multiValued="true" indexed="true" stored="true" />
 		<field name="provider" type="string" multiValued="false" indexed="true" stored="true" />
-		
+
 		<!-- Apache Nutch -->
-		<field name="tstamp" type="tdate" multiValued="false" indexed="true" stored="true"/>
+		<field name="tstamp" type="tdate" multiValued="false" indexed="true" stored="true" />
 		<field name="digest" type="text_general" multiValued="false" indexed="false" stored="true" />
 		<field name="host" type="text_general" multiValued="false" indexed="true" stored="true" />
-		<field name="boost" type="double" multiValued="false" indexed="true" stored="true"/>
-		<field name="segment" type="text_general" indexed="false" stored="true"/>
-		<field name="anchor" type="text_general" indexed="true" stored="false" multiValued="true"/>
+		<field name="boost" type="double" multiValued="false" indexed="true" stored="true" />
+		<field name="segment" type="text_general" indexed="false" stored="true" />
+		<field name="anchor" type="text_general" indexed="true" stored="false" multiValued="true" />
 	</fields>
 
 	<copyField source="abstract" dest="content" />
@@ -60,9 +60,19 @@
 	<copyField source="text" dest="content" />
 
 	<!-- Apache Nutch -->
-	<copyField source="tstamp" dest="content"/>
+	<copyField source="tstamp" dest="content" />
 	<copyField source="host" dest="content" />
-	<copyField source="anchor" dest="content"/>
+	<copyField source="anchor" dest="content" />
+
+	<!-- Suggest -->
+	<copyField source="abstract" dest="text_suggest" />
+	<copyField source="text" dest="text_suggest" />
+	<copyField source="title" dest="text_suggest" />
+
+	<!-- Spellcheck -->
+	<copyField source="abstract" dest="text_spellcheck" />
+	<copyField source="text" dest="text_spellcheck" />
+	<copyField source="title" dest="text_spellcheck" />
 
 	<uniqueKey>id</uniqueKey>
 
@@ -144,10 +154,10 @@
 		</fieldType>
 		<fieldType name="phrase_suggest" class="solr.TextField">
 			<analyzer>
-				<tokenizer class="solr.KeywordTokenizerFactory"/>
-				<filter class="solr.PatternReplaceFilterFactory" pattern="([^\p{L}\p{M}\p{N}\p{Cs}]*[\p{L}\p{M}\p{N}\p{Cs}\_]+:)|([^\p{L}\p{M}\p{N}\p{Cs}])+" replace="all" replacement=" "/>
-				<filter class="solr.LowerCaseFilterFactory"/>
-				<filter class="solr.TrimFilterFactory"/>
+				<tokenizer class="solr.KeywordTokenizerFactory" />
+				<filter class="solr.PatternReplaceFilterFactory" pattern="([^\p{L}\p{M}\p{N}\p{Cs}]*[\p{L}\p{M}\p{N}\p{Cs}\_]+:)|([^\p{L}\p{M}\p{N}\p{Cs}])+" replace="all" replacement=" " />
+				<filter class="solr.LowerCaseFilterFactory" />
+				<filter class="solr.TrimFilterFactory" />
 			</analyzer>
 		</fieldType>
 		<fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />
