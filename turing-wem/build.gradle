@@ -13,6 +13,7 @@ plugins {
 }
 
 apply plugin: 'java'
+apply plugin: 'eclipse'
 apply plugin: 'com.github.johnrengelman.shadow'
 
 
@@ -29,7 +30,7 @@ compileJava.options.encoding = "UTF-8"
 compileTestJava.options.encoding = "UTF-8"
 
 repositories {
-		maven { url 'https://jitpack.io' }
+	maven { url 'https://jitpack.io' }
     mavenCentral()
 }
 
@@ -54,10 +55,16 @@ dependencies {
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
 	//implementation group: 'com.github.alegauss' , name: 'dummy-vgn', version: '8e2eb9b874'
 	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: 'f752da72b7'
+	
 	// Jackson
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
+    
     // HTTP Client
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
+    
+    // Tika
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'1.24'
+
 }
 
 jar {
@@ -74,14 +81,22 @@ jar {
    exclude 'castor-*.jar'
    exclude 'thirdparty-combined.jar'
      dependencies {
-      exclude(dependency('log4j:log4j'))
-      exclude(dependency('org.apache.httpcomponents:httpcore'))
-      exclude(dependency('org.apache.httpcomponents:httpclient'))
-      exclude(dependency('commons-httpclient:commons-httpclient'))
-      exclude(dependency('com.github.alegauss:dummy-vgn'))
-      exclude(dependency('commons-codec:commons-codec'))
-      exclude(dependency('commons-logging:commons-logging'))
-      exclude(dependency('org.json:json'))
+         exclude(dependency('log4j:log4j'))
+         exclude(dependency('org.apache.httpcomponents:httpcore'))
+         exclude(dependency('org.apache.httpcomponents:httpclient'))
+         exclude(dependency('commons-httpclient:commons-httpclient'))
+         exclude(dependency('com.github.alegauss:dummy-vgn'))
+         exclude(dependency('commons-codec:commons-codec'))
+         exclude(dependency('commons-logging:commons-logging'))
+         exclude(dependency('org.json:json'))
+
+      //   exclude(dependency('xerces:xercesImpl'))
+      //   exclude(dependency('org.slf4j:slf4j-api'))
+      //   exclude(dependency('org.ow2.asm:asm'))
+      //   exclude(dependency('org.bouncycastle:bcmail-jdk15on'))
+      //   exclude(dependency('org.bouncycastle:bcprov-jdk15on'))
+       //  exclude(dependency('org.apache.opennlp:opennlp-tools'))
+      //   exclude(dependency('edu.usc.ir:sentiment-analysis-parser'))
    }
 }
 

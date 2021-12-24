@@ -180,7 +180,7 @@ dependencies {
    	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.13.1'
    	  	
   	// H2
-    implementation group: 'com.h2database', name: 'h2', version:'2.0.204'
+    implementation group: 'com.h2database', name: 'h2', version:'1.4.200'
     
     // MariaDB
     implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.7.4'         
@@ -194,7 +194,7 @@ dependencies {
     // CoreNLP
     implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'4.3.1'
     
-    //ASM
+    // ASM
     implementation group: 'asm', name: 'asm', version:'4.0_RC2'
     
     // OpenNLP

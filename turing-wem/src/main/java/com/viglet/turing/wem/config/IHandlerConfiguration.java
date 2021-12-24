@@ -50,4 +50,6 @@ public interface IHandlerConfiguration {
 
 	String getPassword();
 
+	String getFileSourcePath();
+
 }

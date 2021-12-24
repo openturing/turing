@@ -42,6 +42,9 @@
 			<srcAttr xmlName="body">
 				<tag>text</tag>
 			</srcAttr>
+			<srcAttr xmlName="image" className="com.viglet.turing.wem.ext.TurReadStaticFile">
+				<tag>text</tag>
+			</srcAttr>
 		</index-attrs>
 	</mappingDefinition>
 	<mappingDefinition contentType="TUR_SPOTLIGHT">

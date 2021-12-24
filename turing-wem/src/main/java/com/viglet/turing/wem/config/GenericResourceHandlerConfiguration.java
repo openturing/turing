@@ -54,6 +54,7 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 	private String cdaContextName;
 	private String cdaURLPrefix;
 	private String sitesAssociationPriority;
+	private String fileSourcePath;
 	private String login;
 	private String password;
 	private String providerName;
@@ -186,6 +187,7 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 		cdaContextName = properties.getProperty("dps.site.default.contextname", DEFAULT_DPS_CONTEXT);
 		cdaURLPrefix = properties.getProperty("dps.site.default.urlprefix");
 		sitesAssociationPriority = properties.getProperty("dps.config.association.priority");
+		fileSourcePath = properties.getProperty("dps.config.filesource.path");
 
 	}
 	@Override
@@ -243,6 +245,11 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
 	@Override
 	public TurSNSiteConfig getDefaultSNSiteConfig() {
 		return new TurSNSiteConfig(snSite, snLocale);
+	}
+
+	@Override
+	public String getFileSourcePath() {
+		return fileSourcePath;
 	}
 
 	@Override
