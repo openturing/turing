@@ -98,24 +98,26 @@ public class TurSNProcessQueue {
 		logger.debug("receiveQueue turSNJob: {}", turSNJob);
 		if (turSNJob != null) {
 			this.turSNSiteRepository.findById(turSNJob.getSiteId()).ifPresent(turSNSite -> {
-				for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
-					boolean status = false;
-					logger.debug("receiveQueue TurSNJobItem: {}", turSNJobItem);
-					if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
-						status = isSpotlightJob(turSNJobItem) ? createSpotlight(turSNJobItem, turSNSite)
-								: indexing(turSNJobItem, turSNSite);
+				if (turSNJob.getTurSNJobItems() != null) {
+					for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
+						boolean status = false;
+						logger.debug("receiveQueue TurSNJobItem: {}", turSNJobItem);
+						if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
+							status = isSpotlightJob(turSNJobItem) ? createSpotlight(turSNJobItem, turSNSite)
+									: indexing(turSNJobItem, turSNSite);
 
-					} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
-						String id = (String) turSNJobItem.getAttributes().get("id");
-						status = (id != null && turSNSiteSpotlightRepository.findById(id).isPresent())
-								? deleteSpotlight(turSNJobItem)
-								: desindexing(turSNJobItem, turSNSite);
+						} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
+							String id = (String) turSNJobItem.getAttributes().get("id");
+							status = (id != null && turSNSiteSpotlightRepository.findById(id).isPresent())
+									? deleteSpotlight(turSNJobItem)
+									: desindexing(turSNJobItem, turSNSite);
 
-					}
-					if (status) {
-						processQueueInfo(turSNSite, turSNJobItem);
-					} else {
-						logger.warn("Object ID '{}' was not processed", turSNJobItem.getAttributes().get("id"));
+						}
+						if (status) {
+							processQueueInfo(turSNSite, turSNJobItem);
+						} else {
+							logger.warn("Object ID '{}' was not processed", turSNJobItem.getAttributes().get("id"));
+						}
 					}
 				}
 			});
