@@ -61,7 +61,8 @@ bootJar {
     	attributes(    
         'Implementation-Version': "${-> project.jar.version + '-' + project.ext.gitProps['git.commit.id.abbrev']}"
     	)
-  	} 
+  	}
+	archiveBaseName = 'viglet-turing'
 }
 
 repositories {
