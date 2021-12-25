@@ -209,7 +209,7 @@ dependencies {
     
     // Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version:'2.2.0'
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.2.0'
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.2.1'
 	implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: '2.2.0'
 	implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: '2.2.1'	
     implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version:'2.0'
