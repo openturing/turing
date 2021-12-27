@@ -17,13 +17,9 @@
 
 package com.viglet.turing.exchange;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.exchange.sn.TurSNSiteImport;
+import com.viglet.turing.utils.TurUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -33,9 +29,12 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.viglet.turing.exchange.sn.TurSNSiteImport;
-import com.viglet.turing.utils.TurUtils;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class TurImportExchange {
@@ -64,7 +63,6 @@ public class TurImportExchange {
 		}
 		return new TurExchange();
 	}
-
 	private TurExchange importSNSiteFromExportFile(File extractFolder, File parentExtractFolder) {
 		ObjectMapper mapper = new ObjectMapper();
 		try {

@@ -43,5 +43,4 @@ public class TurImportAPI {
 	public TurExchange shImport(@RequestParam("file") MultipartFile multipartFile) {
 		return turImportExchange.importFromMultipartFile(multipartFile);
 	}
-
 }

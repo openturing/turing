@@ -64,7 +64,6 @@ dependencies {
     
     // Tika
     implementation group: 'org.apache.tika', name: 'tika-parsers', version:'1.24'
-
 }
 
 jar {
