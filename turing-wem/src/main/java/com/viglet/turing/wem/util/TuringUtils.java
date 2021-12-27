@@ -136,10 +136,10 @@ public class TuringUtils {
             HttpPost httpPost = new HttpPost(String.format("%s/api/sn/%s/import/zip", config.getTuringURL(),
                     turSNSiteConfig.getName()));
             byte[] bytes = byteArrayOutputStream.toByteArray();
-            ContentBody cd = new InputStreamBody(new ByteArrayInputStream(bytes), "export.zip");
-            HttpEntity entity = MultipartEntityBuilder.create().addPart("file", cd).build();
+            ContentBody contentBody = new InputStreamBody(new ByteArrayInputStream(bytes), "export.zip");
+            HttpEntity entity = MultipartEntityBuilder.create().addPart("file", contentBody).build();
             httpPost.setEntity(entity);
-            
+
             basicAuth(config, httpPost);
             try (CloseableHttpResponse response = client.execute(httpPost)) {
 

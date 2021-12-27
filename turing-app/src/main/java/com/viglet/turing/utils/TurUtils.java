@@ -17,22 +17,12 @@
 
 package com.viglet.turing.utils;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
+import com.viglet.turing.spring.security.auth.ITurAuthenticationFacade;
+import net.lingala.zip4j.ZipFile;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -45,8 +35,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.viglet.turing.exception.TurException;
-import com.viglet.turing.spring.security.auth.ITurAuthenticationFacade;
+import java.io.*;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Component
 public class TurUtils {
@@ -174,29 +167,15 @@ public class TurUtils {
 	/**
 	 * Unzip it
 	 * 
-	 * @param zipFile      input zip file
+	 * @param file      input zip file
 	 * @param outputFolder output Folder
 	 * @throws Exception
 	 */
-	public static void unZipIt(File zipFile, File outputFolder) {
-
-		try (ZipArchiveInputStream zin = new ZipArchiveInputStream(new FileInputStream(zipFile))) {
-			ZipArchiveEntry entry;
-			while ((entry = zin.getNextZipEntry()) != null) {
-				if (entry.isDirectory()) {
-					continue;
-				}
-				File curfile = new File(outputFolder, entry.getName());
-				if (!curfile.toPath().normalize().startsWith(outputFolder.toPath()))
-					throw new TurException("Bad zip entry");
-				File parent = curfile.getParentFile();
-				if (!parent.exists() && !parent.mkdirs()) {
-					throw new TurException("could not create directory: " + parent.getPath());
-				}
-				IOUtils.copy(zin, new FileOutputStream(curfile));
-			}
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
+	public static void unZipIt(File file, File outputFolder) {
+		try (ZipFile zipFile = new ZipFile(file)) {
+			zipFile.extractAll(outputFolder.getAbsolutePath());
+		} catch (IllegalStateException | IOException e) {
+			logger.error(e);
 		}
 	}
 

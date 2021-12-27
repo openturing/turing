@@ -43,10 +43,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Files;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -311,41 +309,51 @@ public class TurWEMIndex {
             Document document = builder.parse(new InputSource(new StringReader(xml)));
 
             if (document != null) {
-                Element element = document.getDocumentElement();
-
-                NodeList nodes = element.getChildNodes();
-                TurSNJobItems turSNJobItems = new TurSNJobItems();
-                TurSNJobItem turSNJobItem = new TurSNJobItem();
-                Map<String, Object> attributes = new HashMap<>();
-                for (int i = 0; i < nodes.getLength(); i++) {
-
-                    String nodeName = nodes.item(i).getNodeName();
-                    if (attributes.containsKey(nodeName)) {
-                        if (!(attributes.get(nodeName) instanceof ArrayList)) {
-                            List<Object> attributeValues = new ArrayList<>();
-                            attributeValues.add(attributes.get(nodeName));
-                            attributeValues.add(nodes.item(i).getTextContent());
-
-                            attributes.put(nodeName, attributeValues);
-                            turSNJobItem.setAttributes(attributes);
-                        } else {
-                            @SuppressWarnings("unchecked")
-                            List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
-                            attributeValues.add(nodes.item(i).getTextContent());
-                            attributes.put(nodeName, attributeValues);
-                        }
-                    } else {
-                        attributes.put(nodeName, nodes.item(i).getTextContent());
-                    }
-                }
-
-                turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-                turSNJobItem.setLocale(turSNSiteConfig.getLocale());
-                turSNJobItem.setAttributes(attributes);
-                turSNJobItems.add(turSNJobItem);
-
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 try (ZipOutputStream zos = new ZipOutputStream(byteArrayOutputStream)) {
+                    Element element = document.getDocumentElement();
+
+                    NodeList nodes = element.getChildNodes();
+                    TurSNJobItems turSNJobItems = new TurSNJobItems();
+                    TurSNJobItem turSNJobItem = new TurSNJobItem();
+                    Map<String, Object> attributes = new HashMap<>();
+                    for (int i = 0; i < nodes.getLength(); i++) {
+                        String randomFileName = UUID.randomUUID().toString();
+                        String attributeValue = nodes.item(i).getTextContent();
+                        String attributeName = nodes.item(i).getNodeName();
+                        if (attributeValue.startsWith("file://")) {
+                            File file = new File(attributeValue.replace("file://", ""));
+
+                            ZipEntry entry = new ZipEntry(randomFileName);
+                            entry.setTime(file.lastModified());
+                            zos.putNextEntry(entry);
+                            Files.copy(file.toPath(), zos);
+
+                            attributeValue = "file://" + randomFileName;
+
+                        }
+                        if (attributes.containsKey(attributeName)) {
+                            if (!(attributes.get(attributeName) instanceof ArrayList)) {
+                                List<Object> attributeValues = new ArrayList<>();
+                                attributeValues.add(attributes.get(attributeName));
+                                attributeValues.add(attributeValue);
+                                attributes.put(attributeName, attributeValues);
+                            } else {
+                                @SuppressWarnings("unchecked")
+                                List<Object> attributeValues = (List<Object>) attributes.get(attributeName);
+                                attributeValues.add(attributeValue);
+                                attributes.put(attributeName, attributeValues);
+                            }
+                        } else {
+                            attributes.put(attributeName, attributeValue);
+                        }
+                    }
+
+                    turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+                    turSNJobItem.setLocale(turSNSiteConfig.getLocale());
+                    turSNJobItem.setAttributes(attributes);
+                    turSNJobItems.add(turSNJobItem);
+
 
                     ZipEntry entry = new ZipEntry("export.json");
 

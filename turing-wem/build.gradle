@@ -61,9 +61,8 @@ dependencies {
     
     // HTTP Client
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
-    
-    // Tika
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'1.24'
+    implementation group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.2'
+
 }
 
 jar {
@@ -83,19 +82,12 @@ jar {
          exclude(dependency('log4j:log4j'))
          exclude(dependency('org.apache.httpcomponents:httpcore'))
          exclude(dependency('org.apache.httpcomponents:httpclient'))
+         exclude(dependency('org.apache.httpcomponents:httpmime'))
          exclude(dependency('commons-httpclient:commons-httpclient'))
          exclude(dependency('com.github.alegauss:dummy-vgn'))
          exclude(dependency('commons-codec:commons-codec'))
          exclude(dependency('commons-logging:commons-logging'))
          exclude(dependency('org.json:json'))
-
-      //   exclude(dependency('xerces:xercesImpl'))
-      //   exclude(dependency('org.slf4j:slf4j-api'))
-      //   exclude(dependency('org.ow2.asm:asm'))
-      //   exclude(dependency('org.bouncycastle:bcmail-jdk15on'))
-      //   exclude(dependency('org.bouncycastle:bcprov-jdk15on'))
-       //  exclude(dependency('org.apache.opennlp:opennlp-tools'))
-      //   exclude(dependency('edu.usc.ir:sentiment-analysis-parser'))
    }
 }
 

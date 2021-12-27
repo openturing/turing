@@ -22,16 +22,32 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.utils.TurUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/sn/{siteName}/import")
@@ -64,16 +80,110 @@ public class TurSNImportAPI {
     public boolean turSNImportZipFileBroker(@PathVariable String siteName, @RequestParam("file") MultipartFile multipartFile) {
         File extractFolder = TurUtils.extractZipFile(multipartFile);
         if (extractFolder != null) {
-            try {
-                TurSNJobItems turSNJobItems = new ObjectMapper().readValue(
-                        new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator).concat(EXPORT_FILE)),
-                        TurSNJobItems.class);
-                return turSNImportBroker(siteName, turSNJobItems);
+            TurSNJobItems turSNJobItems = null;
+            try (FileInputStream fileInputStream =  new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator).concat(EXPORT_FILE))){
+                turSNJobItems = new ObjectMapper().readValue(fileInputStream,TurSNJobItems.class);
+                turSNJobItems.forEach(turSNJobItem -> {
+                    turSNJobItem.getAttributes().entrySet().forEach(attribute -> {
+                        if (attribute.getValue().toString().startsWith("file://")) {
+                            String fileName = attribute.getValue().toString().replace("file://", "");
+                            try (FileInputStream fileInputStreamAttribute = new FileInputStream(extractFolder.getAbsolutePath() + File.separator + fileName)){
+                                StringBuilder contentFile = new StringBuilder();
+                                AutoDetectParser parser = new AutoDetectParser();
+                                // -1 = no limit of number of characters
+                                BodyContentHandler handler = new BodyContentHandler(-1);
+                                Metadata metadata = new Metadata();
+
+                                TesseractOCRConfig config = new TesseractOCRConfig();
+                                PDFParserConfig pdfConfig = new PDFParserConfig();
+                                pdfConfig.setExtractInlineImages(true);
+
+                                ParseContext parseContext = new ParseContext();
+                                parseContext.set(TesseractOCRConfig.class, config);
+                                parseContext.set(PDFParserConfig.class, pdfConfig);
+
+                                parseContext.set(Parser.class, parser);
+
+                                EmbeddedDocumentExtractor embeddedDocumentExtractor = new EmbeddedDocumentExtractor() {
+                                    @Override
+                                    public boolean shouldParseEmbedded(Metadata metadata) {
+                                        return true;
+                                    }
+
+                                    @Override
+                                    public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
+                                                              boolean outputHtml) throws SAXException, IOException {
+
+                                        BodyContentHandler handlerInner = new BodyContentHandler(-1);
+                                        AutoDetectParser parserInner = new AutoDetectParser();
+
+                                        Metadata metadataInner = new Metadata();
+
+                                        TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
+                                        PDFParserConfig pdfConfigInner = new PDFParserConfig();
+                                        pdfConfigInner.setExtractInlineImages(true);
+
+                                        ParseContext parseContextInner = new ParseContext();
+                                        parseContextInner.set(TesseractOCRConfig.class, tesseractOCRConfig);
+                                        parseContextInner.set(PDFParserConfig.class, pdfConfigInner);
+
+                                        parseContextInner.set(Parser.class, parserInner);
+
+                                        File tempFile = File.createTempFile(UUID.randomUUID().toString(), null, TurUtils.addSubDirToStoreDir("tmp"));
+                                        Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                                        try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
+                                            parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
+                                            contentFile.append(cleanTextContent(handlerInner.toString()));
+
+                                        } catch (IOException | SAXException | TikaException e) {
+                                            logger.error(e);
+                                        }
+                                        FileUtils.delete(tempFile);
+                                    }
+                                };
+
+                                parseContext.set(EmbeddedDocumentExtractor.class, embeddedDocumentExtractor);
+
+                                parser.parse(fileInputStreamAttribute, handler, metadata, parseContext);
+
+                                contentFile.append(cleanTextContent(handler.toString()));
+
+                                attribute.setValue(contentFile.toString());
+
+                            } catch (IOException | SAXException | TikaException e) {
+                                logger.error(e);
+                            }
+                        }
+                    });
+                });
             } catch (IOException e) {
                 logger.error(e.getMessage(), e);
             }
+            try {
+                FileUtils.deleteDirectory(extractFolder);
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+            }
+            return turSNJobItems != null && turSNImportBroker(siteName, turSNJobItems);
+
         }
         return false;
+    }
+
+    private static String cleanTextContent(String text) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Original Text: {}", text.replace("\n", "\\\\n \n").replace("\t", "\\\\t \t"));
+        }
+        // Remove 2 or more spaces
+        text = text.trim().replaceAll("[\\t\\r]", "\\n");
+        text = text.trim().replaceAll(" +", " ");
+
+        text = text.trim();
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Cleaned Text: {}", text);
+        }
+        return text;
     }
 
     public void send(TurSNJob turSNJob) {
