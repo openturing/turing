@@ -22,10 +22,7 @@ import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.beans.TuringTagMap;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.viglet.turing.wem.config.TurSNSiteConfig;
-import com.vignette.as.client.common.AsLocaleData;
-import com.vignette.as.client.common.AttributeData;
-import com.vignette.as.client.common.AttributeDefinitionData;
-import com.vignette.as.client.common.DataType;
+import com.vignette.as.client.common.*;
 import com.vignette.as.client.common.ref.*;
 import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.exception.AuthorizationException;
@@ -241,14 +238,37 @@ public class TuringUtils {
         return chosenChannel;
     }
 
-    public static String channelBreadcrumb(Channel channel) throws ApplicationException, ValidationException {
+    public static String channelBreadcrumb(Channel channel, Locale locale) throws ApplicationException, ValidationException {
         if (channel != null) {
+
+            AsLocaleRef asLocaleRef = null;
+            if (locale != null) {
+                try {
+                    asLocaleRef = new AsLocaleRef(locale);
+                } catch (ValidationException var11) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Error occurred while creating AsLocaleRef object for locale: " + locale.toString());
+                    }
+                }
+            }
+
             StringBuilder channelPath = new StringBuilder();
             String chFurlName;
             Channel[] breadcrumb = channel.getBreadcrumbPath(true);
             for (int j = 0; j < breadcrumb.length; j++) {
                 if (j > 0) {
-                    channelPath.append("/" + breadcrumb[j].getFurlName());
+                    if (asLocaleRef != null) {
+                        ChannelLocalizedData chLocalData = breadcrumb[j].getData().getLocalizedData(asLocaleRef);
+                        if (chLocalData != null) {
+                               channelPath.append("/" + chLocalData.getFurlName());
+                        }
+                        else {
+                            channelPath.append("/" + breadcrumb[j].getFurlName());
+                        }
+                    }
+                    else {
+                        channelPath.append("/" + breadcrumb[j].getFurlName());
+                    }
                 }
             }
             channelPath.append("/");

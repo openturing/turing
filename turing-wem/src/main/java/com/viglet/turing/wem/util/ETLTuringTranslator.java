@@ -16,12 +16,6 @@
  */
 package com.viglet.turing.wem.util;
 
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.common.ref.ChannelRef;
 import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
@@ -31,7 +25,14 @@ import com.vignette.as.client.exception.ValidationException;
 import com.vignette.as.client.javabean.Channel;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.as.client.javabean.ManagedObject;
+import com.vignette.ext.templating.util.ContentUtil;
 import com.vignette.logging.context.ContextLogger;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ETLTuringTranslator {
 
@@ -108,7 +109,7 @@ public class ETLTuringTranslator {
 			log.debug("ETLTuringTranslator MO: Channel");
 		}
 		Channel channel = (Channel) mo;
-		chFurlName = TuringUtils.channelBreadcrumb(channel);
+		chFurlName = TuringUtils.channelBreadcrumb(channel, ContentUtil.getLocaleFromString(TuringUtils.getLocale(mo, config)));
 
 		moFurlName = TuringUtils.normalizeText(chFurlName);
 		return moFurlName;
@@ -132,12 +133,12 @@ public class ETLTuringTranslator {
 
 		for (ChannelRef channelRef : channelRefs) {
 			TuringUtils.getSiteNames(siteNames, channelRef.getChannel());
-
 		}
 
 		Channel chosenChannel = TuringUtils.getChosenChannel(channelRefs, siteNames, config);
-		if (chosenChannel != null)
-			chFurlName = TuringUtils.channelBreadcrumb(chosenChannel);
+		if (chosenChannel != null) {
+			chFurlName = TuringUtils.channelBreadcrumb(chosenChannel, ContentUtil.getLocaleFromString(TuringUtils.getLocale(mo, config)));
+		}
 		moFurlName = TuringUtils.normalizeText(chFurlName + ciFurlName);
 		return moFurlName;
 	}
