@@ -12,14 +12,13 @@ import com.vignette.logging.context.ContextLogger;
 
 
 public class TurReadStaticFile implements ExtAttributeInterface {
-    private static final ContextLogger logger = ContextLogger.getLogger(TurChannelDescription.class);
+    private static final ContextLogger logger = ContextLogger.getLogger(TurReadStaticFile.class);
     private static final String EMPTY_STRING = "";
-
 
     @Override
     public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config) throws Exception {
-        if (log.isDebugEnabled()) {
-            log.debug("Executing TurReadStaticFile");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Executing TurReadStaticFile");
         }
 
         TurMultiValue turMultiValue = new TurMultiValue();

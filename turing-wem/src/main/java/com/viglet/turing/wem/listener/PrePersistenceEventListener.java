@@ -21,9 +21,8 @@ import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.exception.AuthorizationException;
 import com.vignette.as.client.exception.ValidationException;
-import com.vignette.as.client.javabean.ManagedObject;
-import com.vignette.as.server.event.AsPrePersistenceEvent;
 import com.vignette.as.server.event.AsEvent;
+import com.vignette.as.server.event.AsPrePersistenceEvent;
 import com.vignette.as.server.event.IAsEventListener;
 import com.vignette.logging.context.ContextLogger;
 
@@ -37,7 +36,6 @@ public class PrePersistenceEventListener implements IAsEventListener {
 			if (event instanceof AsPrePersistenceEvent) {
 				AsPrePersistenceEvent prePersistenceEvent = (AsPrePersistenceEvent) event;
 				String type = prePersistenceEvent.getType();
-				ManagedObject mo = prePersistenceEvent.getManagedObject();
 
 				IHandlerConfiguration config = new GenericResourceHandlerConfiguration();
 
@@ -46,7 +44,7 @@ public class PrePersistenceEventListener implements IAsEventListener {
 				// Call out to the appropriate method depending on event type
 				if (type.equals(AsPrePersistenceEvent.PRE_DELETE)) {
 					log.debug("Viglet Turing PrePersistenceEvent() - Delete object");
-					handler.onPrePersistenceDelete(mo, prePersistenceEvent);
+					handler.onPrePersistenceDelete(prePersistenceEvent);
 				}
 			}
 		} catch (Exception e) {

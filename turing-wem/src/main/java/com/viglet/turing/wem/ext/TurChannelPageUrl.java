@@ -27,7 +27,7 @@ import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurChannelPageUrl implements ExtAttributeInterface {
-	private static final ContextLogger log = ContextLogger.getLogger(TurChannelPageName.class);
+	private static final ContextLogger logger = ContextLogger.getLogger(TurChannelPageUrl.class);
 
 	@Override
 	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config)
@@ -35,8 +35,8 @@ public class TurChannelPageUrl implements ExtAttributeInterface {
 		String url = "";
 		ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
 
-		if (log.isDebugEnabled()) {
-			log.debug("Executing ChannelPageUrl");
+		if (logger.isDebugEnabled()) {
+			logger.debug("Executing ChannelPageUrl");
 		}
 		for (ManagedObjectVCMRef mo : ManagedObject.getReferringManagedObjects(ci.getContentManagementId())) {
 			if (mo.getObjectTypeRef().getObjectType().getName().equals("Channel")) {
@@ -44,8 +44,8 @@ public class TurChannelPageUrl implements ExtAttributeInterface {
 			}
 
 		}
-		if (log.isDebugEnabled()) {
-			log.debug("ChannelPageUrl URL: " + url);
+		if (logger.isDebugEnabled()) {
+			logger.debug("ChannelPageUrl URL: " + url);
 		}
 		
 		TurMultiValue turMultiValue = new TurMultiValue();

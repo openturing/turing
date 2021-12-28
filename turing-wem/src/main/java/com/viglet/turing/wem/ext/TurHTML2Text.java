@@ -25,14 +25,14 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurHTML2Text implements ExtAttributeInterface {
-	private static final ContextLogger log = ContextLogger.getLogger(TurDPSUrl.class);
+	private static final ContextLogger logger = ContextLogger.getLogger(TurHTML2Text.class);
 	private static final String EMPTY_STRING = "";
 
 	@Override
 	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
 			IHandlerConfiguration config) throws Exception {
-		if (log.isDebugEnabled()) {
-			log.debug("Executing HTML2Text");
+		if (logger.isDebugEnabled()) {
+			logger.debug("Executing HTML2Text");
 		}
 
 		TurMultiValue turMultiValue = new TurMultiValue();

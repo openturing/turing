@@ -18,7 +18,6 @@ package com.viglet.turing.wem.listener;
 
 import com.viglet.turing.wem.broker.indexer.TurWEMIndexer;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
-import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.as.server.event.AsPrePersistenceEvent;
 import com.vignette.logging.context.ContextLogger;
 
@@ -32,8 +31,8 @@ public class PrePersistenceHandler {
 		this.config = config;
 	}
 
-	public void onPrePersistenceDelete(ManagedObject mo, AsPrePersistenceEvent prePersistenceEvent) {
-		boolean result = TurWEMIndexer.indexDelete(mo, prePersistenceEvent, config);
+	public void onPrePersistenceDelete(AsPrePersistenceEvent prePersistenceEvent) {
+		boolean result = TurWEMIndexer.indexDelete(prePersistenceEvent, config);
 		log.debug("Viglet Turing Indexing Delete: " + result);
 	}
 

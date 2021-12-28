@@ -392,7 +392,7 @@ public class TuringUtils {
     }
 
     private static List<Site> getSitesFromChannel(Channel channel) throws ApplicationException, RemoteException {
-        List<Site> sites = new ArrayList<Site>();
+        List<Site> sites = new ArrayList<>();
         if (channel != null) {
             for (SiteRef siteRef : channel.getSiteRefs()) {
                 sites.add(siteRef.getSite());

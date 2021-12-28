@@ -16,27 +16,23 @@
  */
 package com.viglet.turing.wem.mappers;
 
-import org.w3c.dom.*;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-
 import com.viglet.turing.wem.beans.TurCTDMappingMap;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.beans.TuringTagMap;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.vignette.logging.context.ContextLogger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.*;
+import java.util.Map.Entry;
 
 // Open and process Mappping XML File structure
 public class MappingDefinitionsProcess {
@@ -51,8 +47,6 @@ public class MappingDefinitionsProcess {
 
 		try {
 			DocumentBuilderFactory dlf = DocumentBuilderFactory.newInstance();
-			//dlf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-			//dlf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
 			DocumentBuilder db = dlf.newDocumentBuilder();
 
 			File f = new File(resourceXml);

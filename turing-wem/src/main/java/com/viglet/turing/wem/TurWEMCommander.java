@@ -16,19 +16,6 @@
  */
 package com.viglet.turing.wem;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
@@ -40,28 +27,13 @@ import com.viglet.turing.wem.index.IValidToIndex;
 import com.viglet.turing.wem.mappers.MappingDefinitions;
 import com.viglet.turing.wem.mappers.MappingDefinitionsProcess;
 import com.vignette.as.apps.contentIndex.ContentIndexException;
-import com.vignette.as.client.common.AsObjectRequestParameters;
-import com.vignette.as.client.common.AsObjectType;
-import com.vignette.as.client.common.ContentInstanceDBQuery;
-import com.vignette.as.client.common.ContentInstanceWhereClause;
-import com.vignette.as.client.common.Query;
-import com.vignette.as.client.common.RequestParameters;
-import com.vignette.as.client.common.StaticFileDBQuery;
-import com.vignette.as.client.common.StaticFileWhereClause;
-import com.vignette.as.client.common.WhereClause;
+import com.vignette.as.client.common.*;
 import com.vignette.as.client.common.ref.ContentTypeRef;
 import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
 import com.vignette.as.client.common.ref.ObjectTypeRef;
 import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.exception.ValidationException;
-import com.vignette.as.client.javabean.ContentInstance;
-import com.vignette.as.client.javabean.ContentItem;
-import com.vignette.as.client.javabean.ContentType;
-import com.vignette.as.client.javabean.IPagingList;
-import com.vignette.as.client.javabean.ManagedObject;
-import com.vignette.as.client.javabean.ObjectType;
-import com.vignette.as.client.javabean.QueryManager;
-import com.vignette.as.client.javabean.StaticFile;
+import com.vignette.as.client.javabean.*;
 import com.vignette.as.config.ConfigUtil;
 import com.vignette.config.client.common.ConfigException;
 import com.vignette.config.util.ConfigLog;
@@ -69,6 +41,14 @@ import com.vignette.logging.LoggingManager;
 import com.vignette.logging.context.ContextLogger;
 import com.vignette.util.VgnException;
 import com.vignette.util.VgnIllegalArgumentException;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.*;
 
 public class TurWEMCommander {
 	private static JCommander jCommander = new JCommander();
@@ -216,7 +196,7 @@ public class TurWEMCommander {
 		for (Object objectType : contentTypes) {
 			ObjectType ot = (ObjectType) objectType;
 			if (TurWEMIndex.isCTDIntoMapping(ot.getData().getName(), turingConfig)) {
-				jCommander.getConsole().println(String.format("\nRetrieved Object Type: %s %s", ot.getData().getName(),
+				jCommander.getConsole().println(String.format("%n Retrieved Object Type: %s %s", ot.getData().getName(),
 						ot.getContentManagementId().toString()));
 				this.indexByContentType(siteName, ot);
 			}

@@ -51,6 +51,7 @@ import java.util.zip.ZipOutputStream;
 public class TurWEMIndex {
 
     private static final ContextLogger log = ContextLogger.getLogger(TurWEMIndex.class);
+    private static final String FILE_PROTOCOL = "file://";
 
     private TurWEMIndex() {
         throw new IllegalStateException("TurWEMIndex");
@@ -77,8 +78,12 @@ public class TurWEMIndex {
                         log.info(String.format(
                                 "Viglet Turing indexer Processing Content Type: %s, WEM Site: %s, SNSite: %s, Locale: %s",
                                 contentTypeName, siteName, turSNSiteConfig.getName(), turSNSiteConfig.getLocale()));
-                        //return postIndex(generateXMLToIndex(contentInstance, config), turSNSiteConfig, config);
-                        return generateZipImport(generateXMLToIndex(contentInstance, config), turSNSiteConfig, config);
+                        String xmlToIndex = generateXMLToIndex(contentInstance, config);
+                        if (xmlToIndex.contains(FILE_PROTOCOL)) {
+                            return generateZipImport(xmlToIndex, turSNSiteConfig, config);
+                        } else {
+                            return postIndex(xmlToIndex, turSNSiteConfig, config);
+                        }
                     } else {
                         if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
                                 && mo.getContentManagementId() != null) {
@@ -122,9 +127,8 @@ public class TurWEMIndex {
                     config.getProviderName()));
             List<TurAttrDef> attributeDefs = prepareAttributeDefs(ci, config, mappingDefinitions, ctdMappings);
             if (log.isDebugEnabled()) {
-                attributeDefs.forEach(attributeDef -> {
-                    log.debug("attributeDef in generateXMLToIndex(): " + attributeDef.toString());
-                });
+                attributeDefs.forEach(attributeDef ->
+                        log.debug("attributeDef in generateXMLToIndex(): " + attributeDef.toString()));
             }
 
             addAttributeDefsToXML(xml, attributeDefs);
@@ -146,7 +150,7 @@ public class TurWEMIndex {
         MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
         TurCTDMappingMap mappings = mappingDefinitions.getMappingDefinitions();
         CTDMappings ctdMappings = mappings.get(contentTypeName);
-        return ctdMappings == null ? false : true;
+        return ctdMappings != null;
 
     }
 
@@ -242,8 +246,6 @@ public class TurWEMIndex {
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            //factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            //factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
 
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(new InputSource(new StringReader(xml)));
@@ -321,15 +323,15 @@ public class TurWEMIndex {
                         String randomFileName = UUID.randomUUID().toString();
                         String attributeValue = nodes.item(i).getTextContent();
                         String attributeName = nodes.item(i).getNodeName();
-                        if (attributeValue.startsWith("file://")) {
-                            File file = new File(attributeValue.replace("file://", ""));
+                        if (attributeValue.startsWith(FILE_PROTOCOL)) {
+                            File file = new File(attributeValue.replace(FILE_PROTOCOL, ""));
 
                             ZipEntry entry = new ZipEntry(randomFileName);
                             entry.setTime(file.lastModified());
                             zos.putNextEntry(entry);
                             Files.copy(file.toPath(), zos);
 
-                            attributeValue = "file://" + randomFileName;
+                            attributeValue = FILE_PROTOCOL.concat(randomFileName);
 
                         }
                         if (attributes.containsKey(attributeName)) {

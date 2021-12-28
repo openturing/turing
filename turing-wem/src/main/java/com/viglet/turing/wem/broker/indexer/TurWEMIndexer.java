@@ -45,7 +45,7 @@ public class TurWEMIndexer {
 		return true;
 	}
 
-	public static boolean indexDelete(ManagedObject mo, AsPrePersistenceEvent prePersistenceEvent,
+	public static boolean indexDelete(AsPrePersistenceEvent prePersistenceEvent,
 			IHandlerConfiguration config) {
 		if (log.isDebugEnabled()) {
 			log.debug("Deleting Object in Viglet Turing index");
