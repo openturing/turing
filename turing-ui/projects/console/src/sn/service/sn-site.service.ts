@@ -48,6 +48,10 @@ export class TurSNSiteService {
     return this.httpClient.get<TurSNSiteField>(`${environment.apiUrl}/api/sn/${id}/field/ext/${fieldId}`);
   }
 
+  getFieldStructure(id: string): Observable<TurSNSiteField> {
+    return this.httpClient.get<TurSNSiteField>(`${environment.apiUrl}/api/sn/${id}/field/ext/structure`);
+  }
+
   getStatus(id: string): Observable<TurSNSiteStatus> {
     return this.httpClient.get<TurSNSiteStatus>(`${environment.apiUrl}/api/sn/${id}/monitoring`);
   }
@@ -66,14 +70,25 @@ export class TurSNSiteService {
         JSON.stringify(turSNSite));
     }
   }
+
   public delete(turSNSite: TurSNSite): Observable<TurSNSite> {
     return this.httpClient.delete<TurSNSite>(`${environment.apiUrl}/api/sn/${turSNSite.id}`);
 
   }
-  public saveField(siteId: string, turSNSiteField: TurSNSiteField): Observable<TurSNSiteField> {
-    return this.httpClient.put<TurSNSiteField>(`${environment.apiUrl}/api/sn/${siteId}/field/ext/${turSNSiteField.id}`,
-      JSON.stringify(turSNSiteField));
 
+  public saveField(siteId: string, turSNSiteField: TurSNSiteField, newObject: boolean): Observable<TurSNSiteField> {
+    if (newObject) {
+      return this.httpClient.post<TurSNSiteField>(`${environment.apiUrl}/api/sn/${siteId}/field/ext`,
+        JSON.stringify(turSNSiteField));
+    }
+    else {
+      return this.httpClient.put<TurSNSiteField>(`${environment.apiUrl}/api/sn/${siteId}/field/ext/${turSNSiteField.id}`,
+        JSON.stringify(turSNSiteField));
+    }
   }
 
+  public deleteField(siteId: string, turSNSiteField: TurSNSiteField): Observable<TurSNSiteField> {
+    return this.httpClient.delete<TurSNSiteField>(`${environment.apiUrl}/api/sn/${siteId}/field/ext/${turSNSiteField.id}`);
+
+  }
 }

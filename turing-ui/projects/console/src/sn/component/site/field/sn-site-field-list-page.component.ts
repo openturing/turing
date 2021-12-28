@@ -22,7 +22,6 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
     this.turSNSiteSEFields = turSNSiteService.getFieldsByType(this.siteId, "se");
     this.turSNSiteNLPFields = turSNSiteService.getFieldsByType(this.siteId, "ner");
     this.turSNSite = this.turSNSiteService.get(this.siteId);
-
   }
 
   getTurSNSite(): Observable<TurSNSite> {
@@ -42,11 +41,12 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    //Empty
   }
 
   public updateField(_turSNSiteField: TurSNSiteField, fieldName: string, event: Event) {
     (_turSNSiteField[fieldName as keyof TurSNSiteField] as any) = event ? 1 : 0;
-    this.turSNSiteService.saveField(this.siteId, _turSNSiteField).subscribe(
+    this.turSNSiteService.saveField(this.siteId, _turSNSiteField, false).subscribe(
       (turSNSiteField: TurSNSiteField) => {
         _turSNSiteField = turSNSiteField;
         this.notifier.notify("success", turSNSiteField.name.concat(" semantic navigation field was updated."));
@@ -55,7 +55,7 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
         this.notifier.notify("error", "Semantic navigation field has a error: " + response);
       },
       () => {
-        // console.log('The POST observable is now completed.');
+        // The POST observable is now completed.
       });
   }
 }

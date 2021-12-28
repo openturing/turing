@@ -57,7 +57,7 @@ const routes: Routes = [
             path: 'field', component: TurSNSiteFieldRootPageComponent, canActivate: [AuthGuard],
             children: [
               { path: 'list', component: TurSNSiteFieldListPageComponent, canActivate: [AuthGuard] },
-              { path: 'edit/:fieldId', component: TurSNSiteFieldPageComponent, canActivate: [AuthGuard] },
+              { path: ':fieldId', component: TurSNSiteFieldPageComponent, canActivate: [AuthGuard] },
               { path: '', redirectTo: 'list', pathMatch: 'full' }
             ]
           },

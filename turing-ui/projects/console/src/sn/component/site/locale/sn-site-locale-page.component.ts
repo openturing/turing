@@ -53,6 +53,7 @@ export class TurSNSiteLocalePageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Empty
   }
 
   getTurLocales(): Observable<TurLocale[]> {
@@ -88,7 +89,7 @@ export class TurSNSiteLocalePageComponent implements OnInit {
         this.notifier.notify("error", "Semantic navigation site locale was error: " + response);
       },
       () => {
-        // console.log('The POST observable is now completed.');
+        // The POST observable is now completed.
       });
   }
 
@@ -104,9 +105,8 @@ export class TurSNSiteLocalePageComponent implements OnInit {
         this.notifier.notify("error", "Semantic navigation site locale was error: " + response);
       },
       () => {
-        // console.log('The POST observable is now completed.');
+        // The POST observable is now completed.
       });
-
   }
 
   public compareNLPInstance(n1: TurNLPInstance, n2: TurNLPInstance): boolean {
