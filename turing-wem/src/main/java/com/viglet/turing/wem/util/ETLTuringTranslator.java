@@ -102,7 +102,7 @@ public class ETLTuringTranslator {
 
 	}
 
-	private String translateChannel(ManagedObject mo) throws ApplicationException, ValidationException {
+	public String translateChannel(ManagedObject mo) throws ApplicationException, ValidationException {
 		String chFurlName;
 		String moFurlName;
 		if (log.isDebugEnabled()) {
@@ -115,7 +115,7 @@ public class ETLTuringTranslator {
 		return moFurlName;
 	}
 
-	private String translateContentInstance(ManagedObject mo)
+	public String translateContentInstance(ManagedObject mo)
 			throws ApplicationException, RemoteException, ValidationException, AuthorizationException {
 		String chFurlName = "";
 		ChannelRef[] channelRefs;

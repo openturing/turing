@@ -16,19 +16,6 @@
  */
 package com.viglet.turing.api.sn.queue;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
@@ -38,6 +25,14 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.TurSolrUtils;
 import com.viglet.turing.utils.TurUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.*;
 
 /**
  * @author Alexandre Oliveira
@@ -200,15 +195,21 @@ public class TurSNMergeProvidersProcess {
         });
     }
 
-    private void addProviderToSEDocument(Map<String, Object> documentAttribs, String providerName) {
-        List<?> providers = (ArrayList<?>) documentAttribs.get(PROVIDER_ATTRIBUTE);
+    private void addProviderToSEDocument(Map<String, Object> documentAttributes, String providerName) {
+        Object providerAttribute = documentAttributes.get(PROVIDER_ATTRIBUTE);
+        List<String> providers = new ArrayList<>();
+        if (providerAttribute instanceof ArrayList) {
+            providers = (ArrayList<String>) documentAttributes.get(PROVIDER_ATTRIBUTE);
+        } else {
+            providers.add((String) providerAttribute);
+        }
         if (!providers.isEmpty()) {
             List<String> list = turUtils.cloneListOfTermsAsString(providers);
 
             if (!providers.contains(providerName)) {
                 list.add(providerName);
             }
-            documentAttribs.put(PROVIDER_ATTRIBUTE, list);
+            documentAttributes.put(PROVIDER_ATTRIBUTE, list);
         } else {
             logger.debug("The providers attribute of Merge Providers is empty");
         }

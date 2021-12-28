@@ -401,15 +401,13 @@ public class TuringUtils {
         return sites;
     }
 
-    public static String getSiteDomain(ManagedObject mo, IHandlerConfiguration config)
-            throws ApplicationException, RemoteException, AuthorizationException, ValidationException {
+    public static String getSiteDomain(ManagedObject mo, IHandlerConfiguration config) {
         String siteName = getSiteName(mo, config);
         return getSiteDomainBySiteName(siteName, config);
 
     }
 
-    public static String getSiteDomainBySiteName(String siteName, IHandlerConfiguration config)
-            throws ApplicationException, RemoteException, AuthorizationException, ValidationException {
+    public static String getSiteDomainBySiteName(String siteName, IHandlerConfiguration config) {
         if (log.isDebugEnabled()) {
             log.debug("ETLTuringTranslator getSiteUrl:" + siteName);
         }
@@ -419,7 +417,7 @@ public class TuringUtils {
     }
 
     public static String getSiteUrl(ManagedObject mo, IHandlerConfiguration config)
-            throws ApplicationException, RemoteException, AuthorizationException, ValidationException {
+            throws ApplicationException {
         if (mo != null) {
             String siteNameAssociated = getSiteNameFromContentInstance(mo, config);
             if (siteNameAssociated != null) {
@@ -439,13 +437,12 @@ public class TuringUtils {
 
     }
 
-    private static String getSiteNameFromContentInstance(ManagedObject mo, IHandlerConfiguration config)
-            throws ApplicationException, RemoteException, AuthorizationException, ValidationException {
+    public static String getSiteNameFromContentInstance(ManagedObject mo, IHandlerConfiguration config) {
         return getSiteName(mo, config);
     }
 
     private static String createSiteURL(ManagedObject mo, IHandlerConfiguration config)
-            throws ApplicationException, RemoteException, AuthorizationException, ValidationException {
+            throws ApplicationException {
         Site site = getSite(mo, config);
         String siteName = site.getName();
         if (log.isDebugEnabled()) {
