@@ -17,15 +17,24 @@
 
 package com.viglet.turing.solr;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.AbstractMap.SimpleEntry;
-
+import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteField;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
+import com.viglet.turing.se.TurSEParameters;
+import com.viglet.turing.se.facet.TurSEFacetResult;
+import com.viglet.turing.se.facet.TurSEFacetResultAttr;
+import com.viglet.turing.se.field.TurSEFieldType;
+import com.viglet.turing.se.result.TurSEResult;
+import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
+import com.viglet.turing.se.similar.TurSESimilarResult;
+import com.viglet.turing.sn.TurSNFieldType;
+import com.viglet.turing.sn.TurSNUtils;
+import com.viglet.turing.sn.tr.TurSNTargetingRuleMethod;
+import com.viglet.turing.sn.tr.TurSNTargetingRules;
+import com.viglet.turing.utils.TurSNSiteFieldUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -46,24 +55,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteField;
-import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
-import com.viglet.turing.se.TurSEParameters;
-import com.viglet.turing.se.facet.TurSEFacetResult;
-import com.viglet.turing.se.facet.TurSEFacetResultAttr;
-import com.viglet.turing.se.field.TurSEFieldType;
-import com.viglet.turing.se.result.TurSEResult;
-import com.viglet.turing.se.result.TurSEResults;
-import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
-import com.viglet.turing.se.similar.TurSESimilarResult;
-import com.viglet.turing.sn.TurSNFieldType;
-import com.viglet.turing.sn.TurSNUtils;
-import com.viglet.turing.sn.tr.TurSNTargetingRuleMethod;
-import com.viglet.turing.sn.tr.TurSNTargetingRules;
-import com.viglet.turing.utils.TurSNSiteFieldUtils;
+import java.io.IOException;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.*;
 
 @Component
 @Transactional
@@ -309,15 +303,13 @@ public class TurSolr {
 	}
 
 	public Optional<TurSEResults> retrieveSolrFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
-			TurSNSiteSearchContext context) {
+			TurSNSiteSearchContext context, TurSESpellCheckResult turSESpellCheckResult) {
 
 		TurSEParameters turSEParameters = context.getTurSEParameters();
 		SolrQuery query = new SolrQuery();
 		setRows(turSNSite, turSEParameters);
 		setSortEntry(turSNSite, query, turSEParameters);
-
 		if (TurSNUtils.isAutoCorrectionEnabled(context, turSNSite)) {
-			TurSESpellCheckResult turSESpellCheckResult = spellCheckTerm(turSolrInstance, turSEParameters.getQuery());
 			if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
 				query.setQuery(turSESpellCheckResult.getCorrectedText());
 			} else {
@@ -338,12 +330,12 @@ public class TurSolr {
 		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = prepareQueryFacet(turSNSite, query);
 
 		return executeSolrQueryFromSN(turSolrInstance, turSNSite, turSEParameters, query, turSNSiteMLTFieldExts,
-				turSNSiteFacetFieldExts, turSNSiteHlFieldExts);
+				turSNSiteFacetFieldExts, turSNSiteHlFieldExts, turSESpellCheckResult);
 	}
 
 	private Optional<TurSEResults> executeSolrQueryFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
 			TurSEParameters turSEParameters, SolrQuery query, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts,
-			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts, List<TurSNSiteFieldExt> turSNSiteHlFieldExts) {
+			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts, List<TurSNSiteFieldExt> turSNSiteHlFieldExts, TurSESpellCheckResult turSESpellCheckResult) {
 		TurSEResults turSEResults = new TurSEResults();
 
 		try {
@@ -360,7 +352,7 @@ public class TurSolr {
 
 			setMLT(turSNSite, turSNSiteMLTFieldExts, turSEResults, similarResults);
 
-			turSEResults.setSpellCheck(spellCheckTerm(turSolrInstance, turSEParameters.getQuery()));
+			turSEResults.setSpellCheck(turSESpellCheckResult);
 
 			return Optional.of(turSEResults);
 		} catch (IOException | SolrServerException e) {

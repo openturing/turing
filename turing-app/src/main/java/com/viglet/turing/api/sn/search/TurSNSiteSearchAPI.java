@@ -17,48 +17,7 @@
 
 package com.viglet.turing.api.sn.search;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrField;
-import com.viglet.turing.solr.TurSolrInstance;
-import com.viglet.turing.solr.TurSolrInstanceProcess;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
-
-import com.viglet.turing.api.sn.bean.TurSNSiteFilterQueryBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteLocaleBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchDefaultFieldsBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentMetadataBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetItemBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetLabelBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchPaginationBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContextBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContextQueryBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchResultsBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchWidgetBean;
+import com.viglet.turing.api.sn.bean.*;
 import com.viglet.turing.api.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
@@ -76,6 +35,20 @@ import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.se.similar.TurSESimilarResult;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.TurSNUtils;
+import com.viglet.turing.solr.TurSolr;
+import com.viglet.turing.solr.TurSolrField;
+import com.viglet.turing.solr.TurSolrInstance;
+import com.viglet.turing.solr.TurSolrInstanceProcess;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/sn/{siteName}/search")
@@ -121,8 +94,9 @@ public class TurSNSiteSearchAPI {
 			TurSEParameters turSEParameters = turSNSiteSearchContext.getTurSEParameters();
 			turSEParameters.setCurrentPage(prepareQueryCurrentPage(turSEParameters));
 			turSEParameters.setRows(prepareQueryRows(turSEParameters));
-			prepareQueryAutoCorrection(q, turSNSiteSearchContext, turSNSite, turSolrInstance);
-			turSolr.retrieveSolrFromSN(turSolrInstance, turSNSite, turSNSiteSearchContext).ifPresent(turSEResults -> {
+			TurSESpellCheckResult turSESpellCheckResult = prepareQueryAutoCorrection(q, turSNSiteSearchContext, turSNSite, turSolrInstance);
+			turSolr.retrieveSolrFromSN(turSolrInstance, turSNSite, turSNSiteSearchContext, turSESpellCheckResult)
+					.ifPresent(turSEResults -> {
 				List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = turSNSiteFieldExtRepository
 						.findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
 				Map<String, TurSNSiteFieldExt> facetMap = setFacetMap(turSNSiteFacetFieldExts);
@@ -150,15 +124,18 @@ public class TurSNSiteSearchAPI {
 		return Collections.emptyList();
 	}
 
-	private void prepareQueryAutoCorrection(String q, TurSNSiteSearchContext turSNSiteSearchContext,
+	private TurSESpellCheckResult prepareQueryAutoCorrection(String q, TurSNSiteSearchContext turSNSiteSearchContext,
 			TurSNSite turSNSite, TurSolrInstance turSolrInstance) {
+		TurSESpellCheckResult turSESpellCheckResult = turSolr.spellCheckTerm(turSolrInstance, q);
 		if (TurSNUtils.isAutoCorrectionEnabled(turSNSiteSearchContext, turSNSite)) {
-			TurSESpellCheckResult turSESpellCheckResult = turSolr.spellCheckTerm(turSolrInstance, q);
+
 			if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
 				turSNSiteSearchContext.setUri(TurSNUtils.addOrReplaceParameter(turSNSiteSearchContext.getUri(), "q",
 						turSESpellCheckResult.getCorrectedText()));
 			}
 		}
+
+		return turSESpellCheckResult;
 	}
 
 	private Map<String, TurSNSiteFieldExt> setFacetMap(List<TurSNSiteFieldExt> turSNSiteFacetFieldExts) {
