@@ -32,7 +32,7 @@
       <div class="d-table">
         <div class="d-table-cell col-4">
           <a [routerLink]="['/sn/site', getId(), 'field', snSiteField.id ]">
-            <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
+            <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
               class="float-left">
               <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSiteField.name | lowercase">
                 Avatar
@@ -93,8 +93,8 @@
     <div *ngFor="let snSiteField of snSiteFields" class="Box-body">
       <div class="d-table">
         <div class="d-table-cell col-6">
-          <a [routerLink]="['/sn/site', getId(), 'field', 'edit', snSiteField.id ]">
-            <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
+          <a [routerLink]="['/sn/site', getId(), 'field', snSiteField.id ]">
+            <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
               class="float-left">
               <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSiteField.name | lowercase">
                 Avatar

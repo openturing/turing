@@ -3,7 +3,7 @@
   <div class="Subhead mt-4">
     <div class="Subhead-heading">
       <div *ngIf="!isNewObject()" class="d-flex">
-        <div style="background-color: whitesmoke; height: 32px; border-radius: 50%;">
+        <div style="height: 32px; border-radius: 50%;">
           <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="seInstance.title | lowercase">
           </svg>
         </div>
@@ -12,7 +12,7 @@
         </div>
       </div>
       <div *ngIf="isNewObject()" class="d-flex">
-        <div style="background-color: whitesmoke; height: 32px; border-radius: 50%;">
+        <div style="height: 32px; border-radius: 50%;">
           <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="'new'">
           </svg>
         </div>
