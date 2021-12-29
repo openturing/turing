@@ -128,11 +128,14 @@ public class TurSNSiteSearchAPI {
 			TurSNSite turSNSite, TurSolrInstance turSolrInstance) {
 		TurSESpellCheckResult turSESpellCheckResult = turSolr.spellCheckTerm(turSolrInstance, q);
 		if (TurSNUtils.isAutoCorrectionEnabled(turSNSiteSearchContext, turSNSite)) {
-
+			turSESpellCheckResult.setUsingCorrected(true);
 			if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
 				turSNSiteSearchContext.setUri(TurSNUtils.addOrReplaceParameter(turSNSiteSearchContext.getUri(), "q",
 						turSESpellCheckResult.getCorrectedText()));
 			}
+		}
+		else {
+			turSESpellCheckResult.setUsingCorrected(false);
 		}
 
 		return turSESpellCheckResult;

@@ -178,7 +178,7 @@
           </details>
         </div>
         <div>
-          <div *ngIf="snSearch.widget.spellCheck.correctedText">
+          <div *ngIf="snSearch.widget.spellCheck.usingCorrectedText && snSearch.widget.spellCheck.correctedText">
             <h4 class="mb-1">Showing results for <button class="btn-link"
                 (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
                 style="font-style: italic;font-weight: bold;">{{snSearch.widget.spellCheck.corrected.text}}</button>.
@@ -186,6 +186,12 @@
             <p>Instead, search for <button class="btn-link"
                 (click)="turRedirect(snSearch.widget.spellCheck.original.link)"
                 style="font-weight: bold;">{{snSearch.widget.spellCheck.original.text}}</button></p>
+          </div>
+          <div *ngIf="!snSearch.widget.spellCheck.usingCorrectedText && snSearch.widget.spellCheck.correctedText">
+            <h4 class="mb-1">Did you mean '<button class="btn-link"
+                (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
+                style="font-style: italic;font-weight: bold;">{{snSearch.widget.spellCheck.corrected.text}}</button>'?
+            </h4>
           </div>
           <ul *ngIf="snSearch.results as snSearchResults;" class="repo-list">
             <ng-container *ngFor="let document of snSearchResults.document">
