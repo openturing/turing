@@ -467,8 +467,11 @@ public class TuringUtils {
             url.append(ContentUtil.getDefaultFormatForSite(getSite(mo, config)));
         }
         if (FurlUtil.isIncludeLocaleName(site)) {
-            url.append(SLASH);
-            url.append(getLocale(mo, config));
+            String locale = getLocale(mo, config);
+            if (locale != null) {
+                url.append(SLASH);
+                url.append(locale);
+            }
         }
         return url.toString();
     }
@@ -491,8 +494,8 @@ public class TuringUtils {
         try {
             Site site = getSite(mo, config);
             AsLocale asLocale = ContentUtil.getDefaultLocaleForSite(site);
-            if (asLocale != null && asLocale.getLocale() != null && asLocale.getLocale().getJavaLocale() != null) {
-                return asLocale.getLocale().getJavaLocale().toString();
+            if (asLocale != null &&  asLocale.getJavaLocale() != null) {
+                return asLocale.getJavaLocale().toString();
             }
         } catch (ApplicationException e) {
             log.error(e.getMessage(), e);
