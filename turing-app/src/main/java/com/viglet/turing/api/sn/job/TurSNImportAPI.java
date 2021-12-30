@@ -76,7 +76,7 @@ public class TurSNImportAPI {
         } else {
             turSNJobItems.forEach(turSNJobItem -> {
                 if (turSNJobItem != null) {
-                    logger.warn("Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't not exist",
+                    logger.warn("Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
                             turSNJobItem.getAttributes() != null ? turSNJobItem.getAttributes().get("id") : null,
                             siteName,
                             turSNJobItem.getLocale(),
