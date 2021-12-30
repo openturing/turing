@@ -17,24 +17,15 @@
 
 package com.viglet.turing.api.nlp;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
-
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/nlp/vendor")
@@ -44,19 +35,19 @@ public class TurNLPVendorAPI {
 	@Autowired
 	TurNLPVendorRepository turNLPVendorRepository;
 
-	@ApiOperation(value = "Natural Language Processing Vendor List")
+	@Operation(summary = "Natural Language Processing Vendor List")
 	@GetMapping
 	public List<TurNLPVendor> turNLPVendorList() {
 		return this.turNLPVendorRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Natural Language Processing Vendor")
+	@Operation(summary = "Show a Natural Language Processing Vendor")
 	@GetMapping("/{id}")
 	public TurNLPVendor turNLPVendorGet(@PathVariable String id) {
 		return this.turNLPVendorRepository.findById(id).orElse(new TurNLPVendor());
 	}
 
-	@ApiOperation(value = "Update a Natural Language Processing")
+	@Operation(summary = "Update a Natural Language Processing")
 	@PutMapping("/{id}")
 	public TurNLPVendor turNLPVendorUpdate(@PathVariable String id, @RequestBody TurNLPVendor turNLPVendor) {
 		return this.turNLPVendorRepository.findById(id).map(turNLPVendorEdit -> {
@@ -71,14 +62,14 @@ public class TurNLPVendorAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Natural Language Processing Vendor")
+	@Operation(summary = "Delete a Natural Language Processing Vendor")
 	@DeleteMapping("/{id}")
 	public boolean turNLPVendorDelete(@PathVariable String id) {
 		this.turNLPVendorRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Natural Language Processing Vendor")
+	@Operation(summary = "Create a Natural Language Processing Vendor")
 	@PostMapping
 	public TurNLPVendor turNLPVendorAdd(@RequestBody TurNLPVendor turNLPVendor) {
 		this.turNLPVendorRepository.save(turNLPVendor);

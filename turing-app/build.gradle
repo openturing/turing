@@ -1,6 +1,6 @@
 
 buildscript {
-    ext { springBootVersion = '2.5.7'
+    ext { springBootVersion = '2.6.2'
 	      hibernateVersion = '5.11.0.Final'
 		  httpClientVersion = '4.5.11'
 		  swaggerVersion = '3.0.0'
@@ -223,10 +223,9 @@ dependencies {
     //ActiveMQ using KahaDB
     implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.16.3'
 	
-	// Swagger
-	implementation group: 'io.springfox', name: 'springfox-swagger2', version: "${swaggerVersion}"
-	implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: "${swaggerVersion}"	
-	
+	// SpringDoc
+	implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.3'
+
 	// Schema.org
 	implementation group: 'com.squins.google.fork.schema-org-client', name: 'schema-org-client', version: '1.0.1'
 	
