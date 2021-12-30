@@ -35,7 +35,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 	private static final String FIELD_PROPERTY = "turing.field.";
 	private final TurSNJobItems turSNJobItems = new TurSNJobItems();
 	private ModifiableSolrParams params;
-
+	private TurMappingReader turMapping;
 	private Configuration config;
 
 	private String url;
@@ -69,6 +69,11 @@ public class TurNutchIndexWriter implements IndexWriter {
 			turSNJobItem.setAttributes(attributes);
 			turSNJobItems.add(turSNJobItem);
 		}
+		String snSite = turMapping.getSNSite(turSNJobItem.getAttributes().get("id").toString());
+
+		if (snSite != null) {
+			site = snSite;
+		}
 
 		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
 
@@ -84,7 +89,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 		turSNJobItem.setLocale(this.config.get(TurNutchConstants.LOCALE_PROPERTY, TurNutchCommons.LOCALE_DEFAULT_VALUE));
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-		Map<String, Object> attributes = new HashMap<String, Object>();
+		Map<String, Object> attributes = new HashMap<>();
 		Map<String, String> turCustomFields = this.config.getValByRegex("^" + FIELD_PROPERTY + "*");
 		String localeField = this.config.get(TurNutchConstants.LOCALE_FIELD_PROPERTY);
 		for (final Entry<String, NutchField> fieldMap : doc) {
@@ -102,15 +107,14 @@ public class TurNutchIndexWriter implements IndexWriter {
 				}
 				if (localeField != null && fieldMap.getKey().equals(TurNutchCommons.META_TAG_VALUE + localeField)) {
 					turSNJobItem.setLocale(TurNutchCommons.stripNonCharCodepoints((String) originalValue));
-				} else if (fieldMap.getKey().startsWith(TurNutchCommons.META_TAG_VALUE)) {
-					attributes.put(fieldMap.getKey().replace(TurNutchCommons.META_TAG_VALUE, ""), normalizedValue);
-				} else if (fieldMap.getKey().equals(TurNutchCommons.CONTENT_FIELD)) {
-					attributes.put(TurNutchCommons.TEXT_FIELD, normalizedValue);
 				} else if (fieldMap.getKey().equals(TurNutchCommons.TIMESTAMP_FIELD)) {
 					attributes.put(this.config.get(TIMESTAMP_PROPERTY, TurNutchCommons.TIMESTAMP_FIELD),
 							normalizedValue);
 				} else {
-					attributes.put(fieldMap.getKey(), normalizedValue);
+					attributes.put(turMapping.mapKey(fieldMap.getKey()), normalizedValue);
+					String sCopy = turMapping.mapCopyKey(fieldMap.getKey());
+					if (sCopy != fieldMap.getKey())
+						attributes.put(sCopy, normalizedValue);
 				}
 			}
 		}
@@ -134,6 +138,12 @@ public class TurNutchIndexWriter implements IndexWriter {
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 		totalAdds++;
+		String snSite = turMapping.getSNSite(turSNJobItem.getAttributes().get("id").toString());
+
+		if (snSite != null) {
+			site = snSite;
+		}
+
 		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
 	}
 
@@ -158,12 +168,12 @@ public class TurNutchIndexWriter implements IndexWriter {
 	}
 
 	@Override
-	public void open(JobConf job, String name) throws IOException {
-
+	public void open(JobConf job, String name) {
 		if (this.config.get(TurNutchConstants.FORCE_CONFIG) != null
 				&& this.config.get(TurNutchConstants.FORCE_CONFIG).equals(String.valueOf(true))) {
 			useTuringConfig();
 		} else {
+
 			if (this.config.get(TurNutchConstants.SOLR_SERVER_URL) != null) {
 				useSolrConfig();
 			} else {
@@ -214,6 +224,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 	}
 
 	private void init(JobConf job) {
+		turMapping = TurMappingReader.getInstance(job);
 		delete = config.getBoolean(IndexerMapReduce.INDEXER_DELETE, false);
 		weightField = job.get(TurNutchConstants.WEIGHT_FIELD, StringUtils.EMPTY);
 		// parse optional params
