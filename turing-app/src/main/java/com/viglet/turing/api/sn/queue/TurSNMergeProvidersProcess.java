@@ -54,7 +54,7 @@ public class TurSNMergeProvidersProcess {
     private TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository;
 
     @SuppressWarnings("unchecked")
-    public Map<String, Object> mergeDocuments(TurSNSite turSNSite, String locale,
+    public Map<String, Object> mergeDocuments(TurSNSite turSNSite,
                                               Map<String, Object> queueDocumentAttrs) {
         List<TurSNSiteMergeProviders> turSNSiteMergeProvidersList = turSNSiteMergeProvidersRepository
                 .findByTurSNSite(turSNSite);
@@ -90,9 +90,8 @@ public class TurSNMergeProvidersProcess {
         if (hasSolrDocuments(resultsFromAndTo)) {
             TurSEResult turSEResultFromAndTo = TurSolrUtils
                     .createTurSEResultFromDocument(resultsFromAndTo.iterator().next());
-            Map<String, Object> mergedDocumentAttribs = doMergeContent(queueDocumentAttrs,
+            return doMergeContent(queueDocumentAttrs,
                     turSEResultFromAndTo.getFields(), turSNSiteMergeProviders);
-            return mergedDocumentAttribs;
         } else {
             if (hasSolrDocuments(resultsFrom) && hasSolrDocuments(resultsTo)) {
                 desindexSolrDocuments(turSNSiteMergeProviders, resultsFrom);
@@ -114,23 +113,21 @@ public class TurSNMergeProvidersProcess {
         if (hasSolrDocuments(resultsFromAndTo)) {
             TurSEResult turSEResultFromAndTo = TurSolrUtils
                     .createTurSEResultFromDocument(resultsFromAndTo.iterator().next());
-            Map<String, Object> mergedDocumentAttribs = doMergeContent(turSEResultFromAndTo.getFields(),
+            return doMergeContent(turSEResultFromAndTo.getFields(),
                     queueDocumentAttrs, turSNSiteMergeProviders);
-            return mergedDocumentAttribs;
         } else if (hasSolrDocuments(resultsFrom)) {
             TurSEResult turSEResultFrom = TurSolrUtils.createTurSEResultFromDocument(resultsFrom.iterator().next());
-            Map<String, Object> mergedDocumentAttribs = doMergeContent(turSEResultFrom.getFields(), queueDocumentAttrs,
+            Map<String, Object> mergedDocumentAttributes = doMergeContent(turSEResultFrom.getFields(), queueDocumentAttrs,
                     turSNSiteMergeProviders);
             desindexSolrDocuments(turSNSiteMergeProviders, resultsFrom);
-            return mergedDocumentAttribs;
+            return mergedDocumentAttributes;
         }
         return queueDocumentAttrs;
     }
 
     private Map<String, Object> doMergeContent(Map<String, Object> attributesFrom, Map<String, Object> attributesTo,
                                                TurSNSiteMergeProviders turSNSiteMergeProviders) {
-        Map<String, Object> mergedDocumentAttribs = new HashMap<>();
-        mergedDocumentAttribs = attributesTo;
+        Map<String, Object> mergedDocumentAttribs = attributesTo;
         addProviderToSEDocument(mergedDocumentAttribs, turSNSiteMergeProviders.getProviderFrom());
         addOverwrittenAttributesToSolrDocument(attributesFrom, mergedDocumentAttribs,
                 turSNSiteMergeProviders.getOverwrittenFields());
@@ -145,16 +142,14 @@ public class TurSNMergeProvidersProcess {
         Map<String, Object> queryMapTo = new HashMap<>();
         queryMapTo.put(turSNSiteMergeProviders.getRelationTo(), relationValue);
         queryMapTo.put(PROVIDER_ATTRIBUTE, turSNSiteMergeProviders.getProviderTo());
-        SolrDocumentList resultsTo = solrResultAnd(turSNSiteMergeProviders, queryMapTo);
-        return resultsTo;
+        return solrResultAnd(turSNSiteMergeProviders, queryMapTo);
     }
 
     private SolrDocumentList solrDocumentsFrom(TurSNSiteMergeProviders turSNSiteMergeProviders, String relationValue) {
         Map<String, Object> queryMapFrom = new HashMap<>();
         queryMapFrom.put(turSNSiteMergeProviders.getRelationFrom(), relationValue);
         queryMapFrom.put(PROVIDER_ATTRIBUTE, turSNSiteMergeProviders.getProviderFrom());
-        SolrDocumentList resultsFrom = solrResultAnd(turSNSiteMergeProviders, queryMapFrom);
-        return resultsFrom;
+        return solrResultAnd(turSNSiteMergeProviders, queryMapFrom);
     }
 
     private SolrDocumentList solrDocumentsFromAndTo(TurSNSiteMergeProviders turSNSiteMergeProviders,
@@ -163,8 +158,7 @@ public class TurSNMergeProvidersProcess {
         queryMapFrom.put(relationAttrib, relationValue);
         queryMapFrom.put(PROVIDER_ATTRIBUTE, String.format("(\"%s\" AND \"%s\")",
                 turSNSiteMergeProviders.getProviderFrom(), turSNSiteMergeProviders.getProviderFrom()));
-        SolrDocumentList resultsFrom = solrResultAnd(turSNSiteMergeProviders, queryMapFrom);
-        return resultsFrom;
+        return solrResultAnd(turSNSiteMergeProviders, queryMapFrom);
     }
 
     private void desindexSolrDocuments(TurSNSiteMergeProviders turSNSiteMergeProviders, List<SolrDocument> results) {
@@ -178,17 +172,16 @@ public class TurSNMergeProvidersProcess {
                                            Map<String, Object> attributes) {
         return turSolrInstanceProcess
                 .initSolrInstance(turSNSiteMergeProviders.getTurSNSite(), turSNSiteMergeProviders.getLocale())
-                .map(turSolrInstance -> {
-                    return turSolr.solrResultAnd(turSolrInstance, attributes);
-                }).orElse(new SolrDocumentList());
+                .map(turSolrInstance -> turSolr.solrResultAnd(turSolrInstance, attributes)).orElse(new SolrDocumentList());
 
     }
 
     private void addOverwrittenAttributesToSolrDocument(Map<String, Object> queueDocumentAttrs,
-                                                        Map<String, Object> attributesTo, Set<TurSNSiteMergeProvidersField> overwrittenFields) {
+                                                        Map<String, Object> attributesTo,
+                                                        Set<TurSNSiteMergeProvidersField> overwrittenFields) {
         queueDocumentAttrs.entrySet().forEach(attributeFrom -> {
             if (overwrittenFields != null && overwrittenFields.stream()
-                    .filter(o -> o.getName().equals(attributeFrom.getKey())).findFirst().isPresent()) {
+                    .anyMatch(o -> o.getName().equals(attributeFrom.getKey()))) {
                 attributesTo.put(attributeFrom.getKey(), attributeFrom.getValue());
 
             }

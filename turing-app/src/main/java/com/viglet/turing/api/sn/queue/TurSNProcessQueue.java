@@ -17,27 +17,6 @@
 
 package com.viglet.turing.api.sn.queue;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TimeZone;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jms.annotation.JmsListener;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,6 +41,17 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.thesaurus.TurThesaurusProcessor;
 import com.viglet.turing.utils.TurUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Map.Entry;
 
 @Component
 public class TurSNProcessQueue {
@@ -116,7 +106,7 @@ public class TurSNProcessQueue {
                         if (status) {
                             processQueueInfo(turSNSite, turSNJobItem);
                         } else {
-                            logger.warn("Object ID '{}' of '{}' SN Site ({}). was not processed",
+                            logger.warn("Object ID '{}' of '{}' SN Site ({}) was not processed",
                                     turSNJobItem.getAttributes().get("id"),
                                     turSNSite.getName(),
                                     turSNJobItem.getLocale());
@@ -130,7 +120,7 @@ public class TurSNProcessQueue {
     }
 
     private boolean isSpotlightJob(TurSNJobItem turSNJobItem) {
-        return turSNJobItem.getAttributes().containsKey("type")
+        return turSNJobItem != null && turSNJobItem.getAttributes() != null && turSNJobItem.getAttributes().containsKey("type")
                 && turSNJobItem.getAttributes().get("type").equals("TUR_SPOTLIGHT");
     }
 
@@ -156,8 +146,8 @@ public class TurSNProcessQueue {
         if (turSNJobItem.getAttributes().containsKey("id")) {
             turSNSiteSpotlightRepository.delete((String) turSNJobItem.getAttributes().get("id"));
         } else if (turSNJobItem.getAttributes().containsKey(TurSNMergeProvidersProcess.PROVIDER_ATTRIBUTE)) {
-            logger.info("Provider Value: "
-                    + (String) turSNJobItem.getAttributes().get(TurSNMergeProvidersProcess.PROVIDER_ATTRIBUTE));
+            logger.info("Provider Value: {}",
+                    turSNJobItem.getAttributes().get(TurSNMergeProvidersProcess.PROVIDER_ATTRIBUTE));
             Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
                     .findByProvider((String) turSNJobItem.getAttributes().get(TurSNMergeProvidersProcess.PROVIDER_ATTRIBUTE));
             turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
@@ -259,7 +249,7 @@ public class TurSNProcessQueue {
         processThesaurus(turSNJobItem, turSNSite, consolidateResults);
 
         Map<String, Object> attributes = this.removeDuplicateTerms(
-                turSNMergeProvidersProcess.mergeDocuments(turSNSite, turSNJobItem.getLocale(), consolidateResults));
+                turSNMergeProvidersProcess.mergeDocuments(turSNSite, consolidateResults));
 
         // SE
         return turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale()).map(turSolrInstance -> {

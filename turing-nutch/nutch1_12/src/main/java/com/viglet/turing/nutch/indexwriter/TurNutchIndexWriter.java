@@ -1,16 +1,9 @@
 package com.viglet.turing.nutch.indexwriter;
 
-import java.lang.invoke.MethodHandles;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.io.IOException;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
+import com.viglet.turing.client.sn.job.TurSNJobAction;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.nutch.commons.TurNutchCommons;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
@@ -22,10 +15,17 @@ import org.apache.solr.common.params.ModifiableSolrParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.viglet.turing.client.sn.job.TurSNJobAction;
-import com.viglet.turing.client.sn.job.TurSNJobItem;
-import com.viglet.turing.client.sn.job.TurSNJobItems;
-import com.viglet.turing.nutch.commons.TurNutchCommons;
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import static java.net.URLDecoder.decode;
 
 public class TurNutchIndexWriter implements IndexWriter {
 
@@ -55,7 +55,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 
 		try {
-			key = URLDecoder.decode(key, StandardCharsets.UTF_8);
+			key = decode(key, StandardCharsets.UTF_8);
 		} catch (IllegalArgumentException e) {
 			logger.warn("Could not decode: " + key + ", it probably wasn't encoded in the first place..");
 		}

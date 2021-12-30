@@ -17,10 +17,10 @@
 
 package com.viglet.turing.api.sn.job;
 
+import org.springframework.stereotype.Component;
+
 import java.io.Serializable;
 import java.util.Map;
-
-import org.springframework.stereotype.Component;
 
 @Component
 public class TurSNJobItem implements Serializable{

@@ -47,17 +47,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/sn/{siteName}/import")
 @Tag(name = "Semantic Navigation Import", description = "Semantic Navigation Import API")
 public class TurSNImportAPI {
-    private static final Logger logger = LogManager.getLogger(TurSNImportAPI.class.getName());
+    private static final Logger logger = LogManager.getLogger(TurSNImportAPI.class);
+    private static final String FILE_PROTOCOL = "file://";
     @Autowired
     private JmsMessagingTemplate jmsMessagingTemplate;
     @Autowired
     private TurSNSiteRepository turSNSiteRepository;
+
     private static final String EXPORT_FILE = "export.json";
     public static final String INDEXING_QUEUE = "indexing.queue";
 
@@ -71,6 +74,18 @@ public class TurSNImportAPI {
             send(turSNJob);
             return true;
         } else {
+            turSNJobItems.forEach(turSNJobItem -> {
+                if (turSNJobItem != null) {
+                    logger.warn("Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't not exist",
+                            turSNJobItem.getAttributes() != null ? turSNJobItem.getAttributes().get("id") : null,
+                            siteName,
+                            turSNJobItem.getLocale(),
+                            siteName);
+                } else {
+                    logger.warn("No JobItem' of '{}' SN Site",
+                            siteName);
+                }
+            });
             return false;
         }
 
@@ -81,81 +96,12 @@ public class TurSNImportAPI {
         File extractFolder = TurUtils.extractZipFile(multipartFile);
         if (extractFolder != null) {
             TurSNJobItems turSNJobItems = null;
-            try (FileInputStream fileInputStream =  new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator).concat(EXPORT_FILE))){
-                turSNJobItems = new ObjectMapper().readValue(fileInputStream,TurSNJobItems.class);
-                turSNJobItems.forEach(turSNJobItem -> {
-                    turSNJobItem.getAttributes().entrySet().forEach(attribute -> {
-                        if (attribute.getValue().toString().startsWith("file://")) {
-                            String fileName = attribute.getValue().toString().replace("file://", "");
-                            try (FileInputStream fileInputStreamAttribute = new FileInputStream(extractFolder.getAbsolutePath() + File.separator + fileName)){
-                                StringBuilder contentFile = new StringBuilder();
-                                AutoDetectParser parser = new AutoDetectParser();
-                                // -1 = no limit of number of characters
-                                BodyContentHandler handler = new BodyContentHandler(-1);
-                                Metadata metadata = new Metadata();
-
-                                TesseractOCRConfig config = new TesseractOCRConfig();
-                                PDFParserConfig pdfConfig = new PDFParserConfig();
-                                pdfConfig.setExtractInlineImages(true);
-
-                                ParseContext parseContext = new ParseContext();
-                                parseContext.set(TesseractOCRConfig.class, config);
-                                parseContext.set(PDFParserConfig.class, pdfConfig);
-
-                                parseContext.set(Parser.class, parser);
-
-                                EmbeddedDocumentExtractor embeddedDocumentExtractor = new EmbeddedDocumentExtractor() {
-                                    @Override
-                                    public boolean shouldParseEmbedded(Metadata metadata) {
-                                        return true;
-                                    }
-
-                                    @Override
-                                    public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
-                                                              boolean outputHtml) throws SAXException, IOException {
-
-                                        BodyContentHandler handlerInner = new BodyContentHandler(-1);
-                                        AutoDetectParser parserInner = new AutoDetectParser();
-
-                                        Metadata metadataInner = new Metadata();
-
-                                        TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
-                                        PDFParserConfig pdfConfigInner = new PDFParserConfig();
-                                        pdfConfigInner.setExtractInlineImages(true);
-
-                                        ParseContext parseContextInner = new ParseContext();
-                                        parseContextInner.set(TesseractOCRConfig.class, tesseractOCRConfig);
-                                        parseContextInner.set(PDFParserConfig.class, pdfConfigInner);
-
-                                        parseContextInner.set(Parser.class, parserInner);
-
-                                        File tempFile = File.createTempFile(UUID.randomUUID().toString(), null, TurUtils.addSubDirToStoreDir("tmp"));
-                                        Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                                        try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
-                                            parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
-                                            contentFile.append(cleanTextContent(handlerInner.toString()));
-
-                                        } catch (IOException | SAXException | TikaException e) {
-                                            logger.error(e);
-                                        }
-                                        FileUtils.delete(tempFile);
-                                    }
-                                };
-
-                                parseContext.set(EmbeddedDocumentExtractor.class, embeddedDocumentExtractor);
-
-                                parser.parse(fileInputStreamAttribute, handler, metadata, parseContext);
-
-                                contentFile.append(cleanTextContent(handler.toString()));
-
-                                attribute.setValue(contentFile.toString());
-
-                            } catch (IOException | SAXException | TikaException e) {
-                                logger.error(e);
-                            }
-                        }
-                    });
-                });
+            try (FileInputStream fileInputStream = new FileInputStream(extractFolder.getAbsolutePath()
+                    .concat(File.separator).concat(EXPORT_FILE))) {
+                turSNJobItems = new ObjectMapper().readValue(fileInputStream, TurSNJobItems.class);
+                turSNJobItems.forEach(turSNJobItem ->
+                        turSNJobItem.getAttributes().entrySet().forEach(attribute ->
+                                extractTextOfFileAttribute(extractFolder, attribute)));
             } catch (IOException e) {
                 logger.error(e.getMessage(), e);
             }
@@ -170,21 +116,80 @@ public class TurSNImportAPI {
         return false;
     }
 
-    private static String cleanTextContent(String text) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Original Text: {}", text.replace("\n", "\\\\n \n").replace("\t", "\\\\t \t"));
-        }
-        // Remove 2 or more spaces
-        text = text.trim().replaceAll("[\\t\\r]", "\\n");
-        text = text.trim().replaceAll(" +", " ");
+    private void extractTextOfFileAttribute(File extractFolder, Map.Entry<String, Object> attribute) {
+        if (attribute.getValue().toString().startsWith(FILE_PROTOCOL)) {
+            String fileName = attribute.getValue().toString().replace(FILE_PROTOCOL, "");
+            try (FileInputStream fileInputStreamAttribute =
+                         new FileInputStream(extractFolder.getAbsolutePath() + File.separator + fileName)) {
+                StringBuilder contentFile = new StringBuilder();
+                AutoDetectParser parser = new AutoDetectParser();
+                // -1 = no limit of number of characters
+                BodyContentHandler handler = new BodyContentHandler(-1);
+                Metadata metadata = new Metadata();
 
-        text = text.trim();
+                TesseractOCRConfig config = new TesseractOCRConfig();
+                PDFParserConfig pdfConfig = new PDFParserConfig();
+                pdfConfig.setExtractInlineImages(true);
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Cleaned Text: {}", text);
+                ParseContext parseContext = new ParseContext();
+                parseContext.set(TesseractOCRConfig.class, config);
+                parseContext.set(PDFParserConfig.class, pdfConfig);
+
+                parseContext.set(Parser.class, parser);
+
+                EmbeddedDocumentExtractor embeddedDocumentExtractor = new EmbeddedDocumentExtractor() {
+                    @Override
+                    public boolean shouldParseEmbedded(Metadata metadata) {
+                        return true;
+                    }
+
+                    @Override
+                    public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
+                                              boolean outputHtml) throws IOException {
+
+                        BodyContentHandler handlerInner = new BodyContentHandler(-1);
+                        AutoDetectParser parserInner = new AutoDetectParser();
+
+                        Metadata metadataInner = new Metadata();
+
+                        TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
+                        PDFParserConfig pdfConfigInner = new PDFParserConfig();
+                        pdfConfigInner.setExtractInlineImages(true);
+
+                        ParseContext parseContextInner = new ParseContext();
+                        parseContextInner.set(TesseractOCRConfig.class, tesseractOCRConfig);
+                        parseContextInner.set(PDFParserConfig.class, pdfConfigInner);
+
+                        parseContextInner.set(Parser.class, parserInner);
+
+                        File tempFile = File.createTempFile(UUID.randomUUID().toString(), null,
+                                TurUtils.addSubDirToStoreDir("tmp"));
+                        Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
+                            parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
+                            contentFile.append(TurUtils.cleanTextContent(handlerInner.toString()));
+
+                        } catch (IOException | SAXException | TikaException e) {
+                            logger.error(e);
+                        }
+                        FileUtils.delete(tempFile);
+                    }
+                };
+
+                parseContext.set(EmbeddedDocumentExtractor.class, embeddedDocumentExtractor);
+
+                parser.parse(fileInputStreamAttribute, handler, metadata, parseContext);
+
+                contentFile.append(TurUtils.cleanTextContent(handler.toString()));
+
+                attribute.setValue(contentFile.toString());
+
+            } catch (IOException | SAXException | TikaException e) {
+                logger.error(e);
+            }
         }
-        return text;
     }
+
 
     public void send(TurSNJob turSNJob) {
 
@@ -209,9 +214,8 @@ public class TurSNImportAPI {
                 } else if (turJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
                     action = "deindex";
                 }
-                logger.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site.", action,
-                        turJobItem.getAttributes().get("id"), turSNSite.getName());
-
+                logger.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).", action,
+                        turJobItem.getAttributes().get("id"), turSNSite.getName(), turJobItem.getLocale());
             }
         });
     }
