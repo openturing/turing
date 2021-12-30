@@ -234,7 +234,7 @@ dependencies {
 	implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.25'
 	
 	//Language Tool
-	implementation group: 'org.languagetool', name: 'language-all', version: '5.5'
+	implementation group: 'org.languagetool', name: 'language-all', version: '5.6'
 	
 	testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
