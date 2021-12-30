@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
- * 
+ * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -24,17 +24,12 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurCTDName implements ExtAttributeInterface {
-	private static final ContextLogger log = ContextLogger.getLogger(TurCTDName.class);
+    private static final ContextLogger log = ContextLogger.getLogger(TurCTDName.class);
 
-	@Override
-	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-			IHandlerConfiguration config) throws Exception {
-		if (log.isDebugEnabled())
-			log.debug("Executing TurCTDName");
-
-		TurMultiValue turMultiValue = new TurMultiValue();
-		turMultiValue.add(ci != null ? ci.getObjectType().getData().getName() : null);
-		
-		return turMultiValue;		
-	}
+    @Override
+    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
+                                 IHandlerConfiguration config) throws Exception {
+        log.debug("Executing TurCTDName");
+        return TurMultiValue.singleItem(ci != null ? ci.getObjectType().getData().getName() : null);
+    }
 }

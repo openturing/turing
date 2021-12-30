@@ -16,9 +16,6 @@
  */
 package com.viglet.turing.wem.broker.indexer;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -29,6 +26,9 @@ import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AsLocaleData;
 import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class TurWEMDeindex {
 
 	private TurWEMDeindex() {
@@ -37,7 +37,6 @@ public class TurWEMDeindex {
 
 	// This method deletes the content to the Viglet Turing broker
 	public static void indexDelete(ManagedObjectVCMRef managedObjectVCMRef, IHandlerConfiguration config) {
-
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 		String siteName = TuringUtils.getSiteNameFromManagedObjectVCMRef(managedObjectVCMRef, config);

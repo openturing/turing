@@ -39,9 +39,7 @@ public class TurSpotlightExtraFields implements ExtAttributeInterface {
     @Override
     public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
                                  IHandlerConfiguration config) throws Exception {
-        if (log.isDebugEnabled()) {
-            log.debug("Executing TurSpotlightExtraFields");
-        }
+        log.debug("Executing TurSpotlightExtraFields");
         List<TurSpotlightContent> turSpotlightContents = new ArrayList<>();
         Arrays.asList(ci.getRelations(tag.getSrcAttributeRelation().get(0))).forEach(attributedObject -> {
             try {
@@ -64,12 +62,7 @@ public class TurSpotlightExtraFields implements ExtAttributeInterface {
                 log.error(e.getMessage(), e);
             }
         });
-
-        String json = new ObjectMapper().writeValueAsString(turSpotlightContents);
-        TurMultiValue turMultiValue = new TurMultiValue();
-        turMultiValue.add(json);
-
-        return turMultiValue;
+        return TurMultiValue.singleItem(new ObjectMapper().writeValueAsString(turSpotlightContents));
     }
 
     class TurCTDAttributes {

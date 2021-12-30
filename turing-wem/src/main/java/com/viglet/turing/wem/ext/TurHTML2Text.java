@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
- * 
+ * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -25,23 +25,17 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurHTML2Text implements ExtAttributeInterface {
-	private static final ContextLogger logger = ContextLogger.getLogger(TurHTML2Text.class);
-	private static final String EMPTY_STRING = "";
+    private static final ContextLogger logger = ContextLogger.getLogger(TurHTML2Text.class);
+    private static final String EMPTY_STRING = "";
 
-	@Override
-	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-			IHandlerConfiguration config) throws Exception {
-		if (logger.isDebugEnabled()) {
-			logger.debug("Executing HTML2Text");
-		}
+    @Override
+    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
+                                 IHandlerConfiguration config) throws Exception {
+        logger.debug("Executing HTML2Text");
+        if (attributeData != null && attributeData.getValue() != null)
+            return TurMultiValue.singleItem(HtmlManipulator.html2Text(attributeData.getValue().toString()));
+        else
+            return TurMultiValue.singleItem(EMPTY_STRING);
 
-		TurMultiValue turMultiValue = new TurMultiValue();
-
-		if (attributeData != null && attributeData.getValue() != null)
-			turMultiValue.add(HtmlManipulator.html2Text(attributeData.getValue().toString()));		
-		else
-			turMultiValue.add(EMPTY_STRING);
-	
-		return turMultiValue;
-	}
+    }
 }

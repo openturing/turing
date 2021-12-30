@@ -11,26 +11,23 @@ import com.vignette.as.client.javabean.StaticFile;
 import com.vignette.logging.context.ContextLogger;
 
 
-public class TurReadStaticFile implements ExtAttributeInterface {
-    private static final ContextLogger logger = ContextLogger.getLogger(TurReadStaticFile.class);
+public class TurStaticFile implements ExtAttributeInterface {
+    private static final ContextLogger logger = ContextLogger.getLogger(TurStaticFile.class);
     private static final String EMPTY_STRING = "";
+    private static final String FILE_PROTOCOL = "file://";
 
     @Override
-    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config) throws Exception {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Executing TurReadStaticFile");
-        }
-
-        TurMultiValue turMultiValue = new TurMultiValue();
-
+    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
+                                 IHandlerConfiguration config) throws Exception {
+        logger.debug("Executing TurReadStaticFile");
         if (attributeData != null && attributeData.getValue() != null) {
             StaticFile staticFile = (StaticFile) ManagedObject
                     .findByContentManagementId(new ManagedObjectVCMRef(attributeData.getValue().toString()));
-            turMultiValue.add(String.format("file://%s%s", config.getFileSourcePath(), staticFile.getPlacementPath()));
+            return TurMultiValue.singleItem(FILE_PROTOCOL
+                    .concat(config.getFileSourcePath()).concat(staticFile.getPlacementPath()));
         } else {
-            turMultiValue.add(EMPTY_STRING);
+            return TurMultiValue.singleItem(EMPTY_STRING);
         }
 
-        return turMultiValue;
     }
 }

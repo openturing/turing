@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
- * 
+ * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -27,30 +27,22 @@ import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurChannelPageUrl implements ExtAttributeInterface {
-	private static final ContextLogger logger = ContextLogger.getLogger(TurChannelPageUrl.class);
+    private static final ContextLogger logger = ContextLogger.getLogger(TurChannelPageUrl.class);
 
-	@Override
-	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config)
-			throws Exception {
-		String url = "";
-		ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
-
-		if (logger.isDebugEnabled()) {
-			logger.debug("Executing ChannelPageUrl");
-		}
-		for (ManagedObjectVCMRef mo : ManagedObject.getReferringManagedObjects(ci.getContentManagementId())) {
-			if (mo.getObjectTypeRef().getObjectType().getName().equals("Channel")) {
-				url = etlTranslator.translateByGUID(mo.getId());
-			}
-
-		}
-		if (logger.isDebugEnabled()) {
-			logger.debug("ChannelPageUrl URL: " + url);
-		}
-		
-		TurMultiValue turMultiValue = new TurMultiValue();
-		turMultiValue.add(url);
-		
-		return turMultiValue;
-	}
+    @Override
+    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config)
+            throws Exception {
+        logger.debug("Executing ChannelPageUrl");
+        String url = "";
+        ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
+        for (ManagedObjectVCMRef mo : ManagedObject.getReferringManagedObjects(ci.getContentManagementId())) {
+            if (mo.getObjectTypeRef().getObjectType().getName().equals("Channel")) {
+                url = etlTranslator.translateByGUID(mo.getId());
+            }
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("ChannelPageUrl URL: ".concat(url));
+        }
+        return TurMultiValue.singleItem(url);
+    }
 }

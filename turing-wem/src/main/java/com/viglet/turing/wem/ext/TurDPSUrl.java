@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
- * 
+ * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -25,33 +25,27 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurDPSUrl implements ExtAttributeInterface {
-	private static final ContextLogger log = ContextLogger.getLogger(TurDPSUrl.class);
+    private static final ContextLogger log = ContextLogger.getLogger(TurDPSUrl.class);
 
-	@Override
-	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-			IHandlerConfiguration config) throws Exception {
-		ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
+    @Override
+    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
+                                 IHandlerConfiguration config) throws Exception {
+        log.debug("Executing DPSUrl");
+        ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
+        String attribContent = null;
+        if (attributeData != null) {
+            attribContent = attributeData.getValue().toString();
+        }
 
-		if (log.isDebugEnabled()) {
-			log.debug("Executing DPSUrl");
-		}
-
-		String attribContent = null;
-		if (attributeData != null) {
-			attribContent = attributeData.getValue().toString();
-		}
-		TurMultiValue turMultiValue = new TurMultiValue();
-
-		if (attribContent == null) {
-			turMultiValue.add(etlTranslator.translateByGUID(ci.getContentManagementId().getId()));
-			return turMultiValue;
-		} else {
-			if (attribContent.toLowerCase().startsWith("http"))
-				turMultiValue.add(attribContent);
-			else
-				turMultiValue.add(etlTranslator.translate(attribContent));
-		}
-		return turMultiValue;
-	}
-
+        if (attribContent == null) {
+            return TurMultiValue.singleItem(etlTranslator.translateByGUID(ci.getContentManagementId().getId()));
+        } else {
+            TurMultiValue turMultiValue = new TurMultiValue();
+            if (attribContent.toLowerCase().startsWith("http"))
+                turMultiValue.add(attribContent);
+            else
+                turMultiValue.add(etlTranslator.translate(attribContent));
+            return turMultiValue;
+        }
+    }
 }
