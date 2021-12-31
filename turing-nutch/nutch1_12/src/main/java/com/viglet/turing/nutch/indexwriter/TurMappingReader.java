@@ -19,8 +19,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TurMappingReader {
-    public static Logger LOG = LoggerFactory.getLogger(TurMappingReader.class);
-
+    private static final Logger logger = LoggerFactory.getLogger(TurMappingReader.class);
+    private static final String SOURCE_ATTRIBUTE = "source";
+    private static final String DESTINATION_ATTRIBUTE = "dest";
+    private static final String URL_ATTRIBUTE = "url";
+    private static final String ID_ATTRIBUTE = "id";
+    private static final String SN_SITE_ATTRIBUTE = "snSite";
+    private static final String SITE_TAG = "site";
+    private static final String UNIQUE_KEY_TAG = "uniqueKey";
+    private static final String COPY_FIELD_TAG = "copyField";
+    private static final String FIELD_TAG = "field";
+    private static final String TURING_MAPPING_CONFIGURATION = "turing.mapping.file";
+    private static final String TURING_MAPPING_FILE =  "turing-mapping.xml";
     private Configuration conf;
 
     private Map<String, String> keyMap = new HashMap<>();
@@ -29,7 +39,7 @@ public class TurMappingReader {
 
     private Map<String, String> siteMap = new HashMap<>();
 
-    private String uniqueKey = "id";
+    private String uniqueKey = ID_ATTRIBUTE;
 
     public static synchronized TurMappingReader getInstance(Configuration conf) {
         ObjectCache cache = ObjectCache.get(conf);
@@ -48,46 +58,50 @@ public class TurMappingReader {
 
     private void parseMapping() {
         InputStream ssInputStream = null;
-        ssInputStream = this.conf.getConfResourceAsInputStream(this.conf.get("turing.mapping.file", "turing-mapping.xml"));
+        ssInputStream = this.conf.getConfResourceAsInputStream(
+                this.conf.get(TURING_MAPPING_CONFIGURATION, TURING_MAPPING_FILE));
         InputSource inputSource = new InputSource(ssInputStream);
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(inputSource);
             Element rootElement = document.getDocumentElement();
-            NodeList fieldList = rootElement.getElementsByTagName("field");
+            NodeList fieldList = rootElement.getElementsByTagName(FIELD_TAG);
 
             if (fieldList.getLength() > 0)
                 for (int i = 0; i < fieldList.getLength(); i++) {
                     Element element = (Element) fieldList.item(i);
-                    LOG.info("source: " + element.getAttribute("source") + " dest: " + element.getAttribute("dest"));
-                    this.keyMap.put(element.getAttribute("source"), element.getAttribute("dest"));
+                    logger.info("source: {} dest: {}",
+                            element.getAttribute(SOURCE_ATTRIBUTE), element.getAttribute(DESTINATION_ATTRIBUTE));
+                    this.keyMap.put(element.getAttribute(SOURCE_ATTRIBUTE), element.getAttribute(DESTINATION_ATTRIBUTE));
                 }
-            NodeList copyFieldList = rootElement.getElementsByTagName("copyField");
+            NodeList copyFieldList = rootElement.getElementsByTagName(COPY_FIELD_TAG);
             if (copyFieldList.getLength() > 0)
                 for (int i = 0; i < copyFieldList.getLength(); i++) {
                     Element element = (Element) copyFieldList.item(i);
-                    LOG.info("source: " + element.getAttribute("source") + " dest: " + element.getAttribute("dest"));
-                    this.copyMap.put(element.getAttribute("source"), element.getAttribute("dest"));
+                    logger.info("source: {} dest: {}",
+                            element.getAttribute(SOURCE_ATTRIBUTE), element.getAttribute(DESTINATION_ATTRIBUTE));
+                    this.copyMap.put(element.getAttribute(SOURCE_ATTRIBUTE), element.getAttribute(DESTINATION_ATTRIBUTE));
                 }
-            NodeList uniqueKeyItem = rootElement.getElementsByTagName("uniqueKey");
+            NodeList uniqueKeyItem = rootElement.getElementsByTagName(UNIQUE_KEY_TAG);
             if (uniqueKeyItem.getLength() > 1) {
-                LOG.warn("More than one unique key definitions found in solr index mapping, using default 'id'");
-                this.uniqueKey = "id";
+                logger.warn("More than one unique key definitions found in solr index mapping, using default 'id'");
+                this.uniqueKey = ID_ATTRIBUTE;
             } else if (uniqueKeyItem.getLength() == 0) {
-                LOG.warn("No unique key definition found in solr index mapping using, default 'id'");
+                logger.warn("No unique key definition found in solr index mapping using, default 'id'");
             } else {
                 this.uniqueKey = uniqueKeyItem.item(0).getFirstChild().getNodeValue();
             }
-            NodeList siteList = rootElement.getElementsByTagName("site");
+            NodeList siteList = rootElement.getElementsByTagName(SITE_TAG);
             if (siteList.getLength() > 0)
                 for (int i = 0; i < siteList.getLength(); i++) {
                     Element element = (Element) siteList.item(i);
-                    LOG.info("url: " + element.getAttribute("url") + " snSite: " + element.getAttribute("snSite"));
-                    this.siteMap.put(element.getAttribute("url"), element.getAttribute("snSite"));
+                    logger.info("url: {} snSite: {}",
+                            element.getAttribute(URL_ATTRIBUTE), element.getAttribute(SN_SITE_ATTRIBUTE));
+                    this.siteMap.put(element.getAttribute(URL_ATTRIBUTE), element.getAttribute(SN_SITE_ATTRIBUTE));
                 }
         } catch (SAXException | IOException | ParserConfigurationException e) {
-            LOG.warn(e.toString());
+            logger.warn(e.toString());
         }
     }
 
