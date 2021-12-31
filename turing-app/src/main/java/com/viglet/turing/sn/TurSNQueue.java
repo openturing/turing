@@ -16,21 +16,19 @@
  */
 package com.viglet.turing.sn;
 
-import java.util.Enumeration;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
+
+import java.util.Enumeration;
 
 @Component
 public class TurSNQueue {
 	@Autowired
 	JmsTemplate jmsTemplate;
 
-	public static final String INDEXING_QUEUE = "indexing.queue";
-
 	public int getQueueSize() {
-		return jmsTemplate.browse(INDEXING_QUEUE, (session, browser) -> {
+		return jmsTemplate.browse(TurSNConstants.INDEXING_QUEUE, (session, browser) -> {
 			Enumeration<?> messages = browser.getEnumeration();
 			int total = 0;
 			while (messages.hasMoreElements()) {

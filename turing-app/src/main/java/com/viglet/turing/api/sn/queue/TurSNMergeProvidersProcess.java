@@ -21,6 +21,7 @@ import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
 import com.viglet.turing.se.result.TurSEResult;
+import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.TurSolrUtils;
@@ -41,8 +42,6 @@ import java.util.*;
 @Component
 public class TurSNMergeProvidersProcess {
     private static final Logger logger = LogManager.getLogger(TurSNMergeProvidersProcess.class);
-    public static final String PROVIDER_ATTRIBUTE = "source_apps";
-    public static final String ID_ATTRIBUTE = "id";
 
     @Autowired
     private TurSolrInstanceProcess turSolrInstanceProcess;
@@ -60,8 +59,8 @@ public class TurSNMergeProvidersProcess {
                 .findByTurSNSite(turSNSite);
         if (!turSNSiteMergeProvidersList.isEmpty()) {
             TurSNSiteMergeProviders turSNSiteMergeProviders = turSNSiteMergeProvidersList.iterator().next();
-            if (queueDocumentAttrs.containsKey(PROVIDER_ATTRIBUTE)) {
-                Object providersAttribute = queueDocumentAttrs.get(PROVIDER_ATTRIBUTE);
+            if (queueDocumentAttrs.containsKey(TurSNConstants.PROVIDER_ATTRIBUTE)) {
+                Object providersAttribute = queueDocumentAttrs.get(TurSNConstants.PROVIDER_ATTRIBUTE);
                 List<String> queueDocumentProviders = new ArrayList<>();
                 if (providersAttribute instanceof String) {
                     queueDocumentProviders.add((String) providersAttribute);
@@ -77,7 +76,6 @@ public class TurSNMergeProvidersProcess {
             }
         }
         return queueDocumentAttrs;
-
     }
 
     private Map<String, Object> mergeFrom(Map<String, Object> queueDocumentAttrs,
@@ -108,8 +106,8 @@ public class TurSNMergeProvidersProcess {
                                         TurSNSiteMergeProviders turSNSiteMergeProviders) {
         String relationValue = (String) queueDocumentAttrs.get(turSNSiteMergeProviders.getRelationTo());
         List<SolrDocument> resultsFrom = solrDocumentsFrom(turSNSiteMergeProviders, relationValue);
-        String idValue = (String) queueDocumentAttrs.get(ID_ATTRIBUTE);
-        List<SolrDocument> resultsFromAndTo = solrDocumentsFromAndTo(turSNSiteMergeProviders, ID_ATTRIBUTE, idValue);
+        String idValue = (String) queueDocumentAttrs.get(TurSNConstants.ID_ATTRIBUTE);
+        List<SolrDocument> resultsFromAndTo = solrDocumentsFromAndTo(turSNSiteMergeProviders, TurSNConstants.ID_ATTRIBUTE, idValue);
         if (hasSolrDocuments(resultsFromAndTo)) {
             TurSEResult turSEResultFromAndTo = TurSolrUtils
                     .createTurSEResultFromDocument(resultsFromAndTo.iterator().next());
@@ -141,14 +139,14 @@ public class TurSNMergeProvidersProcess {
     private SolrDocumentList solrDocumentsTo(TurSNSiteMergeProviders turSNSiteMergeProviders, String relationValue) {
         Map<String, Object> queryMapTo = new HashMap<>();
         queryMapTo.put(turSNSiteMergeProviders.getRelationTo(), relationValue);
-        queryMapTo.put(PROVIDER_ATTRIBUTE, turSNSiteMergeProviders.getProviderTo());
+        queryMapTo.put(TurSNConstants.PROVIDER_ATTRIBUTE, turSNSiteMergeProviders.getProviderTo());
         return solrResultAnd(turSNSiteMergeProviders, queryMapTo);
     }
 
     private SolrDocumentList solrDocumentsFrom(TurSNSiteMergeProviders turSNSiteMergeProviders, String relationValue) {
         Map<String, Object> queryMapFrom = new HashMap<>();
         queryMapFrom.put(turSNSiteMergeProviders.getRelationFrom(), relationValue);
-        queryMapFrom.put(PROVIDER_ATTRIBUTE, turSNSiteMergeProviders.getProviderFrom());
+        queryMapFrom.put(TurSNConstants.PROVIDER_ATTRIBUTE, turSNSiteMergeProviders.getProviderFrom());
         return solrResultAnd(turSNSiteMergeProviders, queryMapFrom);
     }
 
@@ -156,7 +154,7 @@ public class TurSNMergeProvidersProcess {
                                                     String relationAttrib, String relationValue) {
         Map<String, Object> queryMapFrom = new HashMap<>();
         queryMapFrom.put(relationAttrib, relationValue);
-        queryMapFrom.put(PROVIDER_ATTRIBUTE, String.format("(\"%s\" AND \"%s\")",
+        queryMapFrom.put(TurSNConstants.PROVIDER_ATTRIBUTE, String.format("(\"%s\" AND \"%s\")",
                 turSNSiteMergeProviders.getProviderFrom(), turSNSiteMergeProviders.getProviderFrom()));
         return solrResultAnd(turSNSiteMergeProviders, queryMapFrom);
     }
@@ -165,7 +163,7 @@ public class TurSNMergeProvidersProcess {
         turSolrInstanceProcess
                 .initSolrInstance(turSNSiteMergeProviders.getTurSNSite(), turSNSiteMergeProviders.getLocale())
                 .ifPresent(turSolrInstance -> results
-                        .forEach(result -> turSolr.desindexing(turSolrInstance, result.get(ID_ATTRIBUTE).toString())));
+                        .forEach(result -> turSolr.desindexing(turSolrInstance, result.get(TurSNConstants.ID_ATTRIBUTE).toString())));
     }
 
     private SolrDocumentList solrResultAnd(TurSNSiteMergeProviders turSNSiteMergeProviders,
@@ -189,10 +187,10 @@ public class TurSNMergeProvidersProcess {
     }
 
     private void addProviderToSEDocument(Map<String, Object> documentAttributes, String providerName) {
-        Object providerAttribute = documentAttributes.get(PROVIDER_ATTRIBUTE);
+        Object providerAttribute = documentAttributes.get(TurSNConstants.PROVIDER_ATTRIBUTE);
         List<String> providers = new ArrayList<>();
         if (providerAttribute instanceof ArrayList) {
-            providers = (ArrayList<String>) documentAttributes.get(PROVIDER_ATTRIBUTE);
+            providers = (ArrayList<String>) documentAttributes.get(TurSNConstants.PROVIDER_ATTRIBUTE);
         } else {
             providers.add((String) providerAttribute);
         }
@@ -202,7 +200,7 @@ public class TurSNMergeProvidersProcess {
             if (!providers.contains(providerName)) {
                 list.add(providerName);
             }
-            documentAttributes.put(PROVIDER_ATTRIBUTE, list);
+            documentAttributes.put(TurSNConstants.PROVIDER_ATTRIBUTE, list);
         } else {
             logger.debug("The providers attribute of Merge Providers is empty");
         }

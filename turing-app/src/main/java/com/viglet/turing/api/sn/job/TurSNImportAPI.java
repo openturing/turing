@@ -20,6 +20,7 @@ package com.viglet.turing.api.sn.job;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.utils.TurUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.io.FileUtils;
@@ -55,14 +56,10 @@ import java.util.UUID;
 @Tag(name = "Semantic Navigation Import", description = "Semantic Navigation Import API")
 public class TurSNImportAPI {
     private static final Logger logger = LogManager.getLogger(TurSNImportAPI.class);
-    private static final String FILE_PROTOCOL = "file://";
     @Autowired
     private JmsMessagingTemplate jmsMessagingTemplate;
     @Autowired
     private TurSNSiteRepository turSNSiteRepository;
-
-    private static final String EXPORT_FILE = "export.json";
-    public static final String INDEXING_QUEUE = "indexing.queue";
 
     @PostMapping
     public boolean turSNImportBroker(@PathVariable String siteName, @RequestBody TurSNJobItems turSNJobItems) {
@@ -77,18 +74,17 @@ public class TurSNImportAPI {
             turSNJobItems.forEach(turSNJobItem -> {
                 if (turSNJobItem != null) {
                     logger.warn("Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
-                            turSNJobItem.getAttributes() != null ? turSNJobItem.getAttributes().get("id") : null,
+                            turSNJobItem.getAttributes() != null ?
+                                    turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE) : null,
                             siteName,
                             turSNJobItem.getLocale(),
                             siteName);
                 } else {
-                    logger.warn("No JobItem' of '{}' SN Site",
-                            siteName);
+                    logger.warn("No JobItem' of '{}' SN Site", siteName);
                 }
             });
             return false;
         }
-
     }
 
     @PostMapping("zip")
@@ -97,7 +93,7 @@ public class TurSNImportAPI {
         if (extractFolder != null) {
             TurSNJobItems turSNJobItems = null;
             try (FileInputStream fileInputStream = new FileInputStream(extractFolder.getAbsolutePath()
-                    .concat(File.separator).concat(EXPORT_FILE))) {
+                    .concat(File.separator).concat(TurSNConstants.EXPORT_FILE))) {
                 turSNJobItems = new ObjectMapper().readValue(fileInputStream, TurSNJobItems.class);
                 turSNJobItems.forEach(turSNJobItem ->
                         turSNJobItem.getAttributes().entrySet().forEach(attribute ->
@@ -117,8 +113,8 @@ public class TurSNImportAPI {
     }
 
     private void extractTextOfFileAttribute(File extractFolder, Map.Entry<String, Object> attribute) {
-        if (attribute.getValue().toString().startsWith(FILE_PROTOCOL)) {
-            String fileName = attribute.getValue().toString().replace(FILE_PROTOCOL, "");
+        if (attribute.getValue().toString().startsWith(TurSNConstants.FILE_PROTOCOL)) {
+            String fileName = attribute.getValue().toString().replace(TurSNConstants.FILE_PROTOCOL, "");
             try (FileInputStream fileInputStreamAttribute =
                          new FileInputStream(extractFolder.getAbsolutePath() + File.separator + fileName)) {
                 StringBuilder contentFile = new StringBuilder();
@@ -190,24 +186,20 @@ public class TurSNImportAPI {
         }
     }
 
-
     public void send(TurSNJob turSNJob) {
-
         sentQueueInfo(turSNJob);
-
         if (logger.isDebugEnabled()) {
-            logger.debug("Sent job - {}", INDEXING_QUEUE);
+            logger.debug("Sent job - {}", TurSNConstants.INDEXING_QUEUE);
             logger.debug("turSNJob: {}", turSNJob.getTurSNJobItems());
         }
-        this.jmsMessagingTemplate.convertAndSend(INDEXING_QUEUE, turSNJob);
-
+        this.jmsMessagingTemplate.convertAndSend(TurSNConstants.INDEXING_QUEUE, turSNJob);
     }
 
     private void sentQueueInfo(TurSNJob turSNJob) {
         TurSNSite turSNSite = turSNSiteRepository.findById(turSNJob.getSiteId()).orElse(null);
         turSNJob.getTurSNJobItems().forEach(turJobItem -> {
             if (turSNSite != null && turJobItem != null && turJobItem.getAttributes() != null
-                    && turJobItem.getAttributes().containsKey("id")) {
+                    && turJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
                 String action = null;
                 if (turJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
                     action = "index";
@@ -215,7 +207,8 @@ public class TurSNImportAPI {
                     action = "deindex";
                 }
                 logger.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).", action,
-                        turJobItem.getAttributes().get("id"), turSNSite.getName(), turJobItem.getLocale());
+                        turJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
+                        turSNSite.getName(), turJobItem.getLocale());
             }
         });
     }
