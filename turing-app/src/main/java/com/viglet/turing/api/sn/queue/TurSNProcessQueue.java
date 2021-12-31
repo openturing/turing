@@ -62,7 +62,6 @@ public class TurSNProcessQueue {
     @Autowired
     private TurSNThesaurusProcess turSNThesaurusProcess;
 
-
     public TurSNProcessQueue() {
         // Empty
     }
@@ -73,34 +72,52 @@ public class TurSNProcessQueue {
         logger.debug("receiveQueue turSNJob: {}", turSNJob);
         if (turSNJob != null) {
             this.turSNSiteRepository.findById(turSNJob.getSiteId()).ifPresent(turSNSite -> {
-                if (turSNJob.getTurSNJobItems() != null) {
-                    for (TurSNJobItem turSNJobItem : turSNJob.getTurSNJobItems()) {
-                        boolean status = false;
-                        logger.debug("receiveQueue TurSNJobItem: {}", turSNJobItem);
-                        if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
-                            status = turSNSpotlightProcess.isSpotlightJob(turSNJobItem) ?
-                                    turSNSpotlightProcess.createUnmanagedSpotlight(turSNJobItem, turSNSite)
-                                    : index(turSNJobItem, turSNSite);
-                        } else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
-                            String id = (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE);
-                            status = (id != null && turSNSiteSpotlightRepository.findById(id).isPresent())
-                                    ? turSNSpotlightProcess.deleteUnmanagedSpotlight(turSNJobItem, turSNSite)
-                                    : deindex(turSNJobItem, turSNSite);
-                        }
-                        if (status) {
-                            processQueueInfo(turSNSite, turSNJobItem);
-                        } else {
-                            logger.warn("Object ID '{}' of '{}' SN Site ({}) was not processed",
-                                    turSNJobItem.getAttributes().get("id"),
-                                    turSNSite.getName(),
-                                    turSNJobItem.getLocale());
-                        }
+                turSNJob.getTurSNJobItems().forEach(turSNJobItem -> {
+                    if (processJob(turSNSite, turSNJobItem)) {
+                        processQueueInfo(turSNSite, turSNJobItem);
+                    } else {
+                        logNoProcessed(turSNSite, turSNJobItem);
                     }
-                }
+                });
             });
         } else {
             logger.debug("turSNJob empty or siteId empty");
         }
+    }
+
+    private void logNoProcessed(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
+        logger.warn("Object ID '{}' of '{}' SN Site ({}) was not processed",
+                turSNJobItem.getAttributes().get("id"),
+                turSNSite.getName(),
+                turSNJobItem.getLocale());
+    }
+
+    private boolean processJob(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
+        boolean status = false;
+        logger.debug("processJob TurSNJobItem: {}", turSNJobItem);
+        if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
+            status = createJob(turSNSite, turSNJobItem);
+        } else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
+            status = deleteJob(turSNSite, turSNJobItem);
+        }
+        return status;
+    }
+
+    private boolean deleteJob(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
+        boolean status;
+        String id = (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE);
+        status = (id != null && turSNSiteSpotlightRepository.findById(id).isPresent())
+                ? turSNSpotlightProcess.deleteUnmanagedSpotlight(turSNJobItem, turSNSite)
+                : deindex(turSNJobItem, turSNSite);
+        return status;
+    }
+
+    private boolean createJob(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
+        boolean status;
+        status = turSNSpotlightProcess.isSpotlightJob(turSNJobItem) ?
+                turSNSpotlightProcess.createUnmanagedSpotlight(turSNJobItem, turSNSite)
+                : index(turSNJobItem, turSNSite);
+        return status;
     }
 
     private void processQueueInfo(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
@@ -162,7 +179,6 @@ public class TurSNProcessQueue {
             }
         }
     }
-
 
 
     public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {

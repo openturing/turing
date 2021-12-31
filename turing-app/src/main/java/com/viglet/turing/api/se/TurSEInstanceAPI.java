@@ -25,8 +25,6 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +35,6 @@ import java.util.List;
 @RequestMapping("/api/se")
 @Tag(name = "Search Engine", description = "Search Engine API")
 public class TurSEInstanceAPI {
-    private static final Log logger = LogFactory.getLog(TurSEInstanceAPI.class);
     @Autowired
     private TurSEInstanceRepository turSEInstanceRepository;
     @Autowired
@@ -46,6 +43,7 @@ public class TurSEInstanceAPI {
     private TurSolr turSolr;
 
     public TurSEInstanceAPI() {
+        // Empty
     }
 
     @Operation(summary = "Search Engine List")
