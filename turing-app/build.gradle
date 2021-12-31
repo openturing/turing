@@ -1,45 +1,45 @@
-
 buildscript {
-    ext { springBootVersion = '2.6.2'
-	      hibernateVersion = '5.11.0.Final'
-		  httpClientVersion = '4.5.11'
-		  swaggerVersion = '3.0.0'
-		  jasyptVersion = '3.0.4'
-		 }
-		repositories {
-			mavenCentral()	
-			 maven {
-        		url "https://packages.atlassian.com/mvn/maven-external/"
-    		}	
-		}
+    ext {
+        springBootVersion = '2.6.2'
+        hibernateVersion = '5.11.0.Final'
+        httpClientVersion = '4.5.11'
+        swaggerVersion = '3.0.0'
+        jasyptVersion = '3.0.4'
+    }
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://packages.atlassian.com/mvn/maven-external/"
+        }
+    }
     dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}") }
 }
 
 plugins {
-  id 'org.springframework.boot' version "${springBootVersion}"
-  id 'io.spring.dependency-management' version '1.0.11.RELEASE'
-  id 'java'
-  id "com.gorylenko.gradle-git-properties" version '2.3.2'
-  id 'de.undercouch.download' version '4.1.2'
-  id 'eclipse'
-  id 'jacoco'
-  id 'org.sonarqube' version '3.3'
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+    id "com.gorylenko.gradle-git-properties" version '2.3.2'
+    id 'de.undercouch.download' version '4.1.2'
+    id 'eclipse'
+    id 'jacoco'
+    id 'org.sonarqube' version '3.3'
 }
 
 //apply from: 'liquibase.gradle'
 
 sonarqube {
-  properties {
-    property "sonar.projectKey", "turing-app"
-    property "sonar.organization", "viglet-turing"
-    property "sonar.host.url", "https://sonarcloud.io"
-    property "sonar.cpd.exclusions", "**/persistence/dto/**,**/persistence/model/**,**/plugins/nlp/otca/response/xml/**"
-  }
+    properties {
+        property "sonar.projectKey", "turing-app"
+        property "sonar.organization", "viglet-turing"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.cpd.exclusions", "**/persistence/dto/**,**/persistence/model/**,**/plugins/nlp/otca/response/xml/**"
+    }
 }
 
 jar {
     archiveBaseName = 'viglet-turing'
-    archiveVersion =  '0.3.5'
+    archiveVersion = '0.3.5'
 }
 
 eclipse {
@@ -58,20 +58,20 @@ gitProperties {
 }
 
 bootJar {
-	launchScript() // executable jar
+    launchScript() // executable jar
     manifest {
-    	attributes(    
-        'Implementation-Version': "${-> project.jar.version + '-' + project.ext.gitProps['git.commit.id.abbrev']}"
-    	)
-  	}
-	archiveBaseName = 'viglet-turing'
+        attributes(
+                'Implementation-Version': "${-> project.jar.version + '-' + project.ext.gitProps['git.commit.id.abbrev']}"
+        )
+    }
+    archiveBaseName = 'viglet-turing'
 }
 
 repositories {
-	mavenCentral()
-	 maven {
-        		url "https://packages.atlassian.com/mvn/maven-external/"
-    		}	
+    mavenCentral()
+    maven {
+        url "https://packages.atlassian.com/mvn/maven-external/"
+    }
 }
 
 group = 'com.viglet.turing'
@@ -79,7 +79,7 @@ sourceCompatibility = 14
 targetCompatibility = 14
 
 tasks.withType(JavaCompile) {
-	options.encoding = 'UTF-8'
+    options.encoding = 'UTF-8'
 }
 
 task stage(dependsOn: ['build', 'clean'])
@@ -87,7 +87,7 @@ task stage(dependsOn: ['build', 'clean'])
 build.mustRunAfter clean
 
 if (!project.hasProperty('no-ui')) {
-	compileJava.dependsOn(':turing-ui:build'); 
+    compileJava.dependsOn(':turing-ui:build');
 }
 
 configurations {
@@ -97,152 +97,152 @@ configurations {
 ext['log4j2.version'] = '2.17.0'
 
 dependencies {
-	compileOnly group: 'javax.servlet', name: 'servlet-api', version: '2.5'
+    compileOnly group: 'javax.servlet', name: 'servlet-api', version: '2.5'
 
-	implementation (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.3.1') {
-		exclude(module: 'guava')
-		exclude(module: 'commons-logging')
-		exclude(module: 'log4j')
-		exclude(module: 'slf4j-api')
-		exclude(module: 'slf4j-log4j12')
-		exclude(module: 'jackson-mapper-asl')
-		exclude(module: 'jackson-core-asl')
-		exclude(module: 'jersey-core')
-		exclude(module: 'jersey-json')
-		exclude(module: 'jersey-server')				
-		exclude(module: 'jasper-runtime')
-		exclude(module: 'jasper-compiler')
-		exclude(module: 'servlet-api')
-		exclude(module: 'jsp-api')
-		exclude(module: 'commons-el')
-	
-	}
-	
-	implementation (group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.3.1') {
-		exclude(module: 'jackson-mapper-asl')
-		exclude(module: 'jackson-core-asl')
-		exclude(module: 'jersey-core')
-		exclude(module: 'jersey-json')
-		exclude(module: 'jersey-server')				
-		exclude(module: 'jasper-runtime')
-		exclude(module: 'jasper-compiler')
-		exclude(module: 'servlet-api')
-		exclude(module: 'jsp-api')
-		exclude(module: 'log4j')
-	}
-	implementation (group: 'org.apache.hadoop', name: 'hadoop-auth', version: '3.3.1') {
-		exclude(module: 'commons-logging')
-		exclude(module: 'log4j')
-		exclude(module: 'slf4j-api')
-		exclude(module: 'slf4j-log4j12')
-		exclude(module: 'jackson-mapper-asl')
-		exclude(module: 'jackson-core-asl')
-		exclude(module: 'jersey-core')
-		exclude(module: 'jersey-json')
-		exclude(module: 'jersey-server')				
-		exclude(module: 'jasper-runtime')
-		exclude(module: 'jasper-compiler')
-		exclude(module: 'servlet-api')
-		exclude(module: 'jsp-api')
-	}
-	implementation (group: 'org.apache.hadoop', name: 'hadoop-core', version: '1.2.1') {
-		exclude(module: 'jersey-core')
-		exclude(module: 'jersey-json')
-		exclude(module: 'jersey-server')
-		exclude(module: 'jackson-mapper-asl')
-		exclude(module: 'jackson-core-asl')
-		exclude(module: 'hsqldb')
-		exclude(module: 'commons-el')
-	}
-	
- 	// Spring Boot
+    implementation(group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.3.1') {
+        exclude(module: 'guava')
+        exclude(module: 'commons-logging')
+        exclude(module: 'log4j')
+        exclude(module: 'slf4j-api')
+        exclude(module: 'slf4j-log4j12')
+        exclude(module: 'jackson-mapper-asl')
+        exclude(module: 'jackson-core-asl')
+        exclude(module: 'jersey-core')
+        exclude(module: 'jersey-json')
+        exclude(module: 'jersey-server')
+        exclude(module: 'jasper-runtime')
+        exclude(module: 'jasper-compiler')
+        exclude(module: 'servlet-api')
+        exclude(module: 'jsp-api')
+        exclude(module: 'commons-el')
+
+    }
+
+    implementation(group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.3.1') {
+        exclude(module: 'jackson-mapper-asl')
+        exclude(module: 'jackson-core-asl')
+        exclude(module: 'jersey-core')
+        exclude(module: 'jersey-json')
+        exclude(module: 'jersey-server')
+        exclude(module: 'jasper-runtime')
+        exclude(module: 'jasper-compiler')
+        exclude(module: 'servlet-api')
+        exclude(module: 'jsp-api')
+        exclude(module: 'log4j')
+    }
+    implementation(group: 'org.apache.hadoop', name: 'hadoop-auth', version: '3.3.1') {
+        exclude(module: 'commons-logging')
+        exclude(module: 'log4j')
+        exclude(module: 'slf4j-api')
+        exclude(module: 'slf4j-log4j12')
+        exclude(module: 'jackson-mapper-asl')
+        exclude(module: 'jackson-core-asl')
+        exclude(module: 'jersey-core')
+        exclude(module: 'jersey-json')
+        exclude(module: 'jersey-server')
+        exclude(module: 'jasper-runtime')
+        exclude(module: 'jasper-compiler')
+        exclude(module: 'servlet-api')
+        exclude(module: 'jsp-api')
+    }
+    implementation(group: 'org.apache.hadoop', name: 'hadoop-core', version: '1.2.1') {
+        exclude(module: 'jersey-core')
+        exclude(module: 'jersey-json')
+        exclude(module: 'jersey-server')
+        exclude(module: 'jackson-mapper-asl')
+        exclude(module: 'jackson-core-asl')
+        exclude(module: 'hsqldb')
+        exclude(module: 'commons-el')
+    }
+
+    // Spring Boot
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version:"${springBootVersion}"
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version:"${springBootVersion}"
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version:"${springBootVersion}"   
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version:"${springBootVersion}"
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version:"${springBootVersion}"
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version:"${springBootVersion}"
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version:"${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: "${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version: "${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version: "${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version: "${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: "${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version: "${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: "${springBootVersion}"
 
-	// Liquidbase
-	//implementation group: 'org.liquibase', name: 'liquibase-core', version: '4.6.2'
+    // Liquidbase
+    //implementation group: 'org.liquibase', name: 'liquibase-core', version: '4.6.2'
 
-	// SolrJ
-	implementation (group: 'org.apache.solr', name: 'solr-solrj', version: '8.11.1') {
-		exclude(module: 'xml-apis')
-	}
+    // SolrJ
+    implementation(group: 'org.apache.solr', name: 'solr-solrj', version: '8.11.1') {
+        exclude(module: 'xml-apis')
+    }
 
-	//Zip4j
-	implementation group: 'net.lingala.zip4j', name: 'zip4j', version: '2.9.1'
+    //Zip4j
+    implementation group: 'net.lingala.zip4j', name: 'zip4j', version: '2.9.1'
 
-   	// Oracle	
-	implementation group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
-	
-	// Jasypt
-	implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
-	
-	// Spring
-  	implementation group: 'org.springframework', name: 'spring-test', version: '5.3.14'
+    // Oracle
+    implementation group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
 
- 	// Jackson
-   	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.13.1'
-   	  	
-  	// H2
-    implementation group: 'com.h2database', name: 'h2', version:'1.4.200'
-    
+    // Jasypt
+    implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
+
+    // Spring
+    implementation group: 'org.springframework', name: 'spring-test', version: '5.3.14'
+
+    // Jackson
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.13.1'
+
+    // H2
+    implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
+
     // MariaDB
-    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.7.4'         
-    
+    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.7.4'
+
     // PostgreSQL
-	implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.1'
-        
+    implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.1'
+
     // JSON
-    implementation group: 'org.json', name: 'json', version:'20211205'
-      
+    implementation group: 'org.json', name: 'json', version: '20211205'
+
     // CoreNLP
-    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version:'4.3.1'
-    
+    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '4.3.1'
+
     // ASM
-    implementation group: 'asm', name: 'asm', version:'4.0_RC2'
-    
+    implementation group: 'asm', name: 'asm', version: '4.0_RC2'
+
     // OpenNLP
-    implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version:'1.9.4'
-    
+    implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version: '1.9.4'
+
     // Apache Commons
-    implementation group: 'commons-io', name: 'commons-io', version:'2.11.0'
-    implementation group: 'commons-lang', name: 'commons-lang', version:'2.6'
-  
+    implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+    implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
+
     // EhCache
-    implementation group: 'net.sf.ehcache', name: 'ehcache', version:'2.10.10.1.14'
-    
+    implementation group: 'net.sf.ehcache', name: 'ehcache', version: '2.10.10.1.14'
+
     // Tika
-    implementation group: 'org.apache.tika', name: 'tika-core', version:'2.2.1'
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.2.1'
-	implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: '2.2.1'
-	implementation group: 'org.apache.tika', name: 'tika-parser-text-module', version: '2.2.1'
-	implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: '2.2.1'
-	implementation group: 'org.apache.tika', name: 'tika-parser-microsoft-module', version: '2.2.1'
-	implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version:'2.0'
-    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-core', version:'1.4.0'
-    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version:'1.4.0'
+    implementation group: 'org.apache.tika', name: 'tika-core', version: '2.2.1'
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version: '2.2.1'
+    implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: '2.2.1'
+    implementation group: 'org.apache.tika', name: 'tika-parser-text-module', version: '2.2.1'
+    implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: '2.2.1'
+    implementation group: 'org.apache.tika', name: 'tika-parser-microsoft-module', version: '2.2.1'
+    implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version: '2.0'
+    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-core', version: '1.4.0'
+    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
 
     //ActiveMQ using KahaDB
     implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.16.3'
-	
-	// SpringDoc
-	implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.3'
 
-	// Schema.org
-	implementation group: 'com.squins.google.fork.schema-org-client', name: 'schema-org-client', version: '1.0.1'
-	
-	//PDFBox
-	implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.25'
-	
-	//Language Tool
-	implementation group: 'org.languagetool', name: 'language-all', version: '5.6'
-	
-	testImplementation('org.springframework.boot:spring-boot-starter-test')
+    // SpringDoc
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.3'
+
+    // Schema.org
+    implementation group: 'com.squins.google.fork.schema-org-client', name: 'schema-org-client', version: '1.0.1'
+
+    //PDFBox
+    implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.25'
+
+    //Language Tool
+    implementation group: 'org.languagetool', name: 'language-all', version: '5.6'
+
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
 
 jacoco {
@@ -250,19 +250,19 @@ jacoco {
 }
 
 test {
-	useJUnitPlatform()
+    useJUnitPlatform()
     testLogging {
         events "passed", "skipped", "failed"
         exceptionFormat "full"
     }
-    
- 	jacocoTestReport {
-    	reports {
-        	xml.enabled true
-        	html.enabled false
-    	}
-	}
-   
-	check.dependsOn jacocoTestReport   
+
+    jacocoTestReport {
+        reports {
+            xml.enabled true
+            html.enabled false
+        }
+    }
+
+    check.dependsOn jacocoTestReport
 
 }
