@@ -38,14 +38,14 @@ public class TurSNSpotlightProcess {
     private TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
 
     @Transactional
-    private void ifExistsDeleteSpotlightDependencies(Optional<TurSNSiteSpotlight> turSNSiteSpotlight) {
-        if (turSNSiteSpotlight.isPresent()) {
+    private void ifExistsDeleteSpotlightDependencies(TurSNSiteSpotlight turSNSiteSpotlight) {
+        if (turSNSiteSpotlight != null) {
             Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = turSNSiteSpotlightTermRepository
-                    .findByTurSNSiteSpotlight(turSNSiteSpotlight.get());
+                    .findByTurSNSiteSpotlight(turSNSiteSpotlight);
             turSNSiteSpotlightTermRepository.deleteAllInBatch(turSNSiteSpotlightTerms);
 
             Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = turSNSiteSpotlightDocumentRepository
-                    .findByTurSNSiteSpotlight(turSNSiteSpotlight.get());
+                    .findByTurSNSiteSpotlight(turSNSiteSpotlight);
             turSNSiteSpotlightDocumentRepository.deleteAllInBatch(turSNSiteSpotlightDocuments);
         }
     }
@@ -56,11 +56,12 @@ public class TurSNSpotlightProcess {
                 && turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE).equals(TYPE_VALUE);
     }
 
-    public boolean deleteUnmanagedSpotlight(TurSNJobItem turSNJobItem) {
-        turSNSiteSpotlightRepository.delete((String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE));
-
+    public boolean deleteUnmanagedSpotlight(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
         if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
-            turSNSiteSpotlightRepository.delete((String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE));
+            Set<TurSNSiteSpotlight> turSNSiteSpotlights =
+                    turSNSiteSpotlightRepository.findByUnmanagedIdAndTurSNSite((String) turSNJobItem.getAttributes()
+                            .get(TurSNConstants.ID_ATTRIBUTE), turSNSite);
+            turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
         } else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.PROVIDER_ATTRIBUTE)) {
             logger.info("Provider Value: {}",
                     turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE));
@@ -72,16 +73,20 @@ public class TurSNSpotlightProcess {
     }
 
     public boolean createUnmanagedSpotlight(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
-        String jsonContent = (String) turSNJobItem.getAttributes().get(CONTENT_ATTRIBUTE);
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
-            String id = (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE);
-            Optional<TurSNSiteSpotlight> turSNSiteSpotlightOptional = turSNSiteSpotlightRepository.findById(id);
-            if (turSNSiteSpotlightOptional.isPresent()) {
-                ifExistsDeleteSpotlightDependencies(turSNSiteSpotlightOptional);
-                turSNSiteSpotlight = turSNSiteSpotlightOptional.get();
+        String id = (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE);
+        Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
+                .findByUnmanagedIdAndTurSNSite(id, turSNSite);
+        TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
+        if (!turSNSiteSpotlights.isEmpty()) {
+            turSNSiteSpotlights.forEach(turSNSiteSpotlightItem -> ifExistsDeleteSpotlightDependencies(turSNSiteSpotlightItem));
+            if (turSNSiteSpotlights.size() > 1) {
+                turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
+            } else {
+                turSNSiteSpotlight = turSNSiteSpotlights.iterator().next();
             }
+        }
+        try {
+            String jsonContent = (String) turSNJobItem.getAttributes().get(CONTENT_ATTRIBUTE);
             String name = (String) turSNJobItem.getAttributes().get(NAME_ATTRIBUTE);
             String provider = (String) turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE);
             List<String> terms = Arrays.asList(((String) turSNJobItem.getAttributes().get(TERMS_ATTRIBUTE))
@@ -90,13 +95,13 @@ public class TurSNSpotlightProcess {
             simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
             Date date = simpleDateFormat.parse((String) turSNJobItem.getAttributes()
                     .get(TurSNConstants.MODIFICATION_DATE_ATTRIBUTE));
-            List<TurSpotlightContent> turSpotlightContents = mapper.readValue(jsonContent, new TypeReference<>() {
+            List<TurSpotlightContent> turSpotlightContents = new ObjectMapper().readValue(jsonContent, new TypeReference<>() {
             });
 
-            turSNSiteSpotlight.setId(id);
+            turSNSiteSpotlight.setUnmanagedId(id);
             turSNSiteSpotlight.setDescription(name);
             turSNSiteSpotlight.setName(name);
-            turSNSiteSpotlight.setDate(date);
+            turSNSiteSpotlight.setModificationDate(date);
             turSNSiteSpotlight.setTurSNSite(turSNSite);
             turSNSiteSpotlight.setManaged(0);
             turSNSiteSpotlight.setProvider(provider);
@@ -119,7 +124,6 @@ public class TurSNSpotlightProcess {
                 turSNSiteSpotlightDocument.setType(DOCUMENT_TYPE);
                 turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
             }
-
         } catch (ParseException | JsonProcessingException e) {
             logger.error(e.getMessage(), e);
         }

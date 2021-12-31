@@ -17,11 +17,6 @@
 
 package com.viglet.turing.sn.template;
 
-import java.util.Date;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
@@ -45,6 +40,10 @@ import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightT
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.Date;
 
 /**
  * @author Alexandre Oliveira
@@ -165,7 +164,7 @@ public class TurSNTemplate {
 		TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
 		turSNSiteSpotlight.setDescription("Spotlight Sample");
 		turSNSiteSpotlight.setName("Spotlight Sample");
-		turSNSiteSpotlight.setDate(new Date());
+		turSNSiteSpotlight.setModificationDate(new Date());
 		turSNSiteSpotlight.setManaged(1);
 		turSNSiteSpotlight.setProvider("TURING");
 		turSNSiteSpotlight.setTurSNSite(turSNSite);

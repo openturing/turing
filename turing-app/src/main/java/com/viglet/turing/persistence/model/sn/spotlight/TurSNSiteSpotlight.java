@@ -17,21 +17,19 @@
 
 package com.viglet.turing.persistence.model.sn.spotlight;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.*;
+
+import javax.persistence.Entity;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-
-import javax.persistence.*;
-
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
 
 /**
  * The persistent class for the turSNSiteSpotlight database table.
@@ -54,15 +52,17 @@ public class TurSNSiteSpotlight implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String name;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String description;
 
-	@Column(name = "dateChat")
 	@Temporal(TemporalType.TIMESTAMP)
-	private Date date;
+	private Date modificationDate;
 
 	@Column
 	private int managed = 1;
+
+	@Column
+	private String unmanagedId;
 
 	@Column
 	private String provider = "TURING";
@@ -133,14 +133,6 @@ public class TurSNSiteSpotlight implements Serializable {
 		this.turSNSiteSpotlightTerms = turSNSiteSpotlightTerms;
 	}
 
-	public Date getDate() {
-		return date;
-	}
-
-	public void setDate(Date date) {
-		this.date = date;
-	}
-
 	public int getManaged() {
 		return managed;
 	}
@@ -157,4 +149,19 @@ public class TurSNSiteSpotlight implements Serializable {
 		this.provider = provider;
 	}
 
+	public Date getModificationDate() {
+		return modificationDate;
+	}
+
+	public void setModificationDate(Date modificationDate) {
+		this.modificationDate = modificationDate;
+	}
+
+	public String getUnmanagedId() {
+		return unmanagedId;
+	}
+
+	public void setUnmanagedId(String unmanagedId) {
+		this.unmanagedId = unmanagedId;
+	}
 }
