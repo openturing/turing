@@ -220,8 +220,10 @@ dependencies {
     implementation group: 'org.apache.tika', name: 'tika-core', version:'2.2.1'
     implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.2.1'
 	implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: '2.2.1'
-	implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: '2.2.1'	
-    implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version:'2.0'
+	implementation group: 'org.apache.tika', name: 'tika-parser-text-module', version: '2.2.1'
+	implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: '2.2.1'
+	implementation group: 'org.apache.tika', name: 'tika-parser-microsoft-module', version: '2.2.1'
+	implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version:'2.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-core', version:'1.4.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version:'1.4.0'
 
