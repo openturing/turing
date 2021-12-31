@@ -18,13 +18,14 @@
 
 <mapping>
   <fields>
-    <field dest="content" source="text"/>
-    <field dest="title" source="title"/>
-    <field dest="host" source="host"/>
-    <field dest="segment" source="segment"/>
-    <field dest="boost" source="boost"/>
-    <field dest="digest" source="digest"/>
-    <field dest="tstamp" source="tstamp"/>
+    <field source="content" dest="text"/>
+    <field source="title" dest="title"/>
+    <field source="host" dest="host"/>
+    <field source="segment" dest="segment"/>
+    <field source="boost" dest="boost" remove="true"/>
+    <field source="digest" dest="digest"/>
+    <field source="tstamp" dest="tstamp"/>
+    <field source="metatag.description" dest="descriptionNutch" />
   </fields>
   <sites>
     <site url="https://viglet.com" snSite="Sample"/>

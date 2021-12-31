@@ -71,21 +71,21 @@ public class TurSNProcessQueue {
     public void receiveIndexingQueue(TurSNJob turSNJob) {
         logger.debug("receiveQueue turSNJob: {}", turSNJob);
         if (turSNJob != null) {
-            this.turSNSiteRepository.findById(turSNJob.getSiteId()).ifPresent(turSNSite -> {
-                turSNJob.getTurSNJobItems().forEach(turSNJobItem -> {
-                    if (processJob(turSNSite, turSNJobItem)) {
-                        processQueueInfo(turSNSite, turSNJobItem);
-                    } else {
-                        logNoProcessed(turSNSite, turSNJobItem);
-                    }
-                });
-            });
+            this.turSNSiteRepository.findById(turSNJob.getSiteId()).ifPresent(turSNSite ->
+                    turSNJob.getTurSNJobItems().forEach(turSNJobItem -> {
+                        if (processJob(turSNSite, turSNJobItem)) {
+                            processQueueInfo(turSNSite, turSNJobItem);
+                        } else {
+                            noProcessedWarning(turSNSite, turSNJobItem);
+                        }
+                    })
+            );
         } else {
             logger.debug("turSNJob empty or siteId empty");
         }
     }
 
-    private void logNoProcessed(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
+    private void noProcessedWarning(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
         logger.warn("Object ID '{}' of '{}' SN Site ({}) was not processed",
                 turSNJobItem.getAttributes().get("id"),
                 turSNSite.getName(),
@@ -180,7 +180,6 @@ public class TurSNProcessQueue {
         }
     }
 
-
     public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {
         Map<String, Object> attributesWithUniqueTerms = new HashMap<>();
         if (attributes != null) {
@@ -214,5 +213,4 @@ public class TurSNProcessQueue {
                     term -> logger.debug("removeDuplicateTerms: attributesWithUniqueTerms Array Value: {}", term));
         }
     }
-
 }
