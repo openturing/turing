@@ -32,7 +32,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -57,7 +56,6 @@ public class TurSNSpotlightProcess {
     @Autowired
     private TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
 
-    @Transactional
     private void ifExistsDeleteSpotlightDependencies(TurSNSiteSpotlight turSNSiteSpotlight) {
         if (turSNSiteSpotlight != null) {
             Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = turSNSiteSpotlightTermRepository
@@ -98,7 +96,7 @@ public class TurSNSpotlightProcess {
                 .findByUnmanagedIdAndTurSNSite(id, turSNSite);
         TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
         if (!turSNSiteSpotlights.isEmpty()) {
-            turSNSiteSpotlights.forEach(turSNSiteSpotlightItem -> ifExistsDeleteSpotlightDependencies(turSNSiteSpotlightItem));
+            turSNSiteSpotlights.forEach(this::ifExistsDeleteSpotlightDependencies);
             if (turSNSiteSpotlights.size() > 1) {
                 turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
             } else {

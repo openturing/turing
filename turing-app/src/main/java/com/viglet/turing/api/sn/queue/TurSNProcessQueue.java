@@ -64,6 +64,7 @@ public class TurSNProcessQueue {
 
 
     public TurSNProcessQueue() {
+        // Empty
     }
 
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)

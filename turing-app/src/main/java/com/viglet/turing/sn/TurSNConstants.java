@@ -21,6 +21,10 @@ package com.viglet.turing.sn;
  * @since 0.3.5
  */
 public class TurSNConstants {
+    private TurSNConstants() {
+        throw new IllegalStateException("Semantic Navigation Constants class");
+    }
+
     public static final String FILE_PROTOCOL = "file://";
     public static final String EXPORT_FILE = "export.json";
     public static final String INDEXING_QUEUE = "indexing.queue";
