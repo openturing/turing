@@ -48,6 +48,48 @@ task compileOne (type: JavaCompile) {
     targetCompatibility = '1.8'
 }
 
+task cleanDistribution(type: Delete) {
+    delete "$buildDir/extracted_dist/"
+}
+
+task copyJar(type: Copy) {
+    from "$buildDir/libs/turing-wem-all.jar"
+    into "$buildDir/extracted_dist/"
+}
+task copyConfs(type: Copy) {
+    from "conf"
+    into "$buildDir/extracted_dist/conf/"
+}
+
+task copyCommandLine(type: Copy) {
+    from "command-line"
+    into "$buildDir/extracted_dist/command-line/"
+}
+
+task copySQL(type: Copy) {
+    from "sql"
+    into "$buildDir/extracted_dist/sql/"
+}
+
+task copyImports(type: Copy) {
+    from "imports"
+    into "$buildDir/extracted_dist/imports/"
+}
+
+task packageDistribution(type: Zip) {
+    archiveFileName = "turing-wem.zip"
+    destinationDirectory = file("$buildDir/dist")
+    from "$buildDir/extracted_dist"
+}
+
+cleanDistribution.dependsOn shadowJar
+copyConfs.dependsOn cleanDistribution
+copyCommandLine.dependsOn copyConfs
+copySQL.dependsOn copyCommandLine
+copyImports.dependsOn copySQL
+copyJar.dependsOn copyImports
+packageDistribution.dependsOn copyJar
+
 dependencies {
     //implementation files(fileTree(dir: 'lib', includes: ['*.jar']))
     implementation group: 'com.beust', name: 'jcommander', version: '1.81'	
