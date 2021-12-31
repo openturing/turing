@@ -104,34 +104,34 @@ public class TurSNProcessQueue {
     }
 
     private boolean deleteJob(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
-        boolean status;
-        String id = (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE);
-        status = (id != null && turSNSiteSpotlightRepository.findById(id).isPresent())
+        return (turSNSpotlightProcess.isSpotlightJob(turSNJobItem))
                 ? turSNSpotlightProcess.deleteUnmanagedSpotlight(turSNJobItem, turSNSite)
                 : deindex(turSNJobItem, turSNSite);
-        return status;
     }
 
     private boolean createJob(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
-        boolean status;
-        status = turSNSpotlightProcess.isSpotlightJob(turSNJobItem) ?
+        return turSNSpotlightProcess.isSpotlightJob(turSNJobItem) ?
                 turSNSpotlightProcess.createUnmanagedSpotlight(turSNJobItem, turSNSite)
                 : index(turSNJobItem, turSNSite);
-        return status;
     }
 
     private void processQueueInfo(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
-        if (turSNSite != null && turSNJobItem != null && turSNJobItem.getAttributes() != null
-                && turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
+        if (turSNSite != null && turSNJobItem != null && turSNJobItem.getAttributes() != null) {
             String action = null;
             if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
                 action = "Created";
             } else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
                 action = "Deleted";
             }
-            logger.info("{} the Object ID '{}' of '{}' SN Site ({}).", action,
-                    turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
-                    turSNSite.getName(), turSNJobItem.getLocale());
+            if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
+                logger.info("{} the Object ID '{}' of '{}' SN Site ({}).", action,
+                        turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
+                        turSNSite.getName(), turSNJobItem.getLocale());
+            } else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.TYPE_ATTRIBUTE)) {
+                logger.info("{} the Object Type '{}' of '{}' SN Site ({}).", action,
+                        turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE),
+                        turSNSite.getName(), turSNJobItem.getLocale());
+            }
         }
     }
 

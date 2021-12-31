@@ -47,16 +47,20 @@ public class TurSpotlightExtraFields implements ExtAttributeInterface {
                 Object title = attributedObject.getAttributeValue("TITLE-TUR-SPOTLIGHT-CONTENT");
                 Object content = attributedObject.getAttributeValue("CONTENT-TUR-SPOTLIGHT-CONTENT");
                 Object link = attributedObject.getAttributeValue("LINK-TUR-SPOTLIGHT-CONTENT");
-
-                ContentInstance contentInstance = (ContentInstance) ManagedObject
-                        .findByContentManagementId(new ManagedObjectVCMRef(content.toString()));
-                TurCTDAttributes turCTDAttributes = new TurCTDAttributes();
-                turCTDAttributes.setId((String) content);
-                turCTDAttributes.setTitle((String) contentInstance.getAttributeValue("title"));
-                String ctdJson = new ObjectMapper().writeValueAsString(turCTDAttributes);
-
+                String contentText = "";
+                if (((String) content).length() == 40 ) {
+                    ContentInstance contentInstance = (ContentInstance) ManagedObject
+                            .findByContentManagementId(new ManagedObjectVCMRef(content.toString()));
+                    TurCTDAttributes turCTDAttributes = new TurCTDAttributes();
+                    turCTDAttributes.setId((String) content);
+                    turCTDAttributes.setTitle((String) contentInstance.getAttributeValue("title"));
+                    contentText = new ObjectMapper().writeValueAsString(turCTDAttributes);
+                }
+                else {
+                    contentText = (String) content;
+                }
                 TurSpotlightContent turSpotlightContent = new TurSpotlightContent((int) position, (String) title,
-                        ctdJson, (String) link);
+                        contentText, (String) link);
                 turSpotlightContents.add(turSpotlightContent);
             } catch (ApplicationException | ValidationException | JsonProcessingException e) {
                 log.error(e.getMessage(), e);

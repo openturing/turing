@@ -73,12 +73,29 @@ public class TurSNImportAPI {
         } else {
             turSNJobItems.forEach(turSNJobItem -> {
                 if (turSNJobItem != null) {
-                    logger.warn("Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
-                            turSNJobItem.getAttributes() != null ?
-                                    turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE) : null,
-                            siteName,
-                            turSNJobItem.getLocale(),
-                            siteName);
+                    if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
+                        logger.warn("Create Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
+                                turSNJobItem.getAttributes() != null ?
+                                        turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE) : null,
+                                siteName,
+                                turSNJobItem.getLocale(),
+                                siteName);
+                    }
+                    else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)){
+                        if (turSNJobItem.getAttributes() != null && turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
+                            logger.warn("Delete Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
+                                    turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
+                                    siteName,
+                                    turSNJobItem.getLocale(),
+                                    siteName);
+                        } else {
+                            logger.warn("Delete Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
+                                    turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE),
+                                    siteName,
+                                    turSNJobItem.getLocale(),
+                                    siteName);
+                        }
+                    }
                 } else {
                     logger.warn("No JobItem' of '{}' SN Site", siteName);
                 }
