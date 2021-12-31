@@ -51,6 +51,4 @@ public interface TurSNSiteSpotlightRepository extends JpaRepository<TurSNSiteSpo
 	@Modifying
 	@Query("delete from  TurSNSiteSpotlight sss where sss.id = ?1")
 	void delete(String id);
-
-	void deleteByUnmanagedIdAndTurSNSite(String unmanagedId, TurSNSite turSNSite);
 }
