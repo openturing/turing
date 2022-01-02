@@ -94,7 +94,7 @@ configurations {
     all*.exclude group: 'xml-apis'
 }
 
-ext['log4j2.version'] = '2.17.0'
+ext['log4j2.version'] = '2.17.1'
 
 dependencies {
     compileOnly group: 'javax.servlet', name: 'servlet-api', version: '2.5'

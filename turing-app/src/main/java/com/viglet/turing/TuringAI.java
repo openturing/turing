@@ -17,8 +17,10 @@
 
 package com.viglet.turing;
 
-import java.io.File;
-
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
+import com.viglet.turing.console.TurConsole;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.store.PersistenceAdapter;
 import org.apache.activemq.store.kahadb.KahaDBPersistenceAdapter;
@@ -33,16 +35,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
-import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
-import com.viglet.turing.console.TurConsole;
+import java.io.File;
 
 @SpringBootApplication
 @EnableJms
 @EnableCaching
 @EnableEncryptableProperties
-public class Turing {
+public class TuringAI {
 
 	public static void main(String... args) {
 
@@ -50,7 +49,7 @@ public class Turing {
 			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
 					.run(args);
 		} else {
-			SpringApplication.run(Turing.class, args);
+			SpringApplication.run(TuringAI.class, args);
 		}
 
 	}
