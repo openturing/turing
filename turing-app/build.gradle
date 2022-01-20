@@ -192,7 +192,7 @@ dependencies {
     implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
 
     // MariaDB
-    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.7.4'
+    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.7.5'
 
     // PostgreSQL
     implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.1'
