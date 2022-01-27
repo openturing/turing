@@ -158,7 +158,7 @@ public class TurSNProcessQueue {
         turSNThesaurusProcess.processThesaurus(turSNJobItem, turSNSite, consolidateResults);
 
         Map<String, Object> attributes = this.removeDuplicateTerms(
-                turSNMergeProvidersProcess.mergeDocuments(turSNSite, consolidateResults));
+                turSNMergeProvidersProcess.mergeDocuments(turSNSite, consolidateResults, turSNJobItem.getLocale()));
 
         // SE
         return turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale()).map(turSolrInstance -> {

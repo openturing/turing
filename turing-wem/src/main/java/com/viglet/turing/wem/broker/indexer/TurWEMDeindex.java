@@ -40,8 +40,8 @@ public class TurWEMDeindex {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 		String siteName = TuringUtils.getSiteNameFromManagedObjectVCMRef(managedObjectVCMRef, config);
-		AsLocaleData asLocaleData = TuringUtils.getAsLocaleDataFromManagedObject(managedObjectVCMRef);
-		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
+		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName);
+
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 		turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 		Map<String, Object> attributes = new HashMap<>();

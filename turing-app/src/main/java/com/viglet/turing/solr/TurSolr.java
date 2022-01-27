@@ -89,6 +89,9 @@ public class TurSolr {
 
 	public void indexing(TurSolrInstance turSolrInstance, TurSNSite turSNSite, Map<String, Object> attributes) {
 		logger.debug("Executing indexing ...");
+		attributes.remove("score");
+		attributes.remove("_version_");
+		attributes.remove("boost");
 		this.addDocument(turSolrInstance, turSNSite, attributes);
 	}
 
