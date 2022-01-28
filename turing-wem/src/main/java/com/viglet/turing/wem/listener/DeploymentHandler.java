@@ -22,12 +22,11 @@ import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.as.server.event.AsDeploymentEvent;
 import com.vignette.logging.context.ContextLogger;
 
-
 public class DeploymentHandler {
 
 	private static final ContextLogger log = ContextLogger.getLogger(DeploymentHandler.class);
 
-    IHandlerConfiguration config;
+    private IHandlerConfiguration config;
 
     public DeploymentHandler(IHandlerConfiguration config) {
         this.config = config;
@@ -41,12 +40,6 @@ public class DeploymentHandler {
     public void onManagedObjectUpdate(ManagedObject mo, AsDeploymentEvent deploymentEvent) {
         boolean result = TurWEMIndexer.indexUpdate(mo, config);
         log.debug("Viglet Turing Indexing Update: " + result);
-    }
-
-    public void onManagedObjectDelete(ManagedObject mo, AsDeploymentEvent deploymentEvent) {
-       
-        boolean result = TurWEMIndexer.indexDelete(mo, config);
-        log.debug("Viglet Turing Indexing Delete: " + result);
     }
 
 }

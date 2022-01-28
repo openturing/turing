@@ -51,7 +51,7 @@ public class TurWEMAttrClass {
 			if (log.isDebugEnabled())
 				log.debug("ClassName : " + className);
 
-			Object extAttribute = Class.forName(className).newInstance();
+			Object extAttribute = Class.forName(className).getDeclaredConstructor().newInstance();
 			TurMultiValue turMultiValue = ((ExtAttributeInterface) extAttribute).consume(turingTag, ci, attributeData,
 					config);
 			TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);

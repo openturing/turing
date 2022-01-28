@@ -74,8 +74,12 @@ public class TurSolrField {
 			return longToString(attrValue);
 		} else if (attrValue instanceof Object[]) {
 			return objectArrayToString(attrValue);
+		} else if (attrValue instanceof Date) {
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+			simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+			return simpleDateFormat.format(attrValue);
 		} else {
-			return (String) attrValue;
+			return attrValue.toString();
 		}
 	}
 

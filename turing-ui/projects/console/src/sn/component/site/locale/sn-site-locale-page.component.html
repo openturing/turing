@@ -11,17 +11,55 @@
         </div>
       </div>
     </div>
-    <div class="Subhead-actions"><button type="button" class="btn btn-primary">Save</button></div>
+    <div class="Subhead-actions" style="display: inherit;">
+      <details *ngIf="!isNewObject()" #modalDeleteLocale id="modalDeleteLocale"
+        class="details-reset details-overlay details-overlay-dark mr-2" style="display: unset;">
+        <summary class="btn btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
+            class="mr-1"></span>Delete language</summary>
+        <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast" style="overflow: hidden;">
+          <div class="Box-header">
+            <button onclick='document.getElementById("modalDeleteLocale").removeAttribute("open");'
+              class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
+              <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
+                aria-hidden="true">
+                <path fill-rule="evenodd"
+                  d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
+                </path>
+              </svg>
+            </button>
+            <h3 class="Box-title">Are you absolutely sure?</h3>
+
+          </div>
+          <div class="flash flash-warn flash-full">
+            Unexpected bad things will happen if you don’t read this!
+          </div>
+
+          <div class="Box-body overflow-auto">
+            <p>
+              This action <strong>cannot</strong> be undone. This will permanently delete the
+              <strong>{{snSiteLocale.language}}</strong> language.
+            </p>
+            <button (click)="delete(snSiteLocale)" class="btn-danger btn btn-block">
+              <span class="d-md-inline-block d-none">I understand the consequences, delete this language</span>
+            </button>
+          </div>
+        </details-dialog>
+      </details>
+      <button type="button" (click)="save(snSiteLocale)" class="btn btn-primary">{{saveButtonCaption()}}</button>
+    </div>
   </div>
   <div class="form-group">
     <div class="form-group-header">
       <label for="sn-field-language">Language</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSiteLocale.language" class="form-control" type="text" id="sn-field-name"
-        style="width: 100%;" />
-      <p class="note" id="sn-field-language-tip">
-        Name will appear on semantic navigation site field list.
+      <select [(ngModel)]="snSiteLocale.language" class="form-select" style="width: 100%;">
+        <option *ngFor="let locale of (getTurLocales() | async)" [value]="locale.initials">
+          {{locale.en}} ({{locale.initials}})
+        </option>
+      </select>
+      <p class="note" id="help-text-for-checkbox">
+        Language of semantic navigation site.
       </p>
     </div>
   </div>
@@ -30,10 +68,15 @@
       <label for="sn-field-description">NLP Instance</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSiteLocale.turNLPInstance.title" class="form-control" type="text" id="sn-field-description"
-        style="width: 100%;" />
+      <select [(ngModel)]="snSiteLocale.turNLPInstance" [compareWith]="compareNLPInstance" class="form-select"
+        style="width: 100%;">
+        <option [ngValue]=null>-- No NLP --</option>
+        <option *ngFor="let nlpInstance of (geTurNLPInstances() | async)" [ngValue]="nlpInstance">
+          {{nlpInstance.title}}
+        </option>
+      </select>
       <p class="note" id="sn-field-description-tip">
-        Description will appear on semantic navigation site field list.
+        NLP Instance used by semantic navigation site when content is indexed to "{{snSiteLocale.language}}" language.
       </p>
     </div>
   </div>
@@ -45,7 +88,7 @@
       <input [(ngModel)]="snSiteLocale.core" class="form-control" type="text" id="sn-field-description"
         style="width: 100%;" />
       <p class="note" id="sn-field-description-tip">
-        Description will appear on semantic navigation site field list.
+        Core of Search Engine to store and to search indexed content.
       </p>
     </div>
   </div>

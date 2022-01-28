@@ -8,7 +8,7 @@
 			</Pattern>
 		</layout>
 	</appender>
-	<logger name="com.viglet.turing.Turing" level="info"
+	<logger name="com.viglet.turing.TuringAI" level="info"
 		additivity="false">
 		<appender-ref ref="CONSOLE" />
 	</logger>

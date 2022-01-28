@@ -39,7 +39,7 @@ public class TurNLPVendorOnStartup {
 			TurNLPVendor turNLPVendor = new TurNLPVendor();
 			turNLPVendor.setId(TurNLPVendorsConstant.CORENLP);
 			turNLPVendor.setDescription("Stanford CoreNLP");
-			turNLPVendor.setPlugin("com.viglet.turing.plugins.corenlp.TurCoreNLPConnector");
+			turNLPVendor.setPlugin("com.viglet.turing.plugins.nlp.corenlp.TurCoreNLPConnector");
 			turNLPVendor.setTitle("Stanford CoreNLP");
 			turNLPVendor.setWebsite("http://stanfordnlp.github.io/CoreNLP");
 			turNLPVendorRepository.save(turNLPVendor);
@@ -47,7 +47,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendor = new TurNLPVendor();
 			turNLPVendor.setId(TurNLPVendorsConstant.OTCA);
 			turNLPVendor.setDescription("OpenText OTCA");
-			turNLPVendor.setPlugin("com.viglet.turing.plugins.otca.TurTMEConnector");
+			turNLPVendor.setPlugin("com.viglet.turing.plugins.nlp.otca.TurTMEConnector");
 			turNLPVendor.setTitle("OpenText OTCA");
 			turNLPVendor.setWebsite("http://opentext.com/what-we-do/products/discovery");
 			turNLPVendorRepository.save(turNLPVendor);
@@ -55,7 +55,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendor = new TurNLPVendor();
 			turNLPVendor.setId(TurNLPVendorsConstant.OPENNLP);
 			turNLPVendor.setDescription("Apache OpenNLP");
-			turNLPVendor.setPlugin("com.viglet.turing.plugins.opennlp.TurOpenNLPConnector");
+			turNLPVendor.setPlugin("com.viglet.turing.plugins.nlp.opennlp.TurOpenNLPConnector");
 			turNLPVendor.setTitle("Apache OpenNLP");
 			turNLPVendor.setWebsite("https://opennlp.apache.org");
 			turNLPVendorRepository.save(turNLPVendor);
@@ -63,7 +63,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendor = new TurNLPVendor();
 			turNLPVendor.setId(TurNLPVendorsConstant.SPACY);
 			turNLPVendor.setTitle("SpaCy");
-			turNLPVendor.setPlugin("com.viglet.turing.plugins.spacy.TurSpaCyConnector");
+			turNLPVendor.setPlugin("com.viglet.turing.plugins.nlp.spacy.TurSpaCyConnector");
 			turNLPVendor.setDescription("SpaCy");
 			turNLPVendor.setWebsite("https://spacy.io");
 			turNLPVendorRepository.save(turNLPVendor);
@@ -71,7 +71,7 @@ public class TurNLPVendorOnStartup {
 			turNLPVendor = new TurNLPVendor();
 			turNLPVendor.setId(TurNLPVendorsConstant.POLYGLOT);
 			turNLPVendor.setTitle("Polyglot");
-			turNLPVendor.setPlugin("com.viglet.turing.plugins.polyglot.TurPolyglotConnector");
+			turNLPVendor.setPlugin("com.viglet.turing.plugins.nlp.polyglot.TurPolyglotConnector");
 			turNLPVendor.setDescription("Polyglot");
 			turNLPVendor.setWebsite("http://polyglot-nlp.com");
 			turNLPVendorRepository.save(turNLPVendor);

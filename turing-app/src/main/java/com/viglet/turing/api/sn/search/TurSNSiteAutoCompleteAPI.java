@@ -19,6 +19,7 @@ package com.viglet.turing.api.sn.search;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -61,8 +62,7 @@ public class TurSNSiteAutoCompleteAPI {
 	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,
 			@RequestParam(required = true, name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, defaultValue = "20", name = TurSNParamType.ROWS) long rows,
-			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale,
-			HttpServletRequest request) {
+			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale, HttpServletRequest request) {
 
 		SpellCheckResponse turSEResults = executeAutoCompleteFromSE(siteName, locale, q);
 		int tokenQSize = q.split(" ").length;
@@ -74,11 +74,13 @@ public class TurSNSiteAutoCompleteAPI {
 	private SpellCheckResponse executeAutoCompleteFromSE(String siteName, String locale, String q) {
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		SpellCheckResponse turSEResults = null;
-		TurSolrInstance turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
-		try {
-			turSEResults = turSolr.autoComplete(turSolrInstance, q);
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
+		Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
+		if (turSolrInstance.isPresent()) {
+			try {
+				turSEResults = turSolr.autoComplete(turSolrInstance.get(), q);
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
 		}
 		return turSEResults;
 	}

@@ -23,7 +23,7 @@ import javax.persistence.*;
 
 import org.hibernate.annotations.GenericGenerator;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * The persistent class for the turSNSiteSpotlightDocument database table.
@@ -34,6 +34,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 @Entity
 @Table(name = "turSNSiteSpotlightTerm")
 @NamedQuery(name = "TurSNSiteSpotlightTerm.findAll", query = "SELECT snsst FROM TurSNSiteSpotlightTerm snsst")
+@JsonIgnoreProperties({ "turSNSiteSpotlight"})
 public class TurSNSiteSpotlightTerm implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -47,11 +48,10 @@ public class TurSNSiteSpotlightTerm implements Serializable {
 	private String name;
 
 	// bi-directional many-to-one association to TurSNSiteSpotlight
-	@ManyToOne
-	@JoinColumn(name = "sn_site_spotlight_id", nullable = false)
-	@JsonBackReference(value = "turSNSiteSpotlightTerm-turSNSiteSpotlight")
+	@ManyToOne(fetch = FetchType.LAZY) // (cascade = {CascadeType.ALL})
+	@JoinColumn(name = "sn_site_spotlight_id")
 	private TurSNSiteSpotlight turSNSiteSpotlight;
-
+	
 	public String getId() {
 		return id;
 	}

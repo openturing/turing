@@ -20,13 +20,13 @@ package com.viglet.turing.persistence.repository.sn.spotlight;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
-
-import java.util.Collection;
-import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author Alexandre Oliveira
@@ -36,10 +36,15 @@ public interface TurSNSiteSpotlightRepository extends JpaRepository<TurSNSiteSpo
 
 	@SuppressWarnings("unchecked")
 	TurSNSiteSpotlight save(TurSNSiteSpotlight turSNSiteSpotlight);
-	
+
+	Set<TurSNSiteSpotlight> findByUnmanagedIdAndTurSNSite(String unmanagedId, TurSNSite turSNSite);
+
 	List<TurSNSiteSpotlight> findByTurSNSite(TurSNSite turSNSite);
 	
-	List<TurSNSiteSpotlight> findDistinctByTurSNSiteAndTurSNSiteSpotlightTermsIn(TurSNSite turSNSite, Collection<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms);
+	Set<TurSNSiteSpotlight> findByProvider(String provider);
+
+	List<TurSNSiteSpotlight> findDistinctByTurSNSiteAndTurSNSiteSpotlightTermsIn(TurSNSite turSNSite,
+																				 Collection<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms);
 	
 	void delete(TurSNSiteSpotlight turSNSiteSpotlight);
 

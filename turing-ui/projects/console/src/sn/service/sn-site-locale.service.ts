@@ -20,6 +20,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { TurSNSiteLocale } from '../model/sn-site-locale.model';
+import { TurSNSite } from '../model/sn-site.model';
 
 @Injectable()
 export class TurSNSiteLocaleService {
@@ -33,10 +34,22 @@ export class TurSNSiteLocaleService {
     return this.httpClient.get<TurSNSiteLocale>(`${environment.apiUrl}/api/sn/${siteId}/locale/${id}`);
   }
 
-  public save(siteId: string, turSNSiteLocale: TurSNSiteLocale): Observable<TurSNSiteLocale> {
-    return this.httpClient.put<TurSNSiteLocale>(`${environment.apiUrl}/api/sn/${siteId}/locale/${turSNSiteLocale.id}`,
-      JSON.stringify(turSNSiteLocale));
-
+  getStructure(siteId: string): Observable<TurSNSiteLocale> {
+    return this.httpClient.get<TurSNSiteLocale>(`${environment.apiUrl}/api/sn/${siteId}/locale/structure`);
   }
 
+  public save(turSNSiteLocale: TurSNSiteLocale, newObject: boolean): Observable<TurSNSiteLocale> {
+    if (newObject) {
+      return this.httpClient.post<TurSNSiteLocale>(`${environment.apiUrl}/api/sn/${turSNSiteLocale.turSNSite.id}/locale`,
+        JSON.stringify(turSNSiteLocale));
+    }
+    else {
+      return this.httpClient.put<TurSNSiteLocale>(`${environment.apiUrl}/api/sn/${turSNSiteLocale.turSNSite.id}/locale/${turSNSiteLocale.id}`,
+        JSON.stringify(turSNSiteLocale));
+    }
+  }
+  public delete(turSNSiteLocale: TurSNSiteLocale): Observable<TurSNSiteLocale> {
+    return this.httpClient.delete<TurSNSiteLocale>(`${environment.apiUrl}/api/sn/${turSNSiteLocale.turSNSite.id}/locale/${turSNSiteLocale.id}`);
+
+  }
 }

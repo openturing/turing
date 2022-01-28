@@ -100,16 +100,18 @@ dependencies {
     implementation group: 'org.apache.nutch', name: 'nutch', version: '1.18'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.8'	    
     implementation group: 'org.apache.solr', name: 'solr-solrj', version: "8.5.1"
-    implementation group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.12"
+    implementation group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.14"
     implementation group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.5.10"
     implementation group: 'org.apache.hadoop', name: 'hadoop-core', version: '0.20.2'
    	implementation group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.1.3'
-	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: '0.3.3'
+	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: 'f752da72b7'
+	implementation project(':turing-nutch:nutch-commons')
 	
 	localDeps group: 'org.apache.solr', name: 'solr-solrj', version: "8.5.1"
     localDeps group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.12"
     localDeps group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.5.10"
-    localDeps group: 'com.github.openturing', name: 'turing-java-sdk', version: '0.3.3'
+    localDeps group: 'com.github.openturing', name: 'turing-java-sdk', version: 'f752da72b7'
+    localDeps project(':turing-nutch:nutch-commons')
 }
 
 test {

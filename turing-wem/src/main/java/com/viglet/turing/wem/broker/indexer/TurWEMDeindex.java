@@ -16,64 +16,56 @@
  */
 package com.viglet.turing.wem.broker.indexer;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.wem.config.GenericResourceHandlerConfiguration;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
+import com.viglet.turing.wem.config.TurSNSiteConfig;
 import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AsLocaleData;
-import com.vignette.as.client.exception.ApplicationException;
-import com.vignette.as.client.javabean.ManagedObject;
-import com.vignette.logging.context.ContextLogger;
+import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class TurWEMDeindex {
-	private static final ContextLogger logger = ContextLogger.getLogger(TurWEMDeindex.class);
 
 	private TurWEMDeindex() {
 		throw new IllegalStateException("TurWEMDeindex");
 	}
 
 	// This method deletes the content to the Viglet Turing broker
-	public static void indexDelete(ManagedObject mo, IHandlerConfiguration config) {
+	public static void indexDelete(ManagedObjectVCMRef managedObjectVCMRef, IHandlerConfiguration config) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
+		String siteName = TuringUtils.getSiteNameFromManagedObjectVCMRef(managedObjectVCMRef, config);
+		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName);
 
+		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
+		turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 		Map<String, Object> attributes = new HashMap<>();
-		String guid = mo.getContentManagementId().getId();
-		attributes.put("id", guid);
+
+		String guid = managedObjectVCMRef.getId();
+		attributes.put(GenericResourceHandlerConfiguration.ID_ATTRIBUTE, guid);
+		attributes.put(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
-		try {
 
-			AsLocaleData asLocaleData = null;
-			if (mo.getLocale() != null && mo.getLocale().getAsLocale() != null
-					&& mo.getLocale().getAsLocale().getData() != null)
-				asLocaleData = mo.getLocale().getAsLocale().getData();
-			TuringUtils.sendToTuring(turSNJobItems, config, asLocaleData);
-		} catch (IOException | ApplicationException e) {
-			logger.error(e);
-		}
+		TuringUtils.sendToTuring(turSNJobItems, config, turSNSiteConfig);
 	}
 
-	public static void indexDeleteByType(String typeName, IHandlerConfiguration config) {
+	public static void indexDeleteByType(String siteName, String typeName, IHandlerConfiguration config) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
+		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName);
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-
+		turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 		Map<String, Object> attributes = new HashMap<>();
-		attributes.put("type", typeName);
+		attributes.put(GenericResourceHandlerConfiguration.TYPE_ATTRIBUTE, typeName);
+		attributes.put(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
-		try {
-			AsLocaleData asLocaleData = null;
-			TuringUtils.sendToTuring(turSNJobItems, config, asLocaleData);
-		} catch (IOException e) {
-			logger.error(e);
-		}
+		TuringUtils.sendToTuring(turSNJobItems, config, turSNSiteConfig);
 	}
 }

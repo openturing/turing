@@ -78,7 +78,7 @@
 
       <details class="details-reset details-overlay">
         <summary class="btn btn-sm" aria-haspopup="true">
-          <i>Language:</i>
+          <em>Language:</em>
           <span> {{snSearch.queryContext.query.locale}}</span>
         </summary>
         <div class="SelectMenu">
@@ -103,9 +103,14 @@
     <div *ngIf="snSearch.results.document.length <= 0" class="blankslate blankslate-large">
       <span octicon="search" [size]=48 class="mb-3"></span>
       <h3 class="mb-1">We couldn’t find any results matching '{{turQuery}}'.</h3>
-      <p>You can try to see all the available content, maybe you have a new idea. :-)</p>
-      <button class="btn btn-primary my-3" type="button" (click)="showAll()">Show all the available content</button>
-
+      <h3 *ngIf="snSearch.widget.spellCheck.correctedText" class="mb-1">Did you mean '<button class="btn-link"
+          (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
+          style="font-style: italic;font-weight: bold;">{{snSearch.widget.spellCheck.corrected.text}}</button>'?
+      </h3>
+      <div *ngIf="!snSearch.widget.spellCheck.correctedText">
+        <p>You can try to see all the available content, maybe you have a new idea. :-)</p>
+        <button class="btn btn-primary my-3" type="button" (click)="showAll()">Show all the available content</button>
+      </div>
     </div>
 
     <div *ngIf="snSearch.results.document.length > 0">
@@ -147,7 +152,7 @@
 
           <details class="details-reset details-overlay">
             <summary class="btn btn-sm" aria-haspopup="true">
-              <i>Order by:</i>
+              <em>Order by:</em>
               <span> {{camelize(turSort)}}</span>
             </summary>
             <div class="SelectMenu">
@@ -173,7 +178,7 @@
           </details>
         </div>
         <div>
-          <div *ngIf="snSearch.widget.spellCheck.correctedText">
+          <div *ngIf="snSearch.widget.spellCheck.usingCorrectedText && snSearch.widget.spellCheck.correctedText">
             <h4 class="mb-1">Showing results for <button class="btn-link"
                 (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
                 style="font-style: italic;font-weight: bold;">{{snSearch.widget.spellCheck.corrected.text}}</button>.
@@ -181,6 +186,12 @@
             <p>Instead, search for <button class="btn-link"
                 (click)="turRedirect(snSearch.widget.spellCheck.original.link)"
                 style="font-weight: bold;">{{snSearch.widget.spellCheck.original.text}}</button></p>
+          </div>
+          <div *ngIf="!snSearch.widget.spellCheck.usingCorrectedText && snSearch.widget.spellCheck.correctedText">
+            <h4 class="mb-1">Did you mean '<button class="btn-link"
+                (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
+                style="font-style: italic;font-weight: bold;">{{snSearch.widget.spellCheck.corrected.text}}</button>'?
+            </h4>
           </div>
           <ul *ngIf="snSearch.results as snSearchResults;" class="repo-list">
             <ng-container *ngFor="let document of snSearchResults.document">
@@ -193,7 +204,7 @@
                     </svg>
 
                     <h3 class="mb-1" [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></h3>
-                    <p [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]"></p>
+                    <p [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description] | safeHtml"></p>
                     <a href="{{document.fields[snSearch.queryContext.defaultFields.url]}}" class="btn btn-primary my-3"
                       type="button">Read More</a>
                   </div>

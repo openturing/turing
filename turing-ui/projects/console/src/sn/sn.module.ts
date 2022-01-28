@@ -27,6 +27,11 @@ import { TurSNSiteLocaleService } from './service/sn-site-locale.service';
 import { TurSNSiteLocalePageComponent } from './component/site/locale/sn-site-locale-page.component';
 import { TurSNSiteLocaleRootPageComponent } from './component/site/locale/sn-site-locale-root-page.component';
 import { TurSNSiteLocaleListPageComponent } from './component/site/locale/sn-site-locale-list-page.component';
+import { TurNLPVendorService } from '../nlp/service/nlp-vendor.service';
+import { TurSNSiteMergeListPageComponent } from './component/site/merge/sn-site-merge-list-page.component';
+import { TurSNSiteMergePageComponent } from './component/site/merge/sn-site-merge-page.component';
+import { TurSNSiteMergeRootPageComponent } from './component/site/merge/sn-site-merge-root-page.component';
+import { TurSNSiteMergeService } from './service/sn-site-merge.service';
 
 @NgModule({
   declarations: [
@@ -43,7 +48,10 @@ import { TurSNSiteLocaleListPageComponent } from './component/site/locale/sn-sit
     TurSNSiteSpotlightPageComponent,
     TurSNSiteLocaleRootPageComponent,
     TurSNSiteLocaleListPageComponent,
-    TurSNSiteLocalePageComponent
+    TurSNSiteLocalePageComponent,
+    TurSNSiteMergeRootPageComponent,
+    TurSNSiteMergeListPageComponent,
+    TurSNSiteMergePageComponent
   ],
   imports: [
     CommonModule,
@@ -59,10 +67,12 @@ import { TurSNSiteLocaleListPageComponent } from './component/site/locale/sn-sit
     TurSNSiteService,
     TurSEInstanceService,
     TurNLPInstanceService,
+    TurNLPVendorService,
     TurLocaleService,
     TurSNFieldTypeService,
     TurSNSiteSpotlightService,
-    TurSNSiteLocaleService
+    TurSNSiteLocaleService,
+    TurSNSiteMergeService
   ],
   schemas: [ CUSTOM_ELEMENTS_SCHEMA ]
 })

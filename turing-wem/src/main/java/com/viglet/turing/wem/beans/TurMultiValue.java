@@ -11,4 +11,5 @@ public class TurMultiValue extends ArrayList<String> {
 		turMultiValue.add(text);
 		return turMultiValue;
 	}
+
 }

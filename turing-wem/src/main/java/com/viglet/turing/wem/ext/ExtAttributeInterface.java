@@ -25,5 +25,6 @@ import com.vignette.logging.context.ContextLogger;
 
 public interface ExtAttributeInterface {
 	static final ContextLogger log = ContextLogger.getLogger(ExtAttributeInterface.class);
-	public TurMultiValue consume (TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config) throws Exception;	
+	public TurMultiValue consume (TuringTag tag, ContentInstance ci, AttributeData attributeData,
+								  IHandlerConfiguration config) throws Exception;
 }

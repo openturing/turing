@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
- * 
+ * Copyright (C) 2016-2019 Alexandre Oliveira <alexandre.oliveira@viglet.com>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -26,28 +26,21 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurChannelPath implements ExtAttributeInterface {
-	private static final ContextLogger log = ContextLogger.getLogger(TurChannelPath.class);
+    private static final ContextLogger log = ContextLogger.getLogger(TurChannelPath.class);
 
-	@Override
-	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config)
-			throws Exception {
-		if (log.isDebugEnabled())
-			log.debug("Executing TurChannelPath");
-
-		
-		StringBuilder channelPath = new StringBuilder();
-		ChannelRef[] cref = ci.getChannelAssociations();
-		for (int i = 0; i < cref.length; i++) {
-			Channel currentChannel = cref[i].getChannel();
-			String[] breadcrumb = currentChannel.getBreadcrumbNamePath(true);
-			for (int j = 0; j < breadcrumb.length; j++)
-				channelPath.append("/" + breadcrumb[j]);
-		}
-		
-		TurMultiValue turMultiValue = new TurMultiValue();
-		turMultiValue.add(channelPath.toString());
-		
-		return turMultiValue;		
-	}
+    @Override
+    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config)
+            throws Exception {
+        log.debug("Executing TurChannelPath");
+        StringBuilder channelPath = new StringBuilder();
+        ChannelRef[] channelRefs = ci.getChannelAssociations();
+        for (int i = 0; i < channelRefs.length; i++) {
+            Channel currentChannel = channelRefs[i].getChannel();
+            String[] breadcrumb = currentChannel.getBreadcrumbNamePath(true);
+            for (int j = 0; j < breadcrumb.length; j++)
+                channelPath.append("/" + breadcrumb[j]);
+        }
+        return TurMultiValue.singleItem(channelPath.toString());
+    }
 
 }

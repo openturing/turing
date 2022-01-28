@@ -43,9 +43,12 @@ import com.google.common.io.CharStreams;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBean;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBeans;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
+import com.viglet.turing.persistence.repository.nlp.TurNLPVendorEntityRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 
@@ -61,7 +64,30 @@ public class TurNLPProcess {
 	private ServletContext context;
 	@Autowired
 	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
+	@Autowired
+	private TurNLPVendorEntityRepository turNLPVendorEntityRepository;
+	public TurNLPInstance saveAndAssocEntity(TurNLPInstance turNLPInstance) {
+		TurNLPInstance turNLPInstanceEdit = this.turNLPInstanceRepository.save(turNLPInstance);
+		this.copyEntitiesFromVendorToInstance(turNLPInstanceEdit);
+		return turNLPInstanceEdit;
+	}
 
+	private void copyEntitiesFromVendorToInstance(TurNLPInstance turNLPInstance) {
+		List<TurNLPVendorEntity> turNLPVendorEntities = turNLPVendorEntityRepository
+				.findByTurNLPVendor(turNLPInstance.getTurNLPVendor());
+		if (turNLPVendorEntities != null) {
+			for (TurNLPVendorEntity turNLPVendorEntity : turNLPVendorEntities) {
+				TurNLPInstanceEntity turNLPInstanceEntity = new TurNLPInstanceEntity();
+				turNLPInstanceEntity.setName(turNLPVendorEntity.getName());
+				turNLPInstanceEntity.setTurNLPEntity(turNLPVendorEntity.getTurNLPEntity());
+				turNLPInstanceEntity.setTurNLPInstance(turNLPInstance);
+				turNLPInstanceEntity.setEnabled(1);
+				turNLPInstanceEntity.setLanguage(turNLPVendorEntity.getLanguage());
+				turNLPInstanceEntityRepository.save(turNLPInstanceEntity);
+			}
+		}
+	}
+	
 	public TurNLPInstance getDefaultNLPInstance() {
 		return init().map(TurNLP::getTurNLPInstance).orElse(null);
 	}

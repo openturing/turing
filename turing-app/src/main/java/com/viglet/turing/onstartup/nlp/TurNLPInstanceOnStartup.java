@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.nlp.TurNLPVendorsConstant;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
@@ -39,7 +40,9 @@ public class TurNLPInstanceOnStartup {
 	private TurNLPVendorRepository turNLPVendorRepository;
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
-
+	@Autowired
+	private TurNLPProcess turNLPProcess;
+	
 	public void createDefaultRows() {
 
 		TurConfigVar turConfigVar = new TurConfigVar();
@@ -55,7 +58,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setPort(0);
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
-				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+				turNLPProcess.saveAndAssocEntity(turNLPInstance);
 
 				turConfigVar.setId("DEFAULT_NLP");
 				turConfigVar.setPath("/nlp");
@@ -70,7 +73,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setPort(0);
 				turNLPInstance.setLanguage(TurLocaleRepository.PT_BR);
 				turNLPInstance.setEnabled(1);
-				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+				turNLPProcess.saveAndAssocEntity(turNLPInstance);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.CORENLP).ifPresent(turNLPVendorCoreNLP -> {
@@ -82,7 +85,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setPort(9001);
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
-				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+				turNLPProcess.saveAndAssocEntity(turNLPInstance);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.SPACY).ifPresent(turNLPVendorSpaCy -> {
@@ -94,7 +97,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setPort(2800);
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
-				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+				turNLPProcess.saveAndAssocEntity(turNLPInstance);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).ifPresent(turNLPVendorPolyglot -> {
@@ -106,7 +109,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setPort(2810);
 				turNLPInstance.setLanguage(TurLocaleRepository.CA);
 				turNLPInstance.setEnabled(1);
-				turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+				turNLPProcess.saveAndAssocEntity(turNLPInstance);
 			});
 		}
 

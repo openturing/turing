@@ -27,7 +27,6 @@
               "@primer/octicons"
             ],
             "baseHref": "/console/",
-            "deployUrl": "/console/",
             "outputPath": "../turing-app/src/main/resources/public/console",
             "index": "projects/console/src/index.html",
             "main": "projects/console/src/main.ts",
@@ -134,7 +133,7 @@
             "allowedCommonJsDependencies": [
               "@primer/octicons"
             ],
-            "deployUrl": "/sn/templates/",
+            "baseHref": "/sn/templates/",
             "outputPath": "../turing-app/src/main/resources/public/sn/templates",
             "index": "projects/sn/src/index.html",
             "main": "projects/sn/src/main.ts",
@@ -241,7 +240,7 @@
             "allowedCommonJsDependencies": [
               "@primer/octicons"
             ],
-            "deployUrl": "/welcome/",
+            "baseHref": "/welcome/",
             "outputPath": "../turing-app/src/main/resources/public/welcome",
             "index": "projects/welcome/src/index.html",
             "main": "projects/welcome/src/main.ts",
@@ -349,7 +348,6 @@
               "@primer/octicons"
             ],
             "baseHref": "/converse/",
-            "deployUrl": "/converse/",
             "outputPath": "../turing-app/src/main/resources/public/converse",
             "index": "projects/converse/src/index.html",
             "main": "projects/converse/src/main.ts",

@@ -37,7 +37,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
  * The persistent class for the turSNSiteLocale database table.
  * 
  * @author Alexandre Oliveira
- * @since 0.3.4
+ * @since 0.3.5
  */
 @Entity
 @Table(name = "turSNSiteLocale")

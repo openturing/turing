@@ -16,6 +16,9 @@ import { TurSNSiteSpotlightPageComponent } from './component/site/spotlight/sn-s
 import { TurSNSiteLocaleRootPageComponent } from './component/site/locale/sn-site-locale-root-page.component';
 import { TurSNSiteLocaleListPageComponent } from './component/site/locale/sn-site-locale-list-page.component';
 import { TurSNSiteLocalePageComponent } from './component/site/locale/sn-site-locale-page.component';
+import { TurSNSiteMergeRootPageComponent } from './component/site/merge/sn-site-merge-root-page.component';
+import { TurSNSiteMergeListPageComponent } from './component/site/merge/sn-site-merge-list-page.component';
+import { TurSNSiteMergePageComponent } from './component/site/merge/sn-site-merge-page.component';
 
 const routes: Routes = [
   {
@@ -34,10 +37,18 @@ const routes: Routes = [
             ]
           },
           {
+            path: 'merge', component: TurSNSiteMergeRootPageComponent, canActivate: [AuthGuard],
+            children: [
+              { path: 'list', component: TurSNSiteMergeListPageComponent, canActivate: [AuthGuard] },
+              { path: ':mergeId', component: TurSNSiteMergePageComponent, canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' }
+            ]
+          },
+          {
             path: 'locale', component: TurSNSiteLocaleRootPageComponent, canActivate: [AuthGuard],
             children: [
               { path: 'list', component: TurSNSiteLocaleListPageComponent, canActivate: [AuthGuard] },
-              { path: 'edit/:localeId', component: TurSNSiteLocalePageComponent, canActivate: [AuthGuard] },
+              { path: ':localeId', component: TurSNSiteLocalePageComponent, canActivate: [AuthGuard] },
               { path: '', redirectTo: 'list', pathMatch: 'full' }
             ]
           },
@@ -46,7 +57,7 @@ const routes: Routes = [
             path: 'field', component: TurSNSiteFieldRootPageComponent, canActivate: [AuthGuard],
             children: [
               { path: 'list', component: TurSNSiteFieldListPageComponent, canActivate: [AuthGuard] },
-              { path: 'edit/:fieldId', component: TurSNSiteFieldPageComponent, canActivate: [AuthGuard] },
+              { path: ':fieldId', component: TurSNSiteFieldPageComponent, canActivate: [AuthGuard] },
               { path: '', redirectTo: 'list', pathMatch: 'full' }
             ]
           },

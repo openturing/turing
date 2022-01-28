@@ -6,10 +6,9 @@ url,string,false,true,true,true
 image,text_general,false,true,true,true
 modification_date,pdate,false,true,true,true
 publication_date,pdate,false,true,true,true
-attachments,string,true,true,true,true
 author,string,true,true,true,true
 section,string,false,true,true,true
-provider,string,false,true,true,true
+source_apps,string,true,true,true,true
 title,text_general,false,true,true,true
 turing_entity_DATE,string,true,true,true,true
 turing_entity_GL,string,true,true,true,true

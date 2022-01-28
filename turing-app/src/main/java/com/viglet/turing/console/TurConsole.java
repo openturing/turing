@@ -34,7 +34,7 @@ public class TurConsole implements ApplicationRunner {
 	@Override
 	public void run(ApplicationArguments args) {
 		if (!args.getNonOptionArgs().isEmpty() && args.getNonOptionArgs().get(1).equals("encrypt")) {
-			System.console().writer().println(turEncryptCLI.encrypt(args.getOptionValues("input").get(0)));
+			System.err.println(turEncryptCLI.encrypt(args.getOptionValues("input").get(0)));
 		}
 	}
 }

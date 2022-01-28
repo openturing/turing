@@ -1,7 +1,7 @@
 buildscript {
 	repositories {
-		mavenCentral()
-		 jcenter()
+	mavenCentral()
+	jcenter()
 	}
 	dependencies {
         classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
@@ -13,6 +13,7 @@ plugins {
 }
 
 apply plugin: 'java'
+apply plugin: 'eclipse'
 apply plugin: 'com.github.johnrengelman.shadow'
 
 
@@ -29,8 +30,8 @@ compileJava.options.encoding = "UTF-8"
 compileTestJava.options.encoding = "UTF-8"
 
 repositories {
-		maven { url 'https://jitpack.io' }
-        mavenCentral()
+	maven { url 'https://jitpack.io' }
+    mavenCentral()
 }
 
 javadoc {
@@ -47,13 +48,63 @@ task compileOne (type: JavaCompile) {
     targetCompatibility = '1.8'
 }
 
+task cleanDistribution(type: Delete) {
+    delete "$buildDir/extracted_dist/"
+}
+
+task copyJar(type: Copy) {
+    from "$buildDir/libs/turing-wem-all.jar"
+    into "$buildDir/extracted_dist/"
+}
+task copyConfs(type: Copy) {
+    from "conf"
+    into "$buildDir/extracted_dist/conf/"
+}
+
+task copyCommandLine(type: Copy) {
+    from "command-line"
+    into "$buildDir/extracted_dist/command-line/"
+}
+
+task copySQL(type: Copy) {
+    from "sql"
+    into "$buildDir/extracted_dist/sql/"
+}
+
+task copyImports(type: Copy) {
+    from "imports"
+    into "$buildDir/extracted_dist/imports/"
+}
+
+task packageDistribution(type: Zip) {
+    archiveFileName = "turing-wem.zip"
+    destinationDirectory = file("$buildDir/dist")
+    from "$buildDir/extracted_dist"
+}
+
+cleanDistribution.dependsOn shadowJar
+copyConfs.dependsOn cleanDistribution
+copyCommandLine.dependsOn copyConfs
+copySQL.dependsOn copyCommandLine
+copyImports.dependsOn copySQL
+copyJar.dependsOn copyImports
+packageDistribution.dependsOn copyJar
+
 dependencies {
     //implementation files(fileTree(dir: 'lib', includes: ['*.jar']))
     implementation group: 'com.beust', name: 'jcommander', version: '1.81'	
-    implementation group: 'log4j', name: 'log4j', version: '1.2.7'
+    implementation group: 'log4j', name: 'log4j', version: '1.2.17'
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
-	implementation group: 'com.github.alegauss' , name: 'dummy-vgn', version: '8e2eb9b874'
-	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: '0.3.3'
+	implementation group: 'com.github.alegauss' , name: 'dummy-vgn', version: '2f2b7a1aea'
+	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: 'f752da72b7'
+	
+	// Jackson
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
+    
+    // HTTP Client
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
+    implementation group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.2'
+
 }
 
 jar {
@@ -70,14 +121,15 @@ jar {
    exclude 'castor-*.jar'
    exclude 'thirdparty-combined.jar'
      dependencies {
-      exclude(dependency('log4j:log4j'))
-      exclude(dependency('org.apache.httpcomponents:httpcore'))
-      exclude(dependency('org.apache.httpcomponents:httpclient'))
-      exclude(dependency('commons-httpclient:commons-httpclient'))
-      exclude(dependency('com.github.alegauss:dummy-vgn'))
-      exclude(dependency('commons-codec:commons-codec'))
-      exclude(dependency('commons-logging:commons-logging'))
-      exclude(dependency('org.json:json'))
+         exclude(dependency('log4j:log4j'))
+         exclude(dependency('org.apache.httpcomponents:httpcore'))
+         exclude(dependency('org.apache.httpcomponents:httpclient'))
+         exclude(dependency('org.apache.httpcomponents:httpmime'))
+         exclude(dependency('commons-httpclient:commons-httpclient'))
+         exclude(dependency('com.github.alegauss:dummy-vgn'))
+         exclude(dependency('commons-codec:commons-codec'))
+         exclude(dependency('commons-logging:commons-logging'))
+         exclude(dependency('org.json:json'))
    }
 }
 

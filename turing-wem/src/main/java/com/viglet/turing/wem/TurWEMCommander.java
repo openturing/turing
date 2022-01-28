@@ -16,22 +16,10 @@
  */
 package com.viglet.turing.wem;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.viglet.turing.wem.broker.indexer.TurWEMIndex;
 import com.viglet.turing.wem.broker.indexer.TurWEMIndexer;
 import com.viglet.turing.wem.config.GenericResourceHandlerConfiguration;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
@@ -39,28 +27,13 @@ import com.viglet.turing.wem.index.IValidToIndex;
 import com.viglet.turing.wem.mappers.MappingDefinitions;
 import com.viglet.turing.wem.mappers.MappingDefinitionsProcess;
 import com.vignette.as.apps.contentIndex.ContentIndexException;
-import com.vignette.as.client.common.AsObjectRequestParameters;
-import com.vignette.as.client.common.AsObjectType;
-import com.vignette.as.client.common.ContentInstanceDBQuery;
-import com.vignette.as.client.common.ContentInstanceWhereClause;
-import com.vignette.as.client.common.Query;
-import com.vignette.as.client.common.RequestParameters;
-import com.vignette.as.client.common.StaticFileDBQuery;
-import com.vignette.as.client.common.StaticFileWhereClause;
-import com.vignette.as.client.common.WhereClause;
+import com.vignette.as.client.common.*;
 import com.vignette.as.client.common.ref.ContentTypeRef;
 import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
 import com.vignette.as.client.common.ref.ObjectTypeRef;
 import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.exception.ValidationException;
-import com.vignette.as.client.javabean.ContentInstance;
-import com.vignette.as.client.javabean.ContentItem;
-import com.vignette.as.client.javabean.ContentType;
-import com.vignette.as.client.javabean.IPagingList;
-import com.vignette.as.client.javabean.ManagedObject;
-import com.vignette.as.client.javabean.ObjectType;
-import com.vignette.as.client.javabean.QueryManager;
-import com.vignette.as.client.javabean.StaticFile;
+import com.vignette.as.client.javabean.*;
 import com.vignette.as.config.ConfigUtil;
 import com.vignette.config.client.common.ConfigException;
 import com.vignette.config.util.ConfigLog;
@@ -68,6 +41,14 @@ import com.vignette.logging.LoggingManager;
 import com.vignette.logging.context.ContextLogger;
 import com.vignette.util.VgnException;
 import com.vignette.util.VgnIllegalArgumentException;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.*;
 
 public class TurWEMCommander {
 	private static JCommander jCommander = new JCommander();
@@ -103,6 +84,9 @@ public class TurWEMCommander {
 			"-g" }, description = "The path to a file containing the GUID(s) of content instances or static files to be indexed.")
 	private String guidFilePath = null;
 
+	@Parameter(names = { "--siteName", "-s" }, description = "WEM site name.", required = true)
+	private String siteName = "Sample";
+
 	@Parameter(names = { "--page-size",
 			"-z" }, description = "The page size. After processing a page the processed count is written to an offset file."
 					+ " This helps the indexer to resume from that page even after failure. ")
@@ -116,7 +100,7 @@ public class TurWEMCommander {
 
 	public static void main(String... argv) {
 		TurWEMCommander main = new TurWEMCommander();
-		
+
 		jCommander.addObject(main);
 
 		try {
@@ -167,19 +151,18 @@ public class TurWEMCommander {
 		}
 	}
 
-	private void runByContentType()
-			throws ApplicationException, ContentIndexException, ConfigException, MalformedURLException, ValidationException {
+	private void runByContentType() throws ApplicationException, ContentIndexException, ConfigException,
+			MalformedURLException, ValidationException {
 		ObjectType objectType = ObjectType.findByName(contentType);
 		if (objectType != null)
-			this.indexByContentType(objectType);
+			this.indexByContentType(siteName, objectType);
 	}
 
 	private void runByGuidList()
 			throws ValidationException, ApplicationException, ContentIndexException, ConfigException {
 		ArrayList<String> contentInstances = new ArrayList<>();
-		try (FileReader fr = new FileReader(guidFilePath);
-				BufferedReader br = new BufferedReader(fr)){
-			
+		try (FileReader fr = new FileReader(guidFilePath); BufferedReader br = new BufferedReader(fr)) {
+
 			String sCurrentLine;
 
 			while ((sCurrentLine = br.readLine()) != null) {
@@ -197,57 +180,67 @@ public class TurWEMCommander {
 				this.indexGUIDList(contentInstances);
 
 		} catch (IOException e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 	}
 
-	private void runAllObjectTypes()
-			throws ApplicationException, ContentIndexException, ConfigException, MalformedURLException, ValidationException {
+	private void runAllObjectTypes() throws ApplicationException, ContentIndexException, ConfigException,
+			MalformedURLException, ValidationException {
 		IPagingList contentTypeIPagingList = ContentType.findAll();
+		@SuppressWarnings("unchecked")
 		List<Object> contentTypes = contentTypeIPagingList.asList();
 		contentTypes.add(StaticFile.getTypeObjectTypeRef().getObjectType());
 
-		jCommander.getConsole().println(String.format("Total number of Object Types: %d", contentTypes.size()));
+		jCommander.getConsole().println(
+				String.format("Total number of Object Types: %d", TurWEMIndex.countCTDIntoMapping(turingConfig)));
 		for (Object objectType : contentTypes) {
 			ObjectType ot = (ObjectType) objectType;
-			jCommander.getConsole().println(String.format("Retrieved Object Type: %s %s", ot.getData().getName(),
-					ot.getContentManagementId().toString()));
-			this.indexByContentType(ot);
+			if (TurWEMIndex.isCTDIntoMapping(ot.getData().getName(), turingConfig)) {
+				jCommander.getConsole().println(String.format("%n Retrieved Object Type: %s %s", ot.getData().getName(),
+						ot.getContentManagementId().toString()));
+				this.indexByContentType(siteName, ot);
+			}
 		}
 	}
 
-	private void indexByContentType(ObjectType objectType)
+	private void indexByContentType(String siteName, ObjectType objectType)
 			throws ApplicationException, ContentIndexException, ConfigException, MalformedURLException {
-		int totalPages = 0;
-		IPagingList results = null;
-		int totalEntries;
-		try {
-			TurWEMIndexer.indexDeleteByType(objectType.getData().getName(), turingConfig);
-			MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(turingConfig);
-			RequestParameters rp = new RequestParameters();
-			rp.setTopRelationOnly(false);
-			
-			AsObjectType aot = AsObjectType.getInstance(new ObjectTypeRef((ManagedObject) objectType));
-			IValidToIndex instance = mappingDefinitions.validToIndex(objectType, turingConfig);
-			if (aot.isStaticFile()) {
-				results = queryStaticFilesList(rp, instance);
-			} else {
-				results = queryContentInstanceList(objectType, rp, instance);
+		if (TurWEMIndex.isCTDIntoMapping(objectType.getData().getName(), turingConfig)) {
+			int totalPages = 0;
+			IPagingList results = null;
+			int totalEntries;
+			try {
+				TurWEMIndexer.indexDeleteByType(siteName, objectType.getData().getName(), turingConfig);
+				MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(turingConfig);
+				RequestParameters rp = new RequestParameters();
+				rp.setTopRelationOnly(false);
+
+				AsObjectType aot = AsObjectType.getInstance(new ObjectTypeRef((ManagedObject) objectType));
+				IValidToIndex instance = mappingDefinitions.validToIndex(objectType, turingConfig);
+				if (aot.isStaticFile()) {
+					results = queryStaticFilesList(rp, instance);
+				} else {
+					results = queryContentInstanceList(objectType, rp, instance);
+				}
+				totalEntries = results.size();
+				jCommander.getConsole().println(String.format("Number of Content Instances of type %s %s = %d",
+						objectType.getData().getName(), objectType.getContentManagementId().toString(), totalEntries));
+				totalPages = totalEntries > 0 ? (totalEntries + pageSize - 1) / pageSize : totalEntries / pageSize;
+
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
 			}
-			totalEntries = results.size();
-			jCommander.getConsole().println(String.format("Number of Content Instances of type %s %s = %d",
-					objectType.getData().getName(), objectType.getContentManagementId().toString(), totalEntries));
-			totalPages = totalEntries > 0 ? (totalEntries + pageSize - 1) / pageSize : totalEntries / pageSize;
-			
-		} catch (Exception e) {
-			logger.error(e);
+			indexByContentTypeProcess(totalPages, results);
+		} else {
+			jCommander.getConsole().println(String.format("%s type is not configured in CTD Mapping XML file.",
+					objectType.getData().getName()));
 		}
-		indexByContentTypeProcess(totalPages, results);
+
 	}
 
 	private IPagingList queryContentInstanceList(ObjectType objectType, RequestParameters rp, IValidToIndex instance)
 			throws Exception {
-		
+
 		IPagingList results;
 		ContentInstanceWhereClause clause = new ContentInstanceWhereClause();
 		ContentInstanceDBQuery query = new ContentInstanceDBQuery(new ContentTypeRef(objectType.getId()));
@@ -276,7 +269,8 @@ public class TurWEMCommander {
 		if (it != null) {
 			while (it.hasNext()) {
 				List<?> managedObjects = (List<?>) it.next();
-				jCommander.getConsole().println(String.format("Processing Page %d of %d pages", currentPage++, totalPages));
+				jCommander.getConsole()
+						.println(String.format("Processing Page %d of %d pages", currentPage++, totalPages));
 				long start = System.currentTimeMillis();
 				try {
 					HashSet<ManagedObjectVCMRef> validGuids = new HashSet<ManagedObjectVCMRef>();
@@ -297,13 +291,15 @@ public class TurWEMCommander {
 					if (!validGuids.isEmpty())
 						guids = validGuids.toArray(new ManagedObjectVCMRef[0]);
 
-					jCommander.getConsole().println(String.format("Processing the registration of %d assets", validGuids.size()));
+					jCommander.getConsole()
+							.println(String.format("Processing the registration of %d assets", validGuids.size()));
 					this.indexContentInstances(guids, objectMap);
 				} catch (Exception e) {
 					logger.error(e);
 				}
 				long elapsed = System.currentTimeMillis() - start;
-				jCommander.getConsole().println(String.format("%d items processed in %dms", managedObjects.size(), elapsed));
+				jCommander.getConsole()
+						.println(String.format("%d items processed in %dms", managedObjects.size(), elapsed));
 
 			}
 		}
@@ -320,7 +316,7 @@ public class TurWEMCommander {
 					ManagedObjectVCMRef ref = new ManagedObjectVCMRef(guid);
 					validGuids.add(ref);
 				} catch (VgnIllegalArgumentException e) {
-					logger.error(e);
+					logger.error(e.getMessage(), e);
 				}
 			}
 		}
@@ -340,7 +336,8 @@ public class TurWEMCommander {
 				ManagedObject mo = (ManagedObject) object;
 				objectMap.put(mo.getContentManagementId().getId(), mo);
 			}
-			jCommander.getConsole().println(String.format("Processing the registration of %d assets", managedObjects.size()));
+			jCommander.getConsole()
+					.println(String.format("Processing the registration of %d assets", managedObjects.size()));
 			this.indexContentInstances(managedObjectVCMRefs, objectMap);
 		}
 	}

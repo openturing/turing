@@ -4,4 +4,5 @@ export interface TurSNSearchSpellCheck {
   original: TurSNSearchSpellCheckText;
   corrected: TurSNSearchSpellCheckText;
   correctedText: boolean;
+  usingCorrectedText: boolean;
 }

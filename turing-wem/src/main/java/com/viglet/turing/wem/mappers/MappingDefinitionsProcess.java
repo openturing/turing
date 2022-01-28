@@ -16,28 +16,23 @@
  */
 package com.viglet.turing.wem.mappers;
 
-import org.w3c.dom.*;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-
 import com.viglet.turing.wem.beans.TurCTDMappingMap;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.beans.TuringTagMap;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.vignette.logging.context.ContextLogger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.*;
+import java.util.Map.Entry;
 
 // Open and process Mappping XML File structure
 public class MappingDefinitionsProcess {
@@ -52,8 +47,6 @@ public class MappingDefinitionsProcess {
 
 		try {
 			DocumentBuilderFactory dlf = DocumentBuilderFactory.newInstance();
-			dlf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-			dlf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
 			DocumentBuilder db = dlf.newDocumentBuilder();
 
 			File f = new File(resourceXml);
@@ -218,7 +211,8 @@ public class MappingDefinitionsProcess {
 			Element srcAttrNode = (Element) srcNodeList.item(i);
 			if (srcAttrNode.hasAttributes() && (srcAttrNode.hasAttribute(TurXMLConstant.XML_NAME_ATT)
 					|| srcAttrNode.hasAttribute(TurXMLConstant.CLASS_NAME_ATT)
-					|| srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT))) {
+					|| srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT)
+					|| srcAttrNode.hasAttribute(TurXMLConstant.RELATION_ATT))) {
 				List<TuringTag> turingTags = loadSrcAttr(srcAttrNode);
 				if (turingTags != null)
 					turingTagsPerSrcAttr.addAll(turingTags);
@@ -245,6 +239,8 @@ public class MappingDefinitionsProcess {
 		TuringTag turingTag = new TuringTag();
 		if (srcAttrNode.hasAttribute(TurXMLConstant.XML_NAME_ATT))
 			turingTag.setSrcXmlName(srcAttrNode.getAttribute(TurXMLConstant.XML_NAME_ATT));
+		else if (srcAttrNode.hasAttribute(TurXMLConstant.RELATION_ATT)) // No XMLName, but it has relation attribute
+			turingTag.setSrcXmlName(srcAttrNode.getAttribute(TurXMLConstant.RELATION_ATT));
 
 		if (srcAttrNode.hasAttribute(TurXMLConstant.CLASS_NAME_ATT))
 			turingTag.setSrcClassName(srcAttrNode.getAttribute(TurXMLConstant.CLASS_NAME_ATT));
@@ -259,14 +255,12 @@ public class MappingDefinitionsProcess {
 		if (srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT)) {
 			turingTag.setTextValue(srcAttrNode.getAttribute(TurXMLConstant.TEXT_VALUE_ATT));
 		}
-		if (srcAttrNode.hasAttribute(TurXMLConstant.MANDATORY_ATT)) {
-			if (log.isDebugEnabled())
-				log.debug(String.format("MANDATORY: %s", srcAttrNode.getAttribute(TurXMLConstant.MANDATORY_ATT)));
 
+		if (srcAttrNode.hasAttribute(TurXMLConstant.MANDATORY_ATT))
 			turingTag.setSrcMandatory(Boolean.parseBoolean(srcAttrNode.getAttribute(TurXMLConstant.MANDATORY_ATT)));
-
-		} else
+		else
 			turingTag.setSrcMandatory(false);
+	
 		if (log.isDebugEnabled())
 			log.debug(String.format("Mandatory: %b", turingTag.getSrcMandatory()));
 

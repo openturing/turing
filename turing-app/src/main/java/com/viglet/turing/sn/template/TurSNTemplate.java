@@ -17,16 +17,13 @@
 
 package com.viglet.turing.sn.template;
 
-import java.util.Date;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
+import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
@@ -35,12 +32,18 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersFieldRepository;
+import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.Date;
 
 /**
  * @author Alexandre Oliveira
@@ -66,6 +69,10 @@ public class TurSNTemplate {
 	private TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
 	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+	@Autowired
+	private TurSNSiteMergeProvidersRepository turSNSiteMergeRepository;
+	@Autowired
+	private TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository;
 
 	public void defaultSNUI(TurSNSite turSNSite) {
 		turSNSite.setRowsPerPage(10);
@@ -150,14 +157,16 @@ public class TurSNTemplate {
 		createSNSiteField(turSNSite, "site", "Site Name", TurSEFieldType.STRING, 0, "Sites", 0);
 		createSNSiteField(turSNSite, "author", "Author", TurSEFieldType.STRING, 0, "Authors", 0);
 		createSNSiteField(turSNSite, "section", "Section", TurSEFieldType.STRING, 0, "Sections", 0);
-
+		createSNSiteField(turSNSite, "source_apps", "Source Apps", TurSEFieldType.STRING, 1, "Source Apps", 0);
 	}
 
 	public void createSpotlight(TurSNSite turSNSite) {
 		TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
 		turSNSiteSpotlight.setDescription("Spotlight Sample");
 		turSNSiteSpotlight.setName("Spotlight Sample");
-		turSNSiteSpotlight.setDate(new Date());
+		turSNSiteSpotlight.setModificationDate(new Date());
+		turSNSiteSpotlight.setManaged(1);
+		turSNSiteSpotlight.setProvider("TURING");
 		turSNSiteSpotlight.setTurSNSite(turSNSite);
 		turSNSiteSpotlightRepository.save(turSNSiteSpotlight);
 
@@ -165,7 +174,8 @@ public class TurSNTemplate {
 		turSNSiteSpotlightDocument.setPosition(1);
 		turSNSiteSpotlightDocument.setTitle("Viglet Docs");
 		turSNSiteSpotlightDocument.setTurSNSiteSpotlight(turSNSiteSpotlight);
-		turSNSiteSpotlightDocument.setSearchId("https://docs.viglet.com/");
+		turSNSiteSpotlightDocument.setReferenceId("https://docs.viglet.com/");
+		turSNSiteSpotlightDocument.setLink("https://docs.viglet.com/");
 		turSNSiteSpotlightDocument.setType("Page");
 		turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
 
@@ -188,12 +198,25 @@ public class TurSNTemplate {
 		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
 		turSNSiteLocale.setTurSNSite(turSNSite);
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
+	}
 
-		TurSNSiteLocale turSNSiteLocale2 = new TurSNSiteLocale();
-		turSNSiteLocale2.setLanguage(TurLocaleRepository.PT_BR);
-		turSNSiteLocale2.setCore("turing_pt");
-		turSNSiteLocale2.setTurNLPInstance(turNLPInstanceRepository.findAll().get(1));
-		turSNSiteLocale2.setTurSNSite(turSNSite);
-		turSNSiteLocaleRepository.save(turSNSiteLocale2);
+	public void createMergeProviders(TurSNSite turSNSite) {
+		
+		TurSNSiteMergeProviders turSNSiteMerge = new TurSNSiteMergeProviders();
+		turSNSiteMerge.setTurSNSite(turSNSite);
+		turSNSiteMerge.setLocale(TurLocaleRepository.EN_US);
+		turSNSiteMerge.setProviderFrom("Nutch");
+		turSNSiteMerge.setProviderTo("WEM");
+		turSNSiteMerge.setRelationFrom("id");
+		turSNSiteMerge.setRelationTo("url");
+		turSNSiteMerge.setDescription("Merge content from Nutch into existing WEM content.");
+		
+		turSNSiteMergeRepository.save(turSNSiteMerge);
+		
+		TurSNSiteMergeProvidersField turSNSiteMergeField = new TurSNSiteMergeProvidersField();
+		turSNSiteMergeField.setName("text");
+		turSNSiteMergeField.setTurSNSiteMergeProviders(turSNSiteMerge);
+
+		turSNSiteMergeFieldRepository.save(turSNSiteMergeField);
 	}
 }

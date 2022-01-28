@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
 	license agreements. See the NOTICE file distributed with this work for additional 
 	information regarding copyright ownership. The ASF licenses this file to 
@@ -47,8 +47,7 @@
 		a particular implementation via solr.MMapDirectoryFactory, solr.NIOFSDirectoryFactory, 
 		or solr.SimpleFSDirectoryFactory. solr.RAMDirectoryFactory is memory based, 
 		not persistent, and doesn't work with replication. -->
-	<directoryFactory name="DirectoryFactory"
-		class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}" />
+	<directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}" />
 
 	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 		Index Config - These settings control low-level behavior of indexing Most 
@@ -247,19 +246,16 @@
 			FastLRUCache) size - the maximum number of entries in the cache initialSize 
 			- the initial capacity (number of entries) of the cache. (see java.util.HashMap) 
 			autowarmCount - the number of entries to prepopulate from and old cache. -->
-		<filterCache class="solr.FastLRUCache" size="512"
-			initialSize="512" autowarmCount="128" />
+		<filterCache class="solr.FastLRUCache" size="512" initialSize="512" autowarmCount="128" />
 
 		<!-- Query Result Cache Caches results of searches - ordered lists of document 
 			ids (DocList) based on a query, a sort, and the range of documents requested. -->
-		<queryResultCache class="solr.LRUCache" size="512"
-			initialSize="512" autowarmCount="128" />
+		<queryResultCache class="solr.LRUCache" size="512" initialSize="512" autowarmCount="128" />
 
 		<!-- Document Cache Caches Lucene Document objects (the stored fields for 
 			each document). Since Lucene internal document ids are transient, this cache 
 			will not be autowarmed. -->
-		<documentCache class="solr.LRUCache" size="512"
-			initialSize="512" autowarmCount="128" />
+		<documentCache class="solr.LRUCache" size="512" initialSize="512" autowarmCount="128" />
 
 		<!-- Field Value Cache Cache used to hold field values that are quickly 
 			accessible by document id. The fieldValueCache is created by default even 
@@ -363,8 +359,7 @@
 			size of Multipart File Uploads that Solr will allow in a Request. *** WARNING 
 			*** The settings below authorize Solr to fetch remote files, You should make 
 			sure your system has some authentication before using enableRemoteStreaming="true" -->
-		<requestParsers enableRemoteStreaming="true"
-			multipartUploadLimitInKB="2048000" />
+		<requestParsers enableRemoteStreaming="true" multipartUploadLimitInKB="2048000" />
 
 		<!-- HTTP Caching Set HTTP caching related parameters (for proxy caches 
 			and clients). The options below instruct Solr not to output any HTTP Caching 
@@ -408,7 +403,7 @@
 		Search Queries, the primary Request Handler provided with Solr is "SearchHandler" 
 		It delegates to a sequent of SearchComponents (see below) and supports distributed 
 		queries across multiple shards -->
-	
+
 	<requestHandler name="/select" class="solr.SearchHandler">
 		<shardHandlerFactory class="HttpShardHandlerFactory">
 			<int name="socketTimeOut">50000</int>
@@ -418,7 +413,7 @@
 		<!-- default values for query parameters can be specified, these will be 
 			overridden by parameters in the request -->
 		<lst name="defaults">
-			
+
 			<str name="echoParams">explicit</str>
 			<str name="df">content</str>
 			<str name="fl">*,score</str>
@@ -483,7 +478,7 @@
 			<str>mlt</str>
 		</arr>
 	</requestHandler>
-	
+
 	<searchComponent name="mlt" class="solr.MoreLikeThisComponent" />
 
 	<!-- Parameters for the MoreLikeThis Handler are adjusted according to observations made on a data set 
@@ -506,23 +501,23 @@
         - mlt.fl = summary
         - df = summary
          -->
-    <requestHandler name="/mlt" class="solr.MoreLikeThisHandler" >
-        <lst name="defaults">
-            <str name="echoParams">explicit</str>
-            <int name="rows">10</int>
-            <bool name="mlt">true</bool>
-            <str name="mlt.fl">summary</str>
-            <int name="mlt.maxwl">100</int>
-            <int name="mlt.minwl">4</int>
-            <int name="mlt.mintf">1</int>
-            <int name="mlt.maxqt">15</int>
-            <int name="mlt.mindf">5</int>
-            <int name="mlt.maxdf">100</int>
-            <bool name="mlt.boost">true</bool>
-            <!-- df parameter is required with keyword queries -->
-            <str name="df">summary</str>
-        </lst>
-    </requestHandler>
+	<requestHandler name="/mlt" class="solr.MoreLikeThisHandler">
+		<lst name="defaults">
+			<str name="echoParams">explicit</str>
+			<int name="rows">10</int>
+			<bool name="mlt">true</bool>
+			<str name="mlt.fl">summary</str>
+			<int name="mlt.maxwl">100</int>
+			<int name="mlt.minwl">4</int>
+			<int name="mlt.mintf">1</int>
+			<int name="mlt.maxqt">15</int>
+			<int name="mlt.mindf">5</int>
+			<int name="mlt.maxdf">100</int>
+			<bool name="mlt.boost">true</bool>
+			<!-- df parameter is required with keyword queries -->
+			<str name="df">summary</str>
+		</lst>
+	</requestHandler>
 
 	<!-- A request handler that returns indented JSON by default -->
 	<requestHandler name="/query" class="solr.SearchHandler">
@@ -661,8 +656,7 @@
 
 
 	<!-- Solr Cell Update Request Handler http://wiki.apache.org/solr/ExtractingRequestHandler -->
-	<requestHandler name="/update/extract" startup="lazy"
-		class="solr.extraction.ExtractingRequestHandler">
+	<requestHandler name="/update/extract" startup="lazy" class="solr.extraction.ExtractingRequestHandler">
 		<lst name="defaults">
 			<!--
 				recursive parameter should be set to recursively extract and index content in Zip file.
@@ -718,8 +712,7 @@
 		(true|false) - When set to true and when query analysis is performed, the 
 		produced tokens of the field value analysis will be marked as "matched" for 
 		every token that is produces by the query analysis -->
-	<requestHandler name="/analysis/field" startup="lazy"
-		class="solr.FieldAnalysisRequestHandler" />
+	<requestHandler name="/analysis/field" startup="lazy" class="solr.FieldAnalysisRequestHandler" />
 
 
 	<!-- Document Analysis Handler http://wiki.apache.org/solr/AnalysisRequestHandler 
@@ -734,8 +727,7 @@
 		or "q" request parameter that holds the query text to be analyzed. It also 
 		supports the "analysis.showmatch" parameter which when set to true, all field 
 		tokens that match the query tokens will be marked as a "match". -->
-	<requestHandler name="/analysis/document"
-		class="solr.DocumentAnalysisRequestHandler" startup="lazy" />
+	<requestHandler name="/analysis/document" class="solr.DocumentAnalysisRequestHandler" startup="lazy" />
 
 	<!-- Admin Handlers Admin Handlers - This will register all the standard 
 		admin RequestHandlers. -->
@@ -788,8 +780,7 @@
 
 	<!-- Solr Replication for SolrCloud Recovery This is the config need for 
 		SolrCloud's recovery replication. -->
-	<requestHandler name="/replication" class="solr.ReplicationHandler"
-		startup="lazy" />
+	<requestHandler name="/replication" class="solr.ReplicationHandler" startup="lazy" />
 
 
 	<!-- Search Components Search components are registered to SolrCore and 
@@ -879,8 +870,7 @@
 		THERE IS REALLY GOOD CHANCE THE SETUP BELOW IS NOT WHAT YOU WANT FOR YOUR 
 		PRODUCTION SYSTEM! See http://wiki.apache.org/solr/SpellCheckComponent for 
 		details on the request parameters. -->
-	<requestHandler name="/spell" class="solr.SearchHandler"
-		startup="lazy">
+	<requestHandler name="/spell" class="solr.SearchHandler" startup="lazy">
 		<lst name="defaults">
 			<str name="df">content</str>
 			<!-- Solr will use suggestions from both the 'default' spellchecker and 
@@ -909,8 +899,7 @@
 	<!-- A request handler for demonstrating the term vector component This 
 		is purely as an example. In reality you will likely want to add the component 
 		to your already specified request handlers. -->
-	<requestHandler name="/tvrh" class="solr.SearchHandler"
-		startup="lazy">
+	<requestHandler name="/tvrh" class="solr.SearchHandler" startup="lazy">
 		<lst name="defaults">
 			<str name="df">content</str>
 			<bool name="tv">true</bool>
@@ -924,8 +913,7 @@
 		You'll need to set the solr.cluster.enabled system property when running 
 		solr to run with clustering enabled: java -Dsolr.clustering.enabled=true 
 		-jar start.jar -->
-	<searchComponent name="clustering"
-		enable="${solr.clustering.enabled:false}" class="solr.handler.clustering.ClusteringComponent">
+	<searchComponent name="clustering" enable="${solr.clustering.enabled:false}" class="solr.handler.clustering.ClusteringComponent">
 		<!-- Declare an engine -->
 		<lst name="engine">
 			<!-- The name, only one can be named "default" -->
@@ -966,8 +954,7 @@
 	<!-- A request handler for demonstrating the clustering component This is 
 		purely as an example. In reality you will likely want to add the component 
 		to your already specified request handlers. -->
-	<requestHandler name="/clustering" startup="lazy"
-		enable="${solr.clustering.enabled:false}" class="solr.SearchHandler">
+	<requestHandler name="/clustering" startup="lazy" enable="${solr.clustering.enabled:false}" class="solr.SearchHandler">
 		<lst name="defaults">
 			<bool name="clustering">true</bool>
 			<str name="clustering.engine">default</str>
@@ -1003,8 +990,7 @@
 	<searchComponent name="terms" class="solr.TermsComponent" />
 
 	<!-- A request handler for demonstrating the terms component -->
-	<requestHandler name="/terms" class="solr.SearchHandler"
-		startup="lazy">
+	<requestHandler name="/terms" class="solr.SearchHandler" startup="lazy">
 		<lst name="defaults">
 			<bool name="terms">true</bool>
 		</lst>
@@ -1018,8 +1004,7 @@
 		a search component that enables you to configure the top results for a given 
 		query regardless of the normal lucene scoring. -->
 	<!-- A request handler for demonstrating the elevator component -->
-	<requestHandler name="/elevate" class="solr.SearchHandler"
-		startup="lazy">
+	<requestHandler name="/elevate" class="solr.SearchHandler" startup="lazy">
 		<lst name="defaults">
 			<str name="echoParams">explicit</str>
 			<str name="df">content</str>
@@ -1034,8 +1019,7 @@
 		<highlighting>
 			<!-- Configure the standard fragmenter -->
 			<!-- This could most likely be commented out in the "default" case -->
-			<fragmenter name="gap" default="true"
-				class="solr.highlight.GapFragmenter">
+			<fragmenter name="gap" default="true" class="solr.highlight.GapFragmenter">
 				<lst name="defaults">
 					<int name="hl.fragsize">100</int>
 				</lst>
@@ -1054,11 +1038,14 @@
 			</fragmenter>
 
 			<!-- Configure the standard formatter -->
-			<formatter name="html" default="true"
-				class="solr.highlight.HtmlFormatter">
+			<formatter name="html" default="true" class="solr.highlight.HtmlFormatter">
 				<lst name="defaults">
-					<str name="hl.simple.pre"><![CDATA[<em>]]></str>
-					<str name="hl.simple.post"><![CDATA[</em>]]></str>
+					<str name="hl.simple.pre">
+						<![CDATA[<em>]]>
+					</str>
+					<str name="hl.simple.post">
+						<![CDATA[</em>]]>
+					</str>
 				</lst>
 			</formatter>
 
@@ -1151,8 +1138,7 @@
 	</queryResponseWriter>
 
 	<!-- Custom response writers can be declared as needed... -->
-	<queryResponseWriter name="velocity"
-		class="solr.VelocityResponseWriter" startup="lazy" />
+	<queryResponseWriter name="velocity" class="solr.VelocityResponseWriter" startup="lazy" />
 
 
 	<!-- XSLT response writer transforms the XML output by any xslt file found 
@@ -1190,12 +1176,74 @@
 
 
 	<!-- Query parser used for inbound security filtering -->
-	<queryParser name="acl"
-		class="com.opentext.otif.security.ACLQParserPlugin" />
+	<queryParser name="acl" class="com.opentext.otif.security.ACLQParserPlugin" />
 
 	<!-- Legacy config for the admin interface -->
 	<admin>
 		<defaultQuery>*:*</defaultQuery>
 	</admin>
+	<searchComponent class="solr.SpellCheckComponent" name="tur_suggest">
+		<lst name="spellchecker">
+			<str name="name">suggest</str>
+			<str name="classname">org.apache.solr.spelling.suggest.Suggester</str>
+			<str name="lookupImpl">org.apache.solr.spelling.suggest.fst.WFSTLookupFactory</str>
+			<str name="buildOnCommit">true</str>
+			<bool name="exactMatchFirst">true</bool>
+			<str name="field">text_suggest</str>
+		</lst>
 
+		<str name="queryAnalyzerFieldType">phrase_suggest</str>
+	</searchComponent>
+
+	<searchComponent name="tur_spellcheck" class="solr.SpellCheckComponent">
+		<str name="queryAnalyzerFieldType">textSpell</str>
+		<lst name="spellchecker">
+			<str name="name">default</str>
+			<str name="field">text_spellcheck</str>
+			<str name="classname">solr.DirectSolrSpellChecker</str>
+			<str name="distanceMeasure">internal</str>
+			<float name="accuracy">0.0</float>
+			<int name="maxEdits">2</int>
+			<int name="minPrefix">1</int>
+			<int name="maxInspections">5</int>
+			<int name="minQueryLength">4</int>
+			<float name="maxQueryFrequency">0.00</float>
+			<float name="thresholdTokenFrequency">.0000</float>
+		</lst>
+	</searchComponent>
+
+	<queryConverter name="queryConverter" class="org.apache.solr.spelling.SuggestQueryConverter" />
+
+	<requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/tur_suggest">
+		<lst name="defaults">
+			<str name="spellcheck">true</str>
+			<str name="spellcheck.dictionary">suggest</str>
+			<str name="spellcheck.onlyMorePopular">true</str>
+			<str name="spellcheck.count">50</str>
+			<str name="spellcheck.collate">false</str>
+		</lst>
+		<arr name="components">
+			<str>tur_suggest</str>
+		</arr>
+	</requestHandler>
+
+
+	<requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/tur_spell" startup="lazy">
+		<lst name="defaults">
+			<str name="df">text_spellcheck</str>
+			<str name="spellcheck.dictionary">default</str>
+			<str name="spellcheck">on</str>
+			<str name="spellcheck.extendedResults">true</str>
+			<str name="spellcheck.count">10</str>
+			<str name="spellcheck.alternativeTermCount">5</str>
+			<str name="spellcheck.maxResultsForSuggest">5</str>
+			<str name="spellcheck.collate">true</str>
+			<str name="spellcheck.collateExtendedResults">true</str>
+			<str name="spellcheck.maxCollationTries">10</str>
+			<str name="spellcheck.maxCollations">1</str>
+		</lst>
+		<arr name="last-components">
+			<str>tur_spellcheck</str>
+		</arr>
+	</requestHandler>
 </config>

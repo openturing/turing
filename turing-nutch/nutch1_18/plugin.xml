@@ -10,7 +10,8 @@
     <library name="httpcore-4.4.12.jar" />
     <library name="httpmime-4.5.10.jar" />
     <library name="solr-solrj-8.5.1.jar" />
-    <library name="turing-java-sdk-0.3.3.jar" />
+    <library name="turing-java-sdk-f752da72b7.jar" />
+    <library name="turing-nutch-commons.jar" />
   </runtime>
 
   <requires>

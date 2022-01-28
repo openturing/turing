@@ -1,47 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mappingDefinitions>
-	<common-index-attrs>
-		<srcAttr className="com.viglet.turing.wem.ext.TurCTDName"
-			mandatory="true">
-			<tag>type</tag>
-		</srcAttr>
-		<srcAttr
-			className="com.viglet.turing.wem.ext.TurWEMPublicationDate"
-			mandatory="true">
-			<tag>publicationDate</tag>
-		</srcAttr>
-		<srcAttr
-			className="com.viglet.turing.wem.ext.TurWEMModificationDate"
-			mandatory="true">
-			<tag>modificationDate</tag>
-		</srcAttr>
-		<srcAttr className="com.viglet.turing.wem.ext.TurSiteName"
-			mandatory="true">
-			<tag>site</tag>
-		</srcAttr>
-		<srcAttr className="com.viglet.turing.wem.ext.HTML2Text">
-			<tag>text</tag>
-		</srcAttr>
-		<srcAttr className="com.viglet.turing.wem.ext.HTML2Text">
-			<tag>description</tag>
-		</srcAttr>
-		<srcAttr className="com.viglet.turing.wem.ext.DPSUrl"
-			mandatory="true">
-			<tag>url</tag>
-		</srcAttr>
-	</common-index-attrs>
-	<mappingDefinition
-		contentType="INNOVATE_PRESS_RELEASE">
-		<index-attrs>
-			<srcAttr xmlName="title">
-				<tag>title</tag>
-			</srcAttr>
-			<srcAttr xmlName="teaser">
-				<tag>description</tag>
-			</srcAttr>
-			<srcAttr xmlName="body">
-				<tag>text</tag>
-			</srcAttr>
-		</index-attrs>
-	</mappingDefinition>
+    <common-index-attrs>
+        <srcAttr className="com.viglet.turing.wem.ext.TurCTDName"
+                 mandatory="true">
+            <tag>type</tag>
+        </srcAttr>
+        <srcAttr
+                className="com.viglet.turing.wem.ext.TurWEMPublicationDate"
+                mandatory="true">
+            <tag>publicationDate</tag>
+        </srcAttr>
+        <srcAttr
+                className="com.viglet.turing.wem.ext.TurWEMModificationDate"
+                mandatory="true">
+            <tag>modificationDate</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.wem.ext.TurSiteName"
+                 mandatory="true">
+            <tag>site</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.wem.ext.TurHTML2Text">
+            <tag>text</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.wem.ext.TurHTML2Text">
+            <tag>description</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.wem.ext.TurDPSUrl"
+                 mandatory="true">
+            <tag>url</tag>
+        </srcAttr>
+    </common-index-attrs>
+    <mappingDefinition
+            contentType="INNOVATE_PRESS_RELEASE">
+        <index-attrs>
+            <srcAttr xmlName="title">
+                <tag>title</tag>
+            </srcAttr>
+            <srcAttr xmlName="teaser">
+                <tag>description</tag>
+            </srcAttr>
+            <srcAttr xmlName="body">
+                <tag>text</tag>
+            </srcAttr>
+            <srcAttr xmlName="image" className="com.viglet.turing.wem.ext.TurStaticFile">
+                <tag>text</tag>
+            </srcAttr>
+        </index-attrs>
+    </mappingDefinition>
+    <mappingDefinition contentType="TUR_SPOTLIGHT">
+        <index-attrs>
+            <srcAttr xmlName="NAME-TUR-SPOTLIGHT">
+                <tag>name</tag>
+            </srcAttr>
+            <srcAttr xmlName="TERMS-TUR-SPOTLIGHT">
+                <tag>terms</tag>
+            </srcAttr>
+            <srcAttr relation="WEMSYS-TUR-SPOTLIGHT-CONTENT"
+                     className="com.viglet.turing.wem.ext.TurSpotlightExtraFields">
+                <tag>content</tag>
+            </srcAttr>
+        </index-attrs>
+    </mappingDefinition>
+
 </mappingDefinitions>

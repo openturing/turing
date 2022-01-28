@@ -53,9 +53,8 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 						"/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
 						"/browserconfig.xml", "/console/**")
 				.permitAll().anyRequest().authenticated().and()
-				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf()
+				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf().ignoringAntMatchers("/api/sn/**")
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
-	//	http.csrf().disable();
 		http.cors();
 	}
 
@@ -68,7 +67,7 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 
 	@Autowired
 	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-		auth.userDetailsService(userDetailsService).passwordEncoder(passwordencoder());
+		auth.userDetailsService(userDetailsService);
 	}
 
 	@Bean(name = "passwordEncoder")

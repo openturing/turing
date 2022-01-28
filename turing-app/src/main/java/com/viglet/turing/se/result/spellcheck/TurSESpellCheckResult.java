@@ -4,6 +4,7 @@ public class TurSESpellCheckResult {
 
 	private boolean isCorrected;
 	private String correctedText;
+	private boolean usingCorrected;
 
 	public TurSESpellCheckResult() {
 		super();
@@ -33,4 +34,11 @@ public class TurSESpellCheckResult {
 		this.correctedText = correctedText;
 	}
 
+	public boolean isUsingCorrected() {
+		return usingCorrected;
+	}
+
+	public void setUsingCorrected(boolean usingCorrected) {
+		this.usingCorrected = usingCorrected;
+	}
 }

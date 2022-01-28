@@ -16,9 +16,6 @@
  */
 package com.viglet.turing.wem.broker.attribute;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.viglet.turing.wem.beans.TurAttrDef;
 import com.viglet.turing.wem.beans.TurAttrDefContext;
 import com.viglet.turing.wem.beans.TurMultiValue;
@@ -28,6 +25,9 @@ import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.javabean.AttributedObject;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TurWEMAttrXML {
 	private static final ContextLogger log = ContextLogger.getLogger(TurWEMAttrXML.class);
@@ -45,7 +45,13 @@ public class TurWEMAttrXML {
 			attributesDefs.add(turAttrDef);
 			return attributesDefs;
 		} else {
-			if (turingTag.getSrcAttributeRelation() != null && !turingTag.getSrcAttributeRelation().isEmpty())
+			if (log.isDebugEnabled()) {
+				log.debug(
+						String.format("attributeXML getSrcAttributeRelation(): %s", turingTag.getSrcAttributeRelation()));
+				log.debug(String.format("attributeXML getSrcXmlName(): %s", turingTag.getSrcXmlName()));
+			}
+			if (turingTag.getSrcAttributeRelation() != null && !turingTag.getSrcAttributeRelation().isEmpty()
+					&& !turingTag.getSrcXmlName().equals(turingTag.getSrcAttributeRelation().get(0)))
 				return addAttributeWithRelator(turAttrDefContext);
 			else
 				return addAttributeWithoutRelator(turAttrDefContext);

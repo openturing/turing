@@ -24,9 +24,7 @@ export class TurSNSiteLocaleListPageComponent {
   getId(): string {
     return this.siteId;
   }
-  newLanguage(): void {
-    //
-  }
+
   getTurSNSiteLocales(): Observable<TurSNSiteLocale[]> {
     return this.turSNSiteLocales;
   }

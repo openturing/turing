@@ -2,7 +2,8 @@
   <div class="Subhead">
     <div class="Subhead-heading"><span octicon="typography" [size]="24" class="mr-1"></span> Multi Languages</div>
     <div class="Subhead-actions">
-      <button (click)="newLanguage()" type="button" class="btn btn-primary">New Language</button>
+      <a [routerLink]="['/sn/site', getId(), 'locale', 'new']" type="button" class="btn btn-primary"><span
+          octicon="typography" [size]="16" class="mr-1"></span> New</a>
     </div>
   </div>
   <div *ngIf="(getTurSNSiteLocales() | async) as snSiteLocales; else loading" class="Box">
@@ -24,7 +25,7 @@
     <div *ngFor="let turSNSiteLocale of snSiteLocales" data-view-component="true" class="Box-body">
       <div class="d-table" style="width: 100%;">
         <div class="d-table-cell col-2">
-          <a [routerLink]="['/sn/site', getId(),'locale', 'edit', turSNSiteLocale.id ]">
+          <a [routerLink]="['/sn/site', getId(),'locale', turSNSiteLocale.id ]">
             {{turSNSiteLocale.language}}
           </a>
         </div>
@@ -32,10 +33,14 @@
           {{turSNSiteLocale.core}}
         </div>
         <div class="d-table-cell col-4">
-          {{turSNSiteLocale.turNLPInstance.title}}
+          <span *ngIf="turSNSiteLocale.turNLPInstance">
+            {{turSNSiteLocale.turNLPInstance.title}}
+          </span>
+          <span *ngIf="turSNSiteLocale.turNLPInstance == null">
+            --
+          </span>
         </div>
         <div class="d-table-cell col-4" style="text-align: right;">
-          <button class="btn btn-sm btn-danger mr-2"><span octicon="trash" [size]=16 class="mr-1"></span>Delete</button>
           <a target="_blank" href="/sn/{{turSNSiteLocale.turSNSite.name}}?_setlocale={{turSNSiteLocale.language}}"
             class="btn btn-outline btn-sm" role="button"><span octicon="eye" [size]=16 class="mr-1"></span> Open
             Search</a>

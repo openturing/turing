@@ -17,15 +17,24 @@
 
 package com.viglet.turing.solr;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.AbstractMap.SimpleEntry;
-
+import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteField;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
+import com.viglet.turing.se.TurSEParameters;
+import com.viglet.turing.se.facet.TurSEFacetResult;
+import com.viglet.turing.se.facet.TurSEFacetResultAttr;
+import com.viglet.turing.se.field.TurSEFieldType;
+import com.viglet.turing.se.result.TurSEResult;
+import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
+import com.viglet.turing.se.similar.TurSESimilarResult;
+import com.viglet.turing.sn.TurSNFieldType;
+import com.viglet.turing.sn.TurSNUtils;
+import com.viglet.turing.sn.tr.TurSNTargetingRuleMethod;
+import com.viglet.turing.sn.tr.TurSNTargetingRules;
+import com.viglet.turing.utils.TurSNSiteFieldUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -46,24 +55,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteField;
-import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
-import com.viglet.turing.se.TurSEParameters;
-import com.viglet.turing.se.facet.TurSEFacetResult;
-import com.viglet.turing.se.facet.TurSEFacetResultAttr;
-import com.viglet.turing.se.field.TurSEFieldType;
-import com.viglet.turing.se.result.TurSEResult;
-import com.viglet.turing.se.result.TurSEResults;
-import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
-import com.viglet.turing.se.similar.TurSESimilarResult;
-import com.viglet.turing.sn.TurSNFieldType;
-import com.viglet.turing.sn.TurSNUtils;
-import com.viglet.turing.sn.tr.TurSNTargetingRuleMethod;
-import com.viglet.turing.sn.tr.TurSNTargetingRules;
-import com.viglet.turing.utils.TurSNSiteFieldUtils;
+import java.io.IOException;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.*;
 
 @Component
 @Transactional
@@ -72,14 +66,32 @@ public class TurSolr {
 
 	@Autowired
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-
 	@Autowired
 	private TurSolrField turSolrField;
 	@Autowired
 	private TurSNTargetingRules turSNTargetingRules;
 
+	public long getDocumentTotal(TurSolrInstance turSolrInstance) {
+		SolrQuery query = new SolrQuery();
+		query.setQuery("*:*");
+		query.setRows(0);
+
+		try {
+			QueryResponse queryResponse = turSolrInstance.getSolrClient().query(query);
+			return queryResponse.getResults().getNumFound();
+		} catch (SolrServerException | IOException e) {
+			logger.error(e);
+		}
+
+		return 0l;
+
+	}
+
 	public void indexing(TurSolrInstance turSolrInstance, TurSNSite turSNSite, Map<String, Object> attributes) {
 		logger.debug("Executing indexing ...");
+		attributes.remove("score");
+		attributes.remove("_version_");
+		attributes.remove("boost");
 		this.addDocument(turSolrInstance, turSNSite, attributes);
 	}
 
@@ -133,16 +145,8 @@ public class TurSolr {
 		SolrInputDocument document = new SolrInputDocument();
 
 		if (attributes != null) {
-			processAttributes(attributes, turSNSiteFieldMap, document);
-
+			attributes.entrySet().forEach(entry -> processAttribute(turSNSiteFieldMap, document, entry));
 			addSolrDocument(turSolrInstance, document);
-		}
-	}
-
-	private void processAttributes(Map<String, Object> attributes, Map<String, TurSNSiteField> turSNSiteFieldMap,
-			SolrInputDocument document) {
-		for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-			processAttribute(turSNSiteFieldMap, document, entry);
 		}
 	}
 
@@ -226,6 +230,25 @@ public class TurSolr {
 		}
 	}
 
+	public SolrDocumentList solrResultAnd(TurSolrInstance turSolrInstance, Map<String, Object> attributes) {
+
+		SolrQuery query = new SolrQuery();
+
+		query.setQuery("*:*");
+		String[] fqs = attributes.entrySet().stream().map(entry -> entry.getKey() + ":\"" + entry.getValue() + "\"")
+				.toArray(String[]::new);
+		query.setFilterQueries(fqs);
+		QueryResponse queryResponse;
+		try {
+			queryResponse = turSolrInstance.getSolrClient().query(query);
+			return queryResponse.getResults();
+		} catch (IOException | SolrServerException e) {
+			logger.error(e);
+		}
+		return new SolrDocumentList();
+
+	}
+
 	public SpellCheckResponse autoComplete(TurSolrInstance turSolrInstance, String term) {
 		SolrQuery query = new SolrQuery();
 		query.setRequestHandler("/tur_suggest");
@@ -283,15 +306,13 @@ public class TurSolr {
 	}
 
 	public Optional<TurSEResults> retrieveSolrFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
-			TurSNSiteSearchContext context) {
+			TurSNSiteSearchContext context, TurSESpellCheckResult turSESpellCheckResult) {
 
 		TurSEParameters turSEParameters = context.getTurSEParameters();
 		SolrQuery query = new SolrQuery();
 		setRows(turSNSite, turSEParameters);
 		setSortEntry(turSNSite, query, turSEParameters);
-
 		if (TurSNUtils.isAutoCorrectionEnabled(context, turSNSite)) {
-			TurSESpellCheckResult turSESpellCheckResult = spellCheckTerm(turSolrInstance, turSEParameters.getQuery());
 			if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
 				query.setQuery(turSESpellCheckResult.getCorrectedText());
 			} else {
@@ -312,12 +333,12 @@ public class TurSolr {
 		List<TurSNSiteFieldExt> turSNSiteFacetFieldExts = prepareQueryFacet(turSNSite, query);
 
 		return executeSolrQueryFromSN(turSolrInstance, turSNSite, turSEParameters, query, turSNSiteMLTFieldExts,
-				turSNSiteFacetFieldExts, turSNSiteHlFieldExts);
+				turSNSiteFacetFieldExts, turSNSiteHlFieldExts, turSESpellCheckResult);
 	}
 
 	private Optional<TurSEResults> executeSolrQueryFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
 			TurSEParameters turSEParameters, SolrQuery query, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts,
-			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts, List<TurSNSiteFieldExt> turSNSiteHlFieldExts) {
+			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts, List<TurSNSiteFieldExt> turSNSiteHlFieldExts, TurSESpellCheckResult turSESpellCheckResult) {
 		TurSEResults turSEResults = new TurSEResults();
 
 		try {
@@ -334,7 +355,7 @@ public class TurSolr {
 
 			setMLT(turSNSite, turSNSiteMLTFieldExts, turSEResults, similarResults);
 
-			turSEResults.setSpellCheck(spellCheckTerm(turSolrInstance, turSEParameters.getQuery()));
+			turSEResults.setSpellCheck(turSESpellCheckResult);
 
 			return Optional.of(turSEResults);
 		} catch (IOException | SolrServerException e) {
@@ -554,7 +575,7 @@ public class TurSolr {
 			List<TurSEResult> results = new ArrayList<>();
 
 			for (SolrDocument document : queryResponse.getResults()) {
-				TurSEResult turSEResult = createTurSEResult(document);
+				TurSEResult turSEResult = TurSolrUtils.createTurSEResultFromDocument(document);
 				results.add(turSEResult);
 			}
 
@@ -666,12 +687,12 @@ public class TurSolr {
 			} else {
 				fields.put(attribute, attrValue);
 			}
-
-			turSEResult.setFields(fields);
 		}
+		turSEResult.setFields(fields);
 		return turSEResult;
 	}
 
+	
 	private void addRequiredFieldsToDocument(Map<String, Object> requiredFields, SolrDocument document) {
 		for (Object requiredFieldObject : requiredFields.keySet().toArray()) {
 			String requiredField = (String) requiredFieldObject;
@@ -679,18 +700,5 @@ public class TurSolr {
 				document.addField(requiredField, requiredFields.get(requiredField));
 			}
 		}
-	}
-
-	private TurSEResult createTurSEResult(SolrDocument document) {
-		TurSEResult turSEResult = new TurSEResult();
-
-		Map<String, Object> fields = new HashMap<>();
-		for (String attribute : document.getFieldNames()) {
-			Object attrValue = document.getFieldValue(attribute);
-			fields.put(attribute, attrValue);
-
-			turSEResult.setFields(fields);
-		}
-		return turSEResult;
 	}
 }

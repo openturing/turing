@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016-2021 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
- * 
+ * Copyright (C) 2016-2021 Alexandre Oliveira <alexandre.oliveira@viglet.com>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -27,29 +27,20 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurParentChannel implements ExtAttributeInterface {
-	private static final ContextLogger log = ContextLogger.getLogger(TurParentChannel.class);
+    private static final ContextLogger log = ContextLogger.getLogger(TurParentChannel.class);
 
-	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-			IHandlerConfiguration config) throws Exception {
-		if (log.isDebugEnabled())
-			log.debug("Executing TurParentChannel");
-
-		ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
-
-		Channel firstChannel;
-		ChannelRef[] fcref = ci.getChannelAssociations();
-
-		if (fcref.length > 0) {
-			firstChannel = fcref[0].getChannel();
-
-			Channel[] breadcrumb = firstChannel.getBreadcrumbPath(true);
-			TurMultiValue turMultiValue = new TurMultiValue();
-			turMultiValue.add(
-					etlTranslator.translateByGUID(breadcrumb[breadcrumb.length - 1].getContentManagementId().getId()));
-			return turMultiValue;
-
-		}
-
-		return new TurMultiValue();
-	}
+    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
+                                 IHandlerConfiguration config) throws Exception {
+        log.debug("Executing TurParentChannel");
+        ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
+        Channel firstChannel;
+        ChannelRef[] channelRefs = ci.getChannelAssociations();
+        if (channelRefs.length > 0) {
+            firstChannel = channelRefs[0].getChannel();
+            Channel[] breadcrumb = firstChannel.getBreadcrumbPath(true);
+            return TurMultiValue.singleItem(etlTranslator.translateByGUID(breadcrumb[breadcrumb.length - 1]
+                    .getContentManagementId().getId()));
+        }
+        return new TurMultiValue();
+    }
 }

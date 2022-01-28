@@ -6,6 +6,7 @@ import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
 public class TurSNSiteSpellCheckBean {
 
 	private boolean correctedText;
+	private boolean usingCorrectedText;
 	private TurSNSiteSpellCheckText original;
 	private TurSNSiteSpellCheckText corrected;
 
@@ -14,6 +15,7 @@ public class TurSNSiteSpellCheckBean {
 		this.correctedText = turSESpellCheckResult.isCorrected();
 		this.original = new TurSNSiteSpellCheckText(context.getUri(), context.getTurSEParameters().getQuery(), true);
 		this.corrected = new TurSNSiteSpellCheckText(context.getUri(), turSESpellCheckResult.getCorrectedText(), false);
+		this.usingCorrectedText = turSESpellCheckResult.isUsingCorrected();
 	}
 
 	public TurSNSiteSpellCheckText getOriginal() {
@@ -40,4 +42,11 @@ public class TurSNSiteSpellCheckBean {
 		this.correctedText = correctedText;
 	}
 
+	public boolean isUsingCorrectedText() {
+		return usingCorrectedText;
+	}
+
+	public void setUsingCorrectedText(boolean usingCorrectedText) {
+		this.usingCorrectedText = usingCorrectedText;
+	}
 }

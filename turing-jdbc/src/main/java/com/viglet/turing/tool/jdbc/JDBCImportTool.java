@@ -44,9 +44,9 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.viglet.turing.api.sn.job.TurSNJobAction;
-import com.viglet.turing.api.sn.job.TurSNJobItem;
-import com.viglet.turing.api.sn.job.TurSNJobItems;
+import com.viglet.turing.client.sn.job.TurSNJobAction;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.tool.file.TurFileAttributes;
 import com.viglet.turing.tool.impl.TurJDBCCustomImpl;
 import com.viglet.turing.tool.jdbc.format.TurFormatValue;
@@ -340,7 +340,7 @@ public class JDBCImportTool {
 		TurJDBCCustomImpl turJDBCCustomImpl = null;
 		if (customClassName != null) {
 			try {
-				turJDBCCustomImpl = (TurJDBCCustomImpl) Class.forName(customClassName).newInstance();
+				turJDBCCustomImpl = (TurJDBCCustomImpl) Class.forName(customClassName).getDeclaredConstructor().newInstance();
 			} catch (Exception e) {
 				logger.error("Custom Class Exception", e);
 			}

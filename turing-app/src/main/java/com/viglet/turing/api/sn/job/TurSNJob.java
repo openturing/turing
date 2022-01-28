@@ -45,4 +45,9 @@ public class TurSNJob implements Serializable {
 	public void setTurSNJobItems(TurSNJobItems turSNJobItems) {
 		this.turSNJobItems = turSNJobItems;
 	}
+	
+	public String toString() {
+		return String.format("siteId: %s, turSNJobItems: %s", this.getSiteId(), this.getTurSNJobItems());
+	}
+
 }

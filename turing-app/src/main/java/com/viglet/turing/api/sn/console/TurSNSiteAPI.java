@@ -18,6 +18,7 @@
 package com.viglet.turing.api.sn.console;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -38,13 +39,18 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import com.viglet.turing.api.sn.bean.TurSNSiteMonitoringStatusBean;
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.sn.TurSNQueue;
 import com.viglet.turing.sn.template.TurSNTemplate;
+import com.viglet.turing.solr.TurSolr;
+import com.viglet.turing.solr.TurSolrInstance;
+import com.viglet.turing.solr.TurSolrInstanceProcess;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
@@ -55,13 +61,18 @@ import io.swagger.v3.oas.annotations.Operation;
 @ComponentScan("com.viglet.turing")
 public class TurSNSiteAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteAPI.class);
-	private static final String DEFAULT_LANGUAGE = "en_US";
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
 	private TurSNSiteExport turSNSiteExport;
 	@Autowired
 	private TurSNTemplate turSNTemplate;
+	@Autowired
+	private TurSNQueue turSNQueue;
+	@Autowired
+	private TurSolrInstanceProcess turSolrInstanceProcess;
+	@Autowired
+	private TurSolr turSolr;
 
 	@Operation(summary = "Semantic Navigation Site List")
 	@GetMapping
@@ -72,16 +83,9 @@ public class TurSNSiteAPI {
 	@Operation(summary = "Semantic Navigation Site structure")
 	@GetMapping("/structure")
 	public TurSNSite turSNSiteStructure() {
-
-		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
-		turSNSiteLocale.setLanguage(DEFAULT_LANGUAGE);
-		turSNSiteLocale.setTurNLPInstance(new TurNLPInstance());
-
 		TurSNSite turSNSite = new TurSNSite();
-
 		turSNSite.setTurSEInstance(new TurSEInstance());
-		turSNSite.addTurSNSiteLocale(turSNSiteLocale);
-
+		turSNSite.setTurNLPVendor(new TurNLPVendor());
 		return turSNSite;
 	}
 
@@ -98,6 +102,7 @@ public class TurSNSiteAPI {
 			turSNSiteEdit.setName(turSNSite.getName());
 			turSNSiteEdit.setDescription(turSNSite.getDescription());
 			turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
+			turSNSiteEdit.setTurNLPVendor(turSNSite.getTurNLPVendor());
 			turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
 
 			// UI
@@ -137,6 +142,7 @@ public class TurSNSiteAPI {
 		turSNSiteRepository.save(turSNSite);
 		turSNTemplate.defaultSNUI(turSNSite);
 		turSNTemplate.createSEFields(turSNSite);
+		turSNTemplate.createLocale(turSNSite);
 		return turSNSite;
 
 	}
@@ -151,7 +157,24 @@ public class TurSNSiteAPI {
 			logger.error(e);
 		}
 		return null;
+	}
 
+	@Operation(summary = "Semantic Navigation Site Monitoring Status")
+	@GetMapping("/{id}/monitoring")
+	public TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatus(@PathVariable String id) {
+		return this.turSNSiteRepository.findById(id).map(turSNSite -> {
+			TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
+			turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
+			long documentTotal = 0l;
+			for (TurSNSiteLocale turSNSiteLocale : turSNSite.getTurSNSiteLocales()) {
+				Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
+				if (turSolrInstance.isPresent()) {
+					documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());
+				}
+			}
+			turSNSiteMonitoringStatusBean.setDocuments((int) documentTotal);
+			return turSNSiteMonitoringStatusBean;
+		}).orElse(new TurSNSiteMonitoringStatusBean());
 	}
 
 }

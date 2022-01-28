@@ -17,18 +17,19 @@
 
 package com.viglet.turing.api.nlp;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.UUID;
-
+import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.nlp.TurNLPProcess;
+import com.viglet.turing.nlp.output.blazon.RedactionCommand;
+import com.viglet.turing.nlp.output.blazon.RedactionScript;
+import com.viglet.turing.nlp.output.blazon.SearchString;
+import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
+import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
+import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
+import com.viglet.turing.utils.TurUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.exception.TikaException;
@@ -43,33 +44,22 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import com.viglet.turing.nlp.TurNLP;
-import com.viglet.turing.nlp.TurNLPProcess;
-import com.viglet.turing.nlp.output.blazon.RedactionCommand;
-import com.viglet.turing.nlp.output.blazon.RedactionScript;
-import com.viglet.turing.nlp.output.blazon.SearchString;
-import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
-import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
-import com.viglet.turing.utils.TurUtils;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/nlp")
@@ -134,17 +124,14 @@ public class TurNLPInstanceAPI {
 	@Operation(summary = "Create a Natural Language Processing")
 	@PostMapping
 	public TurNLPInstance turNLPInstanceAdd(@RequestBody TurNLPInstance turNLPInstance) {
-		this.turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+		turNLPProcess.saveAndAssocEntity(turNLPInstance);
 		return turNLPInstance;
 
 	}
 
 	@PostMapping(value = "/{id}/validate/file/blazon", produces = MediaType.APPLICATION_XML_VALUE)
 	public RedactionScript validateFile(@RequestParam("file") MultipartFile multipartFile, @PathVariable String id) {
-
-		InputStream inputStream;
-		try {
-			inputStream = multipartFile.getInputStream();
+		try (InputStream inputStream = multipartFile.getInputStream()){
 			StringBuilder contentFile = new StringBuilder();
 			AutoDetectParser parser = new AutoDetectParser();
 			// -1 = no limit of number of characters
@@ -169,7 +156,7 @@ public class TurNLPInstanceAPI {
 
 				@Override
 				public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
-						boolean outputHtml) throws SAXException, IOException {
+						boolean outputHtml) throws IOException {
 
 					BodyContentHandler handlerInner = new BodyContentHandler(-1);
 					AutoDetectParser parserInner = new AutoDetectParser();
@@ -190,7 +177,7 @@ public class TurNLPInstanceAPI {
 					Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 					try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
 						parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
-						contentFile.append(cleanTextContent(handlerInner.toString()));
+						contentFile.append(TurUtils.cleanTextContent(handlerInner.toString()));
 
 					} catch (IOException | SAXException | TikaException e) {
 						logger.error(e);
@@ -204,7 +191,7 @@ public class TurNLPInstanceAPI {
 			parser.parse(inputStream, handler, metadata, parseContext);
 
 			TurNLPTextValidate textValidate = new TurNLPTextValidate();
-			contentFile.append(cleanTextContent(handler.toString()));
+			contentFile.append(TurUtils.cleanTextContent(handler.toString()));
 			textValidate.setText(contentFile.toString());
 
 			return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
@@ -256,22 +243,6 @@ public class TurNLPInstanceAPI {
 			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
 			return createRedactionScript(turNLP);
 		}).orElse(null);
-	}
-
-	private static String cleanTextContent(String text) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("Original Text: {}", text.replace("\n", "\\\\n \n").replace("\t", "\\\\t \t"));
-		}
-		// Remove 2 or more spaces
-		text = text.trim().replaceAll("[\\t\\r]", "\\n");
-		text = text.trim().replaceAll(" +", " ");
-
-		text = text.trim();
-
-		if (logger.isDebugEnabled()) {
-			logger.debug("Cleaned Text: {}", text);
-		}
-		return text;
 	}
 
 	private TurNLPValidateResponse createNLPValidateResponse(TurNLPInstance turNLPInstance, Optional<TurNLP> turNLP) {

@@ -17,21 +17,19 @@
 
 package com.viglet.turing.persistence.model.sn.spotlight;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.Set;
-
-import javax.persistence.*;
-
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.*;
+
+import javax.persistence.Entity;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.*;
+import java.io.Serializable;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * The persistent class for the turSNSiteSpotlight database table.
@@ -54,32 +52,38 @@ public class TurSNSiteSpotlight implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String name;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String description;
-	
-	@Column(name = "dateChat")
+
 	@Temporal(TemporalType.TIMESTAMP)
-	private Date date;
-	
+	private Date modificationDate;
+
+	@Column
+	private int managed = 1;
+
+	@Column
+	private String unmanagedId;
+
+	@Column
+	private String provider = "TURING";
+
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)
 	@JsonBackReference(value = "turSNSiteSpotlight-turSNSite")
 	private TurSNSite turSNSite;
 
-	// bi-directional many-to-one association to TurSNSiteFieldExt
-	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true)
+	// bi-directional many-to-one association to turSNSiteSpotlightTerms
+	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms;
+	private Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = new HashSet<>();
 
-	// bi-directional many-to-one association to TurSNSiteFieldExt
-	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true)
+	// bi-directional many-to-one association to turSNSiteSpotlightDocuments
+	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments;
+	private Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = new HashSet<>();
 
 	public String getId() {
 		return id;
@@ -129,12 +133,35 @@ public class TurSNSiteSpotlight implements Serializable {
 		this.turSNSiteSpotlightTerms = turSNSiteSpotlightTerms;
 	}
 
-	public Date getDate() {
-		return date;
+	public int getManaged() {
+		return managed;
 	}
 
-	public void setDate(Date date) {
-		this.date = date;
+	public void setManaged(int managed) {
+		this.managed = managed;
 	}
 
+	public String getProvider() {
+		return provider;
+	}
+
+	public void setProvider(String provider) {
+		this.provider = provider;
+	}
+
+	public Date getModificationDate() {
+		return modificationDate;
+	}
+
+	public void setModificationDate(Date modificationDate) {
+		this.modificationDate = modificationDate;
+	}
+
+	public String getUnmanagedId() {
+		return unmanagedId;
+	}
+
+	public void setUnmanagedId(String unmanagedId) {
+		this.unmanagedId = unmanagedId;
+	}
 }

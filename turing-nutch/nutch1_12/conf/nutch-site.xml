@@ -36,12 +36,18 @@
     </property>
     <property>
         <name>plugin.includes</name>
-        <value>extractor|protocol-http|urlfilter-(regex|validator)|parse-(html|tika)|index-(basic|anchor|replace|static)|indexer-(viglet-turing)|scoring-opic|urlnormalizer-(pass|regex|basic)</value>
+        <value>
+            extractor|protocol-http|urlfilter-(regex|validator)|parse-(html|tika)|index-(basic|anchor|replace|static)|indexer-(viglet-turing)|scoring-opic|urlnormalizer-(pass|regex|basic)
+        </value>
         <description>
-            Regular expression naming plugin directory names to include.  Any plugin not matching this expression is excluded. 
-            In any case you need at least include the nutch-extensionpoints plugin. 
-            By default Nutch includes crawling just HTML and plain text via HTTP, and basic indexing and search plugins. 
-            In order to use HTTPS please enable protocol-httpclient, but be aware of possible intermittent problems with the underlying commons-httpclient library. 
+            Regular expression naming plugin directory names to include. Any plugin not
+            matching this expression is excluded.
+            In any case you need at least include the nutch-extensionpoints plugin.
+            By default Nutch includes crawling just HTML and plain text via HTTP,
+            and basic indexing and search plugins.
+            In order to use HTTPS please enable protocol-httpclient, but be aware
+            of possible intermittent problems with the underlying
+            commons-httpclient library.
             Set parsefilter-naivebayes for classification based focused crawler.
         </description>
     </property>
@@ -60,7 +66,8 @@
         <name>turing.url</name>
         <value>http://127.0.0.1:2700</value>
         <description>
-            Defines the Turing URL into which data should be indexed using the indexer-turing plugin.
+            Defines the Turing URL into which data should be indexed using the
+            indexer-turing plugin.
         </description>
     </property>
     <property>
@@ -71,10 +78,26 @@
         </description>
     </property>
     <property>
+        <name>turing.locale</name>
+        <value>en_US</value>
+        <description>
+            Defines the Turing Semantic Navigation Locale.
+        </description>
+    </property>
+    <property>
+        <name>turing.locale.field</name>
+        <value>language</value>
+        <description>
+            Defines the Turing Semantic Navigation Locale based in existing field
+        </description>
+    </property>
+    <property>
         <name>turing.auth</name>
         <value>true</value>
         <description>
-            Whether to enable HTTP basic authentication for communicating with Turing. Use the username and password properties to configure your credentials.
+            Whether to enable HTTP basic authentication for communicating with Turing.
+            Use the username and password properties to configure your
+            credentials.
         </description>
     </property>
     <property>
@@ -95,7 +118,8 @@
         <name>turing.timestamp.field</name>
         <value>modification_date</value>
         <description>
-            Field used to store the timestamp of indexing. The default value is "tstamp".
+            Field used to store the timestamp of indexing. The default value is
+            "tstamp".
         </description>
     </property>
     <property>
@@ -106,7 +130,7 @@
         </description>
     </property>
     <property>
-        <name>turing.field.source_app</name>
+        <name>turing.field.source_apps</name>
         <value>Nutch</value>
         <description>
             Name of Source Application. The default value is "Nutch".
@@ -114,18 +138,16 @@
     </property>
     <!--
     <property>
-    <name>turing.field.hello</name>
-    <value>foo</value>
-    <description>
-        This a test.
-    </description>
+        <name>turing.field.hello</name>
+        <value>foo</value>
+        <description>
+            This a test.
+        </description>
     </property>
     <property>
-    <name>turing.field.world</name>
-    <value>bar</value>
-    <description>
-        This is another test.
-    </description>
+        <name>turing.field.world</name>
+        <value>bar</value>
+        <description>This is another test.</description>
     </property>
     -->
 </configuration>
