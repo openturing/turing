@@ -21,7 +21,7 @@
     "@angular/localize": "13.1.0",
     "@angular/platform-browser": "13.2.0",
     "@angular/platform-browser-dynamic": "13.1.3",
-    "@angular/router": "13.1.3",
+    "@angular/router": "13.2.0",
     "@primer/css": "19.2.0",
     "@primer/octicons": "16.3.0",
     "@primer/styled-octicons": "16.3.0",
