@@ -50,6 +50,9 @@ public class DeploymentEventListener implements IAsEventListener {
 				} else if (type.equals(AsDeploymentEvent.MANAGED_OBJECT_UPDATE)) {
 					log.debug("Viglet Turing DeploymentEvent() - Update object");
 					handler.onManagedObjectUpdate(mo, deploymentEvent);
+				} else if (type.equals(AsDeploymentEvent.MANAGED_OBJECT_DELETE)) {
+					log.debug("Viglet Turing DeploymentEvent() - Delete object");
+					handler.onManagedObjectDelete(mo, deploymentEvent);
 				}
 			}
 		} catch (Exception e) {

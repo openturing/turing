@@ -57,13 +57,11 @@ public class TurWEMIndex {
         throw new IllegalStateException("TurWEMIndex");
     }
 
-    public static boolean indexCreate(ManagedObject mo, IHandlerConfiguration config) {
+    public static boolean indexCreate(ManagedObject mo, IHandlerConfiguration config, String siteName) {
         MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
         if ((mappingDefinitions != null) && (mo != null) && (mo instanceof ContentInstance)) {
             try {
                 ContentInstance contentInstance = (ContentInstance) mo;
-
-                String siteName = TuringUtils.getSiteName(contentInstance, config);
 
                 String contentTypeName = contentInstance.getObjectType().getData().getName();
 
@@ -87,7 +85,7 @@ public class TurWEMIndex {
                     } else {
                         if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
                                 && mo.getContentManagementId() != null) {
-                            TurWEMDeindex.indexDelete(mo.getContentManagementId(), config);
+                            TurWEMDeindex.indexDelete(mo.getContentManagementId(), config, siteName);
                         }
 
                     }
