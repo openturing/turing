@@ -19,7 +19,7 @@ plugins {
     id 'org.springframework.boot' version "${springBootVersion}"
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
-    id "com.gorylenko.gradle-git-properties" version '2.3.2'
+    id "com.gorylenko.gradle-git-properties" version '2.4.0'
     id 'de.undercouch.download' version '5.0.1'
     id 'eclipse'
     id 'jacoco'
