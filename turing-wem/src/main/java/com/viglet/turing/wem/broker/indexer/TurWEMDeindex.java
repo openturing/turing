@@ -25,7 +25,11 @@ import com.viglet.turing.wem.config.TurSNSiteConfig;
 import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AsLocaleData;
 import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
+import com.vignette.as.client.exception.ApplicationException;
+import com.vignette.as.client.javabean.ManagedObject;
+import com.vignette.logging.context.ContextLogger;
 
+import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,12 +39,28 @@ public class TurWEMDeindex {
 		throw new IllegalStateException("TurWEMDeindex");
 	}
 
+	private static final ContextLogger log = ContextLogger.getLogger(TurWEMDeindex.class);
+
 	// This method deletes the content to the Viglet Turing broker
-	public static void indexDelete(ManagedObjectVCMRef managedObjectVCMRef, IHandlerConfiguration config) {
+	public static void indexDelete(ManagedObjectVCMRef managedObjectVCMRef, IHandlerConfiguration config, String siteName) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		String siteName = TuringUtils.getSiteNameFromManagedObjectVCMRef(managedObjectVCMRef, config);
-		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName);
+
+		AsLocaleData asLocaleData = null;
+
+		try {
+			ManagedObject mo = managedObjectVCMRef.retrieveManagedObject();
+			if(mo != null) {
+				if ((mo.getLocale() != null) && (mo.getLocale().getAsLocale() != null)
+						&& (mo.getLocale().getAsLocale().getData() != null))
+					asLocaleData = mo.getLocale().getAsLocale().getData();
+			}
+
+		} catch (Exception e) {
+			log.error("Error while retrieving locale from MO. Id " + managedObjectVCMRef.getId(), e);
+		}
+
+		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
 
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 		turSNJobItem.setLocale(turSNSiteConfig.getLocale());

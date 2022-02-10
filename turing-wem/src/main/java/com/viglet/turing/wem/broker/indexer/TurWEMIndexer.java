@@ -17,6 +17,7 @@
 package com.viglet.turing.wem.broker.indexer;
 
 import com.viglet.turing.wem.config.IHandlerConfiguration;
+import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.as.server.event.AsPrePersistenceEvent;
 import com.vignette.logging.context.ContextLogger;
@@ -29,19 +30,19 @@ public class TurWEMIndexer {
 		throw new IllegalStateException("TurWEMIndexer");
 	}
 
-	public static boolean indexCreate(ManagedObject mo, IHandlerConfiguration config) {
+	public static boolean indexCreate(ManagedObject mo, IHandlerConfiguration config, String siteName) {
 		if (log.isDebugEnabled()) {
 			log.debug("Creating Object in Viglet Turing index");
 		}
-		TurWEMIndex.indexCreate(mo, config);
+		TurWEMIndex.indexCreate(mo, config, siteName);
 		return true;
 	}
 
-	public static boolean indexUpdate(ManagedObject mo, IHandlerConfiguration config) {
+	public static boolean indexUpdate(ManagedObject mo, IHandlerConfiguration config, String siteName) {
 		if (log.isDebugEnabled()) {
 			log.debug("Updating Object in Viglet Turing index");
 		}
-		TurWEMIndex.indexCreate(mo, config);
+		TurWEMIndex.indexCreate(mo, config, siteName);
 		return true;
 	}
 
@@ -50,7 +51,17 @@ public class TurWEMIndexer {
 		if (log.isDebugEnabled()) {
 			log.debug("Deleting Object in Viglet Turing index");
 		}
-		TurWEMDeindex.indexDelete(prePersistenceEvent.getManagedObject().getContentManagementId() , config);
+		String siteName = TuringUtils.getSiteNameFromContentInstance(prePersistenceEvent.getManagedObject(), config);
+		TurWEMDeindex.indexDelete(prePersistenceEvent.getManagedObject().getContentManagementId() , config, siteName);
+		return true;
+	}
+
+	public static boolean indexDelete(ManagedObject mo,
+									  IHandlerConfiguration config, String siteName) {
+		if (log.isDebugEnabled()) {
+			log.debug("Deleting Object in Viglet Turing index");
+		}
+		TurWEMDeindex.indexDelete(mo.getContentManagementId() , config, siteName);
 		return true;
 	}
 
