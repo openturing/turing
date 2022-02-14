@@ -1,7 +1,7 @@
 # To get started with Dependabot version updates, you'll need to specify which
 # package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+# Please see the documentation for all configuration options: 
+# https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates 
 
 version: 2
 updates:
@@ -9,37 +9,23 @@ updates:
     directory: "/turing-app" # Location of package manifests
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 15
     target-branch: "0.3.5"
+    open-pull-requests-limit: 15
   - package-ecosystem: "gradle" # See documentation for possible values
     directory: "/turing-filesystem" # Location of package manifests
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 15
     target-branch: "0.3.5"
+    open-pull-requests-limit: 15
   - package-ecosystem: "gradle" # See documentation for possible values
     directory: "/turing-jdbc" # Location of package manifests
     schedule:
       interval: "daily"
+    target-branch: "0.3.5"
     open-pull-requests-limit: 15
-    target-branch: "0.3.5"
-  - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/turing-filesystem" # Location of package manifests
-    schedule:
-      interval: "daily"
-    target-branch: "0.3.5"
-  - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/turing-nutch" # Location of package manifests
-    schedule:
-      interval: "daily"
-    target-branch: "0.3.5"
-  - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/turing-wem" # Location of package manifests
-    schedule:
-      interval: "daily"
-    target-branch: "0.3.5"
   - package-ecosystem: "npm" # See documentation for possible values
     directory: "/turing-ui" # Location of package manifests
     schedule:
       interval: "daily"
     target-branch: "0.3.5"
+    open-pull-requests-limit: 15
