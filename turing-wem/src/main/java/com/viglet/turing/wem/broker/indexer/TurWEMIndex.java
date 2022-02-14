@@ -65,6 +65,10 @@ public class TurWEMIndex {
 
                 String contentTypeName = contentInstance.getObjectType().getData().getName();
 
+                if("Management Site".equals(siteName)) {
+                    siteName = TuringUtils.getSiteName(contentInstance, config);
+                }
+
                 AsLocaleData asLocaleData = null;
                 if ((contentInstance.getLocale() != null) && (contentInstance.getLocale().getAsLocale() != null)
                         && (contentInstance.getLocale().getAsLocale().getData() != null))
