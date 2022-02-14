@@ -26,6 +26,7 @@ import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.viglet.turing.wem.index.IValidToIndex;
 import com.viglet.turing.wem.mappers.MappingDefinitions;
 import com.viglet.turing.wem.mappers.MappingDefinitionsProcess;
+import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.apps.contentIndex.ContentIndexException;
 import com.vignette.as.client.common.*;
 import com.vignette.as.client.common.ref.ContentTypeRef;
@@ -350,7 +351,8 @@ public class TurWEMCommander {
 				if (logger.isDebugEnabled())
 					logger.debug(String.format("Attempting to index the Content Instance: %s",
 							mo.getContentManagementId().getId()));
-				TurWEMIndexer.indexCreate(mo, turingConfig);
+				String siteName = TuringUtils.getSiteNameFromContentInstance(mo, turingConfig);
+				TurWEMIndexer.indexCreate(mo, turingConfig, siteName);
 			}
 		}
 	}

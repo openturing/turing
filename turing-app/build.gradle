@@ -19,8 +19,8 @@ plugins {
     id 'org.springframework.boot' version "${springBootVersion}"
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
-    id "com.gorylenko.gradle-git-properties" version '2.3.2'
-    id 'de.undercouch.download' version '4.1.2'
+    id "com.gorylenko.gradle-git-properties" version '2.4.0'
+    id 'de.undercouch.download' version '5.0.1'
     id 'eclipse'
     id 'jacoco'
     id 'org.sonarqube' version '3.3'
@@ -195,7 +195,7 @@ dependencies {
     implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.0.3'
 
     // PostgreSQL
-    implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.1'
+    implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.2'
 
     // JSON
     implementation group: 'org.json', name: 'json', version: '20211205'
@@ -217,12 +217,12 @@ dependencies {
     implementation group: 'net.sf.ehcache', name: 'ehcache', version: '2.10.10.1.14'
 
     // Tika
-    implementation group: 'org.apache.tika', name: 'tika-core', version: '2.2.1'
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version: '2.2.1'
-    implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: '2.2.1'
-    implementation group: 'org.apache.tika', name: 'tika-parser-text-module', version: '2.2.1'
-    implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: '2.2.1'
-    implementation group: 'org.apache.tika', name: 'tika-parser-microsoft-module', version: '2.2.1'
+    implementation group: 'org.apache.tika', name: 'tika-core', version: '2.3.0'
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version: '2.3.0'
+    implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: '2.3.0'
+    implementation group: 'org.apache.tika', name: 'tika-parser-text-module', version: '2.3.0'
+    implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: '2.3.0'
+    implementation group: 'org.apache.tika', name: 'tika-parser-microsoft-module', version: '2.3.0'
     implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version: '2.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-core', version: '1.4.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
@@ -231,7 +231,7 @@ dependencies {
     implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.16.3'
 
     // SpringDoc
-    implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.5'
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.6'
 
     // Schema.org
     implementation group: 'com.squins.google.fork.schema-org-client', name: 'schema-org-client', version: '1.0.1'
