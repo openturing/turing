@@ -23,14 +23,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 
-import org.springframework.stereotype.Component;
-
 import com.viglet.turing.se.field.TurSEFieldType;
 
-@Component
 public class TurSolrField {
 
-	public Integer convertFieldToInt(Object attrValue) {
+	public static Integer convertFieldToInt(Object attrValue) {
 		if (attrValue instanceof String) {
 			return Integer.parseInt((String) attrValue);
 		} else if (attrValue instanceof ArrayList) {
@@ -50,7 +47,7 @@ public class TurSolrField {
 		}
 	}
 
-	public Long convertFieldToLong(Object attrValue) {
+	public static Long convertFieldToLong(Object attrValue) {
 		if (attrValue instanceof String) {
 			return Long.parseLong((String) attrValue);
 		} else if (attrValue instanceof ArrayList) {
@@ -65,7 +62,7 @@ public class TurSolrField {
 		}
 	}
 
-	public String convertFieldToString(Object attrValue) {
+	public static String convertFieldToString(Object attrValue) {
 		if (attrValue instanceof String) {
 			return (String) attrValue;
 		} else if (attrValue instanceof ArrayList) {
@@ -83,7 +80,7 @@ public class TurSolrField {
 		}
 	}
 
-	private String objectArrayToString(Object attrValue) {
+	private static String objectArrayToString(Object attrValue) {
 		Object[] arrAttrValue = (Object[]) attrValue;
 		if (arrAttrValue[0] instanceof String) {
 			return (String) arrAttrValue[0];
@@ -96,7 +93,7 @@ public class TurSolrField {
 		}
 	}
 
-	private String arrayListToString(Object attrValue) {
+	private static String arrayListToString(Object attrValue) {
 		ArrayList<?> arrAttValue = (ArrayList<?>) attrValue;
 		if (arrAttValue.get(0) instanceof String) {
 			return (String) arrAttValue.get(0);
@@ -110,7 +107,7 @@ public class TurSolrField {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Object[] convertFieldToArray(Object attrValue) {
+	public static Object[] convertFieldToArray(Object attrValue) {
 		if (attrValue instanceof String) {
 			return new String[] { (String) attrValue };
 		} else if (attrValue instanceof Long) {
@@ -122,7 +119,7 @@ public class TurSolrField {
 		}
 	}
 
-	public String convertFieldToDate(Object attrValue) {
+	public static String convertFieldToDate(Object attrValue) {
 		if (attrValue instanceof ArrayList) {
 			return arrayListToString(attrValue);
 		} else if (attrValue instanceof Long) {
@@ -134,18 +131,18 @@ public class TurSolrField {
 		}
 	}
 
-	private String longToString(Object attrValue) {
+	private static String longToString(Object attrValue) {
 		return ((Long) attrValue).toString();
 	}
 
-	private String dateToString(Object attrValue) {
+	private static String dateToString(Object attrValue) {
 		TimeZone tz = TimeZone.getTimeZone("UTC");
 		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 		df.setTimeZone(tz);
 		return df.format((Date) attrValue);
 	}
 
-	public boolean convertFieldToBoolean(Object attrValue) {
+	public static boolean convertFieldToBoolean(Object attrValue) {
 		if (attrValue instanceof String) {
 			return Boolean.parseBoolean((String) attrValue);
 		} else if (attrValue instanceof ArrayList) {
@@ -164,18 +161,18 @@ public class TurSolrField {
 		}
 	}
 
-	public Object convertField(TurSEFieldType finalType, Object attrValue) {
+	public static Object convertField(TurSEFieldType finalType, Object attrValue) {
 		switch (finalType) {
 		case INT:
-			return this.convertFieldToInt(attrValue);
+			return convertFieldToInt(attrValue);
 		case LONG:
-			return this.convertFieldToLong(attrValue);
+			return convertFieldToLong(attrValue);
 		case STRING:
-			return this.convertFieldToString(attrValue);
+			return convertFieldToString(attrValue);
 		case DATE:
-			return this.convertFieldToDate(attrValue);
+			return convertFieldToDate(attrValue);
 		case BOOL:
-			return this.convertFieldToBoolean(attrValue);
+			return convertFieldToBoolean(attrValue);
 		default:
 			return attrValue;
 		}

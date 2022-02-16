@@ -40,7 +40,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.nlp.TurNLP;
@@ -52,9 +51,6 @@ import com.viglet.turing.utils.TurUtils;
 @Component
 public class TurCoreNLPConnector implements TurNLPPlugin {
 	private static final Logger logger = LogManager.getLogger(TurCoreNLPConnector.class.getName());
-
-	@Autowired
-	private TurSolrField turSolrField;
 
 	@Override
 	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
@@ -83,7 +79,7 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 			HttpPost httppost = new HttpPost(serverURL.toString());
 
 			for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
-				StringEntity stringEntity = new StringEntity(turSolrField.convertFieldToString(attrValue));
+				StringEntity stringEntity = new StringEntity(TurSolrField.convertFieldToString(attrValue));
 				httppost.setEntity(stringEntity);
 
 				HttpResponse response = httpclient.execute(httppost);

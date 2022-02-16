@@ -42,9 +42,6 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 	static final Logger logger = LogManager.getLogger(TurOpenNLPConnector.class.getName());
 
 	@Autowired
-	private TurSolrField turSolrField;
-
-	@Autowired
 	private TurOpenNLPCache turOpenNLPCache;
 
 	@Override
@@ -52,7 +49,7 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 		List<String> sentencesTokens = new ArrayList<>();
 		for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
 			String[] sentences = this
-					.sentenceDetect(turNLP.getTurNLPInstance(), turSolrField.convertFieldToString(attrValue).replace("\"", "").replace("'", ""));
+					.sentenceDetect(turNLP.getTurNLPInstance(), TurSolrField.convertFieldToString(attrValue).replace("\"", "").replace("'", ""));
 
 			for (String sentence : sentences) {
 

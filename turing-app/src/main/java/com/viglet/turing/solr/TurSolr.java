@@ -67,8 +67,6 @@ public class TurSolr {
 	@Autowired
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
-	private TurSolrField turSolrField;
-	@Autowired
 	private TurSNTargetingRules turSNTargetingRules;
 
 	public long getDocumentTotal(TurSolrInstance turSolrInstance) {
@@ -130,7 +128,7 @@ public class TurSolr {
 		int i = 0;
 		StringBuilder sb = new StringBuilder();
 		for (Object valueItem : list) {
-			sb.append(turSolrField.convertFieldToString(valueItem));
+			sb.append(TurSolrField.convertFieldToString(valueItem));
 			// Last Item
 			if (i++ != list.size() - 1) {
 				sb.append(System.getProperty("line.separator"));
@@ -168,7 +166,7 @@ public class TurSolr {
 	}
 
 	private void processeOtherTypes(SolrInputDocument document, String key, Object attribute) {
-		String valueStr = turSolrField.convertFieldToString(attribute);
+		String valueStr = TurSolrField.convertFieldToString(attribute);
 		document.addField(key, valueStr);
 	}
 
@@ -206,7 +204,7 @@ public class TurSolr {
 			if (key.startsWith("turing_entity_")
 					|| (turSNSiteFieldMap.get(key) != null && turSNSiteFieldMap.get(key).getMultiValued() == 1)) {
 				for (Object valueItem : values) {
-					document.addField(key, turSolrField.convertFieldToString(valueItem));
+					document.addField(key, TurSolrField.convertFieldToString(valueItem));
 				}
 			} else {
 				document.addField(key, concatenateString(values));
@@ -437,10 +435,10 @@ public class TurSolr {
 			SolrDocumentList mltDocumentList = (SolrDocumentList) mltResp.get((String) document.get("id"));
 			for (SolrDocument mltDocument : mltDocumentList) {
 				TurSESimilarResult turSESimilarResult = new TurSESimilarResult();
-				turSESimilarResult.setId(turSolrField.convertFieldToString(mltDocument.getFieldValue("id")));
-				turSESimilarResult.setTitle(turSolrField.convertFieldToString(mltDocument.getFieldValue("title")));
-				turSESimilarResult.setType(turSolrField.convertFieldToString(mltDocument.getFieldValue("type")));
-				turSESimilarResult.setUrl(turSolrField.convertFieldToString(mltDocument.getFieldValue("url")));
+				turSESimilarResult.setId(TurSolrField.convertFieldToString(mltDocument.getFieldValue("id")));
+				turSESimilarResult.setTitle(TurSolrField.convertFieldToString(mltDocument.getFieldValue("title")));
+				turSESimilarResult.setType(TurSolrField.convertFieldToString(mltDocument.getFieldValue("type")));
+				turSESimilarResult.setUrl(TurSolrField.convertFieldToString(mltDocument.getFieldValue("url")));
 				similarResults.add(turSESimilarResult);
 			}
 		}

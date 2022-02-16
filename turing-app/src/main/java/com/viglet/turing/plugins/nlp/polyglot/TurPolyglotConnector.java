@@ -38,7 +38,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
@@ -53,9 +52,6 @@ import java.util.*;
 @Component
 public class TurPolyglotConnector implements TurNLPPlugin {
 	private static final Logger logger = LogManager.getLogger(TurPolyglotConnector.class);
-
-	@Autowired
-	private TurSolrField turSolrField;
 
 	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
 		return this.request(turNLP);
@@ -173,7 +169,7 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 	}
 
 	private String cleanFullText(Object attrValue) {
-		return turSolrField.convertFieldToString(attrValue).replaceAll("[\\n:;]", ". ")
+		return TurSolrField.convertFieldToString(attrValue).replaceAll("[\\n:;]", ". ")
 				.replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
 	}
 

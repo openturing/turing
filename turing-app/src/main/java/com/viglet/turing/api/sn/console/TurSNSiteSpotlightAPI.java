@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -83,6 +84,7 @@ public class TurSNSiteSpotlightAPI {
 	@Transactional
 	@Operation(summary = "Delete a Semantic Navigation Site Spotlight")
 	@DeleteMapping("/{id}")
+	@CacheEvict(value = { "spotlight", "spotlight_term"}, allEntries = true)
 	public boolean turSNSiteDelete(@PathVariable String id) {
 		turSNSiteSpotlightRepository.delete(id);
 		return true;
