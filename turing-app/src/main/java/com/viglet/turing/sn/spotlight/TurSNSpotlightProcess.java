@@ -25,9 +25,11 @@ import com.viglet.turing.api.sn.queue.TurSpotlightContent;
 import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
@@ -70,6 +72,8 @@ public class TurSNSpotlightProcess {
 	private TurSolr turSolr;
 	@Autowired
 	private TurSpotlightCache turSpotlightCache;
+	@Autowired
+	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
 	private void ifExistsDeleteSpotlightDependencies(TurSNSiteSpotlight turSNSiteSpotlight) {
 		if (turSNSiteSpotlight != null) {
@@ -89,89 +93,110 @@ public class TurSNSpotlightProcess {
 				&& turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE).equals(TYPE_VALUE);
 	}
 
-	@CacheEvict(value = { "spotlight", "spotlight_term"}, allEntries = true)
+	@CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
 	public boolean deleteUnmanagedSpotlight(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
 		if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
-			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository.findByUnmanagedIdAndTurSNSite(
-					(String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite);
-			turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
-		} else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.PROVIDER_ATTRIBUTE)) {
-			logger.info("Provider Value: {}", turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE));
+			TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite,
+					turSNJobItem.getLocale());
 			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
-					.findByProvider((String) turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE));
+					.findByUnmanagedIdAndTurSNSiteAndLanguage(
+							(String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite,
+							turSNSiteLocale.getLanguage());
 			turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
+			logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was deleted.", turSNJobItem.getAttributes().get("id"),
+					turSNSite.getName(), turSNJobItem.getLocale());
+		} else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.PROVIDER_ATTRIBUTE)) {
+			String provider = (String) turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE);
+			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository.findByProvider(provider);
+			turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
+			logger.warn("Spotlight by '{}' provider was deleted.", provider);
 		}
+
 		return true;
 	}
 
-	@CacheEvict(value = { "spotlight", "spotlight_term"}, allEntries = true)
+	@CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
 	public boolean createUnmanagedSpotlight(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
 		String id = (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE);
-		Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository.findByUnmanagedIdAndTurSNSite(id,
-				turSNSite);
-		TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
-		if (!turSNSiteSpotlights.isEmpty()) {
-			turSNSiteSpotlights.forEach(this::ifExistsDeleteSpotlightDependencies);
-			if (turSNSiteSpotlights.size() > 1) {
-				turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
-			} else {
-				turSNSiteSpotlight = turSNSiteSpotlights.iterator().next();
+		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite,
+				turSNJobItem.getLocale());
+		if (turSNSiteLocale == null) {
+			logger.warn("Spotlight ID '{}' of '{}' SN Site was not processed, because {} locale did not found.",
+					turSNJobItem.getAttributes().get("id"), turSNSite.getName(), turSNJobItem.getLocale());
+			return false;
+		} else {
+			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
+					.findByUnmanagedIdAndTurSNSiteAndLanguage(id, turSNSite, turSNSiteLocale.getLanguage());
+			TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
+			if (!turSNSiteSpotlights.isEmpty()) {
+				turSNSiteSpotlights.forEach(this::ifExistsDeleteSpotlightDependencies);
+				if (turSNSiteSpotlights.size() > 1) {
+					turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
+				} else {
+					turSNSiteSpotlight = turSNSiteSpotlights.iterator().next();
+				}
 			}
+			try {
+				String jsonContent = (String) turSNJobItem.getAttributes().get(CONTENT_ATTRIBUTE);
+				String name = (String) turSNJobItem.getAttributes().get(NAME_ATTRIBUTE);
+				String provider = (String) turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE);
+				List<String> terms = Arrays
+						.asList(((String) turSNJobItem.getAttributes().get(TERMS_ATTRIBUTE)).split(","));
+				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+				simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+				Date date = simpleDateFormat
+						.parse((String) turSNJobItem.getAttributes().get(TurSNConstants.MODIFICATION_DATE_ATTRIBUTE));
+				List<TurSpotlightContent> turSpotlightContents = new ObjectMapper().readValue(jsonContent,
+						new TypeReference<>() {
+						});
+
+				turSNSiteSpotlight.setUnmanagedId(id);
+				turSNSiteSpotlight.setDescription(name);
+				turSNSiteSpotlight.setName(name);
+				turSNSiteSpotlight.setModificationDate(date);
+				turSNSiteSpotlight.setTurSNSite(turSNSite);
+				turSNSiteSpotlight.setLanguage(turSNSiteLocale.getLanguage());
+				turSNSiteSpotlight.setManaged(0);
+				turSNSiteSpotlight.setProvider(provider);
+				turSNSiteSpotlightRepository.save(turSNSiteSpotlight);
+
+				for (String term : terms) {
+					TurSNSiteSpotlightTerm turSNSiteSpotlightTerm = new TurSNSiteSpotlightTerm();
+					turSNSiteSpotlightTerm.setName(term.trim());
+					turSNSiteSpotlightTerm.setTurSNSiteSpotlight(turSNSiteSpotlight);
+					turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm);
+				}
+
+				for (TurSpotlightContent turSpotlightContent : turSpotlightContents) {
+					TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument();
+					turSNSiteSpotlightDocument.setPosition(turSpotlightContent.getPosition());
+					turSNSiteSpotlightDocument.setTitle(turSpotlightContent.getTitle());
+					turSNSiteSpotlightDocument.setTurSNSiteSpotlight(turSNSiteSpotlight);
+					turSNSiteSpotlightDocument.setContent(turSpotlightContent.getContent());
+					turSNSiteSpotlightDocument.setLink(turSpotlightContent.getLink());
+					turSNSiteSpotlightDocument.setType(DOCUMENT_TYPE);
+					turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
+				}
+				logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was created.",
+						turSNJobItem.getAttributes().get("id"), turSNSite.getName(), turSNJobItem.getLocale());
+			} catch (ParseException | JsonProcessingException e) {
+				logger.error(e.getMessage(), e);
+			}
+			return true;
 		}
-		try {
-			String jsonContent = (String) turSNJobItem.getAttributes().get(CONTENT_ATTRIBUTE);
-			String name = (String) turSNJobItem.getAttributes().get(NAME_ATTRIBUTE);
-			String provider = (String) turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE);
-			List<String> terms = Arrays.asList(((String) turSNJobItem.getAttributes().get(TERMS_ATTRIBUTE)).split(","));
-			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-			simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-			Date date = simpleDateFormat
-					.parse((String) turSNJobItem.getAttributes().get(TurSNConstants.MODIFICATION_DATE_ATTRIBUTE));
-			List<TurSpotlightContent> turSpotlightContents = new ObjectMapper().readValue(jsonContent,
-					new TypeReference<>() {
-					});
-
-			turSNSiteSpotlight.setUnmanagedId(id);
-			turSNSiteSpotlight.setDescription(name);
-			turSNSiteSpotlight.setName(name);
-			turSNSiteSpotlight.setModificationDate(date);
-			turSNSiteSpotlight.setTurSNSite(turSNSite);
-			turSNSiteSpotlight.setManaged(0);
-			turSNSiteSpotlight.setProvider(provider);
-			turSNSiteSpotlightRepository.save(turSNSiteSpotlight);
-
-			for (String term : terms) {
-				TurSNSiteSpotlightTerm turSNSiteSpotlightTerm = new TurSNSiteSpotlightTerm();
-				turSNSiteSpotlightTerm.setName(term.trim());
-				turSNSiteSpotlightTerm.setTurSNSiteSpotlight(turSNSiteSpotlight);
-				turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm);
-			}
-
-			for (TurSpotlightContent turSpotlightContent : turSpotlightContents) {
-				TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument();
-				turSNSiteSpotlightDocument.setPosition(turSpotlightContent.getPosition());
-				turSNSiteSpotlightDocument.setTitle(turSpotlightContent.getTitle());
-				turSNSiteSpotlightDocument.setTurSNSiteSpotlight(turSNSiteSpotlight);
-				turSNSiteSpotlightDocument.setContent(turSpotlightContent.getContent());
-				turSNSiteSpotlightDocument.setLink(turSpotlightContent.getLink());
-				turSNSiteSpotlightDocument.setType(DOCUMENT_TYPE);
-				turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
-			}
-		} catch (ParseException | JsonProcessingException e) {
-			logger.error(e.getMessage(), e);
-		}
-		return true;
 	}
 
 	public void addSpotlightToResults(TurSNSiteSearchContext context, TurSolrInstance turSolrInstance,
 			TurSNSite turSNSite, Map<String, TurSNSiteFieldExt> facetMap, Map<String, TurSNSiteFieldExt> fieldExtMap,
 			List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean) {
 		List<TurSNSiteSpotlight> turSNSiteSpotlights = new ArrayList<>();
-		turSpotlightCache.findTermsBySNSite(turSNSite.getName()).forEach(turSNSiteSpotlightTerm -> {
-			if (context.getTurSEParameters().getQuery().contains(turSNSiteSpotlightTerm.getTerm())) {
-				turSNSiteSpotlights.add(turSNSiteSpotlightTerm.getSpotlight());
-			}
-		});
+		turSpotlightCache.findTermsBySNSiteAndLanguage(turSNSite.getName(), context.getLocale())
+				.forEach(turSNSiteSpotlightTerm -> {
+					if (context.getTurSEParameters().getQuery().toLowerCase()
+							.contains(turSNSiteSpotlightTerm.getTerm().toLowerCase())) {
+						turSNSiteSpotlights.add(turSNSiteSpotlightTerm.getSpotlight());
+					}
+				});
 
 		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = new HashMap<>();
 		turSNSiteSpotlights.forEach(spotlight -> spotlight.getTurSNSiteSpotlightDocuments().forEach(document -> {

@@ -170,7 +170,21 @@
       </p>
     </div>
   </div>
-
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="sn-field-language">Language</label>
+    </div>
+    <div class="form-group-body">
+      <select [(ngModel)]="snSiteSpotlight.language" class="form-select" style="width: 100%;">
+        <option *ngFor="let locale of (getTurSNSiteLocales() | async)" [value]="locale.language">
+          {{locale.language}}
+        </option>
+      </select>
+      <p class="note" id="help-text-for-checkbox">
+        Language of semantic navigation site.
+      </p>
+    </div>
+  </div>
 
   <div class="js-tag-input-wrapper">
     <div class="form-group my-0">

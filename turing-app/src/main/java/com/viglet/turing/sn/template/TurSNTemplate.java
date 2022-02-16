@@ -160,7 +160,7 @@ public class TurSNTemplate {
 		createSNSiteField(turSNSite, "source_apps", "Source Apps", TurSEFieldType.STRING, 1, "Source Apps", 0);
 	}
 
-	public void createSpotlight(TurSNSite turSNSite) {
+	public void createSpotlight(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
 		TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
 		turSNSiteSpotlight.setDescription("Spotlight Sample");
 		turSNSiteSpotlight.setName("Spotlight Sample");
@@ -168,6 +168,7 @@ public class TurSNTemplate {
 		turSNSiteSpotlight.setManaged(1);
 		turSNSiteSpotlight.setProvider("TURING");
 		turSNSiteSpotlight.setTurSNSite(turSNSite);
+		turSNSiteSpotlight.setLanguage(turSNSiteLocale.getLanguage());
 		turSNSiteSpotlightRepository.save(turSNSiteSpotlight);
 
 		TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument();
@@ -190,7 +191,7 @@ public class TurSNTemplate {
 		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm2);
 	}
 
-	public void createLocale(TurSNSite turSNSite) {
+	public TurSNSiteLocale createLocale(TurSNSite turSNSite) {
 
 		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
 		turSNSiteLocale.setLanguage(TurLocaleRepository.EN_US);
@@ -198,10 +199,13 @@ public class TurSNTemplate {
 		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
 		turSNSiteLocale.setTurSNSite(turSNSite);
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
+
+		return turSNSiteLocale;
+
 	}
 
 	public void createMergeProviders(TurSNSite turSNSite) {
-		
+
 		TurSNSiteMergeProviders turSNSiteMerge = new TurSNSiteMergeProviders();
 		turSNSiteMerge.setTurSNSite(turSNSite);
 		turSNSiteMerge.setLocale(TurLocaleRepository.EN_US);
@@ -210,9 +214,9 @@ public class TurSNTemplate {
 		turSNSiteMerge.setRelationFrom("id");
 		turSNSiteMerge.setRelationTo("url");
 		turSNSiteMerge.setDescription("Merge content from Nutch into existing WEM content.");
-		
+
 		turSNSiteMergeRepository.save(turSNSiteMerge);
-		
+
 		TurSNSiteMergeProvidersField turSNSiteMergeField = new TurSNSiteMergeProvidersField();
 		turSNSiteMergeField.setName("text");
 		turSNSiteMergeField.setTurSNSiteMergeProviders(turSNSiteMerge);

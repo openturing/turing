@@ -6,6 +6,8 @@ import { TurSNSiteService } from '../../../service/sn-site.service';
 import { ActivatedRoute } from '@angular/router';
 import { TurSNSiteSpotlight } from '../../../model/sn-site-spotlight.model';
 import { TurSNSiteSpotlightService } from '../../../service/sn-site-spotlight.service';
+import { TurSNSiteLocaleService } from '../../../service/sn-site-locale.service';
+import { TurSNSiteLocale } from '../../../model/sn-site-locale.model';
 
 @Component({
   selector: 'sn-site-spotlight-page',
@@ -13,17 +15,20 @@ import { TurSNSiteSpotlightService } from '../../../service/sn-site-spotlight.se
 })
 export class TurSNSiteSpotlightPageComponent implements OnInit {
   private turSNSite: Observable<TurSNSite>;
+  private turSNSiteLocales: Observable<TurSNSiteLocale[]>;
   private turSNSiteSpotlight: Observable<TurSNSiteSpotlight>;
   private siteId: string;
 
   constructor(
     private readonly notifier: NotifierService,
     private turSNSiteService: TurSNSiteService,
+    private turSNSiteLocaleService: TurSNSiteLocaleService,
     private turSNSiteSpotlightService: TurSNSiteSpotlightService,
     private route: ActivatedRoute) {
     this.siteId = this.route.parent?.parent?.snapshot.paramMap.get('id') || "";
     let spotlightId = this.route.snapshot.paramMap.get('spotlightId') || "";
     this.turSNSite = this.turSNSiteService.get(this.siteId);
+    this.turSNSiteLocales = turSNSiteLocaleService.query(this.siteId);
     this.turSNSiteSpotlight = this.turSNSiteSpotlightService.get(this.siteId, spotlightId);
   }
 
@@ -31,11 +36,17 @@ export class TurSNSiteSpotlightPageComponent implements OnInit {
     return this.turSNSite;
   }
 
+  getTurSNSiteLocales(): Observable<TurSNSiteLocale[]> {
+
+    return this.turSNSiteLocales;
+  }
+
   getTurSNSiteSpotlight(): Observable<TurSNSiteSpotlight> {
     return this.turSNSiteSpotlight;
   }
 
   ngOnInit(): void {
+    // Empty
   }
 
   public saveSiteField(_turSNSiteSpotlight: TurSNSiteSpotlight) {

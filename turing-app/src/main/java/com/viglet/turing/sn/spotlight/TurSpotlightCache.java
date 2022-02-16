@@ -41,15 +41,15 @@ public class TurSpotlightCache {
 	private TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
 
 	@Cacheable(value = "spotlight", sync = true)
-	public List<TurSNSiteSpotlight> findSpotlightBySNSite(String snSite) {
+	public List<TurSNSiteSpotlight> findSpotlightBySNSiteAndLanguage(String snSite, String language) {
 		List<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
-				.findByTurSNSite(turSNSiteRepository.findByName(snSite));
+				.findByTurSNSiteAndLanguage(turSNSiteRepository.findByName(snSite), language);
 		return turSNSiteSpotlights;
 	}
 	
 	@Cacheable(value = "spotlight_term", sync = true)
-	public List<TurSNSpotlightTermCacheBean> findTermsBySNSite(String snSite) {
-		List<TurSNSiteSpotlight> turSNSiteSpotlights = this.findSpotlightBySNSite(snSite);
+	public List<TurSNSpotlightTermCacheBean> findTermsBySNSiteAndLanguage(String snSite, String language) {
+		List<TurSNSiteSpotlight> turSNSiteSpotlights = this.findSpotlightBySNSiteAndLanguage(snSite, language);
 		List<TurSNSpotlightTermCacheBean> terms = new ArrayList<>();
 		for (TurSNSiteSpotlight turSNSiteSpotlight : turSNSiteSpotlights) {
 			for (TurSNSiteSpotlightTerm turSNSiteSpotlightTerm : turSNSiteSpotlight.getTurSNSiteSpotlightTerms()) {
