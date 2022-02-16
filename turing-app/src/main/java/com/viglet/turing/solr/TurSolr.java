@@ -322,7 +322,7 @@ public class TurSolr {
 			query.setQuery(turSEParameters.getQuery());
 		}
 		query.setRows(turSEParameters.getRows());
-		query.setStart((turSEParameters.getCurrentPage() * turSEParameters.getRows()) - turSEParameters.getRows());
+		query.setStart(TurSolrUtils.firstRowPositionFromCurrentPage(turSEParameters));
 
 		prepareQueryFilterQuery(turSEParameters, query);
 
@@ -336,9 +336,11 @@ public class TurSolr {
 				turSNSiteFacetFieldExts, turSNSiteHlFieldExts, turSESpellCheckResult);
 	}
 
+	
 	private Optional<TurSEResults> executeSolrQueryFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
 			TurSEParameters turSEParameters, SolrQuery query, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts,
-			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts, List<TurSNSiteFieldExt> turSNSiteHlFieldExts, TurSESpellCheckResult turSESpellCheckResult) {
+			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts, List<TurSNSiteFieldExt> turSNSiteHlFieldExts,
+			TurSESpellCheckResult turSESpellCheckResult) {
 		TurSEResults turSEResults = new TurSEResults();
 
 		try {
@@ -557,7 +559,7 @@ public class TurSolr {
 		}
 
 		query.setRows(turSEParameters.getRows());
-		query.setStart((turSEParameters.getCurrentPage() * turSEParameters.getRows()) - turSEParameters.getRows());
+		query.setStart(TurSolrUtils.firstRowPositionFromCurrentPage(turSEParameters));
 
 		// Filter Query
 		String[] filterQueryArr = new String[turSEParameters.getFilterQueries().size()];
@@ -692,7 +694,6 @@ public class TurSolr {
 		return turSEResult;
 	}
 
-	
 	private void addRequiredFieldsToDocument(Map<String, Object> requiredFields, SolrDocument document) {
 		for (Object requiredFieldObject : requiredFields.keySet().toArray()) {
 			String requiredField = (String) requiredFieldObject;
