@@ -143,7 +143,45 @@
         </div>
       </div>
     </div>
-    <div class="Subhead-actions"><button type="button" class="btn btn-primary">Save</button></div>
+
+    <div class="Subhead-actions" style="display: inherit;">
+      <details *ngIf="!isNewObject()" #modalDeleteSpotlight id="modalDeleteSpotlight"
+        class="details-reset details-overlay details-overlay-dark mr-2" style="display: unset;">
+        <summary class="btn btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
+            class="mr-1"></span>Delete spotlight</summary>
+        <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast" style="overflow: hidden;">
+          <div class="Box-header">
+            <button onclick='document.getElementById("modalDeleteSpotlight").removeAttribute("open");'
+              class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
+              <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
+                aria-hidden="true">
+                <path fill-rule="evenodd"
+                  d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
+                </path>
+              </svg>
+            </button>
+            <h3 class="Box-title">Are you absolutely sure?</h3>
+
+          </div>
+          <div class="flash flash-warn flash-full">
+            Unexpected bad things will happen if you don’t read this!
+          </div>
+
+          <div class="Box-body overflow-auto">
+            <p>
+              This action <strong>cannot</strong> be undone. This will permanently delete the
+              <strong>{{snSiteSpotlight.name}}</strong> spotlight.
+            </p>
+            <button (click)="delete(snSiteSpotlight)" class="btn-danger btn btn-block">
+              <span class="d-md-inline-block d-none">I understand the consequences, delete this spotlight</span>
+            </button>
+          </div>
+        </details-dialog>
+      </details>
+      <button type="button" (click)="save(snSiteSpotlight)" class="btn btn-primary">{{saveButtonCaption()}}</button>
+    </div>
+
+
     <div class="Subhead-description">{{snSiteSpotlight.description}}</div>
   </div>
   <div class="form-group">

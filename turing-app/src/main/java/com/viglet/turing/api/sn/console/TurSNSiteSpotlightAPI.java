@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -80,13 +83,47 @@ public class TurSNSiteSpotlightAPI {
 
 		return new TurSNSiteSpotlight();
 	}
-	
+
+	@Operation(summary = "Update a Semantic Navigation Site Spotlight")
+	@PutMapping("/{id}")
+	public TurSNSiteSpotlight turSNSiteSpotlightUpdate(@PathVariable String id,
+			@RequestBody TurSNSiteSpotlight turSNSiteSpotlight) {
+
+		return turSNSiteSpotlightRepository.findById(id).map(turSNSiteSpotlightEdit -> {
+			turSNSiteSpotlightEdit.setDescription(turSNSiteSpotlight.getDescription());
+			turSNSiteSpotlightEdit.setLanguage(turSNSiteSpotlight.getLanguage());
+			turSNSiteSpotlightEdit.setModificationDate(turSNSiteSpotlight.getModificationDate());
+			turSNSiteSpotlightEdit.setName(turSNSiteSpotlight.getName());
+			turSNSiteSpotlightEdit.setProvider(turSNSiteSpotlight.getProvider());
+			turSNSiteSpotlightEdit.setTurSNSite(turSNSiteSpotlight.getTurSNSite());
+			turSNSiteSpotlightRepository.save(turSNSiteSpotlightEdit);
+			return turSNSiteSpotlightEdit;
+		}).orElse(new TurSNSiteSpotlight());
+	}
+
 	@Transactional
 	@Operation(summary = "Delete a Semantic Navigation Site Spotlight")
 	@DeleteMapping("/{id}")
-	@CacheEvict(value = { "spotlight", "spotlight_term"}, allEntries = true)
+	@CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
 	public boolean turSNSiteDelete(@PathVariable String id) {
 		turSNSiteSpotlightRepository.delete(id);
 		return true;
+	}
+
+	@Operation(summary = "Create a Semantic Navigation Site Spotlight")
+	@PostMapping
+	public TurSNSiteSpotlight turSNSiteSpotlighAdd(@RequestBody TurSNSiteSpotlight turSNSiteSpotlight) {
+		turSNSiteSpotlightRepository.save(turSNSiteSpotlight);
+		return turSNSiteSpotlight;
+	}
+
+	@Operation(summary = "Semantic Navigation Site Spotlight structure")
+	@GetMapping("structure")
+	public TurSNSiteSpotlight turSNSiteSpotlightStructure(@PathVariable String snSiteId) {
+		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
+			TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
+			turSNSiteSpotlight.setTurSNSite(turSNSite);
+			return turSNSiteSpotlight;
+		}).orElse(new TurSNSiteSpotlight());
 	}
 }

@@ -74,7 +74,6 @@ public class TurSNSiteSpotlight implements Serializable {
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)
-	@JsonBackReference(value = "turSNSiteSpotlight-turSNSite")
 	private TurSNSite turSNSite;
 
 	// bi-directional many-to-one association to turSNSiteSpotlightTerms
