@@ -190,7 +190,8 @@ public class TurSNMergeProvidersProcess {
         });
     }
 
-    private void addProviderToSEDocument(Map<String, Object> documentAttributes, String providerName) {
+    @SuppressWarnings("unchecked")
+	private void addProviderToSEDocument(Map<String, Object> documentAttributes, String providerName) {
         Object providerAttribute = documentAttributes.get(TurSNConstants.PROVIDER_ATTRIBUTE);
         List<String> providers = new ArrayList<>();
         if (providerAttribute instanceof ArrayList) {

@@ -100,7 +100,7 @@ public class TurOTCAAutorityFileAPI {
 	private static final String EMPTY_TERM_NAME = "<EMPTY>";
 
 	public String normalizeEntity(String s) {
-		s = turUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "").replace(" ", "_");
+		s = TurUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "").replace(" ", "_");
 		return s;
 	}
 
@@ -180,8 +180,8 @@ public class TurOTCAAutorityFileAPI {
 
 		for (AFTermVariationType afTermVariationType : variations.getVariation()) {
 			TurTermVariation turTermVariation = new TurTermVariation();
-			turTermVariation.setName(turUtils.removeDuplicateWhiteSpaces(afTermVariationType.getName()));
-			turTermVariation.setNameLower(turUtils.stripAccents(turTermVariation.getName()).toLowerCase());
+			turTermVariation.setName(TurUtils.removeDuplicateWhiteSpaces(afTermVariationType.getName()));
+			turTermVariation.setNameLower(TurUtils.stripAccents(turTermVariation.getName()).toLowerCase());
 			
 			setRuleAccent(afTermVariationType, turTermVariation);
 
