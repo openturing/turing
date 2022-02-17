@@ -1,5 +1,6 @@
 buildscript {
     ext {
+        kotlin_version = '1.6.10'
         springBootVersion = '2.6.3'
         hibernateVersion = '5.11.0.Final'
         httpClientVersion = '4.5.11'
@@ -12,13 +13,17 @@ buildscript {
             url "https://packages.atlassian.com/mvn/maven-external/"
         }
     }
-    dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}") }
+    dependencies { 
+    	classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    	classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
 }
 
 plugins {
     id 'org.springframework.boot' version "${springBootVersion}"
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
+    id 'org.jetbrains.kotlin.jvm' version "1.6.10"
     id "com.gorylenko.gradle-git-properties" version '2.4.0'
     id 'de.undercouch.download' version '5.0.1'
     id 'eclipse'
@@ -78,6 +83,14 @@ group = 'com.viglet.turing'
 sourceCompatibility = 14
 targetCompatibility = 14
 
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+	kotlinOptions {
+		freeCompilerArgs = ['-Xjsr305=strict']
+		jvmTarget = "14"
+	}
+}
+
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
@@ -98,6 +111,9 @@ ext['log4j2.version'] = '2.17.1'
 
 dependencies {
     compileOnly group: 'javax.servlet', name: 'servlet-api', version: '2.5'
+	
+	implementation group: 'org.jetbrains.kotlin', name: 'kotlin-reflect'
+	implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8'
 
     implementation(group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.3.1') {
         exclude(module: 'guava')
