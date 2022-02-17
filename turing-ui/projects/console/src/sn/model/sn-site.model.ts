@@ -25,4 +25,5 @@ export interface TurSNSite {
   rowsPerPage: number;
   spellCheck: number;
   spellCheckFixes: number;
+  spotlightWithResults: number;
 }

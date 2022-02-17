@@ -32,6 +32,8 @@ public class TurSNSiteSearchWidgetBean {
 	private List<TurSESimilarResult> similar;
 	private TurSNSiteSpellCheckBean spellCheck;
 	private List<TurSNSiteLocaleBean> locales;
+	private List<TurSNSiteSpotlightDocumentBean> spotlights;
+
 	public List<TurSNSiteSearchFacetBean> getFacet() {
 		return facet;
 	}
@@ -70,6 +72,14 @@ public class TurSNSiteSearchWidgetBean {
 
 	public void setLocales(List<TurSNSiteLocaleBean> locales) {
 		this.locales = locales;
+	}
+
+	public List<TurSNSiteSpotlightDocumentBean> getSpotlights() {
+		return spotlights;
+	}
+
+	public void setSpotlights(List<TurSNSiteSpotlightDocumentBean> spotlights) {
+		this.spotlights = spotlights;
 	}
 
 }

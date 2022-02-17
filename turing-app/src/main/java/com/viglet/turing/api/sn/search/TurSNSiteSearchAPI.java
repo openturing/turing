@@ -21,9 +21,9 @@ import com.viglet.turing.api.sn.bean.*;
 import com.viglet.turing.api.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
 import com.viglet.turing.se.TurSEParameters;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
@@ -33,7 +33,6 @@ import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrField;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 
@@ -64,6 +63,7 @@ public class TurSNSiteSearchAPI {
 	private TurSolr turSolr;
 	@Autowired
 	private TurSNSpotlightProcess turSNSpotlightProcess;
+
 	@GetMapping
 	public TurSNSiteSearchBean turSNSiteSearchSelect(@PathVariable String siteName,
 			@RequestParam(required = false, name = TurSNParamType.QUERY) String q,
@@ -226,17 +226,18 @@ public class TurSNSiteSearchAPI {
 		TurSNSiteSearchResultsBean turSNSiteSearchResultsBean = new TurSNSiteSearchResultsBean();
 		List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean = new ArrayList<>();
 		List<TurSEResult> seResults = turSEResults.getResults();
-		seResults.forEach(result -> TurSNUtils.addSNDocument(context.getUri(), fieldExtMap, facetMap, turSNSiteSearchDocumentsBean,
-				result, false));
+		seResults.forEach(result -> TurSNUtils.addSNDocument(context.getUri(), fieldExtMap, facetMap,
+				turSNSiteSearchDocumentsBean, result, false));
 
-		turSNSpotlightProcess.addSpotlightToResults(context, turSolrInstance, turSNSite, facetMap, fieldExtMap, turSNSiteSearchDocumentsBean);
-
+		if (turSNSite != null && turSNSite.getSpotlightWithResults() != null
+				&& turSNSite.getSpotlightWithResults() == 1) {
+			turSNSpotlightProcess.addSpotlightToResults(context, turSolrInstance, turSNSite, facetMap, fieldExtMap,
+					turSNSiteSearchDocumentsBean);
+		}
 		turSNSiteSearchResultsBean.setDocument(turSNSiteSearchDocumentsBean);
 		return turSNSiteSearchResultsBean;
 
 	}
-
-
 
 	private TurSNSiteSearchWidgetBean responseWidget(TurSNSiteSearchContext context, TurSNSite turSNSite,
 			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts, Map<String, TurSNSiteFieldExt> facetMap,
@@ -250,8 +251,38 @@ public class TurSNSiteSearchAPI {
 		turSNSiteSearchWidgetBean.setSimilar(responseMLT(turSNSite, turSEResults));
 		turSNSiteSearchWidgetBean.setSpellCheck(responseSpellCheck(context, turSEResults.getSpellCheck()));
 		turSNSiteSearchWidgetBean.setLocales(responseLocales(turSNSite, context.getUri()));
+		turSNSiteSearchWidgetBean.setSpotlights(responseSpotlights(context, turSNSite));
+
 		return turSNSiteSearchWidgetBean;
 
+	}
+
+	private List<TurSNSiteSpotlightDocumentBean> responseSpotlights(TurSNSiteSearchContext context,
+			TurSNSite turSNSite) {
+		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = turSNSpotlightProcess
+				.getSpotlightsFromQuery(context, turSNSite);
+		List<TurSNSiteSpotlightDocumentBean> turSNSiteSpotlightDocumentBeans = new ArrayList<>();
+
+		turSNSiteSpotlightDocumentMap.entrySet().forEach(spotlightEntry -> {
+			spotlightEntry.getValue().forEach(document -> {
+				TurSNSiteSpotlightDocumentBean turSNSiteSpotlightDocumentBean = new TurSNSiteSpotlightDocumentBean();
+				turSNSiteSpotlightDocumentBean.setId(document.getId());
+				turSNSiteSpotlightDocumentBean.setContent(document.getContent());
+				turSNSiteSpotlightDocumentBean.setLink(document.getLink());
+				turSNSiteSpotlightDocumentBean.setPosition(document.getPosition());
+				turSNSiteSpotlightDocumentBean.setReferenceId(document.getReferenceId());
+				turSNSiteSpotlightDocumentBean.setTitle(document.getTitle());
+				turSNSiteSpotlightDocumentBean.setType(document.getType());
+				turSNSiteSpotlightDocumentBeans.add(turSNSiteSpotlightDocumentBean);
+			});
+		});
+		Collections.sort(turSNSiteSpotlightDocumentBeans, new Comparator<TurSNSiteSpotlightDocumentBean>() {
+			@Override
+			public int compare(TurSNSiteSpotlightDocumentBean s1, TurSNSiteSpotlightDocumentBean s2) {
+				return s1.getPosition() - s2.getPosition();
+			}
+		});
+		return turSNSiteSpotlightDocumentBeans;
 	}
 
 	private List<TurSNSiteLocaleBean> responseLocales(TurSNSite turSNSite, URI uri) {
@@ -533,11 +564,4 @@ public class TurSNSiteSearchAPI {
 		return firstPagination;
 	}
 
-	
-
-	
-
-
-
-	
 }

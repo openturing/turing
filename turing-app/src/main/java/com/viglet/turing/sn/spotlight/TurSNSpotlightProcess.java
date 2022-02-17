@@ -189,6 +189,57 @@ public class TurSNSpotlightProcess {
 	public void addSpotlightToResults(TurSNSiteSearchContext context, TurSolrInstance turSolrInstance,
 			TurSNSite turSNSite, Map<String, TurSNSiteFieldExt> facetMap, Map<String, TurSNSiteFieldExt> fieldExtMap,
 			List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean) {
+
+		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = getSpotlightsFromQuery(
+				context, turSNSite);
+		
+		int firstRowPositionFromCurrentPage = TurSolrUtils.firstRowPositionFromCurrentPage(context.getTurSEParameters())
+				+ 1;
+		int lastRowPositionFromCurrentPage = TurSolrUtils.lastRowPositionFromCurrentPage(context.getTurSEParameters())
+				- 1;
+
+		if (lastRowPositionFromCurrentPage > firstRowPositionFromCurrentPage + turSNSiteSearchDocumentsBean.size()) {
+			lastRowPositionFromCurrentPage = firstRowPositionFromCurrentPage + turSNSiteSearchDocumentsBean.size();
+		}
+
+		int maxPositionFromList = turSNSiteSearchDocumentsBean.size();
+
+		for (int currentPositionFromList = 0; currentPositionFromList < maxPositionFromList ; currentPositionFromList++) {
+
+			int currentPositionFromCurrentPage = currentPositionFromList + firstRowPositionFromCurrentPage;
+
+			if (turSNSiteSpotlightDocumentMap.containsKey(currentPositionFromCurrentPage)
+					&& currentPositionFromCurrentPage < lastRowPositionFromCurrentPage) {
+				lastRowPositionFromCurrentPage++;
+				List<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = turSNSiteSpotlightDocumentMap
+						.get(currentPositionFromCurrentPage);
+				for (TurSNSiteSpotlightDocument document : turSNSiteSpotlightDocuments) {
+					TurSEResult turSEResult = turSolr.findById(turSolrInstance, turSNSite, document.getReferenceId());
+					if (turSEResult != null) {
+						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,
+								turSNSiteSearchDocumentsBean, turSEResult, true, currentPositionFromList);
+					} else {
+						turSEResult = new TurSEResult();
+						Map<String, Object> fields = new HashMap<>();
+						fields.put("id", document.getId());
+						fields.put("description", document.getContent());
+						fields.put("url", document.getLink());
+						fields.put("referenceId", document.getReferenceId());
+						fields.put("title", document.getTitle());
+						fields.put("type", document.getType());
+						turSEResult.setFields(fields);
+						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,
+								turSNSiteSearchDocumentsBean, turSEResult, true, currentPositionFromList);
+					}
+					
+					
+				}
+			}
+		}
+	}
+
+	public Map<Integer, List<TurSNSiteSpotlightDocument>> getSpotlightsFromQuery(
+			TurSNSiteSearchContext context, TurSNSite turSNSite) {
 		List<TurSNSiteSpotlight> turSNSiteSpotlights = new ArrayList<>();
 		turSpotlightCache.findTermsBySNSiteAndLanguage(turSNSite.getName(), context.getLocale())
 				.forEach(turSNSiteSpotlightTerm -> {
@@ -201,50 +252,12 @@ public class TurSNSpotlightProcess {
 		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = new HashMap<>();
 		turSNSiteSpotlights.forEach(spotlight -> spotlight.getTurSNSiteSpotlightDocuments().forEach(document -> {
 			if (turSNSiteSpotlightDocumentMap.containsKey(document.getPosition())) {
-
 				turSNSiteSpotlightDocumentMap.get(document.getPosition()).add(document);
 			} else {
 				turSNSiteSpotlightDocumentMap.put(document.getPosition(), new ArrayList<>(Arrays.asList(document)));
 			}
 		}));
-		int firstRowPositionFromCurrentPage = TurSolrUtils.firstRowPositionFromCurrentPage(context.getTurSEParameters())
-				+ 1;
-		int lastRowPositionFromCurrentPage = TurSolrUtils.lastRowPositionFromCurrentPage(context.getTurSEParameters())
-				- 1;
-
-		if (lastRowPositionFromCurrentPage > firstRowPositionFromCurrentPage + turSNSiteSearchDocumentsBean.size()) {
-			lastRowPositionFromCurrentPage = firstRowPositionFromCurrentPage + turSNSiteSearchDocumentsBean.size();
-		}
-
-		for (int currentPosition = 0; currentPosition < (turSNSiteSearchDocumentsBean.size()
-				+ turSNSiteSpotlightDocumentMap.size()); currentPosition++) {
-
-			int currentPositionFromCurrentPage = currentPosition + firstRowPositionFromCurrentPage;
-			if (turSNSiteSpotlightDocumentMap.containsKey(currentPositionFromCurrentPage)
-					&& currentPositionFromCurrentPage < lastRowPositionFromCurrentPage) {
-				lastRowPositionFromCurrentPage++;
-				List<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = turSNSiteSpotlightDocumentMap
-						.get(currentPositionFromCurrentPage);
-				for (TurSNSiteSpotlightDocument document : turSNSiteSpotlightDocuments) {
-					TurSEResult turSEResult = turSolr.findById(turSolrInstance, turSNSite, document.getReferenceId());
-					if (turSEResult != null) {
-						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,
-								turSNSiteSearchDocumentsBean, turSEResult, true, currentPosition);
-					} else {
-						turSEResult = new TurSEResult();
-						Map<String, Object> fields = new HashMap<>();
-						fields.put("id", document.getId());
-						fields.put("description", document.getContent());
-						fields.put("url", document.getLink());
-						fields.put("referenceId", document.getReferenceId());
-						fields.put("title", document.getTitle());
-						fields.put("type", document.getType());
-						turSEResult.setFields(fields);
-						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,
-								turSNSiteSearchDocumentsBean, turSEResult, true, currentPosition);
-					}
-				}
-			}
-		}
+		return turSNSiteSpotlightDocumentMap;
 	}
+	
 }

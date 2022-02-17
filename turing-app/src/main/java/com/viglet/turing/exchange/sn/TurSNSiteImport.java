@@ -49,16 +49,16 @@ public class TurSNSiteImport {
 				turSNSite.setDefaultTitleField(turSNSiteExchange.getDefaultTitleField());
 				turSNSite.setDefaultURLField(turSNSiteExchange.getDefaultURLField());
 				turSNSite.setDescription(turSNSiteExchange.getDescription());
-				turSNSite.setFacet(boolToByte(turSNSiteExchange.getFacet()));
-				turSNSite.setHl(boolToByte( turSNSiteExchange.getHl()));
+				turSNSite.setFacet(boolToInteger(turSNSiteExchange.getFacet()));
+				turSNSite.setHl(boolToInteger( turSNSiteExchange.getHl()));
 				turSNSite.setHlPost(turSNSiteExchange.getHlPost());
 				turSNSite.setHlPre(turSNSiteExchange.getHlPre());
 				turSNSite.setId(turSNSiteExchange.getId());
 				turSNSite.setItemsPerFacet(turSNSiteExchange.getItemsPerFacet());
-				turSNSite.setMlt(boolToByte( turSNSiteExchange.getMlt()));
+				turSNSite.setMlt(boolToInteger( turSNSiteExchange.getMlt()));
 				turSNSite.setName(turSNSiteExchange.getName());
 				turSNSite.setRowsPerPage(turSNSiteExchange.getRowsPerPage());
-				turSNSite.setThesaurus(boolToByte(turSNSiteExchange.getThesaurus()));
+				turSNSite.setThesaurus(boolToInteger(turSNSiteExchange.getThesaurus()));
 				turSNSite.setTurSEInstance(turSEInstanceRepository.findById(turSNSiteExchange.getTurSEInstance()).orElse(null));
 
 				turSNSiteRepository.save(turSNSite);
@@ -75,7 +75,7 @@ public class TurSNSiteImport {
 		}
 	}
 
-	private byte boolToByte(boolean bool) {
-		return bool ? (byte) 1 : (byte) 0;
+	private Integer boolToInteger(boolean bool) {
+		return bool ?  1 :  0;
 	}
 }

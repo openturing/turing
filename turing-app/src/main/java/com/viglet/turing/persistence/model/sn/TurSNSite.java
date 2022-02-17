@@ -60,16 +60,16 @@ public class TurSNSite implements Serializable {
 	private String description;
 
 	@Column(nullable = true)
-	private int rowsPerPage;
+	private Integer rowsPerPage;
 
 	@Column(nullable = true)
-	private int facet;
+	private Integer facet;
 
 	@Column(nullable = true)
-	private int itemsPerFacet;
+	private Integer itemsPerFacet;
 
 	@Column(nullable = true)
-	private int hl;
+	private Integer hl;
 
 	@Column(nullable = true, length = 50)
 	private String hlPre;
@@ -78,10 +78,10 @@ public class TurSNSite implements Serializable {
 	private String hlPost;
 
 	@Column(nullable = true)
-	private int mlt;
+	private Integer mlt;
 
 	@Column(nullable = true)
-	private int thesaurus;
+	private Integer thesaurus;
 
 	@Column(nullable = true)
 	private String defaultTitleField;
@@ -102,11 +102,14 @@ public class TurSNSite implements Serializable {
 	private String defaultURLField;
 
 	@Column(nullable = true)
-	private int spellCheck;
+	private Integer spellCheck;
 
 	@Column(nullable = true)
-	private int spellCheckFixes;
-
+	private Integer spellCheckFixes;
+	
+	@Column(nullable = true)
+	private Integer spotlightWithResults;
+	
 	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
@@ -225,23 +228,23 @@ public class TurSNSite implements Serializable {
 		return turSNSiteLocale;
 	}
 
-	public int getRowsPerPage() {
+	public Integer getRowsPerPage() {
 		return rowsPerPage;
 	}
 
-	public void setRowsPerPage(int rowsPerPage) {
+	public void setRowsPerPage(Integer rowsPerPage) {
 		this.rowsPerPage = rowsPerPage;
 	}
 
-	public int getFacet() {
+	public Integer getFacet() {
 		return facet;
 	}
 
-	public void setFacet(int facet) {
+	public void setFacet(Integer facet) {
 		this.facet = facet;
 	}
 
-	public int getItemsPerFacet() {
+	public Integer getItemsPerFacet() {
 		return itemsPerFacet;
 	}
 
@@ -249,11 +252,11 @@ public class TurSNSite implements Serializable {
 		this.itemsPerFacet = itemsPerFacet;
 	}
 
-	public int getHl() {
+	public Integer getHl() {
 		return hl;
 	}
 
-	public void setHl(int hl) {
+	public void setHl(Integer hl) {
 		this.hl = hl;
 	}
 
@@ -273,19 +276,19 @@ public class TurSNSite implements Serializable {
 		this.hlPost = hlPost;
 	}
 
-	public int getMlt() {
+	public Integer getMlt() {
 		return mlt;
 	}
 
-	public void setMlt(int mlt) {
+	public void setMlt(Integer mlt) {
 		this.mlt = mlt;
 	}
 
-	public int getThesaurus() {
+	public Integer getThesaurus() {
 		return thesaurus;
 	}
 
-	public void setThesaurus(int thesaurus) {
+	public void setThesaurus(Integer thesaurus) {
 		this.thesaurus = thesaurus;
 	}
 
@@ -337,19 +340,29 @@ public class TurSNSite implements Serializable {
 		this.defaultImageField = defaultImageField;
 	}
 
-	public int getSpellCheck() {
+	public Integer getSpellCheck() {
 		return spellCheck;
 	}
 
-	public void setSpellCheck(int spellCheck) {
+	public void setSpellCheck(Integer spellCheck) {
 		this.spellCheck = spellCheck;
 	}
 
-	public int getSpellCheckFixes() {
+	public Integer getSpellCheckFixes() {
 		return spellCheckFixes;
 	}
 
-	public void setSpellCheckFixes(int spellCheckFixes) {
+	public void setSpellCheckFixes(Integer spellCheckFixes) {
 		this.spellCheckFixes = spellCheckFixes;
 	}
+
+	public Integer getSpotlightWithResults() {
+		return spotlightWithResults;
+	}
+
+	public void setSpotlightWithResults(Integer spotlightWithResults) {
+		this.spotlightWithResults = spotlightWithResults;
+	}
+	
+	
 }

@@ -121,6 +121,23 @@
       Use "More Like This" feature.
     </p>
   </div>
+
+  <div class="Subhead mt-5">
+    <div class="Subhead-heading"><span octicon="megaphone" [size]="24" class="mr-1"> </span> Spotlight</div>
+    <div class="Subhead-description">Show spotlight content based in the term-based search.
+    </div>
+  </div>
+  <div class="form-checkbox">
+    <label>
+      <input [(ngModel)]="snSite.spotlightWithResults" type="checkbox" [ngModelOptions]="{standalone: true}"
+        (ngModelChange)="snSite.spotlightWithResults = $event ? 1 : 0" aria-describedby="sn-mlt-tip" />
+      "Spotlight with search results" enabled
+    </label>
+    <p class="note" id="sn-spellCheck-tip">
+      Displays the spotlight ones along with the search using the its position.
+    </p>
+  </div>
+
   <div class="Subhead mt-5">
     <div class="Subhead-heading"><span octicon="tasklist" [size]="24" class="mr-1"> </span> Default Fields</div>
     <div class="Subhead-description">What is the fields that will be used on search results display.</div>
