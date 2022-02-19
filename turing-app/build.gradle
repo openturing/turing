@@ -44,7 +44,7 @@ sonarqube {
 
 jar {
     archiveBaseName = 'viglet-turing'
-    archiveVersion = '0.3.5'
+    archiveVersion = '0.3.6'
 }
 
 eclipse {
@@ -80,14 +80,14 @@ repositories {
 }
 
 group = 'com.viglet.turing'
-sourceCompatibility = 14
-targetCompatibility = 14
+sourceCompatibility = 17
+targetCompatibility = 17
 
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
 	kotlinOptions {
 		freeCompilerArgs = ['-Xjsr305=strict']
-		jvmTarget = "14"
+		jvmTarget = "17"
 	}
 }
 
@@ -262,7 +262,7 @@ dependencies {
 }
 
 jacoco {
-    toolVersion = "0.8.6"
+    toolVersion = "0.8.7"
 }
 
 test {

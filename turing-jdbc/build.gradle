@@ -16,8 +16,8 @@ group = 'com.viglet.turing.jdbc'
 
 description = "turing-jdbc"
 
-sourceCompatibility = 14
-targetCompatibility = 14
+sourceCompatibility = 17
+targetCompatibility = 17
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
@@ -33,7 +33,7 @@ sonarqube {
 
 jar {
     baseName = 'turing-jdbc'
-    version =  '0.3.5'
+    version =  '0.3.6'
     manifest {
 		attributes 'Main-Class': 'com.viglet.turing.tool.jdbc.JDBCImportTool'
 	}
