@@ -115,6 +115,7 @@ public class TurSNSiteAPI {
 			turSNSiteEdit.setSpellCheckFixes(turSNSite.getSpellCheckFixes());
 			turSNSiteEdit.setMlt(turSNSite.getMlt());
 			turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
+			turSNSiteEdit.setSpotlightWithResults(turSNSite.getSpotlightWithResults());
 			turSNSiteEdit.setDefaultTitleField(turSNSite.getDefaultTitleField());
 			turSNSiteEdit.setDefaultTextField(turSNSite.getDefaultTextField());
 			turSNSiteEdit.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());

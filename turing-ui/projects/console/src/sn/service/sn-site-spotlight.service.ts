@@ -33,10 +33,22 @@ export class TurSNSiteSpotlightService {
     return this.httpClient.get<TurSNSiteSpotlight>(`${environment.apiUrl}/api/sn/${siteId}/spotlight/${id}`);
   }
 
-  public save(siteId: string, turSNSiteSpotlight: TurSNSiteSpotlight): Observable<TurSNSiteSpotlight> {
-    return this.httpClient.put<TurSNSiteSpotlight>(`${environment.apiUrl}/api/sn/${siteId}/spotlight/${turSNSiteSpotlight.id}`,
-      JSON.stringify(turSNSiteSpotlight));
-
+  getStructure(siteId: string): Observable<TurSNSiteSpotlight> {
+    return this.httpClient.get<TurSNSiteSpotlight>(`${environment.apiUrl}/api/sn/${siteId}/spotlight/structure`);
   }
 
+  public save(siteId: string, turSNSiteSpotlight: TurSNSiteSpotlight, newObject: boolean): Observable<TurSNSiteSpotlight> {
+    if (newObject) {
+      return this.httpClient.post<TurSNSiteSpotlight>(`${environment.apiUrl}/api/sn/${siteId}/spotlight`,
+        JSON.stringify(turSNSiteSpotlight));
+    }
+    else {
+      return this.httpClient.put<TurSNSiteSpotlight>(`${environment.apiUrl}/api/sn/${siteId}/spotlight/${turSNSiteSpotlight.id}`,
+        JSON.stringify(turSNSiteSpotlight));
+    }
+  }
+
+  public delete(siteId: string, turSNSiteSpotlight: TurSNSiteSpotlight): Observable<TurSNSiteSpotlight> {
+    return this.httpClient.delete<TurSNSiteSpotlight>(`${environment.apiUrl}/api/sn/${siteId}/spotlight/${turSNSiteSpotlight.id}`);
+  }
 }

@@ -37,15 +37,18 @@ public interface TurSNSiteSpotlightRepository extends JpaRepository<TurSNSiteSpo
 	@SuppressWarnings("unchecked")
 	TurSNSiteSpotlight save(TurSNSiteSpotlight turSNSiteSpotlight);
 
-	Set<TurSNSiteSpotlight> findByUnmanagedIdAndTurSNSite(String unmanagedId, TurSNSite turSNSite);
+	Set<TurSNSiteSpotlight> findByUnmanagedIdAndTurSNSiteAndLanguage(String unmanagedId, TurSNSite turSNSite,
+			String language);
 
-	List<TurSNSiteSpotlight> findByTurSNSite(TurSNSite turSNSite);
+	List<TurSNSiteSpotlight> findByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
 	
+	List<TurSNSiteSpotlight> findByTurSNSite(TurSNSite turSNSite);
+
 	Set<TurSNSiteSpotlight> findByProvider(String provider);
 
-	List<TurSNSiteSpotlight> findDistinctByTurSNSiteAndTurSNSiteSpotlightTermsIn(TurSNSite turSNSite,
-																				 Collection<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms);
-	
+	List<TurSNSiteSpotlight> findDistinctByTurSNSiteAndLanguageAndTurSNSiteSpotlightTermsIn(TurSNSite turSNSite, String language,
+			Collection<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms);
+
 	void delete(TurSNSiteSpotlight turSNSiteSpotlight);
 
 	@Modifying

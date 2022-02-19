@@ -27,6 +27,7 @@ export class TurLocaleService {
     query(): Observable<TurLocale[]> {
         return this.httpClient.get<TurLocale[]>(`${environment.apiUrl}/api/locale`);
     }
+
     get(initials: string): Observable<TurLocale> {
         return this.httpClient.get<TurLocale>(`${environment.apiUrl}/api/locale/${initials}`);
     }

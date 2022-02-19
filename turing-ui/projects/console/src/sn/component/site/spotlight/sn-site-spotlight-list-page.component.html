@@ -11,9 +11,8 @@
     </div>
     <div class="float-right" style="display: inline-flex;">
       <div class="d-flex flex-justify-end position-relative">
-        <button class="btn btn-primary" role="button">
-          <span octicon="megaphone" [size]=16 class="mr-1"></span> New
-        </button>
+        <a [routerLink]="['/sn/site', getId(), 'spotlight', 'new']" type="button" class="btn btn-primary"><span
+          octicon="megaphone" [size]="16" class="mr-1"></span> New</a>
       </div>
     </div>
   </div>
@@ -22,8 +21,7 @@
       <ul>
         <li *ngFor="let snSiteSpotlight of snSiteSpotlights" class="Box-row ">
           <div class="d-flex flex-items-center">
-            <input type="checkbox" class="mr-2" />
-            <a [routerLink]="['/sn/site', getId(), 'spotlight', 'edit', snSiteSpotlight.id]" routerLinkActive="active" class="d-flex flex-items-center">
+            <a [routerLink]="['/sn/site', getId(), 'spotlight', snSiteSpotlight.id]" routerLinkActive="active" class="d-flex flex-items-center">
               <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
               class="float-left">
               <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSiteSpotlight.name | lowercase">
@@ -31,37 +29,12 @@
               </svg>
             </div>
               {{snSiteSpotlight.name}}</a>
-            <details class="details-reset details-overlay ml-3">
-              <summary aria-haspopup="true" class="ellipsis-expander" aria-expanded="false">
-                &hellip;
-              </summary>
-              <div class="SelectMenu">
-                <div class="SelectMenu-modal">
-                  <header class="SelectMenu-header">
-                    <h3 class="SelectMenu-title">{{'title'}}</h3>
-                  </header>
-                  <div class="SelectMenu-list">
-                    <button class="SelectMenu-item" role="menuitem">
-                      <span octicon="pencil" [size]=16 class="mr-1"></span> Edit
-                    </button>
-                    <button class="SelectMenu-item" role="menuitem"><svg class="octicon mr-1" width="16" height="16"
-                        viewBox="0 0 512 512">
-                        <path fill="currentColor"
-                          d="M464 0H144c-26.51 0-48 21.49-48 48v48H48c-26.51 0-48 21.49-48 48v320c0 26.51 21.49 48 48 48h320c26.51 0 48-21.49 48-48v-48h48c26.51 0 48-21.49 48-48V48c0-26.51-21.49-48-48-48zM362 464H54a6 6 0 0 1-6-6V150a6 6 0 0 1 6-6h42v224c0 26.51 21.49 48 48 48h224v42a6 6 0 0 1-6 6zm96-96H150a6 6 0 0 1-6-6V54a6 6 0 0 1 6-6h308a6 6 0 0 1 6 6v308a6 6 0 0 1-6 6z">
-                        </path>
-                      </svg>Clone</button>
-                    <button class="SelectMenu-item" role="menuitem">
-                      <span octicon="trash" [size]=16 class="mr-1"></span> Delete</button>
-                  </div>
-                </div>
-              </div>
-            </details>
           </div>
           <div class="d-flex flex-items-center mt-1 color-text-secondary">
             <span octicon="clock" [size]=16 class="mr-1"></span>
             <span>
               <span style="font-size: smaller;"> Updated
-                {{snSiteSpotlight.date | amTimeAgo}}</span>
+                {{snSiteSpotlight.modificationDate | amTimeAgo}}</span>
               <span> - </span> {{snSiteSpotlight.description}}</span>
           </div>
 

@@ -19,6 +19,7 @@ package com.viglet.turing.persistence.model.sn.spotlight;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -66,11 +67,13 @@ public class TurSNSiteSpotlight implements Serializable {
 
 	@Column
 	private String provider = "TURING";
+	
+	@Column
+	private String language;
 
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)
-	@JsonBackReference(value = "turSNSiteSpotlight-turSNSite")
 	private TurSNSite turSNSite;
 
 	// bi-directional many-to-one association to turSNSiteSpotlightTerms
@@ -164,4 +167,13 @@ public class TurSNSiteSpotlight implements Serializable {
 	public void setUnmanagedId(String unmanagedId) {
 		this.unmanagedId = unmanagedId;
 	}
+
+	public String getLanguage() {
+		return language;
+	}
+
+	public void setLanguage(String language) {
+		this.language = language;
+	}
+
 }

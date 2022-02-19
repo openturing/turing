@@ -1,5 +1,6 @@
 buildscript {
     ext {
+        kotlin_version = '1.6.10'
         springBootVersion = '2.6.3'
         hibernateVersion = '5.11.0.Final'
         httpClientVersion = '4.5.11'
@@ -12,13 +13,17 @@ buildscript {
             url "https://packages.atlassian.com/mvn/maven-external/"
         }
     }
-    dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}") }
+    dependencies { 
+    	classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    	classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
 }
 
 plugins {
     id 'org.springframework.boot' version "${springBootVersion}"
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
+    id 'org.jetbrains.kotlin.jvm' version "1.6.10"
     id "com.gorylenko.gradle-git-properties" version '2.4.0'
     id 'de.undercouch.download' version '5.0.1'
     id 'eclipse'
@@ -39,7 +44,7 @@ sonarqube {
 
 jar {
     archiveBaseName = 'viglet-turing'
-    archiveVersion = '0.3.5'
+    archiveVersion = '0.3.6'
 }
 
 eclipse {
@@ -75,8 +80,16 @@ repositories {
 }
 
 group = 'com.viglet.turing'
-sourceCompatibility = 14
-targetCompatibility = 14
+sourceCompatibility = 17
+targetCompatibility = 17
+
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+	kotlinOptions {
+		freeCompilerArgs = ['-Xjsr305=strict']
+		jvmTarget = "17"
+	}
+}
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
@@ -98,6 +111,9 @@ ext['log4j2.version'] = '2.17.1'
 
 dependencies {
     compileOnly group: 'javax.servlet', name: 'servlet-api', version: '2.5'
+	
+	implementation group: 'org.jetbrains.kotlin', name: 'kotlin-reflect'
+	implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8'
 
     implementation(group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.3.1') {
         exclude(module: 'guava')
@@ -183,7 +199,7 @@ dependencies {
     implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
 
     // Spring
-    implementation group: 'org.springframework', name: 'spring-test', version: '5.3.15'
+    implementation group: 'org.springframework', name: 'spring-test', version: '5.3.16'
 
     // Jackson
     implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.13.1'
@@ -195,7 +211,7 @@ dependencies {
     implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.0.3'
 
     // PostgreSQL
-    implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.2'
+    implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.3'
 
     // JSON
     implementation group: 'org.json', name: 'json', version: '20211205'
@@ -228,7 +244,7 @@ dependencies {
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
 
     //ActiveMQ using KahaDB
-    implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.16.3'
+    implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.16.4'
 
     // SpringDoc
     implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.6'
@@ -246,7 +262,7 @@ dependencies {
 }
 
 jacoco {
-    toolVersion = "0.8.6"
+    toolVersion = "0.8.7"
 }
 
 test {

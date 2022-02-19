@@ -41,7 +41,6 @@ public class TurDataGroupModel implements Serializable {
 	@Column(unique = true, nullable = false)
 	private int id;
 
-	// bi-directional many-to-one association to TurCategory
 	@OneToOne
 	private TurMLModel turMLModel;
 

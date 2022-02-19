@@ -5,7 +5,8 @@ export interface TurSNSiteSpotlight {
   id: string;
   name: string;
   description: string;
-  date: Date;
+  language: string;
+  modificationDate: Date;
   turSNSiteSpotlightTerms: TurSNSiteSpotlightTerm[];
   turSNSiteSpotlightDocuments: TurSNSiteSpotlightDocument[];
 }

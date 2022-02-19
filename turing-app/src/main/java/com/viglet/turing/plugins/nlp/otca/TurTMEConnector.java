@@ -40,7 +40,6 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.XML;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -73,8 +72,6 @@ public class TurTMEConnector implements TurNLPPlugin {
 	private static final String COMPLEX_CONCEPTS = "ComplexConcepts";
 	private static final String SIMPLE_CONCEPTS = "SimpleConcepts";
 	private static final String LOG_KV = "{}: {}";
-	@Autowired
-	private TurSolrField turSolrField;
 
 	private static final int PRETTY_PRINT_INDENT_FACTOR = 4;
 
@@ -224,7 +221,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 			sb.append("<TextID>32534ae2e9282510VgnVCM1000004c00210aRCRD</TextID>");
 			sb.append("<LanguageID>PORTUGUESE</LanguageID>");
 			sb.append("<NSTEIN_Text>");
-			sb.append(turSolrField.convertFieldToString(attrValue));
+			sb.append(TurSolrField.convertFieldToString(attrValue));
 			sb.append("</NSTEIN_Text>");
 			sb.append("</Text>");
 			sb.append("</Texts>");

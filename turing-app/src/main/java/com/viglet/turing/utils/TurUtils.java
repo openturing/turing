@@ -78,13 +78,13 @@ public class TurUtils {
         return authentication.getName();
     }
 
-    public String stripAccents(String s) {
+    public static String stripAccents(String s) {
         s = Normalizer.normalize(s, Normalizer.Form.NFD);
         s = s.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
         return s;
     }
 
-    public String removeDuplicateWhiteSpaces(String s) {
+    public static String removeDuplicateWhiteSpaces(String s) {
         return s.replaceAll("\\s+", " ").trim();
     }
 

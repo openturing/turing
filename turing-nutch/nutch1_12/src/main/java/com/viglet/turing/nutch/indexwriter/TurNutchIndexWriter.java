@@ -55,7 +55,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 
 		try {
-			key = decode(key, StandardCharsets.UTF_8);
+			key = decode(key, StandardCharsets.UTF_8.name());
 		} catch (IllegalArgumentException e) {
 			logger.warn("Could not decode: " + key + ", it probably wasn't encoded in the first place..");
 		}

@@ -2,6 +2,7 @@ package com.viglet.turing.solr;
 
 import org.apache.solr.common.SolrDocument;
 
+import com.viglet.turing.se.TurSEParameters;
 import com.viglet.turing.se.result.TurSEResult;
 
 public class TurSolrUtils {
@@ -16,4 +17,12 @@ public class TurSolrUtils {
                 .forEach(attribute -> turSEResult.getFields().put(attribute, document.getFieldValue(attribute)));
         return turSEResult;
     }
+    
+    public static int firstRowPositionFromCurrentPage(TurSEParameters turSEParameters) {
+		return (turSEParameters.getCurrentPage() * turSEParameters.getRows()) - turSEParameters.getRows();
+	}
+
+	public static int lastRowPositionFromCurrentPage(TurSEParameters turSEParameters) {
+		return (turSEParameters.getCurrentPage() * turSEParameters.getRows());
+	}
 }

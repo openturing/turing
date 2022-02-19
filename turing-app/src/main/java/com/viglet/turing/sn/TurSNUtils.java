@@ -20,7 +20,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -32,14 +36,22 @@ import org.apache.tika.utils.StringUtils;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentBean;
+import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentMetadataBean;
 import com.viglet.turing.api.sn.search.TurSNParamType;
 import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
+import com.viglet.turing.solr.TurSolrField;
 
 public class TurSNUtils {
 	private static final Logger logger = LogManager.getLogger(TurSNUtils.class);
-
+	public static final String TURING_ENTITY = "turing_entity";
+	public static final String DEFAULT_LANGUAGE = "en";
+	public static final String URL = "url";
+	
 	private TurSNUtils() {
 		throw new IllegalStateException("SN Utility class");
 	}
@@ -134,5 +146,121 @@ public class TurSNUtils {
 		} else {
 			addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
 		}
+	}
+	
+	public static void addSNDocument(URI uri, Map<String, TurSNSiteFieldExt> fieldExtMap,
+			Map<String, TurSNSiteFieldExt> facetMap, List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean,
+			TurSEResult result, boolean isElevate) {
+		addSNDocumentWithPostion(uri, fieldExtMap, facetMap, turSNSiteSearchDocumentsBean, result, isElevate,
+				null);
+	}
+
+	public static void addSNDocumentWithPostion(URI uri, Map<String, TurSNSiteFieldExt> fieldExtMap,
+			Map<String, TurSNSiteFieldExt> facetMap, List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean,
+			TurSEResult result, boolean isElevate, Integer position) {
+		TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean = new TurSNSiteSearchDocumentBean();
+		Map<String, Object> turSEResultAttr = result.getFields();
+		Set<String> attribs = turSEResultAttr.keySet();
+
+		turSNSiteSearchDocumentBean.setElevate(isElevate);
+
+		List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans = addMetadataFromDocument(uri,
+				facetMap, turSEResultAttr);
+
+		turSNSiteSearchDocumentBean.setMetadata(turSNSiteSearchDocumentMetadataBeans);
+
+		setSourcefromDocument(turSNSiteSearchDocumentBean, turSEResultAttr);
+
+		Map<String, Object> fields = addFieldsFromDocument(fieldExtMap, turSEResultAttr, attribs);
+		turSNSiteSearchDocumentBean.setFields(fields);
+		if (position == null) {
+			turSNSiteSearchDocumentsBean.add(turSNSiteSearchDocumentBean);
+		} else {
+			turSNSiteSearchDocumentsBean.add(position, turSNSiteSearchDocumentBean);
+		}
+	}
+	
+	private static Map<String, Object> addFieldsFromDocument(Map<String, TurSNSiteFieldExt> fieldExtMap,
+			Map<String, Object> turSEResultAttr, Set<String> attribs) {
+		Map<String, Object> fields = new HashMap<>();
+		attribs.forEach(attribute -> {
+			if (!attribute.startsWith(TURING_ENTITY)) {
+				addFieldandValueToMap(turSEResultAttr, fields, attribute, getFieldName(fieldExtMap, attribute));
+			}
+		});
+		return fields;
+	}
+	
+
+	private static String getFieldName(Map<String, TurSNSiteFieldExt> fieldExtMap, String attribute) {
+		String nodeName;
+		if (fieldExtMap.containsKey(attribute)) {
+			TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
+			nodeName = turSNSiteFieldExt.getName();
+		} else {
+			nodeName = attribute;
+		}
+		return nodeName;
+	}
+
+
+	private static void addFieldandValueToMap(Map<String, Object> turSEResultAttr, Map<String, Object> fields,
+			String attribute, String nodeName) {
+		if (nodeName != null && fields.containsKey(nodeName)) {
+			addValueToExistingFieldMap(turSEResultAttr, fields, attribute, nodeName);
+		} else {
+			fields.put(nodeName, turSEResultAttr.get(attribute));
+
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static void addValueToExistingFieldMap(Map<String, Object> turSEResultAttr, Map<String, Object> fields,
+			String attribute, String nodeName) {
+		if (!(fields.get(nodeName) instanceof List)) {
+			List<Object> attributeValues = new ArrayList<>();
+			attributeValues.add(fields.get(nodeName));
+			attributeValues.add(turSEResultAttr.get(attribute));
+			fields.put(nodeName, attributeValues);
+		} else {
+			((List<Object>) fields.get(nodeName)).add(turSEResultAttr.get(attribute));
+		}
+	}
+
+	private static void setSourcefromDocument(TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean,
+			Map<String, Object> turSEResultAttr) {
+		if (turSEResultAttr.containsKey(URL)) {
+			turSNSiteSearchDocumentBean.setSource((String) turSEResultAttr.get(URL));
+		}
+	}
+	
+
+	private static List<TurSNSiteSearchDocumentMetadataBean> addMetadataFromDocument(URI uri,
+			Map<String, TurSNSiteFieldExt> facetMap, Map<String, Object> turSEResultAttr) {
+		List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans = new ArrayList<>();
+		facetMap.keySet().forEach(facet -> {
+			if (turSEResultAttr.containsKey(facet)) {
+				if (turSEResultAttr.get(facet) instanceof ArrayList) {
+					((ArrayList<?>) turSEResultAttr.get(facet)).forEach(facetValueObject -> addFilterQueryByType(uri,
+							turSNSiteSearchDocumentMetadataBeans, facet, facetValueObject));
+				} else {
+					addFilterQueryByType(uri, turSNSiteSearchDocumentMetadataBeans, facet, turSEResultAttr.get(facet));
+				}
+
+			}
+		});
+
+		return turSNSiteSearchDocumentMetadataBeans;
+	}
+
+	private static void addFilterQueryByType(URI uri,
+			List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans, String facet,
+			Object attrValue) {
+		String facetValue = TurSolrField.convertFieldToString(attrValue);
+		TurSNSiteSearchDocumentMetadataBean turSNSiteSearchDocumentMetadataBean = new TurSNSiteSearchDocumentMetadataBean();
+		turSNSiteSearchDocumentMetadataBean
+				.setHref(TurSNUtils.addFilterQuery(uri, facet + ":" + facetValue).toString());
+		turSNSiteSearchDocumentMetadataBean.setText(facetValue);
+		turSNSiteSearchDocumentMetadataBeans.add(turSNSiteSearchDocumentMetadataBean);
 	}
 }

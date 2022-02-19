@@ -57,10 +57,6 @@ public class TurThesaurusProcessor {
 
 	@Autowired
 	private TurTermVariationRepository turTermVariationRepository;
-	@Autowired
-	private TurSolrField turSolrField;
-	@Autowired
-	private TurUtils turUtils;
 
 	Map<String, TurTermVariation> terms = new LinkedHashMap<>();
 
@@ -79,7 +75,7 @@ public class TurThesaurusProcessor {
 		if (attributes != null) {
 			for (Object attrValue : attributes.values()) {
 				Map<String, List<String>> termsDetected = this
-						.detectTerms(turSolrField.convertFieldToString(attrValue));
+						.detectTerms(TurSolrField.convertFieldToString(attrValue));
 				for (Entry<String, List<String>> termDetected : termsDetected.entrySet()) {
 					if (entityResults.containsKey(nlpEntityAttribute(termDetected))) {
 						entityResults.get(nlpEntityAttribute(termDetected)).addAll(termDetected.getValue());
@@ -107,7 +103,7 @@ public class TurThesaurusProcessor {
 	public TurEntityResults detectTerms(String text) {
 		TurEntityResults entityResults = new TurEntityResults();
 		logger.debug("detectTerms....");
-		String[] words = turUtils.removeDuplicateWhiteSpaces(text).split(" ");
+		String[] words = TurUtils.removeDuplicateWhiteSpaces(text).split(" ");
 		TurNLPSentence turNLPSentence = new TurNLPSentence();
 
 		int[] idx = { 0 };
@@ -117,7 +113,7 @@ public class TurThesaurusProcessor {
 		TurTermVariation[] stringTerms = terms.values().toArray(new TurTermVariation[terms.size()]);
 
 		for (String word : words) {
-			String wordLowerCase = turUtils.stripAccents(word).toLowerCase();
+			String wordLowerCase = TurUtils.stripAccents(word).toLowerCase();
 			logger.debug("word: {}", word);
 			List<TurTermVariation> results = Arrays.stream(stringTerms)
 					.filter(t -> t.getNameLower().contains(wordLowerCase)).collect(Collectors.toList());
@@ -136,7 +132,7 @@ public class TurThesaurusProcessor {
 			TurNLPWord turNLPWord = (TurNLPWord) wordObject;
 			logger.debug("word2: {}", turNLPWord.getWord());
 			Map<String, TurTermVariation> variations = lhWords
-					.get(turUtils.stripAccents(turNLPWord.getWord()).toLowerCase());
+					.get(TurUtils.stripAccents(turNLPWord.getWord()).toLowerCase());
 
 			if (prevVariations != null) {
 				logger.debug("variations.size(): {}", variations.size());
@@ -414,12 +410,12 @@ public class TurThesaurusProcessor {
 	}
 
 	public boolean validateTerm(String word, TurTermVariation variation) {
-		String wordNoAccent = turUtils.stripAccents(word);
+		String wordNoAccent = TurUtils.stripAccents(word);
 		String wordLowerCaseNoAccent = wordNoAccent.toLowerCase();
 		String wordLowerCaseWithAccent = word.toLowerCase();
 
 		String termName = terms.get(variation.getId()).getName();
-		String termNameNoAccent = turUtils.stripAccents(termName);
+		String termNameNoAccent = TurUtils.stripAccents(termName);
 		String termNameLower = terms.get(variation.getId()).getNameLower();
 
 		logger.debug("Validating..");

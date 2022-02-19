@@ -22,11 +22,10 @@ import com.viglet.turing.api.sn.job.TurSNJobAction;
 import com.viglet.turing.api.sn.job.TurSNJobItem;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.sn.TurSNNLPProcess;
 import com.viglet.turing.sn.TurSNThesaurusProcess;
-import com.viglet.turing.sn.TurSNSpotlightProcess;
+import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.utils.TurUtils;
@@ -49,8 +48,6 @@ public class TurSNProcessQueue {
     private TurSNSiteRepository turSNSiteRepository;
     @Autowired
     private TurSolrInstanceProcess turSolrInstanceProcess;
-    @Autowired
-    private TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
     @Autowired
     private TurSNMergeProvidersProcess turSNMergeProvidersProcess;
     @Autowired

@@ -32,7 +32,7 @@ const routes: Routes = [
             path: 'spotlight', component: TurSNSiteSpotlightRootPageComponent, canActivate: [AuthGuard],
             children: [
               { path: 'list', component: TurSNSiteSpotlightListPageComponent, canActivate: [AuthGuard] },
-              { path: 'edit/:spotlightId', component: TurSNSiteSpotlightPageComponent, canActivate: [AuthGuard] },
+              { path: ':spotlightId', component: TurSNSiteSpotlightPageComponent, canActivate: [AuthGuard] },
               { path: '', redirectTo: 'list', pathMatch: 'full' }
             ]
           },
