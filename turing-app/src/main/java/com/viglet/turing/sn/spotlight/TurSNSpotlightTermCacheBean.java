@@ -1,9 +1,11 @@
 package com.viglet.turing.sn.spotlight;
 
+import java.io.Serializable;
+
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 
-public class TurSNSpotlightTermCacheBean {
-
+public class TurSNSpotlightTermCacheBean implements Serializable {
+	private static final long serialVersionUID = 1L;
 	private String term;
 	private String spotlightId;
 	private TurSNSiteSpotlight spotlight;
