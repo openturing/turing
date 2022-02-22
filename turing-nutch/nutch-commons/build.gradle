@@ -9,7 +9,6 @@ buildscript {
 		mavenCentral()
 		maven { url "https://repo.spring.io/snapshot" }
 		maven { url "https://repo.spring.io/milestone" }
-		maven { url 'https://jitpack.io' }
 		jcenter()
 		}
 }
@@ -40,7 +39,6 @@ configurations {
 }
 repositories {
 	mavenCentral()
-	maven { url 'https://jitpack.io' }
 }
 
 sourceCompatibility = 1.8
@@ -56,8 +54,7 @@ dependencies {
     implementation group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.1"
     implementation group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.4.1"
 	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
-    
-	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: 'f752da72b7'
+	implementation project(':turing-java-sdk')
 }
 test {
     testLogging {

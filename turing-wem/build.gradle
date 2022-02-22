@@ -34,12 +34,6 @@ repositories {
     mavenCentral()
 }
 
-javadoc {
-    source = sourceSets.main.allJava
-    classpath = configurations.implementation
-    destinationDir = file("docs")
-}
-
 task compileOne (type: JavaCompile) {
     source = fileTree(dir: 'src', include: '**/*.java')
     classpath = files('build/classes/main')
@@ -96,7 +90,7 @@ dependencies {
     implementation group: 'log4j', name: 'log4j', version: '1.2.17'
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
 	implementation group: 'com.github.alegauss' , name: 'dummy-vgn', version: '2f2b7a1aea'
-	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: 'f752da72b7'
+	implementation project(':turing-java-sdk')
 	
 	// Jackson
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
