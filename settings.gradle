@@ -1,5 +1,6 @@
 rootProject.name = 'viglet-turing'
 include ':turing-java-sdk'
+include ':turing-jdbc'
 if (!System.env.JITPACK){
 	include ':turing-app'
 	include ':turing-wem'
