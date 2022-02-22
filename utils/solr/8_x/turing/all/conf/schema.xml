@@ -419,30 +419,6 @@
       <filter class="solr.SnowballPorterFilterFactory" language="Russian" />
     </analyzer>
   </fieldType>
-  <fieldType name="text_spellcheck" class="solr.TextField" positionIncrementGap="100">
-    <analyzer>
-      <charFilter class="solr.HTMLStripCharFilterFactory" />
-      <tokenizer class="solr.StandardTokenizerFactory" />
-      <filter class="solr.LowerCaseFilterFactory" />
-      <filter class="solr.SynonymFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt" />
-      <filter class="solr.RemoveDuplicatesTokenFilterFactory" />
-    </analyzer>
-  </fieldType>
-  <fieldType name="text_suggest" class="solr.TextField" positionIncrementGap="100">
-    <analyzer type="index">
-      <charFilter class="solr.HTMLStripCharFilterFactory" />
-      <tokenizer class="solr.StandardTokenizerFactory" />
-      <filter class="solr.LowerCaseFilterFactory" />
-      <filter class="solr.RemoveDuplicatesTokenFilterFactory" />
-      <filter class="solr.ShingleFilterFactory" outputUnigrams="true" maxShingleSize="10" tokenSeparator=" " />
-    </analyzer>
-    <analyzer type="query">
-      <charFilter class="solr.HTMLStripCharFilterFactory" />
-      <tokenizer class="solr.StandardTokenizerFactory" />
-      <filter class="solr.LowerCaseFilterFactory" />
-      <filter class="solr.RemoveDuplicatesTokenFilterFactory" />
-    </analyzer>
-  </fieldType>
   <fieldType name="text_sv" class="solr.TextField" positionIncrementGap="100">
     <analyzer>
       <tokenizer class="solr.StandardTokenizerFactory" />
@@ -471,6 +447,38 @@
       <tokenizer class="solr.WhitespaceTokenizerFactory" />
     </analyzer>
   </fieldType>
+  <fieldType name="text_spellcheck" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <charFilter class="solr.HTMLStripCharFilterFactory" />
+      <tokenizer class="solr.StandardTokenizerFactory" />
+      <filter class="solr.LowerCaseFilterFactory" />
+      <filter class="solr.SynonymFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt" />
+      <filter class="solr.RemoveDuplicatesTokenFilterFactory" />
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_suggest" class="solr.TextField" positionIncrementGap="100">
+    <analyzer type="index">
+      <charFilter class="solr.HTMLStripCharFilterFactory" />
+      <tokenizer class="solr.StandardTokenizerFactory" />
+      <filter class="solr.LowerCaseFilterFactory" />
+      <filter class="solr.RemoveDuplicatesTokenFilterFactory" />
+      <filter class="solr.ShingleFilterFactory" outputUnigrams="true" maxShingleSize="10" tokenSeparator=" " />
+    </analyzer>
+    <analyzer type="query">
+      <charFilter class="solr.HTMLStripCharFilterFactory" />
+      <tokenizer class="solr.StandardTokenizerFactory" />
+      <filter class="solr.LowerCaseFilterFactory" />
+      <filter class="solr.RemoveDuplicatesTokenFilterFactory" />
+    </analyzer>
+  </fieldType>
+  <fieldType name="phrase_suggest" class="solr.TextField">
+    <analyzer>
+      <tokenizer class="solr.KeywordTokenizerFactory" />
+      <filter class="solr.PatternReplaceFilterFactory" pattern="([^\p{L}\p{M}\p{N}\p{Cs}]*[\p{L}\p{M}\p{N}\p{Cs}\_]+:)|([^\p{L}\p{M}\p{N}\p{Cs}])+" replace="all" replacement=" " />
+      <filter class="solr.LowerCaseFilterFactory" />
+      <filter class="solr.TrimFilterFactory" />
+    </analyzer>
+  </fieldType>
   <field name="_nest_path_" type="_nest_path_" />
   <field name="_root_" type="string" docValues="false" indexed="true" stored="false" />
   <field name="_text_" type="text_general" multiValued="true" indexed="true" stored="false" />
@@ -482,6 +490,8 @@
   <field name="modification_date" type="pdate" multiValued="false" indexed="true" stored="true" />
   <field name="publication_date" type="pdate" multiValued="false" indexed="true" stored="true" />
   <field name="section" type="string" multiValued="false" indexed="true" stored="true" />
+  <field name="text_spellcheck" type="text_spellcheck" multiValued="true" indexed="true" stored="false" />
+  <field name="text_suggest" type="text_suggest" multiValued="true" indexed="true" stored="false" />
   <field name="text" type="text_general" multiValued="false" indexed="true" stored="true" />
   <field name="title" type="text_general" multiValued="false" indexed="true" stored="true" />
   <field name="turing_entity_DATE" type="string" multiValued="true" indexed="true" stored="true" />

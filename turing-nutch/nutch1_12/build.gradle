@@ -9,7 +9,6 @@ buildscript {
 		mavenCentral()
 		maven { url "https://repo.spring.io/snapshot" }
 		maven { url "https://repo.spring.io/milestone" }
-		maven { url 'https://jitpack.io' }
 		jcenter()
 		}
 }
@@ -42,7 +41,6 @@ repositories {
 	mavenCentral()
 	maven { url "https://repo.spring.io/snapshot" }
 	maven { url "https://repo.spring.io/milestone" }
-	maven { url 'https://jitpack.io' }
 }
 
 sourceCompatibility = 1.8
@@ -100,14 +98,14 @@ dependencies {
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:"4.5.13", force:true
     implementation group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.1", force:true
     implementation group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.4.1"
-	implementation group: 'com.github.openturing', name: 'turing-java-sdk', version: 'f752da72b7'
+	implementation project(':turing-java-sdk')
 	implementation project(':turing-nutch:nutch-commons')
 
 	localDeps group: 'org.apache.solr', name: 'solr-solrj', version: "5.4.1"
 	localDeps group: 'org.apache.httpcomponents', name: 'httpclient', version:"4.4.1", force:true
     localDeps group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.1", force:true
     localDeps group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.4.1"
-    localDeps group: 'com.github.openturing', name: 'turing-java-sdk', version: 'f752da72b7'
+    localDeps project(':turing-java-sdk')
     localDeps project(':turing-nutch:nutch-commons')
 }
 test {
