@@ -1,6 +1,6 @@
 rootProject.name = 'viglet-turing'
-include ':turing-java-sdk'
 include ':turing-dummy'
+include ':turing-java-sdk'
 
 if (!System.env.JITPACK){
 	include ':turing-app'
