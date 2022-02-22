@@ -34,12 +34,6 @@ repositories {
     mavenCentral()
 }
 
-javadoc {
-    source = sourceSets.main.allJava
-    classpath = configurations.implementation
-    destinationDir = file("docs")
-}
-
 task compileOne (type: JavaCompile) {
     source = fileTree(dir: 'src', include: '**/*.java')
     classpath = files('build/classes/main')
