@@ -20,13 +20,11 @@ apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 apply plugin: 'com.github.johnrengelman.shadow'
 
-group = 'com.github.openviglet'
-
 sourceCompatibility = 1.8
 
 jar {
     baseName = 'turing-java-sdk'
-    version =  '0.3.4'
+    version =  '0.3.5'
 }
 
 repositories {		
