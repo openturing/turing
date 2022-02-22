@@ -4,32 +4,16 @@ buildscript {
 			log4jVersion = '1.2.7'
 			httpClientVersion = '4.5.2'
 		 }
-	
-	repositories {
-		mavenCentral()
-		jcenter()
-	}
-	
-	dependencies {
-    	classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
-    }
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
-apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceCompatibility = 1.8
 
 repositories {		
         mavenCentral()
-}
-
- shadowJar {
-   baseName = 'turing-java-sdk'
-   classifier = null
-   version = 'all'
 }
 
 dependencies {
@@ -44,20 +28,4 @@ dependencies {
     
     // HTTP Client
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:"${httpClientVersion}"
-}
-
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
 }
