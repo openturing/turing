@@ -6,10 +6,6 @@ buildscript {
 		 }
 }
 
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'maven-publish'
-
 sourceCompatibility = 1.8
 
 repositories {		
@@ -28,16 +24,4 @@ dependencies {
     
     // HTTP Client
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:"${httpClientVersion}"
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId = 'viglet-tuirng'
-            artifactId = 'turing-java-sdk'
-            version = '0.3.5'
-
-            from components.java
-        }
-    }
 }
