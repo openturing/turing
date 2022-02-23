@@ -30,7 +30,7 @@ compileJava.options.encoding = "UTF-8"
 compileTestJava.options.encoding = "UTF-8"
 
 repositories {
-	maven { url 'https://jitpack.io' }
+    maven { url 'https://jitpack.io' }
     mavenCentral()
 }
 
@@ -85,14 +85,20 @@ copyJar.dependsOn copyImports
 packageDistribution.dependsOn copyJar
 
 dependencies {
-    //implementation files(fileTree(dir: 'lib', includes: ['*.jar']))
+    
+    if (System.env.CI) {
+        implementation group: 'com.github.alegauss' , name: 'dummy-vgn', version: '2f2b7a1aea'
+    }
+    else {
+        implementation files(fileTree(dir: 'lib', includes: ['*.jar']))
+    }
+
     implementation group: 'com.beust', name: 'jcommander', version: '1.81'	
     implementation group: 'log4j', name: 'log4j', version: '1.2.17'
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
-	implementation group: 'com.github.alegauss' , name: 'dummy-vgn', version: '2f2b7a1aea'
 	implementation project(':turing-java-sdk')
 	
-	// Jackson
+    // Jackson
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
     
     // HTTP Client
