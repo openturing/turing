@@ -42,7 +42,8 @@ public class TurWEMDeindex {
 	private static final ContextLogger log = ContextLogger.getLogger(TurWEMDeindex.class);
 
 	// This method deletes the content to the Viglet Turing broker
-	public static void indexDelete(ManagedObjectVCMRef managedObjectVCMRef, IHandlerConfiguration config, String siteName) {
+	public static void indexDelete(ManagedObjectVCMRef managedObjectVCMRef, IHandlerConfiguration config,
+			String siteName) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 
@@ -50,7 +51,7 @@ public class TurWEMDeindex {
 
 		try {
 			ManagedObject mo = managedObjectVCMRef.retrieveManagedObject();
-			if(mo != null) {
+			if (mo != null) {
 				if ((mo.getLocale() != null) && (mo.getLocale().getAsLocale() != null)
 						&& (mo.getLocale().getAsLocale().getData() != null))
 					asLocaleData = mo.getLocale().getAsLocale().getData();
@@ -69,6 +70,12 @@ public class TurWEMDeindex {
 		String guid = managedObjectVCMRef.getId();
 		attributes.put(GenericResourceHandlerConfiguration.ID_ATTRIBUTE, guid);
 		attributes.put(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
+		try {
+			attributes.put(GenericResourceHandlerConfiguration.TYPE_ATTRIBUTE,
+					managedObjectVCMRef.retrieveManagedObject().getObjectType().getData().getName());
+		} catch (ApplicationException | RemoteException e) {
+			log.error(e.getMessage(), e);
+		}
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 

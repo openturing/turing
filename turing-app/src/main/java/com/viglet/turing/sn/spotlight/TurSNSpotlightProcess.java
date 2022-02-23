@@ -103,7 +103,7 @@ public class TurSNSpotlightProcess {
 							(String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite,
 							turSNSiteLocale.getLanguage());
 			turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
-			logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was deleted.", turSNJobItem.getAttributes().get("id"),
+			logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was deleted.", turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
 					turSNSite.getName(), turSNJobItem.getLocale());
 		} else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.PROVIDER_ATTRIBUTE)) {
 			String provider = (String) turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE);
@@ -122,7 +122,7 @@ public class TurSNSpotlightProcess {
 				turSNJobItem.getLocale());
 		if (turSNSiteLocale == null) {
 			logger.warn("Spotlight ID '{}' of '{}' SN Site was not processed, because {} locale did not found.",
-					turSNJobItem.getAttributes().get("id"), turSNSite.getName(), turSNJobItem.getLocale());
+					turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(), turSNJobItem.getLocale());
 			return false;
 		} else {
 			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
@@ -178,7 +178,7 @@ public class TurSNSpotlightProcess {
 					turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
 				}
 				logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was created.",
-						turSNJobItem.getAttributes().get("id"), turSNSite.getName(), turSNJobItem.getLocale());
+						turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(), turSNJobItem.getLocale());
 			} catch (ParseException | JsonProcessingException e) {
 				logger.error(e.getMessage(), e);
 			}
