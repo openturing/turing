@@ -31,3 +31,4 @@ hs_err_pid*
 .metals
 .bloop
 derby.log
+LOG_FILE_IS_UNDEFINED
