@@ -38,8 +38,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.TurSEStopword;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,8 +49,6 @@ public class TurSNSiteAutoCompleteAPI {
 	private static final Log logger = LogFactory.getLog(TurSNSiteAutoCompleteAPI.class);
 	@Autowired
 	private TurSolr turSolr;
-	@Autowired
-	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
 	private TurSEStopword turSEStopword;
 	@Autowired
@@ -72,9 +68,8 @@ public class TurSNSiteAutoCompleteAPI {
 	}
 
 	private SpellCheckResponse executeAutoCompleteFromSE(String siteName, String locale, String q) {
-		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		SpellCheckResponse turSEResults = null;
-		Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSite, locale);
+		Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(siteName, locale);
 		if (turSolrInstance.isPresent()) {
 			try {
 				turSEResults = turSolr.autoComplete(turSolrInstance.get(), q);

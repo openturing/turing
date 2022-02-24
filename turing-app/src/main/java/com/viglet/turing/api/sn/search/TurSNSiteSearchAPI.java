@@ -78,10 +78,10 @@ public class TurSNSiteSearchAPI {
 		TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName,
 				new TurSEParameters(q, fq, requestTargetingRules(tr), currentPage, sort, rows, autoCorrectionDisabled),
 				locale, TurSNUtils.requestToURI(request));
-		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 
 		TurSNSiteSearchBean turSNSiteSearchBean = new TurSNSiteSearchBean();
-		turSolrInstanceProcess.initSolrInstance(turSNSite, locale).ifPresent(turSolrInstance -> {
+		turSolrInstanceProcess.initSolrInstance(siteName, locale).ifPresent(turSolrInstance -> {
+			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 			TurSEParameters turSEParameters = turSNSiteSearchContext.getTurSEParameters();
 			turSEParameters.setCurrentPage(prepareQueryCurrentPage(turSEParameters));
 			turSEParameters.setRows(prepareQueryRows(turSEParameters));
