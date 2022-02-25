@@ -1,7 +1,7 @@
 buildscript {
     ext {
         kotlin_version = '1.6.10'
-        springBootVersion = '2.6.3'
+        springBootVersion = '2.6.4'
         hibernateVersion = '5.11.0.Final'
         httpClientVersion = '4.5.11'
         swaggerVersion = '3.0.0'
