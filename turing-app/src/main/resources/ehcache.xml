@@ -1,97 +1,38 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE ehcache>
-<ehcache>
-	<diskStore path="java.io.tmpdir" />
-	<cache name="solrCore" maxElementsInMemory="100"
-		   eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="60"
-		   overflowToDisk="true" />
-		   
-	<cache name="spotlight" maxElementsInMemory="100"
-		   eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="60"
-		   overflowToDisk="true" />
-	<cache name="spotlight_term" maxElementsInMemory="100"
-		   eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="60"
-		   overflowToDisk="true" />
-	
-	<cache name="turSEInstancefindAll" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-	<cache name="turSEInstancefindById" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
+<config xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns='http://www.ehcache.org/v3' xsi:schemaLocation="
+            http://www.ehcache.org/v3 
+            http://www.ehcache.org/schema/ehcache-core-3.7.xsd">
+    <persistence directory="store/cache" />
+    <cache-template name="default">
+        <expiry>
+            <ttl unit="seconds">30</ttl>
+        </expiry>
+        <resources>
+            <heap>1000</heap>
+            <offheap unit="MB">10</offheap>
+            <disk persistent="true" unit="MB">20</disk>
+        </resources>
+    </cache-template>
 
-
-	<cache name="turSEVendorfindAll" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-
-	<cache name="turSEVendorfindById" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-
-
-	<cache name="turSNSiteFieldExtfindByTurSNSite"
-		maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="600"
-		timeToLiveSeconds="3600" overflowToDisk="true" />
-	<cache name="turSNSiteFieldExtfindByTurSNSiteAndEnabled"
-		maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="600"
-		timeToLiveSeconds="3600" overflowToDisk="true" />
-	<cache name="turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled"
-		maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="600"
-		timeToLiveSeconds="3600" overflowToDisk="true" />
-	<cache name="turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled"
-		maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="600"
-		timeToLiveSeconds="3600" overflowToDisk="true" />
-	<cache name="turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled"
-		maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="600"
-		timeToLiveSeconds="3600" overflowToDisk="true" />
-	<cache
-		name="turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled"
-		maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="600"
-		timeToLiveSeconds="3600" overflowToDisk="true" />
-	<cache name="turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled"
-		maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="600"
-		timeToLiveSeconds="3600" overflowToDisk="true" />
-
-	<cache name="turSNSiteFieldfindById" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-	<cache name="turSNSiteFieldfindByTurSNSite"
-		maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="600"
-		timeToLiveSeconds="3600" overflowToDisk="true" />
-
-
-	<cache name="turSNSitefindAll" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-	<cache name="turSNSitefindById" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-	<cache name="turSNSitefindByName" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-
-
-	<cache name="turConfigVarfindAll" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-	<cache name="turConfigVarfindById" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-
-
-	<cache name="turLocalefindAll" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-	<cache name="turLocalefindByInitials" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-	<cache name="nlpName" maxElementsInMemory="10000" eternal="false"
-		timeToIdleSeconds="600" timeToLiveSeconds="3600" overflowToDisk="true" />
-	<cache name="nlpSentence" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-	<cache name="nlpToken" maxElementsInMemory="10000"
-		eternal="false" timeToIdleSeconds="600" timeToLiveSeconds="3600"
-		overflowToDisk="true" />
-</ehcache>
+    <cache alias="solrCore" uses-template="default"></cache>
+    <cache alias="spotlight" uses-template="default"></cache>
+    <cache alias="turSEInstancefindAll" uses-template="default"></cache>
+    <cache alias="turSEVendorfindAll" uses-template="default"></cache>
+    <cache alias="turSEInstancefindById" uses-template="default"></cache>
+    <cache alias="turSNSiteFieldExtfindByTurSNSite" uses-template="default"></cache>
+    <cache alias="turSNSiteFieldExtfindByTurSNSiteAndEnabled" uses-template="default"></cache>
+    <cache alias="turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled" uses-template="default"></cache>
+    <cache alias="turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled" uses-template="default"></cache>
+    <cache alias="turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled" uses-template="default"></cache>
+    <cache alias="turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled" uses-template="default"></cache>
+    <cache alias="turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled" uses-template="default"></cache>
+    <cache alias="turSNSiteFieldfindById" uses-template="default"></cache>
+    <cache alias="turSNSiteFieldfindByTurSNSite" uses-template="default"></cache>
+    <cache alias="turSNSitefindByName" uses-template="default"></cache>
+    <cache alias="turConfigVarfindAll" uses-template="default"></cache>
+    <cache alias="turConfigVarfindById" uses-template="default"></cache>
+    <cache alias="turLocalefindAll" uses-template="default"></cache>
+    <cache alias="turLocalefindByInitials" uses-template="default"></cache>
+    <cache alias="nlpName" uses-template="default"></cache>
+    <cache alias="nlpSentence" uses-template="default"></cache>
+    <cache alias="nlpToken" uses-template="default"></cache>
+</config>

@@ -1,19 +1,14 @@
 buildscript {
     ext {
-        kotlin_version = '1.6.10'
         springBootVersion = '2.6.4'
-        hibernateVersion = '5.11.0.Final'
-        httpClientVersion = '4.5.11'
-        swaggerVersion = '3.0.0'
         jasyptVersion = '3.0.4'
         languagetool = '5.6'
+        tika = '2.3.0'
     }
     repositories {
         mavenCentral()
-        maven {
-            url "https://packages.atlassian.com/mvn/maven-external/"
-        }
     }
+
     dependencies { 
     	classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     }
@@ -73,9 +68,6 @@ bootJar {
 
 repositories {
     mavenCentral()
-    maven {
-        url "https://packages.atlassian.com/mvn/maven-external/"
-    }
 }
 
 group = 'com.viglet.turing'
@@ -97,8 +89,6 @@ if (!project.hasProperty('no-ui')) {
 configurations {
     all*.exclude group: 'xml-apis'
 }
-
-ext['log4j2.version'] = '2.17.1'
 
 dependencies {
     compileOnly group: 'javax.servlet', name: 'servlet-api', version: '2.5'
@@ -151,9 +141,6 @@ dependencies {
     // CoreNLP
     implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '4.4.0'
 
-    // ASM
-    implementation group: 'asm', name: 'asm', version: '4.0_RC2'
-
     // OpenNLP
     implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version: '1.9.4'
 
@@ -162,15 +149,16 @@ dependencies {
     implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
 
     // EhCache
-    implementation group: 'net.sf.ehcache', name: 'ehcache', version: '2.10.10.1.14'
+	implementation group: 'javax.cache', name: 'cache-api', version: '1.1.1'
+	implementation group: 'org.ehcache', name: 'ehcache', version: '3.9.9'
 
     // Tika
-    implementation group: 'org.apache.tika', name: 'tika-core', version: '2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version: '2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: '2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parser-text-module', version: '2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: '2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parser-microsoft-module', version: '2.3.0'
+    implementation group: 'org.apache.tika', name: 'tika-core', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-text-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-microsoft-module', version: "${tika}"
     implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version: '2.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-core', version: '1.4.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
