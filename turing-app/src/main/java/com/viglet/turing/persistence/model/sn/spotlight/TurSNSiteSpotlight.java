@@ -17,7 +17,6 @@
 
 package com.viglet.turing.persistence.model.sn.spotlight;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 
 import org.hibernate.annotations.CascadeType;
