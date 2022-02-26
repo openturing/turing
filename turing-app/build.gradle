@@ -148,9 +148,8 @@ dependencies {
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
     implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
 
-    // EhCache
-	implementation group: 'javax.cache', name: 'cache-api', version: '1.1.1'
-	implementation group: 'org.ehcache', name: 'ehcache', version: '3.9.9'
+    // Hazelcast
+	implementation group: 'com.hazelcast', name: 'hazelcast-all', version: '4.0.2'
 
     // Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version: "${tika}"
