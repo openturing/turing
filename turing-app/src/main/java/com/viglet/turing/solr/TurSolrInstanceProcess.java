@@ -30,6 +30,8 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Optional;
 
 /**
@@ -64,7 +66,11 @@ public class TurSolrInstanceProcess {
 		if (turSolrCache.isSolrCoreExists(urlString)) {
 			HttpSolrClient httpSolrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
 					.withConnectionTimeout(30000).withSocketTimeout(30000).build();
-			return Optional.of(new TurSolrInstance(closeableHttpClient, httpSolrClient, core));
+			try {
+				return Optional.of(new TurSolrInstance(closeableHttpClient, httpSolrClient, new URL(urlString), core));
+			} catch (MalformedURLException e) {
+				logger.error(e.getMessage(), e);
+			}
 		}
 		return Optional.empty();
 	}

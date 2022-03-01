@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@ package com.viglet.turing.api.sn.search;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -59,80 +58,70 @@ public class TurSNSiteAutoCompleteAPI {
 			@RequestParam(required = true, name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, defaultValue = "20", name = TurSNParamType.ROWS) long rows,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale, HttpServletRequest request) {
+		return turSolrInstanceProcess.initSolrInstance(siteName, locale).map(instance -> {
+			SpellCheckResponse turSEResults = executeAutoCompleteFromSE(instance, q);
+			int numberOfWordsFromQuery = q.split(" ").length;
+			List<String> autoCompleteListFormatted = createFormattedList(turSEResults, instance,
+					numberOfWordsFromQuery);
+			List<String> autoCompleteListShrink = removeDuplicatedTerms(autoCompleteListFormatted,
+					numberOfWordsFromQuery);
+			return autoCompleteListShrink.stream().limit(rows).collect(Collectors.toList());
+		}).orElse(new ArrayList<>());
 
-		SpellCheckResponse turSEResults = executeAutoCompleteFromSE(siteName, locale, q);
-		int tokenQSize = q.split(" ").length;
-		List<String> termListFormatted = createFormattedList(turSEResults, tokenQSize);
-		List<String> termListShrink = removeDuplicatedTerms(termListFormatted, tokenQSize);
-		return termListShrink.stream().limit(rows).collect(Collectors.toList());
 	}
 
-	private SpellCheckResponse executeAutoCompleteFromSE(String siteName, String locale, String q) {
+	private SpellCheckResponse executeAutoCompleteFromSE(TurSolrInstance turSolrInstance, String q) {
 		SpellCheckResponse turSEResults = null;
-		Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(siteName, locale);
-		if (turSolrInstance.isPresent()) {
-			try {
-				turSEResults = turSolr.autoComplete(turSolrInstance.get(), q);
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-			}
+		try {
+			turSEResults = turSolr.autoComplete(turSolrInstance, q);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
 		}
 		return turSEResults;
 	}
 
-	private List<String> createFormattedList(SpellCheckResponse turSEResults, int tokenQSize) {
-		List<String> termListFormatted = new ArrayList<>();
+	private List<String> createFormattedList(SpellCheckResponse turSEResults, TurSolrInstance turSolrInstance,
+			int numberOfWordsFromQuery) {
+		List<String> autoCompleteListFormatted = new ArrayList<>();
 		if (hasSuggestions(turSEResults)) {
-			List<String> termList = turSEResults.getSuggestions().get(0).getAlternatives();
-			FormatteListData formatteListData = new FormatteListData();
-			termList.forEach(term -> processTern(tokenQSize, termListFormatted, formatteListData, term));
+			List<String> autoCompleteList = turSEResults.getSuggestions().get(0).getAlternatives();
+			AutoCompleteListData autoCompleteListData = new AutoCompleteListData(turSolrInstance);
+			autoCompleteList.forEach(autoCompleteItem -> processTerm(numberOfWordsFromQuery, autoCompleteListFormatted,
+					autoCompleteListData, autoCompleteItem));
 		}
-		return termListFormatted;
+		return autoCompleteListFormatted;
 	}
 
-	private void processTern(int tokenQSize, List<String> termListFormatted, FormatteListData formatteListData,
-			String term) {
-		String[] token = term.split(" ");
-		String lastToken = token[token.length - 1];
-		if (token.length > tokenQSize) {
-			if (formatteListData.getPreviousTerm() == null) {
-				firstIter(termListFormatted, formatteListData, term, lastToken);
+	private void processTerm(int numberOfWordsFromQuery, List<String> autoCompleteListFormatted,
+			AutoCompleteListData autoCompleteListData, String autoCompleteItem) {
+		String[] autoCompleteItemTokens = autoCompleteItem.split(" ");
+		String autoCompleteItemFirstToken = autoCompleteItemTokens[0];
+		String autoCompleteItemLastToken = autoCompleteItemTokens[autoCompleteItemTokens.length - 1];
+		if (!autoCompleteListData.getStopWords().contains(autoCompleteItemFirstToken)) {
+			if (autoCompleteListData.getPreviousTerm() == null) {
+				firstIter(autoCompleteListFormatted, autoCompleteListData, autoCompleteItem, autoCompleteItemLastToken);
 			} else {
-				otherIter(termListFormatted, formatteListData, term, lastToken);
+				otherIter(autoCompleteListFormatted, autoCompleteListData, autoCompleteItem, autoCompleteItemLastToken);
 			}
 
-		} else {
-			finishTermList(termListFormatted, formatteListData, term);
 		}
 	}
 
-	private void finishTermList(List<String> termListFormatted, FormatteListData formatteListData, String term) {
-		termListFormatted.add(term);
-		formatteListData.setPreviousTerm(term + "");
-	}
-
-	private void otherIter(List<String> termListFormatted, FormatteListData formatteListData, String term,
-			String lastToken) {
-		if (formatteListData.isPreviousFinishedStopWords()) {
-			if (!formatteListData.getStopWords().contains(lastToken)) {
-				termListFormatted.add(term);
-				formatteListData.setPreviousFinishedStopWords(false);
-			}
-		} else {
-			formatteListData.setPreviousFinishedStopWords(true);
+	private void otherIter(List<String> autoCompleteListFormatted, AutoCompleteListData autoCompleteListData,
+			String autoCompleteItem, String autoCompleteItemLastToken) {
+		if (!autoCompleteListData.getStopWords().contains(autoCompleteItemLastToken)) {
+			autoCompleteListFormatted.add(autoCompleteItem);
 		}
 	}
 
-	private void firstIter(List<String> termListFormatted, FormatteListData formatteListData, String term,
-			String lastToken) {
-		if (!formatteListData.getStopWords().contains(lastToken)
-				|| !term.contains(formatteListData.getPreviousTerm())) {
-			termListFormatted.add(term);
-			formatteListData.setPreviousFinishedStopWords(false);
-		} else {
-			formatteListData.setPreviousFinishedStopWords(true);
+	private void firstIter(List<String> autoCompleteListFormatted, AutoCompleteListData autoCompleteListData,
+			String autoCompleteItem, String autoCompleteItemLastToken) {
+		if (!autoCompleteListData.getStopWords().contains(autoCompleteItemLastToken)
+				|| (autoCompleteListData.getPreviousTerm() != null
+						&& !autoCompleteItem.contains(autoCompleteListData.getPreviousTerm()))) {
+			autoCompleteListFormatted.add(autoCompleteItem);
 		}
-		formatteListData.setPreviousTerm(term);
+		autoCompleteListData.setPreviousTerm(autoCompleteItem);
 	}
 
 	private boolean hasSuggestions(SpellCheckResponse turSEResults) {
@@ -140,33 +129,42 @@ public class TurSNSiteAutoCompleteAPI {
 				&& !turSEResults.getSuggestions().isEmpty();
 	}
 
-	private List<String> removeDuplicatedTerms(List<String> termListFormatted, int tokenQSize) {
+	private List<String> removeDuplicatedTerms(List<String> autoCompleteListFormatted, int numberOfWordsFromQuery) {
 		List<String> termListShrink = new ArrayList<>();
 		String previousTerm = null;
-		for (String term : termListFormatted) {
-			int currentIndex = termListFormatted.indexOf(term);
-			String[] token = term.split(" ");
-			if ((token.length <= tokenQSize + 1) || previousTerm == null) {
+		for (String term : autoCompleteListFormatted) {
+			int currentIndex = autoCompleteListFormatted.indexOf(term);
+			if (previousTerm == null) {
 				termListShrink.add(term);
 				previousTerm = term;
-			} else {
-				if (!term.contains(previousTerm)) {
-					termListShrink.add(term);
-				} else {
-					if ((termListFormatted.size() > currentIndex + 1)
-							&& (!termListFormatted.get(currentIndex + 1).contains(term))) {
-						termListShrink.add(term);
-					}
-				}
+			} else if (!term.contains(previousTerm)) {
+				termListShrink.add(term);
+			} else if ((autoCompleteListFormatted.size() > currentIndex + 1)
+					&& (!autoCompleteListFormatted.get(currentIndex + 1).contains(term))) {
+				termListShrink.add(term);
+			}
+
+		}
+		List<String> termListShrink2 = new ArrayList<>();
+		for (String term : termListShrink) {
+			List<String> resultList = termListShrink.stream().filter(s -> s.startsWith(term))
+					.collect(Collectors.toList());
+			if (resultList.size() == 1) {
+				termListShrink2.add(resultList.get(0));
 			}
 		}
-		return termListShrink;
+
+		return termListShrink2;
 	}
 
-	class FormatteListData {
-		private List<String> stopWords = turSEStopword.getStopWords();
+	class AutoCompleteListData {
+		private List<String> stopWords = null;
 		private String previousTerm = null;
-		private boolean previousFinishedStopWords = false;
+
+		public AutoCompleteListData(TurSolrInstance turSolrInstance) {
+			super();
+			this.stopWords = turSEStopword.getStopWords(turSolrInstance);
+		}
 
 		public List<String> getStopWords() {
 			return stopWords;
@@ -183,14 +181,5 @@ public class TurSNSiteAutoCompleteAPI {
 		public void setPreviousTerm(String previousTerm) {
 			this.previousTerm = previousTerm;
 		}
-
-		public boolean isPreviousFinishedStopWords() {
-			return previousFinishedStopWords;
-		}
-
-		public void setPreviousFinishedStopWords(boolean previousFinishedStopWords) {
-			this.previousFinishedStopWords = previousFinishedStopWords;
-		}
-
 	}
 }
