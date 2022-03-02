@@ -1,11 +1,9 @@
 buildscript {
     ext {
-        kotlin_version = '1.6.10'
-        springBootVersion = '2.6.3'
-        hibernateVersion = '5.11.0.Final'
-        httpClientVersion = '4.5.11'
-        swaggerVersion = '3.0.0'
+        springBootVersion = '2.6.4'
         jasyptVersion = '3.0.4'
+        languagetool = '5.6'
+        tika = '2.3.0'
     }
     repositories {
         mavenCentral()
@@ -14,7 +12,6 @@ buildscript {
         }
     }
     dependencies { 
-    	classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     	classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     }
 }
@@ -23,7 +20,6 @@ plugins {
     id 'org.springframework.boot' version "${springBootVersion}"
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version "1.6.10"
     id "com.gorylenko.gradle-git-properties" version '2.4.0'
     id 'de.undercouch.download' version '5.0.1'
     id 'eclipse'
@@ -83,14 +79,6 @@ group = 'com.viglet.turing'
 sourceCompatibility = 14
 targetCompatibility = 14
 
-
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
-	kotlinOptions {
-		freeCompilerArgs = ['-Xjsr305=strict']
-		jvmTarget = "14"
-	}
-}
-
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
@@ -112,65 +100,6 @@ ext['log4j2.version'] = '2.17.1'
 dependencies {
     compileOnly group: 'javax.servlet', name: 'servlet-api', version: '2.5'
 	
-	implementation group: 'org.jetbrains.kotlin', name: 'kotlin-reflect'
-	implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8'
-
-    implementation(group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.3.1') {
-        exclude(module: 'guava')
-        exclude(module: 'commons-logging')
-        exclude(module: 'log4j')
-        exclude(module: 'slf4j-api')
-        exclude(module: 'slf4j-log4j12')
-        exclude(module: 'jackson-mapper-asl')
-        exclude(module: 'jackson-core-asl')
-        exclude(module: 'jersey-core')
-        exclude(module: 'jersey-json')
-        exclude(module: 'jersey-server')
-        exclude(module: 'jasper-runtime')
-        exclude(module: 'jasper-compiler')
-        exclude(module: 'servlet-api')
-        exclude(module: 'jsp-api')
-        exclude(module: 'commons-el')
-
-    }
-
-    implementation(group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.3.1') {
-        exclude(module: 'jackson-mapper-asl')
-        exclude(module: 'jackson-core-asl')
-        exclude(module: 'jersey-core')
-        exclude(module: 'jersey-json')
-        exclude(module: 'jersey-server')
-        exclude(module: 'jasper-runtime')
-        exclude(module: 'jasper-compiler')
-        exclude(module: 'servlet-api')
-        exclude(module: 'jsp-api')
-        exclude(module: 'log4j')
-    }
-    implementation(group: 'org.apache.hadoop', name: 'hadoop-auth', version: '3.3.1') {
-        exclude(module: 'commons-logging')
-        exclude(module: 'log4j')
-        exclude(module: 'slf4j-api')
-        exclude(module: 'slf4j-log4j12')
-        exclude(module: 'jackson-mapper-asl')
-        exclude(module: 'jackson-core-asl')
-        exclude(module: 'jersey-core')
-        exclude(module: 'jersey-json')
-        exclude(module: 'jersey-server')
-        exclude(module: 'jasper-runtime')
-        exclude(module: 'jasper-compiler')
-        exclude(module: 'servlet-api')
-        exclude(module: 'jsp-api')
-    }
-    implementation(group: 'org.apache.hadoop', name: 'hadoop-core', version: '1.2.1') {
-        exclude(module: 'jersey-core')
-        exclude(module: 'jersey-json')
-        exclude(module: 'jersey-server')
-        exclude(module: 'jackson-mapper-asl')
-        exclude(module: 'jackson-core-asl')
-        exclude(module: 'hsqldb')
-        exclude(module: 'commons-el')
-    }
-
     // Spring Boot
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: "${springBootVersion}"
@@ -219,9 +148,6 @@ dependencies {
     // CoreNLP
     implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '4.4.0'
 
-    // ASM
-    implementation group: 'asm', name: 'asm', version: '4.0_RC2'
-
     // OpenNLP
     implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version: '1.9.4'
 
@@ -233,12 +159,12 @@ dependencies {
     implementation group: 'net.sf.ehcache', name: 'ehcache', version: '2.10.10.1.14'
 
     // Tika
-    implementation group: 'org.apache.tika', name: 'tika-core', version: '2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version: '2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: '2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parser-text-module', version: '2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: '2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parser-microsoft-module', version: '2.3.0'
+    implementation group: 'org.apache.tika', name: 'tika-core', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-text-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-microsoft-module', version: "${tika}"
     implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version: '2.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-core', version: '1.4.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
@@ -256,7 +182,8 @@ dependencies {
     implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.25'
 
     //Language Tool
-    implementation group: 'org.languagetool', name: 'language-all', version: '5.6'
+    implementation group: 'org.languagetool', name: 'language-en', version: "${languagetool}"
+    implementation group: 'org.languagetool', name: 'language-pt', version: "${languagetool}"
 
     testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
