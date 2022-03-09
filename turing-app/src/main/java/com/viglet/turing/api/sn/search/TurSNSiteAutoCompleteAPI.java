@@ -50,6 +50,7 @@ public class TurSNSiteAutoCompleteAPI {
 	private static final String SPACE_CHAR = " ";
 	private static final boolean USE_BIGGER_TERMS = false;
 	private static final boolean USE_TERMS_QUERY_EQUALS_AUTO_COMPLETE = true;
+	private static final boolean USE_REPEAT_QUERY_TEXT_ON_AUTOCOMPLETE = false;
 	@Autowired
 	private TurSolr turSolr;
 	@Autowired
@@ -133,9 +134,10 @@ public class TurSNSiteAutoCompleteAPI {
 				&& !turSEResults.getSuggestions().isEmpty();
 	}
 
+	@SuppressWarnings("unused")
 	private List<String> removeDuplicatedTerms(List<String> autoCompleteList, int numberOfWordsFromQuery, String termQuery) {
 		List<String> autoCompleteWithoutDuplicated = autoCompleteList.stream().distinct().collect(Collectors.toList());
-		if (autoCompleteWithoutDuplicated.isEmpty()) {
+		if (USE_REPEAT_QUERY_TEXT_ON_AUTOCOMPLETE && autoCompleteWithoutDuplicated.isEmpty()) {
 			autoCompleteWithoutDuplicated.add(termQuery);
 		}
 		return USE_BIGGER_TERMS ? biggerTerms(autoCompleteWithoutDuplicated) : autoCompleteWithoutDuplicated;
