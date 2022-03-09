@@ -66,6 +66,9 @@ public class TurSNSiteAutoCompleteAPI {
 			return turSolrInstanceProcess.initSolrInstance(siteName, locale).map(instance -> {
 				SpellCheckResponse turSEResults = executeAutoCompleteFromSE(instance, q);
 				int numberOfWordsFromQuery = q.split(SPACE_CHAR).length;
+				if (q.endsWith(SPACE_CHAR)) {
+					numberOfWordsFromQuery++;
+				}
 				List<String> autoCompleteListFormatted = createFormattedList(turSEResults, instance,
 						numberOfWordsFromQuery);
 				List<String> autoCompleteListShrink = removeDuplicatedTerms(autoCompleteListFormatted,
@@ -112,11 +115,13 @@ public class TurSNSiteAutoCompleteAPI {
 		String[] autoCompleteItemTokens = autoCompleteItem.split(SPACE_CHAR);
 		int numberOfWordsFromAutoCompleteItem = autoCompleteItemTokens.length;
 		String autoCompleteItemFirstToken = autoCompleteItemTokens[0];
+		String autoCompleteItemLastToken = autoCompleteItemTokens[autoCompleteItemTokens.length - 1];
 		boolean numberOfWordsIsEquals = numberOfWordsFromQuery == numberOfWordsFromAutoCompleteItem;
 		boolean firstWordIsStopword = autoCompleteListData.getStopWords().contains(autoCompleteItemFirstToken);
+		boolean lastWordIsStopword = autoCompleteListData.getStopWords().contains(autoCompleteItemLastToken);
 		boolean addItem = true;
 
-		if ((USE_TERMS_QUERY_EQUALS_AUTO_COMPLETE && !numberOfWordsIsEquals) || firstWordIsStopword) {
+		if ((USE_TERMS_QUERY_EQUALS_AUTO_COMPLETE && !numberOfWordsIsEquals) || firstWordIsStopword || lastWordIsStopword) {
 			addItem = false;
 		}
 		
