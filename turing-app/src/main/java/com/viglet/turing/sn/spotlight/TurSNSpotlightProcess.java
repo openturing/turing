@@ -103,8 +103,9 @@ public class TurSNSpotlightProcess {
 							(String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite,
 							turSNSiteLocale.getLanguage());
 			turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
-			logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was deleted.", turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
-					turSNSite.getName(), turSNJobItem.getLocale());
+			logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was deleted.",
+					turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(),
+					turSNJobItem.getLocale());
 		} else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.PROVIDER_ATTRIBUTE)) {
 			String provider = (String) turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE);
 			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository.findByProvider(provider);
@@ -122,7 +123,8 @@ public class TurSNSpotlightProcess {
 				turSNJobItem.getLocale());
 		if (turSNSiteLocale == null) {
 			logger.warn("Spotlight ID '{}' of '{}' SN Site was not processed, because {} locale did not found.",
-					turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(), turSNJobItem.getLocale());
+					turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(),
+					turSNJobItem.getLocale());
 			return false;
 		} else {
 			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
@@ -178,7 +180,8 @@ public class TurSNSpotlightProcess {
 					turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
 				}
 				logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was created.",
-						turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(), turSNJobItem.getLocale());
+						turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(),
+						turSNJobItem.getLocale());
 			} catch (ParseException | JsonProcessingException e) {
 				logger.error(e.getMessage(), e);
 			}
@@ -190,9 +193,9 @@ public class TurSNSpotlightProcess {
 			TurSNSite turSNSite, Map<String, TurSNSiteFieldExt> facetMap, Map<String, TurSNSiteFieldExt> fieldExtMap,
 			List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean) {
 
-		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = getSpotlightsFromQuery(
-				context, turSNSite);
-		
+		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = getSpotlightsFromQuery(context,
+				turSNSite);
+
 		int firstRowPositionFromCurrentPage = TurSolrUtils.firstRowPositionFromCurrentPage(context.getTurSEParameters())
 				+ 1;
 		int lastRowPositionFromCurrentPage = TurSolrUtils.lastRowPositionFromCurrentPage(context.getTurSEParameters())
@@ -204,7 +207,7 @@ public class TurSNSpotlightProcess {
 
 		int maxPositionFromList = turSNSiteSearchDocumentsBean.size();
 
-		for (int currentPositionFromList = 0; currentPositionFromList < maxPositionFromList ; currentPositionFromList++) {
+		for (int currentPositionFromList = 0; currentPositionFromList < maxPositionFromList; currentPositionFromList++) {
 
 			int currentPositionFromCurrentPage = currentPositionFromList + firstRowPositionFromCurrentPage;
 
@@ -231,20 +234,20 @@ public class TurSNSpotlightProcess {
 						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,
 								turSNSiteSearchDocumentsBean, turSEResult, true, currentPositionFromList);
 					}
-					
-					
+
 				}
 			}
 		}
 	}
 
-	public Map<Integer, List<TurSNSiteSpotlightDocument>> getSpotlightsFromQuery(
-			TurSNSiteSearchContext context, TurSNSite turSNSite) {
+	public Map<Integer, List<TurSNSiteSpotlightDocument>> getSpotlightsFromQuery(TurSNSiteSearchContext context,
+			TurSNSite turSNSite) {
 		List<TurSNSiteSpotlight> turSNSiteSpotlights = new ArrayList<>();
 		turSpotlightCache.findTermsBySNSiteAndLanguage(turSNSite.getName(), context.getLocale())
 				.forEach(turSNSiteSpotlightTerm -> {
 					if (context.getTurSEParameters().getQuery().toLowerCase()
-							.contains(turSNSiteSpotlightTerm.getTerm().toLowerCase())) {
+							.contains(turSNSiteSpotlightTerm.getTerm().toLowerCase())
+							&& !turSNSiteSpotlights.contains(turSNSiteSpotlightTerm.getSpotlight())) {
 						turSNSiteSpotlights.add(turSNSiteSpotlightTerm.getSpotlight());
 					}
 				});
@@ -259,5 +262,5 @@ public class TurSNSpotlightProcess {
 		}));
 		return turSNSiteSpotlightDocumentMap;
 	}
-	
+
 }
