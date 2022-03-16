@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2020 the original author or authors. 
+ * Copyright (C) 2017-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ package com.viglet.turing.tool.jdbc.format;
 
 import org.jsoup.Jsoup;
 
-import com.viglet.turing.tool.jdbc.JDBCImportTool;
+import com.viglet.turing.tool.jdbc.TurJDBCImportTool;
 
 /**
 *
@@ -28,9 +28,9 @@ import com.viglet.turing.tool.jdbc.JDBCImportTool;
 **/
 public class TurFormatValue {
 	private static final String ID = "id";
-	private JDBCImportTool jdbcImportTool = null;
+	private TurJDBCImportTool jdbcImportTool = null;
 	
-	public TurFormatValue(JDBCImportTool jdbcImportTool) {
+	public TurFormatValue(TurJDBCImportTool jdbcImportTool) {
 		this.jdbcImportTool = jdbcImportTool;
 	}
 	public String format(String name, String value) {

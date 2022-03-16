@@ -76,11 +76,6 @@ dependencies {
     
     // Jsoup
     implementation group: 'org.jsoup', name: 'jsoup', version: '1.14.3'
-    
-    // Guava
-	implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
-    
-    
 }
 
 jar.enabled = false
