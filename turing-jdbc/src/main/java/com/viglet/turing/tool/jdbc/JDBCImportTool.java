@@ -99,7 +99,10 @@ public class JDBCImportTool {
 
 	@Parameter(names = { "--site" }, description = "Specify the Semantic Navigation Site", required = true)
 	private String site = null;
-
+	
+	@Parameter(names = { "--locale" }, description = "Specify the Semantic Navigation Site Locale", required = false)
+	private String locale = "en_US";
+	
 	@Parameter(names = { "--server", "-s" }, description = "Viglet Turing Server")
 	private String turingServer = "http://localhost:2700";
 
@@ -450,7 +453,7 @@ public class JDBCImportTool {
 				}
 
 				turSNJobItem.setAttributes(attributes);
-
+				turSNJobItem.setLocale(locale);
 				turSNJobItems.add(turSNJobItem);
 
 				chunkTotal++;
