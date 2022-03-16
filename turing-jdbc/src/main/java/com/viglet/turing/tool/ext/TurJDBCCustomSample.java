@@ -28,7 +28,7 @@ import com.viglet.turing.tool.impl.TurJDBCCustomImpl;
 *
 **/
 public class TurJDBCCustomSample implements TurJDBCCustomImpl {
-	final static String TITLE = "title";
+	private static final String TITLE = "title";
 	
 	@Override
 	public Map<String, Object> run(Connection connection, Map<String, Object> attributes) {

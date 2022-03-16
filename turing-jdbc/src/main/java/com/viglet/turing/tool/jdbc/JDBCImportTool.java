@@ -28,11 +28,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +42,7 @@ import java.util.TimeZone;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
@@ -53,7 +53,6 @@ import com.viglet.turing.tool.jdbc.format.TurFormatValue;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHeaders;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -99,10 +98,10 @@ public class JDBCImportTool {
 
 	@Parameter(names = { "--site" }, description = "Specify the Semantic Navigation Site", required = true)
 	private String site = null;
-	
+
 	@Parameter(names = { "--locale" }, description = "Specify the Semantic Navigation Site Locale", required = false)
 	private String locale = "en_US";
-	
+
 	@Parameter(names = { "--server", "-s" }, description = "Viglet Turing Server")
 	private String turingServer = "http://localhost:2700";
 
@@ -285,17 +284,17 @@ public class JDBCImportTool {
 			turFormatValue = new TurFormatValue(main);
 			main.run();
 		} catch (ParameterException e) {
-			logger.info("Error: " + e.getLocalizedMessage());
+			logger.info("Error: {}", e.getLocalizedMessage());
 			jCommander.usage();
 		}
 
 	}
 
 	public void run() {
-		logger.info(String.format("driver: %s", driver));
-		logger.info(String.format("connect: %s", connect));
-		logger.info(String.format("query: %s", query));
-		logger.info(String.format("username: %s", dbUsername));
+		logger.info("driver: {}", driver);
+		logger.info("connect: {}", connect);
+		logger.info("query: {}", query);
+		logger.info("username: {}", dbUsername);
 
 		this.select();
 	}
@@ -322,7 +321,7 @@ public class JDBCImportTool {
 
 				return turFileAttributes;
 			} else {
-				logger.info("File not exists: " + filePath);
+				logger.info("File not exists: {}", filePath);
 			}
 		} catch (IOException | SAXException | TikaException e) {
 			logger.error("readFile Exception", e);
@@ -338,14 +337,13 @@ public class JDBCImportTool {
 			this.indexDeleteByType();
 		}
 
-		Connection conn = null;
-		Statement stmt = null;
 		TurJDBCCustomImpl turJDBCCustomImpl = null;
 		if (customClassName != null) {
 			try {
-				turJDBCCustomImpl = (TurJDBCCustomImpl) Class.forName(customClassName).getDeclaredConstructor().newInstance();
+				turJDBCCustomImpl = (TurJDBCCustomImpl) Class.forName(customClassName).getDeclaredConstructor()
+						.newInstance();
 			} catch (Exception e) {
-				logger.error("Custom Class Exception", e);
+				logger.error(e.getMessage(), e);
 			}
 		}
 
@@ -354,185 +352,160 @@ public class JDBCImportTool {
 			Class.forName(driver);
 
 			// Open a connection
-			logger.info("Connecting to database...");
-			conn = DriverManager.getConnection(connect, dbUsername, dbPassword);
+			logger.info("Execute a query...");
+			try (Connection conn = DriverManager.getConnection(connect, dbUsername, dbPassword);
+					Statement stmt = conn.createStatement();
+					ResultSet rs = stmt.executeQuery(query);) {
 
-			// Execute a query
-			logger.info("Creating statement...");
-			stmt = conn.createStatement();
-			String sql;
-			sql = query;
-			ResultSet rs = stmt.executeQuery(sql);
+				// Extract data from result set
+				int chunkCurrent = 0;
+				int chunkTotal = 0;
+				TurSNJobItems turSNJobItems = new TurSNJobItems();
 
-			// Extract data from result set
-			int chunkCurrent = 0;
-			int chunkTotal = 0;
-			TurSNJobItems turSNJobItems = new TurSNJobItems();
+				while (rs.next()) {
+					TurSNJobItem turSNJobItem = new TurSNJobItem();
+					turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+					Map<String, Object> attributes = new HashMap<>();
 
-			while (rs.next()) {
-				TurSNJobItem turSNJobItem = new TurSNJobItem();
-				turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-				Map<String, Object> attributes = new HashMap<String, Object>();
+					ResultSetMetaData rsmd = rs.getMetaData();
 
-				ResultSetMetaData rsmd = rs.getMetaData();
+					// Retrieve by column name
+					for (int c = 1; c <= rsmd.getColumnCount(); c++) {
+						String nameSensitve = rsmd.getColumnLabel(c);
+						String className = rsmd.getColumnClassName(c);
 
-				// Retrieve by column name
-				for (int c = 1; c <= rsmd.getColumnCount(); c++) {
-					String nameSensitve = rsmd.getColumnLabel(c);
-					String className = rsmd.getColumnClassName(c);
-
-					if (className.equals("java.lang.Integer")) {
-						int intValue = rs.getInt(c);
-						attributes.put(nameSensitve, turFormatValue.format(nameSensitve, Integer.toString(intValue)));
-					} else if (className.equals("java.sql.Timestamp")) {
-						TimeZone tz = TimeZone.getTimeZone("UTC");
-						DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-						df.setTimeZone(tz);
-						attributes.put(nameSensitve, turFormatValue.format(nameSensitve, df.format(rs.getDate(c))));
-					} else {
-						String strValue = rs.getString(c);
-						attributes.put(nameSensitve, turFormatValue.format(nameSensitve, strValue));
-					}
-				}
-				attributes.put("type", type);
-
-				if (filePathField != null && attributes.containsKey(filePathField)) {
-					TurFileAttributes turFileAttributes = this.readFile((String) attributes.get(filePathField));
-					if (turFileAttributes != null) {
-						logger.info("File: " + turFileAttributes.getFile().getAbsolutePath());
-						if (fileSizeField != null && turFileAttributes.getFile() != null) {
-							attributes.put(fileSizeField, turFileAttributes.getFile().length());
-
-							logger.info("File size: "
-									+ FileUtils.byteCountToDisplaySize(turFileAttributes.getFile().length()));
-							logger.info("File - Content size: " + FileUtils
-									.byteCountToDisplaySize(turFileAttributes.getContent().getBytes().length));
+						if (className.equals("java.lang.Integer")) {
+							int intValue = rs.getInt(c);
+							attributes.put(nameSensitve,
+									turFormatValue.format(nameSensitve, Integer.toString(intValue)));
+						} else if (className.equals("java.sql.Timestamp")) {
+							TimeZone tz = TimeZone.getTimeZone("UTC");
+							DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+							df.setTimeZone(tz);
+							attributes.put(nameSensitve, turFormatValue.format(nameSensitve, df.format(rs.getDate(c))));
 						} else {
-							logger.info("File without size: " + filePathField);
+							String strValue = rs.getString(c);
+							attributes.put(nameSensitve, turFormatValue.format(nameSensitve, strValue));
 						}
+					}
+					attributes.put("type", type);
 
-						if (fileContentField != null) {
-							long maxContentByteSize = maxContentMegaByteSize * MEGA_BYTE;
+					if (filePathField != null && attributes.containsKey(filePathField)) {
+						TurFileAttributes turFileAttributes = this.readFile((String) attributes.get(filePathField));
+						if (turFileAttributes != null) {
+							logger.info("File: " + turFileAttributes.getFile().getAbsolutePath());
+							if (fileSizeField != null && turFileAttributes.getFile() != null) {
+								attributes.put(fileSizeField, turFileAttributes.getFile().length());
 
-							if (turFileAttributes.getContent().getBytes().length <= maxContentByteSize) {
-								attributes.put(fileContentField, turFileAttributes.getContent());
+								logger.info("File size: "
+										+ FileUtils.byteCountToDisplaySize(turFileAttributes.getFile().length()));
+								logger.info("File - Content size: " + FileUtils
+										.byteCountToDisplaySize(turFileAttributes.getContent().getBytes().length));
 							} else {
-								attributes.put(fileContentField, turFileAttributes.getContent().substring(0,
-										Math.toIntExact(maxContentByteSize)));
-								logger.info(String.format("File size greater than %s, truncating content ...:",
-										FileUtils.byteCountToDisplaySize(maxContentByteSize)));
+								logger.info("File without size: " + filePathField);
 							}
-						} else {
-							logger.info("File without content: " + filePathField);
+
+							if (fileContentField != null) {
+								long maxContentByteSize = maxContentMegaByteSize * MEGA_BYTE;
+
+								if (turFileAttributes.getContent().getBytes().length <= maxContentByteSize) {
+									attributes.put(fileContentField, turFileAttributes.getContent());
+								} else {
+									attributes.put(fileContentField, turFileAttributes.getContent().substring(0,
+											Math.toIntExact(maxContentByteSize)));
+									logger.info("File size greater than {}, truncating content ...:",
+											FileUtils.byteCountToDisplaySize(maxContentByteSize));
+								}
+							} else {
+								logger.info("File without content: {}", filePathField);
+							}
 						}
 					}
-				}
 
-				if (customClassName != null && turJDBCCustomImpl != null)
-					attributes = turJDBCCustomImpl.run(conn, attributes);
+					if (customClassName != null && turJDBCCustomImpl != null)
+						attributes = turJDBCCustomImpl.run(conn, attributes);
 
-				// MultiValue
-				String[] strMvFields = mvField.toLowerCase().split(",");
-				for (Entry<String, Object> atribute : attributes.entrySet()) {
-					String attributeName = atribute.getKey();
-					String attributeValue = String.valueOf(atribute.getValue());
-					for (String strMvField : strMvFields) {
-						if (attributeName.toLowerCase().equals(strMvField.toLowerCase())) {
-							if (attributeValue != null) {
-								String[] mvValues = attributeValue.split(mvSeparator);
-								List<String> multiValueList = new ArrayList<String>();
-
-								for (String mvValue : mvValues) {
-									multiValueList.add(turFormatValue.format(attributeName, mvValue));
-
-								}
+					// MultiValue
+					String[] strMvFields = mvField.toLowerCase().split(",");
+					for (Entry<String, Object> atribute : attributes.entrySet()) {
+						String attributeName = atribute.getKey();
+						String attributeValue = String.valueOf(atribute.getValue());
+						for (String strMvField : strMvFields) {
+							if (attributeName.equalsIgnoreCase(strMvField.toLowerCase()) && attributeValue != null) {
+								List<String> multiValueList = Arrays.asList(attributeValue.split(mvSeparator));
 								attributes.put(attributeName, multiValueList);
 							}
 						}
 					}
+
+					turSNJobItem.setAttributes(attributes);
+					turSNJobItem.setLocale(locale);
+					turSNJobItems.add(turSNJobItem);
+
+					chunkTotal++;
+					chunkCurrent++;
+					if (chunkCurrent == chunk) {
+						this.sendServer(turSNJobItems, chunkTotal);
+						turSNJobItems = new TurSNJobItems();
+						chunkCurrent = 0;
+					}
 				}
-
-				turSNJobItem.setAttributes(attributes);
-				turSNJobItem.setLocale(locale);
-				turSNJobItems.add(turSNJobItem);
-
-				chunkTotal++;
-				chunkCurrent++;
-				if (chunkCurrent == chunk) {
+				if (chunkCurrent > 0) {
 					this.sendServer(turSNJobItems, chunkTotal);
 					turSNJobItems = new TurSNJobItems();
 					chunkCurrent = 0;
 				}
 			}
-			if (chunkCurrent > 0) {
-
-				this.sendServer(turSNJobItems, chunkTotal);
-				turSNJobItems = new TurSNJobItems();
-				chunkCurrent = 0;
-			}
-			rs.close();
-			stmt.close();
-			conn.close();
-		} catch (SQLException se) {
-			logger.error("SQLException", se);
 		} catch (Exception e) {
-			logger.error("Exception", e);
-		} finally {
-			try {
-				if (stmt != null)
-					stmt.close();
-			} catch (SQLException se2) {
-				logger.error("SQLException", se2);
-			}
-			try {
-				if (conn != null)
-					conn.close();
-			} catch (SQLException se) {
-				logger.error("SQLException", se);
-			}
+			logger.error(e.getMessage(), e);
 		}
 	}
 
-	public void sendServer(TurSNJobItems turSNJobItems, int chunkTotal) throws ClientProtocolException, IOException {
-		ObjectMapper mapper = new ObjectMapper();
-		String jsonResult = mapper.writeValueAsString(turSNJobItems);
-		int initial = 1;
-		if (chunkTotal > chunk) {
-			initial = chunkTotal - chunk;
+	public void sendServer(TurSNJobItems turSNJobItems, int chunkTotal) {
+		String jsonResult;
+		try {
+			jsonResult = new ObjectMapper().writeValueAsString(turSNJobItems);
+
+			int initial = 1;
+			if (chunkTotal > chunk) {
+				initial = chunkTotal - chunk;
+			}
+
+			Charset utf8Charset = StandardCharsets.UTF_8;
+			Charset customCharset = Charset.forName(encoding);
+
+			ByteBuffer inputBuffer = ByteBuffer.wrap(jsonResult.getBytes());
+
+			// decode UTF-8
+			CharBuffer data = utf8Charset.decode(inputBuffer);
+
+			// encode
+			ByteBuffer outputBuffer = customCharset.encode(data);
+
+			byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
+			String jsonUTF8 = new String(outputData);
+
+			System.out.print("Importing " + initial + " to " + chunkTotal + " items\n");
+			try (CloseableHttpClient client = HttpClients.createDefault()) {
+				HttpPost httpPost = new HttpPost(String.format("%s/api/sn/%s/import", turingServer, site));
+				if (showOutput) {
+					System.out.println(jsonUTF8);
+				}
+				StringEntity entity = new StringEntity(jsonUTF8, StandardCharsets.UTF_8);
+				httpPost.setEntity(entity);
+				httpPost.setHeader("Accept", "application/json");
+				httpPost.setHeader("Content-type", "application/json");
+				httpPost.setHeader("Accept-Encoding", StandardCharsets.UTF_8.name());
+
+				basicAuth(httpPost);
+
+				client.execute(httpPost);
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
+			}
+		} catch (JsonProcessingException e) {
+			logger.error(e.getMessage(), e);
 		}
-
-		Charset utf8Charset = Charset.forName("UTF-8");
-		Charset customCharset = Charset.forName(encoding);
-
-		ByteBuffer inputBuffer = ByteBuffer.wrap(jsonResult.getBytes());
-
-		// decode UTF-8
-		CharBuffer data = utf8Charset.decode(inputBuffer);
-
-		// encode
-		ByteBuffer outputBuffer = customCharset.encode(data);
-
-		byte[] outputData = new String(outputBuffer.array()).getBytes("UTF-8");
-		String jsonUTF8 = new String(outputData);
-
-		System.out.print("Importing " + initial + " to " + chunkTotal + " items\n");
-		CloseableHttpClient client = HttpClients.createDefault();
-		HttpPost httpPost = new HttpPost(String.format("%s/api/sn/%s/import", turingServer, site));
-		if (showOutput) {
-			System.out.println(jsonUTF8);
-		}
-		StringEntity entity = new StringEntity(new String(jsonUTF8), "UTF-8");
-		httpPost.setEntity(entity);
-		httpPost.setHeader("Accept", "application/json");
-		httpPost.setHeader("Content-type", "application/json");
-		httpPost.setHeader("Accept-Encoding", "UTF-8");
-
-		basicAuth(httpPost);
-
-		@SuppressWarnings("unused")
-		CloseableHttpResponse response = client.execute(httpPost);
-
-		client.close();
 	}
 
 	private void basicAuth(HttpPost httpPost) {
@@ -555,25 +528,20 @@ public class JDBCImportTool {
 
 	public boolean indexDeleteByType() {
 		boolean success = false;
-		try {
-			CloseableHttpClient client = HttpClients.createDefault();
+		try (CloseableHttpClient client = HttpClients.createDefault()) {
 			HttpGet httpGet = new HttpGet(String.format("%s/api/otsn/broker?action=delete&index=%s&type=%s&config=none",
 					this.getTuringServer(), this.getSite(), this.getType()));
-
-			CloseableHttpResponse response = client.execute(httpGet);
-			if (logger.isDebugEnabled()) {
-				logger.debug("Viglet Turing Delete Request URI:" + httpGet.getURI());
-				logger.debug("Viglet Turing indexer response HTTP result is: "
-						+ EntityUtils.toString(response.getEntity(), "UTF-8"));
+			try (CloseableHttpResponse response = client.execute(httpGet)) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Viglet Turing Delete Request URI: {}", httpGet.getURI());
+					logger.debug("Viglet Turing indexer response HTTP result is: {}",
+							EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8));
+				}
+				success = true;
 			}
-			client.close();
-			success = true;
-
 		} catch (Exception e) {
-
-			logger.error("Can't Delete in Viglet Turing index: " + e.getMessage());
+			logger.error(e.getMessage(), e);
 		}
-
 		return success;
 	}
 }
