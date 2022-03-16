@@ -28,6 +28,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -44,6 +45,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.net.MediaType;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -304,22 +306,22 @@ public class JDBCImportTool {
 		try {
 			File file = new File(filePath);
 			if (file.exists()) {
-				InputStream inputStream = new FileInputStream(file);
+				try (InputStream inputStream = new FileInputStream(file)) {
+					AutoDetectParser parser = new AutoDetectParser();
+					// -1 = no limit of number of characters
+					BodyContentHandler handler = new BodyContentHandler(-1);
+					Metadata metadata = new Metadata();
 
-				AutoDetectParser parser = new AutoDetectParser();
-				// -1 = no limit of number of characters
-				BodyContentHandler handler = new BodyContentHandler(-1);
-				Metadata metadata = new Metadata();
+					ParseContext pcontext = new ParseContext();
 
-				ParseContext pcontext = new ParseContext();
+					parser.parse(inputStream, handler, metadata, pcontext);
+					TurFileAttributes turFileAttributes = new TurFileAttributes();
+					turFileAttributes.setContent(cleanTextContent(handler.toString()));
+					turFileAttributes.setFile(file);
+					turFileAttributes.setMetadata(metadata);
 
-				parser.parse(inputStream, handler, metadata, pcontext);
-				TurFileAttributes turFileAttributes = new TurFileAttributes();
-				turFileAttributes.setContent(cleanTextContent(handler.toString()));
-				turFileAttributes.setFile(file);
-				turFileAttributes.setMetadata(metadata);
-
-				return turFileAttributes;
+					return turFileAttributes;
+				}
 			} else {
 				logger.info("File not exists: {}", filePath);
 			}
@@ -363,84 +365,14 @@ public class JDBCImportTool {
 				TurSNJobItems turSNJobItems = new TurSNJobItems();
 
 				while (rs.next()) {
-					TurSNJobItem turSNJobItem = new TurSNJobItem();
-					turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 					Map<String, Object> attributes = new HashMap<>();
-
-					ResultSetMetaData rsmd = rs.getMetaData();
-
-					// Retrieve by column name
-					for (int c = 1; c <= rsmd.getColumnCount(); c++) {
-						String nameSensitve = rsmd.getColumnLabel(c);
-						String className = rsmd.getColumnClassName(c);
-
-						if (className.equals("java.lang.Integer")) {
-							int intValue = rs.getInt(c);
-							attributes.put(nameSensitve,
-									turFormatValue.format(nameSensitve, Integer.toString(intValue)));
-						} else if (className.equals("java.sql.Timestamp")) {
-							TimeZone tz = TimeZone.getTimeZone("UTC");
-							DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-							df.setTimeZone(tz);
-							attributes.put(nameSensitve, turFormatValue.format(nameSensitve, df.format(rs.getDate(c))));
-						} else {
-							String strValue = rs.getString(c);
-							attributes.put(nameSensitve, turFormatValue.format(nameSensitve, strValue));
-						}
-					}
 					attributes.put("type", type);
+					addDBFieldsAsAttributes(rs, attributes);
+					addFileAttributes(attributes);
+					attributes = modifyAttributesByCustomClass(turJDBCCustomImpl, conn, attributes);
+					addMultiValueAttributes(attributes);
 
-					if (filePathField != null && attributes.containsKey(filePathField)) {
-						TurFileAttributes turFileAttributes = this.readFile((String) attributes.get(filePathField));
-						if (turFileAttributes != null) {
-							logger.info("File: " + turFileAttributes.getFile().getAbsolutePath());
-							if (fileSizeField != null && turFileAttributes.getFile() != null) {
-								attributes.put(fileSizeField, turFileAttributes.getFile().length());
-
-								logger.info("File size: "
-										+ FileUtils.byteCountToDisplaySize(turFileAttributes.getFile().length()));
-								logger.info("File - Content size: " + FileUtils
-										.byteCountToDisplaySize(turFileAttributes.getContent().getBytes().length));
-							} else {
-								logger.info("File without size: " + filePathField);
-							}
-
-							if (fileContentField != null) {
-								long maxContentByteSize = maxContentMegaByteSize * MEGA_BYTE;
-
-								if (turFileAttributes.getContent().getBytes().length <= maxContentByteSize) {
-									attributes.put(fileContentField, turFileAttributes.getContent());
-								} else {
-									attributes.put(fileContentField, turFileAttributes.getContent().substring(0,
-											Math.toIntExact(maxContentByteSize)));
-									logger.info("File size greater than {}, truncating content ...:",
-											FileUtils.byteCountToDisplaySize(maxContentByteSize));
-								}
-							} else {
-								logger.info("File without content: {}", filePathField);
-							}
-						}
-					}
-
-					if (customClassName != null && turJDBCCustomImpl != null)
-						attributes = turJDBCCustomImpl.run(conn, attributes);
-
-					// MultiValue
-					String[] strMvFields = mvField.toLowerCase().split(",");
-					for (Entry<String, Object> atribute : attributes.entrySet()) {
-						String attributeName = atribute.getKey();
-						String attributeValue = String.valueOf(atribute.getValue());
-						for (String strMvField : strMvFields) {
-							if (attributeName.equalsIgnoreCase(strMvField.toLowerCase()) && attributeValue != null) {
-								List<String> multiValueList = Arrays.asList(attributeValue.split(mvSeparator));
-								attributes.put(attributeName, multiValueList);
-							}
-						}
-					}
-
-					turSNJobItem.setAttributes(attributes);
-					turSNJobItem.setLocale(locale);
-					turSNJobItems.add(turSNJobItem);
+					turSNJobItems.add(createTurSNJobItem(attributes));
 
 					chunkTotal++;
 					chunkCurrent++;
@@ -458,6 +390,93 @@ public class JDBCImportTool {
 			}
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
+		}
+	}
+
+	private Map<String, Object> modifyAttributesByCustomClass(TurJDBCCustomImpl turJDBCCustomImpl, Connection conn,
+			Map<String, Object> attributes) {
+		if (hasCustomClass(turJDBCCustomImpl))
+			attributes = turJDBCCustomImpl.run(conn, attributes);
+		return attributes;
+	}
+
+	private boolean hasCustomClass(TurJDBCCustomImpl turJDBCCustomImpl) {
+		return customClassName != null && turJDBCCustomImpl != null;
+	}
+
+	private TurSNJobItem createTurSNJobItem(Map<String, Object> attributes) {
+		TurSNJobItem turSNJobItem = new TurSNJobItem();
+		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+		turSNJobItem.setAttributes(attributes);
+		turSNJobItem.setLocale(locale);
+		return turSNJobItem;
+	}
+
+	private void addDBFieldsAsAttributes(ResultSet rs, Map<String, Object> attributes) throws SQLException {
+		ResultSetMetaData rsmd = rs.getMetaData();
+		for (int c = 1; c <= rsmd.getColumnCount(); c++) {
+			String nameSensitve = rsmd.getColumnLabel(c);
+			String className = rsmd.getColumnClassName(c);
+
+			if (className.equals("java.lang.Integer")) {
+				int intValue = rs.getInt(c);
+				attributes.put(nameSensitve, turFormatValue.format(nameSensitve, Integer.toString(intValue)));
+			} else if (className.equals("java.sql.Timestamp")) {
+				TimeZone tz = TimeZone.getTimeZone("UTC");
+				DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+				df.setTimeZone(tz);
+				attributes.put(nameSensitve, turFormatValue.format(nameSensitve, df.format(rs.getDate(c))));
+			} else {
+				String strValue = rs.getString(c);
+				attributes.put(nameSensitve, turFormatValue.format(nameSensitve, strValue));
+			}
+		}
+	}
+
+	private void addFileAttributes(Map<String, Object> attributes) {
+		if (filePathField != null && attributes.containsKey(filePathField)) {
+			TurFileAttributes turFileAttributes = this.readFile((String) attributes.get(filePathField));
+			if (turFileAttributes != null) {
+				logger.info("File: " + turFileAttributes.getFile().getAbsolutePath());
+				if (fileSizeField != null && turFileAttributes.getFile() != null) {
+					attributes.put(fileSizeField, turFileAttributes.getFile().length());
+
+					logger.info("File size: " + FileUtils.byteCountToDisplaySize(turFileAttributes.getFile().length()));
+					logger.info("File - Content size: "
+							+ FileUtils.byteCountToDisplaySize(turFileAttributes.getContent().getBytes().length));
+				} else {
+					logger.info("File without size: " + filePathField);
+				}
+
+				if (fileContentField != null) {
+					long maxContentByteSize = maxContentMegaByteSize * MEGA_BYTE;
+
+					if (turFileAttributes.getContent().getBytes().length <= maxContentByteSize) {
+						attributes.put(fileContentField, turFileAttributes.getContent());
+					} else {
+						attributes.put(fileContentField,
+								turFileAttributes.getContent().substring(0, Math.toIntExact(maxContentByteSize)));
+						logger.info("File size greater than {}, truncating content ...:",
+								FileUtils.byteCountToDisplaySize(maxContentByteSize));
+					}
+				} else {
+					logger.info("File without content: {}", filePathField);
+				}
+			}
+		}
+	}
+
+	private void addMultiValueAttributes(Map<String, Object> attributes) {
+		String[] strMvFields = mvField.toLowerCase().split(",");
+		for (Entry<String, Object> atribute : attributes.entrySet()) {
+			String attributeName = atribute.getKey();
+			String attributeValue = String.valueOf(atribute.getValue());
+			for (String strMvField : strMvFields) {
+				if (attributeName.equalsIgnoreCase(strMvField.toLowerCase()) && attributeValue != null) {
+					List<String> multiValueList = Arrays.asList(attributeValue.split(mvSeparator));
+					attributes.put(attributeName, multiValueList);
+				}
+			}
 		}
 	}
 
@@ -493,8 +512,8 @@ public class JDBCImportTool {
 				}
 				StringEntity entity = new StringEntity(jsonUTF8, StandardCharsets.UTF_8);
 				httpPost.setEntity(entity);
-				httpPost.setHeader("Accept", "application/json");
-				httpPost.setHeader("Content-type", "application/json");
+				httpPost.setHeader("Accept", MediaType.JSON_UTF_8.toString());
+				httpPost.setHeader("Content-type", MediaType.JSON_UTF_8.toString());
 				httpPost.setHeader("Accept-Encoding", StandardCharsets.UTF_8.name());
 
 				basicAuth(httpPost);
