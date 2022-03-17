@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,7 +44,7 @@ import com.viglet.turing.solr.TurSolrInstance;
 
 @Component
 public class TurSEStopword {
-	private static final Logger logger = LogManager.getLogger(TurSEStopword.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private ResourceLoader resourceloader;
 	private static final String TEXT_GENERAL = "text_general";

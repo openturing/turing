@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.wem.broker.relator;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +26,7 @@ import com.vignette.as.client.javabean.AttributedObject;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMRelator {
-	private static final ContextLogger log = ContextLogger.getLogger(TurWEMRelator.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private TurWEMRelator() {
 		throw new IllegalStateException("TurWEMRelator");

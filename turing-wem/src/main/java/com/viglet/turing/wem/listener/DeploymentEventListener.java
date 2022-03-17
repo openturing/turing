@@ -16,6 +16,8 @@
  */
 package com.viglet.turing.wem.listener;
 
+import java.lang.invoke.MethodHandles;
+
 import com.viglet.turing.wem.config.GenericResourceHandlerConfiguration;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.exception.ApplicationException;
@@ -29,7 +31,7 @@ import com.vignette.logging.context.ContextLogger;
 
 public class DeploymentEventListener implements IAsEventListener {
 
-	private static final ContextLogger log = ContextLogger.getLogger(DeploymentEventListener.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	public void consume(AsEvent event) throws ApplicationException, AuthorizationException, ValidationException {
 		try {

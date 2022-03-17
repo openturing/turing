@@ -20,6 +20,7 @@ package com.viglet.turing.converse.exchange;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ import com.viglet.turing.utils.TurUtils;
 
 @Component
 public class TurConverseImportExchange {
-	private static final Logger logger = LogManager.getLogger(TurConverseImportExchange.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	private static final String AGENT_FILE = "agent.json";
 	@Autowired
 	private TurConverseAgentRepository turConverseAgentRepository;

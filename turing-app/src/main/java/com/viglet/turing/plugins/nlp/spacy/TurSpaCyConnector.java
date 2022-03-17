@@ -20,6 +20,7 @@ package com.viglet.turing.plugins.nlp.spacy;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.invoke.MethodHandles;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -53,7 +54,7 @@ import java.util.*;
 
 @Component
 public class TurSpaCyConnector implements TurNLPPlugin {
-	static final Logger logger = LogManager.getLogger(TurSpaCyConnector.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Override
 	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {

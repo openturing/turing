@@ -42,7 +42,7 @@ import io.swagger.v3.oas.annotations.Operation;
 public class TurLocaleAPI {
 
 	@Autowired
-	TurLocaleRepository turLocaleRepository;
+	private TurLocaleRepository turLocaleRepository;
 
 	@Operation(summary = "Locale List")
 	@GetMapping

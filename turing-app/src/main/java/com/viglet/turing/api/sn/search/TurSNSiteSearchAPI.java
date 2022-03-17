@@ -43,6 +43,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -51,8 +53,7 @@ import java.util.*;
 @RequestMapping("/api/sn/{siteName}/search")
 @Tag(name = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
-	private static final Logger logger = LogManager.getLogger(TurSNSiteSearchAPI.class);
-
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired

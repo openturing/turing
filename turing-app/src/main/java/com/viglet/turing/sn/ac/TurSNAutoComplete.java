@@ -17,6 +17,7 @@
 
 package com.viglet.turing.sn.ac;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +36,7 @@ import com.viglet.turing.solr.TurSolrInstanceProcess;
 
 @Component
 public class TurSNAutoComplete {
-	private static final Log logger = LogFactory.getLog(TurSNAutoComplete.class);
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	private static final String SPACE_CHAR = " ";
 	private static final boolean USE_BIGGER_TERMS = false;
 	private static final boolean USE_TERMS_QUERY_EQUALS_AUTO_COMPLETE = true;

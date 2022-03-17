@@ -30,6 +30,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.lang.invoke.MethodHandles;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
@@ -41,7 +42,7 @@ import java.util.Optional;
  */
 @Component
 public class TurSolrInstanceProcess {
-	private static final Logger logger = LogManager.getLogger(TurSolrInstanceProcess.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;

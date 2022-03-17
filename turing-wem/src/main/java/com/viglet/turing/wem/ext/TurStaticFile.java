@@ -1,5 +1,7 @@
 package com.viglet.turing.wem.ext;
 
+import java.lang.invoke.MethodHandles;
+
 import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
@@ -12,7 +14,7 @@ import com.vignette.logging.context.ContextLogger;
 
 
 public class TurStaticFile implements ExtAttributeInterface {
-    private static final ContextLogger logger = ContextLogger.getLogger(TurStaticFile.class);
+    private static final ContextLogger logger = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
     private static final String EMPTY_STRING = "";
     private static final String FILE_PROTOCOL = "file://";
 

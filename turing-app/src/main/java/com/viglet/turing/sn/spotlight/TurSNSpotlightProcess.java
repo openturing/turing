@@ -46,6 +46,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Component;
 
+import java.lang.invoke.MethodHandles;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -56,7 +57,7 @@ import java.util.*;
  */
 @Component
 public class TurSNSpotlightProcess {
-	private static final Logger logger = LogManager.getLogger(TurSNSpotlightProcess.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	private static final String NAME_ATTRIBUTE = "name";
 	private static final String CONTENT_ATTRIBUTE = "content";
 	private static final String TERMS_ATTRIBUTE = "terms";

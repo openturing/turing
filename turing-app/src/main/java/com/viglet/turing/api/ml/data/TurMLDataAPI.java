@@ -18,6 +18,7 @@
 package com.viglet.turing.api.ml.data;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
@@ -63,7 +64,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/ml/data")
 @Tag(name = "Machine Learning Data", description = "Machine Learning Data API")
 public class TurMLDataAPI {
-	private static final Logger logger = LogManager.getLogger(TurMLDataAPI.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurDataRepository turDataRepository;
 	@Autowired

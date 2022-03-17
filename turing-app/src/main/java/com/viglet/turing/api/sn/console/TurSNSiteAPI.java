@@ -17,6 +17,7 @@
 
 package com.viglet.turing.api.sn.console;
 
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,7 +61,7 @@ import io.swagger.v3.oas.annotations.Operation;
 @Tag(name = "Semantic Navigation Site", description = "Semantic Navigation Site API")
 @ComponentScan("com.viglet.turing")
 public class TurSNSiteAPI {
-	private static final Log logger = LogFactory.getLog(TurSNSiteAPI.class);
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired

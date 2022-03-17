@@ -16,6 +16,8 @@
  */
 package com.viglet.turing.wem.ext;
 
+import java.lang.invoke.MethodHandles;
+
 import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
@@ -25,7 +27,7 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurHTML2Text implements ExtAttributeInterface {
-    private static final ContextLogger logger = ContextLogger.getLogger(TurHTML2Text.class);
+    private static final ContextLogger logger = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
     private static final String EMPTY_STRING = "";
 
     @Override

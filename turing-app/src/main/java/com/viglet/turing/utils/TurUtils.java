@@ -36,6 +36,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.lang.invoke.MethodHandles;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +44,7 @@ import java.util.UUID;
 
 @Component
 public class TurUtils {
-    private static final Logger logger = LogManager.getLogger(TurUtils.class);
+    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
     @Autowired
     private ITurAuthenticationFacade authenticationFacade;
     private static final String USER_DIR = "user.dir";

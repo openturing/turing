@@ -33,6 +33,7 @@ import org.apache.solr.common.SolrDocumentList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.lang.invoke.MethodHandles;
 import java.util.*;
 
 /**
@@ -41,8 +42,7 @@ import java.util.*;
  */
 @Component
 public class TurSNMergeProvidersProcess {
-    private static final Logger logger = LogManager.getLogger(TurSNMergeProvidersProcess.class);
-
+    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
     @Autowired
     private TurSolrInstanceProcess turSolrInstanceProcess;
     @Autowired

@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.tool.jdbc;
 
+import java.lang.invoke.MethodHandles;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -51,11 +52,12 @@ import org.apache.logging.log4j.Logger;
  * Class that can be used to bootstrap and launch JDBC Import Tool
  *
  * @author Alexandre Oliveira
+ * 
  * @since 0.3.0
  *
  **/
 public class TurJDBCImportTool {
-	private static final Logger logger = LogManager.getLogger(TurJDBCImportTool.class.getName());
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	private static final long MEGA_BYTE = 1024L * 1024L;
 	private static final String TYPE_ATTRIBUTE = "type";

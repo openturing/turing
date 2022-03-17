@@ -17,6 +17,7 @@
 
 package com.viglet.turing.thesaurus;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -53,12 +54,12 @@ import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 @ComponentScan
 @Transactional
 public class TurThesaurusProcessor {
-	private static final Logger logger = LogManager.getLogger(TurThesaurusProcessor.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Autowired
 	private TurTermVariationRepository turTermVariationRepository;
 
-	Map<String, TurTermVariation> terms = new LinkedHashMap<>();
+	private Map<String, TurTermVariation> terms = new LinkedHashMap<>();
 
 	public void startup() {
 		List<TurTermVariation> turTermVariations = turTermVariationRepository.findAll();

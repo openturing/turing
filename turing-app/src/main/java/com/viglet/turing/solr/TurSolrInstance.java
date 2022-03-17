@@ -17,6 +17,7 @@
 package com.viglet.turing.solr;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.URL;
 
 import javax.annotation.PreDestroy;
@@ -27,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 
 public class TurSolrInstance {
-	private static final Logger logger = LogManager.getLogger(TurSolrInstance.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	private CloseableHttpClient closeableHttpClient;
 

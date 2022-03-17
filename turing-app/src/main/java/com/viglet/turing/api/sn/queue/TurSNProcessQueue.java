@@ -36,12 +36,13 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.invoke.MethodHandles;
 import java.util.*;
 import java.util.Map.Entry;
 
 @Component
 public class TurSNProcessQueue {
-    private static final Logger logger = LogManager.getLogger(TurSNProcessQueue.class);
+    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
     @Autowired
     private TurSolr turSolr;
     @Autowired

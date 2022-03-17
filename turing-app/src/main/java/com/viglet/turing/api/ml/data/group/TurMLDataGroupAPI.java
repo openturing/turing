@@ -43,7 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurMLDataGroupAPI {
 
 	@Autowired
-	TurDataGroupRepository turDataGroupRepository;
+	private TurDataGroupRepository turDataGroupRepository;
 
 	@Operation(summary = "Machine Learning Data Group List")
 	@GetMapping

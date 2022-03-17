@@ -23,6 +23,7 @@ import org.apache.tika.metadata.Metadata;
 /**
 *
 * @author Alexandre Oliveira
+* 
 * @since 0.3.0
 *
 **/

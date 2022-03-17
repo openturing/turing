@@ -42,7 +42,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurMLVendorAPI {
 
 	@Autowired
-	TurMLVendorRepository turMLVendorRepository;
+	private TurMLVendorRepository turMLVendorRepository;
 
 	@Operation(summary = "Machine Learning Vendor List")
 	@GetMapping

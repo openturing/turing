@@ -16,6 +16,8 @@
  */
 package com.viglet.turing.wem.ext;
 
+import java.lang.invoke.MethodHandles;
+
 import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
@@ -24,7 +26,7 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public interface ExtAttributeInterface {
-	static final ContextLogger log = ContextLogger.getLogger(ExtAttributeInterface.class);
+	static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 	public TurMultiValue consume (TuringTag tag, ContentInstance ci, AttributeData attributeData,
 								  IHandlerConfiguration config) throws Exception;
 }

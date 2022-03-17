@@ -25,6 +25,7 @@ import com.vignette.util.MsgObject;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -58,7 +59,7 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
     private String login;
     private String password;
     private String providerName;
-    private static final ContextLogger log = ContextLogger.getLogger(GenericResourceHandlerConfiguration.class);
+    private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
     // Load up from Generic Resource
     public GenericResourceHandlerConfiguration() {

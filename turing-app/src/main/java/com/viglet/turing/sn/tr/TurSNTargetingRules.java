@@ -27,7 +27,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TurSNTargetingRules {
-
 	public String run(TurSNTargetingRuleMethod method, List<String> trs) {
 		if (method.equals(TurSNTargetingRuleMethod.AND))
 			return this.andMethod(trs);

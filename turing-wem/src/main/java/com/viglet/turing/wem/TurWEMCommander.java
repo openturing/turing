@@ -48,12 +48,13 @@ import org.apache.log4j.LogManager;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.MalformedURLException;
 import java.util.*;
 
 public class TurWEMCommander {
 	private static JCommander jCommander = new JCommander();
-	private static ContextLogger logger = LoggingManager.getContextLogger(TurWEMCommander.class);
+	private static ContextLogger logger = LoggingManager.getContextLogger(MethodHandles.lookup().lookupClass());
 
 	private static final String WORKING_DIR = "com.vignette.workingDir";
 	private static final String STFL = "STFL";

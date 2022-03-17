@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2020 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import com.viglet.turing.tool.jdbc.impl.TurJDBCCustomImpl;
 /**
 *
 * @author Alexandre Oliveira
+* 
 * @since 0.3.0
 *
 **/

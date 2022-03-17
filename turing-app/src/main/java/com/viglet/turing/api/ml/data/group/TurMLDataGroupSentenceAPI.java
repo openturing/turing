@@ -47,11 +47,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurMLDataGroupSentenceAPI {
 
 	@Autowired
-	TurDataGroupRepository turDataGroupRepository;
+	private TurDataGroupRepository turDataGroupRepository;
 	@Autowired
-	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 	@Autowired
-	TurMLCategoryRepository turMLCategoryRepository;
+	private TurMLCategoryRepository turMLCategoryRepository;
 
 	@Operation(summary = "Machine Learning Data Group Sentence List")
 	@GetMapping

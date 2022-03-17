@@ -20,6 +20,7 @@ package com.viglet.turing.plugins.nlp.polyglot;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.invoke.MethodHandles;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -51,7 +52,7 @@ import java.util.*;
 
 @Component
 public class TurPolyglotConnector implements TurNLPPlugin {
-	private static final Logger logger = LogManager.getLogger(TurPolyglotConnector.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
 		return this.request(turNLP);

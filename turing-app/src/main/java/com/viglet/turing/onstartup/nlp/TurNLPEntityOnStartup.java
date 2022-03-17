@@ -17,8 +17,6 @@
 
 package com.viglet.turing.onstartup.nlp;
 
-import javax.sql.DataSource;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,9 +27,6 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 @Component
 @Transactional
 public class TurNLPEntityOnStartup {
-	@Autowired
-	DataSource dataSource;
-
 	@Autowired(required = true)
 	private TurNLPEntityRepository turNLPEntityRepository;
 
