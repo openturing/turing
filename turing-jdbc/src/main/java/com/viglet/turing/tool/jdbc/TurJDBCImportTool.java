@@ -413,7 +413,7 @@ public class TurJDBCImportTool {
 			if (logger.isDebugEnabled()) {
 				logger.debug("File: {}", turFileAttributes.getFile().getAbsolutePath());
 				logger.debug("File size: {}", FileUtils.byteCountToDisplaySize(turFileAttributes.getFile().length()));
-				logger.debug("File - Content size: ",
+				logger.debug("File - Content size: {}",
 						FileUtils.byteCountToDisplaySize(turFileAttributes.getContent().getBytes().length));
 			}
 		} else {

@@ -32,14 +32,18 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.SAXException;
 
 /**
-*
-* @author Alexandre Oliveira
-* 
-* @since 0.3.5
-*
-**/
+ *
+ * @author Alexandre Oliveira
+ * 
+ * @since 0.3.5
+ *
+ **/
 public class TurFileUtils {
 	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+
+	private TurFileUtils() {
+		throw new IllegalStateException("Turing File Utilities class");
+	}
 
 	public static TurFileAttributes readFile(String filePath) {
 		File file = new File(filePath);
