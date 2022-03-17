@@ -19,7 +19,7 @@ package com.viglet.turing.tool.ext;
 import java.sql.Connection;
 import java.util.Map;
 
-import com.viglet.turing.tool.impl.TurJDBCCustomImpl;
+import com.viglet.turing.tool.jdbc.impl.TurJDBCCustomImpl;
 
 /**
 *
