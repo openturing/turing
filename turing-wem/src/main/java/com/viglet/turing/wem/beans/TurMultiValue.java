@@ -1,6 +1,7 @@
 package com.viglet.turing.wem.beans;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class TurMultiValue extends ArrayList<String> {
 
@@ -12,4 +13,10 @@ public class TurMultiValue extends ArrayList<String> {
 		return turMultiValue;
 	}
 
+
+	public static TurMultiValue fromList(List<String> list) {
+		TurMultiValue turMultiValue = new TurMultiValue();
+		list.forEach(turMultiValue::add);
+		return turMultiValue;
+	}
 }
