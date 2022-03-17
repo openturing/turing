@@ -16,8 +16,12 @@
  */
 package com.viglet.turing.tool.jdbc;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -67,7 +71,7 @@ public class TurJDBCImportTool {
 	private static final String INTEGER_CLASS = "java.lang.Integer";
 	private static final String UTC = "UTC";
 	private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-
+	private static final String FILE_PROTOCOL = "file://";
 	@Parameter(names = { "--deindex-before-importing" }, description = "Deindex before importing", arity = 1)
 	private boolean deindexBeforeImporting = false;
 
@@ -80,7 +84,8 @@ public class TurJDBCImportTool {
 	@Parameter(names = { "--connect", "-c" }, description = "Specify JDBC connect string", required = true)
 	private String connect = null;
 
-	@Parameter(names = { "--query", "-q" }, description = "Import the results of statement", required = true)
+	@Parameter(names = { "--query",
+			"-q" }, description = "Import the results of statement, if it starts with file://, it will read the file with statement", required = true)
 	private String query = null;
 
 	@Parameter(names = { "--site" }, description = "Specify the Semantic Navigation Site", required = true)
@@ -257,6 +262,16 @@ public class TurJDBCImportTool {
 		return help;
 	}
 
+	public String getFormattedQuery() {
+		try {
+			return query.startsWith(FILE_PROTOCOL) ? Files.readString(Paths.get(query.replace(FILE_PROTOCOL, "")))
+					: query;
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return query;
+	}
+
 	public static void main(String... argv) {
 
 		TurJDBCImportTool main = new TurJDBCImportTool();
@@ -280,29 +295,23 @@ public class TurJDBCImportTool {
 	public void run() {
 		logger.info("driver: {}", driver);
 		logger.info("connect: {}", connect);
-		logger.info("query: {}", query);
+		logger.info("query: {}", getFormattedQuery());
 		logger.info("username: {}", dbUsername);
 
 		this.select();
 	}
 
 	private void select() {
-		try {
-			TurSNServer turSNServer = new TurSNServer(new URL(turingServer), this.site, this.locale,
-					new TurUsernamePasswordCredentials(turUsername, turPassword));
-			turSNServer.setProviderName(PROVIDER_ATTRIBUTE_VALUE);
+		if (loadJDBCDriver()) {
+			TurSNServer turSNServer = createTurSNServer();
+			TurJDBCCustomImpl turJDBCCustomImpl = instantiateCustomClass();
 			if (this.deindexBeforeImporting) {
 				turSNServer.deleteItemsByType(type);
 			}
-			TurJDBCCustomImpl turJDBCCustomImpl = instantiateCustomClass();
-
-			// Register JDBC driver
-			Class.forName(driver);
-
 			logger.info("Execute a query...");
 			try (Connection conn = DriverManager.getConnection(connect, dbUsername, dbPassword);
 					Statement stmt = conn.createStatement();
-					ResultSet rs = stmt.executeQuery(query)) {
+					ResultSet rs = stmt.executeQuery(getFormattedQuery())) {
 				TurChunkingJob turChunkingJob = new TurChunkingJob(chunk);
 				while (rs.next()) {
 					turChunkingJob.addItem(createJobItem(turJDBCCustomImpl, conn, rs));
@@ -314,10 +323,34 @@ public class TurJDBCImportTool {
 				if (turChunkingJob.hasItemsLeft()) {
 					this.sendServer(turSNServer, turChunkingJob);
 				}
+			} catch (SQLException e) {
+				logger.error(e.getMessage(), e);
 			}
-		} catch (Exception e) {
+		}
+	}
+
+	private boolean loadJDBCDriver() {
+		try {
+			Class.forName(driver);
+			return true;
+		} catch (ClassNotFoundException e) {
 			logger.error(e.getMessage(), e);
 		}
+		return false;
+	}
+
+	private TurSNServer createTurSNServer() {
+		TurSNServer turSNServer;
+		try {
+			turSNServer = new TurSNServer(new URL(turingServer), this.site, this.locale,
+					new TurUsernamePasswordCredentials(turUsername, turPassword));
+
+			turSNServer.setProviderName(PROVIDER_ATTRIBUTE_VALUE);
+			return turSNServer;
+		} catch (MalformedURLException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return null;
 	}
 
 	private TurJDBCCustomImpl instantiateCustomClass() {

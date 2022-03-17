@@ -29,43 +29,48 @@ import com.viglet.turing.client.sn.job.TurSNJobItems;
 
 public class TurChunkingJob {
 	private int chunkSize;
-	private int current;
+	private int chunkCurrent;
 	private int total;
 	private TurSNJobItems turSNJobItems;
 
 	public TurChunkingJob(int chunkSize) {
 		super();
 		this.chunkSize = chunkSize;
-		this.current = 0;
+		this.chunkCurrent = 0;
 		this.total = 0;
 		this.turSNJobItems = new TurSNJobItems();
 	}
 
 	public boolean hasItemsLeft() {
-		return this.current > 0;
+		return this.chunkCurrent > 0;
 	}
 
 	public int getFirstItemPosition() {
-		return (this.total > this.chunkSize) ? this.total - this.chunkSize : 1;
+		int left = total % chunkSize;
+		if (left > 0) {
+			return total - left + 1;
+		} else {
+			return (this.total > this.chunkSize) ? this.total - this.chunkSize + 1 : 1;
+		}
 	}
 
 	public void addItem(TurSNJobItem turSNJobItem) {
 		this.turSNJobItems.add(turSNJobItem);
 		this.total++;
-		this.current++;
+		this.chunkCurrent++;
 	}
 
 	public void newCicle() {
-		this.current = 0;
+		this.chunkCurrent = 0;
 		this.turSNJobItems = new TurSNJobItems();
 	}
 
 	public boolean isChunkLimit() {
-		return this.current == this.chunkSize;
+		return this.chunkCurrent == this.chunkSize;
 	}
 
 	public int getCurrent() {
-		return this.current;
+		return this.chunkCurrent;
 	}
 
 	public int getTotal() {
