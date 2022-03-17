@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.viglet.turing.tool.impl;
+package com.viglet.turing.tool.jdbc.impl;
 
 import java.sql.Connection;
 import java.util.Map;

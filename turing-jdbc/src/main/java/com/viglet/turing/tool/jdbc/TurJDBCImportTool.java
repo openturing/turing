@@ -16,10 +16,6 @@
  */
 package com.viglet.turing.tool.jdbc;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -43,18 +39,13 @@ import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.tool.file.TurFileAttributes;
-import com.viglet.turing.tool.impl.TurJDBCCustomImpl;
+import com.viglet.turing.tool.file.TurFileUtils;
+import com.viglet.turing.tool.jdbc.impl.TurJDBCCustomImpl;
 import com.viglet.turing.tool.jdbc.format.TurFormatValue;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Class that can be used to bootstrap and launch JDBC Import Tool
@@ -64,10 +55,17 @@ import org.xml.sax.SAXException;
  *
  **/
 public class TurJDBCImportTool {
-	static final Logger logger = LogManager.getLogger(TurJDBCImportTool.class.getName());
+	private static final Logger logger = LogManager.getLogger(TurJDBCImportTool.class.getName());
 
 	private static final long MEGA_BYTE = 1024L * 1024L;
 	private static final String TYPE_ATTRIBUTE = "type";
+	private static final String PROVIDER_ATTRIBUTE = "source_apps";
+	private static final String PROVIDER_ATTRIBUTE_VALUE = "turing-jdbc";
+	private static final String SQL_TIMESTAMP_CLASS = "java.sql.Timestamp";
+	private static final String INTEGER_CLASS = "java.lang.Integer";
+	private static final String UTC = "UTC";
+	private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+
 	@Parameter(names = { "--deindex-before-importing" }, description = "Deindex before importing", arity = 1)
 	private boolean deindexBeforeImporting = false;
 
@@ -286,43 +284,11 @@ public class TurJDBCImportTool {
 		this.select();
 	}
 
-	private TurFileAttributes readFile(String filePath) {
-
-		try {
-			File file = new File(filePath);
-			if (file.exists()) {
-				try (InputStream inputStream = new FileInputStream(file)) {
-					AutoDetectParser parser = new AutoDetectParser();
-					// -1 = no limit of number of characters
-					BodyContentHandler handler = new BodyContentHandler(-1);
-					Metadata metadata = new Metadata();
-
-					ParseContext pcontext = new ParseContext();
-
-					parser.parse(inputStream, handler, metadata, pcontext);
-					TurFileAttributes turFileAttributes = new TurFileAttributes();
-					turFileAttributes.setContent(cleanTextContent(handler.toString()));
-					turFileAttributes.setFile(file);
-					turFileAttributes.setMetadata(metadata);
-
-					return turFileAttributes;
-				}
-			} else {
-				logger.info("File not exists: {}", filePath);
-			}
-		} catch (IOException | SAXException | TikaException e) {
-			logger.error("readFile Exception", e);
-		}
-
-		return null;
-
-	}
-
 	private void select() {
 		try {
 			TurSNServer turSNServer = new TurSNServer(new URL(turingServer), this.site, this.locale,
 					new TurUsernamePasswordCredentials(turUsername, turPassword));
-
+			turSNServer.setProviderName(PROVIDER_ATTRIBUTE_VALUE);
 			if (this.deindexBeforeImporting) {
 				turSNServer.deleteItemsByType(type);
 			}
@@ -369,6 +335,7 @@ public class TurJDBCImportTool {
 			throws SQLException {
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put(TYPE_ATTRIBUTE, type);
+		attributes.put(PROVIDER_ATTRIBUTE, PROVIDER_ATTRIBUTE_VALUE);
 		addDBFieldsAsAttributes(rs, attributes);
 		addFileAttributes(attributes);
 		attributes = modifyAttributesByCustomClass(turJDBCCustomImpl, conn, attributes);
@@ -377,14 +344,13 @@ public class TurJDBCImportTool {
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItem.setLocale(locale);
+
 		return turSNJobItem;
 	}
 
 	private Map<String, Object> modifyAttributesByCustomClass(TurJDBCCustomImpl turJDBCCustomImpl, Connection conn,
 			Map<String, Object> attributes) {
-		if (hasCustomClass(turJDBCCustomImpl))
-			attributes = turJDBCCustomImpl.run(conn, attributes);
-		return attributes;
+		return (hasCustomClass(turJDBCCustomImpl)) ? turJDBCCustomImpl.run(conn, attributes) : attributes;
 	}
 
 	private boolean hasCustomClass(TurJDBCCustomImpl turJDBCCustomImpl) {
@@ -396,14 +362,12 @@ public class TurJDBCImportTool {
 		for (int c = 1; c <= rsmd.getColumnCount(); c++) {
 			String nameSensitve = rsmd.getColumnLabel(c);
 			String className = rsmd.getColumnClassName(c);
-
-			if (className.equals("java.lang.Integer")) {
+			if (className.equals(INTEGER_CLASS)) {
 				int intValue = rs.getInt(c);
 				attributes.put(nameSensitve, turFormatValue.format(nameSensitve, Integer.toString(intValue)));
-			} else if (className.equals("java.sql.Timestamp")) {
-				TimeZone tz = TimeZone.getTimeZone("UTC");
-				DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-				df.setTimeZone(tz);
+			} else if (className.equals(SQL_TIMESTAMP_CLASS)) {
+				DateFormat df = new SimpleDateFormat(DATE_FORMAT);
+				df.setTimeZone(TimeZone.getTimeZone(UTC));
 				attributes.put(nameSensitve, turFormatValue.format(nameSensitve, df.format(rs.getDate(c))));
 			} else {
 				String strValue = rs.getString(c);
@@ -414,38 +378,44 @@ public class TurJDBCImportTool {
 
 	private void addFileAttributes(Map<String, Object> attributes) {
 		if (filePathField != null && attributes.containsKey(filePathField)) {
-			TurFileAttributes turFileAttributes = this.readFile((String) attributes.get(filePathField));
+			TurFileAttributes turFileAttributes = TurFileUtils.readFile((String) attributes.get(filePathField));
 			if (turFileAttributes != null) {
-				if (fileSizeField != null && turFileAttributes.getFile() != null) {
-					attributes.put(fileSizeField, turFileAttributes.getFile().length());
-					if (logger.isDebugEnabled()) {
-						logger.debug("File: {}", turFileAttributes.getFile().getAbsolutePath());
-						logger.debug("File size: {}",
-								FileUtils.byteCountToDisplaySize(turFileAttributes.getFile().length()));
-						logger.debug("File - Content size: "
-								+ FileUtils.byteCountToDisplaySize(turFileAttributes.getContent().getBytes().length));
-					}
-				} else {
-					logger.debug("File without size: {}", filePathField);
-				}
+				addFileSizeAttribute(attributes, turFileAttributes);
+				addFileContentAttribute(attributes, turFileAttributes);
+			}
+		}
+	}
 
-				if (fileContentField != null) {
-					long maxContentByteSize = maxContentMegaByteSize * MEGA_BYTE;
+	private void addFileContentAttribute(Map<String, Object> attributes, TurFileAttributes turFileAttributes) {
+		if (fileContentField != null) {
+			long maxContentByteSize = maxContentMegaByteSize * MEGA_BYTE;
 
-					if (turFileAttributes.getContent().getBytes().length <= maxContentByteSize) {
-						attributes.put(fileContentField, turFileAttributes.getContent());
-					} else {
-						attributes.put(fileContentField,
-								turFileAttributes.getContent().substring(0, Math.toIntExact(maxContentByteSize)));
-						if (logger.isDebugEnabled()) {
-							logger.debug("File size greater than {}, truncating content ...:",
-									FileUtils.byteCountToDisplaySize(maxContentByteSize));
-						}
-					}
-				} else {
-					logger.debug("File without content: {}", filePathField);
+			if (turFileAttributes.getContent().getBytes().length <= maxContentByteSize) {
+				attributes.put(fileContentField, turFileAttributes.getContent());
+			} else {
+				attributes.put(fileContentField,
+						turFileAttributes.getContent().substring(0, Math.toIntExact(maxContentByteSize)));
+				if (logger.isDebugEnabled()) {
+					logger.debug("File size greater than {}, truncating content ...:",
+							FileUtils.byteCountToDisplaySize(maxContentByteSize));
 				}
 			}
+		} else {
+			logger.debug("File without content: {}", filePathField);
+		}
+	}
+
+	private void addFileSizeAttribute(Map<String, Object> attributes, TurFileAttributes turFileAttributes) {
+		if (fileSizeField != null && turFileAttributes.getFile() != null) {
+			attributes.put(fileSizeField, turFileAttributes.getFile().length());
+			if (logger.isDebugEnabled()) {
+				logger.debug("File: {}", turFileAttributes.getFile().getAbsolutePath());
+				logger.debug("File size: {}", FileUtils.byteCountToDisplaySize(turFileAttributes.getFile().length()));
+				logger.debug("File - Content size: ",
+						FileUtils.byteCountToDisplaySize(turFileAttributes.getContent().getBytes().length));
+			}
+		} else {
+			logger.debug("File without size: {}", filePathField);
 		}
 	}
 
@@ -468,17 +438,8 @@ public class TurJDBCImportTool {
 	}
 
 	private void sendServer(TurSNServer turSNServer, TurChunkingJob turChunkingJob) {
-		System.out.print(String.format("Importing %s to %s items\n", turChunkingJob.getFirstItemPosition(),
+		System.out.print(String.format("Importing %s to %s items%n", turChunkingJob.getFirstItemPosition(),
 				turChunkingJob.getTotal()));
 		turSNServer.importItems(turChunkingJob.getTurSNJobItems(), showOutput);
-	}
-
-	private static String cleanTextContent(String text) {
-		text = text.replaceAll("[\r\n\t]", " ");
-		text = text.replaceAll("[^\\p{L}&&[^0-9A-Za-z]&&[^\\p{javaSpaceChar}]&&[^\\p{Punct}]]", "").replaceAll("_{2,}",
-				"");
-		// Remove 2 or more spaces
-		text = text.trim().replaceAll(" +", " ");
-		return text.trim();
 	}
 }
