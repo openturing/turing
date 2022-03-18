@@ -206,28 +206,6 @@ public class TurSNSite implements Serializable {
 		return turSNSiteField;
 	}
 
-	public Set<TurSNSiteLocale> getTurSNSiteLocales() {
-		return turSNSiteLocales;
-	}
-
-	public void setTurSNSiteLocales(Set<TurSNSiteLocale> turSNSiteLocales) {
-		this.turSNSiteLocales = turSNSiteLocales;
-	}
-
-	public TurSNSiteLocale addTurSNSiteLocale(TurSNSiteLocale turSNSiteLocale) {
-		getTurSNSiteLocales().add(turSNSiteLocale);
-		turSNSiteLocale.setTurSNSite(this);
-
-		return turSNSiteLocale;
-	}
-
-	public TurSNSiteLocale removeTurSNSiteLocale(TurSNSiteLocale turSNSiteLocale) {
-		getTurSNSiteLocales().remove(turSNSiteLocale);
-		turSNSiteLocale.setTurSNSite(this);
-
-		return turSNSiteLocale;
-	}
-
 	public Integer getRowsPerPage() {
 		return rowsPerPage;
 	}
