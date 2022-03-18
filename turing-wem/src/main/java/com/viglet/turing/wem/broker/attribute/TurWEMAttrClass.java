@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.wem.broker.attribute;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +33,7 @@ import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMAttrClass {
 
-	private static final ContextLogger log = ContextLogger.getLogger(TurWEMAttrClass.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private TurWEMAttrClass() {
 		throw new IllegalStateException("TurWEMAttrClass");

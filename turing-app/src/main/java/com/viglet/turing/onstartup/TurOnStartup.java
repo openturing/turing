@@ -17,6 +17,8 @@
 
 package com.viglet.turing.onstartup;
 
+import java.lang.invoke.MethodHandles;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,10 +48,9 @@ import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 @Component
 @Transactional
 public class TurOnStartup implements ApplicationRunner {
-	private static final Logger logger = LogManager.getLogger(TurOnStartup.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
-
 	@Autowired
 	private TurLocaleOnStartup turLocaleOnStartup;
 	@Autowired

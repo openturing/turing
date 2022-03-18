@@ -42,7 +42,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurMLInstanceAPI {
 
 	@Autowired
-	TurMLInstanceRepository turMLInstanceRepository;
+	private TurMLInstanceRepository turMLInstanceRepository;
 
 	@Operation(summary = "Machine Learning List")
 	@GetMapping

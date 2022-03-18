@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +56,7 @@ import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 @ComponentScan
 @Component
 public class TurNLPProcess {
-	private static final Logger logger = LogManager.getLogger(TurNLPProcess.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired

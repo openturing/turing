@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.sn;
 
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -47,7 +48,7 @@ import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.solr.TurSolrField;
 
 public class TurSNUtils {
-	private static final Logger logger = LogManager.getLogger(TurSNUtils.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	public static final String TURING_ENTITY = "turing_entity";
 	public static final String DEFAULT_LANGUAGE = "en";
 	public static final String URL = "url";

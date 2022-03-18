@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.wem.mappers;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +30,7 @@ import com.vignette.logging.context.ContextLogger;
 public class CTDMappings {
 	private TuringTagMap turingTagMap;
 	private String classValidToIndex = null;
-	private static final ContextLogger log = ContextLogger.getLogger(CTDMappings.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	// OLD getIndexAttrTag
 	public List<TuringTag> getTuringTagBySrcAttr(String srcAttrName) {

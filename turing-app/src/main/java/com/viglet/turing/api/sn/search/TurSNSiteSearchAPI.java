@@ -24,6 +24,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.se.TurSEParameters;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
@@ -43,6 +44,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -51,12 +54,13 @@ import java.util.*;
 @RequestMapping("/api/sn/{siteName}/search")
 @Tag(name = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
-	private static final Logger logger = LogManager.getLogger(TurSNSiteSearchAPI.class);
-
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
+	@Autowired
+	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 	@Autowired
 	private TurSolrInstanceProcess turSolrInstanceProcess;
 	@Autowired
@@ -78,10 +82,10 @@ public class TurSNSiteSearchAPI {
 		TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName,
 				new TurSEParameters(q, fq, requestTargetingRules(tr), currentPage, sort, rows, autoCorrectionDisabled),
 				locale, TurSNUtils.requestToURI(request));
-		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 
 		TurSNSiteSearchBean turSNSiteSearchBean = new TurSNSiteSearchBean();
-		turSolrInstanceProcess.initSolrInstance(turSNSite, locale).ifPresent(turSolrInstance -> {
+		turSolrInstanceProcess.initSolrInstance(siteName, locale).ifPresent(turSolrInstance -> {
+			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 			TurSEParameters turSEParameters = turSNSiteSearchContext.getTurSEParameters();
 			turSEParameters.setCurrentPage(prepareQueryCurrentPage(turSEParameters));
 			turSEParameters.setRows(prepareQueryRows(turSEParameters));
@@ -287,7 +291,7 @@ public class TurSNSiteSearchAPI {
 
 	private List<TurSNSiteLocaleBean> responseLocales(TurSNSite turSNSite, URI uri) {
 		List<TurSNSiteLocaleBean> turSNSiteLocaleBeans = new ArrayList<>();
-		turSNSite.getTurSNSiteLocales().forEach(turSNSiteLocale -> {
+		turSNSiteLocaleRepository.findByTurSNSite(turSNSite).forEach(turSNSiteLocale -> {
 			TurSNSiteLocaleBean turSNSiteLocaleBean = new TurSNSiteLocaleBean();
 			turSNSiteLocaleBean.setLocale(turSNSiteLocale.getLanguage());
 			turSNSiteLocaleBean.setLink(TurSNUtils

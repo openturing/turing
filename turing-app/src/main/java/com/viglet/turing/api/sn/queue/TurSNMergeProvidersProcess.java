@@ -33,6 +33,7 @@ import org.apache.solr.common.SolrDocumentList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.lang.invoke.MethodHandles;
 import java.util.*;
 
 /**
@@ -41,8 +42,7 @@ import java.util.*;
  */
 @Component
 public class TurSNMergeProvidersProcess {
-    private static final Logger logger = LogManager.getLogger(TurSNMergeProvidersProcess.class);
-
+    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
     @Autowired
     private TurSolrInstanceProcess turSolrInstanceProcess;
     @Autowired
@@ -165,7 +165,7 @@ public class TurSNMergeProvidersProcess {
 
     private void desindexSolrDocuments(TurSNSiteMergeProviders turSNSiteMergeProviders, List<SolrDocument> results) {
         turSolrInstanceProcess
-                .initSolrInstance(turSNSiteMergeProviders.getTurSNSite(), turSNSiteMergeProviders.getLocale())
+                .initSolrInstance(turSNSiteMergeProviders.getTurSNSite().getName(), turSNSiteMergeProviders.getLocale())
                 .ifPresent(turSolrInstance -> results
                         .forEach(result -> turSolr.desindexing(turSolrInstance, result.get(TurSNConstants.ID_ATTRIBUTE).toString())));
     }
@@ -173,7 +173,7 @@ public class TurSNMergeProvidersProcess {
     private SolrDocumentList solrResultAnd(TurSNSiteMergeProviders turSNSiteMergeProviders,
                                            Map<String, Object> attributes, String locale) {
         return turSolrInstanceProcess
-                .initSolrInstance(turSNSiteMergeProviders.getTurSNSite(), Optional.ofNullable(locale).orElse(turSNSiteMergeProviders.getLocale()))
+                .initSolrInstance(turSNSiteMergeProviders.getTurSNSite().getName(), Optional.ofNullable(locale).orElse(turSNSiteMergeProviders.getLocale()))
                 .map(turSolrInstance -> turSolr.solrResultAnd(turSolrInstance, attributes)).orElse(new SolrDocumentList());
 
     }

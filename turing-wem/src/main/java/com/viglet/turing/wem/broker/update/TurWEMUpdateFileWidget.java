@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.wem.broker.update;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +32,7 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMUpdateFileWidget {
-	private static final ContextLogger log = ContextLogger.getLogger(TurWEMUpdateFileWidget.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private TurWEMUpdateFileWidget() {
 		throw new IllegalStateException("TurWEMUpdateFileWidget");

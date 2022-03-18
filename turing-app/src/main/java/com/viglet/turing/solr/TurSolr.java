@@ -56,13 +56,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
 
 @Component
 @Transactional
 public class TurSolr {
-	private static final Logger logger = LogManager.getLogger(TurSolr.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Autowired
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;

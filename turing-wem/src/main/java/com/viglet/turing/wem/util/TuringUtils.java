@@ -45,6 +45,7 @@ import org.apache.http.impl.client.HttpClients;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -54,7 +55,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 public class TuringUtils {
-    private static final ContextLogger log = ContextLogger.getLogger(TuringUtils.class);
+    private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
     private TuringUtils() {
         throw new IllegalStateException("TuringUtils");

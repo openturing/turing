@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -65,11 +66,11 @@ import opennlp.tools.util.TrainingParameters;
 @RequestMapping("/api/ml/model")
 @Tag(name ="Machine Learning Model", description = "Machine Learning Model API")
 public class TurMLModelAPI {
-	private static final Log logger = LogFactory.getLog(TurMLModelAPI.class);
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
-	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 	@Autowired
-	TurMLModelRepository turMLModelRepository;
+	private TurMLModelRepository turMLModelRepository;
 
 	@Operation(summary = "Machine Learning Model List")
 	@GetMapping

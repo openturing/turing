@@ -31,12 +31,13 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.util.*;
 import java.util.Map.Entry;
 
 // Open and process Mappping XML File structure
 public class MappingDefinitionsProcess {
-	private static final ContextLogger log = ContextLogger.getLogger(MappingDefinitionsProcess.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private MappingDefinitionsProcess() {
 		throw new IllegalStateException("MappingDefinitionsProcess");

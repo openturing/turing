@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -48,7 +49,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.model.ml.TurMLModel;
 import com.viglet.turing.persistence.model.storage.TurDataGroupModel;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
-import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
 import com.viglet.turing.persistence.repository.ml.TurMLModelRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupModelRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
@@ -70,17 +70,15 @@ import opennlp.tools.util.TrainingParameters;
 @RequestMapping("/api/ml/data/group/{dataGroupId}/model")
 @Tag(name = "Machine Learning Model by Group", description = "Machine Learning Model by Group API")
 public class TurMLDataGroupModelAPI {
-	private static final Log logger = LogFactory.getLog(TurMLDataGroupModelAPI.class);
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
-	TurDataGroupRepository turDataGroupRepository;
+	private TurDataGroupRepository turDataGroupRepository;
 	@Autowired
-	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 	@Autowired
-	TurMLCategoryRepository turMLCategoryRepository;
+	private TurMLModelRepository turMLModelRepository;
 	@Autowired
-	TurMLModelRepository turMLModelRepository;
-	@Autowired
-	TurDataGroupModelRepository turDataGroupModelRepository;
+	private TurDataGroupModelRepository turDataGroupModelRepository;
 
 	@Operation(summary = "Machine Learning Data Group Model List")
 	@GetMapping

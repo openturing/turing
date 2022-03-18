@@ -16,6 +16,8 @@
  */
 package com.viglet.turing.wem.mappers;
 
+import java.lang.invoke.MethodHandles;
+
 import com.viglet.turing.wem.beans.TurCTDMappingMap;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.viglet.turing.wem.index.IValidToIndex;
@@ -26,7 +28,7 @@ import com.vignette.logging.context.ContextLogger;
 public class MappingDefinitions {
 	private TurCTDMappingMap turCTDMappingMap;
 	private String mappingsXML;
-	private static final ContextLogger logger = ContextLogger.getLogger(MappingDefinitions.class);
+	private static final ContextLogger logger = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	public String getMappingsXML() {
 		return mappingsXML;

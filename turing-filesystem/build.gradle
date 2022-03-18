@@ -17,8 +17,8 @@ version = '0.3.5'
 
 description = "turing-filesystem"
 
-sourceCompatibility = 17
-targetCompatibility = 17
+sourceCompatibility = 14
+targetCompatibility = 14
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
@@ -34,7 +34,7 @@ sonarqube {
 
 jar {
     baseName = 'turing-filesystem'
-    version =  '0.3.6'
+    version =  '0.3.5'
     manifest {
         attributes 'Main-Class': 'com.viglet.turing.tool.filesystem.TurFSImportTool'
     }
@@ -52,12 +52,12 @@ repositories {
 
 dependencies {
 	implementation group: 'com.beust', name: 'jcommander', version: '1.82'	
-	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.1'	
+	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.2'	
 	implementation group: 'org.json', name: 'json', version:'20211205'
 	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.13'
-	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.17.1'
+	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.17.2'
 	implementation group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.13'
-	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.0'
+	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.1'
 	implementation project(':turing-java-sdk')
 
 	// Tika

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 package com.viglet.turing.wem.broker.indexer;
 
 import com.viglet.turing.client.sn.job.TurSNJobAction;
@@ -25,35 +26,39 @@ import com.viglet.turing.wem.config.TurSNSiteConfig;
 import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AsLocaleData;
 import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
-import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
-import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class TurWEMDeindex {
 
 	private TurWEMDeindex() {
-		throw new IllegalStateException("TurWEMDeindex");
+		throw new IllegalStateException(TurWEMDeindex.class.getName());
 	}
 
 	private static final ContextLogger log = ContextLogger.getLogger(TurWEMDeindex.class);
 
-	// This method deletes the content to the Viglet Turing broker
-	public static void indexDelete(ManagedObjectVCMRef managedObjectVCMRef, IHandlerConfiguration config, String siteName) {
+	/**
+	 * Create and send a job to delete a spotlight or deindex a content in Turing
+	 * Semantic Navigation Site.
+	 * 
+	 **/
+	public static void indexDelete(ManagedObjectVCMRef managedObjectVCMRef, IHandlerConfiguration config,
+			String siteName) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 
 		AsLocaleData asLocaleData = null;
-
+		String ctdXmlName = null;
 		try {
 			ManagedObject mo = managedObjectVCMRef.retrieveManagedObject();
-			if(mo != null) {
+			if (mo != null) {
 				if ((mo.getLocale() != null) && (mo.getLocale().getAsLocale() != null)
 						&& (mo.getLocale().getAsLocale().getData() != null))
 					asLocaleData = mo.getLocale().getAsLocale().getData();
+				ctdXmlName = mo.getObjectType().getData().getName();
 			}
 
 		} catch (Exception e) {
@@ -69,12 +74,19 @@ public class TurWEMDeindex {
 		String guid = managedObjectVCMRef.getId();
 		attributes.put(GenericResourceHandlerConfiguration.ID_ATTRIBUTE, guid);
 		attributes.put(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
+		attributes.put(GenericResourceHandlerConfiguration.TYPE_ATTRIBUTE, ctdXmlName);
+
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 
 		TuringUtils.sendToTuring(turSNJobItems, config, turSNSiteConfig);
 	}
 
+	/**
+	 * Create and send a job to delete a spotlight or deindex a context by CTD XML
+	 * Name in Turing Semantic Navigation Site.
+	 * 
+	 **/
 	public static void indexDeleteByType(String siteName, String typeName, IHandlerConfiguration config) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();

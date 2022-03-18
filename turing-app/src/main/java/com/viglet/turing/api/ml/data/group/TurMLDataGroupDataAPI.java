@@ -18,6 +18,7 @@
 package com.viglet.turing.api.ml.data.group;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,7 +62,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/ml/data/group/{dataGroupId}/data")
 @Tag(name ="Machine Learning Data by Group", description = "Machine Learning Data by Group API")
 public class TurMLDataGroupDataAPI {
-	private static final Log logger = LogFactory.getLog(TurMLDataGroupDataAPI.class);
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurDataGroupRepository turDataGroupRepository;
 	@Autowired

@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.lang.invoke.MethodHandles;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ import com.viglet.turing.solr.TurSolrField;
 
 @Component
 public class TurTMEConnector implements TurNLPPlugin {
-	private static final Logger logger = LogManager.getLogger(TurTMEConnector.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	private static final String COMPLEX_CONCEPTS = "ComplexConcepts";
 	private static final String SIMPLE_CONCEPTS = "SimpleConcepts";
 	private static final String LOG_KV = "{}: {}";

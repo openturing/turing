@@ -18,6 +18,7 @@
 package com.viglet.turing.api.sn.console;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +68,7 @@ import io.swagger.v3.oas.annotations.Operation;
 @RequestMapping("/api/sn/{snSiteId}/field/ext")
 @Tag(name = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
 public class TurSNSiteFieldExtAPI {
-	private static final Log logger = LogFactory.getLog(TurSNSiteFieldExtAPI.class);
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired

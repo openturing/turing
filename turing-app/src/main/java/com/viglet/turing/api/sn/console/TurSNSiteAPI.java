@@ -17,6 +17,7 @@
 
 package com.viglet.turing.api.sn.console;
 
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,6 +47,7 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNQueue;
 import com.viglet.turing.sn.template.TurSNTemplate;
 import com.viglet.turing.solr.TurSolr;
@@ -60,9 +62,11 @@ import io.swagger.v3.oas.annotations.Operation;
 @Tag(name = "Semantic Navigation Site", description = "Semantic Navigation Site API")
 @ComponentScan("com.viglet.turing")
 public class TurSNSiteAPI {
-	private static final Log logger = LogFactory.getLog(TurSNSiteAPI.class);
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
+	@Autowired
+	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 	@Autowired
 	private TurSNSiteExport turSNSiteExport;
 	@Autowired
@@ -167,7 +171,7 @@ public class TurSNSiteAPI {
 			TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
 			turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
 			long documentTotal = 0l;
-			for (TurSNSiteLocale turSNSiteLocale : turSNSite.getTurSNSiteLocales()) {
+			for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository.findByTurSNSite(turSNSite)) {
 				Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
 				if (turSolrInstance.isPresent()) {
 					documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());

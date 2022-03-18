@@ -16,6 +16,8 @@
  */
 package com.viglet.turing.wem.broker.indexer;
 
+import java.lang.invoke.MethodHandles;
+
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.javabean.ManagedObject;
@@ -24,7 +26,7 @@ import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMIndexer {
 
-	private static final ContextLogger log = ContextLogger.getLogger(TurWEMIndexer.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private TurWEMIndexer() {
 		throw new IllegalStateException("TurWEMIndexer");

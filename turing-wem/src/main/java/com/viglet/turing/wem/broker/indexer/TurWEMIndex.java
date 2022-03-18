@@ -43,6 +43,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.zip.ZipEntry;
@@ -50,7 +51,7 @@ import java.util.zip.ZipOutputStream;
 
 public class TurWEMIndex {
 
-    private static final ContextLogger log = ContextLogger.getLogger(TurWEMIndex.class);
+    private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
     private static final String FILE_PROTOCOL = "file://";
 
     private TurWEMIndex() {

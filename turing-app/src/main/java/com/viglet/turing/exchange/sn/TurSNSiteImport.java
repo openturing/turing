@@ -29,7 +29,6 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
 @Component
 public class TurSNSiteImport {
-
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired

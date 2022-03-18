@@ -17,6 +17,8 @@
 package com.viglet.turing.solr;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.net.URL;
 
 import javax.annotation.PreDestroy;
 
@@ -26,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 
 public class TurSolrInstance {
-	private static final Logger logger = LogManager.getLogger(TurSolrInstance.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	private CloseableHttpClient closeableHttpClient;
 
@@ -34,6 +36,7 @@ public class TurSolrInstance {
 
 	private String core = null;
 
+	private URL solrUrl = null;
 	@PreDestroy
 	public void destroy() {
 		if (logger.isDebugEnabled()) {
@@ -57,20 +60,13 @@ public class TurSolrInstance {
 		}
 	}
 
-	public TurSolrInstance(CloseableHttpClient closeableHttpClient, SolrClient solrClient,
+	public TurSolrInstance(CloseableHttpClient closeableHttpClient, SolrClient solrClient, URL solrUrl,
 			String core) {
 		super();
 		this.closeableHttpClient = closeableHttpClient;
 		this.solrClient = solrClient;
+		this.solrUrl = solrUrl;
 		this.core = core;
-	}
-
-	public CloseableHttpClient getCloseableHttpClient() {
-		return closeableHttpClient;
-	}
-
-	public void setCloseableHttpClient(CloseableHttpClient closeableHttpClient) {
-		this.closeableHttpClient = closeableHttpClient;
 	}
 
 	public SolrClient getSolrClient() {
@@ -89,4 +85,14 @@ public class TurSolrInstance {
 		this.core = core;
 	}
 
+	public URL getSolrUrl() {
+		return solrUrl;
+	}
+
+	public void setSolrUrl(URL solrUrl) {
+		this.solrUrl = solrUrl;
+	}
+
+
+	
 }

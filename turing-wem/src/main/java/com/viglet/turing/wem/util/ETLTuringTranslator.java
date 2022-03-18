@@ -28,6 +28,7 @@ import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.ext.templating.util.ContentUtil;
 import com.vignette.logging.context.ContextLogger;
 
+import java.lang.invoke.MethodHandles;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,7 @@ public class ETLTuringTranslator {
 
 	IHandlerConfiguration config;
 
-	private static final ContextLogger log = ContextLogger.getLogger(ETLTuringTranslator.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	public ETLTuringTranslator(IHandlerConfiguration config) {
 		this.config = config;

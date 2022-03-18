@@ -29,12 +29,13 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class TurSpotlightExtraFields implements ExtAttributeInterface {
-    private static final ContextLogger log = ContextLogger.getLogger(TurSpotlightExtraFields.class);
+    private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
     @Override
     public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,

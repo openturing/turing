@@ -52,7 +52,6 @@ import java.util.Date;
 
 @Component
 public class TurSNTemplate {
-
 	@Autowired
 	private TurSNSiteFieldRepository turSNSiteFieldRepository;
 	@Autowired

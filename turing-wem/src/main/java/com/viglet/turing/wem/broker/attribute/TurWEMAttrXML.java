@@ -26,11 +26,12 @@ import com.vignette.as.client.javabean.AttributedObject;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TurWEMAttrXML {
-	private static final ContextLogger log = ContextLogger.getLogger(TurWEMAttrXML.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private TurWEMAttrXML() {
 		throw new IllegalStateException("TurWEMAttrXML");

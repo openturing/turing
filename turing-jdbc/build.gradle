@@ -16,8 +16,8 @@ group = 'com.viglet.turing.jdbc'
 
 description = "turing-jdbc"
 
-sourceCompatibility = 17
-targetCompatibility = 17
+sourceCompatibility = 14
+targetCompatibility = 14
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
@@ -33,9 +33,9 @@ sonarqube {
 
 jar {
     baseName = 'turing-jdbc'
-    version =  '0.3.6'
+    version =  '0.3.5'
     manifest {
-		attributes 'Main-Class': 'com.viglet.turing.tool.jdbc.JDBCImportTool'
+		attributes 'Main-Class': 'com.viglet.turing.tool.jdbc.TurJDBCImportTool'
 	}
 }
 
@@ -50,10 +50,10 @@ repositories {
 
 dependencies {
 	implementation group: 'com.beust', name: 'jcommander', version: '1.82'	
-	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.1'	
+	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.2'	
 	implementation group: 'org.json', name: 'json', version:'20211205'
 	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.13'
-	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.17.1'
+	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.17.2'
   	implementation project(':turing-java-sdk')
 	
 	// Tika
@@ -65,7 +65,17 @@ dependencies {
     // Commons
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
     
-	
+    // Oracle
+    implementation group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
+    
+	// MariaDB
+    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.0.3'
+
+    // PostgreSQL
+    implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.3'
+    
+    // Jsoup
+    implementation group: 'org.jsoup', name: 'jsoup', version: '1.14.3'
 }
 
 jar.enabled = false

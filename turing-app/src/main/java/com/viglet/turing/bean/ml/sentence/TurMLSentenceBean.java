@@ -21,9 +21,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TurMLSentenceBean {
-	String sentence;
+	private String sentence;
 	
-	int turMLCategoryId;
+	private int turMLCategoryId;
 	
 	public String getSentence() {
 		return sentence;

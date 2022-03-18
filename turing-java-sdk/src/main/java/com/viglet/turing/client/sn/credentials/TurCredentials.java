@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,24 +15,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.api.storage.hadoop;
+package com.viglet.turing.client.sn.credentials;
 
-import java.util.List;
+/**
+ * Turing Server Credentials Interface.
+ * 
+ * @author Alexandre Oliveira
+ * 
+ * @since 0.3.5
+ */
+public interface TurCredentials {
 
-import org.springframework.stereotype.Component;
-
-@Component
-public class TurChildPath {
-	List<org.apache.hadoop.fs.Path> dir;
-
-	public List<org.apache.hadoop.fs.Path> getDir() {
-		return dir;
-	}
-
-	public void setDir(List<org.apache.hadoop.fs.Path> dir) {
-		this.dir = dir;
-	}
-
-	
-	
 }

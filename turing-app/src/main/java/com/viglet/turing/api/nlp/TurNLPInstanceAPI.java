@@ -53,6 +53,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -65,7 +66,7 @@ import java.util.UUID;
 @RequestMapping("/api/nlp")
 @Tag(name = "Natural Language Processing", description = "Natural Language Processing API")
 public class TurNLPInstanceAPI {
-	private static final Logger logger = LogManager.getLogger(TurNLPInstanceAPI.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	private static final String NLP_TEMP_FILE = "nlp_temp";
 	@Autowired
 	private TurNLPInstanceRepository turNLPInstanceRepository;

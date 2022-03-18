@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,8 +48,11 @@ import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContext;
 import com.viglet.turing.api.sn.bean.TurSNSiteSpotlightDocumentBean;
 import com.viglet.turing.client.sn.TurSNQuery.ORDER;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
+import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
 import com.viglet.turing.client.sn.facet.TurSNFacetFieldList;
+import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.client.sn.job.TurSNJobUtils;
 import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
@@ -67,6 +70,11 @@ public class TurSNServer {
 
 	private static Logger logger = Logger.getLogger(TurSNServer.class.getName());
 
+	private static final String SITE_NAME_DEFAULT = "Sample";
+
+	private static final String LOCALE_DEFAULT = "en_US";
+
+	private static final String PROVIDER_NAME_DEFAULT = "turing-java-sdk";
 	private String turSNServer;
 
 	private TurSNQuery turSNQuery;
@@ -77,20 +85,26 @@ public class TurSNServer {
 
 	private String locale;
 
+	private TurUsernamePasswordCredentials credentials;
+
+	private String providerName;
+
 	@Deprecated
 	public TurSNServer(String turSNServer) {
 		super();
 		this.turSNServer = turSNServer;
-
+		this.siteName = SITE_NAME_DEFAULT;
+		this.locale = LOCALE_DEFAULT;
+		this.providerName = PROVIDER_NAME_DEFAULT;
 	}
 
 	public TurSNServer(URL serverURL, String siteName) {
 		super();
 		this.serverURL = serverURL;
 		this.siteName = siteName;
-		this.locale = "en_US";
+		this.locale = LOCALE_DEFAULT;
 		this.turSNServer = String.format("%s/api/sn/%s", this.serverURL, this.siteName, this.locale);
-
+		this.providerName = PROVIDER_NAME_DEFAULT;
 	}
 
 	public TurSNServer(URL serverURL, String siteName, String locale) {
@@ -99,6 +113,27 @@ public class TurSNServer {
 		this.siteName = siteName;
 		this.locale = locale;
 		this.turSNServer = String.format("%s/api/sn/%s", this.serverURL, this.siteName);
+		this.providerName = PROVIDER_NAME_DEFAULT;
+	}
+
+	public TurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials) {
+		super();
+		this.serverURL = serverURL;
+		this.siteName = siteName;
+		this.locale = locale;
+		this.turSNServer = String.format("%s/api/sn/%s", this.serverURL, this.siteName);
+		this.credentials = credentials;
+		this.providerName = PROVIDER_NAME_DEFAULT;
+	}
+
+	public TurSNServer(URL serverURL, TurUsernamePasswordCredentials credentials) {
+		super();
+		this.serverURL = serverURL;
+		this.siteName = SITE_NAME_DEFAULT;
+		this.locale = LOCALE_DEFAULT;
+		this.turSNServer = String.format("%s/api/sn/%s", this.serverURL, this.siteName);
+		this.credentials = credentials;
+		this.providerName = PROVIDER_NAME_DEFAULT;
 
 	}
 
@@ -132,6 +167,42 @@ public class TurSNServer {
 
 	public void setLocale(String locale) {
 		this.locale = locale;
+	}
+
+	public TurUsernamePasswordCredentials getCredentials() {
+		return credentials;
+	}
+
+	public void setCredentials(TurUsernamePasswordCredentials credentials) {
+		this.credentials = credentials;
+	}
+
+	public String getProviderName() {
+		return providerName;
+	}
+
+	public void setProviderName(String providerName) {
+		this.providerName = providerName;
+	}
+
+	public void importItems(TurSNJobItems turSNJobItems, boolean showOutput) {
+		TurSNJobUtils.importItems(turSNJobItems, this, showOutput);
+	}
+
+	public void importItems(TurSNJobItems turSNJobItems) {
+		if (credentials != null) {
+			importItems(turSNJobItems, false);
+		} else {
+			logger.severe("No credentials to import Items");
+		}
+	}
+
+	public void deleteItemsByType(String typeName) {
+		if (credentials != null) {
+			TurSNJobUtils.deleteItemsByType(this, typeName);
+		} else {
+			logger.severe(String.format("No credentials to delete items by %s type", typeName));
+		}
 	}
 
 	public List<TurSNLocale> getLocales() {
