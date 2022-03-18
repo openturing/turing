@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Map;
 
 /**
@@ -32,7 +33,7 @@ import java.util.Map;
  */
 @Component
 public class TurSNThesaurusProcess {
-    private static final Logger logger = LogManager.getLogger(TurSNThesaurusProcess.class);
+    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
     @Autowired
     private TurThesaurusProcessor turThesaurusProcessor;
     public void processThesaurus(TurSNJobItem turSNJobItem, TurSNSite turSNSite,

@@ -1,6 +1,7 @@
 package com.viglet.turing.api.cognitive;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -29,7 +30,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag( name = "Cognitive", description = "Cognitive API")
 
 public class TurCognitiveAPI {
-	private static final Logger logger = LogManager.getLogger(TurCognitiveAPI.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Operation(summary = "Cognitive Detect Language")
 	@GetMapping("/detect-language/")

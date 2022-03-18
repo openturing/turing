@@ -42,7 +42,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurSEVendorAPI {
 
 	@Autowired
-	TurSEVendorRepository turSEVendorRepository;
+	private TurSEVendorRepository turSEVendorRepository;
 
 	@Operation(summary = "Search Engine Vendor List")
 	@GetMapping

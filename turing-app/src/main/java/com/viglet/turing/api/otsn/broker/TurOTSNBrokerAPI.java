@@ -18,6 +18,7 @@
 package com.viglet.turing.api.otsn.broker;
 
 import java.io.StringReader;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,7 +57,7 @@ import org.w3c.dom.NodeList;
 @RequestMapping("/api/otsn/broker")
 @Tag(name = "OTSN Broker", description = "OTSN Broker API")
 public class TurOTSNBrokerAPI {
-	private static final Logger logger = LogManager.getLogger(TurOTSNBrokerAPI.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired

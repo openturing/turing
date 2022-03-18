@@ -18,6 +18,7 @@
 package com.viglet.turing.converse;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -55,7 +56,7 @@ import com.viglet.turing.solr.TurSolrInstanceProcess;
 
 @Component
 public class TurConverseSE {
-	private static final Logger logger = LogManager.getLogger(TurConverseSE.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	private static final String FQ_KEY_VALUE = "%s:%s";
 	private static final String FQ_KEY_VALUE_EXACT = "%s:\"%s\"";
 	private static final String SOLR_ANY = "[\"\" TO *]";

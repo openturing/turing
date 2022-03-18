@@ -16,6 +16,8 @@
  */
 package com.viglet.turing.wem.listener;
 
+import java.lang.invoke.MethodHandles;
+
 import com.viglet.turing.wem.broker.indexer.TurWEMIndexer;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.vignette.as.server.event.AsPrePersistenceEvent;
@@ -23,7 +25,7 @@ import com.vignette.logging.context.ContextLogger;
 
 public class PrePersistenceHandler {
 
-	private static final ContextLogger log = ContextLogger.getLogger(PrePersistenceHandler.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private IHandlerConfiguration config;
 

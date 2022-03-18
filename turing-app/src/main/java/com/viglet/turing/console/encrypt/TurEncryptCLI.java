@@ -17,6 +17,8 @@
 
 package com.viglet.turing.console.encrypt;
 
+import java.lang.invoke.MethodHandles;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jasypt.encryption.StringEncryptor;
@@ -27,19 +29,18 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TurEncryptCLI {
-	private static final Log logger = LogFactory.getLog(TurEncryptCLI.class);
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Qualifier("turEncryptor")
 	@Autowired
-	StringEncryptor stringEncryptor;
+	private StringEncryptor stringEncryptor;
 
 	public String encrypt(String input) {
-		String result = null;
 		try {
 			return stringEncryptor.encrypt(input);
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
-		return result;
+		return null;
 	}
 
 }

@@ -22,6 +22,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -32,7 +33,7 @@ import java.net.URL;
  */
 @Component
 public class TurSolrCache {
-    private static final Logger logger = LogManager.getLogger(TurSolrCache.class);
+    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
     @Cacheable(value = "solrCore", sync = true)
     public boolean isSolrCoreExists(String urlString) {

@@ -16,6 +16,8 @@
  */
 package com.viglet.turing.wem.listener;
 
+import java.lang.invoke.MethodHandles;
+
 import com.viglet.turing.wem.broker.indexer.TurWEMIndexer;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.javabean.ManagedObject;
@@ -24,7 +26,7 @@ import com.vignette.logging.context.ContextLogger;
 
 public class DeploymentHandler {
 
-	private static final ContextLogger log = ContextLogger.getLogger(DeploymentHandler.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
     private IHandlerConfiguration config;
 

@@ -36,12 +36,13 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.invoke.MethodHandles;
 import java.util.*;
 import java.util.Map.Entry;
 
 @Component
 public class TurSNProcessQueue {
-    private static final Logger logger = LogManager.getLogger(TurSNProcessQueue.class);
+    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
     @Autowired
     private TurSolr turSolr;
     @Autowired
@@ -134,7 +135,7 @@ public class TurSNProcessQueue {
 
     public boolean deindex(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
         logger.debug("Deindex");
-        return turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale()).map(turSolrInstance -> {
+        return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale()).map(turSolrInstance -> {
             if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
                 turSolr.desindexing(turSolrInstance, (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE));
             } else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.TYPE_ATTRIBUTE)) {
@@ -158,7 +159,7 @@ public class TurSNProcessQueue {
                 turSNMergeProvidersProcess.mergeDocuments(turSNSite, consolidateResults, turSNJobItem.getLocale()));
 
         // SE
-        return turSolrInstanceProcess.initSolrInstance(turSNSite, turSNJobItem.getLocale()).map(turSolrInstance -> {
+        return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale()).map(turSolrInstance -> {
             turSolr.indexing(turSolrInstance, turSNSite, attributes);
             return true;
         }).orElse(false);

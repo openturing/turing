@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.converse;
 
+import java.lang.invoke.MethodHandles;
 import java.security.SecureRandom;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
@@ -41,7 +42,7 @@ import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatRes
 
 @Component
 public class TurConverse {
-	private static final Logger logger = LogManager.getLogger(TurConverse.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurConverseChatResponseRepository turConverseChatResponseRepository;
 	@Autowired

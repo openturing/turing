@@ -19,6 +19,7 @@ package com.viglet.turing.onstartup.nlp;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.URL;
 
 import org.apache.commons.io.FileUtils;
@@ -26,7 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class TurOpenNLPModelsOnStartup {
-	private static final Logger logger = LogManager.getLogger(TurOpenNLPModelsOnStartup.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	// Reset
 	public static final String RESET = "\033[0m"; // Text Reset
 

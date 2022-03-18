@@ -20,6 +20,7 @@ package com.viglet.turing.exchange.sn;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -45,7 +46,7 @@ import com.viglet.turing.utils.TurUtils;
 
 @Component
 public class TurSNSiteExport {
-	private static final Log logger = LogFactory.getLog(TurSNSiteExport.class);
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired

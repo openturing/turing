@@ -17,9 +17,9 @@
 
 package com.viglet.turing.api.otca.af;
 
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -77,7 +77,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/otca/af")
 @Tag(name = "OTCA", description = "OTCA API")
 public class TurOTCAAutorityFileAPI {
-	private static final Log logger = LogFactory.getLog(TurOTCAAutorityFileAPI.class);
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
@@ -92,10 +92,6 @@ public class TurOTCAAutorityFileAPI {
 	private TurTermVariationRepository turTermVariationRepository;
 	@Autowired
 	private TurTermVariationLanguageRepository turTermVariationLanguageRepository;
-	@Autowired
-	ServletContext servletContext;
-	@Autowired
-	TurUtils turUtils;
 
 	private static final String EMPTY_TERM_NAME = "<EMPTY>";
 

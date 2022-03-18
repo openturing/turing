@@ -41,9 +41,9 @@ import org.springframework.security.web.firewall.StrictHttpFirewall;
 @ComponentScan(basePackageClasses = TurCustomUserDetailsService.class)
 public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 	@Autowired
-	UserDetailsService userDetailsService;
+	private UserDetailsService userDetailsService;
 	@Autowired
-	TurAuthenticationEntryPoint turAuthenticationEntryPoint;
+	protected TurAuthenticationEntryPoint turAuthenticationEntryPoint;
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {

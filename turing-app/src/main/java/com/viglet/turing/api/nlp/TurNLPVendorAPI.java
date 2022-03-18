@@ -33,7 +33,7 @@ import java.util.List;
 public class TurNLPVendorAPI {
 
 	@Autowired
-	TurNLPVendorRepository turNLPVendorRepository;
+	private TurNLPVendorRepository turNLPVendorRepository;
 
 	@Operation(summary = "Natural Language Processing Vendor List")
 	@GetMapping

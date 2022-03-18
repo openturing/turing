@@ -42,7 +42,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurMLCategoryAPI {
 
 	@Autowired
-	TurMLCategoryRepository turMLCategoryRepository;
+	private TurMLCategoryRepository turMLCategoryRepository;
 
 	@Operation(summary = "Machine Learning Category List")
 	@GetMapping

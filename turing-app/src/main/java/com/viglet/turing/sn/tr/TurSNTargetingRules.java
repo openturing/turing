@@ -27,7 +27,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TurSNTargetingRules {
-
 	public String run(TurSNTargetingRuleMethod method, List<String> trs) {
 		if (method.equals(TurSNTargetingRuleMethod.AND))
 			return this.andMethod(trs);
@@ -46,18 +45,18 @@ public class TurSNTargetingRules {
 		Map<String, List<String>> trMap = new HashMap<>();
 
 		for (String tr : trs) {
-			String[] targetingRuleParts = tr.split(":");
-			if (targetingRuleParts.length == 2) {
-				String attribute = targetingRuleParts[0].trim();
-				String value = targetingRuleParts[1];
-				trMap.computeIfAbsent(attribute, k -> trMap.put(attribute, new ArrayList<>()));
+			if (tr.contains(":")) {
+				String attribute = tr.substring(0, tr.indexOf(":"));
+				String value = tr.substring(tr.indexOf(":") + 1);
+				if (!trMap.containsKey(attribute))
+					trMap.put(attribute, new ArrayList<>());
 				trMap.get(attribute).add(value);
 			}
 		}
 
 		String targetingRuleAND = "";
 
-		for (Entry<String, List<String>> trEntry : trMap.entrySet()) {
+		for (Entry<String, List<String>> trEntry : trMap.entrySet()) {			
 			String targetingRuleOR = "";
 			targetingRuleQuery.append(targetingRuleAND);
 			targetingRuleQuery.append("(");

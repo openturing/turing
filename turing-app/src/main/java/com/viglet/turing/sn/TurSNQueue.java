@@ -25,7 +25,7 @@ import java.util.Enumeration;
 @Component
 public class TurSNQueue {
 	@Autowired
-	JmsTemplate jmsTemplate;
+	private JmsTemplate jmsTemplate;
 
 	public int getQueueSize() {
 		return jmsTemplate.browse(TurSNConstants.INDEXING_QUEUE, (session, browser) -> {

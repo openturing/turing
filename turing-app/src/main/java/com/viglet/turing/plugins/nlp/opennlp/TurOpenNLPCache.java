@@ -19,6 +19,7 @@ package com.viglet.turing.plugins.nlp.opennlp;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +35,7 @@ import opennlp.tools.tokenize.TokenizerModel;
 
 @Component
 public class TurOpenNLPCache {
-	static final Logger logger = LogManager.getLogger(TurOpenNLPCache.class.getName());
+	static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Cacheable("nlpName")
 	public TurNameFinderME nameFinderMe(String entityPath) {

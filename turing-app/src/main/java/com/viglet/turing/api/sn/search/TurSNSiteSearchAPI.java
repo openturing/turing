@@ -43,6 +43,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -51,8 +53,7 @@ import java.util.*;
 @RequestMapping("/api/sn/{siteName}/search")
 @Tag(name = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
-	private static final Logger logger = LogManager.getLogger(TurSNSiteSearchAPI.class);
-
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
@@ -78,10 +79,10 @@ public class TurSNSiteSearchAPI {
 		TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName,
 				new TurSEParameters(q, fq, requestTargetingRules(tr), currentPage, sort, rows, autoCorrectionDisabled),
 				locale, TurSNUtils.requestToURI(request));
-		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 
 		TurSNSiteSearchBean turSNSiteSearchBean = new TurSNSiteSearchBean();
-		turSolrInstanceProcess.initSolrInstance(turSNSite, locale).ifPresent(turSolrInstance -> {
+		turSolrInstanceProcess.initSolrInstance(siteName, locale).ifPresent(turSolrInstance -> {
+			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 			TurSEParameters turSEParameters = turSNSiteSearchContext.getTurSEParameters();
 			turSEParameters.setCurrentPage(prepareQueryCurrentPage(turSEParameters));
 			turSEParameters.setRows(prepareQueryRows(turSEParameters));

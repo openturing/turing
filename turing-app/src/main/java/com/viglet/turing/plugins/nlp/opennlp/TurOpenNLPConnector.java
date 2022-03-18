@@ -17,6 +17,7 @@
 
 package com.viglet.turing.plugins.nlp.opennlp;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,7 +40,7 @@ import opennlp.tools.util.Span;
 
 @Component
 public class TurOpenNLPConnector implements TurNLPPlugin {
-	static final Logger logger = LogManager.getLogger(TurOpenNLPConnector.class.getName());
+	static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Autowired
 	private TurOpenNLPCache turOpenNLPCache;
