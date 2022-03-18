@@ -1,3 +1,24 @@
+
+## 0.3.6
+
+#### IMPROVEMENTS
+* Java 17
+
+## 0.3.5
+
+#### NEW FEATURES
+* Spotlight
+* Multi language
+* UI: Angular 13
+
+#### IMPROVEMENTS
+* Java 14
+* Spring Boot 2.5.6
+
+## 0.3.4
+
+#### NEW FEATURES
+
 ## 0.3.3
 
 #### NEW FEATURES

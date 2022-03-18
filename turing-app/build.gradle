@@ -7,10 +7,8 @@ buildscript {
     }
     repositories {
         mavenCentral()
-        maven {
-            url "https://packages.atlassian.com/mvn/maven-external/"
-        }
     }
+
     dependencies { 
     	classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     }
@@ -21,7 +19,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
     id "com.gorylenko.gradle-git-properties" version '2.4.0'
-    id 'de.undercouch.download' version '5.0.1'
+    id 'de.undercouch.download' version '5.0.2'
     id 'eclipse'
     id 'jacoco'
     id 'org.sonarqube' version '3.3'
@@ -40,7 +38,7 @@ sonarqube {
 
 jar {
     archiveBaseName = 'viglet-turing'
-    archiveVersion = '0.3.5'
+    archiveVersion = '0.3.6'
 }
 
 eclipse {
@@ -70,14 +68,11 @@ bootJar {
 
 repositories {
     mavenCentral()
-    maven {
-        url "https://packages.atlassian.com/mvn/maven-external/"
-    }
 }
 
 group = 'com.viglet.turing'
-sourceCompatibility = 14
-targetCompatibility = 14
+sourceCompatibility = 17
+targetCompatibility = 17
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
@@ -94,8 +89,6 @@ if (!project.hasProperty('no-ui')) {
 configurations {
     all*.exclude group: 'xml-apis'
 }
-
-ext['log4j2.version'] = '2.17.1'
 
 dependencies {
     compileOnly group: 'javax.servlet', name: 'servlet-api', version: '2.5'
@@ -128,10 +121,10 @@ dependencies {
     implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
 
     // Spring
-    implementation group: 'org.springframework', name: 'spring-test', version: '5.3.16'
+    implementation group: 'org.springframework', name: 'spring-test', version: '5.3.17'
 
     // Jackson
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.13.1'
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.13.2'
 
     // H2
     implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
@@ -155,8 +148,8 @@ dependencies {
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
     implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
 
-    // EhCache
-    implementation group: 'net.sf.ehcache', name: 'ehcache', version: '2.10.10.1.14'
+    // Hazelcast
+	implementation group: 'com.hazelcast', name: 'hazelcast-all', version: '4.2.4'
 
     // Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version: "${tika}"
@@ -170,7 +163,7 @@ dependencies {
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
 
     //ActiveMQ using KahaDB
-    implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.16.4'
+    implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.17.0'
 
     // SpringDoc
     implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.6'
