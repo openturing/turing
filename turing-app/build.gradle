@@ -146,7 +146,7 @@ dependencies {
     implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.3'
 
     // JSON
-    implementation group: 'org.json', name: 'json', version: '20211205'
+    implementation group: 'org.json', name: 'json', version: '20220320'
 
     // CoreNLP
     implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '4.4.0'
