@@ -12,8 +12,6 @@ public class TurSNParamType {
 	public static final String SORT = "sort";
 	public static final String ROWS = "rows";
 	public static final String LOCALE = "_setlocale";
-	public static final String USER_ID = "userid";
 	public static final String AUTO_CORRECTION_DISABLED = "nfpr";
-	public static final String PRE_SEARCH = "_presearch";
 
 }

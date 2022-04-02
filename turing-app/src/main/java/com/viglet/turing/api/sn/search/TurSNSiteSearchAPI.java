@@ -116,7 +116,7 @@ public class TurSNSiteSearchAPI {
 	public ResponseEntity<List<String>> turSNSiteSearchLatestImpersonate(@PathVariable String siteName,
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "5") Integer rows,
 			@RequestParam(required = true, name = TurSNParamType.LOCALE) String locale,
-			@RequestParam(required = true, name = TurSNParamType.USER_ID) String userId, Principal principal,
+			@RequestParam(required = true, name = "userId") String userId, Principal principal,
 			HttpServletRequest request) {
 		if (principal != null) {
 			return new ResponseEntity<>(turSNSearchProcess.latestSearches(siteName, locale, userId, rows),

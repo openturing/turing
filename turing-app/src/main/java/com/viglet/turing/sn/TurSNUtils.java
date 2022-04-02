@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -111,21 +110,7 @@ public class TurSNUtils {
 
 		return modifiedURI(uri, sbQueryString);
 	}
-
-	public static URI removePrivateParams(URI uri) {
-		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
-		StringBuilder sbQueryString = new StringBuilder();
-		params.stream()
-				.filter(nameValuePair -> !nameValuePair.getName().equals(TurSNParamType.PRE_SEARCH)
-						&& !nameValuePair.getName().equals(TurSNParamType.TARGETING_RULES)
-						&& !nameValuePair.getName().equals(TurSNParamType.USER_ID))
-				.collect(Collectors.toList()).forEach(nameValuePair -> {
-					addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
-				});
-
-		return modifiedURI(uri, sbQueryString);
-	}
-
+	
 	public static URI removeFilterQuery(URI uri, String fq) {
 		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
 		StringBuilder sbQueryString = new StringBuilder();

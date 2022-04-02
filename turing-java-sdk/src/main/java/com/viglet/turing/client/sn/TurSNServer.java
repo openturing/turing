@@ -126,7 +126,7 @@ public class TurSNServer {
 		this.providerName = PROVIDER_NAME_DEFAULT;
 		this.turSNSitePostParams = new TurSNSitePostParamsBean();
 		this.turSNSitePostParams.setUserId(null);
-		this.turSNSitePostParams.setPreSearch(false);
+		this.turSNSitePostParams.setUseMetrics(true);
 	}
 
 	public TurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials,
@@ -140,7 +140,7 @@ public class TurSNServer {
 		this.providerName = PROVIDER_NAME_DEFAULT;
 		this.turSNSitePostParams = new TurSNSitePostParamsBean();
 		this.turSNSitePostParams.setUserId(userId);
-		this.turSNSitePostParams.setPreSearch(false);
+		this.turSNSitePostParams.setUseMetrics(true);
 
 	}
 
@@ -323,7 +323,7 @@ public class TurSNServer {
 		betweenDatesRequest(turingURL);
 		pageNumberRequest(turingURL);
 		if (this.getCredentials() != null) {
-			System.out.println("Tem Credencial");
+			this.getTurSNSitePostParams().setUseMetrics(this.turSNQuery.getUseMetrics());
 			return preparePostRequest(turingURL);
 		} else {
 			return prepareGetRequest(turingURL);

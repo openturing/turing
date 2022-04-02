@@ -27,7 +27,7 @@ public class TurSNSitePostParamsBean {
 
 	private String userId;
 
-	private boolean preSearch = false;
+	private boolean useMetrics = true;
 
 	public String getUserId() {
 		return userId;
@@ -37,12 +37,13 @@ public class TurSNSitePostParamsBean {
 		this.userId = userId;
 	}
 
-	public boolean isPreSearch() {
-		return preSearch;
+	public boolean getUseMetrics() {
+		return useMetrics;
 	}
 
-	public void setPreSearch(boolean preSearch) {
-		this.preSearch = preSearch;
+	public void setUseMetrics(boolean useMetrics) {
+		this.useMetrics = useMetrics;
 	}
 
 }
+

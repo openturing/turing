@@ -137,7 +137,7 @@ public class TurSNSearchProcess {
 
 		if (!turSNSiteSearchContext.getTurSEParameters().getQuery().trim().equals("*")
 				&& !(turSNSiteSearchContext.getTurSNSitePostParamsBean() != null
-						&& turSNSiteSearchContext.getTurSNSitePostParamsBean().isPreSearch())) {
+						&& turSNSiteSearchContext.getTurSNSitePostParamsBean().getUseMetrics())) {
 			TurSNSiteMetricAccess turSNSiteMetricAccess = new TurSNSiteMetricAccess();
 
 			turSNSiteMetricAccess.setAccessDate(new Date());

@@ -45,6 +45,7 @@ public class TurSNQuery {
 	private List<String> fieldQueries;
 	private List<String> targetingRules;
 	private int pageNumber;
+	private boolean useMetrics;
 
 	public String getQuery() {
 		return query;
@@ -139,6 +140,14 @@ public class TurSNQuery {
 
 	public void setPageNumber(int pageNumber) {
 		this.pageNumber = pageNumber;
+	}
+
+	public boolean getUseMetrics() {
+		return useMetrics;
+	}
+
+	public void setUseMetrics(boolean useMetrics) {
+		this.useMetrics = useMetrics;
 	}
 
 }
