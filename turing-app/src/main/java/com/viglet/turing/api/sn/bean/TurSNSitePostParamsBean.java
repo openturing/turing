@@ -27,7 +27,7 @@ public class TurSNSitePostParamsBean {
 
 	private String userId;
 
-	private boolean useMetrics = true;
+	private boolean populateMetrics = true;
 
 	public String getUserId() {
 		return userId;
@@ -37,13 +37,12 @@ public class TurSNSitePostParamsBean {
 		this.userId = userId;
 	}
 
-	public boolean getUseMetrics() {
-		return useMetrics;
+	public boolean isPopulateMetrics() {
+		return populateMetrics;
 	}
 
-	public void setUseMetrics(boolean useMetrics) {
-		this.useMetrics = useMetrics;
+	public void setPopulateMetrics(boolean populateMetrics) {
+		this.populateMetrics = populateMetrics;
 	}
 
 }
-

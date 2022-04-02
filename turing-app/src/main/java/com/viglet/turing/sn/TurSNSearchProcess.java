@@ -156,7 +156,7 @@ public class TurSNSearchProcess {
 
 	private boolean useMetrics(TurSNSiteSearchContext turSNSiteSearchContext) {
 		return (turSNSiteSearchContext.getTurSNSitePostParamsBean() != null
-				&& turSNSiteSearchContext.getTurSNSitePostParamsBean().getUseMetrics())
+				&& turSNSiteSearchContext.getTurSNSitePostParamsBean().isPopulateMetrics())
 				|| turSNSiteSearchContext.getTurSNSitePostParamsBean() == null;
 	}
 

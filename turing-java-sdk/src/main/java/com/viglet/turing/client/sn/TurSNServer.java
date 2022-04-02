@@ -129,7 +129,7 @@ public class TurSNServer {
 		this.providerName = PROVIDER_NAME_DEFAULT;
 		this.turSNSitePostParams = new TurSNSitePostParamsBean();
 		this.turSNSitePostParams.setUserId(null);
-		this.turSNSitePostParams.setUseMetrics(true);
+		this.turSNSitePostParams.setPopulateMetrics(true);
 	}
 
 	public TurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials,
@@ -143,7 +143,7 @@ public class TurSNServer {
 		this.providerName = PROVIDER_NAME_DEFAULT;
 		this.turSNSitePostParams = new TurSNSitePostParamsBean();
 		this.turSNSitePostParams.setUserId(userId);
-		this.turSNSitePostParams.setUseMetrics(true);
+		this.turSNSitePostParams.setPopulateMetrics(true);
 
 	}
 
@@ -375,7 +375,7 @@ public class TurSNServer {
 			betweenDatesRequest(turingURL);
 			pageNumberRequest(turingURL);
 			if (this.getCredentials() != null) {
-				this.getTurSNSitePostParams().setUseMetrics(this.turSNQuery.getUseMetrics());
+				this.getTurSNSitePostParams().setPopulateMetrics(this.turSNQuery.isPopulateMetrics());
 				return preparePostRequest(turingURL);
 			} else {
 				return prepareGetRequest(turingURL);
