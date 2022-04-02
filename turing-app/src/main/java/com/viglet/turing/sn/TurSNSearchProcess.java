@@ -134,10 +134,8 @@ public class TurSNSearchProcess {
 	}
 
 	public void populateMetrics(TurSNSite turSNSite, TurSNSiteSearchContext turSNSiteSearchContext, long numFound) {
-
 		if (!turSNSiteSearchContext.getTurSEParameters().getQuery().trim().equals("*")
-				&& !(turSNSiteSearchContext.getTurSNSitePostParamsBean() != null
-						&& turSNSiteSearchContext.getTurSNSitePostParamsBean().getUseMetrics())) {
+				&& useMetrics(turSNSiteSearchContext)) {
 			TurSNSiteMetricAccess turSNSiteMetricAccess = new TurSNSiteMetricAccess();
 
 			turSNSiteMetricAccess.setAccessDate(new Date());
@@ -154,6 +152,12 @@ public class TurSNSearchProcess {
 			turSNSiteMetricAccess.setNumFound(numFound);
 			turSNSiteMetricAccessRepository.save(turSNSiteMetricAccess);
 		}
+	}
+
+	private boolean useMetrics(TurSNSiteSearchContext turSNSiteSearchContext) {
+		return (turSNSiteSearchContext.getTurSNSitePostParamsBean() != null
+				&& turSNSiteSearchContext.getTurSNSitePostParamsBean().getUseMetrics())
+				|| turSNSiteSearchContext.getTurSNSitePostParamsBean() == null;
 	}
 
 	private TurSESpellCheckResult prepareQueryAutoCorrection(TurSNSiteSearchContext turSNSiteSearchContext,

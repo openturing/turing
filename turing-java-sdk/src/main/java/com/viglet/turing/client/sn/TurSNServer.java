@@ -48,6 +48,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.api.sn.bean.TurSNSearchLatestRequestBean;
 import com.viglet.turing.api.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContext;
@@ -87,6 +88,8 @@ public class TurSNServer {
 	private static final String AUTO_COMPLETE_CONTEXT = "/ac";
 
 	private static final String LOCALES_CONTEXT = "/search/locales";
+
+	private static final String LATEST_SEARCHES_CONTEXT = "/search/latest";
 
 	private static final String SEARCH_CONTEXT = "/search";
 
@@ -217,6 +220,43 @@ public class TurSNServer {
 		this.turSNSitePostParams = turSNSitePostParams;
 	}
 
+	public List<String> getLatestSearches(int rows) {
+		try {
+			URIBuilder turingURL = new URIBuilder(turSNServer.concat(LATEST_SEARCHES_CONTEXT))
+					.addParameter(TurSNParamType.LOCALE, getLocale())
+					.addParameter(TurSNParamType.ROWS, Integer.toString(rows));
+
+			if (this.getCredentials() != null) {
+				HttpPost httpPost = new HttpPost(turingURL.build());
+
+				httpPost.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+				httpPost.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+				httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
+
+				if (this.getTurSNSitePostParams() != null && this.getTurSNSitePostParams().getUserId() != null) {
+					TurSNSearchLatestRequestBean turSNSearchLatestRequestBean = new TurSNSearchLatestRequestBean();
+					turSNSearchLatestRequestBean.setUserId(this.getTurSNSitePostParams().getUserId());
+					String jsonResult = new ObjectMapper().writeValueAsString(turSNSearchLatestRequestBean);
+					httpPost.setEntity(new StringEntity(jsonResult, StandardCharsets.UTF_8));
+				}
+				TurSNClientUtils.basicAuth(httpPost, this.getCredentials());
+				try {
+					return new ObjectMapper().readValue(openConnectionAndRequest(httpPost),
+							new TypeReference<List<String>>() {
+							});
+				} catch (IOException e) {
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
+				logger.fine(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
+
+			}
+		} catch (JsonProcessingException | URISyntaxException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+		}
+		return Collections.emptyList();
+
+	}
+
 	public void importItems(TurSNJobItems turSNJobItems, boolean showOutput) {
 		TurSNJobUtils.importItems(turSNJobItems, this, showOutput);
 	}
@@ -291,43 +331,60 @@ public class TurSNServer {
 
 	public QueryTurSNResponse query(TurSNQuery turSNQuery) {
 		this.turSNQuery = turSNQuery;
-
-		try (CloseableHttpClient client = HttpClients.createDefault()) {
-			return createTuringResponse(executeQueryRequest(prepareQueryRequest(), client));
-		} catch (URISyntaxException | IOException e) {
+		try {
+			TurSNSiteSearchBean turSNSiteSearchBean = new ObjectMapper()
+					.readValue(openConnectionAndRequest(prepareQueryRequest()), TurSNSiteSearchBean.class);
+			return createTuringResponse(turSNSiteSearchBean);
+		} catch (IOException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
-
 		return new QueryTurSNResponse();
 	}
 
-	private TurSNSiteSearchBean executeQueryRequest(HttpRequestBase httpRequestBase, CloseableHttpClient client) {
-		try {
-			HttpResponse response = client.execute(httpRequestBase);
-			String result = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-			return new ObjectMapper().readValue(result, TurSNSiteSearchBean.class);
+	private String openConnectionAndRequest(HttpRequestBase httpRequestBase) {
+		try (CloseableHttpClient client = HttpClients.createDefault()) {
+			return executeQueryRequest(httpRequestBase, client);
 		} catch (IOException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
 		return null;
 	}
 
-	private HttpRequestBase prepareQueryRequest() throws URISyntaxException {
-		URIBuilder turingURL = new URIBuilder(turSNServer.concat(SEARCH_CONTEXT))
-				.addParameter(TurSNParamType.LOCALE, getLocale())
-				.addParameter(TurSNParamType.QUERY, this.turSNQuery.getQuery());
-		rowsRequest(turingURL);
-		fieldQueryRequest(turingURL);
-		targetingRulesRequest(turingURL);
-		sortRequest(turingURL);
-		betweenDatesRequest(turingURL);
-		pageNumberRequest(turingURL);
-		if (this.getCredentials() != null) {
-			this.getTurSNSitePostParams().setUseMetrics(this.turSNQuery.getUseMetrics());
-			return preparePostRequest(turingURL);
-		} else {
-			return prepareGetRequest(turingURL);
+	private String executeQueryRequest(HttpRequestBase httpRequestBase, CloseableHttpClient client) {
+		try {
+			HttpResponse response = client.execute(httpRequestBase);
+			String result = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+			return result;
+		} catch (IOException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
+		return null;
+	}
+
+	private HttpRequestBase prepareQueryRequest() {
+
+		try {
+			URIBuilder turingURL = new URIBuilder(turSNServer.concat(SEARCH_CONTEXT))
+					.addParameter(TurSNParamType.LOCALE, getLocale())
+					.addParameter(TurSNParamType.QUERY, this.turSNQuery.getQuery());
+
+			rowsRequest(turingURL);
+			fieldQueryRequest(turingURL);
+			targetingRulesRequest(turingURL);
+			sortRequest(turingURL);
+			betweenDatesRequest(turingURL);
+			pageNumberRequest(turingURL);
+			if (this.getCredentials() != null) {
+				this.getTurSNSitePostParams().setUseMetrics(this.turSNQuery.getUseMetrics());
+				return preparePostRequest(turingURL);
+			} else {
+				return prepareGetRequest(turingURL);
+			}
+
+		} catch (URISyntaxException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+		}
+		return null;
 	}
 
 	private QueryTurSNResponse createTuringResponse(TurSNSiteSearchBean turSNSiteSearchBean) {

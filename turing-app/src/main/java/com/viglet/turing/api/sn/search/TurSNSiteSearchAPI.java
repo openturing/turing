@@ -17,6 +17,7 @@
 
 package com.viglet.turing.api.sn.search;
 
+import com.viglet.turing.api.sn.bean.TurSNSearchLatestRequestBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.api.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
@@ -42,6 +43,7 @@ import java.net.URISyntaxException;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/sn/{siteName}/search")
@@ -77,8 +79,8 @@ public class TurSNSiteSearchAPI {
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
 			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0") Integer autoCorrectionDisabled,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale,
-			@RequestBody TurSNSitePostParamsBean turSNSitePostParamsBean,
-			Principal principal, HttpServletRequest request) {
+			@RequestBody TurSNSitePostParamsBean turSNSitePostParamsBean, Principal principal,
+			HttpServletRequest request) {
 		if (principal != null) {
 			return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
 					new TurSEParameters(q, fq, currentPage, sort, rows, autoCorrectionDisabled,
@@ -101,27 +103,21 @@ public class TurSNSiteSearchAPI {
 	}
 
 	@PostMapping("latest")
-	public ResponseEntity<List<String>> turSNSiteSearchLatest(@PathVariable String siteName,
+	public ResponseEntity<List<String>> turSNSiteSearchLatestImpersonate(@PathVariable String siteName,
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "5") Integer rows,
-			@RequestParam(required = true, name = TurSNParamType.LOCALE) String locale, Principal principal,
+			@RequestParam(required = true, name = TurSNParamType.LOCALE) String locale,
+			@RequestBody Optional<TurSNSearchLatestRequestBean> turSNSearchLatestRequestBean, Principal principal,
 			HttpServletRequest request) {
 		if (principal != null) {
-			return new ResponseEntity<>(turSNSearchProcess.latestSearches(siteName, locale, principal.getName(), rows),
-					HttpStatus.OK);
+			return new ResponseEntity<>(turSNSearchProcess.latestSearches(siteName, locale,
+					isLatestImpersonate(turSNSearchLatestRequestBean) ? turSNSearchLatestRequestBean.get().getUserId()
+							: principal.getName(),
+					rows), HttpStatus.OK);
 		}
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 	}
 
-	@PostMapping("latest/impersonate")
-	public ResponseEntity<List<String>> turSNSiteSearchLatestImpersonate(@PathVariable String siteName,
-			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "5") Integer rows,
-			@RequestParam(required = true, name = TurSNParamType.LOCALE) String locale,
-			@RequestParam(required = true, name = "userId") String userId, Principal principal,
-			HttpServletRequest request) {
-		if (principal != null) {
-			return new ResponseEntity<>(turSNSearchProcess.latestSearches(siteName, locale, userId, rows),
-					HttpStatus.OK);
-		}
-		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+	private boolean isLatestImpersonate(Optional<TurSNSearchLatestRequestBean> turSNSearchLatestRequestBean) {
+		return turSNSearchLatestRequestBean.isPresent() && turSNSearchLatestRequestBean.get().getUserId() != null;
 	}
 }
