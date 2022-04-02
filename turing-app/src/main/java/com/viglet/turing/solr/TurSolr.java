@@ -17,6 +17,7 @@
 
 package com.viglet.turing.solr;
 
+import com.viglet.turing.api.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
@@ -325,7 +326,7 @@ public class TurSolr {
 
 		prepareQueryFilterQuery(turSEParameters, query);
 
-		prepareQueryTargetingRules(turSEParameters, query);
+		prepareQueryTargetingRules(context.getTurSNSitePostParamsBean(), query);
 
 		List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = prepareQueryMLT(turSNSite, query);
 		List<TurSNSiteFieldExt> turSNSiteHlFieldExts = prepareQueryHL(turSNSite, query);
@@ -470,11 +471,11 @@ public class TurSolr {
 		return turSNSite.getFacet() == 1 && turSNSiteFacetFieldExts != null && !turSNSiteFacetFieldExts.isEmpty();
 	}
 
-	private void prepareQueryTargetingRules(TurSEParameters turSEParameters, SolrQuery query) {
+	private void prepareQueryTargetingRules(TurSNSitePostParamsBean turSNSitePostParamsBean, SolrQuery query) {
 		// Targeting Rule
-		if (turSEParameters.getTargetingRules() != null && !turSEParameters.getTargetingRules().isEmpty())
+		if (turSNSitePostParamsBean.getTargetingRules() != null && !turSNSitePostParamsBean.getTargetingRules().isEmpty())
 			query.addFilterQuery(
-					turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, turSEParameters.getTargetingRules()));
+					turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, turSNSitePostParamsBean.getTargetingRules()));
 	}
 
 	private void prepareQueryFilterQuery(TurSEParameters turSEParameters, SolrQuery query) {
@@ -564,8 +565,6 @@ public class TurSolr {
 		String[] filterQueryArr = new String[turSEParameters.getFilterQueries().size()];
 		filterQueryArr = turSEParameters.getFilterQueries().toArray(filterQueryArr);
 		query.setFilterQueries(filterQueryArr);
-
-		prepareQueryTargetingRules(turSEParameters, query);
 
 		QueryResponse queryResponse;
 		try {

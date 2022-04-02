@@ -74,7 +74,6 @@ public class TurSNSiteSearchAPI {
 			@RequestParam(required = false, name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
 			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
-			@RequestParam(required = false, name = TurSNParamType.TARGETING_RULES) List<String> tr,
 			@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
 			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0") Integer autoCorrectionDisabled,
@@ -82,9 +81,9 @@ public class TurSNSiteSearchAPI {
 			@RequestBody TurSNSitePostParamsBean turSNSitePostParamsBean, Principal principal,
 			HttpServletRequest request) {
 		if (principal != null) {
+			turSNSitePostParamsBean.setTargetingRules(turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
 			return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-					new TurSEParameters(q, fq, currentPage, sort, rows, autoCorrectionDisabled,
-							turSNSearchProcess.requestTargetingRules(tr)),
+					new TurSEParameters(q, fq, currentPage, sort, rows, autoCorrectionDisabled),
 					locale, TurSNUtils.requestToURI(request), turSNSitePostParamsBean)), HttpStatus.OK);
 		}
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

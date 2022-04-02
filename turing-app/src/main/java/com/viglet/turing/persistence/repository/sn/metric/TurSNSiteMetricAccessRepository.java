@@ -37,7 +37,7 @@ public interface TurSNSiteMetricAccessRepository extends JpaRepository<TurSNSite
 	TurSNSiteMetricAccess save(TurSNSiteMetricAccess turSNSiteLocale);
 
 	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(term, max(accessDate)) from TurSNSiteMetricAccess where turSNSite = ?1 and language = ?2 and userId = ?3 GROUP BY term ORDER BY MAX(accessDate) DESC")
-	List<TurSNSiteMetricAccessTerm> findDistinctTermByTurSNSiteAndLanguageAndUserIdOrderByAccessDateDesc(TurSNSite turSNSite,
+	List<TurSNSiteMetricAccessTerm> findLatestSearches(TurSNSite turSNSite,
 			String language, String userId, Pageable pageable);
 
 	List<TurSNSiteMetricAccess> findByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);

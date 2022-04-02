@@ -103,14 +103,13 @@ public class TurSEInstanceAPI {
 	public String turSEInstanceSelect(@RequestParam(required = false, name = "q") String q,
 			@RequestParam(required = false, name = "p") Integer currentPage,
 			@RequestParam(required = false, name = "fq[]") List<String> fq,
-			@RequestParam(required = false, name = "tr[]") List<String> tr,
 			@RequestParam(required = false, name = "sort") String sort,
 			@RequestParam(required = false, name = "rows") Integer rows) {
 
 		currentPage = (currentPage == null || currentPage <= 0) ? 1 : currentPage;
 		rows = rows == null ? 0 : rows;
 
-		TurSEParameters turSEParameters = new TurSEParameters(q, fq, currentPage, sort, rows, 0, tr);
+		TurSEParameters turSEParameters = new TurSEParameters(q, fq, currentPage, sort, rows, 0);
 		return turSolrInstanceProcess.initSolrInstance()
 				.map(turSolrInstance -> turSolr.retrieveSolr(turSolrInstance, turSEParameters, "text").toString())
 				.orElse("");

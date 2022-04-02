@@ -5,7 +5,6 @@ import java.util.List;
 public class TurSEParameters {
 	private String query;
 	private List<String> filterQueries;
-	private List<String> targetingRules;
 	private Integer currentPage;
 	private String sort;
 	private Integer rows;
@@ -16,7 +15,6 @@ public class TurSEParameters {
 		super();
 		this.query = query;
 		this.filterQueries = filterQueries;
-		this.targetingRules = targetingRules;
 		this.currentPage = currentPage;
 		this.sort = sort;
 		this.rows = rows;
@@ -42,14 +40,6 @@ public class TurSEParameters {
 
 	public void setFilterQueries(List<String> filterQueries) {
 		this.filterQueries = filterQueries;
-	}
-
-	public List<String> getTargetingRules() {
-		return targetingRules;
-	}
-
-	public void setTargetingRules(List<String> targetingRules) {
-		this.targetingRules = targetingRules;
 	}
 
 	public Integer getCurrentPage() {

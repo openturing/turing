@@ -16,6 +16,9 @@
  */
 package com.viglet.turing.api.sn.bean;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 
  * @author Alexandre Oliveira
@@ -28,6 +31,7 @@ public class TurSNSitePostParamsBean {
 	private String userId;
 
 	private boolean populateMetrics = true;
+	private List<String> targetingRules = new ArrayList<>();
 
 	public String getUserId() {
 		return userId;
@@ -43,6 +47,14 @@ public class TurSNSitePostParamsBean {
 
 	public void setPopulateMetrics(boolean populateMetrics) {
 		this.populateMetrics = populateMetrics;
+	}
+
+	public List<String> getTargetingRules() {
+		return targetingRules;
+	}
+
+	public void setTargetingRules(List<String> targetingRules) {
+		this.targetingRules = targetingRules;
 	}
 
 }

@@ -97,9 +97,8 @@ public class TurSNSearchProcess {
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		if (turSNSite != null) {
 			return turSNSiteMetricAccessRepository
-					.findDistinctTermByTurSNSiteAndLanguageAndUserIdOrderByAccessDateDesc(turSNSite, locale, userId,
-							PageRequest.of(0, rows))
-					.stream().map(TurSNSiteMetricAccessTerm::getTerm).collect(Collectors.toList());
+					.findLatestSearches(turSNSite, locale, userId, PageRequest.of(0, rows)).stream()
+					.map(TurSNSiteMetricAccessTerm::getTerm).collect(Collectors.toList());
 
 		}
 		return Collections.emptyList();
@@ -144,16 +143,18 @@ public class TurSNSearchProcess {
 
 			turSNSiteMetricAccess.setAccessDate(new Date());
 			turSNSiteMetricAccess.setLanguage(turSNSiteSearchContext.getLocale());
-			turSNSiteMetricAccess
-					.setTargetingRules(turSNSiteSearchContext.getTurSEParameters().getTargetingRules() != null
-							? new HashSet<>(turSNSiteSearchContext.getTurSEParameters().getTargetingRules())
-							: null);
 			turSNSiteMetricAccess.setTerm(turSNSiteSearchContext.getTurSEParameters().getQuery());
 			turSNSiteMetricAccess.setTurSNSite(turSNSite);
-			turSNSiteMetricAccess.setUserId(turSNSiteSearchContext.getTurSNSitePostParamsBean() != null
-					? turSNSiteSearchContext.getTurSNSitePostParamsBean().getUserId()
-					: null);
 			turSNSiteMetricAccess.setNumFound(numFound);
+
+			if (turSNSiteSearchContext.getTurSNSitePostParamsBean() != null) {
+				turSNSiteMetricAccess.setTargetingRules(
+						turSNSiteSearchContext.getTurSNSitePostParamsBean().getTargetingRules() != null
+								? new HashSet<>(turSNSiteSearchContext.getTurSNSitePostParamsBean().getTargetingRules())
+								: null);
+				turSNSiteMetricAccess.setUserId(turSNSiteSearchContext.getTurSNSitePostParamsBean().getUserId());
+			}
+
 			turSNSiteMetricAccessRepository.save(turSNSiteMetricAccess);
 		}
 	}
