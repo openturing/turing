@@ -18,6 +18,8 @@ package com.viglet.turing.client.sn;
 
 import java.net.URL;
 
+import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
+
 /**
  * HTTP of TurnSNServer.
  * 
@@ -32,13 +34,25 @@ public class HttpTurSNServer extends TurSNServer {
 		super(turSNServer);
 
 	}
+
 	public HttpTurSNServer(URL serverURL, String siteName) {
 		super(serverURL, siteName);
-		}
+	}
 
 	public HttpTurSNServer(URL serverURL, String siteName, String locale) {
 		super(serverURL, siteName, locale);
-	
+
+	}
+
+	public HttpTurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials) {
+		super(serverURL, siteName, locale, credentials);
+
+	}
+
+	public HttpTurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials,
+			String userId) {
+		super(serverURL, siteName, locale, credentials, userId);
+
 	}
 
 }

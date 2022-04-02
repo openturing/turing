@@ -35,86 +35,85 @@ import java.util.List;
 @RequestMapping("/api/se")
 @Tag(name = "Search Engine", description = "Search Engine API")
 public class TurSEInstanceAPI {
-    @Autowired
-    private TurSEInstanceRepository turSEInstanceRepository;
-    @Autowired
-    private TurSolrInstanceProcess turSolrInstanceProcess;
-    @Autowired
-    private TurSolr turSolr;
+	@Autowired
+	private TurSEInstanceRepository turSEInstanceRepository;
+	@Autowired
+	private TurSolrInstanceProcess turSolrInstanceProcess;
+	@Autowired
+	private TurSolr turSolr;
 
-    public TurSEInstanceAPI() {
-        // Empty
-    }
+	public TurSEInstanceAPI() {
+		// Empty
+	}
 
-    @Operation(summary = "Search Engine List")
-    @GetMapping
-    public List<TurSEInstance> turSEInstanceList() {
-        return this.turSEInstanceRepository.findAll();
-    }
+	@Operation(summary = "Search Engine List")
+	@GetMapping
+	public List<TurSEInstance> turSEInstanceList() {
+		return this.turSEInstanceRepository.findAll();
+	}
 
-    @Operation(summary = "Search Engine structure")
-    @GetMapping("/structure")
-    public TurSEInstance turNLPInstanceStructure() {
-        TurSEInstance turSEInstance = new TurSEInstance();
-        turSEInstance.setTurSEVendor(new TurSEVendor());
-        return turSEInstance;
+	@Operation(summary = "Search Engine structure")
+	@GetMapping("/structure")
+	public TurSEInstance turNLPInstanceStructure() {
+		TurSEInstance turSEInstance = new TurSEInstance();
+		turSEInstance.setTurSEVendor(new TurSEVendor());
+		return turSEInstance;
 
-    }
+	}
 
-    @Operation(summary = "Show a Search Engine")
-    @GetMapping("/{id}")
-    public TurSEInstance turSEInstanceGet(@PathVariable String id) {
-        return this.turSEInstanceRepository.findById(id).orElse(new TurSEInstance());
-    }
+	@Operation(summary = "Show a Search Engine")
+	@GetMapping("/{id}")
+	public TurSEInstance turSEInstanceGet(@PathVariable String id) {
+		return this.turSEInstanceRepository.findById(id).orElse(new TurSEInstance());
+	}
 
-    @Operation(summary = "Update a Search Engine")
-    @PutMapping("/{id}")
-    public TurSEInstance turSEInstanceUpdate(@PathVariable String id, @RequestBody TurSEInstance turSEInstance) {
-        return turSEInstanceRepository.findById(id).map(turSEInstanceEdit -> {
-            turSEInstanceEdit.setTitle(turSEInstance.getTitle());
-            turSEInstanceEdit.setDescription(turSEInstance.getDescription());
-            turSEInstanceEdit.setTurSEVendor(turSEInstance.getTurSEVendor());
-            turSEInstanceEdit.setHost(turSEInstance.getHost());
-            turSEInstanceEdit.setPort(turSEInstance.getPort());
-            turSEInstanceEdit.setEnabled(turSEInstance.getEnabled());
-            this.turSEInstanceRepository.save(turSEInstanceEdit);
-            return turSEInstanceEdit;
-        }).orElse(new TurSEInstance());
+	@Operation(summary = "Update a Search Engine")
+	@PutMapping("/{id}")
+	public TurSEInstance turSEInstanceUpdate(@PathVariable String id, @RequestBody TurSEInstance turSEInstance) {
+		return turSEInstanceRepository.findById(id).map(turSEInstanceEdit -> {
+			turSEInstanceEdit.setTitle(turSEInstance.getTitle());
+			turSEInstanceEdit.setDescription(turSEInstance.getDescription());
+			turSEInstanceEdit.setTurSEVendor(turSEInstance.getTurSEVendor());
+			turSEInstanceEdit.setHost(turSEInstance.getHost());
+			turSEInstanceEdit.setPort(turSEInstance.getPort());
+			turSEInstanceEdit.setEnabled(turSEInstance.getEnabled());
+			this.turSEInstanceRepository.save(turSEInstanceEdit);
+			return turSEInstanceEdit;
+		}).orElse(new TurSEInstance());
 
-    }
+	}
 
-    @Transactional
-    @Operation(summary = "Delete a Search Engine")
-    @DeleteMapping("/{id}")
-    public boolean turSEInstanceDelete(@PathVariable String id) {
-        this.turSEInstanceRepository.delete(id);
-        return true;
-    }
+	@Transactional
+	@Operation(summary = "Delete a Search Engine")
+	@DeleteMapping("/{id}")
+	public boolean turSEInstanceDelete(@PathVariable String id) {
+		this.turSEInstanceRepository.delete(id);
+		return true;
+	}
 
-    @Operation(summary = "Create a Search Engine")
-    @PostMapping
-    public TurSEInstance turSEInstanceAdd(@RequestBody TurSEInstance turSEInstance) {
-        this.turSEInstanceRepository.save(turSEInstance);
-        return turSEInstance;
+	@Operation(summary = "Create a Search Engine")
+	@PostMapping
+	public TurSEInstance turSEInstanceAdd(@RequestBody TurSEInstance turSEInstance) {
+		this.turSEInstanceRepository.save(turSEInstance);
+		return turSEInstance;
 
-    }
+	}
 
-    @GetMapping("/select")
-    public String turSEInstanceSelect(@RequestParam(required = false, name = "q") String q,
-                                      @RequestParam(required = false, name = "p") Integer currentPage,
-                                      @RequestParam(required = false, name = "fq[]") List<String> fq,
-                                      @RequestParam(required = false, name = "tr[]") List<String> tr,
-                                      @RequestParam(required = false, name = "sort") String sort,
-                                      @RequestParam(required = false, name = "rows") Integer rows) {
+	@GetMapping("/select")
+	public String turSEInstanceSelect(@RequestParam(required = false, name = "q") String q,
+			@RequestParam(required = false, name = "p") Integer currentPage,
+			@RequestParam(required = false, name = "fq[]") List<String> fq,
+			@RequestParam(required = false, name = "tr[]") List<String> tr,
+			@RequestParam(required = false, name = "sort") String sort,
+			@RequestParam(required = false, name = "rows") Integer rows) {
 
-        currentPage = (currentPage == null || currentPage <= 0) ? 1 : currentPage;
-        rows = rows == null ? 0 : rows;
+		currentPage = (currentPage == null || currentPage <= 0) ? 1 : currentPage;
+		rows = rows == null ? 0 : rows;
 
-        TurSEParameters turSEParameters = new TurSEParameters(q, fq, tr, currentPage, sort, rows, 0);
-        return turSolrInstanceProcess.initSolrInstance()
-                .map(turSolrInstance ->
-                        turSolr.retrieveSolr(turSolrInstance, turSEParameters, "text").toString())
-                .orElse("");
-    }
+		TurSEParameters turSEParameters = new TurSEParameters(q, fq, currentPage, sort, rows, 0, tr);
+		return turSolrInstanceProcess.initSolrInstance()
+				.map(turSolrInstance -> turSolr.retrieveSolr(turSolrInstance, turSEParameters, "text").toString())
+				.orElse("");
+	}
 
 }

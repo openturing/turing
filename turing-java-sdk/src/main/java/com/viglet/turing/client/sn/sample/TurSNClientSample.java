@@ -28,6 +28,7 @@ import com.viglet.turing.client.sn.TurSNDocumentList;
 import com.viglet.turing.client.sn.TurSNQuery;
 import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
+import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
@@ -50,7 +51,7 @@ public class TurSNClientSample {
 			turSNServer.getLocales().forEach(System.out::println);
 
 			System.out.println("--- Query");
-			turSNServer = new HttpTurSNServer(new URL("http://localhost:2700"), "Sample", "en_US");
+			turSNServer = new HttpTurSNServer(new URL("http://localhost:2700"), "Sample", "en_US", new TurUsernamePasswordCredentials("admin", "admin"), "alexandre10");
 
 			TurSNQuery query = new TurSNQuery();
 			if (args.length > 0) {

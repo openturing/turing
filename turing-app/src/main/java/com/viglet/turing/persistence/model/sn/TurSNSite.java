@@ -33,6 +33,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 
 /**
@@ -106,10 +107,10 @@ public class TurSNSite implements Serializable {
 
 	@Column(nullable = true)
 	private Integer spellCheckFixes;
-	
+
 	@Column(nullable = true)
 	private Integer spotlightWithResults;
-	
+
 	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
@@ -143,6 +144,12 @@ public class TurSNSite implements Serializable {
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteLocale> turSNSiteLocales = new HashSet<>();
+
+	// bi-directional many-to-one association to turSNSiteLocales
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
+	@Cascade({ CascadeType.ALL })
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNSiteMetricAccess> turSNSiteMetricAccesses = new HashSet<>();
 
 	public String getId() {
 		return id;
@@ -341,6 +348,5 @@ public class TurSNSite implements Serializable {
 	public void setSpotlightWithResults(Integer spotlightWithResults) {
 		this.spotlightWithResults = spotlightWithResults;
 	}
-	
-	
+
 }

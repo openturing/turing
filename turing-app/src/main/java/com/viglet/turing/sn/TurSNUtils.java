@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -52,7 +53,7 @@ public class TurSNUtils {
 	public static final String TURING_ENTITY = "turing_entity";
 	public static final String DEFAULT_LANGUAGE = "en";
 	public static final String URL = "url";
-	
+
 	private TurSNUtils() {
 		throw new IllegalStateException("SN Utility class");
 	}
@@ -62,8 +63,9 @@ public class TurSNUtils {
 	}
 
 	public static boolean isAutoCorrectionEnabled(TurSNSiteSearchContext context, TurSNSite turSNSite) {
-		return context.getTurSEParameters().getAutoCorrectionDisabled() != 1 && context.getTurSEParameters().getCurrentPage() == 1
-				&& turSNSite.getSpellCheck() == 1 && turSNSite.getSpellCheckFixes() == 1;
+		return context.getTurSEParameters().getAutoCorrectionDisabled() != 1
+				&& context.getTurSEParameters().getCurrentPage() == 1 && turSNSite.getSpellCheck() == 1
+				&& turSNSite.getSpellCheckFixes() == 1;
 	}
 
 	public static URI requestToURI(HttpServletRequest request) {
@@ -110,6 +112,20 @@ public class TurSNUtils {
 		return modifiedURI(uri, sbQueryString);
 	}
 
+	public static URI removePrivateParams(URI uri) {
+		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
+		StringBuilder sbQueryString = new StringBuilder();
+		params.stream()
+				.filter(nameValuePair -> !nameValuePair.getName().equals(TurSNParamType.PRE_SEARCH)
+						&& !nameValuePair.getName().equals(TurSNParamType.TARGETING_RULES)
+						&& !nameValuePair.getName().equals(TurSNParamType.USER_ID))
+				.collect(Collectors.toList()).forEach(nameValuePair -> {
+					addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
+				});
+
+		return modifiedURI(uri, sbQueryString);
+	}
+
 	public static URI removeFilterQuery(URI uri, String fq) {
 		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
 		StringBuilder sbQueryString = new StringBuilder();
@@ -148,12 +164,11 @@ public class TurSNUtils {
 			addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
 		}
 	}
-	
+
 	public static void addSNDocument(URI uri, Map<String, TurSNSiteFieldExt> fieldExtMap,
 			Map<String, TurSNSiteFieldExt> facetMap, List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean,
 			TurSEResult result, boolean isElevate) {
-		addSNDocumentWithPostion(uri, fieldExtMap, facetMap, turSNSiteSearchDocumentsBean, result, isElevate,
-				null);
+		addSNDocumentWithPostion(uri, fieldExtMap, facetMap, turSNSiteSearchDocumentsBean, result, isElevate, null);
 	}
 
 	public static void addSNDocumentWithPostion(URI uri, Map<String, TurSNSiteFieldExt> fieldExtMap,
@@ -180,7 +195,7 @@ public class TurSNUtils {
 			turSNSiteSearchDocumentsBean.add(position, turSNSiteSearchDocumentBean);
 		}
 	}
-	
+
 	private static Map<String, Object> addFieldsFromDocument(Map<String, TurSNSiteFieldExt> fieldExtMap,
 			Map<String, Object> turSEResultAttr, Set<String> attribs) {
 		Map<String, Object> fields = new HashMap<>();
@@ -191,7 +206,6 @@ public class TurSNUtils {
 		});
 		return fields;
 	}
-	
 
 	private static String getFieldName(Map<String, TurSNSiteFieldExt> fieldExtMap, String attribute) {
 		String nodeName;
@@ -204,7 +218,6 @@ public class TurSNUtils {
 		return nodeName;
 	}
 
-
 	private static void addFieldandValueToMap(Map<String, Object> turSEResultAttr, Map<String, Object> fields,
 			String attribute, String nodeName) {
 		if (nodeName != null && fields.containsKey(nodeName)) {
@@ -214,7 +227,7 @@ public class TurSNUtils {
 
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private static void addValueToExistingFieldMap(Map<String, Object> turSEResultAttr, Map<String, Object> fields,
 			String attribute, String nodeName) {
@@ -234,7 +247,6 @@ public class TurSNUtils {
 			turSNSiteSearchDocumentBean.setSource((String) turSEResultAttr.get(URL));
 		}
 	}
-	
 
 	private static List<TurSNSiteSearchDocumentMetadataBean> addMetadataFromDocument(URI uri,
 			Map<String, TurSNSiteFieldExt> facetMap, Map<String, Object> turSEResultAttr) {

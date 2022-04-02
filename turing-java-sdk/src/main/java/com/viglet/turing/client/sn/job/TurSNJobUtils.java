@@ -20,13 +20,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -35,7 +33,7 @@ import org.apache.http.impl.client.HttpClients;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.TurSNServer;
-import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
+import com.viglet.turing.client.sn.utils.TurSNClientUtils;
 
 /**
  * Turing Semantic Navigation Utilities.
@@ -73,7 +71,7 @@ public class TurSNJobUtils {
 			httpPost.setHeader("Content-type", "application/json");
 			httpPost.setHeader("Accept-Encoding", StandardCharsets.UTF_8.name());
 
-			basicAuth(httpPost, turSNServer);
+			TurSNClientUtils.basicAuth(httpPost, turSNServer.getCredentials());
 			try (CloseableHttpResponse response = client.execute(httpPost)) {
 				if (logger.isLoggable(Level.FINE)) {
 					logger.fine(String.format("Viglet Turing Index Request URI: %s", httpPost.getURI()));
@@ -101,15 +99,5 @@ public class TurSNJobUtils {
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 		importItems(turSNJobItems, turSNServer, false);
-	}
-
-	private static void basicAuth(HttpPost httpPost, TurSNServer turSNServer) {
-		TurUsernamePasswordCredentials credentials = turSNServer.getCredentials();
-		if (credentials != null && credentials.getUsername() != null) {
-			String auth = String.format("%s:%s", credentials.getUsername(), credentials.getPassword());
-			String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
-			String authHeader = "Basic " + encodedAuth;
-			httpPost.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
-		}
 	}
 }

@@ -16,28 +16,33 @@
  */
 package com.viglet.turing.api.sn.bean;
 
-import java.util.List;
+/**
+ * 
+ * @author Alexandre Oliveira
+ * 
+ * @since 0.3.6
+ *
+ */
+public class TurSNSitePostParamsBean {
 
-public class TurSNSiteFilterQueryBean {
+	private String userId;
 
-	private List<String> hiddenItems;
+	private boolean preSearch = false;
 
-	private List<String> items;
-
-	public List<String> getHiddenItems() {
-		return hiddenItems;
+	public String getUserId() {
+		return userId;
 	}
 
-	public void setHiddenItems(List<String> hiddenItems) {
-		this.hiddenItems = hiddenItems;
+	public void setUserId(String userId) {
+		this.userId = userId;
 	}
 
-	public List<String> getItems() {
-		return items;
+	public boolean isPreSearch() {
+		return preSearch;
 	}
 
-	public void setItems(List<String> items) {
-		this.items = items;
+	public void setPreSearch(boolean preSearch) {
+		this.preSearch = preSearch;
 	}
 
 }

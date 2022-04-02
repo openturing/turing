@@ -11,8 +11,8 @@ public class TurSEParameters {
 	private Integer rows;
 	private Integer autoCorrectionDisabled;
 
-	public TurSEParameters(String query, List<String> filterQueries, List<String> targetingRules, Integer currentPage,
-			String sort, Integer rows, Integer autoCorrectionDisabled) {
+	public TurSEParameters(String query, List<String> filterQueries, Integer currentPage, String sort, Integer rows,
+			Integer autoCorrectionDisabled, List<String> targetingRules) {
 		super();
 		this.query = query;
 		this.filterQueries = filterQueries;
@@ -21,6 +21,11 @@ public class TurSEParameters {
 		this.sort = sort;
 		this.rows = rows;
 		this.autoCorrectionDisabled = autoCorrectionDisabled;
+	}
+
+	public TurSEParameters(String query, List<String> filterQueries, Integer currentPage, String sort, Integer rows,
+			Integer autoCorrectionDisabled) {
+		this(query, filterQueries, currentPage, sort, rows, autoCorrectionDisabled, null);
 	}
 
 	public String getQuery() {
