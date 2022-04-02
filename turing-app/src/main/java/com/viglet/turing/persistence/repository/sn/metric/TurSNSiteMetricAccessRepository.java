@@ -35,14 +35,15 @@ public interface TurSNSiteMetricAccessRepository extends JpaRepository<TurSNSite
 
 	@SuppressWarnings("unchecked")
 	TurSNSiteMetricAccess save(TurSNSiteMetricAccess turSNSiteLocale);
-	
-	@Query(value = "select distinct term from TurSNSiteMetricAccess where id in (select id from TurSNSiteMetricAccess where turSNSite = ?1 and language = ?2 and userId = ?3 order by accessDate desc)")
-	List<String> findDistinctTermByTurSNSiteAndLanguageAndUserIdOrderByAccessDateDesc(TurSNSite turSNSite, String language, String userId, Pageable pageable);
-	
+
+	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(term, max(accessDate)) from TurSNSiteMetricAccess where turSNSite = ?1 and language = ?2 and userId = ?3 GROUP BY term ORDER BY MAX(accessDate) DESC")
+	List<TurSNSiteMetricAccessTerm> findDistinctTermByTurSNSiteAndLanguageAndUserIdOrderByAccessDateDesc(TurSNSite turSNSite,
+			String language, String userId, Pageable pageable);
+
 	List<TurSNSiteMetricAccess> findByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
-	
+
 	List<TurSNSiteMetricAccess> findByTurSNSite(TurSNSite turSNSite);
-	
+
 	void delete(TurSNSiteMetricAccess turSNSiteLocale);
 
 	@Modifying

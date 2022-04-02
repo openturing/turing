@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -57,6 +58,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
+import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
 import com.viglet.turing.se.TurSEParameters;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
@@ -94,8 +96,10 @@ public class TurSNSearchProcess {
 	public List<String> latestSearches(String siteName, String locale, String userId, int rows) {
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 		if (turSNSite != null) {
-			return turSNSiteMetricAccessRepository.findDistinctTermByTurSNSiteAndLanguageAndUserIdOrderByAccessDateDesc(
-					turSNSite, locale, userId, PageRequest.of(0, rows));
+			return turSNSiteMetricAccessRepository
+					.findDistinctTermByTurSNSiteAndLanguageAndUserIdOrderByAccessDateDesc(turSNSite, locale, userId,
+							PageRequest.of(0, rows))
+					.stream().map(TurSNSiteMetricAccessTerm::getTerm).collect(Collectors.toList());
 
 		}
 		return Collections.emptyList();
