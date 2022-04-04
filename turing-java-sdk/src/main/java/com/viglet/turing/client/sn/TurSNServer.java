@@ -370,12 +370,12 @@ public class TurSNServer {
 
 			rowsRequest(turingURL);
 			fieldQueryRequest(turingURL);
-			targetingRulesRequest(turingURL);
 			sortRequest(turingURL);
 			betweenDatesRequest(turingURL);
 			pageNumberRequest(turingURL);
 			if (this.getCredentials() != null) {
 				this.getTurSNSitePostParams().setPopulateMetrics(this.turSNQuery.isPopulateMetrics());
+				this.getTurSNSitePostParams().setTargetingRules(this.turSNQuery.getTargetingRules());
 				return preparePostRequest(turingURL);
 			} else {
 				return prepareGetRequest(turingURL);
@@ -515,14 +515,6 @@ public class TurSNServer {
 					turingURL.addParameter(TurSNParamType.SORT,
 							String.format("%s %s", turSortField.getField(), turSortField.getSort().name()));
 				}
-			}
-		}
-	}
-
-	private void targetingRulesRequest(URIBuilder turingURL) {
-		if (this.turSNQuery.getTargetingRules() != null) {
-			for (String targetingRule : this.turSNQuery.getTargetingRules()) {
-				turingURL.addParameter(TurSNParamType.TARGETING_RULES, targetingRule);
 			}
 		}
 	}

@@ -12,6 +12,7 @@ public class TurSNSiteSearchContext {
 	@Nonnull
 	private TurSEParameters turSEParameters;
 	private String locale;
+	@Nonnull
 	private TurSNSitePostParamsBean turSNSitePostParamsBean;
 	private URI uri;
 
@@ -25,7 +26,7 @@ public class TurSNSiteSearchContext {
 	}
 
 	public TurSNSiteSearchContext(String siteName, TurSEParameters turSEParameters, String locale, URI uri) {
-		this(siteName, turSEParameters, locale, uri, null);
+		this(siteName, turSEParameters, locale, uri, new TurSNSitePostParamsBean());
 	}
 
 	public String getSiteName() {
