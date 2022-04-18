@@ -72,7 +72,7 @@ dependencies {
     implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.0.4'
 
     // PostgreSQL
-    implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.3'
+    implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.4'
     
     // Jsoup
     implementation group: 'org.jsoup', name: 'jsoup', version: '1.14.3'
