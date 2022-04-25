@@ -1,0 +1,55 @@
+buildscript {
+    ext {	jsonVersion = '20140107'
+			jacksonVersion = '2.9.7'
+			log4jVersion = '1.2.7'
+		 }
+	
+	repositories {
+		mavenCentral()
+		jcenter()
+	}
+
+	dependencies {
+    	classpath 'com.github.jengelman.gradle.plugins:shadow:1.0.3'
+    }
+    
+}
+
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+sourceCompatibility = 1.6
+compileJava.options.encoding = "UTF-8"
+compileTestJava.options.encoding = "UTF-8"
+
+repositories {		
+        mavenCentral()
+        jcenter()
+}
+
+task compileOne (type: JavaCompile) {
+    source = fileTree(dir: 'src', include: '**/*.java')
+    classpath = files('build/classes/main')
+    destinationDir = file('build/classes/main')
+    sourceCompatibility = '1.6'
+    targetCompatibility = '1.6'
+}
+
+ shadowJar {
+   baseName = 'turing-java-sdk'
+}
+
+dependencies {
+   	// JSON
+    compile group: 'org.json', name: 'json', version:"${jsonVersion}"
+    
+    // Jackson
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.0'
+    
+    // Log4J
+    compile group: 'log4j', name: 'log4j', version: "${log4jVersion}"
+
+    compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.53'
+}
+
+compileOne.options.compilerArgs = ["-sourcepath", "$projectDir/src/main/java"]
