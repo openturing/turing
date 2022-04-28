@@ -19,5 +19,6 @@ hs_err_pid*
 /.settings/
 .project
 .idea
+.gradle
 zip
 docs

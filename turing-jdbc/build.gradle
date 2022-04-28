@@ -1,4 +1,7 @@
 buildscript {
+ 	ext {
+        tika = '2.3.0'
+    }
 	repositories {
 		mavenCentral()
 		 jcenter()
@@ -48,6 +51,10 @@ repositories {
     mavenCentral()
 }
 
+configurations {
+    all*.exclude group: 'xml-apis'
+}
+
 dependencies {
 	implementation group: 'com.beust', name: 'jcommander', version: '1.82'	
 	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.2.2'	
@@ -57,8 +64,15 @@ dependencies {
   	implementation project(':turing-java-sdk')
 	
 	// Tika
-    implementation group: 'org.apache.tika', name: 'tika-core', version:'2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.3.0'
+    implementation group: 'org.apache.tika', name: 'tika-core', version:"${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version:"${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-text-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-microsoft-module', version: "${tika}"
+    implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version: '2.0'
+    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-core', version: '1.4.0'
+    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.36.0.3'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
     
