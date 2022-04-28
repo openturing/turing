@@ -159,7 +159,7 @@ dependencies {
     implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
 
     // Hazelcast
-	implementation group: 'com.hazelcast', name: 'hazelcast-all', version: '4.2.4'
+	implementation group: 'com.hazelcast', name: 'hazelcast-all', version: '4.2.5'
 
     // Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version: "${tika}"
