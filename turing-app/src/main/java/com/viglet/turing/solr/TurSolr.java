@@ -72,6 +72,7 @@ public class TurSolr {
 	private TurSNTargetingRules turSNTargetingRules;
 	@Autowired
 	private TurSNSiteFieldUtils turSNSiteFieldUtils;
+
 	public long getDocumentTotal(TurSolrInstance turSolrInstance) {
 		SolrQuery query = new SolrQuery();
 		query.setQuery("*:*");
@@ -270,11 +271,12 @@ public class TurSolr {
 		QueryResponse queryResponse;
 		try {
 			queryResponse = turSolrInstance.getSolrClient().query(query);
-			String correctedText = queryResponse.getSpellCheckResponse().getCollatedResult();
-			if (!StringUtils.isEmpty(correctedText)) {
-				return new TurSESpellCheckResult(true, correctedText);
+			if (queryResponse.getSpellCheckResponse() != null) {
+				String correctedText = queryResponse.getSpellCheckResponse().getCollatedResult();
+				if (!StringUtils.isEmpty(correctedText)) {
+					return new TurSESpellCheckResult(true, correctedText);
+				}
 			}
-
 		} catch (IOException | SolrServerException e) {
 			logger.error(e);
 		}
@@ -336,7 +338,6 @@ public class TurSolr {
 				turSNSiteFacetFieldExts, turSNSiteHlFieldExts, turSESpellCheckResult);
 	}
 
-	
 	private Optional<TurSEResults> executeSolrQueryFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
 			TurSEParameters turSEParameters, SolrQuery query, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts,
 			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts, List<TurSNSiteFieldExt> turSNSiteHlFieldExts,
@@ -473,7 +474,8 @@ public class TurSolr {
 
 	private void prepareQueryTargetingRules(TurSNSitePostParamsBean turSNSitePostParamsBean, SolrQuery query) {
 		// Targeting Rule
-		if (turSNSitePostParamsBean.getTargetingRules() != null && !turSNSitePostParamsBean.getTargetingRules().isEmpty())
+		if (turSNSitePostParamsBean.getTargetingRules() != null
+				&& !turSNSitePostParamsBean.getTargetingRules().isEmpty())
 			query.addFilterQuery(
 					turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, turSNSitePostParamsBean.getTargetingRules()));
 	}
