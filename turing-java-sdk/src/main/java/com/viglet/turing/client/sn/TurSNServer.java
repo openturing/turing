@@ -62,7 +62,7 @@ import com.viglet.turing.client.sn.utils.TurSNClientUtils;
 import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContext;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 
@@ -421,7 +421,7 @@ public class TurSNServer {
 			turSNDocuments.add(turSNDocument);
 		});
 
-		TurSNSiteSearchQueryContext turSNSiteSearchQueryContext = turSNSiteSearchBean.getQueryContext();
+		TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContext = turSNSiteSearchBean.getQueryContext();
 		TurSNDocumentList turSNDocumentList = new TurSNDocumentList();
 		turSNDocumentList.setTurSNDocuments(turSNDocuments);
 		turSNDocumentList.setQueryContext(turSNSiteSearchQueryContext);
