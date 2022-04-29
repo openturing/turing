@@ -18,10 +18,11 @@ package com.viglet.turing.client.sn.pagination;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchPaginationBean;
+
 import java.util.Objects;
 import java.util.Optional;
-
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchPaginationBean;
 
 /**
  * Class to interact with current pagination.

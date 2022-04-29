@@ -63,9 +63,7 @@ public class TurWEMIndex {
         if ((mappingDefinitions != null) && (mo != null) && (mo instanceof ContentInstance)) {
             try {
                 ContentInstance contentInstance = (ContentInstance) mo;
-
                 String contentTypeName = contentInstance.getObjectType().getData().getName();
-                
                 // When there is related content but no associated site.
                 if("Management Site".equals(siteName)) {
                     siteName = TuringUtils.getSiteName(contentInstance, config);

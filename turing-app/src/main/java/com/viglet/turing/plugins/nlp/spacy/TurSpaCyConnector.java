@@ -43,12 +43,12 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import com.google.common.io.CharStreams;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
-import com.viglet.turing.utils.TurUtils;
 
 import java.util.*;
 
@@ -102,7 +102,7 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 				try (BufferedReader rd = new BufferedReader(
 						new InputStreamReader(entity.getContent(), StandardCharsets.UTF_8))) {
 					String jsonResponse = CharStreams.toString(rd);
-					if (TurUtils.isJSONValid(jsonResponse)) {
+					if (TurCommonsUtils.isJSONValid(jsonResponse)) {
 						if (logger.isDebugEnabled()) {
 							logger.debug("SpaCy JSONResponse: {}", jsonResponse);
 						}

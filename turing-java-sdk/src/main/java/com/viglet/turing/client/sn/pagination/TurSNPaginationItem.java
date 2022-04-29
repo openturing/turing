@@ -17,8 +17,9 @@
 package com.viglet.turing.client.sn.pagination;
 
 
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchPaginationBean;
 import com.viglet.turing.client.sn.TurSNItemWithAPI;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchPaginationBean;
+import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
 
 /**
  * Pagination of results of Turing AI Semantic Navigation response with friendly

@@ -1,5 +1,7 @@
 package com.viglet.turing.client.sn.facet;
 
+import com.viglet.turing.commons.se.field.TurSEFieldType;
+
 public class TurSNFacetField {
 
 	private String label;
@@ -10,7 +12,7 @@ public class TurSNFacetField {
 
 	private boolean multiValued;
 
-	private String type;
+	private TurSEFieldType type;
 
 	private TurSNFacetFieldValueList values;
 
@@ -58,11 +60,11 @@ public class TurSNFacetField {
 		this.multiValued = multiValue;
 	}
 
-	public String getType() {
+	public TurSEFieldType getType() {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(TurSEFieldType type) {
 		this.type = type;
 	}
 

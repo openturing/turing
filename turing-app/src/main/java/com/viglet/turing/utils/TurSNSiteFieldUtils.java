@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,19 +18,23 @@
 package com.viglet.turing.utils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 
 @Component
 public class TurSNSiteFieldUtils {
+	@Autowired
+	private TurSNSiteFieldRepository turSNSiteFieldRepository;
 	
 	public Map<String, TurSNSiteField> toMap(TurSNSite turSNSite) {
-		Set<TurSNSiteField> turSNSiteFields = turSNSite.getTurSNSiteFields();
+		List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
 		Map<String, TurSNSiteField> turSNSiteFieldsMap = new HashMap<>();
 		for (TurSNSiteField turSNSiteField : turSNSiteFields)
 			turSNSiteFieldsMap.put(turSNSiteField.getName(), turSNSiteField);

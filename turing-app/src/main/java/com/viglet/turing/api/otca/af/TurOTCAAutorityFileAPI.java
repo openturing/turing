@@ -40,6 +40,7 @@ import org.springframework.web.servlet.view.RedirectView;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.nlp.TurNLPRelationType;
 import com.viglet.turing.nlp.TurNLPTermAccent;
 import com.viglet.turing.nlp.TurNLPTermCase;
@@ -69,7 +70,6 @@ import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermVariationCaseEnum;
 import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermVariationType;
 import com.viglet.turing.plugins.nlp.otca.af.xml.AFType;
 import com.viglet.turing.plugins.nlp.otca.af.xml.AFType.Terms;
-import com.viglet.turing.utils.TurUtils;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -96,7 +96,7 @@ public class TurOTCAAutorityFileAPI {
 	private static final String EMPTY_TERM_NAME = "<EMPTY>";
 
 	public String normalizeEntity(String s) {
-		s = TurUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "").replace(" ", "_");
+		s = TurCommonsUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "").replace(" ", "_");
 		return s;
 	}
 
@@ -176,8 +176,8 @@ public class TurOTCAAutorityFileAPI {
 
 		for (AFTermVariationType afTermVariationType : variations.getVariation()) {
 			TurTermVariation turTermVariation = new TurTermVariation();
-			turTermVariation.setName(TurUtils.removeDuplicateWhiteSpaces(afTermVariationType.getName()));
-			turTermVariation.setNameLower(TurUtils.stripAccents(turTermVariation.getName()).toLowerCase());
+			turTermVariation.setName(TurCommonsUtils.removeDuplicateWhiteSpaces(afTermVariationType.getName()));
+			turTermVariation.setNameLower(TurCommonsUtils.stripAccents(turTermVariation.getName()).toLowerCase());
 			
 			setRuleAccent(afTermVariationType, turTermVariation);
 

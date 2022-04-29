@@ -15,7 +15,7 @@
  */
 package com.viglet.turing.client.sn.didyoumean;
 
-import com.viglet.turing.api.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
+import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 
 /**
  * Return the correct text of Turing AI response.

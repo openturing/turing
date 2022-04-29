@@ -17,6 +17,7 @@
 
 package com.viglet.turing.sn.template;
 
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
@@ -38,7 +39,6 @@ import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightD
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
-import com.viglet.turing.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

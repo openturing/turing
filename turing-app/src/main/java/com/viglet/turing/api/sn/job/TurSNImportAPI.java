@@ -18,6 +18,7 @@
 package com.viglet.turing.api.sn.job;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
@@ -175,11 +176,11 @@ public class TurSNImportAPI {
 						parseContextInner.set(Parser.class, parserInner);
 
 						File tempFile = File.createTempFile(UUID.randomUUID().toString(), null,
-								TurUtils.addSubDirToStoreDir("tmp"));
+								TurCommonsUtils.addSubDirToStoreDir("tmp"));
 						Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 						try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
 							parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
-							contentFile.append(TurUtils.cleanTextContent(handlerInner.toString()));
+							contentFile.append(handlerInner.toString());
 
 						} catch (IOException | SAXException | TikaException e) {
 							logger.error(e);
@@ -192,9 +193,9 @@ public class TurSNImportAPI {
 
 				parser.parse(fileInputStreamAttribute, handler, metadata, parseContext);
 
-				contentFile.append(TurUtils.cleanTextContent(handler.toString()));
+				contentFile.append(handler.toString());
 
-				attribute.setValue(contentFile.toString());
+				attribute.setValue(TurCommonsUtils.cleanTextContent(contentFile.toString()));
 
 			} catch (IOException | SAXException | TikaException e) {
 				logger.error(e);

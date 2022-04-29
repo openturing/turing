@@ -16,7 +16,7 @@
 
 package com.viglet.turing.client.sn.spotlight;
 
-import com.viglet.turing.api.sn.bean.TurSNSiteSpotlightDocumentBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
 
 /**
  * Spotlight Document.

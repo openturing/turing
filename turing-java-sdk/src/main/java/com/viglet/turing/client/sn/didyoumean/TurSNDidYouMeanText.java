@@ -15,7 +15,7 @@
  */
 package com.viglet.turing.client.sn.didyoumean;
 
-import com.viglet.turing.api.sn.bean.spellcheck.TurSNSiteSpellCheckText;
+import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckText;
 
 /**
  * Did You Mean Text Class.

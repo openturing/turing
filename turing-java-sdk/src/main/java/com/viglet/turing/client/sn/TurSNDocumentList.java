@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContext;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
 
 /**
  * List of Document result.
@@ -31,7 +31,7 @@ import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContext;
  */
 public class TurSNDocumentList implements Iterable<TurSNDocument> {
 	private List<TurSNDocument> turSNDocuments = new ArrayList<>();
-	private TurSNSiteSearchQueryContext queryContext;
+	private TurSNSiteSearchQueryContextBean queryContext;
 	@Override
 	public Iterator<TurSNDocument> iterator() {
 		return turSNDocuments.iterator();
@@ -45,12 +45,12 @@ public class TurSNDocumentList implements Iterable<TurSNDocument> {
 		this.turSNDocuments = turSNDocuments;
 	}
 	
-	public TurSNSiteSearchQueryContext getQueryContext() {
+	public TurSNSiteSearchQueryContextBean getQueryContext() {
 		return queryContext;
 	}
 
-	public void setQueryContext(TurSNSiteSearchQueryContext queryContext) {
-		this.queryContext = queryContext;
+	public void setQueryContext(TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContext) {
+		this.queryContext = turSNSiteSearchQueryContext;
 	}
 	
 }

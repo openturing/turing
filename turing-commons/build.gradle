@@ -1,0 +1,68 @@
+buildscript {
+    ext { tika = '2.3.0'
+    	httpClientVersion = '4.5.2'
+		 }
+		repositories {
+		mavenCentral()
+		maven { url "https://repo.spring.io/snapshot" }
+		maven { url "https://repo.spring.io/milestone" }
+		jcenter()
+		}
+}
+
+plugins {
+  id "java"
+  id "eclipse"
+  id "org.sonarqube" version "3.3"
+}
+
+sonarqube {
+  properties {
+      property "sonar.projectKey", "turing-commons"
+      property "sonar.organization", "viglet-turing"
+      property "sonar.host.url", "https://sonarcloud.io"
+  }
+}
+
+jar {
+    baseName = 'turing-commons'
+    version =  '0.3.5'
+}
+
+
+configurations {
+	localDeps
+    jar.archiveName = 'turing-commons.jar'
+}
+repositories {
+	mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+dependencies {
+
+	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.17.2'
+	implementation group: 'org.json', name: 'json', version:'20220320'
+	implementation group: 'org.apache.commons', name: 'commons-compress', version: '1.21'
+	implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+//Zip4j
+    implementation group: 'net.lingala.zip4j', name: 'zip4j', version: '2.10.0'
+    // Jackson
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
+    // HTTP Client
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:"${httpClientVersion}"
+    
+}
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+    
+}

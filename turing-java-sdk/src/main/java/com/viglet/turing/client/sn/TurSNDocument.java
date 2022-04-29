@@ -16,7 +16,7 @@
 
 package com.viglet.turing.client.sn;
 
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
 
 /**
  * Get Info about a document result.

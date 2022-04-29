@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetItemBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetItemBean;
 
 public class TurSNFacetFieldValueList implements Iterable<TurSNFacetFieldValue>{
 	private List<TurSNFacetFieldValue> turFacetFieldValues = new ArrayList<>();

@@ -1,4 +1,7 @@
 buildscript {
+ 	ext {
+        tika = '2.3.0'
+    }
 	repositories {
 		mavenCentral()
 		 jcenter()
@@ -33,7 +36,7 @@ sonarqube {
 
 jar {
     baseName = 'turing-jdbc'
-    version =  '0.3.5'
+    version =  '0.3.6'
     manifest {
 		attributes 'Main-Class': 'com.viglet.turing.tool.jdbc.TurJDBCImportTool'
 	}
@@ -48,31 +51,28 @@ repositories {
     mavenCentral()
 }
 
+configurations {
+    all*.exclude group: 'xml-apis'
+}
+
 dependencies {
-	implementation group: 'com.beust', name: 'jcommander', version: '1.82'	
-	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.2'	
-	implementation group: 'org.json', name: 'json', version:'20211205'
-	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.13'
 	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.17.2'
+	implementation group: 'com.beust', name: 'jcommander', version: '1.82'	
+	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.2.2'	
+	implementation group: 'org.json', name: 'json', version:'20220320'
+	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.13'
+	implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
   	implementation project(':turing-java-sdk')
+  	implementation project(':turing-filesystem:fs-commons')
 	
-	// Tika
-    implementation group: 'org.apache.tika', name: 'tika-core', version:'2.3.0'
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.3.0'
-    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.36.0.3'
-    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
-    
-    // Commons
-    implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
-    
     // Oracle
     implementation group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
     
 	// MariaDB
-    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.0.3'
+    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.0.4'
 
     // PostgreSQL
-    implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.3'
+    implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.4'
     
     // Jsoup
     implementation group: 'org.jsoup', name: 'jsoup', version: '1.14.3'

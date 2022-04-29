@@ -1,0 +1,66 @@
+buildscript {
+	repositories {
+		mavenCentral()
+		 jcenter()
+	}
+	dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.0.3'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+sourceCompatibility = 1.6
+compileJava.options.encoding = "UTF-8"
+compileTestJava.options.encoding = "UTF-8"
+
+javadoc {
+    source = sourceSets.main.allJava
+    classpath = configurations.compile
+    destinationDir = file("docs")
+}
+
+task compileOne (type: JavaCompile) {
+    source = fileTree(dir: 'src', include: '**/*.java')
+    classpath = files('build/classes/main')
+    destinationDir = file('build/classes/main')
+    sourceCompatibility = '1.6'
+    targetCompatibility = '1.6'
+}
+
+dependencies {
+    compile files(fileTree(dir: 'lib', includes: ['*.jar']))
+    compile group: 'com.beust', name: 'jcommander', version: '1.47'	
+    compile group: 'log4j', name: 'log4j', version: '1.2.7'
+    compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.59'
+    compile project(':turing-java-sdk-jdk6')
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.viglet.turing.wem.TurWEMCommander'
+    }
+ }
+ 
+ repositories {		
+        mavenCentral()
+        jcenter()
+}
+
+ shadowJar {
+   baseName = 'turing-wem'
+   classifier = null
+   version = 'all'
+   exclude 'vgn-*.jar'
+   exclude 'thirdparty-combined.jar'
+   exclude 'castor*.jar'
+   exclude 'commons-httpclient.jar'
+     dependencies {
+      exclude(dependency('log4j:log4j'))
+      exclude(dependency('org.json:json'))
+   }
+  
+}
+ 
+compileOne.options.compilerArgs = ["-sourcepath", "$projectDir/src/main/java"]

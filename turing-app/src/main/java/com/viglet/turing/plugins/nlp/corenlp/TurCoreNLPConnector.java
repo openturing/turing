@@ -43,11 +43,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
-import com.viglet.turing.utils.TurUtils;
 
 @Component
 public class TurCoreNLPConnector implements TurNLPPlugin {
@@ -91,7 +91,7 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 							BufferedReader rd = new BufferedReader(
 									new InputStreamReader(instream, StandardCharsets.UTF_8))) {
 						String jsonResponse = readAll(rd);
-						if (TurUtils.isJSONValid(jsonResponse)) {
+						if (TurCommonsUtils.isJSONValid(jsonResponse)) {
 							this.getEntities(new JSONObject(jsonResponse), entityList);
 						}
 					}

@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetBean;
 
 public class TurSNFacetFieldList implements Iterable<TurSNFacetField> {
 
