@@ -1,20 +1,4 @@
-/*
- * Copyright (C) 2016-2022 the original author or authors. 
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-package com.viglet.turing.tool.file;
+package com.viglet.turing.filesystem.commons;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,16 +24,10 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import com.viglet.turing.utils.TurUtils;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 
-/**
- *
- * @author Alexandre Oliveira
- * 
- * @since 0.3.5
- *
- **/
 public class TurFileUtils {
+
 	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	private TurFileUtils() {
@@ -64,6 +42,11 @@ public class TurFileUtils {
 			logger.info("File not exists: {}", filePath);
 			return null;
 		}
+	}
+
+	public static void main(String[] args) {
+		TurFileAttributes turFileAttributes = parseFile(new File(args[0]));
+		System.out.println(turFileAttributes.getContent());
 	}
 
 	public static TurFileAttributes parseFile(File file) {
@@ -111,11 +94,11 @@ public class TurFileUtils {
 					parseContextInner.set(Parser.class, parserInner);
 
 					File tempFile = File.createTempFile(UUID.randomUUID().toString(), null,
-							TurUtils.addSubDirToStoreDir("tmp"));
+							TurCommonsUtils.addSubDirToStoreDir("tmp"));
 					Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 					try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
 						parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
-						contentFile.append(TurUtils.cleanTextContent(handlerInner.toString()));
+						contentFile.append(TurCommonsUtils.cleanTextContent(handlerInner.toString()));
 
 					} catch (TikaException e) {
 						logger.error(e);
@@ -127,8 +110,7 @@ public class TurFileUtils {
 			parseContext.set(EmbeddedDocumentExtractor.class, embeddedDocumentExtractor);
 
 			parser.parse(fileInputStreamAttribute, handler, metadata, parseContext);
-
-			contentFile.append(TurUtils.cleanTextContent(handler.toString()));
+			contentFile.append(TurCommonsUtils.cleanTextContent(handler.toString()));
 
 			return new TurFileAttributes(file, cleanTextContent(contentFile.toString()), metadata);
 
@@ -141,8 +123,6 @@ public class TurFileUtils {
 
 	private static String cleanTextContent(String text) {
 		text = text.replaceAll("[\r\n\t]", " ");
-		text = text.replaceAll("[^\\p{L}&&[^0-9A-Za-z]&&[^\\p{javaSpaceChar}]&&[^\\p{Punct}]]", "").replaceAll("_{2,}",
-				"");
 		// Remove 2 or more spaces
 		text = text.trim().replaceAll(" +", " ");
 		return text.trim();

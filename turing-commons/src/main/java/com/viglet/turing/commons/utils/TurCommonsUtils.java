@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.utils;
+package com.viglet.turing.commons.utils;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
@@ -35,7 +35,7 @@ import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TurUtils {
+public class TurCommonsUtils {
     private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final String USER_DIR = "user.dir";

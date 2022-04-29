@@ -43,8 +43,8 @@ import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
-import com.viglet.turing.tool.file.TurFileAttributes;
-import com.viglet.turing.tool.file.TurFileUtils;
+import com.viglet.turing.filesystem.commons.TurFileAttributes;
+import com.viglet.turing.filesystem.commons.TurFileUtils;
 import com.viglet.turing.tool.jdbc.impl.TurJDBCCustomImpl;
 import com.viglet.turing.tool.jdbc.format.TurFormatValue;
 

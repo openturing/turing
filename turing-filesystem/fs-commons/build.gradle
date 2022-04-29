@@ -1,0 +1,75 @@
+buildscript {
+    ext { tika = '2.3.0'
+		 }
+		repositories {
+			mavenCentral()
+
+		}
+		dependencies {
+        	classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
+	    }
+}
+
+plugins {
+  id "org.sonarqube" version "3.3"
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+
+sonarqube {
+  properties {
+      property "sonar.projectKey", "fs-commons"
+      property "sonar.organization", "viglet-turing"
+      property "sonar.host.url", "https://sonarcloud.io"
+  }
+}
+
+jar {
+    baseName = 'turing-fs-commons'
+    version =  '0.3.5'
+     manifest {
+        attributes 'Main-Class': 'com.viglet.turing.filesystem.commons.TurFileUtils'
+    }
+}
+
+configurations {
+	localDeps
+    jar.archiveName = 'turing-fs-commons.jar'
+}
+repositories {
+	mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+dependencies {
+
+	// Tika
+    implementation group: 'org.apache.tika', name: 'tika-core', version:"${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version:"${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-pdf-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-text-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-ocr-module', version: "${tika}"
+    implementation group: 'org.apache.tika', name: 'tika-parser-microsoft-module', version: "${tika}"
+    implementation group: 'com.levigo.jbig2', name: 'levigo-jbig2-imageio', version: '2.0'
+    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-core', version: '1.4.0'
+    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.36.0.3'
+    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
+    implementation project(':turing-commons')
+}
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+    
+}
