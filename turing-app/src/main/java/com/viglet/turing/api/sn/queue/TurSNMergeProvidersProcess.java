@@ -60,10 +60,10 @@ public class TurSNMergeProvidersProcess {
             if (queueDocumentAttrs.containsKey(TurSNConstants.PROVIDER_ATTRIBUTE)) {
                 Object providersAttribute = queueDocumentAttrs.get(TurSNConstants.PROVIDER_ATTRIBUTE);
                 List<String> queueDocumentProviders = new ArrayList<>();
-                if (providersAttribute instanceof String) {
-                    queueDocumentProviders.add((String) providersAttribute);
-                } else if (providersAttribute instanceof ArrayList) {
-                    queueDocumentProviders.addAll((ArrayList<String>) providersAttribute);
+                if (providersAttribute instanceof String stringValue) {
+                    queueDocumentProviders.add(stringValue);
+                } else if (providersAttribute instanceof ArrayList<?> arrayListValue) {
+                    queueDocumentProviders.addAll((Collection<? extends String>) arrayListValue);
                 }
 
                 if (queueDocumentProviders.contains(turSNSiteMergeProviders.getProviderFrom())) {

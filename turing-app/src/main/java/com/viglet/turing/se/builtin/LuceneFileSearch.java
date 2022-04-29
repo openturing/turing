@@ -6,6 +6,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -70,7 +71,7 @@ public class LuceneFileSearch {
         } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
-        return null;
+        return  Collections.emptyList();
 
     }
 

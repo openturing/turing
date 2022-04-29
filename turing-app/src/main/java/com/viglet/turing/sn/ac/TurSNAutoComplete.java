@@ -61,7 +61,7 @@ public class TurSNAutoComplete {
 						numberOfWordsFromQuery);
 				List<String> autoCompleteListShrink = removeDuplicatedTerms(autoCompleteListFormatted,
 						numberOfWordsFromQuery, q);
-				return autoCompleteListShrink.stream().limit(rows).collect(Collectors.toList());
+				return autoCompleteListShrink.stream().limit(rows).toList();
 			}).orElse(Collections.emptyList());
 		} else {
 			return Collections.emptyList();
@@ -134,7 +134,7 @@ public class TurSNAutoComplete {
 		List<String> autoCompleteOnlyBiggerTerms = new ArrayList<>();
 		for (String term : autoCompleteWithoutDuplicated) {
 			List<String> resultList = autoCompleteWithoutDuplicated.stream().filter(s -> s.startsWith(term))
-					.collect(Collectors.toList());
+					.toList();
 			if (resultList.size() == 1) {
 				autoCompleteOnlyBiggerTerms.add(resultList.get(0));
 			}

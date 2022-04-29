@@ -51,12 +51,16 @@ import java.util.List;
  *
  */
 public class TurCommonsUtils {
-    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final String USER_DIR = "user.dir";
-    private static final File userDir = new File(System.getProperty(USER_DIR));
+	private static final String USER_DIR = "user.dir";
+	private static final File userDir = new File(System.getProperty(USER_DIR));
 
-    public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue) {
+	private TurCommonsUtils() {
+		throw new IllegalStateException("Utility class");
+	}
+
+	public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue) {
 
 		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8.name());
 
@@ -77,12 +81,12 @@ public class TurCommonsUtils {
 
 		return modifiedURI(uri, sbQueryString);
 	}
-    
-    public static void addParameterToQueryString(StringBuilder sbQueryString, String name, String value) {
+
+	public static void addParameterToQueryString(StringBuilder sbQueryString, String name, String value) {
 		sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, StandardCharsets.UTF_8)));
 	}
 
-    public static URI modifiedURI(URI uri, StringBuilder sbQueryString) {
+	public static URI modifiedURI(URI uri, StringBuilder sbQueryString) {
 		try {
 			return new URI(uri.getRawPath() + "?" + removeAmpersand(sbQueryString));
 		} catch (URISyntaxException e) {
@@ -90,132 +94,131 @@ public class TurCommonsUtils {
 		}
 		return uri;
 	}
-    
+
 	private static String removeAmpersand(StringBuilder sbQueryString) {
 		return sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
 	}
 
-    
-    public static String cleanTextContent(String text) {
+	public static String cleanTextContent(String text) {
 		text = text.replaceAll("[\r\n\t]", " ");
 		// Remove 2 or more spaces
 		text = text.trim().replaceAll(" +", " ");
 		return text.trim();
 	}
 
-    public static List<String> cloneListOfTermsAsString(List<?> nlpAttributeArray) {
-        List<String> list = new ArrayList<>();
-        for (Object nlpAttributeItem : nlpAttributeArray) {
-            list.add((String) nlpAttributeItem);
-        }
-        return list;
-    }
+	public static List<String> cloneListOfTermsAsString(List<?> nlpAttributeArray) {
+		List<String> list = new ArrayList<>();
+		for (Object nlpAttributeItem : nlpAttributeArray) {
+			list.add((String) nlpAttributeItem);
+		}
+		return list;
+	}
 
-    public static String stripAccents(String s) {
-        s = Normalizer.normalize(s, Normalizer.Form.NFD);
-        s = s.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
-        return s;
-    }
+	public static String stripAccents(String s) {
+		s = Normalizer.normalize(s, Normalizer.Form.NFD);
+		s = s.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
+		return s;
+	}
 
-    public static String removeDuplicateWhiteSpaces(String s) {
-        return s.replaceAll("\\s+", " ").trim();
-    }
+	public static String removeDuplicateWhiteSpaces(String s) {
+		return s.replaceAll("\\s+", " ").trim();
+	}
 
-    /**
-     * Add all files from the source directory to the destination zip file
-     *
-     * @param source      the directory with files to add
-     * @param destination the zip file that should contain the files
-     * @throws IOException      if the io fails
-     * @throws ArchiveException if creating or adding to the archive fails
-     */
-    public static void addFilesToZip(File source, File destination) {
+	/**
+	 * Add all files from the source directory to the destination zip file
+	 *
+	 * @param source      the directory with files to add
+	 * @param destination the zip file that should contain the files
+	 * @throws IOException      if the io fails
+	 * @throws ArchiveException if creating or adding to the archive fails
+	 */
+	public static void addFilesToZip(File source, File destination) {
 
-        try (OutputStream archiveStream = new FileOutputStream(destination);
-             ArchiveOutputStream archive = new ArchiveStreamFactory()
-                     .createArchiveOutputStream(ArchiveStreamFactory.ZIP, archiveStream)) {
+		try (OutputStream archiveStream = new FileOutputStream(destination);
+				ArchiveOutputStream archive = new ArchiveStreamFactory()
+						.createArchiveOutputStream(ArchiveStreamFactory.ZIP, archiveStream)) {
 
-            FileUtils.listFiles(source, null, true).forEach(file -> addFileToZip(source, archive, file));
+			FileUtils.listFiles(source, null, true).forEach(file -> addFileToZip(source, archive, file));
 
-            archive.finish();
-        } catch (IOException | ArchiveException e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
+			archive.finish();
+		} catch (IOException | ArchiveException e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
 
-    private static void addFileToZip(File source, ArchiveOutputStream archive, File file) {
-        String entryName;
-        try {
-            entryName = getEntryName(source, file);
-            ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
-            archive.putArchiveEntry(entry);
+	private static void addFileToZip(File source, ArchiveOutputStream archive, File file) {
+		String entryName;
+		try {
+			entryName = getEntryName(source, file);
+			ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
+			archive.putArchiveEntry(entry);
 
-            try (BufferedInputStream input = new BufferedInputStream(new FileInputStream(file))) {
-                IOUtils.copy(input, archive);
-                archive.closeArchiveEntry();
-            }
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
+			try (BufferedInputStream input = new BufferedInputStream(new FileInputStream(file))) {
+				IOUtils.copy(input, archive);
+				archive.closeArchiveEntry();
+			}
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
 
-    /**
-     * Remove the leading part of each entry that contains the source directory name
-     *
-     * @param source the directory where the file entry is found
-     * @param file   the file that is about to be added
-     * @return the name of an archive entry
-     * @throws IOException if the io fails
-     */
-    private static String getEntryName(File source, File file) throws IOException {
-        int index = source.getAbsolutePath().length() + 1;
-        String path = file.getCanonicalPath();
+	/**
+	 * Remove the leading part of each entry that contains the source directory name
+	 *
+	 * @param source the directory where the file entry is found
+	 * @param file   the file that is about to be added
+	 * @return the name of an archive entry
+	 * @throws IOException if the io fails
+	 */
+	private static String getEntryName(File source, File file) throws IOException {
+		int index = source.getAbsolutePath().length() + 1;
+		String path = file.getCanonicalPath();
 
-        return path.substring(index);
-    }
+		return path.substring(index);
+	}
 
-    public static File getStoreDir() {
-        File store = new File(userDir.getAbsolutePath().concat(File.separator + "store"));
-        if (!store.exists()) {
-            store.mkdirs();
-        }
-        return store;
-    }
+	public static File getStoreDir() {
+		File store = new File(userDir.getAbsolutePath().concat(File.separator + "store"));
+		if (!store.exists()) {
+			store.mkdirs();
+		}
+		return store;
+	}
 
-    public static File addSubDirToStoreDir(String directoryName) {
-        File storeDir = getStoreDir();
-        File newDir = new File(storeDir.getAbsolutePath().concat(File.separator + directoryName));
-        if (!newDir.exists()) {
-            newDir.mkdirs();
-        }
-        return newDir;
-    }
+	public static File addSubDirToStoreDir(String directoryName) {
+		File storeDir = getStoreDir();
+		File newDir = new File(storeDir.getAbsolutePath().concat(File.separator + directoryName));
+		if (!newDir.exists()) {
+			newDir.mkdirs();
+		}
+		return newDir;
+	}
 
-    /**
-     * Unzip it
-     *
-     * @param file         input zip file
-     * @param outputFolder output Folder
-     * @throws Exception
-     */
-    public static void unZipIt(File file, File outputFolder) {
-        try (ZipFile zipFile = new ZipFile(file)) {
-            zipFile.extractAll(outputFolder.getAbsolutePath());
-        } catch (IllegalStateException | IOException e) {
-            logger.error(e);
-        }
-    }
+	/**
+	 * Unzip it
+	 *
+	 * @param file         input zip file
+	 * @param outputFolder output Folder
+	 * @throws Exception
+	 */
+	public static void unZipIt(File file, File outputFolder) {
+		try (ZipFile zipFile = new ZipFile(file)) {
+			zipFile.extractAll(outputFolder.getAbsolutePath());
+		} catch (IllegalStateException | IOException e) {
+			logger.error(e);
+		}
+	}
 
-    public static boolean isJSONValid(String test) {
-        try {
-            new JSONObject(test);
-        } catch (JSONException ex) {
-            try {
-                new JSONArray(test);
-            } catch (JSONException ex1) {
-                return false;
-            }
-        }
-        return true;
-    }
+	public static boolean isJSONValid(String test) {
+		try {
+			new JSONObject(test);
+		} catch (JSONException ex) {
+			try {
+				new JSONArray(test);
+			} catch (JSONException ex1) {
+				return false;
+			}
+		}
+		return true;
+	}
 }

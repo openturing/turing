@@ -2,6 +2,7 @@ package com.viglet.turing.se.builtin;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -74,7 +75,7 @@ public class InMemoryLuceneIndex {
         } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
-        return null;
+        return Collections.emptyList();
 
     }
 
@@ -103,7 +104,7 @@ public class InMemoryLuceneIndex {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return null;
+        return Collections.emptyList();
 
     }
 
@@ -121,7 +122,7 @@ public class InMemoryLuceneIndex {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return null;
+        return Collections.emptyList();
 
     }
 

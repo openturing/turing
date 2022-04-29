@@ -42,9 +42,8 @@ public class TurSpotlightCache {
 
 	@Cacheable(value = "spotlight", sync = true)
 	public List<TurSNSiteSpotlight> findSpotlightBySNSiteAndLanguage(String snSite, String language) {
-		List<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
+		return turSNSiteSpotlightRepository
 				.findByTurSNSiteAndLanguage(turSNSiteRepository.findByName(snSite), language);
-		return turSNSiteSpotlights;
 	}
 	
 	@Cacheable(value = "spotlight_term", sync = true)

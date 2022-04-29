@@ -298,29 +298,28 @@ public class TurTMEConnector implements TurNLPPlugin {
 			logger.debug("Concepts: {}", concepts.getName());
 			setComplexConcepts(hmEntities, concepts);
 			setSimpleConcepts(hmEntities, concepts);
-		} else if (result instanceof ServerResponseEntityExtractorResultType) {
-			setEntities(result, hmEntities);
-		} else if (result instanceof ServerResponseCategorizerResultType) {
-			setCategorizer(result, hmEntities);
+		} else if (result instanceof ServerResponseEntityExtractorResultType serverResponseEntityExtractorResultType) {
+			setEntities(serverResponseEntityExtractorResultType, hmEntities);
+		} else if (result instanceof ServerResponseCategorizerResultType serverResponseCategorizerResultType) {
+			setCategorizer(serverResponseCategorizerResultType, hmEntities);
 
 		}
 
 	}
 
-	private void setEntities(Object result, Map<String, List<String>> hmEntities) {
-		ServerResponseEntityExtractorResultType entities = (ServerResponseEntityExtractorResultType) result;
+	private void setEntities(ServerResponseEntityExtractorResultType entities, Map<String, List<String>> hmEntities) {
 		for (Object nf : entities.getNfExtractOrNfFullTextSearch()) {
-			if (nf instanceof ServerResponseEntityExtractorResultExtractResultType) {
-				setTerms(hmEntities, nf);
-			} else if (nf instanceof ServerResponseEntityExtractorResultFullTextSearchResultType) {
-				setFullText(hmEntities, nf);
+			if (nf instanceof ServerResponseEntityExtractorResultExtractResultType extractor) {
+				setTerms(hmEntities, extractor);
+			} else if (nf instanceof ServerResponseEntityExtractorResultFullTextSearchResultType fullText) {
+				setFullText(hmEntities, fullText);
 			}
 
 		}
 	}
 
-	private void setTerms(Map<String, List<String>> hmEntities, Object nf) {
-		ServerResponseEntityExtractorResultExtractResultType extractor = (ServerResponseEntityExtractorResultExtractResultType) nf;
+	private void setTerms(Map<String, List<String>> hmEntities,
+			ServerResponseEntityExtractorResultExtractResultType extractor) {
 		for (ServerResponseEntityExtractorResultTermType term : extractor.getExtractedTerm()) {
 			logger.debug("getCartridgeID: {}", term.getCartridgeID());
 			if (!hmEntities.containsKey(term.getCartridgeID())) {
@@ -338,8 +337,8 @@ public class TurTMEConnector implements TurNLPPlugin {
 		}
 	}
 
-	private void setFullText(Map<String, List<String>> hmEntities, Object nf) {
-		ServerResponseEntityExtractorResultFullTextSearchResultType fullText = (ServerResponseEntityExtractorResultFullTextSearchResultType) nf;
+	private void setFullText(Map<String, List<String>> hmEntities,
+			ServerResponseEntityExtractorResultFullTextSearchResultType fullText) {
 		for (ServerResponseEntityExtractorResultTermType term : fullText.getExtractedTerm()) {
 			if (!hmEntities.containsKey(term.getCartridgeID())) {
 				hmEntities.put(term.getCartridgeID(), new ArrayList<>());
@@ -362,8 +361,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 		}
 	}
 
-	private void setCategorizer(Object result, Map<String, List<String>> hmEntities) {
-		ServerResponseCategorizerResultType categorizer = (ServerResponseCategorizerResultType) result;
+	private void setCategorizer(ServerResponseCategorizerResultType categorizer, Map<String, List<String>> hmEntities) {
 		setCategory(categorizer);
 		setKnowledgeBase(hmEntities, categorizer);
 	}
@@ -427,16 +425,14 @@ public class TurTMEConnector implements TurNLPPlugin {
 			logger.debug(SIMPLE_CONCEPTS);
 			hmEntities.computeIfAbsent(SIMPLE_CONCEPTS, k -> hmEntities.put(k, new ArrayList<>()));
 			for (Object simpleConcepts : concepts.getSimpleConcepts().getConceptOrExtractedTerm()) {
-				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept1Type) {
-					hmEntities.get(SIMPLE_CONCEPTS)
-							.add(((ServerResponseConceptExtractorResultConcept1Type) simpleConcepts).getValue());
+				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept1Type serverResponseConceptExtractorResultConcept1Type) {
+					hmEntities.get(SIMPLE_CONCEPTS).add(serverResponseConceptExtractorResultConcept1Type.getValue());
 				}
-				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept2Type) {
+				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept2Type serverResponseConceptExtractorResultConcept2Type) {
 					hmEntities.get(SIMPLE_CONCEPTS)
-							.add(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent()
-									.toString());
+							.add(serverResponseConceptExtractorResultConcept2Type.getContent().toString());
 					logger.debug(LOG_KV, SIMPLE_CONCEPTS,
-							((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
+							serverResponseConceptExtractorResultConcept2Type.getContent());
 				}
 			}
 		}
@@ -448,18 +444,15 @@ public class TurTMEConnector implements TurNLPPlugin {
 			logger.debug(COMPLEX_CONCEPTS);
 			hmEntities.computeIfAbsent(COMPLEX_CONCEPTS, k -> hmEntities.put(k, new ArrayList<>()));
 			for (Object complexConcept : concepts.getComplexConcepts().getConceptOrExtractedTerm()) {
-				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept1Type) {
-					hmEntities.get(COMPLEX_CONCEPTS)
-							.add(((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
-					logger.debug(LOG_KV, COMPLEX_CONCEPTS,
-							((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
+				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept1Type serverResponseConceptExtractorResultConcept1Type) {
+					hmEntities.get(COMPLEX_CONCEPTS).add(serverResponseConceptExtractorResultConcept1Type.getValue());
+					logger.debug(LOG_KV, COMPLEX_CONCEPTS, serverResponseConceptExtractorResultConcept1Type.getValue());
 				}
-				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept2Type) {
+				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept2Type serverResponseConceptExtractorResultConcept2Type) {
 					hmEntities.get(COMPLEX_CONCEPTS)
-							.add(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent()
-									.toString());
+							.add(serverResponseConceptExtractorResultConcept2Type.getContent().toString());
 					logger.debug(LOG_KV, COMPLEX_CONCEPTS,
-							((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
+							serverResponseConceptExtractorResultConcept2Type.getContent());
 				}
 			}
 		}

@@ -117,7 +117,7 @@ public class TurThesaurusProcessor {
 			String wordLowerCase = TurCommonsUtils.stripAccents(word).toLowerCase();
 			logger.debug("word: {}", word);
 			List<TurTermVariation> results = Arrays.stream(stringTerms)
-					.filter(t -> t.getNameLower().contains(wordLowerCase)).collect(Collectors.toList());
+					.filter(t -> t.getNameLower().contains(wordLowerCase)).toList();
 
 			Map<String, TurTermVariation> hmResults = new LinkedHashMap<>();
 			Arrays.stream(results.toArray())

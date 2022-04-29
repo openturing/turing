@@ -99,7 +99,7 @@ public class TurSNSearchProcess {
 		if (turSNSite != null) {
 			return turSNSiteMetricAccessRepository
 					.findLatestSearches(turSNSite, locale, userId, PageRequest.of(0, rows)).stream()
-					.map(TurSNSiteMetricAccessTerm::getTerm).collect(Collectors.toList());
+					.map(TurSNSiteMetricAccessTerm::getTerm).toList();
 
 		}
 		return Collections.emptyList();
@@ -173,8 +173,8 @@ public class TurSNSearchProcess {
 		if (TurSNUtils.isAutoCorrectionEnabled(turSNSiteSearchContext, turSNSite)) {
 			turSESpellCheckResult.setUsingCorrected(true);
 			if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
-				turSNSiteSearchContext.setUri(TurCommonsUtils.addOrReplaceParameter(turSNSiteSearchContext.getUri(), "q",
-						turSESpellCheckResult.getCorrectedText()));
+				turSNSiteSearchContext.setUri(TurCommonsUtils.addOrReplaceParameter(turSNSiteSearchContext.getUri(),
+						"q", turSESpellCheckResult.getCorrectedText()));
 			}
 		} else {
 			turSESpellCheckResult.setUsingCorrected(false);
@@ -313,19 +313,18 @@ public class TurSNSearchProcess {
 				.getSpotlightsFromQuery(context, turSNSite);
 		List<TurSNSiteSpotlightDocumentBean> turSNSiteSpotlightDocumentBeans = new ArrayList<>();
 
-		turSNSiteSpotlightDocumentMap.entrySet().forEach(spotlightEntry -> {
-			spotlightEntry.getValue().forEach(document -> {
-				TurSNSiteSpotlightDocumentBean turSNSiteSpotlightDocumentBean = new TurSNSiteSpotlightDocumentBean();
-				turSNSiteSpotlightDocumentBean.setId(document.getId());
-				turSNSiteSpotlightDocumentBean.setContent(document.getContent());
-				turSNSiteSpotlightDocumentBean.setLink(document.getLink());
-				turSNSiteSpotlightDocumentBean.setPosition(document.getPosition());
-				turSNSiteSpotlightDocumentBean.setReferenceId(document.getReferenceId());
-				turSNSiteSpotlightDocumentBean.setTitle(document.getTitle());
-				turSNSiteSpotlightDocumentBean.setType(document.getType());
-				turSNSiteSpotlightDocumentBeans.add(turSNSiteSpotlightDocumentBean);
-			});
-		});
+		turSNSiteSpotlightDocumentMap.entrySet()
+				.forEach(spotlightEntry -> spotlightEntry.getValue().forEach(document -> {
+					TurSNSiteSpotlightDocumentBean turSNSiteSpotlightDocumentBean = new TurSNSiteSpotlightDocumentBean();
+					turSNSiteSpotlightDocumentBean.setId(document.getId());
+					turSNSiteSpotlightDocumentBean.setContent(document.getContent());
+					turSNSiteSpotlightDocumentBean.setLink(document.getLink());
+					turSNSiteSpotlightDocumentBean.setPosition(document.getPosition());
+					turSNSiteSpotlightDocumentBean.setReferenceId(document.getReferenceId());
+					turSNSiteSpotlightDocumentBean.setTitle(document.getTitle());
+					turSNSiteSpotlightDocumentBean.setType(document.getType());
+					turSNSiteSpotlightDocumentBeans.add(turSNSiteSpotlightDocumentBean);
+				}));
 		Collections.sort(turSNSiteSpotlightDocumentBeans, new Comparator<TurSNSiteSpotlightDocumentBean>() {
 			@Override
 			public int compare(TurSNSiteSpotlightDocumentBean s1, TurSNSiteSpotlightDocumentBean s2) {
@@ -538,8 +537,8 @@ public class TurSNSearchProcess {
 	private void setFirstPage(URI uri, List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans,
 			TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean) {
 		turSNSiteSearchPaginationBean.setType(TurSNPaginationType.FIRST);
-		turSNSiteSearchPaginationBean
-				.setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(1)).toString());
+		turSNSiteSearchPaginationBean.setHref(
+				TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(1)).toString());
 		turSNSiteSearchPaginationBean.setText("First");
 		turSNSiteSearchPaginationBean.setPage(1);
 		turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
@@ -577,8 +576,8 @@ public class TurSNSearchProcess {
 	private void setOthersPages(URI uri, List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans, int page) {
 		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
 		turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-		turSNSiteSearchPaginationBean
-				.setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
+		turSNSiteSearchPaginationBean.setHref(
+				TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
 		turSNSiteSearchPaginationBean.setText(Integer.toString(page));
 		turSNSiteSearchPaginationBean.setType(TurSNPaginationType.PAGE);
 		turSNSiteSearchPaginationBean.setPage(page);
@@ -588,8 +587,8 @@ public class TurSNSearchProcess {
 	private void setCurrentPage(URI uri, List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans, int page) {
 		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
 		turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-		turSNSiteSearchPaginationBean
-				.setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
+		turSNSiteSearchPaginationBean.setHref(
+				TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
 		turSNSiteSearchPaginationBean.setType(TurSNPaginationType.CURRENT);
 		turSNSiteSearchPaginationBean.setText(Integer.toString(page));
 		turSNSiteSearchPaginationBean.setPage(page);
