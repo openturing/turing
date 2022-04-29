@@ -23,8 +23,7 @@ import javax.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-
-import com.viglet.turing.se.field.TurSEFieldType;
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 
 /**

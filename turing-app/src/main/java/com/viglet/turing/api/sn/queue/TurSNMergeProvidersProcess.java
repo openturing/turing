@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors.
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.api.sn.queue;
 
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
@@ -25,7 +26,6 @@ import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.TurSolrUtils;
-import com.viglet.turing.utils.TurUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.common.SolrDocument;
@@ -47,8 +47,6 @@ public class TurSNMergeProvidersProcess {
     private TurSolrInstanceProcess turSolrInstanceProcess;
     @Autowired
     private TurSolr turSolr;
-    @Autowired
-    private TurUtils turUtils;
     @Autowired
     private TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository;
 
@@ -200,7 +198,7 @@ public class TurSNMergeProvidersProcess {
             providers.add((String) providerAttribute);
         }
         if (!providers.isEmpty()) {
-            List<String> list = turUtils.cloneListOfTermsAsString(providers);
+            List<String> list = TurCommonsUtils.cloneListOfTermsAsString(providers);
 
             if (!providers.contains(providerName)) {
                 list.add(providerName);

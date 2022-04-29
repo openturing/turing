@@ -39,18 +39,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.utils.TurUtils;
 
 @Component
 public class TurSNSiteExport {
 	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private TurUtils turUtils;
 
 	public StreamingResponseBody exportObject(HttpServletResponse response) {
 		String folderName = UUID.randomUUID().toString();
@@ -86,7 +84,7 @@ public class TurSNSiteExport {
 
 				File zipFile = new File(tmpDir.getAbsolutePath().concat(File.separator + folderName + ".zip"));
 
-				turUtils.addFilesToZip(exportDir, zipFile);
+				TurCommonsUtils.addFilesToZip(exportDir, zipFile);
 
 				String strDate = new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date());
 				String zipFileName = "SNSite_" + strDate + ".zip";

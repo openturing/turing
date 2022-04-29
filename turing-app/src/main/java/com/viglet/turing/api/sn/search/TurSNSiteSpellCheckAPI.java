@@ -28,8 +28,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
-import com.viglet.turing.api.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
-import com.viglet.turing.se.TurSEParameters;
+import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
+import com.viglet.turing.commons.sn.search.TurSNParamType;
+import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.sn.TurSNUtils;
 
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 
-import com.viglet.turing.se.field.TurSEFieldType;
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 
 public class TurSolrField {
 

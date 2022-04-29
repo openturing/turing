@@ -17,6 +17,7 @@
 
 package com.viglet.turing.api.nlp;
 
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.nlp.output.blazon.RedactionCommand;
@@ -27,7 +28,6 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
-import com.viglet.turing.utils.TurUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.logging.log4j.LogManager;
@@ -174,11 +174,11 @@ public class TurNLPInstanceAPI {
 
 					parseContextInner.set(Parser.class, parserInner);
 					
-					File tempFile = File.createTempFile(NLP_TEMP_FILE + UUID.randomUUID(), null, TurUtils.addSubDirToStoreDir("tmp"));
+					File tempFile = File.createTempFile(NLP_TEMP_FILE + UUID.randomUUID(), null, TurCommonsUtils.addSubDirToStoreDir("tmp"));
 					Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 					try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
 						parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
-						contentFile.append(TurUtils.cleanTextContent(handlerInner.toString()));
+						contentFile.append(TurCommonsUtils.cleanTextContent(handlerInner.toString()));
 
 					} catch (IOException | SAXException | TikaException e) {
 						logger.error(e);
@@ -192,7 +192,7 @@ public class TurNLPInstanceAPI {
 			parser.parse(inputStream, handler, metadata, parseContext);
 
 			TurNLPTextValidate textValidate = new TurNLPTextValidate();
-			contentFile.append(TurUtils.cleanTextContent(handler.toString()));
+			contentFile.append(TurCommonsUtils.cleanTextContent(handler.toString()));
 			textValidate.setText(contentFile.toString());
 
 			return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {

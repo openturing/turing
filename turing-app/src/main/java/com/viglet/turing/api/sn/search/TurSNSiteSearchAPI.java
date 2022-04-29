@@ -17,13 +17,15 @@
 
 package com.viglet.turing.api.sn.search;
 
-import com.viglet.turing.api.sn.bean.TurSNSearchLatestRequestBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteLocaleBean;
-import com.viglet.turing.api.sn.bean.TurSNSitePostParamsBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
+import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.commons.sn.search.TurSNParamType;
+import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.se.TurSEParameters;
 import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNUtils;
 

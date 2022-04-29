@@ -23,24 +23,79 @@ import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import net.lingala.zip4j.ZipFile;
+
 import java.io.*;
 import java.lang.invoke.MethodHandles;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 
+ * @author Alexandre Oliveira
+ * 
+ * @since 0.3.6
+ *
+ */
 public class TurCommonsUtils {
     private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final String USER_DIR = "user.dir";
     private static final File userDir = new File(System.getProperty(USER_DIR));
 
+    public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue) {
+
+		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8.name());
+
+		StringBuilder sbQueryString = new StringBuilder();
+		boolean alreadyExists = false;
+
+		for (NameValuePair nameValuePair : params) {
+			if ((nameValuePair.getName().equals(paramName) && !alreadyExists)) {
+				alreadyExists = true;
+				addParameterToQueryString(sbQueryString, nameValuePair.getName(), paramValue);
+			} else {
+				addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
+			}
+		}
+		if (!alreadyExists) {
+			addParameterToQueryString(sbQueryString, paramName, paramValue);
+		}
+
+		return modifiedURI(uri, sbQueryString);
+	}
+    
+    public static void addParameterToQueryString(StringBuilder sbQueryString, String name, String value) {
+		sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, StandardCharsets.UTF_8)));
+	}
+
+    public static URI modifiedURI(URI uri, StringBuilder sbQueryString) {
+		try {
+			return new URI(uri.getRawPath() + "?" + removeAmpersand(sbQueryString));
+		} catch (URISyntaxException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return uri;
+	}
+    
+	private static String removeAmpersand(StringBuilder sbQueryString) {
+		return sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
+	}
+
+    
     public static String cleanTextContent(String text) {
 		text = text.replaceAll("[\r\n\t]", " ");
 		// Remove 2 or more spaces
@@ -48,7 +103,7 @@ public class TurCommonsUtils {
 		return text.trim();
 	}
 
-    public List<String> cloneListOfTermsAsString(List<?> nlpAttributeArray) {
+    public static List<String> cloneListOfTermsAsString(List<?> nlpAttributeArray) {
         List<String> list = new ArrayList<>();
         for (Object nlpAttributeItem : nlpAttributeArray) {
             list.add((String) nlpAttributeItem);
@@ -74,7 +129,7 @@ public class TurCommonsUtils {
      * @throws IOException      if the io fails
      * @throws ArchiveException if creating or adding to the archive fails
      */
-    public void addFilesToZip(File source, File destination) {
+    public static void addFilesToZip(File source, File destination) {
 
         try (OutputStream archiveStream = new FileOutputStream(destination);
              ArchiveOutputStream archive = new ArchiveStreamFactory()
@@ -88,7 +143,7 @@ public class TurCommonsUtils {
         }
     }
 
-    private void addFileToZip(File source, ArchiveOutputStream archive, File file) {
+    private static void addFileToZip(File source, ArchiveOutputStream archive, File file) {
         String entryName;
         try {
             entryName = getEntryName(source, file);
@@ -112,7 +167,7 @@ public class TurCommonsUtils {
      * @return the name of an archive entry
      * @throws IOException if the io fails
      */
-    private String getEntryName(File source, File file) throws IOException {
+    private static String getEntryName(File source, File file) throws IOException {
         int index = source.getAbsolutePath().length() + 1;
         String path = file.getCanonicalPath();
 
@@ -134,6 +189,21 @@ public class TurCommonsUtils {
             newDir.mkdirs();
         }
         return newDir;
+    }
+
+    /**
+     * Unzip it
+     *
+     * @param file         input zip file
+     * @param outputFolder output Folder
+     * @throws Exception
+     */
+    public static void unZipIt(File file, File outputFolder) {
+        try (ZipFile zipFile = new ZipFile(file)) {
+            zipFile.extractAll(outputFolder.getAbsolutePath());
+        } catch (IllegalStateException | IOException e) {
+            logger.error(e);
+        }
     }
 
     public static boolean isJSONValid(String test) {

@@ -48,12 +48,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.viglet.turing.api.sn.bean.TurSNSearchLatestRequestBean;
-import com.viglet.turing.api.sn.bean.TurSNSitePostParamsBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContext;
-import com.viglet.turing.api.sn.bean.TurSNSiteSpotlightDocumentBean;
-import com.viglet.turing.api.sn.search.TurSNParamType;
 import com.viglet.turing.client.sn.TurSNQuery.ORDER;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
 import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
@@ -65,6 +59,12 @@ import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
 import com.viglet.turing.client.sn.utils.TurSNClientUtils;
+import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
+import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContext;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
+import com.viglet.turing.commons.sn.search.TurSNParamType;
 
 /**
  * Connect to Turing AI Server.

@@ -2,7 +2,7 @@ package com.viglet.turing.solr;
 
 import org.apache.solr.common.SolrDocument;
 
-import com.viglet.turing.se.TurSEParameters;
+import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.se.result.TurSEResult;
 
 public class TurSolrUtils {

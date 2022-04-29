@@ -16,10 +16,7 @@
  */
 package com.viglet.turing.sn;
 
-import java.lang.invoke.MethodHandles;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,24 +28,22 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tika.utils.StringUtils;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentMetadataBean;
-import com.viglet.turing.api.sn.search.TurSNParamType;
-import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentMetadataBean;
+import com.viglet.turing.commons.sn.search.TurSNParamType;
+import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.se.result.TurSEResult;
-import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.solr.TurSolrField;
 
 public class TurSNUtils {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	public static final String TURING_ENTITY = "turing_entity";
 	public static final String DEFAULT_LANGUAGE = "en";
 	public static final String URL = "url";
@@ -71,27 +66,7 @@ public class TurSNUtils {
 		return UriComponentsBuilder.fromHttpRequest(new ServletServerHttpRequest(request)).build().toUri();
 	}
 
-	public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue) {
-
-		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
-
-		StringBuilder sbQueryString = new StringBuilder();
-		boolean alreadyExists = false;
-
-		for (NameValuePair nameValuePair : params) {
-			if ((nameValuePair.getName().equals(paramName) && !alreadyExists)) {
-				alreadyExists = true;
-				addParameterToQueryString(sbQueryString, nameValuePair.getName(), paramValue);
-			} else {
-				addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
-			}
-		}
-		if (!alreadyExists) {
-			addParameterToQueryString(sbQueryString, paramName, paramValue);
-		}
-
-		return modifiedURI(uri, sbQueryString);
-	}
+	
 
 	public static URI addFilterQuery(URI uri, String fq) {
 		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
@@ -105,10 +80,10 @@ public class TurSNUtils {
 			resetPagination(sbQueryString, nameValuePair);
 		}
 		if (!alreadyExists) {
-			addParameterToQueryString(sbQueryString, TurSNParamType.FILTER_QUERIES, fq);
+			TurCommonsUtils.addParameterToQueryString(sbQueryString, TurSNParamType.FILTER_QUERIES, fq);
 		}
 
-		return modifiedURI(uri, sbQueryString);
+		return TurCommonsUtils.modifiedURI(uri, sbQueryString);
 	}
 	
 	public static URI removeFilterQuery(URI uri, String fq) {
@@ -122,31 +97,18 @@ public class TurSNUtils {
 			}
 		}
 
-		return modifiedURI(uri, sbQueryString);
+		return TurCommonsUtils.modifiedURI(uri, sbQueryString);
 	}
 
-	private static URI modifiedURI(URI uri, StringBuilder sbQueryString) {
-		try {
-			return new URI(uri.getRawPath() + "?" + removeAmpersand(sbQueryString));
-		} catch (URISyntaxException e) {
-			logger.error(e.getMessage(), e);
-		}
-		return uri;
-	}
+	
 
-	private static String removeAmpersand(StringBuilder sbQueryString) {
-		return sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
-	}
 
-	private static void addParameterToQueryString(StringBuilder sbQueryString, String name, String value) {
-		sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, StandardCharsets.UTF_8)));
-	}
-
+	
 	private static void resetPagination(StringBuilder sbQueryString, NameValuePair nameValuePair) {
 		if ((nameValuePair.getName().equals(TurSNParamType.PAGE))) {
-			addParameterToQueryString(sbQueryString, nameValuePair.getName(), "1");
+			TurCommonsUtils.addParameterToQueryString(sbQueryString, nameValuePair.getName(), "1");
 		} else {
-			addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
+			TurCommonsUtils.addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
 		}
 	}
 

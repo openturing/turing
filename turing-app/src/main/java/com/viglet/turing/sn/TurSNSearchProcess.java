@@ -33,23 +33,27 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.api.sn.bean.TurSNSiteFilterQueryBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteLocaleBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchDefaultFieldsBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchDocumentBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetItemBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchFacetLabelBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchPaginationBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContextBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContextQueryBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchResultsBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchWidgetBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSpotlightDocumentBean;
-import com.viglet.turing.api.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
-import com.viglet.turing.api.sn.search.TurSNPaginationType;
-import com.viglet.turing.api.sn.search.TurSNParamType;
-import com.viglet.turing.api.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
+import com.viglet.turing.commons.se.similar.TurSESimilarResult;
+import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDefaultFieldsBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetItemBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetLabelBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchPaginationBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextQueryBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchWidgetBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
+import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
+import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
+import com.viglet.turing.commons.sn.search.TurSNParamType;
+import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
@@ -59,11 +63,8 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
-import com.viglet.turing.se.TurSEParameters;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
-import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
-import com.viglet.turing.se.similar.TurSESimilarResult;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
@@ -172,7 +173,7 @@ public class TurSNSearchProcess {
 		if (TurSNUtils.isAutoCorrectionEnabled(turSNSiteSearchContext, turSNSite)) {
 			turSESpellCheckResult.setUsingCorrected(true);
 			if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
-				turSNSiteSearchContext.setUri(TurSNUtils.addOrReplaceParameter(turSNSiteSearchContext.getUri(), "q",
+				turSNSiteSearchContext.setUri(TurCommonsUtils.addOrReplaceParameter(turSNSiteSearchContext.getUri(), "q",
 						turSESpellCheckResult.getCorrectedText()));
 			}
 		} else {
@@ -339,7 +340,7 @@ public class TurSNSearchProcess {
 		turSNSiteLocaleRepository.findByTurSNSite(turSNSite).forEach(turSNSiteLocale -> {
 			TurSNSiteLocaleBean turSNSiteLocaleBean = new TurSNSiteLocaleBean();
 			turSNSiteLocaleBean.setLocale(turSNSiteLocale.getLanguage());
-			turSNSiteLocaleBean.setLink(TurSNUtils
+			turSNSiteLocaleBean.setLink(TurCommonsUtils
 					.addOrReplaceParameter(uri, TurSNParamType.LOCALE, turSNSiteLocale.getLanguage()).toString());
 			turSNSiteLocaleBeans.add(turSNSiteLocaleBean);
 		});
@@ -526,7 +527,7 @@ public class TurSNSearchProcess {
 		if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
 			turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
 			turSNSiteSearchPaginationBean.setType(TurSNPaginationType.PREVIOUS);
-			turSNSiteSearchPaginationBean.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
+			turSNSiteSearchPaginationBean.setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
 					Integer.toString(turSEResults.getCurrentPage() - 1)).toString());
 			turSNSiteSearchPaginationBean.setText("Previous");
 			turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() - 1);
@@ -538,7 +539,7 @@ public class TurSNSearchProcess {
 			TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean) {
 		turSNSiteSearchPaginationBean.setType(TurSNPaginationType.FIRST);
 		turSNSiteSearchPaginationBean
-				.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(1)).toString());
+				.setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(1)).toString());
 		turSNSiteSearchPaginationBean.setText("First");
 		turSNSiteSearchPaginationBean.setPage(1);
 		turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
@@ -549,7 +550,7 @@ public class TurSNSearchProcess {
 		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
 		turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
 		turSNSiteSearchPaginationBean.setType(TurSNPaginationType.LAST);
-		turSNSiteSearchPaginationBean.setHref(TurSNUtils
+		turSNSiteSearchPaginationBean.setHref(TurCommonsUtils
 				.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(turSEResults.getPageCount()))
 				.toString());
 		turSNSiteSearchPaginationBean.setText("Last");
@@ -564,7 +565,7 @@ public class TurSNSearchProcess {
 			turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
 
 			turSNSiteSearchPaginationBean.setType(TurSNPaginationType.NEXT);
-			turSNSiteSearchPaginationBean.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
+			turSNSiteSearchPaginationBean.setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
 					Integer.toString(turSEResults.getCurrentPage() + 1)).toString());
 			turSNSiteSearchPaginationBean.setText("Next");
 			turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() + 1);
@@ -577,7 +578,7 @@ public class TurSNSearchProcess {
 		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
 		turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
 		turSNSiteSearchPaginationBean
-				.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
+				.setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
 		turSNSiteSearchPaginationBean.setText(Integer.toString(page));
 		turSNSiteSearchPaginationBean.setType(TurSNPaginationType.PAGE);
 		turSNSiteSearchPaginationBean.setPage(page);
@@ -588,7 +589,7 @@ public class TurSNSearchProcess {
 		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
 		turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
 		turSNSiteSearchPaginationBean
-				.setHref(TurSNUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
+				.setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
 		turSNSiteSearchPaginationBean.setType(TurSNPaginationType.CURRENT);
 		turSNSiteSearchPaginationBean.setText(Integer.toString(page));
 		turSNSiteSearchPaginationBean.setPage(page);

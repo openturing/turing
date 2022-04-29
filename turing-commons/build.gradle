@@ -1,5 +1,6 @@
 buildscript {
     ext { tika = '2.3.0'
+    	httpClientVersion = '4.5.2'
 		 }
 		repositories {
 		mavenCentral()
@@ -50,7 +51,12 @@ dependencies {
 	implementation group: 'org.json', name: 'json', version:'20220320'
 	implementation group: 'org.apache.commons', name: 'commons-compress', version: '1.21'
 	implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
-
+//Zip4j
+    implementation group: 'net.lingala.zip4j', name: 'zip4j', version: '2.10.0'
+    // Jackson
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
+    // HTTP Client
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:"${httpClientVersion}"
     
 }
 test {

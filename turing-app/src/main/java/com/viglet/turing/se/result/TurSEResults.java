@@ -19,9 +19,9 @@ package com.viglet.turing.se.result;
 
 import java.util.List;
 
+import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
+import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.se.facet.TurSEFacetResult;
-import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
-import com.viglet.turing.se.similar.TurSESimilarResult;
 
 public class TurSEResults {
 	private int qTime;

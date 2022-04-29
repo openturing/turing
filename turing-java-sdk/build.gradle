@@ -40,4 +40,6 @@ dependencies {
     
     // HTTP Client
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:"${httpClientVersion}"
+    
+    implementation project(':turing-commons')
 }

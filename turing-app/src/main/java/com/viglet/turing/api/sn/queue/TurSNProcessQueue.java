@@ -20,6 +20,7 @@ package com.viglet.turing.api.sn.queue;
 import com.viglet.turing.api.sn.job.TurSNJob;
 import com.viglet.turing.api.sn.job.TurSNJobAction;
 import com.viglet.turing.api.sn.job.TurSNJobItem;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
@@ -28,7 +29,6 @@ import com.viglet.turing.sn.TurSNThesaurusProcess;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
-import com.viglet.turing.utils.TurUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,8 +51,6 @@ public class TurSNProcessQueue {
     private TurSolrInstanceProcess turSolrInstanceProcess;
     @Autowired
     private TurSNMergeProvidersProcess turSNMergeProvidersProcess;
-    @Autowired
-    private TurUtils turUtils;
     @Autowired
     private TurSNSpotlightProcess turSNSpotlightProcess;
     @Autowired
@@ -202,7 +200,7 @@ public class TurSNProcessQueue {
                                                     Entry<String, Object> attribute) {
         List<?> nlpAttributeArray = (ArrayList<?>) attribute.getValue();
         if (!nlpAttributeArray.isEmpty()) {
-            List<String> list = turUtils.cloneListOfTermsAsString(nlpAttributeArray);
+            List<String> list = TurCommonsUtils.cloneListOfTermsAsString(nlpAttributeArray);
             Set<String> termsUnique = new HashSet<>(list);
             List<Object> arrayValue = new ArrayList<>();
             arrayValue.addAll(termsUnique);
