@@ -45,7 +45,7 @@ public class TurFileUtils {
 	}
 
 	public static void main(String[] args) {
-		TurFileAttributes turFileAttributes = parseFile(new File(args[0]));
+		TurFileAttributes turFileAttributes = readFile(args[0]);
 		System.out.println(turFileAttributes.getContent());
 	}
 
@@ -98,7 +98,7 @@ public class TurFileUtils {
 					Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 					try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
 						parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
-						contentFile.append(TurCommonsUtils.cleanTextContent(handlerInner.toString()));
+						contentFile.append(handlerInner.toString());
 
 					} catch (TikaException e) {
 						logger.error(e);
@@ -110,21 +110,14 @@ public class TurFileUtils {
 			parseContext.set(EmbeddedDocumentExtractor.class, embeddedDocumentExtractor);
 
 			parser.parse(fileInputStreamAttribute, handler, metadata, parseContext);
-			contentFile.append(TurCommonsUtils.cleanTextContent(handler.toString()));
-
-			return new TurFileAttributes(file, cleanTextContent(contentFile.toString()), metadata);
+			
+			contentFile.append(handler.toString());
+			return new TurFileAttributes(file, TurCommonsUtils.cleanTextContent(contentFile.toString()), metadata);
 
 		} catch (IOException | SAXException | TikaException e) {
 			logger.error(e.getMessage(), e);
 		}
 
 		return null;
-	}
-
-	private static String cleanTextContent(String text) {
-		text = text.replaceAll("[\r\n\t]", " ");
-		// Remove 2 or more spaces
-		text = text.trim().replaceAll(" +", " ");
-		return text.trim();
 	}
 }

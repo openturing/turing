@@ -310,18 +310,26 @@ public class TurJDBCImportTool {
 			}
 			logger.info("Execute a query...");
 			try (Connection conn = DriverManager.getConnection(connect, dbUsername, dbPassword);
-					Statement stmt = conn.createStatement();
+					Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+							ResultSet.CONCUR_READ_ONLY);
 					ResultSet rs = stmt.executeQuery(getFormattedQuery())) {
+				int totalRows = 0;
+				if (rs.last()) {
+					totalRows = rs.getRow();
+					// Move to beginning
+					rs.beforeFirst();
+				}
+
 				TurChunkingJob turChunkingJob = new TurChunkingJob(chunk);
 				while (rs.next()) {
 					turChunkingJob.addItem(createJobItem(turJDBCCustomImpl, conn, rs));
 					if (turChunkingJob.isChunkLimit()) {
-						this.sendServer(turSNServer, turChunkingJob);
+						this.sendServer(turSNServer, turChunkingJob, totalRows);
 						turChunkingJob.newCicle();
 					}
 				}
 				if (turChunkingJob.hasItemsLeft()) {
-					this.sendServer(turSNServer, turChunkingJob);
+					this.sendServer(turSNServer, turChunkingJob, totalRows);
 				}
 			} catch (SQLException e) {
 				logger.error(e.getMessage(), e);
@@ -472,9 +480,9 @@ public class TurJDBCImportTool {
 		}
 	}
 
-	private void sendServer(TurSNServer turSNServer, TurChunkingJob turChunkingJob) {
-		System.out.print(String.format("Importing %s to %s items%n", turChunkingJob.getFirstItemPosition(),
-				turChunkingJob.getTotal()));
+	private void sendServer(TurSNServer turSNServer, TurChunkingJob turChunkingJob, int totalRows) {
+		System.out.print(String.format("Importing %s to %s of %s items%n", turChunkingJob.getFirstItemPosition(),
+				turChunkingJob.getTotal(), totalRows));
 		turSNServer.importItems(turChunkingJob.getTurSNJobItems(), showOutput);
 	}
 }

@@ -42,20 +42,11 @@ public class TurCommonsUtils {
     private static final File userDir = new File(System.getProperty(USER_DIR));
 
     public static String cleanTextContent(String text) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Original Text: {}", text.replace("\n", "\\\\n \n").replace("\t", "\\\\t \t"));
-        }
-        // Remove 2 or more spaces
-        text = text.trim().replaceAll("[\\t\\r]", "\\n");
-        text = text.trim().replaceAll(" +", " ");
-
-        text = text.trim();
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Cleaned Text: {}", text);
-        }
-        return text;
-    }
+		text = text.replaceAll("[\r\n\t]", " ");
+		// Remove 2 or more spaces
+		text = text.trim().replaceAll(" +", " ");
+		return text.trim();
+	}
 
     public List<String> cloneListOfTermsAsString(List<?> nlpAttributeArray) {
         List<String> list = new ArrayList<>();
