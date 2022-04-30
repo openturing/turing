@@ -19,6 +19,9 @@ import { TurSNSiteLocalePageComponent } from './component/site/locale/sn-site-lo
 import { TurSNSiteMergeRootPageComponent } from './component/site/merge/sn-site-merge-root-page.component';
 import { TurSNSiteMergeListPageComponent } from './component/site/merge/sn-site-merge-list-page.component';
 import { TurSNSiteMergePageComponent } from './component/site/merge/sn-site-merge-page.component';
+import { TurSNSiteMetricsRootPageComponent } from './component/site/metrics/sn-site-metrics-root-page.component';
+import { TurSNSiteMetricsTopTermsPageComponent } from './component/site/metrics/sn-site-metrics-top-terms-page.component';
+import { TurSNSiteMetricsTopTermsRootPageComponent } from './component/site/metrics/sn-site-metrics-top-terms-root-page.component';
 
 const routes: Routes = [
   {
@@ -28,6 +31,19 @@ const routes: Routes = [
       {
         path: 'site/:id', component: TurSNSitePageComponent, canActivate: [AuthGuard],
         children: [
+          {
+            path: 'metrics', component: TurSNSiteMetricsRootPageComponent, canActivate: [AuthGuard],
+            children: [
+              {
+                path: 'top-terms', component: TurSNSiteMetricsTopTermsRootPageComponent, canActivate: [AuthGuard],
+                children: [
+                  { path: ':period', component: TurSNSiteMetricsTopTermsPageComponent, canActivate: [AuthGuard] },
+                  { path: '', redirectTo: 'this-month', pathMatch: 'full' }
+                ]
+              },
+              { path: '', redirectTo: 'top-terms', pathMatch: 'full' }
+            ]
+          },
           {
             path: 'spotlight', component: TurSNSiteSpotlightRootPageComponent, canActivate: [AuthGuard],
             children: [

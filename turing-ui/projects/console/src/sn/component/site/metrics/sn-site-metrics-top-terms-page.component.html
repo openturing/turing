@@ -1,0 +1,60 @@
+<div *ngIf="(getTurSNSiteMetricsTopTerms() | async) as snSiteMetricsTopTerms; else loading">
+
+  <nav class="UnderlineNav UnderlineNav--left mb-5" aria-label="Foo bar">
+    <div class="mb-2">
+      <div class="Subhead-heading"><span octicon="graph" [size]="24" class="mr-1"></span> Top Search Terms</div>
+    </div>
+      <div class="UnderlineNav-body">
+        <a class="UnderlineNav-item" [routerLink]="['/sn/site',getId() , 'metrics', 'top-terms', 'today']"
+        [routerLinkActive]="['selected']">Today</a>
+        <a class="UnderlineNav-item" [routerLink]="['/sn/site',getId() , 'metrics', 'top-terms', 'this-week']"
+        [routerLinkActive]="['selected']">This Week</a>
+        <a class="UnderlineNav-item" [routerLink]="['/sn/site',getId() , 'metrics', 'top-terms', 'this-month']"
+        [routerLinkActive]="['selected']">This Month</a>
+        <a class="UnderlineNav-item" [routerLink]="['/sn/site',getId() , 'metrics', 'top-terms', 'all-time']"
+        [routerLinkActive]="['selected']">All Time</a>
+      </div>
+
+  </nav>
+  <div class="Box" style="max-width: 600px;">
+    <div class="Box-header">
+      <div class="d-table">
+        <div class="d-table-cell col-2">
+          Rank
+        </div>
+        <div class="d-table-cell col-10">
+          Term
+        </div>
+        <div class="d-table-cell col-4">
+          Total
+        </div>
+      </div>
+    </div>
+    <div *ngFor="let snSiteMetricsTopTerm of snSiteMetricsTopTerms; let i = index" [attr.data-index]="i"
+      data-view-component="true" class="Box-body">
+      <div class="d-table">
+        <div class="d-table-cell col-2">
+          <span class="Counter"> {{i+1}}º</span>
+        </div>
+        <div class="d-table-cell col-10">
+
+          <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;" class="float-left">
+
+            <svg width="24" height="24" style="border-radius: 50%;"
+              [identiconHash]="snSiteMetricsTopTerm.term | lowercase">
+              Avatar
+            </svg>
+          </div>
+          {{snSiteMetricsTopTerm.term}}
+
+        </div>
+        <div class="d-table-cell col-4">
+          <span class="Counter">{{snSiteMetricsTopTerm.total}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

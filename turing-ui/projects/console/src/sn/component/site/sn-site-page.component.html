@@ -94,6 +94,10 @@
       <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'spotlight']"
         [routerLinkActive]="['selected']"><span octicon="megaphone" [size]=16 class="mr-1"></span> Spotlight</a>
     </nav>
+    <nav class="menu" aria-label="Metrics">
+      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'metrics', 'top-terms']"
+      [routerLinkActive]="['selected']"><span octicon="graph" [size]=16 class="mr-1"></span> Top Search Terms</a>
+    </nav>
   </div>
   <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
     <router-outlet>

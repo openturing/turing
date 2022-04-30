@@ -20,6 +20,7 @@ package com.viglet.turing.persistence.repository.sn.metric;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
@@ -39,7 +40,14 @@ public interface TurSNSiteMetricAccessRepository extends JpaRepository<TurSNSite
 	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(term, max(accessDate)) from TurSNSiteMetricAccess where turSNSite = ?1 and language = ?2 and userId = ?3 GROUP BY term ORDER BY MAX(accessDate) DESC")
 	List<TurSNSiteMetricAccessTerm> findLatestSearches(TurSNSite turSNSite,
 			String language, String userId, Pageable pageable);
-
+	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(term, COUNT(term)) from "
+			+ "TurSNSiteMetricAccess where turSNSite = ?1 GROUP BY term ORDER BY COUNT(term) DESC")
+	List<TurSNSiteMetricAccessTerm> topTerms(TurSNSite turSNSite, Pageable pageable);
+	
+	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(term, COUNT(term)) from "
+			+ "TurSNSiteMetricAccess where turSNSite = ?1 AND accessDate BETWEEN ?2 AND ?3 GROUP BY term ORDER BY COUNT(term) DESC")
+	List<TurSNSiteMetricAccessTerm> topTermsBetweenDates(TurSNSite turSNSite, Date startDate, Date endDate, Pageable pageable);
+	
 	List<TurSNSiteMetricAccess> findByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
 
 	List<TurSNSiteMetricAccess> findByTurSNSite(TurSNSite turSNSite);

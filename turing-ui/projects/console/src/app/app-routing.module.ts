@@ -18,7 +18,7 @@ const routes: Routes = [
   { path: '', redirectTo: '/nlp', pathMatch: 'full' }
 ];
 @NgModule({
-  imports: [RouterModule.forRoot(routes, { useHash: false })],
+  imports: [RouterModule.forRoot(routes, { useHash: false})],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }
