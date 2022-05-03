@@ -5,7 +5,7 @@ buildscript {
         springBootVersion = '2.6.7'
         jasyptVersion = '3.0.4'
         languagetool = '5.7'
-        tika = '2.3.0'
+        tika = '2.4.0'
     }
     repositories {
         mavenCentral()
