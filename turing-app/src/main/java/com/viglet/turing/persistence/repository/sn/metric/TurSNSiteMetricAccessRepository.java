@@ -37,16 +37,25 @@ public interface TurSNSiteMetricAccessRepository extends JpaRepository<TurSNSite
 	@SuppressWarnings("unchecked")
 	TurSNSiteMetricAccess save(TurSNSiteMetricAccess turSNSiteLocale);
 
-	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(term, max(accessDate)) from TurSNSiteMetricAccess where turSNSite = ?1 and language = ?2 and userId = ?3 GROUP BY term ORDER BY MAX(accessDate) DESC")
+	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(sanatizedTerm, max(accessDate)) from "
+			+ "TurSNSiteMetricAccess where turSNSite = ?1 and language = ?2 and userId = ?3 GROUP BY sanatizedTerm ORDER BY MAX(accessDate) DESC")
 	List<TurSNSiteMetricAccessTerm> findLatestSearches(TurSNSite turSNSite,
 			String language, String userId, Pageable pageable);
-	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(term, COUNT(term)) from "
-			+ "TurSNSiteMetricAccess where turSNSite = ?1 GROUP BY term ORDER BY COUNT(term) DESC")
+	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(sanatizedTerm, COUNT(sanatizedTerm), AVG(CAST(numFound as double))) from "
+			+ "TurSNSiteMetricAccess where turSNSite = ?1 GROUP BY sanatizedTerm ORDER BY COUNT(sanatizedTerm) DESC")
 	List<TurSNSiteMetricAccessTerm> topTerms(TurSNSite turSNSite, Pageable pageable);
 	
-	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(term, COUNT(term)) from "
-			+ "TurSNSiteMetricAccess where turSNSite = ?1 AND accessDate BETWEEN ?2 AND ?3 GROUP BY term ORDER BY COUNT(term) DESC")
+	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(sanatizedTerm, COUNT(sanatizedTerm), AVG(CAST(numFound as double))) from "
+			+ "TurSNSiteMetricAccess where turSNSite = ?1 AND accessDate BETWEEN ?2 AND ?3 GROUP BY sanatizedTerm ORDER BY COUNT(sanatizedTerm) DESC")
 	List<TurSNSiteMetricAccessTerm> topTermsBetweenDates(TurSNSite turSNSite, Date startDate, Date endDate, Pageable pageable);
+	
+	@Query(value = "select COUNT(sanatizedTerm) from "
+			+ "TurSNSiteMetricAccess where turSNSite = ?1")
+	int countTerms(TurSNSite turSNSite);
+	
+	@Query(value = "select COUNT(sanatizedTerm) from "
+			+ "TurSNSiteMetricAccess where turSNSite = ?1 AND accessDate BETWEEN ?2 AND ?3")
+	int countTermsByPeriod(TurSNSite turSNSite, Date startDate, Date endDate);
 	
 	List<TurSNSiteMetricAccess> findByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
 

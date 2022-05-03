@@ -31,16 +31,21 @@ public class TurSNSiteMetricAccessTerm {
 	private String term;
 	private Date acessDate;
 	private long total;
+	private double numFound;
+
 	public TurSNSiteMetricAccessTerm(String term, Date acessDate) {
 		super();
 		this.term = term;
 		this.acessDate = acessDate;
 	}
-	public TurSNSiteMetricAccessTerm(String term, long total) {
+
+	public TurSNSiteMetricAccessTerm(String term, long total, double numFound) {
 		super();
 		this.term = term;
 		this.total = total;
+		this.numFound = numFound;
 	}
+
 	public String getTerm() {
 		return term;
 	}
@@ -56,13 +61,21 @@ public class TurSNSiteMetricAccessTerm {
 	public void setAcessDate(Date acessDate) {
 		this.acessDate = acessDate;
 	}
+
 	public long getTotal() {
 		return total;
 	}
+
 	public void setTotal(long total) {
 		this.total = total;
 	}
-	
-	
+
+	public double getNumFound() {
+		return numFound;
+	}
+
+	public void setNumFound(double numFound) {
+		this.numFound = numFound;
+	}
 
 }

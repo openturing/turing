@@ -25,16 +25,16 @@ import { TurSNSiteMetricsTerm } from '../model/sn-site-metrics-term.model';
 export class TurSNSiteMetricsService {
   constructor(private httpClient: HttpClient) { }
 
-  topTermsAllTime(siteId: string, rows: number): Observable<TurSNSiteMetricsTerm[]> {
-    return this.httpClient.get<TurSNSiteMetricsTerm[]>(`${environment.apiUrl}/api/sn/${siteId}/metrics/top-terms/all-time/${rows}`);
+  topTermsAllTime(siteId: string, rows: number): Observable<TurSNSiteMetricsTerm> {
+    return this.httpClient.get<TurSNSiteMetricsTerm>(`${environment.apiUrl}/api/sn/${siteId}/metrics/top-terms/all-time/${rows}`);
   }
-  topTermsToday(siteId: string, rows: number): Observable<TurSNSiteMetricsTerm[]> {
-    return this.httpClient.get<TurSNSiteMetricsTerm[]>(`${environment.apiUrl}/api/sn/${siteId}/metrics/top-terms/today/${rows}`);
+  topTermsToday(siteId: string, rows: number): Observable<TurSNSiteMetricsTerm> {
+    return this.httpClient.get<TurSNSiteMetricsTerm>(`${environment.apiUrl}/api/sn/${siteId}/metrics/top-terms/today/${rows}`);
   }
-  topTermsThisWeek(siteId: string, rows: number): Observable<TurSNSiteMetricsTerm[]> {
-    return this.httpClient.get<TurSNSiteMetricsTerm[]>(`${environment.apiUrl}/api/sn/${siteId}/metrics/top-terms/this-week/${rows}`);
+  topTermsThisWeek(siteId: string, rows: number): Observable<TurSNSiteMetricsTerm> {
+    return this.httpClient.get<TurSNSiteMetricsTerm>(`${environment.apiUrl}/api/sn/${siteId}/metrics/top-terms/this-week/${rows}`);
   }
-  topTermsThisMonth(siteId: string, rows: number): Observable<TurSNSiteMetricsTerm[]> {
-    return this.httpClient.get<TurSNSiteMetricsTerm[]>(`${environment.apiUrl}/api/sn/${siteId}/metrics/top-terms/this-month/${rows}`);
+  topTermsThisMonth(siteId: string, rows: number): Observable<TurSNSiteMetricsTerm> {
+    return this.httpClient.get<TurSNSiteMetricsTerm>(`${environment.apiUrl}/api/sn/${siteId}/metrics/top-terms/this-month/${rows}`);
   }
 }

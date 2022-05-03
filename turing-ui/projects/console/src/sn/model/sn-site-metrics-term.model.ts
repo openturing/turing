@@ -1,4 +1,8 @@
+import { TurSNSiteMetricsTopTerm } from "./sn-site-metrics-top-term.model";
+
 export interface TurSNSiteMetricsTerm {
-  term: string;
-  total: number;
+  topTerms: TurSNSiteMetricsTopTerm[];
+  totalTermsPeriod: number;
+  totalTermsPreviousPeriod: number;
+  variationPeriod: number;
 }

@@ -30,6 +30,7 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.text.Normalizer;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -60,6 +61,9 @@ public class TurSNSiteMetricAccess implements Serializable {
 
 	@Column
 	private String term;
+
+	@Column
+	private String sanatizedTerm;
 
 	@ElementCollection
 	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
@@ -108,6 +112,8 @@ public class TurSNSiteMetricAccess implements Serializable {
 
 	public void setTerm(String term) {
 		this.term = term;
+		this.sanatizedTerm = Normalizer.normalize(term, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "")
+				.replaceAll("( )+", " ").toLowerCase().trim();
 	}
 
 	public Set<String> getTargetingRules() {
@@ -140,6 +146,14 @@ public class TurSNSiteMetricAccess implements Serializable {
 
 	public void setNumFound(long numFound) {
 		this.numFound = numFound;
+	}
+
+	public String getSanatizedTerm() {
+		return sanatizedTerm;
+	}
+
+	public void setSanatizedTerm(String sanatizedTerm) {
+		this.sanatizedTerm = sanatizedTerm;
 	}
 
 }

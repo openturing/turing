@@ -10,7 +10,7 @@ import { TurSNSiteMetricsService } from '../../../service/sn-site-metrics.servic
   templateUrl: './sn-site-metrics-top-terms-page.component.html'
 })
 export class TurSNSiteMetricsTopTermsPageComponent {
-  private turSNSiteMetricsTopTerms: Observable<TurSNSiteMetricsTerm[]>;
+  private turSNSiteMetricsTopTerms: Observable<TurSNSiteMetricsTerm>;
   private siteId: string;
   private currentSiteId: string;
   private period: string;
@@ -35,7 +35,7 @@ export class TurSNSiteMetricsTopTermsPageComponent {
     }
   }
 
-  getTopTermsService(): Observable<TurSNSiteMetricsTerm[]> {
+  getTopTermsService(): Observable<TurSNSiteMetricsTerm> {
     if (this.period == 'today') {
       return this.turSNSiteMetricsService.topTermsToday(this.siteId, 50);
     } else if (this.period == 'this-week') {
@@ -51,7 +51,7 @@ export class TurSNSiteMetricsTopTermsPageComponent {
     return this.siteId;
   }
 
-  getTurSNSiteMetricsTopTerms(): Observable<TurSNSiteMetricsTerm[]> {
+  getTurSNSiteMetricsTopTerms(): Observable<TurSNSiteMetricsTerm> {
     this.siteId = this.route.parent?.parent?.parent?.snapshot.paramMap.get('id') || "";
     this.period = this.route.snapshot.paramMap.get('period') || "this-month";
     if (this.currentPeriod != this.period || this.currentSiteId != this.siteId) {

@@ -17,10 +17,10 @@
 
 package com.viglet.turing.api.sn.console;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,10 +30,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.api.sn.bean.TurSNSiteMetricsTopTermsBean;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
-import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,10 +52,10 @@ public class TurSNSiteMetricsAPI {
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
 	private TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository;
-
+	SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss"); 
 	@Operation(summary = "Semantic Navigation Site Metrics Top Terms")
 	@GetMapping("top-terms/today/{rows}")
-	public List<TurSNSiteMetricAccessTerm> turSNSiteMetricsTopTermsToday(@PathVariable String snSiteId,
+	public TurSNSiteMetricsTopTermsBean turSNSiteMetricsTopTermsToday(@PathVariable String snSiteId,
 			@PathVariable int rows) {
 		Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(snSiteId);
 		if (turSNSite.isPresent()) {
@@ -64,33 +64,69 @@ public class TurSNSiteMetricsAPI {
 			cal.clear(Calendar.MINUTE);
 			cal.clear(Calendar.SECOND);
 			cal.clear(Calendar.MILLISECOND);
-			return this.turSNSiteMetricAccessRepository.topTermsBetweenDates(turSNSite.get(), cal.getTime(), new Date(),
-					PageRequest.of(0, rows));
+
+			Calendar previousBegin = Calendar.getInstance();
+			previousBegin.set(Calendar.HOUR_OF_DAY, 0);
+			previousBegin.clear(Calendar.MINUTE);
+			previousBegin.clear(Calendar.SECOND);
+			previousBegin.clear(Calendar.MILLISECOND);
+			previousBegin.add(Calendar.DATE, -1);
+			
+			Calendar previousEnd = Calendar.getInstance();
+			previousEnd.add(Calendar.DATE, -1);
+			
+			return getTopTermsReport(rows, turSNSite, cal, previousBegin, previousEnd);
 		}
-		return new ArrayList<>();
+		return new TurSNSiteMetricsTopTermsBean(new ArrayList<>(), 0, 0);
+	}
+
+	private TurSNSiteMetricsTopTermsBean getTopTermsReport(int rows, Optional<TurSNSite> turSNSite, Calendar cal,
+			Calendar previousBegin, Calendar previousEnd) {
+		return new TurSNSiteMetricsTopTermsBean(
+				this.turSNSiteMetricAccessRepository.topTermsBetweenDates(turSNSite.get(), cal.getTime(),
+						new Date(), PageRequest.of(0, rows)),
+				this.turSNSiteMetricAccessRepository.countTermsByPeriod(turSNSite.get(), cal.getTime(), new Date()),
+				this.turSNSiteMetricAccessRepository.countTermsByPeriod(turSNSite.get(), previousBegin.getTime(),
+						previousEnd.getTime()));
 	}
 
 	@GetMapping("top-terms/this-week/{rows}")
-	public List<TurSNSiteMetricAccessTerm> turSNSiteMetricsTopTermsThisWeek(@PathVariable String snSiteId,
+	public TurSNSiteMetricsTopTermsBean turSNSiteMetricsTopTermsThisWeek(@PathVariable String snSiteId,
 			@PathVariable int rows) {
 		Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(snSiteId);
 		if (turSNSite.isPresent()) {
 			Calendar cal = Calendar.getInstance();
+			
 			cal.set(Calendar.HOUR_OF_DAY, 0);
 			cal.clear(Calendar.MINUTE);
 			cal.clear(Calendar.SECOND);
 			cal.clear(Calendar.MILLISECOND);
-
 			cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
-
-			return this.turSNSiteMetricAccessRepository.topTermsBetweenDates(turSNSite.get(), cal.getTime(), new Date(),
-					PageRequest.of(0, rows));
+			
+			Calendar previousBegin = Calendar.getInstance();
+			previousBegin.add(Calendar.DATE, -7);
+			previousBegin.set(Calendar.HOUR_OF_DAY, 0);
+			previousBegin.clear(Calendar.MINUTE);
+			previousBegin.clear(Calendar.SECOND);
+			previousBegin.clear(Calendar.MILLISECOND);
+			previousBegin.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
+			
+			Calendar previousEnd = Calendar.getInstance();
+			previousEnd.add(Calendar.DATE, -7);
+			previousEnd.set(Calendar.HOUR_OF_DAY, 23);
+			previousEnd.set(Calendar.MINUTE, 59);
+			previousEnd.set(Calendar.SECOND, 59);
+			previousEnd.set(Calendar.MILLISECOND, 999);
+			previousEnd.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
+			previousEnd.add(Calendar.DATE, +6);
+			
+			return getTopTermsReport(rows, turSNSite, cal, previousBegin, previousEnd);
 		}
-		return new ArrayList<>();
+		return new TurSNSiteMetricsTopTermsBean(new ArrayList<>(), 0, 0);
 	}
 
 	@GetMapping("top-terms/this-month/{rows}")
-	public List<TurSNSiteMetricAccessTerm> turSNSiteMetricsTopTermsThisMonth(@PathVariable String snSiteId,
+	public TurSNSiteMetricsTopTermsBean turSNSiteMetricsTopTermsThisMonth(@PathVariable String snSiteId,
 			@PathVariable int rows) {
 		Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(snSiteId);
 		if (turSNSite.isPresent()) {
@@ -102,19 +138,38 @@ public class TurSNSiteMetricsAPI {
 
 			cal.set(Calendar.DAY_OF_MONTH, 1);
 
-			return this.turSNSiteMetricAccessRepository.topTermsBetweenDates(turSNSite.get(), cal.getTime(), new Date(),
-					PageRequest.of(0, rows));
+			
+			Calendar previousBegin = Calendar.getInstance();
+			previousBegin.set(Calendar.HOUR_OF_DAY, 0);
+			previousBegin.clear(Calendar.MINUTE);
+			previousBegin.clear(Calendar.SECOND);
+			previousBegin.clear(Calendar.MILLISECOND);
+			previousBegin.add(Calendar.MONTH, -1);
+			previousBegin.set(Calendar.DATE, 1);
+			
+			Calendar previousEnd = Calendar.getInstance();
+			previousEnd.set(Calendar.HOUR_OF_DAY, 23);
+			previousEnd.set(Calendar.MINUTE, 59);
+			previousEnd.set(Calendar.SECOND, 59);
+			previousEnd.set(Calendar.MILLISECOND, 999);
+			previousEnd.set(Calendar.DATE, 1);
+			previousEnd.add(Calendar.DAY_OF_MONTH, -1);
+			
+			return getTopTermsReport(rows, turSNSite, cal, previousBegin, previousEnd);
 		}
-		return new ArrayList<>();
+		return new TurSNSiteMetricsTopTermsBean(new ArrayList<>(), 0, 0);
 	}
 
 	@GetMapping("top-terms/all-time/{rows}")
-	public List<TurSNSiteMetricAccessTerm> turSNSiteMetricsTopTermsAllTime(@PathVariable String snSiteId,
+	public TurSNSiteMetricsTopTermsBean turSNSiteMetricsTopTermsAllTime(@PathVariable String snSiteId,
 			@PathVariable int rows) {
 		Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(snSiteId);
 		if (turSNSite.isPresent()) {
-			return this.turSNSiteMetricAccessRepository.topTerms(turSNSite.get(), PageRequest.of(0, rows));
+			return new TurSNSiteMetricsTopTermsBean(
+					this.turSNSiteMetricAccessRepository.topTerms(turSNSite.get(), PageRequest.of(0, rows)),
+					this.turSNSiteMetricAccessRepository.countTerms(turSNSite.get()), 0);
 		}
-		return new ArrayList<>();
+		return new TurSNSiteMetricsTopTermsBean(new ArrayList<>(), 0, 0);
 	}
+
 }
