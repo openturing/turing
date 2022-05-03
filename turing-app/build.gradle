@@ -170,7 +170,7 @@ dependencies {
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
 
     //ActiveMQ using KahaDB
-    implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.17.0'
+    implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.17.1'
 
     // SpringDoc
     implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.8'
