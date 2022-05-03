@@ -23,76 +23,15 @@ import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 
-public class TurSEResults {
+public class TurSEResults extends TurSEGenericResults {
 	private int qTime;
 	private long elapsedTime;
-	private long numFound;
-	private long start;
-	private int limit;
-	private int pageCount;
-	private int currentPage;
 	private String queryString;
 	private String sort;
 	private TurSESpellCheckResult spellCheck;
 	private List<TurSESimilarResult> similarResults;
 	private List<TurSEFacetResult> facetResults;
-	private List<TurSEResult> results;
-
-	public List<TurSESimilarResult> getSimilarResults() {
-		return similarResults;
-	}
-
-	public void setSimilarResults(List<TurSESimilarResult> similarResults) {
-		this.similarResults = similarResults;
-	}
-
-	public List<TurSEFacetResult> getFacetResults() {
-		return facetResults;
-	}
-
-	public void setFacetResults(List<TurSEFacetResult> facetResults) {
-		this.facetResults = facetResults;
-	}
-
-	public String getSort() {
-		return sort;
-	}
-
-	public void setSort(String sort) {
-		this.sort = sort;
-	}
-
-	public String getQueryString() {
-		return queryString;
-	}
-
-	public void setQueryString(String queryString) {
-		this.queryString = queryString;
-	}
-
-	public int getPageCount() {
-		return pageCount;
-	}
-
-	public void setPageCount(int pageCount) {
-		this.pageCount = pageCount;
-	}
-
-	public int getCurrentPage() {
-		return currentPage;
-	}
-
-	public void setCurrentPage(int currentPage) {
-		this.currentPage = currentPage;
-	}
-
-	public int getLimit() {
-		return limit;
-	}
-
-	public void setLimit(int limit) {
-		this.limit = limit;
-	}
+	private List<TurSEGroup> groups;
 
 	public int getqTime() {
 		return qTime;
@@ -110,28 +49,20 @@ public class TurSEResults {
 		this.elapsedTime = elapsedTime;
 	}
 
-	public long getNumFound() {
-		return numFound;
+	public String getQueryString() {
+		return queryString;
 	}
 
-	public void setNumFound(long numFound) {
-		this.numFound = numFound;
+	public void setQueryString(String queryString) {
+		this.queryString = queryString;
 	}
 
-	public long getStart() {
-		return start;
+	public String getSort() {
+		return sort;
 	}
 
-	public void setStart(long start) {
-		this.start = start;
-	}
-
-	public List<TurSEResult> getResults() {
-		return results;
-	}
-
-	public void setResults(List<TurSEResult> results) {
-		this.results = results;
+	public void setSort(String sort) {
+		this.sort = sort;
 	}
 
 	public TurSESpellCheckResult getSpellCheck() {
@@ -141,4 +72,29 @@ public class TurSEResults {
 	public void setSpellCheck(TurSESpellCheckResult spellCheck) {
 		this.spellCheck = spellCheck;
 	}
+
+	public List<TurSESimilarResult> getSimilarResults() {
+		return similarResults;
+	}
+
+	public void setSimilarResults(List<TurSESimilarResult> similarResults) {
+		this.similarResults = similarResults;
+	}
+
+	public List<TurSEFacetResult> getFacetResults() {
+		return facetResults;
+	}
+
+	public void setFacetResults(List<TurSEFacetResult> facetResults) {
+		this.facetResults = facetResults;
+	}
+
+	public List<TurSEGroup> getGroups() {
+		return groups;
+	}
+
+	public void setGroups(List<TurSEGroup> groups) {
+		this.groups = groups;
+	}
+
 }

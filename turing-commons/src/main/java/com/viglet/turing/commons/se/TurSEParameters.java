@@ -8,19 +8,21 @@ public class TurSEParameters {
 	private Integer currentPage;
 	private String sort;
 	private Integer rows;
+	private String group;
 	private Integer autoCorrectionDisabled;
 
 	public TurSEParameters(String query, List<String> filterQueries, Integer currentPage, String sort, Integer rows,
-			Integer autoCorrectionDisabled) {
+			String group, Integer autoCorrectionDisabled) {
 		super();
 		this.query = query;
 		this.filterQueries = filterQueries;
 		this.currentPage = currentPage;
 		this.sort = sort;
 		this.rows = rows;
+		this.group = group;
 		this.autoCorrectionDisabled = autoCorrectionDisabled;
 	}
-	
+
 	public String getQuery() {
 		return query;
 	}
@@ -68,4 +70,13 @@ public class TurSEParameters {
 	public void setAutoCorrectionDisabled(Integer autoCorrectionDisabled) {
 		this.autoCorrectionDisabled = autoCorrectionDisabled;
 	}
+
+	public String getGroup() {
+		return group;
+	}
+
+	public void setGroup(String group) {
+		this.group = group;
+	}
+
 }

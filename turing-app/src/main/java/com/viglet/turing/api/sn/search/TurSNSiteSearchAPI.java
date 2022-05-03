@@ -64,10 +64,11 @@ public class TurSNSiteSearchAPI {
 			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
 			@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
+			@RequestParam(required = false, name = TurSNParamType.GROUP) String group,
 			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0") Integer autoCorrectionDisabled,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale, HttpServletRequest request) {
 		return turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-				new TurSEParameters(q, fq, currentPage, sort, rows, autoCorrectionDisabled), locale,
+				new TurSEParameters(q, fq, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
 				TurSNUtils.requestToURI(request)));
 	}
 
@@ -78,15 +79,17 @@ public class TurSNSiteSearchAPI {
 			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
 			@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
+			@RequestParam(required = false, name = TurSNParamType.GROUP) String group,
 			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0") Integer autoCorrectionDisabled,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale,
 			@RequestBody TurSNSitePostParamsBean turSNSitePostParamsBean, Principal principal,
 			HttpServletRequest request) {
 		if (principal != null) {
-			turSNSitePostParamsBean.setTargetingRules(turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
+			turSNSitePostParamsBean.setTargetingRules(
+					turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
 			return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-					new TurSEParameters(q, fq, currentPage, sort, rows, autoCorrectionDisabled),
-					locale, TurSNUtils.requestToURI(request), turSNSitePostParamsBean)), HttpStatus.OK);
+					new TurSEParameters(q, fq, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
+					TurSNUtils.requestToURI(request), turSNSitePostParamsBean)), HttpStatus.OK);
 		}
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 	}

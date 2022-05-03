@@ -100,7 +100,18 @@ public class TurSNUtils {
 		return TurCommonsUtils.modifiedURI(uri, sbQueryString);
 	}
 
-	
+	public static URI removeQueryField(URI uri, String field) {
+		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
+		StringBuilder sbQueryString = new StringBuilder();
+
+		for (NameValuePair nameValuePair : params) {
+			if (!(nameValuePair.getName().equals(field))) {
+				TurCommonsUtils.addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
+			}
+		}
+
+		return TurCommonsUtils.modifiedURI(uri, sbQueryString);
+	}
 
 
 	

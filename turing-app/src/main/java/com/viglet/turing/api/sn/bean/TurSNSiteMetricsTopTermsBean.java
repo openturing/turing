@@ -24,7 +24,7 @@ public class TurSNSiteMetricsTopTermsBean {
 			this.variationPeriod = 0;
 		} else {
 			float total = ((float) totalTermsPeriod / (float) totalTermsPreviousPeriod);
-			this.variationPeriod = (int) ((total < 1) ? (-1) * (1 - total) * 100 : total * 100);
+			this.variationPeriod = (int) ((total < 1) ? (-1) * (1 - total) * 100 : (total * 100) - 100);
 		}
 	}
 
