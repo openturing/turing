@@ -17,7 +17,6 @@
 
 package com.viglet.turing.api.sn.console;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -52,7 +51,7 @@ public class TurSNSiteMetricsAPI {
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
 	private TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository;
-	SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss"); 
+
 	@Operation(summary = "Semantic Navigation Site Metrics Top Terms")
 	@GetMapping("top-terms/today/{rows}")
 	public TurSNSiteMetricsTopTermsBean turSNSiteMetricsTopTermsToday(@PathVariable String snSiteId,
@@ -113,13 +112,7 @@ public class TurSNSiteMetricsAPI {
 			
 			Calendar previousEnd = Calendar.getInstance();
 			previousEnd.add(Calendar.DATE, -7);
-			previousEnd.set(Calendar.HOUR_OF_DAY, 23);
-			previousEnd.set(Calendar.MINUTE, 59);
-			previousEnd.set(Calendar.SECOND, 59);
-			previousEnd.set(Calendar.MILLISECOND, 999);
-			previousEnd.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
-			previousEnd.add(Calendar.DATE, +6);
-			
+
 			return getTopTermsReport(rows, turSNSite, cal, previousBegin, previousEnd);
 		}
 		return new TurSNSiteMetricsTopTermsBean(new ArrayList<>(), 0, 0);
@@ -148,12 +141,7 @@ public class TurSNSiteMetricsAPI {
 			previousBegin.set(Calendar.DATE, 1);
 			
 			Calendar previousEnd = Calendar.getInstance();
-			previousEnd.set(Calendar.HOUR_OF_DAY, 23);
-			previousEnd.set(Calendar.MINUTE, 59);
-			previousEnd.set(Calendar.SECOND, 59);
-			previousEnd.set(Calendar.MILLISECOND, 999);
-			previousEnd.set(Calendar.DATE, 1);
-			previousEnd.add(Calendar.DAY_OF_MONTH, -1);
+			previousEnd.add(Calendar.DAY_OF_MONTH, (-1) * previousEnd.getActualMaximum(Calendar.DAY_OF_MONTH) + 1);
 			
 			return getTopTermsReport(rows, turSNSite, cal, previousBegin, previousEnd);
 		}

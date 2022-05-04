@@ -1,6 +1,6 @@
 <div *ngIf="(getTurSNSiteMetricsTopTerms() | async) as snSiteMetricsTopTerms; else loading">
 
-  <nav class="UnderlineNav UnderlineNav--left mb-5" aria-label="Foo bar">
+  <nav class="UnderlineNav UnderlineNav--left mb-5" aria-label="Top Search Terms">
     <div class="mb-2">
       <div class="Subhead-heading"><span octicon="graph" [size]="24" class="mr-1"></span> Top Search Terms</div>
     </div>
@@ -16,64 +16,71 @@
     </div>
 
   </nav>
-  <div id="col-left" class="float-left" style="width: calc(100% - 300px);">
-    <div class="Box">
-      <div class="Box-header">
-        <div class="d-table">
-          <div class="d-table-cell col-2">
-            Rank
-          </div>
-          <div class="d-table-cell col-6">
-            Term
-          </div>
-          <div class="d-table-cell col-4" style="text-align: center;">
-            <div>Average</div>
-            <div>of results</div>
-          </div>
-          <div class="d-table-cell col-4" style="text-align: center;">
-            <div>Search</div>
-            <div>total</div>
+  <div *ngIf="snSiteMetricsTopTerms.topTerms.length < 1" class="blankslate">
+    <span octicon="graph" [size]="48" class="mb-3"></span>
+    <h3 class="mb-1">You don’t seem to have any access.</h3>
+    <p>As soon as you have some access more information will appear.</p>
+  </div>
+  <div  *ngIf="snSiteMetricsTopTerms.topTerms.length >= 1">
+    <div id="col-left" class="float-left" style="width: calc(100% - 300px);">
+      <div class="Box">
+        <div class="Box-header">
+          <div class="d-table">
+            <div class="d-table-cell col-2">
+              Rank
+            </div>
+            <div class="d-table-cell col-6">
+              Term
+            </div>
+            <div class="d-table-cell col-4" style="text-align: center;">
+              <div>Average</div>
+              <div>of results</div>
+            </div>
+            <div class="d-table-cell col-4" style="text-align: center;">
+              <div>Search</div>
+              <div>total</div>
+            </div>
           </div>
         </div>
-      </div>
-      <div *ngFor="let snSiteMetricsTopTerm of snSiteMetricsTopTerms.topTerms ; let i = index" [attr.data-index]="i"
-        data-view-component="true" class="Box-body">
-        <div class="d-table">
-          <div class="d-table-cell col-2">
-            <span class="Counter"> {{i+1}}º</span>
-          </div>
-          <div class="d-table-cell col-6">
-
-            <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;" class="float-left">
-
-              <svg width="24" height="24" style="border-radius: 50%;"
-                [identiconHash]="snSiteMetricsTopTerm.term | lowercase">
-                Avatar
-              </svg>
+        <div *ngFor="let snSiteMetricsTopTerm of snSiteMetricsTopTerms.topTerms ; let i = index" [attr.data-index]="i"
+          data-view-component="true" class="Box-body">
+          <div class="d-table">
+            <div class="d-table-cell col-2">
+              <span class="Counter"> {{i+1}}º</span>
             </div>
-            {{snSiteMetricsTopTerm.term}}
+            <div class="d-table-cell col-6">
 
-          </div>
-          <div class="d-table-cell col-4" style="text-align: center;">
-            <span class="Counter">{{snSiteMetricsTopTerm.numFound}}</span>
-          </div>
-          <div class="d-table-cell col-4" style="text-align: center;">
-            <span class="Counter">{{snSiteMetricsTopTerm.total}}</span>
+              <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;" class="float-left">
+
+                <svg width="24" height="24" style="border-radius: 50%;"
+                  [identiconHash]="snSiteMetricsTopTerm.term | lowercase">
+                  Avatar
+                </svg>
+              </div>
+              {{snSiteMetricsTopTerm.term}}
+
+            </div>
+            <div class="d-table-cell col-4" style="text-align: center;">
+              <span class="Counter">{{snSiteMetricsTopTerm.numFound}}</span>
+            </div>
+            <div class="d-table-cell col-4" style="text-align: center;">
+              <span class="Counter">{{snSiteMetricsTopTerm.total}}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  <div id="col-right" class="float-right" style="width: 280px;">
-    <h2 class="mb-3 h4">Statistics</h2>
-    <div class="Link--muted"><span octicon="search" [size]="16" class="mr-2"></span>
-      <span><strong>{{snSiteMetricsTopTerms.totalTermsPeriod}}</strong> search terms</span>
-      <span *ngIf="snSiteMetricsTopTerms.variationPeriod > 0"
-        style="color:green"><span octicon="arrow-up" [size]="16" class="ml-2"></span>{{snSiteMetricsTopTerms.variationPeriod}}%</span>
-        <span *ngIf="snSiteMetricsTopTerms.variationPeriod < 0"
-          style="color:red"><span octicon="arrow-down" [size]="16" class="ml-2"></span>{{snSiteMetricsTopTerms.variationPeriod}}%</span>
+    <div id="col-right" class="float-right" style="width: 280px;">
+      <h2 class="mb-3 h4">Statistics</h2>
+      <div class="Link--muted"><span octicon="search" [size]="16" class="mr-2"></span>
+        <span><strong>{{snSiteMetricsTopTerms.totalTermsPeriod}}</strong> search terms</span>
+        <span *ngIf="snSiteMetricsTopTerms.variationPeriod > 0" style="color:green"><span octicon="arrow-up" [size]="16"
+            class="ml-2"></span>+{{snSiteMetricsTopTerms.variationPeriod}}%</span>
+        <span *ngIf="snSiteMetricsTopTerms.variationPeriod < 0" style="color:red"><span octicon="arrow-down" [size]="16"
+            class="ml-2"></span>{{snSiteMetricsTopTerms.variationPeriod}}%</span>
 
       </div>
+    </div>
   </div>
 </div>
 <ng-template #loading>

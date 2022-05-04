@@ -17,6 +17,8 @@
 
 package com.viglet.turing.persistence.repository.sn.metric;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 
 /**
@@ -43,7 +45,7 @@ public class TurSNSiteMetricAccessTerm {
 		super();
 		this.term = term;
 		this.total = total;
-		this.numFound = numFound;
+		this.numFound =  new BigDecimal(numFound).setScale(0, RoundingMode.HALF_UP).doubleValue();
 	}
 
 	public String getTerm() {
