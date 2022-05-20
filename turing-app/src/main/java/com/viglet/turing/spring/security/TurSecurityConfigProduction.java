@@ -53,7 +53,7 @@ public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
 						"/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
 						"/browserconfig.xml", "/console/**")
 				.permitAll().anyRequest().authenticated().and()
-				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf().ignoringAntMatchers("/api/sn/**")
+				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf().ignoringAntMatchers("/api/sn/**","/api/nlp/**")
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
 		http.cors();
 	}

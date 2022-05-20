@@ -2,13 +2,26 @@ import java.util.regex.Pattern
 
 buildscript {
     ext {
-        springBootVersion = '2.6.7'
+        springBootVersion = '2.7.0'
         jasyptVersion = '3.0.4'
         languagetool = '5.7'
         tika = '2.4.0'
     }
     repositories {
         mavenCentral()
+         maven {
+        url "https://repo.itextsupport.com/releases"
+           content {
+           includeGroupByRegex "com\\.itextpdf.*"
+        }
+    }
+ maven {
+        url "https://repo.itextsupport.com/snapshot"
+           content {
+           includeGroupByRegex "com\\.itextpdf.*"
+        }
+    }
+    
     }
 
     dependencies { 
@@ -78,6 +91,18 @@ bootRun {
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://repo.itextsupport.com/releases"
+        content {
+           includeGroupByRegex "com\\.itextpdf.*"
+        }
+    }
+     maven {
+        url "https://repo.itextsupport.com/snapshot"
+           content {
+           includeGroupByRegex "com\\.itextpdf.*"
+        }
+    }
 }
 
 group = 'com.viglet.turing'
@@ -113,6 +138,17 @@ dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version: "${springBootVersion}"
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: "${springBootVersion}"
  	implementation project(':turing-commons')
+ 	implementation project(':turing-filesystem:fs-commons')
+ 	
+ 	// https://mvnrepository.com/artifact/com.itextpdf/itextpdf
+implementation group: 'com.itextpdf', name: 'itext7-core', version: '7.2.2'
+// https://mvnrepository.com/artifact/com.itextpdf/cleanup
+implementation group: 'com.itextpdf', name: 'cleanup', version: '3.0.0'
+// https://mvnrepository.com/artifact/org.apache.commons/commons-imaging
+implementation group: 'org.apache.commons', name: 'commons-imaging', version: '1.0-alpha3'
+
+//Thanks for using https://jar-download.com
+ 	
     // Liquidbase
     //implementation group: 'org.liquibase', name: 'liquibase-core', version: '4.6.2'
 

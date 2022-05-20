@@ -23,9 +23,11 @@ import java.util.List;
 public class TurNLPValidateResponse {
 
 	private String vendor;
-	
+
 	private String locale;
-	
+
+	private String text;
+
 	private List<TurNLPEntityValidateResponse> entities = new ArrayList<>();
 
 	public String getVendor() {
@@ -51,6 +53,12 @@ public class TurNLPValidateResponse {
 	public void setLocale(String locale) {
 		this.locale = locale;
 	}
-	
-	
+
+	public String getText() {
+		return text;
+	}
+
+	public void setText(String text) {
+		this.text = text;
+	}
 }

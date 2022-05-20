@@ -33,34 +33,50 @@ import java.util.UUID;
 
 @Component
 public class TurUtils {
-    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
-    @Autowired
-    private ITurAuthenticationFacade authenticationFacade;
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+	@Autowired
+	private ITurAuthenticationFacade authenticationFacade;
 
-    public static File extractZipFile(MultipartFile file) {
-        File tmpDir = TurCommonsUtils.addSubDirToStoreDir("tmp");
+	private static File getTempDirectory() {
+		return TurCommonsUtils.addSubDirToStoreDir("tmp");
+	}
 
-        File zipFile = new File(tmpDir.getAbsolutePath().concat(File.separator + "imp_"
-                + file.getOriginalFilename().replace(".", "").replace("/", "") + UUID.randomUUID())); // NOSONAR
+	public static File getFileFromMultipart(MultipartFile file) {
+		File localFile = new File(
+				randomTempFileOrDirectory());
 
-        try {
-            file.transferTo(zipFile);
-        } catch (IllegalStateException | IOException e) {
-            logger.error(e.getMessage(), e);
-        }
-        File extractFolder = new File(tmpDir.getAbsolutePath().concat(File.separator + "imp_" + UUID.randomUUID()));
-        try {
-        	TurCommonsUtils.unZipIt(zipFile, extractFolder);
-            FileUtils.deleteQuietly(zipFile);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
+		try {
+			file.transferTo(localFile);
+		} catch (IllegalStateException | IOException e) {
+			logger.error(e.getMessage(), e);
+		}
 
-        return extractFolder;
-    }
-    
-    public String getCurrentUsername() {
-        Authentication authentication = authenticationFacade.getAuthentication();
-        return authentication.getName();
-    }
+		return localFile;
+	}
+
+	public static File extractZipFile(MultipartFile file) {
+
+		File zipFile = getFileFromMultipart(file);
+
+		File extractFolder = new File(
+				randomTempFileOrDirectory());
+		try {
+			TurCommonsUtils.unZipIt(zipFile, new File(
+					randomTempFileOrDirectory()));
+			FileUtils.deleteQuietly(zipFile);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
+
+		return extractFolder;
+	}
+
+	private static String randomTempFileOrDirectory() {
+		return getTempDirectory().getAbsolutePath().concat(File.separator + "imp_" + UUID.randomUUID());
+	}
+
+	public String getCurrentUsername() {
+		Authentication authentication = authenticationFacade.getAuthentication();
+		return authentication.getName();
+	}
 }

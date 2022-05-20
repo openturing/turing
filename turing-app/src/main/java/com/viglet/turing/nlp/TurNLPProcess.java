@@ -157,7 +157,7 @@ public class TurNLPProcess {
 				turNLP.setEntityMapWithProcessedValues(nlpService.processAttributesToEntityMap(turNLP));
 			}
 		} catch (Exception e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 
 		if (logger.isDebugEnabled() && turNLP.getEntityMapWithProcessedValues() != null) {
@@ -178,7 +178,7 @@ public class TurNLPProcess {
 				logTermsOfTraining(turNLPTrainingBeans);
 				remapEntityMap(entityMapWithProcessedValues, processedAttributes, terms);
 			} catch (IOException e) {
-				logger.error(e);
+				logger.error(e.getMessage(), e);
 			}
 			entityMapWithProcessedValues = processedAttributes;
 		}

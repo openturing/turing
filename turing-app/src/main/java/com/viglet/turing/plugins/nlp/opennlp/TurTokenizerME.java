@@ -24,7 +24,7 @@ public class TurTokenizerME implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private transient TokenizerME tokenizerME;
+	private TokenizerME tokenizerME;
 
 	public TurTokenizerME(TokenizerME tokenizerME) {
 		this.tokenizerME = tokenizerME;

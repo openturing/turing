@@ -35,11 +35,25 @@ public class TurFileUtils {
 	}
 
 	public static TurFileAttributes readFile(String filePath) {
-		File file = new File(filePath);
+		return readFile(new File(filePath));
+	}
+
+	public static TurFileAttributes readFileAndClean(File file) {
+		if (file.exists()) {
+			TurFileAttributes turFileAttributes = parseFile(file);
+			turFileAttributes.setContent(TurCommonsUtils.cleanTextContent(turFileAttributes.getContent()));
+			return turFileAttributes;
+		} else {
+			logger.info("File not exists: {}", file.getAbsolutePath());
+			return null;
+		}
+	}
+
+	public static TurFileAttributes readFile(File file) {
 		if (file.exists()) {
 			return parseFile(file);
 		} else {
-			logger.info("File not exists: {}", filePath);
+			logger.info("File not exists: {}", file.getAbsolutePath());
 			return null;
 		}
 	}
@@ -110,9 +124,9 @@ public class TurFileUtils {
 			parseContext.set(EmbeddedDocumentExtractor.class, embeddedDocumentExtractor);
 
 			parser.parse(fileInputStreamAttribute, handler, metadata, parseContext);
-			
+
 			contentFile.append(handler.toString());
-			return new TurFileAttributes(file, TurCommonsUtils.cleanTextContent(contentFile.toString()), metadata);
+			return new TurFileAttributes(file, contentFile.toString(), metadata);
 
 		} catch (IOException | SAXException | TikaException e) {
 			logger.error(e.getMessage(), e);
