@@ -22,6 +22,7 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.pdfcleanup.PdfCleaner;
+import com.itextpdf.pdfcleanup.autosweep.CompositeCleanupStrategy;
 import com.itextpdf.pdfcleanup.autosweep.ICleanupStrategy;
 import com.itextpdf.pdfcleanup.autosweep.RegexBasedCleanupStrategy;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
@@ -117,8 +118,8 @@ public class TurNLPInstanceAPI {
 			turNLPInstanceEdit.setTitle(turNLPInstance.getTitle());
 			turNLPInstanceEdit.setDescription(turNLPInstance.getDescription());
 			turNLPInstanceEdit.setTurNLPVendor(turNLPInstance.getTurNLPVendor());
-			turNLPInstanceEdit.setHost(turNLPInstance.getHost());
-			turNLPInstanceEdit.setPort(turNLPInstance.getPort());
+			turNLPInstanceEdit.setEndpointURL(turNLPInstance.getEndpointURL());
+			turNLPInstanceEdit.setKey(turNLPInstance.getKey());
 			turNLPInstanceEdit.setEnabled(turNLPInstance.getEnabled());
 			turNLPInstanceEdit.setLanguage(turNLPInstance.getLanguage());
 			this.turNLPInstanceRepository.save(turNLPInstanceEdit);
@@ -250,7 +251,7 @@ public class TurNLPInstanceAPI {
 		TurFileAttributes turFileAttributes = TurFileUtils.readFile(file);
 		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
 			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, turFileAttributes.getContent());
-			
+
 			PdfReader pdfReader = null;
 			try {
 				pdfReader = new PdfReader(file);
@@ -258,24 +259,32 @@ public class TurNLPInstanceAPI {
 			} catch (IOException e) {
 				logger.error(e.getMessage(), e);
 			}
-			
+
 			try (PdfDocument pdf = new PdfDocument(pdfReader,
 					new PdfWriter(file.getAbsolutePath().concat("redact.pdf")))) {
-				getNLPTerms(turNLPInstance, turNLP).forEach(term -> {
-					ICleanupStrategy cleanupStrategy = new RegexBasedCleanupStrategy(Pattern.compile("\\b".concat(term.replace(")", "").replace("(", "")).concat("\\b"), Pattern.CASE_INSENSITIVE))
-							.setRedactionColor(ColorConstants.DARK_GRAY);
-					try {
-						PdfCleaner.autoSweepCleanUp(pdf, cleanupStrategy);
-					} catch (IOException e) {
-						logger.error(e.getMessage(), e);
-					}
-				});
+				CompositeCleanupStrategy strategy = new CompositeCleanupStrategy();
+				List<String> terms = getNLPTerms(turNLPInstance, turNLP);
+				strategy.add(
+						new RegexBasedCleanupStrategy(redactRegex(terms)).setRedactionColor(ColorConstants.DARK_GRAY));
+				try {
+					PdfCleaner.autoSweepCleanUp(pdf, strategy);
+				} catch (IOException e) {
+					logger.error(e.getMessage(), e);
+				}
 			} catch (IOException e) {
 				logger.error(e.getMessage(), e);
 			}
-			
+
 			return createNLPValidateResponse(turNLPInstance, turNLP, turFileAttributes.getContent());
 		}).orElse(null);
+	}
+
+	private Pattern redactRegex(List<String> terms) {
+		StringBuffer stringBuffer = new StringBuffer();
+		terms.forEach(term -> stringBuffer.append(term.concat("|")));
+		stringBuffer.deleteCharAt(stringBuffer.length() - 1);
+		String pattern = "\\b(".concat(stringBuffer.toString().replace(")", "").replace("(", "")).concat(")\\b");
+		return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
 	}
 
 	@PostMapping("/{id}/validate/text/web")
@@ -327,6 +336,7 @@ public class TurNLPInstanceAPI {
 		}
 		return terms;
 	}
+
 	public boolean isNumeric(String str) {
 		return str.matches("-?\\d+(\\.\\d+)?"); // match a number with optional
 												// '-' and decimal.

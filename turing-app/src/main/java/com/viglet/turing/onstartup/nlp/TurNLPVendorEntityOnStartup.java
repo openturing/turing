@@ -32,6 +32,7 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
+import com.viglet.turing.plugins.nlp.gcp.response.TurNLPGCPEntityTypeResponse;
 
 @Component
 @Transactional
@@ -145,6 +146,11 @@ public class TurNLPVendorEntityOnStartup {
 				spacyEntities(turNLPVendor, TurLocaleRepository.EN_US);
 				spacyEntities(turNLPVendor, TurLocaleRepository.PT_BR);
 			});
+			
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.GCP).ifPresent(turNLPVendor -> {
+				gcpEntities(turNLPVendor, TurLocaleRepository.EN_US);
+				gcpEntities(turNLPVendor, TurLocaleRepository.PT_BR);
+			});
 
 		}
 	}
@@ -170,6 +176,21 @@ public class TurNLPVendorEntityOnStartup {
 		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LANGUAGE_INTERNAL, TurNLPEntityConstant.LANGUAGE_SPACY, language);
 		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.QUANTITY_INTERNAL, TurNLPEntityConstant.QUANTITY_SPACY, language);
 		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.CARDINAL_INTERNAL, TurNLPEntityConstant.CARDINAL_SPACY, language);
+	}
+	
+	private void gcpEntities(TurNLPVendor turNLPVendor, String language) {
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL, TurNLPGCPEntityTypeResponse.PERSON.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL, TurNLPGCPEntityTypeResponse.LOCATION.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL, TurNLPGCPEntityTypeResponse.ORGANIZATION.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.DATE_INTERNAL, TurNLPGCPEntityTypeResponse.DATE.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.MISC_INTERNAL, TurNLPGCPEntityTypeResponse.OTHER.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.MONEY_INTERNAL, TurNLPGCPEntityTypeResponse.PRICE.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.EVENT_INTERNAL, TurNLPGCPEntityTypeResponse.EVENT.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.WORK_OF_ART_INTERNAL, TurNLPGCPEntityTypeResponse.WORK_OF_ART.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.CONSUMER_GOOD, TurNLPGCPEntityTypeResponse.CONSUMER_GOOD.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PHONE_NUMBER, TurNLPGCPEntityTypeResponse.PHONE_NUMBER.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ADDRESS, TurNLPGCPEntityTypeResponse.ADDRESS.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.CARDINAL_INTERNAL, TurNLPGCPEntityTypeResponse.NUMBER.toString(), language);
 	}
 
 	public void addNLPVendor(TurNLPVendor turNLPVendor, String internalName, String name, String language) {

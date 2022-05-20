@@ -17,9 +17,7 @@
 
 package com.viglet.turing.plugins.nlp.polyglot;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.invoke.MethodHandles;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -42,7 +40,6 @@ import org.json.JSONObject;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
-import com.google.common.io.CharStreams;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
@@ -81,15 +78,12 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 					CloseableHttpResponse response = httpclient.execute(httpPost)) {
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
-					try (BufferedReader rd = new BufferedReader(
-							new InputStreamReader(entity.getContent(), StandardCharsets.UTF_8))) {
-						String jsonResponse = CharStreams.toString(rd);
-						if (TurCommonsUtils.isJSONValid(jsonResponse)) {
-							if (logger.isDebugEnabled()) {
-								logger.debug("Polyglot JSONResponse: {}", jsonResponse);
-							}
-							this.getEntitiesPolyglot(new JSONArray(jsonResponse), entityList);
+					String jsonResponse = new String(entity.getContent().readAllBytes(), StandardCharsets.UTF_8);
+					if (TurCommonsUtils.isJSONValid(jsonResponse)) {
+						if (logger.isDebugEnabled()) {
+							logger.debug("Polyglot JSONResponse: {}", jsonResponse);
 						}
+						this.getEntitiesPolyglot(new JSONArray(jsonResponse), entityList);
 					}
 				}
 			} catch (IOException e) {
@@ -144,13 +138,12 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 
 	private URL getServerURL(TurNLP turNLP) {
 		try {
-			return new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(), "/ent");
+			return new URL(turNLP.getTurNLPInstance().getEndpointURL().concat("/ent"));
 		} catch (MalformedURLException e) {
 			logger.error(e.getMessage(), e);
 		}
 		return null;
 	}
-
 
 	private void handleEntityPolyglot(String entityType, String entity, Map<String, List<String>> entityList) {
 		if (entityList.containsKey(entityType)) {
@@ -164,7 +157,7 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 		}
 
 	}
-	
+
 	private String[] createSentences(Object attrValue) {
 		return cleanFullText(attrValue).split("\\.");
 	}
@@ -190,7 +183,7 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 		}
 		return entityList.get(entity);
 	}
-	
+
 	public void getEntitiesPolyglot(JSONArray json, Map<String, List<String>> entityList) {
 
 		for (int i = 0; i < json.length(); i++) {
@@ -208,7 +201,5 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 		}
 
 	}
-
-
 
 }

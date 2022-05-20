@@ -58,15 +58,14 @@ public class TurNLPInstance implements Serializable {
 	@Column(nullable = false)
 	private int enabled;
 
-	@Column(length = 255)
-	private String host;
-
 	@Column(nullable = false, length = 5)
 	private String language;
 
-	@Column
-	private int port;
+	@Column(nullable = true, length = 100)
+	private String key;
 
+	@Column(nullable = true, length = 100)
+	private String endpointURL;
 	// bi-directional many-to-one association to TurNLPVendor
 	@ManyToOne
 	@JoinColumn(name = "nlp_vendor_id", nullable = false)
@@ -103,14 +102,6 @@ public class TurNLPInstance implements Serializable {
 		this.enabled = enabled;
 	}
 
-	public String getHost() {
-		return this.host;
-	}
-
-	public void setHost(String host) {
-		this.host = host;
-	}
-
 	public String getLanguage() {
 		return this.language;
 	}
@@ -118,15 +109,7 @@ public class TurNLPInstance implements Serializable {
 	public void setLanguage(String language) {
 		this.language = language;
 	}
-
-	public int getPort() {
-		return this.port;
-	}
-
-	public void setPort(int port) {
-		this.port = port;
-	}
-
+	
 	public String getTitle() {
 		return this.title;
 	}
@@ -164,4 +147,21 @@ public class TurNLPInstance implements Serializable {
 
 		return turNLPInstanceEntity;
 	}
+
+	public String getKey() {
+		return key;
+	}
+
+	public void setKey(String key) {
+		this.key = key;
+	}
+
+	public String getEndpointURL() {
+		return endpointURL;
+	}
+
+	public void setEndpointURL(String endpointURL) {
+		this.endpointURL = endpointURL;
+	}
+
 }

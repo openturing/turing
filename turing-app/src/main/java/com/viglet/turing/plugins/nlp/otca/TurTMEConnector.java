@@ -92,7 +92,8 @@ public class TurTMEConnector implements TurNLPPlugin {
 			if (length == 0) {
 				return null;
 			}
-			try (Socket socket = new Socket(turNLPInstance.getHost(), turNLPInstance.getPort());
+			String[] endpoint = turNLPInstance.getEndpointURL().split(":");
+			try (Socket socket = new Socket(endpoint[0], Integer.parseInt(endpoint[1]));
 					OutputStream output = socket.getOutputStream();
 					InputStream input = socket.getInputStream()) {
 				// Header (4 bytes little-endian data length)

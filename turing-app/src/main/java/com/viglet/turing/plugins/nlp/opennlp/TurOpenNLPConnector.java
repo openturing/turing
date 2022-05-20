@@ -56,9 +56,7 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 					TurSolrField.convertFieldToString(attrValue).replace("\"", "").replace("'", ""));
 
 			for (String sentence : sentences) {
-
 				String sentencesFormatted = sentence.trim();
-
 				if (sentencesFormatted.endsWith(".")) {
 					if (!sentencesFormatted.endsWith(" ."))
 						sentencesFormatted = sentencesFormatted.substring(0, sentencesFormatted.length() - 1) + " .";

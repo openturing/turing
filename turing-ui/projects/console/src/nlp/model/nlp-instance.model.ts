@@ -4,8 +4,8 @@ export interface TurNLPInstance {
   id: string;
   title: string;
   description: string;
-  host: string;
-  port: number;
+  endpointURL: string;
+  key: string;
   language: string;
   enabled: number;
   turNLPVendor: TurNLPVendor;

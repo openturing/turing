@@ -115,5 +115,10 @@ public class TurNLPEntityConstant {
 
 	public static final String CARDINAL_INTERNAL = "CARDINAL";
 	public static final String CARDINAL_SPACY = "CARDINAL";
-
+	
+	public static final String PHONE_NUMBER = "PHONE_NUMBER";
+	
+	public static final String ADDRESS = "ADDRESS";
+	
+	public static final String CONSUMER_GOOD = "CONSUMER_GOOD";
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,18 +14,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.viglet.turing.nlp;
+package com.viglet.turing.plugins.nlp.gcp.request;
 
-public class TurNLPVendorsConstant {
+/**
+ * 
+ * @author Alexandre Oliveira
+ * 
+ * @since 0.3.6
+ *
+ */
+public enum TurNLPGCPEncodingResponse {
 
-	private TurNLPVendorsConstant() {
-		throw new IllegalStateException("NLP Vendors Constants class");
+	NONE {
+		@Override
+		public String toString() {
+			return "NONE";
+		}
+	},
+	UTF8 {
+		@Override
+		public String toString() {
+			return "UTF8";
+		}
+	},
+	UTF16 {
+		@Override
+		public String toString() {
+			return "UTF16";
+		}
+	},
+	UTF32 {
+		@Override
+		public String toString() {
+			return "UTF32";
+		}
 	}
-
-	public static final String CORENLP = "CORENLP";
-	public static final String OPENNLP = "OPENNLP";
-	public static final String OTCA = "OTCA";
-	public static final String SPACY = "SPACY";
-	public static final String POLYGLOT = "POLYGLOT";
-	public static final String GCP = "GCP";
 }

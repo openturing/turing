@@ -17,11 +17,7 @@
 
 package com.viglet.turing.plugins.nlp.corenlp;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.lang.invoke.MethodHandles;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -58,15 +54,6 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 		return this.request(turNLP);
 	}
 
-	private static String readAll(Reader rd) throws IOException {
-		StringBuilder sb = new StringBuilder();
-		int cp;
-		while ((cp = rd.read()) != -1) {
-			sb.append((char) cp);
-		}
-		return sb.toString();
-	}
-
 	public Map<String, List<String>> request(TurNLP turNLP) {
 		Map<String, List<String>> entityList = new HashMap<>();
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
@@ -74,8 +61,7 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 
 			String queryParams = String.format("properties=%s", URLEncoder.encode(props, StandardCharsets.UTF_8));
 
-			URL serverURL = new URL("http", turNLP.getTurNLPInstance().getHost(), turNLP.getTurNLPInstance().getPort(),
-					"/?" + queryParams);
+			URL serverURL = new URL(String.format("%s/?%s", turNLP.getTurNLPInstance().getEndpointURL(), queryParams));
 
 			HttpPost httppost = new HttpPost(serverURL.toString());
 
@@ -87,13 +73,9 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 				HttpEntity entity = response.getEntity();
 
 				if (entity != null) {
-					try (InputStream instream = entity.getContent();
-							BufferedReader rd = new BufferedReader(
-									new InputStreamReader(instream, StandardCharsets.UTF_8))) {
-						String jsonResponse = readAll(rd);
-						if (TurCommonsUtils.isJSONValid(jsonResponse)) {
-							this.getEntities(new JSONObject(jsonResponse), entityList);
-						}
+					String jsonResponse = new String(entity.getContent().readAllBytes(), StandardCharsets.UTF_8);
+					if (TurCommonsUtils.isJSONValid(jsonResponse)) {
+						this.getEntities(new JSONObject(jsonResponse), entityList);
 					}
 				}
 			}
@@ -111,7 +93,7 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 
 		for (TurNLPInstanceEntity nlpInstanceEntity : turNLP.getNlpInstanceEntities()) {
 			entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
-					this.getEntity(entityList, nlpInstanceEntity.getName()));
+					entityList.get(nlpInstanceEntity.getName()));
 		}
 
 		logger.debug("CoreNLP getAttributes: {}", entityAttributes);
@@ -166,10 +148,6 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 		if (!tokenPositon.isNewToken() && (sb.length() > 0)) {
 			this.handleEntity(entityList, tokenPositon.getPrevious(), sb, tokenList);
 		}
-	}
-
-	public List<String> getEntity(Map<String, List<String>> entityList, String entity) {
-		return entityList.get(entity);
 	}
 
 	private void handleEntity(Map<String, List<String>> entityList, String inKey, StringBuilder inSb,

@@ -75,6 +75,14 @@ public class TurNLPVendorOnStartup {
 			turNLPVendor.setDescription("Polyglot");
 			turNLPVendor.setWebsite("http://polyglot-nlp.com");
 			turNLPVendorRepository.save(turNLPVendor);
+			
+			turNLPVendor = new TurNLPVendor();
+			turNLPVendor.setId(TurNLPVendorsConstant.GCP);
+			turNLPVendor.setTitle("Google Cloud Plataform - NLP");
+			turNLPVendor.setPlugin("com.viglet.turing.plugins.nlp.gcp.TurNLPGCPConnector");
+			turNLPVendor.setDescription("Google Cloud Plataform - NLP");
+			turNLPVendor.setWebsite("https://cloud.google.com/natural-language");
+			turNLPVendorRepository.save(turNLPVendor);
 		}
 	}
 
