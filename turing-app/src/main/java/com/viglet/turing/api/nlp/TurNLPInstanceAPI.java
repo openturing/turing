@@ -63,7 +63,6 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
@@ -244,7 +243,7 @@ public class TurNLPInstanceAPI {
 	}
 
 	@PostMapping("/{id}/validate/document")
-	public TurNLPValidateResponse turSNImportZipFileBroker(@PathVariable String id,
+	public TurNLPValidateResponse validateDocument(@PathVariable String id,
 			@RequestParam("file") MultipartFile multipartFile) {
 		File file = TurUtils.getFileFromMultipart(multipartFile);
 
@@ -262,7 +261,7 @@ public class TurNLPInstanceAPI {
 			
 			try (PdfDocument pdf = new PdfDocument(pdfReader,
 					new PdfWriter(file.getAbsolutePath().concat("redact.pdf")))) {
-				addRedact(turNLPInstance, turNLP).forEach(term -> {
+				getNLPTerms(turNLPInstance, turNLP).forEach(term -> {
 					ICleanupStrategy cleanupStrategy = new RegexBasedCleanupStrategy(Pattern.compile("\\b".concat(term.replace(")", "").replace("(", "")).concat("\\b"), Pattern.CASE_INSENSITIVE))
 							.setRedactionColor(ColorConstants.DARK_GRAY);
 					try {
@@ -317,7 +316,7 @@ public class TurNLPInstanceAPI {
 		return turNLPValidateResponse;
 	}
 
-	private List<String> addRedact(TurNLPInstance turNLPInstance, Optional<TurNLP> turNLP) {
+	private List<String> getNLPTerms(TurNLPInstance turNLPInstance, Optional<TurNLP> turNLP) {
 		List<String> terms = new ArrayList<>();
 		if (turNLP.isPresent() && turNLP.get().getEntityMapWithProcessedValues() != null) {
 			for (Entry<String, List<String>> entityType : turNLP.get().getEntityMapWithProcessedValues().entrySet()) {
