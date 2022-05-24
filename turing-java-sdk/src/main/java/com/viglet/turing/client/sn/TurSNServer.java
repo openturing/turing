@@ -63,6 +63,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 
@@ -389,13 +390,40 @@ public class TurSNServer {
 
 	private QueryTurSNResponse createTuringResponse(TurSNSiteSearchBean turSNSiteSearchBean) {
 		QueryTurSNResponse queryTuringResponse = new QueryTurSNResponse();
-		queryTuringResponse.setResults(setResultsResponse(turSNSiteSearchBean));
+
+		queryTuringResponse.setResults(
+				setResultsResponse(turSNSiteSearchBean.getResults(), turSNSiteSearchBean.getQueryContext()));
+		queryTuringResponse.setGroupResponse(setGroupResponse(turSNSiteSearchBean));
 		queryTuringResponse.setPagination(new TurSNPagination(turSNSiteSearchBean.getPagination()));
 		queryTuringResponse.setFacetFields(setFacetFieldsResponse(turSNSiteSearchBean));
 		queryTuringResponse.setDidYouMean(new TurSNDidYouMean(turSNSiteSearchBean.getWidget().getSpellCheck()));
 		queryTuringResponse
 				.setSpotlightDocuments(setSpotlightDocumetsResponse(turSNSiteSearchBean.getWidget().getSpotlights()));
 		return queryTuringResponse;
+	}
+
+	private TurSNGroupList setGroupResponse(TurSNSiteSearchBean turSNSiteSearchBean) {
+		List<TurSNGroup> turSNGroups = new ArrayList<>();
+
+		turSNSiteSearchBean.getGroups().forEach(groups -> {
+			TurSNGroup turSNGroup = new TurSNGroup();
+			turSNGroup.setCount(groups.getCount());
+			turSNGroup.setLimit(groups.getLimit());
+			turSNGroup.setName(groups.getName());
+			turSNGroup.setPage(groups.getPage());
+			turSNGroup.setPageCount(groups.getPageCount());
+			turSNGroup.setPageEnd(groups.getPageEnd());
+			turSNGroup.setPageStart(groups.getPageStart());
+			turSNGroup.setPagination(new TurSNPagination(groups.getPagination()));
+			turSNGroup.setResults(setResultsResponse(groups.getResults(), turSNSiteSearchBean.getQueryContext()));
+			turSNGroups.add(turSNGroup);
+		});
+
+		TurSNGroupList turSNGroupList = new TurSNGroupList();
+		turSNGroupList.setTurSNGroups(turSNGroups);
+
+		return turSNGroupList;
+
 	}
 
 	private List<TurSNSpotlightDocument> setSpotlightDocumetsResponse(
@@ -412,19 +440,19 @@ public class TurSNServer {
 		return facetFields;
 	}
 
-	private TurSNDocumentList setResultsResponse(TurSNSiteSearchBean turSNSiteSearchBean) {
+	private TurSNDocumentList setResultsResponse(TurSNSiteSearchResultsBean turSNSiteSearchResultsBean,
+			TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContextBean) {
 		List<TurSNDocument> turSNDocuments = new ArrayList<>();
 
-		turSNSiteSearchBean.getResults().getDocument().forEach(turSNSiteSearchDocumentBean -> {
+		turSNSiteSearchResultsBean.getDocument().forEach(turSNSiteSearchDocumentBean -> {
 			TurSNDocument turSNDocument = new TurSNDocument();
 			turSNDocument.setContent(turSNSiteSearchDocumentBean);
 			turSNDocuments.add(turSNDocument);
 		});
 
-		TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContext = turSNSiteSearchBean.getQueryContext();
 		TurSNDocumentList turSNDocumentList = new TurSNDocumentList();
 		turSNDocumentList.setTurSNDocuments(turSNDocuments);
-		turSNDocumentList.setQueryContext(turSNSiteSearchQueryContext);
+		turSNDocumentList.setQueryContext(turSNSiteSearchQueryContextBean);
 		return turSNDocumentList;
 	}
 

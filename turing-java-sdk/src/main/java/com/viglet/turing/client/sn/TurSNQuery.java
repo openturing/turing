@@ -40,6 +40,7 @@ public class TurSNQuery {
 
 	private String query;
 	private int rows;
+	private String groupBy;
 	private TurSNSortField sortField;
 	private TurSNClientBetweenDates betweenDates;
 	private List<String> fieldQueries;
@@ -61,6 +62,14 @@ public class TurSNQuery {
 
 	public void setRows(int rows) {
 		this.rows = rows;
+	}
+
+	public String getGroupBy() {
+		return groupBy;
+	}
+
+	public void setGroupBy(String groupBy) {
+		this.groupBy = groupBy;
 	}
 
 	public TurSNSortField getSortField() {
