@@ -333,9 +333,12 @@ public class TurSNServer {
 	public QueryTurSNResponse query(TurSNQuery turSNQuery) {
 		this.turSNQuery = turSNQuery;
 		try {
-			TurSNSiteSearchBean turSNSiteSearchBean = new ObjectMapper()
-					.readValue(openConnectionAndRequest(prepareQueryRequest()), TurSNSiteSearchBean.class);
-			return createTuringResponse(turSNSiteSearchBean);
+			String requestString = openConnectionAndRequest(prepareQueryRequest());
+			if (requestString != null) {
+				TurSNSiteSearchBean turSNSiteSearchBean = new ObjectMapper().readValue(requestString,
+						TurSNSiteSearchBean.class);
+				return createTuringResponse(turSNSiteSearchBean);
+			}
 		} catch (IOException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
@@ -354,8 +357,9 @@ public class TurSNServer {
 	private String executeQueryRequest(HttpRequestBase httpRequestBase, CloseableHttpClient client) {
 		try {
 			HttpResponse response = client.execute(httpRequestBase);
-			String result = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-			return result;
+			if (response.getStatusLine().getStatusCode() == 200) {
+				return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+			}
 		} catch (IOException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
@@ -369,6 +373,7 @@ public class TurSNServer {
 					.addParameter(TurSNParamType.LOCALE, getLocale())
 					.addParameter(TurSNParamType.QUERY, this.turSNQuery.getQuery());
 
+			groupByRequest(turingURL);
 			rowsRequest(turingURL);
 			fieldQueryRequest(turingURL);
 			sortRequest(turingURL);
@@ -386,6 +391,12 @@ public class TurSNServer {
 			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
 		return null;
+	}
+
+	private void groupByRequest(URIBuilder turingURL) {
+		if (this.turSNQuery.getGroupBy() != null && this.turSNQuery.getGroupBy().trim().length() > 0) {
+			turingURL.addParameter(TurSNParamType.GROUP, this.turSNQuery.getGroupBy());
+		}
 	}
 
 	private QueryTurSNResponse createTuringResponse(TurSNSiteSearchBean turSNSiteSearchBean) {

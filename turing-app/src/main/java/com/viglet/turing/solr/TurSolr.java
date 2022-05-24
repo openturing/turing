@@ -405,9 +405,10 @@ public class TurSolr {
 			List<TurSEGroup> turSEGroups = new ArrayList<>();
 			queryResponse.getGroupResponse().getValues()
 					.forEach(groupCommand -> groupCommand.getValues().forEach(group -> {
+						
 						TurSEGroup turSEGroup = new TurSEGroup();
 						turSEGroup.setName(group.getGroupValue());
-						turSEGroup.setNumFound(groupCommand.getMatches());
+						turSEGroup.setNumFound(group.getResult().getNumFound());
 						turSEGroup.setCurrentPage(turSEParameters.getCurrentPage());
 						turSEGroup.setLimit(turSEParameters.getRows());
 						turSEGroup.setPageCount(getNumberOfPages(turSEGroup));

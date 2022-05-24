@@ -484,7 +484,7 @@ public class TurSNSearchProcess {
 					turSNSiteSearchFacetBean.setLabel(turSNSiteSearchFacetLabelBean);
 					turSNSiteSearchFacetBean.setName(turSNSiteFieldExt.getName());
 					turSNSiteSearchFacetBean.setDescription(turSNSiteFieldExt.getDescription());
-					turSNSiteSearchFacetBean.setMultiValued(turSNSiteFieldExt.getMultiValued());
+					turSNSiteSearchFacetBean.setMultiValuedWithInt(turSNSiteFieldExt.getMultiValued());
 					turSNSiteSearchFacetBean.setType(turSNSiteFieldExt.getType());
 					turSNSiteSearchFacetBean.setFacets(turSNSiteSearchFacetItemBeans);
 

@@ -35,6 +35,10 @@ public class TurSNSiteSpellCheckBean {
 	private TurSNSiteSpellCheckText original;
 	private TurSNSiteSpellCheckText corrected;
 
+	public TurSNSiteSpellCheckBean() {
+		super();
+	}
+	
 	public TurSNSiteSpellCheckBean(TurSNSiteSearchContext context, TurSESpellCheckResult turSESpellCheckResult) {
 		super();
 		this.correctedText = turSESpellCheckResult.isCorrected();

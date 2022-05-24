@@ -17,6 +17,8 @@ package com.viglet.turing.commons.sn.bean;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * List of documents with results by group of query of Turing AI Semantic
  * Navigation response.
@@ -26,6 +28,7 @@ import java.util.List;
  * @since 0.3.6
  */
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchGroupBean {
 
 	private String name;
