@@ -20,8 +20,8 @@ package com.viglet.turing.plugins.nlp;
 import java.util.List;
 import java.util.Map;
 
-import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.nlp.TurNLPRequest;
 
 public interface TurNLPPlugin {
-	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP);
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest);
 }

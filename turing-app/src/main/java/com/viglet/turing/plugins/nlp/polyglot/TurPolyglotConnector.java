@@ -41,8 +41,9 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.nlp.TurNLP;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+
+import com.viglet.turing.nlp.TurNLPRequest;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
 import java.util.*;
@@ -51,28 +52,28 @@ import java.util.*;
 public class TurPolyglotConnector implements TurNLPPlugin {
 	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
-	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
-		return this.request(turNLP);
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest) {
+		return this.request(turNLPRequest);
 	}
 
-	public Map<String, List<String>> request(TurNLP turNLP) {
+	public Map<String, List<String>> request(TurNLPRequest turNLPRequest) {
 		Map<String, List<String>> entityList = new HashMap<>();
 
-		if (turNLP.getAttributeMapToBeProcessed() != null) {
-			for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
+		if (turNLPRequest.getData() != null) {
+			for (Object attrValue : turNLPRequest.getData().values()) {
 
 				for (String atributeValue : createSentences(attrValue)) {
-					processSentence(turNLP, entityList, atributeValue);
+					processSentence(turNLPRequest, entityList, atributeValue);
 				}
 			}
 
 		}
-		return this.getAttributes(turNLP, entityList);
+		return this.getAttributes(turNLPRequest, entityList);
 
 	}
 
-	private void processSentence(TurNLP turNLP, Map<String, List<String>> entityList, String atributeValue) {
-		HttpPost httpPost = prepareHttpPost(turNLP, atributeValue);
+	private void processSentence(TurNLPRequest turNLPRequest, Map<String, List<String>> entityList, String atributeValue) {
+		HttpPost httpPost = prepareHttpPost(turNLPRequest, atributeValue);
 		if (httpPost != null) {
 			try (CloseableHttpClient httpclient = HttpClients.createDefault();
 					CloseableHttpResponse response = httpclient.execute(httpPost)) {
@@ -92,10 +93,10 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 		}
 	}
 
-	private HttpPost prepareHttpPost(TurNLP turNLP, String atributeValue) {
-		URL serverURL = getServerURL(turNLP);
+	private HttpPost prepareHttpPost(TurNLPRequest turNLPRequest, String atributeValue) {
+		URL serverURL = getServerURL(turNLPRequest);
 		if (serverURL != null) {
-			JSONObject jsonBody = prepareJSONResponse(turNLP, atributeValue);
+			JSONObject jsonBody = prepareJSONResponse(turNLPRequest, atributeValue);
 
 			HttpPost httpPost = new HttpPost(serverURL.toString());
 
@@ -110,7 +111,7 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 		}
 	}
 
-	private JSONObject prepareJSONResponse(TurNLP turNLP, String atributeValue) {
+	private JSONObject prepareJSONResponse(TurNLPRequest turNLPRequest, String atributeValue) {
 		Charset utf8Charset = StandardCharsets.UTF_8;
 		Charset customCharset = StandardCharsets.UTF_8;
 		if (logger.isDebugEnabled()) {
@@ -119,7 +120,7 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 		JSONObject jsonBody = new JSONObject();
 		jsonBody.put("text", atributeValue);
 
-		jsonBody.put("model", turNLP.getTurNLPInstance().getLanguage());
+		jsonBody.put("model", turNLPRequest.getTurNLPInstance().getLanguage());
 
 		ByteBuffer inputBuffer = ByteBuffer.wrap(jsonBody.toString().getBytes());
 
@@ -136,9 +137,9 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 		return jsonBody;
 	}
 
-	private URL getServerURL(TurNLP turNLP) {
+	private URL getServerURL(TurNLPRequest turNLPRequest) {
 		try {
-			return new URL(turNLP.getTurNLPInstance().getEndpointURL().concat("/ent"));
+			return new URL(turNLPRequest.getTurNLPInstance().getEndpointURL().concat("/ent"));
 		} catch (MalformedURLException e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -167,12 +168,12 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 				.replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
 	}
 
-	public Map<String, List<String>> getAttributes(TurNLP turNLP, Map<String, List<String>> entityList) {
+	public Map<String, List<String>> getAttributes(TurNLPRequest turNLPRequest, Map<String, List<String>> entityList) {
 		Map<String, List<String>> entityAttributes = new HashMap<>();
 
-		for (TurNLPInstanceEntity turNLPInstanceEntity : turNLP.getNlpInstanceEntities()) {
-			entityAttributes.put(turNLPInstanceEntity.getTurNLPEntity().getInternalName(),
-					this.getEntity(turNLPInstanceEntity.getTurNLPEntity().getInternalName(), entityList));
+		for (TurNLPVendorEntity turNLPVendorEntity : turNLPRequest.getEntities()) {
+			entityAttributes.put(turNLPVendorEntity.getTurNLPEntity().getInternalName(),
+					this.getEntity(turNLPVendorEntity.getName(), entityList));
 		}
 		return entityAttributes;
 	}

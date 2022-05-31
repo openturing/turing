@@ -17,8 +17,8 @@
 package com.viglet.turing.sn;
 
 import com.viglet.turing.api.sn.job.TurSNJobItem;
-import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.nlp.TurNLPProcess;
+import com.viglet.turing.nlp.TurNLPResponse;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -33,7 +33,6 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author Alexandre Oliveira
@@ -65,12 +64,12 @@ public class TurSNNLPProcess {
             HashMap<String, Object> seAttributes = defineSEAttributesToBeProcessedByNLP(turSNJobItem,
                     turSNSiteFieldsExtMap);
 
-            Optional<TurNLP> turNLP = turNLPProcess.processAttribsByNLP(turSNSiteLocale.getTurNLPInstance(),
+            TurNLPResponse turNLPResponse = turNLPProcess.processAttribsByNLP(turSNSiteLocale.getTurNLPInstance(),
                     seAttributes);
 
             // Add prefix to attribute name
-            Map<String, Object> nlpAttributesToSearchEngine = turNLP.isPresent()
-                    ? createNLPAttributesToSEFromNLPEntityMap(turNLP.get())
+            Map<String, Object> nlpAttributesToSearchEngine = turNLPResponse != null
+                    ? createNLPAttributesToSEFromNLPEntityMap(turNLPResponse)
                     : new HashMap<>();
 
             // Copy NLP attributes to consolidateResults
@@ -78,10 +77,10 @@ public class TurSNNLPProcess {
         }
     }
 
-    private Map<String, Object> createNLPAttributesToSEFromNLPEntityMap(TurNLP turNLP) {
+    private Map<String, Object> createNLPAttributesToSEFromNLPEntityMap(TurNLPResponse turNLPResponse) {
         Map<String, Object> nlpAttributesToSearchEngine = new HashMap<>();
 
-        for (Map.Entry<String, List<String>> nlpResult : turNLP.getEntityMapWithProcessedValues().entrySet()) {
+        for (Map.Entry<String, List<String>> nlpResult : turNLPResponse.getEntityMapWithProcessedValues().entrySet()) {
             nlpAttributesToSearchEngine.put("turing_entity_" + nlpResult.getKey(), nlpResult.getValue());
         }
 

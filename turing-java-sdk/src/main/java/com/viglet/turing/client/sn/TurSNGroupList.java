@@ -34,7 +34,7 @@ public class TurSNGroupList implements Iterable<TurSNGroup> {
 		return turSNGroups.iterator();
 	}
 
-	public List<TurSNGroup> getTurSNDocuments() {
+	public List<TurSNGroup> getTurSNGroups() {
 		return turSNGroups;
 	}
 

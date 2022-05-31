@@ -40,8 +40,8 @@ import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.nlp.TurNLP;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.nlp.TurNLPRequest;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
 
@@ -50,22 +50,23 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Override
-	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
-		return this.request(turNLP);
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest) {
+		return this.request(turNLPRequest);
 	}
 
-	public Map<String, List<String>> request(TurNLP turNLP) {
+	public Map<String, List<String>> request(TurNLPRequest turNLPRequest) {
 		Map<String, List<String>> entityList = new HashMap<>();
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
 			String props = "{\"tokenize.whitespace\":\"true\",\"annotators\":\"tokenize,ssplit,pos,ner\",\"outputFormat\":\"json\"}";
 
 			String queryParams = String.format("properties=%s", URLEncoder.encode(props, StandardCharsets.UTF_8));
 
-			URL serverURL = new URL(String.format("%s/?%s", turNLP.getTurNLPInstance().getEndpointURL(), queryParams));
+			URL serverURL = new URL(
+					String.format("%s/?%s", turNLPRequest.getTurNLPInstance().getEndpointURL(), queryParams));
 
 			HttpPost httppost = new HttpPost(serverURL.toString());
 
-			for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
+			for (Object attrValue : turNLPRequest.getData().values()) {
 				StringEntity stringEntity = new StringEntity(TurSolrField.convertFieldToString(attrValue));
 				httppost.setEntity(stringEntity);
 
@@ -83,17 +84,17 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 			logger.error(e.getMessage(), e);
 		}
 
-		return this.generateEntityMapFromSentenceTokens(turNLP, entityList);
+		return this.generateEntityMapFromSentenceTokens(turNLPRequest, entityList);
 
 	}
 
-	public Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLP turNLP,
+	public Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLPRequest turNLPRequest,
 			Map<String, List<String>> entityList) {
 		Map<String, List<String>> entityAttributes = new HashMap<>();
 
-		for (TurNLPInstanceEntity nlpInstanceEntity : turNLP.getNlpInstanceEntities()) {
-			entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
-					entityList.get(nlpInstanceEntity.getName()));
+		for (TurNLPVendorEntity turNLPVendorEntity : turNLPRequest.getEntities()) {
+			entityAttributes.put(turNLPVendorEntity.getTurNLPEntity().getInternalName(),
+					entityList.get(turNLPVendorEntity.getName()));
 		}
 
 		logger.debug("CoreNLP getAttributes: {}", entityAttributes);

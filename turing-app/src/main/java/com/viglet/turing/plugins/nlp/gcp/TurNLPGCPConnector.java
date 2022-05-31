@@ -18,6 +18,7 @@
 package com.viglet.turing.plugins.nlp.gcp;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.invoke.MethodHandles;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -37,9 +38,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.plugins.nlp.gcp.request.TurNLPGCPDocumentRequest;
 import com.viglet.turing.plugins.nlp.gcp.request.TurNLPGCPEncodingResponse;
@@ -61,41 +63,48 @@ public class TurNLPGCPConnector implements TurNLPPlugin {
 	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Override
-	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
-		return this.request(turNLP);
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest) {
+		return this.request(turNLPRequest);
 	}
 
-	public Map<String, List<String>> request(TurNLP turNLP) {
+	public Map<String, List<String>> request(TurNLPRequest turNLPRequest) {
 		Map<String, Set<String>> entityList = new HashMap<>();
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
-			URL serverURL = new URL(String.format("%s?key=%s", turNLP.getTurNLPInstance().getEndpointURL(),
-					turNLP.getTurNLPInstance().getKey()));
-			HttpPost httppost = new HttpPost(serverURL.toString());
-			for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
+			URL serverURL = new URL(String.format("%s?key=%s", turNLPRequest.getTurNLPInstance().getEndpointURL(),
+					turNLPRequest.getTurNLPInstance().getKey()));
+			HttpPost httpPost = new HttpPost(serverURL.toString());
+			for (Object attrValue : turNLPRequest.getData().values()) {
 				TurNLPGCPDocumentRequest turNLPGCPDocumentRequest = new TurNLPGCPDocumentRequest(
-						TurNLPGCPTypeResponse.PLAIN_TEXT, turNLP.getTurNLPInstance().getLanguage(),
-						TurSolrField.convertFieldToString(attrValue));
+						TurNLPGCPTypeResponse.PLAIN_TEXT, turNLPRequest.getTurNLPInstance().getLanguage(),
+						TurSolrField.convertFieldToString(attrValue) + ". Conheci a Márcia.");
 				TurNLPGCPRequest turNLPGCPRequest = new TurNLPGCPRequest(turNLPGCPDocumentRequest,
-						TurNLPGCPEncodingResponse.UTF8);
-				httppost.setEntity(new StringEntity(
-						new ObjectMapper().writer().withDefaultPrettyPrinter().writeValueAsString(turNLPGCPRequest)));
-				updateEntityList(httpclient.execute(httppost).getEntity(), entityList);
+						TurNLPGCPEncodingResponse.UTF16);
+				httpPost.addHeader("Content-Type", "application/json");
+				httpPost.setEntity(new StringEntity(convertObjectToJson(turNLPGCPRequest), StandardCharsets.UTF_8));
+				entityList = updateEntityList(httpclient.execute(httpPost).getEntity());
 			}
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
 
-		return this.generateEntityMapFromSentenceTokens(turNLP, entityList);
+		return this.generateEntityMapFromSentenceTokens(turNLPRequest, entityList);
 
 	}
 
-	private Map<String, Set<String>> updateEntityList(HttpEntity entity, Map<String, Set<String>> entityList) {
+	private String convertObjectToJson(TurNLPGCPRequest turNLPGCPRequest)
+			throws UnsupportedEncodingException, JsonProcessingException {
+		return 
+				new ObjectMapper().writer().withDefaultPrettyPrinter().writeValueAsString(turNLPGCPRequest);
+	}
+
+	private Map<String, Set<String>> updateEntityList(HttpEntity entity) {
+		Map<String, Set<String>> entityList = new HashMap<>();
 		if (entity != null) {
 			String jsonResponse;
 			try {
 				jsonResponse = new String(entity.getContent().readAllBytes(), StandardCharsets.UTF_8);
 				if (TurCommonsUtils.isJSONValid(jsonResponse)) {
-					this.getEntities(new ObjectMapper().readValue(jsonResponse, TurNLPGCPResponse.class), entityList);
+					entityList = this.getEntities(new ObjectMapper().readValue(jsonResponse, TurNLPGCPResponse.class));
 				}
 			} catch (UnsupportedOperationException | IOException e) {
 				logger.error(e.getMessage(), e);
@@ -104,21 +113,23 @@ public class TurNLPGCPConnector implements TurNLPPlugin {
 		return entityList;
 	}
 
-	public Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLP turNLP,
+	public Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLPRequest turNLPRequest,
 			Map<String, Set<String>> entityList) {
 		Map<String, List<String>> entityAttributes = new HashMap<>();
-		turNLP.getNlpInstanceEntities().forEach(
-				nlpInstanceEntity -> entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
-						entityList.get(nlpInstanceEntity.getName()) != null
-								? List.copyOf(entityList.get(nlpInstanceEntity.getName()))
+		turNLPRequest.getEntities()
+				.forEach(nlpVendorEntity -> entityAttributes.put(nlpVendorEntity.getTurNLPEntity().getInternalName(),
+						entityList.get(nlpVendorEntity.getName()) != null
+								? List.copyOf(entityList.get(nlpVendorEntity.getName()))
 								: new ArrayList<>()));
 
 		logger.debug("CGP NLP getAttributes: {}", entityAttributes);
 		return entityAttributes;
 	}
 
-	public void getEntities(TurNLPGCPResponse turNLPGCPResponse, Map<String, Set<String>> entityList) {
+	public Map<String, Set<String>> getEntities(TurNLPGCPResponse turNLPGCPResponse) {
+		Map<String, Set<String>> entityList = new HashMap<>();
 		turNLPGCPResponse.getEntities().forEach(entity -> handleEntity(entityList, entity));
+		return entityList;
 	}
 
 	private void handleEntity(Map<String, Set<String>> entityList, TurNLPGCPEntityResponse entity) {

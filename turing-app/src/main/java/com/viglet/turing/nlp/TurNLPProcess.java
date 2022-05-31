@@ -44,10 +44,7 @@ import com.google.common.io.CharStreams;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBean;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBeans;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
-import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorEntityRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
@@ -60,42 +57,20 @@ public class TurNLPProcess {
 	@Autowired
 	private TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
+	private TurNLPVendorEntityRepository turNLPVendorEntityRepository;
+	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
+
 	@Autowired
 	private ServletContext context;
-	@Autowired
-	private TurNLPInstanceEntityRepository turNLPInstanceEntityRepository;
-	@Autowired
-	private TurNLPVendorEntityRepository turNLPVendorEntityRepository;
-	public TurNLPInstance saveAndAssocEntity(TurNLPInstance turNLPInstance) {
-		TurNLPInstance turNLPInstanceEdit = this.turNLPInstanceRepository.save(turNLPInstance);
-		this.copyEntitiesFromVendorToInstance(turNLPInstanceEdit);
-		return turNLPInstanceEdit;
-	}
 
-	private void copyEntitiesFromVendorToInstance(TurNLPInstance turNLPInstance) {
-		List<TurNLPVendorEntity> turNLPVendorEntities = turNLPVendorEntityRepository
-				.findByTurNLPVendor(turNLPInstance.getTurNLPVendor());
-		if (turNLPVendorEntities != null) {
-			for (TurNLPVendorEntity turNLPVendorEntity : turNLPVendorEntities) {
-				TurNLPInstanceEntity turNLPInstanceEntity = new TurNLPInstanceEntity();
-				turNLPInstanceEntity.setName(turNLPVendorEntity.getName());
-				turNLPInstanceEntity.setTurNLPEntity(turNLPVendorEntity.getTurNLPEntity());
-				turNLPInstanceEntity.setTurNLPInstance(turNLPInstance);
-				turNLPInstanceEntity.setEnabled(1);
-				turNLPInstanceEntity.setLanguage(turNLPVendorEntity.getLanguage());
-				turNLPInstanceEntityRepository.save(turNLPInstanceEntity);
-			}
-		}
-	}
-	
 	public TurNLPInstance getDefaultNLPInstance() {
-		return init().map(TurNLP::getTurNLPInstance).orElse(null);
+		return init().map(TurNLPRequest::getTurNLPInstance).orElse(null);
 	}
 
-	private Optional<TurNLP> init() {
+	private Optional<TurNLPRequest> init() {
 		Optional<TurConfigVar> turConfigVar = turConfigVarRepository.findById("DEFAULT_NLP");
-		
+
 		if (turConfigVar.isPresent()) {
 			Optional<TurNLPInstance> turNLPInstance = turNLPInstanceRepository.findById(turConfigVar.get().getValue());
 			if (turNLPInstance.isPresent()) {
@@ -105,64 +80,98 @@ public class TurNLPProcess {
 		return Optional.empty();
 	}
 
-	private Optional<TurNLP> init(TurNLPInstance turNLPInstance) {
-		TurNLP turNLP = new TurNLP();
-		turNLP.setTurNLPInstance(turNLPInstance);
-		turNLP.setTurNLPVendor(turNLPInstance.getTurNLPVendor());
-		turNLP.setNlpInstanceEntities(turNLPInstanceEntityRepository.findByTurNLPInstanceAndEnabled(turNLPInstance, 1));
-		return Optional.ofNullable(turNLP);
+	private Optional<TurNLPRequest> init(Map<String, Object> data, List<String> entities) {
+		Optional<TurConfigVar> turConfigVar = turConfigVarRepository.findById("DEFAULT_NLP");
+
+		if (turConfigVar.isPresent()) {
+			Optional<TurNLPInstance> turNLPInstance = turNLPInstanceRepository.findById(turConfigVar.get().getValue());
+			if (turNLPInstance.isPresent()) {
+				return init(turNLPInstance.get(), data, entities);
+			}
+		}
+		return Optional.empty();
 	}
 
-	public Optional<TurNLP> processTextByDefaultNLP(String text) {
-		Optional<TurNLP> turNLP = this.init();
+	private Optional<TurNLPRequest> init(TurNLPInstance turNLPInstance) {
+		return init(turNLPInstance, new HashMap<>(), new ArrayList<>());
+	}
 
+	private Optional<TurNLPRequest> init(TurNLPInstance turNLPInstance, Map<String, Object> data,
+			List<String> entities) {
+		TurNLPRequest turNLPRequest = new TurNLPRequest();
+		turNLPRequest.setTurNLPInstance(turNLPInstance);
+		turNLPRequest.setData(data);
+		turNLPRequest.setEntities(turNLPVendorEntityRepository
+				.findByTurNLPVendorAndTurNLPEntity_internalNameIn(turNLPInstance.getTurNLPVendor(), entities));
+		return Optional.ofNullable(turNLPRequest);
+	}
+
+	public TurNLPResponse processTextByDefaultNLP(String text, List<String> entities) {
+		Optional<TurNLPRequest> turNLPRequest = this.init(createDataWithTextAttrib(text), entities);
+		return getNLPResponse(turNLPRequest);
+	}
+
+	private TurNLPResponse getNLPResponse(Optional<TurNLPRequest> turNLPRequestOptional) {
+		return turNLPRequestOptional.map(turNLPRequest -> {
+			return createEntityMapFromAttributesMapToBeProcessed(turNLPRequest);
+		}).orElse(new TurNLPResponse());
+	}
+
+	public TurNLPResponse processTextByNLP(TurNLPInstance turNLPInstance, String text) {
+		return processTextByNLP(turNLPInstance, text, getEntitiesFromNLPVendor(turNLPInstance));
+	}
+
+	private List<String> getEntitiesFromNLPVendor(TurNLPInstance turNLPInstance) {
+		List<String> entities = new ArrayList<>();
+		turNLPVendorEntityRepository.findByTurNLPVendor(turNLPInstance.getTurNLPVendor())
+				.forEach(entity -> entities.add(entity.getName()));
+		return entities;
+	}
+
+	public TurNLPResponse processTextByNLP(TurNLPInstance turNLPInstance, String text, List<String> entities) {
+		Optional<TurNLPRequest> turNLPRequest = this.init(turNLPInstance, createDataWithTextAttrib(text), entities);
+		return getNLPResponse(turNLPRequest);
+	}
+
+	private Map<String, Object> createDataWithTextAttrib(String text) {
 		Map<String, Object> attribs = new HashMap<>();
 		attribs.put("text", text);
-		setNLPAttribs(turNLP, attribs);
-		return turNLP;
+		return attribs;
 	}
 
-	private void setNLPAttribs(Optional<TurNLP> turNLPOptional, Map<String, Object> attribs) {
-		turNLPOptional.ifPresent(turNLP -> {
-			turNLP.setAttributeMapToBeProcessed(attribs);
-			createEntityMapFromAttributesMapToBeProcessed(turNLP);
-		});
-	}
-
-	public Optional<TurNLP> processTextByNLP(TurNLPInstance turNLPInstance, String text) {
-		Optional<TurNLP> turNLP = this.init(turNLPInstance);
-		Map<String, Object> attribs = new HashMap<>();
-		attribs.put("text", text);
-		setNLPAttribs(turNLP, attribs);
-		return turNLP;
-	}
-
-	public Optional<TurNLP> processAttribsByNLP(TurNLPInstance turNLPInstance, Map<String, Object> attributes) {
-		Optional<TurNLP> turNLP = this.init(turNLPInstance);
-		setNLPAttribs(turNLP, attributes);
-		return turNLP;
+	public TurNLPResponse processAttribsByNLP(TurNLPInstance turNLPInstance, Map<String, Object> attributes) {
+		return processAttribsByNLP(turNLPInstance, attributes, getEntitiesFromNLPVendor(turNLPInstance));
 
 	}
 
-	private void createEntityMapFromAttributesMapToBeProcessed(TurNLP turNLP) {
+	public TurNLPResponse processAttribsByNLP(TurNLPInstance turNLPInstance, Map<String, Object> attributes,
+			List<String> entities) {
+		Optional<TurNLPRequest> turNLPRequest = this.init(turNLPInstance, attributes, entities);
+		return getNLPResponse(turNLPRequest);
+
+	}
+
+	private TurNLPResponse createEntityMapFromAttributesMapToBeProcessed(TurNLPRequest turNLPRequest) {
 		logger.debug("Executing retrieveNLP...");
 		TurNLPPlugin nlpService;
-
+		TurNLPResponse turNLPResponse = new TurNLPResponse();
 		try {
-			nlpService = (TurNLPPlugin) Class.forName(turNLP.getTurNLPVendor().getPlugin()).getDeclaredConstructor()
-					.newInstance();
+			nlpService = (TurNLPPlugin) Class.forName(turNLPRequest.getTurNLPInstance().getTurNLPVendor().getPlugin())
+					.getDeclaredConstructor().newInstance();
 			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(context);
 			if (applicationContext != null) {
 				applicationContext.getAutowireCapableBeanFactory().autowireBean(nlpService);
-				turNLP.setEntityMapWithProcessedValues(nlpService.processAttributesToEntityMap(turNLP));
+				turNLPResponse.setEntityMapWithProcessedValues(nlpService.processAttributesToEntityMap(turNLPRequest));
 			}
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
 
-		if (logger.isDebugEnabled() && turNLP.getEntityMapWithProcessedValues() != null) {
-			logger.debug("Result retrieveNLP: {}", turNLP.getEntityMapWithProcessedValues());
+		if (logger.isDebugEnabled() && turNLPResponse.getEntityMapWithProcessedValues() != null) {
+			logger.debug("Result retrieveNLP: {}", turNLPResponse.getEntityMapWithProcessedValues());
 		}
+
+		return turNLPResponse;
 
 	}
 
@@ -173,7 +182,8 @@ public class TurNLPProcess {
 		File trainingFile = new File(userDir.getAbsolutePath().concat("/store/nlp/train/train.json"));
 		if (trainingFile.exists()) {
 			try (BufferedReader rd = new BufferedReader(new FileReader(trainingFile))) {
-				TurNLPTrainingBeans turNLPTrainingBeans = new ObjectMapper().readValue(CharStreams.toString(rd), TurNLPTrainingBeans.class);
+				TurNLPTrainingBeans turNLPTrainingBeans = new ObjectMapper().readValue(CharStreams.toString(rd),
+						TurNLPTrainingBeans.class);
 				Map<String, TurNLPTrainingBean> terms = termMapOfTraining(turNLPTrainingBeans);
 				logTermsOfTraining(turNLPTrainingBeans);
 				remapEntityMap(entityMapWithProcessedValues, processedAttributes, terms);
@@ -232,8 +242,7 @@ public class TurNLPProcess {
 		if (term.getConvertTo() != null)
 			processedAttributes.get(attribute.getKey()).add(term.getConvertTo());
 		else
-			processedAttributes.get(attribute.getKey())
-					.add(attributeValueItem.toString());
+			processedAttributes.get(attribute.getKey()).add(attributeValueItem.toString());
 	}
 
 	private void remapToNewNer(Map<String, List<String>> processedAttributes, Object attributeValueItem,
@@ -243,8 +252,7 @@ public class TurNLPProcess {
 		if (term.getConvertTo() != null)
 			processedAttributes.get(term.getNer()).add(term.getConvertTo());
 		else
-			processedAttributes.get(term.getNer())
-					.add(attributeValueItem.toString());
+			processedAttributes.get(term.getNer()).add(attributeValueItem.toString());
 	}
 
 	private Map<String, TurNLPTrainingBean> termMapOfTraining(TurNLPTrainingBeans turNLPTrainingBeans) {
@@ -252,7 +260,7 @@ public class TurNLPProcess {
 		for (TurNLPTrainingBean turNLPTrainingBeanItem : turNLPTrainingBeans.getTerms()) {
 			terms.put(turNLPTrainingBeanItem.getTerm().toLowerCase(), turNLPTrainingBeanItem);
 		}
-		
+
 		return terms;
 	}
 

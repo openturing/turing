@@ -41,8 +41,8 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.nlp.TurNLP;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.nlp.TurNLPRequest;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
@@ -54,42 +54,43 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Override
-	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
-		return this.request(turNLP);
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest) {
+		return this.request(turNLPRequest);
 	}
 
-	public Map<String, List<String>> request(TurNLP turNLP) {
-		Map<String, List<String>> entityList = processAttributes(turNLP, getServerURL(turNLP));
-		return this.getAttributes(turNLP, entityList);
+	public Map<String, List<String>> request(TurNLPRequest turNLPRequest) {
+		Map<String, List<String>> entityList = processAttributes(turNLPRequest, getServerURL(turNLPRequest));
+		return this.getAttributes(turNLPRequest, entityList);
 	}
 
-	private URL getServerURL(TurNLP turNLP) {
+	private URL getServerURL(TurNLPRequest turNLPRequest) {
 		try {
-			return new URL(turNLP.getTurNLPInstance().getEndpointURL().concat("/ent"));
+			return new URL(turNLPRequest.getTurNLPInstance().getEndpointURL().concat("/ent"));
 		} catch (MalformedURLException e) {
 			logger.error(e.getMessage(), e);
 		}
 		return null;
 	}
 
-	private Map<String, List<String>> processAttributes(TurNLP turNLP, URL serverURL) {
+	private Map<String, List<String>> processAttributes(TurNLPRequest turNLPRequest, URL serverURL) {
 		Map<String, List<String>> entityList = new HashMap<>();
-		if (turNLP.getAttributeMapToBeProcessed() != null) {
-			for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
+		if (turNLPRequest.getData() != null) {
+			for (Object attrValue : turNLPRequest.getData().values()) {
 				for (String sentence : createSentences(attrValue)) {
 
-					processSentence(turNLP, entityList, serverURL, sentence);
+					processSentence(turNLPRequest, entityList, serverURL, sentence);
 				}
 			}
 		}
 		return entityList;
 	}
 
-	private void processSentence(TurNLP turNLP, Map<String, List<String>> entityList, URL serverURL, String sentence) {
+	private void processSentence(TurNLPRequest turNLPRequest, Map<String, List<String>> entityList, URL serverURL,
+			String sentence) {
 		if (logger.isDebugEnabled()) {
 			logger.debug("SpaCy Text: {}", sentence);
 		}
-		HttpPost httpPost = prepareHttpPost(turNLP, serverURL, sentence);
+		HttpPost httpPost = prepareHttpPost(turNLPRequest, serverURL, sentence);
 
 		try (CloseableHttpClient httpclient = HttpClients.createDefault();
 				CloseableHttpResponse response = httpclient.execute(httpPost)) {
@@ -109,8 +110,8 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 		}
 	}
 
-	private HttpPost prepareHttpPost(TurNLP turNLP, URL serverURL, String sentence) {
-		JSONObject jsonBody = createJSONRequest(turNLP, sentence);
+	private HttpPost prepareHttpPost(TurNLPRequest turNLPRequest, URL serverURL, String sentence) {
+		JSONObject jsonBody = createJSONRequest(turNLPRequest, sentence);
 		HttpPost httpPost = new HttpPost(serverURL.toString());
 		httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 		httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
@@ -129,14 +130,14 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 				.replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
 	}
 
-	private JSONObject createJSONRequest(TurNLP turNLP, String atributeValue) {
+	private JSONObject createJSONRequest(TurNLPRequest turNLPRequest, String atributeValue) {
 		JSONObject jsonBody = new JSONObject();
 		jsonBody.put("text", atributeValue);
 
-		if (turNLP.getTurNLPInstance().getLanguage().equals(TurLocaleRepository.PT_BR)) {
+		if (turNLPRequest.getTurNLPInstance().getLanguage().equals(TurLocaleRepository.PT_BR)) {
 			jsonBody.put("model", "pt_core_news_sm");
 		} else {
-			jsonBody.put("model", turNLP.getTurNLPInstance().getLanguage());
+			jsonBody.put("model", turNLPRequest.getTurNLPInstance().getLanguage());
 		}
 
 		ByteBuffer inputBuffer = ByteBuffer.wrap(jsonBody.toString().getBytes());
@@ -159,12 +160,12 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 		return jsonBody;
 	}
 
-	public Map<String, List<String>> getAttributes(TurNLP turNLP, Map<String, List<String>> entityList) {
+	public Map<String, List<String>> getAttributes(TurNLPRequest turNLPRequest, Map<String, List<String>> entityList) {
 		Map<String, List<String>> entityAttributes = new HashMap<>();
 
-		for (TurNLPInstanceEntity turNLPInstanceEntity : turNLP.getNlpInstanceEntities()) {
-			entityAttributes.put(turNLPInstanceEntity.getTurNLPEntity().getInternalName(),
-					this.getEntity(turNLPInstanceEntity.getTurNLPEntity().getInternalName(), entityList));
+		for (TurNLPVendorEntity turNLPVendorEntity : turNLPRequest.getEntities()) {
+			entityAttributes.put(turNLPVendorEntity.getTurNLPEntity().getInternalName(),
+					this.getEntity(turNLPVendorEntity.getName(), entityList));
 		}
 		if (logger.isDebugEnabled()) {
 			logger.debug("SpaCy getAttributes: {}", entityAttributes);

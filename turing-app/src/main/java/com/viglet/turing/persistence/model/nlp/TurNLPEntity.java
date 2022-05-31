@@ -75,14 +75,6 @@ public class TurNLPEntity implements Serializable {
 		this.enabled = enabled;
 	}
 
-	// bi-directional many-to-one association to TurNLPInstanceEntity
-	@OneToMany(mappedBy = "turNLPEntity", orphanRemoval = true)
-	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurNLPInstanceEntity> turNLPInstanceEntities;
-	
-
 	// bi-directional many-to-one association to TurNLPVendorEntity
 	@OneToMany(mappedBy = "turNLPEntity", orphanRemoval = true)
 	@Cascade({ CascadeType.ALL })
@@ -137,30 +129,6 @@ public class TurNLPEntity implements Serializable {
 	public void setName(String name) {
 		this.name = name;
 	}
-
-	public Set<TurNLPInstanceEntity> getTurNLPInstanceEntities() {
-		return this.turNLPInstanceEntities;
-	}
-
-	public void setTurNLPInstanceEntities(Set<TurNLPInstanceEntity> turNLPInstanceEntities) {
-		this.turNLPInstanceEntities = turNLPInstanceEntities;
-	}
-
-	public TurNLPInstanceEntity addTurNLPInstanceEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
-		getTurNLPInstanceEntities().add(turNLPInstanceEntity);
-		turNLPInstanceEntity.setTurNLPEntity(this);
-
-		return turNLPInstanceEntity;
-	}
-
-	public TurNLPInstanceEntity removeTurNLPInstanceEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
-		getTurNLPInstanceEntities().remove(turNLPInstanceEntity);
-		turNLPInstanceEntity.setTurNLPEntity(null);
-
-		return turNLPInstanceEntity;
-	}
-
-	
 	
 	public Set<TurNLPVendorEntity> getTurNLPVendorEntities() {
 		return this.turNLPVendorEntities;

@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.nlp.TurNLPVendorsConstant;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
@@ -40,8 +39,6 @@ public class TurNLPInstanceOnStartup {
 	private TurNLPVendorRepository turNLPVendorRepository;
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
-	@Autowired
-	private TurNLPProcess turNLPProcess;
 	
 	public void createDefaultRows() {
 
@@ -57,7 +54,6 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setEndpointURL(LOCALHOST);
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
-				turNLPProcess.saveAndAssocEntity(turNLPInstance);
 
 				turConfigVar.setId("DEFAULT_NLP");
 				turConfigVar.setPath("/nlp");
@@ -71,7 +67,6 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setEndpointURL(LOCALHOST);
 				turNLPInstance.setLanguage(TurLocaleRepository.PT_BR);
 				turNLPInstance.setEnabled(1);
-				turNLPProcess.saveAndAssocEntity(turNLPInstance);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.CORENLP).ifPresent(turNLPVendorCoreNLP -> {
@@ -82,7 +77,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setEndpointURL(LOCALHOST.concat(":9001"));
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
-				turNLPProcess.saveAndAssocEntity(turNLPInstance);
+
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.SPACY).ifPresent(turNLPVendorSpaCy -> {
@@ -93,7 +88,6 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setEndpointURL(LOCALHOST.concat(":2800"));
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
-				turNLPProcess.saveAndAssocEntity(turNLPInstance);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).ifPresent(turNLPVendorPolyglot -> {
@@ -104,18 +98,16 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setEndpointURL(LOCALHOST.concat(":2810"));
 				turNLPInstance.setLanguage(TurLocaleRepository.CA);
 				turNLPInstance.setEnabled(1);
-				turNLPProcess.saveAndAssocEntity(turNLPInstance);
 			});
 			
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.GCP).ifPresent(turNLPVendorGCP -> {
 				TurNLPInstance turNLPInstance = new TurNLPInstance();
-				turNLPInstance.setTitle("Google Cloud Plataform NLP");
-				turNLPInstance.setDescription("Google Cloud Plataform NLP - Portuguese");
+				turNLPInstance.setTitle("Google Cloud Platform NLP");
+				turNLPInstance.setDescription("Google Cloud Platform NLP - Portuguese");
 				turNLPInstance.setTurNLPVendor(turNLPVendorGCP);
 				turNLPInstance.setEndpointURL("https://language.googleapis.com/v1/documents:analyzeEntities");
 				turNLPInstance.setLanguage(TurLocaleRepository.PT_BR);
 				turNLPInstance.setEnabled(1);
-				turNLPProcess.saveAndAssocEntity(turNLPInstance);
 			});
 		}
 

@@ -47,9 +47,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 import com.viglet.turing.exception.TurException;
-import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultCategoryType;
 import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultKnowledgeBaseType;
@@ -138,9 +138,9 @@ public class TurTMEConnector implements TurNLPPlugin {
 	}
 
 	@Override
-	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest) {
 		Map<String, List<String>> hmEntities = new HashMap<>();
-		for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
+		for (Object attrValue : turNLPRequest.getData().values()) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("<Nserver>");
 			sb.append("<Methods>");
@@ -159,7 +159,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 			sb.append("<nfExtract>");
 			sb.append("<Cartridges>");
 
-			for (TurNLPInstanceEntity entity : turNLP.getNlpInstanceEntities()) {
+			for (TurNLPVendorEntity entity : turNLPRequest.getEntities()) {
 				sb.append("<Cartridge>" + entity.getName() + "</Cartridge>");
 			}
 
@@ -229,10 +229,10 @@ public class TurTMEConnector implements TurNLPPlugin {
 			sb.append("</Texts>");
 			sb.append("</Nserver>");
 
-			this.toJSON(this.request(turNLP.getTurNLPInstance(), sb.toString()), hmEntities);
+			this.toJSON(this.request(turNLPRequest.getTurNLPInstance(), sb.toString()), hmEntities);
 		}
 
-		return this.getAttributes(turNLP, hmEntities);
+		return this.getAttributes(turNLPRequest, hmEntities);
 
 	}
 
@@ -459,14 +459,14 @@ public class TurTMEConnector implements TurNLPPlugin {
 		}
 	}
 
-	public Map<String, List<String>> getAttributes(TurNLP turNLP, Map<String, List<String>> hmEntities) {
+	public Map<String, List<String>> getAttributes(TurNLPRequest turNLPRequest, Map<String, List<String>> hmEntities) {
 
 		logger.debug("getAttributes() hmEntities: {}", hmEntities);
-		logger.debug("getAttributes() nlpInstanceEntities: {}", turNLP.getNlpInstanceEntities());
+		logger.debug("getAttributes() nlpInstanceEntities: {}", turNLPRequest.getEntities());
 		Map<String, List<String>> entityAttributes = new HashMap<>();
-		for (TurNLPInstanceEntity nlpInstanceEntity : turNLP.getNlpInstanceEntities()) {
-			entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
-					hmEntities.get(nlpInstanceEntity.getTurNLPEntity().getInternalName()));
+		for (TurNLPVendorEntity turNLPVendorEntity : turNLPRequest.getEntities()) {
+			entityAttributes.put(turNLPVendorEntity.getTurNLPEntity().getInternalName(),
+					hmEntities.get(turNLPVendorEntity.getName()));
 		}
 
 		logger.debug("getAttributes() entityAttributes: {}", entityAttributes);

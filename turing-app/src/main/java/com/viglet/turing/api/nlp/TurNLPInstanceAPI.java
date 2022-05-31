@@ -17,19 +17,21 @@
 
 package com.viglet.turing.api.nlp;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.pdfcleanup.PdfCleaner;
 import com.itextpdf.pdfcleanup.autosweep.CompositeCleanupStrategy;
-import com.itextpdf.pdfcleanup.autosweep.ICleanupStrategy;
 import com.itextpdf.pdfcleanup.autosweep.RegexBasedCleanupStrategy;
+import com.viglet.turing.api.nlp.bean.TurNLPValidateDocument;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
 import com.viglet.turing.filesystem.commons.TurFileAttributes;
-import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.nlp.TurNLPProcess;
+import com.viglet.turing.nlp.TurNLPResponse;
 import com.viglet.turing.nlp.output.blazon.RedactionCommand;
 import com.viglet.turing.nlp.output.blazon.RedactionScript;
 import com.viglet.turing.nlp.output.blazon.SearchString;
@@ -64,6 +66,8 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
@@ -72,7 +76,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Optional;
+import java.util.Scanner;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -139,7 +143,6 @@ public class TurNLPInstanceAPI {
 	@Operation(summary = "Create a Natural Language Processing")
 	@PostMapping
 	public TurNLPInstance turNLPInstanceAdd(@RequestBody TurNLPInstance turNLPInstance) {
-		turNLPProcess.saveAndAssocEntity(turNLPInstance);
 		return turNLPInstance;
 
 	}
@@ -211,8 +214,8 @@ public class TurNLPInstanceAPI {
 			textValidate.setText(contentFile.toString());
 
 			return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-				Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
-				return createRedactionScript(turNLP);
+				TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+				return createRedactionScript(turNLPResponse);
 			}).orElse(new RedactionScript());
 
 		} catch (IOException | SAXException | TikaException e) {
@@ -222,95 +225,118 @@ public class TurNLPInstanceAPI {
 		return null;
 	}
 
-	private RedactionScript createRedactionScript(Optional<TurNLP> turNLP) {
+	private RedactionScript createRedactionScript(TurNLPResponse turNLPResponse) {
 		List<RedactionCommand> redactionCommands = new ArrayList<>();
 		RedactionScript redationScript = new RedactionScript();
 		redationScript.setVersion("1");
-		turNLP.ifPresent(nlp -> nlp.getEntityMapWithProcessedValues().entrySet().forEach(entityType -> {
-			if (entityType.getValue() != null) {
-				entityType.getValue().forEach(term -> {
-					RedactionCommand redactionCommand = new RedactionCommand();
-					SearchString searchString = new SearchString();
-					searchString.setMatchWholeWord(true);
-					searchString.setString(String.format("%s", term));
-					redactionCommand.setSearchString(searchString);
-					redactionCommands.add(redactionCommand);
-				});
-			}
-		}));
-
+		if (turNLPResponse != null) {
+			turNLPResponse.getEntityMapWithProcessedValues().entrySet().forEach(entityType -> {
+				if (entityType.getValue() != null) {
+					entityType.getValue().forEach(term -> {
+						RedactionCommand redactionCommand = new RedactionCommand();
+						SearchString searchString = new SearchString();
+						searchString.setMatchWholeWord(true);
+						searchString.setString(String.format("%s", term));
+						redactionCommand.setSearchString(searchString);
+						redactionCommands.add(redactionCommand);
+					});
+				}
+			});
+		}
 		redationScript.setRedactionCommands(redactionCommands);
 		return redationScript;
 	}
 
 	@PostMapping("/{id}/validate/document")
 	public TurNLPValidateResponse validateDocument(@PathVariable String id,
-			@RequestParam("file") MultipartFile multipartFile) {
+			@RequestParam("file") MultipartFile multipartFile,
+			@RequestParam("config") String turNLPValidateDocumentRequest) {
+
 		File file = TurUtils.getFileFromMultipart(multipartFile);
 
 		TurFileAttributes turFileAttributes = TurFileUtils.readFile(file);
 		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, turFileAttributes.getContent());
 
-			PdfReader pdfReader = null;
+			TurNLPValidateDocument turNLPValidateDocument = null;
 			try {
-				pdfReader = new PdfReader(file);
-				pdfReader.setUnethicalReading(true);
-			} catch (IOException e) {
+				turNLPValidateDocument = new ObjectMapper().readValue(turNLPValidateDocumentRequest,
+						TurNLPValidateDocument.class);
+
+			} catch (JsonProcessingException e) {
 				logger.error(e.getMessage(), e);
 			}
+			List<String> entities = new ArrayList<>();
+			turNLPValidateDocument.getEntities().forEach(entity -> {
+				entities.add(entity.getName());
+			});
+			TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance,
+					turFileAttributes.getContent(), entities);
 
-			try (PdfDocument pdf = new PdfDocument(pdfReader,
-					new PdfWriter(file.getAbsolutePath().concat("redact.pdf")))) {
-				CompositeCleanupStrategy strategy = new CompositeCleanupStrategy();
-				List<String> terms = getNLPTerms(turNLPInstance, turNLP);
-				strategy.add(
-						new RegexBasedCleanupStrategy(redactRegex(terms)).setRedactionColor(ColorConstants.DARK_GRAY));
+			if (isPDF(file)) {
+				PdfReader pdfReader = null;
 				try {
-					PdfCleaner.autoSweepCleanUp(pdf, strategy);
+					pdfReader = new PdfReader(file);
+					pdfReader.setUnethicalReading(true);
 				} catch (IOException e) {
 					logger.error(e.getMessage(), e);
 				}
-			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
-			}
 
-			return createNLPValidateResponse(turNLPInstance, turNLP, turFileAttributes.getContent());
+				try (PdfDocument pdf = new PdfDocument(pdfReader,
+						new PdfWriter(file.getAbsolutePath().concat("redact.pdf")))) {
+					CompositeCleanupStrategy strategy = new CompositeCleanupStrategy();
+					List<String> terms = getNLPTerms(turNLPInstance, turNLPResponse);
+					strategy.add(new RegexBasedCleanupStrategy(redactRegex(terms))
+							.setRedactionColor(ColorConstants.DARK_GRAY));
+					try {
+						PdfCleaner.autoSweepCleanUp(pdf, strategy);
+					} catch (IOException e) {
+						logger.error(e.getMessage(), e);
+					}
+				} catch (IOException e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
+			return createNLPValidateResponse(turNLPInstance, turNLPResponse, turFileAttributes.getContent());
 		}).orElse(null);
 	}
 
 	private Pattern redactRegex(List<String> terms) {
+
 		StringBuffer stringBuffer = new StringBuffer();
 		terms.forEach(term -> stringBuffer.append(term.concat("|")));
-		stringBuffer.deleteCharAt(stringBuffer.length() - 1);
-		String pattern = "\\b(".concat(stringBuffer.toString().replace(")", "").replace("(", "")).concat(")\\b");
-		return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+		if (!stringBuffer.isEmpty()) {
+			stringBuffer.deleteCharAt(stringBuffer.length() - 1);
+			String pattern = "\\b(".concat(stringBuffer.toString().replace(")", "").replace("(", "")).concat(")\\b");
+			return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+		} else {
+			return Pattern.compile("", Pattern.CASE_INSENSITIVE);
+		}
 	}
 
 	@PostMapping("/{id}/validate/text/web")
 	public TurNLPValidateResponse validateWeb(@PathVariable String id, @RequestBody TurNLPTextValidate textValidate) {
 		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
-			return createNLPValidateResponse(turNLPInstance, turNLP, textValidate.getText());
+			TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+			return createNLPValidateResponse(turNLPInstance, turNLPResponse, textValidate.getText());
 		}).orElse(null);
 	}
 
 	@PostMapping("/{id}/validate/text/blazon")
 	public RedactionScript validateBlazon(@PathVariable String id, @RequestBody TurNLPTextValidate textValidate) {
 		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
-			return createRedactionScript(turNLP);
+			TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+			return createRedactionScript(turNLPResponse);
 		}).orElse(null);
 	}
 
-	private TurNLPValidateResponse createNLPValidateResponse(TurNLPInstance turNLPInstance, Optional<TurNLP> turNLP,
-			String text) {
+	private TurNLPValidateResponse createNLPValidateResponse(TurNLPInstance turNLPInstance,
+			TurNLPResponse turNLPResponse, String text) {
 		TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
 		turNLPValidateResponse.setVendor(turNLPInstance.getTurNLPVendor().getTitle());
 		turNLPValidateResponse.setLocale(turNLPInstance.getLanguage());
 		turNLPValidateResponse.setText(text);
-		if (turNLP.isPresent() && turNLP.get().getEntityMapWithProcessedValues() != null) {
-			for (Entry<String, List<String>> entityType : turNLP.get().getEntityMapWithProcessedValues().entrySet()) {
+		if (turNLPResponse != null && turNLPResponse.getEntityMapWithProcessedValues() != null) {
+			for (Entry<String, List<String>> entityType : turNLPResponse.getEntityMapWithProcessedValues().entrySet()) {
 				if (entityType.getValue() != null) {
 					TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
 					TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
@@ -325,10 +351,10 @@ public class TurNLPInstanceAPI {
 		return turNLPValidateResponse;
 	}
 
-	private List<String> getNLPTerms(TurNLPInstance turNLPInstance, Optional<TurNLP> turNLP) {
+	private List<String> getNLPTerms(TurNLPInstance turNLPInstance, TurNLPResponse turNLPResponse) {
 		List<String> terms = new ArrayList<>();
-		if (turNLP.isPresent() && turNLP.get().getEntityMapWithProcessedValues() != null) {
-			for (Entry<String, List<String>> entityType : turNLP.get().getEntityMapWithProcessedValues().entrySet()) {
+		if (turNLPResponse != null && turNLPResponse.getEntityMapWithProcessedValues() != null) {
+			for (Entry<String, List<String>> entityType : turNLPResponse.getEntityMapWithProcessedValues().entrySet()) {
 				if (entityType.getValue() != null) {
 					terms.addAll(entityType.getValue());
 				}
@@ -340,6 +366,23 @@ public class TurNLPInstanceAPI {
 	public boolean isNumeric(String str) {
 		return str.matches("-?\\d+(\\.\\d+)?"); // match a number with optional
 												// '-' and decimal.
+	}
+
+	public boolean isPDF(File file) {
+		Scanner input;
+		try {
+			input = new Scanner(new FileReader(file));
+
+			while (input.hasNextLine()) {
+				final String checkline = input.nextLine();
+				if (checkline.contains("%PDF-")) {
+					return true;
+				}
+			}
+		} catch (FileNotFoundException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return false;
 	}
 
 	public static class TurNLPTextValidate {

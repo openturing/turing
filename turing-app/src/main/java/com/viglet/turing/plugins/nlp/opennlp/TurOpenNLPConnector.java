@@ -30,9 +30,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
 
@@ -49,10 +49,10 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 	static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Override
-	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest) {
 		List<String> sentencesTokens = new ArrayList<>();
-		for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
-			String[] sentences = this.sentenceDetect(turNLP.getTurNLPInstance(),
+		for (Object attrValue : turNLPRequest.getData().values()) {
+			String[] sentences = this.sentenceDetect(turNLPRequest.getTurNLPInstance(),
 					TurSolrField.convertFieldToString(attrValue).replace("\"", "").replace("'", ""));
 
 			for (String sentence : sentences) {
@@ -64,22 +64,22 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 					sentencesFormatted = sentencesFormatted + " .";
 
 				logger.debug("OpenNLP Sentence: {}", sentencesFormatted);
-				String[] tokens = tokenDetect(turNLP.getTurNLPInstance(), sentencesFormatted + ".");
+				String[] tokens = tokenDetect(turNLPRequest.getTurNLPInstance(), sentencesFormatted + ".");
 				Collections.addAll(sentencesTokens, tokens);
 			}
 		}
 
-		return generateEntityMapFromSentenceTokens(turNLP, sentencesTokens);
+		return generateEntityMapFromSentenceTokens(turNLPRequest, sentencesTokens);
 	}
 
-	private Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLP turNLP, List<String> sentencesTokens) {
+	private Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLPRequest turNLPRequest, List<String> sentencesTokens) {
 		Map<String, List<String>> entityMap = new HashMap<>();
 
-		for (TurNLPInstanceEntity nlpInstanceEntity : turNLP.getNlpInstanceEntities()) {
-			logger.debug("TurNLPInstanceEntity : {}", nlpInstanceEntity.getName());
-			List<String> entityList = this.getEntityList(nlpInstanceEntity.getName(), sentencesTokens);
+		for (TurNLPVendorEntity turNLPVendorEntity : turNLPRequest.getEntities()) {
+			logger.debug("TurNLPInstanceEntity : {}", turNLPVendorEntity);
+			List<String> entityList = this.getEntityList(turNLPVendorEntity.getName(), sentencesTokens);
 			if (!entityList.isEmpty()) {
-				entityMap.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(), entityList);
+				entityMap.put(turNLPVendorEntity.getTurNLPEntity().getInternalName(), entityList);
 			}
 		}
 

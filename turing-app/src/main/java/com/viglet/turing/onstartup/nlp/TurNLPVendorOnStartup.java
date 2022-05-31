@@ -78,9 +78,9 @@ public class TurNLPVendorOnStartup {
 			
 			turNLPVendor = new TurNLPVendor();
 			turNLPVendor.setId(TurNLPVendorsConstant.GCP);
-			turNLPVendor.setTitle("Google Cloud Plataform - NLP");
+			turNLPVendor.setTitle("Google Cloud Platform - NLP");
 			turNLPVendor.setPlugin("com.viglet.turing.plugins.nlp.gcp.TurNLPGCPConnector");
-			turNLPVendor.setDescription("Google Cloud Plataform - NLP");
+			turNLPVendor.setDescription("Google Cloud Platform - NLP");
 			turNLPVendor.setWebsite("https://cloud.google.com/natural-language");
 			turNLPVendorRepository.save(turNLPVendor);
 		}

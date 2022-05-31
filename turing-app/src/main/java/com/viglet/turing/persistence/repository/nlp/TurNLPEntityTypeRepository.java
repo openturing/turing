@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,18 +17,18 @@
 
 package com.viglet.turing.persistence.repository.nlp;
 
-import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
-import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
-
-import java.util.List;
+import com.viglet.turing.persistence.model.nlp.TurNLPEntityType;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface TurNLPVendorEntityRepository extends JpaRepository<TurNLPVendorEntity, String> {
+/**
+ * 
+ * @author Alexandre Oliveira
+ * 
+ * @since 0.3.6
+ *
+ */
+public interface TurNLPEntityTypeRepository extends JpaRepository<TurNLPEntityType, String> {
 
-	List<TurNLPVendorEntity> findByTurNLPVendor(TurNLPVendor turNLPVendor);
-	
-	List<TurNLPVendorEntity> findByTurNLPVendorAndTurNLPEntity_internalNameIn(TurNLPVendor turNLPVendor, List<String> entities);
-
-	void delete(TurNLPVendorEntity turNLPVendorEntity);
+	void delete(TurNLPEntityType turNLPEntity);
 }

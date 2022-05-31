@@ -22,7 +22,7 @@ import javax.persistence.*;
 
 
 /**
- * The persistent class for the vigNLPSolutions database table.
+ * The persistent class for the turNLPFeature database table.
  * 
  */
 @Entity
