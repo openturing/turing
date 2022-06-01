@@ -47,9 +47,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 import com.viglet.turing.exception.TurException;
+import com.viglet.turing.nlp.TurNLPEntityRequest;
 import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultCategoryType;
 import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultKnowledgeBaseType;
@@ -159,7 +159,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 			sb.append("<nfExtract>");
 			sb.append("<Cartridges>");
 
-			for (TurNLPVendorEntity entity : turNLPRequest.getEntities()) {
+			for (TurNLPEntityRequest entity : turNLPRequest.getEntities()) {
 				sb.append("<Cartridge>" + entity.getName() + "</Cartridge>");
 			}
 
@@ -464,9 +464,9 @@ public class TurTMEConnector implements TurNLPPlugin {
 		logger.debug("getAttributes() hmEntities: {}", hmEntities);
 		logger.debug("getAttributes() nlpInstanceEntities: {}", turNLPRequest.getEntities());
 		Map<String, List<String>> entityAttributes = new HashMap<>();
-		for (TurNLPVendorEntity turNLPVendorEntity : turNLPRequest.getEntities()) {
-			entityAttributes.put(turNLPVendorEntity.getTurNLPEntity().getInternalName(),
-					hmEntities.get(turNLPVendorEntity.getName()));
+		for (TurNLPEntityRequest turNLPEntityRequest : turNLPRequest.getEntities()) {
+			entityAttributes.put(turNLPEntityRequest.getTurNLPVendorEntity().getTurNLPEntity().getInternalName(),
+					hmEntities.get(turNLPEntityRequest.getName()));
 		}
 
 		logger.debug("getAttributes() entityAttributes: {}", entityAttributes);

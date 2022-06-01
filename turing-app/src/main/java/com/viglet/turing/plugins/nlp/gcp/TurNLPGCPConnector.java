@@ -41,6 +41,7 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.nlp.TurNLPEntityRequest;
 import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.plugins.nlp.gcp.request.TurNLPGCPDocumentRequest;
@@ -73,15 +74,16 @@ public class TurNLPGCPConnector implements TurNLPPlugin {
 			URL serverURL = new URL(String.format("%s?key=%s", turNLPRequest.getTurNLPInstance().getEndpointURL(),
 					turNLPRequest.getTurNLPInstance().getKey()));
 			HttpPost httpPost = new HttpPost(serverURL.toString());
+			System.out.println("RRR: " +  turNLPRequest.getTurNLPInstance().getLanguage());
 			for (Object attrValue : turNLPRequest.getData().values()) {
 				TurNLPGCPDocumentRequest turNLPGCPDocumentRequest = new TurNLPGCPDocumentRequest(
 						TurNLPGCPTypeResponse.PLAIN_TEXT, turNLPRequest.getTurNLPInstance().getLanguage(),
-						TurSolrField.convertFieldToString(attrValue) + ". Conheci a Márcia.");
+						TurSolrField.convertFieldToString(attrValue));
 				TurNLPGCPRequest turNLPGCPRequest = new TurNLPGCPRequest(turNLPGCPDocumentRequest,
 						TurNLPGCPEncodingResponse.UTF16);
 				httpPost.addHeader("Content-Type", "application/json");
 				httpPost.setEntity(new StringEntity(convertObjectToJson(turNLPGCPRequest), StandardCharsets.UTF_8));
-				entityList = updateEntityList(httpclient.execute(httpPost).getEntity());
+				entityList = updateEntityList(httpclient.execute(httpPost).getEntity(), turNLPRequest.getEntities());
 			}
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
@@ -93,18 +95,19 @@ public class TurNLPGCPConnector implements TurNLPPlugin {
 
 	private String convertObjectToJson(TurNLPGCPRequest turNLPGCPRequest)
 			throws UnsupportedEncodingException, JsonProcessingException {
-		return 
-				new ObjectMapper().writer().withDefaultPrettyPrinter().writeValueAsString(turNLPGCPRequest);
+		return new ObjectMapper().writer().withDefaultPrettyPrinter().writeValueAsString(turNLPGCPRequest);
 	}
 
-	private Map<String, Set<String>> updateEntityList(HttpEntity entity) {
+	private Map<String, Set<String>> updateEntityList(HttpEntity entity,
+			List<TurNLPEntityRequest> turNLPEntitiesRequest) {
 		Map<String, Set<String>> entityList = new HashMap<>();
 		if (entity != null) {
 			String jsonResponse;
 			try {
 				jsonResponse = new String(entity.getContent().readAllBytes(), StandardCharsets.UTF_8);
 				if (TurCommonsUtils.isJSONValid(jsonResponse)) {
-					entityList = this.getEntities(new ObjectMapper().readValue(jsonResponse, TurNLPGCPResponse.class));
+					entityList = this.getEntities(new ObjectMapper().readValue(jsonResponse, TurNLPGCPResponse.class),
+							turNLPEntitiesRequest);
 				}
 			} catch (UnsupportedOperationException | IOException e) {
 				logger.error(e.getMessage(), e);
@@ -117,19 +120,38 @@ public class TurNLPGCPConnector implements TurNLPPlugin {
 			Map<String, Set<String>> entityList) {
 		Map<String, List<String>> entityAttributes = new HashMap<>();
 		turNLPRequest.getEntities()
-				.forEach(nlpVendorEntity -> entityAttributes.put(nlpVendorEntity.getTurNLPEntity().getInternalName(),
-						entityList.get(nlpVendorEntity.getName()) != null
-								? List.copyOf(entityList.get(nlpVendorEntity.getName()))
+				.forEach(nlpVendorEntity -> entityAttributes.put(
+						nlpVendorEntity.getTurNLPVendorEntity().getTurNLPEntity().getInternalName(),
+						entityList.containsKey(nlpVendorEntity.getTurNLPVendorEntity().getName())
+								? List.copyOf(entityList.get(nlpVendorEntity.getTurNLPVendorEntity().getName()))
 								: new ArrayList<>()));
 
 		logger.debug("CGP NLP getAttributes: {}", entityAttributes);
 		return entityAttributes;
 	}
 
-	public Map<String, Set<String>> getEntities(TurNLPGCPResponse turNLPGCPResponse) {
+	public Map<String, Set<String>> getEntities(TurNLPGCPResponse turNLPGCPResponse,
+			List<TurNLPEntityRequest> turNLPEntitiesRequest) {
 		Map<String, Set<String>> entityList = new HashMap<>();
-		turNLPGCPResponse.getEntities().forEach(entity -> handleEntity(entityList, entity));
+		
+		turNLPGCPResponse.getEntities().forEach(entity -> {
+			TurNLPEntityRequest turNLPEntityRequest = getTurNLPEntityRequest(turNLPEntitiesRequest, entity);
+			if (turNLPEntityRequest != null) {
+				entity.getMentions().forEach(mention -> {
+					if (turNLPEntityRequest.getTypes() == null
+							|| turNLPEntityRequest.getTypes().contains(mention.getType().toString())) {
+						handleEntity(entityList, entity);
+					}
+				});
+			}
+		});
 		return entityList;
+	}
+
+	private TurNLPEntityRequest getTurNLPEntityRequest(List<TurNLPEntityRequest> turNLPEntitiesRequest,
+			TurNLPGCPEntityResponse entity) {
+		return turNLPEntitiesRequest.stream().filter(turNLPEntityRequestIn -> turNLPEntityRequestIn
+				.getTurNLPVendorEntity().getName().equals(entity.getType().toString())).findFirst().orElse(null);
 	}
 
 	private void handleEntity(Map<String, Set<String>> entityList, TurNLPGCPEntityResponse entity) {

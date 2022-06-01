@@ -41,9 +41,8 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-
+import com.viglet.turing.nlp.TurNLPEntityRequest;
 import com.viglet.turing.nlp.TurNLPRequest;
-import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
 import java.util.*;
@@ -171,9 +170,9 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 	public Map<String, List<String>> getAttributes(TurNLPRequest turNLPRequest, Map<String, List<String>> entityList) {
 		Map<String, List<String>> entityAttributes = new HashMap<>();
 
-		for (TurNLPVendorEntity turNLPVendorEntity : turNLPRequest.getEntities()) {
-			entityAttributes.put(turNLPVendorEntity.getTurNLPEntity().getInternalName(),
-					this.getEntity(turNLPVendorEntity.getName(), entityList));
+		for (TurNLPEntityRequest turNLPEntityRequest : turNLPRequest.getEntities()) {
+			entityAttributes.put(turNLPEntityRequest.getTurNLPVendorEntity().getTurNLPEntity().getInternalName(),
+					this.getEntity(turNLPEntityRequest.getName(), entityList));
 		}
 		return entityAttributes;
 	}

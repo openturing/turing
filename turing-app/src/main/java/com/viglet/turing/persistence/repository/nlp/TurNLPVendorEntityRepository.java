@@ -29,6 +29,7 @@ public interface TurNLPVendorEntityRepository extends JpaRepository<TurNLPVendor
 	List<TurNLPVendorEntity> findByTurNLPVendor(TurNLPVendor turNLPVendor);
 	
 	List<TurNLPVendorEntity> findByTurNLPVendorAndTurNLPEntity_internalNameIn(TurNLPVendor turNLPVendor, List<String> entities);
+	TurNLPVendorEntity findByTurNLPVendorAndTurNLPEntity_internalNameAndLanguage(TurNLPVendor turNLPVendor, String entityName, String language);
 
 	void delete(TurNLPVendorEntity turNLPVendorEntity);
 }

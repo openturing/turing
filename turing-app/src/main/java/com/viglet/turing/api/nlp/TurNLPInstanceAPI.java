@@ -265,12 +265,8 @@ public class TurNLPInstanceAPI {
 			} catch (JsonProcessingException e) {
 				logger.error(e.getMessage(), e);
 			}
-			List<String> entities = new ArrayList<>();
-			turNLPValidateDocument.getEntities().forEach(entity -> {
-				entities.add(entity.getName());
-			});
 			TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance,
-					turFileAttributes.getContent(), entities);
+					turFileAttributes.getContent(), turNLPValidateDocument.getEntities());
 
 			if (isPDF(file)) {
 				PdfReader pdfReader = null;

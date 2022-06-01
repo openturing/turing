@@ -30,9 +30,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.nlp.TurNLPEntityRequest;
 import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
 
@@ -75,11 +75,11 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 	private Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLPRequest turNLPRequest, List<String> sentencesTokens) {
 		Map<String, List<String>> entityMap = new HashMap<>();
 
-		for (TurNLPVendorEntity turNLPVendorEntity : turNLPRequest.getEntities()) {
-			logger.debug("TurNLPInstanceEntity : {}", turNLPVendorEntity);
-			List<String> entityList = this.getEntityList(turNLPVendorEntity.getName(), sentencesTokens);
+		for (TurNLPEntityRequest turNLPEntityRequest : turNLPRequest.getEntities()) {
+			logger.debug("TurNLPInstanceEntity : {}", turNLPEntityRequest);
+			List<String> entityList = this.getEntityList(turNLPEntityRequest.getName(), sentencesTokens);
 			if (!entityList.isEmpty()) {
-				entityMap.put(turNLPVendorEntity.getTurNLPEntity().getInternalName(), entityList);
+				entityMap.put(turNLPEntityRequest.getTurNLPVendorEntity().getTurNLPEntity().getInternalName(), entityList);
 			}
 		}
 

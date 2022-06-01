@@ -1,11 +1,29 @@
 package com.viglet.turing.api.nlp.bean;
 
+import java.util.List;
+
 public class TurNLPValidateEntity {
 	private String name;
 
-	private String type;
+	private List<String> types;
 
-	private String subType;
+	private List<String> subTypes;
+
+	public TurNLPValidateEntity() {
+		super();
+
+	}
+
+	public TurNLPValidateEntity(String name, List<String> types, List<String> subTypes) {
+		super();
+		this.name = name;
+		this.types = types;
+		this.subTypes = subTypes;
+	}
+
+	public TurNLPValidateEntity(String name) {
+		this(name, null, null);
+	}
 
 	public String getName() {
 		return name;
@@ -15,20 +33,19 @@ public class TurNLPValidateEntity {
 		this.name = name;
 	}
 
-	public String getType() {
-		return type;
+	public List<String> getTypes() {
+		return types;
 	}
 
-	public void setType(String type) {
-		this.type = type;
+	public void setTypes(List<String> types) {
+		this.types = types;
 	}
 
-	public String getSubType() {
-		return subType;
+	public List<String> getSubTypes() {
+		return subTypes;
 	}
 
-	public void setSubType(String subType) {
-		this.subType = subType;
+	public void setSubTypes(List<String> subTypes) {
+		this.subTypes = subTypes;
 	}
-
 }

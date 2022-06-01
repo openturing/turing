@@ -41,6 +41,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.CharStreams;
+import com.viglet.turing.api.nlp.bean.TurNLPValidateEntity;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBean;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBeans;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
@@ -80,7 +81,7 @@ public class TurNLPProcess {
 		return Optional.empty();
 	}
 
-	private Optional<TurNLPRequest> init(Map<String, Object> data, List<String> entities) {
+	private Optional<TurNLPRequest> init(Map<String, Object> data, List<TurNLPValidateEntity> entities) {
 		Optional<TurConfigVar> turConfigVar = turConfigVarRepository.findById("DEFAULT_NLP");
 
 		if (turConfigVar.isPresent()) {
@@ -97,16 +98,22 @@ public class TurNLPProcess {
 	}
 
 	private Optional<TurNLPRequest> init(TurNLPInstance turNLPInstance, Map<String, Object> data,
-			List<String> entities) {
+			List<TurNLPValidateEntity> turNLPValidateEntities) {
 		TurNLPRequest turNLPRequest = new TurNLPRequest();
 		turNLPRequest.setTurNLPInstance(turNLPInstance);
 		turNLPRequest.setData(data);
-		turNLPRequest.setEntities(turNLPVendorEntityRepository
-				.findByTurNLPVendorAndTurNLPEntity_internalNameIn(turNLPInstance.getTurNLPVendor(), entities));
+
+		List<TurNLPEntityRequest> turNLPEntitiesRequest = new ArrayList<>();
+		turNLPValidateEntities.forEach(entity -> {
+			turNLPEntitiesRequest.add(new TurNLPEntityRequest(entity.getName(), entity.getTypes(), entity.getSubTypes(),
+					turNLPVendorEntityRepository.findByTurNLPVendorAndTurNLPEntity_internalNameAndLanguage(
+							turNLPInstance.getTurNLPVendor(), entity.getName(), "pt_BR")));
+		});
+		turNLPRequest.setEntities(turNLPEntitiesRequest);
 		return Optional.ofNullable(turNLPRequest);
 	}
 
-	public TurNLPResponse processTextByDefaultNLP(String text, List<String> entities) {
+	public TurNLPResponse processTextByDefaultNLP(String text, List<TurNLPValidateEntity> entities) {
 		Optional<TurNLPRequest> turNLPRequest = this.init(createDataWithTextAttrib(text), entities);
 		return getNLPResponse(turNLPRequest);
 	}
@@ -121,15 +128,17 @@ public class TurNLPProcess {
 		return processTextByNLP(turNLPInstance, text, getEntitiesFromNLPVendor(turNLPInstance));
 	}
 
-	private List<String> getEntitiesFromNLPVendor(TurNLPInstance turNLPInstance) {
-		List<String> entities = new ArrayList<>();
+	private List<TurNLPValidateEntity> getEntitiesFromNLPVendor(TurNLPInstance turNLPInstance) {
+		List<TurNLPValidateEntity> entities = new ArrayList<>();
 		turNLPVendorEntityRepository.findByTurNLPVendor(turNLPInstance.getTurNLPVendor())
-				.forEach(entity -> entities.add(entity.getName()));
+				.forEach(entity -> entities.add(new TurNLPValidateEntity(entity.getName())));
 		return entities;
 	}
 
-	public TurNLPResponse processTextByNLP(TurNLPInstance turNLPInstance, String text, List<String> entities) {
-		Optional<TurNLPRequest> turNLPRequest = this.init(turNLPInstance, createDataWithTextAttrib(text), entities);
+	public TurNLPResponse processTextByNLP(TurNLPInstance turNLPInstance, String text,
+			List<TurNLPValidateEntity> turNLPValidateEntities) {
+		Optional<TurNLPRequest> turNLPRequest = this.init(turNLPInstance, createDataWithTextAttrib(text),
+				turNLPValidateEntities);
 		return getNLPResponse(turNLPRequest);
 	}
 
@@ -145,7 +154,7 @@ public class TurNLPProcess {
 	}
 
 	public TurNLPResponse processAttribsByNLP(TurNLPInstance turNLPInstance, Map<String, Object> attributes,
-			List<String> entities) {
+			List<TurNLPValidateEntity> entities) {
 		Optional<TurNLPRequest> turNLPRequest = this.init(turNLPInstance, attributes, entities);
 		return getNLPResponse(turNLPRequest);
 
