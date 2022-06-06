@@ -22,7 +22,7 @@ import { environment } from '../../environments/environment';
 import { TurSNSite } from '../model/sn-site.model';
 import { TurSNSiteField } from '../model/sn-site-field.model';
 import { map } from 'rxjs/operators';
-import { TurSNSiteStatus } from '../model/sn-site.-monitoring.model';
+import { TurSNSiteStatus } from '../model/sn-site-monitoring.model';
 
 @Injectable()
 export class TurSNSiteService {

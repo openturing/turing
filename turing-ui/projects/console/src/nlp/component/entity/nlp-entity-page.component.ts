@@ -4,7 +4,7 @@ import { TurNLPEntity } from '../../model/nlp-entity.model';
 import { NotifierService } from 'angular-notifier';
 import { TurNLPEntityService } from '../../service/nlp-entity.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormControl, Validators } from '@angular/forms';
+import { UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
   selector: 'nlp-entity-page',
@@ -16,7 +16,7 @@ export class TurNLPEntityPageComponent implements OnInit {
   private turNLPEntity: Observable<TurNLPEntity>;
   private newObject: boolean = false;
 
-  portControl = new FormControl(80, [Validators.max(100), Validators.min(0)])
+  portControl = new UntypedFormControl(80, [Validators.max(100), Validators.min(0)])
 
 
   constructor(

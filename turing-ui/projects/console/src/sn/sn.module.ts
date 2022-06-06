@@ -32,6 +32,10 @@ import { TurSNSiteMergeListPageComponent } from './component/site/merge/sn-site-
 import { TurSNSiteMergePageComponent } from './component/site/merge/sn-site-merge-page.component';
 import { TurSNSiteMergeRootPageComponent } from './component/site/merge/sn-site-merge-root-page.component';
 import { TurSNSiteMergeService } from './service/sn-site-merge.service';
+import { TurSNSiteMetricsRootPageComponent } from './component/site/metrics/sn-site-metrics-root-page.component';
+import { TurSNSiteMetricsTopTermsPageComponent } from './component/site/metrics/sn-site-metrics-top-terms-page.component';
+import { TurSNSiteMetricsService } from './service/sn-site-metrics.service';
+import { TurSNSiteMetricsTopTermsRootPageComponent } from './component/site/metrics/sn-site-metrics-top-terms-root-page.component';
 
 @NgModule({
   declarations: [
@@ -51,7 +55,10 @@ import { TurSNSiteMergeService } from './service/sn-site-merge.service';
     TurSNSiteLocalePageComponent,
     TurSNSiteMergeRootPageComponent,
     TurSNSiteMergeListPageComponent,
-    TurSNSiteMergePageComponent
+    TurSNSiteMergePageComponent,
+    TurSNSiteMetricsRootPageComponent,
+    TurSNSiteMetricsTopTermsRootPageComponent,
+    TurSNSiteMetricsTopTermsPageComponent
   ],
   imports: [
     CommonModule,
@@ -72,7 +79,8 @@ import { TurSNSiteMergeService } from './service/sn-site-merge.service';
     TurSNFieldTypeService,
     TurSNSiteSpotlightService,
     TurSNSiteLocaleService,
-    TurSNSiteMergeService
+    TurSNSiteMergeService,
+    TurSNSiteMetricsService
   ],
   schemas: [ CUSTOM_ELEMENTS_SCHEMA ]
 })

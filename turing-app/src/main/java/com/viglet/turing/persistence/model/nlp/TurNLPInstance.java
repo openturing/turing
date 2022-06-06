@@ -1,18 +1,22 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package com.viglet.turing.persistence.model.nlp;
@@ -20,16 +24,9 @@ package com.viglet.turing.persistence.model.nlp;
 import java.io.Serializable;
 import javax.persistence.*;
 
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
-import java.util.List;
 
 /**
  * The persistent class for the turNLPInstance database table.
@@ -58,26 +55,18 @@ public class TurNLPInstance implements Serializable {
 	@Column(nullable = false)
 	private int enabled;
 
-	@Column(length = 255)
-	private String host;
-
 	@Column(nullable = false, length = 5)
 	private String language;
 
-	@Column
-	private int port;
+	@Column(nullable = true, length = 100)
+	private String key;
 
+	@Column(nullable = true, length = 100)
+	private String endpointURL;
 	// bi-directional many-to-one association to TurNLPVendor
 	@ManyToOne
 	@JoinColumn(name = "nlp_vendor_id", nullable = false)
 	private TurNLPVendor turNLPVendor;
-
-	// bi-directional many-to-one association to TurNLPInstanceEntity
-	@OneToMany(mappedBy = "turNLPInstance", orphanRemoval = true)
-	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	private List<TurNLPInstanceEntity> turNLPInstanceEntities;
 
 	public String getId() {
 		return this.id;
@@ -103,14 +92,6 @@ public class TurNLPInstance implements Serializable {
 		this.enabled = enabled;
 	}
 
-	public String getHost() {
-		return this.host;
-	}
-
-	public void setHost(String host) {
-		this.host = host;
-	}
-
 	public String getLanguage() {
 		return this.language;
 	}
@@ -118,15 +99,7 @@ public class TurNLPInstance implements Serializable {
 	public void setLanguage(String language) {
 		this.language = language;
 	}
-
-	public int getPort() {
-		return this.port;
-	}
-
-	public void setPort(int port) {
-		this.port = port;
-	}
-
+	
 	public String getTitle() {
 		return this.title;
 	}
@@ -143,25 +116,20 @@ public class TurNLPInstance implements Serializable {
 		this.turNLPVendor = turNLPVendor;
 	}
 
-	public List<TurNLPInstanceEntity> getTurNLPInstanceEntities() {
-		return this.turNLPInstanceEntities;
+	public String getKey() {
+		return key;
 	}
 
-	public void setTurNLPInstanceEntities(List<TurNLPInstanceEntity> turNLPInstanceEntities) {
-		this.turNLPInstanceEntities = turNLPInstanceEntities;
+	public void setKey(String key) {
+		this.key = key;
 	}
 
-	public TurNLPInstanceEntity addTurNLPInstanceEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
-		getTurNLPInstanceEntities().add(turNLPInstanceEntity);
-		turNLPInstanceEntity.setTurNLPInstance(this);
-
-		return turNLPInstanceEntity;
+	public String getEndpointURL() {
+		return endpointURL;
 	}
 
-	public TurNLPInstanceEntity removeTurNLPInstanceEntity(TurNLPInstanceEntity turNLPInstanceEntity) {
-		getTurNLPInstanceEntities().remove(turNLPInstanceEntity);
-		turNLPInstanceEntity.setTurNLPInstance(null);
-
-		return turNLPInstanceEntity;
+	public void setEndpointURL(String endpointURL) {
+		this.endpointURL = endpointURL;
 	}
+
 }

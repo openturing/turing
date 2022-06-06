@@ -1,27 +1,29 @@
 /*
- * Copyright (C) 2016-2020 the original author or authors. 
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 package com.viglet.turing.onstartup.nlp;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.nlp.TurNLPVendorsConstant;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
@@ -33,15 +35,13 @@ import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 @Component
 @Transactional
 public class TurNLPInstanceOnStartup {
-	private static final String LOCALHOST = "localhost";
+	private static final String LOCALHOST = "http://localhost";
 	@Autowired
 	private TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
 	private TurNLPVendorRepository turNLPVendorRepository;
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
-	@Autowired
-	private TurNLPProcess turNLPProcess;
 	
 	public void createDefaultRows() {
 
@@ -54,12 +54,11 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTitle("OpenNLP English");
 				turNLPInstance.setDescription("OpenNLP Production - English");
 				turNLPInstance.setTurNLPVendor(turNLPVendorOpenNLP);
-				turNLPInstance.setHost(LOCALHOST);
-				turNLPInstance.setPort(0);
+				turNLPInstance.setEndpointURL(LOCALHOST);
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
-				turNLPProcess.saveAndAssocEntity(turNLPInstance);
-
+				turNLPInstanceRepository.save(turNLPInstance);
+				
 				turConfigVar.setId("DEFAULT_NLP");
 				turConfigVar.setPath("/nlp");
 				turConfigVar.setValue(turNLPInstance.getId());
@@ -69,11 +68,10 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTitle("OpenNLP Portuguese");
 				turNLPInstance.setDescription("OpenNLP Production - Portuguese");
 				turNLPInstance.setTurNLPVendor(turNLPVendorOpenNLP);
-				turNLPInstance.setHost(LOCALHOST);
-				turNLPInstance.setPort(0);
+				turNLPInstance.setEndpointURL(LOCALHOST);
 				turNLPInstance.setLanguage(TurLocaleRepository.PT_BR);
 				turNLPInstance.setEnabled(1);
-				turNLPProcess.saveAndAssocEntity(turNLPInstance);
+				turNLPInstanceRepository.save(turNLPInstance);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.CORENLP).ifPresent(turNLPVendorCoreNLP -> {
@@ -81,11 +79,10 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTitle("CoreNLP");
 				turNLPInstance.setDescription("CoreNLP Production - English");
 				turNLPInstance.setTurNLPVendor(turNLPVendorCoreNLP);
-				turNLPInstance.setHost(LOCALHOST);
-				turNLPInstance.setPort(9001);
+				turNLPInstance.setEndpointURL(LOCALHOST.concat(":9001"));
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
-				turNLPProcess.saveAndAssocEntity(turNLPInstance);
+				turNLPInstanceRepository.save(turNLPInstance);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.SPACY).ifPresent(turNLPVendorSpaCy -> {
@@ -93,11 +90,10 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTitle("SpaCy");
 				turNLPInstance.setDescription("SpaCy Production - English");
 				turNLPInstance.setTurNLPVendor(turNLPVendorSpaCy);
-				turNLPInstance.setHost(LOCALHOST);
-				turNLPInstance.setPort(2800);
+				turNLPInstance.setEndpointURL(LOCALHOST.concat(":2800"));
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
-				turNLPProcess.saveAndAssocEntity(turNLPInstance);
+				turNLPInstanceRepository.save(turNLPInstance);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).ifPresent(turNLPVendorPolyglot -> {
@@ -105,11 +101,21 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setTitle("Polyglot");
 				turNLPInstance.setDescription("Polyglot Production - Catalan");
 				turNLPInstance.setTurNLPVendor(turNLPVendorPolyglot);
-				turNLPInstance.setHost(LOCALHOST);
-				turNLPInstance.setPort(2810);
+				turNLPInstance.setEndpointURL(LOCALHOST.concat(":2810"));
 				turNLPInstance.setLanguage(TurLocaleRepository.CA);
 				turNLPInstance.setEnabled(1);
-				turNLPProcess.saveAndAssocEntity(turNLPInstance);
+				turNLPInstanceRepository.save(turNLPInstance);
+			});
+			
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.GCP).ifPresent(turNLPVendorGCP -> {
+				TurNLPInstance turNLPInstance = new TurNLPInstance();
+				turNLPInstance.setTitle("Google Cloud Platform NLP");
+				turNLPInstance.setDescription("Google Cloud Platform NLP - Portuguese");
+				turNLPInstance.setTurNLPVendor(turNLPVendorGCP);
+				turNLPInstance.setEndpointURL("https://language.googleapis.com/v1/documents:analyzeEntities");
+				turNLPInstance.setLanguage(TurLocaleRepository.PT_BR);
+				turNLPInstance.setEnabled(1);
+				turNLPInstanceRepository.save(turNLPInstance);
 			});
 		}
 

@@ -1,18 +1,22 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package com.viglet.turing.solr;
@@ -29,6 +33,8 @@ import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
+import com.viglet.turing.se.result.TurSEGenericResults;
+import com.viglet.turing.se.result.TurSEGroup;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.sn.TurSNFieldType;
@@ -43,6 +49,7 @@ import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.FacetField.Count;
+import org.apache.solr.client.solrj.response.GroupCommand;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.common.SolrDocument;
@@ -323,12 +330,17 @@ public class TurSolr {
 		} else {
 			query.setQuery(turSEParameters.getQuery());
 		}
-		query.setRows(turSEParameters.getRows());
-		query.setStart(TurSolrUtils.firstRowPositionFromCurrentPage(turSEParameters));
-
+		if (!hasGroup(turSEParameters)) {
+			query.setRows(turSEParameters.getRows());
+			query.setStart(TurSolrUtils.firstRowPositionFromCurrentPage(turSEParameters));
+		}
 		prepareQueryFilterQuery(turSEParameters, query);
 
 		prepareQueryTargetingRules(context.getTurSNSitePostParamsBean(), query);
+
+		if (hasGroup(turSEParameters)) {
+			prepareGroup(turSEParameters, query);
+		}
 
 		List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = prepareQueryMLT(turSNSite, query);
 		List<TurSNSiteFieldExt> turSNSiteHlFieldExts = prepareQueryHL(turSNSite, query);
@@ -336,6 +348,19 @@ public class TurSolr {
 
 		return executeSolrQueryFromSN(turSolrInstance, turSNSite, turSEParameters, query, turSNSiteMLTFieldExts,
 				turSNSiteFacetFieldExts, turSNSiteHlFieldExts, turSESpellCheckResult);
+	}
+
+	private void prepareGroup(TurSEParameters turSEParameters, SolrQuery query) {
+
+		query.set("group", "true");
+		query.set("group.field", turSEParameters.getGroup());
+		query.set("group.limit", turSEParameters.getRows());
+		query.set("group.offset", TurSolrUtils.firstRowPositionFromCurrentPage(turSEParameters));
+
+	}
+
+	private boolean hasGroup(TurSEParameters turSEParameters) {
+		return turSEParameters.getGroup() != null && turSEParameters.getGroup().trim().length() > 0;
 	}
 
 	private Optional<TurSEResults> executeSolrQueryFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
@@ -353,8 +378,11 @@ public class TurSolr {
 
 			List<TurSESimilarResult> similarResults = new ArrayList<>();
 
-			turSEResults.setResults(addSolrDocumentsToSEResults(turSNSite, turSNSiteMLTFieldExts, queryResponse,
-					similarResults, turSNSiteHlFieldExts));
+			processGroups(turSNSite, turSEParameters, turSNSiteMLTFieldExts, turSNSiteHlFieldExts, turSEResults,
+					queryResponse, similarResults);
+
+			processResults(turSNSite, turSNSiteMLTFieldExts, turSNSiteHlFieldExts, turSEResults, queryResponse,
+					similarResults);
 
 			setMLT(turSNSite, turSNSiteMLTFieldExts, turSEResults, similarResults);
 
@@ -365,6 +393,36 @@ public class TurSolr {
 			logger.error(e);
 		}
 		return Optional.empty();
+	}
+
+	private void processResults(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts,
+			List<TurSNSiteFieldExt> turSNSiteHlFieldExts, TurSEResults turSEResults, QueryResponse queryResponse,
+			List<TurSESimilarResult> similarResults) {
+		turSEResults.setResults(addSolrDocumentsToSEResults(queryResponse.getResults(), turSNSite,
+				turSNSiteMLTFieldExts, queryResponse, similarResults, turSNSiteHlFieldExts));
+	}
+
+	private void processGroups(TurSNSite turSNSite, TurSEParameters turSEParameters,
+			List<TurSNSiteFieldExt> turSNSiteMLTFieldExts, List<TurSNSiteFieldExt> turSNSiteHlFieldExts,
+			TurSEResults turSEResults, QueryResponse queryResponse, List<TurSESimilarResult> similarResults) {
+		if (hasGroup(turSEParameters) && queryResponse.getGroupResponse() != null) {
+			List<TurSEGroup> turSEGroups = new ArrayList<>();
+			queryResponse.getGroupResponse().getValues()
+					.forEach(groupCommand -> groupCommand.getValues().forEach(group -> {
+						
+						TurSEGroup turSEGroup = new TurSEGroup();
+						turSEGroup.setName(group.getGroupValue());
+						turSEGroup.setNumFound(group.getResult().getNumFound());
+						turSEGroup.setCurrentPage(turSEParameters.getCurrentPage());
+						turSEGroup.setLimit(turSEParameters.getRows());
+						turSEGroup.setPageCount(getNumberOfPages(turSEGroup));
+						turSEGroup.setResults(addSolrDocumentsToSEResults(group.getResult(), turSNSite,
+								turSNSiteMLTFieldExts, queryResponse, similarResults, turSNSiteHlFieldExts));
+						turSEGroups.add(turSEGroup);
+
+					}));
+			turSEResults.setGroups(turSEGroups);
+		}
 	}
 
 	private void setMLT(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts, TurSEResults turSEResults,
@@ -396,35 +454,50 @@ public class TurSolr {
 
 	private void turSEResultsParameters(TurSEParameters turSEParameters, SolrQuery query, TurSEResults turSEResults,
 			QueryResponse queryResponse) {
-		turSEResults.setNumFound(queryResponse.getResults().getNumFound());
+		if (queryResponse.getResults() != null) {
+			turSEResults.setNumFound(queryResponse.getResults().getNumFound());
+			turSEResults.setStart(queryResponse.getResults().getStart());
+		} else if (queryResponse.getGroupResponse() != null) {
+			int numFound = 0;
+			for (GroupCommand groupCommand : queryResponse.getGroupResponse().getValues()) {
+				numFound += groupCommand.getMatches();
+			}
+			turSEResults.setNumFound(numFound);
+		}
+
 		turSEResults.setElapsedTime(queryResponse.getElapsedTime());
 		turSEResults.setqTime(queryResponse.getQTime());
-		turSEResults.setStart(queryResponse.getResults().getStart());
+
 		turSEResults.setQueryString(query.getQuery());
 		turSEResults.setSort(turSEParameters.getSort());
 		turSEResults.setLimit(turSEParameters.getRows());
-
-		int pageCount = (int) Math.ceil(turSEResults.getNumFound() / (double) turSEResults.getLimit());
-		turSEResults.setPageCount(pageCount);
+		turSEResults.setPageCount(getNumberOfPages(turSEResults));
 		turSEResults.setCurrentPage(turSEParameters.getCurrentPage());
+
+	}
+
+	private int getNumberOfPages(TurSEGenericResults turSEGenericResults) {
+		return (int) Math.ceil(turSEGenericResults.getNumFound() / (double) turSEGenericResults.getLimit());
 	}
 
 	private boolean hasMLT(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts) {
 		return turSNSite.getMlt() == 1 && turSNSiteMLTFieldExts != null && !turSNSiteMLTFieldExts.isEmpty();
 	}
 
-	private List<TurSEResult> addSolrDocumentsToSEResults(TurSNSite turSNSite,
+	private List<TurSEResult> addSolrDocumentsToSEResults(SolrDocumentList solrDocumentList, TurSNSite turSNSite,
 			List<TurSNSiteFieldExt> turSNSiteMLTFieldExts, QueryResponse queryResponse,
 			List<TurSESimilarResult> similarResults, List<TurSNSiteFieldExt> turSNSiteHlFieldExts) {
 		Map<String, Object> requiredFields = getRequiredFields(turSNSite);
 		Map<String, TurSNSiteFieldExt> fieldExtMap = getFieldExtMap(turSNSite);
 
 		List<TurSEResult> results = new ArrayList<>();
-		for (SolrDocument document : queryResponse.getResults()) {
-			Map<String, List<String>> hl = getHL(turSNSite, turSNSiteHlFieldExts, queryResponse, document);
-			processSEResultsMLT(turSNSite, turSNSiteMLTFieldExts, similarResults, document, queryResponse);
-			TurSEResult turSEResult = createTurSEResult(fieldExtMap, requiredFields, document, hl);
-			results.add(turSEResult);
+		if (solrDocumentList != null) {
+			for (SolrDocument document : solrDocumentList) {
+				Map<String, List<String>> hl = getHL(turSNSite, turSNSiteHlFieldExts, queryResponse, document);
+				processSEResultsMLT(turSNSite, turSNSiteMLTFieldExts, similarResults, document, queryResponse);
+				TurSEResult turSEResult = createTurSEResult(fieldExtMap, requiredFields, document, hl);
+				results.add(turSEResult);
+			}
 		}
 		return results;
 	}

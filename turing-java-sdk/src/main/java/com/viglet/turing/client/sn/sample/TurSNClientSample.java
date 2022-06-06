@@ -26,10 +26,12 @@ import java.util.logging.Logger;
 
 import com.viglet.turing.client.sn.HttpTurSNServer;
 import com.viglet.turing.client.sn.TurSNDocumentList;
+import com.viglet.turing.client.sn.TurSNGroupList;
 import com.viglet.turing.client.sn.TurSNQuery;
 import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
 import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
+import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
 import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
@@ -75,10 +77,16 @@ public class TurSNClientSample {
 			spolight(response);
 
 			System.out.println("--- Pagination");
-			pagination(response);
+			pagination(response.getPagination());
+
+			System.out.println("--- Facet");
+			facet(response);
 
 			System.out.println("--- Did You Mean");
 			didYouMean(response);
+
+			System.out.println("--- Group By");
+			groupBy(args, turSNServer);
 
 		} catch (MalformedURLException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);
@@ -114,55 +122,94 @@ public class TurSNClientSample {
 		return response;
 	}
 
-	private static void spolight(QueryTurSNResponse response) {
-		List<TurSNSpotlightDocument> turSNSpotlightDocuments = response.getSpotlightDocuments();
-		turSNSpotlightDocuments.forEach(turSNSpotlightDocument -> System.out
-				.println(String.format("%s %s %s", turSNSpotlightDocument.getPosition(),
-						turSNSpotlightDocument.getTitle(), turSNSpotlightDocument.getContent())));
+	private static void groupBy(String[] args, HttpTurSNServer turSNServer) {
+		TurSNQuery query = new TurSNQuery();
+		if (args.length > 0) {
+			query.setQuery(args[0]);
+		} else {
+			query.setQuery(QUERY);
+		}
+		query.setRows(10);
+		query.setGroupBy("type");
+		query.setPageNumber(1);
+
+		QueryTurSNResponse response = turSNServer.query(query);
+
+		TurSNGroupList turSNGroupList = response.getGroupResponse();
+		if (turSNGroupList != null) {
+			turSNGroupList.forEach(group -> {
+				System.out.println("Group Name: ".concat(group.getName()));
+				pagination(group.getPagination());
+				
+				group.getResults().forEach(result -> {
+					if (result.getContent() != null && result.getContent().getFields() != null) {
+						System.out.println(result.getContent().getFields().get("title"));
+					}
+				}); 
+			});
+		}
+
 	}
 
-	private static void pagination(QueryTurSNResponse response) {
-		TurSNPagination turSNPagination = response.getPagination();
-		turSNPagination.getAllPages().forEach(page -> {
-			System.out.println(page.getLabel());
-			page.getQueryParams().ifPresent(queryParam -> queryParam.entrySet().forEach(
-					param -> showKeyValue(param)));
-		});
-		System.out.println("---");
-		turSNPagination.getLastPage().ifPresent(page -> System.out.println(page.getLabel()));
+	private static void spolight(QueryTurSNResponse response) {
+		List<TurSNSpotlightDocument> turSNSpotlightDocuments = response.getSpotlightDocuments();
+		if (turSNSpotlightDocuments != null) {
+			turSNSpotlightDocuments.forEach(turSNSpotlightDocument -> System.out
+					.println(String.format("%s %s %s", turSNSpotlightDocument.getPosition(),
+							turSNSpotlightDocument.getTitle(), turSNSpotlightDocument.getContent())));
+		}
+	}
 
-		System.out.println("---");
-		response.getFacetFields().forEach(facetFields -> {
-			System.out.println(String.format("Facet: %s - %s - %s - %s", facetFields.getLabel(), facetFields.getName(),
-					facetFields.getDescription(), facetFields.getType()));
-			facetFields.getValues().forEach(facetField -> {
-				System.out.println(String.format("%s (%s)", facetField.getLabel(), facetField.getCount()));
-				facetField.getQueryParams().ifPresent(queryParam -> queryParam.entrySet().forEach(param -> showKeyValue(param)));
+	private static void pagination(TurSNPagination turSNPagination) {
+		if (turSNPagination != null) {
+			turSNPagination.getAllPages().forEach(page -> {
+				System.out.println(page.getLabel());
+				page.getQueryParams()
+						.ifPresent(queryParam -> queryParam.entrySet().forEach(param -> showKeyValue(param)));
+				System.out.println(" ");
 			});
 
-		});
-		response.getFacetFields().getFacetWithRemovedValues().ifPresent(facetToRemove -> {
 			System.out.println("---");
-			System.out.println(facetToRemove.getLabel());
-			facetToRemove.getValues().forEach(value -> {
-				System.out.println(value.getLabel());
-				value.getQueryParams().ifPresent(queryParam -> queryParam.entrySet().forEach(param -> showKeyValue(param)));
-			});
+			turSNPagination.getLastPage().ifPresent(page -> System.out.println(page.getLabel()));
+		}
+	}
 
-		});
+	private static void facet(QueryTurSNResponse response) {
+		if (response.getFacetFields() != null) {
+			response.getFacetFields().forEach(facetFields -> {
+				System.out.println(String.format("Facet: %s - %s - %s - %s", facetFields.getLabel(),
+						facetFields.getName(), facetFields.getDescription(), facetFields.getType()));
+				facetFields.getValues().forEach(facetField -> {
+					System.out.println(String.format("%s (%s)", facetField.getLabel(), facetField.getCount()));
+					facetField.getQueryParams()
+							.ifPresent(queryParam -> queryParam.entrySet().forEach(param -> showKeyValue(param)));
+				});
+
+			});
+			response.getFacetFields().getFacetWithRemovedValues().ifPresent(facetToRemove -> {
+				System.out.println("---");
+				System.out.println(facetToRemove.getLabel());
+				facetToRemove.getValues().forEach(value -> {
+					System.out.println(value.getLabel());
+					value.getQueryParams()
+							.ifPresent(queryParam -> queryParam.entrySet().forEach(param -> showKeyValue(param)));
+				});
+
+			});
+		}
 	}
 
 	private static void showKeyValue(Entry<String, List<String>> param) {
-		System.out
-				.println(String.format("%s %s", param.getKey(), param.getValue().toString()));
+		System.out.println(String.format("%s %s", param.getKey(), param.getValue().toString()));
 	}
 
 	private static void didYouMean(QueryTurSNResponse response) {
-		if (response.getDidYouMean().isCorrectedText()) {
-			System.out.println(String.format("Original Query %s: %s", response.getDidYouMean().getOriginal().getText(),
-					response.getDidYouMean().getOriginal().getLink()));
-			System.out.println(String.format("Correct Query %s: %s", response.getDidYouMean().getCorrected().getText(),
-					response.getDidYouMean().getCorrected().getLink()));
+		TurSNDidYouMean turSNDidYouMean = response.getDidYouMean();
+		if (turSNDidYouMean != null && turSNDidYouMean.isCorrectedText()) {
+			System.out.println(String.format("Original Query %s: %s", turSNDidYouMean.getOriginal().getText(),
+					turSNDidYouMean.getOriginal().getLink()));
+			System.out.println(String.format("Correct Query %s: %s", turSNDidYouMean.getCorrected().getText(),
+					turSNDidYouMean.getCorrected().getLink()));
 		}
 	}
 

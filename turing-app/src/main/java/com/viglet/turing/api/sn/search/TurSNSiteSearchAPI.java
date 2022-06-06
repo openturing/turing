@@ -1,18 +1,22 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package com.viglet.turing.api.sn.search;
@@ -64,10 +68,11 @@ public class TurSNSiteSearchAPI {
 			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
 			@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
+			@RequestParam(required = false, name = TurSNParamType.GROUP) String group,
 			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0") Integer autoCorrectionDisabled,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale, HttpServletRequest request) {
 		return turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-				new TurSEParameters(q, fq, currentPage, sort, rows, autoCorrectionDisabled), locale,
+				new TurSEParameters(q, fq, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
 				TurSNUtils.requestToURI(request)));
 	}
 
@@ -78,15 +83,17 @@ public class TurSNSiteSearchAPI {
 			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
 			@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
+			@RequestParam(required = false, name = TurSNParamType.GROUP) String group,
 			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0") Integer autoCorrectionDisabled,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale,
 			@RequestBody TurSNSitePostParamsBean turSNSitePostParamsBean, Principal principal,
 			HttpServletRequest request) {
 		if (principal != null) {
-			turSNSitePostParamsBean.setTargetingRules(turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
+			turSNSitePostParamsBean.setTargetingRules(
+					turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
 			return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-					new TurSEParameters(q, fq, currentPage, sort, rows, autoCorrectionDisabled),
-					locale, TurSNUtils.requestToURI(request), turSNSitePostParamsBean)), HttpStatus.OK);
+					new TurSEParameters(q, fq, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
+					TurSNUtils.requestToURI(request), turSNSitePostParamsBean)), HttpStatus.OK);
 		}
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 	}

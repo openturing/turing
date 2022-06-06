@@ -10,7 +10,7 @@ import { TurSEInstance } from '../../../se/model/se-instance.model';
 import { TurSEInstanceService } from '../../../se/service/se-instance.service';
 import { TurNLPInstance } from '../../../nlp/model/nlp-instance.model';
 import { TurNLPInstanceService } from '../../../nlp/service/nlp-instance.service';
-import { TurSNSiteStatus } from '../../model/sn-site.-monitoring.model';
+import { TurSNSiteStatus } from '../../model/sn-site-monitoring.model';
 
 @Component({
   selector: 'sn-site-page',

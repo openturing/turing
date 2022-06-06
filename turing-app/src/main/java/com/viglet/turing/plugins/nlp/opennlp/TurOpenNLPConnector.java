@@ -1,22 +1,28 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package com.viglet.turing.plugins.nlp.opennlp;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,36 +32,35 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.nlp.TurNLPEntityRequest;
+import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
 
 import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.namefind.TokenNameFinderModel;
+import opennlp.tools.sentdetect.SentenceDetectorME;
+import opennlp.tools.sentdetect.SentenceModel;
+import opennlp.tools.tokenize.TokenizerME;
+import opennlp.tools.tokenize.TokenizerModel;
 import opennlp.tools.util.Span;
 
 @Component
 public class TurOpenNLPConnector implements TurNLPPlugin {
 	static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
-	@Autowired
-	private TurOpenNLPCache turOpenNLPCache;
-
 	@Override
-	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest) {
 		List<String> sentencesTokens = new ArrayList<>();
-		for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
-			String[] sentences = this
-					.sentenceDetect(turNLP.getTurNLPInstance(), TurSolrField.convertFieldToString(attrValue).replace("\"", "").replace("'", ""));
+		for (Object attrValue : turNLPRequest.getData().values()) {
+			String[] sentences = this.sentenceDetect(turNLPRequest.getTurNLPInstance(),
+					TurSolrField.convertFieldToString(attrValue).replace("\"", "").replace("'", ""));
 
 			for (String sentence : sentences) {
-
 				String sentencesFormatted = sentence.trim();
-
 				if (sentencesFormatted.endsWith(".")) {
 					if (!sentencesFormatted.endsWith(" ."))
 						sentencesFormatted = sentencesFormatted.substring(0, sentencesFormatted.length() - 1) + " .";
@@ -63,22 +68,22 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 					sentencesFormatted = sentencesFormatted + " .";
 
 				logger.debug("OpenNLP Sentence: {}", sentencesFormatted);
-				String[] tokens = tokenDetect(turNLP.getTurNLPInstance(), sentencesFormatted + ".");
+				String[] tokens = tokenDetect(turNLPRequest.getTurNLPInstance(), sentencesFormatted + ".");
 				Collections.addAll(sentencesTokens, tokens);
 			}
 		}
 
-		return generateEntityMapFromSentenceTokens(turNLP, sentencesTokens);
+		return generateEntityMapFromSentenceTokens(turNLPRequest, sentencesTokens);
 	}
 
-	private Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLP turNLP, List<String> sentencesTokens) {
+	private Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLPRequest turNLPRequest, List<String> sentencesTokens) {
 		Map<String, List<String>> entityMap = new HashMap<>();
 
-		for (TurNLPInstanceEntity nlpInstanceEntity : turNLP.getNlpInstanceEntities()) {
-			logger.debug("TurNLPInstanceEntity : {}", nlpInstanceEntity.getName());
-			List<String> entityList = this.getEntityList(nlpInstanceEntity.getName(), sentencesTokens);
+		for (TurNLPEntityRequest turNLPEntityRequest : turNLPRequest.getEntities()) {
+			logger.debug("TurNLPInstanceEntity : {}", turNLPEntityRequest);
+			List<String> entityList = this.getEntityList(turNLPEntityRequest.getName(), sentencesTokens);
 			if (!entityList.isEmpty()) {
-				entityMap.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(), entityList);
+				entityMap.put(turNLPEntityRequest.getTurNLPVendorEntity().getTurNLPEntity().getInternalName(), entityList);
 			}
 		}
 
@@ -90,7 +95,7 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 			NameFinderME nameFinder = null;
 			List<String> entities = new ArrayList<>();
 
-			nameFinder = turOpenNLPCache.nameFinderMe(entityPath).getNameFinderME();
+			nameFinder = nameFinderMe(entityPath).getNameFinderME();
 
 			String[] tokens = sentencesTokens.toArray(new String[0]);
 			if (tokens != null) {
@@ -119,12 +124,70 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 	}
 
 	public String[] sentenceDetect(TurNLPInstance turNLPInstance, String text) {
-		return turOpenNLPCache.sentenceDetectorME(turNLPInstance.getLanguage()).getSentenceDetectorME()
-				.sentDetect(text);
+		return sentenceDetectorME(turNLPInstance.getLanguage()).getSentenceDetectorME().sentDetect(text);
 
 	}
 
 	private String[] tokenDetect(TurNLPInstance turNLPInstance, String sentence) {
-		return turOpenNLPCache.tokenizerME(turNLPInstance.getLanguage()).getTokenizerME().tokenize(sentence);
+		TurTokenizerME turTokenizerME = tokenizerME(turNLPInstance.getLanguage());
+		if (turTokenizerME != null && turTokenizerME.getTokenizerME() != null) {
+			return turTokenizerME.getTokenizerME().tokenize(sentence);
+		}
+		return new String[0];
 	}
+
+	public TurNameFinderME nameFinderMe(String entityPath) {
+		logger.debug("Creating OpenNLP Entity: {}", entityPath);
+		File modelIn = new File(entityPath);
+
+		TokenNameFinderModel model;
+		try {
+			model = new TokenNameFinderModel(modelIn);
+			NameFinderME nameFinderME = new NameFinderME(model);
+			return new TurNameFinderME(nameFinderME);
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+
+		return null;
+
+	}
+
+	public TurSentenceDetectorME sentenceDetectorME(String language) {
+		try {
+			File modelIn = null;
+			File userDir = new File(System.getProperty("user.dir"));
+			if (language.equals("en_US")) {
+				modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/en/en-sent.bin"));
+			} else if (language.equals("pt_BR")) {
+				modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/pt/pt-sent.bin"));
+			}
+			SentenceModel model = new SentenceModel(modelIn);
+			SentenceDetectorME sentenceDetectorME = new SentenceDetectorME(model);
+			return new TurSentenceDetectorME(sentenceDetectorME);
+
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return null;
+	}
+
+	public TurTokenizerME tokenizerME(String language) {
+		try {
+			File modelIn = null;
+			File userDir = new File(System.getProperty("user.dir"));
+			if (language.equals("en_US")) {
+				modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/en/en-token.bin"));
+			} else if (language.equals("pt_BR")) {
+				modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/pt/pt-token.bin"));
+			}
+			TokenizerModel model = new TokenizerModel(modelIn);
+			TokenizerME tokenizerME = new TokenizerME(model);
+			return new TurTokenizerME(tokenizerME);
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return null;
+	}
+
 }

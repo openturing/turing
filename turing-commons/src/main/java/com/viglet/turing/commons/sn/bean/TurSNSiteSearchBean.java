@@ -24,6 +24,7 @@ public class TurSNSiteSearchBean {
 	private List<TurSNSiteSearchPaginationBean> pagination;
 	private TurSNSiteSearchQueryContextBean queryContext;
 	private TurSNSiteSearchResultsBean results;
+	private List<TurSNSiteSearchGroupBean> groups;
 	private TurSNSiteSearchWidgetBean widget;
 	public List<TurSNSiteSearchPaginationBean> getPagination() {
 		return pagination;
@@ -49,7 +50,11 @@ public class TurSNSiteSearchBean {
 	public void setWidget(TurSNSiteSearchWidgetBean widget) {
 		this.widget = widget;
 	}
-	
-	
+	public List<TurSNSiteSearchGroupBean> getGroups() {
+		return groups;
+	}
+	public void setGroups(List<TurSNSiteSearchGroupBean> groups) {
+		this.groups = groups;
+	}
 
 }

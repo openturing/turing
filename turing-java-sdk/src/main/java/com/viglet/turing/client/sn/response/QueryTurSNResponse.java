@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.viglet.turing.client.sn.response;
 import java.util.List;
 
 import com.viglet.turing.client.sn.TurSNDocumentList;
+import com.viglet.turing.client.sn.TurSNGroupList;
 import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
 import com.viglet.turing.client.sn.facet.TurSNFacetFieldList;
 import com.viglet.turing.client.sn.pagination.TurSNPagination;
@@ -33,6 +34,8 @@ import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
  */
 public class QueryTurSNResponse {
 
+	private TurSNGroupList groups;
+
 	private TurSNDocumentList results;
 
 	private TurSNPagination pagination;
@@ -42,9 +45,13 @@ public class QueryTurSNResponse {
 	private TurSNFacetFieldList facetFields;
 
 	private List<TurSNSpotlightDocument> spotlightDocuments;
-	
+
 	public TurSNDocumentList getResults() {
 		return results;
+	}
+
+	public TurSNGroupList getGroupResponse() {
+		return groups;
 	}
 
 	public TurSNPagination getPagination() {
@@ -53,6 +60,10 @@ public class QueryTurSNResponse {
 
 	public void setResults(TurSNDocumentList results) {
 		this.results = results;
+	}
+
+	public void setGroupResponse(TurSNGroupList groups) {
+		this.groups = groups;
 	}
 
 	public void setPagination(TurSNPagination pagination) {

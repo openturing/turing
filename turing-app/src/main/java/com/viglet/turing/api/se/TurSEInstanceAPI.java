@@ -1,23 +1,27 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 package com.viglet.turing.api.se;
 
 import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
@@ -100,16 +104,17 @@ public class TurSEInstanceAPI {
 	}
 
 	@GetMapping("/select")
-	public String turSEInstanceSelect(@RequestParam(required = false, name = "q") String q,
-			@RequestParam(required = false, name = "p") Integer currentPage,
-			@RequestParam(required = false, name = "fq[]") List<String> fq,
-			@RequestParam(required = false, name = "sort") String sort,
-			@RequestParam(required = false, name = "rows") Integer rows) {
+	public String turSEInstanceSelect(@RequestParam(required = false, name = TurSNParamType.QUERY) String q,
+			@RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
+			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
+			@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
+			@RequestParam(required = false, name = TurSNParamType.ROWS) Integer rows,
+			@RequestParam(required = false, name = TurSNParamType.GROUP) String group) {
 
 		currentPage = (currentPage == null || currentPage <= 0) ? 1 : currentPage;
 		rows = rows == null ? 0 : rows;
 
-		TurSEParameters turSEParameters = new TurSEParameters(q, fq, currentPage, sort, rows, 0);
+		TurSEParameters turSEParameters = new TurSEParameters(q, fq, currentPage, sort, rows, group, 0);
 		return turSolrInstanceProcess.initSolrInstance()
 				.map(turSolrInstance -> turSolr.retrieveSolr(turSolrInstance, turSEParameters, "text").toString())
 				.orElse("");

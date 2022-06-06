@@ -1,10 +1,10 @@
 <tur-header></tur-header>
-<nav class="UnderlineNav overflow-hidden px-3 px-md-4 px-lg-5 bg-gray-light pt-3 mb-2" aria-label="Dashboard Tabs">
+<nav class="UnderlineNav overflow-hidden  px-3 px-md-4 px-lg-5 mt-3 mb-2" aria-label="Dashboard Tabs">
   <div class="UnderlineNav-body">
     <a [routerLink]="['/nlp']" [routerLinkActive]="['selected']" class="UnderlineNav-item">
       <span octicon="comment-discussion" [size]=16 class="UnderlineNav-octicon octicon mr-1"
         [style.color]="getRouter().url === '/nlp'?'':'#959da5'"></span>
-      NLP <span class="Counter">10</span>
+      NLP
     </a>
     <a [routerLink]="['/se']" [routerLinkActive]="['selected']" class="UnderlineNav-item">
       <span octicon="codescan" [size]=16 class="UnderlineNav-octicon octicon mr-1"

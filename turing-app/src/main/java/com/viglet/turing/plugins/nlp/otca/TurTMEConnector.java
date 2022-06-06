@@ -1,18 +1,22 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package com.viglet.turing.plugins.nlp.otca;
@@ -47,9 +51,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 import com.viglet.turing.exception.TurException;
-import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.nlp.TurNLPEntityRequest;
+import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstanceEntity;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultCategoryType;
 import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultKnowledgeBaseType;
@@ -92,7 +96,8 @@ public class TurTMEConnector implements TurNLPPlugin {
 			if (length == 0) {
 				return null;
 			}
-			try (Socket socket = new Socket(turNLPInstance.getHost(), turNLPInstance.getPort());
+			String[] endpoint = turNLPInstance.getEndpointURL().split(":");
+			try (Socket socket = new Socket(endpoint[0], Integer.parseInt(endpoint[1]));
 					OutputStream output = socket.getOutputStream();
 					InputStream input = socket.getInputStream()) {
 				// Header (4 bytes little-endian data length)
@@ -137,9 +142,9 @@ public class TurTMEConnector implements TurNLPPlugin {
 	}
 
 	@Override
-	public Map<String, List<String>> processAttributesToEntityMap(TurNLP turNLP) {
+	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest) {
 		Map<String, List<String>> hmEntities = new HashMap<>();
-		for (Object attrValue : turNLP.getAttributeMapToBeProcessed().values()) {
+		for (Object attrValue : turNLPRequest.getData().values()) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("<Nserver>");
 			sb.append("<Methods>");
@@ -158,7 +163,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 			sb.append("<nfExtract>");
 			sb.append("<Cartridges>");
 
-			for (TurNLPInstanceEntity entity : turNLP.getNlpInstanceEntities()) {
+			for (TurNLPEntityRequest entity : turNLPRequest.getEntities()) {
 				sb.append("<Cartridge>" + entity.getName() + "</Cartridge>");
 			}
 
@@ -228,10 +233,10 @@ public class TurTMEConnector implements TurNLPPlugin {
 			sb.append("</Texts>");
 			sb.append("</Nserver>");
 
-			this.toJSON(this.request(turNLP.getTurNLPInstance(), sb.toString()), hmEntities);
+			this.toJSON(this.request(turNLPRequest.getTurNLPInstance(), sb.toString()), hmEntities);
 		}
 
-		return this.getAttributes(turNLP, hmEntities);
+		return this.getAttributes(turNLPRequest, hmEntities);
 
 	}
 
@@ -298,29 +303,28 @@ public class TurTMEConnector implements TurNLPPlugin {
 			logger.debug("Concepts: {}", concepts.getName());
 			setComplexConcepts(hmEntities, concepts);
 			setSimpleConcepts(hmEntities, concepts);
-		} else if (result instanceof ServerResponseEntityExtractorResultType) {
-			setEntities(result, hmEntities);
-		} else if (result instanceof ServerResponseCategorizerResultType) {
-			setCategorizer(result, hmEntities);
+		} else if (result instanceof ServerResponseEntityExtractorResultType serverResponseEntityExtractorResultType) {
+			setEntities(serverResponseEntityExtractorResultType, hmEntities);
+		} else if (result instanceof ServerResponseCategorizerResultType serverResponseCategorizerResultType) {
+			setCategorizer(serverResponseCategorizerResultType, hmEntities);
 
 		}
 
 	}
 
-	private void setEntities(Object result, Map<String, List<String>> hmEntities) {
-		ServerResponseEntityExtractorResultType entities = (ServerResponseEntityExtractorResultType) result;
+	private void setEntities(ServerResponseEntityExtractorResultType entities, Map<String, List<String>> hmEntities) {
 		for (Object nf : entities.getNfExtractOrNfFullTextSearch()) {
-			if (nf instanceof ServerResponseEntityExtractorResultExtractResultType) {
-				setTerms(hmEntities, nf);
-			} else if (nf instanceof ServerResponseEntityExtractorResultFullTextSearchResultType) {
-				setFullText(hmEntities, nf);
+			if (nf instanceof ServerResponseEntityExtractorResultExtractResultType extractor) {
+				setTerms(hmEntities, extractor);
+			} else if (nf instanceof ServerResponseEntityExtractorResultFullTextSearchResultType fullText) {
+				setFullText(hmEntities, fullText);
 			}
 
 		}
 	}
 
-	private void setTerms(Map<String, List<String>> hmEntities, Object nf) {
-		ServerResponseEntityExtractorResultExtractResultType extractor = (ServerResponseEntityExtractorResultExtractResultType) nf;
+	private void setTerms(Map<String, List<String>> hmEntities,
+			ServerResponseEntityExtractorResultExtractResultType extractor) {
 		for (ServerResponseEntityExtractorResultTermType term : extractor.getExtractedTerm()) {
 			logger.debug("getCartridgeID: {}", term.getCartridgeID());
 			if (!hmEntities.containsKey(term.getCartridgeID())) {
@@ -338,8 +342,8 @@ public class TurTMEConnector implements TurNLPPlugin {
 		}
 	}
 
-	private void setFullText(Map<String, List<String>> hmEntities, Object nf) {
-		ServerResponseEntityExtractorResultFullTextSearchResultType fullText = (ServerResponseEntityExtractorResultFullTextSearchResultType) nf;
+	private void setFullText(Map<String, List<String>> hmEntities,
+			ServerResponseEntityExtractorResultFullTextSearchResultType fullText) {
 		for (ServerResponseEntityExtractorResultTermType term : fullText.getExtractedTerm()) {
 			if (!hmEntities.containsKey(term.getCartridgeID())) {
 				hmEntities.put(term.getCartridgeID(), new ArrayList<>());
@@ -362,8 +366,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 		}
 	}
 
-	private void setCategorizer(Object result, Map<String, List<String>> hmEntities) {
-		ServerResponseCategorizerResultType categorizer = (ServerResponseCategorizerResultType) result;
+	private void setCategorizer(ServerResponseCategorizerResultType categorizer, Map<String, List<String>> hmEntities) {
 		setCategory(categorizer);
 		setKnowledgeBase(hmEntities, categorizer);
 	}
@@ -427,16 +430,14 @@ public class TurTMEConnector implements TurNLPPlugin {
 			logger.debug(SIMPLE_CONCEPTS);
 			hmEntities.computeIfAbsent(SIMPLE_CONCEPTS, k -> hmEntities.put(k, new ArrayList<>()));
 			for (Object simpleConcepts : concepts.getSimpleConcepts().getConceptOrExtractedTerm()) {
-				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept1Type) {
-					hmEntities.get(SIMPLE_CONCEPTS)
-							.add(((ServerResponseConceptExtractorResultConcept1Type) simpleConcepts).getValue());
+				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept1Type serverResponseConceptExtractorResultConcept1Type) {
+					hmEntities.get(SIMPLE_CONCEPTS).add(serverResponseConceptExtractorResultConcept1Type.getValue());
 				}
-				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept2Type) {
+				if (simpleConcepts instanceof ServerResponseConceptExtractorResultConcept2Type serverResponseConceptExtractorResultConcept2Type) {
 					hmEntities.get(SIMPLE_CONCEPTS)
-							.add(((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent()
-									.toString());
+							.add(serverResponseConceptExtractorResultConcept2Type.getContent().toString());
 					logger.debug(LOG_KV, SIMPLE_CONCEPTS,
-							((ServerResponseConceptExtractorResultConcept2Type) simpleConcepts).getContent());
+							serverResponseConceptExtractorResultConcept2Type.getContent());
 				}
 			}
 		}
@@ -448,31 +449,28 @@ public class TurTMEConnector implements TurNLPPlugin {
 			logger.debug(COMPLEX_CONCEPTS);
 			hmEntities.computeIfAbsent(COMPLEX_CONCEPTS, k -> hmEntities.put(k, new ArrayList<>()));
 			for (Object complexConcept : concepts.getComplexConcepts().getConceptOrExtractedTerm()) {
-				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept1Type) {
-					hmEntities.get(COMPLEX_CONCEPTS)
-							.add(((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
-					logger.debug(LOG_KV, COMPLEX_CONCEPTS,
-							((ServerResponseConceptExtractorResultConcept1Type) complexConcept).getValue());
+				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept1Type serverResponseConceptExtractorResultConcept1Type) {
+					hmEntities.get(COMPLEX_CONCEPTS).add(serverResponseConceptExtractorResultConcept1Type.getValue());
+					logger.debug(LOG_KV, COMPLEX_CONCEPTS, serverResponseConceptExtractorResultConcept1Type.getValue());
 				}
-				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept2Type) {
+				if (complexConcept instanceof ServerResponseConceptExtractorResultConcept2Type serverResponseConceptExtractorResultConcept2Type) {
 					hmEntities.get(COMPLEX_CONCEPTS)
-							.add(((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent()
-									.toString());
+							.add(serverResponseConceptExtractorResultConcept2Type.getContent().toString());
 					logger.debug(LOG_KV, COMPLEX_CONCEPTS,
-							((ServerResponseConceptExtractorResultConcept2Type) complexConcept).getContent());
+							serverResponseConceptExtractorResultConcept2Type.getContent());
 				}
 			}
 		}
 	}
 
-	public Map<String, List<String>> getAttributes(TurNLP turNLP, Map<String, List<String>> hmEntities) {
+	public Map<String, List<String>> getAttributes(TurNLPRequest turNLPRequest, Map<String, List<String>> hmEntities) {
 
 		logger.debug("getAttributes() hmEntities: {}", hmEntities);
-		logger.debug("getAttributes() nlpInstanceEntities: {}", turNLP.getNlpInstanceEntities());
+		logger.debug("getAttributes() nlpInstanceEntities: {}", turNLPRequest.getEntities());
 		Map<String, List<String>> entityAttributes = new HashMap<>();
-		for (TurNLPInstanceEntity nlpInstanceEntity : turNLP.getNlpInstanceEntities()) {
-			entityAttributes.put(nlpInstanceEntity.getTurNLPEntity().getInternalName(),
-					hmEntities.get(nlpInstanceEntity.getTurNLPEntity().getInternalName()));
+		for (TurNLPEntityRequest turNLPEntityRequest : turNLPRequest.getEntities()) {
+			entityAttributes.put(turNLPEntityRequest.getTurNLPVendorEntity().getTurNLPEntity().getInternalName(),
+					hmEntities.get(turNLPEntityRequest.getName()));
 		}
 
 		logger.debug("getAttributes() entityAttributes: {}", entityAttributes);

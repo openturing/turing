@@ -54,7 +54,8 @@ public class TurSNPagination {
 		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean = paginationList.stream()
 				.filter(paginationItem -> Objects.nonNull(paginationItem))
 				.filter(paginationItem -> Objects.nonNull(paginationItem.getType()))
-				.filter(paginationItem -> paginationItem.getType().equals(type)).findFirst().orElse(null);
+				.filter(paginationItem -> paginationItem.getType().toString().equalsIgnoreCase(type)).findFirst()
+				.orElse(null);
 
 		return turSNSiteSearchPaginationBean == null ? Optional.empty()
 				: Optional.of(new TurSNPaginationItem(turSNSiteSearchPaginationBean));

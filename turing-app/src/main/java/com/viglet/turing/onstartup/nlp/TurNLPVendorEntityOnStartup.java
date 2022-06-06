@@ -1,18 +1,22 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package com.viglet.turing.onstartup.nlp;
@@ -32,6 +36,7 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
+import com.viglet.turing.plugins.nlp.gcp.response.TurNLPGCPEntityTypeResponse;
 
 @Component
 @Transactional
@@ -145,6 +150,11 @@ public class TurNLPVendorEntityOnStartup {
 				spacyEntities(turNLPVendor, TurLocaleRepository.EN_US);
 				spacyEntities(turNLPVendor, TurLocaleRepository.PT_BR);
 			});
+			
+			turNLPVendorRepository.findById(TurNLPVendorsConstant.GCP).ifPresent(turNLPVendor -> {
+				gcpEntities(turNLPVendor, TurLocaleRepository.EN_US);
+				gcpEntities(turNLPVendor, TurLocaleRepository.PT_BR);
+			});
 
 		}
 	}
@@ -170,6 +180,21 @@ public class TurNLPVendorEntityOnStartup {
 		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LANGUAGE_INTERNAL, TurNLPEntityConstant.LANGUAGE_SPACY, language);
 		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.QUANTITY_INTERNAL, TurNLPEntityConstant.QUANTITY_SPACY, language);
 		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.CARDINAL_INTERNAL, TurNLPEntityConstant.CARDINAL_SPACY, language);
+	}
+	
+	private void gcpEntities(TurNLPVendor turNLPVendor, String language) {
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL, TurNLPGCPEntityTypeResponse.PERSON.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL, TurNLPGCPEntityTypeResponse.LOCATION.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL, TurNLPGCPEntityTypeResponse.ORGANIZATION.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.DATE_INTERNAL, TurNLPGCPEntityTypeResponse.DATE.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.MISC_INTERNAL, TurNLPGCPEntityTypeResponse.OTHER.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.MONEY_INTERNAL, TurNLPGCPEntityTypeResponse.PRICE.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.EVENT_INTERNAL, TurNLPGCPEntityTypeResponse.EVENT.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.WORK_OF_ART_INTERNAL, TurNLPGCPEntityTypeResponse.WORK_OF_ART.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.CONSUMER_GOOD, TurNLPGCPEntityTypeResponse.CONSUMER_GOOD.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PHONE_NUMBER, TurNLPGCPEntityTypeResponse.PHONE_NUMBER.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ADDRESS, TurNLPGCPEntityTypeResponse.ADDRESS.toString(), language);
+		this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.CARDINAL_INTERNAL, TurNLPGCPEntityTypeResponse.NUMBER.toString(), language);
 	}
 
 	public void addNLPVendor(TurNLPVendor turNLPVendor, String internalName, String name, String language) {

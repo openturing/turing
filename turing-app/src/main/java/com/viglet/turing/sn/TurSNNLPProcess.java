@@ -1,24 +1,28 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.viglet.turing.sn;
 
 import com.viglet.turing.api.sn.job.TurSNJobItem;
-import com.viglet.turing.nlp.TurNLP;
 import com.viglet.turing.nlp.TurNLPProcess;
+import com.viglet.turing.nlp.TurNLPResponse;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -33,7 +37,6 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author Alexandre Oliveira
@@ -65,12 +68,12 @@ public class TurSNNLPProcess {
             HashMap<String, Object> seAttributes = defineSEAttributesToBeProcessedByNLP(turSNJobItem,
                     turSNSiteFieldsExtMap);
 
-            Optional<TurNLP> turNLP = turNLPProcess.processAttribsByNLP(turSNSiteLocale.getTurNLPInstance(),
+            TurNLPResponse turNLPResponse = turNLPProcess.processAttribsByNLP(turSNSiteLocale.getTurNLPInstance(),
                     seAttributes);
 
             // Add prefix to attribute name
-            Map<String, Object> nlpAttributesToSearchEngine = turNLP.isPresent()
-                    ? createNLPAttributesToSEFromNLPEntityMap(turNLP.get())
+            Map<String, Object> nlpAttributesToSearchEngine = turNLPResponse != null
+                    ? createNLPAttributesToSEFromNLPEntityMap(turNLPResponse)
                     : new HashMap<>();
 
             // Copy NLP attributes to consolidateResults
@@ -78,10 +81,10 @@ public class TurSNNLPProcess {
         }
     }
 
-    private Map<String, Object> createNLPAttributesToSEFromNLPEntityMap(TurNLP turNLP) {
+    private Map<String, Object> createNLPAttributesToSEFromNLPEntityMap(TurNLPResponse turNLPResponse) {
         Map<String, Object> nlpAttributesToSearchEngine = new HashMap<>();
 
-        for (Map.Entry<String, List<String>> nlpResult : turNLP.getEntityMapWithProcessedValues().entrySet()) {
+        for (Map.Entry<String, List<String>> nlpResult : turNLPResponse.getEntityMapWithProcessedValues().entrySet()) {
             nlpAttributesToSearchEngine.put("turing_entity_" + nlpResult.getKey(), nlpResult.getValue());
         }
 

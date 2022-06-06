@@ -1,25 +1,41 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package com.viglet.turing.api.nlp;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfReader;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.pdfcleanup.PdfCleaner;
+import com.itextpdf.pdfcleanup.autosweep.CompositeCleanupStrategy;
+import com.itextpdf.pdfcleanup.autosweep.RegexBasedCleanupStrategy;
+import com.viglet.turing.api.nlp.bean.TurNLPValidateDocument;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.filesystem.commons.TurFileUtils;
+import com.viglet.turing.filesystem.commons.TurFileAttributes;
 import com.viglet.turing.nlp.TurNLPProcess;
+import com.viglet.turing.nlp.TurNLPResponse;
 import com.viglet.turing.nlp.output.blazon.RedactionCommand;
 import com.viglet.turing.nlp.output.blazon.RedactionScript;
 import com.viglet.turing.nlp.output.blazon.SearchString;
@@ -28,8 +44,11 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
+import com.viglet.turing.utils.TurUtils;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.exception.TikaException;
@@ -51,6 +70,8 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
@@ -59,8 +80,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Optional;
+import java.util.Scanner;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/nlp")
@@ -104,8 +126,8 @@ public class TurNLPInstanceAPI {
 			turNLPInstanceEdit.setTitle(turNLPInstance.getTitle());
 			turNLPInstanceEdit.setDescription(turNLPInstance.getDescription());
 			turNLPInstanceEdit.setTurNLPVendor(turNLPInstance.getTurNLPVendor());
-			turNLPInstanceEdit.setHost(turNLPInstance.getHost());
-			turNLPInstanceEdit.setPort(turNLPInstance.getPort());
+			turNLPInstanceEdit.setEndpointURL(turNLPInstance.getEndpointURL());
+			turNLPInstanceEdit.setKey(turNLPInstance.getKey());
 			turNLPInstanceEdit.setEnabled(turNLPInstance.getEnabled());
 			turNLPInstanceEdit.setLanguage(turNLPInstance.getLanguage());
 			this.turNLPInstanceRepository.save(turNLPInstanceEdit);
@@ -125,14 +147,13 @@ public class TurNLPInstanceAPI {
 	@Operation(summary = "Create a Natural Language Processing")
 	@PostMapping
 	public TurNLPInstance turNLPInstanceAdd(@RequestBody TurNLPInstance turNLPInstance) {
-		turNLPProcess.saveAndAssocEntity(turNLPInstance);
 		return turNLPInstance;
 
 	}
 
 	@PostMapping(value = "/{id}/validate/file/blazon", produces = MediaType.APPLICATION_XML_VALUE)
 	public RedactionScript validateFile(@RequestParam("file") MultipartFile multipartFile, @PathVariable String id) {
-		try (InputStream inputStream = multipartFile.getInputStream()){
+		try (InputStream inputStream = multipartFile.getInputStream()) {
 			StringBuilder contentFile = new StringBuilder();
 			AutoDetectParser parser = new AutoDetectParser();
 			// -1 = no limit of number of characters
@@ -173,15 +194,16 @@ public class TurNLPInstanceAPI {
 					parseContextInner.set(PDFParserConfig.class, pdfConfigInner);
 
 					parseContextInner.set(Parser.class, parserInner);
-					
-					File tempFile = File.createTempFile(NLP_TEMP_FILE + UUID.randomUUID(), null, TurCommonsUtils.addSubDirToStoreDir("tmp"));
+
+					File tempFile = File.createTempFile(NLP_TEMP_FILE + UUID.randomUUID(), null,
+							TurCommonsUtils.addSubDirToStoreDir("tmp"));
 					Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 					try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
 						parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
 						contentFile.append(TurCommonsUtils.cleanTextContent(handlerInner.toString()));
 
 					} catch (IOException | SAXException | TikaException e) {
-						logger.error(e);
+						logger.error(e.getMessage(), e);
 					}
 					tempFile.deleteOnExit();
 				}
@@ -196,62 +218,125 @@ public class TurNLPInstanceAPI {
 			textValidate.setText(contentFile.toString());
 
 			return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-				Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
-				return createRedactionScript(turNLP);
+				TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+				return createRedactionScript(turNLPResponse);
 			}).orElse(new RedactionScript());
 
 		} catch (IOException | SAXException | TikaException e) {
-			logger.error(e);
+			logger.error(e.getMessage(), e);
 		}
 
 		return null;
 	}
 
-	private RedactionScript createRedactionScript(Optional<TurNLP> turNLP) {
+	private RedactionScript createRedactionScript(TurNLPResponse turNLPResponse) {
 		List<RedactionCommand> redactionCommands = new ArrayList<>();
 		RedactionScript redationScript = new RedactionScript();
 		redationScript.setVersion("1");
-		turNLP.ifPresent(nlp -> nlp.getEntityMapWithProcessedValues().entrySet().forEach(entityType -> {
-			if (entityType.getValue() != null) {
-				entityType.getValue().forEach(term -> {
-					RedactionCommand redactionCommand = new RedactionCommand();
-					SearchString searchString = new SearchString();
-					searchString.setMatchWholeWord(true);
-					searchString.setString(String.format("%s", term));
-					redactionCommand.setSearchString(searchString);
-					redactionCommands.add(redactionCommand);
-				});
-			}
-		}));
-
+		if (turNLPResponse != null) {
+			turNLPResponse.getEntityMapWithProcessedValues().entrySet().forEach(entityType -> {
+				if (entityType.getValue() != null) {
+					entityType.getValue().forEach(term -> {
+						RedactionCommand redactionCommand = new RedactionCommand();
+						SearchString searchString = new SearchString();
+						searchString.setMatchWholeWord(true);
+						searchString.setString(String.format("%s", term));
+						redactionCommand.setSearchString(searchString);
+						redactionCommands.add(redactionCommand);
+					});
+				}
+			});
+		}
 		redationScript.setRedactionCommands(redactionCommands);
 		return redationScript;
 	}
 
-	@PostMapping("/{id}/validate/text/web")
-	public TurNLPValidateResponse validateWeb(@PathVariable String id, @PathVariable String format,
-			@RequestBody TurNLPTextValidate textValidate) {
+	@PostMapping("/{id}/validate/document")
+	public TurNLPValidateResponse validateDocument(@PathVariable String id,
+			@RequestParam("file") MultipartFile multipartFile,
+			@RequestParam("config") String turNLPValidateDocumentRequest) {
+
+		File file = TurUtils.getFileFromMultipart(multipartFile);
+
+		TurFileAttributes turFileAttributes = TurFileUtils.readFile(file);
 		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
-			return createNLPValidateResponse(turNLPInstance, turNLP);
+
+			TurNLPValidateDocument turNLPValidateDocument = null;
+			try {
+				turNLPValidateDocument = new ObjectMapper().readValue(turNLPValidateDocumentRequest,
+						TurNLPValidateDocument.class);
+
+			} catch (JsonProcessingException e) {
+				logger.error(e.getMessage(), e);
+			}
+			TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance,
+					turFileAttributes.getContent(), turNLPValidateDocument.getEntities());
+
+			if (isPDF(file)) {
+				PdfReader pdfReader = null;
+				try {
+					pdfReader = new PdfReader(file);
+					pdfReader.setUnethicalReading(true);
+				} catch (IOException e) {
+					logger.error(e.getMessage(), e);
+				}
+
+				try (PdfDocument pdf = new PdfDocument(pdfReader,
+						new PdfWriter(file.getAbsolutePath().concat("redact.pdf")))) {
+					CompositeCleanupStrategy strategy = new CompositeCleanupStrategy();
+					List<String> terms = getNLPTerms(turNLPInstance, turNLPResponse);
+					strategy.add(new RegexBasedCleanupStrategy(redactRegex(terms))
+							.setRedactionColor(ColorConstants.DARK_GRAY));
+					try {
+						PdfCleaner.autoSweepCleanUp(pdf, strategy);
+					} catch (IOException e) {
+						logger.error(e.getMessage(), e);
+					}
+				} catch (IOException e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
+			return createNLPValidateResponse(turNLPInstance, turNLPResponse, turFileAttributes.getContent());
+		}).orElse(null);
+	}
+
+	private Pattern redactRegex(List<String> terms) {
+
+		StringBuffer stringBuffer = new StringBuffer();
+		terms.forEach(term -> stringBuffer.append(term.concat("|")));
+		if (!stringBuffer.isEmpty()) {
+			stringBuffer.deleteCharAt(stringBuffer.length() - 1);
+			String pattern = "\\b(".concat(stringBuffer.toString().replace(")", "").replace("(", "")).concat(")\\b");
+			return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+		} else {
+			return Pattern.compile("", Pattern.CASE_INSENSITIVE);
+		}
+	}
+
+	@PostMapping("/{id}/validate/text/web")
+	public TurNLPValidateResponse validateWeb(@PathVariable String id, @RequestBody TurNLPTextValidate textValidate) {
+		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
+			TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+			return createNLPValidateResponse(turNLPInstance, turNLPResponse, textValidate.getText());
 		}).orElse(null);
 	}
 
 	@PostMapping("/{id}/validate/text/blazon")
-	public RedactionScript validateBlazon(@PathVariable String id, @PathVariable String format,
-			@RequestBody TurNLPTextValidate textValidate) {
+	public RedactionScript validateBlazon(@PathVariable String id, @RequestBody TurNLPTextValidate textValidate) {
 		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
-			return createRedactionScript(turNLP);
+			TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+			return createRedactionScript(turNLPResponse);
 		}).orElse(null);
 	}
 
-	private TurNLPValidateResponse createNLPValidateResponse(TurNLPInstance turNLPInstance, Optional<TurNLP> turNLP) {
+	private TurNLPValidateResponse createNLPValidateResponse(TurNLPInstance turNLPInstance,
+			TurNLPResponse turNLPResponse, String text) {
 		TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
 		turNLPValidateResponse.setVendor(turNLPInstance.getTurNLPVendor().getTitle());
 		turNLPValidateResponse.setLocale(turNLPInstance.getLanguage());
-		if (turNLP.isPresent()) {
-			for (Entry<String, List<String>> entityType : turNLP.get().getEntityMapWithProcessedValues().entrySet()) {
+		turNLPValidateResponse.setText(text);
+		if (turNLPResponse != null && turNLPResponse.getEntityMapWithProcessedValues() != null) {
+			for (Entry<String, List<String>> entityType : turNLPResponse.getEntityMapWithProcessedValues().entrySet()) {
 				if (entityType.getValue() != null) {
 					TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
 					TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
@@ -266,9 +351,38 @@ public class TurNLPInstanceAPI {
 		return turNLPValidateResponse;
 	}
 
+	private List<String> getNLPTerms(TurNLPInstance turNLPInstance, TurNLPResponse turNLPResponse) {
+		List<String> terms = new ArrayList<>();
+		if (turNLPResponse != null && turNLPResponse.getEntityMapWithProcessedValues() != null) {
+			for (Entry<String, List<String>> entityType : turNLPResponse.getEntityMapWithProcessedValues().entrySet()) {
+				if (entityType.getValue() != null) {
+					terms.addAll(entityType.getValue());
+				}
+			}
+		}
+		return terms;
+	}
+
 	public boolean isNumeric(String str) {
 		return str.matches("-?\\d+(\\.\\d+)?"); // match a number with optional
 												// '-' and decimal.
+	}
+
+	public boolean isPDF(File file) {
+		Scanner input;
+		try {
+			input = new Scanner(new FileReader(file));
+
+			while (input.hasNextLine()) {
+				final String checkline = input.nextLine();
+				if (checkline.contains("%PDF-")) {
+					return true;
+				}
+			}
+		} catch (FileNotFoundException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return false;
 	}
 
 	public static class TurNLPTextValidate {

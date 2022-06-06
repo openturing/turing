@@ -1,18 +1,22 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package com.viglet.turing.se.result;
@@ -23,76 +27,15 @@ import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 
-public class TurSEResults {
+public class TurSEResults extends TurSEGenericResults {
 	private int qTime;
 	private long elapsedTime;
-	private long numFound;
-	private long start;
-	private int limit;
-	private int pageCount;
-	private int currentPage;
 	private String queryString;
 	private String sort;
 	private TurSESpellCheckResult spellCheck;
 	private List<TurSESimilarResult> similarResults;
 	private List<TurSEFacetResult> facetResults;
-	private List<TurSEResult> results;
-
-	public List<TurSESimilarResult> getSimilarResults() {
-		return similarResults;
-	}
-
-	public void setSimilarResults(List<TurSESimilarResult> similarResults) {
-		this.similarResults = similarResults;
-	}
-
-	public List<TurSEFacetResult> getFacetResults() {
-		return facetResults;
-	}
-
-	public void setFacetResults(List<TurSEFacetResult> facetResults) {
-		this.facetResults = facetResults;
-	}
-
-	public String getSort() {
-		return sort;
-	}
-
-	public void setSort(String sort) {
-		this.sort = sort;
-	}
-
-	public String getQueryString() {
-		return queryString;
-	}
-
-	public void setQueryString(String queryString) {
-		this.queryString = queryString;
-	}
-
-	public int getPageCount() {
-		return pageCount;
-	}
-
-	public void setPageCount(int pageCount) {
-		this.pageCount = pageCount;
-	}
-
-	public int getCurrentPage() {
-		return currentPage;
-	}
-
-	public void setCurrentPage(int currentPage) {
-		this.currentPage = currentPage;
-	}
-
-	public int getLimit() {
-		return limit;
-	}
-
-	public void setLimit(int limit) {
-		this.limit = limit;
-	}
+	private List<TurSEGroup> groups;
 
 	public int getqTime() {
 		return qTime;
@@ -110,28 +53,20 @@ public class TurSEResults {
 		this.elapsedTime = elapsedTime;
 	}
 
-	public long getNumFound() {
-		return numFound;
+	public String getQueryString() {
+		return queryString;
 	}
 
-	public void setNumFound(long numFound) {
-		this.numFound = numFound;
+	public void setQueryString(String queryString) {
+		this.queryString = queryString;
 	}
 
-	public long getStart() {
-		return start;
+	public String getSort() {
+		return sort;
 	}
 
-	public void setStart(long start) {
-		this.start = start;
-	}
-
-	public List<TurSEResult> getResults() {
-		return results;
-	}
-
-	public void setResults(List<TurSEResult> results) {
-		this.results = results;
+	public void setSort(String sort) {
+		this.sort = sort;
 	}
 
 	public TurSESpellCheckResult getSpellCheck() {
@@ -141,4 +76,29 @@ public class TurSEResults {
 	public void setSpellCheck(TurSESpellCheckResult spellCheck) {
 		this.spellCheck = spellCheck;
 	}
+
+	public List<TurSESimilarResult> getSimilarResults() {
+		return similarResults;
+	}
+
+	public void setSimilarResults(List<TurSESimilarResult> similarResults) {
+		this.similarResults = similarResults;
+	}
+
+	public List<TurSEFacetResult> getFacetResults() {
+		return facetResults;
+	}
+
+	public void setFacetResults(List<TurSEFacetResult> facetResults) {
+		this.facetResults = facetResults;
+	}
+
+	public List<TurSEGroup> getGroups() {
+		return groups;
+	}
+
+	public void setGroups(List<TurSEGroup> groups) {
+		this.groups = groups;
+	}
+
 }

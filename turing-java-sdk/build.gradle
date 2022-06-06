@@ -24,6 +24,12 @@ repositories {
         jcenter()
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.viglet.turing.client.sn.sample.TurSNClientSample'
+    }
+ }
+ 
  shadowJar {
    baseName = 'turing-java-sdk'
 }

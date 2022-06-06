@@ -35,6 +35,10 @@ public class TurSNSiteSpellCheckText {
 	private String text;
 	private String link;
 	
+	public TurSNSiteSpellCheckText() {
+		super();
+	}
+	
 	public TurSNSiteSpellCheckText(URI uri, String text, boolean isOriginal) {
 		super();
 		URI uriModified = TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.QUERY, text);
