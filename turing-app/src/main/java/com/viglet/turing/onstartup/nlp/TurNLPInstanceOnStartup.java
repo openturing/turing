@@ -57,7 +57,8 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setEndpointURL(LOCALHOST);
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
-
+				turNLPInstanceRepository.save(turNLPInstance);
+				
 				turConfigVar.setId("DEFAULT_NLP");
 				turConfigVar.setPath("/nlp");
 				turConfigVar.setValue(turNLPInstance.getId());
@@ -70,6 +71,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setEndpointURL(LOCALHOST);
 				turNLPInstance.setLanguage(TurLocaleRepository.PT_BR);
 				turNLPInstance.setEnabled(1);
+				turNLPInstanceRepository.save(turNLPInstance);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.CORENLP).ifPresent(turNLPVendorCoreNLP -> {
@@ -80,7 +82,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setEndpointURL(LOCALHOST.concat(":9001"));
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
-
+				turNLPInstanceRepository.save(turNLPInstance);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.SPACY).ifPresent(turNLPVendorSpaCy -> {
@@ -91,6 +93,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setEndpointURL(LOCALHOST.concat(":2800"));
 				turNLPInstance.setLanguage(TurLocaleRepository.EN_US);
 				turNLPInstance.setEnabled(1);
+				turNLPInstanceRepository.save(turNLPInstance);
 			});
 
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).ifPresent(turNLPVendorPolyglot -> {
@@ -101,6 +104,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setEndpointURL(LOCALHOST.concat(":2810"));
 				turNLPInstance.setLanguage(TurLocaleRepository.CA);
 				turNLPInstance.setEnabled(1);
+				turNLPInstanceRepository.save(turNLPInstance);
 			});
 			
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.GCP).ifPresent(turNLPVendorGCP -> {
@@ -111,6 +115,7 @@ public class TurNLPInstanceOnStartup {
 				turNLPInstance.setEndpointURL("https://language.googleapis.com/v1/documents:analyzeEntities");
 				turNLPInstance.setLanguage(TurLocaleRepository.PT_BR);
 				turNLPInstance.setEnabled(1);
+				turNLPInstanceRepository.save(turNLPInstance);
 			});
 		}
 

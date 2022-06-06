@@ -44,7 +44,7 @@ import com.fasterxml.jackson.annotation.JsonIdentityReference;
  * 
  */
 @Entity
-@Table(name = "turNLPFeature")
+@Table(name = "turNLPEntityType")
 @NamedQuery(name = "TurNLPEntityType.findAll", query = "SELECT net FROM TurNLPEntityType net")
 public class TurNLPEntityType implements Serializable {
 	private static final long serialVersionUID = 1L;
