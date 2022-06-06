@@ -11,12 +11,10 @@ image:https://img.shields.io/github/license/openturing/turing.svg?style=for-the-
 image:https://img.shields.io/github/last-commit/openturing/turing.svg?style=for-the-badge&logo=java)[GitHub last commit]
 image:https://img.shields.io/github/workflow/status/openturing/turing/Build?style=for-the-badge&logo=GitHub[link="https://github.com/openturing/turing/actions/workflows/build.yml"]
 image:https://img.shields.io/badge/Sonar-Code%20Quality-brightgreen?style=for-the-badge&logo=SonarCloud[link="https://sonarcloud.io/organizations/viglet-turing/projects"]
-image:https://img.shields.io/twitter/follow/VigletTweet.svg?style=for-the-badge&logo=twitter[link="https://twitter.com/VigletTweet"]
-image:https://img.shields.io/badge/LinkedIn-Follow-blue?style=for-the-badge&logo=LinkedIn[link="https://www.linkedin.com/company/viglet"]
 
 = Preface
 
-Viglet Turing AI (https://viglet.com/turing) is an open source solution (https://github.com/openturing), which has Semantic Navigation and Chatbot as its main features. You can choose from several NLPs to enrich the data. All content is indexed in Solr as search engine.
+Viglet Turing AI (https://openviglet.github.io/turing/) is an open source solution (https://github.com/openturing), which has Semantic Navigation and Chatbot as its main features. You can choose from several NLPs to enrich the data. All content is indexed in Solr as search engine.
 
 :numbered:
 
@@ -24,7 +22,7 @@ Viglet Turing AI (https://viglet.com/turing) is an open source solution (https:/
 
 === Documentation
 
-Technical documentation on Turing AI is available at https://docs.viglet.com/turing.
+Technical documentation on Turing AI is available at https://openviglet.github.io/docs/turing/.
 
 === Run
 
