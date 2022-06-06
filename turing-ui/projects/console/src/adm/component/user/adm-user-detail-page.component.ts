@@ -4,7 +4,7 @@ import { TurAdmUser } from '../../model/adm-user.model';
 import { NotifierService } from 'angular-notifier';
 import { TurAdmUserService } from '../../service/adm-user.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormControl, Validators } from '@angular/forms';
+import { UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
   selector: 'adm-user-detail-page',
@@ -15,7 +15,7 @@ export class TurAdmUserDetailPageComponent implements OnInit {
   modalDelete!: ElementRef;
   private turAdmUser: Observable<TurAdmUser>;
   private newObject: boolean = false;
-  portControl = new FormControl(80, [Validators.max(100), Validators.min(0)])
+  portControl = new UntypedFormControl(80, [Validators.max(100), Validators.min(0)])
 
 
   constructor(

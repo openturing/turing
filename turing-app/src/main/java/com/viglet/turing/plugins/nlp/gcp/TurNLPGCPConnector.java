@@ -23,12 +23,14 @@ import java.lang.invoke.MethodHandles;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -74,11 +76,35 @@ public class TurNLPGCPConnector implements TurNLPPlugin {
 			URL serverURL = new URL(String.format("%s?key=%s", turNLPRequest.getTurNLPInstance().getEndpointURL(),
 					turNLPRequest.getTurNLPInstance().getKey()));
 			HttpPost httpPost = new HttpPost(serverURL.toString());
-			System.out.println("RRR: " +  turNLPRequest.getTurNLPInstance().getLanguage());
 			for (Object attrValue : turNLPRequest.getData().values()) {
+				String text = TurSolrField.convertFieldToString(attrValue);
+				
+				List<String> newLineList =  new ArrayList<>();
+				Arrays.asList(text.split("\n")).forEach(newLine -> {
+					List<String> textWords = Arrays.asList(newLine.split(" ")); 
+					List<String> convertTextWords = new ArrayList<>();
+					textWords.forEach(word -> {
+						String checkWord = word.trim();
+						//System.out.println(word + " - " + checkWord);
+						if (StringUtils.isAllUpperCase(checkWord)) {
+							//System.out.println("S");
+							convertTextWords.add(StringUtils.capitalize(word.toLowerCase()));
+						}
+						else {
+							//System.out.println("N");
+							convertTextWords.add(word);
+						}
+						
+					});
+					String newText =  StringUtils.join(convertTextWords, " ");
+					newLineList.add(newText);
+				});
+				String newTextNewLine =  StringUtils.join(newLineList, "\n");
+				
+				System.out.println(newTextNewLine);
 				TurNLPGCPDocumentRequest turNLPGCPDocumentRequest = new TurNLPGCPDocumentRequest(
 						TurNLPGCPTypeResponse.PLAIN_TEXT, turNLPRequest.getTurNLPInstance().getLanguage(),
-						TurSolrField.convertFieldToString(attrValue));
+						newTextNewLine);
 				TurNLPGCPRequest turNLPGCPRequest = new TurNLPGCPRequest(turNLPGCPDocumentRequest,
 						TurNLPGCPEncodingResponse.UTF16);
 				httpPost.addHeader("Content-Type", "application/json");

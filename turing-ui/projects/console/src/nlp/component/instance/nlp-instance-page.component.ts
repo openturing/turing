@@ -8,7 +8,7 @@ import { TurNLPVendor } from '../../model/nlp-vendor.model';
 import { TurNLPVendorService } from '../../service/nlp-vendor.service';
 import { TurLocale } from '../../../locale/model/locale.model';
 import { TurLocaleService } from '../../../locale/service/locale.service';
-import { FormControl, Validators } from '@angular/forms';
+import { UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
   selector: 'nlp-instance-page',
@@ -22,7 +22,7 @@ export class TurNLPInstancePageComponent implements OnInit {
   private turNLPVendors: Observable<TurNLPVendor[]>;
   private newObject: boolean = false;
 
-  portControl = new FormControl(80, [Validators.max(100), Validators.min(0)])
+  portControl = new UntypedFormControl(80, [Validators.max(100), Validators.min(0)])
 
 
   constructor(

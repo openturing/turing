@@ -8,7 +8,7 @@ import { TurSEVendor } from '../../model/se-vendor.model';
 import { TurSEVendorService } from '../../service/se-vendor.service';
 import { TurLocale } from '../../../locale/model/locale.model';
 import { TurLocaleService } from '../../../locale/service/locale.service';
-import { FormControl, Validators } from '@angular/forms';
+import { UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
   selector: 'se-instance-page',
@@ -22,7 +22,7 @@ export class TurSEInstancePageComponent implements OnInit {
   private turSEVendors: Observable<TurSEVendor[]>;
   private newObject: boolean = false;
 
-  portControl = new FormControl(80, [Validators.max(100), Validators.min(0)])
+  portControl = new UntypedFormControl(80, [Validators.max(100), Validators.min(0)])
 
 
   constructor(
