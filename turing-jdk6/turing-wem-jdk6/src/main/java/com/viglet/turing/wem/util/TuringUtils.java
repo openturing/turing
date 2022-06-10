@@ -49,8 +49,7 @@ import java.util.Map.Entry;
 public class TuringUtils {
 
   private static final ContextLogger log = ContextLogger.getLogger(
-    TuringUtils.class.getName()
-  );
+      TuringUtils.class.getName());
 
   private TuringUtils() {
     throw new IllegalStateException("TuringUtils");
@@ -80,23 +79,21 @@ public class TuringUtils {
   }
 
   public static ContentInstance findContentInstanceByKey(
-    ContentType contentType,
-    String primaryKeyValue
-  )
-    throws Exception {
+      ContentType contentType,
+      String primaryKeyValue)
+      throws Exception {
     ContentInstance ci = null;
     try {
       AttributeDefinitionData add = getKeyAttributeDefinitionData(contentType);
       DataType dt = add.getDataType();
       Object val = primaryKeyValue;
-      if (dt.isInt() || dt.isNumerical() || dt.isTinyInt()) val =
-        Integer.valueOf(primaryKeyValue);
+      if (dt.isInt() || dt.isNumerical() || dt.isTinyInt())
+        val = Integer.valueOf(primaryKeyValue);
       ObjectTypeRef otr = new ObjectTypeRef(contentType);
       AttributeData atd = new AttributeData(add, val, otr);
       ManagedObjectRef ref = new ManagedObjectRef(
-        otr,
-        new AttributeData[] { atd }
-      );
+          otr,
+          new AttributeData[] { atd });
 
       ci = (ContentInstance) ManagedObject.findById(ref);
     } catch (ApplicationException e) {
@@ -107,41 +104,39 @@ public class TuringUtils {
   }
 
   public static AttributeDefinitionData getKeyAttributeDefinitionData(
-    ContentType ct
-  )
-    throws Exception {
+      ContentType ct)
+      throws Exception {
     AttributeDefinitionData[] adds = ct
-      .getData()
-      .getTopRelation()
-      .getKeyAttributeDefinitions();
-    if (adds == null) throw new Exception(
-      "Failed to retrieve primary key definition",
-      null
-    );
-    if (adds.length == 0) throw new Exception("No primary key found", null);
+        .getData()
+        .getTopRelation()
+        .getKeyAttributeDefinitions();
+    if (adds == null)
+      throw new Exception(
+          "Failed to retrieve primary key definition",
+          null);
+    if (adds.length == 0)
+      throw new Exception("No primary key found", null);
     if (adds.length > 1) {
       StringBuilder sb = new StringBuilder();
       sb.append("Works with one primary key only: ").append(adds.length);
       throw new Exception(sb.toString(), null);
-    } else return adds[0];
+    } else
+      return adds[0];
   }
 
   public static void sendToTuring(
-    TurSNJobItems turSNJobItems,
-    IHandlerConfiguration config,
-    TurSNSiteConfig turSNSiteConfig
-  ) {
+      TurSNJobItems turSNJobItems,
+      IHandlerConfiguration config,
+      TurSNSiteConfig turSNSiteConfig) {
     TurUsernamePasswordCredentials credentials = new TurUsernamePasswordCredentials(
-      config.getLogin(),
-      config.getPassword()
-    );
+        config.getLogin(),
+        config.getPassword());
     try {
       HttpTurSNServer turSNServer = new HttpTurSNServer(
-        new URL(config.getTuringURL()),
-        turSNSiteConfig.getName(),
-        turSNSiteConfig.getLocale(),
-        credentials
-      );
+          new URL(config.getTuringURL()),
+          turSNSiteConfig.getName(),
+          turSNSiteConfig.getLocale(),
+          credentials);
       TurSNJobUtils.importItems(turSNJobItems, turSNServer, false);
     } catch (MalformedURLException e) {
       log.error(e.getStackTrace());
@@ -149,17 +144,16 @@ public class TuringUtils {
   }
 
   public static Channel getChosenChannel(
-    ChannelRef[] channelRefs,
-    List<String> siteNames,
-    IHandlerConfiguration config
-  )
-    throws ApplicationException, ValidationException, RemoteException {
+      ChannelRef[] channelRefs,
+      List<String> siteNames,
+      IHandlerConfiguration config)
+      throws ApplicationException, ValidationException, RemoteException {
     String siteName = null;
-    if (!siteNames.isEmpty()) siteName = chosenSiteName(siteNames, config);
+    if (!siteNames.isEmpty())
+      siteName = chosenSiteName(siteNames, config);
     Channel chosenChannel = null;
     if (siteName != null) {
-      chosenChannel =
-        channelsFromChosenSite(channelRefs, siteName, chosenChannel);
+      chosenChannel = channelsFromChosenSite(channelRefs, siteName, chosenChannel);
     } else if (channelRefs != null && channelRefs.length > 0) {
       chosenChannel = channelRefs[0].getChannel();
     }
@@ -167,11 +161,10 @@ public class TuringUtils {
   }
 
   private static Channel channelsFromChosenSite(
-    ChannelRef[] channelRefs,
-    String siteName,
-    Channel chosenChannel
-  )
-    throws ApplicationException, ValidationException, RemoteException {
+      ChannelRef[] channelRefs,
+      String siteName,
+      Channel chosenChannel)
+      throws ApplicationException, ValidationException, RemoteException {
     boolean foundSite = false;
     for (ChannelRef channelRef : channelRefs) {
       for (SiteRef siteRef : channelRef.getChannel().getSiteRefs()) {
@@ -188,7 +181,7 @@ public class TuringUtils {
   }
 
   public static String channelBreadcrumb(Channel channel, Locale locale)
-    throws ApplicationException, ValidationException {
+      throws ApplicationException, ValidationException {
     if (channel != null) {
       AsLocaleRef asLocaleRef = null;
       if (locale != null) {
@@ -197,9 +190,8 @@ public class TuringUtils {
         } catch (ValidationException var11) {
           if (log.isDebugEnabled()) {
             log.debug(
-              "Error occurred while creating AsLocaleRef object for locale: " +
-              locale.toString()
-            );
+                "Error occurred while creating AsLocaleRef object for locale: " +
+                    locale.toString());
           }
         }
       }
@@ -210,8 +202,7 @@ public class TuringUtils {
       for (int j = 0; j < breadcrumb.length; j++) {
         if (j > 0) {
           if (asLocaleRef != null) {
-            ChannelLocalizedData chLocalData =
-              breadcrumb[j].getData().getLocalizedData(asLocaleRef);
+            ChannelLocalizedData chLocalData = breadcrumb[j].getData().getLocalizedData(asLocaleRef);
             if (chLocalData != null) {
               channelPath.append("/" + chLocalData.getFurlName());
             } else {
@@ -231,7 +222,7 @@ public class TuringUtils {
   }
 
   public static String normalizeText(String text) {
-    return text.replace("-", "–").replace(" ", "-").replace("\\?", "%3F");
+    return text.replace("-", "–").replace(" ", "-").replace("\\?", "%3F").replace("#", "%23");
   }
 
   public static Site getSite(ManagedObject mo, IHandlerConfiguration config) {
@@ -269,9 +260,8 @@ public class TuringUtils {
   }
 
   public static String getSiteName(
-    ManagedObject mo,
-    IHandlerConfiguration config
-  ) {
+      ManagedObject mo,
+      IHandlerConfiguration config) {
     List<String> siteNames = new ArrayList<String>();
     try {
       if (mo instanceof ContentInstance) {
@@ -301,13 +291,10 @@ public class TuringUtils {
   }
 
   private static Site chosenSite(
-    List<Site> sites,
-    IHandlerConfiguration config
-  ) {
-    if (
-      config.getSitesAssocPriority() != null &&
-      !config.getSitesAssocPriority().isEmpty()
-    ) {
+      List<Site> sites,
+      IHandlerConfiguration config) {
+    if (config.getSitesAssocPriority() != null &&
+        !config.getSitesAssocPriority().isEmpty()) {
       Site selectedSite = null;
       for (String siteAssocPriority : config.getSitesAssocPriority()) {
         for (Site site : sites) {
@@ -332,14 +319,11 @@ public class TuringUtils {
   }
 
   private static String chosenSiteName(
-    List<String> siteNames,
-    IHandlerConfiguration config
-  ) {
+      List<String> siteNames,
+      IHandlerConfiguration config) {
     String siteNameAssociated;
-    if (
-      config.getSitesAssocPriority() != null &&
-      !config.getSitesAssocPriority().isEmpty()
-    ) {
+    if (config.getSitesAssocPriority() != null &&
+        !config.getSitesAssocPriority().isEmpty()) {
       boolean foundSite = false;
       String siteName = null;
       for (String siteAssocPriority : config.getSitesAssocPriority()) {
@@ -360,7 +344,7 @@ public class TuringUtils {
   }
 
   public static void getSiteNames(List<String> siteNames, Channel channel)
-    throws ApplicationException, RemoteException {
+      throws ApplicationException, RemoteException {
     List<Site> sites = getSitesFromChannel(channel);
     for (Site site : sites) {
       if (!siteNames.contains(site.getName())) {
@@ -370,7 +354,7 @@ public class TuringUtils {
   }
 
   private static List<Site> getSitesFromChannel(Channel channel)
-    throws ApplicationException, RemoteException {
+      throws ApplicationException, RemoteException {
     List<Site> sites = new ArrayList<Site>();
     if (channel != null) {
       for (SiteRef siteRef : channel.getSiteRefs()) {
@@ -381,17 +365,15 @@ public class TuringUtils {
   }
 
   public static String getSiteDomain(
-    ManagedObject mo,
-    IHandlerConfiguration config
-  ) {
+      ManagedObject mo,
+      IHandlerConfiguration config) {
     String siteName = getSiteName(mo, config);
     return getSiteDomainBySiteName(siteName, config);
   }
 
   public static String getSiteDomainBySiteName(
-    String siteName,
-    IHandlerConfiguration config
-  ) {
+      String siteName,
+      IHandlerConfiguration config) {
     if (log.isDebugEnabled()) {
       log.debug("ETLTuringTranslator getSiteUrl:" + siteName);
     }
@@ -400,10 +382,9 @@ public class TuringUtils {
   }
 
   public static String getSiteUrl(
-    ManagedObject mo,
-    IHandlerConfiguration config
-  )
-    throws ApplicationException {
+      ManagedObject mo,
+      IHandlerConfiguration config)
+      throws ApplicationException {
     if (mo != null) {
       String siteNameAssociated = getSiteNameFromContentInstance(mo, config);
       if (siteNameAssociated != null) {
@@ -411,8 +392,7 @@ public class TuringUtils {
       } else {
         if (log.isDebugEnabled()) {
           log.debug(
-            "ETLTuringTranslator Content without channel:" + mo.getName()
-          );
+              "ETLTuringTranslator Content without channel:" + mo.getName());
         }
         return null;
       }
@@ -425,17 +405,15 @@ public class TuringUtils {
   }
 
   public static String getSiteNameFromContentInstance(
-    ManagedObject mo,
-    IHandlerConfiguration config
-  ) {
+      ManagedObject mo,
+      IHandlerConfiguration config) {
     return getSiteName(mo, config);
   }
 
   private static String createSiteURL(
-    ManagedObject mo,
-    IHandlerConfiguration config
-  )
-    throws ApplicationException {
+      ManagedObject mo,
+      IHandlerConfiguration config)
+      throws ApplicationException {
     Site site = getSite(mo, config);
     String siteName = site.getName();
     if (log.isDebugEnabled()) {
@@ -444,10 +422,8 @@ public class TuringUtils {
     final String SLASH = "/";
     StringBuilder url = new StringBuilder(getSiteDomain(mo, config));
 
-    if (
-      config.getCDAContextName(siteName) != null &&
-      FurlUtil.isIncludeContextName(site)
-    ) {
+    if (config.getCDAContextName(siteName) != null &&
+        FurlUtil.isIncludeContextName(site)) {
       url.append(SLASH);
       url.append(config.getCDAContextName(siteName));
     }
@@ -472,15 +448,12 @@ public class TuringUtils {
   }
 
   public static String getLocale(
-    ManagedObject mo,
-    IHandlerConfiguration config
-  ) {
+      ManagedObject mo,
+      IHandlerConfiguration config) {
     String locale = null;
-    if (
-      mo != null &&
-      mo.getLocale() != null &&
-      mo.getLocale().getJavaLocale() != null
-    ) {
+    if (mo != null &&
+        mo.getLocale() != null &&
+        mo.getLocale().getJavaLocale() != null) {
       locale = mo.getLocale().getJavaLocale().toString();
     }
 
@@ -492,9 +465,8 @@ public class TuringUtils {
   }
 
   private static String getDefaultLocale(
-    ManagedObject mo,
-    IHandlerConfiguration config
-  ) {
+      ManagedObject mo,
+      IHandlerConfiguration config) {
     try {
       Site site = getSite(mo, config);
       AsLocale asLocale = ContentUtil.getDefaultLocaleForSite(site);
@@ -508,19 +480,17 @@ public class TuringUtils {
   }
 
   public static AsLocaleData getAsLocaleDataFromManagedObject(
-    ManagedObjectVCMRef managedObjectVCMRef
-  ) {
+      ManagedObjectVCMRef managedObjectVCMRef) {
     ManagedObject mo;
     AsLocaleData asLocaleData = null;
     try {
       mo = managedObjectVCMRef.retrieveManagedObject();
 
-      if (
-        mo != null &&
-        mo.getLocale() != null &&
-        mo.getLocale().getAsLocale() != null &&
-        mo.getLocale().getAsLocale().getData() != null
-      ) asLocaleData = mo.getLocale().getAsLocale().getData();
+      if (mo != null &&
+          mo.getLocale() != null &&
+          mo.getLocale().getAsLocale() != null &&
+          mo.getLocale().getAsLocale().getData() != null)
+        asLocaleData = mo.getLocale().getAsLocale().getData();
     } catch (ApplicationException e) {
       log.error(e.getMessage(), e);
     } catch (RemoteException e) {
@@ -530,16 +500,13 @@ public class TuringUtils {
   }
 
   public static String getSiteNameFromManagedObjectVCMRef(
-    ManagedObjectVCMRef managedObjectVCMRef,
-    IHandlerConfiguration config
-  ) {
+      ManagedObjectVCMRef managedObjectVCMRef,
+      IHandlerConfiguration config) {
     String siteName = null;
     try {
-      siteName =
-        TuringUtils.getSiteName(
+      siteName = TuringUtils.getSiteName(
           managedObjectVCMRef.retrieveManagedObject(),
-          config
-        );
+          config);
     } catch (ApplicationException e) {
       log.error(e.getMessage(), e);
     } catch (RemoteException e) {

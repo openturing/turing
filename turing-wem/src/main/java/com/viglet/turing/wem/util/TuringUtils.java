@@ -281,7 +281,7 @@ public class TuringUtils {
     }
 
     public static String normalizeText(String text) {
-        return text.replace("-", "–").replace(" ", "-").replace("\\?", "%3F");
+        return text.replace("-", "–").replace(" ", "-").replace("\\?", "%3F").replace("#", "%23");
     }
 
     public static Site getSite(ManagedObject mo, IHandlerConfiguration config) {
