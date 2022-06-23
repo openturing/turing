@@ -348,7 +348,7 @@ public class TurWEMCommander {
 			throws ApplicationException, ConfigException, ContentIndexException {
 		for (ManagedObjectVCMRef ref : refs) {
 			ManagedObject mo = (ManagedObject) objects.get(ref.getId());
-			if (mo instanceof ContentInstance) {
+			if (mo instanceof ContentInstance || mo instanceof Channel) {
 				if (logger.isDebugEnabled())
 					logger.debug(String.format("Attempting to index the Content Instance: %s",
 							mo.getContentManagementId().getId()));

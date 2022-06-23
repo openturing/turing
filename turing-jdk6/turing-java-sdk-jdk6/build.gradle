@@ -10,10 +10,37 @@ buildscript {
 	}
 
 	dependencies {
-    	classpath 'com.github.jengelman.gradle.plugins:shadow:1.0.3'
+    	classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
     }
     
 }
+
+def javaExecutablesPath = new File(java6Home, 'bin')
+def javaExecutables = [:].withDefault { execName ->
+    def executable = new File(javaExecutablesPath, execName + ".exe")
+    assert executable.exists() : "There is no ${execName}.exe executable in ${javaExecutablesPath}"
+    executable
+}
+tasks.withType(AbstractCompile) {
+    options.with {
+        fork = true
+        forkOptions.javaHome = file(java6Home)
+    }
+}
+tasks.withType(JavaCompile) {
+	options.encoding = "UTF-8"
+}
+
+tasks.withType(Test) {
+    executable = javaExecutables.java
+    systemProperty "file.encoding", "UTF-8"
+}
+
+tasks.withType(JavaExec) {
+    executable = javaExecutables.java
+}
+
+
 
 apply plugin: 'java'
 apply plugin: 'com.github.johnrengelman.shadow'
@@ -41,15 +68,15 @@ task compileOne (type: JavaCompile) {
 
 dependencies {
    	// JSON
-    compile group: 'org.json', name: 'json', version:"${jsonVersion}"
+    implementation group: 'org.json', name: 'json', version:"${jsonVersion}"
     
     // Jackson
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.0'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.0'
     
     // Log4J
-    compile group: 'log4j', name: 'log4j', version: "${log4jVersion}"
+    implementation group: 'log4j', name: 'log4j', version: "${log4jVersion}"
 
-    compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.53'
+    implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.53'
 }
 
 compileOne.options.compilerArgs = ["-sourcepath", "$projectDir/src/main/java"]

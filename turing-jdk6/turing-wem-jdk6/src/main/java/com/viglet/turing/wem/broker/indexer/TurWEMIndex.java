@@ -16,7 +16,6 @@
  */
 package com.viglet.turing.wem.broker.indexer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -30,6 +29,12 @@ import com.viglet.turing.wem.mappers.MappingDefinitions;
 import com.viglet.turing.wem.mappers.MappingDefinitionsProcess;
 import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AsLocaleData;
+import com.vignette.as.client.common.ComputedMoReferenceInstance;
+import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
+import com.vignette.as.client.exception.ApplicationException;
+import com.vignette.as.client.exception.AuthorizationException;
+import com.vignette.as.client.exception.ValidationException;
+import com.vignette.as.client.javabean.Channel;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
@@ -44,14 +49,12 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 
+import java.rmi.RemoteException;
 import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 public class TurWEMIndex {
 
     private static final ContextLogger log = ContextLogger.getLogger(TurWEMIndex.class.getName());
-    private static final String FILE_PROTOCOL = "file://";
 
     private TurWEMIndex() {
         throw new IllegalStateException("TurWEMIndex");
@@ -59,45 +62,72 @@ public class TurWEMIndex {
 
     public static boolean indexCreate(ManagedObject mo, IHandlerConfiguration config, String siteName) {
         MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
-        if ((mappingDefinitions != null) && (mo != null) && (mo instanceof ContentInstance)) {
-            try {
-                ContentInstance contentInstance = (ContentInstance) mo;
-
-                String contentTypeName = contentInstance.getObjectType().getData().getName();
-                
-                // When there is related content but no associated site.
-                if("Management Site".equals(siteName)) {
-                    siteName = TuringUtils.getSiteName(contentInstance, config);
-                }
-
-                AsLocaleData asLocaleData = null;
-                if ((contentInstance.getLocale() != null) && (contentInstance.getLocale().getAsLocale() != null)
-                        && (contentInstance.getLocale().getAsLocale().getData() != null))
-                    asLocaleData = contentInstance.getLocale().getAsLocale().getData();
-
-                TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
-                if (isCTDIntoMapping(contentTypeName, config)) {
-                    if (mappingDefinitions.isClassValidToIndex(contentInstance, config)) {
-                        log.info(String.format(
-                                "Viglet Turing indexer Processing Content Type: %s, WEM Site: %s, SNSite: %s, Locale: %s",
-                                contentTypeName, siteName, turSNSiteConfig.getName(), turSNSiteConfig.getLocale()));
-                        String xmlToIndex = generateXMLToIndex(contentInstance, config);
-                        return postIndex(xmlToIndex, turSNSiteConfig, config);
-                    } else {
-                        if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
-                                && mo.getContentManagementId() != null) {
-                            TurWEMDeindex.indexDelete(mo.getContentManagementId(), config, siteName);
+        if ((mappingDefinitions != null) && (mo != null) ) {
+            if (mo instanceof Channel) {
+                 try {
+                    for (Map.Entry<String, Set<ComputedMoReferenceInstance>> computedReferenceInstances:
+                            mo.getComputedReferenceInstances().entrySet()) {
+                          for (ComputedMoReferenceInstance computedMoReferenceInstance :
+                                  computedReferenceInstances.getValue()) {
+                            ManagedObjectVCMRef managedObjectVCMRef =
+                                    new ManagedObjectVCMRef(computedMoReferenceInstance.getReferentId());
+                             ManagedObject  moReferent = managedObjectVCMRef.retrieveManagedObject();
+                             if (moReferent instanceof ContentInstance
+                                     && moReferent.getObjectType().getData().getName().equals("VgnExtPage")) {
+                                 indexCreate(moReferent, config, siteName);
+                             }
                         }
-
                     }
-                } else {
-                    if (log.isDebugEnabled())
-                        log.debug(String.format(
-                                "Mapping definition is not found in the mappingXML for the CTD and ignoring: %s",
-                                contentTypeName));
+                } catch (ApplicationException e) {
+                     log.error(e.getMessage(), e);
+                } catch (AuthorizationException e) {
+                     log.error(e.getMessage(), e);
+                } catch (ValidationException e) {
+                     log.error(e.getMessage(), e);
+                } catch (RemoteException e) {
+                     log.error(e.getMessage(), e);
                 }
-            } catch (Exception e) {
-                log.error("Can't Create to Viglet Turing indexer.", e);
+            }
+            else if (mo instanceof ContentInstance) {
+                try {
+                    ContentInstance contentInstance = (ContentInstance) mo;
+
+                    String contentTypeName = contentInstance.getObjectType().getData().getName();
+
+                    // When there is related content but no associated site.
+                    if ("Management Site".equals(siteName)) {
+                        siteName = TuringUtils.getSiteName(contentInstance, config);
+                    }
+
+                    AsLocaleData asLocaleData = null;
+                    if ((contentInstance.getLocale() != null) && (contentInstance.getLocale().getAsLocale() != null)
+                            && (contentInstance.getLocale().getAsLocale().getData() != null))
+                        asLocaleData = contentInstance.getLocale().getAsLocale().getData();
+
+                    TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
+                    if (isCTDIntoMapping(contentTypeName, config)) {
+                        if (mappingDefinitions.isClassValidToIndex(contentInstance, config)) {
+                            log.info(String.format(
+                                    "Viglet Turing indexer Processing Content Type: %s, WEM Site: %s, SNSite: %s, Locale: %s",
+                                    contentTypeName, siteName, turSNSiteConfig.getName(), turSNSiteConfig.getLocale()));
+                            String xmlToIndex = generateXMLToIndex(contentInstance, config);
+                            return postIndex(xmlToIndex, turSNSiteConfig, config);
+                        } else {
+                            if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
+                                    && mo.getContentManagementId() != null) {
+                                TurWEMDeindex.indexDelete(mo.getContentManagementId(), config, siteName);
+                            }
+
+                        }
+                    } else {
+                        if (log.isDebugEnabled())
+                            log.debug(String.format(
+                                    "Mapping definition is not found in the mappingXML for the CTD and ignoring: %s",
+                                    contentTypeName));
+                    }
+                } catch (Exception e) {
+                    log.error("Can't Create to Viglet Turing indexer.", e);
+                }
             }
         }
         return false;
@@ -137,7 +167,7 @@ public class TurWEMIndex {
             xml.append("</document>");
 
             if (log.isDebugEnabled())
-                log.debug(String.format("Viglet Turing XML content: %s", xml.toString()));
+                log.debug(String.format("Viglet Turing XML content: %s", xml));
         } else {
             log.info(String.format("Mapping definition is not found in the mappingXML for the CTD: %s",
                     contentTypeName));
@@ -210,8 +240,8 @@ public class TurWEMIndex {
     private static void addCategoriesToXML(ContentInstance ci, StringBuilder xml) {
         String[] classifications = ci.getTaxonomyClassifications();
         if (classifications != null && classifications.length > 0) {
-            for (int i = 0; i < classifications.length; i++) {
-                String wemClassification = classifications[i].substring(classifications[i].lastIndexOf("/") + 1);
+            for (String classification : classifications) {
+                String wemClassification = classification.substring(classification.lastIndexOf("/") + 1);
                 xml.append(createXMLAttribute("categories", wemClassification));
             }
         }
