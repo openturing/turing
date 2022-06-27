@@ -141,7 +141,7 @@ dependencies {
  	implementation project(':turing-filesystem:fs-commons')
  	
  	// https://mvnrepository.com/artifact/com.itextpdf/itextpdf
-implementation group: 'com.itextpdf', name: 'itext7-core', version: '7.2.2'
+implementation group: 'com.itextpdf', name: 'itext7-core', version: '7.2.3'
 // https://mvnrepository.com/artifact/com.itextpdf/cleanup
 implementation group: 'com.itextpdf', name: 'cleanup', version: '3.0.0'
 // https://mvnrepository.com/artifact/org.apache.commons/commons-imaging
