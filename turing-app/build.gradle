@@ -167,7 +167,7 @@ implementation group: 'org.apache.commons', name: 'commons-imaging', version: '1
     implementation group: 'org.springframework', name: 'spring-test', version: '5.3.21'
 
     // Jackson
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.13.3'
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.13.4'
 
     // H2
     implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
