@@ -45,7 +45,6 @@
     "@types/jasminewd2": "2.0.10",
     "@types/node": "18.0.1",
     "@types/primer__octicons": "^17.5.0",
-    "codelyzer": "^0.0.28",
     "jasmine-core": "4.2.0",
     "jasmine-spec-reporter": "7.0.0",
     "karma": "6.4.0",
