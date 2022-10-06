@@ -35,6 +35,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.request.schema.AnalyzerDefinition;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
 import org.apache.solr.client.solrj.response.schema.SchemaResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,16 +65,15 @@ public class TurSEStopword {
 		try {
 			SchemaResponse.FieldTypeResponse initialFieldTypeResponse = fieldTypeRequest
 					.process(turSolrInstance.getSolrClient());
-
-			for (Map<String, Object> fieldTypeMap : initialFieldTypeResponse.getFieldType().getAnalyzer()
-					.getFilters()) {
-				if (fieldTypeMap.get(CLASS_FILTER).equals(STOPWORD_CLASS_FILTER)) {
-					String url = String.format(ADMIN_FILE_URL, turSolrInstance.getSolrUrl().toString(),
-							APPLICATION_OCTET_STREAM_UTF8, fieldTypeMap.get(WORDS_ATTRIBUTE));
-					ResponseEntity<String> response = new RestTemplate().getForEntity(url, String.class);
-					stopwordsStream = IOUtils.toInputStream(response.getBody(), StandardCharsets.UTF_8);
-				}
-
+			if (initialFieldTypeResponse.getFieldType().getAnalyzer() != null) {
+				AnalyzerDefinition analyzer = initialFieldTypeResponse.getFieldType().getAnalyzer();
+				stopwordsStream = getStopword(turSolrInstance, stopwordsStream, analyzer);
+			} else if (initialFieldTypeResponse.getFieldType().getQueryAnalyzer() != null) {
+				AnalyzerDefinition queryAnalyzer = initialFieldTypeResponse.getFieldType().getQueryAnalyzer();
+				stopwordsStream = getStopword(turSolrInstance, stopwordsStream, queryAnalyzer);
+			} else if (initialFieldTypeResponse.getFieldType().getIndexAnalyzer() != null) {
+				AnalyzerDefinition indexAnalyzer = initialFieldTypeResponse.getFieldType().getIndexAnalyzer();
+				stopwordsStream = getStopword(turSolrInstance, stopwordsStream, indexAnalyzer);
 			}
 		} catch (SolrServerException | IOException e) {
 			logger.error(e.getMessage(), e);
@@ -104,5 +104,20 @@ public class TurSEStopword {
 			logger.error(e.getMessage(), e);
 		}
 		return Collections.emptyList();
+	}
+
+	private InputStream getStopword(TurSolrInstance turSolrInstance, InputStream stopwordsStream,
+			AnalyzerDefinition analyzer) {
+		if (analyzer.getFilters() != null && !analyzer.getFilters().isEmpty())
+			for (Map<String, Object> fieldTypeMap : analyzer.getFilters()) {
+				if (fieldTypeMap.get(CLASS_FILTER).equals(STOPWORD_CLASS_FILTER)) {
+					String url = String.format(ADMIN_FILE_URL, turSolrInstance.getSolrUrl().toString(),
+							APPLICATION_OCTET_STREAM_UTF8, fieldTypeMap.get(WORDS_ATTRIBUTE));
+					ResponseEntity<String> response = new RestTemplate().getForEntity(url, String.class);
+					stopwordsStream = IOUtils.toInputStream(response.getBody(), StandardCharsets.UTF_8);
+				}
+
+			}
+		return stopwordsStream;
 	}
 }
