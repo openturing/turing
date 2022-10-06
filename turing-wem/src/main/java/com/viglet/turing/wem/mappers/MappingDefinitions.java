@@ -70,7 +70,6 @@ public class MappingDefinitions {
 		return status;
 	}
 
-	@SuppressWarnings("deprecation")
 	public IValidToIndex validToIndex(ObjectType ot, IHandlerConfiguration config) {
 
 		try {

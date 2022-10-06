@@ -29,20 +29,18 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurParentChannel implements ExtAttributeInterface {
-    private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
-    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-                                 IHandlerConfiguration config) throws Exception {
-        log.debug("Executing TurParentChannel");
-        ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
-        Channel firstChannel;
-        ChannelRef[] channelRefs = ci.getChannelAssociations();
-        if (channelRefs.length > 0) {
-            firstChannel = channelRefs[0].getChannel();
-            Channel[] breadcrumb = firstChannel.getBreadcrumbPath(true);
-            return TurMultiValue.singleItem(etlTranslator.translateByGUID(breadcrumb[breadcrumb.length - 1]
-                    .getContentManagementId().getId()));
-        }
-        return new TurMultiValue();
-    }
+	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
+			IHandlerConfiguration config) throws Exception {
+		log.debug("Executing TurParentChannel");
+		ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
+		ChannelRef[] channelRefs = ci.getChannelAssociations();
+		if (channelRefs.length > 0) {
+			Channel[] breadcrumb = channelRefs[0].getChannel().getBreadcrumbPath(true);
+			return TurMultiValue.singleItem(
+					etlTranslator.translateByGUID(breadcrumb[breadcrumb.length - 1].getContentManagementId().getId()));
+		}
+		return new TurMultiValue();
+	}
 }
