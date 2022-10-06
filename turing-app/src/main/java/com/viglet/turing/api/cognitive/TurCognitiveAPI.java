@@ -31,7 +31,7 @@ import org.apache.logging.log4j.Logger;
 import org.languagetool.JLanguageTool;
 import org.languagetool.Language;
 import org.languagetool.language.BritishEnglish;
-import org.languagetool.language.LanguageIdentifier;
+import org.languagetool.language.identifier.SimpleLanguageIdentifier;
 import org.languagetool.language.BrazilianPortuguese;
 import org.languagetool.rules.RuleMatch;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,7 +47,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/cognitive")
-@Tag( name = "Cognitive", description = "Cognitive API")
+@Tag(name = "Cognitive", description = "Cognitive API")
 
 public class TurCognitiveAPI {
 	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
@@ -55,8 +55,7 @@ public class TurCognitiveAPI {
 	@Operation(summary = "Cognitive Detect Language")
 	@GetMapping("/detect-language/")
 	public String turCognitiveDetectLanguage(@RequestParam(required = false, name = "text") String text) {
-		LanguageIdentifier languageIdentifier = new LanguageIdentifier();
-		Language language = languageIdentifier.detectLanguage(text);
+		Language language = new SimpleLanguageIdentifier().detectLanguage(text);
 		Locale locale = language.getLocaleWithCountryAndVariant();
 		return locale.toString();
 	}
@@ -67,7 +66,7 @@ public class TurCognitiveAPI {
 			@RequestParam(required = false, name = "text") String text) {
 		JLanguageTool langTool = loadSpellCheckByLocale(locale);
 		return createSpellCheckList(text, langTool);
-		
+
 	}
 
 	private JLanguageTool loadSpellCheckByLocale(String locale) {
@@ -89,7 +88,8 @@ public class TurCognitiveAPI {
 				} else {
 					suggesterPhrases = addToListOtherMatches(suggesterPhrases, match);
 				}
-				logger.debug("Potential error at characters {} - {}: {}", match.getFromPos(), match.getToPos(), match.getMessage());
+				logger.debug("Potential error at characters {} - {}: {}", match.getFromPos(), match.getToPos(),
+						match.getMessage());
 				logger.debug("Suggested correction(s): {}", match.getSuggestedReplacements());
 			}
 			return suggesterPhrases;
