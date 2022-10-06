@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { TurConverseAgentService } from './service/converse-agent.service';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { TurCommonsModule } from '../commons/commons.module';
-import { OcticonsModule } from 'ngx-octicons';
+import { OcticonsModule } from 'angular-octicons';
 import { RouterModule } from '@angular/router';
 import { TurLocaleService } from '../locale/service/locale.service';
 import { TurSEInstanceService } from '../se/service/se-instance.service';

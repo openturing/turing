@@ -24,6 +24,9 @@
     "paths": {
       "@environments/*": [
         "environments/*"
+      ],
+      "angular-octicons": [
+        "dist/angular-octicons"
       ]
     }
   },
