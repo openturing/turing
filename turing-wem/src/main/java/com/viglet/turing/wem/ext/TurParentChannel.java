@@ -41,8 +41,10 @@ public class TurParentChannel implements ExtAttributeInterface {
 		ChannelRef[] channelRefs = ci.getChannelAssociations();
 		if (channelRefs.length > 0) {
 			ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
-			return TurMultiValue.singleItem(etlTranslator.translateByGUID(TuringUtils
-					.getParentChannelFromBreadcrumb(channelRefs[0].getChannel().getBreadcrumbPath(true)).getId()));
+			String channelId = TuringUtils
+					.getParentChannelFromBreadcrumb(channelRefs[0].getChannel().getBreadcrumbPath(true))
+					.getContentManagementId().getId();
+			return TurMultiValue.singleItem(etlTranslator.translateByGUID(channelId));
 		}
 		return new TurMultiValue();
 	}

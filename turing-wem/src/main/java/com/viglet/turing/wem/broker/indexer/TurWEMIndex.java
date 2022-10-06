@@ -34,11 +34,6 @@ import com.viglet.turing.wem.mappers.MappingDefinitions;
 import com.viglet.turing.wem.mappers.MappingDefinitionsProcess;
 import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AsLocaleData;
-import com.vignette.as.client.common.ComputedMoReferenceInstance;
-import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
-import com.vignette.as.client.exception.ApplicationException;
-import com.vignette.as.client.exception.AuthorizationException;
-import com.vignette.as.client.exception.ValidationException;
 import com.vignette.as.client.javabean.Channel;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.as.client.javabean.ManagedObject;
@@ -55,7 +50,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -64,8 +58,8 @@ public class TurWEMIndex {
 
 	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 	private static final String FILE_PROTOCOL = "file://";
-	private static final String CTD_VGNEXTPAGE = "VgnExtPage";
 	private static final String MGMT_SITE = "Management Site";
+
 	private TurWEMIndex() {
 		throw new IllegalStateException("TurWEMIndex");
 	}
@@ -74,28 +68,8 @@ public class TurWEMIndex {
 		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
 		if ((mappingDefinitions != null) && (mo != null)) {
 			if (mo instanceof Channel) {
-				try {
-					for (Map.Entry<String, Set<ComputedMoReferenceInstance>> computedReferenceInstances : mo
-							.getComputedReferenceInstances().entrySet()) {
-						for (ComputedMoReferenceInstance computedMoReferenceInstance : computedReferenceInstances
-								.getValue()) {
-							ManagedObjectVCMRef managedObjectVCMRef = new ManagedObjectVCMRef(
-									computedMoReferenceInstance.getReferentId());
-							ManagedObject moReferent = managedObjectVCMRef.retrieveManagedObject();
-							if (moReferent instanceof ContentInstance
-									&& moReferent.getObjectType().getData().getName().equals(CTD_VGNEXTPAGE)) {
-								indexCreate(moReferent, config, siteName);
-							}
-						}
-					}
-				} catch (ApplicationException e) {
-					log.error(e.getMessage(), e);
-				} catch (AuthorizationException e) {
-					log.error(e.getMessage(), e);
-				} catch (ValidationException e) {
-					log.error(e.getMessage(), e);
-				} catch (RemoteException e) {
-					log.error(e.getMessage(), e);
+				for (ManagedObject moReference : TuringUtils.getVgnExtPagesFromChannel((Channel) mo)) {
+					indexCreate(moReference, config, siteName);
 				}
 			} else if (mo instanceof ContentInstance) {
 				try {
