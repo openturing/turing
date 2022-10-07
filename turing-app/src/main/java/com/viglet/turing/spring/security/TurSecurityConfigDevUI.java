@@ -21,11 +21,13 @@
 
 package com.viglet.turing.spring.security;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 
@@ -34,18 +36,20 @@ import org.springframework.security.web.csrf.CsrfFilter;
 @Profile("dev-ui")
 @ComponentScan(basePackageClasses = TurCustomUserDetailsService.class)
 public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.headers().frameOptions().disable().cacheControl().disable();
-        http.httpBasic().authenticationEntryPoint(turAuthenticationEntryPoint).and().authorizeRequests()
-                .antMatchers("/index.html", "/welcome/**", "/", "/assets/**", "/swagger-resources/**", "/h2/**",
-                        "/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
-                        "/browserconfig.xml", "/console/**")
-                .permitAll().anyRequest().authenticated().and()
-                .addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf().ignoringAntMatchers("/api/sn/**")
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
-        http.csrf().disable();
-        http.cors();
-    }
+
+	@Bean
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+		http.headers().frameOptions().disable().cacheControl().disable();
+		http.httpBasic().authenticationEntryPoint(turAuthenticationEntryPoint).and().authorizeRequests()
+				.antMatchers("/index.html", "/welcome/**", "/", "/assets/**", "/swagger-resources/**", "/h2/**",
+						"/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
+						"/browserconfig.xml", "/console/**")
+				.permitAll().anyRequest().authenticated().and()
+				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf().ignoringAntMatchers("/api/sn/**")
+				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
+		http.csrf().disable();
+		http.cors();
+		return http.build();
+	}
 
 }

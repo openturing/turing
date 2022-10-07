@@ -28,12 +28,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.firewall.HttpFirewall;
@@ -43,30 +43,33 @@ import org.springframework.security.web.firewall.StrictHttpFirewall;
 @EnableWebSecurity
 @Profile("production")
 @ComponentScan(basePackageClasses = TurCustomUserDetailsService.class)
-public class TurSecurityConfigProduction extends WebSecurityConfigurerAdapter {
+public class TurSecurityConfigProduction {
 	@Autowired
 	private UserDetailsService userDetailsService;
 	@Autowired
 	protected TurAuthenticationEntryPoint turAuthenticationEntryPoint;
 
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
+	@Bean
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http.headers().frameOptions().disable().cacheControl().disable();
 		http.httpBasic().authenticationEntryPoint(turAuthenticationEntryPoint).and().authorizeRequests()
 				.antMatchers("/index.html", "/welcome/**", "/", "/assets/**", "/swagger-resources/**", "/h2/**",
 						"/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
 						"/browserconfig.xml", "/console/**")
 				.permitAll().anyRequest().authenticated().and()
-				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf().ignoringAntMatchers("/api/sn/**","/api/nlp/**")
+				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf()
+				.ignoringAntMatchers("/api/sn/**", "/api/nlp/**")
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
 		http.cors();
+		return http.build();
 	}
 
-	@Override
-	public void configure(WebSecurity web) throws Exception {
-		web.ignoring().antMatchers("/h2/**");
-		super.configure(web);
-		web.httpFirewall(allowUrlEncodedSlaturHttpFirewall());
+	@Bean
+	public WebSecurityCustomizer webSecurityCustomizer() {
+		return (web) -> {
+			web.httpFirewall(allowUrlEncodedSlaturHttpFirewall());
+			web.ignoring().antMatchers("/h2/**");
+		};
 	}
 
 	@Autowired
