@@ -1,5 +1,5 @@
 buildscript {
-    ext { tika = '2.4.1'
+    ext { tika = '2.5.0'
 		 }
 		repositories {
 			mavenCentral()
