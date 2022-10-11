@@ -69,7 +69,9 @@ public class TurSolr {
 	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 	@Autowired
 	private TurSNTargetingRules turSNTargetingRules;
-
+	@Autowired 
+	private TurSNSiteFieldUtils turSNSiteFieldUtils;
+	
 	public long getDocumentTotal(TurSolrInstance turSolrInstance) {
 		SolrQuery query = new SolrQuery();
 		query.setQuery("*:*");
@@ -139,7 +141,7 @@ public class TurSolr {
 	}
 
 	public void addDocument(TurSolrInstance turSolrInstance, TurSNSite turSNSite, Map<String, Object> attributes) {
-		TurSNSiteFieldUtils turSNSiteFieldUtils = new TurSNSiteFieldUtils();
+		
 		Map<String, TurSNSiteField> turSNSiteFieldMap = turSNSiteFieldUtils.toMap(turSNSite);
 		SolrInputDocument document = new SolrInputDocument();
 
