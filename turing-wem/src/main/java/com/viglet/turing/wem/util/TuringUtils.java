@@ -290,7 +290,7 @@ public class TuringUtils {
             if (mo instanceof ContentInstance) {
                 ContentInstance ci = (ContentInstance) mo;
                 for (ChannelRef channelRef : ci.getChannelAssociations()) {
-                    sites = getSitesFromChannel(channelRef.getChannel());
+                	sites.addAll(getSitesFromChannel(channelRef.getChannel()));
 
                 }
             } else if (mo instanceof Channel) {
