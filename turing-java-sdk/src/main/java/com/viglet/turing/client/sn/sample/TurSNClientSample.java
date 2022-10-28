@@ -66,6 +66,11 @@ public class TurSNClientSample {
 			QueryTurSNResponse response = turSNServer.query(query);
 			TurSNDocumentList turSNResults = response.getResults();
 
+			System.out.println("--- Results");
+			response.getResults().getTurSNDocuments().forEach(turSNDocument -> System.out
+					.println(String.format("%s %s", turSNDocument.getFieldValue("title"),
+							turSNDocument.getFieldValue("url"))));
+			
 			System.out.println("--- Spotlight Documents");
 			List<TurSNSpotlightDocument> turSNSpotlightDocuments = response.getSpotlightDocuments();
 			turSNSpotlightDocuments.forEach(turSNSpotlightDocument -> System.out

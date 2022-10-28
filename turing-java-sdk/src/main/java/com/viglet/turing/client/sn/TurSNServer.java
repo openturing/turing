@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -44,7 +46,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.viglet.turing.api.sn.bean.TurSNSiteSearchBean;
-import com.viglet.turing.api.sn.bean.TurSNSiteSearchQueryContext;
 import com.viglet.turing.api.sn.bean.TurSNSiteSpotlightDocumentBean;
 import com.viglet.turing.client.sn.TurSNQuery.ORDER;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
@@ -56,8 +57,6 @@ import com.viglet.turing.client.sn.job.TurSNJobUtils;
 import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
-
-import java.util.logging.*;
 
 /**
  * Connect to Turing AI Server.
@@ -268,13 +267,21 @@ public class TurSNServer {
 		return new QueryTurSNResponse();
 	}
 
-	private TurSNSiteSearchBean executeQueryRequest(HttpGet httpGet, CloseableHttpClient client)
-			throws IOException, ClientProtocolException, JsonParseException, JsonMappingException {
-		HttpResponse response = client.execute(httpGet);
-		HttpEntity entity = response.getEntity();
-		String result = EntityUtils.toString(entity, StandardCharsets.UTF_8);
-		TurSNSiteSearchBean turSNSiteSearchBean = new ObjectMapper().readValue(result, TurSNSiteSearchBean.class);
-		return turSNSiteSearchBean;
+	private TurSNSiteSearchBean executeQueryRequest(HttpGet httpGet, CloseableHttpClient client) {
+		try {
+			HttpResponse response = client.execute(httpGet);
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode == 200) {
+				HttpEntity entity = response.getEntity();
+				String result = EntityUtils.toString(entity, StandardCharsets.UTF_8);
+				return new ObjectMapper().readValue(result, TurSNSiteSearchBean.class);
+			} else {
+				logger.log(Level.SEVERE, "Error Connection. Status Code: " + statusCode);
+			}
+		} catch (IOException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+		}
+		return new TurSNSiteSearchBean();
 	}
 
 	private HttpGet prepareQueryRequest() throws URISyntaxException {
@@ -316,19 +323,37 @@ public class TurSNServer {
 	}
 
 	private TurSNDocumentList setResultsResponse(TurSNSiteSearchBean turSNSiteSearchBean) {
-		List<TurSNDocument> turSNDocuments = new ArrayList<>();
+		if (hasSearchResults(turSNSiteSearchBean)) {
+			TurSNDocumentList turSNDocumentList = new TurSNDocumentList();
 
-		turSNSiteSearchBean.getResults().getDocument().forEach(turSNSiteSearchDocumentBean -> {
-			TurSNDocument turSNDocument = new TurSNDocument();
-			turSNDocument.setContent(turSNSiteSearchDocumentBean);
-			turSNDocuments.add(turSNDocument);
-		});
+			List<TurSNDocument> turSNDocuments = new ArrayList<>();
+			turSNSiteSearchBean.getResults().getDocument().forEach(turSNSiteSearchDocumentBean -> {
+				TurSNDocument turSNDocument = new TurSNDocument();
+				turSNDocument.setContent(turSNSiteSearchDocumentBean);
+				turSNDocuments.add(turSNDocument);
+			});
+			turSNDocumentList.setQueryContext(turSNSiteSearchBean.getQueryContext());
+			turSNDocumentList.setTurSNDocuments(turSNDocuments);
+			return turSNDocumentList;
+		}
+		return new TurSNDocumentList();
+	}
 
-		TurSNSiteSearchQueryContext turSNSiteSearchQueryContext = turSNSiteSearchBean.getQueryContext();
-		TurSNDocumentList turSNDocumentList = new TurSNDocumentList();
-		turSNDocumentList.setTurSNDocuments(turSNDocuments);
-		turSNDocumentList.setQueryContext(turSNSiteSearchQueryContext);
-		return turSNDocumentList;
+	private boolean hasSearchResults(TurSNSiteSearchBean turSNSiteSearchBean) {
+		if (turSNSiteSearchBean == null) {
+			logger.severe("Empty result.");
+			return false;
+		}
+
+		if (turSNSiteSearchBean.getResults() == null || turSNSiteSearchBean.getResults().getDocument() == null
+				|| (turSNSiteSearchBean.getResults() != null && turSNSiteSearchBean.getResults().getDocument() != null
+						&& turSNSiteSearchBean.getResults().getDocument().isEmpty())) {
+			if (logger.isLoggable(Level.FINEST))
+				logger.finest("No results.");
+			return false;
+		}
+
+		return true;
 	}
 
 	private HttpGet prepareGetRequest(URIBuilder turingURL) throws URISyntaxException {
@@ -337,7 +362,7 @@ public class TurSNServer {
 		httpGet.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
 		httpGet.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
 		httpGet.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
-		logger.info(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
+		logger.finest(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
 		return httpGet;
 	}
 

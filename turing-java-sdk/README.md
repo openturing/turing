@@ -7,8 +7,8 @@ Documentation: [https://openturing.github.io/turing-java-sdk/](https://openturin
 
 ## Test Sample Code
 ```bash
-./gradlew shadowJar
-java -cp build/libs/turing-java-sdk-all.jar com.viglet.turing.client.sn.sample.TurSNClientSample
+./gradlew turing-java-sdk:shadowJar
+java -cp turing-java-sdk/build/libs/turing-java-sdk-all.jar com.viglet.turing.client.sn.sample.TurSNClientSample
 ```
 
 ```java
