@@ -69,7 +69,7 @@ dependencies {
     implementation group: 'com.oracle.ojdbc', name: 'ojdbc8', version: '19.3.0.0'
     
 	// MariaDB
-    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.0.8'
+    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.1.0'
 
     // PostgreSQL
     implementation group: 'org.postgresql', name: 'postgresql', version: '42.5.0'
