@@ -254,13 +254,20 @@ public class TurSNSpotlightProcess {
 				});
 
 		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = new HashMap<>();
-		turSNSiteSpotlights.forEach(spotlight -> spotlight.getTurSNSiteSpotlightDocuments().forEach(document -> {
-			if (turSNSiteSpotlightDocumentMap.containsKey(document.getPosition())) {
-				turSNSiteSpotlightDocumentMap.get(document.getPosition()).add(document);
-			} else {
-				turSNSiteSpotlightDocumentMap.put(document.getPosition(), new ArrayList<>(Arrays.asList(document)));
+		turSNSiteSpotlights.forEach(spotlight -> {
+			Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = turSNSiteSpotlightDocumentRepository
+					.findByTurSNSiteSpotlight(spotlight);
+			if (turSNSiteSpotlightDocuments != null && !turSNSiteSpotlightDocuments.isEmpty()) {
+				turSNSiteSpotlightDocuments.forEach(document -> {
+					if (turSNSiteSpotlightDocumentMap.containsKey(document.getPosition())) {
+						turSNSiteSpotlightDocumentMap.get(document.getPosition()).add(document);
+					} else {
+						turSNSiteSpotlightDocumentMap.put(document.getPosition(),
+								new ArrayList<>(Arrays.asList(document)));
+					}
+				});
 			}
-		}));
+		});
 		return turSNSiteSpotlightDocumentMap;
 	}
 

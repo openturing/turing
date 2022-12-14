@@ -73,6 +73,9 @@ public class TurSolrInstanceProcess {
 				logger.error(e.getMessage(), e);
 			}
 		}
+		else {
+			logger.warn("{} is not available", urlString);
+		}
 		return Optional.empty();
 	}
 
