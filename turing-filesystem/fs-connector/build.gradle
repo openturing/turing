@@ -63,7 +63,7 @@ dependencies {
 	// Tika
   implementation group: 'org.apache.tika', name: 'tika-core', version:'2.5.0'
   implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.5.0'
-  implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.39.3.0'
+  implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.40.1.0'
   implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
     
   // Commons
