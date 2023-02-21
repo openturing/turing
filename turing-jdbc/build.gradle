@@ -56,7 +56,7 @@ configurations {
 }
 
 dependencies {
-	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.19.0'
+	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.20.0'
 	implementation group: 'com.beust', name: 'jcommander', version: '1.82'	
 	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.4'	
 	implementation group: 'org.json', name: 'json', version:'20220924'
