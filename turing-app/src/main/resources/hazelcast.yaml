@@ -2,4 +2,4 @@ hazelcast:
   network:
     join:
       multicast:
-        enabled: true
+        enabled: false
