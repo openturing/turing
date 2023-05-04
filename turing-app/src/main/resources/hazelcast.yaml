@@ -3,3 +3,5 @@ hazelcast:
     join:
       multicast:
         enabled: false
+      auto-detection:
+        enabled: false
