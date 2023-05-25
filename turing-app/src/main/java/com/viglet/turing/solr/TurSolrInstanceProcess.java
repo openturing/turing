@@ -58,7 +58,7 @@ public class TurSolrInstanceProcess {
 	@Autowired
 	private TurSolrCache turSolrCache;
 	@Value("${turing.solr.timeout:30000}")
-	private int solrTimeout;
+	private int turSolrTimeout;
 	
 	private Optional<TurSolrInstance> getSolrClient(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
 		return getSolrClient(turSNSite.getTurSEInstance(), turSNSiteLocale.getCore());
@@ -67,10 +67,9 @@ public class TurSolrInstanceProcess {
 	private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
 		String urlString = String.format("http://%s:%s/solr/%s", turSEInstance.getHost(), turSEInstance.getPort(),
 				core);
-		System.out.println("RRR: " + solrTimeout);
 		if (turSolrCache.isSolrCoreExists(urlString)) {
 			HttpSolrClient httpSolrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
-					.withConnectionTimeout(solrTimeout).withSocketTimeout(solrTimeout).build();
+					.withConnectionTimeout(turSolrTimeout).withSocketTimeout(turSolrTimeout).build();
 			try {
 				return Optional.of(new TurSolrInstance(closeableHttpClient, httpSolrClient, new URL(urlString), core));
 			} catch (MalformedURLException e) {
