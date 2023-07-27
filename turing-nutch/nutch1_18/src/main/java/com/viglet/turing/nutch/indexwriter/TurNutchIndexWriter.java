@@ -143,8 +143,9 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void write(NutchDocument doc) throws IOException {
+		System.out.println(doc.toString());
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setLocale(TurNutchCommons.LOCALE_DEFAULT_VALUE);
+		turSNJobItem.setLocale(this.config.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY), TurNutchCommons.LOCALE_DEFAULT_VALUE));
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 		Map<String, Object> attributes = new HashMap<String, Object>();
 		for (final Entry<String, NutchField> e : doc) {
@@ -157,11 +158,11 @@ public class TurNutchIndexWriter implements IndexWriter {
 					val2 = DateTimeFormatter.ISO_INSTANT.format(((Date) val).toInstant());
 				}
 
-				if (e.getKey().equals("content") || e.getKey().equals("title")) {
+				if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD) || e.getKey().equals(TurNutchCommons.TITLE_FIELD)) {
 					val2 = TurNutchCommons.stripNonCharCodepoints((String) val);
 				}
-				if (e.getKey().equals("content")) {
-					attributes.put("text", val2);
+				if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD)) {
+					attributes.put(TurNutchCommons.TEXT_FIELD, val2);
 				} else {
 					attributes.put(e.getKey(), val2);
 				}
