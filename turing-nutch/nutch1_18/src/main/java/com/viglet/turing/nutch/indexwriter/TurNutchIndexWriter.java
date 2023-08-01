@@ -123,12 +123,10 @@ public class TurNutchIndexWriter implements IndexWriter {
 		// escape Solr hash separator
 		key = key.replaceAll("!", "\\!");
 
-		if (delete) {
-			Map<String, Object> attributes = new HashMap<String, Object>();
-			attributes.put("id", key);
-			turSNJobItem.setAttributes(attributes);
-			turSNJobItems.add(turSNJobItem);
-		}
+		Map<String, Object> attributes = new HashMap<>();
+		attributes.put(TurNutchCommons.ID_FIELD, key);
+		turSNJobItem.setAttributes(attributes);
+		turSNJobItems.add(turSNJobItem);
 
 		if (turSNJobItems.getTuringDocuments().size() >= batchSize) {
 			TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
@@ -145,7 +143,8 @@ public class TurNutchIndexWriter implements IndexWriter {
 	public void write(NutchDocument doc) throws IOException {
 		System.out.println(doc.toString());
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setLocale(this.config.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY), TurNutchCommons.LOCALE_DEFAULT_VALUE));
+		turSNJobItem.setLocale(this.config.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY),
+				TurNutchCommons.LOCALE_DEFAULT_VALUE));
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 		Map<String, Object> attributes = new HashMap<String, Object>();
 		for (final Entry<String, NutchField> e : doc) {
@@ -158,7 +157,8 @@ public class TurNutchIndexWriter implements IndexWriter {
 					val2 = DateTimeFormatter.ISO_INSTANT.format(((Date) val).toInstant());
 				}
 
-				if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD) || e.getKey().equals(TurNutchCommons.TITLE_FIELD)) {
+				if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD)
+						|| e.getKey().equals(TurNutchCommons.TITLE_FIELD)) {
 					val2 = TurNutchCommons.stripNonCharCodepoints((String) val);
 				}
 				if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD)) {
@@ -193,8 +193,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 	public void commit() throws IOException {
 		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
 	}
-
-	
 
 	@Override
 	public Configuration getConf() {

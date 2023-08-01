@@ -43,7 +43,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 	private boolean auth;
 
 	private int totalAdds = 0;
-	private boolean delete = false;
 	private String weightField;
 
 	private String username;
@@ -63,13 +62,11 @@ public class TurNutchIndexWriter implements IndexWriter {
 		// escape solr hash separator
 		key = key.replaceAll("!", "\\!");
 
-		if (delete) {
-			Map<String, Object> attributes = new HashMap<String, Object>();
-			attributes.put(TurNutchCommons.ID_FIELD, key);
-			turSNJobItem.setAttributes(attributes);
-			turSNJobItems.add(turSNJobItem);
-		}
-		String snSite = turMapping.getSNSite(turSNJobItem.getAttributes().get("id").toString());
+		Map<String, Object> attributes = new HashMap<String, Object>();
+		attributes.put(TurNutchCommons.ID_FIELD, key);
+		turSNJobItem.setAttributes(attributes);
+		turSNJobItems.add(turSNJobItem);
+		String snSite = turMapping.getSNSite(turSNJobItem.getAttributes().get(TurNutchCommons.ID_FIELD).toString());
 
 		if (snSite != null) {
 			site = snSite;
@@ -87,7 +84,8 @@ public class TurNutchIndexWriter implements IndexWriter {
 	@Override
 	public void write(NutchDocument doc) throws IOException {
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setLocale(this.config.get(TurNutchConstants.LOCALE_PROPERTY, TurNutchCommons.LOCALE_DEFAULT_VALUE));
+		turSNJobItem
+				.setLocale(this.config.get(TurNutchConstants.LOCALE_PROPERTY, TurNutchCommons.LOCALE_DEFAULT_VALUE));
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 		Map<String, Object> attributes = new HashMap<>();
 		Map<String, String> turCustomFields = this.config.getValByRegex("^" + FIELD_PROPERTY + "*");
