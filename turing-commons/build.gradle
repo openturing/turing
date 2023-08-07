@@ -26,7 +26,7 @@ sonarqube {
 
 jar {
     baseName = 'turing-commons'
-    version =  '0.3.5'
+    version =  '0.3.7'
 }
 
 
