@@ -192,7 +192,7 @@ implementation group: 'org.apache.commons', name: 'commons-imaging', version: '1
     implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
 
     // Hazelcast
-	implementation group: 'com.hazelcast', name: 'hazelcast-all', version: '4.2.7'
+	implementation group: 'com.hazelcast', name: 'hazelcast-all', version: '4.2.8'
 
     // Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version: "${tika}"
