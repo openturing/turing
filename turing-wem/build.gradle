@@ -137,4 +137,4 @@ jar {
    }
 }
 
-compileOne.options.compilerArgs = ["-sourcepath", "$projectDir/src/main/java"]
+compileOne.options.compilerArgs = ["-sourcepath", "${projectDir}/src/main/java".toString()]
