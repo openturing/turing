@@ -2,7 +2,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { MomentModule } from 'ngx-moment';
-import { OcticonsModule } from 'ngx-octicons';
+import { OcticonsModule } from 'angular-octicons';
 import { TurSNSearchRootPageComponent } from '../search/component/root/search-root-page.component';
 import { AppRoutingModule } from './app-routing.module';
 import { IdenticonHashDirective } from './directive/identicon-hash.directive';

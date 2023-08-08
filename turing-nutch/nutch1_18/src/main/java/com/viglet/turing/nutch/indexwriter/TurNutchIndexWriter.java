@@ -41,7 +41,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	private int batchSize;
 	private int totalAdds = 0;
-	private boolean delete = false;
 	private String weightField;
 
 	private String username;
@@ -88,7 +87,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 	}
 
 	private void init(IndexWriterParams properties) {
-		delete = config.getBoolean(IndexerMapReduce.INDEXER_DELETE, false);
 		batchSize = properties.getInt(TurNutchConstants.COMMIT_SIZE, 1000);
 		weightField = properties.get(TurNutchConstants.WEIGHT_FIELD, "");
 		// parse optional parameters
@@ -123,12 +121,10 @@ public class TurNutchIndexWriter implements IndexWriter {
 		// escape Solr hash separator
 		key = key.replaceAll("!", "\\!");
 
-		if (delete) {
-			Map<String, Object> attributes = new HashMap<String, Object>();
-			attributes.put("id", key);
-			turSNJobItem.setAttributes(attributes);
-			turSNJobItems.add(turSNJobItem);
-		}
+		Map<String, Object> attributes = new HashMap<>();
+		attributes.put(TurNutchCommons.ID_FIELD, key);
+		turSNJobItem.setAttributes(attributes);
+		turSNJobItems.add(turSNJobItem);
 
 		if (turSNJobItems.getTuringDocuments().size() >= batchSize) {
 			TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
@@ -143,8 +139,10 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void write(NutchDocument doc) throws IOException {
+		System.out.println(doc.toString());
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setLocale(TurNutchCommons.LOCALE_DEFAULT_VALUE);
+		turSNJobItem.setLocale(this.config.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY),
+				TurNutchCommons.LOCALE_DEFAULT_VALUE));
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 		Map<String, Object> attributes = new HashMap<String, Object>();
 		for (final Entry<String, NutchField> e : doc) {
@@ -157,11 +155,12 @@ public class TurNutchIndexWriter implements IndexWriter {
 					val2 = DateTimeFormatter.ISO_INSTANT.format(((Date) val).toInstant());
 				}
 
-				if (e.getKey().equals("content") || e.getKey().equals("title")) {
+				if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD)
+						|| e.getKey().equals(TurNutchCommons.TITLE_FIELD)) {
 					val2 = TurNutchCommons.stripNonCharCodepoints((String) val);
 				}
-				if (e.getKey().equals("content")) {
-					attributes.put("text", val2);
+				if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD)) {
+					attributes.put(TurNutchCommons.TEXT_FIELD, val2);
 				} else {
 					attributes.put(e.getKey(), val2);
 				}
@@ -192,8 +191,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 	public void commit() throws IOException {
 		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
 	}
-
-	
 
 	@Override
 	public Configuration getConf() {

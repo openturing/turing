@@ -355,10 +355,14 @@ public class TurSNServer {
 	}
 
 	private String executeQueryRequest(HttpRequestBase httpRequestBase, CloseableHttpClient client) {
+
 		try {
 			HttpResponse response = client.execute(httpRequestBase);
-			if (response.getStatusLine().getStatusCode() == 200) {
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode == 200) {
 				return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+			} else {
+				logger.log(Level.SEVERE, "Error Connection. Status Code: " + statusCode);
 			}
 		} catch (IOException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);
@@ -453,18 +457,36 @@ public class TurSNServer {
 
 	private TurSNDocumentList setResultsResponse(TurSNSiteSearchResultsBean turSNSiteSearchResultsBean,
 			TurSNSiteSearchQueryContextBean turSNSiteSearchQueryContextBean) {
-		List<TurSNDocument> turSNDocuments = new ArrayList<>();
+		if (hasSearchResults(turSNSiteSearchResultsBean)) {
+			List<TurSNDocument> turSNDocuments = new ArrayList<>();
+			turSNSiteSearchResultsBean.getDocument().forEach(turSNSiteSearchDocumentBean -> {
+				TurSNDocument turSNDocument = new TurSNDocument();
+				turSNDocument.setContent(turSNSiteSearchDocumentBean);
+				turSNDocuments.add(turSNDocument);
+			});
+			TurSNDocumentList turSNDocumentList = new TurSNDocumentList();
+			turSNDocumentList.setTurSNDocuments(turSNDocuments);
+			turSNDocumentList.setQueryContext(turSNSiteSearchQueryContextBean);
+			return turSNDocumentList;
+		}
+		return new TurSNDocumentList();
+	}
 
-		turSNSiteSearchResultsBean.getDocument().forEach(turSNSiteSearchDocumentBean -> {
-			TurSNDocument turSNDocument = new TurSNDocument();
-			turSNDocument.setContent(turSNSiteSearchDocumentBean);
-			turSNDocuments.add(turSNDocument);
-		});
+	private boolean hasSearchResults(TurSNSiteSearchResultsBean turSNSiteSearchResultsBean) {
+		if (turSNSiteSearchResultsBean == null) {
+			logger.severe("Empty result.");
+			return false;
+		}
 
-		TurSNDocumentList turSNDocumentList = new TurSNDocumentList();
-		turSNDocumentList.setTurSNDocuments(turSNDocuments);
-		turSNDocumentList.setQueryContext(turSNSiteSearchQueryContextBean);
-		return turSNDocumentList;
+		if (turSNSiteSearchResultsBean.getDocument() == null
+				|| (turSNSiteSearchResultsBean.getDocument() != null
+						&& turSNSiteSearchResultsBean.getDocument().isEmpty())) {
+			if (logger.isLoggable(Level.FINEST))
+				logger.finest("No results.");
+			return false;
+		}
+
+		return true;
 	}
 
 	private HttpPost preparePostRequest(URIBuilder turingURL) {

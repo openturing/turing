@@ -1,18 +1,22 @@
 /*
- * Copyright (C) 2016-2021 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016-2022 the original author or authors. 
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.viglet.turing.wem;
 
@@ -111,7 +115,7 @@ public class TurWEMCommander {
 				jCommander.usage();
 				return;
 			}
-			jCommander.getConsole().println("Viglet Turing WEM Indexer Tool.");
+			JCommander.getConsole().println("Viglet Turing WEM Indexer Tool.");
 
 			main.run();
 		} catch (ParameterException e) {
@@ -146,7 +150,7 @@ public class TurWEMCommander {
 			if (logger.isDebugEnabled())
 				logger.debug("Error into ConfigSpace configuration", exception);
 		} catch (VgnException vgnException) {
-			jCommander.getConsole().println("Logging does not started");
+			JCommander.getConsole().println("Logging does not started");
 		} catch (Exception e) {
 			logger.error("Viglet Turing Index Error: ", e);
 
@@ -208,12 +212,12 @@ public class TurWEMCommander {
 		List<Object> contentTypes = contentTypeIPagingList.asList();
 		contentTypes.add(StaticFile.getTypeObjectTypeRef().getObjectType());
 
-		jCommander.getConsole().println(
+		JCommander.getConsole().println(
 				String.format("Total number of Object Types: %d", TurWEMIndex.countCTDIntoMapping(turingConfig)));
 		for (Object objectType : contentTypes) {
 			ObjectType ot = (ObjectType) objectType;
 			if (TurWEMIndex.isCTDIntoMapping(ot.getData().getName(), turingConfig)) {
-				jCommander.getConsole().println(String.format("%n Retrieved Object Type: %s %s", ot.getData().getName(),
+				JCommander.getConsole().println(String.format("%n Retrieved Object Type: %s %s", ot.getData().getName(),
 						ot.getContentManagementId().toString()));
 				this.indexByContentType(siteName, ot);
 			}
@@ -240,7 +244,7 @@ public class TurWEMCommander {
 					results = queryContentInstanceList(objectType, rp, instance);
 				}
 				totalEntries = results.size();
-				jCommander.getConsole().println(String.format("Number of Content Instances of type %s %s = %d",
+				JCommander.getConsole().println(String.format("Number of Content Instances of type %s %s = %d",
 						objectType.getData().getName(), objectType.getContentManagementId().toString(), totalEntries));
 				totalPages = totalEntries > 0 ? (totalEntries + pageSize - 1) / pageSize : totalEntries / pageSize;
 
@@ -249,7 +253,7 @@ public class TurWEMCommander {
 			}
 			indexByContentTypeProcess(totalPages, results);
 		} else {
-			jCommander.getConsole().println(String.format("%s type is not configured in CTD Mapping XML file.",
+			JCommander.getConsole().println(String.format("%s type is not configured in CTD Mapping XML file.",
 					objectType.getData().getName()));
 		}
 
@@ -286,7 +290,7 @@ public class TurWEMCommander {
 		if (it != null) {
 			while (it.hasNext()) {
 				List<?> managedObjects = (List<?>) it.next();
-				jCommander.getConsole()
+				JCommander.getConsole()
 						.println(String.format("Processing Page %d of %d pages", currentPage++, totalPages));
 				long start = System.currentTimeMillis();
 				try {
@@ -308,14 +312,14 @@ public class TurWEMCommander {
 					if (!validGuids.isEmpty())
 						guids = validGuids.toArray(new ManagedObjectVCMRef[0]);
 
-					jCommander.getConsole()
+					JCommander.getConsole()
 							.println(String.format("Processing the registration of %d assets", validGuids.size()));
 					this.indexContentInstances(guids, objectMap);
 				} catch (Exception e) {
 					logger.error(e);
 				}
 				long elapsed = System.currentTimeMillis() - start;
-				jCommander.getConsole()
+				JCommander.getConsole()
 						.println(String.format("%d items processed in %dms", managedObjects.size(), elapsed));
 
 			}
@@ -324,7 +328,7 @@ public class TurWEMCommander {
 
 	private void indexGUIDList(List<String> guids)
 			throws ValidationException, ApplicationException, ContentIndexException, ConfigException {
-		jCommander.getConsole().println(String.format("Processing a total of %d GUID Strings", guids.size()));
+		JCommander.getConsole().println(String.format("Processing a total of %d GUID Strings", guids.size()));
 
 		ArrayList<ManagedObjectVCMRef> validGuids = new ArrayList<ManagedObjectVCMRef>();
 		for (String guid : guids) {
@@ -353,17 +357,16 @@ public class TurWEMCommander {
 				ManagedObject mo = (ManagedObject) object;
 				objectMap.put(mo.getContentManagementId().getId(), mo);
 			}
-			jCommander.getConsole()
+			JCommander.getConsole()
 					.println(String.format("Processing the registration of %d assets", managedObjects.size()));
 			this.indexContentInstances(managedObjectVCMRefs, objectMap);
 		}
 	}
 
-	private void indexContentInstances(ManagedObjectVCMRef[] refs, HashMap<String, ?> objects)
-			throws ApplicationException, ConfigException, ContentIndexException {
+	private void indexContentInstances(ManagedObjectVCMRef[] refs, HashMap<String, ?> objects) {
 		for (ManagedObjectVCMRef ref : refs) {
 			ManagedObject mo = (ManagedObject) objects.get(ref.getId());
-			if (mo instanceof ContentInstance) {
+			if (mo instanceof ContentInstance || mo instanceof Channel) {
 				if (logger.isDebugEnabled())
 					logger.debug(String.format("Attempting to index the Content Instance: %s",
 							mo.getContentManagementId().getId()));

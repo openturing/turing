@@ -121,7 +121,6 @@ jar {
    exclude 'castor-*.jar'
    exclude 'thirdparty-combined.jar'
      dependencies {
-         exclude(dependency('log4j:log4j'))
          exclude(dependency('org.apache.httpcomponents:httpcore'))
          exclude(dependency('org.apache.httpcomponents:httpclient'))
          exclude(dependency('org.apache.httpcomponents:httpmime'))
@@ -130,6 +129,11 @@ jar {
          exclude(dependency('commons-codec:commons-codec'))
          exclude(dependency('commons-logging:commons-logging'))
          exclude(dependency('org.json:json'))
+         exclude(dependency('org.apache.commons:commons-compress')) 
+         exclude(dependency('commons-io:commons-io')) 
+         exclude(dependency('log4j:log4j'))
+         exclude(dependency('org.apache.logging.log4j:log4j-core'))
+         exclude(dependency('org.apache.logging.log4j:log4j-api'))
    }
 }
 

@@ -433,6 +433,37 @@
           }
         }
       }
+    },
+    "angular-octicons": {
+      "projectType": "library",
+      "root": "projects/angular-octicons",
+      "sourceRoot": "projects/angular-octicons/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": {
+            "project": "projects/angular-octicons/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/angular-octicons/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/angular-octicons/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/angular-octicons/src/test.ts",
+            "tsConfig": "projects/angular-octicons/tsconfig.spec.json",
+            "karmaConfig": "projects/angular-octicons/karma.conf.js"
+          }
+        }
+      }
     }
   }
 }

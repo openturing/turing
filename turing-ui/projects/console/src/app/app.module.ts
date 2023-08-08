@@ -8,7 +8,7 @@ import { BasicAuthInterceptor, ErrorInterceptor } from './_helpers';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NotifierModule, NotifierOptions } from "angular-notifier";
 
-import { OcticonsModule } from 'ngx-octicons';
+import { OcticonsModule } from 'angular-octicons';
 import { TurConsolePageComponent } from './../console/console-page.component';
 import { TurCommonsModule } from '../commons/commons.module';
 import { DragDropModule } from '@angular/cdk/drag-drop';

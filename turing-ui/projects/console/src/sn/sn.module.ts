@@ -6,7 +6,7 @@ import { TurSNSiteListPageComponent } from './component/site/sn-site-list-page.c
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { TurSNRoutingModule } from './sn-routing.module';
 import { TurCommonsModule } from '../commons/commons.module';
-import { OcticonsModule } from 'ngx-octicons';
+import { OcticonsModule } from 'angular-octicons';
 import { RouterModule } from '@angular/router';
 import { TurSNRootPageComponent } from './component/root/sn-root-page.component';
 import { TurSNSitePageComponent } from './component/site/sn-site-page.component';

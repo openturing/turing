@@ -9,23 +9,23 @@ updates:
     directory: "/turing-app" # Location of package manifests
     schedule:
       interval: "daily"
-    target-branch: "0.3.6"
+    target-branch: "0.3.7"
     open-pull-requests-limit: 15
   - package-ecosystem: "gradle" # See documentation for possible values
     directory: "/turing-filesystem" # Location of package manifests
     schedule:
       interval: "daily"
-    target-branch: "0.3.6"
+    target-branch: "0.3.7"
     open-pull-requests-limit: 15
   - package-ecosystem: "gradle" # See documentation for possible values
     directory: "/turing-jdbc" # Location of package manifests
     schedule:
       interval: "daily"
-    target-branch: "0.3.6"
+    target-branch: "0.3.7"
     open-pull-requests-limit: 15
   - package-ecosystem: "npm" # See documentation for possible values
     directory: "/turing-ui" # Location of package manifests
     schedule:
       interval: "weekly"
-    target-branch: "0.3.6"
+    target-branch: "0.3.7"
     open-pull-requests-limit: 15

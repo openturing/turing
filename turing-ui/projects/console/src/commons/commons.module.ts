@@ -4,7 +4,7 @@ import { TurHeaderComponent } from './component/header/header.component';
 import { TurLogoComponent } from './component/logo/logo.component';
 import { IdenticonHashDirective } from '../app/directive/identicon-hash.directive';
 import { RouterModule } from '@angular/router';
-import { OcticonsModule } from 'ngx-octicons';
+import { OcticonsModule } from 'angular-octicons';
 
 @NgModule({
   declarations: [

@@ -6,8 +6,11 @@
     "types": [],
     "paths": {
       "@environments/*": [
-        "src/environments/*"
-      ]
+        "src/environments/*",
+
+      ],
+      "angular-octicons": ["dist/angular-octicons"],
+      "angular-octicons/*": ["dist/angular-octicons/*"]
     }
   },
   "files": [

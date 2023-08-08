@@ -5,7 +5,7 @@ import { TurSEInstanceListPageComponent } from './component/instance/se-instance
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { TurSERoutingModule } from './se-routing.module';
 import { TurCommonsModule } from '../commons/commons.module';
-import { OcticonsModule } from 'ngx-octicons';
+import { OcticonsModule } from 'angular-octicons';
 import { RouterModule } from '@angular/router';
 import { TurSERootPageComponent } from './component/root/se-root-page.component';
 import { TurSEVendorService } from './service/se-vendor.service';

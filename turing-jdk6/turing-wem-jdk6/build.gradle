@@ -1,10 +1,35 @@
+def javaExecutablesPath = new File(java6Home, 'bin')
+def javaExecutables = [:].withDefault { execName ->
+    def executable = new File(javaExecutablesPath, execName + ".exe")
+    assert executable.exists() : "There is no ${execName}.exe executable in ${javaExecutablesPath}"
+    executable
+}
+tasks.withType(AbstractCompile) {
+    options.with {
+        fork = true
+        forkOptions.javaHome = file(java6Home)
+    }
+}
+tasks.withType(JavaCompile) {
+	options.encoding = "UTF-8"
+}
+
+tasks.withType(Test) {
+    executable = javaExecutables.java
+    systemProperty "file.encoding", "UTF-8"
+}
+
+tasks.withType(JavaExec) {
+    executable = javaExecutables.java
+}
+
 buildscript {
 	repositories {
 		mavenCentral()
 		 jcenter()
 	}
 	dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.0.3'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
     }
 }
 
@@ -17,7 +42,7 @@ compileTestJava.options.encoding = "UTF-8"
 
 javadoc {
     source = sourceSets.main.allJava
-    classpath = configurations.compile
+    classpath = configurations.implementation
     destinationDir = file("docs")
 }
 
@@ -30,11 +55,12 @@ task compileOne (type: JavaCompile) {
 }
 
 dependencies {
-    compile files(fileTree(dir: 'lib', includes: ['*.jar']))
-    compile group: 'com.beust', name: 'jcommander', version: '1.47'	
-    compile group: 'log4j', name: 'log4j', version: '1.2.7'
-    compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.59'
-    compile project(':turing-java-sdk-jdk6')
+    implementation files(fileTree(dir: 'lib', includes: ['*.jar']))
+    implementation group: 'com.beust', name: 'jcommander', version: '1.47'	
+    implementation group: 'log4j', name: 'log4j', version: '1.2.7'
+    implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.59'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.0'
+    implementation project(':turing-java-sdk-jdk6')
 }
 
 jar {

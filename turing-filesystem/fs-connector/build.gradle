@@ -8,7 +8,7 @@ plugins {
   id 'com.github.johnrengelman.shadow' version "7.1.2"
   id 'java'
   id 'eclipse'
-  id "org.sonarqube" version "3.3"
+  id "org.sonarqube" version "4.0.0.2929"
 }
 
 
@@ -34,7 +34,7 @@ sonarqube {
 
 jar {
     baseName = 'turing-filesystem'
-    version =  '0.3.6'
+    version =  '0.3.7'
     manifest {
         attributes 'Main-Class': 'com.viglet.turing.tool.filesystem.TurFSImportTool'
     }
@@ -52,18 +52,18 @@ repositories {
 
 dependencies {
 	implementation group: 'com.beust', name: 'jcommander', version: '1.82'	
-	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.3'	
-	implementation group: 'org.json', name: 'json', version:'20220320'
+	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.4'	
+	implementation group: 'org.json', name: 'json', version:'20230227'
 	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.13'
-	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.17.2'
+	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.20.0'
 	implementation group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.13'
-	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.2'
+	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.3'
 	implementation project(':turing-java-sdk')
 
 	// Tika
-  implementation group: 'org.apache.tika', name: 'tika-core', version:'2.4.0'
-  implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.4.0'
-  implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.36.0.3'
+  implementation group: 'org.apache.tika', name: 'tika-core', version:'2.5.0'
+  implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.5.0'
+  implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.41.0.0'
   implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
     
   // Commons

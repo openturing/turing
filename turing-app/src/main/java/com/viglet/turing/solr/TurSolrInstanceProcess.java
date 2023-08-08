@@ -32,6 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.lang.invoke.MethodHandles;
@@ -60,7 +61,9 @@ public class TurSolrInstanceProcess {
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
 	private TurSolrCache turSolrCache;
-
+	@Value("${turing.solr.timeout:30000}")
+	private int solrTimeout;
+	
 	private Optional<TurSolrInstance> getSolrClient(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
 		return getSolrClient(turSNSite.getTurSEInstance(), turSNSiteLocale.getCore());
 	}
@@ -70,7 +73,7 @@ public class TurSolrInstanceProcess {
 				core);
 		if (turSolrCache.isSolrCoreExists(urlString)) {
 			HttpSolrClient httpSolrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
-					.withConnectionTimeout(30000).withSocketTimeout(30000).build();
+					.withConnectionTimeout(solrTimeout).withSocketTimeout(solrTimeout).build();
 			try {
 				return Optional.of(new TurSolrInstance(closeableHttpClient, httpSolrClient, new URL(urlString), core));
 			} catch (MalformedURLException e) {

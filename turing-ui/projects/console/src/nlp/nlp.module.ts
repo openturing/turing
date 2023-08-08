@@ -5,7 +5,7 @@ import { TurNLPInstanceListPageComponent } from './component/instance/nlp-instan
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { TurNLPRoutingModule } from './nlp-routing.module';
 import { TurCommonsModule } from '../commons/commons.module';
-import { OcticonsModule } from 'ngx-octicons';
+import { OcticonsModule } from 'angular-octicons';
 import { RouterModule } from '@angular/router';
 import { TurNLPEntityListPageComponent } from './component/entity/nlp-entity-list-page.component';
 import { TurNLPRootPageComponent } from './component/root/nlp-root-page.component';
