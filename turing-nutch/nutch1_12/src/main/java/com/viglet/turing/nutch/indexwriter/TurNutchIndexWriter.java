@@ -223,7 +223,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	private void init(JobConf job) {
 		turMapping = TurMappingReader.getInstance(job);
-		delete = config.getBoolean(IndexerMapReduce.INDEXER_DELETE, false);
 		weightField = job.get(TurNutchConstants.WEIGHT_FIELD, StringUtils.EMPTY);
 		// parse optional params
 		params = new ModifiableSolrParams();

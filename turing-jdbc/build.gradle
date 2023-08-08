@@ -36,7 +36,7 @@ sonarqube {
 
 jar {
     baseName = 'turing-jdbc'
-    version =  '0.3.6'
+    version =  '0.3.7'
     manifest {
 		attributes 'Main-Class': 'com.viglet.turing.tool.jdbc.TurJDBCImportTool'
 	}

@@ -41,7 +41,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	private int batchSize;
 	private int totalAdds = 0;
-	private boolean delete = false;
 	private String weightField;
 
 	private String username;
@@ -88,7 +87,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 	}
 
 	private void init(IndexWriterParams properties) {
-		delete = config.getBoolean(IndexerMapReduce.INDEXER_DELETE, false);
 		batchSize = properties.getInt(TurNutchConstants.COMMIT_SIZE, 1000);
 		weightField = properties.get(TurNutchConstants.WEIGHT_FIELD, "");
 		// parse optional parameters
