@@ -75,7 +75,7 @@ dependencies {
     implementation group: 'org.postgresql', name: 'postgresql', version: '42.5.4'
     
     // Jsoup
-    implementation group: 'org.jsoup', name: 'jsoup', version: '1.15.4'
+    implementation group: 'org.jsoup', name: 'jsoup', version: '1.16.1'
 }
 
 jar.enabled = false
