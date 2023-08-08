@@ -153,7 +153,7 @@ implementation group: 'org.apache.commons', name: 'commons-imaging', version: '1
     //implementation group: 'org.liquibase', name: 'liquibase-core', version: '4.6.2'
 
     // SolrJ
-    implementation(group: 'org.apache.solr', name: 'solr-solrj', version: '9.0.0') {
+    implementation(group: 'org.apache.solr', name: 'solr-solrj', version: '9.1.1') {
         exclude(module: 'xml-apis')
     }
 
