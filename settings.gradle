@@ -16,4 +16,5 @@ if (!System.env.JITPACK){
 	include ':turing-java-proxy'
 	include ':turing-ui'
 	include ':turing-installer'
+	include ':turing-aem:aem-indexer'
 }

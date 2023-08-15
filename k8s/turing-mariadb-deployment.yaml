@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.26.0 (40646f47)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: turing-mariadb
+  name: turing-mariadb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: turing-mariadb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: turing-mariadb
+    spec:
+      containers:
+        - env:
+            - name: MYSQL_DATABASE
+              value: turing
+            - name: MYSQL_PASSWORD
+              value: turing
+            - name: MYSQL_ROOT_PASSWORD
+              value: turing
+            - name: MYSQL_USER
+              value: turing
+          image: turing-mariadb
+          name: turing-mariadb
+          ports:
+            - containerPort: 3306
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: turing-mariadb-claim0
+      restartPolicy: Always
+      volumes:
+        - name: turing-mariadb-claim0
+          persistentVolumeClaim:
+            claimName: turing-mariadb-claim0
+status: {}

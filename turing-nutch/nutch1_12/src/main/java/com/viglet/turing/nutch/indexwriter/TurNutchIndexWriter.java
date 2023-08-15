@@ -50,9 +50,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void delete(String key) throws IOException {
-		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE);
 		try {
 			key = decode(key, StandardCharsets.UTF_8.name());
 		} catch (IllegalArgumentException e) {
@@ -83,12 +81,10 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void write(NutchDocument doc) throws IOException {
-		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem
-				.setLocale(this.config.get(TurNutchConstants.LOCALE_PROPERTY, TurNutchCommons.LOCALE_DEFAULT_VALUE));
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+
 		Map<String, Object> attributes = new HashMap<>();
 		Map<String, String> turCustomFields = this.config.getValByRegex("^" + FIELD_PROPERTY + "*");
+		String locale = this.config.get(TurNutchConstants.LOCALE_PROPERTY, TurNutchCommons.LOCALE_DEFAULT_VALUE);
 		String localeField = this.config.get(TurNutchConstants.LOCALE_FIELD_PROPERTY);
 		for (final Entry<String, NutchField> fieldMap : doc) {
 			for (final Object originalValue : fieldMap.getValue().getValues()) {
@@ -104,8 +100,9 @@ public class TurNutchIndexWriter implements IndexWriter {
 					normalizedValue = TurNutchCommons.stripNonCharCodepoints((String) originalValue);
 				}
 				if (localeField != null && fieldMap.getKey().equals(TurNutchCommons.META_TAG_VALUE + localeField)) {
-					turSNJobItem.setLocale(TurNutchCommons.stripNonCharCodepoints((String) originalValue));
-				} else if (fieldMap.getKey().equals(TurNutchCommons.TIMESTAMP_FIELD)) {
+					locale = TurNutchCommons.stripNonCharCodepoints((String) originalValue);
+				}
+				if (fieldMap.getKey().equals(TurNutchCommons.TIMESTAMP_FIELD)) {
 					attributes.put(this.config.get(TIMESTAMP_PROPERTY, TurNutchCommons.TIMESTAMP_FIELD),
 							normalizedValue);
 				} else {
@@ -133,6 +130,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 				attributes.put(key, turCustomField.getValue());
 			}
 		});
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, locale);
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 		totalAdds++;

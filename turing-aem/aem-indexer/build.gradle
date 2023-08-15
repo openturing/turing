@@ -1,0 +1,43 @@
+plugins {
+	id 'java'
+	id "com.github.johnrengelman.shadow" version "6.1.0"
+}
+
+group = "com.viglet.turing.connector.aem"
+version = "0.3.7"
+
+java {
+	sourceCompatibility = '1.8'
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.apache.jackrabbit:jackrabbit-jcr-commons:2.21.19'
+	implementation 'org.apache.jackrabbit:jackrabbit-jcr2dav:2.21.19'
+
+	implementation 'com.beust:jcommander:1.82'
+	implementation 'org.slf4j:slf4j-api:2.0.7'
+    implementation 'org.slf4j:slf4j-simple:2.0.7'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.7'
+    implementation project(':turing-java-sdk')
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.viglet.turing.connector.aem.indexer.TurAEMIndexerTool'
+    }
+ }
+ 
+ shadowJar {
+   baseName = 'turing-aem'
+   classifier = null
+   version = 'all'
+
+}
+
+//tasks.named('test') {
+//	useJUnitPlatform()
+//}

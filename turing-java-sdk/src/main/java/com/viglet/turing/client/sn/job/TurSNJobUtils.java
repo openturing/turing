@@ -90,9 +90,7 @@ public class TurSNJobUtils {
 
 	public static void deleteItemsByType(TurSNServer turSNServer, String typeName) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
-		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-		turSNJobItem.setLocale(turSNServer.getLocale());
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, turSNServer.getLocale());
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put(TYPE_ATTRIBUTE, typeName);
 		attributes.put(PROVIDER_ATTRIBUTE, turSNServer.getProviderName());

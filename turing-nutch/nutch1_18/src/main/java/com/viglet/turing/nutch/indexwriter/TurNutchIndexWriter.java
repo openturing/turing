@@ -106,9 +106,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void delete(String key) throws IOException {
-		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE);
 		try {
 			key = URLDecoder.decode(key, "UTF8");
 		} catch (UnsupportedEncodingException e) {
@@ -139,12 +137,9 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void write(NutchDocument doc) throws IOException {
-		System.out.println(doc.toString());
-		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setLocale(this.config.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY),
-				TurNutchCommons.LOCALE_DEFAULT_VALUE));
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-		Map<String, Object> attributes = new HashMap<String, Object>();
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, this.config
+				.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY), TurNutchCommons.LOCALE_DEFAULT_VALUE));
+		Map<String, Object> attributes = new HashMap<>();
 		for (final Entry<String, NutchField> e : doc) {
 
 			for (final Object val : e.getValue().getValues()) {

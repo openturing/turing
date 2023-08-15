@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.26.0 (40646f47)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: turing-nginx
+  name: turing-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: turing-nginx
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: turing-nginx
+    spec:
+      containers:
+        - image: nginx:1.13
+          name: turing-nginx
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+          resources: {}
+          volumeMounts:
+            - mountPath: /etc/nginx/conf.d
+              name: turing-nginx-claim0
+      restartPolicy: Always
+      volumes:
+        - name: turing-nginx-claim0
+          persistentVolumeClaim:
+            claimName: turing-nginx-claim0
+status: {}
