@@ -4,8 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
+import javax.jcr.ValueFormatException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,21 +19,20 @@ public class AemPage extends AemObject {
 	private String description;
 	private String url;
 	private String subTitle;
-	private String lastModified;
+	private StringBuffer components = new StringBuffer();
 	private Map<String,Object> attributes = new HashMap<>();
 	public AemPage(Node node) {
 		super(node);
-		Node jcrContent;
 		try {
-			jcrContent = node.getNode(JCR_CONTENT);
+			Node jcrContent = node.getNode(JCR_CONTENT);
 			url = node.getPath() + ".html";
 
-			if (jcrContent.hasProperty("pageTitle"))
-				title = jcrContent.getProperty("pageTitle").getString();
+			if (jcrContent.hasProperty("jcr:title"))
+				title = jcrContent.getProperty("jcr:title").getString();
 			
 			if (jcrContent.hasProperty("jcr:description")) 
-				description = jcrContent.getProperty("jcr:description").getString();
-			
+				description = getPropertyValue(jcrContent.getProperty("jcr:description"));
+			getNode(jcrContent, components);
 		} catch (PathNotFoundException e) {
 			logger.error(e.getMessage(), e);
 		} catch (RepositoryException e) {
@@ -39,6 +40,23 @@ public class AemPage extends AemObject {
 		}
 	}
 	
+	private void getNode(Node node, StringBuffer components) throws RepositoryException, ValueFormatException {
+
+		if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
+			NodeIterator nodeIterator = node.getNodes();
+			while (nodeIterator.hasNext()) {
+				
+				Node nodeChild = nodeIterator.nextNode();
+				if (nodeChild.hasProperty("jcr:title")) 
+					components.append(getPropertyValue(nodeChild.getProperty("jcr:title")));
+				if (nodeChild.hasProperty("text")) 
+					components.append(getPropertyValue(nodeChild.getProperty("text")));
+				if (nodeChild.hasNodes()) {
+					getNode(nodeChild, components);
+				}
+			}
+		}
+	}
 	public String getTitle() {
 		return title;
 	}
@@ -55,12 +73,13 @@ public class AemPage extends AemObject {
 		return subTitle;
 	}
 
-	public String getLastModified() {
-		return lastModified;
-	}
-
+	
 	public Map<String, Object> getAttributes() {
 		return attributes;
+	}
+
+	public StringBuffer getComponents() {
+		return components;
 	}
 
 }

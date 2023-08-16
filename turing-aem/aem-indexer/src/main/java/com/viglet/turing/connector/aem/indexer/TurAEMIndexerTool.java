@@ -1,9 +1,16 @@
 package com.viglet.turing.connector.aem.indexer;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.TimeZone;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -62,9 +69,6 @@ public class TurAEMIndexerTool {
 	@Parameter(names = { "--sitePath", "-s" }, description = "AEM site path.", required = false)
 	private String sitePath = "/content/we-retail";
 
-	@Parameter(names = { "--snSite", "-f" }, description = "SN site path.", required = true)
-	private String snSite = "Sample";
-
 	@Parameter(names = { "--page-size",
 			"-z" }, description = "The page size. After processing a page the processed count is written to an offset file."
 					+ " This helps the indexer to resume from that page even after failure. ")
@@ -77,8 +81,20 @@ public class TurAEMIndexerTool {
 	private boolean help = false;
 
 	private static String CQ_PAGE = "cq:Page";
+	private static Properties properties = new Properties();
+	private String siteName;
 
 	public static void main(String... argv) {
+
+		try {
+			properties.load(new FileReader(TurAEMIndexerTool.class.getProtectionDomain().getCodeSource().getLocation()
+					.getFile().replaceAll(".jar$", ".properties")));
+		} catch (FileNotFoundException e) {
+			logger.error(e.getMessage(), e);
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		}
+
 		TurAEMIndexerTool turAEMIndexerTool = new TurAEMIndexerTool();
 
 		jCommander.addObject(turAEMIndexerTool);
@@ -109,9 +125,11 @@ public class TurAEMIndexerTool {
 	public void getRead() throws Exception {
 		Repository repository = JcrUtils.getRepository(hostAndPort);
 		Session session = repository.login(new SimpleCredentials(username, password.toCharArray()));
-		
+
 		try {
 			Node node = session.getNode(sitePath);
+			AemSite aemSite = new AemSite(node);
+			siteName = aemSite.getTitle();
 			getNode(node);
 		} finally {
 			session.logout();
@@ -128,7 +146,7 @@ public class TurAEMIndexerTool {
 					System.out.println(nodeChild.getPath() + ": " + nodeChild.getName());
 
 					if (contentType != null && contentType.equals(CQ_PAGE)) {
-						getPage(nodeChild);
+						indexPage(new AemPage(nodeChild));
 					} else {
 						new AemObject(nodeChild);
 					}
@@ -140,25 +158,36 @@ public class TurAEMIndexerTool {
 		}
 	}
 
-	private void getPage(Node nodeChild) throws PathNotFoundException, RepositoryException, ValueFormatException {
-		AemPage aemPage = new AemPage(nodeChild);
-	
+	private void indexPage(AemPage aemPage) throws PathNotFoundException, RepositoryException, ValueFormatException {
+
+		TimeZone tz = TimeZone.getTimeZone("UTC");
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+		df.setTimeZone(tz);
+
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put("id", aemPage.getUrl());
 		attributes.put("title", aemPage.getTitle());
 		attributes.put("description", aemPage.getDescription());
-		attributes.put("url", aemPage.getUrl());
-		attributes.put("site", sitePath);
-
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, "en_US");
+		attributes.put("text", aemPage.getComponents().toString());
+		attributes.put("url", properties.getProperty("aem.site.default.urlprefix").concat(aemPage.getUrl()));
+		attributes.put("site", siteName);
+		attributes.put("publication_date",
+				aemPage.getCreatedDate() != null ? df.format(aemPage.getCreatedDate().getTime()) : null);
+		attributes.put("source_apps", properties.getProperty("turing.provider.name"));
+		attributes.put("type", aemPage.getType());
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE,
+				properties.getProperty("aem.site.default.sn.locale"));
 
 		turSNJobItem.setAttributes(attributes);
 		TurSNJobItems turSNJobItems = new TurSNJobItems();
 		turSNJobItems.add(turSNJobItem);
-		TurUsernamePasswordCredentials credentials = new TurUsernamePasswordCredentials("admin", "admin");
+		TurUsernamePasswordCredentials credentials = new TurUsernamePasswordCredentials(
+				properties.getProperty("turing.login"), properties.getProperty("turing.password"));
 		TurSNServer turSNServer;
 		try {
-			turSNServer = new TurSNServer(new URL("http://localhost:2700"), snSite, "en_US", credentials);
+			turSNServer = new TurSNServer(new URL(properties.getProperty("turing.url")),
+					properties.getProperty("aem.site.default.sn.site"),
+					properties.getProperty("aem.site.default.sn.locale"), credentials);
 			TurSNJobUtils.importItems(turSNJobItems, turSNServer, false);
 		} catch (MalformedURLException e) {
 			logger.error(e.getMessage(), e);
