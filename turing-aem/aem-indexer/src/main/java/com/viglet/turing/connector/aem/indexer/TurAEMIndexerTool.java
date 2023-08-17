@@ -1,16 +1,11 @@
 package com.viglet.turing.connector.aem.indexer;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.TimeZone;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -34,6 +29,16 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.client.sn.job.TurSNJobUtils;
+import com.viglet.turing.connector.aem.indexer.conf.AemHandlerConfiguration;
+import com.viglet.turing.connector.cms.beans.TurAttrDef;
+import com.viglet.turing.connector.cms.beans.TurAttrDefContext;
+import com.viglet.turing.connector.cms.beans.TurMultiValue;
+import com.viglet.turing.connector.cms.beans.TuringTag;
+import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
+import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
+import com.viglet.turing.connector.cms.mappers.CTDMappings;
+import com.viglet.turing.connector.cms.mappers.MappingDefinitions;
+import com.viglet.turing.connector.cms.mappers.MappingDefinitionsProcess;
 
 public class TurAEMIndexerTool {
 
@@ -81,20 +86,10 @@ public class TurAEMIndexerTool {
 	private boolean help = false;
 
 	private static String CQ_PAGE = "cq:Page";
-	private static Properties properties = new Properties();
+	AemHandlerConfiguration config = new AemHandlerConfiguration();
 	private String siteName;
 
 	public static void main(String... argv) {
-
-		try {
-			properties.load(new FileReader(TurAEMIndexerTool.class.getProtectionDomain().getCodeSource().getLocation()
-					.getFile().replaceAll(".jar$", ".properties")));
-		} catch (FileNotFoundException e) {
-			logger.error(e.getMessage(), e);
-		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
-		}
-
 		TurAEMIndexerTool turAEMIndexerTool = new TurAEMIndexerTool();
 
 		jCommander.addObject(turAEMIndexerTool);
@@ -143,8 +138,6 @@ public class TurAEMIndexerTool {
 			while (nodeIterator.hasNext()) {
 				Node nodeChild = nodeIterator.nextNode();
 				if (hasContentType(nodeChild) || contentType == null) {
-					System.out.println(nodeChild.getPath() + ": " + nodeChild.getName());
-
 					if (contentType != null && contentType.equals(CQ_PAGE)) {
 						indexPage(new AemPage(nodeChild));
 					} else {
@@ -158,41 +151,73 @@ public class TurAEMIndexerTool {
 		}
 	}
 
+	private static List<TurAttrDef> prepareAttributeDefs(AemObject aemObject, IHandlerConfiguration config,
+			MappingDefinitions mappingDefinitions, String contentType) {
+		CTDMappings ctdMappings = mappingDefinitions.getMappingByContentType(contentType);
+		List<TurAttrDef> attributesDefs = new ArrayList<>();
+
+		for (String tag : ctdMappings.getTagList()) {
+			if (logger.isDebugEnabled()) {
+				logger.debug(String.format("generateXMLToIndex: Tag: %s", tag));
+			}
+			for (TuringTag turingTag : ctdMappings.getTuringTagMap().get(tag)) {
+				if (tag != null && turingTag != null && turingTag.getTagName() != null) {
+
+					TurAttrDefContext turAttrDefContext = new TurAttrDefContext(aemObject, turingTag, config,
+							mappingDefinitions);
+					try {
+						List<TurAttrDef> attributeDefsXML = TurAEMAttrXML.attributeXML(turAttrDefContext);
+						// Unique
+						if (turingTag.isSrcUniqueValues()) {
+
+							TurMultiValue multiValue = new TurMultiValue();
+							for (TurAttrDef turAttrDef : attributeDefsXML) {
+								for (String singleValue : turAttrDef.getMultiValue()) {
+									if (!multiValue.contains(singleValue)) {
+										multiValue.add(singleValue);
+									}
+								}
+							}
+							TurAttrDef turAttrDefUnique = new TurAttrDef(turingTag.getTagName(), multiValue);
+							attributesDefs.add(turAttrDefUnique);
+						} else {
+							attributesDefs.addAll(attributeDefsXML);
+						}
+					} catch (Exception e) {
+						logger.error(e.getMessage(), e);
+					}
+				}
+			}
+		}
+		return attributesDefs;
+	}
+
 	private void indexPage(AemPage aemPage) throws PathNotFoundException, RepositoryException, ValueFormatException {
 
-		TimeZone tz = TimeZone.getTimeZone("UTC");
-		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-		df.setTimeZone(tz);
-
+		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
+		List<TurAttrDef> turAttrDefList = TurAEMIndexerTool.prepareAttributeDefs(aemPage, config, mappingDefinitions,
+				"cq:Page");
+		TurSNSiteConfig turSNSiteConfig = config.getDefaultSNSiteConfig();
 		Map<String, Object> attributes = new HashMap<>();
-		attributes.put("id", aemPage.getUrl());
-		attributes.put("title", aemPage.getTitle());
-		attributes.put("description", aemPage.getDescription());
-		attributes.put("text", aemPage.getComponents().toString());
-		attributes.put("url", properties.getProperty("aem.site.default.urlprefix").concat(aemPage.getUrl()));
+		for (TurAttrDef turAttrDef : turAttrDefList) {
+			turAttrDef.getMultiValue().forEach(value -> attributes.put(turAttrDef.getTagName(), value));
+		}
 		attributes.put("site", siteName);
-		attributes.put("publication_date",
-				aemPage.getCreatedDate() != null ? df.format(aemPage.getCreatedDate().getTime()) : null);
-		attributes.put("source_apps", properties.getProperty("turing.provider.name"));
-		attributes.put("type", aemPage.getType());
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE,
-				properties.getProperty("aem.site.default.sn.locale"));
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, turSNSiteConfig.getLocale());
 
 		turSNJobItem.setAttributes(attributes);
 		TurSNJobItems turSNJobItems = new TurSNJobItems();
 		turSNJobItems.add(turSNJobItem);
-		TurUsernamePasswordCredentials credentials = new TurUsernamePasswordCredentials(
-				properties.getProperty("turing.login"), properties.getProperty("turing.password"));
+		TurUsernamePasswordCredentials credentials = new TurUsernamePasswordCredentials(config.getLogin(),
+				config.getPassword());
 		TurSNServer turSNServer;
 		try {
-			turSNServer = new TurSNServer(new URL(properties.getProperty("turing.url")),
-					properties.getProperty("aem.site.default.sn.site"),
-					properties.getProperty("aem.site.default.sn.locale"), credentials);
+			turSNServer = new TurSNServer(new URL(config.getTuringURL()), turSNSiteConfig.getName(),
+					turSNSiteConfig.getLocale(), credentials);
 			TurSNJobUtils.importItems(turSNJobItems, turSNServer, false);
 		} catch (MalformedURLException e) {
 			logger.error(e.getMessage(), e);
 		}
-
 	}
 
 	private boolean hasContentType(Node nodeChild)

@@ -17,4 +17,5 @@ if (!System.env.JITPACK){
 	include ':turing-ui'
 	include ':turing-installer'
 	include ':turing-aem:aem-indexer'
+	include ':turing-cms:cms-mapping'
 }

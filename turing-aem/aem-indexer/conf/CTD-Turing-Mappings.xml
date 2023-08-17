@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappingDefinitions>
+    <common-index-attrs>
+        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurCTDName" mandatory="true">
+            <tag>type</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurAEMCreationnDate" mandatory="true">
+            <tag>publicationDate</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurAEMModificationDate" mandatory="true">
+            <tag>modificationDate</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurSiteName" mandatory="true">
+            <tag>site</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurHTML2Text">
+            <tag>text</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurHTML2Text">
+            <tag>description</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurContentUrl" mandatory="true">
+            <tag>url</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurContentId" mandatory="true">
+            <tag>id</tag>
+        </srcAttr>
+        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurSourceApps" mandatory="true">
+            <tag>source_apps</tag>
+        </srcAttr>
+    </common-index-attrs>
+    <mappingDefinition contentType="cq:Page">
+        <index-attrs>
+            <srcAttr xmlName="jcr:title">
+                <tag>title</tag>
+            </srcAttr>
+            <srcAttr xmlName="jcr:description">
+                <tag>description</tag>
+            </srcAttr>
+            <srcAttr xmlName="text" className="com.viglet.turing.connector.aem.indexer.ext.TurPageComponents">
+                <tag>text</tag>
+            </srcAttr>
+        </index-attrs>
+    </mappingDefinition>
+
+</mappingDefinitions>

@@ -14,24 +14,21 @@ import org.slf4j.LoggerFactory;
 
 public class AemPage extends AemObject {
 	private static Logger logger = LoggerFactory.getLogger(AemPage.class);
-	
+
 	private String title;
 	private String description;
 	private String url;
 	private String subTitle;
 	private StringBuffer components = new StringBuffer();
-	private Map<String,Object> attributes = new HashMap<>();
+	private Map<String, Object> attributes = new HashMap<>();
+
 	public AemPage(Node node) {
 		super(node);
 		try {
 			Node jcrContent = node.getNode(JCR_CONTENT);
 			url = node.getPath() + ".html";
-
-			if (jcrContent.hasProperty("jcr:title"))
-				title = jcrContent.getProperty("jcr:title").getString();
-			
-			if (jcrContent.hasProperty("jcr:description")) 
-				description = getPropertyValue(jcrContent.getProperty("jcr:description"));
+			title = getJcrPropertyValue(jcrContent, "jcr:title");
+			description = getJcrPropertyValue(jcrContent, "jcr:description");
 			getNode(jcrContent, components);
 		} catch (PathNotFoundException e) {
 			logger.error(e.getMessage(), e);
@@ -39,24 +36,26 @@ public class AemPage extends AemObject {
 			logger.error(e.getMessage(), e);
 		}
 	}
-	
+
+
 	private void getNode(Node node, StringBuffer components) throws RepositoryException, ValueFormatException {
 
 		if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
 			NodeIterator nodeIterator = node.getNodes();
 			while (nodeIterator.hasNext()) {
-				
+
 				Node nodeChild = nodeIterator.nextNode();
-				if (nodeChild.hasProperty("jcr:title")) 
-					components.append(getPropertyValue(nodeChild.getProperty("jcr:title")));
-				if (nodeChild.hasProperty("text")) 
-					components.append(getPropertyValue(nodeChild.getProperty("text")));
+				if (nodeChild.hasProperty("jcr:title"))
+					components.append(getJcrPropertyValue(nodeChild, "jcr:title"));
+				if (nodeChild.hasProperty("text"))
+					components.append(getJcrPropertyValue(nodeChild, "text"));
 				if (nodeChild.hasNodes()) {
 					getNode(nodeChild, components);
 				}
 			}
 		}
 	}
+
 	public String getTitle() {
 		return title;
 	}
@@ -73,7 +72,6 @@ public class AemPage extends AemObject {
 		return subTitle;
 	}
 
-	
 	public Map<String, Object> getAttributes() {
 		return attributes;
 	}

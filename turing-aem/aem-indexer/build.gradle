@@ -19,10 +19,9 @@ dependencies {
 	implementation 'org.apache.jackrabbit:jackrabbit-jcr2dav:2.21.19'
 
 	implementation 'com.beust:jcommander:1.82'
-	implementation 'org.slf4j:slf4j-api:2.0.7'
-    implementation 'org.slf4j:slf4j-simple:2.0.7'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.7'
     implementation project(':turing-java-sdk')
+    implementation project(':turing-cms:cms-mapping')
 }
 
 jar {
