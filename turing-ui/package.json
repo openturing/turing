@@ -45,7 +45,7 @@
     "@types/jasminewd2": "2.0.10",
     "@types/node": "20.5.0",
     "@types/primer__octicons": "^17.5.0",
-    "jasmine-core": "4.5.0",
+    "jasmine-core": "5.1.0",
     "jasmine-spec-reporter": "7.0.0",
     "karma": "6.4.2",
     "karma-chrome-launcher": "3.2.0",
