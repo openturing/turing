@@ -22,7 +22,7 @@
     "@angular/platform-browser": "16.1.8",
     "@angular/platform-browser-dynamic": "16.1.8",
     "@angular/router": "16.1.8",
-    "@primer/css": "20.8.3",
+    "@primer/css": "21.0.7",
     "@primer/octicons": "19.5.0",
     "@primer/styled-octicons": "19.5.0",
     "angular-notifier": "14.0.0",
