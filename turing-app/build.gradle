@@ -2,7 +2,7 @@ import java.util.regex.Pattern
 
 buildscript {
     ext {
-        springBootVersion = '2.7.14'
+        springBootVersion = '3.1.2'
         jasyptVersion = '3.0.5'
         languagetool = '6.1'
         tika = '2.8.0'
