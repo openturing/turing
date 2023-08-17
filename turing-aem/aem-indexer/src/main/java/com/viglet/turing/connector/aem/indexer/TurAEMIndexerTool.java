@@ -32,6 +32,7 @@ import com.viglet.turing.client.sn.job.TurSNJobUtils;
 import com.viglet.turing.connector.aem.indexer.conf.AemHandlerConfiguration;
 import com.viglet.turing.connector.cms.beans.TurAttrDef;
 import com.viglet.turing.connector.cms.beans.TurAttrDefContext;
+import com.viglet.turing.connector.cms.beans.TurCTDMappingMap;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
@@ -77,7 +78,7 @@ public class TurAEMIndexerTool {
 	@Parameter(names = { "--page-size",
 			"-z" }, description = "The page size. After processing a page the processed count is written to an offset file."
 					+ " This helps the indexer to resume from that page even after failure. ")
-	private int pageSize = 500;
+	private int pageSize = 50;
 
 	@Parameter(names = "--debug", description = "Change the log level to debug", help = true)
 	private boolean debug = false;
@@ -86,6 +87,9 @@ public class TurAEMIndexerTool {
 	private boolean help = false;
 
 	private static String CQ_PAGE = "cq:Page";
+	private static int processed = 0;
+	private static int currentPage = 0;
+	private static long start;
 	AemHandlerConfiguration config = new AemHandlerConfiguration();
 	private String siteName;
 
@@ -118,37 +122,87 @@ public class TurAEMIndexerTool {
 	}
 
 	public void getRead() throws Exception {
-		Repository repository = JcrUtils.getRepository(hostAndPort);
-		Session session = repository.login(new SimpleCredentials(username, password.toCharArray()));
-
-		try {
-			Node node = session.getNode(sitePath);
-			AemSite aemSite = new AemSite(node);
-			siteName = aemSite.getTitle();
-			getNode(node);
-		} finally {
-			session.logout();
+		if (isCTDIntoMapping(contentType, config)) {
+			int totalPages = 0;
+			Repository repository = JcrUtils.getRepository(hostAndPort);
+			Session session = repository.login(new SimpleCredentials(username, password.toCharArray()));
+			try {
+				Node node = session.getNode(sitePath);
+				AemSite aemSite = new AemSite(node);
+				siteName = aemSite.getTitle();
+				start = System.currentTimeMillis();
+				getNode(node, totalPages);
+				long elapsed = System.currentTimeMillis() - start;
+				jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+			} finally {
+				session.logout();
+			}
+		} else {
+			jCommander.getConsole()
+					.println(String.format("%s type is not configured in CTD Mapping XML file.", contentType));
 		}
 	}
 
-	private void getNode(Node node) throws RepositoryException, ValueFormatException {
+	public static String ordinal(int i) {
+		String[] suffixes = new String[] { "th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th" };
+		switch (i % 100) {
+		case 11:
+		case 12:
+		case 13:
+			return i + "th";
+		default:
+			return i + suffixes[i % 10];
 
-		if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
-			NodeIterator nodeIterator = node.getNodes();
-			while (nodeIterator.hasNext()) {
-				Node nodeChild = nodeIterator.nextNode();
-				if (hasContentType(nodeChild) || contentType == null) {
-					if (contentType != null && contentType.equals(CQ_PAGE)) {
-						indexPage(new AemPage(nodeChild));
-					} else {
-						new AemObject(nodeChild);
+		}
+	}
+
+	private void getNode(Node node, int totalPages) {
+
+		try {
+
+			if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
+				NodeIterator nodeIterator = node.getNodes();
+				while (nodeIterator.hasNext()) {
+
+					Node nodeChild = nodeIterator.nextNode();
+					if (hasContentType(nodeChild, contentType) || contentType == null) {
+						if (processed == 0) {
+							currentPage++;
+							jCommander.getConsole().println(String.format("Processing %s item",
+									ordinal((currentPage * pageSize) - pageSize + 1)));
+						}
+						if (processed >= pageSize) {
+							long elapsed = System.currentTimeMillis() - start;
+							jCommander.getConsole()
+									.println(String.format("%d items processed in %dms", processed, elapsed));
+							processed = 0;
+							start = System.currentTimeMillis();
+						} else {
+							processed++;
+						}
+						if (contentType != null && contentType.equals(CQ_PAGE)) {
+							indexPage(new AemPage(nodeChild));
+						} else {
+							new AemObject(nodeChild);
+						}
+					}
+					if (nodeChild.hasNodes()) {
+						getNode(nodeChild, totalPages);
 					}
 				}
-				if (nodeChild.hasNodes()) {
-					getNode(nodeChild);
-				}
 			}
+
+		} catch (RepositoryException e) {
+			logger.error(e.getMessage(), e);
 		}
+	}
+
+	public static boolean isCTDIntoMapping(String contentTypeName, IHandlerConfiguration config) {
+		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
+		TurCTDMappingMap mappings = mappingDefinitions.getMappingDefinitions();
+		CTDMappings ctdMappings = mappings.get(contentTypeName);
+		return ctdMappings != null;
+
 	}
 
 	private static List<TurAttrDef> prepareAttributeDefs(AemObject aemObject, IHandlerConfiguration config,
@@ -220,8 +274,8 @@ public class TurAEMIndexerTool {
 		}
 	}
 
-	private boolean hasContentType(Node nodeChild)
+	private static boolean hasContentType(Node nodeChild, String primaryType)
 			throws ValueFormatException, RepositoryException, PathNotFoundException {
-		return contentType != null && nodeChild.getProperty("jcr:primaryType").getString().equals(contentType);
+		return primaryType != null && nodeChild.getProperty("jcr:primaryType").getString().equals(primaryType);
 	}
 }

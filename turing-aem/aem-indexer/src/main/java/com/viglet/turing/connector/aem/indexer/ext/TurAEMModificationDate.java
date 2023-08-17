@@ -23,7 +23,7 @@ public class TurAEMModificationDate implements ExtAttributeInterface {
 		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 		df.setTimeZone(tz);
 		
-		return TurMultiValue.singleItem(aemObject.getLastModified() != null ? df.format(aemObject.getCreatedDate().getTime()) : null);
+		return TurMultiValue.singleItem(aemObject.getCreatedDate() != null ? df.format(aemObject.getCreatedDate().getTime()) : null);
 
 	}
 }

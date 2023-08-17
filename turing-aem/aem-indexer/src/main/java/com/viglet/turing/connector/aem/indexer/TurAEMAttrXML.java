@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.jcr.Property;
-import javax.jcr.RepositoryException;
-import javax.jcr.ValueFormatException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,9 +65,8 @@ public class TurAEMAttrXML {
 		}
 	}
 
-	private static boolean hasJcrPropertyValue(Property jcrProperty) throws ValueFormatException, RepositoryException {
-		return jcrProperty != null && jcrProperty.getValue() != null
-				&& jcrProperty.getValue().toString().trim().length() > 0;
+	private static boolean hasJcrPropertyValue(Property jcrProperty) {
+		return jcrProperty != null && AemObject.getPropertyValue(jcrProperty) != null;
 	}
 
 }

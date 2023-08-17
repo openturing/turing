@@ -49,11 +49,16 @@ public class AemObject {
 		}
 	}
 
-	public static String getPropertyValue(Property property) throws RepositoryException, ValueFormatException {
-		if (property.isMultiple())
-			return property.getValues().length > 0 ? property.getValues()[0].getString() : "";
-		else
-			return property.getValue().getString();
+	public static String getPropertyValue(Property property) {
+		try {
+			if (property.isMultiple())
+				return property.getValues().length > 0 ? property.getValues()[0].getString() : "";
+			else
+				return property.getValue().getString();
+		} catch (IllegalStateException | RepositoryException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return null;
 	}
 	public static String getJcrPropertyValue(Node node, String propertyName)
 			throws RepositoryException, ValueFormatException, PathNotFoundException {
