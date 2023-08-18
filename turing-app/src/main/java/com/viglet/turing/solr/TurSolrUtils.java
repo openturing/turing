@@ -20,25 +20,60 @@
  */
 package com.viglet.turing.solr;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.solr.common.SolrDocument;
-
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.se.result.TurSEResult;
 
 public class TurSolrUtils {
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
-    private TurSolrUtils() {
-        throw new IllegalStateException("Solr Utility class");
-    }
+	private TurSolrUtils() {
+		throw new IllegalStateException("Solr Utility class");
+	}
 
-    public static TurSEResult createTurSEResultFromDocument(SolrDocument document) {
-        TurSEResult turSEResult = new TurSEResult();
-        document.getFieldNames()
-                .forEach(attribute -> turSEResult.getFields().put(attribute, document.getFieldValue(attribute)));
-        return turSEResult;
-    }
-    
-    public static int firstRowPositionFromCurrentPage(TurSEParameters turSEParameters) {
+	public static void createCore(String solrUrl, String name, String instanceDir, String configSet) {
+		String json = """
+					{
+				    "create": [
+				        {
+				            "name": "%s",
+				            "instanceDir": "%s",
+				            "configSet": "%s"
+				        }
+				    ]
+				}
+				""";
+		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+
+		HttpRequest request = HttpRequest.newBuilder()
+				.uri(URI.create(String.format("http://%s:8983/api/cores", solrUrl)))
+				.POST(BodyPublishers.ofString(String.format(json, name, instanceDir, configSet)))
+				.setHeader("Content-Type", "application/json").build();
+
+		try {
+			client.send(request, HttpResponse.BodyHandlers.ofString());
+		} catch (IOException | InterruptedException e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
+
+	public static TurSEResult createTurSEResultFromDocument(SolrDocument document) {
+		TurSEResult turSEResult = new TurSEResult();
+		document.getFieldNames()
+				.forEach(attribute -> turSEResult.getFields().put(attribute, document.getFieldValue(attribute)));
+		return turSEResult;
+	}
+
+	public static int firstRowPositionFromCurrentPage(TurSEParameters turSEParameters) {
 		return (turSEParameters.getCurrentPage() * turSEParameters.getRows()) - turSEParameters.getRows();
 	}
 
