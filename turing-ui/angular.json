@@ -23,9 +23,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "allowedCommonJsDependencies": [
-              "@primer/octicons"
-            ],
+            "allowedCommonJsDependencies": ["@primer/octicons"],
             "baseHref": "/console/",
             "outputPath": "../turing-app/src/main/resources/public/console",
             "index": "projects/console/src/index.html",
@@ -37,9 +35,7 @@
               "projects/console/src/favicon.ico",
               "projects/console/src/assets"
             ],
-            "styles": [
-              "projects/console/src/styles.scss"
-            ],
+            "styles": ["projects/console/src/styles.scss"],
             "scripts": []
           },
           "configurations": {
@@ -105,9 +101,7 @@
               "projects/console/src/favicon.ico",
               "projects/console/src/assets"
             ],
-            "styles": [
-              "projects/console/src/styles.scss"
-            ],
+            "styles": ["projects/console/src/styles.scss"],
             "scripts": []
           }
         }
@@ -130,9 +124,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "allowedCommonJsDependencies": [
-              "@primer/octicons"
-            ],
+            "allowedCommonJsDependencies": ["@primer/octicons"],
             "baseHref": "/sn/templates/",
             "outputPath": "../turing-app/src/main/resources/public/sn/templates",
             "index": "projects/sn/src/index.html",
@@ -140,13 +132,8 @@
             "polyfills": "projects/sn/src/polyfills.ts",
             "tsConfig": "projects/sn/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-            "assets": [
-              "projects/sn/src/favicon.ico",
-              "projects/sn/src/assets"
-            ],
-            "styles": [
-              "projects/sn/src/styles.scss"
-            ],
+            "assets": ["projects/sn/src/favicon.ico", "projects/sn/src/assets"],
+            "styles": ["projects/sn/src/styles.scss"],
             "scripts": []
           },
           "configurations": {
@@ -208,13 +195,8 @@
             "tsConfig": "projects/sn/tsconfig.spec.json",
             "karmaConfig": "projects/sn/karma.conf.js",
             "inlineStyleLanguage": "scss",
-            "assets": [
-              "projects/sn/src/favicon.ico",
-              "projects/sn/src/assets"
-            ],
-            "styles": [
-              "projects/sn/src/styles.scss"
-            ],
+            "assets": ["projects/sn/src/favicon.ico", "projects/sn/src/assets"],
+            "styles": ["projects/sn/src/styles.scss"],
             "scripts": []
           }
         }
@@ -237,9 +219,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "allowedCommonJsDependencies": [
-              "@primer/octicons"
-            ],
+            "allowedCommonJsDependencies": ["@primer/octicons"],
             "baseHref": "/welcome/",
             "outputPath": "../turing-app/src/main/resources/public/welcome",
             "index": "projects/welcome/src/index.html",
@@ -251,9 +231,7 @@
               "projects/welcome/src/favicon.ico",
               "projects/welcome/src/assets"
             ],
-            "styles": [
-              "projects/welcome/src/styles.scss"
-            ],
+            "styles": ["projects/welcome/src/styles.scss"],
             "scripts": []
           },
           "configurations": {
@@ -319,9 +297,7 @@
               "projects/welcome/src/favicon.ico",
               "projects/welcome/src/assets"
             ],
-            "styles": [
-              "projects/welcome/src/styles.scss"
-            ],
+            "styles": ["projects/welcome/src/styles.scss"],
             "scripts": []
           }
         }
@@ -344,9 +320,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "allowedCommonJsDependencies": [
-              "@primer/octicons"
-            ],
+            "allowedCommonJsDependencies": ["@primer/octicons"],
             "baseHref": "/converse/",
             "outputPath": "../turing-app/src/main/resources/public/converse",
             "index": "projects/converse/src/index.html",
@@ -358,9 +332,7 @@
               "projects/converse/src/favicon.ico",
               "projects/converse/src/assets"
             ],
-            "styles": [
-              "projects/converse/src/styles.scss"
-            ],
+            "styles": ["projects/converse/src/styles.scss"],
             "scripts": []
           },
           "configurations": {
@@ -426,9 +398,7 @@
               "projects/converse/src/favicon.ico",
               "projects/converse/src/assets"
             ],
-            "styles": [
-              "projects/converse/src/styles.scss"
-            ],
+            "styles": ["projects/converse/src/styles.scss"],
             "scripts": []
           }
         }
@@ -461,6 +431,107 @@
             "main": "projects/angular-octicons/src/test.ts",
             "tsConfig": "projects/angular-octicons/tsconfig.spec.json",
             "karmaConfig": "projects/angular-octicons/karma.conf.js"
+          }
+        }
+      }
+    },
+    "cloud": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        },
+        "@schematics/angular:application": {
+          "strict": true
+        }
+      },
+      "root": "projects/cloud",
+      "sourceRoot": "projects/cloud/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "allowedCommonJsDependencies": ["@primer/octicons"],
+            "baseHref": "/cloud/",
+            "outputPath": "../turing-app/src/main/resources/public/cloud",
+            "index": "projects/cloud/src/index.html",
+            "main": "projects/cloud/src/main.ts",
+            "polyfills": "projects/cloud/src/polyfills.ts",
+            "tsConfig": "projects/cloud/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "projects/cloud/src/favicon.ico",
+              "projects/cloud/src/assets"
+            ],
+            "styles": ["projects/cloud/src/styles.scss"],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "10mb",
+                  "maximumError": "10mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "projects/cloud/src/environments/environment.ts",
+                  "with": "projects/cloud/src/environments/environment.prod.ts"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "cloud:build:production"
+            },
+            "development": {
+              "browserTarget": "cloud:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "cloud:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/cloud/src/test.ts",
+            "polyfills": "projects/cloud/src/polyfills.ts",
+            "tsConfig": "projects/cloud/tsconfig.spec.json",
+            "karmaConfig": "projects/cloud/karma.conf.js",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "projects/cloud/src/favicon.ico",
+              "projects/cloud/src/assets"
+            ],
+            "styles": ["projects/cloud/src/styles.scss"],
+            "scripts": []
           }
         }
       }
