@@ -7,6 +7,8 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { FormsModule } from '@angular/forms';
 import { TurLoginModule } from './login/login.module';
+import { TurSignupModule } from './signup/signup.module';
+import { TurPasswordResetModule } from './password-reset/password-reset.module';
 
 @NgModule({
   declarations: [
@@ -19,7 +21,9 @@ import { TurLoginModule } from './login/login.module';
     HttpClientModule,
     MomentModule,
     FormsModule,
-    TurLoginModule
+    TurLoginModule,
+    TurSignupModule,
+    TurPasswordResetModule
   ],
   providers: [
   ],
