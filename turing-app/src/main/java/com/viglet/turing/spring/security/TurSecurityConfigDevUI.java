@@ -28,8 +28,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -39,16 +37,14 @@ public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http.headers().frameOptions().disable().cacheControl().disable();
-		http.httpBasic().authenticationEntryPoint(turAuthenticationEntryPoint).and().authorizeRequests()
-				.antMatchers("/index.html", "/welcome/**", "/", "/assets/**", "/swagger-resources/**", "/h2/**",
-						"/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
-						"/browserconfig.xml", "/console/**")
-				.permitAll().anyRequest().authenticated().and()
-				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf().ignoringAntMatchers("/api/sn/**")
-				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
-		http.csrf().disable();
-		http.cors();
+		http.headers(header -> header.frameOptions(
+				frameOptions -> frameOptions.disable().cacheControl(cacheControl -> cacheControl.disable())));
+		http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
+				.authorizeHttpRequests(authorizeRequests -> authorizeRequests.anyRequest().authenticated()
+						.requestMatchers("/index.html", "/welcome/**", "/", "/assets/**", "/swagger-resources/**",
+								"/h2/**", "/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png",
+								"/manifest.json", "/browserconfig.xml", "/console/**"))
+				.csrf(csrf -> csrf.disable());
 		return http.build();
 	}
 

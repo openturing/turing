@@ -25,9 +25,6 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
 import com.viglet.turing.console.TurConsole;
-import org.apache.activemq.broker.BrokerService;
-import org.apache.activemq.store.PersistenceAdapter;
-import org.apache.activemq.store.kahadb.KahaDBPersistenceAdapter;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -38,8 +35,6 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.web.filter.CharacterEncodingFilter;
-
-import java.io.File;
 
 @SpringBootApplication
 @EnableJms
@@ -59,7 +54,7 @@ public class TuringAI {
 	}
 
 	@Bean
-	public FilterRegistrationBean<CharacterEncodingFilter> filterRegistrationBean() {
+	FilterRegistrationBean<CharacterEncodingFilter> filterRegistrationBean() {
 		FilterRegistrationBean<CharacterEncodingFilter> registrationBean = new FilterRegistrationBean<>();
 		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
 		characterEncodingFilter.setForceEncoding(true);
@@ -69,33 +64,8 @@ public class TuringAI {
 	}
 
 	@Bean
-	public Module hibernate5Module() {
+	Module hibernate5Module() {
 		return new Hibernate5Module();
 	}
 
-	@Bean(initMethod = "start", destroyMethod = "stop")
-	public BrokerService broker() throws Exception {
-		final BrokerService broker = new BrokerService();
-		broker.addConnector("vm://localhost");
-		PersistenceAdapter persistenceAdapter = new KahaDBPersistenceAdapter();
-
-		File userDir = new File(System.getProperty("user.dir"));
-		File queueDir = null;
-		if (userDir.exists() && userDir.isDirectory()) {
-			queueDir = new File(userDir.getAbsolutePath().concat(File.separator + "store" + File.separator + "queue"));
-			if (!queueDir.exists()) {
-				queueDir.mkdirs();
-			}
-
-		} else {
-			queueDir = new File(System.getProperty("user.home") + File.separator + "turing-queue");
-			if (!queueDir.exists()) {
-				queueDir.mkdirs();
-			}
-		}
-		persistenceAdapter.setDirectory(queueDir);
-		broker.setPersistenceAdapter(persistenceAdapter);
-		broker.setPersistent(true);
-		return broker;
-	}
 }

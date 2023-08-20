@@ -21,9 +21,9 @@
 package com.viglet.turing.persistence.model.se;
 
 import java.io.Serializable;
-import javax.persistence.*;
+import jakarta.persistence.*;
 
-import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UuidGenerator;
 
 /**
  * The persistent class for the vigServices database table.
@@ -36,8 +36,7 @@ public class TurSEInstance implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
-	@GeneratedValue(generator = "UUID")
+	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

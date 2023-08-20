@@ -24,9 +24,9 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.*;
+import org.hibernate.annotations.UuidGenerator;
 
-import org.hibernate.annotations.GenericGenerator;
+import jakarta.persistence.*;
 
 /**
  * The persistent class for the TurGroup database table.
@@ -38,9 +38,7 @@ public class TurGroup implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
-	@GeneratedValue(generator = "UUID")
-
+	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
