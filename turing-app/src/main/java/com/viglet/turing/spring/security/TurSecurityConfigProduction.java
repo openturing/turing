@@ -55,10 +55,10 @@ public class TurSecurityConfigProduction {
 		http.httpBasic().authenticationEntryPoint(turAuthenticationEntryPoint).and().authorizeRequests()
 				.antMatchers("/index.html", "/welcome/**", "/", "/assets/**", "/swagger-resources/**", "/h2/**",
 						"/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
-						"/browserconfig.xml", "/console/**")
+						"/browserconfig.xml", "/console/**", "/api/user/**")
 				.permitAll().anyRequest().authenticated().and()
 				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf()
-				.ignoringAntMatchers("/api/sn/**", "/api/nlp/**")
+				.ignoringAntMatchers("/api/sn/**", "/api/nlp/**", "/api/user/**")
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
 		http.cors();
 		return http.build();

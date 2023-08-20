@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { TurLoginModule } from './login/login.module';
 import { TurSignupModule } from './signup/signup.module';
 import { TurPasswordResetModule } from './password-reset/password-reset.module';
+import { TurSignupService } from './_services/signup.service';
 
 @NgModule({
   declarations: [
@@ -26,6 +27,7 @@ import { TurPasswordResetModule } from './password-reset/password-reset.module';
     TurPasswordResetModule
   ],
   providers: [
+    TurSignupService
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent]

@@ -1,9 +1,11 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
-import { first } from 'rxjs/operators';
-
-import { AuthenticationService } from '../../_services';
+import { TurSignupService } from '../../_services/signup.service';
+import { User } from '../../_models/user';
+//import { NotifierService } from 'angular-notifier';
+import { Observable } from 'rxjs';
+import { UserService } from '../../_services';
 
 @Component({ templateUrl: 'signup-page.component.html' })
 export class TurSignupPageComponent implements OnInit {
@@ -11,30 +13,26 @@ export class TurSignupPageComponent implements OnInit {
   loading = false;
   submitted = false;
   returnUrl!: string;
+  private user: Observable<User>;
   error = '';
 
   constructor(
+   // private readonly notifier: NotifierService,
     private formBuilder: UntypedFormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private authenticationService: AuthenticationService
+    private signupService: TurSignupService,
+    private userService: UserService
   ) {
-    // redirect to home if already logged in
-    console.log(this.authenticationService.userValue.authdata);
-    if (this.authenticationService.userValue && this.authenticationService.userValue.authdata ) {
-
-      window.location.href = '/console';
-    }
+    this.user = this.userService.getStructure();
   }
 
   ngOnInit() {
     this.loginForm = this.formBuilder.group({
+      email: ['', Validators.required],
       username: ['', Validators.required],
       password: ['', Validators.required]
     });
-
-    // get return url from route parameters or default to '/'
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/console';
   }
 
   // convenience getter for easy access to form fields
@@ -49,15 +47,23 @@ export class TurSignupPageComponent implements OnInit {
     }
 
     this.loading = true;
-    this.authenticationService.login(this.f.username.value, this.f.password.value)
-      .pipe(first())
-      .subscribe(
-        data => {
-          window.location.href = this.returnUrl;
-        },
-        error => {
-          this.error = error;
-          this.loading = false;
-        });
+
+  }
+
+  getUser(): Observable<User> {
+    return this.user;
+  }
+
+  public save(_user: User) {
+    this.signupService.signup(_user).subscribe(
+      (user: User) => {
+        this.router.navigate(['/welcome']);
+      },
+      response => {
+       // this.notifier.notify("error", "SN site was error: " + response);
+      },
+      () => {
+        // console.log('The POST observable is now completed.');
+      });
   }
 }

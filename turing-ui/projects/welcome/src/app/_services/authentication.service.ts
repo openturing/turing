@@ -25,8 +25,6 @@ export class AuthenticationService {
     }
 
     login(username: string, password: string) {
-      console.log(username);
-      console.log(password);
         const headers = new HttpHeaders({
             authorization : 'Basic ' + btoa(username + ':' + password)
         } );

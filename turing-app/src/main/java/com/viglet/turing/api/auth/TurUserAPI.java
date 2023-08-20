@@ -126,14 +126,12 @@ public class TurUserAPI {
 		return true;
 	}
 
-	@PostMapping("/{username}")
-	public TurUser turUserAdd(@PathVariable String username, @RequestBody TurUser turUser) {
+	@PostMapping
+	public TurUser turUserAdd(@RequestBody TurUser turUser) {
 		if (turUser.getPassword() != null && turUser.getPassword().trim().length() > 0) {
 			turUser.setPassword(passwordEncoder.encode(turUser.getPassword()));
+			turUserRepository.save(turUser);
 		}
-
-		turUserRepository.save(turUser);
-
 		return turUser;
 	}
 
