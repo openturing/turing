@@ -47,23 +47,14 @@ export class TurSignupPageComponent implements OnInit {
     }
 
     this.loading = true;
-
-  }
-
-  getUser(): Observable<User> {
-    return this.user;
-  }
-
-  public save(_user: User) {
-    this.signupService.signup(_user).subscribe(
-      (user: User) => {
-        this.router.navigate(['/welcome']);
+    this.signupService.signup(this.f.email.value, this.f.username.value, this.f.password.value)
+    .subscribe(
+      data => {
+        window.location.href = '/welcome';
       },
-      response => {
-       // this.notifier.notify("error", "SN site was error: " + response);
-      },
-      () => {
-        // console.log('The POST observable is now completed.');
+      error => {
+        this.error = error;
+        this.loading = false;
       });
   }
 }

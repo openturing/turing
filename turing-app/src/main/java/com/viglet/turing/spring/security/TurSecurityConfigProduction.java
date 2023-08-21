@@ -60,16 +60,16 @@ public class TurSecurityConfigProduction {
 				.authorizeHttpRequests(authorizeRequests -> {
 					authorizeRequests.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
 							mvc.pattern("/"), mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
-							mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"),
-							mvc.pattern("/api/sn/**"), mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"),
-							mvc.pattern("/manifest.json"), mvc.pattern("/browserconfig.xml"),
-							mvc.pattern("/console/**")).permitAll();
+							mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
+							mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
+							mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"),
+							mvc.pattern("/api/v2/guest/**")).permitAll();
 					authorizeRequests.anyRequest().authenticated();
 
 				}).addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class)
 				.csrf(csrf -> csrf
 						.ignoringRequestMatchers(mvc.pattern("/api/sn/**"), mvc.pattern("/api/nlp/**"),
-								mvc.pattern("/api/user/**"))
+								mvc.pattern("/api/v2/guest/**"))
 						.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
 
 		return http.build();

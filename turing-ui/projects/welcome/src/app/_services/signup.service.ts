@@ -17,16 +17,29 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { User } from '../_models/user';
+import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 
 @Injectable()
 export class TurSignupService {
-  constructor(private httpClient: HttpClient) { }
+  private userSubject: BehaviorSubject<User>;
+  constructor(private httpClient: HttpClient) {
+    this.userSubject = new BehaviorSubject<User>(JSON.parse("{}"));
+  }
 
-  public signup(user: User): Observable<User> {
-    return this.httpClient.post<User>(`${environment.apiUrl}/api/v2/user`,
-      JSON.stringify(user));
+  signup(email: string, username: string, password: string) {
+
+    const formData = new FormData();
+    formData.append('email', email)
+    formData.append('username', username);
+    formData.append('password', password);
+
+    return this.httpClient.post<any>(`${environment.apiUrl}/api/v2/guest/signup`, formData)
+      .pipe(map(user => {
+        this.userSubject.next(user);
+        return user;
+      }));
   }
 }

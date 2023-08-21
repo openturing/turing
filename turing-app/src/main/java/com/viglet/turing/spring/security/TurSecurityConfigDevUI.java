@@ -25,9 +25,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.Scope;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 @Configuration
 @EnableWebSecurity
@@ -36,16 +39,26 @@ import org.springframework.security.web.SecurityFilterChain;
 public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
 
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
 		http.headers(header -> header.frameOptions(
 				frameOptions -> frameOptions.disable().cacheControl(cacheControl -> cacheControl.disable())));
 		http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
-				.authorizeHttpRequests(authorizeRequests -> authorizeRequests.anyRequest().authenticated()
-						.requestMatchers("/index.html", "/welcome/**", "/", "/assets/**", "/swagger-resources/**",
-								"/h2/**", "/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png",
-								"/manifest.json", "/browserconfig.xml", "/console/**"))
-				.csrf(csrf -> csrf.disable());
+				.authorizeHttpRequests(authorizeRequests -> {
+					authorizeRequests.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
+							mvc.pattern("/"), mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
+							mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
+							mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
+							mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"),
+							mvc.pattern("/api/v2/guest/**")).permitAll();
+					authorizeRequests.anyRequest().authenticated();
+				}).csrf(csrf -> csrf.disable()).cors(cors -> cors.disable());
 		return http.build();
+	}
+
+	@Scope("prototype")
+	@Bean
+	MvcRequestMatcher.Builder mvc(HandlerMappingIntrospector introspector) {
+		return new MvcRequestMatcher.Builder(introspector);
 	}
 
 }

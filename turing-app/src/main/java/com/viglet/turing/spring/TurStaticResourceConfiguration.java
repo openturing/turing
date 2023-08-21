@@ -54,7 +54,7 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 	public void configurePathMatch(PathMatchConfigurer configurer) {
 		configurer.setUseTrailingSlashMatch(true);
 	}
-	 
+
 	@Override
 	public void addViewControllers(ViewControllerRegistry registry) {
 		registry.addViewController("/console").setViewName("forward:/console/index.html");
@@ -83,6 +83,15 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 								: new ClassPathResource("/public/console/index.html");
 					}
 				});
+		registry.addResourceHandler("/welcome/**").addResourceLocations("classpath:/public/welcome/")
+				.resourceChain(true).addResolver(new PathResourceResolver() {
+					@Override
+					protected Resource getResource(String resourcePath, Resource location) throws IOException {
+						Resource requestedResource = location.createRelative(resourcePath);
 
+						return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
+								: new ClassPathResource("/public/welcome/index.html");
+					}
+				});
 	}
 }
