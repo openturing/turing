@@ -33,7 +33,7 @@
     "num2fraction": "1.2.2",
     "rxjs": "7.4.0",
     "sass": "^1.58.3",
-    "tslib": "2.6.1",
+    "tslib": "2.6.2",
     "zone.js": "~0.13.1"
   },
   "devDependencies": {
