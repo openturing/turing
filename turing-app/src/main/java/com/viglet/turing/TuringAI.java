@@ -22,7 +22,7 @@
 package com.viglet.turing;
 
 import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
 import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
 import com.viglet.turing.console.TurConsole;
 import org.springframework.boot.Banner;
@@ -65,7 +65,7 @@ public class TuringAI {
 
 	@Bean
 	Module hibernate5Module() {
-		return new Hibernate5Module();
+		return new Hibernate5JakartaModule();
 	}
 
 }

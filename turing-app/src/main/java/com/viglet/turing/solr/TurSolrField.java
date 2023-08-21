@@ -105,7 +105,7 @@ public class TurSolrField {
 		}
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "unchecked" })
 	public static Object[] convertFieldToArray(Object attrValue) {
 		if (attrValue instanceof String stringValue) {
 			return new String[] { stringValue };
