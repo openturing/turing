@@ -27,12 +27,13 @@ import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
+import com.viglet.turing.properties.TurConfigProperties;
+
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.lang.invoke.MethodHandles;
@@ -61,9 +62,10 @@ public class TurSolrInstanceProcess {
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
 	private TurSolrCache turSolrCache;
-	@Value("${turing.solr.timeout:30000}")
-	private int solrTimeout;
-	
+
+	@Autowired
+	private TurConfigProperties turConfigProperties;
+
 	private Optional<TurSolrInstance> getSolrClient(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
 		return getSolrClient(turSNSite.getTurSEInstance(), turSNSiteLocale.getCore());
 	}
@@ -73,7 +75,8 @@ public class TurSolrInstanceProcess {
 				core);
 		if (turSolrCache.isSolrCoreExists(urlString)) {
 			HttpSolrClient httpSolrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
-					.withConnectionTimeout(solrTimeout).withSocketTimeout(solrTimeout).build();
+					.withConnectionTimeout(turConfigProperties.getSolr().getTimeout())
+					.withSocketTimeout(turConfigProperties.getSolr().getTimeout()).build();
 			try {
 				return Optional.of(new TurSolrInstance(closeableHttpClient, httpSolrClient, new URL(urlString), core));
 			} catch (MalformedURLException e) {

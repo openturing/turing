@@ -81,7 +81,6 @@ public class TurSNSiteAPI {
 	private TurSolrInstanceProcess turSolrInstanceProcess;
 	@Autowired
 	private TurSolr turSolr;
-
 	@Operation(summary = "Semantic Navigation Site List")
 	@GetMapping
 	public List<TurSNSite> turSNSiteList() {

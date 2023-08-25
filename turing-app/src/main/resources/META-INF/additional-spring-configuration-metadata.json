@@ -6,8 +6,12 @@
   },
   {
     "name": "turing.solr.timeout",
-    "type": "java.lang.String",
+    "type": "java.lang.Integer",
     "description": "A description for 'turing.solr.timeout'"
+  },
+  {
+    "name": "turing.cloud",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'turing.cloud'"
   }
-]
-}
+]}
