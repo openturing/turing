@@ -149,13 +149,12 @@ public class TurSNSiteAPI {
 	@PostMapping
 	public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite) {
 		turSNSiteRepository.save(turSNSite);
-		turSNTemplate.defaultSNUI(turSNSite);
-		turSNTemplate.createSEFields(turSNSite);
-		turSNTemplate.createLocale(turSNSite);
+		turSNTemplate.createSNSite(turSNSite);
 		return turSNSite;
 
 	}
 
+	
 	@ResponseBody
 	@GetMapping(value = "/export", produces = "application/zip")
 	public StreamingResponseBody turSNSiteExport(HttpServletResponse response) {

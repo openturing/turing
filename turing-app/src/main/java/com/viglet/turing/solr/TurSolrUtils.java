@@ -55,7 +55,7 @@ public class TurSolrUtils {
 		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
 
 		HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create(String.format("http://%s:8983/api/cores", solrUrl)))
+				.uri(URI.create(String.format("%s/api/cores", solrUrl)))
 				.POST(BodyPublishers.ofString(String.format(json, name, instanceDir, configSet)))
 				.setHeader("Content-Type", "application/json").build();
 

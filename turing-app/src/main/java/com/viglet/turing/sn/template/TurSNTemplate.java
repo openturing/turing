@@ -23,6 +23,7 @@ package com.viglet.turing.sn.template;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
@@ -34,6 +35,7 @@ import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocume
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
+import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -44,10 +46,14 @@ import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightR
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.sn.TurSNFieldType;
+import com.viglet.turing.solr.TurSolrUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * @author Alexandre Oliveira
@@ -76,7 +82,16 @@ public class TurSNTemplate {
 	private TurSNSiteMergeProvidersRepository turSNSiteMergeRepository;
 	@Autowired
 	private TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository;
+	@Autowired
+	private TurSEInstanceRepository turSEInstanceRepository;
+	public void createSNSite(TurSNSite turSNSite) {
+		String sorlCoreName = createSolrCore(turSNSite);
+		defaultSNUI(turSNSite);
+		createSEFields(turSNSite);
+		createLocale(turSNSite, sorlCoreName);
+	}
 
+	
 	public void defaultSNUI(TurSNSite turSNSite) {
 		turSNSite.setRowsPerPage(10);
 		turSNSite.setFacet(1);
@@ -95,7 +110,19 @@ public class TurSNTemplate {
 		turSNSite.setDefaultImageField("image");
 		turSNSite.setDefaultURLField("url");
 	}
-
+	
+	public String createSolrCore(TurSNSite turSNSite) {
+		String coreName = UUID.randomUUID().toString();
+		Optional<TurSEInstance> turSEInstance = turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId());
+		turSEInstance.ifPresent(instance -> {
+			String solrURL = String.format("http://%s:%s", instance.getHost(), instance.getPort());
+			TurSolrUtils.createCore(solrURL, coreName, coreName, "en");
+		});
+		//String solrURL = String.format("http://%s:%s", turSNSite.getTurSEInstance().getHost(), turSNSite.getTurSEInstance().getPort());
+		
+		return coreName;
+	}
+	
 	public void createNERFields(TurSNSite turSNSite) {
 		TurSNSiteFieldExt turSNSiteFieldExt;
 		TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName("PN");
@@ -194,11 +221,11 @@ public class TurSNTemplate {
 		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm2);
 	}
 
-	public TurSNSiteLocale createLocale(TurSNSite turSNSite) {
+	public TurSNSiteLocale createLocale(TurSNSite turSNSite, String coreName) {
 
 		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
 		turSNSiteLocale.setLanguage(TurLocaleRepository.EN_US);
-		turSNSiteLocale.setCore("turing");
+		turSNSiteLocale.setCore(coreName);
 		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
 		turSNSiteLocale.setTurSNSite(turSNSite);
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
