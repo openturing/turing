@@ -32,7 +32,7 @@
     "ngx-smart-modal": "14.0.2",
     "num2fraction": "1.2.2",
     "rxjs": "7.4.0",
-    "sass": "^1.58.3",
+    "sass": "^1.66.1",
     "tslib": "2.6.2",
     "zone.js": "~0.13.1"
   },
