@@ -26,14 +26,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class TurAPIBean {
 
-	String product;
-
+	private String product;
+	private boolean cloud;
+	
 	public String getProduct() {
 		return product;
 	}
 
 	public void setProduct(String product) {
 		this.product = product;
+	}
+
+	public boolean isCloud() {
+		return cloud;
+	}
+
+	public void setCloud(boolean cloud) {
+		this.cloud = cloud;
 	}
 	
 }

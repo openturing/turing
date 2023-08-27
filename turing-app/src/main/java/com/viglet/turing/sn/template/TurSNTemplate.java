@@ -53,7 +53,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * @author Alexandre Oliveira
@@ -84,14 +83,14 @@ public class TurSNTemplate {
 	private TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository;
 	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
-	public void createSNSite(TurSNSite turSNSite) {
-		String sorlCoreName = createSolrCore(turSNSite);
+
+	public void createSNSite(TurSNSite turSNSite, String username, String locale) {
+
 		defaultSNUI(turSNSite);
 		createSEFields(turSNSite);
-		createLocale(turSNSite, sorlCoreName);
+		createLocale(turSNSite, username);
 	}
 
-	
 	public void defaultSNUI(TurSNSite turSNSite) {
 		turSNSite.setRowsPerPage(10);
 		turSNSite.setFacet(1);
@@ -110,19 +109,21 @@ public class TurSNTemplate {
 		turSNSite.setDefaultImageField("image");
 		turSNSite.setDefaultURLField("url");
 	}
-	
-	public String createSolrCore(TurSNSite turSNSite) {
-		String coreName = UUID.randomUUID().toString();
-		Optional<TurSEInstance> turSEInstance = turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId());
+
+	public String createSolrCore(TurSNSiteLocale turSNSiteLocale, String username) {
+		String coreName = String.format("%s_%s_%s", username,
+				turSNSiteLocale.getTurSNSite().getName().toLowerCase().replaceAll(" ", "_"),
+				turSNSiteLocale.getLanguage());
+		Optional<TurSEInstance> turSEInstance = turSEInstanceRepository
+				.findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId());
 		turSEInstance.ifPresent(instance -> {
 			String solrURL = String.format("http://%s:%s", instance.getHost(), instance.getPort());
 			TurSolrUtils.createCore(solrURL, coreName, coreName, "en");
+
 		});
-		//String solrURL = String.format("http://%s:%s", turSNSite.getTurSEInstance().getHost(), turSNSite.getTurSEInstance().getPort());
-		
 		return coreName;
 	}
-	
+
 	public void createNERFields(TurSNSite turSNSite) {
 		TurSNSiteFieldExt turSNSiteFieldExt;
 		TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName("PN");
@@ -221,13 +222,14 @@ public class TurSNTemplate {
 		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm2);
 	}
 
-	public TurSNSiteLocale createLocale(TurSNSite turSNSite, String coreName) {
+	public TurSNSiteLocale createLocale(TurSNSite turSNSite, String username) {
 
 		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
 		turSNSiteLocale.setLanguage(TurLocaleRepository.EN_US);
-		turSNSiteLocale.setCore(coreName);
 		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
+		turSNSiteLocale.setCore(createSolrCore(turSNSiteLocale, username));
 		turSNSiteLocale.setTurSNSite(turSNSite);
+
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
 
 		return turSNSiteLocale;

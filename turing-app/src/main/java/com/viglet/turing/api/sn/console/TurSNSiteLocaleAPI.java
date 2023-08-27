@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.api.sn.console;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +39,7 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.sn.template.TurSNTemplate;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,7 +58,9 @@ public class TurSNSiteLocaleAPI {
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
 	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-
+	@Autowired
+	private TurSNTemplate turSNTemplate;
+	
 	@Operation(summary = "Semantic Navigation Site Locale List")
 	@GetMapping
 	public List<TurSNSiteLocale> turSNSiteLocaleList(@PathVariable String snSiteId) {
@@ -99,11 +103,13 @@ public class TurSNSiteLocaleAPI {
 
 	@Operation(summary = "Create a Semantic Navigation Site Locale")
 	@PostMapping
-	public TurSNSiteLocale turSNSiteLocaleAdd(@RequestBody TurSNSiteLocale turSNSiteLocale) {
+	public TurSNSiteLocale turSNSiteLocaleAdd(@RequestBody TurSNSiteLocale turSNSiteLocale, Principal principal) {
 		if (turSNSiteLocale.getTurNLPInstance() != null && turSNSiteLocale.getTurNLPInstance().getId() == null) {
 			turSNSiteLocale.setTurNLPInstance(null);
 		}
+		turSNSiteLocale.setCore(turSNTemplate.createSolrCore(turSNSiteLocale, principal.getName()));
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
+		
 		return turSNSiteLocale;
 	}
 

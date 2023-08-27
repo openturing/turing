@@ -58,7 +58,7 @@ public class TurSNSiteOnStartup {
 			turSNSite.setTurSEInstance(turSEInstanceRepository.findAll().get(0));
 						
 			turSNSiteRepository.save(turSNSite);
-			turSNTemplate.createSNSite(turSNSite);
+			turSNTemplate.createSNSite(turSNSite, "admin", "en");
 		}
 	}
 

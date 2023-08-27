@@ -25,6 +25,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.viglet.turing.properties.TurConfigProperties;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
@@ -32,13 +35,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Heartbeat", description = "Heartbeat")
 public class TurAPI {
 	@Autowired
-	TurAPIBean turAPIBean;
+	private TurAPIBean turAPIBean;
+	@Autowired
+	private TurConfigProperties turConfigProperties;
 
 	@GetMapping
-	public TurAPIBean info() throws JSONException {
-
+	private TurAPIBean info() throws JSONException {
 		turAPIBean.setProduct("Viglet Turing");
-
+		turAPIBean.setCloud(turConfigProperties.isCloud());
 		return turAPIBean;
 	}
 }

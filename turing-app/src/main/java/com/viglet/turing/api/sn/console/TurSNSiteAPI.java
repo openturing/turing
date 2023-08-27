@@ -22,6 +22,7 @@
 package com.viglet.turing.api.sn.console;
 
 import java.lang.invoke.MethodHandles;
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
@@ -146,9 +147,9 @@ public class TurSNSiteAPI {
 
 	@Operation(summary = "Create a Semantic Navigation Site")
 	@PostMapping
-	public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite) {
+	public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite, Principal principal) {
 		turSNSiteRepository.save(turSNSite);
-		turSNTemplate.createSNSite(turSNSite);
+		turSNTemplate.createSNSite(turSNSite, principal.getName(), "en");
 		return turSNSite;
 
 	}
