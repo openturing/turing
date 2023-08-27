@@ -58,6 +58,7 @@ import com.viglet.turing.sn.template.TurSNTemplate;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
+import com.viglet.turing.solr.TurSolrUtils;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
@@ -82,6 +83,7 @@ public class TurSNSiteAPI {
 	private TurSolrInstanceProcess turSolrInstanceProcess;
 	@Autowired
 	private TurSolr turSolr;
+
 	@Operation(summary = "Semantic Navigation Site List")
 	@GetMapping
 	public List<TurSNSite> turSNSiteList() {
@@ -141,7 +143,14 @@ public class TurSNSiteAPI {
 	@Operation(summary = "Delete a Semantic Navigation Site")
 	@DeleteMapping("/{id}")
 	public boolean turSNSiteDelete(@PathVariable String id) {
+		Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
+		turSNSite.ifPresent(site -> {
+			turSNSiteLocaleRepository.findByTurSNSite(site).forEach(locale -> {
+				TurSolrUtils.deleteCore(site.getTurSEInstance(), locale.getCore());
+			});
+		});
 		turSNSiteRepository.delete(id);
+
 		return true;
 	}
 
@@ -154,7 +163,6 @@ public class TurSNSiteAPI {
 
 	}
 
-	
 	@ResponseBody
 	@GetMapping(value = "/export", produces = "application/zip")
 	public StreamingResponseBody turSNSiteExport(HttpServletResponse response) {

@@ -38,6 +38,7 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersFieldRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
@@ -85,7 +86,6 @@ public class TurSNTemplate {
 	private TurSEInstanceRepository turSEInstanceRepository;
 
 	public void createSNSite(TurSNSite turSNSite, String username, String locale) {
-
 		defaultSNUI(turSNSite);
 		createSEFields(turSNSite);
 		createLocale(turSNSite, username);
@@ -118,7 +118,7 @@ public class TurSNTemplate {
 				.findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId());
 		turSEInstance.ifPresent(instance -> {
 			String solrURL = String.format("http://%s:%s", instance.getHost(), instance.getPort());
-			TurSolrUtils.createCore(solrURL, coreName, coreName, "en");
+			TurSolrUtils.createCore(solrURL, coreName, "en");
 
 		});
 		return coreName;
@@ -227,8 +227,9 @@ public class TurSNTemplate {
 		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
 		turSNSiteLocale.setLanguage(TurLocaleRepository.EN_US);
 		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
-		turSNSiteLocale.setCore(createSolrCore(turSNSiteLocale, username));
 		turSNSiteLocale.setTurSNSite(turSNSite);
+		turSNSiteLocale.setCore(createSolrCore(turSNSiteLocale, username));
+
 
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
 

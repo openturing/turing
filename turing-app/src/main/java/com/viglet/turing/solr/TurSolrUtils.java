@@ -31,6 +31,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.se.result.TurSEResult;
 
 public class TurSolrUtils {
@@ -40,7 +41,27 @@ public class TurSolrUtils {
 		throw new IllegalStateException("Solr Utility class");
 	}
 
-	public static void createCore(String solrUrl, String name, String instanceDir, String configSet) {
+	public static void deleteCore(TurSEInstance turSEInstance, String coreName) {
+		String solrURL = String.format("http://%s:%s", turSEInstance.getHost(), turSEInstance.getPort());
+		TurSolrUtils.deleteCore(solrURL, coreName);
+	}
+
+	public static void deleteCore(String solrUrl, String name) {
+		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+		HttpRequest request = HttpRequest.newBuilder()
+				.uri(URI.create(String.format(
+						"%s/api/cores?action=UNLOAD&core=%s&deleteIndex=true&deleteDataDir=true&deleteInstanceDir=true",
+						solrUrl, name)))
+				.GET().setHeader("Content-Type", "application/json").build();
+
+		try {
+			client.send(request, HttpResponse.BodyHandlers.ofString());
+		} catch (IOException | InterruptedException e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
+
+	public static void createCore(String solrUrl, String name, String configSet) {
 		String json = """
 					{
 				    "create": [
@@ -54,9 +75,8 @@ public class TurSolrUtils {
 				""";
 		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
 
-		HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create(String.format("%s/api/cores", solrUrl)))
-				.POST(BodyPublishers.ofString(String.format(json, name, instanceDir, configSet)))
+		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(String.format("%s/api/cores", solrUrl)))
+				.POST(BodyPublishers.ofString(String.format(json, name, name, configSet)))
 				.setHeader("Content-Type", "application/json").build();
 
 		try {
