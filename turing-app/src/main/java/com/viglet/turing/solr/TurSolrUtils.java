@@ -61,6 +61,63 @@ public class TurSolrUtils {
 		}
 	}
 
+	public static void addField(String solrUrl, String coreName, String fieldName, String type, boolean multiValued) {
+		addOrUpdateField("replace-field", solrUrl, coreName, fieldName, type, multiValued);
+	}
+
+	public static void updateField(String solrUrl, String coreName, String fieldName, String type,
+			boolean multiValued) {
+		addOrUpdateField("add-field", solrUrl, coreName, fieldName, type, multiValued);
+	}
+
+	public static void addOrUpdateField(String action, String solrUrl, String coreName, String fieldName, String type,
+			boolean multiValued) {
+		String json = """
+					{
+				    "%s":{
+				 		"name": "%s",
+				 		"type": "%s",
+				 		"stored": true,
+				 		"multiValued": %s
+				 		}
+				 	}
+				""";
+		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+
+		HttpRequest request = HttpRequest.newBuilder()
+				.uri(URI.create(String.format("%s/solr/%s/schema", solrUrl, coreName)))
+				.POST(BodyPublishers.ofString(String.format(json, action, fieldName, type, multiValued)))
+				.setHeader("Content-Type", "application/json").build();
+
+		try {
+			client.send(request, HttpResponse.BodyHandlers.ofString());
+		} catch (IOException | InterruptedException e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
+
+	public static void deleteField(String solrUrl, String coreName, String fieldName) {
+		String json = """
+					{
+				    "delete-field":{
+				 		"name": "%s"
+				 		}
+				 	}
+				""";
+		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+
+		HttpRequest request = HttpRequest.newBuilder()
+				.uri(URI.create(String.format("%s/solr/%s/schema", solrUrl, coreName)))
+				.POST(BodyPublishers.ofString(String.format(json, fieldName)))
+				.setHeader("Content-Type", "application/json").build();
+
+		try {
+			client.send(request, HttpResponse.BodyHandlers.ofString());
+		} catch (IOException | InterruptedException e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
+
 	public static void createCore(String solrUrl, String name, String configSet) {
 		String json = """
 					{
