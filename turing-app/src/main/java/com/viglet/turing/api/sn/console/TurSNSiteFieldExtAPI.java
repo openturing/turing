@@ -64,6 +64,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.template.TurSNTemplate;
+import com.viglet.turing.solr.TurSolrUtils;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
@@ -244,7 +245,7 @@ public class TurSNSiteFieldExtAPI {
 			this.turSNSiteFieldExtRepository.save(turSNSiteFieldExtEdit);
 
 			this.updateExternalField(turSNSiteFieldExt);
-
+			TurSolrUtils.updateField(turSNSiteFieldExt.getTurSNSite().getTurSEInstance(), null, null, null, false);
 			return turSNSiteFieldExtEdit;
 		}).orElse(new TurSNSiteFieldExt());
 

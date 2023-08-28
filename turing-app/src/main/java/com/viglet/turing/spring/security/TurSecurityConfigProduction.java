@@ -40,6 +40,7 @@ import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 @Configuration
@@ -58,18 +59,22 @@ public class TurSecurityConfigProduction {
 				frameOptions -> frameOptions.disable().cacheControl(cacheControl -> cacheControl.disable())));
 		http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
 				.authorizeHttpRequests(authorizeRequests -> {
-					authorizeRequests.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
-							mvc.pattern("/"), mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
-							mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
-							mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
-							mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"),
-							mvc.pattern("/api/v2/guest/**")).permitAll();
+					authorizeRequests
+							.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"), mvc.pattern("/"),
+									mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
+									mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
+									mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
+									mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"),
+									mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**"))
+							.permitAll();
 					authorizeRequests.anyRequest().authenticated();
 
-				}).addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class)
+				}).headers(headers -> headers.frameOptions(frameOption -> frameOption.sameOrigin()))
+				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class)
+
 				.csrf(csrf -> csrf
 						.ignoringRequestMatchers(mvc.pattern("/api/sn/**"), mvc.pattern("/api/nlp/**"),
-								mvc.pattern("/api/v2/guest/**"))
+								mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**"))
 						.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
 
 		return http.build();
@@ -77,7 +82,9 @@ public class TurSecurityConfigProduction {
 
 	@Bean
 	WebSecurityCustomizer webSecurityCustomizer(MvcRequestMatcher.Builder mvc) {
-		return (web) -> web.httpFirewall(allowUrlEncodedSlaturHttpFirewall());
+		return (web) -> {
+			web.httpFirewall(allowUrlEncodedSlaturHttpFirewall()).ignoring().requestMatchers(mvc.pattern("/h2/**"));
+		};
 	}
 
 	@Scope("prototype")

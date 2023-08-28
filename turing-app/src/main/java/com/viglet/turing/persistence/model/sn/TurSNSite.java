@@ -31,6 +31,7 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UuidGenerator;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
@@ -38,6 +39,7 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import com.viglet.turing.spring.security.TurAuditable;
 
 /**
  * The persistent class for the TurSNSite database table.
@@ -47,7 +49,8 @@ import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 @Table(name = "turSNSite")
 @NamedQuery(name = "TurSNSite.findAll", query = "SELECT sns FROM TurSNSite sns")
 @JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights", "turSNSiteLocales" })
-public class TurSNSite implements Serializable {
+@EntityListeners(AuditingEntityListener.class)
+public class TurSNSite extends TurAuditable<String> implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -112,7 +115,7 @@ public class TurSNSite implements Serializable {
 
 	@Column(nullable = true)
 	private Integer spotlightWithResults;
-
+	
 	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2023 the original author or authors. 
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -42,8 +42,11 @@ public class TurSolrUtils {
 	}
 
 	public static void deleteCore(TurSEInstance turSEInstance, String coreName) {
-		String solrURL = String.format("http://%s:%s", turSEInstance.getHost(), turSEInstance.getPort());
-		TurSolrUtils.deleteCore(solrURL, coreName);
+		TurSolrUtils.deleteCore(getSolrUrl(turSEInstance), coreName);
+	}
+
+	private static String getSolrUrl(TurSEInstance turSEInstance) {
+		return String.format("http://%s:%s", turSEInstance.getHost(), turSEInstance.getPort());
 	}
 
 	public static void deleteCore(String solrUrl, String name) {
@@ -61,16 +64,16 @@ public class TurSolrUtils {
 		}
 	}
 
-	public static void addField(String solrUrl, String coreName, String fieldName, String type, boolean multiValued) {
-		addOrUpdateField("replace-field", solrUrl, coreName, fieldName, type, multiValued);
+	public static void addField(TurSEInstance turSEInstance, String coreName, String fieldName, String type, boolean multiValued) {
+		addOrUpdateField("replace-field", turSEInstance, coreName, fieldName, type, multiValued);
 	}
 
-	public static void updateField(String solrUrl, String coreName, String fieldName, String type,
+	public static void updateField(TurSEInstance turSEInstance, String coreName, String fieldName, String type,
 			boolean multiValued) {
-		addOrUpdateField("add-field", solrUrl, coreName, fieldName, type, multiValued);
+		addOrUpdateField("add-field", turSEInstance, coreName, fieldName, type, multiValued);
 	}
 
-	public static void addOrUpdateField(String action, String solrUrl, String coreName, String fieldName, String type,
+	public static void addOrUpdateField(String action, TurSEInstance turSEInstance, String coreName, String fieldName, String type,
 			boolean multiValued) {
 		String json = """
 					{
@@ -85,7 +88,7 @@ public class TurSolrUtils {
 		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
 
 		HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create(String.format("%s/solr/%s/schema", solrUrl, coreName)))
+				.uri(URI.create(String.format("%s/solr/%s/schema", getSolrUrl(turSEInstance), coreName)))
 				.POST(BodyPublishers.ofString(String.format(json, action, fieldName, type, multiValued)))
 				.setHeader("Content-Type", "application/json").build();
 
@@ -96,7 +99,7 @@ public class TurSolrUtils {
 		}
 	}
 
-	public static void deleteField(String solrUrl, String coreName, String fieldName) {
+	public static void deleteField(TurSEInstance turSEInstance, String coreName, String fieldName) {
 		String json = """
 					{
 				    "delete-field":{
@@ -107,7 +110,7 @@ public class TurSolrUtils {
 		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
 
 		HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create(String.format("%s/solr/%s/schema", solrUrl, coreName)))
+				.uri(URI.create(String.format("%s/solr/%s/schema", getSolrUrl(turSEInstance), coreName)))
 				.POST(BodyPublishers.ofString(String.format(json, fieldName)))
 				.setHeader("Content-Type", "application/json").build();
 
