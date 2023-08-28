@@ -25,14 +25,14 @@ sonarqube {
 }
 
 jar {
-    baseName = 'turing-commons'
+    archiveBaseName = 'turing-commons'
     version =  '0.3.7'
 }
 
 
 configurations {
 	localDeps
-    jar.archiveName = 'turing-commons.jar'
+    jar.archiveFileName = 'turing-commons.jar'
 }
 repositories {
 	mavenCentral()

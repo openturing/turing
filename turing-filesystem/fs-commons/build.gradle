@@ -3,10 +3,10 @@ buildscript {
 		 }
 		repositories {
 			mavenCentral()
-
+            gradlePluginPortal()
 		}
 		dependencies {
-        	classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
+        	classpath 'com.github.johnrengelman:shadow:8.1.1'
 	    }
 }
 
@@ -28,7 +28,7 @@ sonarqube {
 }
 
 jar {
-    baseName = 'turing-fs-commons'
+    archiveBaseName = 'turing-fs-commons'
     version =  '0.3.7'
      manifest {
         attributes 'Main-Class': 'com.viglet.turing.filesystem.commons.TurFileUtils'
@@ -37,7 +37,7 @@ jar {
 
 configurations {
 	localDeps
-    jar.archiveName = 'turing-fs-commons.jar'
+    jar.archiveFileName = 'turing-fs-commons.jar'
 }
 repositories {
 	mavenCentral()

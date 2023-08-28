@@ -9,7 +9,7 @@ buildscript {
 }
 
 plugins {
-  id 'com.github.johnrengelman.shadow' version "7.1.2"
+  id 'com.github.johnrengelman.shadow' version "8.1.1"
   id 'java'
   id 'eclipse'
   id "org.sonarqube" version '4.3.0.3225'
@@ -35,7 +35,7 @@ sonarqube {
 }
 
 jar {
-    baseName = 'turing-jdbc'
+    archiveBaseName = 'turing-jdbc'
     version =  '0.3.7'
     manifest {
 		attributes 'Main-Class': 'com.viglet.turing.tool.jdbc.TurJDBCImportTool'
@@ -43,8 +43,7 @@ jar {
 }
 
 shadowJar {
-   baseName = 'turing-jdbc'
-   classifier = null
+   archiveBaseName = 'turing-jdbc'
 }
 
 repositories {

@@ -29,14 +29,14 @@ sonarqube {
 }
 
 jar {
-    baseName = 'turing-nutch'
+    archiveBaseName = 'turing-nutch'
     version =  '0.3.7'
 }
 
 
 configurations {
 	localDeps
-    jar.archiveName = 'indexer-viglet-turing.jar'
+    jar.archiveFileName = 'indexer-viglet-turing.jar'
 }
 repositories {
 	mavenCentral()
