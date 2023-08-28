@@ -59,14 +59,13 @@ public class TurSecurityConfigProduction {
 				frameOptions -> frameOptions.disable().cacheControl(cacheControl -> cacheControl.disable())));
 		http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
 				.authorizeHttpRequests(authorizeRequests -> {
-					authorizeRequests
-							.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"), mvc.pattern("/"),
-									mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
-									mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
-									mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
-									mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"),
-									mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**"))
-							.permitAll();
+					authorizeRequests.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
+							mvc.pattern("/"), mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
+							mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
+							mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
+							mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"), mvc.pattern("/cloud/**"),
+							mvc.pattern("/admin/**"), mvc.pattern("/api/v2/guest/**"),
+							AntPathRequestMatcher.antMatcher("/h2/**")).permitAll();
 					authorizeRequests.anyRequest().authenticated();
 
 				}).headers(headers -> headers.frameOptions(frameOption -> frameOption.sameOrigin()))

@@ -59,6 +59,8 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 	public void addViewControllers(ViewControllerRegistry registry) {
 		registry.addViewController("/console").setViewName("forward:/console/index.html");
 		registry.addViewController("/console/").setViewName("forward:/console/index.html");
+		registry.addViewController("/cloud").setViewName("forward:/cloud/index.html");
+		registry.addViewController("/cloud/").setViewName("forward:/cloud/index.html");
 		registry.addViewController("/welcome").setViewName("forward:/welcome/index.html");
 		registry.addViewController("/welcome/").setViewName("forward:/welcome/index.html");
 		registry.addViewController("/converse").setViewName("forward:/converse/index.html");
@@ -81,6 +83,16 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 
 						return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
 								: new ClassPathResource("/public/console/index.html");
+					}
+				});
+		registry.addResourceHandler("/cloud/**").addResourceLocations("classpath:/public/cloud/").resourceChain(true)
+				.addResolver(new PathResourceResolver() {
+					@Override
+					protected Resource getResource(String resourcePath, Resource location) throws IOException {
+						Resource requestedResource = location.createRelative(resourcePath);
+
+						return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
+								: new ClassPathResource("/public/cloud/index.html");
 					}
 				});
 		registry.addResourceHandler("/welcome/**").addResourceLocations("classpath:/public/welcome/")

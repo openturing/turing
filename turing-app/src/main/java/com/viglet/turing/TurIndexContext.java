@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class TurIndexContext {
-
 	@GetMapping("/")
 	public void index(HttpServletRequest request, HttpServletResponse response, final Principal principal)
 			throws IOException {
@@ -39,6 +38,6 @@ public class TurIndexContext {
 			response.sendRedirect("/console");
 		} else {
 			response.sendRedirect("/welcome");
-		} 		
+		}
 	}
 }
