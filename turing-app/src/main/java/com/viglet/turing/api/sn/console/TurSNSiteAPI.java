@@ -53,6 +53,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNQueue;
 import com.viglet.turing.sn.template.TurSNTemplate;
 import com.viglet.turing.solr.TurSolr;
@@ -83,11 +84,17 @@ public class TurSNSiteAPI {
 	private TurSolrInstanceProcess turSolrInstanceProcess;
 	@Autowired
 	private TurSolr turSolr;
+	@Autowired
+	private TurConfigProperties turConfigProperties;
 
 	@Operation(summary = "Semantic Navigation Site List")
 	@GetMapping
-	public List<TurSNSite> turSNSiteList() {
-		return this.turSNSiteRepository.findAll();
+	public List<TurSNSite> turSNSiteList(Principal principal) {
+		if (turConfigProperties.isMultiTenant()) {
+			return this.turSNSiteRepository.findByCreatedBy(principal.getName().toLowerCase());
+		} else {
+			return this.turSNSiteRepository.findAll();
+		}
 	}
 
 	@Operation(summary = "Semantic Navigation Site structure")

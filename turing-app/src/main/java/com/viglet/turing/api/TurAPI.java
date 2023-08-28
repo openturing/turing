@@ -42,7 +42,7 @@ public class TurAPI {
 	@GetMapping
 	private TurAPIBean info() throws JSONException {
 		turAPIBean.setProduct("Viglet Turing");
-		turAPIBean.setCloud(turConfigProperties.isCloud());
+		turAPIBean.setMultiTenant(turConfigProperties.isMultiTenant());
 		return turAPIBean;
 	}
 }

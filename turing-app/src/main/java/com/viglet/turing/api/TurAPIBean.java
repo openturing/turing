@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 public class TurAPIBean {
 
 	private String product;
-	private boolean cloud;
+	private boolean multiTenant;
 	
 	public String getProduct() {
 		return product;
@@ -37,12 +37,12 @@ public class TurAPIBean {
 		this.product = product;
 	}
 
-	public boolean isCloud() {
-		return cloud;
+	public boolean isMultiTenant() {
+		return multiTenant;
 	}
 
-	public void setCloud(boolean cloud) {
-		this.cloud = cloud;
+	public void setMultiTenant(boolean multiTenant) {
+		this.multiTenant = multiTenant;
 	}
 	
 }

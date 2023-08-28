@@ -9,6 +9,6 @@ public class TurAuditorAwareImpl implements AuditorAware<String> {
 
     @Override
     public Optional<String> getCurrentAuditor() {
-        return Optional.of(((TurCustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername());
+        return Optional.of(((TurCustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername().toLowerCase());
     }
 }

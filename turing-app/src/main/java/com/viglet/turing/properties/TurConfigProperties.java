@@ -7,15 +7,11 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties("turing")
 public class TurConfigProperties {
 
-	private boolean cloud;
+	private boolean multiTenant;
 	
 	private String allowedOrigins;
 	
 	private TurSolrProperty solr;
-
-	public boolean isCloud() {
-		return cloud;
-	}
 
 	public String getAllowedOrigins() {
 		return allowedOrigins;
@@ -25,16 +21,20 @@ public class TurConfigProperties {
 		return solr;
 	}
 
-	public void setCloud(boolean cloud) {
-		this.cloud = cloud;
-	}
-
 	public void setAllowedOrigins(String allowedOrigins) {
 		this.allowedOrigins = allowedOrigins;
 	}
 
 	public void setSolr(TurSolrProperty solr) {
 		this.solr = solr;
+	}
+
+	public boolean isMultiTenant() {
+		return multiTenant;
+	}
+
+	public void setMultiTenant(boolean multiTenant) {
+		this.multiTenant = multiTenant;
 	}
 	
 	
