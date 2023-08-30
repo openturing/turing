@@ -61,6 +61,4 @@ public class TurSNSiteOnStartup {
 			turSNTemplate.createSNSite(turSNSite, "admin", "en");
 		}
 	}
-
-	
 }
