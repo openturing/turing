@@ -165,7 +165,7 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5-jakarta', version: '2.15.2'
 
     // H2
-    implementation group: 'com.h2database', name: 'h2', version: '2.2.220'
+    implementation group: 'com.h2database', name: 'h2', version: '2.2.222'
 
     // MariaDB
     implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.2.0'
