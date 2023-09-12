@@ -26,13 +26,13 @@ export class AuthenticationService {
 
   login(username: string, password: string) {
     const headers = new HttpHeaders({
-      authorization: 'Basic ' + Buffer.from(username + ':' + password, 'base64').toString('binary')
+      authorization: 'Basic ' +  window.btoa(username + ':' + password)
     });
     let userRest = new User();
     return this.http.get<TurRestInfo>(`${environment.apiUrl}/api/v2`, { headers: headers })
       .pipe(map(turRestInfo => {
         // store user details and basic auth credentials in local storage to keep user logged in between page refreshes
-        turRestInfo.authdata =  Buffer.from(username + ':' + password, 'base64').toString('binary');
+        turRestInfo.authdata =  window.btoa(username + ':' + password);
         localStorage.setItem('restInfo', JSON.stringify(turRestInfo));
 
         userRest.authdata = turRestInfo.authdata;
