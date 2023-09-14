@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { TurConsolePageComponent } from './../console/console-page.component';
+import { TurConsolePageComponent } from '../console/console-page.component';
 import {AuthGuard} from "../../../console/src/app/_helpers";
 
 const routes: Routes = [
