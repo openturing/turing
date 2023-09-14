@@ -20,26 +20,24 @@
  */
 package com.viglet.turing.persistence.model.sn;
 
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
-
-import jakarta.persistence.*;
-
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UuidGenerator;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
+import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.spring.security.TurAuditable;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * The persistent class for the TurSNSite database table.
@@ -155,6 +153,12 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteMetricAccess> turSNSiteMetricAccesses = new HashSet<>();
+
+	// bi-directional many-to-one association to turSNSiteLocales
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
+	@Cascade({ CascadeType.ALL })
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNRankingExpression> turSNRankingExpressions = new HashSet<>();
 
 	public String getId() {
 		return id;

@@ -30,6 +30,8 @@ import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
+import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingCondition;
+import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
@@ -41,13 +43,14 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersFieldRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
+import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
+import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.solr.TurSolrUtils;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -83,11 +86,16 @@ public class TurSNTemplate {
 	private TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository;
 	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
+	@Autowired
+	private TurSNRankingExpressionRepository turSNRankingExpressionRepository;
+	@Autowired
+	private TurSNRankingConditionRepository turSNRankingConditionRepository;
 
 	public void createSNSite(TurSNSite turSNSite, String username, String locale) {
 		defaultSNUI(turSNSite);
 		createSEFields(turSNSite);
 		createLocale(turSNSite, username);
+		createRankingExpression(turSNSite);
 	}
 
 	public void defaultSNUI(TurSNSite turSNSite) {
@@ -234,6 +242,31 @@ public class TurSNTemplate {
 
 		return turSNSiteLocale;
 
+	}
+
+	private TurSNRankingExpression createRankingExpression(TurSNSite turSNSite) {
+
+		TurSNRankingExpression turSNRankingExpression = new TurSNRankingExpression();
+		turSNRankingExpression.setName("Rule Sample");
+		turSNRankingExpression.setWeight(5);
+		turSNRankingExpression.setTurSNSite(turSNSite);
+		turSNRankingExpressionRepository.save(turSNRankingExpression);
+
+		TurSNRankingCondition turSNRankingCondition1 = new TurSNRankingCondition();
+		turSNRankingCondition1.setAtribute("title");
+		turSNRankingCondition1.setCondition(1);
+		turSNRankingCondition1.setValue("viglet");
+		turSNRankingCondition1.setTurSNRankingExpression(turSNRankingExpression);
+		turSNRankingConditionRepository.save(turSNRankingCondition1);
+
+		TurSNRankingCondition turSNRankingCondition2 = new TurSNRankingCondition();
+		turSNRankingCondition2.setAtribute("type");
+		turSNRankingCondition2.setCondition(1);
+		turSNRankingCondition2.setValue("News");
+		turSNRankingCondition2.setTurSNRankingExpression(turSNRankingExpression);
+		turSNRankingConditionRepository.save(turSNRankingCondition2);
+
+		return turSNRankingExpression;
 	}
 
 	public void createMergeProviders(TurSNSite turSNSite) {
