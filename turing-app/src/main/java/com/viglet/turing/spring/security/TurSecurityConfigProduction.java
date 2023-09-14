@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,16 +21,15 @@
 
 package com.viglet.turing.spring.security;
 
+import com.viglet.turing.properties.TurConfigProperties;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,70 +42,78 @@ import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 @Configuration
 @EnableWebSecurity
 @Profile("production")
 @ComponentScan(basePackageClasses = TurCustomUserDetailsService.class)
 public class TurSecurityConfigProduction {
-	@Autowired
-	private UserDetailsService userDetailsService;
-	@Autowired
-	protected TurAuthenticationEntryPoint turAuthenticationEntryPoint;
+    @Autowired
+    private UserDetailsService userDetailsService;
+    @Autowired
+    protected TurAuthenticationEntryPoint turAuthenticationEntryPoint;
+    @Autowired
+    private TurConfigProperties turConfigProperties;
 
-	@Bean
-	SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
-		http.headers(header -> header.frameOptions(
-				frameOptions -> frameOptions.disable().cacheControl(cacheControl -> cacheControl.disable())));
-		http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
-				.authorizeHttpRequests(authorizeRequests -> {
-					authorizeRequests.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
-							mvc.pattern("/"), mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
-							mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
-							mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
-							mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"), mvc.pattern("/cloud/**"),
-							mvc.pattern("/admin/**"), mvc.pattern("/api/v2/guest/**"),
-							AntPathRequestMatcher.antMatcher("/h2/**")).permitAll();
-					authorizeRequests.anyRequest().authenticated();
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
+        http.headers(header -> header.frameOptions(
+                frameOptions -> frameOptions.disable().cacheControl(HeadersConfigurer.CacheControlConfig::disable)));
+        if (turConfigProperties.isKeycloak()) {
+            http.oauth2Login(withDefaults());
+            http.authorizeHttpRequests(authorizeRequests -> authorizeRequests.anyRequest().authenticated());
+            http.cors(AbstractHttpConfigurer::disable);
+        } else {
+            http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint));
+            http.authorizeHttpRequests(authorizeRequests -> {
+                authorizeRequests.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
+                        mvc.pattern("/"), mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
+                        mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
+                        mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
+                        mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"), mvc.pattern("/cloud/**"),
+                        mvc.pattern("/admin/**"), mvc.pattern("/api/v2/guest/**"),
+                        AntPathRequestMatcher.antMatcher("/h2/**")).permitAll();
+                authorizeRequests.anyRequest().authenticated();
+            });
+            http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
+                    .addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class)
+                    .csrf(csrf -> csrf
+                            .ignoringRequestMatchers(mvc.pattern("/api/sn/**"), mvc.pattern("/api/nlp/**"),
+                                    mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**"))
+                            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+        }
+        return http.build();
+    }
 
-				}).headers(headers -> headers.frameOptions(frameOption -> frameOption.sameOrigin()))
-				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class)
+    @Bean
+    WebSecurityCustomizer webSecurityCustomizer(MvcRequestMatcher.Builder mvc) {
+        return (web) -> {
+            web.httpFirewall(allowUrlEncodedSlaturHttpFirewall()).ignoring().requestMatchers(mvc.pattern("/h2/**"));
+        };
+    }
 
-				.csrf(csrf -> csrf
-						.ignoringRequestMatchers(mvc.pattern("/api/sn/**"), mvc.pattern("/api/nlp/**"),
-								mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**"))
-						.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+    @Scope("prototype")
+    @Bean
+    MvcRequestMatcher.Builder mvc(HandlerMappingIntrospector handlerMappingIntrospector) {
+        return new MvcRequestMatcher.Builder(handlerMappingIntrospector);
+    }
 
-		return http.build();
-	}
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userDetailsService);
+    }
 
-	@Bean
-	WebSecurityCustomizer webSecurityCustomizer(MvcRequestMatcher.Builder mvc) {
-		return (web) -> {
-			web.httpFirewall(allowUrlEncodedSlaturHttpFirewall()).ignoring().requestMatchers(mvc.pattern("/h2/**"));
-		};
-	}
+    @Bean(name = "passwordEncoder")
+    PasswordEncoder passwordencoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-	@Scope("prototype")
-	@Bean
-	MvcRequestMatcher.Builder mvc(HandlerMappingIntrospector introspector) {
-		return new MvcRequestMatcher.Builder(introspector);
-	}
-
-	@Autowired
-	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-		auth.userDetailsService(userDetailsService);
-	}
-
-	@Bean(name = "passwordEncoder")
-	PasswordEncoder passwordencoder() {
-		return new BCryptPasswordEncoder();
-	}
-
-	@Bean
-	HttpFirewall allowUrlEncodedSlaturHttpFirewall() {
-		// Allow double slash in URL
-		StrictHttpFirewall firewall = new StrictHttpFirewall();
-		firewall.setAllowUrlEncodedSlash(true);
-		return firewall;
-	}
+    @Bean
+    HttpFirewall allowUrlEncodedSlaturHttpFirewall() {
+        // Allow double slash in URL
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        firewall.setAllowUrlEncodedSlash(true);
+        return firewall;
+    }
 }
