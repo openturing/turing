@@ -20,38 +20,11 @@
  */
 package com.viglet.turing.sn;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Component;
-
 import com.viglet.turing.api.sn.bean.TurSNSiteFilterQueryBean;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
-import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDefaultFieldsBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetItemBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetLabelBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchGroupBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchPaginationBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextQueryBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchWidgetBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
+import com.viglet.turing.commons.sn.bean.*;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
@@ -73,6 +46,12 @@ import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Component;
+
+import java.net.URI;
+import java.util.*;
 
 /**
  * 

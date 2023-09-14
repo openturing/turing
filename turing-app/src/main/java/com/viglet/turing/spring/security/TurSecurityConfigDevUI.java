@@ -26,8 +26,11 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
@@ -41,7 +44,7 @@ public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
 		http.headers(header -> header.frameOptions(
-				frameOptions -> frameOptions.disable().cacheControl(cacheControl -> cacheControl.disable())));
+				frameOptions -> frameOptions.disable().cacheControl(HeadersConfigurer.CacheControlConfig::disable)));
 		http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
 				.authorizeHttpRequests(authorizeRequests -> {
 					authorizeRequests.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
@@ -51,7 +54,7 @@ public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
 							mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"),
 							mvc.pattern("/api/v2/guest/**")).permitAll();
 					authorizeRequests.anyRequest().authenticated();
-				}).csrf(csrf -> csrf.disable()).cors(cors -> cors.disable());
+				}).csrf(AbstractHttpConfigurer::disable).cors(Customizer.withDefaults());
 		return http.build();
 	}
 

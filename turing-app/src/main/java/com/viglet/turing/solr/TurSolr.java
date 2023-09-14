@@ -31,6 +31,8 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
+import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
+import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.result.TurSEGenericResults;
@@ -67,6 +69,7 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Transactional
@@ -79,6 +82,10 @@ public class TurSolr {
 	private TurSNTargetingRules turSNTargetingRules;
 	@Autowired
 	private TurSNSiteFieldUtils turSNSiteFieldUtils;
+	@Autowired
+	private TurSNRankingExpressionRepository turSNRankingExpressionRepository;
+	@Autowired
+	private TurSNRankingConditionRepository turSNRankingConditionRepository;
 
 	public long getDocumentTotal(TurSolrInstance turSolrInstance) {
 		SolrQuery query = new SolrQuery();
@@ -275,6 +282,7 @@ public class TurSolr {
 		SolrQuery query = new SolrQuery();
 		query.setRequestHandler("/tur_spell");
 		query.setQuery(term.replace("\"", ""));
+
 		QueryResponse queryResponse;
 		try {
 			queryResponse = turSolrInstance.getSolrClient().query(query);
@@ -341,6 +349,7 @@ public class TurSolr {
 		if (hasGroup(turSEParameters)) {
 			prepareGroup(turSEParameters, query);
 		}
+		prepareBoostQuery(turSNSite, query);
 
 		List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = prepareQueryMLT(turSNSite, query);
 		List<TurSNSiteFieldExt> turSNSiteHlFieldExts = prepareQueryHL(turSNSite, query);
@@ -349,7 +358,19 @@ public class TurSolr {
 		return executeSolrQueryFromSN(turSolrInstance, turSNSite, turSEParameters, query, turSNSiteMLTFieldExts,
 				turSNSiteFacetFieldExts, turSNSiteHlFieldExts, turSESpellCheckResult);
 	}
+	private void prepareBoostQuery(TurSNSite turSNSite, SolrQuery query) {
 
+		turSNRankingExpressionRepository.findByTurSNSite(turSNSite).forEach(expression -> {
+			String strExpression = "(" +
+					turSNRankingConditionRepository.findByTurSNRankingExpression(expression).stream().map(condition ->
+							String.format("%s:%s", condition.getAtribute(), condition.getValue())).collect(Collectors.joining(" AND ")) +
+					")";
+			query.set("bq", strExpression);
+		});
+
+
+
+	}
 	private void prepareGroup(TurSEParameters turSEParameters, SolrQuery query) {
 
 		query.set("group", "true");

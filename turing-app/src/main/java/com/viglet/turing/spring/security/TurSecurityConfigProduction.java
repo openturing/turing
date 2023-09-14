@@ -27,6 +27,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -60,9 +61,9 @@ public class TurSecurityConfigProduction {
 		http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
 				.authorizeHttpRequests(authorizeRequests -> {
 					authorizeRequests.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
-							mvc.pattern("/"), mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
-							mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
-							mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
+							mvc.pattern("/"), AntPathRequestMatcher.antMatcher("/assets/**"), mvc.pattern("/swagger-resources/**"),
+							mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), AntPathRequestMatcher.antMatcher("/api/sn/**"),
+							AntPathRequestMatcher.antMatcher("/favicon.ico"), AntPathRequestMatcher.antMatcher("/*.png"), AntPathRequestMatcher.antMatcher("/manifest.json"),
 							mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"), mvc.pattern("/cloud/**"),
 							mvc.pattern("/admin/**"), mvc.pattern("/api/v2/guest/**"),
 							AntPathRequestMatcher.antMatcher("/h2/**")).permitAll();
@@ -72,9 +73,10 @@ public class TurSecurityConfigProduction {
 				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class)
 
 				.csrf(csrf -> csrf
-						.ignoringRequestMatchers(mvc.pattern("/api/sn/**"), mvc.pattern("/api/nlp/**"),
+						.ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/api/sn/**"), mvc.pattern("/api/nlp/**"),
 								mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**"))
-						.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+						.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+				.cors(Customizer.withDefaults());
 
 		return http.build();
 	}
