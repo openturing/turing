@@ -4,15 +4,15 @@ import { NgModule } from '@angular/core';
 import { AppRoutingModule } from './app-routing.module';
 import { HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AppComponent } from './page/app/app.component';
-import { BasicAuthInterceptor, ErrorInterceptor } from './_helpers';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NotifierModule, NotifierOptions } from "angular-notifier";
 
 import { OcticonsModule } from 'angular-octicons';
-import { TurConsolePageComponent } from './../console/console-page.component';
-import { TurCommonsModule } from './../commons/commons.module';
+import { TurConsolePageComponent } from '../console/console-page.component';
+import { TurCommonsModule } from '../commons/commons.module';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { RouterModule } from '@angular/router';
+import {BasicAuthInterceptor, ErrorInterceptor} from "../../../console/src/app/_helpers";
 
 const notifierDefaultOptions: NotifierOptions = {
   position: {

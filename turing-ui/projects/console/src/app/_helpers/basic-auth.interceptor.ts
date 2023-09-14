@@ -3,8 +3,7 @@ import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpXsrfTokenExtr
 import { Observable } from 'rxjs';
 
 import { environment } from './../../environments/environment';
-import { AuthenticationService } from './../_services';
-
+import {AuthenticationService} from "../../../../welcome/src/app/_services";
 @Injectable()
 export class BasicAuthInterceptor implements HttpInterceptor {
   constructor(private authenticationService: AuthenticationService, private xsrfTokenExtractor: HttpXsrfTokenExtractor) { }

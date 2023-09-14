@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
-import { User } from '../../../app/_models';
-import { UserService, AuthenticationService } from '../../../app/_services';
+import {User} from "../../../../../welcome/src/app/_models";
+import {AuthenticationService, UserService} from "../../../../../welcome/src/app/_services";
 
 @Component({
   selector: 'tur-header',
