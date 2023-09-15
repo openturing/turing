@@ -22,6 +22,12 @@ import { TurSNSiteMergePageComponent } from './component/site/merge/sn-site-merg
 import { TurSNSiteMetricsRootPageComponent } from './component/site/metrics/sn-site-metrics-root-page.component';
 import { TurSNSiteMetricsTopTermsPageComponent } from './component/site/metrics/sn-site-metrics-top-terms-page.component';
 import { TurSNSiteMetricsTopTermsRootPageComponent } from './component/site/metrics/sn-site-metrics-top-terms-root-page.component';
+import {
+  TurSNRankingExpressionRootPageComponent
+} from "./component/site/ranking/sn-site-ranking-expression-root-page.component";
+import {
+  TurSNRankingExpressionListPageComponent
+} from "./component/site/ranking/sn-ranking-expression-list-page.component";
 
 const routes: Routes = [
   {
@@ -42,6 +48,13 @@ const routes: Routes = [
                 ]
               },
               { path: '', redirectTo: 'top-terms', pathMatch: 'full' }
+            ]
+          },
+          {
+            path: 'ranking-expression', component: TurSNRankingExpressionRootPageComponent, canActivate: [AuthGuard],
+            children: [
+              { path: 'list', component: TurSNRankingExpressionListPageComponent, canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' }
             ]
           },
           {

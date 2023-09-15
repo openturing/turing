@@ -1,0 +1,47 @@
+<div *ngIf="(getTurSNRankingExpressions() | async) as SNRankingExpressions; else loading">
+  <div class="Subhead">
+    <div class="Subhead-heading"><span octicon="number" [size]="24" class="mr-1"></span> Result Ranking </div>
+    <div class="Subhead-description">Define content that will be featured in the term-based search.</div>
+  </div>
+  <div class="clearfix" style="padding: 5px 0px;">
+    <div class="float-left" style="flex: 1 1 auto;">
+      <input class="form-control input-sm" style="min-width: 250px;" type="text"
+        i18n-placeholder="@@FindObjectCurrentFolder" placeholder="Search rules..."
+        aria-label="Search rules..." />
+    </div>
+    <div class="float-right" style="display: inline-flex;">
+      <div class="d-flex flex-justify-end position-relative">
+        <a [routerLink]="['/sn/site', getId(), 'spotlight', 'new']" type="button" class="btn btn-primary"><span
+          octicon="number" [size]="16" class="mr-1"></span> New</a>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top: 20px;">
+    <div class="Box Box--blue">
+      <ul>
+        <li *ngFor="let SNRankingExpression of SNRankingExpressions" class="Box-row ">
+          <div class="d-flex flex-items-center">
+            <a [routerLink]="['/sn/site', getId(), 'spotlight', SNRankingExpression.id]" routerLinkActive="active" class="d-flex flex-items-center">
+              <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
+              class="float-left">
+              <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="SNRankingExpression.name | lowercase">
+                Avatar
+              </svg>
+            </div>
+              {{SNRankingExpression.name}}</a>
+          </div>
+          <div class="d-flex flex-items-center mt-1 color-text-secondary">
+            <span octicon="clock" [size]=16 class="mr-1"></span>
+            <span>
+              <span style="font-size: smaller;"> Updated
+                {{SNRankingExpression.modificationDate | amTimeAgo}}</span>
+              <span> - </span> {{SNRankingExpression.description}}</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

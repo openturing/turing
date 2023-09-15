@@ -83,6 +83,10 @@
         [routerLinkActive]="['selected']">
         <span octicon="law" [size]=16 class="mr-1"></span>
         Behavior</a>
+      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'ranking-expression']"
+         [routerLinkActive]="['selected']">
+        <span octicon="number" [size]=16 class="mr-1"></span>
+       Result Ranking</a>
       <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'merge']"
         [routerLinkActive]="['selected']">
         <span octicon="git-merge" [size]=16 class="mr-1"></span>
