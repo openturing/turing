@@ -28,6 +28,7 @@ import {
 import {
   TurSNRankingExpressionListPageComponent
 } from "./component/site/ranking/sn-ranking-expression-list-page.component";
+import {TurSNRankingExpressionPageComponent} from "./component/site/ranking/sn-ranking-expression-page.component";
 
 const routes: Routes = [
   {
@@ -54,6 +55,7 @@ const routes: Routes = [
             path: 'ranking-expression', component: TurSNRankingExpressionRootPageComponent, canActivate: [AuthGuard],
             children: [
               { path: 'list', component: TurSNRankingExpressionListPageComponent, canActivate: [AuthGuard] },
+              { path: ':rankingExpressionId', component: TurSNRankingExpressionPageComponent, canActivate: [AuthGuard] },
               { path: '', redirectTo: 'list', pathMatch: 'full' }
             ]
           },

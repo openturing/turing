@@ -46,7 +46,7 @@ public class TurSNRankingCondition implements Serializable {
 	private String id;
 
 	@Column(length = 255)
-	private String atribute;
+	private String attribute;
 
 	@Column
 	private int condition;
@@ -67,12 +67,12 @@ public class TurSNRankingCondition implements Serializable {
 		this.id = id;
 	}
 
-	public String getAtribute() {
-		return atribute;
+	public String getAttribute() {
+		return attribute;
 	}
 
-	public void setAtribute(String atribute) {
-		this.atribute = atribute;
+	public void setAttribute(String atribute) {
+		this.attribute = atribute;
 	}
 
 	public int getCondition() {

@@ -363,7 +363,7 @@ public class TurSolr {
 		turSNRankingExpressionRepository.findByTurSNSite(turSNSite).forEach(expression -> {
 			String strExpression = "(" +
 					turSNRankingConditionRepository.findByTurSNRankingExpression(expression).stream().map(condition ->
-							String.format("%s:%s", condition.getAtribute(), condition.getValue())).collect(Collectors.joining(" AND ")) +
+							String.format("%s:%s", condition.getAttribute(), condition.getValue())).collect(Collectors.joining(" AND ")) +
 					")";
 			query.set("bq", strExpression);
 		});

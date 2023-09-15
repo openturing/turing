@@ -253,14 +253,14 @@ public class TurSNTemplate {
 		turSNRankingExpressionRepository.save(turSNRankingExpression);
 
 		TurSNRankingCondition turSNRankingCondition1 = new TurSNRankingCondition();
-		turSNRankingCondition1.setAtribute("title");
+		turSNRankingCondition1.setAttribute("title");
 		turSNRankingCondition1.setCondition(1);
 		turSNRankingCondition1.setValue("viglet");
 		turSNRankingCondition1.setTurSNRankingExpression(turSNRankingExpression);
 		turSNRankingConditionRepository.save(turSNRankingCondition1);
 
 		TurSNRankingCondition turSNRankingCondition2 = new TurSNRankingCondition();
-		turSNRankingCondition2.setAtribute("type");
+		turSNRankingCondition2.setAttribute("type");
 		turSNRankingCondition2.setCondition(1);
 		turSNRankingCondition2.setValue("News");
 		turSNRankingCondition2.setTurSNRankingExpression(turSNRankingExpression);

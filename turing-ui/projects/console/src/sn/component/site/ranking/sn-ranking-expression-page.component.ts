@@ -1,0 +1,89 @@
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Observable } from 'rxjs';
+import { TurSNSite } from '../../../model/sn-site.model';
+import { NotifierService } from 'angular-notifier';
+import { TurSNSiteService } from '../../../service/sn-site.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import {TurSNRankingExpression} from "../../../model/sn-ranking-expression.model";
+import {TurSNRankingExpressionService} from "../../../service/sn-ranking-expression.service";
+
+@Component({
+  selector: 'sn-site-ranking-expression-page',
+  templateUrl: './sn-ranking-expression-page.component.html'
+})
+export class TurSNRankingExpressionPageComponent implements OnInit {
+  @ViewChild('modalDeleteRankingExpression')
+  modalDelete!: ElementRef;
+  private readonly turSNSite: Observable<TurSNSite>;
+  private readonly turSNRankingExpression: Observable<TurSNRankingExpression>;
+  private readonly siteId: string;
+  private readonly newObject: boolean = false;
+
+  constructor(
+    private readonly notifier: NotifierService,
+    private turSNSiteService: TurSNSiteService,
+    private turSNRankingExpressionService: TurSNRankingExpressionService,
+    private activatedRoute: ActivatedRoute,
+    private router: Router) {
+    this.siteId = this.activatedRoute.parent?.parent?.snapshot.paramMap.get('id') || "";
+    let rankingExpressionId = this.activatedRoute.snapshot.paramMap.get('rankingExpressionId') || "";
+    this.turSNSite = this.turSNSiteService.get(this.siteId);
+    this.newObject = (rankingExpressionId.toLowerCase() === 'new');
+    this.turSNRankingExpression = this.newObject ? this.turSNRankingExpressionService.getStructure(this.siteId) :
+        this.turSNRankingExpressionService.get(this.siteId, rankingExpressionId);
+  }
+
+  getTurSNSite(): Observable<TurSNSite> {
+    return this.turSNSite;
+  }
+  getTurSNRankingExpression(): Observable<TurSNRankingExpression> {
+    return this.turSNRankingExpression;
+  }
+
+  ngOnInit(): void {
+    // Empty
+  }
+
+  isNewObject(): boolean {
+    return this.newObject;
+  }
+
+  saveButtonCaption(): string {
+    return this.newObject ? "Create rule" : "Update rule";
+  }
+
+  public save(_turSNRankingExpression: TurSNRankingExpression) {
+    this.turSNRankingExpressionService.save(this.siteId, _turSNRankingExpression, this.newObject).subscribe(
+      (turSNRankingExpression: TurSNRankingExpression) => {
+        let message: string = this.newObject ? " ranking expression was created." : " ranking expression was updated.";
+
+        _turSNRankingExpression = turSNRankingExpression;
+
+        this.notifier.notify("success", turSNRankingExpression.name.concat(message));
+
+        this.router.navigate(['/sn/site/', this.siteId, 'ranking expression', 'list']);
+      },
+      response => {
+        this.notifier.notify("error", "Ranking Expression was error: " + response);
+      },
+      () => {
+        // The POST observable is now completed.
+      });
+  }
+
+  public delete(_turSNRankingExpression: TurSNRankingExpression) {
+    this.turSNRankingExpressionService.delete(this.siteId, _turSNRankingExpression).subscribe(
+      (turSNRankingExpression: TurSNRankingExpression) => {
+        this.notifier.notify("success", _turSNRankingExpression.name.concat(" ranking expression was deleted."));
+        this.modalDelete.nativeElement.removeAttribute("open");
+
+        this.router.navigate(['/sn/site/', this.siteId, 'ranking expression', 'list']);
+      },
+      response => {
+        this.notifier.notify("error", "Ranking Expression was error: " + response);
+      },
+      () => {
+        // The POST observable is now completed.
+      });
+  }
+}
