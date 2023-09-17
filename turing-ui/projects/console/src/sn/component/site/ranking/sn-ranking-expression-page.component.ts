@@ -1,11 +1,13 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { Observable } from 'rxjs';
-import { TurSNSite } from '../../../model/sn-site.model';
-import { NotifierService } from 'angular-notifier';
-import { TurSNSiteService } from '../../../service/sn-site.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Observable, tap} from 'rxjs';
+import {TurSNSite} from '../../../model/sn-site.model';
+import {NotifierService} from 'angular-notifier';
+import {TurSNSiteService} from '../../../service/sn-site.service';
+import {ActivatedRoute, Router} from '@angular/router';
 import {TurSNRankingExpression} from "../../../model/sn-ranking-expression.model";
 import {TurSNRankingExpressionService} from "../../../service/sn-ranking-expression.service";
+import {TurSNSiteField} from "../../../model/sn-site-field.model";
+import {TurSNRankingCondition} from "../../../model/sn-ranking-condition.model";
 
 @Component({
   selector: 'sn-site-ranking-expression-page',
@@ -16,8 +18,10 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
   modalDelete!: ElementRef;
   private readonly turSNSite: Observable<TurSNSite>;
   private readonly turSNRankingExpression: Observable<TurSNRankingExpression>;
+  private turSNSiteSEFields: Observable<TurSNSiteField[]>;
   private readonly siteId: string;
   private readonly newObject: boolean = false;
+  private deletedConditions: Array<string> = new Array<string>;
 
   constructor(
     private readonly notifier: NotifierService,
@@ -31,6 +35,7 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
     this.newObject = (rankingExpressionId.toLowerCase() === 'new');
     this.turSNRankingExpression = this.newObject ? this.turSNRankingExpressionService.getStructure(this.siteId) :
         this.turSNRankingExpressionService.get(this.siteId, rankingExpressionId);
+    this.turSNSiteSEFields = turSNSiteService.getFieldsByType(this.siteId, "se");
   }
 
   getTurSNSite(): Observable<TurSNSite> {
@@ -39,7 +44,21 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
   getTurSNRankingExpression(): Observable<TurSNRankingExpression> {
     return this.turSNRankingExpression;
   }
+  getTurSNSiteSEFields(): Observable<TurSNSiteField[]> {
+    return this.turSNSiteSEFields;
+  }
 
+  newCondition(turSNRankingConditions: TurSNRankingCondition[]) {
+    let turSNRankingCondition  = new TurSNRankingCondition();
+    turSNRankingCondition.condition = 1;
+    turSNRankingConditions.push(turSNRankingCondition);
+
+  }
+
+  removeCondition(snRankingExpression: TurSNRankingExpression, snRankingCondition: TurSNRankingCondition) {
+    this.deletedConditions.push(snRankingCondition.id);
+    snRankingExpression.turSNRankingConditions = snRankingExpression.turSNRankingConditions.filter(condition => condition != snRankingCondition)
+  }
   ngOnInit(): void {
     // Empty
   }
@@ -77,7 +96,7 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
         this.notifier.notify("success", _turSNRankingExpression.name.concat(" ranking expression was deleted."));
         this.modalDelete.nativeElement.removeAttribute("open");
 
-        this.router.navigate(['/sn/site/', this.siteId, 'ranking expression', 'list']);
+       // this.router.navigate(['/sn/site/', this.siteId, 'ranking-expression', 'list']);
       },
       response => {
         this.notifier.notify("error", "Ranking Expression was error: " + response);

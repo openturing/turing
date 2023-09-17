@@ -248,6 +248,7 @@ public class TurSNTemplate {
 
 		TurSNRankingExpression turSNRankingExpression = new TurSNRankingExpression();
 		turSNRankingExpression.setName("Rule Sample");
+		turSNRankingExpression.setDescription("Rule Sample Description");
 		turSNRankingExpression.setWeight(5);
 		turSNRankingExpression.setTurSNSite(turSNSite);
 		turSNRankingExpressionRepository.save(turSNRankingExpression);

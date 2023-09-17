@@ -359,17 +359,17 @@ public class TurSolr {
 				turSNSiteFacetFieldExts, turSNSiteHlFieldExts, turSESpellCheckResult);
 	}
 	private void prepareBoostQuery(TurSNSite turSNSite, SolrQuery query) {
-
+		List<String> bq = new ArrayList<>();
 		turSNRankingExpressionRepository.findByTurSNSite(turSNSite).forEach(expression -> {
 			String strExpression = "(" +
 					turSNRankingConditionRepository.findByTurSNRankingExpression(expression).stream().map(condition ->
-							String.format("%s:%s", condition.getAttribute(), condition.getValue())).collect(Collectors.joining(" AND ")) +
+							String.format("%s:%s", condition.getAttribute(), condition.getValue()))
+							.collect(Collectors.joining(" AND ")) +
 					")";
-			query.set("bq", strExpression);
+			bq.add(strExpression);
+
 		});
-
-
-
+		query.set("bq", bq.toArray(new String[0]));
 	}
 	private void prepareGroup(TurSEParameters turSEParameters, SolrQuery query) {
 
@@ -381,7 +381,7 @@ public class TurSolr {
 	}
 
 	private boolean hasGroup(TurSEParameters turSEParameters) {
-		return turSEParameters.getGroup() != null && turSEParameters.getGroup().trim().length() > 0;
+		return turSEParameters.getGroup() != null && !turSEParameters.getGroup().trim().isEmpty();
 	}
 
 	private Optional<TurSEResults> executeSolrQueryFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,

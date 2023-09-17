@@ -5,6 +5,6 @@ export interface TurSNRankingExpression {
   name: string;
   weight: number;
   turSNRankingConditions: TurSNRankingCondition[];
-  modificationDate: Date;
+  lastModifiedDate: Date;
   description: string;
 }

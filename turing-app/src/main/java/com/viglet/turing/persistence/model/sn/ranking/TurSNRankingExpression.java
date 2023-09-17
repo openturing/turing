@@ -22,6 +22,7 @@
 package com.viglet.turing.persistence.model.sn.ranking;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.spring.security.TurAuditable;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.OnDelete;
@@ -41,7 +42,7 @@ import java.util.Set;
 @Entity
 @Table(name = "turSNRankingExpression")
 @NamedQuery(name = "TurSNRankingExpression.findAll", query = "SELECT sre FROM TurSNRankingExpression sre")
-public class TurSNRankingExpression implements Serializable {
+public class TurSNRankingExpression extends TurAuditable<String>  implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -52,6 +53,8 @@ public class TurSNRankingExpression implements Serializable {
 	@Column(length = 50)
 	private String name;
 
+	@Column(length = 255)
+	private String description;
 	@Column
 	private float weight;
 
@@ -62,7 +65,7 @@ public class TurSNRankingExpression implements Serializable {
 
 	// bi-directional many-to-one association to turSNSiteLocales
 	@OneToMany(mappedBy = "turSNRankingExpression", orphanRemoval = true, fetch = FetchType.LAZY)
-	@Cascade({ org.hibernate.annotations.CascadeType.ALL })
+	@Cascade({ org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN  })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNRankingCondition> turSNRankingConditions = new HashSet<>();
 	public String getId() {
@@ -98,10 +101,22 @@ public class TurSNRankingExpression implements Serializable {
 	}
 
 	public Set<TurSNRankingCondition> getTurSNRankingConditions() {
+
 		return turSNRankingConditions;
 	}
 
 	public void setTurSNRankingConditions(Set<TurSNRankingCondition> turSNRankingConditions) {
-		this.turSNRankingConditions = turSNRankingConditions;
+		this.turSNRankingConditions.clear();
+		if (turSNRankingConditions != null) {
+			this.turSNRankingConditions.addAll(turSNRankingConditions);
+		}
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 }

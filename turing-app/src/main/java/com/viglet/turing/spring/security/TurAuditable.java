@@ -30,4 +30,19 @@ public abstract class TurAuditable<U> {
     @Temporal(TemporalType.TIMESTAMP)
     protected Date lastModifiedDate;
 
+    public U getCreatedBy() {
+        return createdBy;
+    }
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
+
+    public U getLastModifiedBy() {
+        return lastModifiedBy;
+    }
+
+    public Date getLastModifiedDate() {
+        return lastModifiedDate;
+    }
 }

@@ -11,7 +11,7 @@
     </div>
     <div class="float-right" style="display: inline-flex;">
       <div class="d-flex flex-justify-end position-relative">
-        <a [routerLink]="['/sn/site', getId(), 'spotlight', 'new']" type="button" class="btn btn-primary"><span
+        <a [routerLink]="['/sn/site', getId(), 'ranking-expression', 'new']" type="button" class="btn btn-primary"><span
           octicon="number" [size]="16" class="mr-1"></span> New</a>
       </div>
     </div>
@@ -34,7 +34,7 @@
             <span octicon="clock" [size]=16 class="mr-1"></span>
             <span>
               <span style="font-size: smaller;"> Updated
-                {{SNRankingExpression.modificationDate | amTimeAgo}}</span>
+                {{SNRankingExpression.lastModifiedDate | amTimeAgo}}</span>
               <span> - </span> {{SNRankingExpression.description}}</span>
           </div>
         </li>
