@@ -5,6 +5,7 @@ import java.util.List;
 public class TurSEParameters {
 	private String query;
 	private List<String> filterQueries;
+	private List<String> boostQueries;
 	private Integer currentPage;
 	private String sort;
 	private Integer rows;
@@ -29,6 +30,14 @@ public class TurSEParameters {
 
 	public void setQuery(String query) {
 		this.query = query;
+	}
+
+	public List<String> getBoostQueries() {
+		return boostQueries;
+	}
+
+	public void setBoostQueries(List<String> boostQueries) {
+		this.boostQueries = boostQueries;
 	}
 
 	public List<String> getFilterQueries() {
