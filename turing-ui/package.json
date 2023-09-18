@@ -31,7 +31,7 @@
     "ngx-moment": "^6.0.2",
     "ngx-smart-modal": "14.0.2",
     "num2fraction": "1.2.2",
-    "rxjs": "7.4.0",
+    "rxjs": "7.8.1",
     "sass": "^1.58.3",
     "tslib": "2.6.2",
     "zone.js": "~0.13.3"
