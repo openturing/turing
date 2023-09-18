@@ -18,7 +18,7 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
   modalDelete!: ElementRef;
   private readonly turSNSite: Observable<TurSNSite>;
   private readonly turSNRankingExpression: Observable<TurSNRankingExpression>;
-  private turSNSiteSEFields: Observable<TurSNSiteField[]>;
+  private turSNSiteSEFields: TurSNSiteField[] = new Array<TurSNSiteField>;
   private readonly siteId: string;
   private readonly newObject: boolean = false;
   private deletedConditions: Array<string> = new Array<string>;
@@ -35,7 +35,9 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
     this.newObject = (rankingExpressionId.toLowerCase() === 'new');
     this.turSNRankingExpression = this.newObject ? this.turSNRankingExpressionService.getStructure(this.siteId) :
         this.turSNRankingExpressionService.get(this.siteId, rankingExpressionId);
-    this.turSNSiteSEFields = turSNSiteService.getFieldsByType(this.siteId, "se");
+    turSNSiteService.getFieldsByType(this.siteId, "se").subscribe(fields => {
+      this.turSNSiteSEFields = fields as TurSNSiteField[]
+    });
   }
 
   getTurSNSite(): Observable<TurSNSite> {
@@ -44,10 +46,13 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
   getTurSNRankingExpression(): Observable<TurSNRankingExpression> {
     return this.turSNRankingExpression;
   }
-  getTurSNSiteSEFields(): Observable<TurSNSiteField[]> {
+  getTurSNSiteSEFields(): TurSNSiteField[] {
     return this.turSNSiteSEFields;
   }
 
+  getFieldType(fieldName: string): string {
+    return <string>this.turSNSiteSEFields.find(field => field.name == fieldName)?.type;
+  }
   newCondition(turSNRankingConditions: TurSNRankingCondition[]) {
     let turSNRankingCondition  = new TurSNRankingCondition();
     turSNRankingCondition.condition = 1;

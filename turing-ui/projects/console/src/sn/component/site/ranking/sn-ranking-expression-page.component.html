@@ -1,139 +1,13 @@
-<style>
-  .topic-tag-action {
-    display: inline-flex;
-    padding-right: 0;
-    margin: .6em .5em 0 0;
-  }
-
-  .topic-tag-action,
-  .delete-topic-button,
-  .topic-tag {
-    display: inline-block;
-    padding: 0 7px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 18px;
-    border: 1px solid transparent;
-    border-radius: 2em;
-    padding-right: 10px;
-    padding-left: 10px;
-    line-height: 22px;
-    color: var(--color-accent-fg, var(--color-topic-tag-text));
-    background-color: var(--color-accent-subtle, var(--color-topic-tag-bg));
-    border: 1px solid var(--color-topic-tag-border, transparent);
-  }
-
-  .topic-tag-action {
-    display: inline-flex;
-    align-items: center;
-    padding-left: .8em;
-    margin: .4em .4em 0 0;
-    background-color: var(--color-bg-info);
-    border-radius: 6px;
-  }
-
-  .tag-input-container ul {
-    list-style: none;
-  }
-
-  .topic-input-container .tag-input {
-    /* width: 908px; */
-    cursor: text;
-  }
-
-  .tag-input-container ul {
-    list-style: none;
-  }
-
-  .d-inline {
-    display: inline !important;
-  }
-
-  .topic-tag-action,
-  .delete-topic-button,
-  .topic-tag {
-    display: inline-block;
-    padding: 0 7px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 18px;
-    border: 1px solid transparent;
-    border-radius: 2em;
-    padding-right: 10px;
-    padding-left: 10px;
-    line-height: 22px;
-    color: var(--color-accent-fg, var(--color-topic-tag-text));
-    background-color: var(--color-accent-subtle, var(--color-topic-tag-bg));
-    border: 1px solid var(--color-topic-tag-border, transparent);
-  }
-
-  .delete-topic-button,
-  .topic-tag-action .add-topic-button,
-  .topic-tag-action .remove-topic-button {
-    width: 24px;
-    padding: 0;
-    height: 24px;
-    color: inherit;
-    border-color: transparent;
-    border-left: 0;
-    border-radius: 2em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .topic-tag-action,
-  .delete-topic-button,
-  .topic-tag {
-    display: inline-block;
-    padding: 0 7px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 18px;
-    border: 1px solid transparent;
-    border-radius: 2em;
-    padding-right: 10px;
-    padding-left: 10px;
-    line-height: 22px;
-    color: var(--color-accent-fg, var(--color-topic-tag-text));
-    background-color: var(--color-accent-subtle, var(--color-topic-tag-bg));
-    border: 1px solid var(--color-topic-tag-border, transparent);
-  }
-
-  .delete-topic-button,
-  .delete-topic-link {
-    display: inline-block;
-    width: 26px;
-    color: var(--color-text-tertiary);
-    background-color: var(--color-bg-info);
-    border-top: 0;
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 1px solid #b4d9ff;
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
-  }
-
-  .tag-input input {
-    float: left;
-    padding-left: 2px;
-    margin: 0;
-    background: none;
-    border: 0;
-    box-shadow: none;
-  }
-
-  .tag-input-container .suggester {
-    position: absolute;
-    z-index: 100;
-    width: 100%;
-    margin-top: -1px;
-  }
-</style>
 <div *ngIf="(getTurSNRankingExpression() | async) as snRankingExpression; else loading">
   <div class="Subhead mt-4">
     <div class="Subhead-heading">
-      <div class="d-flex">
+      <div *ngIf="isNewObject()" class="d-flex">
+        <div class="ml-2">
+          <span>New Result Ranking</span>
+        </div>
+      </div>
+
+      <div *ngIf="!isNewObject()" class="d-flex">
         <div style="background-color: whitesmoke; height: 32px; border-radius: 50%;">
           <svg width="35" height="35" style="border-radius: 50%;"
                [identiconHash]="snRankingExpression.name | lowercase">
@@ -218,28 +92,52 @@
   </div>
 
   <div *ngFor="let snRankingCondition of snRankingExpression.turSNRankingConditions; last as isLast"
-       data-view-component="true">
-    <select [(ngModel)]="snRankingCondition.attribute" class="form-select mr-3">
-      <option *ngFor="let field of (getTurSNSiteSEFields()) | async" [value]="field.name">
-        {{field.name}}
-      </option>
-    </select>
-    <select [(ngModel)]="snRankingCondition.condition" class="form-select mr-3">
-      <option value="1">
-        Is
-      </option>
-      <option value="2">
-        Is not
-      </option>
-    </select>
+       data-view-component="true" [ngSwitch]="getFieldType(snRankingCondition.attribute)">
+    <div style="display: flex">
+      <select [(ngModel)]="snRankingCondition.attribute" class="form-select mr-3">
+        <option *ngFor="let field of getTurSNSiteSEFields() " [value]="field.name">
+          {{field.name}}
+        </option>
+      </select>
+      <select [(ngModel)]="snRankingCondition.condition" class="form-select mr-3">
+        <option value="1">
+          Is
+        </option>
+        <option value="2">
+          Is not
+        </option>
+      </select>
+      <select *ngSwitchCase="'DATE'" [(ngModel)]="snRankingCondition.value"
+              style="width: 100%"
+              class="form-select mr-3">
+        <option value="asc">
+          ASC
+        </option>
+        <option value="desc">
+          DESC
+        </option>
+      </select>
 
-    <input [(ngModel)]="snRankingCondition.value" class="form-control  mr-3" type="text" id="sn-field-value"/>
-  
-    <button class="btn btn-danger mr-1" (click)="removeCondition(snRankingExpression, snRankingCondition)">
-      <span octicon="trash" [size]=16
-            class="mr-1"></span>Delete condition
-    </button>
+      <select *ngSwitchCase="'BOOL'" [(ngModel)]="snRankingCondition.value"
+              style="width: 100%"
+              class="form-select mr-3">
+        <option value="true">
+          True
+        </option>
+        <option value="false">
+          False
+        </option>
+      </select>
 
+      <input *ngSwitchDefault [(ngModel)]="snRankingCondition.value"
+             style="width: 100%"
+             class="form-control  mr-3" type="text" id="sn-field-value"/>
+
+      <button class="btn btn-danger btn-octicon mr-1"
+              (click)="removeCondition(snRankingExpression, snRankingCondition)">
+        <span octicon="trash" [size]=16></span>
+      </button>
+    </div>
     <div *ngIf="!isLast" class="mb-2 mt-2 ml-1">
       And
     </div>

@@ -36,67 +36,67 @@ import {TurSNSiteMetricsRootPageComponent} from './component/site/metrics/sn-sit
 import {TurSNSiteMetricsTopTermsPageComponent} from './component/site/metrics/sn-site-metrics-top-terms-page.component';
 import {TurSNSiteMetricsService} from './service/sn-site-metrics.service';
 import {
-    TurSNSiteMetricsTopTermsRootPageComponent
+  TurSNSiteMetricsTopTermsRootPageComponent
 } from './component/site/metrics/sn-site-metrics-top-terms-root-page.component';
 import {
-    TurSNRankingExpressionRootPageComponent
+  TurSNRankingExpressionRootPageComponent
 } from "./component/site/ranking/sn-site-ranking-expression-root-page.component";
 import {
-    TurSNRankingExpressionListPageComponent
+  TurSNRankingExpressionListPageComponent
 } from "./component/site/ranking/sn-ranking-expression-list-page.component";
 import {TurSNRankingExpressionService} from "./service/sn-ranking-expression.service";
 import {TurSNRankingExpressionPageComponent} from "./component/site/ranking/sn-ranking-expression-page.component";
 
 @NgModule({
-    declarations: [
-        TurSNRootPageComponent,
-        TurSNSitePageComponent,
-        TurSNSiteDetailPageComponent,
-        TurSNSiteUIPageComponent,
-        TurSNSiteFieldRootPageComponent,
-        TurSNSiteFieldListPageComponent,
-        TurSNSiteFieldPageComponent,
-        TurSNSiteListPageComponent,
-        TurSNSiteSpotlightRootPageComponent,
-        TurSNSiteSpotlightListPageComponent,
-        TurSNSiteSpotlightPageComponent,
-        TurSNSiteLocaleRootPageComponent,
-        TurSNSiteLocaleListPageComponent,
-        TurSNSiteLocalePageComponent,
-        TurSNSiteMergeRootPageComponent,
-        TurSNSiteMergeListPageComponent,
-        TurSNSiteMergePageComponent,
-        TurSNSiteMetricsRootPageComponent,
-        TurSNSiteMetricsTopTermsRootPageComponent,
-        TurSNSiteMetricsTopTermsPageComponent,
-        TurSNRankingExpressionRootPageComponent,
-        TurSNRankingExpressionListPageComponent,
-        TurSNRankingExpressionPageComponent
-    ],
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        FormsModule,
-        OcticonsModule,
-        TurSNRoutingModule,
-        TurCommonsModule,
-        RouterModule,
-        MomentModule
-    ],
-    providers: [
-        TurSNSiteService,
-        TurSEInstanceService,
-        TurNLPInstanceService,
-        TurNLPVendorService,
-        TurLocaleService,
-        TurSNFieldTypeService,
-        TurSNSiteSpotlightService,
-        TurSNSiteLocaleService,
-        TurSNSiteMergeService,
-        TurSNSiteMetricsService,
-        TurSNRankingExpressionService
-    ],
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+  declarations: [
+    TurSNRootPageComponent,
+    TurSNSitePageComponent,
+    TurSNSiteDetailPageComponent,
+    TurSNSiteUIPageComponent,
+    TurSNSiteFieldRootPageComponent,
+    TurSNSiteFieldListPageComponent,
+    TurSNSiteFieldPageComponent,
+    TurSNSiteListPageComponent,
+    TurSNSiteSpotlightRootPageComponent,
+    TurSNSiteSpotlightListPageComponent,
+    TurSNSiteSpotlightPageComponent,
+    TurSNSiteLocaleRootPageComponent,
+    TurSNSiteLocaleListPageComponent,
+    TurSNSiteLocalePageComponent,
+    TurSNSiteMergeRootPageComponent,
+    TurSNSiteMergeListPageComponent,
+    TurSNSiteMergePageComponent,
+    TurSNSiteMetricsRootPageComponent,
+    TurSNSiteMetricsTopTermsRootPageComponent,
+    TurSNSiteMetricsTopTermsPageComponent,
+    TurSNRankingExpressionRootPageComponent,
+    TurSNRankingExpressionListPageComponent,
+    TurSNRankingExpressionPageComponent
+  ],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    OcticonsModule,
+    TurSNRoutingModule,
+    TurCommonsModule,
+    RouterModule,
+    MomentModule
+  ],
+  providers: [
+    TurSNSiteService,
+    TurSEInstanceService,
+    TurNLPInstanceService,
+    TurNLPVendorService,
+    TurLocaleService,
+    TurSNFieldTypeService,
+    TurSNSiteSpotlightService,
+    TurSNSiteLocaleService,
+    TurSNSiteMergeService,
+    TurSNSiteMetricsService,
+    TurSNRankingExpressionService
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class TurSNModule {
 }

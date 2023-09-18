@@ -1,4 +1,11 @@
-<div *ngIf="(getTurSNRankingExpressions() | async) as SNRankingExpressions; else loading">
+<div *ngIf="(getTurSNRankingExpressions() | async) as snRankingExpressions; else loading">
+  <div *ngIf="snRankingExpressions.length < 1" class="blankslate">
+    <span octicon="number" [size]="48" class="mb-3"></span>
+    <h3 class="mb-1">You don’t seem to have any result ranking.</h3>
+    <p>Create a new result ranking to define relevance rules.</p>
+    <a [routerLink]="['/sn/site', getId(), 'ranking-expression', 'new']" class="btn btn-primary my-3" type="button">New result ranking</a>
+  </div>
+  <div *ngIf="snRankingExpressions.length >= 1">
   <div class="Subhead">
     <div class="Subhead-heading"><span octicon="number" [size]="24" class="mr-1"></span> Result Ranking </div>
     <div class="Subhead-description">Define content that will be featured in the term-based search.</div>
@@ -19,28 +26,29 @@
   <div style="margin-top: 20px;">
     <div class="Box Box--blue">
       <ul>
-        <li *ngFor="let SNRankingExpression of SNRankingExpressions" class="Box-row ">
+        <li *ngFor="let snRankingExpression of snRankingExpressions" class="Box-row ">
           <div class="d-flex flex-items-center">
-            <a [routerLink]="['/sn/site', getId(), 'ranking-expression', SNRankingExpression.id]" routerLinkActive="active" class="d-flex flex-items-center">
+            <a [routerLink]="['/sn/site', getId(), 'ranking-expression', snRankingExpression.id]" routerLinkActive="active" class="d-flex flex-items-center">
               <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
               class="float-left">
-              <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="SNRankingExpression.name | lowercase">
+              <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snRankingExpression.name | lowercase">
                 Avatar
               </svg>
             </div>
-              {{SNRankingExpression.name}}</a>
+              {{snRankingExpression.name}}</a>
           </div>
           <div class="d-flex flex-items-center mt-1 color-text-secondary">
             <span octicon="clock" [size]=16 class="mr-1"></span>
             <span>
               <span style="font-size: smaller;"> Updated
-                {{SNRankingExpression.lastModifiedDate | amTimeAgo}}</span>
-              <span> - </span> {{SNRankingExpression.description}}</span>
+                {{snRankingExpression.lastModifiedDate | amTimeAgo}}</span>
+              <span> - </span> {{snRankingExpression.description}}</span>
           </div>
         </li>
       </ul>
     </div>
   </div>
+</div>
 </div>
 <ng-template #loading>
   <span>Loading</span><span class="AnimatedEllipsis"></span>
