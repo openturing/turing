@@ -43,6 +43,7 @@ public class TurAPI {
 	private TurAPIBean info() throws JSONException {
 		turAPIBean.setProduct("Viglet Turing");
 		turAPIBean.setMultiTenant(turConfigProperties.isMultiTenant());
+		turAPIBean.setKeycloak(turConfigProperties.isKeycloak());
 		return turAPIBean;
 	}
 }

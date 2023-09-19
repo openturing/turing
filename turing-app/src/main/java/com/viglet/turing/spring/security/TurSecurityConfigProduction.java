@@ -24,6 +24,7 @@ package com.viglet.turing.spring.security;
 import com.viglet.turing.properties.TurConfigProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -34,8 +35,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
@@ -63,7 +62,11 @@ public class TurSecurityConfigProduction {
         if (turConfigProperties.isKeycloak()) {
             http.oauth2Login(withDefaults());
             http.authorizeHttpRequests(authorizeRequests -> authorizeRequests.anyRequest().authenticated());
-            http.cors(AbstractHttpConfigurer::disable);
+            http.csrf(AbstractHttpConfigurer::disable);
+            http.cors(Customizer.withDefaults());
+            http.logout(logout ->
+                    logout.logoutSuccessUrl("http://172.28.32.1:8080/realms/demo/protocol/openid-connect/logout?post_logout_redirect_uri=http://172.28.32.1:2700/&client_id=demo-app"));
+
         } else {
             http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint));
             http.authorizeHttpRequests(authorizeRequests -> {
@@ -76,12 +79,9 @@ public class TurSecurityConfigProduction {
                         AntPathRequestMatcher.antMatcher("/h2/**")).permitAll();
                 authorizeRequests.anyRequest().authenticated();
             });
-            http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
-                    .addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class)
-                    .csrf(csrf -> csrf
-                            .ignoringRequestMatchers(mvc.pattern("/api/sn/**"), mvc.pattern("/api/nlp/**"),
-                                    mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**"))
-                            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+            http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
+
+
         }
         return http.build();
     }
