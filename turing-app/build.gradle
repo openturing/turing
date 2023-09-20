@@ -138,7 +138,7 @@ dependencies {
  	implementation project(':turing-commons')
  	implementation project(':turing-filesystem:fs-commons')
  	
-	implementation 'org.apache.activemq:artemis-jms-server:2.30.0'
+	implementation 'org.apache.activemq:artemis-jms-server:2.31.0'
 
 	implementation group: 'com.itextpdf', name: 'itext7-core', version: '8.0.1'
 	implementation group: 'com.itextpdf', name: 'cleanup', version: '4.0.0'
