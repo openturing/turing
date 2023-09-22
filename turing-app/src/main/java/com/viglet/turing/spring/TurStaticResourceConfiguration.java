@@ -21,8 +21,7 @@
 
 package com.viglet.turing.spring;
 
-import com.viglet.turing.properties.TurConfigProperties;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
@@ -36,13 +35,12 @@ import java.io.IOException;
 @Configuration
 @AutoConfigureAfter(DispatcherServletAutoConfiguration.class)
 public class TurStaticResourceConfiguration implements WebMvcConfigurer {
-
-	@Autowired
-	private TurConfigProperties turConfigProperties;
+	@Value("${turing.allowedOrigins:localhost}")
+	private String allowedOrigins;
 
 	@Override
 	public void addCorsMappings(CorsRegistry registry) {
-		registry.addMapping("/api/**").allowedOrigins(turConfigProperties.getAllowedOrigins()).allowedMethods("PUT", "DELETE", "GET", "POST")
+		registry.addMapping("/api/**").allowedOrigins(allowedOrigins).allowedMethods("PUT", "DELETE", "GET", "POST")
 				.allowCredentials(false).maxAge(3600);
 	}
 

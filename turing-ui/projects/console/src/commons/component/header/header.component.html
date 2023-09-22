@@ -46,7 +46,11 @@
           <a class="dropdown-item" [routerLink]="['/adm/user']">Admin Console</a>
         </li>
         <li class="dropdown-divider" role="separator"></li>
-        <li><a class="dropdown-item" (click)="logout()" href>Sign out</a></li>
+        <li>
+          <form id="logout_form" action="/logout" method="post">
+            <a class="dropdown-item"  style="cursor:pointer" onclick="document.getElementById('logout_form').submit(); return false;">Sign out</a>
+          </form>
+          </li>
       </ul>
     </details>
   </div>

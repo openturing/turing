@@ -28,6 +28,8 @@ public class TurAPIBean {
 
 	private String product;
 	private boolean multiTenant;
+
+	private boolean keycloak;
 	
 	public String getProduct() {
 		return product;
@@ -44,5 +46,12 @@ public class TurAPIBean {
 	public void setMultiTenant(boolean multiTenant) {
 		this.multiTenant = multiTenant;
 	}
-	
+
+	public boolean isKeycloak() {
+		return keycloak;
+	}
+
+	public void setKeycloak(boolean keycloak) {
+		this.keycloak = keycloak;
+	}
 }

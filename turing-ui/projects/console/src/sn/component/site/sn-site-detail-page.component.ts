@@ -8,7 +8,6 @@ import { TurLocale } from '../../../locale/model/locale.model';
 import { TurLocaleService } from '../../../locale/service/locale.service';
 import { TurSEInstance } from '../../../se/model/se-instance.model';
 import { TurSEInstanceService } from '../../../se/service/se-instance.service';
-import { TurNLPInstance } from '../../../nlp/model/nlp-instance.model';
 import { TurNLPVendor } from 'projects/console/src/nlp/model/nlp-vendor.model';
 import { TurNLPVendorService } from 'projects/console/src/nlp/service/nlp-vendor.service';
 

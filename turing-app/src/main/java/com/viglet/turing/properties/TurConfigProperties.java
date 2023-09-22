@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class TurConfigProperties {
 
 	private boolean multiTenant;
-	
+	private boolean keycloak;
 	private String allowedOrigins;
 	
 	private TurSolrProperty solr;
@@ -36,7 +36,12 @@ public class TurConfigProperties {
 	public void setMultiTenant(boolean multiTenant) {
 		this.multiTenant = multiTenant;
 	}
-	
-	
-	
+
+	public boolean isKeycloak() {
+		return keycloak;
+	}
+
+	public void setKeycloak(boolean keycloak) {
+		this.keycloak = keycloak;
+	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2023 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,25 +18,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.viglet.turing.api;
+package com.viglet.turing.api.discovery;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
+import com.viglet.turing.api.TurAPIBean;
+import com.viglet.turing.properties.TurConfigProperties;
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
-@RequestMapping("/api/v2")
-@Tag(name = "Heartbeat", description = "Heartbeat")
-public class TurAPI {
-	@GetMapping
-	private Map<String,String> info() throws JSONException {
-		Map<String,String> status = new HashMap<>();
-		status.put("status", "ok");
-		return status;
-	}
+@RequestMapping("/api/discovery")
+public class TurDiscoveryAPI {
+    @Autowired
+    private TurAPIBean turAPIBean;
+    @Autowired
+    private TurConfigProperties turConfigProperties;
+
+
+    @GetMapping
+    private TurAPIBean info() throws JSONException {
+        turAPIBean.setProduct("Viglet Turing");
+        turAPIBean.setKeycloak(turConfigProperties.isKeycloak());
+        turAPIBean.setMultiTenant(turConfigProperties.isMultiTenant());
+        return turAPIBean;
+    }
+
 }
