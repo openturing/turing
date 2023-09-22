@@ -1,12 +1,14 @@
-import { Injectable } from '@angular/core';
-import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpXsrfTokenExtractor } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import {Injectable} from '@angular/core';
+import {HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpXsrfTokenExtractor} from '@angular/common/http';
+import {Observable} from 'rxjs';
 
-import { environment } from './../../environments/environment';
+import {environment} from '../../environments/environment';
 import {AuthenticationService} from "../../../../welcome/src/app/_services";
+
 @Injectable()
 export class BasicAuthInterceptor implements HttpInterceptor {
-  constructor(private authenticationService: AuthenticationService, private xsrfTokenExtractor: HttpXsrfTokenExtractor) { }
+  constructor(private authenticationService: AuthenticationService, private xsrfTokenExtractor: HttpXsrfTokenExtractor) {
+  }
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const user = this.authenticationService.userValue;
@@ -24,10 +26,16 @@ export class BasicAuthInterceptor implements HttpInterceptor {
           'Content-Type': 'application/json',
           'X-XSRF-TOKEN': token
         }
-      });
-
+      })
+    } else if (isApiUrl) {
+      request = request.clone({
+        setHeaders: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+          'X-XSRF-TOKEN': token
+        }
+      })
     }
-
     return next.handle(request);
   }
 }

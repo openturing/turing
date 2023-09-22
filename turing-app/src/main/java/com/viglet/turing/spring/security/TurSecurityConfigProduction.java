@@ -29,12 +29,13 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
@@ -59,29 +60,48 @@ public class TurSecurityConfigProduction {
     SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http.headers(header -> header.frameOptions(
                 frameOptions -> frameOptions.disable().cacheControl(HeadersConfigurer.CacheControlConfig::disable)));
+        http.cors(Customizer.withDefaults());
         if (turConfigProperties.isKeycloak()) {
             http.oauth2Login(withDefaults());
-            http.authorizeHttpRequests(authorizeRequests -> authorizeRequests.anyRequest().authenticated());
-            http.csrf(AbstractHttpConfigurer::disable);
-            http.cors(Customizer.withDefaults());
-            http.logout(logout ->
-                    logout.logoutSuccessUrl("http://172.28.32.1:8080/realms/demo/protocol/openid-connect/logout?post_logout_redirect_uri=http://172.28.32.1:2700/&client_id=demo-app"));
-
-        } else {
-            http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint));
             http.authorizeHttpRequests(authorizeRequests -> {
-                authorizeRequests.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
-                        mvc.pattern("/"), mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
-                        mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
-                        mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
-                        mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"), mvc.pattern("/cloud/**"),
-                        mvc.pattern("/admin/**"), mvc.pattern("/api/v2/guest/**"),
-                        AntPathRequestMatcher.antMatcher("/h2/**")).permitAll();
-                authorizeRequests.anyRequest().authenticated();
-            });
-            http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
+                        authorizeRequests.requestMatchers(mvc.pattern("/api/discovery"),
+                                mvc.pattern("/assets/**"), mvc.pattern("/api/sn/**"),
+                                mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"),
+                                mvc.pattern("/manifest.json")).permitAll();
+                        authorizeRequests.anyRequest().authenticated();
+                    }).headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
+                    .addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class)
+                    .csrf(csrf -> csrf
+                            .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/api/sn/**"),
+                                    mvc.pattern("/api/nlp/**"), mvc.pattern("/logout"),
+                                   AntPathRequestMatcher.antMatcher("/h2/**"))
+                            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
 
+            http.logout(logout -> logout.logoutSuccessUrl("http://localhost:8080/realms/demo/protocol/openid-connect/logout?post_logout_redirect_uri=http://localhost:2700/&client_id=demo-app"));
+        } else {
+            http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
+                    .authorizeHttpRequests(authorizeRequests -> {
+                        authorizeRequests.requestMatchers(mvc.pattern("/api/discovery"),
+                                mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
+                                mvc.pattern("/"), AntPathRequestMatcher.antMatcher("/assets/**"),
+                                mvc.pattern("/swagger-resources/**"),
+                                mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"),
+                                AntPathRequestMatcher.antMatcher("/api/sn/**"),
+                                AntPathRequestMatcher.antMatcher("/favicon.ico"),
+                                AntPathRequestMatcher.antMatcher("/*.png"),
+                                AntPathRequestMatcher.antMatcher("/manifest.json"),
+                                mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"),
+                                mvc.pattern("/cloud/**"),
+                                mvc.pattern("/admin/**"), mvc.pattern("/api/v2/guest/**"),
+                                AntPathRequestMatcher.antMatcher("/h2/**")).permitAll();
+                        authorizeRequests.anyRequest().authenticated();
 
+                    }).headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
+                    .addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class)
+                    .csrf(csrf -> csrf
+                            .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/api/sn/**"), mvc.pattern("/api/nlp/**"),
+                                    mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**"))
+                            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
         }
         return http.build();
     }
