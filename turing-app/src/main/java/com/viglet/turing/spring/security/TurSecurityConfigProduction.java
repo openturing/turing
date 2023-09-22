@@ -22,6 +22,7 @@
 package com.viglet.turing.spring.security;
 
 import com.viglet.turing.properties.TurConfigProperties;
+import com.viglet.turing.spring.security.auth.TurLogoutHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 import org.springframework.security.config.Customizer;
@@ -55,7 +56,8 @@ public class TurSecurityConfigProduction {
     protected TurAuthenticationEntryPoint turAuthenticationEntryPoint;
     @Autowired
     private TurConfigProperties turConfigProperties;
-
+    @Autowired
+    private TurLogoutHandler turLogoutHandler;
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http.headers(header -> header.frameOptions(
@@ -77,11 +79,11 @@ public class TurSecurityConfigProduction {
                                    AntPathRequestMatcher.antMatcher("/h2/**"))
                             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
 
-            http.logout(logout -> logout.logoutSuccessUrl("http://localhost:8080/realms/demo/protocol/openid-connect/logout?post_logout_redirect_uri=http://localhost:2700/&client_id=demo-app"));
+            http.logout(logout -> logout.addLogoutHandler(turLogoutHandler).logoutSuccessUrl("http://localhost:8080/realms/demo/protocol/openid-connect/logout?post_logout_redirect_uri=http://localhost:2700/&client_id=demo-app"));
         } else {
             http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
                     .authorizeHttpRequests(authorizeRequests -> {
-                        authorizeRequests.requestMatchers(mvc.pattern("/api/discovery"),
+                        authorizeRequests.requestMatchers(mvc.pattern("/api/discovery"), mvc.pattern("/logout"),
                                 mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
                                 mvc.pattern("/"), AntPathRequestMatcher.antMatcher("/assets/**"),
                                 mvc.pattern("/swagger-resources/**"),
@@ -99,9 +101,11 @@ public class TurSecurityConfigProduction {
                     }).headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                     .addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class)
                     .csrf(csrf -> csrf
-                            .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/api/sn/**"), mvc.pattern("/api/nlp/**"),
+                            .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/api/sn/**"),
+                                    mvc.pattern("/logout"),mvc.pattern("/api/nlp/**"),
                                     mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**"))
                             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+            http.logout(logout -> logout.addLogoutHandler(turLogoutHandler).logoutSuccessUrl("/"));
         }
         return http.build();
     }

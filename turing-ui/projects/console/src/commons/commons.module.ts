@@ -5,6 +5,7 @@ import { TurLogoComponent } from './component/logo/logo.component';
 import { IdenticonHashDirective } from '../app/directive/identicon-hash.directive';
 import { RouterModule } from '@angular/router';
 import { OcticonsModule } from 'angular-octicons';
+import {FormsModule} from "@angular/forms";
 
 @NgModule({
   declarations: [
@@ -12,11 +13,12 @@ import { OcticonsModule } from 'angular-octicons';
     TurLogoComponent,
     IdenticonHashDirective
   ],
-  imports: [
-    CommonModule,
-    RouterModule,
-    OcticonsModule
-  ],
+    imports: [
+        CommonModule,
+        RouterModule,
+        OcticonsModule,
+        FormsModule
+    ],
   exports : [
     TurHeaderComponent,
     TurLogoComponent,

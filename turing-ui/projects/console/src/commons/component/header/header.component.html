@@ -47,8 +47,8 @@
         </li>
         <li class="dropdown-divider" role="separator"></li>
         <li>
-          <form id="logout_form" action="/logout" method="post">
-            <a class="dropdown-item"  style="cursor:pointer" onclick="document.getElementById('logout_form').submit(); return false;">Sign out</a>
+          <form id="logout_form" #f="ngForm" action="/logout" method="post">
+            <a class="dropdown-item"  style="cursor:pointer" (click)="logout();f.ngSubmit.emit();">Sign out</a>
           </form>
           </li>
       </ul>

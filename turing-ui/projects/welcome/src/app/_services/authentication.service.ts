@@ -45,6 +45,6 @@ export class AuthenticationService {
     // remove user from local storage to log user out
     localStorage.removeItem('restInfo');
     this.userSubject.next(new User());
-    window.location.href = '/welcome';
+   // window.location.href = '/welcome';
   }
 }

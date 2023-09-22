@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import { Observable } from 'rxjs';
 import {User} from "../../../../../welcome/src/app/_models";
 import {AuthenticationService, UserService} from "../../../../../welcome/src/app/_services";
@@ -8,7 +8,6 @@ import {AuthenticationService, UserService} from "../../../../../welcome/src/app
   templateUrl: './header.component.html'
 })
 export class TurHeaderComponent implements OnInit {
-
   user!: Observable<User>;
 
   constructor(private userService: UserService, private authenticationService: AuthenticationService) { }
