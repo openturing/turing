@@ -159,7 +159,7 @@ dependencies {
     implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
 
     // Spring
-    implementation group: 'org.springframework', name: 'spring-test', version: '5.3.29'
+    implementation group: 'org.springframework', name: 'spring-test', version: '6.0.12'
 
     // Jackson
     implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5-jakarta', version: '2.15.2'
