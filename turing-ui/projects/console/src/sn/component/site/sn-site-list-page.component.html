@@ -4,57 +4,48 @@
     <h3 class="mb-1">You don’t seem to have any semantic navigation site.</h3>
     <p>Create a new site and use the full potential of semantic navigation.</p>
     <a [routerLink]="['/sn/site/new']" class="btn btn-primary my-3" type="button">New semantic navigation site</a>
-    <p><button class="btn-link" type="button">Import from zip file</button></p>
+    <p>
+      <button class="btn-link" type="button">Import from zip file</button>
+    </p>
   </div>
   <div *ngIf="snSites.length >= 1">
-    <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
-      <nav class="menu" aria-label="Site settings">
-        <a class="menu-item" [routerLink]="['/sn/site' , 'detail']" [routerLinkActive]="['selected']"><span
-            octicon="list-unordered" [size]=16 class="mr-1"></span> Semantic Navigation</a>
-        <a class="menu-item" [routerLink]="['/sn/site' , 'locale']" [routerLinkActive]="['selected']"><span
-            octicon="typography" [size]=16 class="mr-1"></span>
-          Source</a>
-        <a class="menu-item" [routerLink]="['/sn/site', 'ui']" [routerLinkActive]="['selected']">
-          <span octicon="law" [size]=16 class="mr-1"></span>
-          Logs</a>
-      </nav>
-    </div>
-    <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
-      <div style="margin-top: 20px;">
-        <div style="padding-bottom: 15px;">
-          <div class="Subhead" style="padding-bottom: 20px;">
-            <div class="Subhead-heading"><span octicon="list-unordered" [size]="24" class="mr-1"></span> Semantic Navigation</div>
-            <div class="Subhead-actions">
-              <a [routerLink]="['/sn/site/new']" class="btn btn-primary" role="button">
-                <span octicon="package" [size]=16 class="mr-1"></span> New
-              </a>
-            </div>
+    <div style="margin-top: 20px;">
+      <div style="padding-bottom: 15px;">
+        <div class="Subhead" style="padding-bottom: 20px;">
+          <div class="Subhead-heading"><span octicon="list-unordered" [size]="24" class="mr-1"></span> Semantic
+            Navigation
+          </div>
+          <div class="Subhead-actions">
+            <a [routerLink]="['/sn/site/new']" class="btn btn-primary" role="button">
+              <span octicon="package" [size]=16 class="mr-1"></span> New
+            </a>
           </div>
         </div>
       </div>
-      <div *ngFor="let snSite of snSites" class="border-bottom d-flex flex-items-center"
-        style="margin-bottom: 20px;padding-bottom: 10px;">
-        <div class="flex-auto">
-          <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;" class="float-left">
-            <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSite.name | lowercase">
-              Avatar
-            </svg>
-          </div><a [routerLink]="['/sn/site', snSite.id]" routerLinkActive="active"
-            style="font-weight: bolder; font-size: large;">
-            {{snSite.name}} </a>
-          <div class="text-gray-light" style="margin-top: 5px;">
-            {{snSite.description}}
-          </div>
-          <div style="margin-top: 5px;">
-            <span title="Label: green outline label" class="Label Label--outline Label--outline-green">Actived</span>
+    </div>
+    <div *ngFor="let snSite of snSites" class="border-bottom d-flex flex-items-center"
+         style="margin-bottom: 20px;padding-bottom: 10px;">
+      <div class="flex-auto">
+        <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;" class="float-left">
+          <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSite.name | lowercase">
+            Avatar
+          </svg>
+        </div>
+        <a [routerLink]="['/sn/site', snSite.id]" routerLinkActive="active"
+           style="font-weight: bolder; font-size: large;">
+          {{snSite.name}} </a>
+        <div class="text-gray-light" style="margin-top: 5px;">
+          {{snSite.description}}
+        </div>
+        <div style="margin-top: 5px;">
+          <span title="Label: green outline label" class="Label Label--outline Label--outline-green">Actived</span>
 
-          </div>
-          <div class="text-gray-light d-flex flex-items-center" style="margin-top: 10px;">
-            <div class="mr-3">
+        </div>
+        <div class="text-gray-light d-flex flex-items-center" style="margin-top: 10px;">
+          <div class="mr-3">
               <span
                 style="position: relative;top: 1px;display: inline-block;width: 12px;height: 12px;border-radius: 50%;background-color: #2b7489;"></span>
-              <span class="ml-1">Semantic Navigation</span>
-            </div>
+            <span class="ml-1">Semantic Navigation</span>
           </div>
         </div>
       </div>

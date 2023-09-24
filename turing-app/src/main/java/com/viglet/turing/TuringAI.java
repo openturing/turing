@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package com.viglet.turing;
 
 import com.fasterxml.jackson.databind.Module;
@@ -41,18 +40,14 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 @EnableCaching
 @EnableEncryptableProperties
 public class TuringAI {
-
 	public static void main(String... args) {
-
 		if (args != null && args.length > 0 && args[0].equals("console")) {
 			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
 					.run(args);
 		} else {
 			SpringApplication.run(TuringAI.class, args);
 		}
-
 	}
-
 	@Bean
 	FilterRegistrationBean<CharacterEncodingFilter> filterRegistrationBean() {
 		FilterRegistrationBean<CharacterEncodingFilter> registrationBean = new FilterRegistrationBean<>();
@@ -62,7 +57,6 @@ public class TuringAI {
 		registrationBean.setFilter(characterEncodingFilter);
 		return registrationBean;
 	}
-
 	@Bean
 	Module hibernate5Module() {
 		return new Hibernate5JakartaModule();
