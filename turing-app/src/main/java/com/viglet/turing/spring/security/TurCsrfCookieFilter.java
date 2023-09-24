@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2023 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,36 +18,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.viglet.turing.spring.security;
 
-import java.io.IOException;
+package com.viglet.turing.spring.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.WebUtils;
 
-public class TurCsrfHeaderFilter extends OncePerRequestFilter {
+import java.io.IOException;
 
-	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-			throws ServletException, IOException {
-		CsrfToken csrf = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-		if (csrf != null) {
-			Cookie cookie = WebUtils.getCookie(request, "XSRF-TOKEN");
-			String token = csrf.getToken();
-			if (cookie == null || token != null && !token.equals(cookie.getValue())) {
-				cookie = new Cookie("XSRF-TOKEN", token);
-				cookie.setSecure(false);
-				cookie.setPath("/");
-				response.addCookie(cookie);
-			}
-		}
-		filterChain.doFilter(request, response);
-	}
+class TurCsrfCookieFilter extends OncePerRequestFilter {
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
+        // Render the token value to a cookie by causing the deferred token to be loaded
+        csrfToken.getToken();
+
+        filterChain.doFilter(request, response);
+    }
 }
