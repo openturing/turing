@@ -16,6 +16,11 @@
         [style.color]="getRouter().url === '/sn'?'':'#959da5'"></span>
       Semantic Navigation
     </a>
+    <a [routerLink]="['/dev']" [routerLinkActive]="['selected']" class="UnderlineNav-item">
+      <span octicon="code" [size]=16 class="UnderlineNav-octicon octicon mr-1"
+            [style.color]="getRouter().url === '/dev'?'':'#959da5'"></span>
+      API Token
+    </a>
   </div>
 </nav>
 <div class="clearfix container-xl p-0">

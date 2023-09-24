@@ -21,10 +21,11 @@
 
 package com.viglet.turing.persistence.model.nlp.term;
 
-import java.io.Serializable;
 import jakarta.persistence.*;
-
 import org.hibernate.annotations.UuidGenerator;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 
 /**
@@ -35,6 +36,7 @@ import org.hibernate.annotations.UuidGenerator;
 @Table(name="turTermAttribute")
 @NamedQuery(name="TurTermAttribute.findAll", query="SELECT ta FROM TurTermAttribute ta")
 public class TurTermAttribute implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

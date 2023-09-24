@@ -1,12 +1,9 @@
 package com.viglet.turing.persistence.model.sn.source;
 
-import java.io.Serializable;
+import jakarta.persistence.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.Table;
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * The persistent class for the TurSNSite database table.
@@ -17,6 +14,7 @@ import jakarta.persistence.Table;
 @NamedQuery(name = "TurSNSourceType.findAll", query = "SELECT sns FROM TurSNSourceType sns")
 public class TurSNSourceType implements Serializable {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 	
 	@Id

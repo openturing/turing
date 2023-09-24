@@ -21,15 +21,14 @@
 
 package com.viglet.turing.persistence.model.nlp.term;
 
-import java.io.Serializable;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import jakarta.persistence.*;
-
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.UuidGenerator;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
-
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 
@@ -42,6 +41,7 @@ import java.util.List;
 @NamedQuery(name="TurTerm.findAll", query="SELECT t FROM TurTerm t")
 @JsonIgnoreProperties({ "turNLPEntity" } )
 public class TurTerm implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

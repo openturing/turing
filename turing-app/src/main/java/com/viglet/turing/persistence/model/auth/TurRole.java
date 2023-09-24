@@ -20,10 +20,11 @@
  */
 package com.viglet.turing.persistence.model.auth;
 
-import java.io.Serializable;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,6 +36,7 @@ import java.util.Set;
 @Table(name = "turRole")
 @NamedQuery(name = "TurRole.findAll", query = "SELECT r FROM TurRole r")
 public class TurRole implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

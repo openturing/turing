@@ -30,6 +30,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
@@ -45,6 +47,7 @@ import java.util.Set;
 @Table(name = "turSNSiteSpotlight")
 @NamedQuery(name = "TurSNSiteSpotlight.findAll", query = "SELECT snss FROM TurSNSiteSpotlight snss")
 public class TurSNSiteSpotlight implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

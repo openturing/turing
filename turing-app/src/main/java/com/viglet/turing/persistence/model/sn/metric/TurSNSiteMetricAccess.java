@@ -33,6 +33,8 @@ import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.*;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.text.Normalizer;
 import java.util.Date;
@@ -49,6 +51,7 @@ import java.util.Set;
 @Table(name = "turSNSiteMetricAccess")
 @NamedQuery(name = "TurSNSiteMetricAccess.findAll", query = "SELECT snsma FROM TurSNSiteMetricAccess snsma")
 public class TurSNSiteMetricAccess implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

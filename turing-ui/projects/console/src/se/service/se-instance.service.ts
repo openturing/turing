@@ -48,9 +48,7 @@ export class TurSEInstanceService {
         JSON.stringify(turSEInstance));
     }
   }
-
   public delete(turSEInstance: TurSEInstance): Observable<Object> {
     return this.httpClient.delete(`${environment.apiUrl}/api/se/${turSEInstance.id}`);
-
   }
 }

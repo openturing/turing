@@ -21,13 +21,12 @@
 
 package com.viglet.turing.persistence.model.storage;
 
-import java.io.Serializable;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-
 import org.hibernate.annotations.Fetch;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -38,11 +37,9 @@ import java.util.List;
 @Table(name = "turData")
 @NamedQuery(name = "TurData.findAll", query = "SELECT d FROM TurData d")
 @JsonIgnoreProperties({ "turDataGroupData" })
-public class TurData 
-
-implements Serializable 
-
+public class TurData implements Serializable
 {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

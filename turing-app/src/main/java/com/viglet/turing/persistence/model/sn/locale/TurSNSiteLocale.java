@@ -21,20 +21,13 @@
 
 package com.viglet.turing.persistence.model.sn.locale;
 
-import java.io.Serializable;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.Table;
-
-import org.hibernate.annotations.UuidGenerator;
-
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import jakarta.persistence.*;
+import org.hibernate.annotations.UuidGenerator;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * The persistent class for the turSNSiteLocale database table.
@@ -46,6 +39,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 @Table(name = "turSNSiteLocale")
 @NamedQuery(name = "TurSNSiteLocale.findAll", query = "SELECT snsl FROM TurSNSiteLocale snsl")
 public class TurSNSiteLocale implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

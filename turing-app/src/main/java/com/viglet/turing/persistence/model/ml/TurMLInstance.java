@@ -21,8 +21,10 @@
 
 package com.viglet.turing.persistence.model.ml;
 
-import java.io.Serializable;
 import jakarta.persistence.*;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * The persistent class for the vigServices database table.
@@ -32,6 +34,7 @@ import jakarta.persistence.*;
 @Table(name = "turMLInstance")
 @NamedQuery(name = "TurMLInstance.findAll", query = "SELECT mi FROM TurMLInstance mi")
 public class TurMLInstance implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

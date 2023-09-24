@@ -21,11 +21,11 @@
 
 package com.viglet.turing.persistence.model.storage;
 
-import java.io.Serializable;
 import jakarta.persistence.*;
-
 import org.hibernate.annotations.Fetch;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -36,6 +36,7 @@ import java.util.List;
 @Table(name = "turDataGroup")
 @NamedQuery(name = "TurDataGroup.findAll", query = "SELECT dg FROM TurDataGroup dg")
 public class TurDataGroup implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

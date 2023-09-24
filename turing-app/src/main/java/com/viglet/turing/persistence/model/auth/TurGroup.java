@@ -20,13 +20,13 @@
  */
 package com.viglet.turing.persistence.model.auth;
 
+import jakarta.persistence.*;
+import org.hibernate.annotations.UuidGenerator;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.hibernate.annotations.UuidGenerator;
-
-import jakarta.persistence.*;
 
 /**
  * The persistent class for the TurGroup database table.
@@ -35,6 +35,7 @@ import jakarta.persistence.*;
 @Entity
 @NamedQuery(name = "TurGroup.findAll", query = "SELECT g FROM TurGroup g")
 public class TurGroup implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

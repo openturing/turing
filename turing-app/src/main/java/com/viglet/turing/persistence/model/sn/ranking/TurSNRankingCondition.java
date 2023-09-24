@@ -26,6 +26,7 @@ import com.viglet.turing.spring.security.TurAuditable;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -39,6 +40,7 @@ import java.io.Serializable;
 @NamedQuery(name = "TurSNRankingCondition.findAll", query = "SELECT src FROM TurSNRankingExpression src")
 @JsonIgnoreProperties({ "turSNRankingExpression" })
 public class TurSNRankingCondition extends TurAuditable<String>  implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

@@ -21,12 +21,12 @@
 
 package com.viglet.turing.persistence.model.converse.intent;
 
-import java.io.Serializable;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-
 import org.hibernate.annotations.UuidGenerator;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.io.Serial;
+import java.io.Serializable;
 
 
 /**
@@ -38,6 +38,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @NamedQuery(name="TurConverseEvent.findAll", query="SELECT ce FROM TurConverseEvent ce")
 @JsonIgnoreProperties({ "intent" })
 public class TurConverseEvent implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

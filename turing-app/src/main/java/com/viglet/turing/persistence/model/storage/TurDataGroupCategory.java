@@ -20,11 +20,12 @@
  */
 package com.viglet.turing.persistence.model.storage;
 
-import java.io.Serializable;
-import jakarta.persistence.*;
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
+import jakarta.persistence.*;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 
 /**
@@ -35,6 +36,7 @@ import com.viglet.turing.persistence.model.ml.TurMLCategory;
 @Table(name="turDataGroupCategory")
 @NamedQuery(name="TurDataGroupCategory.findAll", query="SELECT dgc FROM TurDataGroupCategory dgc")
 public class TurDataGroupCategory implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

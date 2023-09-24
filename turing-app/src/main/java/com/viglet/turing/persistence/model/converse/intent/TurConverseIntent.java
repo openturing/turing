@@ -21,6 +21,7 @@
 
 package com.viglet.turing.persistence.model.converse.intent;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
@@ -44,6 +45,7 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 @Table(name = "turConverseIntent")
 @NamedQuery(name = "TurConverseIntent.findAll", query = "SELECT ci FROM TurConverseIntent ci")
 public class TurConverseIntent implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

@@ -29,6 +29,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,6 +44,7 @@ import java.util.Set;
 @Table(name = "turSNRankingExpression")
 @NamedQuery(name = "TurSNRankingExpression.findAll", query = "SELECT sre FROM TurSNRankingExpression sre")
 public class TurSNRankingExpression extends TurAuditable<String>  implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

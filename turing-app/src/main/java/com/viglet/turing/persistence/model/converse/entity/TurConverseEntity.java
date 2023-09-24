@@ -20,20 +20,18 @@
  */
 package com.viglet.turing.persistence.model.converse.entity;
 
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.*;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-
-import jakarta.persistence.*;
-
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UuidGenerator;
-
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 /**
  * The persistent class for the turConverseEntity database table.
@@ -43,6 +41,7 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 @Table(name = "turConverseEntity")
 @NamedQuery(name = "TurConverseEntity.findAll", query = "SELECT ce FROM TurConverseEntity ce")
 public class TurConverseEntity implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

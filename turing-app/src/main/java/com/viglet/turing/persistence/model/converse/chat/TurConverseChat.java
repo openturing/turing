@@ -21,28 +21,18 @@
 
 package com.viglet.turing.persistence.model.converse.chat;
 
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.*;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UuidGenerator;
-
-import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 /**
  * The persistent class for the turConverseChat database table.
@@ -52,6 +42,7 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 @Table(name = "turConverseChat")
 @NamedQuery(name = "TurConverseChat.findAll", query = "SELECT cc FROM TurConverseChat cc")
 public class TurConverseChat implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

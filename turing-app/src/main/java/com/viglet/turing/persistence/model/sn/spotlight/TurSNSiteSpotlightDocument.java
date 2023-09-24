@@ -21,13 +21,12 @@
 
 package com.viglet.turing.persistence.model.sn.spotlight;
 
-import java.io.Serializable;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-
 import org.hibernate.annotations.UuidGenerator;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * The persistent class for the turSNSiteSpotlightDocument database table.
@@ -40,6 +39,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @NamedQuery(name = "TurSNSiteSpotlightDocument.findAll", query = "SELECT snssd FROM TurSNSiteSpotlightDocument snssd")
 @JsonIgnoreProperties({ "turSNSiteSpotlight" })
 public class TurSNSiteSpotlightDocument implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

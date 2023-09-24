@@ -20,20 +20,12 @@
  */
 package com.viglet.turing.persistence.model.sn.merge;
 
-import java.io.Serializable;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.Table;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * The persistent class for the turSNSiteMergeField database table.
@@ -46,6 +38,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @NamedQuery(name = "TurSNSiteMergeProvidersField.findAll", query = "SELECT snsmpf FROM TurSNSiteMergeProvidersField snsmpf")
 @JsonIgnoreProperties({ "turSNSiteMergeProviders" })
 public class TurSNSiteMergeProvidersField implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

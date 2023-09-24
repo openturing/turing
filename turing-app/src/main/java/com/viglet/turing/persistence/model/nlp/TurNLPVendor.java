@@ -20,8 +20,10 @@
  */
 package com.viglet.turing.persistence.model.nlp;
 
-import java.io.Serializable;
 import jakarta.persistence.*;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 
 /**
@@ -32,6 +34,7 @@ import jakarta.persistence.*;
 @Table(name = "turNLPVendor")
 @NamedQuery(name = "TurNLPVendor.findAll", query = "SELECT v FROM TurNLPVendor v")
 public class TurNLPVendor implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

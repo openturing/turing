@@ -21,15 +21,14 @@
 
 package com.viglet.turing.persistence.model.ml;
 
-import java.io.Serializable;
-import jakarta.persistence.*;
-
-import org.hibernate.annotations.Fetch;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
+import jakarta.persistence.*;
+import org.hibernate.annotations.Fetch;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 
@@ -42,6 +41,7 @@ import java.util.List;
 @NamedQuery(name="TurMLCategory.findAll", query="SELECT mlc FROM TurMLCategory mlc")
 @JsonIgnoreProperties({ "turDataGroupCategories" })
 public class TurMLCategory implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

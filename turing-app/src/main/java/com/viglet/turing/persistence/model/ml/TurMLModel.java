@@ -21,8 +21,10 @@
 
 package com.viglet.turing.persistence.model.ml;
 
-import java.io.Serializable;
 import jakarta.persistence.*;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 
 /**
@@ -33,6 +35,7 @@ import jakarta.persistence.*;
 @Table(name="turMLModel")
 @NamedQuery(name="TurMLModel.findAll", query="SELECT mlm FROM TurMLModel mlm")
 public class TurMLModel implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

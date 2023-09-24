@@ -20,19 +20,12 @@
  */
 package com.viglet.turing.persistence.model.nlp;
 
-import java.io.Serializable;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.Table;
-
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * The persistent class for the turNLPEntityType database table.
@@ -46,6 +39,7 @@ import com.fasterxml.jackson.annotation.JsonIdentityReference;
 @Table(name = "turNLPEntityType")
 @NamedQuery(name = "TurNLPEntityType.findAll", query = "SELECT net FROM TurNLPEntityType net")
 public class TurNLPEntityType implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

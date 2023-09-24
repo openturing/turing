@@ -21,13 +21,12 @@
 
 package com.viglet.turing.persistence.model.nlp.term;
 
-import java.io.Serializable;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-
 import org.hibernate.annotations.UuidGenerator;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 
@@ -40,6 +39,7 @@ import java.util.List;
 @NamedQuery(name="TurTermRelationFrom.findAll", query="SELECT trf FROM TurTermRelationFrom trf")
 @JsonIgnoreProperties({ "turTerm" } )
 public class TurTermRelationFrom implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id
