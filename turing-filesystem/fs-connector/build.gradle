@@ -67,7 +67,7 @@ dependencies {
   implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
     
   // Commons
-  implementation group: 'commons-io', name: 'commons-io', version: '2.13.0'
+  implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
     
 	
 }
