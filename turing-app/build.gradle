@@ -184,7 +184,7 @@ dependencies {
     implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version: '2.3.0'
 
     // Apache Commons
-    implementation group: 'commons-io', name: 'commons-io', version: '2.13.0'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
     implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
 
     // Hazelcast
