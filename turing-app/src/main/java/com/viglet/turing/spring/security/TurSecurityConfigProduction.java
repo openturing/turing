@@ -54,34 +54,31 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class TurSecurityConfigProduction {
     @Autowired
     private UserDetailsService userDetailsService;
-    @Autowired
-    protected TurAuthenticationEntryPoint turAuthenticationEntryPoint;
-    @Autowired
-    private TurConfigProperties turConfigProperties;
-    @Autowired
-    private TurLogoutHandler turLogoutHandler;
-    @Autowired
-    private TurAuthTokenHeaderFilter turAuthTokenHeaderFilter;
     @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri:''}")
     private String issuerUri;
     @Value("${spring.security.oauth2.client.registration.keycloak.client-id:''}")
     private String clientId;
     @Value("${turing.url:'http://localhost:2700'}")
     private String turingUrl;
+
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
-          http.headers(header -> header.frameOptions(
+    SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc,
+                                    TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
+                                    TurLogoutHandler turLogoutHandler,
+                                    TurConfigProperties turConfigProperties,
+                                    TurAuthenticationEntryPoint turAuthenticationEntryPoint) throws Exception {
+        http.headers(header -> header.frameOptions(
                 frameOptions -> frameOptions.disable().cacheControl(HeadersConfigurer.CacheControlConfig::disable)));
         http.cors(Customizer.withDefaults());
         http.addFilterBefore(turAuthTokenHeaderFilter, BasicAuthenticationFilter.class);
         http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
         http.csrf(csrf -> csrf
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .csrfTokenRequestHandler(new TurSpaCsrfTokenRequestHandler())
-                .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/api/sn/**"),
-                        mvc.pattern("/logout"), mvc.pattern("/api/nlp/**"),
-                        mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**")))
-                .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class); ;
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new TurSpaCsrfTokenRequestHandler())
+                        .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/api/sn/**"),
+                                mvc.pattern("/logout"), mvc.pattern("/api/nlp/**"),
+                                mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**")))
+                .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
         if (turConfigProperties.isKeycloak()) {
             String keycloakUrlFormat =
                     String.format("%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",
@@ -129,9 +126,8 @@ public class TurSecurityConfigProduction {
 
     @Bean
     WebSecurityCustomizer webSecurityCustomizer(MvcRequestMatcher.Builder mvc) {
-        return (web) -> {
+        return (web) ->
             web.httpFirewall(allowUrlEncodedSlaturHttpFirewall()).ignoring().requestMatchers(mvc.pattern("/h2/**"));
-        };
     }
 
     @Scope("prototype")
@@ -157,8 +153,6 @@ public class TurSecurityConfigProduction {
         firewall.setAllowUrlEncodedSlash(true);
         return firewall;
     }
-
-
 
 
 }

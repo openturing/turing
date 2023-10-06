@@ -26,16 +26,14 @@ public class TurAuthTokenHeaderFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String appId = request.getHeader("APP_ID");
-        if (appId != null) {
-            if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                TurUser turUser = turUserRepository.findByUsername("admin");
-                UsernamePasswordAuthenticationToken authenticationToken =
-                        new UsernamePasswordAuthenticationToken(
-                                turUser, null, Collections.emptyList());
-                authenticationToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-            }
+        if (appId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            TurUser turUser = turUserRepository.findByUsername("admin");
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(
+                            turUser, null, Collections.emptyList());
+            authenticationToken.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         }
         filterChain.doFilter(request, response);
     }

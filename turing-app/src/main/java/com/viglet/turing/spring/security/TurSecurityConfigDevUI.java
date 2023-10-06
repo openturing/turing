@@ -21,6 +21,9 @@
 
 package com.viglet.turing.spring.security;
 
+import com.viglet.turing.properties.TurConfigProperties;
+import com.viglet.turing.spring.security.auth.TurAuthTokenHeaderFilter;
+import com.viglet.turing.spring.security.auth.TurLogoutHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -40,9 +43,13 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 @Profile("dev-ui")
 @ComponentScan(basePackageClasses = TurCustomUserDetailsService.class)
 public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
-
+	@Override
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
+	public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc,
+										   TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
+										   TurLogoutHandler turLogoutHandler,
+										   TurConfigProperties turConfigProperties,
+										   TurAuthenticationEntryPoint turAuthenticationEntryPoint) throws Exception {
 		http.headers(header -> header.frameOptions(
 				frameOptions -> frameOptions.disable().cacheControl(HeadersConfigurer.CacheControlConfig::disable)));
 		http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
@@ -57,7 +64,7 @@ public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
 				}).csrf(AbstractHttpConfigurer::disable).cors(Customizer.withDefaults());
 		return http.build();
 	}
-
+	@Override
 	@Scope("prototype")
 	@Bean
 	MvcRequestMatcher.Builder mvc(HandlerMappingIntrospector introspector) {

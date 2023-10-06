@@ -36,9 +36,8 @@ public class TurDiscoveryAPI {
     @Autowired
     private TurConfigProperties turConfigProperties;
 
-
     @GetMapping
-    private TurAPIBean info() throws JSONException {
+    public TurAPIBean info() throws JSONException {
         turAPIBean.setProduct("Viglet Turing");
         turAPIBean.setKeycloak(turConfigProperties.isKeycloak());
         turAPIBean.setMultiTenant(turConfigProperties.isMultiTenant());

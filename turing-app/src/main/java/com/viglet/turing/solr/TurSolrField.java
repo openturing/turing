@@ -20,13 +20,13 @@
  */
 package com.viglet.turing.solr;
 
+import com.viglet.turing.commons.se.field.TurSEFieldType;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
-
-import com.viglet.turing.commons.se.field.TurSEFieldType;
 
 public class TurSolrField {
 
@@ -105,13 +105,12 @@ public class TurSolrField {
 		}
 	}
 
-	@SuppressWarnings({ "unchecked" })
 	public static Object[] convertFieldToArray(Object attrValue) {
 		if (attrValue instanceof String stringValue) {
 			return new String[] { stringValue };
 		} else if (attrValue instanceof Long longValue) {
 			return new Long[] { longValue };
-		} else if (attrValue instanceof ArrayList arrayListValue) {
+		} else if (attrValue instanceof ArrayList<?> arrayListValue) {
 			return arrayListValue.toArray(new Object[0]);
 		} else {
 			return (Object[]) attrValue;
@@ -144,8 +143,7 @@ public class TurSolrField {
 	public static boolean convertFieldToBoolean(Object attrValue) {
 		if (attrValue instanceof String) {
 			return Boolean.parseBoolean((String) attrValue);
-		} else if (attrValue instanceof ArrayList) {
-			ArrayList<?> arrAttValue = (ArrayList<?>) attrValue;
+		} else if (attrValue instanceof ArrayList<?> arrAttValue) {
 			if (arrAttValue.get(0) instanceof String) {
 				return Boolean.parseBoolean((String) arrAttValue.get(0));
 			} else if (arrAttValue.get(0) instanceof Long) {
@@ -161,19 +159,13 @@ public class TurSolrField {
 	}
 
 	public static Object convertField(TurSEFieldType finalType, Object attrValue) {
-		switch (finalType) {
-		case INT:
-			return convertFieldToInt(attrValue);
-		case LONG:
-			return convertFieldToLong(attrValue);
-		case STRING:
-			return convertFieldToString(attrValue);
-		case DATE:
-			return convertFieldToDate(attrValue);
-		case BOOL:
-			return convertFieldToBoolean(attrValue);
-		default:
-			return attrValue;
-		}
+        return switch (finalType) {
+            case INT -> convertFieldToInt(attrValue);
+            case LONG -> convertFieldToLong(attrValue);
+            case STRING -> convertFieldToString(attrValue);
+            case DATE -> convertFieldToDate(attrValue);
+            case BOOL -> convertFieldToBoolean(attrValue);
+            default -> attrValue;
+        };
 	}
 }

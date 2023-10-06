@@ -34,7 +34,7 @@ import java.util.Map;
 @Tag(name = "Heartbeat", description = "Heartbeat")
 public class TurAPI {
 	@GetMapping
-	private Map<String,String> info() throws JSONException {
+	public Map<String,String> info() throws JSONException {
 		Map<String,String> status = new HashMap<>();
 		status.put("status", "ok");
 		return status;

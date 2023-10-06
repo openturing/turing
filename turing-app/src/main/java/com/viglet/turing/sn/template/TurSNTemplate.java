@@ -119,7 +119,7 @@ public class TurSNTemplate {
 
 	public String createSolrCore(TurSNSiteLocale turSNSiteLocale, String username) {
 		String coreName = String.format("%s_%s_%s", username,
-				turSNSiteLocale.getTurSNSite().getName().toLowerCase().replaceAll(" ", "_"),
+				turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
 				turSNSiteLocale.getLanguage());
 		Optional<TurSEInstance> turSEInstance = turSEInstanceRepository
 				.findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId());
