@@ -40,11 +40,13 @@ plugins {
 
 sonarqube {
     properties {
+        property "sonar.gradle.skipCompile", "true"
         property "sonar.projectKey", "turing-app"
         property "sonar.organization", "viglet-turing"
         property "sonar.host.url", "https://sonarcloud.io"
         property "sonar.cpd.exclusions", "**/persistence/dto/**,**/persistence/model/**,**/plugins/nlp/otca/response/xml/**"
     }
+
 }
 
 jar {
