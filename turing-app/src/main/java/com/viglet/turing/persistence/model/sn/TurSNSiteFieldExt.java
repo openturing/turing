@@ -21,14 +21,14 @@
 
 package com.viglet.turing.persistence.model.sn;
 
-import java.io.Serializable;
-import javax.persistence.*;
-
-import org.hibernate.annotations.GenericGenerator;
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
+import jakarta.persistence.*;
+import org.hibernate.annotations.UuidGenerator;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * The persistent class for the turSNSiteFieldExt database table.
@@ -38,11 +38,11 @@ import com.viglet.turing.sn.TurSNFieldType;
 @Table(name = "turSNSiteFieldExt")
 @NamedQuery(name = "TurSNSiteFieldExt.findAll", query = "SELECT snsfe FROM TurSNSiteFieldExt snsfe")
 public class TurSNSiteFieldExt implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
-	@GeneratedValue(generator = "UUID")
+	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

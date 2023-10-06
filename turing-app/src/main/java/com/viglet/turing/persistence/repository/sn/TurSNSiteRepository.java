@@ -37,6 +37,9 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 	@Cacheable("turSNSitefindAll")
 	List<TurSNSite> findAll();
 
+	@Cacheable("turSNSitefindAByCreatedBy")
+	List<TurSNSite> findByCreatedBy(String createdBy);
+	
 	@Cacheable("turSNSitefindById")
 	Optional<TurSNSite> findById(String id);
 

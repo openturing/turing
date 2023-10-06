@@ -21,30 +21,21 @@
 
 package com.viglet.turing.api.sn.console;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Alexandre Oliveira
@@ -74,7 +65,7 @@ public class TurSNSiteSpotlightAPI {
 
 	@Operation(summary = "Show a Semantic Navigation Site Spotlight")
 	@GetMapping("/{id}")
-	public TurSNSiteSpotlight turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
+	public TurSNSiteSpotlight turSNSiteSpotlightGet(@PathVariable String snSiteId, @PathVariable String id) {
 
 		Optional<TurSNSiteSpotlight> turSNSiteSpotlight = turSNSiteSpotlightRepository.findById(id);
 		if (turSNSiteSpotlight.isPresent()) {
@@ -109,7 +100,7 @@ public class TurSNSiteSpotlightAPI {
 	@Operation(summary = "Delete a Semantic Navigation Site Spotlight")
 	@DeleteMapping("/{id}")
 	@CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
-	public boolean turSNSiteDelete(@PathVariable String id) {
+	public boolean turSNSiteSpotlighDelete(@PathVariable String id) {
 		turSNSiteSpotlightRepository.delete(id);
 		return true;
 	}

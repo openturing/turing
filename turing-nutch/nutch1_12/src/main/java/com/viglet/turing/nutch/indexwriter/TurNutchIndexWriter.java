@@ -19,10 +19,7 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import static java.net.URLDecoder.decode;
@@ -34,7 +31,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 	private static final String TIMESTAMP_PROPERTY = "turing.timestamp.field";
 	private static final String FIELD_PROPERTY = "turing.field.";
 	private final TurSNJobItems turSNJobItems = new TurSNJobItems();
-	private ModifiableSolrParams params;
 	private TurMappingReader turMapping;
 	private Configuration config;
 
@@ -50,9 +46,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void delete(String key) throws IOException {
-		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE);
 		try {
 			key = decode(key, StandardCharsets.UTF_8.name());
 		} catch (IllegalArgumentException e) {
@@ -83,12 +77,10 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void write(NutchDocument doc) throws IOException {
-		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem
-				.setLocale(this.config.get(TurNutchConstants.LOCALE_PROPERTY, TurNutchCommons.LOCALE_DEFAULT_VALUE));
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+
 		Map<String, Object> attributes = new HashMap<>();
 		Map<String, String> turCustomFields = this.config.getValByRegex("^" + FIELD_PROPERTY + "*");
+		String locale = this.config.get(TurNutchConstants.LOCALE_PROPERTY, TurNutchCommons.LOCALE_DEFAULT_VALUE);
 		String localeField = this.config.get(TurNutchConstants.LOCALE_FIELD_PROPERTY);
 		for (final Entry<String, NutchField> fieldMap : doc) {
 			for (final Object originalValue : fieldMap.getValue().getValues()) {
@@ -101,17 +93,20 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 				if (fieldMap.getKey().equals(TurNutchCommons.CONTENT_FIELD)
 						|| fieldMap.getKey().equals(TurNutchCommons.TITLE_FIELD)) {
-					normalizedValue = TurNutchCommons.stripNonCharCodepoints((String) originalValue);
+                    assert originalValue instanceof String;
+                    normalizedValue = TurNutchCommons.stripNonCharCodepoints((String) originalValue);
 				}
 				if (localeField != null && fieldMap.getKey().equals(TurNutchCommons.META_TAG_VALUE + localeField)) {
-					turSNJobItem.setLocale(TurNutchCommons.stripNonCharCodepoints((String) originalValue));
-				} else if (fieldMap.getKey().equals(TurNutchCommons.TIMESTAMP_FIELD)) {
+                    assert originalValue instanceof String;
+                    locale = TurNutchCommons.stripNonCharCodepoints((String) originalValue);
+				}
+				if (fieldMap.getKey().equals(TurNutchCommons.TIMESTAMP_FIELD)) {
 					attributes.put(this.config.get(TIMESTAMP_PROPERTY, TurNutchCommons.TIMESTAMP_FIELD),
 							normalizedValue);
 				} else {
 					attributes.put(turMapping.mapKey(fieldMap.getKey()), normalizedValue);
 					String sCopy = turMapping.mapCopyKey(fieldMap.getKey());
-					if (sCopy != fieldMap.getKey())
+					if (!Objects.equals(sCopy, fieldMap.getKey()))
 						attributes.put(sCopy, normalizedValue);
 				}
 			}
@@ -126,13 +121,14 @@ public class TurNutchIndexWriter implements IndexWriter {
 		attributes.put(TurNutchCommons.CONNECTOR_FIELD, this.config
 				.get(FIELD_PROPERTY + TurNutchCommons.CONNECTOR_FIELD, TurNutchCommons.CONNECTOR_DEFAULT_VALUE));
 
-		turCustomFields.entrySet().forEach(turCustomField -> {
-			String[] keyFullName = turCustomField.getKey().split("\\.");
-			String key = keyFullName[keyFullName.length - 1];
-			if (!key.equals(TurNutchCommons.TYPE_FIELD) && (!key.equals(TurNutchCommons.CONNECTOR_FIELD))) {
-				attributes.put(key, turCustomField.getValue());
-			}
-		});
+		turCustomFields.forEach((key1, value) -> {
+            String[] keyFullName = key1.split("\\.");
+            String key = keyFullName[keyFullName.length - 1];
+            if (!key.equals(TurNutchCommons.TYPE_FIELD) && (!key.equals(TurNutchCommons.CONNECTOR_FIELD))) {
+                attributes.put(key, value);
+            }
+        });
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, locale);
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 		totalAdds++;
@@ -225,7 +221,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 		turMapping = TurMappingReader.getInstance(job);
 		weightField = job.get(TurNutchConstants.WEIGHT_FIELD, StringUtils.EMPTY);
 		// parse optional params
-		params = new ModifiableSolrParams();
+		ModifiableSolrParams params = new ModifiableSolrParams();
 		String paramString = config.get(IndexerMapReduce.INDEXER_PARAMS);
 		if (paramString != null) {
 			String[] values = paramString.split("&");
@@ -241,10 +237,8 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public String describe() {
-		StringBuffer sb = new StringBuffer("TurNutchIndexWriter");
-		sb.append(System.lineSeparator()).append(TurNutchCommons.TAB)
-				.append("Indexing to Viglet Turing Semantic Navigation");
-		return sb.toString();
+        return "TurNutchIndexWriter" + System.lineSeparator() + TurNutchCommons.TAB +
+				"Indexing to Viglet Turing Semantic Navigation";
 	}
 
 	void describeLine(StringBuffer sb, String variable, String description, String value) {

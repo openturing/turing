@@ -20,10 +20,11 @@
  */
 package com.viglet.turing.persistence.model.se;
 
-import java.io.Serializable;
-import javax.persistence.*;
+import jakarta.persistence.*;
+import org.hibernate.annotations.UuidGenerator;
 
-import org.hibernate.annotations.GenericGenerator;
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * The persistent class for the vigServices database table.
@@ -33,11 +34,11 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name = "turSEInstance")
 @NamedQuery(name = "TurSEInstance.findAll", query = "SELECT si FROM TurSEInstance si")
 public class TurSEInstance implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
-	@GeneratedValue(generator = "UUID")
+	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

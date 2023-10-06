@@ -22,7 +22,6 @@ package com.viglet.turing.solr;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -39,7 +38,6 @@ import java.net.URL;
 public class TurSolrCache {
     private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
-    @Cacheable(value = "solrCore", sync = true)
     public boolean isSolrCoreExists(String urlString) {
         int responseCode = 0;
         URL url;

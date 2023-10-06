@@ -21,20 +21,6 @@
 
 package com.viglet.turing.persistence.model.converse;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.persistence.*;
-
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
@@ -43,6 +29,18 @@ import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.*;
+
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * The persistent class for the turConverseAgent database table.
@@ -54,11 +52,11 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 @JsonIgnoreProperties({ "intents", "contexts", "chats" })
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class TurConverseAgent implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
-	@GeneratedValue(generator = "UUID")
+	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

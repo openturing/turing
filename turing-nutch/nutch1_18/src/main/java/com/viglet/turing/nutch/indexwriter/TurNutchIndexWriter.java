@@ -1,38 +1,27 @@
 package com.viglet.turing.nutch.indexwriter;
 
-import java.lang.invoke.MethodHandles;
-import java.net.URLDecoder;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.time.format.DateTimeFormatter;
-import java.util.AbstractMap;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.nutch.indexer.IndexWriter;
-import org.apache.nutch.indexer.IndexWriterParams;
-import org.apache.nutch.indexer.IndexerMapReduce;
-import org.apache.nutch.indexer.NutchDocument;
-import org.apache.nutch.indexer.NutchField;
-import org.apache.solr.common.params.ModifiableSolrParams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.nutch.commons.TurNutchCommons;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.nutch.indexer.*;
+import org.apache.solr.common.params.ModifiableSolrParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandles;
+import java.net.URLDecoder;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class TurNutchIndexWriter implements IndexWriter {
 
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 	private final TurSNJobItems turSNJobItems = new TurSNJobItems();
-	private ModifiableSolrParams params;
 	private Configuration config;
 
 	private String url;
@@ -90,7 +79,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 		batchSize = properties.getInt(TurNutchConstants.COMMIT_SIZE, 1000);
 		weightField = properties.get(TurNutchConstants.WEIGHT_FIELD, "");
 		// parse optional parameters
-		params = new ModifiableSolrParams();
+		ModifiableSolrParams params = new ModifiableSolrParams();
 		String paramString = config.get(IndexerMapReduce.INDEXER_PARAMS);
 		if (paramString != null) {
 			String[] values = paramString.split("&");
@@ -106,9 +95,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void delete(String key) throws IOException {
-		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE);
 		try {
 			key = URLDecoder.decode(key, "UTF8");
 		} catch (UnsupportedEncodingException e) {
@@ -139,12 +126,9 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void write(NutchDocument doc) throws IOException {
-		System.out.println(doc.toString());
-		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setLocale(this.config.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY),
-				TurNutchCommons.LOCALE_DEFAULT_VALUE));
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-		Map<String, Object> attributes = new HashMap<String, Object>();
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, this.config
+				.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY), TurNutchCommons.LOCALE_DEFAULT_VALUE));
+		Map<String, Object> attributes = new HashMap<>();
 		for (final Entry<String, NutchField> e : doc) {
 
 			for (final Object val : e.getValue().getValues()) {
@@ -157,7 +141,8 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 				if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD)
 						|| e.getKey().equals(TurNutchCommons.TITLE_FIELD)) {
-					val2 = TurNutchCommons.stripNonCharCodepoints((String) val);
+                    assert val instanceof String;
+                    val2 = TurNutchCommons.stripNonCharCodepoints((String) val);
 				}
 				if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD)) {
 					attributes.put(TurNutchCommons.TEXT_FIELD, val2);

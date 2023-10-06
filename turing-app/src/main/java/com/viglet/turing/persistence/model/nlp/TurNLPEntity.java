@@ -21,18 +21,16 @@
 
 package com.viglet.turing.persistence.model.nlp;
 
-import java.io.Serializable;
-import javax.persistence.*;
-
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.term.TurTerm;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.*;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Set;
 
 /**
@@ -44,6 +42,7 @@ import java.util.Set;
 @NamedQuery(name = "TurNLPEntity.findAll", query = "SELECT ne FROM TurNLPEntity ne")
 @JsonIgnoreProperties({ "turNLPInstanceEntities", "turNLPVendorEntities" } )
 public class TurNLPEntity implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

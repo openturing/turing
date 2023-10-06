@@ -67,8 +67,6 @@ public class TurWEMDeindex {
 	 **/
 	public static void indexDelete(ManagedObjectVCMRef managedObjectVCMRef, IHandlerConfiguration config,
 			String siteName) {
-		final TurSNJobItems turSNJobItems = new TurSNJobItems();
-		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 
 		AsLocaleData asLocaleData = null;
 		String ctdXmlName = null;
@@ -86,9 +84,9 @@ public class TurWEMDeindex {
 		}
 
 		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
+		final TurSNJobItems turSNJobItems = new TurSNJobItems();
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, turSNSiteConfig.getLocale());
 
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-		turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 		Map<String, Object> attributes = new HashMap<>();
 
 		String guid = managedObjectVCMRef.getId();
@@ -108,11 +106,9 @@ public class TurWEMDeindex {
 	 * 
 	 **/
 	public static void indexDeleteByType(String siteName, String typeName, IHandlerConfiguration config) {
-		final TurSNJobItems turSNJobItems = new TurSNJobItems();
-		final TurSNJobItem turSNJobItem = new TurSNJobItem();
 		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName);
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-		turSNJobItem.setLocale(turSNSiteConfig.getLocale());
+		final TurSNJobItems turSNJobItems = new TurSNJobItems();
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, turSNSiteConfig.getLocale());
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put(GenericResourceHandlerConfiguration.TYPE_ATTRIBUTE, typeName);
 		attributes.put(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());

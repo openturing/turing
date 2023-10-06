@@ -21,29 +21,18 @@
 
 package com.viglet.turing.persistence.model.converse.chat;
 
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.*;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-
-import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 /**
  * The persistent class for the turConverseChat database table.
@@ -53,11 +42,11 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 @Table(name = "turConverseChat")
 @NamedQuery(name = "TurConverseChat.findAll", query = "SELECT cc FROM TurConverseChat cc")
 public class TurConverseChat implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
-	@GeneratedValue(generator = "UUID")
+	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

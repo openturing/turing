@@ -21,22 +21,13 @@
 
 package com.viglet.turing.persistence.model.converse.chat;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
+import org.hibernate.annotations.UuidGenerator;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-
-import org.hibernate.annotations.GenericGenerator;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * The persistent class for the turConverseChatResponse database table.
@@ -47,11 +38,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @NamedQuery(name = "TurConverseChatResponse.findAll", query = "SELECT ccr FROM TurConverseChatResponse ccr")
 @JsonIgnoreProperties({ "chat" })
 public class TurConverseChatResponse implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
-	@GeneratedValue(generator = "UUID")
+	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

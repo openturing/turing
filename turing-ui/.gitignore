@@ -2,6 +2,7 @@
 
 # compiled output
 /dist/*
+!dist/angular-octicons
 
 /tmp
 /out-tsc
@@ -48,4 +49,4 @@ Thumbs.db
 
 .gradle
 /build
-!dist/angular-octicons
+/target

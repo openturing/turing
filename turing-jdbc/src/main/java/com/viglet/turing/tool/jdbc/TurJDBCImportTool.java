@@ -16,26 +16,6 @@
  */
 package com.viglet.turing.tool.jdbc;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
@@ -45,12 +25,22 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.filesystem.commons.TurFileAttributes;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
-import com.viglet.turing.tool.jdbc.impl.TurJDBCCustomImpl;
 import com.viglet.turing.tool.jdbc.format.TurFormatValue;
-
+import com.viglet.turing.tool.jdbc.impl.TurJDBCCustomImpl;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * Class that can be used to bootstrap and launch JDBC Import Tool
@@ -306,7 +296,8 @@ public class TurJDBCImportTool {
 			TurSNServer turSNServer = createTurSNServer();
 			TurJDBCCustomImpl turJDBCCustomImpl = instantiateCustomClass();
 			if (this.deindexBeforeImporting) {
-				turSNServer.deleteItemsByType(type);
+                assert turSNServer != null;
+                turSNServer.deleteItemsByType(type);
 			}
 			logger.info("Execute a query...");
 			try (Connection conn = DriverManager.getConnection(connect, dbUsername, dbPassword);
@@ -324,12 +315,14 @@ public class TurJDBCImportTool {
 				while (rs.next()) {
 					turChunkingJob.addItem(createJobItem(turJDBCCustomImpl, conn, rs));
 					if (turChunkingJob.isChunkLimit()) {
-						this.sendServer(turSNServer, turChunkingJob, totalRows);
+                        assert turSNServer != null;
+                        this.sendServer(turSNServer, turChunkingJob, totalRows);
 						turChunkingJob.newCicle();
 					}
 				}
 				if (turChunkingJob.hasItemsLeft()) {
-					this.sendServer(turSNServer, turChunkingJob, totalRows);
+                    assert turSNServer != null;
+                    this.sendServer(turSNServer, turChunkingJob, totalRows);
 				}
 			} catch (SQLException e) {
 				logger.error(e.getMessage(), e);
@@ -383,10 +376,8 @@ public class TurJDBCImportTool {
 		addFileAttributes(attributes);
 		attributes = modifyAttributesByCustomClass(turJDBCCustomImpl, conn, attributes);
 		addMultiValuedAttributes(attributes);
-		TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+		TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, locale);
 		turSNJobItem.setAttributes(attributes);
-		turSNJobItem.setLocale(locale);
 
 		return turSNJobItem;
 	}
@@ -463,11 +454,10 @@ public class TurJDBCImportTool {
 	}
 
 	private void addMultiValuedAttributes(Map<String, Object> attributes) {
-		attributes.entrySet().forEach(attribute -> {
-			String attributeName = attribute.getKey();
-			String attributeValue = String.valueOf(attribute.getValue());
-			addOnlyMultiValuedAttributes(attributes, attributeName, attributeValue);
-		});
+		attributes.forEach((attributeName, value) -> {
+            String attributeValue = String.valueOf(value);
+            addOnlyMultiValuedAttributes(attributes, attributeName, attributeValue);
+        });
 	}
 
 	private void addOnlyMultiValuedAttributes(Map<String, Object> attributes, String attributeName,
@@ -481,8 +471,8 @@ public class TurJDBCImportTool {
 	}
 
 	private void sendServer(TurSNServer turSNServer, TurChunkingJob turChunkingJob, int totalRows) {
-		System.out.print(String.format("Importing %s to %s of %s items%n", turChunkingJob.getFirstItemPosition(),
-				turChunkingJob.getTotal(), totalRows));
+		System.out.printf("Importing %s to %s of %s items%n", turChunkingJob.getFirstItemPosition(),
+				turChunkingJob.getTotal(), totalRows);
 		turSNServer.importItems(turChunkingJob.getTurSNJobItems(), showOutput);
 	}
 }

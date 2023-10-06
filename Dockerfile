@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk14:jre
+FROM eclipse-temurin:17-jdk
 ENV JAVA_OPTS=${JAVA_OPTS:-'-Xmx512m'}
 ENV DEBUG_OPTS=${DEBUG_OPTS}
 ENV PORT=${PORT:-2700}

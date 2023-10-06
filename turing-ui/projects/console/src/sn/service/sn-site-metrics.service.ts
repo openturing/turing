@@ -18,7 +18,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { environment } from '../../../../../environments/environment';
 import { TurSNSiteMetricsTerm } from '../model/sn-site-metrics-term.model';
 
 @Injectable()

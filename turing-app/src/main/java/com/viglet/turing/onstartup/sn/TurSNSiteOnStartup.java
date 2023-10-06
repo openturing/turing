@@ -26,7 +26,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -58,21 +57,8 @@ public class TurSNSiteOnStartup {
 			turSNSite.setTurNLPVendor(turNLPVendorRepository.findAll().get(0));
 			turSNSite.setTurSEInstance(turSEInstanceRepository.findAll().get(0));
 						
-			turSNTemplate.defaultSNUI(turSNSite);
-
 			turSNSiteRepository.save(turSNSite);
-
-			turSNTemplate.createSEFields(turSNSite);
-
-			turSNTemplate.createNERFields(turSNSite);
-
-			TurSNSiteLocale turSNSiteLocale = turSNTemplate.createLocale(turSNSite);
-			
-			turSNTemplate.createMergeProviders(turSNSite);
-
-			turSNTemplate.createSpotlight(turSNSite, turSNSiteLocale);
+			turSNTemplate.createSNSite(turSNSite, "admin", "en");
 		}
 	}
-
-	
 }

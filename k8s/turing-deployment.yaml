@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.26.0 (40646f47)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: turing
+  name: turing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: turing
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: turing
+    spec:
+      containers:
+        - env:
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.mariadb.jdbc.Driver
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: turing
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mariadb://turing-mariadb:3306/turing
+            - name: SPRING_DATASOURCE_USERNAME
+              value: turing
+            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+              value: org.hibernate.dialect.MySQL5InnoDBDialect
+          image: turing
+          name: turing
+          ports:
+            - containerPort: 2700
+          resources: {}
+          volumeMounts:
+            - mountPath: /turing/models
+              name: turing-claim0
+            - mountPath: /turing/store
+              name: turing-claim1
+            - mountPath: /root/.gradle
+              name: turing-claim2
+      restartPolicy: Always
+      volumes:
+        - name: turing-claim0
+          persistentVolumeClaim:
+            claimName: turing-claim0
+        - name: turing-claim1
+          persistentVolumeClaim:
+            claimName: turing-claim1
+        - name: turing-claim2
+          persistentVolumeClaim:
+            claimName: turing-claim2
+status: {}

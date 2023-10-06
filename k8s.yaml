@@ -1,0 +1,72 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: turing
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-name: "www.viglet.cloud"
+spec:
+  type: LoadBalancer
+  selector:
+    app: turing
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 2700
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: turing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: turing
+  template:
+    metadata:
+      labels:
+        app: turing
+    spec:
+      containers:
+      - name: turing
+        image: viglet/turing:0.3.7
+        ports:
+        - containerPort: 2700
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: turing-solr
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-name: "solr.viglet.cloud"
+spec:
+  type: LoadBalancer
+  selector:
+    app: turing-solr
+  ports:
+    - name: http
+      port: 8983
+      targetPort: 8983
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: solr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: turing-solr
+  template:
+    metadata:
+      labels:
+        app: turing-solr
+    spec:
+      containers:
+      - name: turing-solr
+        image: viglet/turing-solr:0.3.7
+        ports:
+        - containerPort: 8983
+          protocol: TCP

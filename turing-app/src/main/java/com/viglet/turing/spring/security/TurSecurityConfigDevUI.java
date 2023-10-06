@@ -21,35 +21,54 @@
 
 package com.viglet.turing.spring.security;
 
+import com.viglet.turing.properties.TurConfigProperties;
+import com.viglet.turing.spring.security.auth.TurAuthTokenHeaderFilter;
+import com.viglet.turing.spring.security.auth.TurLogoutHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.Scope;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 @Configuration
 @EnableWebSecurity
 @Profile("dev-ui")
 @ComponentScan(basePackageClasses = TurCustomUserDetailsService.class)
 public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
-
+	@Override
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http.headers().frameOptions().disable().cacheControl().disable();
-		http.httpBasic().authenticationEntryPoint(turAuthenticationEntryPoint).and().authorizeRequests()
-				.antMatchers("/index.html", "/welcome/**", "/", "/assets/**", "/swagger-resources/**", "/h2/**",
-						"/sn/**", "/fonts/**", "/api/sn/**", "/favicon.ico", "/*.png", "/manifest.json",
-						"/browserconfig.xml", "/console/**")
-				.permitAll().anyRequest().authenticated().and()
-				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf().ignoringAntMatchers("/api/sn/**")
-				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
-		http.csrf().disable();
-		http.cors();
+	public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc,
+										   TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
+										   TurLogoutHandler turLogoutHandler,
+										   TurConfigProperties turConfigProperties,
+										   TurAuthenticationEntryPoint turAuthenticationEntryPoint) throws Exception {
+		http.headers(header -> header.frameOptions(
+				frameOptions -> frameOptions.disable().cacheControl(HeadersConfigurer.CacheControlConfig::disable)));
+		http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
+				.authorizeHttpRequests(authorizeRequests -> {
+					authorizeRequests.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
+							mvc.pattern("/"), mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
+							mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
+							mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
+							mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"),
+							mvc.pattern("/api/v2/guest/**")).permitAll();
+					authorizeRequests.anyRequest().authenticated();
+				}).csrf(AbstractHttpConfigurer::disable).cors(Customizer.withDefaults());
 		return http.build();
+	}
+	@Override
+	@Scope("prototype")
+	@Bean
+	MvcRequestMatcher.Builder mvc(HandlerMappingIntrospector introspector) {
+		return new MvcRequestMatcher.Builder(introspector);
 	}
 
 }

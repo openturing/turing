@@ -21,8 +21,10 @@
 
 package com.viglet.turing.persistence.model.se;
 
+import jakarta.persistence.*;
+
+import java.io.Serial;
 import java.io.Serializable;
-import javax.persistence.*;
 
 /**
  * The persistent class for the vigNLPSolutions database table.
@@ -32,6 +34,7 @@ import javax.persistence.*;
 @Table(name = "turSEVendor")
 @NamedQuery(name = "TurSEVendor.findAll", query = "SELECT v FROM TurSEVendor v")
 public class TurSEVendor implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

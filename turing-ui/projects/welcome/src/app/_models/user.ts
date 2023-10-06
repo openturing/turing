@@ -6,4 +6,5 @@
     lastName!: string;
     authdata?: string;
     admin!: boolean;
+    email!: string;
 }

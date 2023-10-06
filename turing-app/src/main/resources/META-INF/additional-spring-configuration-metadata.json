@@ -6,7 +6,17 @@
   },
   {
     "name": "turing.solr.timeout",
-    "type": "java.lang.String",
+    "type": "java.lang.Integer",
     "description": "A description for 'turing.solr.timeout'"
+  },
+  {
+    "name": "turing.multi-tenant",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'turing.multi-tenant'"
+  },
+  {
+    "name": "turing.keycloak",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'turing.keycloak'"
   }
 ]}

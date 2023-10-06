@@ -11,15 +11,15 @@
         [style.color]="getRouter().url === '/se'?'':'#959da5'"></span>
       Search Engine
     </a>
-    <a [routerLink]="['/converse']" [routerLinkActive]="['selected']" class="UnderlineNav-item">
-      <span octicon="hubot" [size]=16 class="UnderlineNav-octicon octicon mr-1"
-        [style.color]="getRouter().url === '/converse'?'':'#959da5'"></span>
-      Converse
-    </a>
     <a [routerLink]="['/sn']" [routerLinkActive]="['selected']" class="UnderlineNav-item">
       <span octicon="search" [size]=16 class="UnderlineNav-octicon octicon mr-1"
         [style.color]="getRouter().url === '/sn'?'':'#959da5'"></span>
       Semantic Navigation
+    </a>
+    <a [routerLink]="['/dev']" [routerLinkActive]="['selected']" class="UnderlineNav-item">
+      <span octicon="code" [size]=16 class="UnderlineNav-octicon octicon mr-1"
+            [style.color]="getRouter().url === '/dev'?'':'#959da5'"></span>
+      API Token
     </a>
   </div>
 </nav>

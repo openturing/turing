@@ -1,3 +1,3 @@
-FROM solr:7.6
-ADD --chown=solr  config/solr/converse /opt/solr/server/solr/converse
-ADD --chown=solr  config/solr/turing /opt/solr/server/solr/turing
+FROM solr:9.3.0
+ADD --chown=solr  config/solr/turing /var/solr/data/turing
+ADD --chown=solr  config/solr/configsets /var/solr/data/configsets

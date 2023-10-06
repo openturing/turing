@@ -18,16 +18,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package com.viglet.turing;
 
 import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
 import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
 import com.viglet.turing.console.TurConsole;
-import org.apache.activemq.broker.BrokerService;
-import org.apache.activemq.store.PersistenceAdapter;
-import org.apache.activemq.store.kahadb.KahaDBPersistenceAdapter;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -39,27 +35,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
-import java.io.File;
-
 @SpringBootApplication
 @EnableJms
 @EnableCaching
 @EnableEncryptableProperties
 public class TuringAI {
-
 	public static void main(String... args) {
-
 		if (args != null && args.length > 0 && args[0].equals("console")) {
 			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
 					.run(args);
 		} else {
 			SpringApplication.run(TuringAI.class, args);
 		}
-
 	}
-
 	@Bean
-	public FilterRegistrationBean<CharacterEncodingFilter> filterRegistrationBean() {
+	FilterRegistrationBean<CharacterEncodingFilter> filterRegistrationBean() {
 		FilterRegistrationBean<CharacterEncodingFilter> registrationBean = new FilterRegistrationBean<>();
 		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
 		characterEncodingFilter.setForceEncoding(true);
@@ -67,35 +57,9 @@ public class TuringAI {
 		registrationBean.setFilter(characterEncodingFilter);
 		return registrationBean;
 	}
-
 	@Bean
-	public Module hibernate5Module() {
-		return new Hibernate5Module();
+	Module hibernate5Module() {
+		return new Hibernate5JakartaModule();
 	}
 
-	@Bean(initMethod = "start", destroyMethod = "stop")
-	public BrokerService broker() throws Exception {
-		final BrokerService broker = new BrokerService();
-		broker.addConnector("vm://localhost");
-		PersistenceAdapter persistenceAdapter = new KahaDBPersistenceAdapter();
-
-		File userDir = new File(System.getProperty("user.dir"));
-		File queueDir = null;
-		if (userDir.exists() && userDir.isDirectory()) {
-			queueDir = new File(userDir.getAbsolutePath().concat(File.separator + "store" + File.separator + "queue"));
-			if (!queueDir.exists()) {
-				queueDir.mkdirs();
-			}
-
-		} else {
-			queueDir = new File(System.getProperty("user.home") + File.separator + "turing-queue");
-			if (!queueDir.exists()) {
-				queueDir.mkdirs();
-			}
-		}
-		persistenceAdapter.setDirectory(queueDir);
-		broker.setPersistenceAdapter(persistenceAdapter);
-		broker.setPersistent(true);
-		return broker;
-	}
 }

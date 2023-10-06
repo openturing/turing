@@ -21,13 +21,14 @@
 
 package com.viglet.turing.persistence.model.storage;
 
-import java.io.Serializable;
-import javax.persistence.*;
-
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
+import jakarta.persistence.*;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * The persistent class for the turDataSentence database table.
@@ -37,6 +38,7 @@ import com.viglet.turing.persistence.model.ml.TurMLCategory;
 @Table(name = "turDataGroupSentence")
 @NamedQuery(name = "TurDataGroupSentence.findAll", query = "SELECT ds FROM TurDataGroupSentence ds")
 public class TurDataGroupSentence implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

@@ -26,8 +26,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class TurAPIBean {
 
-	String product;
+	private String product;
+	private boolean multiTenant;
 
+	private boolean keycloak;
+	
 	public String getProduct() {
 		return product;
 	}
@@ -35,5 +38,20 @@ public class TurAPIBean {
 	public void setProduct(String product) {
 		this.product = product;
 	}
-	
+
+	public boolean isMultiTenant() {
+		return multiTenant;
+	}
+
+	public void setMultiTenant(boolean multiTenant) {
+		this.multiTenant = multiTenant;
+	}
+
+	public boolean isKeycloak() {
+		return keycloak;
+	}
+
+	public void setKeycloak(boolean keycloak) {
+		this.keycloak = keycloak;
+	}
 }

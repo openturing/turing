@@ -20,10 +20,11 @@
  */
 package com.viglet.turing.persistence.model.storage;
 
-import java.io.Serializable;
-import javax.persistence.*;
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.*;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * The persistent class for the turDataGroupData database table.
@@ -33,6 +34,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 @Table(name="turDataGroupData")
 @NamedQuery(name="TurDataGroupData.findAll", query="SELECT dgd FROM TurDataGroupData dgd")
 public class TurDataGroupData implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

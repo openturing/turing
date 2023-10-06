@@ -21,8 +21,10 @@
 
 package com.viglet.turing.persistence.model.system;
 
+import jakarta.persistence.*;
+
+import java.io.Serial;
 import java.io.Serializable;
-import javax.persistence.*;
 
 /**
  * The persistent class for the vigNLPSolutions database table.
@@ -32,6 +34,7 @@ import javax.persistence.*;
 @Table(name = "turLocale")
 @NamedQuery(name = "TurLocale.findAll", query = "SELECT l FROM TurLocale l")
 public class TurLocale implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

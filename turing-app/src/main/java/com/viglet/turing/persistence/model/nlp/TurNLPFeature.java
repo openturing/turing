@@ -20,8 +20,10 @@
  */
 package com.viglet.turing.persistence.model.nlp;
 
+import jakarta.persistence.*;
+
+import java.io.Serial;
 import java.io.Serializable;
-import javax.persistence.*;
 
 
 /**
@@ -32,6 +34,7 @@ import javax.persistence.*;
 @Table(name="turNLPFeature")
 @NamedQuery(name="TurNLPFeature.findAll", query="SELECT nf FROM TurNLPFeature nf")
 public class TurNLPFeature implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id

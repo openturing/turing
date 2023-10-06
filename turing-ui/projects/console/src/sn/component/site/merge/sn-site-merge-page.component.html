@@ -58,19 +58,19 @@
   </div>
   <div>
     <h3 class="mt-4 mb-2">Providers</h3>
-    <label for="name" class="mr-2">Source:</label>
+    <label for="provider-from" class="mr-2">Source:</label>
     <input [(ngModel)]="snSiteMerge.providerFrom" class="form-control mr-3" type="text" id="provider-from" />
 
-    <label for="email" class="mr-2">Destination:</label>
+    <label for="provider-to" class="mr-2">Destination:</label>
     <input [(ngModel)]="snSiteMerge.providerTo" class="form-control" type="text" id="provider-to" />
   </div>
 
   <div>
     <h3 class="mt-4 mb-2">Relations</h3>
-    <label for="name" class="mr-2">Source:</label>
+    <label for="relation-from" class="mr-2">Source:</label>
     <input [(ngModel)]="snSiteMerge.relationFrom" class="form-control mr-3" type="text" id="relation-from" />
 
-    <label for="email" class="mr-2">Destination:</label>
+    <label for="relation-to" class="mr-2">Destination:</label>
     <input [(ngModel)]="snSiteMerge.relationTo" class="form-control" type="text" id="relation-to" />
   </div>
   <div class="form-group">
@@ -79,7 +79,7 @@
     </div>
     <div class="form-group-body">
       <input [(ngModel)]="snSiteMerge.description" class="form-control" type="text" id="sn-name" style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+      <p class="note" id="help-text-for-description">
         More about this merge provider.
       </p>
     </div>

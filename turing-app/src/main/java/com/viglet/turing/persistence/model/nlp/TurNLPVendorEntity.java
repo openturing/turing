@@ -20,10 +20,11 @@
  */
 package com.viglet.turing.persistence.model.nlp;
 
-import java.io.Serializable;
-import javax.persistence.*;
+import jakarta.persistence.*;
+import org.hibernate.annotations.UuidGenerator;
 
-import org.hibernate.annotations.GenericGenerator;
+import java.io.Serial;
+import java.io.Serializable;
 
 
 /**
@@ -34,11 +35,11 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name="turNLPVendorEntity")
 @NamedQuery(name="TurNLPVendorEntity.findAll", query="SELECT nve FROM TurNLPVendorEntity nve")
 public class TurNLPVendorEntity implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
-	@GeneratedValue(generator = "UUID")
+	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

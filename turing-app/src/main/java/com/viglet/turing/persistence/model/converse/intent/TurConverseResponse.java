@@ -21,12 +21,12 @@
 
 package com.viglet.turing.persistence.model.converse.intent;
 
-import java.io.Serializable;
-import javax.persistence.*;
-
-import org.hibernate.annotations.GenericGenerator;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
+import org.hibernate.annotations.UuidGenerator;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * The persistent class for the turMLModel database table.
@@ -37,11 +37,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @NamedQuery(name = "TurConverseResponse.findAll", query = "SELECT cr FROM TurConverseResponse cr")
 @JsonIgnoreProperties({ "intent" })
 public class TurConverseResponse implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
-	@GeneratedValue(generator = "UUID")
+	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

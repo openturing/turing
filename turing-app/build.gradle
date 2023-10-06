@@ -1,11 +1,9 @@
-import java.util.regex.Pattern
-
 buildscript {
     ext {
-        springBootVersion = '2.7.6'
-        jasyptVersion = '3.0.4'
-        languagetool = '5.9'
-        tika = '2.6.0'
+        springBootVersion = '3.1.4'
+        jasyptVersion = '3.0.5'
+        languagetool = '6.1'
+        tika = '2.9.0'
     }
     repositories {
         mavenCentral()
@@ -31,22 +29,24 @@ buildscript {
 
 plugins {
     id 'org.springframework.boot' version "${springBootVersion}"
-    id 'io.spring.dependency-management' version '1.1.0'
+    id 'io.spring.dependency-management' version '1.1.3'
     id 'java'
     id "com.gorylenko.gradle-git-properties" version '2.4.1'
-    id 'de.undercouch.download' version '5.3.1'
+    id 'de.undercouch.download' version '5.5.0'
     id 'eclipse'
     id 'jacoco'
-    id 'org.sonarqube' version '4.0.0.2929'
+    id 'org.sonarqube' version '4.4.1.3373'
 }
 
 sonarqube {
     properties {
+        property "sonar.gradle.skipCompile", "true"
         property "sonar.projectKey", "turing-app"
         property "sonar.organization", "viglet-turing"
         property "sonar.host.url", "https://sonarcloud.io"
         property "sonar.cpd.exclusions", "**/persistence/dto/**,**/persistence/model/**,**/plugins/nlp/otca/response/xml/**"
     }
+
 }
 
 jar {
@@ -70,10 +70,13 @@ gitProperties {
 }
 
 bootJar {
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     launchScript() // executable jar
     manifest {
         attributes(
-                'Implementation-Version': "${-> project.jar.version + '-' + project.ext.gitProps['git.commit.id.abbrev']}"
+                'Implementation-Version': "${-> (String.valueOf(jar.archiveVersion.get()).concat(' - ').concat(String.valueOf(project.ext.gitProps['git.commit.id.abbrev'])))}"
         )
     }
     archiveBaseName = 'viglet-turing'
@@ -126,34 +129,32 @@ configurations {
 }
 
 dependencies {
-    compileOnly group: 'javax.servlet', name: 'servlet-api', version: '2.5'
-	
     // Spring Boot
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: "${springBootVersion}"
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version: "${springBootVersion}"
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-activemq', version: "${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-artemis', version: "${springBootVersion}"
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version: "${springBootVersion}"
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: "${springBootVersion}"
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version: "${springBootVersion}"
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: "${springBootVersion}"
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-client', version: "${springBootVersion}"
+
+
  	implementation project(':turing-commons')
  	implementation project(':turing-filesystem:fs-commons')
  	
- 	// https://mvnrepository.com/artifact/com.itextpdf/itextpdf
-implementation group: 'com.itextpdf', name: 'itext7-core', version: '7.2.5'
-// https://mvnrepository.com/artifact/com.itextpdf/cleanup
-implementation group: 'com.itextpdf', name: 'cleanup', version: '3.0.1'
-// https://mvnrepository.com/artifact/org.apache.commons/commons-imaging
-implementation group: 'org.apache.commons', name: 'commons-imaging', version: '1.0-alpha3'
+	implementation 'org.apache.activemq:artemis-jms-server:2.31.0'
 
-//Thanks for using https://jar-download.com
- 	
+	implementation group: 'com.itextpdf', name: 'itext7-core', version: '8.0.1'
+	implementation group: 'com.itextpdf', name: 'cleanup', version: '4.0.0'
+	implementation group: 'org.apache.commons', name: 'commons-imaging', version: '1.0-alpha3'
+
     // Liquidbase
     //implementation group: 'org.liquibase', name: 'liquibase-core', version: '4.6.2'
 
     // SolrJ
-    implementation(group: 'org.apache.solr', name: 'solr-solrj', version: '9.1.1') {
+    implementation(group: 'org.apache.solr', name: 'solr-solrj', version: '9.3.0') {
         exclude(module: 'xml-apis')
     }
 
@@ -164,35 +165,35 @@ implementation group: 'org.apache.commons', name: 'commons-imaging', version: '1
     implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: "${jasyptVersion}"
 
     // Spring
-    implementation group: 'org.springframework', name: 'spring-test', version: '6.0.6'
+    implementation group: 'org.springframework', name: 'spring-test', version: '6.0.12'
 
     // Jackson
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.14.2'
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5-jakarta', version: '2.15.2'
 
     // H2
-    implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
+    implementation group: 'com.h2database', name: 'h2', version: '2.2.224'
 
     // MariaDB
-    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.1.2'
+    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.2.0'
 
     // PostgreSQL
-    implementation group: 'org.postgresql', name: 'postgresql', version: '42.5.4'
+    implementation group: 'org.postgresql', name: 'postgresql', version: '42.6.0'
 
     // JSON
-    implementation group: 'org.json', name: 'json', version: '20220924'
+    implementation group: 'org.json', name: 'json', version: '20230618'
 
     // CoreNLP
-    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '4.5.1'
+    implementation group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '4.5.5'
 
     // OpenNLP
-    implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version: '2.1.1'
+    implementation group: 'org.apache.opennlp', name: 'opennlp-tools', version: '2.3.0'
 
     // Apache Commons
-    implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
     implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
 
     // Hazelcast
-	implementation group: 'com.hazelcast', name: 'hazelcast-all', version: '4.2.7'
+	implementation group: 'com.hazelcast', name: 'hazelcast-all', version: '4.2.8'
 
     // Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version: "${tika}"
@@ -205,17 +206,15 @@ implementation group: 'org.apache.commons', name: 'commons-imaging', version: '1
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-core', version: '1.4.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
 
-    //ActiveMQ using KahaDB
-    implementation group: 'org.apache.activemq', name: 'activemq-kahadb-store', version: '5.17.2'
-
     // SpringDoc
-    implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.15'
+	implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.2.0'
+
 
     // Schema.org
     implementation group: 'com.squins.google.fork.schema-org-client', name: 'schema-org-client', version: '1.0.1'
 
     //PDFBox
-    implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.27'
+    implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '3.0.0'
 
     //Language Tool
     implementation group: 'org.languagetool', name: 'language-en', version: "${languagetool}"
@@ -237,8 +236,8 @@ test {
 
     jacocoTestReport {
         reports {
-            xml.enabled true
-            html.enabled false
+            xml.required = true
+            html.required = false
         }
     }
 

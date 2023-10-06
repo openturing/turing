@@ -16,7 +16,7 @@ buildscript {
 plugins {
   id "java"
   id "eclipse"
-  id "org.sonarqube" version "3.3"
+  id 'org.sonarqube' version '4.3.0.3225'
 }
 
 sonarqube {
@@ -28,14 +28,14 @@ sonarqube {
 }
 
 jar {
-    baseName = 'turing-nutch'
+    archiveBaseName = 'turing-nutch'
     version =  '0.3.7'
 }
 
 
 configurations {
 	localDeps
-    jar.archiveName = 'indexer-viglet-turing.jar'
+    jar.archiveFileName = 'indexer-viglet-turing.jar'
 }
 repositories {
 	mavenCentral()
@@ -90,20 +90,24 @@ packageDistribution.dependsOn copyLibs
 
 build.dependsOn 
 build.mustRunAfter clean
-
+configurations.all {
+  resolutionStrategy {
+    force 'org.apache.httpcomponents:httpclient:4.5.13', 'org.apache.httpcomponents:httpcore:4.4.1'
+  }
+}
 dependencies {
 
     implementation group: 'org.apache.nutch', name: 'nutch', version: '1.12'
     implementation group: 'org.apache.solr', name: 'solr-solrj', version: '5.4.1'
-    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:"4.5.13", force:true
-    implementation group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.1", force:true
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:"4.5.13"
+    implementation group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.1"
     implementation group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.4.1"
 	implementation project(':turing-java-sdk')
 	implementation project(':turing-nutch:nutch-commons')
 
 	localDeps group: 'org.apache.solr', name: 'solr-solrj', version: "5.4.1"
-	localDeps group: 'org.apache.httpcomponents', name: 'httpclient', version:"4.4.1", force:true
-    localDeps group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.1", force:true
+	localDeps group: 'org.apache.httpcomponents', name: 'httpclient', version:"4.4.1"
+    localDeps group: 'org.apache.httpcomponents', name: 'httpcore', version:"4.4.1"
     localDeps group: 'org.apache.httpcomponents', name: 'httpmime', version:"4.4.1"
     localDeps project(':turing-java-sdk')
     localDeps project(':turing-nutch:nutch-commons')

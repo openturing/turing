@@ -43,6 +43,7 @@ import com.viglet.turing.onstartup.nlp.TurNLPVendorOnStartup;
 import com.viglet.turing.onstartup.se.TurSEInstanceOnStartup;
 import com.viglet.turing.onstartup.se.TurSEVendorOnStartup;
 import com.viglet.turing.onstartup.sn.TurSNSiteOnStartup;
+import com.viglet.turing.onstartup.sn.TurSNSourceTypeOnStartup;
 import com.viglet.turing.onstartup.storage.TurDataGroupStartup;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.onstartup.system.TurLocaleOnStartup;
@@ -81,6 +82,8 @@ public class TurOnStartup implements ApplicationRunner {
 	@Autowired
 	private TurSNSiteOnStartup turSNSiteOnStartup;
 	@Autowired
+	private TurSNSourceTypeOnStartup turSNSourceTypeOnStartup;
+	@Autowired
 	private TurConverseAgentOnStartup turConverseAgentOnStartup;
 	@Autowired
 	private TurUserOnStartup turUserOnStartup;
@@ -110,6 +113,7 @@ public class TurOnStartup implements ApplicationRunner {
 			turSEInstanceOnStartup.createDefaultRows();
 			turDataGroupStartup.createDefaultRows();
 			turSNSiteOnStartup.createDefaultRows();
+			turSNSourceTypeOnStartup.createDefaultRows();
 			turConverseAgentOnStartup.createDefaultRows();
 			
 			turConfigVarOnStartup.createDefaultRows();

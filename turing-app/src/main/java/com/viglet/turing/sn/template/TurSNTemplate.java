@@ -23,31 +23,39 @@ package com.viglet.turing.sn.template;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
+import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingCondition;
+import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
+import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersFieldRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
+import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
+import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.sn.TurSNFieldType;
+import com.viglet.turing.solr.TurSolrUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.Optional;
 
 /**
  * @author Alexandre Oliveira
@@ -76,6 +84,19 @@ public class TurSNTemplate {
 	private TurSNSiteMergeProvidersRepository turSNSiteMergeRepository;
 	@Autowired
 	private TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository;
+	@Autowired
+	private TurSEInstanceRepository turSEInstanceRepository;
+	@Autowired
+	private TurSNRankingExpressionRepository turSNRankingExpressionRepository;
+	@Autowired
+	private TurSNRankingConditionRepository turSNRankingConditionRepository;
+
+	public void createSNSite(TurSNSite turSNSite, String username, String locale) {
+		defaultSNUI(turSNSite);
+		createSEFields(turSNSite);
+		createLocale(turSNSite, username);
+		createRankingExpression(turSNSite);
+	}
 
 	public void defaultSNUI(TurSNSite turSNSite) {
 		turSNSite.setRowsPerPage(10);
@@ -94,6 +115,20 @@ public class TurSNTemplate {
 		turSNSite.setDefaultDateField("publication_date");
 		turSNSite.setDefaultImageField("image");
 		turSNSite.setDefaultURLField("url");
+	}
+
+	public String createSolrCore(TurSNSiteLocale turSNSiteLocale, String username) {
+		String coreName = String.format("%s_%s_%s", username,
+				turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
+				turSNSiteLocale.getLanguage());
+		Optional<TurSEInstance> turSEInstance = turSEInstanceRepository
+				.findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId());
+		turSEInstance.ifPresent(instance -> {
+			String solrURL = String.format("http://%s:%s", instance.getHost(), instance.getPort());
+			TurSolrUtils.createCore(solrURL, coreName, "en");
+
+		});
+		return coreName;
 	}
 
 	public void createNERFields(TurSNSite turSNSite) {
@@ -194,17 +229,45 @@ public class TurSNTemplate {
 		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm2);
 	}
 
-	public TurSNSiteLocale createLocale(TurSNSite turSNSite) {
+	public TurSNSiteLocale createLocale(TurSNSite turSNSite, String username) {
 
 		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
 		turSNSiteLocale.setLanguage(TurLocaleRepository.EN_US);
-		turSNSiteLocale.setCore("turing");
 		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
 		turSNSiteLocale.setTurSNSite(turSNSite);
+		turSNSiteLocale.setCore(createSolrCore(turSNSiteLocale, username));
+
+
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
 
 		return turSNSiteLocale;
 
+	}
+
+	private TurSNRankingExpression createRankingExpression(TurSNSite turSNSite) {
+
+		TurSNRankingExpression turSNRankingExpression = new TurSNRankingExpression();
+		turSNRankingExpression.setName("Rule Sample");
+		turSNRankingExpression.setDescription("Rule Sample Description");
+		turSNRankingExpression.setWeight(5);
+		turSNRankingExpression.setTurSNSite(turSNSite);
+		turSNRankingExpressionRepository.save(turSNRankingExpression);
+
+		TurSNRankingCondition turSNRankingCondition1 = new TurSNRankingCondition();
+		turSNRankingCondition1.setAttribute("title");
+		turSNRankingCondition1.setCondition(1);
+		turSNRankingCondition1.setValue("viglet");
+		turSNRankingCondition1.setTurSNRankingExpression(turSNRankingExpression);
+		turSNRankingConditionRepository.save(turSNRankingCondition1);
+
+		TurSNRankingCondition turSNRankingCondition2 = new TurSNRankingCondition();
+		turSNRankingCondition2.setAttribute("type");
+		turSNRankingCondition2.setCondition(1);
+		turSNRankingCondition2.setValue("News");
+		turSNRankingCondition2.setTurSNRankingExpression(turSNRankingExpression);
+		turSNRankingConditionRepository.save(turSNRankingCondition2);
+
+		return turSNRankingExpression;
 	}
 
 	public void createMergeProviders(TurSNSite turSNSite) {

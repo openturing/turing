@@ -1,48 +1,49 @@
 buildscript {
-	repositories {
-		mavenCentral()
-		 jcenter()
-	}
+    repositories {
+        mavenCentral()
+        jcenter()
+        gradlePluginPortal()
+    }
 }
 plugins {
-  id 'com.github.johnrengelman.shadow' version "7.1.2"
-  id 'java'
-  id 'eclipse'
-  id "org.sonarqube" version "4.0.0.2929"
+    id 'com.github.johnrengelman.shadow' version "8.1.1"
+    id 'java'
+    id 'eclipse'
+    id "org.sonarqube" version '4.4.1.3373'
 }
 
 
 group = 'com.viglet.turing.filesystem'
-version = '0.3.5'
+version = '0.3.7'
 
 description = "turing-filesystem"
 
-sourceCompatibility = 14
-targetCompatibility = 14
+sourceCompatibility = 17
+targetCompatibility = 17
 
-tasks.withType(JavaCompile) {
-	options.encoding = 'UTF-8'
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
 
 sonarqube {
-  properties {
-    property "sonar.projectKey", "turing-filesystem"
-    property "sonar.organization", "viglet-turing"
-    property "sonar.host.url", "https://sonarcloud.io"
-  }
+    properties {
+        property "sonar.gradle.skipCompile", "true"
+        property "sonar.projectKey", "turing-filesystem"
+        property "sonar.organization", "viglet-turing"
+        property "sonar.host.url", "https://sonarcloud.io"
+    }
 }
 
 jar {
-    baseName = 'turing-filesystem'
-    version =  '0.3.7'
+    archiveBaseName = 'turing-filesystem'
+    version = '0.3.7'
     manifest {
         attributes 'Main-Class': 'com.viglet.turing.tool.filesystem.TurFSImportTool'
     }
 }
 
 shadowJar {
-    baseName = 'turing'
-    classifier = null
+    archiveBaseName = 'turing'
     version = 'filesystem'
 }
 
@@ -51,24 +52,24 @@ repositories {
 }
 
 dependencies {
-	implementation group: 'com.beust', name: 'jcommander', version: '1.82'	
-	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.4'	
-	implementation group: 'org.json', name: 'json', version:'20230227'
-	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version:'4.5.13'
-	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.20.0'
-	implementation group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.13'
-	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.3'
-	implementation project(':turing-java-sdk')
+    implementation group: 'com.beust', name: 'jcommander', version: '1.82'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.15.2'
+    implementation group: 'org.json', name: 'json', version: '20230618'
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.20.0'
+    implementation group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.13'
+    implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.4'
+    implementation project(':turing-java-sdk')
 
-	// Tika
-  implementation group: 'org.apache.tika', name: 'tika-core', version:'2.5.0'
-  implementation group: 'org.apache.tika', name: 'tika-parsers', version:'2.5.0'
-  implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.41.0.0'
-  implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
-    
-  // Commons
-  implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
-    
-	
+    // Tika
+    implementation group: 'org.apache.tika', name: 'tika-core', version: '2.9.0'
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version: '2.9.0'
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.43.0.0'
+    implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
+
+    // Commons
+    implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
+
+
 }
 

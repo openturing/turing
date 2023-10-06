@@ -269,7 +269,7 @@ public class TurWEMIndex {
 
 				NodeList nodes = element.getChildNodes();
 				TurSNJobItems turSNJobItems = new TurSNJobItems();
-				TurSNJobItem turSNJobItem = new TurSNJobItem();
+				TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, turSNSiteConfig.getLocale());
 				Map<String, Object> attributes = new HashMap<>();
 				for (int i = 0; i < nodes.getLength(); i++) {
 
@@ -294,8 +294,6 @@ public class TurWEMIndex {
 					}
 				}
 
-				turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-				turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 				turSNJobItem.setAttributes(attributes);
 				turSNJobItems.add(turSNJobItem);
 
@@ -332,7 +330,7 @@ public class TurWEMIndex {
 
 					NodeList nodes = element.getChildNodes();
 					TurSNJobItems turSNJobItems = new TurSNJobItems();
-					TurSNJobItem turSNJobItem = new TurSNJobItem();
+					TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, turSNSiteConfig.getLocale());
 					Map<String, Object> attributes = new HashMap<>();
 					for (int i = 0; i < nodes.getLength(); i++) {
 						String randomFileName = UUID.randomUUID().toString();
@@ -365,9 +363,6 @@ public class TurWEMIndex {
 							attributes.put(attributeName, attributeValue);
 						}
 					}
-
-					turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-					turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 					turSNJobItem.setAttributes(attributes);
 					turSNJobItems.add(turSNJobItem);
 

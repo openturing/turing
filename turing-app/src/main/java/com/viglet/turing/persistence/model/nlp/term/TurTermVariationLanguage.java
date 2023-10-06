@@ -20,12 +20,12 @@
  */
 package com.viglet.turing.persistence.model.nlp.term;
 
-import java.io.Serializable;
-import javax.persistence.*;
-
-import org.hibernate.annotations.GenericGenerator;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
+import org.hibernate.annotations.UuidGenerator;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 
 /**
@@ -37,11 +37,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @NamedQuery(name="TurTermVariationLanguage.findAll", query="SELECT tvl FROM TurTermVariationLanguage tvl")
 @JsonIgnoreProperties({ "turTerm", "turTermVariation" } )
 public class TurTermVariationLanguage implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@GenericGenerator(name = "UUID", strategy = "com.viglet.turing.jpa.TurUUIDGenerator")
-	@GeneratedValue(generator = "UUID")
+	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
