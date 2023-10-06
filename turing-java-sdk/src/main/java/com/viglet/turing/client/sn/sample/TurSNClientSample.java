@@ -16,6 +16,14 @@
 
 package com.viglet.turing.client.sn.sample;
 
+import com.viglet.turing.client.sn.*;
+import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
+import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
+import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
+import com.viglet.turing.client.sn.pagination.TurSNPagination;
+import com.viglet.turing.client.sn.response.QueryTurSNResponse;
+import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -23,18 +31,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.viglet.turing.client.sn.HttpTurSNServer;
-import com.viglet.turing.client.sn.TurSNDocumentList;
-import com.viglet.turing.client.sn.TurSNGroupList;
-import com.viglet.turing.client.sn.TurSNQuery;
-import com.viglet.turing.client.sn.TurSNServer;
-import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
-import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
-import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
-import com.viglet.turing.client.sn.pagination.TurSNPagination;
-import com.viglet.turing.client.sn.response.QueryTurSNResponse;
-import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
 
 /**
  * Sample code to use this SDK.
@@ -115,7 +111,6 @@ public class TurSNClientSample {
 		query.setRows(1);
 		query.setSortField(TurSNQuery.ORDER.asc);
 		query.setPageNumber(1);
-		query.setSortField();
 		QueryTurSNResponse response = turSNServer.query(query);
 		@SuppressWarnings("unused")
 		TurSNDocumentList turSNResults = response.getResults();
