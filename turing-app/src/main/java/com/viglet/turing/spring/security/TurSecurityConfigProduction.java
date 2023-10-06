@@ -66,7 +66,8 @@ public class TurSecurityConfigProduction {
     private String issuerUri;
     @Value("${spring.security.oauth2.client.registration.keycloak.client-id:''}")
     private String clientId;
-
+    @Value("${turing.url:'http://localhost:2700'}")
+    private String turingUrl;
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
           http.headers(header -> header.frameOptions(
@@ -83,8 +84,8 @@ public class TurSecurityConfigProduction {
                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class); ;
         if (turConfigProperties.isKeycloak()) {
             String keycloakUrlFormat =
-                    String.format("%s/protocol/openid-connect/logout?client_id=%s",
-                            issuerUri, clientId);
+                    String.format("%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",
+                            issuerUri, clientId, turingUrl);
             http.oauth2Login(withDefaults());
             http.authorizeHttpRequests(authorizeRequests -> {
                 authorizeRequests.requestMatchers(mvc.pattern("/api/discovery"),

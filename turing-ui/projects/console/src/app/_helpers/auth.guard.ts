@@ -2,7 +2,7 @@
 import {Router, ActivatedRouteSnapshot, RouterStateSnapshot} from '@angular/router';
 import {AuthenticationService} from "../../../../welcome/src/app/_services";
 import {HttpClient, HttpHeaders, HttpResponse} from "@angular/common/http";
-import {environment} from '../../environments/environment';
+import {environment} from '../../../../../environments/environment';
 import {TurDiscoveryAPI} from "../_model/discovery.model";
 
 @Injectable({providedIn: 'root'})

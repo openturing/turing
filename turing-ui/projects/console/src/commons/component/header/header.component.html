@@ -10,7 +10,7 @@
   <div class="Header-item position-relative d-none d-lg-flex">
     <details class="details-overlay details-reset">
       <summary class="Header-link" aria-label="Create new…" data-ga-click="Header, create new, icon:add"
-        aria-haspopup="menu" role="button" style="outline:none;">
+               aria-haspopup="menu" role="button" style="outline:none;">
         <span octicon="plus" [size]=16 class="mr-1"></span>
         <span class="dropdown-caret"></span>
       </summary>
@@ -37,9 +37,12 @@
         </div>
         <div class="dropdown-caret" style="margin-top: 17px;padding-bottom: 10px;padding-top: 1px;"></div>
       </summary>
-      <ul class="dropdown-menu dropdown-menu-sw" style="margin-right: 8px;">
+      <ul class="dropdown-menu dropdown-menu-sw" style="margin-right: 8px;width:320px">
         <li>
-          <div class="dropdown-item">Signed in as <strong>{{userItem.username}}</strong></div>
+          <div class="dropdown-item">Signed in as <strong>{{userItem.username}}</strong>
+            <span style="width: 100%;white-space: nowrap;display: block" class="color-fg-subtle">
+              {{userItem.firstName}} {{userItem.lastName}}</span>
+          </div>
         </li>
         <li class="dropdown-divider" role="separator"></li>
         <li>
@@ -47,11 +50,12 @@
         </li>
         <li class="dropdown-divider" role="separator"></li>
         <li>
-          <form id="logout_form"action="/logout" method="post">
-            <a class="dropdown-item"  style="cursor:pointer"
-               onclick="localStorage.removeItem('restInfo');localStorage.removeItem('user');document.getElementById('logout_form').submit(); return false;">Sign out</a>
+          <form id="logout_form" action="/logout" method="post">
+            <a class="dropdown-item" style="cursor:pointer"
+               onclick="localStorage.removeItem('restInfo');localStorage.removeItem('user');document.getElementById('logout_form').submit(); return false;">Sign
+              out</a>
           </form>
-          </li>
+        </li>
       </ul>
     </details>
   </div>

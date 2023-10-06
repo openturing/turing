@@ -18,7 +18,7 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
-import {environment} from '../../environments/environment';
+import {environment} from '../../../../../environments/environment';
 import {TurDevToken} from "../model/dev-token.model";
 import {TurSEInstance} from "../../se/model/se-instance.model";
 @Injectable()

@@ -68,10 +68,13 @@ gitProperties {
 }
 
 bootJar {
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     launchScript() // executable jar
     manifest {
         attributes(
-                'Implementation-Version': "${-> project.jar.version + '-' + project.ext.gitProps['git.commit.id.abbrev']}"
+                'Implementation-Version': "${-> (String.valueOf(jar.archiveVersion.get()).concat(' - ').concat(String.valueOf(project.ext.gitProps['git.commit.id.abbrev'])))}"
         )
     }
     archiveBaseName = 'viglet-turing'

@@ -480,15 +480,23 @@ public class TurSolr {
 
     private void setSortEntry(TurSNSite turSNSite, SolrQuery query, TurSEParameters turSEParameters) {
         SimpleEntry<String, String> sortEntry = null;
+
         if (turSEParameters.getSort() != null) {
-            if (turSEParameters.getSort().equalsIgnoreCase("newest")) {
-                sortEntry = new SimpleEntry<>(turSNSite.getDefaultDateField(), "desc");
-            } else if (turSEParameters.getSort().equalsIgnoreCase("oldest")) {
-                sortEntry = new SimpleEntry<>(turSNSite.getDefaultDateField(), "asc");
+            String[] splitSort = turSEParameters.getSort().split(" ");
+            if (splitSort.length == 2) {
+                query.setSort(splitSort[0], splitSort[1].equals("asc") ? ORDER.asc : ORDER.desc);
             }
-        }
-        if (sortEntry != null) {
-            query.setSort(sortEntry.getKey(), sortEntry.getValue().equals("asc") ? ORDER.asc : ORDER.desc);
+            else {
+                if (turSEParameters.getSort().equalsIgnoreCase("newest")) {
+                    sortEntry = new SimpleEntry<>(turSNSite.getDefaultDateField(), "desc");
+                } else if (turSEParameters.getSort().equalsIgnoreCase("oldest")) {
+                    sortEntry = new SimpleEntry<>(turSNSite.getDefaultDateField(), "asc");
+                }
+
+                if (sortEntry != null) {
+                    query.setSort(sortEntry.getKey(), sortEntry.getValue().equals("asc") ? ORDER.asc : ORDER.desc);
+                }
+            }
         }
     }
 

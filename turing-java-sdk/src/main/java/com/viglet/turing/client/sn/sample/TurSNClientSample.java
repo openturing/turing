@@ -115,7 +115,7 @@ public class TurSNClientSample {
 		query.setRows(1);
 		query.setSortField(TurSNQuery.ORDER.asc);
 		query.setPageNumber(1);
-
+		query.setSortField();
 		QueryTurSNResponse response = turSNServer.query(query);
 		@SuppressWarnings("unused")
 		TurSNDocumentList turSNResults = response.getResults();
