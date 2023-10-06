@@ -64,7 +64,6 @@ public class TurSolrUtils {
 			client.send(request, HttpResponse.BodyHandlers.ofString());
 		} catch (IOException | InterruptedException e) {
 			logger.error(e.getMessage(), e);
-			Thread.currentThread().interrupt();
 		}
 	}
 
@@ -100,7 +99,6 @@ public class TurSolrUtils {
 			client.send(request, HttpResponse.BodyHandlers.ofString());
 		} catch (IOException | InterruptedException e) {
 			logger.error(e.getMessage(), e);
-			Thread.currentThread().interrupt();
 		}
 	}
 
@@ -123,7 +121,6 @@ public class TurSolrUtils {
 			client.send(request, HttpResponse.BodyHandlers.ofString());
 		} catch (IOException | InterruptedException e) {
 			logger.error(e.getMessage(), e);
-			Thread.currentThread().interrupt();
 		}
 	}
 
@@ -149,7 +146,6 @@ public class TurSolrUtils {
 			client.send(request, HttpResponse.BodyHandlers.ofString());
 		} catch (IOException | InterruptedException e) {
 			logger.error(e.getMessage(), e);
-			Thread.currentThread().interrupt();
 		}
 	}
 
