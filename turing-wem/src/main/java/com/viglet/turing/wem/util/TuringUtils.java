@@ -83,9 +83,7 @@ public class TuringUtils {
 	public static Set<TuringTag> turingTagMapToSet(TuringTagMap turingTagMap) {
 		Set<TuringTag> turingTags = new HashSet<>();
 		for (Entry<String, ArrayList<TuringTag>> entryCtd : turingTagMap.entrySet()) {
-			for (TuringTag turingTag : entryCtd.getValue()) {
-				turingTags.add(turingTag);
-			}
+			turingTags.addAll(entryCtd.getValue());
 		}
 		return turingTags;
 	}
@@ -119,15 +117,13 @@ public class TuringUtils {
 		if (adds.length == 0)
 			throw new Exception("No primary key found", null);
 		if (adds.length > 1) {
-			StringBuilder sb = new StringBuilder();
-			sb.append("Works with one primary key only: ").append(adds.length);
-			throw new Exception(sb.toString(), null);
+			throw new Exception("Works with one primary key only: " + adds.length, null);
 		} else
 			return adds[0];
 	}
 
 	public static void basicAuth(IHandlerConfiguration config, HttpPost post) {
-		if (config.getLogin() != null && config.getLogin().trim().length() > 0) {
+		if (config.getLogin() != null && !config.getLogin().trim().isEmpty()) {
 			String auth = String.format("%s:%s", config.getLogin(), config.getPassword());
 			String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
 			String authHeader = "Basic " + encodedAuth;
@@ -269,12 +265,12 @@ public class TuringUtils {
 					if (asLocaleRef != null) {
 						ChannelLocalizedData chLocalData = breadcrumb[j].getData().getLocalizedData(asLocaleRef);
 						if (chLocalData != null) {
-							channelPath.append("/" + chLocalData.getFurlName());
+							channelPath.append("/").append(chLocalData.getFurlName());
 						} else {
-							channelPath.append("/" + breadcrumb[j].getFurlName());
+							channelPath.append("/").append(breadcrumb[j].getFurlName());
 						}
 					} else {
-						channelPath.append("/" + breadcrumb[j].getFurlName());
+						channelPath.append("/").append(breadcrumb[j].getFurlName());
 					}
 				}
 			}
@@ -448,36 +444,41 @@ public class TuringUtils {
 
 	private static String createSiteURL(ManagedObject mo, IHandlerConfiguration config) throws ApplicationException {
 		Site site = getSite(mo, config);
-		String siteName = site.getName();
-		if (log.isDebugEnabled()) {
-			log.debug("ETLTuringTranslator getSiteUrl:" + siteName);
-		}
-
-		final String SLASH = "/";
-		StringBuilder url = new StringBuilder(getSiteDomain(mo, config));
-
-		if (config.getCDAContextName(siteName) != null && FurlUtil.isIncludeContextName(site)) {
-			url.append(SLASH);
-			url.append(config.getCDAContextName(siteName));
-		}
-
-		if (FurlUtil.isIncludeSiteName(site) && normalizeText(siteName) != null) {
-			url.append(SLASH);
-			url.append(normalizeText(siteName));
-		}
-
-		if (FurlUtil.isFormatIncluded(site)) {
-			url.append(SLASH);
-			url.append(ContentUtil.getDefaultFormatForSite(getSite(mo, config)));
-		}
-		if (FurlUtil.isIncludeLocaleName(site)) {
-			String locale = getLocale(mo, config);
-			if (locale != null) {
-				url.append(SLASH);
-				url.append(locale);
+		if (site != null) {
+			String siteName = site.getName();
+			if (log.isDebugEnabled()) {
+				log.debug("ETLTuringTranslator getSiteUrl:" + siteName);
 			}
+
+			final String SLASH = "/";
+			StringBuilder url = new StringBuilder(getSiteDomain(mo, config));
+
+			if (config.getCDAContextName(siteName) != null && FurlUtil.isIncludeContextName(site)) {
+				url.append(SLASH);
+				url.append(config.getCDAContextName(siteName));
+			}
+
+			if (FurlUtil.isIncludeSiteName(site)) {
+				normalizeText(siteName);
+				url.append(SLASH);
+				url.append(normalizeText(siteName));
+			}
+
+			if (FurlUtil.isFormatIncluded(site)) {
+				url.append(SLASH);
+				url.append(ContentUtil.getDefaultFormatForSite(getSite(mo, config)));
+			}
+			if (FurlUtil.isIncludeLocaleName(site)) {
+				String locale = getLocale(mo, config);
+				if (locale != null) {
+					url.append(SLASH);
+					url.append(locale);
+				}
+			}
+
+			return url.toString();
 		}
-		return url.toString();
+		return "";
 	}
 
 	public static String getLocale(ManagedObject mo, IHandlerConfiguration config) {
@@ -497,9 +498,11 @@ public class TuringUtils {
 	private static String getDefaultLocale(ManagedObject mo, IHandlerConfiguration config) {
 		try {
 			Site site = getSite(mo, config);
-			AsLocale asLocale = ContentUtil.getDefaultLocaleForSite(site);
-			if (asLocale != null && asLocale.getJavaLocale() != null) {
-				return asLocale.getJavaLocale().toString();
+			if (site != null) {
+				AsLocale asLocale = ContentUtil.getDefaultLocaleForSite(site);
+				if (asLocale != null && asLocale.getJavaLocale() != null) {
+					return asLocale.getJavaLocale().toString();
+				}
 			}
 		} catch (ApplicationException e) {
 			log.error(e.getMessage(), e);
@@ -561,11 +564,7 @@ public class TuringUtils {
 					}
 				}
 			}
-		} catch (ApplicationException e) {
-			log.error(e.getMessage(), e);
-		} catch (AuthorizationException e) {
-			log.error(e.getMessage(), e);
-		} catch (ValidationException e) {
+		} catch (ApplicationException | AuthorizationException | ValidationException e) {
 			log.error(e.getMessage(), e);
 		} catch (RemoteException e) {
 			log.error(e.getMessage(), e);

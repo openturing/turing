@@ -20,13 +20,13 @@
  */
 package com.viglet.turing.wem.broker.indexer;
 
-import java.lang.invoke.MethodHandles;
-
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.as.server.event.AsPrePersistenceEvent;
 import com.vignette.logging.context.ContextLogger;
+
+import java.lang.invoke.MethodHandles;
 
 public class TurWEMIndexer {
 
@@ -71,11 +71,10 @@ public class TurWEMIndexer {
 		return true;
 	}
 
-	public static boolean indexDeleteByType(String siteName, String typeName, IHandlerConfiguration config) {
+	public static void indexDeleteByType(String siteName, String typeName, IHandlerConfiguration config) {
 		if (log.isDebugEnabled()) {
 			log.debug("Deleting Object in Viglet Turing index");
 		}
 		TurWEMDeindex.indexDeleteByType(siteName, typeName, config);
-		return true;
 	}
 }

@@ -53,6 +53,7 @@ public class TurDeindexParentChannel implements IValidToIndex {
 
 	@Override
 	public void whereToValid(WhereClause clause, IHandlerConfiguration config) throws Exception {
+		// Do nothing
 	}
 
 }

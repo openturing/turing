@@ -64,7 +64,7 @@ public class TurWEMIndex {
 		throw new IllegalStateException("TurWEMIndex");
 	}
 
-	public static boolean indexCreate(ManagedObject mo, IHandlerConfiguration config, String siteName) {
+	public static void indexCreate(ManagedObject mo, IHandlerConfiguration config, String siteName) {
 		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
 		if ((mappingDefinitions != null) && (mo != null)) {
 			if (mo instanceof Channel) {
@@ -93,9 +93,9 @@ public class TurWEMIndex {
 									contentTypeName, siteName, turSNSiteConfig.getName(), turSNSiteConfig.getLocale()));
 							String xmlToIndex = generateXMLToIndex(contentInstance, config);
 							if (xmlToIndex.contains(FILE_PROTOCOL)) {
-								return generateZipImport(xmlToIndex, turSNSiteConfig, config);
+								generateZipImport(xmlToIndex, turSNSiteConfig, config);
 							} else {
-								return postIndex(xmlToIndex, turSNSiteConfig, config);
+								postIndex(xmlToIndex, turSNSiteConfig, config);
 							}
 						} else {
 							if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
@@ -115,7 +115,6 @@ public class TurWEMIndex {
 				}
 			}
 		}
-		return false;
 	}
 
 	// Generate XML To Index By ContentInstance
@@ -223,11 +222,11 @@ public class TurWEMIndex {
 
 	private static void addCategoriesToXML(ContentInstance ci, StringBuilder xml) {
 		String[] classifications = ci.getTaxonomyClassifications();
-		if (classifications != null && classifications.length > 0) {
-			for (int i = 0; i < classifications.length; i++) {
-				String wemClassification = classifications[i].substring(classifications[i].lastIndexOf("/") + 1);
-				xml.append(createXMLAttribute("categories", wemClassification));
-			}
+		if (classifications != null) {
+            for (String classification : classifications) {
+                String wemClassification = classification.substring(classification.lastIndexOf("/") + 1);
+                xml.append(createXMLAttribute("categories", wemClassification));
+            }
 		}
 	}
 
@@ -243,7 +242,7 @@ public class TurWEMIndex {
 				}
 				if (turAttrDef.getMultiValue() != null && !turAttrDef.getMultiValue().isEmpty()) {
 					for (String value : turAttrDef.getMultiValue()) {
-						if ((value != null) && (value.trim().length() > 0))
+						if ((value != null) && !value.trim().isEmpty())
 							xml.append(createXMLAttribute(turAttrDef.getTagName(), value));
 					}
 				} else {
@@ -253,40 +252,25 @@ public class TurWEMIndex {
 		}
 	}
 
-	public static boolean postIndex(String xml, TurSNSiteConfig turSNSiteConfig, IHandlerConfiguration config) {
+	public static void postIndex(String xml, TurSNSiteConfig turSNSiteConfig, IHandlerConfiguration config) {
 
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		try {
-			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-			factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-			factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			Document document = builder.parse(new InputSource(new StringReader(xml)));
+			Document document = getImportXml(xml, factory);
 
 			if (document != null) {
 				Element element = document.getDocumentElement();
-
 				NodeList nodes = element.getChildNodes();
 				TurSNJobItems turSNJobItems = new TurSNJobItems();
 				TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, turSNSiteConfig.getLocale());
 				Map<String, Object> attributes = new HashMap<>();
 				for (int i = 0; i < nodes.getLength(); i++) {
-
 					String nodeName = nodes.item(i).getNodeName();
 					if (attributes.containsKey(nodeName)) {
 						if (!(attributes.get(nodeName) instanceof ArrayList)) {
-							List<Object> attributeValues = new ArrayList<>();
-							attributeValues.add(attributes.get(nodeName));
-							attributeValues.add(nodes.item(i).getTextContent());
-
-							attributes.put(nodeName, attributeValues);
-							turSNJobItem.setAttributes(attributes);
+							attributeAsList(attributes, nodeName, nodes.item(i).getTextContent(), turSNJobItem);
 						} else {
-							@SuppressWarnings("unchecked")
-							List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
-							attributeValues.add(nodes.item(i).getTextContent());
-							attributes.put(nodeName, attributeValues);
+							attributeAsObject(attributes, nodeName, nodes.item(i).getTextContent());
 						}
 					} else {
 						attributes.put(nodeName, nodes.item(i).getTextContent());
@@ -301,33 +285,41 @@ public class TurWEMIndex {
 			}
 
 			log.info("Viglet Turing indexer Processed Content Type.");
-			return true;
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			log.error(e.getMessage(), e);
 		}
-		return false;
+	}
+
+	private static void attributeAsObject(Map<String, Object> attributes, String nodeName, String nodes) {
+		@SuppressWarnings("unchecked")
+		List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
+		attributeValues.add(nodes);
+		attributes.put(nodeName, attributeValues);
+	}
+
+	private static void attributeAsList(Map<String, Object> attributes, String nodeName, String attributeValue, TurSNJobItem turSNJobItem) {
+		List<Object> attributeValues = new ArrayList<>();
+		attributeValues.add(attributes.get(nodeName));
+		attributeValues.add(attributeValue);
+
+		attributes.put(nodeName, attributeValues);
+		turSNJobItem.setAttributes(attributes);
 	}
 
 	private static String createXMLAttribute(String tag, String value) {
 		return String.format("<%1$s><![CDATA[%2$s]]></%1$s>", tag, value);
 	}
 
-	private static boolean generateZipImport(String xml, TurSNSiteConfig turSNSiteConfig,
-			IHandlerConfiguration config) {
+	private static void generateZipImport(String xml, TurSNSiteConfig turSNSiteConfig,
+										  IHandlerConfiguration config) {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		try {
-			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-			factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-			factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			Document document = builder.parse(new InputSource(new StringReader(xml)));
+			Document document = getImportXml(xml, factory);
 
 			if (document != null) {
 				ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 				try (ZipOutputStream zos = new ZipOutputStream(byteArrayOutputStream)) {
 					Element element = document.getDocumentElement();
-
 					NodeList nodes = element.getChildNodes();
 					TurSNJobItems turSNJobItems = new TurSNJobItems();
 					TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, turSNSiteConfig.getLocale());
@@ -336,28 +328,12 @@ public class TurWEMIndex {
 						String randomFileName = UUID.randomUUID().toString();
 						String attributeValue = nodes.item(i).getTextContent();
 						String attributeName = nodes.item(i).getNodeName();
-						if (attributeValue.startsWith(FILE_PROTOCOL)) {
-							File file = new File(attributeValue.replace(FILE_PROTOCOL, ""));
-
-							ZipEntry entry = new ZipEntry(randomFileName);
-							entry.setTime(file.lastModified());
-							zos.putNextEntry(entry);
-							Files.copy(file.toPath(), zos);
-
-							attributeValue = FILE_PROTOCOL.concat(randomFileName);
-
-						}
+						attributeValue = getFile(attributeValue, randomFileName, zos);
 						if (attributes.containsKey(attributeName)) {
 							if (!(attributes.get(attributeName) instanceof ArrayList)) {
-								List<Object> attributeValues = new ArrayList<>();
-								attributeValues.add(attributes.get(attributeName));
-								attributeValues.add(attributeValue);
-								attributes.put(attributeName, attributeValues);
+								attributeAsList(attributes, attributeName, attributeValue, turSNJobItem);
 							} else {
-								@SuppressWarnings("unchecked")
-								List<Object> attributeValues = (List<Object>) attributes.get(attributeName);
-								attributeValues.add(attributeValue);
-								attributes.put(attributeName, attributeValues);
+								attributeAsObject(attributes, attributeName, attributeValue);
 							}
 						} else {
 							attributes.put(attributeName, attributeValue);
@@ -379,10 +355,32 @@ public class TurWEMIndex {
 			}
 
 			log.info("Viglet Turing indexer Processed Content Type.");
-			return true;
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			log.error(e.getMessage(), e);
 		}
-		return false;
+	}
+
+	private static Document getImportXml(String xml, DocumentBuilderFactory factory) throws ParserConfigurationException, SAXException, IOException {
+		factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+		factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+
+		DocumentBuilder builder = factory.newDocumentBuilder();
+        return builder.parse(new InputSource(new StringReader(xml)));
+	}
+
+	private static String getFile(String attributeValue, String randomFileName, ZipOutputStream zos) throws IOException {
+		if (attributeValue.startsWith(FILE_PROTOCOL)) {
+			File file = new File(attributeValue.replace(FILE_PROTOCOL, ""));
+
+			ZipEntry entry = new ZipEntry(randomFileName);
+			entry.setTime(file.lastModified());
+			zos.putNextEntry(entry);
+			Files.copy(file.toPath(), zos);
+
+			attributeValue = FILE_PROTOCOL.concat(randomFileName);
+
+		}
+		return attributeValue;
 	}
 }

@@ -20,23 +20,20 @@
  */
 package com.viglet.turing.wem.listener;
 
-import java.lang.invoke.MethodHandles;
-
 import com.viglet.turing.wem.config.GenericResourceHandlerConfiguration;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
-import com.vignette.as.client.exception.ApplicationException;
-import com.vignette.as.client.exception.AuthorizationException;
-import com.vignette.as.client.exception.ValidationException;
 import com.vignette.as.server.event.AsEvent;
 import com.vignette.as.server.event.AsPrePersistenceEvent;
 import com.vignette.as.server.event.IAsEventListener;
 import com.vignette.logging.context.ContextLogger;
 
+import java.lang.invoke.MethodHandles;
+
 public class PrePersistenceEventListener implements IAsEventListener {
 
 	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
-	public void consume(AsEvent event) throws ApplicationException, AuthorizationException, ValidationException {
+	public void consume(AsEvent event) {
 		try {
 			// If this is an actual item being deployed, process the item
 			if (event instanceof AsPrePersistenceEvent) {
