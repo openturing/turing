@@ -1,38 +1,27 @@
 package com.viglet.turing.nutch.indexwriter;
 
-import java.lang.invoke.MethodHandles;
-import java.net.URLDecoder;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.time.format.DateTimeFormatter;
-import java.util.AbstractMap;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.nutch.indexer.IndexWriter;
-import org.apache.nutch.indexer.IndexWriterParams;
-import org.apache.nutch.indexer.IndexerMapReduce;
-import org.apache.nutch.indexer.NutchDocument;
-import org.apache.nutch.indexer.NutchField;
-import org.apache.solr.common.params.ModifiableSolrParams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.nutch.commons.TurNutchCommons;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.nutch.indexer.*;
+import org.apache.solr.common.params.ModifiableSolrParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandles;
+import java.net.URLDecoder;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class TurNutchIndexWriter implements IndexWriter {
 
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 	private final TurSNJobItems turSNJobItems = new TurSNJobItems();
-	private ModifiableSolrParams params;
 	private Configuration config;
 
 	private String url;
@@ -90,7 +79,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 		batchSize = properties.getInt(TurNutchConstants.COMMIT_SIZE, 1000);
 		weightField = properties.get(TurNutchConstants.WEIGHT_FIELD, "");
 		// parse optional parameters
-		params = new ModifiableSolrParams();
+		ModifiableSolrParams params = new ModifiableSolrParams();
 		String paramString = config.get(IndexerMapReduce.INDEXER_PARAMS);
 		if (paramString != null) {
 			String[] values = paramString.split("&");
@@ -152,7 +141,8 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 				if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD)
 						|| e.getKey().equals(TurNutchCommons.TITLE_FIELD)) {
-					val2 = TurNutchCommons.stripNonCharCodepoints((String) val);
+                    assert val instanceof String;
+                    val2 = TurNutchCommons.stripNonCharCodepoints((String) val);
 				}
 				if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD)) {
 					attributes.put(TurNutchCommons.TEXT_FIELD, val2);
