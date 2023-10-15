@@ -2,7 +2,7 @@ buildscript {
     ext {
         springBootVersion = '3.1.4'
         jasyptVersion = '3.0.5'
-        languagetool = '6.1'
+        languagetool = '6.3'
         tika = '2.9.0'
     }
     repositories {
