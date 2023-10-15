@@ -1,18 +1,16 @@
 package com.viglet.turing.connector.aem.indexer;
 
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.jcr.Property;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.viglet.turing.connector.cms.beans.TurAttrDef;
 import com.viglet.turing.connector.cms.beans.TurAttrDefContext;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.beans.TuringTag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jcr.Property;
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TurAEMAttrXML {
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -54,8 +52,14 @@ public class TurAEMAttrXML {
 		AemObject aemObject = (AemObject) turAttrDefContext.getCMSObjectInstance();
 		String attributeName = turAttrDefContext.getTuringTag().getSrcXmlName();
 		Property jcrProperty = null;
-		if (attributeName != null && aemObject.getJcrContentNode().hasProperty(attributeName))
-			jcrProperty = aemObject.getJcrContentNode().getProperty(attributeName);
+		if (attributeName != null) {
+			if (aemObject.getJcrContentNode().hasProperty(attributeName)) {
+				jcrProperty = aemObject.getJcrContentNode().getProperty(attributeName);
+			}
+			else if (aemObject.getAttributes().containsKey(attributeName)){
+				jcrProperty = aemObject.getAttributes().get(attributeName);
+			}
+		}
 		if (hasJcrPropertyValue(jcrProperty)) {
 			return attributeXMLUpdate(turAttrDefContext, jcrProperty);
 		} else if (turingTag.getSrcClassName() != null) {

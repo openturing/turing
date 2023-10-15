@@ -30,7 +30,7 @@ import com.viglet.turing.connector.cms.index.IValidToIndex;
 public class MappingDefinitions {
 	private TurCTDMappingMap turCTDMappingMap;
 	private String mappingsXMLFile;
-	private static Logger logger = LoggerFactory.getLogger(MappingDefinitions.class);
+	private static final Logger logger = LoggerFactory.getLogger(MappingDefinitions.class);
 
 	public String getMappingsXML() {
 		return mappingsXMLFile;

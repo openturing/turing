@@ -20,41 +20,21 @@
  */
 package com.viglet.turing.connector.cms.mappers;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.beans.TuringTagMap;
 import com.viglet.turing.connector.cms.util.TuringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class CTDMappings {
-	private TuringTagMap turingTagMap;
+	private final TuringTagMap turingTagMap;
 	private String classValidToIndex = null;
-	private static Logger logger = LoggerFactory.getLogger(CTDMappings.class);
+	private String subType = null;
+	private static final Logger logger = LoggerFactory.getLogger(CTDMappings.class);
 
-	// OLD getIndexAttrTag
-	public List<TuringTag> getTuringTagBySrcAttr(String srcAttrName) {
-
-		List<TuringTag> turingTags = new ArrayList<>();
-		if (logger.isDebugEnabled())
-			logger.debug("CTDMappings attribute: " + srcAttrName);
-
-		if (turingTagMap != null) {
-			for (TuringTag turingTag : TuringUtils.turingTagMapToSet(turingTagMap)) {
-				if (turingTag != null && turingTag.getSrcXmlName().equals(srcAttrName))
-					turingTags.add(turingTag);
-
-			}
-		}
-		return turingTags;
-	}
-
-	// Get TagList
 	public Set<String> getTagList() {
 		Set<String> tagNames = new HashSet<>();
 
@@ -87,4 +67,11 @@ public class CTDMappings {
 		this.classValidToIndex = classValidToIndex;
 	}
 
+	public String getSubType() {
+		return subType;
+	}
+
+	public void setSubType(String subType) {
+		this.subType = subType;
+	}
 }

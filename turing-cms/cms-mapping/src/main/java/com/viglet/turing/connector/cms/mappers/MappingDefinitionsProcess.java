@@ -24,7 +24,6 @@ import com.viglet.turing.connector.cms.beans.TurCTDMappingMap;
 import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.beans.TuringTagMap;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -35,52 +34,48 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
 
-// Open and process Mappping XML File structure
+// Open and process Mapping XML File structure
 public class MappingDefinitionsProcess {
-	private static Logger logger = LoggerFactory.getLogger(MappingDefinitions.class);
+	private static final Logger logger = LoggerFactory.getLogger(MappingDefinitions.class);
 
 	private MappingDefinitionsProcess() {
 		throw new IllegalStateException("MappingDefinitionsProcess");
 	}
 
 	public static MappingDefinitions loadMappings(String resourceXml) {
-		TurCTDMappingMap mappings = null;
-
 		try {
 			DocumentBuilderFactory dlf = DocumentBuilderFactory.newInstance();
 			DocumentBuilder db = dlf.newDocumentBuilder();
 
 			File f = new File(resourceXml);
 			if (f.isFile() && f.canRead()) {
-				InputStream resourceInputStream = new FileInputStream(resourceXml);
+				InputStream resourceInputStream = Files.newInputStream(Paths.get(resourceXml));
 
 				Document document = db.parse(resourceInputStream);
 				Element rootElement = document.getDocumentElement();
 
 				// Loading mapping definitions
-				mappings = readCTDMappings(rootElement);
+				TurCTDMappingMap mappings = readCTDMappings(rootElement);
+				return new MappingDefinitions(resourceXml, mappings);
 
 			} else {
 				logger.error("Can not read mapping file: " + resourceXml);
-				return null;
 			}
-
 		} catch (Exception e) {
 			logger.error("Error when loading mappings", e);
-			return null;
 		}
-		return new MappingDefinitions(resourceXml, mappings);
+		return null;
 	}
 
 	/**
 	 * Loading mapping definitions
 	 * 
-	 * @param rootElement
 	 * @return TurCTDMappingMap
 	 */
 	public static TurCTDMappingMap readCTDMappings(Element rootElement) {
@@ -96,7 +91,7 @@ public class MappingDefinitionsProcess {
 
 	private static void readMappingDefinitions(Element rootElement, TurCTDMappingMap mappings,
 			List<TuringTag> commonIndexAttrs) {
-		// Get <mappingdefinition/> List
+		// Get <mappingDefinition/> List
 		NodeList contentTypes = rootElement.getElementsByTagName(TurXMLConstant.TAG_MAPPING_DEF);
 
 		for (int i = 0; i < contentTypes.getLength(); i++) {
@@ -120,12 +115,7 @@ public class MappingDefinitionsProcess {
 			TuringTagMap turingTagMap = mergeCommonAttrs(commonIndexAttrs, indexAttrs);
 
 			// Add attributes common and index attributes into CTDMapping
-			CTDMappings ctdMapping = new CTDMappings(turingTagMap);
-
-			// Set isValidToIndex
-			if (mappingDefinition.hasAttribute(TurXMLConstant.TAG_ATT_CLASS_VALID_TOINDEX))
-				ctdMapping.setClassValidToIndex(
-						mappingDefinition.getAttribute(TurXMLConstant.TAG_ATT_CLASS_VALID_TOINDEX));
+			CTDMappings ctdMapping = getCtdMappings(turingTagMap, mappingDefinition);
 
 			/// HashMap of CTDs
 			mappings.put(ctdXmlName, ctdMapping);
@@ -134,6 +124,21 @@ public class MappingDefinitionsProcess {
 				debugReadCTDMappings(mappings);
 			}
 		}
+	}
+
+	private static CTDMappings getCtdMappings(TuringTagMap turingTagMap, Element mappingDefinition) {
+		CTDMappings ctdMapping = new CTDMappings(turingTagMap);
+
+		// Set subType
+		if (mappingDefinition.hasAttribute(TurXMLConstant.TAG_ATT_SUB_TYPE))
+			ctdMapping.setSubType(
+					mappingDefinition.getAttribute(TurXMLConstant.TAG_ATT_SUB_TYPE));
+
+		// Set isValidToIndex
+		if (mappingDefinition.hasAttribute(TurXMLConstant.TAG_ATT_CLASS_VALID_TO_INDEX))
+			ctdMapping.setClassValidToIndex(
+					mappingDefinition.getAttribute(TurXMLConstant.TAG_ATT_CLASS_VALID_TO_INDEX));
+		return ctdMapping;
 	}
 
 	private static void debugReadCTDMappings(TurCTDMappingMap mappings) {
@@ -166,8 +171,7 @@ public class MappingDefinitionsProcess {
 
 		for (TuringTag turingTag : indexAttrs) {
 			if (turingTag != null) {
-				if (commonIndexAttrs != null && turingTag.getSrcClassName() == null
-						&& commonIndexAttrMap.get(turingTag.getTagName()) != null) {
+				if (turingTag.getSrcClassName() == null && commonIndexAttrMap.get(turingTag.getTagName()) != null) {
 					// Common always have one item
 					// Add ClassName of Common into Index, if it doesn't have ClassName
 					turingTag.setSrcClassName(commonIndexAttrMap.get(turingTag.getTagName()).getSrcClassName());
@@ -198,7 +202,7 @@ public class MappingDefinitionsProcess {
 		NodeList attributes = rootElement.getElementsByTagName(genericIndexAttrsTag);
 		for (int i = 0; i < attributes.getLength(); i++) {
 			// Load <srcAttr/> List
-			List<TuringTag> turingTagsPerSrcAttr = loadAtributesFromAttrsElement((Element) attributes.item(i));
+			List<TuringTag> turingTagsPerSrcAttr = loadAttributesFromAttrsElement((Element) attributes.item(i));
 			turingTagMap.addAll(turingTagsPerSrcAttr);
 		}
 
@@ -211,7 +215,7 @@ public class MappingDefinitionsProcess {
 	}
 
 	// Load <srcAttr/> List
-	public static List<TuringTag> loadAtributesFromAttrsElement(Element attrsElement) {
+	public static List<TuringTag> loadAttributesFromAttrsElement(Element attrsElement) {
 		NodeList srcNodeList = attrsElement.getElementsByTagName("srcAttr");
 		List<TuringTag> turingTagsPerSrcAttr = new ArrayList<>();
 
@@ -222,8 +226,7 @@ public class MappingDefinitionsProcess {
 					|| srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT)
 					|| srcAttrNode.hasAttribute(TurXMLConstant.RELATION_ATT))) {
 				List<TuringTag> turingTags = loadSrcAttr(srcAttrNode);
-				if (turingTags != null)
-					turingTagsPerSrcAttr.addAll(turingTags);
+                turingTagsPerSrcAttr.addAll(turingTags);
 			}
 		}
 		return turingTagsPerSrcAttr;
@@ -293,9 +296,8 @@ public class MappingDefinitionsProcess {
 			if (logger.isDebugEnabled())
 				logger.debug("Node: " + nodePos);
 
-			String tagName = null;
 			Node tagNode = tagList.item(nodePos);
-			tagName = tagNode.getFirstChild().getNodeValue();
+			String tagName = tagNode.getFirstChild().getNodeValue();
 			if (logger.isDebugEnabled())
 				logger.debug("tagName:" + tagName);
 
@@ -323,9 +325,9 @@ public class MappingDefinitionsProcess {
 
 		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.loadMappings(config.getMappingsXML());
 
-		if (mappingDefinitions == null && logger.isDebugEnabled())
+		if (mappingDefinitions == null) {
 			logger.error("Mapping definitions are not loaded properly from mappingsXML: " + config.getMappingsXML());
-
+		}
 		return mappingDefinitions;
 	}
 

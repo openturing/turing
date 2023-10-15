@@ -1,17 +1,16 @@
 package com.viglet.turing.connector.aem.indexer.ext;
 
-import java.lang.invoke.MethodHandles;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.viglet.turing.connector.aem.indexer.AemObject;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.invoke.MethodHandles;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 public class TurAEMModificationDate implements ExtAttributeInterface {
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -23,7 +22,7 @@ public class TurAEMModificationDate implements ExtAttributeInterface {
 		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 		df.setTimeZone(tz);
 		
-		return TurMultiValue.singleItem(aemObject.getCreatedDate() != null ? df.format(aemObject.getCreatedDate().getTime()) : null);
+		return TurMultiValue.singleItem(aemObject.getLastModified() != null ? df.format(aemObject.getLastModified().getTime()) : null);
 
 	}
 }

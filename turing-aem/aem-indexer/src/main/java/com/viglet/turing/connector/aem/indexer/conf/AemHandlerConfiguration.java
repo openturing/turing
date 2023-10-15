@@ -20,7 +20,12 @@
  */
 package com.viglet.turing.connector.aem.indexer.conf;
 
-import java.io.FileNotFoundException;
+import com.viglet.turing.connector.aem.indexer.TurAEMIndexerTool;
+import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
+import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -28,13 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.viglet.turing.connector.aem.indexer.TurAEMIndexerTool;
-import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
-import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
 
 public class AemHandlerConfiguration implements IHandlerConfiguration {
 	private static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -122,8 +120,6 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
 		try {
 			properties.load(new FileReader(TurAEMIndexerTool.class.getProtectionDomain().getCodeSource().getLocation()
 					.getFile().replaceAll(".jar$", ".properties")));
-		} catch (FileNotFoundException e) {
-			logger.error(e.getMessage(), e);
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}

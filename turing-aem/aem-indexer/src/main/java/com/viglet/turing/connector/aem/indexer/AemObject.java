@@ -1,49 +1,54 @@
 package com.viglet.turing.connector.aem.indexer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jcr.*;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
-import javax.jcr.RepositoryException;
-import javax.jcr.ValueFormatException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class AemObject {
-	private static Logger logger = LoggerFactory.getLogger(AemObject.class);
+	private static final Logger logger = LoggerFactory.getLogger(AemObject.class);
 	public static String JCR_CONTENT = "jcr:content";
-	private Calendar lastModified;
+	private Calendar lastModified = null;
 	private Calendar createdDate;
 	private String type;
 	private Node node;
 	private Node jcrContentNode;
-	private Map<String, Object> attributes = new HashMap<>();
+	private final Map<String, Property> attributes = new HashMap<>();
 
-	public Map<String, Object> getAttributes() {
+	public Map<String, Property> getAttributes() {
 		return attributes;
 	}
 
 	public AemObject(Node node) {
+		new AemObject(node, null);
+	}
+
+	private boolean hasProperty(Node node, String property) throws RepositoryException {
+		return node.hasProperty(property) && node.getProperty(property) != null;
+	}
+	public AemObject(Node node, String dataPath) {
 		try {
 			this.node = node;
 			type = node.getProperty("jcr:primaryType").getString();
 			jcrContentNode = node.getNode(JCR_CONTENT);
-			if (jcrContentNode.hasProperty("cq:lastModified") && jcrContentNode.getProperty("cq:lastModified") != null)
+			if (hasProperty(jcrContentNode,"cq:lastModified"))
 				lastModified = jcrContentNode.getProperty("cq:lastModified").getDate();
-			if (jcrContentNode.hasProperty("jcr:created") && jcrContentNode.getProperty("jcr:created") != null)
-				createdDate = jcrContentNode.getProperty("jcr:created").getDate();
-			PropertyIterator jcrContentProperties = jcrContentNode.getProperties();
-			while (jcrContentProperties.hasNext()) {
-				Property property = jcrContentProperties.nextProperty();
-				getPropertyValue(property);
+			if (lastModified == null && hasProperty(jcrContentNode, "jcr:lastModified")) {
+				lastModified = jcrContentNode.getProperty("jcr:lastModified").getDate();
 			}
-		} catch (PathNotFoundException e) {
-			logger.error(e.getMessage(), e);
+			if (hasProperty(node,"jcr:created"))
+				createdDate = node.getProperty("jcr:created").getDate();
+			if (dataPath != null) {
+				Node jcrDataNode = jcrContentNode.getNode(dataPath);
+				PropertyIterator jcrContentProperties = jcrDataNode.getProperties();
+				while (jcrContentProperties.hasNext()) {
+					Property property = jcrContentProperties.nextProperty();
+					attributes.put(property.getName(), property);
+				}
+			}
 		} catch (RepositoryException e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -61,7 +66,7 @@ public class AemObject {
 		return null;
 	}
 	public static String getJcrPropertyValue(Node node, String propertyName)
-			throws RepositoryException, ValueFormatException, PathNotFoundException {
+			throws RepositoryException {
 		if (node.hasProperty(propertyName))
 			return getPropertyValue(node.getProperty(propertyName));
 		return null;

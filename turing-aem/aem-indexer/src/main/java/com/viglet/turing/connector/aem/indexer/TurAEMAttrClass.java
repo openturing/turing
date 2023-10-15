@@ -20,15 +20,6 @@
  */
 package com.viglet.turing.connector.aem.indexer;
 
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.jcr.Property;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.viglet.turing.connector.aem.indexer.ext.ExtAttributeInterface;
 import com.viglet.turing.connector.cms.beans.TurAttrDef;
 import com.viglet.turing.connector.cms.beans.TurAttrDefContext;
@@ -36,6 +27,14 @@ import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.util.HtmlManipulator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jcr.Property;
+import javax.jcr.Value;
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TurAEMAttrClass {
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -67,10 +66,20 @@ public class TurAEMAttrClass {
 				turMultiValue.add(HtmlManipulator.html2Text( AemObject.getPropertyValue(jcrProperty)));
 				TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
 				attributesDefs.add(turAttrDef);
-			} else if (jcrProperty != null && jcrProperty.getValue() != null) {
-				turMultiValue.add(AemObject.getPropertyValue(jcrProperty));
-				TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
-				attributesDefs.add(turAttrDef);
+			} else if (jcrProperty != null) {
+				if (jcrProperty.isMultiple() && jcrProperty.getValues().length > 0) {
+					for (Value value : jcrProperty.getValues()) {
+						turMultiValue.add(value.getString());
+					}
+				}
+				else if (jcrProperty.getValue() != null) {
+					turMultiValue.add(AemObject.getPropertyValue(jcrProperty));
+
+				}
+				if (!turMultiValue.isEmpty()) {
+					TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
+					attributesDefs.add(turAttrDef);
+				}
 			}
 
 		}

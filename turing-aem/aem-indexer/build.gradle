@@ -17,9 +17,11 @@ repositories {
 dependencies {
 	implementation 'org.apache.jackrabbit:jackrabbit-jcr-commons:2.21.19'
 	implementation 'org.apache.jackrabbit:jackrabbit-jcr2dav:2.21.19'
+    implementation 'ch.qos.logback:logback-classic:1.4.11'
 
-	implementation 'com.beust:jcommander:1.82'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.7'
+
+    implementation 'com.beust:jcommander:1.82'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.7.1'
     implementation project(':turing-java-sdk')
     implementation project(':turing-cms:cms-mapping')
 }
@@ -29,11 +31,10 @@ jar {
         attributes 'Main-Class': 'com.viglet.turing.connector.aem.indexer.TurAEMIndexerTool'
     }
  }
- 
- shadowJar {
-   archiveBaseName = 'turing-aem'
-   version = 'all'
 
+
+ shadowJar {
+     archiveFileName.set("turing-aem.jar")
 }
 
 //tasks.named('test') {
