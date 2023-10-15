@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/dev/token")
@@ -56,7 +57,6 @@ public class TurDevTokenAPI {
 	public TurDevToken turDevTokenUpdate(@PathVariable String id, @RequestBody TurDevToken turDevToken) {
 		return this.turDevTokenRepository.findById(id).map(turDevTokenEdit -> {
 			turDevTokenEdit.setDescription(turDevToken.getDescription());
-			turDevTokenEdit.setToken(turDevToken.getToken());
 			turDevTokenEdit.setTitle(turDevToken.getTitle());
 			this.turDevTokenRepository.save(turDevTokenEdit);
 			return turDevTokenEdit;
@@ -75,6 +75,7 @@ public class TurDevTokenAPI {
 	@Operation(summary = "Create a Developer Token")
 	@PostMapping
 	public TurDevToken turDevTokenAdd(@RequestBody TurDevToken turDevToken) {
+		turDevToken.setToken(UUID.randomUUID().toString().replace("-","").substring(0,25));
 		this.turDevTokenRepository.save(turDevToken);
 		return turDevToken;
 

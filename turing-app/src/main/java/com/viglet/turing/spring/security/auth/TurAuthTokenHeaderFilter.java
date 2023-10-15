@@ -25,7 +25,7 @@ public class TurAuthTokenHeaderFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        String appId = request.getHeader("APP_ID");
+        String appId = request.getHeader("Key");
         if (appId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             TurUser turUser = turUserRepository.findByUsername("admin");
             UsernamePasswordAuthenticationToken authenticationToken =

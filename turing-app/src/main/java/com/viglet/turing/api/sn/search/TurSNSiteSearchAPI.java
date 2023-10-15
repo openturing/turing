@@ -113,19 +113,23 @@ public class TurSNSiteSearchAPI {
 	@PostMapping("latest")
 	public ResponseEntity<List<String>> turSNSiteSearchLatestImpersonate(@PathVariable String siteName,
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "5") Integer rows,
-			@RequestParam(required = true, name = TurSNParamType.LOCALE) String locale,
+			@RequestParam(name = TurSNParamType.LOCALE) String locale,
 			@RequestBody Optional<TurSNSearchLatestRequestBean> turSNSearchLatestRequestBean, Principal principal,
 			HttpServletRequest request) {
 		if (principal != null) {
 			return new ResponseEntity<>(turSNSearchProcess.latestSearches(siteName, locale,
-					isLatestImpersonate(turSNSearchLatestRequestBean) ? turSNSearchLatestRequestBean.get().getUserId()
-							: principal.getName(),
+					isLatestImpersonate(turSNSearchLatestRequestBean, principal),
 					rows), HttpStatus.OK);
 		}
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 	}
 
-	private boolean isLatestImpersonate(Optional<TurSNSearchLatestRequestBean> turSNSearchLatestRequestBean) {
-		return turSNSearchLatestRequestBean.isPresent() && turSNSearchLatestRequestBean.get().getUserId() != null;
+	private String isLatestImpersonate(Optional<TurSNSearchLatestRequestBean> turSNSearchLatestRequestBean, Principal principal) {
+		if (turSNSearchLatestRequestBean.isPresent() && turSNSearchLatestRequestBean.get().getUserId() != null) {
+			return turSNSearchLatestRequestBean.get().getUserId();
+		}
+		else {
+			return principal.getName();
+		}
 	}
 }

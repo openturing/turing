@@ -216,7 +216,10 @@ dependencies {
     //PDFBox
     implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '3.0.0'
 
+    implementation group: 'com.google.guava', name: 'guava', version: '32.1.2-jre'
+
     //Language Tool
+    implementation group: 'org.languagetool', name: 'language-es', version: "${languagetool}"
     implementation group: 'org.languagetool', name: 'language-en', version: "${languagetool}"
     implementation group: 'org.languagetool', name: 'language-pt', version: "${languagetool}"
 

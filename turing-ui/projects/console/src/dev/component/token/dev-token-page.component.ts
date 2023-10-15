@@ -35,7 +35,7 @@ export class TurDevTokenPageComponent implements OnInit {
   }
 
   saveButtonCaption(): string {
-    return this.newObject ? "Create search engine instance" : "Update search engine instance";
+    return this.newObject ? "Create api token" : "Update api token";
   }
 
   getTurDevToken(): Observable<TurDevToken> {
@@ -67,12 +67,12 @@ export class TurDevTokenPageComponent implements OnInit {
   public delete(_turDevToken: TurDevToken) {
     this.turDevTokenService.delete(_turDevToken).subscribe(
       () => {
-        this.notifier.notify("success", _turDevToken.title.concat(" SE instance was deleted."));
+        this.notifier.notify("success", _turDevToken.title.concat(" Token was deleted."));
         this.modalDelete.nativeElement.removeAttribute("open");
-        this.router.navigate(['/se/instance']);
+        this.router.navigate(['/dev/token']);
       },
       response => {
-        this.notifier.notify("error", "SE instance was error: " + response);
+        this.notifier.notify("error", "Token was error: " + response);
       });
   }
 }

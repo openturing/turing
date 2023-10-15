@@ -75,7 +75,7 @@ public class TurSecurityConfigProduction {
         http.csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new TurSpaCsrfTokenRequestHandler())
-                        .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/api/sn/**"),
+                        .ignoringRequestMatchers(mvc.pattern("/api/sn/**"),
                                 mvc.pattern("/logout"), mvc.pattern("/api/nlp/**"),
                                 mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**")))
                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
@@ -85,9 +85,11 @@ public class TurSecurityConfigProduction {
                             issuerUri, clientId, turingUrl);
             http.oauth2Login(withDefaults());
             http.authorizeHttpRequests(authorizeRequests -> {
-                authorizeRequests.requestMatchers(mvc.pattern("/api/discovery"),
+                authorizeRequests.requestMatchers(
+                        mvc.pattern("/api/discovery"),
                         mvc.pattern("/assets/**"),
-                        mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"),
+                        mvc.pattern("/favicon.ico"),
+                        mvc.pattern("/*.png"),
                         mvc.pattern("/manifest.json"),
                         mvc.pattern("/swagger-resources/**"),
                         mvc.pattern("/browserconfig.xml"),
@@ -102,11 +104,16 @@ public class TurSecurityConfigProduction {
         } else {
             http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
                     .authorizeHttpRequests(authorizeRequests -> {
-                        authorizeRequests.requestMatchers(mvc.pattern("/api/discovery"), mvc.pattern("/logout"),
-                                mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
-                                mvc.pattern("/"), AntPathRequestMatcher.antMatcher("/assets/**"),
+                        authorizeRequests.requestMatchers(
+                                mvc.pattern("/api/discovery"),
+                                mvc.pattern("/logout"),
+                                mvc.pattern("/index.html"),
+                                mvc.pattern("/welcome/**"),
+                                mvc.pattern("/"),
+                                AntPathRequestMatcher.antMatcher("/assets/**"),
                                 mvc.pattern("/swagger-resources/**"),
-                                mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"),
+                                mvc.pattern("/sn/**"),
+                                mvc.pattern("/fonts/**"),
                                 AntPathRequestMatcher.antMatcher("/api/sn/**/ac"),
                                 AntPathRequestMatcher.antMatcher("/api/sn/**/search"),
                                 AntPathRequestMatcher.antMatcher("/api/sn/**/search/**"),

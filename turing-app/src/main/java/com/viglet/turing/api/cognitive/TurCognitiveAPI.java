@@ -20,30 +20,23 @@
  */
 package com.viglet.turing.api.cognitive;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
+import com.google.common.collect.Lists;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.languagetool.JLanguageTool;
 import org.languagetool.Language;
+import org.languagetool.language.BrazilianPortuguese;
 import org.languagetool.language.BritishEnglish;
 import org.languagetool.language.identifier.SimpleLanguageIdentifier;
-import org.languagetool.language.BrazilianPortuguese;
 import org.languagetool.rules.RuleMatch;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.google.common.collect.Lists;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/cognitive")
@@ -55,9 +48,13 @@ public class TurCognitiveAPI {
 	@Operation(summary = "Cognitive Detect Language")
 	@GetMapping("/detect-language/")
 	public String turCognitiveDetectLanguage(@RequestParam(required = false, name = "text") String text) {
-		Language language = new SimpleLanguageIdentifier().detectLanguage(text);
-		Locale locale = language.getLocaleWithCountryAndVariant();
-		return locale.toString();
+		List<String> languages = new ArrayList<>();
+		languages.add("en");
+		languages.add("es");
+		languages.add("pt");
+
+		Language language = new SimpleLanguageIdentifier(languages).detectLanguage(text);
+		return language != null ? language.getLocaleWithCountryAndVariant().toString() : "";
 	}
 
 	@Operation(summary = "Cognitive Spell Checker")
@@ -84,7 +81,7 @@ public class TurCognitiveAPI {
 			List<String> suggesterPhrases = new ArrayList<>();
 			for (RuleMatch match : Lists.reverse(matches)) {
 				if (suggesterPhrases.isEmpty()) {
-					createListwithFirstMatch(text, suggesterPhrases, match);
+					createListWithFirstMatch(text, suggesterPhrases, match);
 				} else {
 					suggesterPhrases = addToListOtherMatches(suggesterPhrases, match);
 				}
@@ -102,13 +99,13 @@ public class TurCognitiveAPI {
 	private List<String> addToListOtherMatches(List<String> suggesterPhrases, RuleMatch match) {
 		List<String> suggesterPhrasesNew = new ArrayList<>();
 		for (String suggesterPhrase : suggesterPhrases) {
-			createListwithFirstMatch(suggesterPhrase, suggesterPhrasesNew, match);
+			createListWithFirstMatch(suggesterPhrase, suggesterPhrasesNew, match);
 		}
 		suggesterPhrases = suggesterPhrasesNew;
 		return suggesterPhrases;
 	}
 
-	private void createListwithFirstMatch(String text, List<String> suggesterPhrases, RuleMatch match) {
+	private void createListWithFirstMatch(String text, List<String> suggesterPhrases, RuleMatch match) {
 		for (String term : match.getSuggestedReplacements()) {
 			StringBuilder buf = new StringBuilder(text);
 			buf.replace(match.getFromPos(), match.getToPos(), term);
