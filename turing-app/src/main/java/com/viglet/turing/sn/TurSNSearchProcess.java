@@ -456,7 +456,7 @@ public class TurSNSearchProcess {
 						turSNSiteSearchFacetItemBean.setCount(facetItem.getCount());
 						turSNSiteSearchFacetItemBean.setLabel(facetItem.getAttribute());
 						turSNSiteSearchFacetItemBean.setLink(TurSNUtils
-								.addFilterQuery(uri, facet.getFacet() + ":" + facetItem.getAttribute()).toString());
+								.addFilterQuery(uri, facet.getFacet() + ":" + facetItem.getAttribute()).toString().replace(":","\\:"));
 						turSNSiteSearchFacetItemBeans.add(turSNSiteSearchFacetItemBean);
 					});
 

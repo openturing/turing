@@ -20,22 +20,6 @@
  */
 package com.viglet.turing.sn;
 
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import jakarta.servlet.http.HttpServletRequest;
-
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.tika.utils.StringUtils;
-import org.springframework.http.server.ServletServerHttpRequest;
-import org.springframework.web.util.UriComponentsBuilder;
-
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentMetadataBean;
@@ -46,6 +30,16 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.solr.TurSolrField;
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.tika.utils.StringUtils;
+import org.springframework.http.server.ServletServerHttpRequest;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class TurSNUtils {
 	public static final String TURING_ENTITY = "turing_entity";
