@@ -5,8 +5,8 @@ services:
     image: nginx:1.13
     restart: always
     ports:
-    - 80:80
-    - 443:443
+    - "80:80"
+    - "443:443"
     volumes:
     - ./containers/nginx/conf.d:/etc/nginx/conf.d
   turing-solr:
@@ -14,15 +14,15 @@ services:
     build: ./containers/solr
     restart: always    
     ports:
-    - 8983:8983
+    - "8983:8983"
   turing-mariadb:
     container_name: turing-mariadb
     build: ./containers/mariadb
     restart: always    
     ports:
-    - 3306:3306
+    - "3306:3306"
     volumes:
-    - ./volumes/mariadb/lib:/var/lib/mysql 
+    - /viglet/docker/volumes/mariadb/lib:/var/lib/mysql
     environment:
       MYSQL_DATABASE: turing
       MYSQL_ROOT_PASSWORD: turing
@@ -33,11 +33,11 @@ services:
     build: .
     restart: always    
     ports:
-     - 2700:2700
+     - "2700:2700"
     volumes:
-    - ./volumes/turing/models:/turing/models   
-    - ./volumes/turing/store:/turing/store
-    - ./volumes/turing/gradle:/root/.gradle
+    - /viglet/docker/volumes/turing/models:/turing/models
+    - /viglet/docker/volumes/turing/store:/turing/store
+    - /viglet/docker/volumes/turing/gradle:/root/.gradle
     depends_on:
       - turing-nginx
       - turing-mariadb
