@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 
+import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
+
 public class AemSite extends AemObject {
 	private static final Logger logger = LoggerFactory.getLogger(AemSite.class);
 	

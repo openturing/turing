@@ -26,12 +26,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
+import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
 public class TurAEMIndexerTool {
 
 	public static final String CONTENT_FRAGMENT = "content-fragment";
 	private static final JCommander jCommander = new JCommander();
-	private static Logger logger = LoggerFactory.getLogger(TurAEMIndexerTool.class);
+	private static final Logger logger = LoggerFactory.getLogger(TurAEMIndexerTool.class);
 	public static final String STATIC_FILE = "static-file";
+	public static final String CONTENT_FRAGMENT_PROPERTY = "contentFragment";
 
 	@Parameter(names = { "--host",
 			"-h" }, description = "The host on which Content Management server is installed.", required = true)
@@ -175,7 +177,7 @@ public class TurAEMIndexerTool {
 							case DAM_ASSET:
 								CTDMappings ctdMappings = getCTDMappingMap(config).get(contentType);
 								if (ctdMappings.getSubType() != null) {
-									if (ctdMappings.getSubType().equals(CONTENT_FRAGMENT)) {
+									if (ctdMappings.getSubType().equals(CONTENT_FRAGMENT) && isContentFragment(nodeChild)) {
 										indexObject(new AemObject(nodeChild, "data/master"));
 									} else if (ctdMappings.getSubType().equals(STATIC_FILE)) {
 										indexObject(new AemObject(nodeChild, "metadata"));
@@ -194,6 +196,20 @@ public class TurAEMIndexerTool {
 			logger.error(e.getMessage(), e);
 		}
 	}
+
+	private boolean isContentFragment(Node node) {
+		try {
+			Node jcrContentNode = node.getNode(JCR_CONTENT);
+			if (TurAemUtils.hasProperty(jcrContentNode,"contentFragment")
+					&& jcrContentNode.getProperty(CONTENT_FRAGMENT_PROPERTY).getBoolean()) {
+				return true;
+			}
+		} catch (RepositoryException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return false;
+	}
+
 	private void indexObject(AemObject aemObject) throws RepositoryException {
 		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
 		List<TurAttrDef> turAttrDefList = prepareAttributeDefs(aemObject, config, mappingDefinitions);
@@ -203,7 +219,6 @@ public class TurAEMIndexerTool {
 		for (TurAttrDef turAttrDef : turAttrDefList) {
 			String attributeName = turAttrDef.getTagName();
 			turAttrDef.getMultiValue().forEach(attributeValue -> {
-				System.out.println("A33: " + attributeValue);
 				if (attributes.containsKey(attributeName)) {
 					if (!(attributes.get(attributeName) instanceof ArrayList)) {
 						attributeAsList(attributes, attributeName, attributeValue);

@@ -38,7 +38,7 @@
                 <tag>abstract</tag>
             </srcAttr>
             <srcAttr xmlName="cq:tags">
-                <tag>author</tag>
+                <tag>tags</tag>
             </srcAttr>
             <srcAttr xmlName="text" className="com.viglet.turing.connector.aem.indexer.ext.TurPageComponents">
                 <tag>text</tag>

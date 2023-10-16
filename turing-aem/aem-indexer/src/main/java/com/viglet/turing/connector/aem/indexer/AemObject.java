@@ -3,14 +3,18 @@ package com.viglet.turing.connector.aem.indexer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jcr.*;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
+import javax.jcr.RepositoryException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
+
 public class AemObject {
 	private static final Logger logger = LoggerFactory.getLogger(AemObject.class);
-	public static String JCR_CONTENT = "jcr:content";
 	private Calendar lastModified = null;
 	private Calendar createdDate;
 	private String type;
@@ -26,20 +30,18 @@ public class AemObject {
 		this(node, null);
 	}
 
-	private boolean hasProperty(Node node, String property) throws RepositoryException {
-		return node.hasProperty(property) && node.getProperty(property) != null;
-	}
+
 	public AemObject(Node node, String dataPath) {
 		try {
 			this.node = node;
 			type = node.getProperty("jcr:primaryType").getString();
 			jcrContentNode = node.getNode(JCR_CONTENT);
-			if (hasProperty(jcrContentNode,"cq:lastModified"))
+			if (TurAemUtils.hasProperty(jcrContentNode,"cq:lastModified"))
 				lastModified = jcrContentNode.getProperty("cq:lastModified").getDate();
-			if (lastModified == null && hasProperty(jcrContentNode, "jcr:lastModified")) {
+			if (lastModified == null && TurAemUtils.hasProperty(jcrContentNode, "jcr:lastModified")) {
 				lastModified = jcrContentNode.getProperty("jcr:lastModified").getDate();
 			}
-			if (hasProperty(node,"jcr:created"))
+			if (TurAemUtils.hasProperty(node,"jcr:created"))
 				createdDate = node.getProperty("jcr:created").getDate();
 			if (dataPath != null) {
 				Node jcrDataNode = jcrContentNode.getNode(dataPath);

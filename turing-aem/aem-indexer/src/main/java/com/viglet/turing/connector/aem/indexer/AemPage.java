@@ -8,6 +8,8 @@ import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.ValueFormatException;
 
+import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
+
 public class AemPage extends AemObject {
 	private static final Logger logger = LoggerFactory.getLogger(AemPage.class);
 
