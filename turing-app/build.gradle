@@ -154,7 +154,7 @@ dependencies {
     //implementation group: 'org.liquibase', name: 'liquibase-core', version: '4.6.2'
 
     // SolrJ
-    implementation(group: 'org.apache.solr', name: 'solr-solrj', version: '9.3.0') {
+    implementation(group: 'org.apache.solr', name: 'solr-solrj', version: '9.4.0') {
         exclude(module: 'xml-apis')
     }
 
