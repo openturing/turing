@@ -485,7 +485,7 @@ public class TurSNSearchProcess {
 
 			List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<>();
 			context.getTurSEParameters().getFilterQueries().forEach(facetToRemove -> {
-				String[] facetToRemoveParts = facetToRemove.split(":");
+				String[] facetToRemoveParts = facetToRemove.split(":", 2);
 				if (facetToRemoveParts.length == 2) {
 					String facetToRemoveValue = facetToRemoveParts[1].replace("\"", "");
 

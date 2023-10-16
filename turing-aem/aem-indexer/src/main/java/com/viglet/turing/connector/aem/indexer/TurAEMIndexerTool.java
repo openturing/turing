@@ -30,7 +30,7 @@ public class TurAEMIndexerTool {
 
 	public static final String CONTENT_FRAGMENT = "content-fragment";
 	private static final JCommander jCommander = new JCommander();
-	private static final Logger logger = LoggerFactory.getLogger(TurAEMIndexerTool.class);
+	private static Logger logger = LoggerFactory.getLogger(TurAEMIndexerTool.class);
 	public static final String STATIC_FILE = "static-file";
 
 	@Parameter(names = { "--host",
@@ -147,14 +147,12 @@ public class TurAEMIndexerTool {
 	private void getNode(Node node, int totalPages) {
 
 		try {
-			System.out.println(contentType);
 			if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
 				NodeIterator nodeIterator = node.getNodes();
 				while (nodeIterator.hasNext()) {
 
 					Node nodeChild = nodeIterator.nextNode();
 					if (hasContentType(nodeChild, contentType) || contentType == null) {
-						System.out.println("A3");
 						if (processed == 0) {
 							currentPage++;
 							jCommander.getConsole().println(String.format("Processing %s item",
@@ -197,7 +195,6 @@ public class TurAEMIndexerTool {
 		}
 	}
 	private void indexObject(AemObject aemObject) throws RepositoryException {
-
 		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
 		List<TurAttrDef> turAttrDefList = prepareAttributeDefs(aemObject, config, mappingDefinitions);
 		TurSNSiteConfig turSNSiteConfig = config.getDefaultSNSiteConfig();
@@ -206,6 +203,7 @@ public class TurAEMIndexerTool {
 		for (TurAttrDef turAttrDef : turAttrDefList) {
 			String attributeName = turAttrDef.getTagName();
 			turAttrDef.getMultiValue().forEach(attributeValue -> {
+				System.out.println("A33: " + attributeValue);
 				if (attributes.containsKey(attributeName)) {
 					if (!(attributes.get(attributeName) instanceof ArrayList)) {
 						attributeAsList(attributes, attributeName, attributeValue);
@@ -229,7 +227,7 @@ public class TurAEMIndexerTool {
 		try {
 			turSNServer = new TurSNServer(new URL(config.getTuringURL()), turSNSiteConfig.getName(),
 					turSNSiteConfig.getLocale(), credentials);
-			TurSNJobUtils.importItems(turSNJobItems, turSNServer, false);
+			TurSNJobUtils.importItems(turSNJobItems, turSNServer, true);
 		} catch (MalformedURLException e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -252,6 +250,7 @@ public class TurAEMIndexerTool {
 		List<TurAttrDef> attributesDefs = new ArrayList<>();
 
 		for (String tag : ctdMappings.getTagList()) {
+
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("generateXMLToIndex: Tag: %s", tag));
 			}

@@ -23,7 +23,7 @@ public class AemObject {
 	}
 
 	public AemObject(Node node) {
-		new AemObject(node, null);
+		this(node, null);
 	}
 
 	private boolean hasProperty(Node node, String property) throws RepositoryException {

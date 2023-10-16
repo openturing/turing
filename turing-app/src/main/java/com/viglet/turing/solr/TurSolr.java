@@ -99,7 +99,7 @@ public class TurSolr {
             logger.error(e);
         }
 
-        return 0l;
+        return 0L;
 
     }
 
@@ -375,8 +375,7 @@ public class TurSolr {
                                     if (condition.getValue().equalsIgnoreCase("asc")) {
                                         return String.format("_query_:\"{!func}recip(ms(NOW/DAY,%s),3.16e-11,1,1)\"",
                                                 condition.getAttribute());
-                                    }
-                                    else {
+                                    } else {
                                         return String.format("%s:%s", condition.getAttribute(), condition.getValue());
                                     }
                                 }
@@ -384,7 +383,7 @@ public class TurSolr {
                             })
                             .collect(Collectors.joining(" AND ")) +
                     ")";
-            bq.add(String.format(Locale.US,"%s^%.1f",strExpression, expression.getWeight())) ;
+            bq.add(String.format(Locale.US, "%s^%.1f", strExpression, expression.getWeight()));
 
         });
         query.set("bq", bq.toArray(new String[0]));
@@ -485,8 +484,7 @@ public class TurSolr {
             String[] splitSort = turSEParameters.getSort().split(" ");
             if (splitSort.length == 2) {
                 query.setSort(splitSort[0], splitSort[1].equals("asc") ? ORDER.asc : ORDER.desc);
-            }
-            else {
+            } else {
                 if (turSEParameters.getSort().equalsIgnoreCase("newest")) {
                     sortEntry = new SimpleEntry<>(turSNSite.getDefaultDateField(), "desc");
                 } else if (turSEParameters.getSort().equalsIgnoreCase("oldest")) {
@@ -604,9 +602,15 @@ public class TurSolr {
     private void prepareQueryFilterQuery(TurSEParameters turSEParameters, SolrQuery query) {
         // Filter Query
         if (turSEParameters.getFilterQueries() != null && !turSEParameters.getFilterQueries().isEmpty()) {
-            String[] filterQueryArr = new String[turSEParameters.getFilterQueries().size()];
-            filterQueryArr = turSEParameters.getFilterQueries().toArray(filterQueryArr);
-            query.setFilterQueries(filterQueryArr);
+            List<String> filterQueriesModified = turSEParameters.getFilterQueries().stream().map(
+                    q -> {
+                        String[] split = q.split(":", 2);
+                        split[1] = String.format("\"%s\"", split[1]);
+                        return String.join(":", split);
+                    }
+            ).toList();
+            String[] filterQueryArr = new String[filterQueriesModified.size()];
+            query.setFilterQueries(filterQueriesModified.toArray(filterQueryArr));
         }
     }
 
@@ -618,7 +622,7 @@ public class TurSolr {
 
             StringBuilder mltFields = new StringBuilder();
             for (TurSNSiteFieldExt turSNSiteMltFieldExt : turSNSiteMLTFieldExts) {
-                if (mltFields.length() != 0) {
+                if (!mltFields.isEmpty()) {
                     mltFields.append(",");
                 }
                 mltFields.append(turSNSiteMltFieldExt.getName());
@@ -722,7 +726,7 @@ public class TurSolr {
 
             StringBuilder hlFields = new StringBuilder();
             for (TurSNSiteFieldExt turSNSiteHlFieldExt : turSNSiteHlFieldExts) {
-                if (hlFields.length() != 0) {
+                if (!hlFields.isEmpty()) {
                     hlFields.append(",");
                 }
                 hlFields.append(turSNSiteHlFieldExt.getName());

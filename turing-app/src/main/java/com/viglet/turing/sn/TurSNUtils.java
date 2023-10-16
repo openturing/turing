@@ -75,7 +75,7 @@ public class TurSNUtils {
 					&& nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES))) {
 				alreadyExists = true;
 			}
-			resetPagination(sbQueryString, nameValuePair);
+			resetPaginationOrAddParameter(sbQueryString, nameValuePair);
 		}
 		if (!alreadyExists) {
 			TurCommonsUtils.addParameterToQueryString(sbQueryString, TurSNParamType.FILTER_QUERIES, fq);
@@ -87,14 +87,12 @@ public class TurSNUtils {
 	public static URI removeFilterQuery(URI uri, String fq) {
 		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
 		StringBuilder sbQueryString = new StringBuilder();
-
 		for (NameValuePair nameValuePair : params) {
-			if (!(nameValuePair.getValue().equals(fq)
+			if (!(java.net.URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8).equals(fq)
 					&& nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES))) {
-				resetPagination(sbQueryString, nameValuePair);
+				resetPaginationOrAddParameter(sbQueryString, nameValuePair);
 			}
 		}
-
 		return TurCommonsUtils.modifiedURI(uri, sbQueryString);
 	}
 
@@ -113,7 +111,7 @@ public class TurSNUtils {
 
 
 	
-	private static void resetPagination(StringBuilder sbQueryString, NameValuePair nameValuePair) {
+	private static void resetPaginationOrAddParameter(StringBuilder sbQueryString, NameValuePair nameValuePair) {
 		if ((nameValuePair.getName().equals(TurSNParamType.PAGE))) {
 			TurCommonsUtils.addParameterToQueryString(sbQueryString, nameValuePair.getName(), "1");
 		} else {

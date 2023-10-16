@@ -16,24 +16,22 @@
  */
 package com.viglet.turing.client.sn.job;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.client.sn.TurSNServer;
+import com.viglet.turing.client.sn.utils.TurSNClientUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.viglet.turing.client.sn.TurSNServer;
-import com.viglet.turing.client.sn.utils.TurSNClientUtils;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Turing Semantic Navigation Utilities.
@@ -51,15 +49,8 @@ public class TurSNJobUtils {
 
 		try (CloseableHttpClient client = HttpClients.createDefault()) {
 			String jsonResult = new ObjectMapper().writeValueAsString(turSNJobItems);
-
-			// decode UTF-8
-			CharBuffer data = StandardCharsets.UTF_8.decode(ByteBuffer.wrap(jsonResult.getBytes()));
-
-			// encode
-			ByteBuffer outputBuffer = StandardCharsets.UTF_8.encode(data);
-
-			byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
-			String jsonUTF8 = new String(outputData);
+			ByteBuffer buffer = StandardCharsets.UTF_8.encode(jsonResult);
+			String jsonUTF8  = StandardCharsets.UTF_8.decode(buffer).toString();
 
 			HttpPost httpPost = new HttpPost(
 					String.format("%s/api/sn/%s/import", turSNServer.getServerURL(), turSNServer.getSiteName()));
