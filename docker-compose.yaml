@@ -49,7 +49,7 @@ services:
       SPRING_DATASOURCE_USERNAME: turing
       SPRING_DATASOURCE_PASSWORD: turing
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.mariadb.jdbc.Driver
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL5InnoDBDialect
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MariaDBDialect
 volumes:
   vol-solr:
   vol-turing-models:
