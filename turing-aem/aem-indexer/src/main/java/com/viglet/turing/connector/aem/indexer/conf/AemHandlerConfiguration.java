@@ -20,7 +20,6 @@
  */
 package com.viglet.turing.connector.aem.indexer.conf;
 
-import com.viglet.turing.connector.aem.indexer.TurAEMIndexerTool;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
 import org.slf4j.Logger;
@@ -29,18 +28,10 @@ import org.slf4j.LoggerFactory;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 public class AemHandlerConfiguration implements IHandlerConfiguration {
-	private static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-	public static final String RESOURCE_TYPE = "Properties";
-	public static final String RESOURCE_NAME = "VigletTuring";
-	public static final String ID_ATTRIBUTE = "id";
-	public static final String TYPE_ATTRIBUTE = "type";
-	public static final String PROVIDER_ATTRIBUTE = "source_apps";
+	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 	private static final String DEFAULT_PROVIDER = "WEM";
 	private static final String DEFAULT_TURING_URL = "http://localhost:2700";
 	private static final String DEFAULT_TURING_USERNAME = "admin";
@@ -62,18 +53,16 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
 	private String password;
 	private String providerName;
 
+	private final String propertyFile;
 	// Load up from Generic Resource
-	public AemHandlerConfiguration() {
+
+	public AemHandlerConfiguration(String propertyFile) {
+		this.propertyFile = propertyFile;
 		parsePropertiesFromResource();
 	}
-
 	@Override
 	public String getTuringURL() {
 		return turingURL;
-	}
-
-	public void setTuringURL(String turingURL) {
-		this.turingURL = turingURL;
 	}
 
 	@Override
@@ -92,10 +81,6 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
 		return contextName != null ? contextName : getCDAContextName();
 	}
 
-	public void setCDAContextName(String cdaContextName) {
-		this.cdaContextName = cdaContextName;
-	}
-
 	@Override
 	public String getCDAURLPrefix() {
 		return cdaURLPrefix;
@@ -107,10 +92,6 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
 		return urlPrefix != null ? urlPrefix : getCDAURLPrefix();
 	}
 
-	public void setCDAURLPrefix(String cdaURLPrefix) {
-		this.cdaURLPrefix = cdaURLPrefix;
-	}
-
 	private void parsePropertiesFromResource() {
 		parseProperties(getProperties());
 	}
@@ -118,9 +99,9 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
 	private Properties getProperties() {
 		Properties properties = new Properties();
 		try {
-			properties.load(new FileReader(TurAEMIndexerTool.class.getProtectionDomain().getCodeSource().getLocation()
-					.getFile().replaceAll(".jar$", ".properties")));
+			properties.load(new FileReader(propertyFile));
 		} catch (IOException e) {
+			System.out.printf("%nERROR: Cannot open %s file, use --property parameter correctly%n", propertyFile);
 			logger.error(e.getMessage(), e);
 		}
 		return properties;
@@ -159,6 +140,7 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
 			turSNSiteConfig.setName(snSiteInternal);
 		}
 
+
 		if (locale != null) {
 			// For example: dps.site.Intranet.en.sn.locale=en_US
 			String snLocaleInternal = getDynamicProperties(String.format("dps.site.%s.%s.sn.locale", site, locale));
@@ -192,6 +174,20 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
 		return turSNSiteConfig;
 	}
 
+	public String getLocaleByPath(String snSite, String path) {
+
+		// dps.site.Intra.sn.locale.en_US.path=/content/sample/en
+		for (Enumeration<?> e = getProperties().propertyNames(); e.hasMoreElements(); ) {
+			String name = (String)e.nextElement();
+			String value = getProperties().getProperty(name);
+			if (name.startsWith(String.format("sn.%s", snSite))
+			&& name.endsWith(".path") &&  path.startsWith(value) ) {
+				String[] parts = name.split("\\.");
+				return parts[2];
+			}
+		}
+		return snLocale;
+	}
 	@Override
 	public TurSNSiteConfig getDefaultSNSiteConfig() {
 		return new TurSNSiteConfig(snSite, snLocale);
@@ -226,26 +222,13 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
 		return login;
 	}
 
-	public void setLogin(String login) {
-		this.login = login;
-	}
-
 	@Override
 	public String getPassword() {
 		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
 	}
 
 	@Override
 	public String getProviderName() {
 		return providerName;
 	}
-
-	public void setProviderName(String providerName) {
-		this.providerName = providerName;
-	}
-
 }

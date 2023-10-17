@@ -27,6 +27,8 @@ import java.net.URL;
 import java.util.*;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
+import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
+
 public class TurAEMIndexerTool {
 
 	public static final String CONTENT_FRAGMENT = "content-fragment";
@@ -57,7 +59,7 @@ public class TurAEMIndexerTool {
 			"-g" }, description = "The path to a file containing the GUID(s) of content instances or static files to be indexed.")
 	private String guidFilePath = null;
 
-	@Parameter(names = { "--sitePath", "-s" }, description = "AEM site path.", required = false)
+	@Parameter(names = { "--site-path", "-s" }, description = "AEM site path.", required = false)
 	private String sitePath = "/content/we-retail";
 
 	@Parameter(names = { "--page-size",
@@ -68,6 +70,11 @@ public class TurAEMIndexerTool {
 	@Parameter(names = "--debug", description = "Change the log level to debug", help = true)
 	private boolean debug = false;
 
+	@Parameter(names = "--property", description = "Property file location path", help = true)
+	private String propertyPath = "turing-aem.properties";
+
+	@Parameter(names = "--show-output", description = "Property file location path", help = true)
+	private boolean showOutput = false;
 	@Parameter(names = "--help", description = "Print usage instructions", help = true)
 	private boolean help = false;
 
@@ -76,7 +83,7 @@ public class TurAEMIndexerTool {
 	private static int processed = 0;
 	private static int currentPage = 0;
 	private static long start;
-	AemHandlerConfiguration config = new AemHandlerConfiguration();
+	private AemHandlerConfiguration config = null;
 	private String siteName;
 
 	public static void main(String... argv) {
@@ -90,10 +97,12 @@ public class TurAEMIndexerTool {
 						getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
 				root.setLevel(Level.DEBUG);
 			}
+
 			if (turAEMIndexerTool.help) {
 				jCommander.usage();
 				return;
 			}
+
 			jCommander.getConsole().println("Viglet Turing AEM Indexer Tool.");
 
 			turAEMIndexerTool.run();
@@ -104,6 +113,7 @@ public class TurAEMIndexerTool {
 	}
 
 	private void run() {
+		config = new AemHandlerConfiguration(propertyPath);
 		try {
 			this.getRead();
 		} catch (Exception e) {
@@ -113,7 +123,6 @@ public class TurAEMIndexerTool {
 
 	public void getRead() throws Exception {
 		if (isCTDIntoMapping(contentType, config)) {
-			int totalPages = 0;
 			Repository repository = JcrUtils.getRepository(hostAndPort);
 			Session session = repository.login(new SimpleCredentials(username, password.toCharArray()));
 			try {
@@ -121,7 +130,7 @@ public class TurAEMIndexerTool {
 				AemSite aemSite = new AemSite(node);
 				siteName = aemSite.getTitle();
 				start = System.currentTimeMillis();
-				getNode(node, totalPages);
+				getNode(node);
 				long elapsed = System.currentTimeMillis() - start;
 				jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
 			} finally {
@@ -146,7 +155,7 @@ public class TurAEMIndexerTool {
 		}
 	}
 
-	private void getNode(Node node, int totalPages) {
+	private void getNode(Node node) {
 
 		try {
 			if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
@@ -187,11 +196,10 @@ public class TurAEMIndexerTool {
 						}
 					}
 					if (nodeChild.hasNodes()) {
-						getNode(nodeChild, totalPages);
+						getNode(nodeChild);
 					}
 				}
 			}
-
 		} catch (RepositoryException e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -200,7 +208,7 @@ public class TurAEMIndexerTool {
 	private boolean isContentFragment(Node node) {
 		try {
 			Node jcrContentNode = node.getNode(JCR_CONTENT);
-			if (TurAemUtils.hasProperty(jcrContentNode,"contentFragment")
+			if (TurAemUtils.hasProperty(jcrContentNode,CONTENT_FRAGMENT_PROPERTY)
 					&& jcrContentNode.getProperty(CONTENT_FRAGMENT_PROPERTY).getBoolean()) {
 				return true;
 			}
@@ -215,7 +223,9 @@ public class TurAEMIndexerTool {
 		List<TurAttrDef> turAttrDefList = prepareAttributeDefs(aemObject, config, mappingDefinitions);
 		TurSNSiteConfig turSNSiteConfig = config.getDefaultSNSiteConfig();
 		Map<String, Object> attributes = new HashMap<>();
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, turSNSiteConfig.getLocale());
+		String locale = config.getLocaleByPath(turSNSiteConfig.getName(), aemObject.getNode().getPath());
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE,
+				locale);
 		for (TurAttrDef turAttrDef : turAttrDefList) {
 			String attributeName = turAttrDef.getTagName();
 			turAttrDef.getMultiValue().forEach(attributeValue -> {
@@ -241,8 +251,8 @@ public class TurAEMIndexerTool {
 		TurSNServer turSNServer;
 		try {
 			turSNServer = new TurSNServer(new URL(config.getTuringURL()), turSNSiteConfig.getName(),
-					turSNSiteConfig.getLocale(), credentials);
-			TurSNJobUtils.importItems(turSNJobItems, turSNServer, true);
+					locale, credentials);
+			TurSNJobUtils.importItems(turSNJobItems, turSNServer, showOutput);
 		} catch (MalformedURLException e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -316,6 +326,6 @@ public class TurAEMIndexerTool {
 
 	private static boolean hasContentType(Node nodeChild, String primaryType)
 			throws RepositoryException {
-		return primaryType != null && nodeChild.getProperty("jcr:primaryType").getString().equals(primaryType);
+		return primaryType != null && nodeChild.getProperty(JCR_PRIMARYTYPE).getString().equals(primaryType);
 	}
 }
