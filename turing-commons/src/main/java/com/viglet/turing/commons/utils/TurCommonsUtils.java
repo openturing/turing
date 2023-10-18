@@ -96,7 +96,10 @@ public class TurCommonsUtils {
 	}
 
 	private static String removeAmpersand(StringBuilder sbQueryString) {
-		return sbQueryString.toString().substring(0, sbQueryString.toString().length() - 1);
+		if (!sbQueryString.toString().isEmpty()) {
+			return sbQueryString.substring(0, sbQueryString.toString().length() - 1);
+		}
+		return "";
 	}
 
 	public static String cleanTextContent(String text) {
