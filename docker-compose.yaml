@@ -2,7 +2,7 @@ version: '3'
 services:
   turing-nginx:
     container_name: turing-nginx
-    image: nginx:1.13
+    image: nginx:1.25.2
     restart: always
     ports:
     - "80:80"
