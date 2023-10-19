@@ -5,8 +5,8 @@ services:
     image: nginx:1.25.2
     restart: always
     ports:
-    - "80:80"
-    - "443:443"
+      - "80:80"
+      - "443:443"
     volumes:
     - ./containers/nginx/conf.d:/etc/nginx/conf.d
   turing-solr:
@@ -14,17 +14,35 @@ services:
     build: ./containers/solr
     restart: always    
     ports:
-    - "8983:8983"
+      - "8983:8983"
     volumes:
-    - vol-solr:/var/solr
+      - vol-solr:/var/solr
+    environment:
+      - ZK_HOST=turing-zk:2181
+    depends_on:
+      - turing-zk
+  turing-zk:
+    container_name: turing-zk
+    hostname: turing-zk
+    restart: always
+    image: zookeeper:3.9.1
+    volumes:
+      - vol-zk:/data
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=turing-zk:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr, conf, ruok
+      ZOO_CFG_EXTRA: "metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000 metricsProvider.exportJvmInfo=true"
   turing-mariadb:
     container_name: turing-mariadb
     build: ./containers/mariadb
     restart: always    
     ports:
-    - "3306:3306"
+      - "3306:3306"
     volumes:
-    - vol-maridb:/var/lib/mysql
+      - vol-mariadb:/var/lib/mysql
     environment:
       MYSQL_DATABASE: turing
       MYSQL_ROOT_PASSWORD: turing
@@ -37,9 +55,9 @@ services:
     ports:
      - "2700:2700"
     volumes:
-    - vol-turing-models:/turing/models
-    - vol-turing-store:/turing/store
-    - vol-turing-gradle:/root/.gradle
+      - vol-turing-models:/turing/models
+      - vol-turing-store:/turing/store
+      - vol-turing-gradle:/root/.gradle
     depends_on:
       - turing-nginx
       - turing-mariadb
@@ -50,9 +68,16 @@ services:
       SPRING_DATASOURCE_PASSWORD: turing
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.mariadb.jdbc.Driver
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MariaDBDialect
+      TURING_SOLR_CLOUD: true
+#     SERVER_SSL_KEY_STORE: /turing/store/cert/turing.p12
+#     SERVER_SSL_KEY_STORE_PASSWORD: turing
+#     SERVER_SSL_KEY_STORE_TYPE: PKCS12
+#     SERVER_SSL_KEY_ALIAS: turing
+#     SERVER_SSL_ENABLED: true
 volumes:
   vol-solr:
+  vol-zk:
   vol-turing-models:
   vol-turing-store:
   vol-turing-gradle:
-  vol-maridb:
+  vol-mariadb:

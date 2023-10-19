@@ -10,6 +10,11 @@
     "description": "A description for 'turing.solr.timeout'"
   },
   {
+    "name": "turing.solr.cloud",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'turing.solr.cloud'"
+  },
+  {
     "name": "turing.multi-tenant",
     "type": "java.lang.Boolean",
     "description": "A description for 'turing.multi-tenant'"
