@@ -101,7 +101,7 @@ public class TurSNTemplate {
 	public void createSNSite(TurSNSite turSNSite, String username, String locale) {
 		defaultSNUI(turSNSite);
 		createSEFields(turSNSite);
-		createLocale(turSNSite, username);
+		createLocale(turSNSite, username, locale);
 		createRankingExpression(turSNSite);
 	}
 
@@ -177,8 +177,8 @@ public class TurSNTemplate {
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
 	}
 
-	private TurSNSiteField createSNSiteField(TurSNSite turSNSite, String name, String description, TurSEFieldType type,
-			int multiValued, String facetName, int hl) {
+	private void createSNSiteField(TurSNSite turSNSite, String name, String description, TurSEFieldType type,
+								   int multiValued, String facetName, int hl) {
 		TurSNSiteField turSNSiteField = new TurSNSiteField();
 		turSNSiteField.setName(name);
 		turSNSiteField.setDescription(description);
@@ -204,7 +204,6 @@ public class TurSNTemplate {
 
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
 
-		return turSNSiteField;
 	}
 
 	public void createSEFields(TurSNSite turSNSite) {
@@ -255,10 +254,10 @@ public class TurSNTemplate {
 		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm2);
 	}
 
-	public TurSNSiteLocale createLocale(TurSNSite turSNSite, String username) {
+	public void createLocale(TurSNSite turSNSite, String username, String locale) {
 
 		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
-		turSNSiteLocale.setLanguage(TurLocaleRepository.EN_US);
+		turSNSiteLocale.setLanguage(locale);
 		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
 		turSNSiteLocale.setTurSNSite(turSNSite);
 		turSNSiteLocale.setCore(createSolrCore(turSNSiteLocale, username));
@@ -266,11 +265,9 @@ public class TurSNTemplate {
 
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
 
-		return turSNSiteLocale;
-
 	}
 
-	private TurSNRankingExpression createRankingExpression(TurSNSite turSNSite) {
+	private void createRankingExpression(TurSNSite turSNSite) {
 
 		TurSNRankingExpression turSNRankingExpression = new TurSNRankingExpression();
 		turSNRankingExpression.setName("Rule Sample");
@@ -293,7 +290,6 @@ public class TurSNTemplate {
 		turSNRankingCondition2.setTurSNRankingExpression(turSNRankingExpression);
 		turSNRankingConditionRepository.save(turSNRankingCondition2);
 
-		return turSNRankingExpression;
 	}
 
 	public void createMergeProviders(TurSNSite turSNSite) {

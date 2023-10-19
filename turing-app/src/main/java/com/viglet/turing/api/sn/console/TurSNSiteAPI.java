@@ -153,7 +153,7 @@ public class TurSNSiteAPI {
     @PostMapping
     public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite, Principal principal) {
         turSNSiteRepository.save(turSNSite);
-        turSNTemplate.createSNSite(turSNSite, principal.getName(), "en");
+        turSNTemplate.createSNSite(turSNSite, principal.getName(), "en_US");
         return turSNSite;
 
     }
