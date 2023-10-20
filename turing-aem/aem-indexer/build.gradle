@@ -7,7 +7,7 @@ group = "com.viglet.turing.connector.aem"
 version = "0.3.7"
 
 java {
-	sourceCompatibility = '1.8'
+	sourceCompatibility = "11"
 }
 
 repositories {
@@ -22,6 +22,7 @@ dependencies {
 
     implementation 'com.beust:jcommander:1.82'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.7.1'
+    implementation group: 'com.h2database', name: 'h2', version: '2.2.224'
     implementation project(':turing-java-sdk')
     implementation project(':turing-cms:cms-mapping')
 }
@@ -40,3 +41,4 @@ jar {
 //tasks.named('test') {
 //	useJUnitPlatform()
 //}
+targetCompatibility = JavaVersion.VERSION_11

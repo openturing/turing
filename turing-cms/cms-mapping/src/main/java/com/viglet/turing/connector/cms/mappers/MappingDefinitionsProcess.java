@@ -129,6 +129,11 @@ public class MappingDefinitionsProcess {
 	private static CTDMappings getCtdMappings(TuringTagMap turingTagMap, Element mappingDefinition) {
 		CTDMappings ctdMapping = new CTDMappings(turingTagMap);
 
+		// Set className
+		if (mappingDefinition.hasAttribute(TurXMLConstant.CLASS_NAME_ATT))
+			ctdMapping.setClassName(
+					mappingDefinition.getAttribute(TurXMLConstant.CLASS_NAME_ATT));
+
 		// Set subType
 		if (mappingDefinition.hasAttribute(TurXMLConstant.TAG_ATT_SUB_TYPE))
 			ctdMapping.setSubType(

@@ -33,6 +33,7 @@ public class CTDMappings {
 	private final TuringTagMap turingTagMap;
 	private String classValidToIndex = null;
 	private String subType = null;
+	private String className = null;
 	private static final Logger logger = LoggerFactory.getLogger(CTDMappings.class);
 
 	public Set<String> getTagList() {
@@ -73,5 +74,13 @@ public class CTDMappings {
 
 	public void setSubType(String subType) {
 		this.subType = subType;
+	}
+
+	public String getClassName() {
+		return className;
+	}
+
+	public void setClassName(String className) {
+		this.className = className;
 	}
 }
