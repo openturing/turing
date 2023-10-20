@@ -20,15 +20,17 @@
  */
 package com.viglet.turing.sn.spotlight;
 
-import java.io.Serializable;
-
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * @author Alexandre Oliveira
  * @since 0.3.5
  */
 public class TurSNSpotlightTermCacheBean implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 	private String term;
 	private String spotlightId;

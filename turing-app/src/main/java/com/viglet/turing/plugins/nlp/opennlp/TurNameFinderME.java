@@ -20,12 +20,14 @@
  */
 package com.viglet.turing.plugins.nlp.opennlp;
 
-import java.io.Serializable;
-
 import opennlp.tools.namefind.NameFinderME;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 public class TurNameFinderME implements Serializable {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private transient NameFinderME nameFinderME;

@@ -21,15 +21,12 @@
 
 package com.viglet.turing.plugins.nlp.spacy;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-
+import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.nlp.TurNLPEntityRequest;
+import com.viglet.turing.nlp.TurNLPRequest;
+import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
+import com.viglet.turing.plugins.nlp.TurNLPPlugin;
+import com.viglet.turing.solr.TurSolrField;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -44,14 +41,18 @@ import org.json.JSONObject;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.nlp.TurNLPEntityRequest;
-import com.viglet.turing.nlp.TurNLPRequest;
-import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
-import com.viglet.turing.plugins.nlp.TurNLPPlugin;
-import com.viglet.turing.solr.TurSolrField;
-
-import java.util.*;
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class TurSpaCyConnector implements TurNLPPlugin {
@@ -131,7 +132,8 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 
 	private String cleanFullText(Object attrValue) {
 		return TurSolrField.convertFieldToString(attrValue).replaceAll("[\\n:;]", ". ")
-				.replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
+				.replaceAll("\\h|\\r|\\n|\"|'|R\\$", " ")
+				.replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
 	}
 
 	private JSONObject createJSONRequest(TurNLPRequest turNLPRequest, String atributeValue) {

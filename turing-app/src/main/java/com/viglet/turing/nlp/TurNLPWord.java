@@ -21,8 +21,8 @@
 package com.viglet.turing.nlp;
 
 public class TurNLPWord {
-	String word;
-	int position;
+	private String word;
+	private int position;
 	
 	public TurNLPWord(String word, int position) {
 		this.setWord(word);

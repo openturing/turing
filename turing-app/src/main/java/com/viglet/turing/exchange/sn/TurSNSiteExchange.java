@@ -21,11 +21,11 @@
 
 package com.viglet.turing.exchange.sn;
 
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
+
+import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteExchange {
@@ -73,10 +73,6 @@ public class TurSNSiteExchange {
 	private String turNLPInstance;
 
 	private Set<TurSNSiteField> turSNSiteFields;
-
-	public TurSNSiteExchange() {
-		super();
-	}
 
 	public TurSNSiteExchange(TurSNSite turSNSite) {
 		this.setDefaultDateField(turSNSite.getDefaultDateField());

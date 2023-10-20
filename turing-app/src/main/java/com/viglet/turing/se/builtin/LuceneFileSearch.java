@@ -19,16 +19,9 @@
  * under the License.
  */
 package com.viglet.turing.se.builtin;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -46,10 +39,22 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 
-public class LuceneFileSearch {
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
-    private Directory indexDirectory;
-    private StandardAnalyzer analyzer;
+public class LuceneFileSearch {
+    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+    private final Directory indexDirectory;
+    private final StandardAnalyzer analyzer;
 
     public LuceneFileSearch(Directory fsDirectory, StandardAnalyzer analyzer) {
         super();
@@ -59,7 +64,7 @@ public class LuceneFileSearch {
 
     public void addFileToIndex(String filepath) throws IOException, URISyntaxException {
 
-        Path path = Paths.get(getClass().getClassLoader().getResource(filepath).toURI());
+        Path path = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource(filepath)).toURI());
         File file = path.toFile();
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
         IndexWriter indexWriter = new IndexWriter(indexDirectory, indexWriterConfig);
@@ -89,7 +94,7 @@ public class LuceneFileSearch {
 
             return documents;
         } catch (IOException | ParseException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         return  Collections.emptyList();
 

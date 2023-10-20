@@ -20,11 +20,14 @@
  */
 package com.viglet.turing.exception;
 
+import java.io.Serial;
+
 public class TurException extends Exception {
 	public TurException(String string) {
 		super(string);
 	}
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 }

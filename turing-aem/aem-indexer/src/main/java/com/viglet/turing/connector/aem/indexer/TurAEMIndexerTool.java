@@ -32,16 +32,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 
-import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
-
 public class TurAEMIndexerTool {
 
     public static final String CONTENT_FRAGMENT = "content-fragment";
     private static final JCommander jCommander = new JCommander();
     private static final Logger logger = LoggerFactory.getLogger(TurAEMIndexerTool.class);
     public static final String STATIC_FILE = "static-file";
-    public static final String CONTENT_FRAGMENT_PROPERTY = "contentFragment";
 
     @Parameter(names = {"--host",
             "-h"}, description = "The host on which Content Management server is installed.", required = true)
@@ -68,6 +65,9 @@ public class TurAEMIndexerTool {
     @Parameter(names = {"--site-path", "-s"}, description = "AEM site path.", required = false)
     private String sitePath = "/content/we-retail";
 
+    @Parameter(names = "--delivered", description = "Publish delivery or author site", help = true)
+    private boolean delivered = false;
+
     @Parameter(names = {"--page-size",
             "-z"}, description = "The page size. After processing a page the processed count is written to an offset file."
             + " This helps the indexer to resume from that page even after failure. ")
@@ -91,7 +91,6 @@ public class TurAEMIndexerTool {
     private static long start;
     private AemHandlerConfiguration config = null;
     private String siteName;
-
     public static void main(String... argv) {
         TurAEMIndexerTool turAEMIndexerTool = new TurAEMIndexerTool();
         jCommander.addObject(turAEMIndexerTool);
@@ -202,29 +201,31 @@ public class TurAEMIndexerTool {
                         } else {
                             processed++;
                         }
+                        AemObject aemObject = new AemObject(nodeChild);
                         CTDMappings ctdMappings = getCTDMappingMap(config).get(contentType);
-                        List<TurAttrDef> extAttributes = new ArrayList<>();
-                        if (ctdMappings.getClassName() != null) {
-                            Object extAttribute = Class.forName(ctdMappings.getClassName())
-                                    .getDeclaredConstructor().newInstance();
-                            extAttributes = ((ExtContentInterface) extAttribute)
-                                    .consume(new AemObject(nodeChild), config);
-                        }
-                        switch (Objects.requireNonNull(contentType)) {
-                            case CQ_PAGE:
-                                indexObject(new AemObject(nodeChild), extAttributes);
-                                break;
-                            case DAM_ASSET:
-
-                                if (ctdMappings.getSubType() != null) {
-                                    if (ctdMappings.getSubType().equals(CONTENT_FRAGMENT)
-                                            && isContentFragment(nodeChild)) {
-                                        indexObject(new AemObject(nodeChild, "data/master"), extAttributes);
-                                    } else if (ctdMappings.getSubType().equals(STATIC_FILE)) {
-                                        indexObject(new AemObject(nodeChild, "metadata"), extAttributes);
+                        if (!delivered || aemObject.isDelivered()) {
+                            List<TurAttrDef> extAttributes = new ArrayList<>();
+                            if (ctdMappings.getClassName() != null) {
+                                Object extAttribute = Class.forName(ctdMappings.getClassName())
+                                        .getDeclaredConstructor().newInstance();
+                                extAttributes = ((ExtContentInterface) extAttribute)
+                                        .consume(aemObject, config);
+                            }
+                            switch (Objects.requireNonNull(contentType)) {
+                                case CQ_PAGE:
+                                    indexObject(aemObject, extAttributes);
+                                    break;
+                                case DAM_ASSET:
+                                    if (ctdMappings.getSubType() != null) {
+                                        if (ctdMappings.getSubType().equals(CONTENT_FRAGMENT)
+                                                && aemObject.isContentFragment()) {
+                                            indexObject(new AemObject(nodeChild, "data/master"), extAttributes);
+                                        } else if (ctdMappings.getSubType().equals(STATIC_FILE)) {
+                                            indexObject(new AemObject(nodeChild, "metadata"), extAttributes);
+                                        }
                                     }
-                                }
-                                break;
+                                    break;
+                            }
                         }
                     }
                     if (nodeChild.hasNodes()) {
@@ -238,19 +239,6 @@ public class TurAEMIndexerTool {
                  NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private boolean isContentFragment(Node node) {
-        try {
-            Node jcrContentNode = node.getNode(JCR_CONTENT);
-            if (TurAemUtils.hasProperty(jcrContentNode, CONTENT_FRAGMENT_PROPERTY)
-                    && jcrContentNode.getProperty(CONTENT_FRAGMENT_PROPERTY).getBoolean()) {
-                return true;
-            }
-        } catch (RepositoryException e) {
-            logger.error(e.getMessage(), e);
-        }
-        return false;
     }
 
     private void indexObject(AemObject aemObject, List<TurAttrDef> extAttributes) throws RepositoryException {
@@ -325,17 +313,7 @@ public class TurAEMIndexerTool {
                         List<TurAttrDef> attributeDefsXML = TurAEMAttrXML.attributeXML(turAttrDefContext);
                         // Unique
                         if (turingTag.isSrcUniqueValues()) {
-
-                            TurMultiValue multiValue = new TurMultiValue();
-                            for (TurAttrDef turAttrDef : attributeDefsXML) {
-                                for (String singleValue : turAttrDef.getMultiValue()) {
-                                    if (!multiValue.contains(singleValue)) {
-                                        multiValue.add(singleValue);
-                                    }
-                                }
-                            }
-                            TurAttrDef turAttrDefUnique = new TurAttrDef(turingTag.getTagName(), multiValue);
-                            attributesDefs.add(turAttrDefUnique);
+                            attributesDefs.add(getTurAttrDefUnique(turingTag, attributeDefsXML));
                         } else {
                             attributesDefs.addAll(attributeDefsXML);
                         }
@@ -346,6 +324,18 @@ public class TurAEMIndexerTool {
             }
         }
         return attributesDefs;
+    }
+
+    private static TurAttrDef getTurAttrDefUnique(TuringTag turingTag, List<TurAttrDef> attributeDefsXML) {
+        TurMultiValue multiValue = new TurMultiValue();
+        for (TurAttrDef turAttrDef : attributeDefsXML) {
+            for (String singleValue : turAttrDef.getMultiValue()) {
+                if (!multiValue.contains(singleValue)) {
+                    multiValue.add(singleValue);
+                }
+            }
+        }
+        return new TurAttrDef(turingTag.getTagName(), multiValue);
     }
 
     private static void attributeAsObject(Map<String, Object> attributes, String nodeName, String nodes) {

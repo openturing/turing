@@ -22,13 +22,14 @@ package com.viglet.turing.persistence.repository.storage;
 
 import com.viglet.turing.persistence.model.storage.TurDataGroup;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TurDataGroupRepository extends JpaRepository<TurDataGroup, Integer> {
 
-	void delete(TurDataGroup turDataGroup);
+	void delete(@NotNull TurDataGroup turDataGroup);
 	
 	@Modifying
 	@Query("delete from TurDataGroup dg where dg.id = ?1")

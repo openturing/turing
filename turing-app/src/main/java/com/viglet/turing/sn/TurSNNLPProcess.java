@@ -93,9 +93,7 @@ public class TurSNNLPProcess {
 
     private void copyNLPAttributesToConsolidateResults(Map<String, Object> consolidateResults,
                                                        Map<String, Object> nlpResultsPreffix) {
-        for (Map.Entry<String, Object> nlpResultPrefix : nlpResultsPreffix.entrySet()) {
-            consolidateResults.put(nlpResultPrefix.getKey(), nlpResultPrefix.getValue());
-        }
+        consolidateResults.putAll(nlpResultsPreffix);
     }
 
     private boolean useNLPToProcessAttributes(TurSNSiteLocale turSNSiteLocale) {

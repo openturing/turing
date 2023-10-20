@@ -22,16 +22,16 @@
 package com.viglet.turing.persistence.repository.storage;
 
 import com.viglet.turing.persistence.model.storage.TurData;
-
-import java.util.List;
-
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
+
 public interface TurDataRepository extends JpaRepository<TurData, Integer> {
 
-	List<TurData> findAll();
+	@NotNull List<TurData> findAll();
 
 	TurData findById(int id);
 

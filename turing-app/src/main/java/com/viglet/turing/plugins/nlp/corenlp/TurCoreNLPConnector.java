@@ -20,16 +20,11 @@
  */
 package com.viglet.turing.plugins.nlp.corenlp;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.nlp.TurNLPEntityRequest;
+import com.viglet.turing.nlp.TurNLPRequest;
+import com.viglet.turing.plugins.nlp.TurNLPPlugin;
+import com.viglet.turing.solr.TurSolrField;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -42,11 +37,15 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.nlp.TurNLPEntityRequest;
-import com.viglet.turing.nlp.TurNLPRequest;
-import com.viglet.turing.plugins.nlp.TurNLPPlugin;
-import com.viglet.turing.solr.TurSolrField;
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class TurCoreNLPConnector implements TurNLPPlugin {
@@ -126,7 +125,7 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 			tokenPositon.setCurrent(token.getString("ner"));
 			String word = token.getString("word");
 			if (tokenPositon.getCurrent().equals("O")) {
-				if (!tokenPositon.getPrevious().equals("O") && (sb.length() > 0)) {
+				if (!tokenPositon.getPrevious().equals("O") && (!sb.isEmpty())) {
 					handleEntity(entityList, tokenPositon.getPrevious(), sb, tokenList);
 					tokenPositon.setNewToken(true);
 				}
@@ -141,7 +140,7 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 			}
 
 			if (tokenPositon.getCurrent().equals(tokenPositon.getPrevious())) {
-				sb.append(" " + word);
+				sb.append(" ").append(word);
 			} else {
 				this.handleEntity(entityList, tokenPositon.getPrevious(), sb, tokenList);
 				tokenPositon.setNewToken(true);
@@ -149,7 +148,7 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 			tokenPositon.setPrevious(tokenPositon.getCurrent());
 
 		});
-		if (!tokenPositon.isNewToken() && (sb.length() > 0)) {
+		if (!tokenPositon.isNewToken() && (!sb.isEmpty())) {
 			this.handleEntity(entityList, tokenPositon.getPrevious(), sb, tokenList);
 		}
 	}
@@ -170,10 +169,10 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 		inSb.setLength(0);
 	}
 
-	class EmbeddedToken {
+	static class EmbeddedToken {
 
-		private String name;
-		private String value;
+		private final String name;
+		private final String value;
 
 		public String getName() {
 			return name;
@@ -190,7 +189,7 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 		}
 	}
 
-	class TokenPositon {
+	static class TokenPositon {
 		private String current;
 		private String previous;
 		private boolean newToken;

@@ -21,10 +21,12 @@
 
 package com.viglet.turing.converse.exchange.entity;
 
+import java.io.Serial;
 import java.util.ArrayList;
 
 public class TurConverseEntityEntriesExchange extends ArrayList<TurConverseEntityEntryExchange> {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 	
 }

@@ -20,13 +20,15 @@
  */
 package com.viglet.turing.api.sn.job;
 
-import java.io.Serializable;
-
 import org.springframework.stereotype.Component;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 @Component
 public class TurSNJob implements Serializable {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private String siteId;

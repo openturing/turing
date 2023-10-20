@@ -21,21 +21,13 @@
 
 package com.viglet.turing.api.sn.search;
 
-import java.util.List;
-
-import jakarta.servlet.http.HttpServletRequest;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.sn.ac.TurSNAutoComplete;
-
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/sn/{siteName}/ac")
@@ -48,7 +40,7 @@ public class TurSNSiteAutoCompleteAPI {
 	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,
 			@RequestParam(required = true, name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, defaultValue = "20", name = TurSNParamType.ROWS) long rows,
-			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale, HttpServletRequest request) {
+			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale) {
 		return turSNAutoComplete.autoComplete(siteName, q, locale, rows);
 	}
 }

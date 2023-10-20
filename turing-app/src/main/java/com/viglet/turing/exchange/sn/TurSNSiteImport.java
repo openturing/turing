@@ -42,7 +42,7 @@ public class TurSNSiteImport {
 
 	public void importSNSite(TurExchange turExchange){
 		for (TurSNSiteExchange turSNSiteExchange : turExchange.getSnSites()) {
-			if (!turSNSiteRepository.findById(turSNSiteExchange.getId()).isPresent()) {
+			if (turSNSiteRepository.findById(turSNSiteExchange.getId()).isEmpty()) {
 				
 				TurSNSite turSNSite = new TurSNSite();
 				turSNSite.setDefaultDateField(turSNSiteExchange.getDefaultDateField());

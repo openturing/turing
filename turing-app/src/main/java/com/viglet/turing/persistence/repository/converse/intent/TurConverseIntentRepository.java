@@ -21,29 +21,30 @@
 
 package com.viglet.turing.persistence.repository.converse.intent;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-import com.viglet.turing.persistence.model.converse.TurConverseAgent;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public interface TurConverseIntentRepository extends JpaRepository<TurConverseIntent, String> {
 
-	List<TurConverseIntent> findAll();
+	@NotNull List<TurConverseIntent> findAll();
 
-	Optional<TurConverseIntent> findById(String id);
+	@NotNull Optional<TurConverseIntent> findById(@NotNull String id);
 	
 	Set<TurConverseIntent> findByAgent(TurConverseAgent agent);
 	
 	List<TurConverseIntent> findByAgentAndFallback(TurConverseAgent agent, boolean fallback);
 	
 	@SuppressWarnings("unchecked")
-	TurConverseIntent save(TurConverseIntent turConverseIntent);
+	@NotNull
+	TurConverseIntent save(@NotNull TurConverseIntent turConverseIntent);
 
 	@Modifying
 	@Query("delete from  TurConverseIntent ci where ci.id = ?1")

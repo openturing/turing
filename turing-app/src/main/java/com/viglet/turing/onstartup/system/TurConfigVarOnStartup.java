@@ -38,7 +38,7 @@ public class TurConfigVarOnStartup {
 
 		final String FIRST_TIME = "FIRST_TIME";
 
-		if (!turConfigVarRepository.findById(FIRST_TIME).isPresent()) {
+		if (turConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
 
 			TurConfigVar turConfigVar = new TurConfigVar();
 			turConfigVar.setId(FIRST_TIME);

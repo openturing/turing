@@ -21,28 +21,6 @@
 
 package com.viglet.turing.nlp;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-
-import jakarta.servlet.ServletContext;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.stereotype.Component;
-import org.springframework.web.context.support.WebApplicationContextUtils;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.CharStreams;
 import com.viglet.turing.api.nlp.bean.TurNLPValidateEntity;
@@ -54,6 +32,22 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorEntityRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
+import jakarta.servlet.ServletContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.util.*;
+import java.util.Map.Entry;
 
 @ComponentScan
 @Component
@@ -114,7 +108,7 @@ public class TurNLPProcess {
 							turNLPInstance.getTurNLPVendor(), entity.getName(), "pt_BR")));
 		});
 		turNLPRequest.setEntities(turNLPEntitiesRequest);
-		return Optional.ofNullable(turNLPRequest);
+		return Optional.of(turNLPRequest);
 	}
 
 	public TurNLPResponse processTextByDefaultNLP(String text, List<TurNLPValidateEntity> entities) {
@@ -123,9 +117,8 @@ public class TurNLPProcess {
 	}
 
 	private TurNLPResponse getNLPResponse(Optional<TurNLPRequest> turNLPRequestOptional) {
-		return turNLPRequestOptional.map(turNLPRequest -> {
-			return createEntityMapFromAttributesMapToBeProcessed(turNLPRequest);
-		}).orElse(new TurNLPResponse());
+		return turNLPRequestOptional.map(this::createEntityMapFromAttributesMapToBeProcessed)
+				.orElse(new TurNLPResponse());
 	}
 
 	public TurNLPResponse processTextByNLP(TurNLPInstance turNLPInstance, String text) {

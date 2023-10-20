@@ -65,7 +65,7 @@ public class TurNLPListKey<T> {
 			hashCodeObjectSb.append(item);
 			hashCodeObjectSb.append(",");
 		});
-		return hashCodeSb.toString().equals(hashCodeObjectSb.toString());
+		return hashCodeSb.toString().contentEquals(hashCodeObjectSb);
 	}
 
 	@Override

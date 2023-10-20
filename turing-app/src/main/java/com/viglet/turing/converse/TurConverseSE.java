@@ -21,13 +21,16 @@
 
 package com.viglet.turing.converse;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
+import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
+import com.viglet.turing.persistence.model.converse.entity.TurConverseEntityTerm;
+import com.viglet.turing.persistence.model.converse.intent.*;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityRepository;
+import com.viglet.turing.persistence.repository.converse.intent.*;
+import com.viglet.turing.solr.TurSolrInstance;
+import com.viglet.turing.solr.TurSolrInstanceProcess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
@@ -39,24 +42,12 @@ import org.apache.solr.common.SolrInputDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.persistence.model.converse.TurConverseAgent;
-import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
-import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
-import com.viglet.turing.persistence.model.converse.entity.TurConverseEntityTerm;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
-import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
-import com.viglet.turing.persistence.model.converse.intent.TurConversePrompt;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
-import com.viglet.turing.persistence.model.se.TurSEInstance;
-import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseParameterRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConversePromptRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
-import com.viglet.turing.solr.TurSolrInstanceProcess;
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Component
 public class TurConverseSE {
@@ -83,8 +74,7 @@ public class TurConverseSE {
 	private Optional<SolrClient> getSolrClient(TurConverseAgent turConverseAgent) {
 		TurSEInstance turSEInstance = turConverseAgent.getTurSEInstance();
 		String core = turConverseAgent.getCore();
-		return turSolrInstanceProcess.initSolrInstance(turSEInstance, core)
-				.map(solrInstance -> Optional.of(solrInstance.getSolrClient())).orElse(Optional.empty());
+		return turSolrInstanceProcess.initSolrInstance(turSEInstance, core).map(TurSolrInstance::getSolrClient);
 	}
 
 	private String keyValueQuery(String key, String value, boolean exact) {

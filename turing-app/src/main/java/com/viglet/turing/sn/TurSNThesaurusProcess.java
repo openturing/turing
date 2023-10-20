@@ -45,7 +45,6 @@ public class TurSNThesaurusProcess {
         boolean thesaurus = false;
         if (turSNSite.getThesaurus() < 1) {
             logger.debug("It is not using Thesaurus to process attributes");
-            thesaurus = false;
         } else {
             logger.debug("It is using Thesaurus to process attributes");
             thesaurus = true;

@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.repository.sn.spotlight;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -39,7 +40,8 @@ import java.util.Set;
 public interface TurSNSiteSpotlightRepository extends JpaRepository<TurSNSiteSpotlight, String> {
 
 	@SuppressWarnings("unchecked")
-	TurSNSiteSpotlight save(TurSNSiteSpotlight turSNSiteSpotlight);
+	@NotNull
+	TurSNSiteSpotlight save(@NotNull TurSNSiteSpotlight turSNSiteSpotlight);
 
 	Set<TurSNSiteSpotlight> findByUnmanagedIdAndTurSNSiteAndLanguage(String unmanagedId, TurSNSite turSNSite,
 			String language);
@@ -53,7 +55,7 @@ public interface TurSNSiteSpotlightRepository extends JpaRepository<TurSNSiteSpo
 	List<TurSNSiteSpotlight> findDistinctByTurSNSiteAndLanguageAndTurSNSiteSpotlightTermsIn(TurSNSite turSNSite, String language,
 			Collection<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms);
 
-	void delete(TurSNSiteSpotlight turSNSiteSpotlight);
+	void delete(@NotNull TurSNSiteSpotlight turSNSiteSpotlight);
 
 	@Modifying
 	@Query("delete from  TurSNSiteSpotlight sss where sss.id = ?1")

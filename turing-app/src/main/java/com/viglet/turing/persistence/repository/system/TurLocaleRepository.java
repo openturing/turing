@@ -22,14 +22,14 @@
 package com.viglet.turing.persistence.repository.system;
 
 import com.viglet.turing.persistence.model.system.TurLocale;
-
-import java.util.List;
-
-import org.springframework.cache.annotation.Cacheable;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
 
 public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 
@@ -39,6 +39,7 @@ public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 	static final String CA = "ca";
 
 	@Cacheable("turLocalefindAll")
+	@NotNull
 	List<TurLocale> findAll();
 
 	@Cacheable("turLocalefindByInitials")
@@ -46,9 +47,10 @@ public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 
 	@SuppressWarnings("unchecked")
 	@CacheEvict(value = { "turLocalefindAll", "turLocalefindByInitials" }, allEntries = true)
-	TurLocale save(TurLocale turLocale);
+	@NotNull
+	TurLocale save(@NotNull TurLocale turLocale);
 
-	void delete(TurLocale turConfigVar);
+	void delete(@NotNull TurLocale turConfigVar);
 
 	@Modifying
 	@Query("delete from  TurLocale l where l.id = ?1")

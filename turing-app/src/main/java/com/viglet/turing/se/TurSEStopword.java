@@ -20,17 +20,7 @@
  */
 package com.viglet.turing.se;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.invoke.MethodHandles;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
+import com.viglet.turing.solr.TurSolrInstance;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,7 +34,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import com.viglet.turing.solr.TurSolrInstance;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @Component
 public class TurSEStopword {
@@ -86,22 +82,24 @@ public class TurSEStopword {
 				logger.error(e.getMessage(), e);
 			}
 		}
-		List<String> stopWords = new ArrayList<>();
-		try (InputStreamReader isr = new InputStreamReader(stopwordsStream);
-				BufferedReader br = new BufferedReader(isr);) {
-			while (br.ready()) {
-				String[] line = br.readLine().split("\\|");
-				if (line.length == 0) {
-					stopWords.add(br.readLine().trim());
-				} else {
-					stopWords.add(line[0].trim());
+		if (stopwordsStream != null) {
+			try (InputStreamReader isr = new InputStreamReader(stopwordsStream);
+				 BufferedReader br = new BufferedReader(isr);) {
+				List<String> stopWords = new ArrayList<>();
+				while (br.ready()) {
+					String[] line = br.readLine().split("\\|");
+					if (line.length == 0) {
+						stopWords.add(br.readLine().trim());
+					} else {
+						stopWords.add(line[0].trim());
+					}
+
 				}
 
+				return stopWords;
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
 			}
-
-			return stopWords;
-		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
 		}
 		return Collections.emptyList();
 	}
@@ -114,7 +112,7 @@ public class TurSEStopword {
 					String url = String.format(ADMIN_FILE_URL, turSolrInstance.getSolrUrl().toString(),
 							APPLICATION_OCTET_STREAM_UTF8, fieldTypeMap.get(WORDS_ATTRIBUTE));
 					ResponseEntity<String> response = new RestTemplate().getForEntity(url, String.class);
-					stopwordsStream = IOUtils.toInputStream(response.getBody(), StandardCharsets.UTF_8);
+					stopwordsStream = IOUtils.toInputStream(Objects.requireNonNull(response.getBody()), StandardCharsets.UTF_8);
 				}
 
 			}

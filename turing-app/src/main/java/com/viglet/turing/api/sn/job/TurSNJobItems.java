@@ -22,20 +22,23 @@
 package com.viglet.turing.api.sn.job;
 
 
+import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.springframework.stereotype.Component;
-
 @Component
 public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
+	@Serial
 	private static final long serialVersionUID = 1L;
 	private List<TurSNJobItem> jobItems = new ArrayList<>();
 
 	@Override
-	public Iterator<TurSNJobItem> iterator() {
+	public @NotNull Iterator<TurSNJobItem> iterator() {
 		return jobItems.iterator();
 	}
 

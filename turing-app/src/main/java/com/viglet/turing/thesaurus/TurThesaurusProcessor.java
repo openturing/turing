@@ -21,37 +21,25 @@
 
 package com.viglet.turing.thesaurus;
 
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.apache.logging.log4j.LogManager;
-
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.nlp.TurNLPListKey;
-import com.viglet.turing.nlp.TurNLPRelationType;
-import com.viglet.turing.nlp.TurNLPSentence;
-import com.viglet.turing.nlp.TurNLPTermAccent;
-import com.viglet.turing.nlp.TurNLPTermCase;
-import com.viglet.turing.nlp.TurNLPWord;
+import com.viglet.turing.nlp.*;
+import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
 import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
 import com.viglet.turing.persistence.repository.nlp.term.TurTermVariationRepository;
 import com.viglet.turing.solr.TurSolrField;
-import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.lang.invoke.MethodHandles;
+import java.util.*;
+import java.util.Map.Entry;
 
 @Component
 @ComponentScan
@@ -62,7 +50,7 @@ public class TurThesaurusProcessor {
 	@Autowired
 	private TurTermVariationRepository turTermVariationRepository;
 
-	private Map<String, TurTermVariation> terms = new LinkedHashMap<>();
+	private final Map<String, TurTermVariation> terms = new LinkedHashMap<>();
 
 	public void startup() {
 		List<TurTermVariation> turTermVariations = turTermVariationRepository.findAll();
@@ -84,8 +72,7 @@ public class TurThesaurusProcessor {
 					if (entityResults.containsKey(nlpEntityAttribute(termDetected))) {
 						entityResults.get(nlpEntityAttribute(termDetected)).addAll(termDetected.getValue());
 					} else {
-						List<String> termList = new ArrayList<>();
-						termList.addAll(termDetected.getValue());
+                        List<String> termList = new ArrayList<>(termDetected.getValue());
 						entityResults.put(nlpEntityAttribute(termDetected), termList);
 					}
 
@@ -93,11 +80,7 @@ public class TurThesaurusProcessor {
 			}
 		}
 
-		Map<String, Object> entityObjectResults = new HashMap<>();
-		for (Entry<String, List<String>> entityResult : entityResults.entrySet()) {
-			entityObjectResults.put(entityResult.getKey(), entityResult.getValue());
-		}
-		return entityObjectResults;
+        return new HashMap<>(entityResults);
 	}
 
 	private String nlpEntityAttribute(Entry<String, List<String>> termDetected) {
@@ -114,7 +97,7 @@ public class TurThesaurusProcessor {
 		Arrays.stream(words).forEach(w -> turNLPSentence.addWord(new TurNLPWord(w, idx[0]++)));
 
 		Map<String, Map<String, TurTermVariation>> lhWords = new LinkedHashMap<>();
-		TurTermVariation[] stringTerms = terms.values().toArray(new TurTermVariation[terms.size()]);
+		TurTermVariation[] stringTerms = terms.values().toArray(new TurTermVariation[0]);
 
 		for (String word : words) {
 			String wordLowerCase = TurCommonsUtils.stripAccents(word).toLowerCase();
@@ -263,7 +246,7 @@ public class TurThesaurusProcessor {
 			List<String> ids, Map<TurNLPListKey<Integer>, List<String>> matches) {
 		TurEntityResults entityResults = new TurEntityResults();
 		logger.debug("Current Positions: {}", positions);
-		if ((positions.get(0).intValue() > 0) && !ids.isEmpty()) {
+		if ((positions.get(0) > 0) && !ids.isEmpty()) {
 			briefMatches(turNLPSentence, positions, ids, matches, entityResults);
 		} else {
 			logger.debug("End. First Position or Empty Ids");
@@ -334,7 +317,7 @@ public class TurThesaurusProcessor {
 		}
 	}
 
-	private TurEntityResults mergeEntityResultsFromTo(TurEntityResults from, TurEntityResults to) {
+	private void mergeEntityResultsFromTo(TurEntityResults from, TurEntityResults to) {
 		logger.debug("mergeEntity From Size: {}", from.size());
 		logger.debug("mergeEntity To Size Before: {}", to.size());
 		Set<Entry<String, List<String>>> fromEntries = from.entrySet();
@@ -347,13 +330,11 @@ public class TurThesaurusProcessor {
 				logger.debug("mergeEntity To After: {}", to.get(fromEntry.getKey()));
 			} else {
 				logger.debug("mergeEntity Not Contains");
-				List<String> values = new ArrayList<>();
-				values.addAll(fromEntry.getValue());
+                List<String> values = new ArrayList<>(fromEntry.getValue());
 				to.put(fromEntry.getKey(), values);
 			}
 		}
 		logger.debug("mergeEntity To Size After: {}", to.size());
-		return to;
 	}
 
 	public TurEntityResults getParentTerm(TurTerm turTerm) {
@@ -404,10 +385,10 @@ public class TurThesaurusProcessor {
 
 	public String getWordsByPosition(TurNLPSentence turNLPSentence, List<Integer> positions) {
 		StringBuilder words = new StringBuilder();
-		List<TurNLPWord> wordsbyPosition = new ArrayList<>(turNLPSentence.getWords().values());
+		List<TurNLPWord> wordsByPosition = new ArrayList<>(turNLPSentence.getWords().values());
 		for (Integer position : positions) {
-			TurNLPWord turNLPWord = wordsbyPosition.get(position);
-			words.append(turNLPWord.getWord() + " ");
+			TurNLPWord turNLPWord = wordsByPosition.get(position);
+			words.append(turNLPWord.getWord()).append(" ");
 
 		}
 		return words.toString().trim();

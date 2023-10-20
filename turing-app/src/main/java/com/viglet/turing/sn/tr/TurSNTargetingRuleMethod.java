@@ -24,7 +24,7 @@ package com.viglet.turing.sn.tr;
 public enum TurSNTargetingRuleMethod {
 	AND("AND"), OR("OR");
 
-	private String id;
+	private final String id;
 
 	TurSNTargetingRuleMethod(String id) {
 		this.id = id;

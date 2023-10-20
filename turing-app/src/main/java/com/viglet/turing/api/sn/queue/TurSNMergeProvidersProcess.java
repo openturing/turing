@@ -127,11 +127,10 @@ public class TurSNMergeProvidersProcess {
 
     private Map<String, Object> doMergeContent(Map<String, Object> attributesFrom, Map<String, Object> attributesTo,
                                                TurSNSiteMergeProviders turSNSiteMergeProviders) {
-        Map<String, Object> mergedDocumentAttribs = attributesTo;
-        addProviderToSEDocument(mergedDocumentAttribs, turSNSiteMergeProviders.getProviderFrom());
-        addOverwrittenAttributesToSolrDocument(attributesFrom, mergedDocumentAttribs,
+        addProviderToSEDocument(attributesTo, turSNSiteMergeProviders.getProviderFrom());
+        addOverwrittenAttributesToSolrDocument(attributesFrom, attributesTo,
                 turSNSiteMergeProviders.getOverwrittenFields());
-        return mergedDocumentAttribs;
+        return attributesTo;
     }
 
     private boolean hasSolrDocuments(List<SolrDocument> resultsTo) {
@@ -183,10 +182,10 @@ public class TurSNMergeProvidersProcess {
     private void addOverwrittenAttributesToSolrDocument(Map<String, Object> queueDocumentAttrs,
                                                         Map<String, Object> attributesTo,
                                                         Set<TurSNSiteMergeProvidersField> overwrittenFields) {
-        queueDocumentAttrs.entrySet().forEach(attributeFrom -> {
+        queueDocumentAttrs.forEach((key, value) -> {
             if (overwrittenFields != null && overwrittenFields.stream()
-                    .anyMatch(o -> o.getName().equals(attributeFrom.getKey()))) {
-                attributesTo.put(attributeFrom.getKey(), attributeFrom.getValue());
+                    .anyMatch(o -> o.getName().equals(key))) {
+                attributesTo.put(key, value);
 
             }
         });

@@ -99,7 +99,7 @@ public class TurSNSiteSearchAPI {
 	}
 
 	@GetMapping("locales")
-	public List<TurSNSiteLocaleBean> turSNSiteSearchLocale(@PathVariable String siteName, HttpServletRequest request) {
+	public List<TurSNSiteLocaleBean> turSNSiteSearchLocale(@PathVariable String siteName) {
 
 		try {
 			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
@@ -114,8 +114,7 @@ public class TurSNSiteSearchAPI {
 	public ResponseEntity<List<String>> turSNSiteSearchLatestImpersonate(@PathVariable String siteName,
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "5") Integer rows,
 			@RequestParam(name = TurSNParamType.LOCALE) String locale,
-			@RequestBody Optional<TurSNSearchLatestRequestBean> turSNSearchLatestRequestBean, Principal principal,
-			HttpServletRequest request) {
+			@RequestBody Optional<TurSNSearchLatestRequestBean> turSNSearchLatestRequestBean, Principal principal) {
 		if (principal != null) {
 			return new ResponseEntity<>(turSNSearchProcess.latestSearches(siteName, locale,
 					isLatestImpersonate(turSNSearchLatestRequestBean, principal),

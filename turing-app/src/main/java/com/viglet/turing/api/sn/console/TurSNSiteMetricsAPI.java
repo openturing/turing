@@ -20,11 +20,12 @@
  */
 package com.viglet.turing.api.sn.console;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Optional;
-
+import com.viglet.turing.api.sn.bean.TurSNSiteMetricsTopTermsBean;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,13 +33,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.api.sn.bean.TurSNSiteMetricsTopTermsBean;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Operation;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Optional;
 
 /**
  * @author Alexandre Oliveira
@@ -84,12 +82,12 @@ public class TurSNSiteMetricsAPI {
 
 	private TurSNSiteMetricsTopTermsBean getTopTermsReport(int rows, Optional<TurSNSite> turSNSite, Calendar cal,
 			Calendar previousBegin, Calendar previousEnd) {
-		return new TurSNSiteMetricsTopTermsBean(
-				this.turSNSiteMetricAccessRepository.topTermsBetweenDates(turSNSite.get(), cal.getTime(),
-						new Date(), PageRequest.of(0, rows)),
-				this.turSNSiteMetricAccessRepository.countTermsByPeriod(turSNSite.get(), cal.getTime(), new Date()),
-				this.turSNSiteMetricAccessRepository.countTermsByPeriod(turSNSite.get(), previousBegin.getTime(),
-						previousEnd.getTime()));
+        return turSNSite.map(snSite -> new TurSNSiteMetricsTopTermsBean(
+                this.turSNSiteMetricAccessRepository.topTermsBetweenDates(snSite, cal.getTime(),
+                        new Date(), PageRequest.of(0, rows)),
+                this.turSNSiteMetricAccessRepository.countTermsByPeriod(snSite, cal.getTime(), new Date()),
+                this.turSNSiteMetricAccessRepository.countTermsByPeriod(snSite, previousBegin.getTime(),
+                        previousEnd.getTime()))).orElseGet(TurSNSiteMetricsTopTermsBean::new);
 	}
 
 	@GetMapping("top-terms/this-week/{rows}")
@@ -155,12 +153,10 @@ public class TurSNSiteMetricsAPI {
 	public TurSNSiteMetricsTopTermsBean turSNSiteMetricsTopTermsAllTime(@PathVariable String snSiteId,
 			@PathVariable int rows) {
 		Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(snSiteId);
-		if (turSNSite.isPresent()) {
-			return new TurSNSiteMetricsTopTermsBean(
-					this.turSNSiteMetricAccessRepository.topTerms(turSNSite.get(), PageRequest.of(0, rows)),
-					this.turSNSiteMetricAccessRepository.countTerms(turSNSite.get()), 0);
-		}
-		return new TurSNSiteMetricsTopTermsBean(new ArrayList<>(), 0, 0);
-	}
+        return turSNSite.map(snSite -> new TurSNSiteMetricsTopTermsBean(
+                this.turSNSiteMetricAccessRepository.topTerms(snSite, PageRequest.of(0, rows)),
+                this.turSNSiteMetricAccessRepository.countTerms(snSite), 0))
+				.orElseGet(TurSNSiteMetricsTopTermsBean::new);
+    }
 
 }

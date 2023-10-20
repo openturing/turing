@@ -22,15 +22,15 @@
 package com.viglet.turing.persistence.repository.se;
 
 import com.viglet.turing.persistence.model.se.TurSEInstance;
-
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.cache.annotation.Cacheable;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
+import java.util.Optional;
 
 public interface TurSEInstanceRepository extends JpaRepository<TurSEInstance, String> {
 
@@ -38,11 +38,13 @@ public interface TurSEInstanceRepository extends JpaRepository<TurSEInstance, St
 	List<TurSEInstance> findAll();
 
 	@Cacheable("turSEInstancefindById")
-	Optional<TurSEInstance> findById(String id);
+	@NotNull
+	Optional<TurSEInstance> findById(@NotNull String id);
 
 	@SuppressWarnings("unchecked")
 	@CacheEvict(value = { "turSEInstancefindAll", "turSEInstancefindById" }, allEntries = true)
-	TurSEInstance save(TurSEInstance turSEInstance);
+	@NotNull
+	TurSEInstance save(@NotNull TurSEInstance turSEInstance);
 
 	@Modifying
 	@Query("delete from  TurSEInstance si where si.id = ?1")

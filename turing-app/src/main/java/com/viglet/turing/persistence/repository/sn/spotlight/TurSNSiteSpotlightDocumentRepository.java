@@ -22,12 +22,12 @@ package com.viglet.turing.persistence.repository.sn.spotlight;
 
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
-
-import java.util.Set;
-
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+
+import java.util.Set;
 
 /**
  * @author Alexandre Oliveira
@@ -36,11 +36,12 @@ import org.springframework.data.jpa.repository.Query;
 public interface TurSNSiteSpotlightDocumentRepository extends JpaRepository<TurSNSiteSpotlightDocument, String> {
 
 	@SuppressWarnings("unchecked")
-	TurSNSiteSpotlightDocument save(TurSNSiteSpotlightDocument turSNSiteSpotlightDocument);
+	@NotNull
+	TurSNSiteSpotlightDocument save(@NotNull TurSNSiteSpotlightDocument turSNSiteSpotlightDocument);
 	
 	Set<TurSNSiteSpotlightDocument> findByTurSNSiteSpotlight(TurSNSiteSpotlight turSNSiteSpotlight);
 	
-	void delete(TurSNSiteSpotlightDocument turSNSiteSpotlightDocument);
+	void delete(@NotNull TurSNSiteSpotlightDocument turSNSiteSpotlightDocument);
 
 	@Modifying
 	@Query("delete from  TurSNSiteSpotlightDocument sssd where sssd.id = ?1")

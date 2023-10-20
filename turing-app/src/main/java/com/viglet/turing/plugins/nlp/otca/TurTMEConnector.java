@@ -21,6 +21,27 @@
 
 package com.viglet.turing.plugins.nlp.otca;
 
+import com.viglet.turing.exception.TurException;
+import com.viglet.turing.nlp.TurNLPEntityRequest;
+import com.viglet.turing.nlp.TurNLPRequest;
+import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.plugins.nlp.TurNLPPlugin;
+import com.viglet.turing.plugins.nlp.otca.response.xml.*;
+import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseEntityExtractorResultTermParentType.Parents;
+import com.viglet.turing.solr.TurSolrField;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Component;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,44 +53,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Unmarshaller;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.sax.SAXSource;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.XML;
-import org.springframework.stereotype.Component;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-
-import com.viglet.turing.exception.TurException;
-import com.viglet.turing.nlp.TurNLPEntityRequest;
-import com.viglet.turing.nlp.TurNLPRequest;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
-import com.viglet.turing.plugins.nlp.TurNLPPlugin;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultCategoryType;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultKnowledgeBaseType;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseCategorizerResultType;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseConceptExtractorResultConcept1Type;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseConceptExtractorResultConcept2Type;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseConceptExtractorResultType;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseEntityExtractorResultExtractResultType;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseEntityExtractorResultFullTextSearchResultType;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseEntityExtractorResultTermOccurenceType;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseEntityExtractorResultTermParentType;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseEntityExtractorResultTermParentType.Parents;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseEntityExtractorResultTermType;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseEntityExtractorResultType;
-import com.viglet.turing.plugins.nlp.otca.response.xml.ServerResponseType;
-import com.viglet.turing.solr.TurSolrField;
 
 @Component
 public class TurTMEConnector implements TurNLPPlugin {
@@ -164,7 +147,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 			sb.append("<Cartridges>");
 
 			for (TurNLPEntityRequest entity : turNLPRequest.getEntities()) {
-				sb.append("<Cartridge>" + entity.getName() + "</Cartridge>");
+				sb.append("<Cartridge>").append(entity.getName()).append("</Cartridge>");
 			}
 
 			sb.append("</Cartridges>");
@@ -240,8 +223,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 
 	}
 
-	public String toJSON(String xml, Map<String, List<String>> hmEntities) {
-		String jsonResult = null;
+	public void toJSON(String xml, Map<String, List<String>> hmEntities) {
 
 		InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
 
@@ -273,15 +255,6 @@ public class TurTMEConnector implements TurNLPPlugin {
 		} catch (JAXBException | SAXException | ParserConfigurationException e) {
 			logger.error(e);
 		}
-		try {
-			JSONObject json = XML.toJSONObject(xml);
-
-			String jsonPrettyPrintString = json.toString(PRETTY_PRINT_INDENT_FACTOR);
-			jsonResult = jsonPrettyPrintString;
-		} catch (JSONException e) {
-			logger.error(e);
-		}
-		return jsonResult;
 	}
 
 	public void getParentTerms(Parents parents, Map<String, List<String>> hmEntities, String cartridgeID) {
@@ -298,8 +271,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 
 		logger.debug("iterateResults... {}", result);
 
-		if (result instanceof ServerResponseConceptExtractorResultType) {
-			ServerResponseConceptExtractorResultType concepts = (ServerResponseConceptExtractorResultType) result;
+		if (result instanceof ServerResponseConceptExtractorResultType concepts) {
 			logger.debug("Concepts: {}", concepts.getName());
 			setComplexConcepts(hmEntities, concepts);
 			setSimpleConcepts(hmEntities, concepts);

@@ -23,12 +23,14 @@ package com.viglet.turing.api.sn.job;
 
 import org.springframework.stereotype.Component;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map;
 
 @Component
 public class TurSNJobItem implements Serializable{
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 	
 	private String locale;

@@ -21,25 +21,11 @@
 
 package com.viglet.turing.plugins.nlp.opennlp;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.viglet.turing.nlp.TurNLPEntityRequest;
 import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
-
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinderModel;
 import opennlp.tools.sentdetect.SentenceDetectorME;
@@ -47,6 +33,14 @@ import opennlp.tools.sentdetect.SentenceModel;
 import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
 import opennlp.tools.util.Span;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.util.*;
 
 @Component
 public class TurOpenNLPConnector implements TurNLPPlugin {
@@ -98,24 +92,20 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 			nameFinder = nameFinderMe(entityPath).getNameFinderME();
 
 			String[] tokens = sentencesTokens.toArray(new String[0]);
-			if (tokens != null) {
-				Span[] nameSpans = nameFinder.find(tokens);
+            Span[] nameSpans = nameFinder.find(tokens);
 
-				for (Span nameSpan : nameSpans) {
-					StringBuilder name = new StringBuilder();
-					for (int i = nameSpan.getStart(); i < nameSpan.getEnd(); i++) {
-						name.append(tokens[i]);
-						if (i < nameSpan.getEnd() - 1)
-							name.append(" ");
-					}
-					entities.add(name.toString());
-				}
+            for (Span nameSpan : nameSpans) {
+                StringBuilder name = new StringBuilder();
+                for (int i = nameSpan.getStart(); i < nameSpan.getEnd(); i++) {
+                    name.append(tokens[i]);
+                    if (i < nameSpan.getEnd() - 1)
+                        name.append(" ");
+                }
+                entities.add(name.toString());
+            }
 
-				return entities;
-			} else {
-				logger.debug("Sentences returns null of OpenNLP Entity {}", entityPath);
-			}
-		} catch (Exception e) {
+            return entities;
+        } catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
 
@@ -162,10 +152,11 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 			} else if (language.equals("pt_BR")) {
 				modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/pt/pt-sent.bin"));
 			}
-			SentenceModel model = new SentenceModel(modelIn);
-			SentenceDetectorME sentenceDetectorME = new SentenceDetectorME(model);
-			return new TurSentenceDetectorME(sentenceDetectorME);
-
+			if (modelIn != null) {
+				SentenceModel model = new SentenceModel(modelIn);
+				SentenceDetectorME sentenceDetectorME = new SentenceDetectorME(model);
+				return new TurSentenceDetectorME(sentenceDetectorME);
+			}
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -181,9 +172,11 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 			} else if (language.equals("pt_BR")) {
 				modelIn = new File(userDir.getAbsolutePath().concat("/models/opennlp/pt/pt-token.bin"));
 			}
-			TokenizerModel model = new TokenizerModel(modelIn);
-			TokenizerME tokenizerME = new TokenizerME(model);
-			return new TurTokenizerME(tokenizerME);
+			if (modelIn != null) {
+				TokenizerModel model = new TokenizerModel(modelIn);
+				TokenizerME tokenizerME = new TokenizerME(model);
+				return new TurTokenizerME(tokenizerME);
+			}
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}

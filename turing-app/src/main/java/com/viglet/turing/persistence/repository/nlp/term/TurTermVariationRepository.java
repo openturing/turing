@@ -22,9 +22,10 @@ package com.viglet.turing.persistence.repository.nlp.term;
 
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TurTermVariationRepository extends JpaRepository<TurTermVariation, String> {
 	
-	void delete(TurTermVariation turTermVariation);
+	void delete(@NotNull TurTermVariation turTermVariation);
 }
