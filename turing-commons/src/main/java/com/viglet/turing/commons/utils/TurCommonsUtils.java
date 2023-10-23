@@ -39,6 +39,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
@@ -83,7 +84,11 @@ public class TurCommonsUtils {
 	}
 
 	public static void addParameterToQueryString(StringBuilder sbQueryString, String name, String value) {
-		sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, StandardCharsets.UTF_8)));
+		try {
+			sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, "UTF-8")));
+		} catch (UnsupportedEncodingException e) {
+			logger.error (e.getMessage(), e);
+		}
 	}
 
 	public static URI modifiedURI(URI uri, StringBuilder sbQueryString) {
@@ -132,13 +137,11 @@ public class TurCommonsUtils {
 	 *
 	 * @param source      the directory with files to add
 	 * @param destination the zip file that should contain the files
-	 * @throws IOException      if the io fails
-	 * @throws ArchiveException if creating or adding to the archive fails
 	 */
 	public static void addFilesToZip(File source, File destination) {
 
-		try (OutputStream archiveStream = new FileOutputStream(destination);
-				ArchiveOutputStream archive = new ArchiveStreamFactory()
+		try (OutputStream archiveStream = Files.newOutputStream(destination.toPath());
+             ArchiveOutputStream archive = new ArchiveStreamFactory()
 						.createArchiveOutputStream(ArchiveStreamFactory.ZIP, archiveStream)) {
 
 			FileUtils.listFiles(source, null, true).forEach(file -> addFileToZip(source, archive, file));
@@ -156,7 +159,7 @@ public class TurCommonsUtils {
 			ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
 			archive.putArchiveEntry(entry);
 
-			try (BufferedInputStream input = new BufferedInputStream(new FileInputStream(file))) {
+			try (BufferedInputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
 				IOUtils.copy(input, archive);
 				archive.closeArchiveEntry();
 			}
@@ -202,7 +205,6 @@ public class TurCommonsUtils {
 	 *
 	 * @param file         input zip file
 	 * @param outputFolder output Folder
-	 * @throws Exception
 	 */
 	public static void unZipIt(File file, File outputFolder) {
 		try (ZipFile zipFile = new ZipFile(file)) {
