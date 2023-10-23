@@ -14,8 +14,8 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.apache.jackrabbit:jackrabbit-jcr-commons:2.21.19'
-	implementation 'org.apache.jackrabbit:jackrabbit-jcr2dav:2.21.19'
+	implementation 'org.apache.jackrabbit:jackrabbit-jcr-commons:2.21.20'
+	implementation 'org.apache.jackrabbit:jackrabbit-jcr2dav:2.21.20'
     implementation 'ch.qos.logback:logback-classic:1.3.11'
 
 
