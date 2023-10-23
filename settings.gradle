@@ -1,9 +1,11 @@
 rootProject.name = 'viglet-turing'
+include ':turing-commons'
 include ':turing-dummy'
 include ':turing-java-sdk'
+include ':turing-cms:cms-mapping'
+include ':turing-aem:aem-indexer'
 
 if (!System.env.JITPACK){
-	include ':turing-commons'
 	include ':turing-app'
 	include ':turing-wem'
 	include ':turing-jdbc'
@@ -15,6 +17,4 @@ if (!System.env.JITPACK){
 	include ':turing-wordpress'
 	include ':turing-java-proxy'
 	include ':turing-ui'
-	include ':turing-aem:aem-indexer'
-	include ':turing-cms:cms-mapping'
 }
