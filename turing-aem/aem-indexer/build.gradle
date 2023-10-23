@@ -36,8 +36,3 @@ jar {
  shadowJar {
      archiveFileName.set("turing-aem.jar")
 }
-
-//tasks.named('test') {
-//	useJUnitPlatform()
-//}
-targetCompatibility = JavaVersion.VERSION_11
