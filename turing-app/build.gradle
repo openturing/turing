@@ -146,7 +146,7 @@ dependencies {
  	
 	implementation 'org.apache.activemq:artemis-jms-server:2.31.0'
 
-	implementation group: 'com.itextpdf', name: 'itext7-core', version: '8.0.1'
+	implementation group: 'com.itextpdf', name: 'itext7-core', version: '8.0.2'
 	implementation group: 'com.itextpdf', name: 'cleanup', version: '4.0.0'
 	implementation group: 'org.apache.commons', name: 'commons-imaging', version: '1.0-alpha3'
 
