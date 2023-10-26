@@ -4,11 +4,10 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --configuration=production welcome && ng build console && ng build sn && ng build converse",
+    "compile": "ng build --configuration=production welcome && ng build console && ng build sn && ng build converse",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "sonar": "sonar-scanner",
-    "test": "ng test --code-coverage --single-run --browsers=Chrome --reporters=progress,junit"
+    "sonar": "sonar-scanner"
   },
   "private": true,
   "dependencies": {

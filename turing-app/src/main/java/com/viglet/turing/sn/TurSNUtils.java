@@ -67,7 +67,7 @@ public class TurSNUtils {
 	
 
 	public static URI addFilterQuery(URI uri, String fq) {
-		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
+		List<NameValuePair> params = URLEncodedUtils.parse(uri, "UTF-8");
 		StringBuilder sbQueryString = new StringBuilder();
 		boolean alreadyExists = false;
 		for (NameValuePair nameValuePair : params) {
@@ -85,7 +85,7 @@ public class TurSNUtils {
 	}
 	
 	public static URI removeFilterQuery(URI uri, String fq) {
-		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
+		List<NameValuePair> params = URLEncodedUtils.parse(uri, "UTF-8");
 		StringBuilder sbQueryString = new StringBuilder();
 		for (NameValuePair nameValuePair : params) {
 			if (!(java.net.URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8).equals(fq)
@@ -97,7 +97,7 @@ public class TurSNUtils {
 	}
 
 	public static URI removeQueryField(URI uri, String field) {
-		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
+		List<NameValuePair> params = URLEncodedUtils.parse(uri, "UTF-8");
 		StringBuilder sbQueryString = new StringBuilder();
 
 		for (NameValuePair nameValuePair : params) {
