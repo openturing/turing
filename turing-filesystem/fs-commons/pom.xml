@@ -7,7 +7,7 @@
   <!-- that they should prefer consuming it instead. -->
   <!-- do_not_remove: published-with-gradle-metadata -->
   <modelVersion>4.0.0</modelVersion>
-  <groupId>viglet-turing.turing-filesystem</groupId>
+  <groupId>com.viglet.turing</groupId>
   <artifactId>fs-commons</artifactId>
   <version>0.3.7</version>
   <properties>
@@ -71,7 +71,7 @@
       <version>3.43.2.1</version>
     </dependency>
     <dependency>
-      <groupId>viglet-turing</groupId>
+      <groupId>com.viglet.turing</groupId>
       <artifactId>turing-commons</artifactId>
       <version>0.3.7</version>
     </dependency>

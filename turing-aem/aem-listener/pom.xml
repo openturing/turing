@@ -17,11 +17,11 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.viglet.turing</groupId>
-    <artifactId>aem-turing-events</artifactId>
+    <artifactId>aem-turing-listener</artifactId>
     <packaging>pom</packaging>
     <version>0.3.7</version>
-    <name>AEM Turing Events</name>
-    <description>AEM Turing Events</description>
+    <name>AEM Turing Listener</name>
+    <description>AEM Turing Listener</description>
 
 
     <modules>

@@ -7,7 +7,7 @@
   <!-- that they should prefer consuming it instead. -->
   <!-- do_not_remove: published-with-gradle-metadata -->
   <modelVersion>4.0.0</modelVersion>
-  <groupId>viglet-turing</groupId>
+  <groupId>com.viglet.turing</groupId>
   <artifactId>turing-wem</artifactId>
   <version>0.3.7</version>
   <properties>
@@ -35,7 +35,7 @@
       <version>3.1</version>
     </dependency>
     <dependency>
-      <groupId>viglet-turing</groupId>
+      <groupId>com.viglet.turing</groupId>
       <artifactId>turing-java-sdk</artifactId>
       <version>0.3.7</version>
     </dependency>

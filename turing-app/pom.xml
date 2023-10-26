@@ -26,7 +26,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>3.1.5</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -37,7 +36,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
-            <version>3.1.5</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -48,7 +46,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-artemis</artifactId>
-            <version>3.1.5</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -59,7 +56,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
-            <version>3.1.5</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -70,7 +66,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
-            <version>3.1.5</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -81,7 +76,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
-            <version>3.1.5</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -92,7 +86,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
-            <version>3.1.5</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -103,7 +96,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
-            <version>3.1.5</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -112,7 +104,7 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>viglet-turing</groupId>
+            <groupId>com.viglet.turing</groupId>
             <artifactId>turing-commons</artifactId>
             <version>0.3.7</version>
             <exclusions>
@@ -123,7 +115,7 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>viglet-turing.turing-filesystem</groupId>
+            <groupId>com.viglet.turing</groupId>
             <artifactId>fs-commons</artifactId>
             <version>0.3.7</version>
             <exclusions>
@@ -518,12 +510,40 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.12.1</version>
+                <executions>
+                    <execution>
+                        <!-- optional: you don't really need execution ids, but it looks nice in your build log. -->
+                        <id>install node and npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <!-- optional: default phase is "generate-resources" -->
+                        <phase>generate-resources</phase>
+
+                    </execution>
+                    <execution>
+                        <id>npm run compile</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run compile</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <nodeVersion>v16.17.1</nodeVersion>
+                    <npmVersion>8.15.0</npmVersion>
+                    <workingDirectory>../turing-ui</workingDirectory>
+                </configuration>
             </plugin>
         </plugins>
     </build>

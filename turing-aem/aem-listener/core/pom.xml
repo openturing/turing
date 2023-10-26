@@ -19,13 +19,13 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.viglet.turing</groupId>
-        <artifactId>aem-turing-events</artifactId>
+        <artifactId>aem-turing-listener</artifactId>
         <version>0.3.7</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>aem-turing-events.core</artifactId>
-    <name>AEM Turing Events - Core</name>
-    <description>Core bundle for AEM Turing Events</description>
+    <artifactId>aem-turing-listener.core</artifactId>
+    <name>AEM Turing Listener - Core</name>
+    <description>Core bundle for AEM Turing Listener</description>
     <build>
         <plugins>
             <plugin>
