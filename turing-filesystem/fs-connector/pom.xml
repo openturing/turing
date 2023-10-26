@@ -10,6 +10,9 @@
   <groupId>com.viglet.turing</groupId>
   <artifactId>fs-connector</artifactId>
   <version>0.3.7</version>
+  <packaging>jar</packaging>
+  <name>Turing Filesystem - Connector</name>
+  <description>Turing Filesystem - Connector</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

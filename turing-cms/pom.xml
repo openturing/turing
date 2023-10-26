@@ -19,22 +19,21 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.viglet.turing</groupId>
-    <artifactId>turing</artifactId>
+    <artifactId>turing-cms</artifactId>
     <packaging>pom</packaging>
     <version>0.3.7</version>
-    <name>Turing AI Master</name>
-    <description>Viglet Turing AI</description>
+    <name>Turing CMS Connector</name>
+    <description>Turing CMS Connector</description>
+
 
     <modules>
-        <module>turing-commons</module>
-        <module>turing-java-sdk</module>
-        <module>turing-filesystem</module>
-        <module>turing-jdbc</module>
-        <module>turing-nutch</module>
-        <module>turing-cms</module>
-        <module>turing-wem</module>
-        <module>turing-aem</module>
-        <module>turing-java-proxy</module>
-        <module>turing-app</module>
+        <module>cms-mapping</module>
     </modules>
+
+    <properties>
+        <project.build.sourceEncoding>project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
 </project>

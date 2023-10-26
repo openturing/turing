@@ -10,6 +10,8 @@
   <artifactId>turing-java-proxy</artifactId>
   <version>0.3.7</version>
   <packaging>jar</packaging>
+  <name>Turing Java Proxy</name>
+  <description>Turing Java Proxy</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

@@ -10,6 +10,9 @@
   <groupId>com.viglet.turing</groupId>
   <artifactId>nutch1_12</artifactId>
   <version>0.3.7</version>
+  <packaging>jar</packaging>
+  <name>Turing Nutch - 1.12 Connector</name>
+  <description>Turing Nutch - 1.12 Connector</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

@@ -10,6 +10,9 @@
   <groupId>com.viglet.turing</groupId>
   <artifactId>cms-mapping</artifactId>
   <version>0.3.7</version>
+  <packaging>jar</packaging>
+  <name>Turing CMS Connector - Mapping</name>
+  <description>Turing CMS Connector - Mapping</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

@@ -10,6 +10,9 @@
   <groupId>com.viglet.turing</groupId>
   <artifactId>turing-java-sdk</artifactId>
   <version>0.3.7</version>
+  <packaging>jar</packaging>
+  <name>Turing Java SDK</name>
+  <description>Turing Java SDK</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
