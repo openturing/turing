@@ -7,12 +7,17 @@
   <!-- that they should prefer consuming it instead. -->
   <!-- do_not_remove: published-with-gradle-metadata -->
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.viglet.turing</groupId>
+  <parent>
+    <groupId>com.viglet.turing</groupId>
+    <artifactId>turing-nutch</artifactId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
   <artifactId>nutch-commons</artifactId>
-  <version>0.3.7</version>
   <packaging>jar</packaging>
   <name>Turing Nutch - Commons</name>
   <description>Turing Nutch - Commons</description>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -50,7 +55,7 @@
     <dependency>
       <groupId>com.viglet.turing</groupId>
       <artifactId>turing-java-sdk</artifactId>
-      <version>0.3.7</version>
+      <version>${revision}</version>
     </dependency>
   </dependencies>
 </project>

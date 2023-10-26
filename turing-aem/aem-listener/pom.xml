@@ -16,14 +16,16 @@
 --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.viglet.turing</groupId>
-    <artifactId>aem-turing-listener</artifactId>
+    <parent>
+        <groupId>com.viglet.turing</groupId>
+        <artifactId>turing-aem</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>turing-aem-listener</artifactId>
     <packaging>pom</packaging>
-    <version>0.3.7</version>
-    <name>AEM Turing Listener</name>
-    <description>AEM Turing Listener</description>
-
-
+    <name>Turing AEM Listener</name>
+    <description>Turing AEM Listener</description>
     <modules>
         <module>core</module>
     </modules>

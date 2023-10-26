@@ -7,9 +7,13 @@
   <!-- that they should prefer consuming it instead. -->
   <!-- do_not_remove: published-with-gradle-metadata -->
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.viglet.turing</groupId>
+  <parent>
+    <groupId>com.viglet.turing</groupId>
+    <artifactId>turing-aem</artifactId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
   <artifactId>turing-aem-indexer</artifactId>
-  <version>0.3.7</version>
   <packaging>jar</packaging>
   <name>Turing AEM Connector - Indexer</name>
   <description>Turing AEM Connector - Indexer</description>
@@ -55,12 +59,12 @@
     <dependency>
       <groupId>com.viglet.turing</groupId>
       <artifactId>turing-java-sdk</artifactId>
-      <version>0.3.7</version>
+      <version>${revision}</version>
     </dependency>
     <dependency>
       <groupId>com.viglet.turing</groupId>
       <artifactId>cms-mapping</artifactId>
-      <version>0.3.7</version>
+      <version>${revision}</version>
     </dependency>
   </dependencies>
 </project>

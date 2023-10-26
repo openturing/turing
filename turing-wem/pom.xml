@@ -7,9 +7,13 @@
   <!-- that they should prefer consuming it instead. -->
   <!-- do_not_remove: published-with-gradle-metadata -->
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.viglet.turing</groupId>
+  <parent>
+    <groupId>com.viglet.turing</groupId>
+    <artifactId>turing</artifactId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
   <artifactId>turing-wem</artifactId>
-  <version>0.3.7</version>
   <packaging>jar</packaging>
   <name>Turing WEM Connector</name>
   <description>Turing WEM Connector</description>
@@ -40,7 +44,7 @@
     <dependency>
       <groupId>com.viglet.turing</groupId>
       <artifactId>turing-java-sdk</artifactId>
-      <version>0.3.7</version>
+      <version>${revision}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

@@ -7,9 +7,13 @@
   <!-- that they should prefer consuming it instead. -->
   <!-- do_not_remove: published-with-gradle-metadata -->
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.viglet.turing</groupId>
+  <parent>
+    <groupId>com.viglet.turing</groupId>
+    <artifactId>turing-cms</artifactId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
   <artifactId>cms-mapping</artifactId>
-  <version>0.3.7</version>
   <packaging>jar</packaging>
   <name>Turing CMS Connector - Mapping</name>
   <description>Turing CMS Connector - Mapping</description>

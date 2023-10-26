@@ -19,11 +19,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.viglet.turing</groupId>
-        <artifactId>aem-turing-listener</artifactId>
-        <version>0.3.7</version>
+        <artifactId>turing-aem-listener</artifactId>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>aem-turing-listener.core</artifactId>
+    <artifactId>turing-aem-listener.core</artifactId>
     <name>AEM Turing Listener - Core</name>
     <description>Core bundle for AEM Turing Listener</description>
     <build>

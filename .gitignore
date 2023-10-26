@@ -34,3 +34,5 @@ hs_err_pid*
 .bloop
 .sonar_lock
 /.idea
+
+.flattened-pom.xml
