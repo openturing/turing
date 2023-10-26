@@ -88,6 +88,14 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <filters>
+                <filter>
+                  <artifact>org.apache.jackrabbit:jackrabbit-jcr-commons</artifact>
+                  <excludes>
+                    <exclude>META-INF/services/javax.jcr.RepositoryFactory</exclude>
+                  </excludes>
+                </filter>
+              </filters>
               <finalName>turing-aem</finalName>
               <shadedArtifactAttached>true</shadedArtifactAttached>
               <shadedClassifierName>indexer</shadedClassifierName>
