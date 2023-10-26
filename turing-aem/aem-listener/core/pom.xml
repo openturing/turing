@@ -24,7 +24,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>turing-aem-listener.core</artifactId>
-    <name>AEM Turing Listener - Core</name>
+    <name>Turing AEM Listener - Core</name>
     <description>Core bundle for AEM Turing Listener</description>
     <build>
         <plugins>
@@ -139,6 +139,12 @@ Import-Package: javax.annotation;version=0.0.0,*
             <artifactId>org.apache.sling.models.impl</artifactId>
             <version>1.4.4</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.26</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

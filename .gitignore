@@ -36,3 +36,4 @@ hs_err_pid*
 /.idea
 
 .flattened-pom.xml
+dependency-reduced-pom.xml

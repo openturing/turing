@@ -21,13 +21,17 @@
 
 package com.viglet.turing.persistence.repository.dev.token;
 
+import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.dev.token.TurDevToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Optional;
+
 public interface TurDevTokenRepository extends JpaRepository<TurDevToken, String> {
 
+	Optional<TurDevToken> findByToken(String token);
 	@Modifying
 	@Query("delete from  TurDevToken dt where dt.id = ?1")
 	void delete(String id);

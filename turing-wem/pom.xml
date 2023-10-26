@@ -66,21 +66,27 @@
       <artifactId>castor</artifactId>
       <version>16.0</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/lib/castor-0.8.jar</systemPath>
+      <systemPath>${pom.basedir}/lib/castor-0.8.jar</systemPath>
+      <type>jar</type>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>opentext</groupId>
       <artifactId>cma</artifactId>
       <version>16.0</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/lib/vgn-appsvcs-cma.jar</systemPath>
+      <systemPath>${pom.basedir}/lib/vgn-appsvcs-cma.jar</systemPath>
+      <type>jar</type>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>opentext</groupId>
       <artifactId>logging</artifactId>
       <version>16.0</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/lib/vgn-shared-logging.jar</systemPath>
+      <systemPath>${pom.basedir}/lib/vgn-shared-logging.jar</systemPath>
+      <type>jar</type>
+      <optional>true</optional>
     </dependency>
   </dependencies>
 </project>

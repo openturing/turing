@@ -21,6 +21,7 @@
 package com.viglet.turing.persistence.model.sn;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.viglet.turing.persistence.model.dev.token.TurDevToken;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -150,60 +151,36 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteLocale> turSNSiteLocales = new HashSet<>();
 
-	// bi-directional many-to-one association to turSNSiteLocales
+	// bi-directional many-to-one association to turSNSiteMetricAccesses
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteMetricAccess> turSNSiteMetricAccesses = new HashSet<>();
 
-	// bi-directional many-to-one association to turSNSiteLocales
+	// bi-directional many-to-one association to turSNRankingExpressions
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNRankingExpression> turSNRankingExpressions = new HashSet<>();
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getDescription() {
-		return description;
-	}
-
 	public void setDescription(String description) {
 		this.description = description;
-	}
-
-	public TurSEInstance getTurSEInstance() {
-		return turSEInstance;
 	}
 
 	public void setTurSEInstance(TurSEInstance turSEInstance) {
 		this.turSEInstance = turSEInstance;
 	}
 
-	public TurNLPVendor getTurNLPVendor() {
-		return turNLPVendor;
-	}
-
 	public void setTurNLPVendor(TurNLPVendor turNLPVendor) {
 		this.turNLPVendor = turNLPVendor;
-	}
-
-	public Set<TurSNSiteField> getTurSNSiteFields() {
-		return turSNSiteFields;
 	}
 
 	public void setTurSNSiteFields(Set<TurSNSiteField> turSNSiteFields) {
@@ -224,140 +201,184 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 		return turSNSiteField;
 	}
 
-	public Integer getRowsPerPage() {
-		return rowsPerPage;
-	}
-
 	public void setRowsPerPage(Integer rowsPerPage) {
 		this.rowsPerPage = rowsPerPage;
-	}
-
-	public Integer getFacet() {
-		return facet;
 	}
 
 	public void setFacet(Integer facet) {
 		this.facet = facet;
 	}
 
-	public Integer getItemsPerFacet() {
-		return itemsPerFacet;
-	}
-
 	public void setItemsPerFacet(int itemsPerFacet) {
 		this.itemsPerFacet = itemsPerFacet;
-	}
-
-	public Integer getHl() {
-		return hl;
 	}
 
 	public void setHl(Integer hl) {
 		this.hl = hl;
 	}
 
-	public String getHlPre() {
-		return hlPre;
-	}
-
 	public void setHlPre(String hlPre) {
 		this.hlPre = hlPre;
-	}
-
-	public String getHlPost() {
-		return hlPost;
 	}
 
 	public void setHlPost(String hlPost) {
 		this.hlPost = hlPost;
 	}
 
-	public Integer getMlt() {
-		return mlt;
-	}
-
 	public void setMlt(Integer mlt) {
 		this.mlt = mlt;
-	}
-
-	public Integer getThesaurus() {
-		return thesaurus;
 	}
 
 	public void setThesaurus(Integer thesaurus) {
 		this.thesaurus = thesaurus;
 	}
 
-	public String getDefaultTextField() {
-		return defaultTextField;
-	}
-
 	public void setDefaultTextField(String defaultTextField) {
 		this.defaultTextField = defaultTextField;
-	}
-
-	public String getDefaultDescriptionField() {
-		return defaultDescriptionField;
 	}
 
 	public void setDefaultDescriptionField(String defaultDescriptionField) {
 		this.defaultDescriptionField = defaultDescriptionField;
 	}
 
-	public String getDefaultDateField() {
-		return defaultDateField;
-	}
-
 	public void setDefaultDateField(String defaultDateField) {
 		this.defaultDateField = defaultDateField;
-	}
-
-	public String getDefaultURLField() {
-		return defaultURLField;
 	}
 
 	public void setDefaultURLField(String defaultURLField) {
 		this.defaultURLField = defaultURLField;
 	}
 
-	public String getDefaultTitleField() {
-		return defaultTitleField;
-	}
-
 	public void setDefaultTitleField(String defaultTitleField) {
 		this.defaultTitleField = defaultTitleField;
-	}
-
-	public String getDefaultImageField() {
-		return defaultImageField;
 	}
 
 	public void setDefaultImageField(String defaultImageField) {
 		this.defaultImageField = defaultImageField;
 	}
 
-	public Integer getSpellCheck() {
-		return spellCheck;
-	}
-
 	public void setSpellCheck(Integer spellCheck) {
 		this.spellCheck = spellCheck;
-	}
-
-	public Integer getSpellCheckFixes() {
-		return spellCheckFixes;
 	}
 
 	public void setSpellCheckFixes(Integer spellCheckFixes) {
 		this.spellCheckFixes = spellCheckFixes;
 	}
 
+	public void setSpotlightWithResults(Integer spotlightWithResults) {
+		this.spotlightWithResults = spotlightWithResults;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public Integer getRowsPerPage() {
+		return rowsPerPage;
+	}
+
+	public Integer getFacet() {
+		return facet;
+	}
+
+	public Integer getItemsPerFacet() {
+		return itemsPerFacet;
+	}
+
+	public Integer getHl() {
+		return hl;
+	}
+
+	public String getHlPre() {
+		return hlPre;
+	}
+
+	public String getHlPost() {
+		return hlPost;
+	}
+
+	public Integer getMlt() {
+		return mlt;
+	}
+
+	public Integer getThesaurus() {
+		return thesaurus;
+	}
+
+	public String getDefaultTitleField() {
+		return defaultTitleField;
+	}
+
+	public String getDefaultTextField() {
+		return defaultTextField;
+	}
+
+	public String getDefaultDescriptionField() {
+		return defaultDescriptionField;
+	}
+
+	public String getDefaultDateField() {
+		return defaultDateField;
+	}
+
+	public String getDefaultImageField() {
+		return defaultImageField;
+	}
+
+	public String getDefaultURLField() {
+		return defaultURLField;
+	}
+
+	public Integer getSpellCheck() {
+		return spellCheck;
+	}
+
+	public Integer getSpellCheckFixes() {
+		return spellCheckFixes;
+	}
+
 	public Integer getSpotlightWithResults() {
 		return spotlightWithResults;
 	}
 
-	public void setSpotlightWithResults(Integer spotlightWithResults) {
-		this.spotlightWithResults = spotlightWithResults;
+	public TurSEInstance getTurSEInstance() {
+		return turSEInstance;
+	}
+
+	public TurNLPVendor getTurNLPVendor() {
+		return turNLPVendor;
+	}
+
+	public Set<TurSNSiteField> getTurSNSiteFields() {
+		return turSNSiteFields;
+	}
+
+	public Set<TurSNSiteFieldExt> getTurSNSiteFieldExts() {
+		return turSNSiteFieldExts;
+	}
+
+	public Set<TurSNSiteSpotlight> getTurSNSiteSpotlights() {
+		return turSNSiteSpotlights;
+	}
+
+	public Set<TurSNSiteLocale> getTurSNSiteLocales() {
+		return turSNSiteLocales;
+	}
+
+	public Set<TurSNSiteMetricAccess> getTurSNSiteMetricAccesses() {
+		return turSNSiteMetricAccesses;
+	}
+
+	public Set<TurSNRankingExpression> getTurSNRankingExpressions() {
+		return turSNRankingExpressions;
 	}
 
 }
