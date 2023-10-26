@@ -114,7 +114,7 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-commons</artifactId>
-            <version>${revision}</version>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -125,7 +125,7 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>fs-commons</artifactId>
-            <version>${revision}</version>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -146,7 +146,7 @@
         </dependency>
         <dependency>
             <groupId>com.itextpdf</groupId>
-            <artifactId>itext7-core</artifactId>
+            <artifactId>itext-core</artifactId>
             <version>8.0.1</version>
             <type>pom</type>
             <exclusions>
@@ -535,10 +535,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
                 <version>1.12.1</version>
@@ -568,17 +564,17 @@
                     <workingDirectory>../turing-ui</workingDirectory>
                 </configuration>
             </plugin>
-                <plugin>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-maven-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>repackage</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

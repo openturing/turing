@@ -67,12 +67,12 @@
     <dependency>
       <groupId>com.viglet.turing</groupId>
       <artifactId>turing-java-sdk</artifactId>
-      <version>${revision}</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>com.viglet.turing</groupId>
       <artifactId>nutch-commons</artifactId>
-      <version>${revision}</version>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 </project>

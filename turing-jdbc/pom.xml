@@ -96,7 +96,7 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-java-sdk</artifactId>
-            <version>${revision}</version>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -107,7 +107,7 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>fs-commons</artifactId>
-            <version>${revision}</version>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
