@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -41,12 +42,14 @@ public class TurDataGroupSentence implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Getter
 	@Id
 	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator = "id_Sequence")
     @SequenceGenerator(name = "id_Sequence", sequenceName = "ID_SEQ")
 	@Column(unique = true, nullable = false)
 	private int id;
 
+	@Getter
 	@Lob
 	@Column(nullable = false, length = 100000 )
 	private String sentence;
@@ -56,6 +59,7 @@ public class TurDataGroupSentence implements Serializable {
 	private TurMLCategory turMLCategory;
 
 	// bi-directional many-to-one association to TurData
+	@Getter
 	@ManyToOne
 	@JoinColumn(name = "datagroup_id", nullable = false)
 	@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
@@ -63,22 +67,15 @@ public class TurDataGroupSentence implements Serializable {
 	private TurDataGroup turDataGroup;
 
 	// bi-directional many-to-one association to TurData
+	@Getter
 	@ManyToOne
 	@JoinColumn(name = "data_id")
 	@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 	@JsonIdentityReference(alwaysAsId = true)
 	private TurData turData;
 
-	public int getId() {
-		return this.id;
-	}
-
 	public void setId(int id) {
 		this.id = id;
-	}
-
-	public String getSentence() {
-		return this.sentence;
 	}
 
 	public void setSentence(String sentence) {
@@ -95,16 +92,8 @@ public class TurDataGroupSentence implements Serializable {
 		this.turMLCategory = turMLCategory;
 	}
 
-	public TurData getTurData() {
-		return this.turData;
-	}
-
 	public void setTurData(TurData turData) {
 		this.turData = turData;
-	}
-
-	public TurDataGroup getTurDataGroup() {
-		return turDataGroup;
 	}
 
 	public void setTurDataGroup(TurDataGroup turDataGroup) {

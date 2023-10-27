@@ -21,8 +21,10 @@
 
 package com.viglet.turing.api;
 
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 
+@Getter
 @Component
 public class TurAPIBean {
 
@@ -30,25 +32,13 @@ public class TurAPIBean {
 	private boolean multiTenant;
 
 	private boolean keycloak;
-	
-	public String getProduct() {
-		return product;
-	}
 
 	public void setProduct(String product) {
 		this.product = product;
 	}
 
-	public boolean isMultiTenant() {
-		return multiTenant;
-	}
-
 	public void setMultiTenant(boolean multiTenant) {
 		this.multiTenant = multiTenant;
-	}
-
-	public boolean isKeycloak() {
-		return keycloak;
 	}
 
 	public void setKeycloak(boolean keycloak) {

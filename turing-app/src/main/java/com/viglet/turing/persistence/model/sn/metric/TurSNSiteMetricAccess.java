@@ -27,6 +27,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
+import lombok.Getter;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -47,6 +48,7 @@ import java.util.Set;
  * @author Alexandre Oliveira
  * @since 0.3.6
  */
+@Getter
 @Entity
 @Table(name = "turSNSiteMetricAccess")
 @NamedQuery(name = "TurSNSiteMetricAccess.findAll", query = "SELECT snsma FROM TurSNSiteMetricAccess snsma")
@@ -88,32 +90,16 @@ public class TurSNSiteMetricAccess implements Serializable {
 
 	private long numFound;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getUserId() {
-		return userId;
 	}
 
 	public void setUserId(String userId) {
 		this.userId = userId;
 	}
 
-	public Date getAccessDate() {
-		return accessDate;
-	}
-
 	public void setAccessDate(Date accessDate) {
 		this.accessDate = accessDate;
-	}
-
-	public String getTerm() {
-		return term;
 	}
 
 	public void setTerm(String term) {
@@ -122,40 +108,20 @@ public class TurSNSiteMetricAccess implements Serializable {
 				.replaceAll("( )+", " ").toLowerCase().trim();
 	}
 
-	public Set<String> getTargetingRules() {
-		return targetingRules;
-	}
-
 	public void setTargetingRules(Set<String> targetingRules) {
 		this.targetingRules = targetingRules;
-	}
-
-	public String getLanguage() {
-		return language;
 	}
 
 	public void setLanguage(String language) {
 		this.language = language;
 	}
 
-	public TurSNSite getTurSNSite() {
-		return turSNSite;
-	}
-
 	public void setTurSNSite(TurSNSite turSNSite) {
 		this.turSNSite = turSNSite;
 	}
 
-	public long getNumFound() {
-		return numFound;
-	}
-
 	public void setNumFound(long numFound) {
 		this.numFound = numFound;
-	}
-
-	public String getSanatizedTerm() {
-		return sanatizedTerm;
 	}
 
 	public void setSanatizedTerm(String sanatizedTerm) {

@@ -26,6 +26,7 @@ import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -37,6 +38,7 @@ import java.util.Set;
  * The persistent class for the turEntities database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turNLPEntity")
 @NamedQuery(name = "TurNLPEntity.findAll", query = "SELECT ne FROM TurNLPEntity ne")
@@ -93,48 +95,24 @@ public class TurNLPEntity implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurTerm> turTerms;
 
-	public String getCollectionName() {
-		return this.collectionName;
-	}
-
 	public void setCollectionName(String collectionName) {
 		this.collectionName = collectionName;
-	}
-
-	public String getDescription() {
-		return this.description;
 	}
 
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public String getInternalName() {
-		return this.internalName;
-	}
-
 	public void setInternalName(String internalName) {
 		this.internalName = internalName;
-	}
-
-	public int getLocal() {
-		return this.local;
 	}
 
 	public void setLocal(int local) {
 		this.local = local;
 	}
 
-	public String getName() {
-		return this.name;
-	}
-
 	public void setName(String name) {
 		this.name = name;
-	}
-	
-	public Set<TurNLPVendorEntity> getTurNLPVendorEntities() {
-		return this.turNLPVendorEntities;
 	}
 
 	public void setTurNLPVendorEntities(Set<TurNLPVendorEntity> turNLPVendorEntities) {
@@ -154,9 +132,6 @@ public class TurNLPEntity implements Serializable {
 
 		return turNLPVendorEntity;
 	}
-	public Set<TurTerm> getTurTerms() {
-		return this.turTerms;
-	}
 
 	public void setTurTerms(Set<TurTerm> turTerms) {
 		this.turTerms = turTerms;
@@ -174,10 +149,6 @@ public class TurNLPEntity implements Serializable {
 		turTerm.setTurNLPEntity(null);
 
 		return turTerm;
-	}
-
-	public int getEnabled() {
-		return enabled;
 	}
 
 	public void setEnabled(int enabled) {

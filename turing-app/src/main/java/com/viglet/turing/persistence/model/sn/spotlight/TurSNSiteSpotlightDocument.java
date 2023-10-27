@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.sn.spotlight;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -34,6 +35,7 @@ import java.io.Serializable;
  * @author Alexandre Oliveira
  * @since 0.3.4
  */
+@Getter
 @Entity
 @Table(name = "turSNSiteSpotlightDocument")
 @NamedQuery(name = "TurSNSiteSpotlightDocument.findAll", query = "SELECT snssd FROM TurSNSiteSpotlightDocument snssd")
@@ -70,64 +72,32 @@ public class TurSNSiteSpotlightDocument implements Serializable {
 	@JoinColumn(name = "sn_site_spotlight_id")
 	private TurSNSiteSpotlight turSNSiteSpotlight;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public int getPosition() {
-		return position;
 	}
 
 	public void setPosition(int position) {
 		this.position = position;
 	}
 
-	public String getTitle() {
-		return title;
-	}
-
 	public void setTitle(String title) {
 		this.title = title;
-	}
-
-	public String getType() {
-		return type;
 	}
 
 	public void setType(String type) {
 		this.type = type;
 	}
 
-	public String getReferenceId() {
-		return referenceId;
-	}
-
 	public void setReferenceId(String referenceId) {
 		this.referenceId = referenceId;
-	}
-
-	public String getContent() {
-		return content;
 	}
 
 	public void setContent(String content) {
 		this.content = content;
 	}
 
-	public String getLink() {
-		return link;
-	}
-
 	public void setLink(String link) {
 		this.link = link;
-	}
-
-	public TurSNSiteSpotlight getTurSNSiteSpotlight() {
-		return turSNSiteSpotlight;
 	}
 
 	public void setTurSNSiteSpotlight(TurSNSiteSpotlight turSNSiteSpotlight) {

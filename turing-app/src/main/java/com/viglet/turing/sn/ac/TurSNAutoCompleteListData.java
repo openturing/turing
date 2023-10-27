@@ -20,8 +20,11 @@
  */
 package com.viglet.turing.sn.ac;
 
+import lombok.Getter;
+
 import java.util.List;
 
+@Getter
 public class TurSNAutoCompleteListData {
 
 	private List<String> stopWords = null;
@@ -29,10 +32,6 @@ public class TurSNAutoCompleteListData {
 	public TurSNAutoCompleteListData(List<String> stopWords) {
 		super();
 		this.stopWords = stopWords;
-	}
-
-	public List<String> getStopWords() {
-		return stopWords;
 	}
 
 	public void setStopWords(List<String> stopWords) {

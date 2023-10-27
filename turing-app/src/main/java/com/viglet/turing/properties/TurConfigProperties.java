@@ -1,8 +1,10 @@
 package com.viglet.turing.properties;
 
+import lombok.Getter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+@Getter
 @Component
 @ConfigurationProperties("turing")
 public class TurConfigProperties {
@@ -13,14 +15,6 @@ public class TurConfigProperties {
 	
 	private TurSolrProperty solr;
 
-	public String getAllowedOrigins() {
-		return allowedOrigins;
-	}
-
-	public TurSolrProperty getSolr() {
-		return solr;
-	}
-
 	public void setAllowedOrigins(String allowedOrigins) {
 		this.allowedOrigins = allowedOrigins;
 	}
@@ -29,16 +23,8 @@ public class TurConfigProperties {
 		this.solr = solr;
 	}
 
-	public boolean isMultiTenant() {
-		return multiTenant;
-	}
-
 	public void setMultiTenant(boolean multiTenant) {
 		this.multiTenant = multiTenant;
-	}
-
-	public boolean isKeycloak() {
-		return keycloak;
 	}
 
 	public void setKeycloak(boolean keycloak) {

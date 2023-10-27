@@ -20,6 +20,8 @@
  */
 package com.viglet.turing.plugins.nlp.gcp.response;
 
+import lombok.Getter;
+
 /**
  * 
  * @author Alexandre Oliveira
@@ -27,22 +29,15 @@ package com.viglet.turing.plugins.nlp.gcp.response;
  * @since 0.3.6
  *
  */
+@Getter
 public class TurNLPGCPMentionTextResponse {
 
 	private String content;
 
 	private int beginOffset;
 
-	public String getContent() {
-		return content;
-	}
-
 	public void setContent(String content) {
 		this.content = content;
-	}
-
-	public int getBeginOffset() {
-		return beginOffset;
 	}
 
 	public void setBeginOffset(int beginOffset) {

@@ -61,8 +61,6 @@ public class TurTMEConnector implements TurNLPPlugin {
 	private static final String SIMPLE_CONCEPTS = "SimpleConcepts";
 	private static final String LOG_KV = "{}: {}";
 
-	private static final int PRETTY_PRINT_INDENT_FACTOR = 4;
-
 	/**
 	 * Send XML request to TME
 	 * 

@@ -21,6 +21,9 @@
 
 package com.viglet.turing.converse.exchange.agent;
 
+import lombok.Getter;
+
+@Getter
 public class TurConverseAgentWebhookExchange {
 	
 	private String url;
@@ -37,56 +40,28 @@ public class TurConverseAgentWebhookExchange {
 	
 	private boolean cloudFunctionsInitialized;
 
-	public String getUrl() {
-		return url;
-	}
-
 	public void setUrl(String url) {
 		this.url = url;
-	}
-
-	public String getUsername() {
-		return username;
 	}
 
 	public void setUsername(String username) {
 		this.username = username;
 	}
 
-	public TurConverseAgentWebhookHeadersExchange getHeaders() {
-		return headers;
-	}
-
 	public void setHeaders(TurConverseAgentWebhookHeadersExchange headers) {
 		this.headers = headers;
-	}
-
-	public boolean isAvailable() {
-		return available;
 	}
 
 	public void setAvailable(boolean available) {
 		this.available = available;
 	}
 
-	public boolean isUseForDomains() {
-		return useForDomains;
-	}
-
 	public void setUseForDomains(boolean useForDomains) {
 		this.useForDomains = useForDomains;
 	}
 
-	public boolean isCloudFunctionsEnabled() {
-		return cloudFunctionsEnabled;
-	}
-
 	public void setCloudFunctionsEnabled(boolean cloudFunctionsEnabled) {
 		this.cloudFunctionsEnabled = cloudFunctionsEnabled;
-	}
-
-	public boolean isCloudFunctionsInitialized() {
-		return cloudFunctionsInitialized;
 	}
 
 	public void setCloudFunctionsInitialized(boolean cloudFunctionsInitialized) {

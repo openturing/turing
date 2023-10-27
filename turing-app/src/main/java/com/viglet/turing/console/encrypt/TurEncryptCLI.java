@@ -23,6 +23,7 @@ package com.viglet.turing.console.encrypt;
 
 import java.lang.invoke.MethodHandles;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jasypt.encryption.StringEncryptor;
@@ -30,10 +31,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import org.springframework.stereotype.Component;
-
+@Slf4j
 @Component
 public class TurEncryptCLI {
-	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
+
 	@Qualifier("turEncryptor")
 	@Autowired
 	private StringEncryptor stringEncryptor;
@@ -42,7 +43,7 @@ public class TurEncryptCLI {
 		try {
 			return stringEncryptor.encrypt(input);
 		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return null;
 	}

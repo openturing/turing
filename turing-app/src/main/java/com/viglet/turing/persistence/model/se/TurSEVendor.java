@@ -22,6 +22,7 @@
 package com.viglet.turing.persistence.model.se;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -30,6 +31,7 @@ import java.io.Serializable;
  * The persistent class for the vigNLPSolutions database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turSEVendor")
 @NamedQuery(name = "TurSEVendor.findAll", query = "SELECT v FROM TurSEVendor v")
@@ -53,40 +55,20 @@ public class TurSEVendor implements Serializable {
 	@Column(nullable = true, length = 255)
 	private String website;
 
-	public String getId() {
-		return this.id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getDescription() {
-		return this.description;
 	}
 
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public String getPlugin() {
-		return this.plugin;
-	}
-
 	public void setPlugin(String plugin) {
 		this.plugin = plugin;
 	}
 
-	public String getTitle() {
-		return this.title;
-	}
-
 	public void setTitle(String title) {
 		this.title = title;
-	}
-
-	public String getWebsite() {
-		return this.website;
 	}
 
 	public void setWebsite(String website) {

@@ -21,8 +21,11 @@
 
 package com.viglet.turing.converse.exchange.intent;
 
+import lombok.Getter;
+
 import java.util.List;
 
+@Getter
 public class TurConverseIntentMessageExchange {
 
 	private int type;
@@ -33,32 +36,16 @@ public class TurConverseIntentMessageExchange {
 	
 	private List<String> speech;
 
-	public int getType() {
-		return type;
-	}
-
 	public void setType(int type) {
 		this.type = type;
-	}
-
-	public String getLang() {
-		return lang;
 	}
 
 	public void setLang(String lang) {
 		this.lang = lang;
 	}
 
-	public String getCondition() {
-		return condition;
-	}
-
 	public void setCondition(String condition) {
 		this.condition = condition;
-	}
-
-	public List<String> getSpeech() {
-		return speech;
 	}
 
 	public void setSpeech(List<String> speech) {

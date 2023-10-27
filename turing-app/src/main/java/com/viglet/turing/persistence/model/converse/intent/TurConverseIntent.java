@@ -28,6 +28,7 @@ import java.util.Set;
 
 import jakarta.persistence.*;
 
+import lombok.Getter;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.OnDelete;
@@ -41,6 +42,7 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
  * The persistent class for the turConverseIntent database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turConverseIntent")
 @NamedQuery(name = "TurConverseIntent.findAll", query = "SELECT ci FROM TurConverseIntent ci")
@@ -90,32 +92,16 @@ public class TurConverseIntent implements Serializable {
 	@JsonIdentityReference(alwaysAsId = true)
 	private TurConverseAgent agent;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getActionName() {
-		return actionName;
-	}
-
 	public void setActionName(String actionName) {
 		this.actionName = actionName;
-	}
-
-	public Set<TurConverseContext> getContextInputs() {
-		return this.contextInputs;
 	}
 
 	public void setContextInputs(Set<TurConverseContext> contextInputs) {
@@ -125,19 +111,11 @@ public class TurConverseIntent implements Serializable {
 		}
 	}
 
-	public Set<TurConverseContext> getContextOutputs() {
-		return this.contextOutputs;
-	}
-
 	public void setContextOutputs(Set<TurConverseContext> contextOutputs) {
 		this.contextOutputs.clear();
 		if (contextOutputs != null) {
 			this.contextOutputs.addAll(contextOutputs);
 		}
-	}
-
-	public Set<TurConverseEvent> getEvents() {
-		return this.events;
 	}
 
 	public void setEvents(Set<TurConverseEvent> events) {
@@ -147,19 +125,11 @@ public class TurConverseIntent implements Serializable {
 		}
 	}
 
-	public Set<TurConversePhrase> getPhrases() {
-		return this.phrases;
-	}
-
 	public void setPhrases(Set<TurConversePhrase> phrases) {
 		this.phrases.clear();
 		if (phrases != null) {
 			this.phrases.addAll(phrases);
 		}
-	}
-
-	public Set<TurConverseParameter> getParameters() {
-		return this.parameters;
 	}
 
 	public void setParameters(Set<TurConverseParameter> parameters) {
@@ -169,19 +139,11 @@ public class TurConverseIntent implements Serializable {
 		}
 	}
 
-	public Set<TurConverseResponse> getResponses() {
-		return this.responses;
-	}
-
 	public void setResponses(Set<TurConverseResponse> responses) {
 		this.responses.clear();
 		if (responses != null) {
 			this.responses.addAll(responses);
 		}
-	}
-
-	public TurConverseAgent getAgent() {
-		return agent;
 	}
 
 	public void setAgent(TurConverseAgent agent) {
@@ -192,10 +154,6 @@ public class TurConverseIntent implements Serializable {
 		agent = new TurConverseAgent();
 		agent.setId(agentId);
 
-	}
-
-	public boolean isFallback() {
-		return fallback;
 	}
 
 	public void setFallback(boolean fallback) {

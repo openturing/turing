@@ -20,23 +20,18 @@
  */
 package com.viglet.turing.se.facet;
 
+import lombok.Getter;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Getter
 public class TurSEFacetResult {
 	private String facet;
 	private Map<String, TurSEFacetResultAttr> turSEFacetResultAttr = new LinkedHashMap<>();
 
-	public String getFacet() {
-		return facet;
-	}
-
 	public void setFacet(String facet) {
 		this.facet = facet;
-	}
-
-	public Map<String, TurSEFacetResultAttr> getTurSEFacetResultAttr() {
-		return turSEFacetResultAttr;
 	}
 
 	public void setTurSEFacetResultAttr(Map<String, TurSEFacetResultAttr> turSEFacetResultAttr) {

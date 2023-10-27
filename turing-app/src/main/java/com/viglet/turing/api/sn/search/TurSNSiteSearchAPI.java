@@ -34,6 +34,7 @@ import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNUtils;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,12 +51,12 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/sn/{siteName}/search")
 @Tag(name = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+
 	@Autowired
 	private TurSNSearchProcess turSNSearchProcess;
 	@Autowired
@@ -105,7 +106,7 @@ public class TurSNSiteSearchAPI {
 			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 			return turSNSearchProcess.responseLocales(turSNSite, new URI(String.format("/api/sn/%s/search", siteName)));
 		} catch (URISyntaxException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return Collections.emptyList();
 	}

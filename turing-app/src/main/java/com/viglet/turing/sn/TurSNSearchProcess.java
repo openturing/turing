@@ -501,7 +501,7 @@ public class TurSNSearchProcess {
 			lastPagination = turSEResults.getPageCount();
 			if (turSEResults.getPageCount() - 3 > 0) {
 				firstPagination = turSEResults.getPageCount() - 3;
-			} else if (turSEResults.getPageCount() - 3 <= 0) {
+			} else {
 				firstPagination = 1;
 			}
 		}
@@ -619,7 +619,7 @@ public class TurSNSearchProcess {
 	private int setFirstPagination(TurSEGenericResults turSEResults, int firstPagination) {
 		if (turSEResults.getCurrentPage() - 3 > 0) {
 			firstPagination = turSEResults.getCurrentPage() - 3;
-		} else if (turSEResults.getCurrentPage() - 3 <= 0) {
+		} else {
 			firstPagination = 1;
 		}
 		return firstPagination;

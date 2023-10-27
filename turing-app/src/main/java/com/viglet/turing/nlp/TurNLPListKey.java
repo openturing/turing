@@ -21,16 +21,15 @@
 
 package com.viglet.turing.nlp;
 
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class TurNLPListKey<T> {
+	@Getter
 	private List<T> list;
-	private StringBuilder hashCodeSb = new StringBuilder();
-
-	public List<T> getList() {
-		return list;
-	}
+	private final StringBuilder hashCodeSb = new StringBuilder();
 
 	public void setList(List<T> list) {
 		this.list = list;
@@ -39,11 +38,10 @@ public class TurNLPListKey<T> {
 	@SuppressWarnings("unchecked")
 	public TurNLPListKey(List<T> list) {
 		this.list = (List<T>) ((ArrayList<T>) list).clone();
-		for (int i = 0; i < this.list.size(); i++) {
-			T item = this.list.get(i);
-			hashCodeSb.append(item);
-			hashCodeSb.append(",");
-		}
+        for (T item : this.list) {
+            hashCodeSb.append(item);
+            hashCodeSb.append(",");
+        }
 	}
 
 	@Override

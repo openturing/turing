@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.sn.spotlight;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 
+import lombok.Getter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -43,6 +44,7 @@ import java.util.Set;
  * @author Alexandre Oliveira
  * @since 0.3.4
  */
+@Getter
 @Entity
 @Table(name = "turSNSiteSpotlight")
 @NamedQuery(name = "TurSNSiteSpotlight.findAll", query = "SELECT snss FROM TurSNSiteSpotlight snss")
@@ -93,88 +95,44 @@ public class TurSNSiteSpotlight implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = new HashSet<>();
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getDescription() {
-		return description;
-	}
-
 	public void setDescription(String description) {
 		this.description = description;
-	}
-
-	public TurSNSite getTurSNSite() {
-		return turSNSite;
 	}
 
 	public void setTurSNSite(TurSNSite turSNSite) {
 		this.turSNSite = turSNSite;
 	}
 
-	public Set<TurSNSiteSpotlightDocument> getTurSNSiteSpotlightDocuments() {
-		return turSNSiteSpotlightDocuments;
-	}
-
 	public void setTurSNSiteSpotlightDocuments(Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments) {
 		this.turSNSiteSpotlightDocuments = turSNSiteSpotlightDocuments;
-	}
-
-	public Set<TurSNSiteSpotlightTerm> getTurSNSiteSpotlightTerms() {
-		return turSNSiteSpotlightTerms;
 	}
 
 	public void setTurSNSiteSpotlightTerms(Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms) {
 		this.turSNSiteSpotlightTerms = turSNSiteSpotlightTerms;
 	}
 
-	public int getManaged() {
-		return managed;
-	}
-
 	public void setManaged(int managed) {
 		this.managed = managed;
-	}
-
-	public String getProvider() {
-		return provider;
 	}
 
 	public void setProvider(String provider) {
 		this.provider = provider;
 	}
 
-	public Date getModificationDate() {
-		return modificationDate;
-	}
-
 	public void setModificationDate(Date modificationDate) {
 		this.modificationDate = modificationDate;
 	}
 
-	public String getUnmanagedId() {
-		return unmanagedId;
-	}
-
 	public void setUnmanagedId(String unmanagedId) {
 		this.unmanagedId = unmanagedId;
-	}
-
-	public String getLanguage() {
-		return language;
 	}
 
 	public void setLanguage(String language) {

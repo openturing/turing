@@ -41,10 +41,9 @@ package com.viglet.turing.exchange;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
 import com.viglet.turing.utils.TurUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Component;
@@ -54,10 +53,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Objects;
-
+@Slf4j
 @Component
 public class TurImportExchange {
-	private static final Logger logger = LogManager.getLogger(TurImportExchange.class);
+
 	@Autowired
 	private TurSNSiteImport turSNSiteImport;
 	private static final String EXPORT_FILE = "export.json";
@@ -97,7 +96,7 @@ public class TurImportExchange {
 
 			return;
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		new TurExchange();
 	}
@@ -108,7 +107,7 @@ public class TurImportExchange {
 			MultipartFile multipartFile = new MockMultipartFile(file.getName(), IOUtils.toByteArray(input));
 			return this.importFromMultipartFile(multipartFile);
 		} catch (IOException | IllegalStateException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return new TurExchange();
 	}

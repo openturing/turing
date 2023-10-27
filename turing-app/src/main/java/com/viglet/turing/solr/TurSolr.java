@@ -44,6 +44,7 @@ import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.sn.tr.TurSNTargetingRuleMethod;
 import com.viglet.turing.sn.tr.TurSNTargetingRules;
 import com.viglet.turing.utils.TurSNSiteFieldUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -70,11 +71,10 @@ import java.lang.invoke.MethodHandles;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
 import java.util.stream.Collectors;
-
+@Slf4j
 @Component
 @Transactional
 public class TurSolr {
-    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
     @Autowired
     private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
@@ -96,7 +96,7 @@ public class TurSolr {
             QueryResponse queryResponse = turSolrInstance.getSolrClient().query(query);
             return queryResponse.getResults().getNumFound();
         } catch (SolrServerException | IOException e) {
-            logger.error(e);
+            log.error(e.getMessage(), e);
         }
 
         return 0L;
@@ -104,7 +104,7 @@ public class TurSolr {
     }
 
     public void indexing(TurSolrInstance turSolrInstance, TurSNSite turSNSite, Map<String, Object> attributes) {
-        logger.debug("Executing indexing ...");
+        log.debug("Executing indexing ...");
         attributes.remove("score");
         attributes.remove("_version_");
         attributes.remove("boost");
@@ -112,13 +112,13 @@ public class TurSolr {
     }
 
     public void desindexing(TurSolrInstance turSolrInstance, String id) {
-        logger.debug("Executing desindexing ...");
+        log.debug("Executing desindexing ...");
 
         this.deleteDocument(turSolrInstance, id);
     }
 
     public void desindexingByType(TurSolrInstance turSolrInstance, String type) {
-        logger.debug("Executing desindexing by type {}...", type);
+        log.debug("Executing desindexing by type {}...", type);
         this.deleteDocumentByType(turSolrInstance, type);
 
     }
@@ -128,7 +128,7 @@ public class TurSolr {
             turSolrInstance.getSolrClient().deleteById(id);
             turSolrInstance.getSolrClient().commit();
         } catch (SolrServerException | IOException e) {
-            logger.error(e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -137,7 +137,7 @@ public class TurSolr {
             turSolrInstance.getSolrClient().deleteByQuery("type:" + type);
             turSolrInstance.getSolrClient().commit();
         } catch (SolrServerException | IOException e) {
-            logger.error(e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -241,7 +241,7 @@ public class TurSolr {
         try {
             turSolrInstance.getSolrClient().add(document);
         } catch (SolrServerException | IOException e) {
-            logger.error(e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -258,7 +258,7 @@ public class TurSolr {
             queryResponse = turSolrInstance.getSolrClient().query(query);
             return queryResponse.getResults();
         } catch (IOException | SolrServerException e) {
-            logger.error(e);
+            log.error(e.getMessage(), e);
         }
         return new SolrDocumentList();
 
@@ -273,7 +273,7 @@ public class TurSolr {
             queryResponse = turSolrInstance.getSolrClient().query(query);
             return queryResponse.getSpellCheckResponse();
         } catch (IOException | SolrServerException e) {
-            logger.error(e);
+            log.error(e.getMessage(), e);
         }
         return null;
     }
@@ -293,7 +293,7 @@ public class TurSolr {
                 }
             }
         } catch (IOException | SolrServerException e) {
-            logger.error(e);
+            log.error(e.getMessage(), e);
         }
         return new TurSESpellCheckResult();
     }
@@ -316,7 +316,7 @@ public class TurSolr {
                 turSEResult = createTurSEResult(fieldExtMap, requiredFields, document, hl);
             }
         } catch (SolrServerException | IOException e) {
-            logger.error(e);
+            log.error(e.getMessage(),e);
         }
 
         return turSEResult;
@@ -429,7 +429,7 @@ public class TurSolr {
 
             return Optional.of(turSEResults);
         } catch (IOException | SolrServerException e) {
-            logger.error(e);
+            log.error(e.getMessage(), e);
         }
         return Optional.empty();
     }
@@ -713,7 +713,7 @@ public class TurSolr {
 
             return turSEResults;
         } catch (IOException | SolrServerException e) {
-            logger.error(e);
+            log.error(e.getMessage(), e);
         }
         return null;
     }

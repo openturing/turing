@@ -112,7 +112,7 @@ public class TurUserAPI {
             turUserEdit.setFirstName(turUser.getFirstName());
             turUserEdit.setLastName(turUser.getLastName());
             turUserEdit.setEmail(turUser.getEmail());
-            if (turUser.getPassword() != null && turUser.getPassword().trim().length() > 0) {
+            if (turUser.getPassword() != null && !turUser.getPassword().trim().isEmpty()) {
                 turUserEdit.setPassword(passwordEncoder.encode(turUser.getPassword()));
             }
             turUserEdit.setTurGroups(turUser.getTurGroups());
@@ -130,7 +130,7 @@ public class TurUserAPI {
 
     @PostMapping
     public TurUser turUserAdd(@RequestBody TurUser turUser) {
-        if (turUser.getPassword() != null && turUser.getPassword().trim().length() > 0) {
+        if (turUser.getPassword() != null && !turUser.getPassword().trim().isEmpty()) {
             turUser.setPassword(passwordEncoder.encode(turUser.getPassword()));
             turUserRepository.save(turUser);
         }

@@ -21,6 +21,9 @@
 package com.viglet.turing.se.facet;
 
 
+import lombok.Getter;
+
+@Getter
 public class TurSEFacetResultAttr {
 	private String attribute;
 	private int count;
@@ -29,15 +32,11 @@ public class TurSEFacetResultAttr {
 		this.setAttribute(attribute);
 		this.setCount(count);
 	}
-	public String getAttribute() {
-		return attribute;
-	}
+
 	public void setAttribute(String attribute) {
 		this.attribute = attribute;
 	}
-	public int getCount() {
-		return count;
-	}
+
 	public void setCount(int count) {
 		this.count = count;
 	}

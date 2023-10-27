@@ -20,11 +20,13 @@
  */
 package com.viglet.turing.plugins.nlp.opennlp;
 
+import lombok.Getter;
 import opennlp.tools.tokenize.TokenizerME;
 
 import java.io.Serial;
 import java.io.Serializable;
 
+@Getter
 public class TurTokenizerME implements Serializable {
 
 	@Serial
@@ -34,10 +36,6 @@ public class TurTokenizerME implements Serializable {
 
 	public TurTokenizerME(TokenizerME tokenizerME) {
 		this.tokenizerME = tokenizerME;
-	}
-
-	public TokenizerME getTokenizerME() {
-		return tokenizerME;
 	}
 
 	public void setTokenizerME(TokenizerME tokenizerME) {

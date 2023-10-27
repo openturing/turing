@@ -23,15 +23,13 @@ package com.viglet.turing.nlp;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 
+@Getter
 @Component
 public class TurNLPSentence {
 	private Map<String, TurNLPWord> words = new LinkedHashMap<>();
-
-	public Map<String, TurNLPWord> getWords() {
-		return words;
-	}
 
 	public void setWords(Map<String, TurNLPWord> words) {
 		this.words = words;

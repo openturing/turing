@@ -25,6 +25,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -39,6 +40,7 @@ import java.util.Set;
  * @author Alexandre Oliveira
  * @since 0.3.5
  */
+@Getter
 @Entity
 @Table(name = "turSNSiteMergeProviders")
 @NamedQuery(name = "TurSNSiteMerge.findAll", query = "SELECT snsmp FROM TurSNSiteMergeProviders snsmp")
@@ -80,72 +82,36 @@ public class TurSNSiteMergeProviders implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteMergeProvidersField> overwrittenFields = new HashSet<>();
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public TurSNSite getTurSNSite() {
-		return turSNSite;
 	}
 
 	public void setTurSNSite(TurSNSite turSNSite) {
 		this.turSNSite = turSNSite;
 	}
 
-	public String getLocale() {
-		return locale;
-	}
-
 	public void setLocale(String locale) {
 		this.locale = locale;
-	}
-
-	public String getDescription() {
-		return description;
 	}
 
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public String getProviderFrom() {
-		return providerFrom;
-	}
-
 	public void setProviderFrom(String providerFrom) {
 		this.providerFrom = providerFrom;
-	}
-
-	public String getProviderTo() {
-		return providerTo;
 	}
 
 	public void setProviderTo(String providerTo) {
 		this.providerTo = providerTo;
 	}
 
-	public String getRelationFrom() {
-		return relationFrom;
-	}
-
 	public void setRelationFrom(String relationFrom) {
 		this.relationFrom = relationFrom;
 	}
 
-	public String getRelationTo() {
-		return relationTo;
-	}
-
 	public void setRelationTo(String relationTo) {
 		this.relationTo = relationTo;
-	}
-
-	public Set<TurSNSiteMergeProvidersField> getOverwrittenFields() {
-		return overwrittenFields;
 	}
 
 	public void setOverwrittenFields(Set<TurSNSiteMergeProvidersField> overwrittenFields) {

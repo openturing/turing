@@ -21,6 +21,7 @@
 package com.viglet.turing.se;
 
 import com.viglet.turing.solr.TurSolrInstance;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,10 +42,10 @@ import java.io.InputStreamReader;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
+@Slf4j
 @Component
 public class TurSEStopword {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+
 	@Autowired
 	private ResourceLoader resourceloader;
 	private static final String TEXT_GENERAL = "text_general";
@@ -72,14 +73,14 @@ public class TurSEStopword {
 				stopwordsStream = getStopword(turSolrInstance, stopwordsStream, indexAnalyzer);
 			}
 		} catch (SolrServerException | IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 
 		if (stopwordsStream == null) {
 			try {
 				stopwordsStream = resourceloader.getResource(DEFAULT_STOPWORD_FILE).getInputStream();
 			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
+				log.error(e.getMessage(), e);
 			}
 		}
 		if (stopwordsStream != null) {
@@ -98,7 +99,7 @@ public class TurSEStopword {
 
 				return stopWords;
 			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
+				log.error(e.getMessage(), e);
 			}
 		}
 		return Collections.emptyList();

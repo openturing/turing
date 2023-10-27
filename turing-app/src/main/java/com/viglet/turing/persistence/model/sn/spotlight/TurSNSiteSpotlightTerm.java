@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.sn.spotlight;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -34,6 +35,7 @@ import java.io.Serializable;
  * @author Alexandre Oliveira
  * @since 0.3.4
  */
+@Getter
 @Entity
 @Table(name = "turSNSiteSpotlightTerm")
 @NamedQuery(name = "TurSNSiteSpotlightTerm.findAll", query = "SELECT snsst FROM TurSNSiteSpotlightTerm snsst")
@@ -54,25 +56,13 @@ public class TurSNSiteSpotlightTerm implements Serializable {
 	@ManyToOne(fetch = FetchType.LAZY) // (cascade = {CascadeType.ALL})
 	@JoinColumn(name = "sn_site_spotlight_id")
 	private TurSNSiteSpotlight turSNSiteSpotlight;
-	
-	public String getId() {
-		return id;
-	}
 
 	public void setId(String id) {
 		this.id = id;
 	}
 
-	public String getName() {
-		return name;
-	}
-
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public TurSNSiteSpotlight getTurSNSiteSpotlight() {
-		return turSNSiteSpotlight;
 	}
 
 	public void setTurSNSiteSpotlight(TurSNSiteSpotlight turSNSiteSpotlight) {

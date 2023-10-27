@@ -21,6 +21,9 @@
 
 package com.viglet.turing.converse.exchange.intent;
 
+import lombok.Getter;
+
+@Getter
 public class TurConverseIntentPhraseDataExchange {
 
 	private String text;
@@ -31,32 +34,16 @@ public class TurConverseIntentPhraseDataExchange {
 
 	private boolean userDefined;
 
-	public String getText() {
-		return text;
-	}
-
 	public void setText(String text) {
 		this.text = text;
-	}
-
-	public String getAlias() {
-		return alias;
 	}
 
 	public void setAlias(String alias) {
 		this.alias = alias;
 	}
 
-	public String getMeta() {
-		return meta;
-	}
-
 	public void setMeta(String meta) {
 		this.meta = meta;
-	}
-
-	public boolean isUserDefined() {
-		return userDefined;
 	}
 
 	public void setUserDefined(boolean userDefined) {

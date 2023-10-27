@@ -25,20 +25,19 @@ import com.viglet.turing.nlp.TurNLPEntityRequest;
 import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import com.viglet.turing.solr.TurSolrField;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -46,11 +45,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+@Slf4j
 @Component
 public class TurCoreNLPConnector implements TurNLPPlugin {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
-
 	@Override
 	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest) {
 		return this.request(turNLPRequest);
@@ -83,7 +80,7 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 				}
 			}
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 
 		return this.generateEntityMapFromSentenceTokens(turNLPRequest, entityList);
@@ -99,7 +96,7 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 					entityList.get(turNLPEntityRequest.getName()));
 		}
 
-		logger.debug("CoreNLP getAttributes: {}", entityAttributes);
+		log.debug("CoreNLP getAttributes: {}", entityAttributes);
 		return entityAttributes;
 	}
 
@@ -169,18 +166,11 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 		inSb.setLength(0);
 	}
 
+	@Getter
 	static class EmbeddedToken {
 
 		private final String name;
 		private final String value;
-
-		public String getName() {
-			return name;
-		}
-
-		public String getValue() {
-			return value;
-		}
 
 		public EmbeddedToken(String name, String value) {
 			super();
@@ -189,6 +179,7 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 		}
 	}
 
+	@Getter
 	static class TokenPositon {
 		private String current;
 		private String previous;
@@ -201,24 +192,12 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 			this.newToken = true;
 		}
 
-		public String getCurrent() {
-			return current;
-		}
-
 		public void setCurrent(String current) {
 			this.current = current;
 		}
 
-		public String getPrevious() {
-			return previous;
-		}
-
 		public void setPrevious(String previous) {
 			this.previous = previous;
-		}
-
-		public boolean isNewToken() {
-			return newToken;
 		}
 
 		public void setNewToken(boolean newToken) {

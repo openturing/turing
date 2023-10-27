@@ -22,22 +22,23 @@ package com.viglet.turing.spring.security;
 
 import java.lang.invoke.MethodHandles;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class TurAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
-	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
-	
+
 	@Override
 	public void afterPropertiesSet() {
 		this.setRealmName("Turing");
 		try {
 			super.afterPropertiesSet();
 		} catch (Exception e) {
-			logger.error("afterPropertiesSet: ", e);
+			log.error("afterPropertiesSet: ", e);
 		}
 	}
 }

@@ -21,13 +21,12 @@
 
 package com.viglet.turing.converse.exchange.intent;
 
+import lombok.Getter;
+
+@Getter
 public class TurConverseIntentResponsePlatformsExchange {
 
 	private String dummy;
-
-	public String getDummy() {
-		return dummy;
-	}
 
 	public void setDummy(String dummy) {
 		this.dummy = dummy;

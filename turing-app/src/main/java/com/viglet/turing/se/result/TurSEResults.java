@@ -26,7 +26,9 @@ import java.util.List;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.se.facet.TurSEFacetResult;
+import lombok.Getter;
 
+@Getter
 public class TurSEResults extends TurSEGenericResults {
 	private int qTime;
 	private long elapsedTime;
@@ -37,64 +39,32 @@ public class TurSEResults extends TurSEGenericResults {
 	private List<TurSEFacetResult> facetResults;
 	private List<TurSEGroup> groups;
 
-	public int getqTime() {
-		return qTime;
-	}
-
 	public void setqTime(int qTime) {
 		this.qTime = qTime;
-	}
-
-	public long getElapsedTime() {
-		return elapsedTime;
 	}
 
 	public void setElapsedTime(long elapsedTime) {
 		this.elapsedTime = elapsedTime;
 	}
 
-	public String getQueryString() {
-		return queryString;
-	}
-
 	public void setQueryString(String queryString) {
 		this.queryString = queryString;
-	}
-
-	public String getSort() {
-		return sort;
 	}
 
 	public void setSort(String sort) {
 		this.sort = sort;
 	}
 
-	public TurSESpellCheckResult getSpellCheck() {
-		return spellCheck;
-	}
-
 	public void setSpellCheck(TurSESpellCheckResult spellCheck) {
 		this.spellCheck = spellCheck;
-	}
-
-	public List<TurSESimilarResult> getSimilarResults() {
-		return similarResults;
 	}
 
 	public void setSimilarResults(List<TurSESimilarResult> similarResults) {
 		this.similarResults = similarResults;
 	}
 
-	public List<TurSEFacetResult> getFacetResults() {
-		return facetResults;
-	}
-
 	public void setFacetResults(List<TurSEFacetResult> facetResults) {
 		this.facetResults = facetResults;
-	}
-
-	public List<TurSEGroup> getGroups() {
-		return groups;
 	}
 
 	public void setGroups(List<TurSEGroup> groups) {

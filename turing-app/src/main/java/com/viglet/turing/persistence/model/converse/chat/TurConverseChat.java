@@ -25,6 +25,7 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -38,6 +39,7 @@ import java.util.List;
  * The persistent class for the turConverseChat database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turConverseChat")
 @NamedQuery(name = "TurConverseChat.findAll", query = "SELECT cc FROM TurConverseChat cc")
@@ -75,40 +77,20 @@ public class TurConverseChat implements Serializable {
 
 	private boolean trainingApproved = false;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public Date getDate() {
-		return date;
 	}
 
 	public void setDate(Date date) {
 		this.date = date;
 	}
 
-	public String getSession() {
-		return session;
-	}
-
 	public void setSession(String session) {
 		this.session = session;
 	}
 
-	public TurConverseAgent getAgent() {
-		return agent;
-	}
-
 	public void setAgent(TurConverseAgent agent) {
 		this.agent = agent;
-	}
-
-	public List<TurConverseChatResponse> getResponses() {
-		return this.responses;
 	}
 
 	public void setResponses(List<TurConverseChatResponse> responses) {
@@ -118,40 +100,20 @@ public class TurConverseChat implements Serializable {
 		}
 	}
 
-	public String getSummary() {
-		return summary;
-	}
-
 	public void setSummary(String summary) {
 		this.summary = summary;
-	}
-
-	public int getRequests() {
-		return requests;
 	}
 
 	public void setRequests(int requests) {
 		this.requests = requests;
 	}
 
-	public int getNoMatch() {
-		return noMatch;
-	}
-
 	public void setNoMatch(int noMatch) {
 		this.noMatch = noMatch;
 	}
 
-	public boolean isUpdated() {
-		return updated;
-	}
-
 	public void setUpdated(boolean updated) {
 		this.updated = updated;
-	}
-
-	public boolean isTrainingApproved() {
-		return trainingApproved;
 	}
 
 	public void setTrainingApproved(boolean trainingApproved) {

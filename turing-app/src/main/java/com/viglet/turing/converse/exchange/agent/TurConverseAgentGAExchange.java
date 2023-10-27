@@ -20,8 +20,10 @@
  */
 package com.viglet.turing.converse.exchange.agent;
 
-import java.util.List;
+import lombok.Getter;
 
+import java.util.List;
+@Getter
 public class TurConverseAgentGAExchange {
 
 	private boolean googleAssistantCompatible;
@@ -50,104 +52,52 @@ public class TurConverseAgentGAExchange {
 	
 	private boolean isDeviceAgent;
 
-	public boolean isGoogleAssistantCompatible() {
-		return googleAssistantCompatible;
-	}
-
 	public void setGoogleAssistantCompatible(boolean googleAssistantCompatible) {
 		this.googleAssistantCompatible = googleAssistantCompatible;
-	}
-
-	public String getProject() {
-		return project;
 	}
 
 	public void setProject(String project) {
 		this.project = project;
 	}
 
-	public boolean isWelcomeIntentSignInRequired() {
-		return welcomeIntentSignInRequired;
-	}
-
 	public void setWelcomeIntentSignInRequired(boolean welcomeIntentSignInRequired) {
 		this.welcomeIntentSignInRequired = welcomeIntentSignInRequired;
-	}
-
-	public List<String> getStartIntents() {
-		return startIntents;
 	}
 
 	public void setStartIntents(List<String> startIntents) {
 		this.startIntents = startIntents;
 	}
 
-	public List<String> getSystemIntents() {
-		return systemIntents;
-	}
-
 	public void setSystemIntents(List<String> systemIntents) {
 		this.systemIntents = systemIntents;
-	}
-
-	public List<String> getEndIntentIds() {
-		return endIntentIds;
 	}
 
 	public void setEndIntentIds(List<String> endIntentIds) {
 		this.endIntentIds = endIntentIds;
 	}
 
-	public TurConverseAgentGAOAuthExchange getoAuthLinking() {
-		return oAuthLinking;
-	}
-
 	public void setoAuthLinking(TurConverseAgentGAOAuthExchange oAuthLinking) {
 		this.oAuthLinking = oAuthLinking;
-	}
-
-	public String getVoiceType() {
-		return voiceType;
 	}
 
 	public void setVoiceType(String voiceType) {
 		this.voiceType = voiceType;
 	}
 
-	public List<String> getCapabilities() {
-		return capabilities;
-	}
-
 	public void setCapabilities(List<String> capabilities) {
 		this.capabilities = capabilities;
-	}
-
-	public String getEnv() {
-		return env;
 	}
 
 	public void setEnv(String env) {
 		this.env = env;
 	}
 
-	public String getProtocolVersion() {
-		return protocolVersion;
-	}
-
 	public void setProtocolVersion(String protocolVersion) {
 		this.protocolVersion = protocolVersion;
 	}
 
-	public String getAutoPreviewEnabled() {
-		return autoPreviewEnabled;
-	}
-
 	public void setAutoPreviewEnabled(String autoPreviewEnabled) {
 		this.autoPreviewEnabled = autoPreviewEnabled;
-	}
-
-	public boolean getIsDeviceAgent() {
-		return isDeviceAgent;
 	}
 
 	public void setIsDeviceAgent(boolean isDeviceAgent) {

@@ -1,20 +1,15 @@
 package com.viglet.turing.properties;
 
+import lombok.Getter;
+
+@Getter
 public class TurSolrProperty {
 
 	private int timeout;
 	private boolean cloud;
 
-	public int getTimeout() {
-		return timeout;
-	}
-
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
-	}
-
-	public boolean isCloud() {
-		return cloud;
 	}
 
 	public void setCloud(boolean cloud) {

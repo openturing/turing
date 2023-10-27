@@ -20,16 +20,15 @@
  */
 package com.viglet.turing.se.result;
 
+import lombok.Getter;
+
 import java.util.HashMap;
 import java.util.Map;
 
+@Getter
 public class TurSEResult {
 
 	private Map<String, Object> fields = new HashMap<>();
-
-	public Map<String, Object> getFields() {
-		return fields;
-	}
 
 	public void setFields(Map<String, Object> fields) {
 		this.fields = fields;

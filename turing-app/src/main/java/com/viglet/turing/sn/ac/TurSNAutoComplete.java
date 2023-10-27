@@ -20,26 +20,22 @@
  */
 package com.viglet.turing.sn.ac;
 
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.solr.client.solrj.response.SpellCheckResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import com.viglet.turing.se.TurSEStopword;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.solr.client.solrj.response.SpellCheckResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+@Slf4j
 @Component
 public class TurSNAutoComplete {
-	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	private static final String SPACE_CHAR = " ";
 	private static final boolean USE_BIGGER_TERMS = false;
 	private static final boolean USE_TERMS_QUERY_EQUALS_AUTO_COMPLETE = true;
@@ -53,7 +49,7 @@ public class TurSNAutoComplete {
 
 	public List<String> autoComplete(String siteName, String q, String locale, long rows) {
 	
-		if (q.length() > 1 && !q.equals("*")) {
+		if (q.length() > 1) {
 			return turSolrInstanceProcess.initSolrInstance(siteName, locale).map(instance -> {
 				SpellCheckResponse turSEResults = executeAutoCompleteFromSE(instance, q);
 				int numberOfWordsFromQuery = q.split(SPACE_CHAR).length;
@@ -77,7 +73,7 @@ public class TurSNAutoComplete {
 		try {
 			turSEResults = turSolr.autoComplete(turSolrInstance, q);
 		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return turSEResults;
 	}
@@ -110,13 +106,8 @@ public class TurSNAutoComplete {
 		boolean numberOfWordsIsEquals = numberOfWordsFromQuery == numberOfWordsFromAutoCompleteItem;
 		boolean firstWordIsStopword = autoCompleteListData.getStopWords().contains(autoCompleteItemFirstToken);
 		boolean lastWordIsStopword = autoCompleteListData.getStopWords().contains(autoCompleteItemLastToken);
-		boolean addItem = true;
 
-		if ((USE_TERMS_QUERY_EQUALS_AUTO_COMPLETE && !numberOfWordsIsEquals) || firstWordIsStopword || lastWordIsStopword) {
-			addItem = false;
-		}
-		
-		return addItem;
+        return (!USE_TERMS_QUERY_EQUALS_AUTO_COMPLETE || numberOfWordsIsEquals) && !firstWordIsStopword && !lastWordIsStopword;
 	}
 
 	private boolean hasSuggestions(SpellCheckResponse turSEResults) {

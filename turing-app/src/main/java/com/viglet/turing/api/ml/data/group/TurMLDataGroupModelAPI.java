@@ -30,6 +30,7 @@ import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import opennlp.tools.doccat.*;
 import opennlp.tools.util.InputStreamFactory;
 import opennlp.tools.util.ObjectStream;
@@ -49,12 +50,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/ml/data/group/{dataGroupId}/model")
 @Tag(name = "Machine Learning Model by Group", description = "Machine Learning Model by Group API")
 public class TurMLDataGroupModelAPI {
-	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurDataGroupRepository turDataGroupRepository;
 	@Autowired
@@ -133,7 +133,7 @@ public class TurMLDataGroupModelAPI {
 			try (PrintWriter out = new PrintWriter(trainFilePath)) {
 				out.println(trainSB.toString().trim());
 			} catch (FileNotFoundException e) {
-				logger.error(e);
+				log.error(e.getMessage(), e);
 			}
 
 			DoccatModel model = null;
@@ -154,14 +154,14 @@ public class TurMLDataGroupModelAPI {
 				model = DocumentCategorizerME.train("en", sampleStream, TrainingParameters.defaultParams(), factory);
 
 			} catch (IOException e) {
-				logger.error(e);
+				log.error(e.getMessage(), e);
 			}
 
 			if (model != null) {
 				try (OutputStream modelOut = new BufferedOutputStream(new FileOutputStream(modelFilePath))) {
 					model.serialize(modelOut);
 				} catch (IOException e) {
-					logger.error(e);
+					log.error(e.getMessage(), e);
 				}
 
 			}

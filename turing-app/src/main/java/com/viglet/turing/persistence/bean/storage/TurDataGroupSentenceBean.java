@@ -21,8 +21,10 @@
 
 package com.viglet.turing.persistence.bean.storage;
 
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 
+@Getter
 @Component
 public class TurDataGroupSentenceBean {
 
@@ -31,34 +33,23 @@ public class TurDataGroupSentenceBean {
 	private int turData;
 	private int turDataGroup;
 	private int turMLCategory;
-	
-	public int getId() {
-		return id;
-	}
+
 	public void setId(int id) {
 		this.id = id;
 	}
-	public String getSentence() {
-		return sentence;
-	}
+
 	public void setSentence(String sentence) {
 		this.sentence = sentence;
 	}
-	public int getTurData() {
-		return turData;
-	}
+
 	public void setTurData(int turData) {
 		this.turData = turData;
 	}
-	public int getTurDataGroup() {
-		return turDataGroup;
-	}
+
 	public void setTurDataGroup(int turDataGroup) {
 		this.turDataGroup = turDataGroup;
 	}
-	public int getTurMLCategory() {
-		return turMLCategory;
-	}
+
 	public void setTurMLCategory(int turMLCategory) {
 		this.turMLCategory = turMLCategory;
 	}

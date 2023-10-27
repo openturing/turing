@@ -25,6 +25,7 @@ import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
 import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatResponseRepository;
 import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.common.SolrDocument;
@@ -36,10 +37,9 @@ import java.lang.invoke.MethodHandles;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-
+@Slf4j
 @Component
 public class TurConverse {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurConverseChatResponseRepository turConverseChatResponseRepository;
 	@Autowired
@@ -270,15 +270,15 @@ public class TurConverse {
 		showSessionAttribute(session,TurConverseConstants.NEXT_PARAMETER);
 		showSessionAttribute(session,TurConverseConstants.NEXT_CONTEXT);
 		showSessionAttribute(session,TurConverseConstants.INTENT);
-		logger.debug("-----");
+		log.debug("-----");
 	}
 
 	private void showSessionAttribute(HttpSession session, String attribute) {
-		logger.debug("{}: {}", attribute, session.getAttribute(attribute));
+		log.debug("{}: {}", attribute, session.getAttribute(attribute));
 	}
 
 	public void cleanSession(HttpSession session) {
-		logger.debug("Clean Session");
+		log.debug("Clean Session");
 		session.removeAttribute(TurConverseConstants.HAS_PARAMETER);
 		session.removeAttribute(TurConverseConstants.NEXT_PARAMETER);
 		session.removeAttribute(TurConverseConstants.NEXT_CONTEXT);

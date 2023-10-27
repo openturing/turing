@@ -21,6 +21,7 @@
 package com.viglet.turing.sn.spotlight;
 
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import lombok.Getter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -29,6 +30,7 @@ import java.io.Serializable;
  * @author Alexandre Oliveira
  * @since 0.3.5
  */
+@Getter
 public class TurSNSpotlightTermCacheBean implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -42,24 +44,12 @@ public class TurSNSpotlightTermCacheBean implements Serializable {
 		this.spotlight = spotlight;
 	}
 
-	public String getTerm() {
-		return term;
-	}
-
 	public void setTerm(String term) {
 		this.term = term;
 	}
 
-	public String getSpotlightId() {
-		return spotlightId;
-	}
-
 	public void setSpotlightId(String spotlightId) {
 		this.spotlightId = spotlightId;
-	}
-
-	public TurSNSiteSpotlight getSpotlight() {
-		return spotlight;
 	}
 
 	public void setSpotlight(TurSNSiteSpotlight spotlight) {

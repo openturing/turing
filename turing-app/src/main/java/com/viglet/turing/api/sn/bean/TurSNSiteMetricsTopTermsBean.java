@@ -21,6 +21,7 @@
 package com.viglet.turing.api.sn.bean;
 
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.List;
  * @since 0.3.6
  *
  */
+@Getter
 public class TurSNSiteMetricsTopTermsBean {
 
 	private List<TurSNSiteMetricAccessTerm> topTerms = new ArrayList<>();
@@ -58,32 +60,16 @@ public class TurSNSiteMetricsTopTermsBean {
 		}
 	}
 
-	public int getTotalTermsPeriod() {
-		return totalTermsPeriod;
-	}
-
 	public void setTotalTermsPeriod(int totalTermsPeriod) {
 		this.totalTermsPeriod = totalTermsPeriod;
-	}
-
-	public List<TurSNSiteMetricAccessTerm> getTopTerms() {
-		return topTerms;
 	}
 
 	public void setTopTerms(List<TurSNSiteMetricAccessTerm> topTerms) {
 		this.topTerms = topTerms;
 	}
 
-	public int getTotalTermsPreviousPeriod() {
-		return totalTermsPreviousPeriod;
-	}
-
 	public void setTotalTermsPreviousPeriod(int totalTermsPreviousPeriod) {
 		this.totalTermsPreviousPeriod = totalTermsPreviousPeriod;
-	}
-
-	public int getVariationPeriod() {
-		return variationPeriod;
 	}
 
 	public void setVariationPeriod(int variationPeriod) {

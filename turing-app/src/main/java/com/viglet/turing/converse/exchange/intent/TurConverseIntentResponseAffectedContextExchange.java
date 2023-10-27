@@ -21,6 +21,9 @@
 
 package com.viglet.turing.converse.exchange.intent;
 
+import lombok.Getter;
+
+@Getter
 public class TurConverseIntentResponseAffectedContextExchange {
 
 	private String name;
@@ -29,24 +32,12 @@ public class TurConverseIntentResponseAffectedContextExchange {
 	
 	private int lifespan;
 
-	public String getName() {
-		return name;
-	}
-
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public TurConverseIntentResponseContextParameterExchange getParameters() {
-		return parameters;
-	}
-
 	public void setParameters(TurConverseIntentResponseContextParameterExchange parameters) {
 		this.parameters = parameters;
-	}
-
-	public int getLifespan() {
-		return lifespan;
 	}
 
 	public void setLifespan(int lifespan) {

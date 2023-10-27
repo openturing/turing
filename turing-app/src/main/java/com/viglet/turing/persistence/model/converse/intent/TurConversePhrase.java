@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.converse.intent;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -32,6 +33,7 @@ import java.io.Serializable;
  * The persistent class for the turConversePhrase database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turConversePhrase")
 @NamedQuery(name = "TurConversePhrase.findAll", query = "SELECT cp FROM TurConversePhrase cp")
@@ -60,24 +62,12 @@ public class TurConversePhrase implements Serializable {
 		this.setText(text);
 	}
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
 	}
 
-	public String getText() {
-		return text;
-	}
-
 	public void setText(String text) {
 		this.text = text;
-	}
-
-	public TurConverseIntent getIntent() {
-		return intent;
 	}
 
 	public void setIntent(TurConverseIntent intent) {

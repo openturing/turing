@@ -27,6 +27,7 @@ import com.viglet.turing.persistence.repository.ml.TurMLModelRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import opennlp.tools.doccat.*;
 import opennlp.tools.util.InputStreamFactory;
 import opennlp.tools.util.ObjectStream;
@@ -44,12 +45,11 @@ import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/ml/model")
 @Tag(name ="Machine Learning Model", description = "Machine Learning Model API")
 public class TurMLModelAPI {
-	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 	@Autowired
@@ -105,7 +105,7 @@ public class TurMLModelAPI {
 			modelStream = new FileInputStream(modelFile);
 			m = new DoccatModel(modelStream);
 		} catch (IOException e) {
-			logger.error(e);
+			log.error(e.getMessage(), e);
 		}
 		String[] inputText = {
 				"Republicans in Congress will start this week on an obstacle course even more arduous than health care: the first overhaul of the tax code in three decades." };
@@ -135,7 +135,7 @@ public class TurMLModelAPI {
 		try (PrintWriter out = new PrintWriter("store/ml/train/generate.train")) {
 			out.println(trainSB.toString().trim());
 		} catch (FileNotFoundException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 
 		String modelFile = "store/ml/model/generate.bin";
@@ -146,18 +146,15 @@ public class TurMLModelAPI {
 				}
 			};
 
-			Charset charset = StandardCharsets.UTF_8;
-			ObjectStream<String> lineStream = new PlainTextByLineStream(isf, charset);
+			ObjectStream<String> lineStream = new PlainTextByLineStream(isf, StandardCharsets.UTF_8);
 			ObjectStream<DocumentSample> sampleStream = new DocumentSampleStream(lineStream);
 
-			DoccatFactory factory = new DoccatFactory();
-
 			DoccatModel model = DocumentCategorizerME.train("en", sampleStream, TrainingParameters.defaultParams(),
-					factory);
+					new DoccatFactory());
 			model.serialize(modelOut);
 
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return null;
 	}

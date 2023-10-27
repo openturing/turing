@@ -20,15 +20,14 @@
  */
 package com.viglet.turing.api.nlp.bean;
 
+import lombok.Getter;
+
 import java.util.List;
 
+@Getter
 public class TurNLPValidateDocument {
 
 	private List<TurNLPValidateEntity> entities;
-
-	public List<TurNLPValidateEntity> getEntities() {
-		return entities;
-	}
 
 	public void setEntities(List<TurNLPValidateEntity> entities) {
 		this.entities = entities;

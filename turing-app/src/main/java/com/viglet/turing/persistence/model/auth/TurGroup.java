@@ -21,6 +21,7 @@
 package com.viglet.turing.persistence.model.auth;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -38,47 +39,35 @@ public class TurGroup implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Getter
 	@Id
 	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	@Getter
 	private String name;
 
+	@Getter
 	private String description;
 
 	@ManyToMany(mappedBy = "turGroups")
 	private Set<TurRole> turRoles = new HashSet<>();
 
+	@Getter
 	@ManyToMany(mappedBy = "turGroups")
 	private Set<TurUser> turUsers = new HashSet<>();
 
-	public String getId() {
-		return this.id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return this.name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getDescription() {
-		return this.description;
-	}
-
 	public void setDescription(String description) {
 		this.description = description;
-	}
-
-	public Set<TurUser> getTurUsers() {
-		return this.turUsers;
 	}
 
 	public void setTurUsers(Set<TurUser> turUsers) {

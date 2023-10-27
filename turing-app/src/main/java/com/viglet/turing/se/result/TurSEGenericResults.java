@@ -21,8 +21,11 @@
 
 package com.viglet.turing.se.result;
 
+import lombok.Getter;
+
 import java.util.List;
 
+@Getter
 public class TurSEGenericResults {
 	private long numFound;
 	private long start;
@@ -31,48 +34,24 @@ public class TurSEGenericResults {
 	private int currentPage;
 	private List<TurSEResult> results;
 
-	public int getCurrentPage() {
-		return currentPage;
-	}
-
 	public void setCurrentPage(int currentPage) {
 		this.currentPage = currentPage;
-	}
-
-	public long getNumFound() {
-		return numFound;
 	}
 
 	public void setNumFound(long numFound) {
 		this.numFound = numFound;
 	}
 
-	public long getStart() {
-		return start;
-	}
-
 	public void setStart(long start) {
 		this.start = start;
-	}
-
-	public int getPageCount() {
-		return pageCount;
 	}
 
 	public void setPageCount(int pageCount) {
 		this.pageCount = pageCount;
 	}
 
-	public int getLimit() {
-		return limit;
-	}
-
 	public void setLimit(int limit) {
 		this.limit = limit;
-	}
-
-	public List<TurSEResult> getResults() {
-		return results;
 	}
 
 	public void setResults(List<TurSEResult> results) {

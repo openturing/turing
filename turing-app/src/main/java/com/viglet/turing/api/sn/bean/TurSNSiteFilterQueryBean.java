@@ -20,24 +20,19 @@
  */
 package com.viglet.turing.api.sn.bean;
 
+import lombok.Getter;
+
 import java.util.List;
 
+@Getter
 public class TurSNSiteFilterQueryBean {
 
 	private List<String> hiddenItems;
 
 	private List<String> items;
 
-	public List<String> getHiddenItems() {
-		return hiddenItems;
-	}
-
 	public void setHiddenItems(List<String> hiddenItems) {
 		this.hiddenItems = hiddenItems;
-	}
-
-	public List<String> getItems() {
-		return items;
 	}
 
 	public void setItems(List<String> items) {

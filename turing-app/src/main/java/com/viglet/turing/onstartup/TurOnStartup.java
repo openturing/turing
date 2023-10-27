@@ -34,6 +34,7 @@ import com.viglet.turing.onstartup.storage.TurDataGroupStartup;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.onstartup.system.TurLocaleOnStartup;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,11 +44,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.invoke.MethodHandles;
-
+@Slf4j
 @Component
 @Transactional
 public class TurOnStartup implements ApplicationRunner {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
 	@Autowired
@@ -91,7 +91,7 @@ public class TurOnStartup implements ApplicationRunner {
 
 		if (turConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
 
-			logger.info("First Time Configuration ...");
+			log.info("First Time Configuration ...");
 
 			turLocaleOnStartup.createDefaultRows();
 			turGroupOnStartup.createDefaultRows();
@@ -113,7 +113,7 @@ public class TurOnStartup implements ApplicationRunner {
 			
 			turConfigVarOnStartup.createDefaultRows();
 
-			logger.info("Configuration finished.");
+			log.info("Configuration finished.");
 		}
 
 	}

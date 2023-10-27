@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -37,6 +38,7 @@ import java.util.Set;
  * The persistent class for the turConverseParameter database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turConverseParameter")
 @NamedQuery(name = "TurConverseParameter.findAll", query = "SELECT cp FROM TurConverseParameter cp")
@@ -69,56 +71,28 @@ public class TurConverseParameter implements Serializable {
 	@JoinColumn(name = "intent_id")
 	private TurConverseIntent intent;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public int getPosition() {
-		return position;
 	}
 
 	public void setPosition(int position) {
 		this.position = position;
 	}
 
-	public boolean isRequired() {
-		return required;
-	}
-
 	public void setRequired(boolean required) {
 		this.required = required;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getEntity() {
-		return entity;
-	}
-
 	public void setEntity(String entity) {
 		this.entity = entity;
 	}
 
-	public String getValue() {
-		return value;
-	}
-
 	public void setValue(String value) {
 		this.value = value;
-	}
-
-	public Set<TurConversePrompt> getPrompts() {
-		return this.prompts;
 	}
 
 	public void setPrompts(Set<TurConversePrompt> prompts) {
@@ -126,10 +100,6 @@ public class TurConverseParameter implements Serializable {
 		if (prompts != null) {
 			this.prompts.addAll(prompts);
 		}
-	}
-
-	public TurConverseIntent getIntent() {
-		return intent;
 	}
 
 	public void setIntent(TurConverseIntent intent) {

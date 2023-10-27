@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.solr;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -34,10 +35,9 @@ import java.net.URL;
  * @since 0.3.5
  *
  */
+@Slf4j
 @Component
 public class TurSolrCache {
-    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
-
     public boolean isSolrCoreExists(String urlString) {
         int responseCode = 0;
         URL url;
@@ -46,7 +46,7 @@ public class TurSolrCache {
             HttpURLConnection huc = (HttpURLConnection) url.openConnection();
             responseCode = huc.getResponseCode();
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return responseCode == 200;
     }

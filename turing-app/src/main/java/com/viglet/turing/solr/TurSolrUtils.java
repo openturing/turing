@@ -23,25 +23,21 @@ package com.viglet.turing.solr;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.se.result.TurSEResult;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.http.HttpHeaders;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.solr.common.SolrDocument;
 import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
-
+@Slf4j
 public class TurSolrUtils {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
-
 
 	private TurSolrUtils() {
 		throw new IllegalStateException("Solr Utility class");
@@ -66,7 +62,7 @@ public class TurSolrUtils {
 		try {
 			client.send(request, HttpResponse.BodyHandlers.ofString());
 		} catch (IOException | InterruptedException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -101,7 +97,7 @@ public class TurSolrUtils {
 		try {
 			client.send(request, HttpResponse.BodyHandlers.ofString());
 		} catch (IOException | InterruptedException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -123,7 +119,7 @@ public class TurSolrUtils {
 		try {
 			client.send(request, HttpResponse.BodyHandlers.ofString());
 		} catch (IOException | InterruptedException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -148,7 +144,7 @@ public class TurSolrUtils {
 		try {
 			client.send(request, HttpResponse.BodyHandlers.ofString());
 		} catch (IOException | InterruptedException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 	}
 	public static void createCollection(String solrUrl, String coreName, InputStream inputStream) {
@@ -179,7 +175,7 @@ public class TurSolrUtils {
 		try {
 			client.send(request, HttpResponse.BodyHandlers.ofString());
 		} catch (IOException | InterruptedException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 	}
 	public static TurSEResult createTurSEResultFromDocument(SolrDocument document) {

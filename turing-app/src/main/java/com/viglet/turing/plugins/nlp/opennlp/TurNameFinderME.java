@@ -20,11 +20,13 @@
  */
 package com.viglet.turing.plugins.nlp.opennlp;
 
+import lombok.Getter;
 import opennlp.tools.namefind.NameFinderME;
 
 import java.io.Serial;
 import java.io.Serializable;
 
+@Getter
 public class TurNameFinderME implements Serializable {
 
 	@Serial
@@ -34,10 +36,6 @@ public class TurNameFinderME implements Serializable {
 
 	public TurNameFinderME(NameFinderME nameFinderME) {
 		this.nameFinderME = nameFinderME;
-	}
-
-	public NameFinderME getNameFinderME() {
-		return nameFinderME;
 	}
 
 	public void setNameFinderME(NameFinderME nameFinderME) {

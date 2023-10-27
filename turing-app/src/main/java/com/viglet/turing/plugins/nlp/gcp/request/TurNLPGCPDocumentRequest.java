@@ -20,6 +20,8 @@
  */
 package com.viglet.turing.plugins.nlp.gcp.request;
 
+import lombok.Getter;
+
 /**
  * 
  * @author Alexandre Oliveira
@@ -27,6 +29,7 @@ package com.viglet.turing.plugins.nlp.gcp.request;
  * @since 0.3.6
  *
  */
+@Getter
 public class TurNLPGCPDocumentRequest {
 
 	private TurNLPGCPTypeResponse type;
@@ -44,32 +47,16 @@ public class TurNLPGCPDocumentRequest {
 		this.content = content;
 	}
 
-	public TurNLPGCPTypeResponse getType() {
-		return type;
-	}
-
 	public void setType(TurNLPGCPTypeResponse type) {
 		this.type = type;
-	}
-
-	public String getLanguage() {
-		return language;
 	}
 
 	public void setLanguage(String language) {
 		this.language = language;
 	}
 
-	public String getContent() {
-		return content;
-	}
-
 	public void setContent(String content) {
 		this.content = content;
-	}
-
-	public String getGcsContentUri() {
-		return gcsContentUri;
 	}
 
 	public void setGcsContentUri(String gcsContentUri) {

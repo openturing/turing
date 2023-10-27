@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.sn.locale;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -35,6 +36,7 @@ import java.io.Serializable;
  * @author Alexandre Oliveira
  * @since 0.3.5
  */
+@Getter
 @Entity
 @Table(name = "turSNSiteLocale")
 @NamedQuery(name = "TurSNSiteLocale.findAll", query = "SELECT snsl FROM TurSNSiteLocale snsl")
@@ -63,40 +65,20 @@ public class TurSNSiteLocale implements Serializable {
 	@JoinColumn(name = "sn_site_id", nullable = false)
 	private TurSNSite turSNSite;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getLanguage() {
-		return language;
 	}
 
 	public void setLanguage(String language) {
 		this.language = language;
 	}
 
-	public String getCore() {
-		return core;
-	}
-
 	public void setCore(String core) {
 		this.core = core;
 	}
 
-	public TurNLPInstance getTurNLPInstance() {
-		return turNLPInstance;
-	}
-
 	public void setTurNLPInstance(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
-	}
-
-	public TurSNSite getTurSNSite() {
-		return turSNSite;
 	}
 
 	public void setTurSNSite(TurSNSite turSNSite) {

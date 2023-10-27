@@ -28,6 +28,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.utils.TurUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,12 +57,12 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.UUID;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/sn/{siteName}/import")
 @Tag(name = "Semantic Navigation Import", description = "Semantic Navigation Import API")
 public class TurSNImportAPI {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+
 	@Autowired
 	private JmsMessagingTemplate jmsMessagingTemplate;
 	@Autowired
@@ -80,7 +81,7 @@ public class TurSNImportAPI {
 			turSNJobItems.forEach(turSNJobItem -> {
 				if (turSNJobItem != null) {
 					if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
-						logger.warn(
+						log.warn(
 								"Create Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
 								turSNJobItem.getAttributes() != null
 										? turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE)
@@ -89,19 +90,19 @@ public class TurSNImportAPI {
 					} else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
 						if (turSNJobItem.getAttributes() != null
 								&& turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
-							logger.warn(
+							log.warn(
 									"Delete Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
 									turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), siteName,
 									turSNJobItem.getLocale(), siteName);
 						} else {
-							logger.warn(
+							log.warn(
 									"Delete Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
 									turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE), siteName,
 									turSNJobItem.getLocale(), siteName);
 						}
 					}
 				} else {
-					logger.warn("No JobItem' of '{}' SN Site", siteName);
+					log.warn("No JobItem' of '{}' SN Site", siteName);
 				}
 			});
 			return false;
@@ -112,26 +113,23 @@ public class TurSNImportAPI {
 	public boolean turSNImportZipFileBroker(@PathVariable String siteName,
 			@RequestParam("file") MultipartFile multipartFile) {
 		File extractFolder = TurUtils.extractZipFile(multipartFile);
-		if (extractFolder != null) {
-			TurSNJobItems turSNJobItems = null;
-			try (FileInputStream fileInputStream = new FileInputStream(
-					extractFolder.getAbsolutePath().concat(File.separator).concat(TurSNConstants.EXPORT_FILE))) {
-				turSNJobItems = new ObjectMapper().readValue(fileInputStream, TurSNJobItems.class);
-				turSNJobItems.forEach(turSNJobItem -> turSNJobItem.getAttributes().entrySet()
-						.forEach(attribute -> extractTextOfFileAttribute(extractFolder, attribute)));
-			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
-			}
-			try {
-				FileUtils.deleteDirectory(extractFolder);
-			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
-			}
-			return turSNJobItems != null && turSNImportBroker(siteName, turSNJobItems);
+        TurSNJobItems turSNJobItems = null;
+        try (FileInputStream fileInputStream = new FileInputStream(
+                extractFolder.getAbsolutePath().concat(File.separator).concat(TurSNConstants.EXPORT_FILE))) {
+            turSNJobItems = new ObjectMapper().readValue(fileInputStream, TurSNJobItems.class);
+            turSNJobItems.forEach(turSNJobItem -> turSNJobItem.getAttributes().entrySet()
+                    .forEach(attribute -> extractTextOfFileAttribute(extractFolder, attribute)));
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+        try {
+            FileUtils.deleteDirectory(extractFolder);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+        return turSNJobItems != null && turSNImportBroker(siteName, turSNJobItems);
 
-		}
-		return false;
-	}
+    }
 
 	private void extractTextOfFileAttribute(File extractFolder, Map.Entry<String, Object> attribute) {
 		if (attribute.getValue().toString().startsWith(TurSNConstants.FILE_PROTOCOL)) {
@@ -187,7 +185,7 @@ public class TurSNImportAPI {
 							contentFile.append(handlerInner.toString());
 
 						} catch (IOException | SAXException | TikaException e) {
-							logger.error(e);
+							log.error(e.getMessage(), e);
 						}
 						FileUtils.delete(tempFile);
 					}
@@ -202,16 +200,16 @@ public class TurSNImportAPI {
 				attribute.setValue(TurCommonsUtils.cleanTextContent(contentFile.toString()));
 
 			} catch (IOException | SAXException | TikaException e) {
-				logger.error(e);
+				log.error(e.getMessage(), e);
 			}
 		}
 	}
 
 	public void send(TurSNJob turSNJob) {
 		sentQueueInfo(turSNJob);
-		if (logger.isDebugEnabled()) {
-			logger.debug("Sent job - {}", TurSNConstants.INDEXING_QUEUE);
-			logger.debug("turSNJob: {}", turSNJob.getTurSNJobItems());
+		if (log.isDebugEnabled()) {
+			log.debug("Sent job - {}", TurSNConstants.INDEXING_QUEUE);
+			log.debug("turSNJob: {}", turSNJob.getTurSNJobItems());
 		}
 		this.jmsMessagingTemplate.convertAndSend(TurSNConstants.INDEXING_QUEUE, turSNJob);
 	}
@@ -227,7 +225,7 @@ public class TurSNImportAPI {
 				} else if (turJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
 					action = "deindex";
 				}
-				logger.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).", action,
+				log.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).", action,
 						turJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(),
 						turJobItem.getLocale());
 			}

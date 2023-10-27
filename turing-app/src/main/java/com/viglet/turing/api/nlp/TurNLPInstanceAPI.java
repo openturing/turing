@@ -49,6 +49,8 @@ import com.viglet.turing.utils.TurUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.exception.TikaException;
@@ -83,12 +85,11 @@ import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.regex.Pattern;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/nlp")
 @Tag(name = "Natural Language Processing", description = "Natural Language Processing API")
 public class TurNLPInstanceAPI {
-    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
     private static final String NLP_TEMP_FILE = "nlp_temp";
     @Autowired
     private TurNLPInstanceRepository turNLPInstanceRepository;
@@ -203,7 +204,7 @@ public class TurNLPInstanceAPI {
                         contentFile.append(TurCommonsUtils.cleanTextContent(handlerInner.toString()));
 
                     } catch (IOException | SAXException | TikaException e) {
-                        logger.error(e.getMessage(), e);
+                        log.error(e.getMessage(), e);
                     }
                     tempFile.deleteOnExit();
                 }
@@ -223,7 +224,7 @@ public class TurNLPInstanceAPI {
             }).orElse(new RedactionScript());
 
         } catch (IOException | SAXException | TikaException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
 
         return null;
@@ -267,7 +268,7 @@ public class TurNLPInstanceAPI {
                         TurNLPValidateDocument.class);
 
             } catch (JsonProcessingException e) {
-                logger.error(e.getMessage(), e);
+                log.error(e.getMessage(), e);
             }
             if (turFileAttributes != null && turNLPValidateDocument != null) {
                 TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance,
@@ -279,7 +280,7 @@ public class TurNLPInstanceAPI {
                         pdfReader = new PdfReader(file);
                         pdfReader.setUnethicalReading(true);
                     } catch (IOException e) {
-                        logger.error(e.getMessage(), e);
+                        log.error(e.getMessage(), e);
                     }
                     if (pdfReader != null) {
                         try (PdfDocument pdf = new PdfDocument(pdfReader,
@@ -291,10 +292,10 @@ public class TurNLPInstanceAPI {
                             try {
                                 PdfCleaner.autoSweepCleanUp(pdf, strategy);
                             } catch (IOException e) {
-                                logger.error(e.getMessage(), e);
+                                log.error(e.getMessage(), e);
                             }
                         } catch (IOException e) {
-                            logger.error(e.getMessage(), e);
+                            log.error(e.getMessage(), e);
                         }
                     }
                 }
@@ -376,20 +377,17 @@ public class TurNLPInstanceAPI {
                 }
             }
         } catch (FileNotFoundException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return false;
     }
 
+    @Getter
     public static class TurNLPTextValidate {
         String text;
 
         public TurNLPTextValidate() {
             super();
-        }
-
-        public String getText() {
-            return text;
         }
 
         public void setText(String text) {

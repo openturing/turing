@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.Fetch;
 
 import java.io.Serial;
@@ -36,6 +37,7 @@ import java.util.List;
  * The persistent class for the turCategory database table.
  * 
  */
+@Getter
 @Entity
 @Table(name="turMLCategory")
 @NamedQuery(name="TurMLCategory.findAll", query="SELECT mlc FROM TurMLCategory mlc")
@@ -69,40 +71,20 @@ public class TurMLCategory implements Serializable {
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentences;
 
-	public int getId() {
-		return this.id;
-	}
-
 	public void setId(int id) {
 		this.id = id;
-	}
-
-	public String getDescription() {
-		return this.description;
 	}
 
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public String getInternalName() {
-		return this.internalName;
-	}
-
 	public void setInternalName(String internalName) {
 		this.internalName = internalName;
 	}
 
-	public String getName() {
-		return this.name;
-	}
-
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public List<TurDataGroupCategory> getTurDataGroupCategories() {
-		return this.turDataGroupCategories;
 	}
 
 	public void setTurDataGroupCategories(List<TurDataGroupCategory> turDataGroupCategories) {
@@ -121,10 +103,6 @@ public class TurMLCategory implements Serializable {
 		turDataGroupCategory.setTurMLCategory(null);
 
 		return turDataGroupCategory;
-	}
-
-	public List<TurDataGroupSentence> getTurDataGroupSentences() {
-		return this.turDataGroupSentences;
 	}
 
 	public void setTurDataSentences(List<TurDataGroupSentence> turDataSentences) {

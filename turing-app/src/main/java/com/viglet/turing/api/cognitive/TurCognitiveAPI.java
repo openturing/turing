@@ -23,6 +23,7 @@ package com.viglet.turing.api.cognitive;
 import com.google.common.collect.Lists;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.languagetool.JLanguageTool;
@@ -42,9 +43,8 @@ import java.util.List;
 @RequestMapping("/api/cognitive")
 @Tag(name = "Cognitive", description = "Cognitive API")
 
+@Slf4j
 public class TurCognitiveAPI {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
-
 	@Operation(summary = "Cognitive Detect Language")
 	@GetMapping("/detect-language/")
 	public String turCognitiveDetectLanguage(@RequestParam(required = false, name = "text") String text) {
@@ -85,13 +85,13 @@ public class TurCognitiveAPI {
 				} else {
 					suggesterPhrases = addToListOtherMatches(suggesterPhrases, match);
 				}
-				logger.debug("Potential error at characters {} - {}: {}", match.getFromPos(), match.getToPos(),
+				log.debug("Potential error at characters {} - {}: {}", match.getFromPos(), match.getToPos(),
 						match.getMessage());
-				logger.debug("Suggested correction(s): {}", match.getSuggestedReplacements());
+				log.debug("Suggested correction(s): {}", match.getSuggestedReplacements());
 			}
 			return suggesterPhrases;
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return new ArrayList<>();
 	}

@@ -25,6 +25,7 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -44,42 +45,41 @@ public class TurConverseEntity implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Getter
 	@Id
 	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	@Getter
 	@Column(nullable = false, length = 50)
 	private String name;
 
 	private boolean isSynonyms;
 
+	@Getter
 	private boolean useRegexp;
 
+	@Getter
 	private boolean allowAutomatedExpansion;
 
+	@Getter
 	private boolean fuzzyMatching;
 
+	@Getter
 	@OneToMany(mappedBy = "entity", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConverseEntityTerm> terms = new HashSet<>();
 
+	@Getter
 	@ManyToOne
 	@JoinColumn(name = "agent_id")
 	@JsonIdentityReference(alwaysAsId = true)
 	private TurConverseAgent agent;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
@@ -94,32 +94,16 @@ public class TurConverseEntity implements Serializable {
 		this.isSynonyms = isSynonyms;
 	}
 
-	public boolean isUseRegexp() {
-		return useRegexp;
-	}
-
 	public void setUseRegexp(boolean useRegexp) {
 		this.useRegexp = useRegexp;
-	}
-
-	public boolean isAllowAutomatedExpansion() {
-		return allowAutomatedExpansion;
 	}
 
 	public void setAllowAutomatedExpansion(boolean allowAutomatedExpansion) {
 		this.allowAutomatedExpansion = allowAutomatedExpansion;
 	}
 
-	public boolean isFuzzyMatching() {
-		return fuzzyMatching;
-	}
-
 	public void setFuzzyMatching(boolean fuzzyMatching) {
 		this.fuzzyMatching = fuzzyMatching;
-	}
-
-	public Set<TurConverseEntityTerm> getTerms() {
-		return this.terms;
 	}
 
 	public void setTerms(Set<TurConverseEntityTerm> terms) {
@@ -127,10 +111,6 @@ public class TurConverseEntity implements Serializable {
 		if (terms != null) {
 			this.terms.addAll(terms);
 		}
-	}
-
-	public TurConverseAgent getAgent() {
-		return agent;
 	}
 
 	public void setAgent(TurConverseAgent agent) {

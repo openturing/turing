@@ -32,6 +32,7 @@ import com.viglet.turing.spring.security.TurAuditable;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -45,6 +46,7 @@ import java.util.Set;
  * The persistent class for the TurSNSite database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turSNSite")
 @NamedQuery(name = "TurSNSite.findAll", query = "SELECT sns FROM TurSNSite sns")
@@ -267,118 +269,6 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 
 	public void setSpotlightWithResults(Integer spotlightWithResults) {
 		this.spotlightWithResults = spotlightWithResults;
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public Integer getRowsPerPage() {
-		return rowsPerPage;
-	}
-
-	public Integer getFacet() {
-		return facet;
-	}
-
-	public Integer getItemsPerFacet() {
-		return itemsPerFacet;
-	}
-
-	public Integer getHl() {
-		return hl;
-	}
-
-	public String getHlPre() {
-		return hlPre;
-	}
-
-	public String getHlPost() {
-		return hlPost;
-	}
-
-	public Integer getMlt() {
-		return mlt;
-	}
-
-	public Integer getThesaurus() {
-		return thesaurus;
-	}
-
-	public String getDefaultTitleField() {
-		return defaultTitleField;
-	}
-
-	public String getDefaultTextField() {
-		return defaultTextField;
-	}
-
-	public String getDefaultDescriptionField() {
-		return defaultDescriptionField;
-	}
-
-	public String getDefaultDateField() {
-		return defaultDateField;
-	}
-
-	public String getDefaultImageField() {
-		return defaultImageField;
-	}
-
-	public String getDefaultURLField() {
-		return defaultURLField;
-	}
-
-	public Integer getSpellCheck() {
-		return spellCheck;
-	}
-
-	public Integer getSpellCheckFixes() {
-		return spellCheckFixes;
-	}
-
-	public Integer getSpotlightWithResults() {
-		return spotlightWithResults;
-	}
-
-	public TurSEInstance getTurSEInstance() {
-		return turSEInstance;
-	}
-
-	public TurNLPVendor getTurNLPVendor() {
-		return turNLPVendor;
-	}
-
-	public Set<TurSNSiteField> getTurSNSiteFields() {
-		return turSNSiteFields;
-	}
-
-	public Set<TurSNSiteFieldExt> getTurSNSiteFieldExts() {
-		return turSNSiteFieldExts;
-	}
-
-	public Set<TurSNSiteSpotlight> getTurSNSiteSpotlights() {
-		return turSNSiteSpotlights;
-	}
-
-	public Set<TurSNSiteLocale> getTurSNSiteLocales() {
-		return turSNSiteLocales;
-	}
-
-	public Set<TurSNSiteMetricAccess> getTurSNSiteMetricAccesses() {
-		return turSNSiteMetricAccesses;
-	}
-
-	public Set<TurSNRankingExpression> getTurSNRankingExpressions() {
-		return turSNRankingExpressions;
 	}
 
 }

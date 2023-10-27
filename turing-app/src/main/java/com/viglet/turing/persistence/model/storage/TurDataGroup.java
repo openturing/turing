@@ -22,6 +22,7 @@
 package com.viglet.turing.persistence.model.storage;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.Fetch;
 
 import java.io.Serial;
@@ -39,24 +40,29 @@ public class TurDataGroup implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Getter
 	@Id
 	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator = "id_Sequence")
     @SequenceGenerator(name = "id_Sequence", sequenceName = "ID_SEQ")
 	@Column(unique = true, nullable = false)
 	private int id;
 
+	@Getter
 	@Column(length = 250)
 	private String description;
 
+	@Getter
 	@Column(nullable = false, length = 50)
 	private String name;
 
 	// bi-directional many-to-one association to TurDataGroupCategory
+	@Getter
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turDataGroup", cascade = CascadeType.ALL)
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupCategory> turDataGroupCategories;
 
 	// bi-directional many-to-one association to TurDataGroupData
+	@Getter
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turDataGroup", cascade = CascadeType.ALL)
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupData> turDataGroupData;
@@ -66,32 +72,16 @@ public class TurDataGroup implements Serializable {
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentence;
 
-	public int getId() {
-		return this.id;
-	}
-
 	public void setId(int id) {
 		this.id = id;
-	}
-
-	public String getDescription() {
-		return this.description;
 	}
 
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public String getName() {
-		return this.name;
-	}
-
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public List<TurDataGroupCategory> getTurDataGroupCategories() {
-		return this.turDataGroupCategories;
 	}
 
 	public void setTurDataGroupCategories(List<TurDataGroupCategory> turDataGroupCategories) {
@@ -110,10 +100,6 @@ public class TurDataGroup implements Serializable {
 		turDataGroupCategory.setTurDataGroup(null);
 
 		return turDataGroupCategory;
-	}
-
-	public List<TurDataGroupData> getTurDataGroupData() {
-		return this.turDataGroupData;
 	}
 
 	public void setTurDataGroupData(List<TurDataGroupData> turDataGroupData) {
