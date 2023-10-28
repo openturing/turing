@@ -34,18 +34,10 @@ import java.util.Set;
 
 public interface TurConverseIntentRepository extends JpaRepository<TurConverseIntent, String> {
 
-	@NotNull List<TurConverseIntent> findAll();
-
-	@NotNull Optional<TurConverseIntent> findById(@NotNull String id);
-	
 	Set<TurConverseIntent> findByAgent(TurConverseAgent agent);
 	
 	List<TurConverseIntent> findByAgentAndFallback(TurConverseAgent agent, boolean fallback);
 	
-	@SuppressWarnings("unchecked")
-	@NotNull
-	TurConverseIntent save(@NotNull TurConverseIntent turConverseIntent);
-
 	@Modifying
 	@Query("delete from  TurConverseIntent ci where ci.id = ?1")
 	void delete(String id);

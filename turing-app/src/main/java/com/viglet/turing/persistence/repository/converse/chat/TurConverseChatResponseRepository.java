@@ -33,10 +33,6 @@ import java.util.Optional;
 
 public interface TurConverseChatResponseRepository extends JpaRepository<TurConverseChatResponse, String> {
 
-	@NotNull List<TurConverseChatResponse> findAll();
-	
-	@NotNull Optional<TurConverseChatResponse> findById(@NotNull String id);
-
 	List<TurConverseChatResponse> findByChat(TurConverseChat turConverseChat);
 	
 	List<TurConverseChatResponse> findByChatOrderByDate(TurConverseChat turConverseChat);
@@ -50,14 +46,4 @@ public interface TurConverseChatResponseRepository extends JpaRepository<TurConv
 	int countByChatAndIsUser(TurConverseChat turConverseChat, boolean isUser);
 	
 	int countByChatAndIsUserAndIntentIdIsNull(TurConverseChat turConverseChat, boolean isUser);
-	
-	@SuppressWarnings("unchecked")
-	@NotNull
-	TurConverseChatResponse save(@NotNull TurConverseChatResponse turConverseChat);
-
-	@Modifying
-	@Query("delete from  TurConverseChatResponse ccr where ccr.id = ?1")
-	void delete(String id);
-
-	
 }

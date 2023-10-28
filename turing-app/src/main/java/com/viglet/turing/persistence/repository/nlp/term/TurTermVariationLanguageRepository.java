@@ -27,5 +27,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TurTermVariationLanguageRepository extends JpaRepository<TurTermVariationLanguage, String> {
 
-	void delete(@NotNull TurTermVariationLanguage turTermVariationLanguage);
 }

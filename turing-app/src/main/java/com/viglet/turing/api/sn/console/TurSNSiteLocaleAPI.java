@@ -89,7 +89,7 @@ public class TurSNSiteLocaleAPI {
 	@Operation(summary = "Delete a Semantic Navigation Site Locale")
 	@DeleteMapping("/{id}")
 	public boolean turSNSiteLocaleDelete(@PathVariable String id, @PathVariable String snSiteId) {
-		turSNSiteLocaleRepository.delete(id);
+		turSNSiteLocaleRepository.deleteById(id);
 		return true;
 	}
 

@@ -33,8 +33,4 @@ import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 public interface TurConverseEventRepository extends JpaRepository<TurConverseEvent, String> {
 
 	Set<TurConverseEvent> findByIntent(TurConverseIntent turConverseIntent);
-
-	@Modifying
-	@Query("delete from  TurConverseEvent ce where ce.id = ?1")
-	void delete(String id);
 }

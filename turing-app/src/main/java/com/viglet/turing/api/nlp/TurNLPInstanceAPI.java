@@ -141,7 +141,7 @@ public class TurNLPInstanceAPI {
     @Operation(summary = "Delete a Natural Language Processing")
     @DeleteMapping("/{id}")
     public boolean turNLPInstanceDelete(@PathVariable String id) {
-        this.turNLPInstanceRepository.delete(id);
+        this.turNLPInstanceRepository.deleteById(id);
         return true;
     }
 

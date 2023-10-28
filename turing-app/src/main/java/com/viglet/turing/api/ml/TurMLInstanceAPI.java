@@ -80,7 +80,7 @@ public class TurMLInstanceAPI {
 	@Operation(summary = "Delete a Machine Learning")
 	@DeleteMapping("/{id}")
 	public boolean turMLInstanceDelete(@PathVariable int id) {
-		this.turMLInstanceRepository.delete(id);
+		this.turMLInstanceRepository.deleteById(id);
 		return true;
 	}
 

@@ -66,7 +66,7 @@ public class TurRoleAPI {
 	@Transactional
 	@DeleteMapping("/{id}")
 	public boolean turRoleDelete(@PathVariable String id) {
-		turRoleRepository.delete(id);
+		turRoleRepository.deleteById(id);
 		return true;
 	}
 

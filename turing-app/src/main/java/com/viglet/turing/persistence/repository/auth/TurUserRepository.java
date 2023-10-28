@@ -34,18 +34,11 @@ import com.viglet.turing.persistence.model.auth.TurUser;
 
 public interface TurUserRepository extends JpaRepository<TurUser, String> {
 
-	List<TurUser> findAll();
-
 	TurUser findByUsername(String username);
 	
 	boolean existsByUsernameAndPassword(String username, String password);
 
-	@SuppressWarnings("unchecked")
-	TurUser save(TurUser turUser);
-
 	Set<TurUser> findByTurGroupsIn(Collection<TurGroup> groups);
 
-	@Modifying
-	@Query("delete from TurUser p where p.username = ?1")
-	void delete(String id);
+    void deleteByUsername(String username);
 }

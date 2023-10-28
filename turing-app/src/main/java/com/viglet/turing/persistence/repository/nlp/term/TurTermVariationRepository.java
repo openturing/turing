@@ -26,6 +26,4 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TurTermVariationRepository extends JpaRepository<TurTermVariation, String> {
-	
-	void delete(@NotNull TurTermVariation turTermVariation);
 }

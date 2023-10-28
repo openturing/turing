@@ -145,7 +145,7 @@ public class TurConverseAgentAPI {
 				context.setIntentOutputs(null);
 				turConverseContextRepository.saveAndFlush(context);
 			}
-			this.turConverseAgentRepository.delete(id);
+			this.turConverseAgentRepository.deleteById(id);
 			return true;
 		}).orElse(false);
 
@@ -179,7 +179,7 @@ public class TurConverseAgentAPI {
 			@RequestParam(required = false, name = "q") String q,
 			@RequestParam(required = false, name = "start") boolean start, HttpSession session) {
 
-		String conversationId = null;
+		String conversationId;
 
 		if (start || session.getAttribute(CONVERSATION_ID) == null) {
 			turConverse.cleanSession(session);

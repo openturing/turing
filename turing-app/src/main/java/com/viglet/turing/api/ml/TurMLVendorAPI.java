@@ -77,7 +77,7 @@ public class TurMLVendorAPI {
 	@Operation(summary = "Delete a Machine Learning Vendor")
 	@DeleteMapping("/{id}")
 	public boolean turMLVendorDelete(@PathVariable String id) {
-		this.turMLVendorRepository.delete(id);
+		this.turMLVendorRepository.deleteById(id);
 		return true;
 	}
 

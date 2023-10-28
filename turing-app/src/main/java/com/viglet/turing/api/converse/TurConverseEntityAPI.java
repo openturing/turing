@@ -99,7 +99,7 @@ public class TurConverseEntityAPI {
 	@Operation(summary = "Delete a Converse Entity")
 	@DeleteMapping("/{id}")
 	public boolean turConverseEntityDelete(@PathVariable String id) {
-		this.turConverseEntityRepository.delete(id);
+		this.turConverseEntityRepository.deleteById(id);
 		return true;
 	}
 

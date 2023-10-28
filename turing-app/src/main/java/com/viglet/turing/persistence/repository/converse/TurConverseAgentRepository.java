@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -27,8 +27,4 @@ import org.springframework.data.jpa.repository.Query;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 public interface TurConverseAgentRepository extends JpaRepository<TurConverseAgent, String> {
-
-	@Modifying
-	@Query("delete from  TurConverseAgent ca where ca.id = ?1")
-	void delete(String id);
 }

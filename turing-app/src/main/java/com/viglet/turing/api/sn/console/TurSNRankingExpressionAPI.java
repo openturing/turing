@@ -100,7 +100,7 @@ public class TurSNRankingExpressionAPI {
     @DeleteMapping("/{id}")
     @CacheEvict(value = {"ranking_expression"}, allEntries = true)
     public boolean turSNRankingExpressionDelete(@PathVariable String id) {
-        turSNRankingExpressionRepository.delete(id);
+        turSNRankingExpressionRepository.deleteById(id);
         return true;
     }
 

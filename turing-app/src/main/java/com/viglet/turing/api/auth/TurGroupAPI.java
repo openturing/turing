@@ -95,7 +95,7 @@ public class TurGroupAPI {
 	@Transactional
 	@DeleteMapping("/{id}")
 	public boolean turGroupDelete(@PathVariable String id) {
-		turGroupRepository.delete(id);
+		turGroupRepository.deleteById(id);
 		return true;
 	}
 

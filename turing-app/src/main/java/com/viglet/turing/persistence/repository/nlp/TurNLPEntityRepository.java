@@ -36,6 +36,4 @@ public interface TurNLPEntityRepository extends JpaRepository<TurNLPEntity, Stri
 	List<TurNLPEntity> findByEnabled(int enabled);
 	
 	TurNLPEntity findByName(String name);
-
-	void delete(@NotNull TurNLPEntity turNLPEntity);
 }

@@ -22,22 +22,14 @@ package com.viglet.turing.persistence.repository.sn.merge;
 
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Set;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
 /**
  * @author Alexandre Oliveira
  * @since 0.3.5
  */
 public interface TurSNSiteMergeProvidersFieldRepository extends JpaRepository<TurSNSiteMergeProvidersField, String> {
-
 	Set<TurSNSiteMergeProvidersField> findByTurSNSiteMergeProviders(TurSNSiteMergeProviders turSNSiteMergeProviders);
-
-	@Modifying
-	@Query("delete from TurSNSiteMergeProvidersField ssmpf where ssmpf.id = ?1")
-	void delete(String id);
 }

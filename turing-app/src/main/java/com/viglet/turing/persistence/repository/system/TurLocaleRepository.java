@@ -33,10 +33,10 @@ import java.util.List;
 
 public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 
-	static final String EN_US = "en_US";
-	static final String EN_GB = "en_GB";
-	static final String PT_BR = "pt_BR";
-	static final String CA = "ca";
+	String EN_US = "en_US";
+	String EN_GB = "en_GB";
+	String PT_BR = "pt_BR";
+	String CA = "ca";
 
 	@Cacheable("turLocalefindAll")
 	@NotNull
@@ -49,8 +49,6 @@ public interface TurLocaleRepository extends JpaRepository<TurLocale, String> {
 	@CacheEvict(value = { "turLocalefindAll", "turLocalefindByInitials" }, allEntries = true)
 	@NotNull
 	TurLocale save(@NotNull TurLocale turLocale);
-
-	void delete(@NotNull TurLocale turConfigVar);
 
 	@Modifying
 	@Query("delete from  TurLocale l where l.id = ?1")

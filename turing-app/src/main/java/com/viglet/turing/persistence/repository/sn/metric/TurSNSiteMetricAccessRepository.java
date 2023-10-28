@@ -22,10 +22,8 @@ package com.viglet.turing.persistence.repository.sn.metric;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Date;
@@ -36,10 +34,6 @@ import java.util.List;
  * @since 0.3.6
  */
 public interface TurSNSiteMetricAccessRepository extends JpaRepository<TurSNSiteMetricAccess, String> {
-
-	@SuppressWarnings("unchecked")
-	@NotNull
-	TurSNSiteMetricAccess save(@NotNull TurSNSiteMetricAccess turSNSiteLocale);
 
 	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(sanatizedTerm, max(accessDate)) from "
 			+ "TurSNSiteMetricAccess where turSNSite = ?1 and language = ?2 and userId = ?3 GROUP BY sanatizedTerm ORDER BY MAX(accessDate) DESC")
@@ -64,10 +58,4 @@ public interface TurSNSiteMetricAccessRepository extends JpaRepository<TurSNSite
 	List<TurSNSiteMetricAccess> findByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
 
 	List<TurSNSiteMetricAccess> findByTurSNSite(TurSNSite turSNSite);
-
-	void delete(@NotNull TurSNSiteMetricAccess turSNSiteLocale);
-
-	@Modifying
-	@Query("delete from TurSNSiteMetricAccess ssma where ssma.id = ?1")
-	void delete(String id);
 }

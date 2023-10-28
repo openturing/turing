@@ -27,10 +27,5 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TurTermRepository extends JpaRepository<TurTerm, String> {
-
 	TurTerm findOneByIdCustom(String idCustom);
-	
-	@Modifying
-	@Query("delete from TurTerm t where t.id = ?1")
-	void delete(String id);
 }

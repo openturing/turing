@@ -23,24 +23,12 @@ package com.viglet.turing.persistence.repository.storage;
 
 import com.viglet.turing.persistence.model.storage.TurDataGroup;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
 public interface TurDataGroupSentenceRepository extends JpaRepository<TurDataGroupSentence, Integer> {
-
-	@NotNull List<TurDataGroupSentence> findAll();
-
 	List<TurDataGroupSentence> findByTurDataGroup(TurDataGroup turDataGroup);
 
 	TurDataGroupSentence findById(int id);
-
-	void delete(@NotNull TurDataGroupSentence turDataGroupSentence);
-	
-	@Modifying
-	@Query("delete from TurDataGroupSentence ds where ds.id = ?1")
-	void delete(int turDataGroupSentenceId);
 }

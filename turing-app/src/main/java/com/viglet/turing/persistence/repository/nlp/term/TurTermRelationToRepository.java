@@ -26,6 +26,4 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TurTermRelationToRepository extends JpaRepository<TurTermRelationTo, String> {
-
-	void delete(@NotNull TurTermRelationTo turTermRelationTo);
 }

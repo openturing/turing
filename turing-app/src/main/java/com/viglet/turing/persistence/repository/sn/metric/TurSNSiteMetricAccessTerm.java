@@ -20,6 +20,9 @@
  */
 package com.viglet.turing.persistence.repository.sn.metric;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Date;
@@ -31,6 +34,8 @@ import java.util.Date;
  * @since 0.3.6
  *
  */
+@Getter
+@Setter
 public class TurSNSiteMetricAccessTerm {
 
 	private String term;
@@ -50,37 +55,4 @@ public class TurSNSiteMetricAccessTerm {
 		this.total = total;
 		this.numFound =  new BigDecimal(numFound).setScale(0, RoundingMode.HALF_UP).doubleValue();
 	}
-
-	public String getTerm() {
-		return term;
-	}
-
-	public void setTerm(String term) {
-		this.term = term;
-	}
-
-	public Date getAcessDate() {
-		return acessDate;
-	}
-
-	public void setAcessDate(Date acessDate) {
-		this.acessDate = acessDate;
-	}
-
-	public long getTotal() {
-		return total;
-	}
-
-	public void setTotal(long total) {
-		this.total = total;
-	}
-
-	public double getNumFound() {
-		return numFound;
-	}
-
-	public void setNumFound(double numFound) {
-		this.numFound = numFound;
-	}
-
 }

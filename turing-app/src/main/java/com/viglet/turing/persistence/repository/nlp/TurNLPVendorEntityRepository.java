@@ -22,7 +22,6 @@ package com.viglet.turing.persistence.repository.nlp;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -33,6 +32,4 @@ public interface TurNLPVendorEntityRepository extends JpaRepository<TurNLPVendor
 	
 	List<TurNLPVendorEntity> findByTurNLPVendorAndTurNLPEntity_internalNameIn(TurNLPVendor turNLPVendor, List<String> entities);
 	TurNLPVendorEntity findByTurNLPVendorAndTurNLPEntity_internalNameAndLanguage(TurNLPVendor turNLPVendor, String entityName, String language);
-
-	void delete(@NotNull TurNLPVendorEntity turNLPVendorEntity);
 }

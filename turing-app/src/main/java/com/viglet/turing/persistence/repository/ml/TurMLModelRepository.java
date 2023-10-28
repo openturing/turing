@@ -28,8 +28,4 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TurMLModelRepository extends JpaRepository<TurMLModel, Integer> {
-
-	@Modifying
-	@Query("delete from  TurMLModel mm where mm.id = ?1")
-	void delete(int id);
 }

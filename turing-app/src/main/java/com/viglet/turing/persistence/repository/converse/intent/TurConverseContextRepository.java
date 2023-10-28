@@ -40,8 +40,4 @@ public interface TurConverseContextRepository extends JpaRepository<TurConverseC
 	
 	Set<TurConverseContext> findByAgentAndText(TurConverseAgent agent, String text);
 	
-
-	@Modifying
-	@Query("delete from  TurConverseContext cc where cc.id = ?1")
-	void delete(String id);
 }

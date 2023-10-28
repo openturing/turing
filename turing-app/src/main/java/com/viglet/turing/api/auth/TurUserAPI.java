@@ -124,7 +124,7 @@ public class TurUserAPI {
     @Transactional
     @DeleteMapping("/{username}")
     public boolean turUserDelete(@PathVariable String username) {
-        turUserRepository.delete(username);
+        turUserRepository.deleteByUsername(username);
         return true;
     }
 

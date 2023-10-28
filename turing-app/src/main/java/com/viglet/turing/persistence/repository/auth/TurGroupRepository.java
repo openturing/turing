@@ -34,18 +34,10 @@ import com.viglet.turing.persistence.model.auth.TurUser;
 
 public interface TurGroupRepository extends JpaRepository<TurGroup, String> {
 
-	List<TurGroup> findAll();
-
-	@SuppressWarnings("unchecked")
-	TurGroup save(TurGroup turGroup);
-
 	TurGroup findByName(String name);
 	
 	Set<TurGroup> findByTurUsersIn(Collection<TurUser> users);
 	
 	int countByNameAndTurUsersIn(String name, Collection<TurUser> turUsers);
 	
-	@Modifying
-	@Query("delete from TurGroup g where g.id = ?1")
-	void delete(String id);
 }

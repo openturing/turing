@@ -35,8 +35,4 @@ public interface TurConversePhraseRepository extends JpaRepository<TurConversePh
 	Set<TurConversePhrase> findByIntent(TurConverseIntent turConverseIntent);
 	
 	Set<TurConversePhrase> findByText(String text);
-
-	@Modifying
-	@Query("delete from  TurConversePhrase cp where cp.id = ?1")
-	void delete(String id);
 }

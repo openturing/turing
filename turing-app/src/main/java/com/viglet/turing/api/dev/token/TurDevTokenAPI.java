@@ -68,7 +68,7 @@ public class TurDevTokenAPI {
 	@Operation(summary = "Delete a Developer Token")
 	@DeleteMapping("/{id}")
 	public boolean turDevTokenDelete(@PathVariable String id) {
-		this.turDevTokenRepository.delete(id);
+		this.turDevTokenRepository.deleteById(id);
 		return true;
 	}
 

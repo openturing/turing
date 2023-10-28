@@ -34,17 +34,9 @@ import java.util.Set;
 
 public interface TurConverseParameterRepository extends JpaRepository<TurConverseParameter, String> {
 
-	@NotNull List<TurConverseParameter> findAll();
-
-	@NotNull Optional<TurConverseParameter> findById(@NotNull String id);
-
 	Set<TurConverseParameter> findByIntent(TurConverseIntent turConverseIntent);
 	
 	Set<TurConverseParameter> findByIntentAndEntity(TurConverseIntent turConverseIntent, String entity);
-	
-	@SuppressWarnings("unchecked")
-	@NotNull
-	TurConverseParameter save(@NotNull TurConverseParameter turConverseParameter);
 
 	@Modifying
 	@Query("delete from  TurConverseParameter cp where cp.id = ?1")

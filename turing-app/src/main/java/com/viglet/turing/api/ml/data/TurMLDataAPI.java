@@ -103,7 +103,7 @@ public class TurMLDataAPI {
 	@Operation(summary = "Delete a Machine Learning Data")
 	@DeleteMapping("/{id}")
 	public boolean turDataDelete(@PathVariable int id) {
-		this.turDataRepository.delete(id);
+		this.turDataRepository.deleteById(id);
 		return true;
 	}
 

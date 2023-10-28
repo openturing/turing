@@ -84,7 +84,7 @@ public class TurMLModelAPI {
 	@Operation(summary = "Delete a Machine Learning Model")
 	@DeleteMapping("/{id}")
 	public boolean turMLModelDelete(@PathVariable int id) {
-		this.turMLModelRepository.delete(id);
+		this.turMLModelRepository.deleteById(id);
 		return true;
 	}
 

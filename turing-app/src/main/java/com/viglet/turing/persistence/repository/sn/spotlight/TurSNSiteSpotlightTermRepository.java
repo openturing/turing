@@ -22,10 +22,7 @@ package com.viglet.turing.persistence.repository.sn.spotlight;
 
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.Collection;
 import java.util.List;
@@ -37,16 +34,6 @@ import java.util.Set;
  */
 public interface TurSNSiteSpotlightTermRepository extends JpaRepository<TurSNSiteSpotlightTerm, String> {
 
-	@SuppressWarnings("unchecked")
-	@NotNull
-	TurSNSiteSpotlightTerm save(@NotNull TurSNSiteSpotlightTerm turSNSiteSpotlightTerm);
-
 	List<TurSNSiteSpotlightTerm> findByNameIn(Collection<String> names);
 	Set<TurSNSiteSpotlightTerm> findByTurSNSiteSpotlight(TurSNSiteSpotlight turSNSiteSpotlight);
-	
-	void delete(@NotNull TurSNSiteSpotlightTerm turSNSiteSpotlightTerm);
-
-	@Modifying
-	@Query("delete from  TurSNSiteSpotlightTerm ssst where ssst.id = ?1")
-	void delete(String id);
 }

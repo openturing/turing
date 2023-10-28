@@ -35,8 +35,6 @@ import java.util.Optional;
 
 public interface TurSNSiteFieldRepository extends JpaRepository<TurSNSiteField, String> {
 
-	@NotNull List<TurSNSiteField> findAll();
-
 	@Cacheable("turSNSiteFieldfindById")
 	@NotNull
 	Optional<TurSNSiteField> findById(@NotNull String id);

@@ -30,9 +30,5 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.Optional;
 
 public interface TurDevTokenRepository extends JpaRepository<TurDevToken, String> {
-
 	Optional<TurDevToken> findByToken(String token);
-	@Modifying
-	@Query("delete from  TurDevToken dt where dt.id = ?1")
-	void delete(String id);
 }

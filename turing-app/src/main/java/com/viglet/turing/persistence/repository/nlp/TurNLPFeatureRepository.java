@@ -27,6 +27,4 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TurNLPFeatureRepository extends JpaRepository<TurNLPFeature, String> {
-
-	void delete(@NotNull TurNLPFeature turNLPFeature);
 }

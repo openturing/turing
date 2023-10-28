@@ -28,8 +28,4 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TurMLCategoryRepository extends JpaRepository<TurMLCategory, Integer> {
-	
-	@Modifying
-	@Query("delete from  TurMLCategory mc where mc.id = ?1")
-	void delete(int id);
 }
