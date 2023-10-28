@@ -1,5 +1,6 @@
 package com.viglet.turing.connector.aem.indexer;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.jackrabbit.JcrConstants.*;
-
+@Getter
 public class AemObject {
 	private static final Logger logger = LoggerFactory.getLogger(AemObject.class);
 	private Calendar lastModified;
@@ -20,13 +21,11 @@ public class AemObject {
 	private boolean contentFragment = false;
 	private boolean delivered = false;
 	private String type;
+	private String model;
 	private Node node;
 	private Node jcrContentNode;
-	private final Map<String, Property> attributes = new HashMap<>();
 
-	public Map<String, Property> getAttributes() {
-		return attributes;
-	}
+	private final Map<String, Property> attributes = new HashMap<>();
 
 	public AemObject(Node node) {
 		this(node, null);
@@ -35,6 +34,7 @@ public class AemObject {
 	public static final String CONTENT_FRAGMENT = "contentFragment";
 	public static final String CQ_IS_DELIVERED = "cq:isDelivered";
 	public static final String CQ_LAST_MODIFIED = "cq:lastModified";
+	public static final String CQ_MODEL = "cq:model";
 	public AemObject(Node node, String dataPath) {
 		try {
 			this.node = node;
@@ -53,6 +53,11 @@ public class AemObject {
 			}
 			if (TurAemUtils.hasProperty(node,JCR_CREATED))
 				createdDate = node.getProperty(JCR_CREATED).getDate();
+			Node jcrDataRootNode = jcrContentNode.getNode("data");
+			if (TurAemUtils.hasProperty(jcrDataRootNode, CQ_MODEL)) {
+				model = jcrDataRootNode.getProperty(CQ_MODEL).getString();
+			}
+
 			if (dataPath != null) {
 				Node jcrDataNode = jcrContentNode.getNode(dataPath);
 				PropertyIterator jcrContentProperties = jcrDataNode.getProperties();
@@ -82,32 +87,5 @@ public class AemObject {
 		if (node.hasProperty(propertyName))
 			return getPropertyValue(node.getProperty(propertyName));
 		return null;
-	}
-	public Calendar getLastModified() {
-		return lastModified;
-	}
-
-	public Calendar getCreatedDate() {
-		return createdDate;
-	}
-
-	public String getType() {
-		return type;
-	}
-
-	public Node getNode() {
-		return node;
-	}
-
-	public Node getJcrContentNode() {
-		return jcrContentNode;
-	}
-
-	public boolean isContentFragment() {
-		return contentFragment;
-	}
-
-	public boolean isDelivered() {
-		return delivered;
 	}
 }

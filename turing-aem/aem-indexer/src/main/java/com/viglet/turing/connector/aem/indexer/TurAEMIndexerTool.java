@@ -204,13 +204,7 @@ public class TurAEMIndexerTool {
                         AemObject aemObject = new AemObject(nodeChild);
                         CTDMappings ctdMappings = getCTDMappingMap(config).get(contentType);
                         if (!delivered || aemObject.isDelivered()) {
-                            List<TurAttrDef> extAttributes = new ArrayList<>();
-                            if (ctdMappings.getClassName() != null) {
-                                Object extAttribute = Class.forName(ctdMappings.getClassName())
-                                        .getDeclaredConstructor().newInstance();
-                                extAttributes = ((ExtContentInterface) extAttribute)
-                                        .consume(aemObject, config);
-                            }
+                            final List<TurAttrDef> extAttributes = runCustomClassFromContentType(ctdMappings, aemObject);
                             switch (Objects.requireNonNull(contentType)) {
                                 case CQ_PAGE:
                                     indexObject(aemObject, extAttributes);
@@ -239,6 +233,17 @@ public class TurAEMIndexerTool {
                  NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<TurAttrDef> runCustomClassFromContentType(CTDMappings ctdMappings, AemObject aemObject) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
+        List<TurAttrDef> extAttributes = new ArrayList<>();
+        if (ctdMappings.getClassName() != null) {
+            Object extAttribute = Class.forName(ctdMappings.getClassName())
+                    .getDeclaredConstructor().newInstance();
+            extAttributes = ((ExtContentInterface) extAttribute)
+                    .consume(aemObject, config);
+        }
+        return extAttributes;
     }
 
     private void indexObject(AemObject aemObject, List<TurAttrDef> extAttributes) throws RepositoryException {
