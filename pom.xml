@@ -20,7 +20,7 @@
         <module>turing-jdbc</module>
         <module>turing-nutch</module>
         <module>turing-cms</module>
-        <module>turing-wem</module>
+      <!--  <module>turing-wem</module> -->
         <module>turing-aem</module>
         <module>turing-java-proxy</module>
         <module>turing-app</module>
