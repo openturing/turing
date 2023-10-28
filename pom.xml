@@ -13,7 +13,6 @@
     <properties>
         <revision>0.3.7</revision>
         <sonar.organization>viglet-turing</sonar.organization>
-        <sonar.projectKey>turing-app</sonar.projectKey>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     </properties>
     <modules>
