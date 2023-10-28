@@ -85,7 +85,7 @@
       <dependency>
           <groupId>com.viglet.turing</groupId>
           <artifactId>turing-commons</artifactId>
-          <version>0.3.8</version>
+          <version>${project.version}</version>
           <scope>compile</scope>
       </dependency>
   </dependencies>
