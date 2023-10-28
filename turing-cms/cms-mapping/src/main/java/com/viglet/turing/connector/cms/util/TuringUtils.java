@@ -16,9 +16,7 @@ public class TuringUtils {
 	public static Set<TuringTag> turingTagMapToSet(TuringTagMap turingTagMap) {
 		Set<TuringTag> turingTags = new HashSet<>();
 		for (Entry<String, ArrayList<TuringTag>> entryCtd : turingTagMap.entrySet()) {
-			for (TuringTag turingTag : entryCtd.getValue()) {
-				turingTags.add(turingTag);
-			}
+			turingTags.addAll(entryCtd.getValue());
 		}
 		return turingTags;
 	}

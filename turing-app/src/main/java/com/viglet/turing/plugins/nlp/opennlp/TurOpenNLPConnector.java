@@ -86,10 +86,9 @@ public class TurOpenNLPConnector implements TurNLPPlugin {
 
 	private List<String> getEntityList(String entityPath, List<String> sentencesTokens) {
 		try {
-			NameFinderME nameFinder = null;
 			List<String> entities = new ArrayList<>();
 
-			nameFinder = nameFinderMe(entityPath).getNameFinderME();
+			NameFinderME nameFinder = nameFinderMe(entityPath).getNameFinderME();
 
 			String[] tokens = sentencesTokens.toArray(new String[0]);
             Span[] nameSpans = nameFinder.find(tokens);

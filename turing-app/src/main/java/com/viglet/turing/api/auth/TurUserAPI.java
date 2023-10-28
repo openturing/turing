@@ -78,8 +78,10 @@ public class TurUserAPI {
                 turUser.setPassword(null);
                 if (turUser.getTurGroups() != null) {
                     for (TurGroup turGroup : turUser.getTurGroups()) {
-                        if (turGroup.getName().equals("Administrator"))
+                        if (turGroup.getName().equals("Administrator")) {
                             isAdmin = true;
+                            break;
+                        }
                     }
                 }
                 turCurrentUser.setUsername(turUser.getUsername());

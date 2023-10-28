@@ -26,7 +26,7 @@ import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.logging.Level;
@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * @since 0.3.4
  */
 public class TurSNClientSample {
-	private static Logger logger = Logger.getLogger(TurSNServer.class.getName());
+	private static final Logger logger = Logger.getLogger(TurSNServer.class.getName());
 
 	private static final String TURING_URL = "http://localhost:2700";
 	private static final String TURING_SITE = "Sample";
@@ -107,7 +107,7 @@ public class TurSNClientSample {
 		} else {
 			query.setQuery(QUERY); // fix to test
 		}
-		query.setFieldQueries(Arrays.asList(FILTER_QUERY));
+		query.setFieldQueries(Collections.singletonList(FILTER_QUERY));
 		query.setRows(1);
 		query.setSortField(TurSNQuery.ORDER.asc);
 		query.setPageNumber(1);
@@ -150,8 +150,8 @@ public class TurSNClientSample {
 		List<TurSNSpotlightDocument> turSNSpotlightDocuments = response.getSpotlightDocuments();
 		if (turSNSpotlightDocuments != null) {
 			turSNSpotlightDocuments.forEach(turSNSpotlightDocument -> System.out
-					.println(String.format("%s %s %s", turSNSpotlightDocument.getPosition(),
-							turSNSpotlightDocument.getTitle(), turSNSpotlightDocument.getContent())));
+					.printf("%s %s %s%n", turSNSpotlightDocument.getPosition(),
+							turSNSpotlightDocument.getTitle(), turSNSpotlightDocument.getContent()));
 		}
 	}
 
@@ -160,7 +160,7 @@ public class TurSNClientSample {
 			turSNPagination.getAllPages().forEach(page -> {
 				System.out.println(page.getLabel());
 				page.getQueryParams()
-						.ifPresent(queryParam -> queryParam.entrySet().forEach(param -> showKeyValue(param)));
+						.ifPresent(queryParam -> queryParam.entrySet().forEach(TurSNClientSample::showKeyValue));
 				System.out.println(" ");
 			});
 
@@ -172,12 +172,12 @@ public class TurSNClientSample {
 	private static void facet(QueryTurSNResponse response) {
 		if (response.getFacetFields() != null) {
 			response.getFacetFields().forEach(facetFields -> {
-				System.out.println(String.format("Facet: %s - %s - %s - %s", facetFields.getLabel(),
-						facetFields.getName(), facetFields.getDescription(), facetFields.getType()));
+				System.out.printf("Facet: %s - %s - %s - %s%n", facetFields.getLabel(),
+						facetFields.getName(), facetFields.getDescription(), facetFields.getType());
 				facetFields.getValues().forEach(facetField -> {
-					System.out.println(String.format("%s (%s)", facetField.getLabel(), facetField.getCount()));
+					System.out.printf("%s (%s)%n", facetField.getLabel(), facetField.getCount());
 					facetField.getQueryParams()
-							.ifPresent(queryParam -> queryParam.entrySet().forEach(param -> showKeyValue(param)));
+							.ifPresent(queryParam -> queryParam.entrySet().forEach(TurSNClientSample::showKeyValue));
 				});
 
 			});
@@ -187,7 +187,7 @@ public class TurSNClientSample {
 				facetToRemove.getValues().forEach(value -> {
 					System.out.println(value.getLabel());
 					value.getQueryParams()
-							.ifPresent(queryParam -> queryParam.entrySet().forEach(param -> showKeyValue(param)));
+							.ifPresent(queryParam -> queryParam.entrySet().forEach(TurSNClientSample::showKeyValue));
 				});
 
 			});
@@ -195,16 +195,16 @@ public class TurSNClientSample {
 	}
 
 	private static void showKeyValue(Entry<String, List<String>> param) {
-		System.out.println(String.format("%s %s", param.getKey(), param.getValue().toString()));
+		System.out.printf("%s %s%n", param.getKey(), param.getValue().toString());
 	}
 
 	private static void didYouMean(QueryTurSNResponse response) {
 		TurSNDidYouMean turSNDidYouMean = response.getDidYouMean();
 		if (turSNDidYouMean != null && turSNDidYouMean.isCorrectedText()) {
-			System.out.println(String.format("Original Query %s: %s", turSNDidYouMean.getOriginal().getText(),
-					turSNDidYouMean.getOriginal().getLink()));
-			System.out.println(String.format("Correct Query %s: %s", turSNDidYouMean.getCorrected().getText(),
-					turSNDidYouMean.getCorrected().getLink()));
+			System.out.printf("Original Query %s: %s%n", turSNDidYouMean.getOriginal().getText(),
+					turSNDidYouMean.getOriginal().getLink());
+			System.out.printf("Correct Query %s: %s%n", turSNDidYouMean.getCorrected().getText(),
+					turSNDidYouMean.getCorrected().getLink());
 		}
 	}
 

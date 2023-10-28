@@ -61,7 +61,7 @@ public class TurSNItemWithAPI {
 			} catch (URISyntaxException e) {
 				logger.log(Level.SEVERE, e.getMessage(), e);
 			}
-			return Optional.ofNullable(queryParams);
+			return Optional.of(queryParams);
 		}).orElse(Optional.empty());
 
 	}

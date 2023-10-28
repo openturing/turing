@@ -78,17 +78,14 @@ public class TurConverseImportExchange {
 	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
 
-	private Map<String, Object> shObjects = new HashMap<>();
-	private Map<String, List<String>> shChildObjects = new HashMap<>();
-
 	public TurConverseAgentExchange importFromMultipartFile(@Nonnull MultipartFile multipartFile) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		File parentExtractFolder = null;
 
 		if (extractFolder != null) {
 			// Check if agent.json exists, if it is not exist try access a sub directory
-			if (!(new File(extractFolder, AGENT_FILE).exists()) && (extractFolder.listFiles().length == 1)) {
-				for (File fileOrDirectory : extractFolder.listFiles()) {
+			if (!(new File(extractFolder, AGENT_FILE).exists()) && (Objects.requireNonNull(extractFolder.listFiles()).length == 1)) {
+				for (File fileOrDirectory : Objects.requireNonNull(extractFolder.listFiles())) {
 					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, AGENT_FILE).exists()) {
 						parentExtractFolder = extractFolder;
 						extractFolder = fileOrDirectory;
@@ -293,9 +290,6 @@ public class TurConverseImportExchange {
 	}
 
 	public File extractZipFile(MultipartFile file) {
-		shObjects.clear();
-		shChildObjects.clear();
-
 		return TurUtils.extractZipFile(file);
 	}
 

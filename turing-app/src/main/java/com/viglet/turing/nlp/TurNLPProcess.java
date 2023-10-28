@@ -196,7 +196,6 @@ public class TurNLPProcess {
 			} catch (IOException e) {
 				logger.error(e.getMessage(), e);
 			}
-			entityMapWithProcessedValues = processedAttributes;
 		}
 	}
 

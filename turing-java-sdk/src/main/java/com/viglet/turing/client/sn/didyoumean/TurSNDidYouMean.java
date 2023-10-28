@@ -25,14 +25,13 @@ import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
  * @since 0.3.5
  */
 public class TurSNDidYouMean {
-	private boolean correctedText = true;
+	private boolean correctedText;
 	private TurSNDidYouMeanText original;
 	private TurSNDidYouMeanText corrected;
 
 	public TurSNDidYouMean() {
 		super();
-		this.correctedText = true;
-		this.original = new TurSNDidYouMeanText();
+        this.original = new TurSNDidYouMeanText();
 		this.corrected = new TurSNDidYouMeanText();
 	}
 

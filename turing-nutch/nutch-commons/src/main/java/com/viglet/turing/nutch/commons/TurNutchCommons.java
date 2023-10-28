@@ -107,9 +107,6 @@ public class TurNutchCommons {
 			String jsonUTF8 = new String(outputData);
 
 			HttpPost httpPost = new HttpPost(String.format("%s/api/sn/%s/import", url, site));
-			if (showOutput) {
-				logger.info(jsonUTF8);
-			}
 			StringEntity entity = new StringEntity(jsonUTF8, StandardCharsets.UTF_8);
 			httpPost.setEntity(entity);
 			httpPost.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());

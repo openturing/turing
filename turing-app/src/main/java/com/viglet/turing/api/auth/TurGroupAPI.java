@@ -64,7 +64,6 @@ public class TurGroupAPI {
 
 		return turGroupRepository.findById(id).map(turGroup -> {
 			List<TurGroup> turGroups = new ArrayList<>();
-			turGroups = new ArrayList<>();
 			turGroups.add(turGroup);
 			turGroup.setTurUsers(turUserRepository.findByTurGroupsIn(turGroups));
 			return turGroup;

@@ -54,8 +54,7 @@ public class TurMappingReader {
     }
 
     private void parseMapping() {
-        InputStream ssInputStream = null;
-        ssInputStream = this.conf.getConfResourceAsInputStream(
+        InputStream ssInputStream = this.conf.getConfResourceAsInputStream(
                 this.conf.get(TURING_MAPPING_CONFIGURATION, TURING_MAPPING_FILE));
         InputSource inputSource = new InputSource(ssInputStream);
         try {

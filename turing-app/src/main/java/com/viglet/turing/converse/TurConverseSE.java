@@ -106,7 +106,6 @@ public class TurConverseSE {
 	}
 
 	private SolrDocumentList executeSolrQuery(TurConverseAgent turConverseAgent, SolrQuery queryParameter) {
-		SolrDocumentList results = null;
 		try {
 			Optional<SolrClient> solrClient = this.getSolrClient(turConverseAgent);
 			if (solrClient.isPresent()) {
@@ -116,7 +115,7 @@ public class TurConverseSE {
 		} catch (SolrServerException | IOException e) {
 			logger.error(e.getMessage(), e);
 		}
-		return results;
+		return null;
 	}
 
 	SolrDocumentList solrGetActionAndParameters(TurConverseAgent turConverseAgent, String intent) {

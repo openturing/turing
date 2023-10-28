@@ -27,24 +27,21 @@ import java.net.URL;
 import jakarta.annotation.PreDestroy;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 @Slf4j
+@Getter
+@Setter
 public class TurSolrInstance {
 
 	private CloseableHttpClient closeableHttpClient;
-
-	@Getter
-	private SolrClient solrClient = null;
-
-	@Getter
-	private String core = null;
-
-	@Getter
-	private URL solrUrl = null;
+	private SolrClient solrClient;
+	private String core;
+	private URL solrUrl;
 	@PreDestroy
 	public void destroy() {
 		if (log.isDebugEnabled()) {
@@ -76,19 +73,4 @@ public class TurSolrInstance {
 		this.solrUrl = solrUrl;
 		this.core = core;
 	}
-
-	public void setSolrClient(SolrClient solrClient) {
-		this.solrClient = solrClient;
-	}
-
-	public void setCore(String core) {
-		this.core = core;
-	}
-
-	public void setSolrUrl(URL solrUrl) {
-		this.solrUrl = solrUrl;
-	}
-
-
-	
 }

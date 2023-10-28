@@ -16,7 +16,7 @@ turing.provider.name=AEM
 dps.site.default.sn.site=Sample
 dps.site.default.sn.locale=en_US
 dps.site.default.contextname=sites
-dps.site.default.urlprefix=http://example.com
+dps.site.default.urlprefix=https://example.com
 dps.config.association.priority=Sample
 dps.config.filesource.path=/appl/aem/
 ```

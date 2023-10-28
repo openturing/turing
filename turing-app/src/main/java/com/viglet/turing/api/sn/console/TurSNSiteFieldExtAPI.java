@@ -328,7 +328,7 @@ public class TurSNSiteFieldExtAPI {
 	public void createField(TurSNSite turSNSite, String locale, TurSNSiteFieldExt turSNSiteFieldExts) {
 		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
 		JSONObject jsonAddField = new JSONObject();
-		String fieldName = null;
+		String fieldName;
 
 		if (turSNSiteFieldExts.getSnType() == TurSNFieldType.NER) {
 			fieldName = String.format("turing_entity_%s", turSNSiteFieldExts.getName());

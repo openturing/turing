@@ -11,26 +11,6 @@
         <description>FreeCode AS Robots Name</description>
     </property>
     <property>
-        <name>http.agent.description</name>
-        <value>FreeCode Norway Web Crawler using Nutch 1.0</value>
-        <description></description>
-    </property>
-    <property>
-        <name>http.agent.url</name>
-        <value>http://www.freecode.no/</value>
-        <description></description>
-    </property>
-    <property>
-        <name>http.agent.email</name>
-        <value>alexandre.oliveira@gmail.com</value>
-        <description></description>
-    </property>
-    <property>
-        <name>http.agent.version</name>
-        <value></value>
-        <description></description>
-    </property>
-    <property>
         <name>generate.max.per.host</name>
         <value>100</value>
     </property>

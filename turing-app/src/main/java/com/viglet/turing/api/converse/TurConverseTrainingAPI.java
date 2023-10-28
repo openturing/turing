@@ -97,7 +97,7 @@ public class TurConverseTrainingAPI {
 				List<TurConverseIntent> intents = turConverseIntentRepository
 						.findByAgentAndFallback(turConverseChat.getAgent(), true);
 
-				TurConverseIntent intent = null;
+				TurConverseIntent intent;
 
 				if (!intents.isEmpty()) {
 					intent = intents.get(0);
