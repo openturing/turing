@@ -75,7 +75,7 @@ public class TurSecurityConfigProduction {
         http.csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new TurSpaCsrfTokenRequestHandler())
-                        .ignoringRequestMatchers(mvc.pattern("/api/sn/**"),
+                        .ignoringRequestMatchers(mvc.pattern("/api/sn/**"),mvc.pattern("/error/**"),
                                 mvc.pattern("/logout"), mvc.pattern("/api/nlp/**"),
                                 mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**")))
                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
@@ -86,6 +86,7 @@ public class TurSecurityConfigProduction {
             http.oauth2Login(withDefaults());
             http.authorizeHttpRequests(authorizeRequests -> {
                 authorizeRequests.requestMatchers(
+                        mvc.pattern("/error/**"),
                         mvc.pattern("/api/discovery"),
                         mvc.pattern("/assets/**"),
                         mvc.pattern("/favicon.ico"),
@@ -105,6 +106,7 @@ public class TurSecurityConfigProduction {
             http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
                     .authorizeHttpRequests(authorizeRequests -> {
                         authorizeRequests.requestMatchers(
+                                mvc.pattern("/error/**"),
                                 mvc.pattern("/api/discovery"),
                                 mvc.pattern("/logout"),
                                 mvc.pattern("/index.html"),

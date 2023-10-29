@@ -63,7 +63,7 @@ public class TurCommonsUtils {
 
 	public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue) {
 
-		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8.name());
+		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
 
 		StringBuilder sbQueryString = new StringBuilder();
 		boolean alreadyExists = false;
