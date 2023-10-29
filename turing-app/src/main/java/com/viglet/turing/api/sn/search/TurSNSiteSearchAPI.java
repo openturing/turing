@@ -26,25 +26,21 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNUtils;
-
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
-
-import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
@@ -67,13 +63,16 @@ public class TurSNSiteSearchAPI {
 			@RequestParam(required = false, name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
 			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
+			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "AND")
+															TurSNFilterQueryOperator fqOperator,
 			@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
 			@RequestParam(required = false, name = TurSNParamType.GROUP) String group,
-			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0") Integer autoCorrectionDisabled,
+			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0")
+															Integer autoCorrectionDisabled,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale, HttpServletRequest request) {
 		return turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-				new TurSEParameters(q, fq, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
+				new TurSEParameters(q, fq, fqOperator, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
 				TurSNUtils.requestToURI(request)));
 	}
 
@@ -82,10 +81,13 @@ public class TurSNSiteSearchAPI {
 			@RequestParam(required = false, name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
 			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
+			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "AND")
+																			 TurSNFilterQueryOperator fqOperator,
 			@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
 			@RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
 			@RequestParam(required = false, name = TurSNParamType.GROUP) String group,
-			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0") Integer autoCorrectionDisabled,
+			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0")
+																			 Integer autoCorrectionDisabled,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale,
 			@RequestBody TurSNSitePostParamsBean turSNSitePostParamsBean, Principal principal,
 			HttpServletRequest request) {
@@ -93,7 +95,7 @@ public class TurSNSiteSearchAPI {
 			turSNSitePostParamsBean.setTargetingRules(
 					turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
 			return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-					new TurSEParameters(q, fq, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
+					new TurSEParameters(q, fq, fqOperator, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
 					TurSNUtils.requestToURI(request), turSNSitePostParamsBean)), HttpStatus.OK);
 		}
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

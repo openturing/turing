@@ -53,20 +53,11 @@
             <srcAttr xmlName="content" className="com.viglet.turing.connector.aem.indexer.ext.TurHTML2Text">
                 <tag>abstract</tag>
             </srcAttr>
-            <srcAttr xmlName="area">
-                <tag>area</tag>
-            </srcAttr>
             <srcAttr xmlName="group">
                 <tag>group</tag>
             </srcAttr>
             <srcAttr xmlName="theme">
                 <tag>theme</tag>
-            </srcAttr>
-            <srcAttr xmlName="subtitle">
-                <tag>subtitle</tag>
-            </srcAttr>
-            <srcAttr xmlName="status">
-                <tag>status</tag>
             </srcAttr>
         </index-attrs>
     </mappingDefinition>

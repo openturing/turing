@@ -11,7 +11,7 @@
     </parent>
     <artifactId>turing-app</artifactId>
     <version>${revision}</version>
-    <name>Turing AI Application</name>
+    <name>Turing Application</name>
     <packaging>jar</packaging>
     <properties>
         <spring-boot.version>3.1.5</spring-boot.version>
@@ -525,6 +525,12 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>4.2.1</version>
+            <scope>compile</scope>
+        </dependency>
 
     </dependencies>
     <dependencyManagement>
@@ -539,6 +545,17 @@
         </dependencies>
     </dependencyManagement>
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                        <parameters>true</parameters>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>com.github.eirslett</groupId>

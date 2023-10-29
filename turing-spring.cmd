@@ -1,0 +1,1 @@
+mvn -Dmaven.repo.local=D:\repo spring-boot:run -pl turing-app -Dskip.npm
