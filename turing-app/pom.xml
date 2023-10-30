@@ -161,7 +161,7 @@
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>cleanup</artifactId>
-            <version>4.0.0</version>
+            <version>4.0.1</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
