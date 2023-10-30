@@ -545,6 +545,7 @@
         </dependencies>
     </dependencyManagement>
     <build>
+        <finalName>viglet-turing</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>

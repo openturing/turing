@@ -17,7 +17,7 @@ RUN sh -c 'chown -R java /tmp'
 RUN sh -c 'chown -R java /store'
 RUN sh -c 'chown -R java /models'
 
-COPY /turing-app/build/libs/viglet-turing.jar /viglet-turing.jar
+COPY /turing-app/target/viglet-turing.jar /viglet-turing.jar
 
 RUN sh -c 'touch /viglet-turing.jar'
 
