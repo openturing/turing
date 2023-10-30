@@ -20,10 +20,12 @@
  */
 package com.viglet.turing.converse.exchange.intent;
 
+import java.io.Serial;
 import java.util.ArrayList;
 
 public class TurConverseIntentPhrasesExchange extends ArrayList<TurConverseIntentPhraseExchange> {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 }

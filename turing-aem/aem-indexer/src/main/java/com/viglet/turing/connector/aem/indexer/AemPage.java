@@ -1,26 +1,23 @@
 package com.viglet.turing.connector.aem.indexer;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.RepositoryException;
-import javax.jcr.ValueFormatException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.RepositoryException;
+import javax.jcr.ValueFormatException;
+
+import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
+
 public class AemPage extends AemObject {
-	private static Logger logger = LoggerFactory.getLogger(AemPage.class);
+	private static final Logger logger = LoggerFactory.getLogger(AemPage.class);
 
 	private String title;
 	private String description;
 	private String url;
 	private String subTitle;
-	private StringBuffer components = new StringBuffer();
-	private Map<String, Object> attributes = new HashMap<>();
+	private final StringBuffer components = new StringBuffer();
 
 	public AemPage(Node node) {
 		super(node);
@@ -30,8 +27,6 @@ public class AemPage extends AemObject {
 			title = getJcrPropertyValue(jcrContent, "jcr:title");
 			description = getJcrPropertyValue(jcrContent, "jcr:description");
 			getNode(jcrContent, components);
-		} catch (PathNotFoundException e) {
-			logger.error(e.getMessage(), e);
 		} catch (RepositoryException e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -70,10 +65,6 @@ public class AemPage extends AemObject {
 
 	public String getSubTitle() {
 		return subTitle;
-	}
-
-	public Map<String, Object> getAttributes() {
-		return attributes;
 	}
 
 	public StringBuffer getComponents() {

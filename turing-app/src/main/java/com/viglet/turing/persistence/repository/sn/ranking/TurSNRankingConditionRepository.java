@@ -23,8 +23,6 @@ package com.viglet.turing.persistence.repository.sn.ranking;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingCondition;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.Set;
 
@@ -33,15 +31,5 @@ import java.util.Set;
  * @since 0.3.7
  */
 public interface TurSNRankingConditionRepository extends JpaRepository<TurSNRankingCondition, String> {
-
-	@SuppressWarnings("unchecked")
-	TurSNRankingCondition save(TurSNRankingCondition turSNRankingCondition);
-	
 	Set<TurSNRankingCondition> findByTurSNRankingExpression(TurSNRankingExpression turSNRankingExpression);
-	
-	void delete(TurSNRankingCondition turSNRankingCondition);
-
-	@Modifying
-	@Query("delete from  TurSNRankingCondition src where src.id = ?1")
-	void delete(String id);
 }

@@ -1,4 +1,0 @@
-rootProject.name = 'turing-filesystem'
-
-include ':fs-commons'
-include ':fs-connector'

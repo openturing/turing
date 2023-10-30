@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.converse.intent;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -33,6 +34,7 @@ import java.io.Serializable;
  * The persistent class for the turMLModel database table.
  * 
  */
+@Getter
 @Entity
 @Table(name="turConverseEvent")
 @NamedQuery(name="TurConverseEvent.findAll", query="SELECT ce FROM TurConverseEvent ce")
@@ -50,16 +52,8 @@ public class TurConverseEvent implements Serializable {
 	@JoinColumn(name = "intent_id")
 	private TurConverseIntent intent;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public TurConverseIntent getIntent() {
-		return intent;
 	}
 
 	public void setIntent(TurConverseIntent intent) {

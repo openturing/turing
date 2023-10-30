@@ -20,18 +20,12 @@
  */
 package com.viglet.turing.converse;
 
-import java.lang.invoke.MethodHandles;
-import java.security.SecureRandom;
-import java.util.AbstractMap;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.viglet.turing.bean.converse.TurConverseAgentResponse;
+import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
+import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
+import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatResponseRepository;
 import jakarta.servlet.http.HttpSession;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.common.SolrDocument;
@@ -39,20 +33,19 @@ import org.apache.solr.common.SolrDocumentList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.bean.converse.TurConverseAgentResponse;
-import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
-import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
-import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatResponseRepository;
-
+import java.lang.invoke.MethodHandles;
+import java.security.SecureRandom;
+import java.util.*;
+import java.util.AbstractMap.SimpleEntry;
+@Slf4j
 @Component
 public class TurConverse {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurConverseChatResponseRepository turConverseChatResponseRepository;
 	@Autowired
 	private TurConverseSE turConverseSE;
 
-	private SecureRandom random = new SecureRandom();
+	private final SecureRandom random = new SecureRandom();
 
 	public void saveChatResponseUser(String q, TurConverseChat chat, HttpSession session) {
 		boolean hasParameter = session.getAttribute(TurConverseConstants.HAS_PARAMETER) != null
@@ -229,7 +222,7 @@ public class TurConverse {
 					word = values.get(0).getParameterValue();
 				}
 			}
-			responseModified.append(word + " ");
+			responseModified.append(word).append(" ");
 		}
 
 		return responseModified.toString();
@@ -253,7 +246,7 @@ public class TurConverse {
 	
 			if (responses != null && !responses.isEmpty()) {
 				int rnd = new SecureRandom().nextInt(responses.size());
-				return (String) responses.stream().collect(Collectors.toCollection(ArrayList::new)).get(rnd);
+				return (String) new ArrayList<>(responses).get(rnd);
 			} else {
 				return TurConverseConstants.FALLBACK_DEFAULT_MESSAGE;
 			}
@@ -277,15 +270,15 @@ public class TurConverse {
 		showSessionAttribute(session,TurConverseConstants.NEXT_PARAMETER);
 		showSessionAttribute(session,TurConverseConstants.NEXT_CONTEXT);
 		showSessionAttribute(session,TurConverseConstants.INTENT);
-		logger.debug("-----");
+		log.debug("-----");
 	}
 
 	private void showSessionAttribute(HttpSession session, String attribute) {
-		logger.debug("{}: {}", attribute, session.getAttribute(attribute));
+		log.debug("{}: {}", attribute, session.getAttribute(attribute));
 	}
 
 	public void cleanSession(HttpSession session) {
-		logger.debug("Clean Session");
+		log.debug("Clean Session");
 		session.removeAttribute(TurConverseConstants.HAS_PARAMETER);
 		session.removeAttribute(TurConverseConstants.NEXT_PARAMETER);
 		session.removeAttribute(TurConverseConstants.NEXT_CONTEXT);

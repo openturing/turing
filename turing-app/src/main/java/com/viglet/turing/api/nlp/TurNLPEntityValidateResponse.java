@@ -24,23 +24,17 @@ package com.viglet.turing.api.nlp;
 import java.util.List;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
+import lombok.Getter;
 
+@Getter
 public class TurNLPEntityValidateResponse {
 
 	private TurNLPEntity type;
 	
 	private List<String> terms;
 
-	public TurNLPEntity getType() {
-		return type;
-	}
-
 	public void setType(TurNLPEntity type) {
 		this.type = type;
-	}
-
-	public List<String> getTerms() {
-		return terms;
 	}
 
 	public void setTerms(List<String> terms) {

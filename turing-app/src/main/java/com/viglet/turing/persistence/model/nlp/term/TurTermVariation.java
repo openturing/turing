@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.nlp.term;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -34,6 +35,7 @@ import java.util.List;
  * The persistent class for the turTermVariation database table.
  * 
  */
+@Getter
 @Entity
 @Table(name="turTermVariation")
 @NamedQuery(name="TurTermVariation.findAll", query="SELECT tv FROM TurTermVariation tv")
@@ -83,96 +85,48 @@ public class TurTermVariation implements Serializable {
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTermVariation", cascade = CascadeType.ALL)
 	private List<TurTermVariationLanguage> turTermVariationLanguages;
 
-	public String getId() {
-		return this.id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return this.name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getNameLower() {
-		return this.nameLower;
-	}
-
 	public void setNameLower(String nameLower) {
 		this.nameLower = nameLower;
-	}
-
-	public int getRuleAccent() {
-		return this.ruleAccent;
 	}
 
 	public void setRuleAccent(int ruleAccent) {
 		this.ruleAccent = ruleAccent;
 	}
 
-	public int getRuleCase() {
-		return this.ruleCase;
-	}
-
 	public void setRuleCase(int ruleCase) {
 		this.ruleCase = ruleCase;
-	}
-
-	public String getRulePrefix() {
-		return this.rulePrefix;
 	}
 
 	public void setRulePrefix(String rulePrefix) {
 		this.rulePrefix = rulePrefix;
 	}
 
-	public int getRulePrefixRequired() {
-		return this.rulePrefixRequired;
-	}
-
 	public void setRulePrefixRequired(int rulePrefixRequired) {
 		this.rulePrefixRequired = rulePrefixRequired;
-	}
-
-	public String getRuleSuffix() {
-		return this.ruleSuffix;
 	}
 
 	public void setRuleSuffix(String ruleSuffix) {
 		this.ruleSuffix = ruleSuffix;
 	}
 
-	public int getRuleSuffixRequired() {
-		return this.ruleSuffixRequired;
-	}
-
 	public void setRuleSuffixRequired(int ruleSuffixRequired) {
 		this.ruleSuffixRequired = ruleSuffixRequired;
-	}
-
-	public double getWeight() {
-		return this.weight;
 	}
 
 	public void setWeight(double weight) {
 		this.weight = weight;
 	}
 
-	public TurTerm getTurTerm() {
-		return this.turTerm;
-	}
-
 	public void setTurTerm(TurTerm turTerm) {
 		this.turTerm = turTerm;
-	}
-
-	public List<TurTermVariationLanguage> getTurTermVariationLanguages() {
-		return this.turTermVariationLanguages;
 	}
 
 	public void setTurTermVariationLanguages(List<TurTermVariationLanguage> turTermVariationLanguages) {

@@ -22,6 +22,7 @@ package com.viglet.turing.persistence.model.nlp.term;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -32,6 +33,7 @@ import java.io.Serializable;
  * The persistent class for the turTermVariationLanguage database table.
  * 
  */
+@Getter
 @Entity
 @Table(name="turTermVariationLanguage")
 @NamedQuery(name="TurTermVariationLanguage.findAll", query="SELECT tvl FROM TurTermVariationLanguage tvl")
@@ -58,32 +60,16 @@ public class TurTermVariationLanguage implements Serializable {
 	@JoinColumn(name="variation_id", nullable=false)
 	private TurTermVariation turTermVariation;
 
-	public String getId() {
-		return this.id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getLanguage() {
-		return this.language;
 	}
 
 	public void setLanguage(String language) {
 		this.language = language;
 	}
 
-	public TurTerm getTurTerm() {
-		return this.turTerm;
-	}
-
 	public void setTurTerm(TurTerm turTerm) {
 		this.turTerm = turTerm;
-	}
-
-	public TurTermVariation getTurTermVariation() {
-		return this.turTermVariation;
 	}
 
 	public void setTurTermVariation(TurTermVariation turTermVariation) {

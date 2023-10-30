@@ -78,8 +78,10 @@ public class TurUserAPI {
                 turUser.setPassword(null);
                 if (turUser.getTurGroups() != null) {
                     for (TurGroup turGroup : turUser.getTurGroups()) {
-                        if (turGroup.getName().equals("Administrator"))
+                        if (turGroup.getName().equals("Administrator")) {
                             isAdmin = true;
+                            break;
+                        }
                     }
                 }
                 turCurrentUser.setUsername(turUser.getUsername());
@@ -112,7 +114,7 @@ public class TurUserAPI {
             turUserEdit.setFirstName(turUser.getFirstName());
             turUserEdit.setLastName(turUser.getLastName());
             turUserEdit.setEmail(turUser.getEmail());
-            if (turUser.getPassword() != null && turUser.getPassword().trim().length() > 0) {
+            if (turUser.getPassword() != null && !turUser.getPassword().trim().isEmpty()) {
                 turUserEdit.setPassword(passwordEncoder.encode(turUser.getPassword()));
             }
             turUserEdit.setTurGroups(turUser.getTurGroups());
@@ -124,13 +126,13 @@ public class TurUserAPI {
     @Transactional
     @DeleteMapping("/{username}")
     public boolean turUserDelete(@PathVariable String username) {
-        turUserRepository.delete(username);
+        turUserRepository.deleteByUsername(username);
         return true;
     }
 
     @PostMapping
     public TurUser turUserAdd(@RequestBody TurUser turUser) {
-        if (turUser.getPassword() != null && turUser.getPassword().trim().length() > 0) {
+        if (turUser.getPassword() != null && !turUser.getPassword().trim().isEmpty()) {
             turUser.setPassword(passwordEncoder.encode(turUser.getPassword()));
             turUserRepository.save(turUser);
         }

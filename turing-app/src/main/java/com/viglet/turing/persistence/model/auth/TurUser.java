@@ -21,6 +21,7 @@
 package com.viglet.turing.persistence.model.auth;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -32,6 +33,7 @@ import java.util.Set;
  * The persistent class for the TurUser database table.
  * 
  */
+@Getter
 @Entity
 @NamedQuery(name = "TurUser.findAll", query = "SELECT s FROM TurUser s")
 public class TurUser implements Serializable {
@@ -82,104 +84,52 @@ public class TurUser implements Serializable {
 		super();
 	}
 
-	public String getConfirmEmail() {
-		return this.confirmEmail;
-	}
-
 	public void setConfirmEmail(String confirmEmail) {
 		this.confirmEmail = confirmEmail;
-	}
-
-	public String getEmail() {
-		return this.email;
 	}
 
 	public void setEmail(String email) {
 		this.email = email;
 	}
 
-	public String getFirstName() {
-		return this.firstName;
-	}
-
 	public void setFirstName(String firstName) {
 		this.firstName = firstName;
-	}
-
-	public Date getLastLogin() {
-		return this.lastLogin;
 	}
 
 	public void setLastLogin(Date lastLogin) {
 		this.lastLogin = lastLogin;
 	}
 
-	public String getLastName() {
-		return this.lastName;
-	}
-
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
-	}
-
-	public String getLastPostType() {
-		return this.lastPostType;
 	}
 
 	public void setLastPostType(String lastPostType) {
 		this.lastPostType = lastPostType;
 	}
 
-	public int getLoginTimes() {
-		return this.loginTimes;
-	}
-
 	public void setLoginTimes(int loginTimes) {
 		this.loginTimes = loginTimes;
-	}
-
-	public String getPassword() {
-		return this.password;
 	}
 
 	public void setPassword(String password) {
 		this.password = password;
 	}
 
-	public String getRealm() {
-		return this.realm;
-	}
-
 	public void setRealm(String realm) {
 		this.realm = realm;
-	}
-
-	public String getRecoverPassword() {
-		return this.recoverPassword;
 	}
 
 	public void setRecoverPassword(String recoverPassword) {
 		this.recoverPassword = recoverPassword;
 	}
 
-	public String getUsername() {
-		return this.username;
-	}
-
 	public void setUsername(String username) {
 		this.username = username;
 	}
 
-	public int getEnabled() {
-		return enabled;
-	}
-
 	public void setEnabled(int enabled) {
 		this.enabled = enabled;
-	}
-	
-	public Set<TurGroup> getTurGroups() {
-		return this.turGroups;
 	}
 
 	public void setTurGroups(Set<TurGroup> turGroups) {

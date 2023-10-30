@@ -21,11 +21,11 @@
 
 package com.viglet.turing.plugins.nlp;
 
+import com.viglet.turing.nlp.TurNLPRequest;
+
 import java.util.List;
 import java.util.Map;
 
-import com.viglet.turing.nlp.TurNLPRequest;
-
 public interface TurNLPPlugin {
-	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest);
+	Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest);
 }

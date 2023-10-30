@@ -21,6 +21,9 @@
 
 package com.viglet.turing.converse.exchange.entity;
 
+import lombok.Getter;
+
+@Getter
 public class TurConverseEntityExchange {
 
 	private String id;
@@ -37,56 +40,28 @@ public class TurConverseEntityExchange {
 
 	private boolean allowFuzzyExtraction;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public boolean getIsOverridable() {
-		return isOverridable;
-	}
-
 	public void setIsOverridable(boolean isOverridable) {
 		this.isOverridable = isOverridable;
-	}
-
-	public boolean getIsEnum() {
-		return isEnum;
 	}
 
 	public void setIsEnum(boolean isEnum) {
 		this.isEnum = isEnum;
 	}
 
-	public boolean getIsRegexp() {
-		return isRegexp;
-	}
-
 	public void setIsRegexp(boolean isRegexp) {
 		this.isRegexp = isRegexp;
 	}
 
-	public boolean getAutomatedExpansion() {
-		return automatedExpansion;
-	}
-
 	public void setAutomatedExpansion(boolean automatedExpansion) {
 		this.automatedExpansion = automatedExpansion;
-	}
-
-	public boolean getAllowFuzzyExtraction() {
-		return allowFuzzyExtraction;
 	}
 
 	public void setAllowFuzzyExtraction(boolean allowFuzzyExtraction) {

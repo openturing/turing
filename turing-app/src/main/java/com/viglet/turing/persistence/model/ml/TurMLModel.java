@@ -22,6 +22,7 @@
 package com.viglet.turing.persistence.model.ml;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -31,6 +32,7 @@ import java.io.Serializable;
  * The persistent class for the turMLModel database table.
  * 
  */
+@Getter
 @Entity
 @Table(name="turMLModel")
 @NamedQuery(name="TurMLModel.findAll", query="SELECT mlm FROM TurMLModel mlm")
@@ -53,32 +55,16 @@ public class TurMLModel implements Serializable {
 	@Column(nullable=false, length=50)
 	private String name;
 
-	public int getId() {
-		return this.id;
-	}
-
 	public void setId(int id) {
 		this.id = id;
-	}
-
-	public String getDescription() {
-		return this.description;
 	}
 
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public String getInternalName() {
-		return this.internalName;
-	}
-
 	public void setInternalName(String internalName) {
 		this.internalName = internalName;
-	}
-
-	public String getName() {
-		return this.name;
 	}
 
 	public void setName(String name) {

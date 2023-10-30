@@ -21,35 +21,6 @@
 
 package com.viglet.turing.api.ml.data.group;
 
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.lang.invoke.MethodHandles;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.viglet.turing.persistence.model.ml.TurMLModel;
 import com.viglet.turing.persistence.model.storage.TurDataGroupModel;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
@@ -57,24 +28,33 @@ import com.viglet.turing.persistence.repository.ml.TurMLModelRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupModelRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import opennlp.tools.doccat.DoccatFactory;
-import opennlp.tools.doccat.DoccatModel;
-import opennlp.tools.doccat.DocumentCategorizerME;
-import opennlp.tools.doccat.DocumentSample;
-import opennlp.tools.doccat.DocumentSampleStream;
+import lombok.extern.slf4j.Slf4j;
+import opennlp.tools.doccat.*;
 import opennlp.tools.util.InputStreamFactory;
 import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
 import opennlp.tools.util.TrainingParameters;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
 
+import java.io.*;
+import java.lang.invoke.MethodHandles;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+@Slf4j
 @RestController
 @RequestMapping("/api/ml/data/group/{dataGroupId}/model")
 @Tag(name = "Machine Learning Model by Group", description = "Machine Learning Model by Group API")
 public class TurMLDataGroupModelAPI {
-	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurDataGroupRepository turDataGroupRepository;
 	@Autowired
@@ -112,7 +92,7 @@ public class TurMLDataGroupModelAPI {
 	@Operation(summary = "Delete a Machine Learning Data Group Model")
 	@DeleteMapping("/{id}")
 	public boolean turDataGroupModelDelete(@PathVariable int dataGroupId, @PathVariable int id) {
-		this.turDataGroupModelRepository.delete(id);
+		this.turDataGroupModelRepository.deleteById(id);
 		return true;
 	}
 
@@ -144,7 +124,7 @@ public class TurMLDataGroupModelAPI {
 
 			for (TurDataGroupSentence vigTrainDocSentence : turDataSentences) {
 				if (vigTrainDocSentence.getTurMLCategory() != null) {
-					trainSB.append(vigTrainDocSentence.getTurMLCategory().getInternalName() + " ");
+					trainSB.append(vigTrainDocSentence.getTurMLCategory().getInternalName()).append(" ");
 					trainSB.append(vigTrainDocSentence.getSentence().replaceAll("[\\t\\n\\r]", " ").trim());
 					trainSB.append("\n");
 				}
@@ -153,7 +133,7 @@ public class TurMLDataGroupModelAPI {
 			try (PrintWriter out = new PrintWriter(trainFilePath)) {
 				out.println(trainSB.toString().trim());
 			} catch (FileNotFoundException e) {
-				logger.error(e);
+				log.error(e.getMessage(), e);
 			}
 
 			DoccatModel model = null;
@@ -174,14 +154,14 @@ public class TurMLDataGroupModelAPI {
 				model = DocumentCategorizerME.train("en", sampleStream, TrainingParameters.defaultParams(), factory);
 
 			} catch (IOException e) {
-				logger.error(e);
+				log.error(e.getMessage(), e);
 			}
 
 			if (model != null) {
 				try (OutputStream modelOut = new BufferedOutputStream(new FileOutputStream(modelFilePath))) {
 					model.serialize(modelOut);
 				} catch (IOException e) {
-					logger.error(e);
+					log.error(e.getMessage(), e);
 				}
 
 			}

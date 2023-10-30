@@ -21,6 +21,7 @@
 package com.viglet.turing.persistence.model.auth;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -32,6 +33,7 @@ import java.util.Set;
  * The persistent class for the TurRole database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turRole")
 @NamedQuery(name = "TurRole.findAll", query = "SELECT r FROM TurRole r")
@@ -56,32 +58,16 @@ public class TurRole implements Serializable {
 	@ManyToMany
 	private Set<TurGroup> turGroups = new HashSet<>();
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getDescription() {
-		return description;
-	}
-
 	public void setDescription(String description) {
 		this.description = description;
-	}
-	
-	public Set<TurGroup> getTurGroups() {
-		return this.turGroups;
 	}
 
 	public void setTurGroups(Set<TurGroup> turGroups) {

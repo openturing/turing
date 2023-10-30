@@ -21,6 +21,7 @@
 
 package com.viglet.turing.spring.security;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 
@@ -33,8 +34,9 @@ import com.viglet.turing.persistence.model.auth.TurUser;
 
 public class TurCustomUserDetails extends TurUser implements UserDetails {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
-	private List<String> turUserRoles;
+	private final List<String> turUserRoles;
 
 	public TurCustomUserDetails(TurUser turUser, List<String> turUserRoles) {
 		super(turUser);

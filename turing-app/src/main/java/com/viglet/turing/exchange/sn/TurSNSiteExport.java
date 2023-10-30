@@ -21,6 +21,20 @@
 
 package com.viglet.turing.exchange.sn;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.exchange.TurExchange;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -32,21 +46,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-
-import jakarta.servlet.http.HttpServletResponse;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.exchange.TurExchange;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
 @Component
 public class TurSNSiteExport {
@@ -99,7 +98,7 @@ public class TurSNSiteExport {
 
 				return new StreamingResponseBody() {
 					@Override
-					public void writeTo(OutputStream output) throws IOException {
+					public void writeTo(@NotNull OutputStream output) throws IOException {
 
 						try {
 							java.nio.file.Path path = Paths.get(zipFile.getAbsolutePath());

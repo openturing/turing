@@ -99,14 +99,14 @@ public class TurSNRankingExpressionAPI {
     @Operation(summary = "Delete a Semantic Navigation Ranking Expression")
     @DeleteMapping("/{id}")
     @CacheEvict(value = {"ranking_expression"}, allEntries = true)
-    public boolean turSNRankingExpressionDelete(@PathVariable String id) {
-        turSNRankingExpressionRepository.delete(id);
+    public boolean turSNRankingExpressionDelete(@PathVariable String id, @PathVariable String snSiteId) {
+        turSNRankingExpressionRepository.deleteById(id);
         return true;
     }
 
     @Operation(summary = "Create a Semantic Navigation Ranking Expression")
     @PostMapping
-    public TurSNRankingExpression turSNRankingExpressionAdd(@RequestBody TurSNRankingExpression turSNRankingExpression) {
+    public TurSNRankingExpression turSNRankingExpressionAdd(@RequestBody TurSNRankingExpression turSNRankingExpression, @PathVariable String snSiteId) {
         turSNRankingExpression.setTurSNRankingConditions(turSNRankingExpression.getTurSNRankingConditions()
                 .stream()
                 .peek(condition ->

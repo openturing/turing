@@ -108,7 +108,7 @@ public class TurSNSiteMergeProvidersAPI {
 	@Operation(summary = "Delete a Semantic Navigation Site Merge Providers")
 	@DeleteMapping("/{id}")
 	public boolean turSNSiteMergeDelete(@PathVariable String id) {
-		turSNSiteMergeRepository.delete(id);
+		turSNSiteMergeRepository.deleteById(id);
 		return true;
 	}
 

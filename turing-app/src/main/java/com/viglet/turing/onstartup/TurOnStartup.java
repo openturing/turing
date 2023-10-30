@@ -20,26 +20,12 @@
  */
 package com.viglet.turing.onstartup;
 
-import java.lang.invoke.MethodHandles;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.viglet.turing.onstartup.auth.TurGroupOnStartup;
 import com.viglet.turing.onstartup.auth.TurUserOnStartup;
 import com.viglet.turing.onstartup.converse.TurConverseAgentOnStartup;
 import com.viglet.turing.onstartup.ml.TurMLInstanceOnStartup;
 import com.viglet.turing.onstartup.ml.TurMLVendorOnStartup;
-import com.viglet.turing.onstartup.nlp.TurNLPEntityOnStartup;
-import com.viglet.turing.onstartup.nlp.TurNLPFeatureOnStartup;
-import com.viglet.turing.onstartup.nlp.TurNLPInstanceOnStartup;
-import com.viglet.turing.onstartup.nlp.TurNLPVendorEntityOnStartup;
-import com.viglet.turing.onstartup.nlp.TurNLPVendorOnStartup;
+import com.viglet.turing.onstartup.nlp.*;
 import com.viglet.turing.onstartup.se.TurSEInstanceOnStartup;
 import com.viglet.turing.onstartup.se.TurSEVendorOnStartup;
 import com.viglet.turing.onstartup.sn.TurSNSiteOnStartup;
@@ -48,11 +34,20 @@ import com.viglet.turing.onstartup.storage.TurDataGroupStartup;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.onstartup.system.TurLocaleOnStartup;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.invoke.MethodHandles;
+@Slf4j
 @Component
 @Transactional
 public class TurOnStartup implements ApplicationRunner {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurConfigVarRepository turConfigVarRepository;
 	@Autowired
@@ -94,9 +89,9 @@ public class TurOnStartup implements ApplicationRunner {
 	public void run(ApplicationArguments arg0) throws Exception {
 		final String FIRST_TIME = "FIRST_TIME";
 
-		if (!turConfigVarRepository.findById(FIRST_TIME).isPresent()) {
+		if (turConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
 
-			logger.info("First Time Configuration ...");
+			log.info("First Time Configuration ...");
 
 			turLocaleOnStartup.createDefaultRows();
 			turGroupOnStartup.createDefaultRows();
@@ -118,7 +113,7 @@ public class TurOnStartup implements ApplicationRunner {
 			
 			turConfigVarOnStartup.createDefaultRows();
 
-			logger.info("Configuration finished.");
+			log.info("Configuration finished.");
 		}
 
 	}

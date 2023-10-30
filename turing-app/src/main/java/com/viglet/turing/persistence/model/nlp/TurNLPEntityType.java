@@ -22,6 +22,7 @@ package com.viglet.turing.persistence.model.nlp;
 
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -47,35 +48,26 @@ public class TurNLPEntityType implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	@Getter
 	@Column(nullable = false, length = 100)
 	private String name;
 
+	@Getter
 	@Column(nullable = true, length = 255)
 	private String description;
 
+	@Getter
 	@ManyToOne
 	@JoinColumn(name = "entity_id")
 	@JsonIdentityReference(alwaysAsId = true)
 	private TurNLPEntity turNLPEntity;
 
-	public String getName() {
-		return name;
-	}
-
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getDescription() {
-		return description;
-	}
-
 	public void setDescription(String description) {
 		this.description = description;
-	}
-
-	public TurNLPEntity getTurNLPEntity() {
-		return turNLPEntity;
 	}
 
 	public void setTurNLPEntity(TurNLPEntity turNLPEntity) {

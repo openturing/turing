@@ -23,9 +23,8 @@ package com.viglet.turing.persistence.repository.nlp;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPFeature;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TurNLPFeatureRepository extends JpaRepository<TurNLPFeature, String> {
-
-	void delete(TurNLPFeature turNLPFeature);
 }

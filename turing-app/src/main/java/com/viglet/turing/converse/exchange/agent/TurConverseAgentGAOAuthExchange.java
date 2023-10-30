@@ -21,6 +21,9 @@
 
 package com.viglet.turing.converse.exchange.agent;
 
+import lombok.Getter;
+
+@Getter
 public class TurConverseAgentGAOAuthExchange {
 
 	private boolean required;
@@ -37,56 +40,28 @@ public class TurConverseAgentGAOAuthExchange {
 
 	private String grantType;
 
-	public boolean isRequired() {
-		return required;
-	}
-
 	public void setRequired(boolean required) {
 		this.required = required;
-	}
-
-	public String getProviderId() {
-		return providerId;
 	}
 
 	public void setProviderId(String providerId) {
 		this.providerId = providerId;
 	}
 
-	public String getAuthorizationUrl() {
-		return authorizationUrl;
-	}
-
 	public void setAuthorizationUrl(String authorizationUrl) {
 		this.authorizationUrl = authorizationUrl;
-	}
-
-	public String getTokenUrl() {
-		return tokenUrl;
 	}
 
 	public void setTokenUrl(String tokenUrl) {
 		this.tokenUrl = tokenUrl;
 	}
 
-	public String getScopes() {
-		return scopes;
-	}
-
 	public void setScopes(String scopes) {
 		this.scopes = scopes;
 	}
 
-	public String getPrivacyPolicyUrl() {
-		return privacyPolicyUrl;
-	}
-
 	public void setPrivacyPolicyUrl(String privacyPolicyUrl) {
 		this.privacyPolicyUrl = privacyPolicyUrl;
-	}
-
-	public String getGrantType() {
-		return grantType;
 	}
 
 	public void setGrantType(String grantType) {

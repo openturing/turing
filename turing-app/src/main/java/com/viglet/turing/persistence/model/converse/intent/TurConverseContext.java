@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -36,6 +37,7 @@ import java.util.Set;
  * The persistent class for the turMLModel database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turConverseCtx")
 @NamedQuery(name = "TurConverseContext.findAll", query = "SELECT cc FROM TurConverseContext cc")
@@ -73,24 +75,12 @@ public class TurConverseContext implements Serializable {
 		this.setText(text);
 	}
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
 	}
 
-	public String getText() {
-		return text;
-	}
-
 	public void setText(String text) {
 		this.text = text;
-	}
-
-	public Set<TurConverseIntent> getIntentInputs() {
-		return this.intentInputs;
 	}
 
 	public void setIntentInputs(Set<TurConverseIntent> intentInputs) {
@@ -100,19 +90,11 @@ public class TurConverseContext implements Serializable {
 		}
 	}
 
-	public Set<TurConverseIntent> getIntentOutputs() {
-		return this.intentOutputs;
-	}
-
 	public void setIntentOutputs(Set<TurConverseIntent> intentOutputs) {
 		this.intentOutputs.clear();
 		if (intentOutputs != null) {
 			this.intentOutputs.addAll(intentOutputs);
 		}
-	}
-
-	public TurConverseAgent getAgent() {
-		return agent;
 	}
 
 	public void setAgent(TurConverseAgent agent) {

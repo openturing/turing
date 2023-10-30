@@ -21,8 +21,10 @@
 
 package com.viglet.turing.converse.exchange.intent;
 
-import java.util.List;
+import lombok.Getter;
 
+import java.util.List;
+@Getter
 public class TurConverseIntentPhraseExchange {
 
 	private String id;
@@ -35,40 +37,20 @@ public class TurConverseIntentPhraseExchange {
 
 	private int updated;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public List<TurConverseIntentPhraseDataExchange> getData() {
-		return data;
 	}
 
 	public void setData(List<TurConverseIntentPhraseDataExchange> data) {
 		this.data = data;
 	}
 
-	public boolean getIsTemplate() {
-		return isTemplate;
-	}
-
 	public void setIsTemplate(boolean isTemplate) {
 		this.isTemplate = isTemplate;
 	}
 
-	public int getCount() {
-		return count;
-	}
-
 	public void setCount(int count) {
 		this.count = count;
-	}
-
-	public int getUpdated() {
-		return updated;
 	}
 
 	public void setUpdated(int updated) {

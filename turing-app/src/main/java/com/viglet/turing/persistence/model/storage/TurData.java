@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.Fetch;
 
 import java.io.Serial;
@@ -33,6 +34,7 @@ import java.util.List;
  * The persistent class for the turData database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turData")
 @NamedQuery(name = "TurData.findAll", query = "SELECT d FROM TurData d")
@@ -64,32 +66,16 @@ public class TurData implements Serializable
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentences;
 
-	public int getId() {
-		return this.id;
-	}
-
 	public void setId(int id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return this.name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getType() {
-		return this.type;
-	}
-
 	public void setType(String type) {
 		this.type = type;
-	}
-
-	public List<TurDataGroupData> getTurDataGroupData() {
-		return this.turDataGroupData;
 	}
 
 	public void setTurDataGroupData(List<TurDataGroupData> turDataGroupData) {
@@ -108,10 +94,6 @@ public class TurData implements Serializable
 		turDataGroupData.setTurData(null);
 
 		return turDataGroupData;
-	}
-
-	public List<TurDataGroupSentence> getTurDataGroupSentences() {
-		return this.turDataGroupSentences;
 	}
 
 	public void setTurDataGroupSentences(List<TurDataGroupSentence> turDataSentences) {

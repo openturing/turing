@@ -20,24 +20,19 @@
  */
 package com.viglet.turing.converse.exchange.entity;
 
+import lombok.Getter;
+
 import java.util.List;
 
+@Getter
 public class TurConverseEntityEntryExchange {
 
 	private String value;
 	
 	private List<String> synonyms;
 
-	public String getValue() {
-		return value;
-	}
-
 	public void setValue(String value) {
 		this.value = value;
-	}
-
-	public List<String> getSynonyms() {
-		return synonyms;
 	}
 
 	public void setSynonyms(List<String> synonyms) {

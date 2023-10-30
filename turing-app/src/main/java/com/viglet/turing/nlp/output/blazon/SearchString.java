@@ -24,7 +24,9 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import lombok.Getter;
 
+@Getter
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "SearchString")
 public class SearchString {
@@ -32,16 +34,11 @@ public class SearchString {
 	private String string;
 	@XmlAttribute
 	private boolean matchWholeWord;
-	
-	public String getString() {
-		return string;
-	}
+
 	public void setString(String string) {
 		this.string = string;
 	}
-	public boolean isMatchWholeWord() {
-		return matchWholeWord;
-	}
+
 	public void setMatchWholeWord(boolean matchWholeWord) {
 		this.matchWholeWord = matchWholeWord;
 	}

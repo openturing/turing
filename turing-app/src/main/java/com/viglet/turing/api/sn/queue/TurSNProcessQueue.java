@@ -206,8 +206,7 @@ public class TurSNProcessQueue {
         if (!nlpAttributeArray.isEmpty()) {
             List<String> list = TurCommonsUtils.cloneListOfTermsAsString(nlpAttributeArray);
             Set<String> termsUnique = new HashSet<>(list);
-            List<Object> arrayValue = new ArrayList<>();
-            arrayValue.addAll(termsUnique);
+            List<Object> arrayValue = new ArrayList<>(termsUnique);
             attributesWithUniqueTerms.put(attribute.getKey(), arrayValue);
             termsUnique.forEach(
                     term -> logger.debug("removeDuplicateTerms: attributesWithUniqueTerms Array Value: {}", term));

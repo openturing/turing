@@ -36,8 +36,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurSNDeindexingAPI {
 	@Autowired
 	private TurSNImportAPI turSNImportAPI;
-	
-	public static final String INDEXING_QUEUE = "indexing.queue";
 
 	@PostMapping
 	public String turSNDesindexingBroker(@PathVariable String id, @RequestBody TurSNJobItems turSNJobItems)

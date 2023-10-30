@@ -20,6 +20,8 @@
  */
 package com.viglet.turing.plugins.nlp.gcp.response;
 
+import lombok.Getter;
+
 /**
  * 
  * @author Alexandre Oliveira
@@ -27,22 +29,15 @@ package com.viglet.turing.plugins.nlp.gcp.response;
  * @since 0.3.6
  *
  */
+@Getter
 public class TurNLPCGCPMentionResponse {
 
 	private TurNLPGCPMentionTextResponse text;
 
 	private TurNLPGCPMentionTypeResponse type;
 
-	public TurNLPGCPMentionTextResponse getText() {
-		return text;
-	}
-
 	public void setText(TurNLPGCPMentionTextResponse text) {
 		this.text = text;
-	}
-
-	public TurNLPGCPMentionTypeResponse getType() {
-		return type;
 	}
 
 	public void setType(TurNLPGCPMentionTypeResponse type) {

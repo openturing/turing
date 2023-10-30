@@ -30,7 +30,7 @@ To run Turing AI, just execute the following lines:
 
 ```shell
 # Turing App
-./gradlew turing-app:bootrun --args='--spring.profiles.active=dev-ui' -Pno-ui
+mvn -Dmaven.repo.local=D:\repo spring-boot:run -pl turing-app -Dskip.npm
 
 # New Turing AI UI using Angular 12 and Primer CSS.
 

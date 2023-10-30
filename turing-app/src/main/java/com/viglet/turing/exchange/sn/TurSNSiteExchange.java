@@ -21,12 +21,14 @@
 
 package com.viglet.turing.exchange.sn;
 
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
+import lombok.Getter;
 
+import java.util.Set;
+
+@Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteExchange {
 
@@ -74,10 +76,6 @@ public class TurSNSiteExchange {
 
 	private Set<TurSNSiteField> turSNSiteFields;
 
-	public TurSNSiteExchange() {
-		super();
-	}
-
 	public TurSNSiteExchange(TurSNSite turSNSite) {
 		this.setDefaultDateField(turSNSite.getDefaultDateField());
 		this.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
@@ -102,64 +100,32 @@ public class TurSNSiteExchange {
 		this.setTurSNSiteFields(turSNSite.getTurSNSiteFields());
 	}
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getDescription() {
-		return description;
-	}
-
 	public void setDescription(String description) {
 		this.description = description;
-	}
-
-	public String getLanguage() {
-		return language;
 	}
 
 	public void setLanguage(String language) {
 		this.language = language;
 	}
 
-	public String getCore() {
-		return core;
-	}
-
 	public void setCore(String core) {
 		this.core = core;
-	}
-
-	public int getRowsPerPage() {
-		return rowsPerPage;
 	}
 
 	public void setRowsPerPage(int rowsPerPage) {
 		this.rowsPerPage = rowsPerPage;
 	}
 
-	public boolean getFacet() {
-		return facet;
-	}
-
 	public void setFacet(boolean facet) {
 		this.facet = facet;
-	}
-
-	public int getItemsPerFacet() {
-		return itemsPerFacet;
 	}
 
 	public void setItemsPerFacet(int itemsPerFacet) {
@@ -174,104 +140,52 @@ public class TurSNSiteExchange {
 		this.hl = hl;
 	}
 
-	public String getHlPre() {
-		return hlPre;
-	}
-
 	public void setHlPre(String hlPre) {
 		this.hlPre = hlPre;
-	}
-
-	public String getHlPost() {
-		return hlPost;
 	}
 
 	public void setHlPost(String hlPost) {
 		this.hlPost = hlPost;
 	}
 
-	public boolean getMlt() {
-		return mlt;
-	}
-
 	public void setMlt(boolean mlt) {
 		this.mlt = mlt;
-	}
-
-	public boolean getThesaurus() {
-		return thesaurus;
 	}
 
 	public void setThesaurus(boolean thesaurus) {
 		this.thesaurus = thesaurus;
 	}
 
-	public String getDefaultTitleField() {
-		return defaultTitleField;
-	}
-
 	public void setDefaultTitleField(String defaultTitleField) {
 		this.defaultTitleField = defaultTitleField;
-	}
-
-	public String getDefaultTextField() {
-		return defaultTextField;
 	}
 
 	public void setDefaultTextField(String defaultTextField) {
 		this.defaultTextField = defaultTextField;
 	}
 
-	public String getDefaultDescriptionField() {
-		return defaultDescriptionField;
-	}
-
 	public void setDefaultDescriptionField(String defaultDescriptionField) {
 		this.defaultDescriptionField = defaultDescriptionField;
-	}
-
-	public String getDefaultDateField() {
-		return defaultDateField;
 	}
 
 	public void setDefaultDateField(String defaultDateField) {
 		this.defaultDateField = defaultDateField;
 	}
 
-	public String getDefaultImageField() {
-		return defaultImageField;
-	}
-
 	public void setDefaultImageField(String defaultImageField) {
 		this.defaultImageField = defaultImageField;
-	}
-
-	public String getDefaultURLField() {
-		return defaultURLField;
 	}
 
 	public void setDefaultURLField(String defaultURLField) {
 		this.defaultURLField = defaultURLField;
 	}
 
-	public String getTurSEInstance() {
-		return turSEInstance;
-	}
-
 	public void setTurSEInstance(String turSEInstance) {
 		this.turSEInstance = turSEInstance;
 	}
 
-	public String getTurNLPInstance() {
-		return turNLPInstance;
-	}
-
 	public void setTurNLPInstance(String turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
-	}
-
-	public Set<TurSNSiteField> getTurSNSiteFields() {
-		return turSNSiteFields;
 	}
 
 	public void setTurSNSiteFields(Set<TurSNSiteField> turSNSiteFields) {

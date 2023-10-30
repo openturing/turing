@@ -30,7 +30,7 @@ import com.viglet.turing.connector.cms.index.IValidToIndex;
 public class MappingDefinitions {
 	private TurCTDMappingMap turCTDMappingMap;
 	private String mappingsXMLFile;
-	private static Logger logger = LoggerFactory.getLogger(MappingDefinitions.class);
+	private static final Logger logger = LoggerFactory.getLogger(MappingDefinitions.class);
 
 	public String getMappingsXML() {
 		return mappingsXMLFile;
@@ -77,8 +77,7 @@ public class MappingDefinitions {
 	public IValidToIndex validToIndex(Object ot, IHandlerConfiguration config) {
 
 		try {
-			String contentTypeName;
-			contentTypeName = null;
+			String contentTypeName = "null";
 
 			if (this.hasClassValidToIndex(contentTypeName)) {
 				CTDMappings ctdMappings = turCTDMappingMap.get(contentTypeName);
@@ -87,13 +86,7 @@ public class MappingDefinitions {
 				if (className != null) {
 					Class<?> clazz = Class.forName(className);
 
-					if (clazz == null) {
-						if (logger.isDebugEnabled())
-							logger.debug(String.format("Valid to Index className is not found in the jar file: %s",
-									className));
-
-					} else
-						instance = (IValidToIndex) clazz.newInstance();
+                    instance = (IValidToIndex) clazz.newInstance();
 				}
 				return instance;
 			}

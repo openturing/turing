@@ -27,9 +27,11 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import jakarta.annotation.Nonnull;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -61,10 +63,9 @@ import com.viglet.turing.persistence.repository.converse.intent.TurConversePhras
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.utils.TurUtils;
-
+@Slf4j
 @Component
 public class TurConverseImportExchange {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	private static final String AGENT_FILE = "agent.json";
 	@Autowired
 	private TurConverseAgentRepository turConverseAgentRepository;
@@ -77,17 +78,14 @@ public class TurConverseImportExchange {
 	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
 
-	private Map<String, Object> shObjects = new HashMap<>();
-	private Map<String, List<String>> shChildObjects = new HashMap<>();
-
 	public TurConverseAgentExchange importFromMultipartFile(@Nonnull MultipartFile multipartFile) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		File parentExtractFolder = null;
 
 		if (extractFolder != null) {
 			// Check if agent.json exists, if it is not exist try access a sub directory
-			if (!(new File(extractFolder, AGENT_FILE).exists()) && (extractFolder.listFiles().length == 1)) {
-				for (File fileOrDirectory : extractFolder.listFiles()) {
+			if (!(new File(extractFolder, AGENT_FILE).exists()) && (Objects.requireNonNull(extractFolder.listFiles()).length == 1)) {
+				for (File fileOrDirectory : Objects.requireNonNull(extractFolder.listFiles())) {
 					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, AGENT_FILE).exists()) {
 						parentExtractFolder = extractFolder;
 						extractFolder = fileOrDirectory;
@@ -121,9 +119,9 @@ public class TurConverseImportExchange {
 					new FileInputStream(extractFolder.getAbsolutePath()
 							.concat(File.separator + "entities" + File.separator + "pessoa_entries_pt-br.json")),
 					TurConverseEntityEntriesExchange.class);
-			logger.debug(turConverseEntityEntriesExchange.get(0).getValue());
+			log.debug(turConverseEntityEntriesExchange.get(0).getValue());
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 
 	}
@@ -135,9 +133,9 @@ public class TurConverseImportExchange {
 					new FileInputStream(extractFolder.getAbsolutePath()
 							.concat(File.separator + "entities" + File.separator + "pessoa.json")),
 					TurConverseEntityExchange.class);
-			logger.debug(turConverseEntityExchange.getName());
+			log.debug(turConverseEntityExchange.getName());
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 
 	}
@@ -168,9 +166,9 @@ public class TurConverseImportExchange {
 			turConverseAgentExchange = mapper.readValue(
 					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + AGENT_FILE)),
 					TurConverseAgentExchange.class);
-			logger.debug(turConverseAgentExchange.getDescription());
+			log.debug(turConverseAgentExchange.getDescription());
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 
 		return turConverseAgentExchange;
@@ -183,7 +181,7 @@ public class TurConverseImportExchange {
 				FileUtils.deleteDirectory(parentExtractFolder);
 			}
 		} catch (IOException e) {
-			logger.error("importFromMultipartFileException", e);
+			log.error("importFromMultipartFileException", e);
 		}
 	}
 
@@ -191,14 +189,14 @@ public class TurConverseImportExchange {
 
 		final ObjectMapper mapper = new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
-		for (final File fileEntry : folder.listFiles()) {
+		for (final File fileEntry : Objects.requireNonNull(folder.listFiles())) {
 			readFileFromFolder(turConverseAgent, mapper, fileEntry);
 		}
 	}
 
 	private void readFileFromFolder(TurConverseAgent turConverseAgent, final ObjectMapper mapper,
 			final File fileEntry) {
-		logger.debug(fileEntry.getName());
+		log.debug(fileEntry.getName());
 		if (fileEntry.getName().contains("_usersays_")) {
 			extractIntentPhrasesExchange(mapper, fileEntry);
 		} else {
@@ -214,9 +212,9 @@ public class TurConverseImportExchange {
 		try {
 			turConverseIntentExchange = mapper.readValue(new FileInputStream(fileEntry),
 					TurConverseIntentExchange.class);
-			logger.debug(turConverseIntentExchange.getName());
+			log.debug(turConverseIntentExchange.getName());
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 
 		return turConverseIntentExchange;
@@ -227,9 +225,9 @@ public class TurConverseImportExchange {
 		try {
 			turConverseIntentPhrasesExchange = mapper.readValue(new FileInputStream(fileEntry),
 					TurConverseIntentPhrasesExchange.class);
-			logger.debug(turConverseIntentPhrasesExchange.get(0).getId());
+			log.debug(turConverseIntentPhrasesExchange.get(0).getId());
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 
 	}
@@ -249,11 +247,11 @@ public class TurConverseImportExchange {
 					}
 				}
 			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
+				log.error(e.getMessage(), e);
 			}
 
 		} else {
-			logger.debug("Usersays not exists: {}", phrasesFile.getAbsolutePath());
+			log.debug("Usersays not exists: {}", phrasesFile.getAbsolutePath());
 		}
 	}
 
@@ -286,15 +284,12 @@ public class TurConverseImportExchange {
 			MultipartFile multipartFile = new MockMultipartFile(file.getName(), IOUtils.toByteArray(input));
 			return this.importFromMultipartFile(multipartFile);
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return new TurConverseAgentExchange();
 	}
 
 	public File extractZipFile(MultipartFile file) {
-		shObjects.clear();
-		shChildObjects.clear();
-
 		return TurUtils.extractZipFile(file);
 	}
 

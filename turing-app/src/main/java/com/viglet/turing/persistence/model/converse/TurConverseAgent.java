@@ -32,6 +32,7 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -55,38 +56,47 @@ public class TurConverseAgent implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Getter
 	@Id
 	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	@Getter
 	@Column(nullable = false, length = 50)
 	private String name;
 
+	@Getter
 	@Column(nullable = false, length = 200)
 	private String description;
 
+	@Getter
 	@Column(nullable = false, length = 5)
 	private String language;
 
+	@Getter
 	@Column(nullable = false, length = 50)
 	private String core;
 
+	@Getter
 	@OneToMany(mappedBy = "agent", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConverseIntent> intents = new HashSet<>();
 	
+	@Getter
 	@OneToMany(mappedBy = "agent", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConverseEntity> entities = new HashSet<>();
 	
+	@Getter
 	@OneToMany(mappedBy = "agent", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConverseContext> contexts = new HashSet<>();
 
+	@Getter
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
 	private TurSEInstance turSEInstance;
@@ -96,57 +106,29 @@ public class TurConverseAgent implements Serializable {
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private List<TurConverseChat> chats = new ArrayList<>();
-	
-	public String getId() {
-		return id;
-	}
 
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getDescription() {
-		return description;
-	}
-
 	public void setDescription(String description) {
 		this.description = description;
-	}
-
-	public String getLanguage() {
-		return language;
 	}
 
 	public void setLanguage(String language) {
 		this.language = language;
 	}
 
-	public String getCore() {
-		return core;
-	}
-
 	public void setCore(String core) {
 		this.core = core;
 	}
 
-	public TurSEInstance getTurSEInstance() {
-		return turSEInstance;
-	}
-
 	public void setTurSEInstance(TurSEInstance turSEInstance) {
 		this.turSEInstance = turSEInstance;
-	}
-
-	public Set<TurConverseIntent> getIntents() {
-		return this.intents;
 	}
 
 	public void setIntents(Set<TurConverseIntent> intents) {
@@ -156,19 +138,11 @@ public class TurConverseAgent implements Serializable {
 		}
 	}
 
-	public Set<TurConverseEntity> getEntities() {
-		return this.entities;
-	}
-
 	public void setEntities(Set<TurConverseEntity> entities) {
 		this.entities.clear();
 		if (entities != null) {
 			this.entities.addAll(entities);
 		}
-	}
-	
-	public Set<TurConverseContext> getContexts() {
-		return this.contexts;
 	}
 
 	public void setContexts(Set<TurConverseContext> contexts) {

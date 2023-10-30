@@ -3,25 +3,25 @@ package com.viglet.turing.nutch.indexwriter;
 public interface TurNutchConstants {
 	public static final String TUR_PREFIX = "turing.";
 	
-	public static final String WEIGHT_FIELD = TUR_PREFIX + "weight.field";
+	public static String WEIGHT_FIELD = TUR_PREFIX + "weight.field";
 	
-	public static final String SERVER_URL = TUR_PREFIX + "url";
+	public final String SERVER_URL = TUR_PREFIX + "url";
 
-	public static final String SITE = TUR_PREFIX + "site";
+	public final String SITE = TUR_PREFIX + "site";
 
-	public static final String USE_AUTH = TUR_PREFIX + "auth";
+	public final String USE_AUTH = TUR_PREFIX + "auth";
 
-	public static final String USERNAME = TUR_PREFIX + "username";
+	public final String USERNAME = TUR_PREFIX + "username";
 
-	public static final String PASSWORD = TUR_PREFIX + "password";
+	public final String PASSWORD = TUR_PREFIX + "password";
 	
-	public static final String FORCE_CONFIG = TUR_PREFIX + "force.config";
+	public final String FORCE_CONFIG = TUR_PREFIX + "force.config";
 	
-	public static final String LOCALE_PROPERTY = TUR_PREFIX + "locale";
+	public final String LOCALE_PROPERTY = TUR_PREFIX + "locale";
 	
-	public static final String LOCALE_FIELD_PROPERTY = TUR_PREFIX + "locale.field";
+	public final String LOCALE_FIELD_PROPERTY = TUR_PREFIX + "locale.field";
 
-	public static final String TIMESTAMP_PROPERTY = TUR_PREFIX + "timestamp.field";
+	public final String TIMESTAMP_PROPERTY = TUR_PREFIX + "timestamp.field";
 	
-	public static final String SOLR_SERVER_URL = "solr.server.url";
+	public final String SOLR_SERVER_URL = "solr.server.url";
 }

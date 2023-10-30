@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.converse.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -37,6 +38,7 @@ import java.util.Set;
  * The persistent class for the turConverseEntityTerm database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turConverseEntityTerm")
 @NamedQuery(name = "TurConverseEntityTerm.findAll", query = "SELECT cet FROM TurConverseEntityTerm cet")
@@ -66,40 +68,20 @@ public class TurConverseEntityTerm implements Serializable {
 
 	private int position;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public Set<String> getSynonyms() {
-		return synonyms;
-	}
-
 	public void setSynonyms(Set<String> synonyms) {
 		this.synonyms = synonyms;
 	}
 
-	public TurConverseEntity getEntity() {
-		return entity;
-	}
-
 	public void setEntity(TurConverseEntity entity) {
 		this.entity = entity;
-	}
-
-	public int getPosition() {
-		return position;
 	}
 
 	public void setPosition(int position) {

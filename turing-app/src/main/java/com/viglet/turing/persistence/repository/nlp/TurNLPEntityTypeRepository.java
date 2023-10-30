@@ -22,7 +22,6 @@
 package com.viglet.turing.persistence.repository.nlp;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPEntityType;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
@@ -33,6 +32,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
  *
  */
 public interface TurNLPEntityTypeRepository extends JpaRepository<TurNLPEntityType, String> {
-
-	void delete(TurNLPEntityType turNLPEntity);
 }

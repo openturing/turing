@@ -21,46 +21,20 @@
 
 package com.viglet.turing.api.converse;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import org.json.JSONException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.viglet.turing.converse.TurConverseSE;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseEvent;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
-import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
-import com.viglet.turing.persistence.model.converse.intent.TurConversePrompt;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
+import com.viglet.turing.persistence.model.converse.intent.*;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseEventRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseParameterRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConversePromptRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
-
+import com.viglet.turing.persistence.repository.converse.intent.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/converse/intent")
@@ -245,8 +219,10 @@ public class TurConverseIntentAPI {
 			Set<TurConverseIntent> intents = contextOutput.get().getIntentOutputs();
 			boolean found = false;
 			for (TurConverseIntent intent : intents) {
-				if (intent.getId().equals(id))
-					found = true;
+                if (intent.getId().equals(id)) {
+                    found = true;
+                    break;
+                }
 			}
 			if (!found)
 				contextOutput.get().getIntentOutputs().add(turConverseIntentEdit);
@@ -332,8 +308,10 @@ public class TurConverseIntentAPI {
 			Set<TurConverseIntent> intents = contextInput.get().getIntentInputs();
 			boolean found = false;
 			for (TurConverseIntent intent : intents) {
-				if (intent.getId().equals(id))
+				if (intent.getId().equals(id)) {
 					found = true;
+					break;
+				}
 			}
 			if (!found)
 				contextInput.get().getIntentInputs().add(turConverseIntentEdit);

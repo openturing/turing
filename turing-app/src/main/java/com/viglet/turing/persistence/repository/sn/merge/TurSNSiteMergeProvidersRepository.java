@@ -35,10 +35,5 @@ import org.springframework.data.jpa.repository.Query;
  * @since 0.3.5
  */
 public interface TurSNSiteMergeProvidersRepository extends JpaRepository<TurSNSiteMergeProviders, String> {
-
 	List<TurSNSiteMergeProviders> findByTurSNSite(TurSNSite turSNSite);
-
-	@Modifying
-	@Query("delete from TurSNSiteMergeProviders ssm where ssm.id = ?1")
-	void delete(String id);
 }

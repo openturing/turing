@@ -303,7 +303,7 @@ public class TurWEMIndex {
 		attributeValues.add(attributeValue);
 
 		attributes.put(nodeName, attributeValues);
-		turSNJobItem.setAttributes(attributes);
+
 	}
 
 	private static String createXMLAttribute(String tag, String value) {
@@ -332,6 +332,7 @@ public class TurWEMIndex {
 						if (attributes.containsKey(attributeName)) {
 							if (!(attributes.get(attributeName) instanceof ArrayList)) {
 								attributeAsList(attributes, attributeName, attributeValue, turSNJobItem);
+								turSNJobItem.setAttributes(attributes);
 							} else {
 								attributeAsObject(attributes, attributeName, attributeValue);
 							}

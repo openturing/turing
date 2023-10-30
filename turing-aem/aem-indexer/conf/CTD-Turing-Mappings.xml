@@ -4,11 +4,11 @@
         <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurCTDName" mandatory="true">
             <tag>type</tag>
         </srcAttr>
-        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurAEMCreationnDate" mandatory="true">
-            <tag>publicationDate</tag>
+        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurAEMCreationDate" mandatory="true">
+            <tag>publication_date</tag>
         </srcAttr>
         <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurAEMModificationDate" mandatory="true">
-            <tag>modificationDate</tag>
+            <tag>modification_date</tag>
         </srcAttr>
         <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurSiteName" mandatory="true">
             <tag>site</tag>
@@ -35,10 +35,29 @@
                 <tag>title</tag>
             </srcAttr>
             <srcAttr xmlName="jcr:description">
-                <tag>description</tag>
+                <tag>abstract</tag>
+            </srcAttr>
+            <srcAttr xmlName="cq:tags">
+                <tag>tags</tag>
             </srcAttr>
             <srcAttr xmlName="text" className="com.viglet.turing.connector.aem.indexer.ext.TurPageComponents">
                 <tag>text</tag>
+            </srcAttr>
+        </index-attrs>
+    </mappingDefinition>
+    <mappingDefinition contentType="dam:Asset" subType="content-fragment">
+        <index-attrs>
+            <srcAttr xmlName="jcr:title">
+                <tag>title</tag>
+            </srcAttr>
+            <srcAttr xmlName="content" className="com.viglet.turing.connector.aem.indexer.ext.TurHTML2Text">
+                <tag>abstract</tag>
+            </srcAttr>
+            <srcAttr xmlName="group">
+                <tag>group</tag>
+            </srcAttr>
+            <srcAttr xmlName="theme">
+                <tag>theme</tag>
             </srcAttr>
         </index-attrs>
     </mappingDefinition>

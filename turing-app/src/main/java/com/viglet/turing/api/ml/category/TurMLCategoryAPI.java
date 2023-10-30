@@ -77,7 +77,7 @@ public class TurMLCategoryAPI {
 	@Operation(summary = "Delete a Machine Learning Category")
 	@DeleteMapping("/{id}")
 	public boolean turMLCategoryDelete(@PathVariable int id) {
-		this.turMLCategoryRepository.delete(id);
+		this.turMLCategoryRepository.deleteById(id);
 		return true;
 	}
 

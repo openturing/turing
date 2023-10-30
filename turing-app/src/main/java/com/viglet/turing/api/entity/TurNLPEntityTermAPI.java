@@ -75,7 +75,7 @@ public class TurNLPEntityTermAPI {
 	@Operation(summary = "Delete a Entity Term")
 	@DeleteMapping("/{id}")
 	public boolean turTermDelete(@PathVariable String id) {
-		this.turTermRepository.delete(id);
+		this.turTermRepository.deleteById(id);
 		return true;
 	}
 

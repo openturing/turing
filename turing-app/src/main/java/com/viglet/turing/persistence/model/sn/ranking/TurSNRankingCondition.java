@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.sn.ranking;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.spring.security.TurAuditable;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -35,6 +36,7 @@ import java.io.Serializable;
  * @author Alexandre Oliveira
  * @since 0.3.7
  */
+@Getter
 @Entity
 @Table(name = "turSNRankingCondition")
 @NamedQuery(name = "TurSNRankingCondition.findAll", query = "SELECT src FROM TurSNRankingExpression src")
@@ -62,40 +64,20 @@ public class TurSNRankingCondition extends TurAuditable<String>  implements Seri
 	@JoinColumn(name = "ranking_exp_id", nullable = false)
 	private TurSNRankingExpression turSNRankingExpression;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getAttribute() {
-		return attribute;
 	}
 
 	public void setAttribute(String atribute) {
 		this.attribute = atribute;
 	}
 
-	public int getCondition() {
-		return condition;
-	}
-
 	public void setCondition(int condition) {
 		this.condition = condition;
 	}
 
-	public String getValue() {
-		return value;
-	}
-
 	public void setValue(String value) {
 		this.value = value;
-	}
-
-	public TurSNRankingExpression getTurSNRankingExpression() {
-		return turSNRankingExpression;
 	}
 
 	public void setTurSNRankingExpression(TurSNRankingExpression turSNRankingExpression) {

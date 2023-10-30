@@ -1,5 +1,5 @@
 ## Derived from official mysql image (our base image)
-FROM mariadb
+FROM mariadb:11.1.2
 
 ## These variables are using into deployment.yaml and/or ConfigMap and Secrets of Kubernetes
 # ENV MYSQL_DATABASE shio

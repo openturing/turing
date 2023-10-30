@@ -22,6 +22,7 @@ package com.viglet.turing.persistence.model.nlp.term;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -32,6 +33,7 @@ import java.io.Serializable;
  * The persistent class for the turTermRelationTo database table.
  * 
  */
+@Getter
 @Entity
 @Table(name="turTermRelationTo")
 @NamedQuery(name="TurTermRelationTo.findAll", query="SELECT trt FROM TurTermRelationTo trt")
@@ -55,24 +57,12 @@ public class TurTermRelationTo implements Serializable {
 	@JoinColumn(name="relation_from_id", nullable=false)
 	private TurTermRelationFrom turTermRelationFrom;
 
-	public String getId() {
-		return this.id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
 	}
 
-	public TurTerm getTurTerm() {
-		return this.turTerm;
-	}
-
 	public void setTurTerm(TurTerm turTerm) {
 		this.turTerm = turTerm;
-	}
-
-	public TurTermRelationFrom getTurTermRelationFrom() {
-		return this.turTermRelationFrom;
 	}
 
 	public void setTurTermRelationFrom(TurTermRelationFrom turTermRelationFrom) {

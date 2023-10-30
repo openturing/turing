@@ -20,22 +20,6 @@
  */
 package com.viglet.turing.sn;
 
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import jakarta.servlet.http.HttpServletRequest;
-
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.tika.utils.StringUtils;
-import org.springframework.http.server.ServletServerHttpRequest;
-import org.springframework.web.util.UriComponentsBuilder;
-
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentMetadataBean;
@@ -46,6 +30,16 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.solr.TurSolrField;
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.tika.utils.StringUtils;
+import org.springframework.http.server.ServletServerHttpRequest;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class TurSNUtils {
 	public static final String TURING_ENTITY = "turing_entity";
@@ -81,7 +75,7 @@ public class TurSNUtils {
 					&& nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES))) {
 				alreadyExists = true;
 			}
-			resetPagination(sbQueryString, nameValuePair);
+			resetPaginationOrAddParameter(sbQueryString, nameValuePair);
 		}
 		if (!alreadyExists) {
 			TurCommonsUtils.addParameterToQueryString(sbQueryString, TurSNParamType.FILTER_QUERIES, fq);
@@ -93,14 +87,12 @@ public class TurSNUtils {
 	public static URI removeFilterQuery(URI uri, String fq) {
 		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
 		StringBuilder sbQueryString = new StringBuilder();
-
 		for (NameValuePair nameValuePair : params) {
-			if (!(nameValuePair.getValue().equals(fq)
+			if (!(java.net.URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8).equals(fq)
 					&& nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES))) {
-				resetPagination(sbQueryString, nameValuePair);
+				resetPaginationOrAddParameter(sbQueryString, nameValuePair);
 			}
 		}
-
 		return TurCommonsUtils.modifiedURI(uri, sbQueryString);
 	}
 
@@ -119,7 +111,7 @@ public class TurSNUtils {
 
 
 	
-	private static void resetPagination(StringBuilder sbQueryString, NameValuePair nameValuePair) {
+	private static void resetPaginationOrAddParameter(StringBuilder sbQueryString, NameValuePair nameValuePair) {
 		if ((nameValuePair.getName().equals(TurSNParamType.PAGE))) {
 			TurCommonsUtils.addParameterToQueryString(sbQueryString, nameValuePair.getName(), "1");
 		} else {

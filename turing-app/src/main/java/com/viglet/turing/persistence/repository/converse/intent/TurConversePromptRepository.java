@@ -33,8 +33,4 @@ import com.viglet.turing.persistence.model.converse.intent.TurConversePrompt;
 public interface TurConversePromptRepository extends JpaRepository<TurConversePrompt, String> {
 
 	Set<TurConversePrompt> findByParameter(TurConverseParameter turConverseParameter);
-
-	@Modifying
-	@Query("delete from  TurConversePrompt cp where cp.id = ?1")
-	void delete(String id);
 }

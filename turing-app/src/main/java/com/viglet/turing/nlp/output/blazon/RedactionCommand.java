@@ -25,7 +25,9 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import lombok.Getter;
 
+@Getter
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "RedactionCommand")
 public class RedactionCommand {
@@ -34,15 +36,11 @@ public class RedactionCommand {
 	private String comment;
 	@XmlElement(name = "SearchString")
 	private SearchString searchString;
-	public String getComment() {
-		return comment;
-	}
+
 	public void setComment(String comment) {
 		this.comment = comment;
 	}
-	public SearchString getSearchString() {
-		return searchString;
-	}
+
 	public void setSearchString(SearchString searchString) {
 		this.searchString = searchString;
 	}

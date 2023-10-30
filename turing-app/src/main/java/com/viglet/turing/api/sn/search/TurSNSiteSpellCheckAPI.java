@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.api.sn.search;
 
+import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,21 +44,23 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/sn/{siteName}/{locale}/spell-check")
 @Tag(name = "Semantic Navigation Spell Check", description = "Semantic Navigation Spell Check API")
 public class TurSNSiteSpellCheckAPI {
-	@Autowired
-	private TurSolr turSolr;
-	@Autowired
-	private TurSolrInstanceProcess turSolrInstanceProcess;
+    @Autowired
+    private TurSolr turSolr;
+    @Autowired
+    private TurSolrInstanceProcess turSolrInstanceProcess;
 
-	@GetMapping
-	public TurSNSiteSpellCheckBean turSNSiteSpellCheck(@PathVariable String siteName, @PathVariable String locale,
-			@RequestParam(required = true, name = TurSNParamType.QUERY) String q, HttpServletRequest request) {
+    @GetMapping
+    public TurSNSiteSpellCheckBean turSNSiteSpellCheck(@PathVariable String siteName, @PathVariable String locale,
+                                                       @RequestParam(name = TurSNParamType.QUERY)
+                                                       String q, HttpServletRequest request) {
 
-		return turSolrInstanceProcess.initSolrInstance(siteName, locale).map(turSolrInstance -> {
-			TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName,
-					new TurSEParameters(q, null, 1, "relevance", 10, null, 0), locale,
-					TurSNUtils.requestToURI(request));
-			return new TurSNSiteSpellCheckBean(turSNSiteSearchContext, turSolr.spellCheckTerm(turSolrInstance, q));
-		}).orElse(null);
+        return turSolrInstanceProcess.initSolrInstance(siteName, locale).map(turSolrInstance -> {
+            TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName,
+                    new TurSEParameters(q, null, TurSNFilterQueryOperator.AND,
+                            1, "relevance", 10, null, 0), locale,
+                    TurSNUtils.requestToURI(request));
+            return new TurSNSiteSpellCheckBean(turSNSiteSearchContext, turSolr.spellCheckTerm(turSolrInstance, q));
+        }).orElse(null);
 
-	}
+    }
 }

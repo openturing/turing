@@ -1,13 +1,9 @@
 package com.viglet.turing.nutch.commons;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.client.sn.job.TurSNJobAction;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNJobItems;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -18,10 +14,13 @@ import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.viglet.turing.client.sn.job.TurSNJobAction;
-import com.viglet.turing.client.sn.job.TurSNJobItem;
-import com.viglet.turing.client.sn.job.TurSNJobItems;
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 public class TurNutchCommons {
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -30,7 +29,6 @@ public class TurNutchCommons {
 	public static final String CONTENT_FIELD = "content";
 	public static final String TITLE_FIELD = "title";
 	public static final String TEXT_FIELD = "text";
-	public static final String LANG_FIELD = "lang";
 	public static final String TIMESTAMP_FIELD = "tstamp";
 	public static final String TYPE_FIELD = "type";
 	public static final String CONNECTOR_FIELD = "source_apps";
@@ -109,10 +107,7 @@ public class TurNutchCommons {
 			String jsonUTF8 = new String(outputData);
 
 			HttpPost httpPost = new HttpPost(String.format("%s/api/sn/%s/import", url, site));
-			if (showOutput) {
-				logger.info(jsonUTF8);
-			}
-			StringEntity entity = new StringEntity(new String(jsonUTF8), StandardCharsets.UTF_8);
+			StringEntity entity = new StringEntity(jsonUTF8, StandardCharsets.UTF_8);
 			httpPost.setEntity(entity);
 			httpPost.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
 			httpPost.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
@@ -122,7 +117,7 @@ public class TurNutchCommons {
 				basicAuth(httpPost, username, password);
 			}
 			CloseableHttpClient client = HttpClients.createDefault();
-			try (CloseableHttpResponse response = client.execute(httpPost)) {
+			try (CloseableHttpResponse ignored = client.execute(httpPost)) {
 				turSNJobItems.getTuringDocuments().clear();
 			}
 		}

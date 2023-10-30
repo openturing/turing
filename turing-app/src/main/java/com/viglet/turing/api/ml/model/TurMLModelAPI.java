@@ -21,56 +21,35 @@
 
 package com.viglet.turing.api.ml.model;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.lang.invoke.MethodHandles;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
+import com.viglet.turing.persistence.model.ml.TurMLModel;
+import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
+import com.viglet.turing.persistence.repository.ml.TurMLModelRepository;
+import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
+import opennlp.tools.doccat.*;
+import opennlp.tools.util.InputStreamFactory;
+import opennlp.tools.util.ObjectStream;
+import opennlp.tools.util.PlainTextByLineStream;
+import opennlp.tools.util.TrainingParameters;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.viglet.turing.persistence.model.ml.TurMLModel;
-import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
-import com.viglet.turing.persistence.repository.ml.TurMLModelRepository;
-import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import opennlp.tools.doccat.DoccatFactory;
-import opennlp.tools.doccat.DoccatModel;
-import opennlp.tools.doccat.DocumentCategorizerME;
-import opennlp.tools.doccat.DocumentSample;
-import opennlp.tools.doccat.DocumentSampleStream;
-import opennlp.tools.util.InputStreamFactory;
-import opennlp.tools.util.ObjectStream;
-import opennlp.tools.util.PlainTextByLineStream;
-import opennlp.tools.util.TrainingParameters;
-
+import java.io.*;
+import java.lang.invoke.MethodHandles;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+@Slf4j
 @RestController
 @RequestMapping("/api/ml/model")
 @Tag(name ="Machine Learning Model", description = "Machine Learning Model API")
 public class TurMLModelAPI {
-	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 	@Autowired
@@ -105,7 +84,7 @@ public class TurMLModelAPI {
 	@Operation(summary = "Delete a Machine Learning Model")
 	@DeleteMapping("/{id}")
 	public boolean turMLModelDelete(@PathVariable int id) {
-		this.turMLModelRepository.delete(id);
+		this.turMLModelRepository.deleteById(id);
 		return true;
 	}
 
@@ -126,7 +105,7 @@ public class TurMLModelAPI {
 			modelStream = new FileInputStream(modelFile);
 			m = new DoccatModel(modelStream);
 		} catch (IOException e) {
-			logger.error(e);
+			log.error(e.getMessage(), e);
 		}
 		String[] inputText = {
 				"Republicans in Congress will start this week on an obstacle course even more arduous than health care: the first overhaul of the tax code in three decades." };
@@ -148,7 +127,7 @@ public class TurMLModelAPI {
 
 		for (TurDataGroupSentence vigTrainDocSentence : turDataSentences) {
 			if (vigTrainDocSentence.getTurMLCategory() != null) {
-				trainSB.append(vigTrainDocSentence.getTurMLCategory().getInternalName() + " ");
+				trainSB.append(vigTrainDocSentence.getTurMLCategory().getInternalName()).append(" ");
 				trainSB.append(vigTrainDocSentence.getSentence().replaceAll("[\\t\\n\\r]", " ").trim());
 				trainSB.append("\n");
 			}
@@ -156,7 +135,7 @@ public class TurMLModelAPI {
 		try (PrintWriter out = new PrintWriter("store/ml/train/generate.train")) {
 			out.println(trainSB.toString().trim());
 		} catch (FileNotFoundException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 
 		String modelFile = "store/ml/model/generate.bin";
@@ -167,18 +146,15 @@ public class TurMLModelAPI {
 				}
 			};
 
-			Charset charset = StandardCharsets.UTF_8;
-			ObjectStream<String> lineStream = new PlainTextByLineStream(isf, charset);
+			ObjectStream<String> lineStream = new PlainTextByLineStream(isf, StandardCharsets.UTF_8);
 			ObjectStream<DocumentSample> sampleStream = new DocumentSampleStream(lineStream);
 
-			DoccatFactory factory = new DoccatFactory();
-
 			DoccatModel model = DocumentCategorizerME.train("en", sampleStream, TrainingParameters.defaultParams(),
-					factory);
+					new DoccatFactory());
 			model.serialize(modelOut);
 
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return null;
 	}

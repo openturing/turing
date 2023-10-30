@@ -2,21 +2,21 @@ package com.viglet.turing.nutch.indexwriter;
 
 public interface TurNutchConstants {
 
-	public static final String COMMIT_SIZE = "commitSize";
+	public static String COMMIT_SIZE = "commitSize";
 	
-	public static final String WEIGHT_FIELD = "weight.field";
+	public final String WEIGHT_FIELD = "weight.field";
 	
-	public static final String SERVER_URL = "url";
+	public final String SERVER_URL = "url";
 
-	public static final String SITE = "site";
+	public final String SITE = "site";
 
-	public static final String USE_AUTH = "auth";
+	public final String USE_AUTH = "auth";
 
-	public static final String USERNAME = "username";
+	public final String USERNAME = "username";
 
-	public static final String PASSWORD = "password";
+	public final String PASSWORD = "password";
 	
-	public static final String LOCALE_PROPERTY = "locale";
+	public final String LOCALE_PROPERTY = "locale";
 	
-	public static final String TURING = "turing.";
+	public final String TURING = "turing.";
 }

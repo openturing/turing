@@ -25,6 +25,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -60,12 +61,11 @@ import com.viglet.turing.plugins.nlp.opennlp.TurOpenNLPConnector;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/ml/data/group/{dataGroupId}/data")
 @Tag(name ="Machine Learning Data by Group", description = "Machine Learning Data by Group API")
 public class TurMLDataGroupDataAPI {
-	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurDataGroupRepository turDataGroupRepository;
 	@Autowired
@@ -108,7 +108,7 @@ public class TurMLDataGroupDataAPI {
 	@Operation(summary = "Delete a Machine Learning Data Group Data")
 	@DeleteMapping("/{id}")
 	public boolean turDataGroupDataDelete(@PathVariable int dataGroupId, @PathVariable int id) {
-		this.turDataGroupDataRepository.delete(id);
+		this.turDataGroupDataRepository.deleteById(id);
 		return true;
 	}
 
@@ -140,7 +140,7 @@ public class TurMLDataGroupDataAPI {
 			try {
 				pdfparser.parse(multipartFile.getInputStream(), handler, metadata, pcontext);
 			} catch (IOException | SAXException | TikaException e) {
-				logger.error(e);
+				log.error(e.getMessage(), e);
 			}
 			String[] sentences = turOpenNLPConnector.sentenceDetect(turNLPProcess.getDefaultNLPInstance(), handler.toString());
 

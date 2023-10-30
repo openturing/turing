@@ -21,26 +21,29 @@
 package com.viglet.turing.persistence.repository.system;
 
 import com.viglet.turing.persistence.model.system.TurConfigVar;
-
-import java.util.List;
-import java.util.Optional;
-
+import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+import java.util.Optional;
+
 public interface TurConfigVarRepository extends JpaRepository<TurConfigVar, String> {
 
 	@Cacheable("turConfigVarfindAll")
+	@NotNull
 	List<TurConfigVar> findAll();
 
 	@Cacheable("turConfigVarfindById")
-	Optional<TurConfigVar> findById(String id);
+	@NotNull
+	Optional<TurConfigVar> findById(@NotNull String id);
 
 	@SuppressWarnings("unchecked")
 	@CacheEvict(value = { "turConfigVarfindAll", "turConfigVarfindById" }, allEntries = true)
-	TurConfigVar save(TurConfigVar turConfigVar);
+	@NotNull
+	TurConfigVar save(@NotNull TurConfigVar turConfigVar);
 
 	@CacheEvict(value = { "turConfigVarfindAll", "turConfigVarfindById" }, allEntries = true)
-	void delete(TurConfigVar turConfigVar);
+	void delete(@NotNull TurConfigVar turConfigVar);
 }

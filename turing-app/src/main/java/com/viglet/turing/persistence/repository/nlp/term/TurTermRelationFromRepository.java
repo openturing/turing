@@ -25,6 +25,4 @@ import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TurTermRelationFromRepository extends JpaRepository<TurTermRelationFrom, String> {
-
-  void delete(TurTermRelationFrom turTermRelationFrom);
 }

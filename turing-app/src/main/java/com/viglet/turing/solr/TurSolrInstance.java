@@ -26,25 +26,26 @@ import java.net.URL;
 
 import jakarta.annotation.PreDestroy;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
-
+@Slf4j
+@Getter
+@Setter
 public class TurSolrInstance {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	private CloseableHttpClient closeableHttpClient;
-
-	private SolrClient solrClient = null;
-
-	private String core = null;
-
-	private URL solrUrl = null;
+	private SolrClient solrClient;
+	private String core;
+	private URL solrUrl;
 	@PreDestroy
 	public void destroy() {
-		if (logger.isDebugEnabled()) {
-			logger.debug("TurSolrInstance destroyed");
+		if (log.isDebugEnabled()) {
+			log.debug("TurSolrInstance destroyed");
 		}
 		this.close();
 	}
@@ -60,7 +61,7 @@ public class TurSolrInstance {
 				closeableHttpClient = null;
 			}
 		} catch (IOException e) {
-			logger.error(e);
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -72,31 +73,4 @@ public class TurSolrInstance {
 		this.solrUrl = solrUrl;
 		this.core = core;
 	}
-
-	public SolrClient getSolrClient() {
-		return solrClient;
-	}
-
-	public void setSolrClient(SolrClient solrClient) {
-		this.solrClient = solrClient;
-	}
-
-	public String getCore() {
-		return core;
-	}
-
-	public void setCore(String core) {
-		this.core = core;
-	}
-
-	public URL getSolrUrl() {
-		return solrUrl;
-	}
-
-	public void setSolrUrl(URL solrUrl) {
-		this.solrUrl = solrUrl;
-	}
-
-
-	
 }

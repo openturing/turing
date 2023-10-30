@@ -41,7 +41,9 @@ public class TurFileUtils {
 	public static TurFileAttributes readFileAndClean(File file) {
 		if (file.exists()) {
 			TurFileAttributes turFileAttributes = parseFile(file);
-			turFileAttributes.setContent(TurCommonsUtils.cleanTextContent(turFileAttributes.getContent()));
+			if (turFileAttributes != null) {
+				turFileAttributes.setContent(TurCommonsUtils.cleanTextContent(turFileAttributes.getContent()));
+			}
 			return turFileAttributes;
 		} else {
 			logger.info("File not exists: {}", file.getAbsolutePath());

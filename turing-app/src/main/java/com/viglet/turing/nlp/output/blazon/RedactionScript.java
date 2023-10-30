@@ -27,7 +27,9 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import lombok.Getter;
 
+@Getter
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "RedactionScript")
 public class RedactionScript {
@@ -37,16 +39,8 @@ public class RedactionScript {
 	@XmlElement(name = "RedactionCommand")
 	private List<RedactionCommand> redactionCommands;
 
-	public String getVersion() {
-		return version;
-	}
-
 	public void setVersion(String version) {
 		this.version = version;
-	}
-
-	public List<RedactionCommand> getRedactionCommands() {
-		return redactionCommands;
 	}
 
 	public void setRedactionCommands(List<RedactionCommand> redactionCommands) {

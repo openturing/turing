@@ -563,7 +563,7 @@ public class TurSNServer {
 
 			if (turSortField.getSort() != null) {
 				if (turSortField.getField() == null) {
-					String orderMod = null;
+					String orderMod;
 					if (turSortField.getSort().name().equals(ORDER.desc.name())) {
 						orderMod = NEWEST_SORT;
 					} else if (turSortField.getSort().name().equals(ORDER.asc.name())) {

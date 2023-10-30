@@ -23,32 +23,32 @@ package com.viglet.turing.persistence.repository.sn;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
-
-import java.util.List;
-import java.util.Optional;
-
+import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
+import java.util.Optional;
+
 public interface TurSNSiteFieldRepository extends JpaRepository<TurSNSiteField, String> {
 
-	List<TurSNSiteField> findAll();
-
 	@Cacheable("turSNSiteFieldfindById")
-	Optional<TurSNSiteField> findById(String id);
+	@NotNull
+	Optional<TurSNSiteField> findById(@NotNull String id);
 
 	@Cacheable("turSNSiteFieldfindByTurSNSite")
 	List<TurSNSiteField> findByTurSNSite(TurSNSite turSNSite);
 
 	@SuppressWarnings("unchecked")
 	@CacheEvict(value = { "turSNSiteFieldfindById", "turSNSiteFieldfindByTurSNSite" }, allEntries = true)
-	TurSNSiteField save(TurSNSiteField turSNSiteField);
+	@NotNull
+	TurSNSiteField save(@NotNull TurSNSiteField turSNSiteField);
 
 	@CacheEvict(value = { "turSNSiteFieldfindById", "turSNSiteFieldfindByTurSNSite" }, allEntries = true)
-	void delete(TurSNSiteField turSNSiteField);
+	void delete(@NotNull TurSNSiteField turSNSiteField);
 
 	@Modifying
 	@Query("delete from TurSNSiteField ssf where ssf.id = ?1")

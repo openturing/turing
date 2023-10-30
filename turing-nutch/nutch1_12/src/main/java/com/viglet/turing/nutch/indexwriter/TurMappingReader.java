@@ -23,7 +23,6 @@ public class TurMappingReader {
     private static final String SOURCE_ATTRIBUTE = "source";
     private static final String DESTINATION_ATTRIBUTE = "dest";
     private static final String URL_ATTRIBUTE = "url";
-    private static final String ID_ATTRIBUTE = "id";
     private static final String SN_SITE_ATTRIBUTE = "snSite";
     private static final String SITE_TAG = "site";
     private static final String UNIQUE_KEY_TAG = "uniqueKey";
@@ -31,15 +30,13 @@ public class TurMappingReader {
     private static final String FIELD_TAG = "field";
     private static final String TURING_MAPPING_CONFIGURATION = "turing.mapping.file";
     private static final String TURING_MAPPING_FILE =  "turing-mapping.xml";
-    private Configuration conf;
+    private final Configuration conf;
 
-    private Map<String, String> keyMap = new HashMap<>();
+    private final Map<String, String> keyMap = new HashMap<>();
 
-    private Map<String, String> copyMap = new HashMap<>();
+    private final Map<String, String> copyMap = new HashMap<>();
 
-    private Map<String, String> siteMap = new HashMap<>();
-
-    private String uniqueKey = ID_ATTRIBUTE;
+    private final Map<String, String> siteMap = new HashMap<>();
 
     public static synchronized TurMappingReader getInstance(Configuration conf) {
         ObjectCache cache = ObjectCache.get(conf);
@@ -57,8 +54,7 @@ public class TurMappingReader {
     }
 
     private void parseMapping() {
-        InputStream ssInputStream = null;
-        ssInputStream = this.conf.getConfResourceAsInputStream(
+        InputStream ssInputStream = this.conf.getConfResourceAsInputStream(
                 this.conf.get(TURING_MAPPING_CONFIGURATION, TURING_MAPPING_FILE));
         InputSource inputSource = new InputSource(ssInputStream);
         try {
@@ -86,11 +82,8 @@ public class TurMappingReader {
             NodeList uniqueKeyItem = rootElement.getElementsByTagName(UNIQUE_KEY_TAG);
             if (uniqueKeyItem.getLength() > 1) {
                 logger.warn("More than one unique key definitions found in solr index mapping, using default 'id'");
-                this.uniqueKey = ID_ATTRIBUTE;
             } else if (uniqueKeyItem.getLength() == 0) {
                 logger.warn("No unique key definition found in solr index mapping using, default 'id'");
-            } else {
-                this.uniqueKey = uniqueKeyItem.item(0).getFirstChild().getNodeValue();
             }
             NodeList siteList = rootElement.getElementsByTagName(SITE_TAG);
             if (siteList.getLength() > 0)
@@ -104,23 +97,6 @@ public class TurMappingReader {
             logger.warn(e.toString());
         }
     }
-
-    public Map<String, String> getKeyMap() {
-        return this.keyMap;
-    }
-
-    public Map<String, String> getCopyMap() {
-        return this.copyMap;
-    }
-
-    public String getUniqueKey() {
-        return this.uniqueKey;
-    }
-
-    public Map<String, String> getSiteMap() {
-        return this.siteMap;
-    }
-
     public String hasCopy(String key) {
         if (this.copyMap.containsKey(key))
             key = this.copyMap.get(key);
@@ -143,14 +119,6 @@ public class TurMappingReader {
     }
 
     public String mapCopyKey(String key) {
-        if (this.copyMap.containsKey(key))
-            key = this.copyMap.get(key);
-        return key;
-    }
-
-    public String mapSiteKey(String key) {
-        if (this.siteMap.containsKey(key))
-            key = this.siteMap.get(key);
-        return key;
+        return hasCopy(key);
     }
 }

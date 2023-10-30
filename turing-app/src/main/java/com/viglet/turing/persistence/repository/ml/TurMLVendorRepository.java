@@ -27,8 +27,4 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TurMLVendorRepository extends JpaRepository<TurMLVendor, String> {
-
-	@Modifying
-	@Query("delete from TurMLVendor mv where mv.id = ?1")
-	void delete(String id);
 }

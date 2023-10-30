@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.nlp;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -33,6 +34,7 @@ import java.io.Serializable;
  * 
  */
 
+@Getter
 @Entity
 @Table(name = "turNLPInstance")
 @NamedQuery(name = "TurNLPInstance.findAll", query = "SELECT n FROM TurNLPInstance n")
@@ -68,64 +70,32 @@ public class TurNLPInstance implements Serializable {
 	@JoinColumn(name = "nlp_vendor_id", nullable = false)
 	private TurNLPVendor turNLPVendor;
 
-	public String getId() {
-		return this.id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getDescription() {
-		return this.description;
 	}
 
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public int getEnabled() {
-		return this.enabled;
-	}
-
 	public void setEnabled(int enabled) {
 		this.enabled = enabled;
 	}
 
-	public String getLanguage() {
-		return this.language;
-	}
-
 	public void setLanguage(String language) {
 		this.language = language;
-	}
-	
-	public String getTitle() {
-		return this.title;
 	}
 
 	public void setTitle(String title) {
 		this.title = title;
 	}
 
-	public TurNLPVendor getTurNLPVendor() {
-		return turNLPVendor;
-	}
-
 	public void setTurNLPVendor(TurNLPVendor turNLPVendor) {
 		this.turNLPVendor = turNLPVendor;
 	}
 
-	public String getKey() {
-		return key;
-	}
-
 	public void setKey(String key) {
 		this.key = key;
-	}
-
-	public String getEndpointURL() {
-		return endpointURL;
 	}
 
 	public void setEndpointURL(String endpointURL) {

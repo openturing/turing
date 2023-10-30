@@ -101,7 +101,7 @@ public class TurSNSiteSpotlightAPI {
 	@DeleteMapping("/{id}")
 	@CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
 	public boolean turSNSiteSpotlighDelete(@PathVariable String id) {
-		turSNSiteSpotlightRepository.delete(id);
+		turSNSiteSpotlightRepository.deleteById(id);
 		return true;
 	}
 

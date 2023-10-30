@@ -22,6 +22,7 @@ package com.viglet.turing.persistence.model.sn.merge;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -33,6 +34,7 @@ import java.io.Serializable;
  * @author Alexandre Oliveira
  * @since 0.3.5
  */
+@Getter
 @Entity
 @Table(name = "turSNSiteMergeField")
 @NamedQuery(name = "TurSNSiteMergeProvidersField.findAll", query = "SELECT snsmpf FROM TurSNSiteMergeProvidersField snsmpf")
@@ -54,24 +56,12 @@ public class TurSNSiteMergeProvidersField implements Serializable {
 	@JoinColumn(name = "sn_site_merge_id")
 	private TurSNSiteMergeProviders turSNSiteMergeProviders;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
 	}
 
-	public String getName() {
-		return name;
-	}
-
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public TurSNSiteMergeProviders getTurSNSiteMergeProviders() {
-		return turSNSiteMergeProviders;
 	}
 
 	public void setTurSNSiteMergeProviders(TurSNSiteMergeProviders turSNSiteMergeProviders) {

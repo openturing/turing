@@ -21,6 +21,7 @@
 package com.viglet.turing.persistence.model.nlp;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -31,6 +32,7 @@ import java.io.Serializable;
  * The persistent class for the vigServicesNLPEntities database table.
  * 
  */
+@Getter
 @Entity
 @Table(name="turNLPVendorEntity")
 @NamedQuery(name="TurNLPVendorEntity.findAll", query="SELECT nve FROM TurNLPVendorEntity nve")
@@ -58,40 +60,20 @@ public class TurNLPVendorEntity implements Serializable {
 	@JoinColumn(name="nlp_vendor_id", nullable=false)
 	private TurNLPVendor turNLPVendor;
 
-	public String getId() {
-		return this.id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return this.name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public TurNLPEntity getTurNLPEntity() {
-		return this.turNLPEntity;
-	}
-
 	public void setTurNLPEntity(TurNLPEntity turNLPEntity) {
 		this.turNLPEntity = turNLPEntity;
 	}
 
-	public TurNLPVendor getTurNLPVendor() {
-		return this.turNLPVendor;
-	}
-
 	public void setTurNLPVendor(TurNLPVendor turNLPVendor) {
 		this.turNLPVendor = turNLPVendor;
-	}
-
-	public String getLanguage() {
-		return language;
 	}
 
 	public void setLanguage(String language) {

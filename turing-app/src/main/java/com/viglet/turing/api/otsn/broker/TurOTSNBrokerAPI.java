@@ -32,6 +32,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,12 +56,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/otsn/broker")
 @Tag(name = "OTSN Broker", description = "OTSN Broker API")
 public class TurOTSNBrokerAPI {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
@@ -91,7 +91,7 @@ public class TurOTSNBrokerAPI {
 			turSNJobItems.add(turSNJobItem);
 
 			TurSNJob turSNJob = createSNJob(turSNSite, turSNJobItems);
-			logger.debug("Indexed Job by Id");
+			log.debug("Indexed Job by Id");
 			turSNImportAPI.send(turSNJob);
 
 			return "Ok";
@@ -148,7 +148,7 @@ public class TurOTSNBrokerAPI {
 		try {
 			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 		} catch (ParserConfigurationException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		DocumentBuilder builder;
 		Document document = null;
@@ -156,7 +156,7 @@ public class TurOTSNBrokerAPI {
 			builder = factory.newDocumentBuilder();
 			document = builder.parse(new InputSource(new StringReader(data)));
 		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return document;
 	}
@@ -183,10 +183,10 @@ public class TurOTSNBrokerAPI {
 			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
 			Map<String, Object> attributes = new HashMap<>();
 			if (id.isPresent()) {
-				logger.debug("Deindexed Job by Id");
+				log.debug("Deindexed Job by Id");
 				attributes.put("id", id.get());
 			} else if (type.isPresent()) {
-				logger.debug("Deindexed Job by Type");
+				log.debug("Deindexed Job by Type");
 				attributes.put("type", type.get());
 			}
 			turSNJobItem.setAttributes(attributes);

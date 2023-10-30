@@ -38,7 +38,4 @@ public interface TurRoleRepository extends JpaRepository<TurRole, String> {
 	
 	Set<TurRole> findByTurGroupsIn(Collection<TurGroup> turGroup);
 	
-	@Modifying
-	@Query("delete from TurRole r where r.id = ?1")
-	void delete(String id);
 }

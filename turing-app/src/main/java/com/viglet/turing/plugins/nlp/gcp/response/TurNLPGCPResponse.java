@@ -20,6 +20,8 @@
  */
 package com.viglet.turing.plugins.nlp.gcp.response;
 
+import lombok.Getter;
+
 import java.util.List;
 
 /**
@@ -29,22 +31,15 @@ import java.util.List;
  * @since 0.3.6
  *
  */
+@Getter
 public class TurNLPGCPResponse {
 
 	private List<TurNLPGCPEntityResponse> entities;
 
 	private String language;
 
-	public List<TurNLPGCPEntityResponse> getEntities() {
-		return entities;
-	}
-
 	public void setEntities(List<TurNLPGCPEntityResponse> entities) {
 		this.entities = entities;
-	}
-
-	public String getLanguage() {
-		return language;
 	}
 
 	public void setLanguage(String language) {

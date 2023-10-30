@@ -20,9 +20,11 @@
  */
 package com.viglet.turing.api.sn.bean;
 
-import java.util.List;
-
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
+import lombok.Getter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 
@@ -31,16 +33,19 @@ import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessT
  * @since 0.3.6
  *
  */
+@Getter
 public class TurSNSiteMetricsTopTermsBean {
 
-	private List<TurSNSiteMetricAccessTerm> topTerms;
+	private List<TurSNSiteMetricAccessTerm> topTerms = new ArrayList<>();
 
-	private int totalTermsPeriod;
+	private int totalTermsPeriod = 0;
 
-	private int totalTermsPreviousPeriod;
+	private int totalTermsPreviousPeriod =0;
 
-	private int variationPeriod;
-
+	private int variationPeriod = 0;
+	public TurSNSiteMetricsTopTermsBean() {
+		super();
+	}
 	public TurSNSiteMetricsTopTermsBean(List<TurSNSiteMetricAccessTerm> metricsTerms, int totalTermsPeriod,
 			int totalTermsPreviousPeriod) {
 		super();
@@ -55,32 +60,16 @@ public class TurSNSiteMetricsTopTermsBean {
 		}
 	}
 
-	public int getTotalTermsPeriod() {
-		return totalTermsPeriod;
-	}
-
 	public void setTotalTermsPeriod(int totalTermsPeriod) {
 		this.totalTermsPeriod = totalTermsPeriod;
-	}
-
-	public List<TurSNSiteMetricAccessTerm> getTopTerms() {
-		return topTerms;
 	}
 
 	public void setTopTerms(List<TurSNSiteMetricAccessTerm> topTerms) {
 		this.topTerms = topTerms;
 	}
 
-	public int getTotalTermsPreviousPeriod() {
-		return totalTermsPreviousPeriod;
-	}
-
 	public void setTotalTermsPreviousPeriod(int totalTermsPreviousPeriod) {
 		this.totalTermsPreviousPeriod = totalTermsPreviousPeriod;
-	}
-
-	public int getVariationPeriod() {
-		return variationPeriod;
 	}
 
 	public void setVariationPeriod(int variationPeriod) {

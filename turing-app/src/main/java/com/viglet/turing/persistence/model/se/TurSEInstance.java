@@ -21,6 +21,7 @@
 package com.viglet.turing.persistence.model.se;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -30,6 +31,7 @@ import java.io.Serializable;
  * The persistent class for the vigServices database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turSEInstance")
 @NamedQuery(name = "TurSEInstance.findAll", query = "SELECT si FROM TurSEInstance si")
@@ -62,56 +64,28 @@ public class TurSEInstance implements Serializable {
 	@JoinColumn(name = "se_vendor_id", nullable = false)
 	private TurSEVendor turSEVendor;
 
-	public String getId() {
-		return this.id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getDescription() {
-		return this.description;
 	}
 
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public int getEnabled() {
-		return this.enabled;
-	}
-
 	public void setEnabled(int enabled) {
 		this.enabled = enabled;
-	}
-
-	public String getHost() {
-		return this.host;
 	}
 
 	public void setHost(String host) {
 		this.host = host;
 	}
 
-	public int getPort() {
-		return this.port;
-	}
-
 	public void setPort(int port) {
 		this.port = port;
 	}
 
-	public String getTitle() {
-		return this.title;
-	}
-
 	public void setTitle(String title) {
 		this.title = title;
-	}
-
-	public TurSEVendor getTurSEVendor() {
-		return turSEVendor;
 	}
 
 	public void setTurSEVendor(TurSEVendor turSEVendor) {

@@ -81,7 +81,7 @@ public class TurMLDataGroupCategoryAPI {
 	@Operation(summary = "Delete a Machine Learning Data Group Category")
 	@DeleteMapping("/{id}")
 	public boolean turDataGroupCategoryDelete(@PathVariable int dataGroupId, @PathVariable int id) {
-		this.turDataGroupCategoryRepository.delete(id);
+		this.turDataGroupCategoryRepository.deleteById(id);
 		return true;
 	}
 

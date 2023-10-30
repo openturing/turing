@@ -20,13 +20,12 @@
  */
 package com.viglet.turing.converse.exchange.agent;
 
+import lombok.Getter;
+
+@Getter
 public class TurConverseAgentWebhookHeadersExchange {
 
 	private String dummy;
-
-	public String getDummy() {
-		return dummy;
-	}
 
 	public void setDummy(String dummy) {
 		this.dummy = dummy;

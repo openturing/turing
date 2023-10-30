@@ -37,13 +37,13 @@ package com.viglet.turing.exchange;
  * specific language governing permissions and limitations
  * under the License.
  */
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
 import com.viglet.turing.utils.TurUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Component;
@@ -52,27 +52,22 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import java.util.Objects;
+@Slf4j
 @Component
 public class TurImportExchange {
-	private static final Logger logger = LogManager.getLogger(TurImportExchange.class);
+
 	@Autowired
 	private TurSNSiteImport turSNSiteImport;
 	private static final String EXPORT_FILE = "export.json";
-	private Map<String, Object> shObjects = new HashMap<>();
-	private Map<String, List<String>> shChildObjects = new HashMap<>();
-
 	public TurExchange importFromMultipartFile(MultipartFile multipartFile) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		File parentExtractFolder = null;
 
 		if (extractFolder != null) {
 			// Check if export.json exists, if it is not exist try access a sub directory
-			if (!(new File(extractFolder, EXPORT_FILE).exists()) && (extractFolder.listFiles().length == 1)) {
-				for (File fileOrDirectory : extractFolder.listFiles()) {
+			if (!(new File(extractFolder, EXPORT_FILE).exists()) && (Objects.requireNonNull(extractFolder.listFiles()).length == 1)) {
+				for (File fileOrDirectory : Objects.requireNonNull(extractFolder.listFiles())) {
 					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, EXPORT_FILE).exists()) {
 						parentExtractFolder = extractFolder;
 						extractFolder = fileOrDirectory;
@@ -83,7 +78,7 @@ public class TurImportExchange {
 		}
 		return new TurExchange();
 	}
-	private TurExchange importSNSiteFromExportFile(File extractFolder, File parentExtractFolder) {
+	private void importSNSiteFromExportFile(File extractFolder, File parentExtractFolder) {
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			TurExchange turExchange = mapper.readValue(
@@ -99,11 +94,11 @@ public class TurImportExchange {
 				FileUtils.deleteDirectory(parentExtractFolder);
 			}
 
-			return turExchange;
+			return;
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
-		return new TurExchange();
+		new TurExchange();
 	}
 
 	public TurExchange importFromFile(File file) {
@@ -112,14 +107,12 @@ public class TurImportExchange {
 			MultipartFile multipartFile = new MockMultipartFile(file.getName(), IOUtils.toByteArray(input));
 			return this.importFromMultipartFile(multipartFile);
 		} catch (IOException | IllegalStateException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return new TurExchange();
 	}
 
 	public File extractZipFile(MultipartFile file) {
-		shObjects.clear();
-		shChildObjects.clear();
 		return TurUtils.extractZipFile(file);
 	}
 }

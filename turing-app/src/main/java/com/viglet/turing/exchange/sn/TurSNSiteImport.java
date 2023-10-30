@@ -42,7 +42,7 @@ public class TurSNSiteImport {
 
 	public void importSNSite(TurExchange turExchange){
 		for (TurSNSiteExchange turSNSiteExchange : turExchange.getSnSites()) {
-			if (!turSNSiteRepository.findById(turSNSiteExchange.getId()).isPresent()) {
+			if (turSNSiteRepository.findById(turSNSiteExchange.getId()).isEmpty()) {
 				
 				TurSNSite turSNSite = new TurSNSite();
 				turSNSite.setDefaultDateField(turSNSiteExchange.getDefaultDateField());
@@ -52,16 +52,16 @@ public class TurSNSiteImport {
 				turSNSite.setDefaultTitleField(turSNSiteExchange.getDefaultTitleField());
 				turSNSite.setDefaultURLField(turSNSiteExchange.getDefaultURLField());
 				turSNSite.setDescription(turSNSiteExchange.getDescription());
-				turSNSite.setFacet(boolToInteger(turSNSiteExchange.getFacet()));
+				turSNSite.setFacet(boolToInteger(turSNSiteExchange.isFacet()));
 				turSNSite.setHl(boolToInteger( turSNSiteExchange.getHl()));
 				turSNSite.setHlPost(turSNSiteExchange.getHlPost());
 				turSNSite.setHlPre(turSNSiteExchange.getHlPre());
 				turSNSite.setId(turSNSiteExchange.getId());
 				turSNSite.setItemsPerFacet(turSNSiteExchange.getItemsPerFacet());
-				turSNSite.setMlt(boolToInteger( turSNSiteExchange.getMlt()));
+				turSNSite.setMlt(boolToInteger( turSNSiteExchange.isMlt()));
 				turSNSite.setName(turSNSiteExchange.getName());
 				turSNSite.setRowsPerPage(turSNSiteExchange.getRowsPerPage());
-				turSNSite.setThesaurus(boolToInteger(turSNSiteExchange.getThesaurus()));
+				turSNSite.setThesaurus(boolToInteger(turSNSiteExchange.isThesaurus()));
 				turSNSite.setTurSEInstance(turSEInstanceRepository.findById(turSNSiteExchange.getTurSEInstance()).orElse(null));
 
 				turSNSiteRepository.save(turSNSite);

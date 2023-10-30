@@ -20,22 +20,22 @@
  */
 package com.viglet.turing.plugins.nlp.opennlp;
 
-import java.io.Serializable;
-
+import lombok.Getter;
 import opennlp.tools.sentdetect.SentenceDetectorME;
 
+import java.io.Serial;
+import java.io.Serializable;
+
+@Getter
 public class TurSentenceDetectorME implements Serializable {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private transient SentenceDetectorME sentenceDetectorME;
 
 	public TurSentenceDetectorME(SentenceDetectorME sentenceDetectorME) {
 		this.sentenceDetectorME = sentenceDetectorME;
-	}
-
-	public SentenceDetectorME getSentenceDetectorME() {
-		return sentenceDetectorME;
 	}
 
 	public void setSentenceDetectorME(SentenceDetectorME sentenceDetectorME) {

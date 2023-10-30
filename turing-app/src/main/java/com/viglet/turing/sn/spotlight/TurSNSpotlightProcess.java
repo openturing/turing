@@ -147,8 +147,7 @@ public class TurSNSpotlightProcess {
 				String jsonContent = (String) turSNJobItem.getAttributes().get(CONTENT_ATTRIBUTE);
 				String name = (String) turSNJobItem.getAttributes().get(NAME_ATTRIBUTE);
 				String provider = (String) turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE);
-				List<String> terms = Arrays
-						.asList(((String) turSNJobItem.getAttributes().get(TERMS_ATTRIBUTE)).split(","));
+				String[] terms = ((String) turSNJobItem.getAttributes().get(TERMS_ATTRIBUTE)).split(",");
 				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 				simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
 				Date date = simpleDateFormat
@@ -267,7 +266,7 @@ public class TurSNSpotlightProcess {
 						turSNSiteSpotlightDocumentMap.get(document.getPosition()).add(document);
 					} else {
 						turSNSiteSpotlightDocumentMap.put(document.getPosition(),
-								new ArrayList<>(Arrays.asList(document)));
+								new ArrayList<>(List.of(document)));
 					}
 				});
 			}

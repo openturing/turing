@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.sn.ranking;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.spring.security.TurAuditable;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -40,6 +41,7 @@ import java.util.Set;
  * @author Alexandre Oliveira
  * @since 0.3.7
  */
+@Getter
 @Entity
 @Table(name = "turSNRankingExpression")
 @NamedQuery(name = "TurSNRankingExpression.findAll", query = "SELECT sre FROM TurSNRankingExpression sre")
@@ -70,41 +72,21 @@ public class TurSNRankingExpression extends TurAuditable<String>  implements Ser
 	@Cascade({ org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN  })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNRankingCondition> turSNRankingConditions = new HashSet<>();
-	public String getId() {
-		return id;
-	}
 
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public float getWeight() {
-		return weight;
-	}
-
 	public void setWeight(float weight) {
 		this.weight = weight;
 	}
 
-	public TurSNSite getTurSNSite() {
-		return turSNSite;
-	}
-
 	public void setTurSNSite(TurSNSite turSNSite) {
 		this.turSNSite = turSNSite;
-	}
-
-	public Set<TurSNRankingCondition> getTurSNRankingConditions() {
-
-		return turSNRankingConditions;
 	}
 
 	public void setTurSNRankingConditions(Set<TurSNRankingCondition> turSNRankingConditions) {
@@ -112,10 +94,6 @@ public class TurSNRankingExpression extends TurAuditable<String>  implements Ser
 		if (turSNRankingConditions != null) {
 			this.turSNRankingConditions.addAll(turSNRankingConditions);
 		}
-	}
-
-	public String getDescription() {
-		return description;
 	}
 
 	public void setDescription(String description) {

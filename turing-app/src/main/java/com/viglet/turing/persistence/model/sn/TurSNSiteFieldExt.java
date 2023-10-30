@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -34,6 +35,7 @@ import java.io.Serializable;
  * The persistent class for the turSNSiteFieldExt database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turSNSiteFieldExt")
 @NamedQuery(name = "TurSNSiteFieldExt.findAll", query = "SELECT snsfe FROM TurSNSiteFieldExt snsfe")
@@ -94,48 +96,24 @@ public class TurSNSiteFieldExt implements Serializable {
 	@JsonBackReference (value="turSNSiteFieldExt-turSNSite")
 	private TurSNSite turSNSite;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getFacetName() {
-		return facetName;
-	}
-
 	public void setFacetName(String facetName) {
 		this.facetName = facetName;
-	}
-
-	public TurSEFieldType getType() {
-		return type;
 	}
 
 	public void setType(TurSEFieldType type) {
 		this.type = type;
 	}
 
-	public int getMultiValued() {
-		return multiValued;
-	}
-
 	public void setMultiValued(int multiValued) {
 		this.multiValued = multiValued;
-	}
-
-	public TurSNSite getTurSNSite() {
-		return turSNSite;
 	}
 
 	public void setTurSNSite(TurSNSite turSNSite) {
@@ -146,80 +124,40 @@ public class TurSNSiteFieldExt implements Serializable {
 		return serialVersionUID;
 	}
 
-	public int getFacet() {
-		return facet;
-	}
-
 	public void setFacet(int facet) {
 		this.facet = facet;
-	}
-
-	public int getHl() {
-		return hl;
 	}
 
 	public void setHl(int hl) {
 		this.hl = hl;
 	}
 
-	public TurSNFieldType getSnType() {
-		return snType;
-	}
-
 	public void setSnType(TurSNFieldType snType) {
 		this.snType = snType;
-	}
-
-	public int getMlt() {
-		return mlt;
 	}
 
 	public void setMlt(int mlt) {
 		this.mlt = mlt;
 	}
 
-	public int getEnabled() {
-		return enabled;
-	}
-
 	public void setEnabled(int enabled) {
 		this.enabled = enabled;
-	}
-
-	public String getExternalId() {
-		return externalId;
 	}
 
 	public void setExternalId(String externalId) {
 		this.externalId = externalId;
 	}
 
-	public String getDescription() {
-		return description;
-	}
-
 	public void setDescription(String description) {
 		this.description = description;
-	}
-
-	public int getRequired() {
-		return required;
 	}
 
 	public void setRequired(int required) {
 		this.required = required;
 	}
 
-	public String getDefaultValue() {
-		return defaultValue;
-	}
-
 	public void setDefaultValue(String defaultValue) {
 		this.defaultValue = defaultValue;
-	}
-
-	public int getNlp() {
-		return nlp;
 	}
 
 	public void setNlp(int nlp) {

@@ -20,6 +20,8 @@
  */
 package com.viglet.turing.plugins.nlp.gcp.response;
 
+import lombok.Getter;
+
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +32,7 @@ import java.util.Map;
  * @since 0.3.6
  *
  */
+@Getter
 public class TurNLPGCPEntityResponse {
 
 	private String name;
@@ -42,40 +45,20 @@ public class TurNLPGCPEntityResponse {
 
 	private List<TurNLPCGCPMentionResponse> mentions;
 
-	public String getName() {
-		return name;
-	}
-
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public TurNLPGCPEntityTypeResponse getType() {
-		return type;
 	}
 
 	public void setType(TurNLPGCPEntityTypeResponse type) {
 		this.type = type;
 	}
 
-	public Map<String, Object> getMetadata() {
-		return metadata;
-	}
-
 	public void setMetadata(Map<String, Object> metadata) {
 		this.metadata = metadata;
 	}
 
-	public double getSalience() {
-		return salience;
-	}
-
 	public void setSalience(double salience) {
 		this.salience = salience;
-	}
-
-	public List<TurNLPCGCPMentionResponse> getMentions() {
-		return mentions;
 	}
 
 	public void setMentions(List<TurNLPCGCPMentionResponse> mentions) {

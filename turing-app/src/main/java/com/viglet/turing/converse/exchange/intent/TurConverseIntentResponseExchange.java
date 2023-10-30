@@ -21,8 +21,11 @@
 
 package com.viglet.turing.converse.exchange.intent;
 
+import lombok.Getter;
+
 import java.util.List;
 
+@Getter
 public class TurConverseIntentResponseExchange {
 
 	private boolean resetContexts;
@@ -39,56 +42,28 @@ public class TurConverseIntentResponseExchange {
 	
 	private List<String> speech;
 
-	public boolean isResetContexts() {
-		return resetContexts;
-	}
-
 	public void setResetContexts(boolean resetContexts) {
 		this.resetContexts = resetContexts;
-	}
-
-	public String getAction() {
-		return action;
 	}
 
 	public void setAction(String action) {
 		this.action = action;
 	}
 
-	public List<TurConverseIntentResponseAffectedContextExchange> getAffectedContexts() {
-		return affectedContexts;
-	}
-
 	public void setAffectedContexts(List<TurConverseIntentResponseAffectedContextExchange> affectedContexts) {
 		this.affectedContexts = affectedContexts;
-	}
-
-	public List<TurConverseIntentResponseParameterExchange> getParameters() {
-		return parameters;
 	}
 
 	public void setParameters(List<TurConverseIntentResponseParameterExchange> parameters) {
 		this.parameters = parameters;
 	}
 
-	public List<TurConverseIntentMessageExchange> getMessages() {
-		return messages;
-	}
-
 	public void setMessages(List<TurConverseIntentMessageExchange> messages) {
 		this.messages = messages;
 	}
 
-	public TurConverseIntentResponsePlatformsExchange getDefaultResponsePlatforms() {
-		return defaultResponsePlatforms;
-	}
-
 	public void setDefaultResponsePlatforms(TurConverseIntentResponsePlatformsExchange defaultResponsePlatforms) {
 		this.defaultResponsePlatforms = defaultResponsePlatforms;
-	}
-
-	public List<String> getSpeech() {
-		return speech;
 	}
 
 	public void setSpeech(List<String> speech) {

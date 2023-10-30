@@ -64,11 +64,4 @@ public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
 				}).csrf(AbstractHttpConfigurer::disable).cors(Customizer.withDefaults());
 		return http.build();
 	}
-	@Override
-	@Scope("prototype")
-	@Bean
-	MvcRequestMatcher.Builder mvc(HandlerMappingIntrospector introspector) {
-		return new MvcRequestMatcher.Builder(introspector);
-	}
-
 }

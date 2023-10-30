@@ -20,12 +20,11 @@
  */
 package com.viglet.turing.se.result;
 
+import lombok.Getter;
+
+@Getter
 public class TurSEGroup extends TurSEGenericResults {
 	private String name;
-
-	public String getName() {
-		return name;
-	}
 
 	public void setName(String name) {
 		this.name = name;

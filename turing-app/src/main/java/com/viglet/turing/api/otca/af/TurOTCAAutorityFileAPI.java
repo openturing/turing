@@ -20,18 +20,23 @@
  */
 package com.viglet.turing.api.otca.af;
 
-import java.lang.invoke.MethodHandles;
-import java.nio.charset.StandardCharsets;
-
-import jakarta.servlet.http.HttpServletRequest;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.nlp.TurNLPRelationType;
+import com.viglet.turing.nlp.TurNLPTermAccent;
+import com.viglet.turing.nlp.TurNLPTermCase;
+import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
+import com.viglet.turing.persistence.model.nlp.term.*;
+import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
+import com.viglet.turing.persistence.repository.nlp.term.*;
+import com.viglet.turing.plugins.nlp.otca.af.xml.*;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermType.Attributes;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermType.Relations;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermType.Variations;
+import com.viglet.turing.plugins.nlp.otca.af.xml.AFType.Terms;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.sax.SAXSource;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,44 +48,15 @@ import org.springframework.web.servlet.view.RedirectView;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
-import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.nlp.TurNLPRelationType;
-import com.viglet.turing.nlp.TurNLPTermAccent;
-import com.viglet.turing.nlp.TurNLPTermCase;
-import com.viglet.turing.persistence.model.nlp.term.TurTerm;
-import com.viglet.turing.persistence.model.nlp.term.TurTermAttribute;
-import com.viglet.turing.persistence.model.nlp.term.TurTermRelationFrom;
-import com.viglet.turing.persistence.model.nlp.term.TurTermRelationTo;
-import com.viglet.turing.persistence.model.nlp.term.TurTermVariation;
-import com.viglet.turing.persistence.model.nlp.term.TurTermVariationLanguage;
-import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
-import com.viglet.turing.persistence.repository.nlp.term.TurTermAttributeRepository;
-import com.viglet.turing.persistence.repository.nlp.term.TurTermRelationFromRepository;
-import com.viglet.turing.persistence.repository.nlp.term.TurTermRelationToRepository;
-import com.viglet.turing.persistence.repository.nlp.term.TurTermRepository;
-import com.viglet.turing.persistence.repository.nlp.term.TurTermVariationLanguageRepository;
-import com.viglet.turing.persistence.repository.nlp.term.TurTermVariationRepository;
-import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFAttributeType;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermRelationType;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermRelationTypeEnum;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermType;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermType.Attributes;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermType.Relations;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermType.Variations;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermVariationAccentEnum;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermVariationCaseEnum;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFTermVariationType;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFType;
-import com.viglet.turing.plugins.nlp.otca.af.xml.AFType.Terms;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
-
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+@Slf4j
 @RestController
 @RequestMapping("/api/otca/af")
 @Tag(name = "OTCA", description = "OTCA API")
 public class TurOTCAAutorityFileAPI {
-	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
@@ -109,11 +85,7 @@ public class TurOTCAAutorityFileAPI {
 		if (turNLPEntity == null) {
 			turNLPEntity = new TurNLPEntity();
 			turNLPEntity.setName(name);
-			if (description != null) {
-				turNLPEntity.setDescription(description);
-			} else {
-				turNLPEntity.setDescription("");
-			}
+            turNLPEntity.setDescription(Objects.requireNonNullElse(description, ""));
 			turNLPEntity.setInternalName(normalizeEntity(name));
 			turNLPEntity.setLocal(1);
 			turNLPEntity.setCollectionName(normalizeEntity(name));
@@ -277,8 +249,7 @@ public class TurOTCAAutorityFileAPI {
 
 	@PostMapping("/import")
 	@Transactional
-	public RedirectView turOTCAAutorityFileImport(@RequestParam("file") MultipartFile multipartFile,
-			HttpServletRequest request) {
+	public RedirectView turOTCAAutorityFileImport(@RequestParam("file") MultipartFile multipartFile){
 
 		try {
 			JAXBContext jaxbContext = JAXBContext
@@ -297,10 +268,8 @@ public class TurOTCAAutorityFileAPI {
 			TurNLPEntity turNLPEntity = this.setEntity(documentType.getName(), documentType.getDescription());
 			this.setTerms(turNLPEntity, documentType.getTerms());
 
-		} catch (JAXBException ejaxb) {
-			logger.error(ejaxb.getMessage(), ejaxb);
 		} catch (Exception ex) {
-			logger.error(ex.getMessage(), ex);
+			log.error(ex.getMessage(), ex);
 		}
 		String redirect = "/turing/#entity/import";
 

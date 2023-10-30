@@ -20,29 +20,20 @@
  */
 package com.viglet.turing.api.sn.console;
 
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.template.TurSNTemplate;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Alexandre Oliveira
@@ -77,7 +68,8 @@ public class TurSNSiteLocaleAPI {
 	@Operation(summary = "Update a Semantic Navigation Site Locale")
 	@PutMapping("/{id}")
 	public TurSNSiteLocale turSNSiteLocaleUpdate(@PathVariable String id,
-			@RequestBody TurSNSiteLocale turSNSiteLocale) {
+												 @RequestBody TurSNSiteLocale turSNSiteLocale,
+												 @PathVariable String snSiteId) {
 		return this.turSNSiteLocaleRepository.findById(id).map(turSNSiteLocaleEdit -> {
 			turSNSiteLocaleEdit.setCore(turSNSiteLocale.getCore());
 			turSNSiteLocaleEdit.setLanguage(turSNSiteLocale.getLanguage());
@@ -96,14 +88,15 @@ public class TurSNSiteLocaleAPI {
 	@Transactional
 	@Operation(summary = "Delete a Semantic Navigation Site Locale")
 	@DeleteMapping("/{id}")
-	public boolean turSNSiteLocaleDelete(@PathVariable String id) {
-		turSNSiteLocaleRepository.delete(id);
+	public boolean turSNSiteLocaleDelete(@PathVariable String id, @PathVariable String snSiteId) {
+		turSNSiteLocaleRepository.deleteById(id);
 		return true;
 	}
 
 	@Operation(summary = "Create a Semantic Navigation Site Locale")
 	@PostMapping
-	public TurSNSiteLocale turSNSiteLocaleAdd(@RequestBody TurSNSiteLocale turSNSiteLocale, Principal principal) {
+	public TurSNSiteLocale turSNSiteLocaleAdd(@RequestBody TurSNSiteLocale turSNSiteLocale, Principal principal,
+											  @PathVariable String snSiteId) {
 		if (turSNSiteLocale.getTurNLPInstance() != null && turSNSiteLocale.getTurNLPInstance().getId() == null) {
 			turSNSiteLocale.setTurNLPInstance(null);
 		}

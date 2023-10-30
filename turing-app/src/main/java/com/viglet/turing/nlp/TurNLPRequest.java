@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import lombok.Getter;
 
 /**
  * 
@@ -32,29 +33,18 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
  * @since 0.3.6
  *
  */
+@Getter
 public class TurNLPRequest {
 	private TurNLPInstance turNLPInstance;
 	private Map<String, Object> data;
 	private List<TurNLPEntityRequest> entities;
 
-	public TurNLPInstance getTurNLPInstance() {
-		return turNLPInstance;
-	}
-
 	public void setTurNLPInstance(TurNLPInstance turNLPInstance) {
 		this.turNLPInstance = turNLPInstance;
 	}
 
-	public Map<String, Object> getData() {
-		return data;
-	}
-
 	public void setData(Map<String, Object> data) {
 		this.data = data;
-	}
-
-	public List<TurNLPEntityRequest> getEntities() {
-		return entities;
 	}
 
 	public void setEntities(List<TurNLPEntityRequest> entities) {

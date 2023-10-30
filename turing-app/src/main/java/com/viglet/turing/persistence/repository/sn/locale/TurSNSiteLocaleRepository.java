@@ -23,12 +23,9 @@ package com.viglet.turing.persistence.repository.sn.locale;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
 /**
  * @author Alexandre Oliveira
@@ -36,16 +33,8 @@ import org.springframework.data.jpa.repository.Query;
  */
 public interface TurSNSiteLocaleRepository extends JpaRepository<TurSNSiteLocale, String> {
 
-	@SuppressWarnings("unchecked")
-	TurSNSiteLocale save(TurSNSiteLocale turSNSiteLocale);
-	
+
 	TurSNSiteLocale findByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
 	
 	List<TurSNSiteLocale> findByTurSNSite(TurSNSite turSNSite);
-	
-	void delete(TurSNSiteLocale turSNSiteLocale);
-
-	@Modifying
-	@Query("delete from  TurSNSiteLocale ssl where ssl.id = ?1")
-	void delete(String id);
 }

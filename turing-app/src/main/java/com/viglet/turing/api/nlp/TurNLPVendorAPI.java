@@ -69,7 +69,7 @@ public class TurNLPVendorAPI {
 	@Operation(summary = "Delete a Natural Language Processing Vendor")
 	@DeleteMapping("/{id}")
 	public boolean turNLPVendorDelete(@PathVariable String id) {
-		this.turNLPVendorRepository.delete(id);
+		this.turNLPVendorRepository.deleteById(id);
 		return true;
 	}
 

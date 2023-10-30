@@ -1,49 +1,71 @@
 package com.viglet.turing.connector.aem.indexer;
 
+import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
+import javax.jcr.RepositoryException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
-import javax.jcr.RepositoryException;
-import javax.jcr.ValueFormatException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import static org.apache.jackrabbit.JcrConstants.*;
+@Getter
 public class AemObject {
-	private static Logger logger = LoggerFactory.getLogger(AemObject.class);
-	public static String JCR_CONTENT = "jcr:content";
+	private static final Logger logger = LoggerFactory.getLogger(AemObject.class);
 	private Calendar lastModified;
 	private Calendar createdDate;
+	private boolean contentFragment = false;
+	private boolean delivered = false;
 	private String type;
+	private String model;
 	private Node node;
 	private Node jcrContentNode;
-	private Map<String, Object> attributes = new HashMap<>();
 
-	public Map<String, Object> getAttributes() {
-		return attributes;
-	}
+	private final Map<String, Property> attributes = new HashMap<>();
 
 	public AemObject(Node node) {
+		this(node, null);
+	}
+
+	public static final String CONTENT_FRAGMENT = "contentFragment";
+	public static final String CQ_IS_DELIVERED = "cq:isDelivered";
+	public static final String CQ_LAST_MODIFIED = "cq:lastModified";
+	public static final String CQ_MODEL = "cq:model";
+	public AemObject(Node node, String dataPath) {
 		try {
 			this.node = node;
-			type = node.getProperty("jcr:primaryType").getString();
+			type = node.getProperty(JCR_PRIMARYTYPE).getString();
 			jcrContentNode = node.getNode(JCR_CONTENT);
-			if (jcrContentNode.hasProperty("cq:lastModified") && jcrContentNode.getProperty("cq:lastModified") != null)
-				lastModified = jcrContentNode.getProperty("cq:lastModified").getDate();
-			if (jcrContentNode.hasProperty("jcr:created") && jcrContentNode.getProperty("jcr:created") != null)
-				createdDate = jcrContentNode.getProperty("jcr:created").getDate();
-			PropertyIterator jcrContentProperties = jcrContentNode.getProperties();
-			while (jcrContentProperties.hasNext()) {
-				Property property = jcrContentProperties.nextProperty();
-				getPropertyValue(property);
+			if (TurAemUtils.hasProperty(jcrContentNode,CQ_LAST_MODIFIED))
+				lastModified = jcrContentNode.getProperty(CQ_LAST_MODIFIED).getDate();
+			if (lastModified == null && TurAemUtils.hasProperty(jcrContentNode, JCR_LASTMODIFIED)) {
+				lastModified = jcrContentNode.getProperty(JCR_LASTMODIFIED).getDate();
 			}
-		} catch (PathNotFoundException e) {
-			logger.error(e.getMessage(), e);
+			if (TurAemUtils.hasProperty(jcrContentNode, CONTENT_FRAGMENT)) {
+				contentFragment = jcrContentNode.getProperty(CONTENT_FRAGMENT).getBoolean();
+			}
+			if (TurAemUtils.hasProperty(jcrContentNode, CQ_IS_DELIVERED)) {
+				delivered = jcrContentNode.getProperty(CQ_IS_DELIVERED).getBoolean();
+			}
+			if (TurAemUtils.hasProperty(node,JCR_CREATED))
+				createdDate = node.getProperty(JCR_CREATED).getDate();
+			Node jcrDataRootNode = jcrContentNode.getNode("data");
+			if (TurAemUtils.hasProperty(jcrDataRootNode, CQ_MODEL)) {
+				model = jcrDataRootNode.getProperty(CQ_MODEL).getString();
+			}
+
+			if (dataPath != null) {
+				Node jcrDataNode = jcrContentNode.getNode(dataPath);
+				PropertyIterator jcrContentProperties = jcrDataNode.getProperties();
+				while (jcrContentProperties.hasNext()) {
+					Property property = jcrContentProperties.nextProperty();
+					attributes.put(property.getName(), property);
+				}
+			}
 		} catch (RepositoryException e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -61,29 +83,9 @@ public class AemObject {
 		return null;
 	}
 	public static String getJcrPropertyValue(Node node, String propertyName)
-			throws RepositoryException, ValueFormatException, PathNotFoundException {
+			throws RepositoryException {
 		if (node.hasProperty(propertyName))
 			return getPropertyValue(node.getProperty(propertyName));
 		return null;
 	}
-	public Calendar getLastModified() {
-		return lastModified;
-	}
-
-	public Calendar getCreatedDate() {
-		return createdDate;
-	}
-
-	public String getType() {
-		return type;
-	}
-
-	public Node getNode() {
-		return node;
-	}
-
-	public Node getJcrContentNode() {
-		return jcrContentNode;
-	}
-
 }

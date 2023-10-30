@@ -22,6 +22,7 @@
 package com.viglet.turing.persistence.model.ml;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -30,6 +31,7 @@ import java.io.Serializable;
  * The persistent class for the vigServices database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turMLInstance")
 @NamedQuery(name = "TurMLInstance.findAll", query = "SELECT mi FROM TurMLInstance mi")
@@ -66,64 +68,32 @@ public class TurMLInstance implements Serializable {
 	@JoinColumn(name = "ml_vendor_id", nullable = false)
 	private TurMLVendor turMLVendor;
 
-	public int getId() {
-		return this.id;
-	}
-
 	public void setId(int id) {
 		this.id = id;
-	}
-
-	public String getDescription() {
-		return this.description;
 	}
 
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public int getEnabled() {
-		return this.enabled;
-	}
-
 	public void setEnabled(int enabled) {
 		this.enabled = enabled;
-	}
-
-	public String getHost() {
-		return this.host;
 	}
 
 	public void setHost(String host) {
 		this.host = host;
 	}
 
-	public String getLanguage() {
-		return this.language;
-	}
-
 	public void setLanguage(String language) {
 		this.language = language;
-	}
-
-	public int getPort() {
-		return this.port;
 	}
 
 	public void setPort(int port) {
 		this.port = port;
 	}
 
-	public String getTitle() {
-		return this.title;
-	}
-
 	public void setTitle(String title) {
 		this.title = title;
-	}
-
-	public TurMLVendor getTurMLVendor() {
-		return turMLVendor;
 	}
 
 	public void setTurMLVendor(TurMLVendor turMLVendor) {

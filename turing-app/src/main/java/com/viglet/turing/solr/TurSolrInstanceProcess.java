@@ -117,8 +117,8 @@ public class TurSolrInstanceProcess {
 
 	public Optional<TurSolrInstance> initSolrInstance() {
 		return turConfigVarRepository.findById("DEFAULT_SE")
-				.map(turConfigVar -> turSEInstanceRepository.findById(turConfigVar.getValue())
-						.map(turSEInstance -> getSolrClient(turSEInstance, "turing")).orElse(null))
+				.flatMap(turConfigVar -> turSEInstanceRepository.findById(turConfigVar.getValue())
+                        .map(turSEInstance -> getSolrClient(turSEInstance, "turing")))
 				.orElse(null);
 	}
 

@@ -23,21 +23,17 @@ package com.viglet.turing.persistence.repository.sn;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.sn.TurSNFieldType;
-
-import java.util.List;
-import java.util.Optional;
-
+import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
+import java.util.Optional;
+
 public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFieldExt, String> {
-
-	List<TurSNSiteFieldExt> findAll();
-
-	Optional<TurSNSiteFieldExt> findById(String id);
 
 	@Cacheable("turSNSiteFieldExtfindByTurSNSite")
 	List<TurSNSiteFieldExt> findByTurSNSite(TurSNSite turSNSite);
@@ -65,13 +61,14 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled" }, allEntries = true)
-	TurSNSiteFieldExt save(TurSNSiteFieldExt turSNSiteFieldExt);
+	@NotNull
+	TurSNSiteFieldExt save(@NotNull TurSNSiteFieldExt turSNSiteFieldExt);
 
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled" }, allEntries = true)
-	void delete(TurSNSiteFieldExt turSNSiteFieldExt);
+	void delete(@NotNull TurSNSiteFieldExt turSNSiteFieldExt);
 
 	@Modifying
 	@Query("delete from TurSNSiteFieldExt ssfe where ssfe.id = ?1")
@@ -82,7 +79,7 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 	void delete(String turSnSiteFieldId);
 
 	@Modifying
-	@Query("delete from TurSNSiteFieldExt ssfe where turSNSite= ?1 and snType = ?2")
+	@Query("delete from TurSNSiteFieldExt ssfe where ssfe.turSNSite= ?1 and ssfe.snType = ?2")
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",

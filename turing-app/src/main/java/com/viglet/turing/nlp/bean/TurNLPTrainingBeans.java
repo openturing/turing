@@ -20,14 +20,13 @@
  */
 package com.viglet.turing.nlp.bean;
 
+import lombok.Getter;
+
 import java.util.List;
 
+@Getter
 public class TurNLPTrainingBeans {
 	private List<TurNLPTrainingBean> terms;
-
-	public List<TurNLPTrainingBean> getTerms() {
-		return terms;
-	}
 
 	public void setTerms(List<TurNLPTrainingBean> terms) {
 		this.terms = terms;

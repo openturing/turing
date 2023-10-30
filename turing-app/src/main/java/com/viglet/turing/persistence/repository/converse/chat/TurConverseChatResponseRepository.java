@@ -21,21 +21,17 @@
 
 package com.viglet.turing.persistence.repository.converse.chat;
 
-import java.util.List;
-import java.util.Optional;
-
+import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
+import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
-import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
+import java.util.List;
+import java.util.Optional;
 
 public interface TurConverseChatResponseRepository extends JpaRepository<TurConverseChatResponse, String> {
-
-	List<TurConverseChatResponse> findAll();
-	
-	Optional<TurConverseChatResponse> findById(String id);
 
 	List<TurConverseChatResponse> findByChat(TurConverseChat turConverseChat);
 	
@@ -50,13 +46,4 @@ public interface TurConverseChatResponseRepository extends JpaRepository<TurConv
 	int countByChatAndIsUser(TurConverseChat turConverseChat, boolean isUser);
 	
 	int countByChatAndIsUserAndIntentIdIsNull(TurConverseChat turConverseChat, boolean isUser);
-	
-	@SuppressWarnings("unchecked")
-	TurConverseChatResponse save(TurConverseChatResponse turConverseChat);
-
-	@Modifying
-	@Query("delete from  TurConverseChatResponse ccr where ccr.id = ?1")
-	void delete(String id);
-
-	
 }

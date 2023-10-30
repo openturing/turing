@@ -20,6 +20,8 @@
  */
 package com.viglet.turing.api.sn.bean;
 
+import lombok.Getter;
+
 /**
  * 
  * @author Alexandre Oliveira
@@ -27,21 +29,14 @@ package com.viglet.turing.api.sn.bean;
  * @since 0.3.6
  *
  */
+@Getter
 public class TurSNSiteMonitoringStatusBean {
 
 	private int queue;
 	private int documents;
 
-	public int getQueue() {
-		return queue;
-	}
-
 	public void setQueue(int queue) {
 		this.queue = queue;
-	}
-
-	public int getDocuments() {
-		return documents;
 	}
 
 	public void setDocuments(int documents) {

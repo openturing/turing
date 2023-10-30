@@ -22,10 +22,10 @@
 package com.viglet.turing.persistence.repository.nlp;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-
-import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TurNLPEntityRepository extends JpaRepository<TurNLPEntity, String> {
 
@@ -36,6 +36,4 @@ public interface TurNLPEntityRepository extends JpaRepository<TurNLPEntity, Stri
 	List<TurNLPEntity> findByEnabled(int enabled);
 	
 	TurNLPEntity findByName(String name);
-
-	void delete(TurNLPEntity turNLPEntity);
 }

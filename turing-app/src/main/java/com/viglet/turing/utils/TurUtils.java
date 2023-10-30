@@ -23,6 +23,7 @@ package com.viglet.turing.utils;
 
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.spring.security.auth.ITurAuthenticationFacade;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,10 +35,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.util.UUID;
-
+@Slf4j
 @Component
 public class TurUtils {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private ITurAuthenticationFacade authenticationFacade;
 
@@ -52,7 +52,7 @@ public class TurUtils {
 		try {
 			file.transferTo(localFile);
 		} catch (IllegalStateException | IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 
 		return localFile;
@@ -69,7 +69,7 @@ public class TurUtils {
 					randomTempFileOrDirectory()));
 			FileUtils.deleteQuietly(zipFile);
 		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 
 		return extractFolder;

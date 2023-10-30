@@ -21,24 +21,18 @@
 
 package com.viglet.turing.bean.ml.sentence;
 
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 
+@Getter
 @Component
 public class TurMLSentenceBean {
 	private String sentence;
 	
 	private int turMLCategoryId;
-	
-	public String getSentence() {
-		return sentence;
-	}
 
 	public void setSentence(String sentence) {
 		this.sentence = sentence;
-	}
-
-	public int getTurMLCategoryId() {
-		return turMLCategoryId;
 	}
 
 	public void setTurMLCategoryId(int turMLCategoryId) {

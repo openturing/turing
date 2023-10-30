@@ -31,7 +31,4 @@ public interface TurConverseChatRepository extends JpaRepository<TurConverseChat
 
 	TurConverseChat findBySession(String session) ;
 
-	@Modifying
-	@Query("delete from  TurConverseChat cc where cc.id = ?1")
-	void delete(String id);
 }

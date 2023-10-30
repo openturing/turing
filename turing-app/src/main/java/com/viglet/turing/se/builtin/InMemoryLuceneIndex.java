@@ -20,62 +20,51 @@
  */
 package com.viglet.turing.se.builtin;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.Term;
+import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.Sort;
-import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 
-public class InMemoryLuceneIndex {
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-    private Directory memoryIndex;
-    private Analyzer analyzer;
+public class InMemoryLuceneIndex {
+    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+    private final Directory memoryIndex;
+    private final Analyzer analyzer;
 
     public InMemoryLuceneIndex(Directory memoryIndex, Analyzer analyzer) {
         super();
         this.memoryIndex = memoryIndex;
         this.analyzer = analyzer;
     }
-
-    /**
-     * 
-     * @param title
-     * @param body
-     */
     public void indexDocument(String title, String body) {
 
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
         try {
-            IndexWriter writter = new IndexWriter(memoryIndex, indexWriterConfig);
+            IndexWriter writer = new IndexWriter(memoryIndex, indexWriterConfig);
             Document document = new Document();
 
             document.add(new TextField("title", title, Field.Store.YES));
             document.add(new TextField("body", body, Field.Store.YES));
             document.add(new SortedDocValuesField("title", new BytesRef(title)));
 
-            writter.addDocument(document);
-            writter.close();
+            writer.addDocument(document);
+            writer.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -93,7 +82,7 @@ public class InMemoryLuceneIndex {
 
             return documents;
         } catch (IOException | ParseException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         return Collections.emptyList();
 
@@ -102,11 +91,11 @@ public class InMemoryLuceneIndex {
     public void deleteDocument(Term term) {
         try {
             IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
-            IndexWriter writter = new IndexWriter(memoryIndex, indexWriterConfig);
-            writter.deleteDocuments(term);
-            writter.close();
+            IndexWriter writer = new IndexWriter(memoryIndex, indexWriterConfig);
+            writer.deleteDocuments(term);
+            writer.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -122,7 +111,7 @@ public class InMemoryLuceneIndex {
 
             return documents;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         return Collections.emptyList();
 
@@ -140,7 +129,7 @@ public class InMemoryLuceneIndex {
 
             return documents;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         return Collections.emptyList();
 

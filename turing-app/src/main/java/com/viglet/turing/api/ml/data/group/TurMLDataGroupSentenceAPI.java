@@ -85,7 +85,7 @@ public class TurMLDataGroupSentenceAPI {
 	@Operation(summary = "Delete a Machine Learning Data Group Sentence")
 	@DeleteMapping("/{id}")
 	public boolean turDataGroupSentenceDelete(@PathVariable int dataGroupId, @PathVariable int id) {
-		this.turDataGroupSentenceRepository.delete(id);
+		this.turDataGroupSentenceRepository.deleteById(id);
 		return true;
 	}
 

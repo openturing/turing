@@ -150,20 +150,13 @@ public class TurSNSiteFieldExtAPI {
 		for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExts) {
 			switch (turSNSiteFieldExt.getSnType()) {
 			case SE:
-				if (fieldMap.containsKey(turSNSiteFieldExt.getExternalId())) {
-					fieldMap.remove(turSNSiteFieldExt.getExternalId());
-				}
+				fieldMap.remove(turSNSiteFieldExt.getExternalId());
 				break;
 			case NER:
-				if (nerMap.containsKey(turSNSiteFieldExt.getExternalId())) {
-					nerMap.remove(turSNSiteFieldExt.getExternalId());
-				}
+				nerMap.remove(turSNSiteFieldExt.getExternalId());
 				break;
-
 			case THESAURUS:
-				if (thesaurusMap.containsKey(turSNSiteFieldExt.getExternalId())) {
-					thesaurusMap.remove(turSNSiteFieldExt.getExternalId());
-				}
+				thesaurusMap.remove(turSNSiteFieldExt.getExternalId());
 				break;
 			}
 		}
@@ -335,7 +328,7 @@ public class TurSNSiteFieldExtAPI {
 	public void createField(TurSNSite turSNSite, String locale, TurSNSiteFieldExt turSNSiteFieldExts) {
 		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
 		JSONObject jsonAddField = new JSONObject();
-		String fieldName = null;
+		String fieldName;
 
 		if (turSNSiteFieldExts.getSnType() == TurSNFieldType.NER) {
 			fieldName = String.format("turing_entity_%s", turSNSiteFieldExts.getName());

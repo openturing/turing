@@ -33,8 +33,4 @@ import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
 public interface TurConverseResponseRepository extends JpaRepository<TurConverseResponse, String> {
 
 	Set<TurConverseResponse> findByIntent(TurConverseIntent turConverseIntent);
-
-	@Modifying
-	@Query("delete from  TurConverseResponse cr where cr.id = ?1")
-	void delete(String id);
 }

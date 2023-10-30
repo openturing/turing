@@ -13,7 +13,7 @@ import { TurSNSearchService } from '../../service/sn-search.service';
 
 export class TurSNSearchRootPageComponent implements OnInit {
   private turSNSearchItems: Observable<TurSNSearch>;
-  private turSiteName!: string;
+  public turSiteName!: string;
   public turQuery!: string;
   private turPage!: string;
   private turLocale!: string;
@@ -46,6 +46,8 @@ export class TurSNSearchRootPageComponent implements OnInit {
   }
 
   generateQueryString(): string {
+    this.turPage = "1";
+
     return TurSNSearchService.generateQueryString(this.turQuery,
       this.turPage,
       this.turLocale,
@@ -107,7 +109,8 @@ export class TurSNSearchRootPageComponent implements OnInit {
   }
 
   showAll() {
-    this.turRedirect("q=*");
+    this.turQuery = "*";
+    this.turRedirect("?" + this.generateQueryString());
   }
   turRedirect(href: string) {
     let result: { [key: string]: string[] } = {};

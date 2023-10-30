@@ -21,15 +21,13 @@
 
 package com.viglet.turing.plugins.nlp.spacy;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-
+import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.nlp.TurNLPEntityRequest;
+import com.viglet.turing.nlp.TurNLPRequest;
+import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
+import com.viglet.turing.plugins.nlp.TurNLPPlugin;
+import com.viglet.turing.solr.TurSolrField;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -44,18 +42,21 @@ import org.json.JSONObject;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.nlp.TurNLPEntityRequest;
-import com.viglet.turing.nlp.TurNLPRequest;
-import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
-import com.viglet.turing.plugins.nlp.TurNLPPlugin;
-import com.viglet.turing.solr.TurSolrField;
-
-import java.util.*;
-
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+@Slf4j
 @Component
 public class TurSpaCyConnector implements TurNLPPlugin {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 
 	@Override
 	public Map<String, List<String>> processAttributesToEntityMap(TurNLPRequest turNLPRequest) {
@@ -71,7 +72,7 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 		try {
 			return new URL(turNLPRequest.getTurNLPInstance().getEndpointURL().concat("/ent"));
 		} catch (MalformedURLException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return null;
 	}
@@ -91,8 +92,8 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 
 	private void processSentence(TurNLPRequest turNLPRequest, Map<String, List<String>> entityList, URL serverURL,
 			String sentence) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("SpaCy Text: {}", sentence);
+		if (log.isDebugEnabled()) {
+			log.debug("SpaCy Text: {}", sentence);
 		}
 		HttpPost httpPost = prepareHttpPost(turNLPRequest, serverURL, sentence);
 
@@ -103,14 +104,14 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 			if (entity != null) {
 				String jsonResponse = new String(entity.getContent().readAllBytes(), StandardCharsets.UTF_8);
 				if (TurCommonsUtils.isJSONValid(jsonResponse)) {
-					if (logger.isDebugEnabled()) {
-						logger.debug("SpaCy JSONResponse: {}", jsonResponse);
+					if (log.isDebugEnabled()) {
+						log.debug("SpaCy JSONResponse: {}", jsonResponse);
 					}
 					this.getEntities(sentence, new JSONArray(jsonResponse), entityList);
 				}
 			}
 		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -131,7 +132,8 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 
 	private String cleanFullText(Object attrValue) {
 		return TurSolrField.convertFieldToString(attrValue).replaceAll("[\\n:;]", ". ")
-				.replaceAll("\\h|\\r|\\n|\"|\'|R\\$", " ").replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
+				.replaceAll("\\h|\\r|\\n|\"|'|R\\$", " ")
+				.replaceAll("\\.+", ". ").replaceAll(" +", " ").trim();
 	}
 
 	private JSONObject createJSONRequest(TurNLPRequest turNLPRequest, String atributeValue) {
@@ -158,8 +160,8 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 		byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
 		String jsonUTF8 = new String(outputData);
 
-		if (logger.isDebugEnabled()) {
-			logger.debug("SpaCy JSONBody: {}", jsonUTF8);
+		if (log.isDebugEnabled()) {
+			log.debug("SpaCy JSONBody: {}", jsonUTF8);
 		}
 		return jsonBody;
 	}
@@ -171,8 +173,8 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 			entityAttributes.put(turNLPEntityRequest.getTurNLPVendorEntity().getTurNLPEntity().getInternalName(),
 					this.getEntity(turNLPEntityRequest.getName(), entityList));
 		}
-		if (logger.isDebugEnabled()) {
-			logger.debug("SpaCy getAttributes: {}", entityAttributes);
+		if (log.isDebugEnabled()) {
+			log.debug("SpaCy getAttributes: {}", entityAttributes);
 		}
 		return entityAttributes;
 	}
@@ -197,8 +199,8 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 			if (label.equals("PER"))
 				label = "PN";
 
-			if (logger.isDebugEnabled()) {
-				logger.debug("SpaCy Term (NER): {} ({})", term, label);
+			if (log.isDebugEnabled()) {
+				log.debug("SpaCy Term (NER): {} ({})", term, label);
 			}
 
 			if (add)
@@ -208,8 +210,8 @@ public class TurSpaCyConnector implements TurNLPPlugin {
 	}
 
 	public List<String> getEntity(String entity, Map<String, List<String>> entityList) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("getEntity: {}", entity);
+		if (log.isDebugEnabled()) {
+			log.debug("getEntity: {}", entity);
 		}
 		return entityList.get(entity);
 	}

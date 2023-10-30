@@ -138,18 +138,10 @@ public class TurSNSearchProcess {
 
 				int lastItemOfFullPage = (int) group.getStart() + group.getLimit();
 
-				if (lastItemOfFullPage < turSNSiteSearchGroupBean.getCount()) {
-					turSNSiteSearchGroupBean.setPageEnd(lastItemOfFullPage);
-				} else {
-					turSNSiteSearchGroupBean.setPageEnd(turSNSiteSearchGroupBean.getCount());
-				}
+                turSNSiteSearchGroupBean.setPageEnd(Math.min(lastItemOfFullPage, turSNSiteSearchGroupBean.getCount()));
 				int firstItemOfFullPage = (int) group.getStart() + 1;
 
-				if (firstItemOfFullPage < turSNSiteSearchGroupBean.getPageEnd()) {
-					turSNSiteSearchGroupBean.setPageStart(firstItemOfFullPage);
-				} else {
-					turSNSiteSearchGroupBean.setPageStart(turSNSiteSearchGroupBean.getPageEnd());
-				}
+                turSNSiteSearchGroupBean.setPageStart(Math.min(firstItemOfFullPage, turSNSiteSearchGroupBean.getPageEnd()));
 
 				turSNSiteSearchGroupBean.setLimit(group.getLimit());
 
@@ -189,9 +181,8 @@ public class TurSNSearchProcess {
 	}
 
 	private boolean useMetrics(TurSNSiteSearchContext turSNSiteSearchContext) {
-		return (turSNSiteSearchContext.getTurSNSitePostParamsBean() != null
-				&& turSNSiteSearchContext.getTurSNSitePostParamsBean().isPopulateMetrics())
-				|| turSNSiteSearchContext.getTurSNSitePostParamsBean() == null;
+		return turSNSiteSearchContext.getTurSNSitePostParamsBean() == null
+				|| turSNSiteSearchContext.getTurSNSitePostParamsBean().isPopulateMetrics();
 	}
 
 	private TurSESpellCheckResult prepareQueryAutoCorrection(TurSNSiteSearchContext turSNSiteSearchContext,
@@ -340,24 +331,18 @@ public class TurSNSearchProcess {
 				.getSpotlightsFromQuery(context, turSNSite);
 		List<TurSNSiteSpotlightDocumentBean> turSNSiteSpotlightDocumentBeans = new ArrayList<>();
 
-		turSNSiteSpotlightDocumentMap.entrySet()
-				.forEach(spotlightEntry -> spotlightEntry.getValue().forEach(document -> {
-					TurSNSiteSpotlightDocumentBean turSNSiteSpotlightDocumentBean = new TurSNSiteSpotlightDocumentBean();
-					turSNSiteSpotlightDocumentBean.setId(document.getId());
-					turSNSiteSpotlightDocumentBean.setContent(document.getContent());
-					turSNSiteSpotlightDocumentBean.setLink(document.getLink());
-					turSNSiteSpotlightDocumentBean.setPosition(document.getPosition());
-					turSNSiteSpotlightDocumentBean.setReferenceId(document.getReferenceId());
-					turSNSiteSpotlightDocumentBean.setTitle(document.getTitle());
-					turSNSiteSpotlightDocumentBean.setType(document.getType());
-					turSNSiteSpotlightDocumentBeans.add(turSNSiteSpotlightDocumentBean);
-				}));
-		Collections.sort(turSNSiteSpotlightDocumentBeans, new Comparator<TurSNSiteSpotlightDocumentBean>() {
-			@Override
-			public int compare(TurSNSiteSpotlightDocumentBean s1, TurSNSiteSpotlightDocumentBean s2) {
-				return s1.getPosition() - s2.getPosition();
-			}
-		});
+		turSNSiteSpotlightDocumentMap.forEach((key, value) -> value.forEach(document -> {
+            TurSNSiteSpotlightDocumentBean turSNSiteSpotlightDocumentBean = new TurSNSiteSpotlightDocumentBean();
+            turSNSiteSpotlightDocumentBean.setId(document.getId());
+            turSNSiteSpotlightDocumentBean.setContent(document.getContent());
+            turSNSiteSpotlightDocumentBean.setLink(document.getLink());
+            turSNSiteSpotlightDocumentBean.setPosition(document.getPosition());
+            turSNSiteSpotlightDocumentBean.setReferenceId(document.getReferenceId());
+            turSNSiteSpotlightDocumentBean.setTitle(document.getTitle());
+            turSNSiteSpotlightDocumentBean.setType(document.getType());
+            turSNSiteSpotlightDocumentBeans.add(turSNSiteSpotlightDocumentBean);
+        }));
+		turSNSiteSpotlightDocumentBeans.sort(Comparator.comparingInt(TurSNSiteSpotlightDocumentBean::getPosition));
 		return turSNSiteSpotlightDocumentBeans;
 	}
 
@@ -397,18 +382,12 @@ public class TurSNSearchProcess {
 
 		int lastItemOfFullPage = (int) turSEResults.getStart() + turSEResults.getLimit();
 
-		if (lastItemOfFullPage < turSNSiteSearchQueryContextBean.getCount()) {
-			turSNSiteSearchQueryContextBean.setPageEnd(lastItemOfFullPage);
-		} else {
-			turSNSiteSearchQueryContextBean.setPageEnd(turSNSiteSearchQueryContextBean.getCount());
-		}
+        turSNSiteSearchQueryContextBean.setPageEnd(Math.min(lastItemOfFullPage,
+				turSNSiteSearchQueryContextBean.getCount()));
 		int firstItemOfFullPage = (int) turSEResults.getStart() + 1;
 
-		if (firstItemOfFullPage < turSNSiteSearchQueryContextBean.getPageEnd()) {
-			turSNSiteSearchQueryContextBean.setPageStart(firstItemOfFullPage);
-		} else {
-			turSNSiteSearchQueryContextBean.setPageStart(turSNSiteSearchQueryContextBean.getPageEnd());
-		}
+        turSNSiteSearchQueryContextBean.setPageStart(Math.min(firstItemOfFullPage,
+				turSNSiteSearchQueryContextBean.getPageEnd()));
 
 		turSNSiteSearchQueryContextBean.setLimit(turSEResults.getLimit());
 		turSNSiteSearchQueryContextBean.setOffset(0);
@@ -456,7 +435,7 @@ public class TurSNSearchProcess {
 						turSNSiteSearchFacetItemBean.setCount(facetItem.getCount());
 						turSNSiteSearchFacetItemBean.setLabel(facetItem.getAttribute());
 						turSNSiteSearchFacetItemBean.setLink(TurSNUtils
-								.addFilterQuery(uri, facet.getFacet() + ":" + facetItem.getAttribute()).toString());
+								.addFilterQuery(uri, facet.getFacet() + ":" + facetItem.getAttribute()).toString().replace(":","\\:"));
 						turSNSiteSearchFacetItemBeans.add(turSNSiteSearchFacetItemBean);
 					});
 
@@ -485,7 +464,7 @@ public class TurSNSearchProcess {
 
 			List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<>();
 			context.getTurSEParameters().getFilterQueries().forEach(facetToRemove -> {
-				String[] facetToRemoveParts = facetToRemove.split(":");
+				String[] facetToRemoveParts = facetToRemove.split(":", 2);
 				if (facetToRemoveParts.length == 2) {
 					String facetToRemoveValue = facetToRemoveParts[1].replace("\"", "");
 
@@ -522,7 +501,7 @@ public class TurSNSearchProcess {
 			lastPagination = turSEResults.getPageCount();
 			if (turSEResults.getPageCount() - 3 > 0) {
 				firstPagination = turSEResults.getPageCount() - 3;
-			} else if (turSEResults.getPageCount() - 3 <= 0) {
+			} else {
 				firstPagination = 1;
 			}
 		}
@@ -640,7 +619,7 @@ public class TurSNSearchProcess {
 	private int setFirstPagination(TurSEGenericResults turSEResults, int firstPagination) {
 		if (turSEResults.getCurrentPage() - 3 > 0) {
 			firstPagination = turSEResults.getCurrentPage() - 3;
-		} else if (turSEResults.getCurrentPage() - 3 <= 0) {
+		} else {
 			firstPagination = 1;
 		}
 		return firstPagination;

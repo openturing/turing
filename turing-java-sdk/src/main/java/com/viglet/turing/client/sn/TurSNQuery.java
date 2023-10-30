@@ -17,6 +17,7 @@
 package com.viglet.turing.client.sn;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -113,9 +114,7 @@ public class TurSNQuery {
 		if (this.fieldQueries == null) {
 			this.fieldQueries = new ArrayList<String>();
 		}
-		for (int i = 0; i < fq.length; i++) {
-			fieldQueries.add(fq[i]);
-		}
+		fieldQueries.addAll(Arrays.asList(fq));
 	}
 
 	public List<String> getFieldQueries() {
@@ -130,9 +129,7 @@ public class TurSNQuery {
 		if (this.targetingRules == null) {
 			this.targetingRules = new ArrayList<>();
 		}
-		for (int i = 0; i < tr.length; i++) {
-			targetingRules.add(tr[i]);
-		}
+		targetingRules.addAll(Arrays.asList(tr));
 	}
 
 	public List<String> getTargetingRules() {

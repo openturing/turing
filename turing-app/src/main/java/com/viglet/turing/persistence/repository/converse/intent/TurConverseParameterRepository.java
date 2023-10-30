@@ -21,29 +21,22 @@
 
 package com.viglet.turing.persistence.repository.converse.intent;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
+import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
+import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public interface TurConverseParameterRepository extends JpaRepository<TurConverseParameter, String> {
-
-	List<TurConverseParameter> findAll();
-
-	Optional<TurConverseParameter> findById(String id);
 
 	Set<TurConverseParameter> findByIntent(TurConverseIntent turConverseIntent);
 	
 	Set<TurConverseParameter> findByIntentAndEntity(TurConverseIntent turConverseIntent, String entity);
-	
-	@SuppressWarnings("unchecked")
-	TurConverseParameter save(TurConverseParameter turConverseParameter);
 
 	@Modifying
 	@Query("delete from  TurConverseParameter cp where cp.id = ?1")

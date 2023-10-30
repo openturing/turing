@@ -22,6 +22,7 @@
 package com.viglet.turing.persistence.model.system;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -30,6 +31,7 @@ import java.io.Serializable;
  * The persistent class for the vigNLPSolutions database table.
  * 
  */
+@Getter
 @Entity
 @Table(name = "turLocale")
 @NamedQuery(name = "TurLocale.findAll", query = "SELECT l FROM TurLocale l")
@@ -57,24 +59,12 @@ public class TurLocale implements Serializable {
 		super();
 	}
 
-	public String getInitials() {
-		return initials;
-	}
-
 	public void setInitials(String initials) {
 		this.initials = initials;
 	}
 
-	public String getEn() {
-		return en;
-	}
-
 	public void setEn(String en) {
 		this.en = en;
-	}
-
-	public String getPt() {
-		return pt;
 	}
 
 	public void setPt(String pt) {

@@ -20,23 +20,8 @@
  */
 package com.viglet.turing.persistence.repository.sn.source;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-
 import com.viglet.turing.persistence.model.sn.source.TurSNSourceType;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TurSNSourceTypeRepository extends JpaRepository<TurSNSourceType, String> {
-
-	List<TurSNSourceType> findAll();
-
-	Optional<TurSNSourceType> findById(String id);
-	
-	@SuppressWarnings("unchecked")
-	TurSNSourceType save(TurSNSourceType turSNSourceType);
-	
-	@Query("delete from  TurSNSourceType st where st.id = ?1")
-	void delete(String id);
 }

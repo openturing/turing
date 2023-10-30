@@ -33,8 +33,4 @@ import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
 public interface TurConverseEntityRepository extends JpaRepository<TurConverseEntity, String> {
 
 	Set<TurConverseEntity> findByAgent(TurConverseAgent agent);
-
-	@Modifying
-	@Query("delete from  TurConverseEntity ce where ce.id = ?1")
-	void delete(String id);
 }
