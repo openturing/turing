@@ -22,495 +22,220 @@
         <sonar.organization>viglet-turing</sonar.organization>
         <sonar.projectKey>turing-app</sonar.projectKey>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <sonar.cpd.exclusions>**/persistence/dto/**,**/persistence/model/**,**/plugins/nlp/otca/response/xml/**</sonar.cpd.exclusions>
+        <sonar.cpd.exclusions>**/persistence/dto/**,**/persistence/model/**,**/plugins/nlp/otca/response/xml/**
+        </sonar.cpd.exclusions>
     </properties>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>${spring-boot.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
-            <version>${spring-boot.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-artemis</artifactId>
-            <version>${spring-boot.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
-            <version>${spring-boot.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
-            <version>${spring-boot.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
-            <version>${spring-boot.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
-            <version>${spring-boot.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
-            <version>${spring-boot.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-commons</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>fs-commons</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>artemis-jms-server</artifactId>
             <version>2.31.2</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>itext-core</artifactId>
             <version>8.0.2</version>
             <type>pom</type>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>cleanup</artifactId>
             <version>4.0.1</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-imaging</artifactId>
             <version>1.0-alpha3</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-solrj</artifactId>
             <version>9.4.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>xml-apis</artifactId>
-                    <groupId>*</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.oracle.ojdbc</groupId>
             <artifactId>ojdbc8</artifactId>
             <version>19.3.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.github.ulisesbocchio</groupId>
             <artifactId>jasypt-spring-boot-starter</artifactId>
             <version>3.0.5</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
             <version>6.0.13</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-hibernate5-jakarta</artifactId>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>2.2.224</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
             <version>3.2.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.6.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
             <version>4.5.5</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.opennlp</groupId>
             <artifactId>opennlp-tools</artifactId>
             <version>2.3.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
             <version>2.6</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-all</artifactId>
             <version>4.2.8</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
             <version>2.9.1</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parsers</artifactId>
             <version>2.9.1</version>
             <type>pom</type>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parser-pdf-module</artifactId>
             <version>2.9.1</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parser-text-module</artifactId>
             <version>2.9.1</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parser-ocr-module</artifactId>
             <version>2.9.1</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parser-microsoft-module</artifactId>
             <version>2.9.1</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.levigo.jbig2</groupId>
             <artifactId>levigo-jbig2-imageio</artifactId>
             <version>2.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.github.jai-imageio</groupId>
             <artifactId>jai-imageio-core</artifactId>
             <version>1.4.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.github.jai-imageio</groupId>
             <artifactId>jai-imageio-jpeg2000</artifactId>
             <version>1.4.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.2.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.squins.google.fork.schema-org-client</groupId>
             <artifactId>schema-org-client</artifactId>
             <version>1.0.1</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
             <version>3.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>32.1.3-jre</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.languagetool</groupId>
             <artifactId>language-es</artifactId>
             <version>6.3</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.languagetool</groupId>
             <artifactId>language-en</artifactId>
             <version>6.3</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.languagetool</groupId>
             <artifactId>language-pt</artifactId>
             <version>6.3</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>xml-apis</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -528,14 +253,13 @@
             <version>7.0.0</version>
             <scope>compile</scope>
         </dependency>
-
     </dependencies>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>3.1.5</version>
+                <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -580,9 +304,40 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v16.17.1</nodeVersion>
-                    <npmVersion>8.15.0</npmVersion>
+                    <nodeVersion>v18.10.0</nodeVersion>
+                    <npmVersion>8.19.2</npmVersion>
                     <workingDirectory>../turing-ui</workingDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>4.9.10</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- everything else is default -->
+                    <generateGitPropertiesFile>false</generateGitPropertiesFile>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <Implementation-Version>${project.version}-${git.commit.id.abbrev} (${git.commit.time})</Implementation-Version>
+                        </manifestEntries>
+                    </archive>
                 </configuration>
             </plugin>
             <plugin>
@@ -596,6 +351,16 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.22.0</version>
             </plugin>
         </plugins>
     </build>
