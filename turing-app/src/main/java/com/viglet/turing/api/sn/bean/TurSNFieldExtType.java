@@ -21,8 +21,10 @@
 package com.viglet.turing.api.sn.bean;
 
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 public class TurSNFieldExtType {
 
 	private String id;
@@ -31,14 +33,6 @@ public class TurSNFieldExtType {
 	public TurSNFieldExtType(String id, String name) {
 		super();
 		this.id = id;
-		this.name = name;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
 		this.name = name;
 	}
 

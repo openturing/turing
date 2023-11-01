@@ -20,13 +20,13 @@
  */
 package com.viglet.turing.api.sn.console;
 
+import com.google.inject.Inject;
 import com.viglet.turing.api.sn.bean.TurSNSiteMetricsTopTermsBean;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,11 +47,15 @@ import java.util.Optional;
 @RequestMapping("/api/sn/{snSiteId}/metrics")
 @Tag(name = "Semantic Navigation Metrics", description = "Semantic Navigation Metrics API")
 public class TurSNSiteMetricsAPI {
+	private final TurSNSiteRepository turSNSiteRepository;
+	private final TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository;
 
-	@Autowired
-	private TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository;
+	@Inject
+	public TurSNSiteMetricsAPI(TurSNSiteRepository turSNSiteRepository,
+							   TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository) {
+		this.turSNSiteRepository = turSNSiteRepository;
+		this.turSNSiteMetricAccessRepository = turSNSiteMetricAccessRepository;
+	}
 
 	@Operation(summary = "Semantic Navigation Site Metrics Top Terms")
 	@GetMapping("top-terms/today/{rows}")

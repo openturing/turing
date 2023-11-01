@@ -21,6 +21,7 @@
 
 package com.viglet.turing.api.sn.console;
 
+import com.google.inject.Inject;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
@@ -39,46 +40,53 @@ import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.template.TurSNTemplate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/sn/{snSiteId}/field/ext")
 @Tag(name = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
 public class TurSNSiteFieldExtAPI {
-	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
-	@Autowired
-	private TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-	@Autowired
-	private TurSNSiteFieldRepository turSNSiteFieldRepository;
-	@Autowired
-	private TurNLPEntityRepository turNLPEntityRepository;
-	@Autowired
-	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-	@Autowired
-	private TurNLPVendorEntityRepository turNLPVendorEntityRepository;
-	@Autowired
-	private TurSNTemplate turSNTemplate;
-	
+	private final TurSNSiteRepository turSNSiteRepository;
+	private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+	private final TurSNSiteFieldRepository turSNSiteFieldRepository;
+	private final TurNLPEntityRepository turNLPEntityRepository;
+	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+	private final TurNLPVendorEntityRepository turNLPVendorEntityRepository;
+	private final TurSNTemplate turSNTemplate;
+
+	@Inject
+	public TurSNSiteFieldExtAPI(TurSNSiteRepository turSNSiteRepository,
+								TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+								TurSNSiteFieldRepository turSNSiteFieldRepository,
+								TurNLPEntityRepository turNLPEntityRepository,
+								TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+								TurNLPVendorEntityRepository turNLPVendorEntityRepository,
+								TurSNTemplate turSNTemplate) {
+		this.turSNSiteRepository = turSNSiteRepository;
+		this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+		this.turSNSiteFieldRepository = turSNSiteFieldRepository;
+		this.turNLPEntityRepository = turNLPEntityRepository;
+		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+		this.turNLPVendorEntityRepository = turNLPVendorEntityRepository;
+		this.turSNTemplate = turSNTemplate;
+	}
+
 	@Operation(summary = "Semantic Navigation Site Field Ext List")
 	@Transactional
 	@GetMapping
@@ -243,21 +251,16 @@ public class TurSNSiteFieldExtAPI {
 			if (turSNSiteFieldExtEdit.getSnType().equals(TurSNFieldType.SE)) {
 				this.turSNSiteFieldRepository.delete(turSNSiteFieldExtEdit.getExternalId());
 			}
-
 			this.turSNSiteFieldExtRepository.delete(id);
-
 			return true;
 		}).orElse(false);
-
 	}
 
 	@Operation(summary = "Create a Semantic Navigation Site Field Ext")
 	@PostMapping
 	public TurSNSiteFieldExt turSNSiteFieldExtAdd(@PathVariable String snSiteId,
 			@RequestBody TurSNSiteFieldExt turSNSiteFieldExt) {
-
 		return createSEField(snSiteId, turSNSiteFieldExt);
-
 	}
 
 	private TurSNSiteFieldExt createSEField(String snSiteId, TurSNSiteFieldExt turSNSiteFieldExt) {
@@ -295,7 +298,7 @@ public class TurSNSiteFieldExtAPI {
 
 			break;
 
-		case NER:
+		case NER, THESAURUS:
 			turNLPEntityRepository.findById(turSNSiteFieldExt.getExternalId()).ifPresent(turNLPEntityNER -> {
 				turNLPEntityNER.setDescription(turSNSiteFieldExt.getDescription());
 				turNLPEntityNER.setInternalName(turSNSiteFieldExt.getName());
@@ -304,15 +307,7 @@ public class TurSNSiteFieldExtAPI {
 
 			break;
 
-		case THESAURUS:
-			turNLPEntityRepository.findById(turSNSiteFieldExt.getExternalId()).ifPresent(turNLPEntityThesaurus -> {
-				turNLPEntityThesaurus.setDescription(turSNSiteFieldExt.getDescription());
-				turNLPEntityThesaurus.setInternalName(turSNSiteFieldExt.getName());
-				this.turNLPEntityRepository.save(turNLPEntityThesaurus);
-			});
-
-			break;
-		}
+        }
 	}
 
 	@GetMapping("/create")
@@ -384,7 +379,7 @@ public class TurSNSiteFieldExtAPI {
 				client.execute(httpPost);
 			}
 		} catch (IOException e) {
-			logger.error(e);
+			log.error(e.getMessage(), e);
 		}
 	}
 }

@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.api.converse;
 
+import com.google.inject.Inject;
 import com.viglet.turing.bean.converse.TurConverseAgentResponse;
 import com.viglet.turing.converse.TurConverse;
 import com.viglet.turing.converse.TurConverseSE;
@@ -56,22 +57,33 @@ public class TurConverseAgentAPI {
 
 	private static final String CONVERSATION_ID = "conversationId";
 	private static final String HAS_PARAMETER = "hasParameter";
-	@Autowired
-	private TurConverseAgentRepository turConverseAgentRepository;
-	@Autowired
-	private TurConverseIntentRepository turConverseIntentRepository;
-	@Autowired
-	private TurConverseEntityRepository turConverseEntityRepository;
-	@Autowired
-	private TurConverseContextRepository turConverseContextRepository;
-	@Autowired
-	private TurConverseChatRepository turConverseChatRepository;
-	@Autowired
-	private TurConverseImportExchange turConverseImportExchange;
-	@Autowired
-	private TurConverse turConverse;
-	@Autowired
-	private TurConverseSE turConverseSE;
+
+	private final TurConverseAgentRepository turConverseAgentRepository;
+	private final TurConverseIntentRepository turConverseIntentRepository;
+	private final TurConverseEntityRepository turConverseEntityRepository;
+	private final TurConverseContextRepository turConverseContextRepository;
+	private final TurConverseChatRepository turConverseChatRepository;
+	private final TurConverseImportExchange turConverseImportExchange;
+	private final TurConverse turConverse;
+	private final TurConverseSE turConverseSE;
+
+	@Inject
+	public TurConverseAgentAPI(TurConverseAgentRepository turConverseAgentRepository,
+							   TurConverseIntentRepository turConverseIntentRepository,
+							   TurConverseEntityRepository turConverseEntityRepository,
+							   TurConverseContextRepository turConverseContextRepository,
+							   TurConverseChatRepository turConverseChatRepository,
+							   TurConverseImportExchange turConverseImportExchange,
+							   TurConverse turConverse, TurConverseSE turConverseSE) {
+		this.turConverseAgentRepository = turConverseAgentRepository;
+		this.turConverseIntentRepository = turConverseIntentRepository;
+		this.turConverseEntityRepository = turConverseEntityRepository;
+		this.turConverseContextRepository = turConverseContextRepository;
+		this.turConverseChatRepository = turConverseChatRepository;
+		this.turConverseImportExchange = turConverseImportExchange;
+		this.turConverse = turConverse;
+		this.turConverseSE = turConverseSE;
+	}
 
 	@Operation(summary = "Converse Agent List")
 	@GetMapping
@@ -89,7 +101,7 @@ public class TurConverseAgentAPI {
 	@GetMapping("/{id}/intents")
 	public Set<TurConverseIntent> turConverseAgentIntentsGet(@PathVariable String id) {
 		return turConverseAgentRepository.findById(id)
-				.map(turConverseAgent -> turConverseIntentRepository.findByAgent(turConverseAgent))
+				.map(turConverseIntentRepository::findByAgent)
 				.orElse(new HashSet<>());
 
 	}
@@ -98,7 +110,7 @@ public class TurConverseAgentAPI {
 	@GetMapping("/{id}/entities")
 	public Set<TurConverseEntity> turConverseAgentEntitiesGet(@PathVariable String id) {
 		return turConverseAgentRepository.findById(id)
-				.map(turConverseAgent -> turConverseEntityRepository.findByAgent(turConverseAgent))
+				.map(turConverseEntityRepository::findByAgent)
 				.orElse(new HashSet<>());
 	}
 
@@ -106,7 +118,7 @@ public class TurConverseAgentAPI {
 	@GetMapping("/{id}/contexts")
 	public Set<TurConverseContext> turConverseAgentContextsGet(@PathVariable String id) {
 		return turConverseAgentRepository.findById(id)
-				.map(turConverseAgent -> turConverseContextRepository.findByAgent(turConverseAgent))
+				.map(turConverseContextRepository::findByAgent)
 				.orElse(new HashSet<>());
 	}
 

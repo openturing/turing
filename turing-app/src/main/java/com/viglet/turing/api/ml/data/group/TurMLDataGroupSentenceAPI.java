@@ -20,41 +20,36 @@
  */
 package com.viglet.turing.api.ml.data.group;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.google.inject.Inject;
 import com.viglet.turing.bean.ml.sentence.TurMLSentenceBean;
 import com.viglet.turing.persistence.bean.storage.TurDataGroupSentenceBean;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.repository.ml.TurMLCategoryRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/ml/data/group/{dataGroupId}/sentence")
 @Tag(name = "Machine Learning Sentence by Group", description = "Machine Learning Sentence by Group API")
 public class TurMLDataGroupSentenceAPI {
 
-	@Autowired
-	private TurDataGroupRepository turDataGroupRepository;
-	@Autowired
-	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
-	@Autowired
-	private TurMLCategoryRepository turMLCategoryRepository;
+	private final TurDataGroupRepository turDataGroupRepository;
+	private final TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private final TurMLCategoryRepository turMLCategoryRepository;
+
+	@Inject
+	public TurMLDataGroupSentenceAPI(TurDataGroupRepository turDataGroupRepository, TurDataGroupSentenceRepository turDataGroupSentenceRepository, TurMLCategoryRepository turMLCategoryRepository) {
+		this.turDataGroupRepository = turDataGroupRepository;
+		this.turDataGroupSentenceRepository = turDataGroupSentenceRepository;
+		this.turMLCategoryRepository = turMLCategoryRepository;
+	}
 
 	@Operation(summary = "Machine Learning Data Group Sentence List")
 	@GetMapping

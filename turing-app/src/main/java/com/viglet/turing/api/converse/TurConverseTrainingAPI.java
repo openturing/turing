@@ -21,6 +21,7 @@
 
 package com.viglet.turing.api.converse;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
@@ -31,7 +32,6 @@ import com.viglet.turing.persistence.repository.converse.intent.TurConverseInten
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,14 +41,20 @@ import java.util.Set;
 @RequestMapping("/api/converse/training")
 @Tag(name ="Converse Training", description = "Converse Training API")
 public class TurConverseTrainingAPI {
-	@Autowired
-	private TurConverseChatRepository turConverseChatRepository;
-	@Autowired
-	private TurConverseChatResponseRepository turConverseChatResponseRepository;
-	@Autowired
-	private TurConverseIntentRepository turConverseIntentRepository;
-	@Autowired
-	private TurConversePhraseRepository turConversePhraseRepository;
+	private final TurConverseChatRepository turConverseChatRepository;
+	private final TurConverseChatResponseRepository turConverseChatResponseRepository;
+	private final TurConverseIntentRepository turConverseIntentRepository;
+	private final TurConversePhraseRepository turConversePhraseRepository;
+	@Inject
+	public TurConverseTrainingAPI(TurConverseChatRepository turConverseChatRepository,
+								  TurConverseChatResponseRepository turConverseChatResponseRepository,
+								  TurConverseIntentRepository turConverseIntentRepository,
+								  TurConversePhraseRepository turConversePhraseRepository) {
+		this.turConverseChatRepository = turConverseChatRepository;
+		this.turConverseChatResponseRepository = turConverseChatResponseRepository;
+		this.turConverseIntentRepository = turConverseIntentRepository;
+		this.turConversePhraseRepository = turConversePhraseRepository;
+	}
 
 	@Operation(summary = "Converse Training List")
 	@GetMapping

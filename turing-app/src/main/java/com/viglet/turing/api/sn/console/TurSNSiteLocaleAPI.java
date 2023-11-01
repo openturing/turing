@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.api.sn.console;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -27,7 +28,6 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.sn.template.TurSNTemplate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,13 +45,19 @@ import java.util.List;
 @Tag(name = "Semantic Navigation Locale", description = "Semantic Navigation Locale API")
 public class TurSNSiteLocaleAPI {
 	private static final String DEFAULT_LANGUAGE = "en_US";
-	@Autowired
-	private TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-	@Autowired
-	private TurSNTemplate turSNTemplate;
-	
+	private final TurSNSiteRepository turSNSiteRepository;
+	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+	private final TurSNTemplate turSNTemplate;
+
+	@Inject
+	public TurSNSiteLocaleAPI(TurSNSiteRepository turSNSiteRepository,
+							  TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+							  TurSNTemplate turSNTemplate) {
+		this.turSNSiteRepository = turSNSiteRepository;
+		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+		this.turSNTemplate = turSNTemplate;
+	}
+
 	@Operation(summary = "Semantic Navigation Site Locale List")
 	@GetMapping
 	public List<TurSNSiteLocale> turSNSiteLocaleList(@PathVariable String snSiteId) {

@@ -21,11 +21,11 @@
 
 package com.viglet.turing.api.nlp;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,9 +35,11 @@ import java.util.List;
 @RequestMapping("/api/nlp/vendor")
 @Tag(name = "Natural Language Processing Vendor", description = "Natural Language Processing Vendor API")
 public class TurNLPVendorAPI {
-
-	@Autowired
-	private TurNLPVendorRepository turNLPVendorRepository;
+	private final TurNLPVendorRepository turNLPVendorRepository;
+	@Inject
+	public TurNLPVendorAPI(TurNLPVendorRepository turNLPVendorRepository) {
+		this.turNLPVendorRepository = turNLPVendorRepository;
+	}
 
 	@Operation(summary = "Natural Language Processing Vendor List")
 	@GetMapping

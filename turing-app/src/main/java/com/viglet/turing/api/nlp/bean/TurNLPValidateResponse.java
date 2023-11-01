@@ -18,26 +18,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package com.viglet.turing.api.nlp.bean;
 
-package com.viglet.turing.api.nlp;
+import com.viglet.turing.api.nlp.bean.TurNLPEntityValidateResponse;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
-import lombok.Getter;
-
 @Getter
-public class TurNLPEntityValidateResponse {
-
-	private TurNLPEntity type;
-	
-	private List<String> terms;
-
-	public void setType(TurNLPEntity type) {
-		this.type = type;
-	}
-
-	public void setTerms(List<String> terms) {
-		this.terms = terms;
-	}
+@Setter
+public class TurNLPValidateResponse {
+	private String vendor;
+	private String locale;
+	private String text;
+	private List<TurNLPEntityValidateResponse> entities = new ArrayList<>();
 }

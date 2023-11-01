@@ -21,6 +21,7 @@
 package com.viglet.turing.api.sn.bean;
 
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * 
@@ -30,16 +31,8 @@ import lombok.Getter;
  *
  */
 @Getter
+@Setter
 public class TurSNSiteMonitoringStatusBean {
-
 	private int queue;
 	private int documents;
-
-	public void setQueue(int queue) {
-		this.queue = queue;
-	}
-
-	public void setDocuments(int documents) {
-		this.documents = documents;
-	}
 }

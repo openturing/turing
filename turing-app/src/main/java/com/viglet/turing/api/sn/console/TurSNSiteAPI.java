@@ -21,6 +21,7 @@
 
 package com.viglet.turing.api.sn.console;
 
+import com.google.inject.Inject;
 import com.viglet.turing.api.sn.bean.TurSNSiteMonitoringStatusBean;
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
@@ -39,41 +40,48 @@ import com.viglet.turing.solr.TurSolrUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.lang.invoke.MethodHandles;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/sn")
 @Tag(name = "Semantic Navigation Site", description = "Semantic Navigation Site API")
 @ComponentScan("com.viglet.turing")
 public class TurSNSiteAPI {
-    private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
-    @Autowired
-    private TurSNSiteRepository turSNSiteRepository;
-    @Autowired
-    private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-    @Autowired
-    private TurSNSiteExport turSNSiteExport;
-    @Autowired
-    private TurSNTemplate turSNTemplate;
-    @Autowired
-    private TurSNQueue turSNQueue;
-    @Autowired
-    private TurSolrInstanceProcess turSolrInstanceProcess;
-    @Autowired
-    private TurSolr turSolr;
-    @Autowired
-    private TurConfigProperties turConfigProperties;
+    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurSNSiteExport turSNSiteExport;
+    private final TurSNTemplate turSNTemplate;
+    private final TurSNQueue turSNQueue;
+    private final TurSolrInstanceProcess turSolrInstanceProcess;
+    private final TurSolr turSolr;
+    private final TurConfigProperties turConfigProperties;
+    @Inject
+    public TurSNSiteAPI(TurSNSiteRepository turSNSiteRepository,
+                        TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                        TurSNSiteExport turSNSiteExport,
+                        TurSNTemplate turSNTemplate,
+                        TurSNQueue turSNQueue,
+                        TurSolrInstanceProcess turSolrInstanceProcess,
+                        TurSolr turSolr,
+                        TurConfigProperties turConfigProperties) {
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turSNSiteExport = turSNSiteExport;
+        this.turSNTemplate = turSNTemplate;
+        this.turSNQueue = turSNQueue;
+        this.turSolrInstanceProcess = turSolrInstanceProcess;
+        this.turSolr = turSolr;
+        this.turConfigProperties = turConfigProperties;
+    }
 
     @Operation(summary = "Semantic Navigation Site List")
     @GetMapping
@@ -165,7 +173,7 @@ public class TurSNSiteAPI {
         try {
             return turSNSiteExport.exportObject(response);
         } catch (Exception e) {
-            logger.error(e);
+            log.error(e.getMessage(), e);
         }
         return null;
     }

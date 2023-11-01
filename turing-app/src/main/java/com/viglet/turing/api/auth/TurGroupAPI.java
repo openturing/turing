@@ -21,38 +21,32 @@
 
 package com.viglet.turing.api.auth;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import jakarta.transaction.Transactional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
-
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.transaction.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v2/group")
 @Tag( name = "Group", description = "Group API")
 public class TurGroupAPI {
 
-	@Autowired
-	private TurGroupRepository turGroupRepository;
-	@Autowired
-	private TurUserRepository turUserRepository;
+	private final TurGroupRepository turGroupRepository;
+	private final TurUserRepository turUserRepository;
+
+	@Inject
+	public TurGroupAPI(TurGroupRepository turGroupRepository, TurUserRepository turUserRepository) {
+		this.turGroupRepository = turGroupRepository;
+		this.turUserRepository = turUserRepository;
+	}
 
 	@GetMapping
 	public List<TurGroup> turGroupList() {

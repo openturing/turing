@@ -23,6 +23,7 @@ package com.viglet.turing.api.nlp;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
@@ -30,10 +31,12 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.pdfcleanup.PdfCleaner;
 import com.itextpdf.pdfcleanup.autosweep.CompositeCleanupStrategy;
 import com.itextpdf.pdfcleanup.autosweep.RegexBasedCleanupStrategy;
+import com.viglet.turing.api.nlp.bean.TurNLPEntityValidateResponse;
 import com.viglet.turing.api.nlp.bean.TurNLPValidateDocument;
+import com.viglet.turing.api.nlp.bean.TurNLPValidateResponse;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.filesystem.commons.TurFileUtils;
 import com.viglet.turing.filesystem.commons.TurFileAttributes;
+import com.viglet.turing.filesystem.commons.TurFileUtils;
 import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.nlp.TurNLPResponse;
 import com.viglet.turing.nlp.output.blazon.RedactionCommand;
@@ -45,14 +48,10 @@ import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.utils.TurUtils;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
@@ -62,7 +61,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -70,13 +68,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.invoke.MethodHandles;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -91,12 +83,17 @@ import java.util.regex.Pattern;
 @Tag(name = "Natural Language Processing", description = "Natural Language Processing API")
 public class TurNLPInstanceAPI {
     private static final String NLP_TEMP_FILE = "nlp_temp";
-    @Autowired
-    private TurNLPInstanceRepository turNLPInstanceRepository;
-    @Autowired
-    private TurNLPEntityRepository turNLPEntityRepository;
-    @Autowired
-    private TurNLPProcess turNLPProcess;
+    private final TurNLPInstanceRepository turNLPInstanceRepository;
+    private final TurNLPEntityRepository turNLPEntityRepository;
+    private final TurNLPProcess turNLPProcess;
+
+    @Inject
+    public TurNLPInstanceAPI(TurNLPInstanceRepository turNLPInstanceRepository,
+                             TurNLPEntityRepository turNLPEntityRepository, TurNLPProcess turNLPProcess) {
+        this.turNLPInstanceRepository = turNLPInstanceRepository;
+        this.turNLPEntityRepository = turNLPEntityRepository;
+        this.turNLPProcess = turNLPProcess;
+    }
 
     @Operation(summary = "Natural Language Processing List")
     @GetMapping
