@@ -21,6 +21,8 @@
 
 package com.viglet.turing.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.spring.security.auth.ITurAuthenticationFacade;
 import lombok.extern.slf4j.Slf4j;
@@ -83,4 +85,14 @@ public class TurUtils {
 		Authentication authentication = authenticationFacade.getAuthentication();
 		return authentication.getName();
 	}
+
+	public static String asJsonString(final Object obj) throws Exception {
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+			return mapper.writeValueAsString(obj);
+		} catch (Exception e) {
+			throw new Exception(e);
+		}
+    }
 }

@@ -33,6 +33,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -47,10 +48,12 @@ import java.util.Set;
  * 
  */
 @Getter
+@Setter
 @Entity
 @Table(name = "turSNSite")
 @NamedQuery(name = "TurSNSite.findAll", query = "SELECT sns FROM TurSNSite sns")
-@JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights", "turSNSiteLocales" })
+@JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights",
+		"turSNSiteLocales", "turSNSiteMetricAccesses", "turSNRankingExpressions" })
 @EntityListeners(AuditingEntityListener.class)
 public class TurSNSite extends TurAuditable<String> implements Serializable {
 
@@ -165,110 +168,16 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNRankingExpression> turSNRankingExpressions = new HashSet<>();
 
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setTurSEInstance(TurSEInstance turSEInstance) {
-		this.turSEInstance = turSEInstance;
-	}
-
-	public void setTurNLPVendor(TurNLPVendor turNLPVendor) {
-		this.turNLPVendor = turNLPVendor;
-	}
-
-	public void setTurSNSiteFields(Set<TurSNSiteField> turSNSiteFields) {
-		this.turSNSiteFields = turSNSiteFields;
-	}
-
 	public TurSNSiteField addTurSNSiteField(TurSNSiteField turSNSiteField) {
 		getTurSNSiteFields().add(turSNSiteField);
 		turSNSiteField.setTurSNSite(this);
 
 		return turSNSiteField;
 	}
-
 	public TurSNSiteField removeTurSNSiteField(TurSNSiteField turSNSiteField) {
 		getTurSNSiteFields().remove(turSNSiteField);
 		turSNSiteField.setTurSNSite(this);
 
 		return turSNSiteField;
 	}
-
-	public void setRowsPerPage(Integer rowsPerPage) {
-		this.rowsPerPage = rowsPerPage;
-	}
-
-	public void setFacet(Integer facet) {
-		this.facet = facet;
-	}
-
-	public void setItemsPerFacet(int itemsPerFacet) {
-		this.itemsPerFacet = itemsPerFacet;
-	}
-
-	public void setHl(Integer hl) {
-		this.hl = hl;
-	}
-
-	public void setHlPre(String hlPre) {
-		this.hlPre = hlPre;
-	}
-
-	public void setHlPost(String hlPost) {
-		this.hlPost = hlPost;
-	}
-
-	public void setMlt(Integer mlt) {
-		this.mlt = mlt;
-	}
-
-	public void setThesaurus(Integer thesaurus) {
-		this.thesaurus = thesaurus;
-	}
-
-	public void setDefaultTextField(String defaultTextField) {
-		this.defaultTextField = defaultTextField;
-	}
-
-	public void setDefaultDescriptionField(String defaultDescriptionField) {
-		this.defaultDescriptionField = defaultDescriptionField;
-	}
-
-	public void setDefaultDateField(String defaultDateField) {
-		this.defaultDateField = defaultDateField;
-	}
-
-	public void setDefaultURLField(String defaultURLField) {
-		this.defaultURLField = defaultURLField;
-	}
-
-	public void setDefaultTitleField(String defaultTitleField) {
-		this.defaultTitleField = defaultTitleField;
-	}
-
-	public void setDefaultImageField(String defaultImageField) {
-		this.defaultImageField = defaultImageField;
-	}
-
-	public void setSpellCheck(Integer spellCheck) {
-		this.spellCheck = spellCheck;
-	}
-
-	public void setSpellCheckFixes(Integer spellCheckFixes) {
-		this.spellCheckFixes = spellCheckFixes;
-	}
-
-	public void setSpotlightWithResults(Integer spotlightWithResults) {
-		this.spotlightWithResults = spotlightWithResults;
-	}
-
 }
