@@ -21,6 +21,7 @@
 package com.viglet.turing.persistence.model.sn;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.viglet.turing.persistence.model.TurObject;
 import com.viglet.turing.persistence.model.dev.token.TurDevToken;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
@@ -55,21 +56,10 @@ import java.util.Set;
 @JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights",
 		"turSNSiteLocales", "turSNSiteMetricAccesses", "turSNRankingExpressions" })
 @EntityListeners(AuditingEntityListener.class)
-public class TurSNSite extends TurAuditable<String> implements Serializable {
+public class TurSNSite extends TurObject implements Serializable {
 
 	@Serial
 	private static final long serialVersionUID = 1L;
-
-	@Id
-	@UuidGenerator
-	@Column(name = "id", updatable = false, nullable = false)
-	private String id;
-
-	@Column(nullable = false, length = 50)
-	private String name;
-
-	@Column(nullable = false, length = 255)
-	private String description;
 
 	@Column(nullable = true)
 	private Integer rowsPerPage;
