@@ -20,51 +20,35 @@
  */
 package com.viglet.turing.api.otsn.broker;
 
-import java.io.StringReader;
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.google.inject.Inject;
+import com.viglet.turing.api.sn.job.*;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
-import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.xml.sax.InputSource;
-
-import com.viglet.turing.api.sn.job.TurSNImportAPI;
-import com.viglet.turing.api.sn.job.TurSNJob;
-import com.viglet.turing.api.sn.job.TurSNJobAction;
-import com.viglet.turing.api.sn.job.TurSNJobItem;
-import com.viglet.turing.api.sn.job.TurSNJobItems;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import java.io.StringReader;
+import java.util.*;
 @Slf4j
 @RestController
 @RequestMapping("/api/otsn/broker")
 @Tag(name = "OTSN Broker", description = "OTSN Broker API")
 public class TurOTSNBrokerAPI {
-	@Autowired
-	private TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private TurSNImportAPI turSNImportAPI;
+	private final TurSNSiteRepository turSNSiteRepository;
+	private final TurSNImportAPI turSNImportAPI;
+	@Inject
+	public TurOTSNBrokerAPI(TurSNSiteRepository turSNSiteRepository, TurSNImportAPI turSNImportAPI) {
+		this.turSNSiteRepository = turSNSiteRepository;
+		this.turSNImportAPI = turSNImportAPI;
+	}
 
 	@PostMapping
 	public String turOTSNBrokerAdd(@RequestParam("index") String siteName, @RequestParam("config") String config,

@@ -21,6 +21,7 @@
 
 package com.viglet.turing.api.ml.data.group;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.ml.TurMLModel;
 import com.viglet.turing.persistence.model.storage.TurDataGroupModel;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
@@ -36,14 +37,10 @@ import opennlp.tools.util.InputStreamFactory;
 import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
 import opennlp.tools.util.TrainingParameters;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
-import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -55,14 +52,20 @@ import java.util.List;
 @RequestMapping("/api/ml/data/group/{dataGroupId}/model")
 @Tag(name = "Machine Learning Model by Group", description = "Machine Learning Model by Group API")
 public class TurMLDataGroupModelAPI {
-	@Autowired
-	private TurDataGroupRepository turDataGroupRepository;
-	@Autowired
-	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
-	@Autowired
-	private TurMLModelRepository turMLModelRepository;
-	@Autowired
-	private TurDataGroupModelRepository turDataGroupModelRepository;
+	private final TurDataGroupRepository turDataGroupRepository;
+	private final TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private final TurMLModelRepository turMLModelRepository;
+	private final TurDataGroupModelRepository turDataGroupModelRepository;
+	@Inject
+	public TurMLDataGroupModelAPI(TurDataGroupRepository turDataGroupRepository,
+								  TurDataGroupSentenceRepository turDataGroupSentenceRepository,
+								  TurMLModelRepository turMLModelRepository,
+								  TurDataGroupModelRepository turDataGroupModelRepository) {
+		this.turDataGroupRepository = turDataGroupRepository;
+		this.turDataGroupSentenceRepository = turDataGroupSentenceRepository;
+		this.turMLModelRepository = turMLModelRepository;
+		this.turDataGroupModelRepository = turDataGroupModelRepository;
+	}
 
 	@Operation(summary = "Machine Learning Data Group Model List")
 	@GetMapping

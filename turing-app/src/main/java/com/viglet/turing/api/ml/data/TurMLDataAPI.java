@@ -20,13 +20,17 @@
  */
 package com.viglet.turing.api.ml.data;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.util.List;
-
+import com.google.inject.Inject;
+import com.viglet.turing.nlp.TurNLPProcess;
+import com.viglet.turing.persistence.model.storage.TurData;
+import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
+import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
+import com.viglet.turing.persistence.repository.storage.TurDataRepository;
+import com.viglet.turing.plugins.nlp.opennlp.TurOpenNLPConnector;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -35,48 +39,37 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
 
-import com.viglet.turing.nlp.TurNLPProcess;
-import com.viglet.turing.persistence.model.storage.TurData;
-import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
+import java.io.IOException;
+import java.util.List;
 
-import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
-import com.viglet.turing.persistence.repository.storage.TurDataRepository;
-import com.viglet.turing.plugins.nlp.opennlp.TurOpenNLPConnector;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/ml/data")
 @Tag(name = "Machine Learning Data", description = "Machine Learning Data API")
 public class TurMLDataAPI {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
-	@Autowired
-	private TurDataRepository turDataRepository;
-	@Autowired
-	private TurNLPProcess turNLPProcess;
-	@Autowired
-	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
-	@Autowired
-	private TurOpenNLPConnector turOpenNLPConnector;
-	
+	private final TurDataRepository turDataRepository;
+	private final TurNLPProcess turNLPProcess;
+	private final TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private final TurOpenNLPConnector turOpenNLPConnector;
+
+	@Inject
+	public TurMLDataAPI(TurDataRepository turDataRepository,
+						TurNLPProcess turNLPProcess,
+						TurDataGroupSentenceRepository turDataGroupSentenceRepository,
+						TurOpenNLPConnector turOpenNLPConnector) {
+		this.turDataRepository = turDataRepository;
+		this.turNLPProcess = turNLPProcess;
+		this.turDataGroupSentenceRepository = turDataGroupSentenceRepository;
+		this.turOpenNLPConnector = turOpenNLPConnector;
+	}
+
 	@Operation(summary = "Machine Learning Data List")
 	@GetMapping
 	public List<TurData> turDataList() throws JSONException {
@@ -160,7 +153,8 @@ public class TurMLDataAPI {
 		try {
 			autoDetectParser.parse(multipartFile.getInputStream(), bodyContentHandler, metadata, parseContext);
 		} catch (IOException | SAXException | TikaException e) {
-			logger.error(e.getMessage(), null, multipartFile, autoDetectParser, bodyContentHandler, metadata, tesseractOCRConfig, pdfParserConfig, parseContext, e);
+			log.error(e.getMessage(), null, multipartFile, autoDetectParser, bodyContentHandler, metadata,
+					tesseractOCRConfig, pdfParserConfig, parseContext, e);
 		}
 		return bodyContentHandler;
 	}

@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.api.otca.af;
 
+import com.google.inject.Inject;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.nlp.TurNLPRelationType;
 import com.viglet.turing.nlp.TurNLPTermAccent;
@@ -37,7 +38,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.Unmarshaller;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,25 +57,35 @@ import java.util.Objects;
 @RequestMapping("/api/otca/af")
 @Tag(name = "OTCA", description = "OTCA API")
 public class TurOTCAAutorityFileAPI {
-	@Autowired
-	private TurNLPEntityRepository turNLPEntityRepository;
-	@Autowired
-	private TurTermRepository turTermRepository;
-	@Autowired
-	private TurTermAttributeRepository turTermAttributeRepository;
-	@Autowired
-	private TurTermRelationFromRepository turTermRelationFromRepository;
-	@Autowired
-	private TurTermRelationToRepository turTermRelationToRepository;
-	@Autowired
-	private TurTermVariationRepository turTermVariationRepository;
-	@Autowired
-	private TurTermVariationLanguageRepository turTermVariationLanguageRepository;
-
+	private final TurNLPEntityRepository turNLPEntityRepository;
+	private final TurTermRepository turTermRepository;
+	private final TurTermAttributeRepository turTermAttributeRepository;
+	private final TurTermRelationFromRepository turTermRelationFromRepository;
+	private final TurTermRelationToRepository turTermRelationToRepository;
+	private final TurTermVariationRepository turTermVariationRepository;
+	private final TurTermVariationLanguageRepository turTermVariationLanguageRepository;
 	private static final String EMPTY_TERM_NAME = "<EMPTY>";
 
+	@Inject
+	public TurOTCAAutorityFileAPI(TurNLPEntityRepository turNLPEntityRepository,
+								  TurTermRepository turTermRepository,
+								  TurTermAttributeRepository turTermAttributeRepository,
+								  TurTermRelationFromRepository turTermRelationFromRepository,
+								  TurTermRelationToRepository turTermRelationToRepository,
+								  TurTermVariationRepository turTermVariationRepository,
+								  TurTermVariationLanguageRepository turTermVariationLanguageRepository) {
+		this.turNLPEntityRepository = turNLPEntityRepository;
+		this.turTermRepository = turTermRepository;
+		this.turTermAttributeRepository = turTermAttributeRepository;
+		this.turTermRelationFromRepository = turTermRelationFromRepository;
+		this.turTermRelationToRepository = turTermRelationToRepository;
+		this.turTermVariationRepository = turTermVariationRepository;
+		this.turTermVariationLanguageRepository = turTermVariationLanguageRepository;
+	}
+
 	public String normalizeEntity(String s) {
-		s = TurCommonsUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "").replace(" ", "_");
+		s = TurCommonsUtils.stripAccents(s).toLowerCase().replaceAll("[^a-zA-Z0-9 ]", "")
+				.replace(" ", "_");
 		return s;
 	}
 

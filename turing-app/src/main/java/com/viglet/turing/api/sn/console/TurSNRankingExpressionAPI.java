@@ -21,13 +21,13 @@
 
 package com.viglet.turing.api.sn.console;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -46,13 +46,17 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/sn/{snSiteId}/ranking-expression")
 @Tag(name = "Semantic Navigation Ranking Expression", description = "Semantic Navigation Ranking Expression API")
 public class TurSNRankingExpressionAPI {
-
-    @Autowired
-    private TurSNSiteRepository turSNSiteRepository;
-    @Autowired
-    private TurSNRankingExpressionRepository turSNRankingExpressionRepository;
-    @Autowired
-    private TurSNRankingConditionRepository turSNRankingConditionRepository;
+    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNRankingExpressionRepository turSNRankingExpressionRepository;
+    private final TurSNRankingConditionRepository turSNRankingConditionRepository;
+    @Inject
+    public TurSNRankingExpressionAPI(TurSNSiteRepository turSNSiteRepository,
+                                     TurSNRankingExpressionRepository turSNRankingExpressionRepository,
+                                     TurSNRankingConditionRepository turSNRankingConditionRepository) {
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNRankingExpressionRepository = turSNRankingExpressionRepository;
+        this.turSNRankingConditionRepository = turSNRankingConditionRepository;
+    }
 
     @Operation(summary = "Semantic Navigation Ranking Expression List")
     @GetMapping

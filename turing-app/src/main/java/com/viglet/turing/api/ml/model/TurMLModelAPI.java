@@ -21,6 +21,7 @@
 
 package com.viglet.turing.api.ml.model;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.ml.TurMLModel;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.repository.ml.TurMLModelRepository;
@@ -33,16 +34,11 @@ import opennlp.tools.util.InputStreamFactory;
 import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
 import opennlp.tools.util.TrainingParameters;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
-import java.lang.invoke.MethodHandles;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 @Slf4j
@@ -50,10 +46,15 @@ import java.util.List;
 @RequestMapping("/api/ml/model")
 @Tag(name ="Machine Learning Model", description = "Machine Learning Model API")
 public class TurMLModelAPI {
-	@Autowired
-	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
-	@Autowired
-	private TurMLModelRepository turMLModelRepository;
+	private final TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private final TurMLModelRepository turMLModelRepository;
+
+	@Inject
+	public TurMLModelAPI(TurDataGroupSentenceRepository turDataGroupSentenceRepository,
+						 TurMLModelRepository turMLModelRepository) {
+		this.turDataGroupSentenceRepository = turDataGroupSentenceRepository;
+		this.turMLModelRepository = turMLModelRepository;
+	}
 
 	@Operation(summary = "Machine Learning Model List")
 	@GetMapping

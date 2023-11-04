@@ -80,7 +80,6 @@ public class TurCommonsUtils {
     }
 
     public static void addParameterToQueryString(StringBuilder sbQueryString, String name, String value) {
-
         if (value != null) {
             try {
                 sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, "UTF-8")));

@@ -21,22 +21,21 @@
 package com.viglet.turing.api.nlp.bean;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
 @Getter
+@Setter
 public class TurNLPValidateEntity {
 	private String name;
-
 	private List<String> types;
-
 	private List<String> subTypes;
 
 	public TurNLPValidateEntity() {
 		super();
 
 	}
-
 	public TurNLPValidateEntity(String name, List<String> types, List<String> subTypes) {
 		super();
 		this.name = name;
@@ -44,19 +43,7 @@ public class TurNLPValidateEntity {
 		this.subTypes = subTypes;
 	}
 
-	public TurNLPValidateEntity(String name) {
+    public TurNLPValidateEntity(String name) {
 		this(name, null, null);
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setTypes(List<String> types) {
-		this.types = types;
-	}
-
-	public void setSubTypes(List<String> subTypes) {
-		this.subTypes = subTypes;
-	}
+    }
 }

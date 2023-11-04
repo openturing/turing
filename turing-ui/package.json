@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "compile": "ng build --configuration=production welcome && ng build console && ng build sn && ng build converse",
+    "compile": "npm install && ng build --configuration=production welcome && ng build console && ng build sn && ng build converse",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "sonar": "sonar-scanner"
@@ -37,12 +37,12 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "16.2.8",
-    "@angular/cli": "16.2.7",
+    "@angular/cli": "16.2.8",
     "@angular/compiler-cli": "16.2.4",
     "@angular/language-service": "16.2.11",
-    "@types/jasmine": "4.3.6",
+    "@types/jasmine": "5.1.1",
     "@types/jasminewd2": "2.0.12",
-    "@types/node": "18.14.6",
+    "@types/node": "20.8.9",
     "@types/primer__octicons": "^19.6.2",
     "jasmine-core": "5.1.1",
     "jasmine-spec-reporter": "7.0.0",

@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.sn.spotlight;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -45,6 +46,7 @@ import java.util.Set;
  * @since 0.3.4
  */
 @Getter
+@Setter
 @Entity
 @Table(name = "turSNSiteSpotlight")
 @NamedQuery(name = "TurSNSiteSpotlight.findAll", query = "SELECT snss FROM TurSNSiteSpotlight snss")
@@ -95,48 +97,5 @@ public class TurSNSiteSpotlight implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = new HashSet<>();
 
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setTurSNSite(TurSNSite turSNSite) {
-		this.turSNSite = turSNSite;
-	}
-
-	public void setTurSNSiteSpotlightDocuments(Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments) {
-		this.turSNSiteSpotlightDocuments = turSNSiteSpotlightDocuments;
-	}
-
-	public void setTurSNSiteSpotlightTerms(Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms) {
-		this.turSNSiteSpotlightTerms = turSNSiteSpotlightTerms;
-	}
-
-	public void setManaged(int managed) {
-		this.managed = managed;
-	}
-
-	public void setProvider(String provider) {
-		this.provider = provider;
-	}
-
-	public void setModificationDate(Date modificationDate) {
-		this.modificationDate = modificationDate;
-	}
-
-	public void setUnmanagedId(String unmanagedId) {
-		this.unmanagedId = unmanagedId;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
-	}
 
 }

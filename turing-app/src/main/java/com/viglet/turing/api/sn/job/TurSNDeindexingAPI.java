@@ -20,22 +20,20 @@
  */
 package com.viglet.turing.api.sn.job;
 
-import org.json.JSONException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.json.JSONException;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/sn/{id}/deindex")
 @Tag(name = "Semantic Navigation Deindexing", description = "Semantic Navigation Deindexing API")
 public class TurSNDeindexingAPI {
-	@Autowired
-	private TurSNImportAPI turSNImportAPI;
+	private final TurSNImportAPI turSNImportAPI;
+	@Inject
+	public TurSNDeindexingAPI(TurSNImportAPI turSNImportAPI) {
+		this.turSNImportAPI = turSNImportAPI;
+	}
 
 	@PostMapping
 	public String turSNDesindexingBroker(@PathVariable String id, @RequestBody TurSNJobItems turSNJobItems)

@@ -21,6 +21,7 @@
 
 package com.viglet.turing.solr;
 
+import com.google.inject.Inject;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
@@ -64,7 +65,6 @@ import org.json.JSONArray;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;

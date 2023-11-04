@@ -21,6 +21,7 @@
 
 package com.viglet.turing.api.auth;
 
+import com.google.inject.Inject;
 import com.viglet.turing.bean.converse.auth.TurCurrentUser;
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurUser;
@@ -46,14 +47,20 @@ import java.util.List;
 @Tag(name = "User", description = "User API")
 public class TurUserAPI {
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private TurUserRepository turUserRepository;
-    @Autowired
-    private TurGroupRepository turGroupRepository;
-    @Autowired
-    private TurConfigProperties turConfigProperties;
+    private final PasswordEncoder passwordEncoder;
+    private final TurUserRepository turUserRepository;
+    private final TurGroupRepository turGroupRepository;
+    private final TurConfigProperties turConfigProperties;
+
+    @Inject
+    public TurUserAPI(PasswordEncoder passwordEncoder, TurUserRepository turUserRepository,
+                      TurGroupRepository turGroupRepository,
+                      TurConfigProperties turConfigProperties) {
+        this.passwordEncoder = passwordEncoder;
+        this.turUserRepository = turUserRepository;
+        this.turGroupRepository = turGroupRepository;
+        this.turConfigProperties = turConfigProperties;
+    }
 
     @GetMapping
     public List<TurUser> turUserList() {

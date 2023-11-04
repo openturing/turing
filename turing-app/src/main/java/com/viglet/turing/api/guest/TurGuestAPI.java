@@ -20,26 +20,28 @@
  */
 package com.viglet.turing.api.guest;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.google.inject.Inject;
+import com.viglet.turing.persistence.model.auth.TurUser;
+import com.viglet.turing.persistence.repository.auth.TurUserRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.persistence.model.auth.TurUser;
-import com.viglet.turing.persistence.repository.auth.TurUserRepository;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
-
 @RestController
 @RequestMapping("/api/v2/guest")
 @Tag(name = "Guest", description = "Guest API")
 public class TurGuestAPI {
-	@Autowired
-	private PasswordEncoder passwordEncoder;
-	@Autowired
-	private TurUserRepository turUserRepository;
+	private final PasswordEncoder passwordEncoder;
+	private final TurUserRepository turUserRepository;
+
+	@Inject
+	public TurGuestAPI(PasswordEncoder passwordEncoder, TurUserRepository turUserRepository) {
+		this.passwordEncoder = passwordEncoder;
+		this.turUserRepository = turUserRepository;
+	}
 
 	@PostMapping("signup")
 	public boolean signup(@RequestParam String email, @RequestParam String username, @RequestParam String password) {

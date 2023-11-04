@@ -75,18 +75,11 @@
     <dependency>
       <groupId>org.xerial</groupId>
       <artifactId>sqlite-jdbc</artifactId>
-      <version>3.43.2.1</version>
     </dependency>
     <dependency>
       <groupId>com.viglet.turing</groupId>
       <artifactId>turing-commons</artifactId>
       <version>${project.version}</version>
     </dependency>
-      <dependency>
-          <groupId>com.viglet.turing</groupId>
-          <artifactId>turing-commons</artifactId>
-          <version>${project.version}</version>
-          <scope>compile</scope>
-      </dependency>
   </dependencies>
 </project>

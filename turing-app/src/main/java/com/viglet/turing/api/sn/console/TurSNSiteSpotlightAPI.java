@@ -21,6 +21,7 @@
 
 package com.viglet.turing.api.sn.console;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
@@ -28,7 +29,6 @@ import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightR
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -47,14 +47,21 @@ import java.util.Optional;
 @Tag(name = "Semantic Navigation Spotlight", description = "Semantic Navigation Spotlight API")
 public class TurSNSiteSpotlightAPI {
 
-	@Autowired
-	private TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
-	@Autowired
-	private TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
-	@Autowired
-	private TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository;
+	private final TurSNSiteRepository turSNSiteRepository;
+	private final TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
+	private final TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
+	private final TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository;
+
+	@Inject
+	public TurSNSiteSpotlightAPI(TurSNSiteRepository turSNSiteRepository,
+								 TurSNSiteSpotlightRepository turSNSiteSpotlightRepository,
+								 TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository,
+								 TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository) {
+		this.turSNSiteRepository = turSNSiteRepository;
+		this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
+		this.turSNSiteSpotlightDocumentRepository = turSNSiteSpotlightDocumentRepository;
+		this.turSNSiteSpotlightTermRepository = turSNSiteSpotlightTermRepository;
+	}
 
 	@Operation(summary = "Semantic Navigation Site Spotlight List")
 	@GetMapping

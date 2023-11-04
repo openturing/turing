@@ -20,35 +20,7 @@
  */
 package com.viglet.turing.api.ml.data.group;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.List;
-
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.pdf.PDFParser;
-import org.apache.tika.sax.BodyContentHandler;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-import org.xml.sax.SAXException;
-
+import com.google.inject.Inject;
 import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.persistence.model.storage.TurData;
 import com.viglet.turing.persistence.model.storage.TurDataGroupData;
@@ -58,27 +30,50 @@ import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataRepository;
 import com.viglet.turing.plugins.nlp.opennlp.TurOpenNLPConnector;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.PDFParser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/ml/data/group/{dataGroupId}/data")
 @Tag(name ="Machine Learning Data by Group", description = "Machine Learning Data by Group API")
 public class TurMLDataGroupDataAPI {
-	@Autowired
-	private TurDataGroupRepository turDataGroupRepository;
-	@Autowired
-	private TurDataGroupDataRepository turDataGroupDataRepository;
-	@Autowired
-	private TurDataRepository turDataRepository;
-	@Autowired
-	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
-	@Autowired
-	private TurOpenNLPConnector turOpenNLPConnector;
-	@Autowired
-	private TurNLPProcess turNLPProcess;
-	
+	private final TurDataGroupRepository turDataGroupRepository;
+	private final TurDataGroupDataRepository turDataGroupDataRepository;
+	private final TurDataRepository turDataRepository;
+	private final TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private final TurOpenNLPConnector turOpenNLPConnector;
+	private final TurNLPProcess turNLPProcess;
+
+	@Inject
+	public TurMLDataGroupDataAPI(TurDataGroupRepository turDataGroupRepository,
+								 TurDataGroupDataRepository turDataGroupDataRepository,
+								 TurDataRepository turDataRepository,
+								 TurDataGroupSentenceRepository turDataGroupSentenceRepository,
+								 TurOpenNLPConnector turOpenNLPConnector,
+								 TurNLPProcess turNLPProcess) {
+		this.turDataGroupRepository = turDataGroupRepository;
+		this.turDataGroupDataRepository = turDataGroupDataRepository;
+		this.turDataRepository = turDataRepository;
+		this.turDataGroupSentenceRepository = turDataGroupSentenceRepository;
+		this.turOpenNLPConnector = turOpenNLPConnector;
+		this.turNLPProcess = turNLPProcess;
+	}
+
 	@Operation(summary = "Machine Learning Data Group Data List")
 	@GetMapping
 	public List<TurDataGroupData> turDataGroupDataList(@PathVariable int dataGroupId) {

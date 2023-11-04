@@ -26,6 +26,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -41,6 +42,7 @@ import java.util.Set;
  * @since 0.3.5
  */
 @Getter
+@Setter
 @Entity
 @Table(name = "turSNSiteMergeProviders")
 @NamedQuery(name = "TurSNSiteMerge.findAll", query = "SELECT snsmp FROM TurSNSiteMergeProviders snsmp")
@@ -61,9 +63,9 @@ public class TurSNSiteMergeProviders implements Serializable {
 	@Column(nullable = false, length = 5)
 	private String locale;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String description;
-	
+
 	@Column(nullable = false, length = 50)
 	private String providerFrom;
 
@@ -81,41 +83,4 @@ public class TurSNSiteMergeProviders implements Serializable {
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteMergeProvidersField> overwrittenFields = new HashSet<>();
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setTurSNSite(TurSNSite turSNSite) {
-		this.turSNSite = turSNSite;
-	}
-
-	public void setLocale(String locale) {
-		this.locale = locale;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setProviderFrom(String providerFrom) {
-		this.providerFrom = providerFrom;
-	}
-
-	public void setProviderTo(String providerTo) {
-		this.providerTo = providerTo;
-	}
-
-	public void setRelationFrom(String relationFrom) {
-		this.relationFrom = relationFrom;
-	}
-
-	public void setRelationTo(String relationTo) {
-		this.relationTo = relationTo;
-	}
-
-	public void setOverwrittenFields(Set<TurSNSiteMergeProvidersField> overwrittenFields) {
-		this.overwrittenFields = overwrittenFields;
-	}
-
 }

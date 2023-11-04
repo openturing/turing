@@ -22,6 +22,7 @@
 package com.viglet.turing.api.converse;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.inject.Inject;
 import com.viglet.turing.converse.TurConverseSE;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.intent.*;
@@ -30,7 +31,6 @@ import com.viglet.turing.persistence.repository.converse.intent.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.json.JSONException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,24 +41,36 @@ import java.util.*;
 @Tag(name = "Converse Intent", description = "Converse Intent API")
 public class TurConverseIntentAPI {
 
-	@Autowired
-	private TurConverseIntentRepository turConverseIntentRepository;
-	@Autowired
-	private TurConverseAgentRepository turConverseAgentRepository;
-	@Autowired
-	private TurConverseContextRepository turConverseContextRepository;
-	@Autowired
-	private TurConverseEventRepository turConverseEventRepository;
-	@Autowired
-	private TurConverseParameterRepository turConverseParameterRepository;
-	@Autowired
-	private TurConversePhraseRepository turConversePhraseRepository;
-	@Autowired
-	private TurConverseResponseRepository turConverseResponseRepository;
-	@Autowired
-	private TurConversePromptRepository turConversePromptRepository;
-	@Autowired
-	private TurConverseSE turConverseSE;
+	private final TurConverseIntentRepository turConverseIntentRepository;
+	private final TurConverseAgentRepository turConverseAgentRepository;
+	private final TurConverseContextRepository turConverseContextRepository;
+	private final TurConverseEventRepository turConverseEventRepository;
+	private final TurConverseParameterRepository turConverseParameterRepository;
+	private final TurConversePhraseRepository turConversePhraseRepository;
+	private final TurConverseResponseRepository turConverseResponseRepository;
+	private final TurConversePromptRepository turConversePromptRepository;
+	private final TurConverseSE turConverseSE;
+
+	@Inject
+	public TurConverseIntentAPI(TurConverseIntentRepository turConverseIntentRepository,
+								TurConverseAgentRepository turConverseAgentRepository,
+								TurConverseContextRepository turConverseContextRepository,
+								TurConverseEventRepository turConverseEventRepository,
+								TurConverseParameterRepository turConverseParameterRepository,
+								TurConversePhraseRepository turConversePhraseRepository,
+								TurConverseResponseRepository turConverseResponseRepository,
+								TurConversePromptRepository turConversePromptRepository,
+								TurConverseSE turConverseSE) {
+		this.turConverseIntentRepository = turConverseIntentRepository;
+		this.turConverseAgentRepository = turConverseAgentRepository;
+		this.turConverseContextRepository = turConverseContextRepository;
+		this.turConverseEventRepository = turConverseEventRepository;
+		this.turConverseParameterRepository = turConverseParameterRepository;
+		this.turConversePhraseRepository = turConversePhraseRepository;
+		this.turConverseResponseRepository = turConverseResponseRepository;
+		this.turConversePromptRepository = turConversePromptRepository;
+		this.turConverseSE = turConverseSE;
+	}
 
 	@Operation(summary = "Converse Intent List")
 	@GetMapping

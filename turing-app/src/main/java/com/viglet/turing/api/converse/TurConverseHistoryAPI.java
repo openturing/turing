@@ -21,30 +21,32 @@
 
 package com.viglet.turing.api.converse;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import com.google.inject.Inject;
+import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
+import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
+import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatRepository;
+import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatResponseRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
-import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
-import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatRepository;
-import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatResponseRepository;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/converse/history")
 @Tag(name ="Converse History", description = "Converse History API")
 public class TurConverseHistoryAPI {
-	@Autowired
-	private TurConverseChatRepository turConverseChatRepository;
-	@Autowired
-	private TurConverseChatResponseRepository turConverseChatResponseRepository;
+	private final TurConverseChatRepository turConverseChatRepository;
+	private final TurConverseChatResponseRepository turConverseChatResponseRepository;
+	@Inject
+	public TurConverseHistoryAPI(TurConverseChatRepository turConverseChatRepository,
+								 TurConverseChatResponseRepository turConverseChatResponseRepository) {
+		this.turConverseChatRepository = turConverseChatRepository;
+		this.turConverseChatResponseRepository = turConverseChatResponseRepository;
+	}
 
 	@Operation(summary = "Converse Training List")
 	@GetMapping

@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.api.se;
 
+import com.google.inject.Inject;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
@@ -30,7 +31,6 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,15 +40,17 @@ import java.util.List;
 @RequestMapping("/api/se")
 @Tag(name = "Search Engine", description = "Search Engine API")
 public class TurSEInstanceAPI {
-	@Autowired
-	private TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	private TurSolrInstanceProcess turSolrInstanceProcess;
-	@Autowired
-	private TurSolr turSolr;
+	private final TurSEInstanceRepository turSEInstanceRepository;
+	private final TurSolrInstanceProcess turSolrInstanceProcess;
+	private final TurSolr turSolr;
 
-	public TurSEInstanceAPI() {
-		// Empty
+	@Inject
+	public TurSEInstanceAPI(TurSEInstanceRepository turSEInstanceRepository,
+							TurSolrInstanceProcess turSolrInstanceProcess,
+							TurSolr turSolr) {
+		this.turSEInstanceRepository = turSEInstanceRepository;
+		this.turSolrInstanceProcess = turSolrInstanceProcess;
+		this.turSolr = turSolr;
 	}
 
 	@Operation(summary = "Search Engine List")

@@ -21,16 +21,12 @@
 package com.viglet.turing.api.nlp.bean;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
 @Getter
+@Setter
 public class TurNLPValidateDocument {
-
 	private List<TurNLPValidateEntity> entities;
-
-	public void setEntities(List<TurNLPValidateEntity> entities) {
-		this.entities = entities;
-	}
-
 }

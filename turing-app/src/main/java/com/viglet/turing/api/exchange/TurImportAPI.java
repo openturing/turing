@@ -21,7 +21,10 @@
 
 package com.viglet.turing.api.exchange;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.google.inject.Inject;
+import com.viglet.turing.exchange.TurExchange;
+import com.viglet.turing.exchange.TurImportExchange;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,18 +32,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.viglet.turing.exchange.TurExchange;
-import com.viglet.turing.exchange.TurImportExchange;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
-
 @RestController
 @RequestMapping("/api/import")
 @Tag(name ="Import", description = "Import objects into Viglet Turing")
 public class TurImportAPI {
 
-	@Autowired
-	private TurImportExchange turImportExchange;
+	private final TurImportExchange turImportExchange;
+
+	@Inject
+	public TurImportAPI(TurImportExchange turImportExchange) {
+		this.turImportExchange = turImportExchange;
+	}
 
 	@PostMapping
 	@Transactional

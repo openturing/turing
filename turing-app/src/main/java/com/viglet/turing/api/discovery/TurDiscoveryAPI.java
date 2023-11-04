@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.api.discovery;
 
+import com.google.inject.Inject;
 import com.viglet.turing.api.TurAPIBean;
 import com.viglet.turing.properties.TurConfigProperties;
 import org.json.JSONException;
@@ -31,10 +32,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/discovery")
 public class TurDiscoveryAPI {
-    @Autowired
-    private TurAPIBean turAPIBean;
-    @Autowired
-    private TurConfigProperties turConfigProperties;
+    private final TurAPIBean turAPIBean;
+    private final TurConfigProperties turConfigProperties;
+
+    @Inject
+    public TurDiscoveryAPI(TurAPIBean turAPIBean, TurConfigProperties turConfigProperties) {
+        this.turAPIBean = turAPIBean;
+        this.turConfigProperties = turConfigProperties;
+    }
 
     @GetMapping
     public TurAPIBean info() throws JSONException {
