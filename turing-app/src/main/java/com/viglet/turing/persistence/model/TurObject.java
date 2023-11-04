@@ -14,11 +14,11 @@ import org.hibernate.annotations.UuidGenerator;
 public abstract class TurObject extends TurAuditable<String> {
     @Id
     @UuidGenerator
-    @Column(name = "id", updatable = false, nullable = false)
+    @Column(name = "id", nullable = false)
     protected String id;
-    @Column(nullable = false, length = 50)
+    @Column(length = 50)
     protected String name;
-    @Column(nullable = false, length = 255)
+    @Column
     protected String description;
 
 }
