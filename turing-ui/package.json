@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "compile": "ng build --configuration=production welcome && ng build console && ng build sn && ng build converse",
+    "compile": "npm install && ng build --configuration=production welcome && ng build console && ng build sn && ng build converse",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "sonar": "sonar-scanner"
