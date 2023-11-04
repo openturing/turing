@@ -21,8 +21,6 @@
 package com.viglet.turing.persistence.model.sn;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.viglet.turing.persistence.model.TurObject;
-import com.viglet.turing.persistence.model.dev.token.TurDevToken;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -56,60 +54,71 @@ import java.util.Set;
 @JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights",
 		"turSNSiteLocales", "turSNSiteMetricAccesses", "turSNRankingExpressions" })
 @EntityListeners(AuditingEntityListener.class)
-public class TurSNSite extends TurObject implements Serializable {
+public class TurSNSite extends TurAuditable<String> implements Serializable {
 
 	@Serial
 	private static final long serialVersionUID = 1L;
 
-	@Column(nullable = true)
+	@Id
+	@UuidGenerator
+	@Column(name = "id", updatable = false, nullable = false)
+	private String id;
+
+	@Column(nullable = false, length = 50)
+	private String name;
+
+	@Column(nullable = false)
+	private String description;
+
+	@Column()
 	private Integer rowsPerPage;
 
-	@Column(nullable = true)
+	@Column()
 	private Integer facet;
 
-	@Column(nullable = true)
+	@Column()
 	private Integer itemsPerFacet;
 
-	@Column(nullable = true)
+	@Column()
 	private Integer hl;
 
-	@Column(nullable = true, length = 50)
+	@Column(length = 50)
 	private String hlPre;
 
-	@Column(nullable = true, length = 50)
+	@Column(length = 50)
 	private String hlPost;
 
-	@Column(nullable = true)
+	@Column()
 	private Integer mlt;
 
-	@Column(nullable = true)
+	@Column()
 	private Integer thesaurus;
 
-	@Column(nullable = true)
+	@Column()
 	private String defaultTitleField;
 
-	@Column(nullable = true)
+	@Column()
 	private String defaultTextField;
 
-	@Column(nullable = true)
+	@Column()
 	private String defaultDescriptionField;
 
-	@Column(nullable = true)
+	@Column()
 	private String defaultDateField;
 
-	@Column(nullable = true)
+	@Column()
 	private String defaultImageField;
 
-	@Column(nullable = true)
+	@Column()
 	private String defaultURLField;
 
-	@Column(nullable = true)
+	@Column()
 	private Integer spellCheck;
 
-	@Column(nullable = true)
+	@Column()
 	private Integer spellCheckFixes;
 
-	@Column(nullable = true)
+	@Column()
 	private Integer spotlightWithResults;
 	
 	// bi-directional many-to-one association to TurSEInstance
@@ -119,7 +128,7 @@ public class TurSNSite extends TurObject implements Serializable {
 
 	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
-	@JoinColumn(name = "nlp_vendor_id", nullable = true)
+	@JoinColumn(name = "nlp_vendor_id")
 	private TurNLPVendor turNLPVendor;
 
 	// bi-directional many-to-one association to turSNSiteFields

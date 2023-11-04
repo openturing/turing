@@ -21,7 +21,6 @@
 
 package com.viglet.turing.persistence.model.sn.merge;
 
-import com.viglet.turing.persistence.model.TurObject;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
@@ -47,9 +46,14 @@ import java.util.Set;
 @Entity
 @Table(name = "turSNSiteMergeProviders")
 @NamedQuery(name = "TurSNSiteMerge.findAll", query = "SELECT snsmp FROM TurSNSiteMergeProviders snsmp")
-public class TurSNSiteMergeProviders extends TurObject implements Serializable {
+public class TurSNSiteMergeProviders implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
+
+	@Id
+	@UuidGenerator
+	@Column(name = "id", updatable = false, nullable = false)
+	private String id;
 
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
@@ -58,6 +62,9 @@ public class TurSNSiteMergeProviders extends TurObject implements Serializable {
 
 	@Column(nullable = false, length = 5)
 	private String locale;
+
+	@Column
+	private String description;
 
 	@Column(nullable = false, length = 50)
 	private String providerFrom;
