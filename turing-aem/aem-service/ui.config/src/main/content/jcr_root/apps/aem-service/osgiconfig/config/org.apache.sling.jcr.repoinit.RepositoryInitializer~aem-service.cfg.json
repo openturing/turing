@@ -1,0 +1,7 @@
+{
+    "scripts": [
+        "create path (sling:OrderedFolder) /content/dam/aem-service",
+        "create path (nt:unstructured) /content/dam/aem-service/jcr:content",
+        "set properties on /content/dam/aem-service/jcr:content\n  set cq:conf{String} to /conf/aem-service\n  set jcr:title{String} to \"AEM Turing Events\"\nend"
+    ]
+}

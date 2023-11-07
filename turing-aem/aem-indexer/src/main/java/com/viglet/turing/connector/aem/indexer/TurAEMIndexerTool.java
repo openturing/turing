@@ -18,14 +18,19 @@ import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
 import com.viglet.turing.connector.cms.mappers.CTDMappings;
 import com.viglet.turing.connector.cms.mappers.MappingDefinitions;
 import com.viglet.turing.connector.cms.mappers.MappingDefinitionsProcess;
+import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.commons.JcrUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.*;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -33,6 +38,7 @@ import java.sql.Statement;
 import java.util.*;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
+
 public class TurAEMIndexerTool {
 
     public static final String CONTENT_FRAGMENT = "content-fragment";
@@ -78,7 +84,8 @@ public class TurAEMIndexerTool {
 
     @Parameter(names = "--property", description = "Property file location path", help = true)
     private String propertyPath = "turing-aem.properties";
-
+    @Parameter(names = "--sitemap", description = "Connect to AEM using sitemap", help = true)
+    private boolean sitemap = false;
     @Parameter(names = "--show-output", description = "Property file location path", help = true)
     private boolean showOutput = false;
     @Parameter(names = "--help", description = "Print usage instructions", help = true)
@@ -91,6 +98,7 @@ public class TurAEMIndexerTool {
     private static long start;
     private AemHandlerConfiguration config = null;
     private String siteName;
+
     public static void main(String... argv) {
         TurAEMIndexerTool turAEMIndexerTool = new TurAEMIndexerTool();
         jCommander.addObject(turAEMIndexerTool);
@@ -146,18 +154,22 @@ public class TurAEMIndexerTool {
 
     public void getRead() throws Exception {
         if (isCTDIntoMapping(contentType, config)) {
-            Repository repository = JcrUtils.getRepository(hostAndPort);
-            Session session = repository.login(new SimpleCredentials(username, password.toCharArray()));
-            try {
-                Node node = session.getNode(sitePath);
-                AemSite aemSite = new AemSite(node);
-                siteName = aemSite.getTitle();
-                start = System.currentTimeMillis();
-                getNode(node);
-                long elapsed = System.currentTimeMillis() - start;
-                jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
-            } finally {
-                session.logout();
+            if (sitemap) {
+                getNodeFromJson(sitePath);
+            } else {
+                Repository repository = JcrUtils.getRepository(hostAndPort + "/crx/server");
+                Session session = repository.login(new SimpleCredentials(username, password.toCharArray()));
+                try {
+                    Node node = session.getNode(sitePath);
+                    AemSite aemSite = new AemSite(node);
+                    siteName = aemSite.getTitle();
+                    start = System.currentTimeMillis();
+                    getNode(node);
+                    long elapsed = System.currentTimeMillis() - start;
+                    jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+                } finally {
+                    session.logout();
+                }
             }
         } else {
             jCommander.getConsole()
@@ -178,8 +190,55 @@ public class TurAEMIndexerTool {
         }
     }
 
-    private void getNode(Node node) {
+    private void getNodeFromJson(String nodePath) {
 
+        try {
+            URL url = new URL(hostAndPort + "/bin/turing-sitemap.json" + sitePath);
+            String json = IOUtils.toString(url, StandardCharsets.UTF_8);
+            JSONArray jsonArray = new JSONArray(json);
+            if (!jsonArray.isEmpty() && (nodePath.startsWith("/content") || nodePath.equals("/"))) {
+                jsonArray.forEach(item -> {
+                    JSONObject jsonObject = (JSONObject) item;
+                    String jsonUrl = jsonObject.getString("url");
+                    if (processed == 0) {
+                        currentPage++;
+                        jCommander.getConsole().println(String.format("Processing %s item",
+                                ordinal((currentPage * pageSize) - pageSize + 1)));
+                    }
+                    if (processed >= pageSize) {
+                        long elapsed = System.currentTimeMillis() - start;
+                        jCommander.getConsole()
+                                .println(String.format("%d items processed in %dms", processed, elapsed));
+                        processed = 0;
+                        start = System.currentTimeMillis();
+                    } else {
+                        processed++;
+                    }
+                    AemObject aemObject = new AemObject(jsonUrl);
+                    CTDMappings ctdMappings = getCTDMappingMap(config).get(contentType);
+                    if (!delivered || aemObject.isDelivered()) {
+                        final List<TurAttrDef> extAttributes;
+                        try {
+                            extAttributes = runCustomClassFromContentType(ctdMappings, aemObject);
+                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                                 NoSuchMethodException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                        try {
+                            indexObject(aemObject, extAttributes);
+                        } catch (RepositoryException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    }
+                    getNodeFromJson(jsonUrl);
+                });
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void getNode(Node node) {
         try {
             if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
                 NodeIterator nodeIterator = node.getNodes();

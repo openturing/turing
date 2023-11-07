@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.nlp.term;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -36,9 +37,9 @@ import java.util.List;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name="turTermRelationFrom")
-@NamedQuery(name="TurTermRelationFrom.findAll", query="SELECT trf FROM TurTermRelationFrom trf")
+@Table(name="tur_term_relation_from")
 @JsonIgnoreProperties({ "turTerm" } )
 public class TurTermRelationFrom implements Serializable {
 	@Serial
@@ -60,22 +61,6 @@ public class TurTermRelationFrom implements Serializable {
 	//bi-directional many-to-one association to TurTermRelationTo
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTermRelationFrom", cascade = CascadeType.ALL)
 	private List<TurTermRelationTo> turTermRelationTos;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setRelationType(int relationType) {
-		this.relationType = relationType;
-	}
-
-	public void setTurTerm(TurTerm turTerm) {
-		this.turTerm = turTerm;
-	}
-
-	public void setTurTermRelationTos(List<TurTermRelationTo> turTermRelationTos) {
-		this.turTermRelationTos = turTermRelationTos;
-	}
 
 	public TurTermRelationTo addTurTermRelationTo(TurTermRelationTo turTermRelationTo) {
 		getTurTermRelationTos().add(turTermRelationTo);

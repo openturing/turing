@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.dev.token;
 import com.viglet.turing.spring.security.TurAuditable;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -34,9 +35,9 @@ import java.io.Serializable;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name = "turDevToken")
-@NamedQuery(name = "TurDevToken.findAll", query = "SELECT dt FROM TurDevToken dt")
+@Table(name = "tur_dev_token")
 public class TurDevToken extends TurAuditable<String>  implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -46,29 +47,12 @@ public class TurDevToken extends TurAuditable<String>  implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String description;
 
 	@Column(nullable = false, length = 100)
 	private String title;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String token;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public void setToken(String token) {
-		this.token = token;
-	}
-
 }

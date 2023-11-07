@@ -26,6 +26,7 @@ import com.viglet.turing.persistence.model.storage.TurDataGroupCategory;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Fetch;
 
 import java.io.Serial;
@@ -38,9 +39,9 @@ import java.util.List;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name="turMLCategory")
-@NamedQuery(name="TurMLCategory.findAll", query="SELECT mlc FROM TurMLCategory mlc")
+@Table(name="tur_ml_category")
 @JsonIgnoreProperties({ "turDataGroupCategories" })
 public class TurMLCategory implements Serializable {
 	@Serial
@@ -52,7 +53,7 @@ public class TurMLCategory implements Serializable {
 	@Column(unique=true, nullable=false)
 	private int id;
 
-	@Column(length=255)
+	@Column
 	private String description;
 
 	@Column(name="internal_name", nullable=false, length=50)
@@ -71,25 +72,6 @@ public class TurMLCategory implements Serializable {
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentences;
 
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setInternalName(String internalName) {
-		this.internalName = internalName;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setTurDataGroupCategories(List<TurDataGroupCategory> turDataGroupCategories) {
-		this.turDataGroupCategories = turDataGroupCategories;
-	}
 
 	public TurDataGroupCategory addTurDataGroupCategory(TurDataGroupCategory turDataGroupCategory) {
 		getTurDataGroupCategories().add(turDataGroupCategory);
@@ -103,10 +85,6 @@ public class TurMLCategory implements Serializable {
 		turDataGroupCategory.setTurMLCategory(null);
 
 		return turDataGroupCategory;
-	}
-
-	public void setTurDataSentences(List<TurDataGroupSentence> turDataSentences) {
-		this.turDataGroupSentences = turDataSentences;
 	}
 
 	public TurDataGroupSentence addTurDataSentence(TurDataGroupSentence turDataSentence) {

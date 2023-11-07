@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.converse.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -39,9 +40,9 @@ import java.util.Set;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name = "turConverseEntityTerm")
-@NamedQuery(name = "TurConverseEntityTerm.findAll", query = "SELECT cet FROM TurConverseEntityTerm cet")
+@Table(name = "tur_converse_entity_term")
 @JsonIgnoreProperties({ "entity" })
 public class TurConverseEntityTerm implements Serializable {
 	@Serial
@@ -68,24 +69,5 @@ public class TurConverseEntityTerm implements Serializable {
 
 	private int position;
 
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setSynonyms(Set<String> synonyms) {
-		this.synonyms = synonyms;
-	}
-
-	public void setEntity(TurConverseEntity entity) {
-		this.entity = entity;
-	}
-
-	public void setPosition(int position) {
-		this.position = position;
-	}
 
 }

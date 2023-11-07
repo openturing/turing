@@ -21,6 +21,7 @@ public class AemObject {
 	private boolean contentFragment = false;
 	private boolean delivered = false;
 	private String type;
+	private String url;
 	private String model;
 	private Node node;
 	private Node jcrContentNode;
@@ -35,9 +36,13 @@ public class AemObject {
 	public static final String CQ_IS_DELIVERED = "cq:isDelivered";
 	public static final String CQ_LAST_MODIFIED = "cq:lastModified";
 	public static final String CQ_MODEL = "cq:model";
+	public AemObject(String nodePath) {
+		this.url = nodePath + ".html";
+	}
 	public AemObject(Node node, String dataPath) {
 		try {
 			this.node = node;
+			this.url = node.getPath() + ".html";
 			type = node.getProperty(JCR_PRIMARYTYPE).getString();
 			jcrContentNode = node.getNode(JCR_CONTENT);
 			if (TurAemUtils.hasProperty(jcrContentNode,CQ_LAST_MODIFIED))

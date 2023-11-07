@@ -1,5 +1,7 @@
 package com.viglet.turing.connector.aem.indexer;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,12 +12,12 @@ import javax.jcr.ValueFormatException;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
 
+@Getter
 public class AemPage extends AemObject {
 	private static final Logger logger = LoggerFactory.getLogger(AemPage.class);
 
 	private String title;
 	private String description;
-	private String url;
 	private String subTitle;
 	private final StringBuffer components = new StringBuffer();
 
@@ -23,7 +25,6 @@ public class AemPage extends AemObject {
 		super(node);
 		try {
 			Node jcrContent = node.getNode(JCR_CONTENT);
-			url = node.getPath() + ".html";
 			title = getJcrPropertyValue(jcrContent, "jcr:title");
 			description = getJcrPropertyValue(jcrContent, "jcr:description");
 			getNode(jcrContent, components);
@@ -50,25 +51,4 @@ public class AemPage extends AemObject {
 			}
 		}
 	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public String getUrl() {
-		return url;
-	}
-
-	public String getSubTitle() {
-		return subTitle;
-	}
-
-	public StringBuffer getComponents() {
-		return components;
-	}
-
 }

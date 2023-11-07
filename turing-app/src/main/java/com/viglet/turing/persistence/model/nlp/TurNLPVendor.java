@@ -22,6 +22,7 @@ package com.viglet.turing.persistence.model.nlp;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -32,9 +33,9 @@ import java.io.Serializable;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name = "turNLPVendor")
-@NamedQuery(name = "TurNLPVendor.findAll", query = "SELECT v FROM TurNLPVendor v")
+@Table(name = "tur_nlp_vendor")
 public class TurNLPVendor implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -43,36 +44,15 @@ public class TurNLPVendor implements Serializable {
 	@Column(unique = true, nullable = false, length = 25)
 	private String id;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String description;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String plugin;
 
 	@Column(nullable = false, length = 100)
 	private String title;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String website;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setPlugin(String plugin) {
-		this.plugin = plugin;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public void setWebsite(String website) {
-		this.website = website;
-	}
-
 }

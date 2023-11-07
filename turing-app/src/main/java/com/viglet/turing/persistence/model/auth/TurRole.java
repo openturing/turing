@@ -35,8 +35,7 @@ import java.util.Set;
  */
 @Getter
 @Entity
-@Table(name = "turRole")
-@NamedQuery(name = "TurRole.findAll", query = "SELECT r FROM TurRole r")
+@Table(name = "tur_role")
 public class TurRole implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

@@ -41,8 +41,7 @@ import java.util.List;
  */
 @Getter
 @Entity
-@Table(name = "turConverseChat")
-@NamedQuery(name = "TurConverseChat.findAll", query = "SELECT cc FROM TurConverseChat cc")
+@Table(name = "tur_converse_chat")
 public class TurConverseChat implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -54,10 +53,10 @@ public class TurConverseChat implements Serializable {
 
 	private String summary;
 
-	@Column(name = "dateChat")
+	@Column(name = "date_chat")
 	private Date date;
 
-	@Column(name = "sessionChat")
+	@Column(name = "session_chat")
 	private String session;
 
 	@ManyToOne

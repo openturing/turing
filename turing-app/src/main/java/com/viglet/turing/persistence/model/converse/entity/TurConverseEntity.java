@@ -39,40 +39,34 @@ import java.util.Set;
  * 
  */
 @Entity
-@Table(name = "turConverseEntity")
-@NamedQuery(name = "TurConverseEntity.findAll", query = "SELECT ce FROM TurConverseEntity ce")
+@Getter
+@Table(name = "tur_converse_entity")
 public class TurConverseEntity implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
-	@Getter
 	@Id
 	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	@Getter
 	@Column(nullable = false, length = 50)
 	private String name;
 
 	private boolean isSynonyms;
 
-	@Getter
 	private boolean useRegexp;
 
-	@Getter
 	private boolean allowAutomatedExpansion;
 
-	@Getter
 	private boolean fuzzyMatching;
 
-	@Getter
+
 	@OneToMany(mappedBy = "entity", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConverseEntityTerm> terms = new HashSet<>();
 
-	@Getter
 	@ManyToOne
 	@JoinColumn(name = "agent_id")
 	@JsonIdentityReference(alwaysAsId = true)
