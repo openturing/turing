@@ -41,7 +41,7 @@ import java.util.logging.Logger;
  * @since 0.3.5
  */
 public class TurSNJobUtils {
-	private static Logger logger = Logger.getLogger(TurSNJobUtils.class.getName());
+	private static final Logger logger = Logger.getLogger(TurSNJobUtils.class.getName());
 	private static final String TYPE_ATTRIBUTE = "type";
 	private static final String PROVIDER_ATTRIBUTE = "source_apps";
 

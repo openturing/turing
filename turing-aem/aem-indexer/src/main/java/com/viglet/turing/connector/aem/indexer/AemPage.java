@@ -18,37 +18,20 @@ public class AemPage extends AemObject {
 
 	private String title;
 	private String description;
-	private String subTitle;
 	private final StringBuffer components = new StringBuffer();
 
 	public AemPage(Node node) {
 		super(node);
 		try {
 			Node jcrContent = node.getNode(JCR_CONTENT);
-			title = getJcrPropertyValue(jcrContent, "jcr:title");
-			description = getJcrPropertyValue(jcrContent, "jcr:description");
-			getNode(jcrContent, components);
+			title = TurAemUtils.getJcrPropertyValue(jcrContent, "jcr:title");
+			description = TurAemUtils.getJcrPropertyValue(jcrContent, "jcr:description");
+			TurAemUtils.getNode(jcrContent, components);
 		} catch (RepositoryException e) {
 			logger.error(e.getMessage(), e);
 		}
 	}
 
 
-	private void getNode(Node node, StringBuffer components) throws RepositoryException, ValueFormatException {
 
-		if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
-			NodeIterator nodeIterator = node.getNodes();
-			while (nodeIterator.hasNext()) {
-
-				Node nodeChild = nodeIterator.nextNode();
-				if (nodeChild.hasProperty("jcr:title"))
-					components.append(getJcrPropertyValue(nodeChild, "jcr:title"));
-				if (nodeChild.hasProperty("text"))
-					components.append(getJcrPropertyValue(nodeChild, "text"));
-				if (nodeChild.hasNodes()) {
-					getNode(nodeChild, components);
-				}
-			}
-		}
-	}
 }

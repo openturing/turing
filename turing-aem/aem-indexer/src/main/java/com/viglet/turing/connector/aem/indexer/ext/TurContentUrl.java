@@ -17,17 +17,12 @@ public class TurContentUrl implements ExtAttributeInterface {
 	@Override
 	public TurMultiValue consume(TuringTag tag, AemObject aemObject, IHandlerConfiguration config) {
 		logger.debug("Executing TurContentUrl");
-		try {
-			return TurMultiValue
-					.singleItem(getURL(aemObject, config));
-		} catch (RepositoryException e) {
-			logger.error(e.getMessage(), e);
-		}
-		return TurMultiValue.singleItem(EMPTY_STRING);
+		return TurMultiValue
+				.singleItem(getURL(aemObject, config));
 
 	}
 
-	public static String getURL(AemObject aemObject, IHandlerConfiguration config) throws RepositoryException {
-		return String.format("%s%s.html", config.getCDAURLPrefix(), aemObject.getNode().getPath());
+	public static String getURL(AemObject aemObject, IHandlerConfiguration config) {
+		return String.format("%s%s.html", config.getCDAURLPrefix(), aemObject.getPath());
 	}
 }
