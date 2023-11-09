@@ -72,7 +72,7 @@ public class TurSNSiteSpotlightAPITests {
     @Order(3)
     void stage01SpotlightAdd() throws Exception {
         TurSNSiteSpotlightTerm turSNSiteSpotlightTerm = new TurSNSiteSpotlightTerm();
-        turSNSiteSpotlightTerm.setName("search");
+        turSNSiteSpotlightTerm.setName("foobar");
         TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument();
         turSNSiteSpotlightDocument.setContent("Ad");
         turSNSiteSpotlightDocument.setLink("https://viglet.com");
