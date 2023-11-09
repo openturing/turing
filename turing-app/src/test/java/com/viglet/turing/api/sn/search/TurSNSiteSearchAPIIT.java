@@ -111,7 +111,7 @@ public class TurSNSiteSearchAPIIT {
     @Test
     @Order(4)
     void openMultiLanguagePortuguese() throws Exception {
-        multiLanguageNotExistsTests(Locale.ITALY);
+        multiLanguageNotExistsTests(new Locale("pt"));
     }
 
     @Test
