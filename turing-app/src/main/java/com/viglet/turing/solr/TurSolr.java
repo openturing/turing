@@ -699,9 +699,11 @@ public class TurSolr {
         query.setStart(TurSolrUtils.firstRowPositionFromCurrentPage(turSEParameters));
 
         // Filter Query
-        String[] filterQueryArr = new String[turSEParameters.getFilterQueries().size()];
-        filterQueryArr = turSEParameters.getFilterQueries().toArray(filterQueryArr);
-        query.setFilterQueries(filterQueryArr);
+        if (turSEParameters.getFilterQueries() != null) {
+            String[] filterQueryArr = new String[turSEParameters.getFilterQueries().size()];
+            filterQueryArr = turSEParameters.getFilterQueries().toArray(filterQueryArr);
+            query.setFilterQueries(filterQueryArr);
+        }
 
         QueryResponse queryResponse;
         try {

@@ -2,6 +2,8 @@ package com.viglet.turing.api.sn.console;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.utils.TurUtilTests;
@@ -21,6 +23,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.security.Principal;
+import java.util.Collections;
 import java.util.Date;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -68,6 +71,16 @@ public class TurSNSiteSpotlightAPITests {
     @Test
     @Order(3)
     void stage01SpotlightAdd() throws Exception {
+        TurSNSiteSpotlightTerm turSNSiteSpotlightTerm = new TurSNSiteSpotlightTerm();
+        turSNSiteSpotlightTerm.setName("search");
+        TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument();
+        turSNSiteSpotlightDocument.setContent("Ad");
+        turSNSiteSpotlightDocument.setLink("https://viglet.com");
+        turSNSiteSpotlightDocument.setPosition(1);
+        turSNSiteSpotlightDocument.setTitle("Ad");
+        turSNSiteSpotlightDocument.setReferenceId("CMS");
+        turSNSiteSpotlightDocument.setType("Page");
+
         TurSNSite turSNSite = turSNSiteRepository.findByName(SN_SITE_NAME);
         TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
         turSNSiteSpotlight.setDescription("Spotlight Sample Test");
@@ -79,6 +92,8 @@ public class TurSNSiteSpotlightAPITests {
         turSNSite.getTurSNSiteLocales().stream().findFirst().ifPresent(locale ->
                 turSNSiteSpotlight.setLanguage(locale.getLanguage())
         );
+        turSNSiteSpotlight.setTurSNSiteSpotlightDocuments(Collections.singleton(turSNSiteSpotlightDocument));
+        turSNSiteSpotlight.setTurSNSiteSpotlightTerms(Collections.singleton(turSNSiteSpotlightTerm));
         String spotlightRequestBody = TurUtils.asJsonString(turSNSiteSpotlight);
         RequestBuilder requestBuilder = MockMvcRequestBuilders.post(SERVICE_URL).principal(mockPrincipal)
                 .accept(MediaType.APPLICATION_JSON)
@@ -120,7 +135,6 @@ public class TurSNSiteSpotlightAPITests {
     @Test
     @Order(6)
     void stage04SpotlightDelete() {
-
         turSNSiteSpotlightRepository.findAll().stream().findFirst().ifPresent(spotlight -> {
             try {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.delete(TurUtilTests

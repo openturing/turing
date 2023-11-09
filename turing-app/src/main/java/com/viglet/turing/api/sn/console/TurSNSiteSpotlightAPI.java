@@ -29,6 +29,7 @@ import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightR
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -43,10 +44,9 @@ import java.util.Optional;
  */
 
 @RestController
-@RequestMapping("/api/sn/{snSiteId}/spotlight")
+@RequestMapping("/api/sn/{ignoredSnSiteId}/spotlight")
 @Tag(name = "Semantic Navigation Spotlight", description = "Semantic Navigation Spotlight API")
 public class TurSNSiteSpotlightAPI {
-
 	private final TurSNSiteRepository turSNSiteRepository;
 	private final TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
 	private final TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
@@ -65,14 +65,14 @@ public class TurSNSiteSpotlightAPI {
 
 	@Operation(summary = "Semantic Navigation Site Spotlight List")
 	@GetMapping
-	public List<TurSNSiteSpotlight> turSNSiteSpotlightList(@PathVariable String snSiteId) {
-		return turSNSiteRepository.findById(snSiteId).map(this.turSNSiteSpotlightRepository::findByTurSNSite)
+	public List<TurSNSiteSpotlight> turSNSiteSpotlightList(@PathVariable String ignoredSnSiteId) {
+		return turSNSiteRepository.findById(ignoredSnSiteId).map(this.turSNSiteSpotlightRepository::findByTurSNSite)
 				.orElse(new ArrayList<>());
 	}
 
 	@Operation(summary = "Show a Semantic Navigation Site Spotlight")
 	@GetMapping("/{id}")
-	public TurSNSiteSpotlight turSNSiteSpotlightGet(@PathVariable String snSiteId, @PathVariable String id) {
+	public TurSNSiteSpotlight turSNSiteSpotlightGet(@PathVariable String ignoredSnSiteId, @PathVariable String id) {
 
 		Optional<TurSNSiteSpotlight> turSNSiteSpotlight = turSNSiteSpotlightRepository.findById(id);
 		if (turSNSiteSpotlight.isPresent()) {
@@ -82,14 +82,14 @@ public class TurSNSiteSpotlightAPI {
 					turSNSiteSpotlightTermRepository.findByTurSNSiteSpotlight(turSNSiteSpotlight.get()));
 			return turSNSiteSpotlight.get();
 		}
-
 		return new TurSNSiteSpotlight();
 	}
 
 	@Operation(summary = "Update a Semantic Navigation Site Spotlight")
 	@PutMapping("/{id}")
 	public TurSNSiteSpotlight turSNSiteSpotlightUpdate(@PathVariable String id,
-			@RequestBody TurSNSiteSpotlight turSNSiteSpotlight) {
+													   @RequestBody TurSNSiteSpotlight turSNSiteSpotlight,
+													   @PathVariable String ignoredSnSiteId) {
 
 		return turSNSiteSpotlightRepository.findById(id).map(turSNSiteSpotlightEdit -> {
 			turSNSiteSpotlightEdit.setDescription(turSNSiteSpotlight.getDescription());
@@ -98,31 +98,46 @@ public class TurSNSiteSpotlightAPI {
 			turSNSiteSpotlightEdit.setName(turSNSiteSpotlight.getName());
 			turSNSiteSpotlightEdit.setProvider(turSNSiteSpotlight.getProvider());
 			turSNSiteSpotlightEdit.setTurSNSite(turSNSiteSpotlight.getTurSNSite());
-			turSNSiteSpotlightRepository.save(turSNSiteSpotlightEdit);
-			return turSNSiteSpotlightEdit;
+			return saveSpotlight(turSNSiteSpotlight, turSNSiteSpotlightEdit);
 		}).orElse(new TurSNSiteSpotlight());
+	}
+
+	@NotNull
+	private TurSNSiteSpotlight saveSpotlight(@RequestBody TurSNSiteSpotlight turSNSiteSpotlight,
+											 TurSNSiteSpotlight turSNSiteSpotlightEdit) {
+		turSNSiteSpotlightRepository.save(turSNSiteSpotlightEdit);
+
+		turSNSiteSpotlight.getTurSNSiteSpotlightTerms().forEach(term -> {
+			term.setTurSNSiteSpotlight(turSNSiteSpotlightEdit);
+			turSNSiteSpotlightTermRepository.save(term);
+		});
+		turSNSiteSpotlight.getTurSNSiteSpotlightDocuments().forEach(document -> {
+			document.setTurSNSiteSpotlight(turSNSiteSpotlightEdit);
+			turSNSiteSpotlightDocumentRepository.save(document);
+		});
+		return turSNSiteSpotlightEdit;
 	}
 
 	@Transactional
 	@Operation(summary = "Delete a Semantic Navigation Site Spotlight")
 	@DeleteMapping("/{id}")
 	@CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
-	public boolean turSNSiteSpotlighDelete(@PathVariable String id) {
+	public boolean turSNSiteSpotlightDelete(@PathVariable String id, @PathVariable String ignoredSnSiteId) {
 		turSNSiteSpotlightRepository.deleteById(id);
 		return true;
 	}
 
 	@Operation(summary = "Create a Semantic Navigation Site Spotlight")
 	@PostMapping
-	public TurSNSiteSpotlight turSNSiteSpotlighAdd(@RequestBody TurSNSiteSpotlight turSNSiteSpotlight) {
-		turSNSiteSpotlightRepository.save(turSNSiteSpotlight);
-		return turSNSiteSpotlight;
+	public TurSNSiteSpotlight turSNSiteSpotlightAdd(@RequestBody TurSNSiteSpotlight turSNSiteSpotlight,
+												   @PathVariable String ignoredSnSiteId) {
+		return saveSpotlight(turSNSiteSpotlight, turSNSiteSpotlight);
 	}
 
 	@Operation(summary = "Semantic Navigation Site Spotlight structure")
 	@GetMapping("structure")
-	public TurSNSiteSpotlight turSNSiteSpotlightStructure(@PathVariable String snSiteId) {
-		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
+	public TurSNSiteSpotlight turSNSiteSpotlightStructure(@PathVariable String ignoredSnSiteId) {
+		return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
 			TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
 			turSNSiteSpotlight.setTurSNSite(turSNSite);
 			return turSNSiteSpotlight;
