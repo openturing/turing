@@ -27,23 +27,20 @@ import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.util.HtmlManipulator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
 
-import javax.jcr.Property;
-import javax.jcr.Value;
-import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
+@Slf4j
 public class TurAEMAttrClass {
-	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
 	private TurAEMAttrClass() {
 		throw new IllegalStateException("TurAEMAttrClass");
 	}
 
-	public static List<TurAttrDef> attributeByClass(TurAttrDefContext turAttrDefContext, Property jcrProperty)
+	public static List<TurAttrDef> attributeByClass(TurAttrDefContext turAttrDefContext, Object jcrProperty)
 			throws Exception {
 
 		TuringTag turingTag = turAttrDefContext.getTuringTag();
@@ -52,8 +49,8 @@ public class TurAEMAttrClass {
 
 		if (turingTag.getSrcClassName() != null) {
 			String className = turingTag.getSrcClassName();
-			if (logger.isDebugEnabled())
-				logger.debug("ClassName : " + className);
+			if (log.isDebugEnabled())
+				log.debug("ClassName : " + className);
 
 			Object extAttribute = Class.forName(className).getDeclaredConstructor().newInstance();
 			TurMultiValue turMultiValue = ((ExtAttributeInterface) extAttribute).consume(turingTag,
@@ -63,17 +60,18 @@ public class TurAEMAttrClass {
 		} else {
 			TurMultiValue turMultiValue = new TurMultiValue();
 			if (turingTag.getSrcAttributeType() != null && turingTag.getSrcAttributeType().equals("html")) {
-				turMultiValue.add(HtmlManipulator.html2Text( AemObject.getPropertyValue(jcrProperty)));
+				turMultiValue.add(HtmlManipulator.html2Text( TurAemUtils.getPropertyValue(jcrProperty)));
 				TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
 				attributesDefs.add(turAttrDef);
 			} else if (jcrProperty != null) {
-				if (jcrProperty.isMultiple() && jcrProperty.getValues().length > 0) {
-					for (Value value : jcrProperty.getValues()) {
-						turMultiValue.add(value.getString());
-					}
+				if (( jcrProperty instanceof JSONArray)
+						&& !((JSONArray)jcrProperty).isEmpty()) {
+					((JSONArray)jcrProperty).forEach(item -> {
+						turMultiValue.add(item.toString());
+					});
 				}
-				else if (jcrProperty.getValue() != null) {
-					turMultiValue.add(AemObject.getPropertyValue(jcrProperty));
+				else {
+					turMultiValue.add(TurAemUtils.getPropertyValue(jcrProperty));
 
 				}
 				if (!turMultiValue.isEmpty()) {

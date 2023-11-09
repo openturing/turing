@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.ml;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -33,9 +34,9 @@ import java.io.Serializable;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name="turMLModel")
-@NamedQuery(name="TurMLModel.findAll", query="SELECT mlm FROM TurMLModel mlm")
+@Table(name="tur_ml_model")
 public class TurMLModel implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -46,7 +47,7 @@ public class TurMLModel implements Serializable {
 	@Column(unique=true, nullable=false)
 	private int id;
 
-	@Column(nullable=false, length=255)
+	@Column(nullable=false)
 	private String description;
 
 	@Column(name="internal_name", nullable=false, length=50)
@@ -54,21 +55,4 @@ public class TurMLModel implements Serializable {
 
 	@Column(nullable=false, length=50)
 	private String name;
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setInternalName(String internalName) {
-		this.internalName = internalName;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
 }

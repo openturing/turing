@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -38,9 +39,9 @@ import java.util.List;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name="turTerm")
-@NamedQuery(name="TurTerm.findAll", query="SELECT t FROM TurTerm t")
+@Table(name="tur_term")
 @JsonIgnoreProperties({ "turNLPEntity" } )
 public class TurTerm implements Serializable {
 	@Serial
@@ -87,26 +88,6 @@ public class TurTerm implements Serializable {
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurTermVariationLanguage> turTermVariationLanguages;
 
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setIdCustom(String idCustom) {
-		this.idCustom = idCustom;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setTurNLPEntity(TurNLPEntity turNLPEntity) {
-		this.turNLPEntity = turNLPEntity;
-	}
-
-	public void setTurTermAttributes(List<TurTermAttribute> turTermAttributes) {
-		this.turTermAttributes = turTermAttributes;
-	}
-
 	public TurTermAttribute addTurTermAttribute(TurTermAttribute turTermAttribute) {
 		getTurTermAttributes().add(turTermAttribute);
 		turTermAttribute.setTurTerm(this);
@@ -119,10 +100,6 @@ public class TurTerm implements Serializable {
 		turTermAttribute.setTurTerm(null);
 
 		return turTermAttribute;
-	}
-
-	public void setTurTermRelationFroms(List<TurTermRelationFrom> turTermRelationFroms) {
-		this.turTermRelationFroms = turTermRelationFroms;
 	}
 
 	public TurTermRelationFrom addTurTermRelationFrom(TurTermRelationFrom turTermRelationFrom) {
@@ -139,10 +116,6 @@ public class TurTerm implements Serializable {
 		return turTermRelationFrom;
 	}
 
-	public void setTurTermRelationTos(List<TurTermRelationTo> turTermRelationTos) {
-		this.turTermRelationTos = turTermRelationTos;
-	}
-
 	public TurTermRelationTo addTurTermRelationTo(TurTermRelationTo turTermRelationTo) {
 		getTurTermRelationTos().add(turTermRelationTo);
 		turTermRelationTo.setTurTerm(this);
@@ -155,10 +128,6 @@ public class TurTerm implements Serializable {
 		turTermRelationTo.setTurTerm(null);
 
 		return turTermRelationTo;
-	}
-
-	public void setTurTermVariations(List<TurTermVariation> turTermVariations) {
-		this.turTermVariations = turTermVariations;
 	}
 
 	public TurTermVariation addTurTermVariation(TurTermVariation turTermVariation) {
@@ -175,10 +144,6 @@ public class TurTerm implements Serializable {
 		return turTermVariation;
 	}
 
-	public void setTurTermVariationLanguages(List<TurTermVariationLanguage> turTermVariationLanguages) {
-		this.turTermVariationLanguages = turTermVariationLanguages;
-	}
-
 	public TurTermVariationLanguage addTurTermVariationLanguage(TurTermVariationLanguage turTermVariationLanguage) {
 		getTurTermVariationLanguages().add(turTermVariationLanguage);
 		turTermVariationLanguage.setTurTerm(this);
@@ -192,5 +157,4 @@ public class TurTerm implements Serializable {
 
 		return turTermVariationLanguage;
 	}
-
 }

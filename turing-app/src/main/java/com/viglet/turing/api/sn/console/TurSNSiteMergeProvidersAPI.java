@@ -112,7 +112,6 @@ public class TurSNSiteMergeProvidersAPI {
 	@PostMapping
 	public TurSNSiteMergeProviders turSNSiteMergeAdd(@RequestBody TurSNSiteMergeProviders turSNSiteMerge) {
 		turSNSiteMergeRepository.save(turSNSiteMerge);
-		
 		turSNSiteMerge.getOverwrittenFields().forEach(field -> {
 			field.setTurSNSiteMergeProviders(turSNSiteMerge);
 			turSNSiteMergeFieldRepository.save(field);

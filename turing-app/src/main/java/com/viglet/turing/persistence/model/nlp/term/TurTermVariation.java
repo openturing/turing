@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.nlp.term;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -36,9 +37,9 @@ import java.util.List;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name="turTermVariation")
-@NamedQuery(name="TurTermVariation.findAll", query="SELECT tv FROM TurTermVariation tv")
+@Table(name="tur_term_variation")
 @JsonIgnoreProperties({ "turTerm" } )
 public class TurTermVariation implements Serializable {
 	@Serial
@@ -49,10 +50,10 @@ public class TurTermVariation implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	@Column(nullable=false, length=255)
+	@Column(nullable=false)
 	private String name;
 
-	@Column(name="name_lower", nullable=false, length=255)
+	@Column(name="name_lower", nullable=false)
 	private String nameLower;
 
 	@Column(name="rule_accent", nullable=false)
@@ -61,13 +62,13 @@ public class TurTermVariation implements Serializable {
 	@Column(name="rule_case", nullable=false)
 	private int ruleCase;
 
-	@Column(name="rule_prefix", length=255)
+	@Column(name="rule_prefix")
 	private String rulePrefix;
 
 	@Column(name="rule_prefix_required")
 	private int rulePrefixRequired;
 
-	@Column(name="rule_suffix", length=255)
+	@Column(name="rule_suffix")
 	private String ruleSuffix;
 
 	@Column(name="rule_suffix_required")
@@ -84,54 +85,6 @@ public class TurTermVariation implements Serializable {
 	//bi-directional many-to-one association to TurTermVariationLanguage
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTermVariation", cascade = CascadeType.ALL)
 	private List<TurTermVariationLanguage> turTermVariationLanguages;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setNameLower(String nameLower) {
-		this.nameLower = nameLower;
-	}
-
-	public void setRuleAccent(int ruleAccent) {
-		this.ruleAccent = ruleAccent;
-	}
-
-	public void setRuleCase(int ruleCase) {
-		this.ruleCase = ruleCase;
-	}
-
-	public void setRulePrefix(String rulePrefix) {
-		this.rulePrefix = rulePrefix;
-	}
-
-	public void setRulePrefixRequired(int rulePrefixRequired) {
-		this.rulePrefixRequired = rulePrefixRequired;
-	}
-
-	public void setRuleSuffix(String ruleSuffix) {
-		this.ruleSuffix = ruleSuffix;
-	}
-
-	public void setRuleSuffixRequired(int ruleSuffixRequired) {
-		this.ruleSuffixRequired = ruleSuffixRequired;
-	}
-
-	public void setWeight(double weight) {
-		this.weight = weight;
-	}
-
-	public void setTurTerm(TurTerm turTerm) {
-		this.turTerm = turTerm;
-	}
-
-	public void setTurTermVariationLanguages(List<TurTermVariationLanguage> turTermVariationLanguages) {
-		this.turTermVariationLanguages = turTermVariationLanguages;
-	}
 
 	public TurTermVariationLanguage addTurTermVariationLanguage(TurTermVariationLanguage turTermVariationLanguage) {
 		getTurTermVariationLanguages().add(turTermVariationLanguage);

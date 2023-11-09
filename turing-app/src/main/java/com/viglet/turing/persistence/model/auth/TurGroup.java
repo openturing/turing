@@ -34,7 +34,7 @@ import java.util.Set;
  * 
  */
 @Entity
-@NamedQuery(name = "TurGroup.findAll", query = "SELECT g FROM TurGroup g")
+@Table(name = "tur_group")
 public class TurGroup implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

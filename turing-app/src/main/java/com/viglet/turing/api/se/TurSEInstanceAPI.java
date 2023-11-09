@@ -27,10 +27,13 @@ import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
+import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -107,21 +110,23 @@ public class TurSEInstanceAPI {
 	}
 
 	@GetMapping("/select")
-	public String turSEInstanceSelect(@RequestParam(required = false, name = TurSNParamType.QUERY) String q,
-			@RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
-			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
-			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "AND") TurSNFilterQueryOperator fqOperator,
-			@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
-			@RequestParam(required = false, name = TurSNParamType.ROWS) Integer rows,
-			@RequestParam(required = false, name = TurSNParamType.GROUP) String group) {
+	public ResponseEntity<TurSEResults> turSEInstanceSelect(@RequestParam(required = false, name = TurSNParamType.QUERY) String q,
+															@RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
+															@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
+															@RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "AND") TurSNFilterQueryOperator fqOperator,
+															@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
+															@RequestParam(required = false, name = TurSNParamType.ROWS) Integer rows,
+															@RequestParam(required = false, name = TurSNParamType.GROUP) String group) {
 
 		currentPage = (currentPage == null || currentPage <= 0) ? 1 : currentPage;
 		rows = rows == null ? 0 : rows;
 
-		TurSEParameters turSEParameters = new TurSEParameters(q, fq, fqOperator, currentPage, sort, rows, group, 0);
+		TurSEParameters turSEParameters = new TurSEParameters(q, fq, fqOperator, currentPage,
+				sort, rows, group, 0);
 		return turSolrInstanceProcess.initSolrInstance()
-				.map(turSolrInstance -> turSolr.retrieveSolr(turSolrInstance, turSEParameters, "text").toString())
-				.orElse("");
+				.map(turSolrInstance -> new ResponseEntity<>(turSolr.retrieveSolr(turSolrInstance, turSEParameters,
+						"text"), HttpStatus.OK))
+				.orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
 	}
 
 }

@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.nlp.term;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -34,9 +35,9 @@ import java.io.Serializable;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name="turTermVariationLanguage")
-@NamedQuery(name="TurTermVariationLanguage.findAll", query="SELECT tvl FROM TurTermVariationLanguage tvl")
+@Table(name="tur_term_variation_language")
 @JsonIgnoreProperties({ "turTerm", "turTermVariation" } )
 public class TurTermVariationLanguage implements Serializable {
 	@Serial
@@ -59,21 +60,4 @@ public class TurTermVariationLanguage implements Serializable {
 	@ManyToOne
 	@JoinColumn(name="variation_id", nullable=false)
 	private TurTermVariation turTermVariation;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
-	}
-
-	public void setTurTerm(TurTerm turTerm) {
-		this.turTerm = turTerm;
-	}
-
-	public void setTurTermVariation(TurTermVariation turTermVariation) {
-		this.turTermVariation = turTermVariation;
-	}
-
 }

@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.ml;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -32,9 +33,9 @@ import java.io.Serializable;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name = "turMLInstance")
-@NamedQuery(name = "TurMLInstance.findAll", query = "SELECT mi FROM TurMLInstance mi")
+@Table(name = "tur_ml_instance")
 public class TurMLInstance implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

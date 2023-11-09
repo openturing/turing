@@ -22,6 +22,7 @@ package com.viglet.turing.persistence.model.se;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -32,9 +33,9 @@ import java.io.Serializable;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name = "turSEInstance")
-@NamedQuery(name = "TurSEInstance.findAll", query = "SELECT si FROM TurSEInstance si")
+@Table(name = "tur_se_instance")
 public class TurSEInstance implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -63,32 +64,4 @@ public class TurSEInstance implements Serializable {
 	@ManyToOne
 	@JoinColumn(name = "se_vendor_id", nullable = false)
 	private TurSEVendor turSEVendor;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setEnabled(int enabled) {
-		this.enabled = enabled;
-	}
-
-	public void setHost(String host) {
-		this.host = host;
-	}
-
-	public void setPort(int port) {
-		this.port = port;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public void setTurSEVendor(TurSEVendor turSEVendor) {
-		this.turSEVendor = turSEVendor;
-	}
 }

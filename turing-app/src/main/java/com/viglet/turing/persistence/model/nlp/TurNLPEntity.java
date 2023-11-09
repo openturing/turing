@@ -27,6 +27,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -39,9 +40,9 @@ import java.util.Set;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name = "turNLPEntity")
-@NamedQuery(name = "TurNLPEntity.findAll", query = "SELECT ne FROM TurNLPEntity ne")
+@Table(name = "tur_nlp_entity")
 @JsonIgnoreProperties({ "turNLPInstanceEntities", "turNLPVendorEntities" } )
 public class TurNLPEntity implements Serializable {
 	@Serial
@@ -54,7 +55,7 @@ public class TurNLPEntity implements Serializable {
 	@Column(name = "collection_name", nullable = false, length = 50)
 	private String collectionName;
 
-	@Column(nullable = false, length = 255)
+	@Column(nullable = false)
 	private String description;
 
 
@@ -95,30 +96,6 @@ public class TurNLPEntity implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurTerm> turTerms;
 
-	public void setCollectionName(String collectionName) {
-		this.collectionName = collectionName;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setInternalName(String internalName) {
-		this.internalName = internalName;
-	}
-
-	public void setLocal(int local) {
-		this.local = local;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setTurNLPVendorEntities(Set<TurNLPVendorEntity> turNLPVendorEntities) {
-		this.turNLPVendorEntities = turNLPVendorEntities;
-	}
-
 	public TurNLPVendorEntity addTurNLPVendorEntity(TurNLPVendorEntity turNLPVendorEntity) {
 		getTurNLPVendorEntities().add(turNLPVendorEntity);
 		turNLPVendorEntity.setTurNLPEntity(this);
@@ -131,10 +108,6 @@ public class TurNLPEntity implements Serializable {
 		turNLPVendorEntity.setTurNLPEntity(null);
 
 		return turNLPVendorEntity;
-	}
-
-	public void setTurTerms(Set<TurTerm> turTerms) {
-		this.turTerms = turTerms;
 	}
 
 	public TurTerm addTurTerm(TurTerm turTerm) {
@@ -150,11 +123,4 @@ public class TurNLPEntity implements Serializable {
 
 		return turTerm;
 	}
-
-	public void setEnabled(int enabled) {
-		this.enabled = enabled;
-	}
-
-	
-
 }

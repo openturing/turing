@@ -12,6 +12,7 @@
     <artifactId>turing-app</artifactId>
     <version>${revision}</version>
     <name>Turing Application</name>
+    <url>https://github.com/openturing/turing</url>
     <packaging>jar</packaging>
     <properties>
         <spring-boot.version>3.1.5</spring-boot.version>
@@ -88,11 +89,6 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-imaging</artifactId>
             <version>1.0-alpha3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.solr</groupId>
-            <artifactId>solr-solrj</artifactId>
-            <version>9.4.0</version>
         </dependency>
         <dependency>
             <groupId>com.oracle.ojdbc</groupId>
@@ -244,13 +240,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.solr</groupId>
-            <artifactId>solr-test-framework</artifactId>
-            <version>9.4.0</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
@@ -259,6 +248,17 @@
             <artifactId>guice</artifactId>
             <version>7.0.0</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.solr</groupId>
+            <artifactId>solr-solrj</artifactId>
+            <version>9.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <version>6.1.5</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <dependencyManagement>
@@ -362,12 +362,39 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.0</version>
+                <version>2.22.1</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.22.0</version>
+                <version>2.22.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                    <testFailureIgnore>true</testFailureIgnore>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.7.1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>3.0.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pdf-plugin</artifactId>
+                <version>1.6.1</version>
             </plugin>
         </plugins>
     </build>
@@ -376,7 +403,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.22.0</version>
+                <version>2.22.2</version>
             </plugin>
         </plugins>
     </reporting>

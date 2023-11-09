@@ -22,6 +22,7 @@ package com.viglet.turing.persistence.model.nlp;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -33,9 +34,9 @@ import java.io.Serializable;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name="turNLPVendorEntity")
-@NamedQuery(name="TurNLPVendorEntity.findAll", query="SELECT nve FROM TurNLPVendorEntity nve")
+@Table(name="tur_nlp_vendor_entity")
 public class TurNLPVendorEntity implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -45,7 +46,7 @@ public class TurNLPVendorEntity implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	@Column(nullable=false, length=255)
+	@Column(nullable=false)
 	private String name;
 
 	@Column(nullable=false, length=5)
@@ -59,25 +60,4 @@ public class TurNLPVendorEntity implements Serializable {
 	@ManyToOne
 	@JoinColumn(name="nlp_vendor_id", nullable=false)
 	private TurNLPVendor turNLPVendor;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setTurNLPEntity(TurNLPEntity turNLPEntity) {
-		this.turNLPEntity = turNLPEntity;
-	}
-
-	public void setTurNLPVendor(TurNLPVendor turNLPVendor) {
-		this.turNLPVendor = turNLPVendor;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
-	}
-	
 }

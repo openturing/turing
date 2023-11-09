@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.converse.chat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -35,104 +36,42 @@ import java.util.Date;
  * 
  */
 @Entity
-@Table(name = "turConverseChatResponse")
-@NamedQuery(name = "TurConverseChatResponse.findAll", query = "SELECT ccr FROM TurConverseChatResponse ccr")
+@Getter
+@Setter
+@Table(name = "tur_converse_chat_response")
 @JsonIgnoreProperties({ "chat" })
 public class TurConverseChatResponse implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
-	@Getter
+
 	@Id
 	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	@Getter
-	@Column(name = "dateResponse")
+	@Column(name = "date_response")
 	private Date date;
 
-	@Getter
 	private String text;
 
 	private boolean isUser;
 
-	@Getter
 	private String intentId;
 
-	@Getter
 	private String actionName;
 
-	@Getter
 	private String parameterName;
 
-	@Getter
 	private String parameterValue;
 
-	@Getter
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "chat_id")
 	private TurConverseChat chat;
 
-	@Getter
 	private boolean trainingToIntent = false;
 	
-	@Getter
 	private boolean trainingToFallback = false;
 	
-	@Getter
 	private boolean trainingRemove = false;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setDate(Date date) {
-		this.date = date;
-	}
-
-	public void setText(String text) {
-		this.text = text;
-	}
-
-	public boolean isUser() {
-		return isUser;
-	}
-
-	public void setUser(boolean isUser) {
-		this.isUser = isUser;
-	}
-
-	public void setIntentId(String intentId) {
-		this.intentId = intentId;
-	}
-
-	public void setActionName(String actionName) {
-		this.actionName = actionName;
-	}
-
-	public void setParameterName(String parameterName) {
-		this.parameterName = parameterName;
-	}
-
-	public void setChat(TurConverseChat chat) {
-		this.chat = chat;
-	}
-
-	public void setParameterValue(String parameterValue) {
-		this.parameterValue = parameterValue;
-	}
-
-	public void setTrainingToIntent(boolean trainingToIntent) {
-		this.trainingToIntent = trainingToIntent;
-	}
-
-	public void setTrainingToFallback(boolean trainingToFallback) {
-		this.trainingToFallback = trainingToFallback;
-	}
-
-	public void setTrainingRemove(boolean trainingRemove) {
-		this.trainingRemove = trainingRemove;
-	}
-
 }

@@ -22,6 +22,7 @@ package com.viglet.turing.persistence.model.nlp;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -32,9 +33,9 @@ import java.io.Serializable;
  * 
  */
 @Getter
+@Setter
 @Entity
-@Table(name="turNLPFeature")
-@NamedQuery(name="TurNLPFeature.findAll", query="SELECT nf FROM TurNLPFeature nf")
+@Table(name="tur_nlp_feature")
 public class TurNLPFeature implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -48,19 +49,6 @@ public class TurNLPFeature implements Serializable {
 	@Column(nullable=false, length=100)
 	private String title;
 	
-	@Column(nullable=true, length=255)
+	@Column
 	private String description;
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
 }

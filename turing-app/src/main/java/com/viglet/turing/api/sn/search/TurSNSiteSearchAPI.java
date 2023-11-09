@@ -30,7 +30,9 @@ import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,9 +59,11 @@ public class TurSNSiteSearchAPI {
 	private TurSNSearchProcess turSNSearchProcess;
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
+	@Autowired
+	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
 	@GetMapping
-	public TurSNSiteSearchBean turSNSiteSearchSelectGet(@PathVariable String siteName,
+	public  ResponseEntity<TurSNSiteSearchBean>  turSNSiteSearchSelectGet(@PathVariable String siteName,
 			@RequestParam(required = false, name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
 			@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
@@ -71,9 +75,18 @@ public class TurSNSiteSearchAPI {
 			@RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0")
 															Integer autoCorrectionDisabled,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale, HttpServletRequest request) {
-		return turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-				new TurSEParameters(q, fq, fqOperator, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
-				TurSNUtils.requestToURI(request)));
+		if (existsByTurSNSiteAndLanguage(siteName, locale)) {
+			return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
+					new TurSEParameters(q, fq, fqOperator, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
+					TurSNUtils.requestToURI(request))), HttpStatus.OK);
+		}
+		else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+	}
+
+	private boolean existsByTurSNSiteAndLanguage(String siteName, String locale) {
+		return turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(turSNSiteRepository.findByName(siteName), locale);
 	}
 
 	@PostMapping
@@ -92,11 +105,16 @@ public class TurSNSiteSearchAPI {
 			@RequestBody TurSNSitePostParamsBean turSNSitePostParamsBean, Principal principal,
 			HttpServletRequest request) {
 		if (principal != null) {
-			turSNSitePostParamsBean.setTargetingRules(
-					turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
-			return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-					new TurSEParameters(q, fq, fqOperator, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
-					TurSNUtils.requestToURI(request), turSNSitePostParamsBean)), HttpStatus.OK);
+			if (existsByTurSNSiteAndLanguage(siteName, locale)) {
+				turSNSitePostParamsBean.setTargetingRules(
+						turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
+				return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
+						new TurSEParameters(q, fq, fqOperator, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
+						TurSNUtils.requestToURI(request), turSNSitePostParamsBean)), HttpStatus.OK);
+			}
+			else {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+			}
 		}
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 	}
