@@ -59,7 +59,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/sn/{snSiteId}/field/ext")
+@RequestMapping("/api/sn/{ignoredSnSiteId}/field/ext")
 @Tag(name = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
 public class TurSNSiteFieldExtAPI {
 	private final TurSNSiteRepository turSNSiteRepository;
@@ -90,8 +90,8 @@ public class TurSNSiteFieldExtAPI {
 	@Operation(summary = "Semantic Navigation Site Field Ext List")
 	@Transactional
 	@GetMapping
-	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String snSiteId) {
-		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
+	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String ignoredSnSiteId) {
+		return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
 			Map<String, TurNLPEntity> nerMap = new HashMap<>();
 			if (turSNSite.getTurNLPVendor() != null) {
 				nerMap = createNERMap(turSNSite.getTurNLPVendor());
@@ -210,14 +210,14 @@ public class TurSNSiteFieldExtAPI {
 
 	@Operation(summary = "Show a Semantic Navigation Site Field Ext")
 	@GetMapping("/{id}")
-	public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
+	public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable String ignoredSnSiteId, @PathVariable String id) {
 		return turSNSiteFieldExtRepository.findById(id).orElse(new TurSNSiteFieldExt());
 	}
 
 	@Operation(summary = "Update a Semantic Navigation Site Field Ext")
 	@PutMapping("/{id}")
-	public TurSNSiteFieldExt turSNSiteFieldExtUpdate(@PathVariable String snSiteId, @PathVariable String id,
-			@RequestBody TurSNSiteFieldExt turSNSiteFieldExt) {
+	public TurSNSiteFieldExt turSNSiteFieldExtUpdate(@PathVariable String ignoredSnSiteId, @PathVariable String id,
+													 @RequestBody TurSNSiteFieldExt turSNSiteFieldExt) {
 		return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExtEdit -> {
 			turSNSiteFieldExtEdit.setFacetName(turSNSiteFieldExt.getFacetName());
 			turSNSiteFieldExtEdit.setMultiValued(turSNSiteFieldExt.getMultiValued());
@@ -236,8 +236,6 @@ public class TurSNSiteFieldExtAPI {
 			this.turSNSiteFieldExtRepository.save(turSNSiteFieldExtEdit);
 
 			this.updateExternalField(turSNSiteFieldExt);
-		//	TurSolrUtils.updateField(turSNSiteFieldExt.getTurSNSite().getTurSEInstance(),
-		//			null, null, null, false);
 			return turSNSiteFieldExtEdit;
 		}).orElse(new TurSNSiteFieldExt());
 
@@ -246,7 +244,7 @@ public class TurSNSiteFieldExtAPI {
 	@Transactional
 	@Operation(summary = "Delete a Semantic Navigation Site Field Ext")
 	@DeleteMapping("/{id}")
-	public boolean turSNSiteFieldExtDelete(@PathVariable String snSiteId, @PathVariable String id) {
+	public boolean turSNSiteFieldExtDelete(@PathVariable String ignoredSnSiteId, @PathVariable String id) {
 		return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExtEdit -> {
 			if (turSNSiteFieldExtEdit.getSnType().equals(TurSNFieldType.SE)) {
 				this.turSNSiteFieldRepository.delete(turSNSiteFieldExtEdit.getExternalId());
@@ -258,9 +256,9 @@ public class TurSNSiteFieldExtAPI {
 
 	@Operation(summary = "Create a Semantic Navigation Site Field Ext")
 	@PostMapping
-	public TurSNSiteFieldExt turSNSiteFieldExtAdd(@PathVariable String snSiteId,
+	public TurSNSiteFieldExt turSNSiteFieldExtAdd(@PathVariable String ignoredSnSiteId,
 			@RequestBody TurSNSiteFieldExt turSNSiteFieldExt) {
-		return createSEField(snSiteId, turSNSiteFieldExt);
+		return createSEField(ignoredSnSiteId, turSNSiteFieldExt);
 	}
 
 	private TurSNSiteFieldExt createSEField(String snSiteId, TurSNSiteFieldExt turSNSiteFieldExt) {
@@ -311,8 +309,8 @@ public class TurSNSiteFieldExtAPI {
 	}
 
 	@GetMapping("/create")
-	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String snSiteId, @PathVariable String locale) {
-		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
+	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String ignoredSnSiteId, @PathVariable String locale) {
+		return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
 			List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository
 					.findByTurSNSiteAndEnabled(turSNSite, 1);
 			turSNSiteFieldExts.forEach(turSNSiteFieldExt -> this.createField(turSNSite, locale, turSNSiteFieldExt));

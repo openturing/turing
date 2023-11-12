@@ -72,6 +72,12 @@
       <artifactId>gson</artifactId>
       <version>2.10.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.jayway.jsonpath</groupId>
+      <artifactId>json-path</artifactId>
+      <version>2.8.0</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -102,6 +108,37 @@
                     <exclude>META-INF/services/javax.jcr.RepositoryFactory</exclude>
                   </excludes>
                 </filter>
+                <filter>
+                  <artifact>org.apache.jackrabbit:jackrabbit-jcr2spi</artifact>
+                  <excludes>
+                    <exclude>META-INF/services/javax.jcr.RepositoryFactory</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>org.apache.logging.log4j:log4j-core</artifact>
+                  <excludes>
+                    <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>commons-logging:commons-logging</artifact>
+                  <excludes>
+                    <exclude>org/apache/commons/logging/Log.class</exclude>
+                    <exclude>org/apache/commons/logging/LogFactory.class</exclude>
+                    <exclude>org/apache/commons/logging/LogConfigurationException.class</exclude>
+                    <exclude>org/apache/commons/logging/impl/NoOpLog.class</exclude>
+                    <exclude>org/apache/commons/logging/impl/SimpleLog.class</exclude>
+                    <exclude>org/apache/commons/logging/impl/SimpleLog$1.class</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                <artifact>*:*</artifact>
+                <excludes>
+                  <exclude>module-info.class</exclude>
+                  <exclude>**/9/module-info.class</exclude>
+                </excludes>
+              </filter>
+
               </filters>
               <finalName>turing-aem</finalName>
               <shadedArtifactAttached>true</shadedArtifactAttached>
@@ -110,6 +147,24 @@
                 <transformer
                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>com.viglet.turing.connector.aem.indexer.TurAEMIndexerTool</mainClass>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                  <resource>MANIFEST.MF</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                  <resource>NOTICE</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                  <resource>DEPENDENCIES</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                  <resource>NOTICE.txt</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                  <resource>LICENSE.txt</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                  <resource>LICENSE</resource>
                 </transformer>
               </transformers>
             </configuration>

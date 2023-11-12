@@ -4,7 +4,6 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
@@ -12,7 +11,6 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.client.sn.job.TurSNJobUtils;
-import com.viglet.turing.connector.aem.indexer.bean.TurAEMPageModel;
 import com.viglet.turing.connector.aem.indexer.conf.AemHandlerConfiguration;
 import com.viglet.turing.connector.aem.indexer.ext.ExtContentInterface;
 import com.viglet.turing.connector.cms.beans.*;
@@ -21,6 +19,7 @@ import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
 import com.viglet.turing.connector.cms.mappers.CTDMappings;
 import com.viglet.turing.connector.cms.mappers.MappingDefinitions;
 import com.viglet.turing.connector.cms.mappers.MappingDefinitionsProcess;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.jackrabbit.commons.JcrUtils;
 import org.json.JSONObject;
@@ -38,15 +37,16 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 
+import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
 @Slf4j
+@Getter
 public class TurAEMIndexerTool {
-
+    public static final String JCR_TITLE = "jcr:title";
     public static final String CONTENT_FRAGMENT = "content-fragment";
     private static final JCommander jCommander = new JCommander();
     public static final String STATIC_FILE = "static-file";
-
     @Parameter(names = {"--host",
             "-h"}, description = "The host on which Content Management server is installed.", required = true)
     private String hostAndPort = null;
@@ -109,11 +109,11 @@ public class TurAEMIndexerTool {
         try {
             jCommander.parse(argv);
 
-         //   if (turAEMIndexerTool.debug) {
-           //     ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory.
+            //   if (turAEMIndexerTool.debug) {
+            //     ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory.
             //            getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-             //   root.setLevel(Level.DEBUG);
-           // }
+            //   root.setLevel(Level.DEBUG);
+            // }
 
             if (turAEMIndexerTool.help) {
                 jCommander.usage();
@@ -158,16 +158,9 @@ public class TurAEMIndexerTool {
 
     public void getRead() throws Exception {
         if (isCTDIntoMapping(contentType, config)) {
-
             switch (mode) {
                 case JSON:
-                    start = System.currentTimeMillis();
-                    String json = getResponseBody(String.format("%s%s.infinity.json",
-                            hostAndPort, sitePath));
-                    siteName = new JSONObject(json).getJSONObject("jcr:content").getString("jcr:title");
-                    getNodesFromJson(sitePath);
-                    long elapsed = System.currentTimeMillis() - start;
-                    jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+                    getNodesFromJson();
                     break;
                 case JCR:
                     getNodesFromJcr();
@@ -179,6 +172,18 @@ public class TurAEMIndexerTool {
         }
     }
 
+    private void getNodesFromJson() {
+        start = System.currentTimeMillis();
+        String jsonUrl = String.format("%s%s.infinity.json",
+                hostAndPort, sitePath);
+        String json = getResponseBody(jsonUrl);
+        JSONObject jsonObject = new JSONObject(json);
+        siteName = new JSONObject(json).getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
+        getNodeFromJson(sitePath, jsonObject);
+        long elapsed = System.currentTimeMillis() - start;
+        jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+    }
+
     private void getNodesFromJcr() throws RepositoryException {
         Repository repository = JcrUtils.getRepository(hostAndPort + "/crx/server");
         Session session = repository.login(new SimpleCredentials(username, password.toCharArray()));
@@ -187,7 +192,7 @@ public class TurAEMIndexerTool {
             AemSite aemSite = new AemSite(node);
             siteName = aemSite.getTitle();
             start = System.currentTimeMillis();
-            getNode(node);
+            getNodeFromJcr(node);
             long elapsed = System.currentTimeMillis() - start;
             jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
         } finally {
@@ -204,7 +209,6 @@ public class TurAEMIndexerTool {
                 return i + "th";
             default:
                 return i + suffixes[i % 10];
-
         }
     }
 
@@ -226,49 +230,68 @@ public class TurAEMIndexerTool {
         }
     }
 
-    private void getNodesFromJson(String nodePath) {
-        String json = getResponseBody(String.format("%s%s.infinity.json",
-                hostAndPort, nodePath));
-        JSONObject jsonObject = new JSONObject(json);
-        List<String> systemAttributes = new ArrayList<>();
-        systemAttributes.add("jcr:content");
-        systemAttributes.add("jcr:created");
-        systemAttributes.add("jcr:createdBy");
-        systemAttributes.add("jcr:primaryType");
-
-        if (jsonObject.getString("jcr:primaryType").equals(contentType)) {
-
+    private void getNodeFromJson(String nodePath, JSONObject jsonObject) {
+        if (jsonObject.getString(JCR_PRIMARYTYPE).equals(contentType)) {
             itemsProcessedStatus();
-            String urlContent = hostAndPort + nodePath + ".model.json";
-            String contentJson = getResponseBody(urlContent);
-            try {
-                ObjectMapper objectMapper = new ObjectMapper()
-                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                TurAEMPageModel turAEMPageModel = objectMapper.readValue(contentJson, TurAEMPageModel.class);
-                AemObject aemObject = new AemObject(jsonObject.getJSONObject("jcr:content"), turAEMPageModel);
-                CTDMappings ctdMappings = getCTDMappingMap(config).get(contentType);
-                List<TurAttrDef> extAttributes = null;
-                try {
-                    extAttributes = runCustomClassFromContentType(ctdMappings, aemObject);
-                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                         NoSuchMethodException | ClassNotFoundException e) {
-                    log.error(e.getMessage(), e);
-                }
-                try {
-                    indexObject(aemObject, extAttributes);
-                } catch (RepositoryException ex) {
-                    log.error(ex.getMessage(), ex);
-                }
-
-            } catch (JsonProcessingException ex) {
-                log.error(ex.getMessage(), ex);
-            }
+            CTDMappings ctdMappings = getCTDMappingMap(config).get(contentType);
+            AemObject aemObject = new AemObject(nodePath, jsonObject);
+            prepareIndexObject(ctdMappings, aemObject);
         }
         jsonObject.toMap().forEach((key, value) -> {
-            if (!systemAttributes.contains(key)) {
-                this.getNodesFromJson(nodePath + "/" + key);
+            if (!key.startsWith("jcr:")) {
+                this.getNodeFromJson(nodePath + "/" + key, jsonObject.getJSONObject(key));
             }
         });
+    }
+
+    private void getNodeFromJcr(Node node) {
+        try {
+            if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
+                NodeIterator nodeIterator = node.getNodes();
+                while (nodeIterator.hasNext()) {
+                    Node nodeChild = nodeIterator.nextNode();
+                    if (hasContentType(nodeChild, contentType) || contentType == null) {
+                        itemsProcessedStatus();
+                        CTDMappings ctdMappings = getCTDMappingMap(config).get(contentType);
+                        AemObject aemObject = new AemObject(nodeChild);
+                        if (!delivered || aemObject.isDelivered()) {
+                            prepareIndexObject(ctdMappings, aemObject);
+                        }
+                    }
+                    if (nodeChild.hasNodes()) {
+                        getNodeFromJcr(nodeChild);
+                    }
+                }
+            }
+        } catch (RepositoryException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    private void prepareIndexObject(CTDMappings ctdMappings, AemObject aemObject) {
+        try {
+            final List<TurAttrDef> extAttributes = runCustomClassFromContentType(ctdMappings, aemObject);
+            switch (Objects.requireNonNull(contentType)) {
+                case CQ_PAGE:
+                    indexObject(aemObject, extAttributes);
+                    break;
+                case DAM_ASSET:
+                    if (ctdMappings.getSubType() != null) {
+                        if (ctdMappings.getSubType().equals(CONTENT_FRAGMENT)
+                                && aemObject.isContentFragment()) {
+                            aemObject.setDataPath("data/master");
+                            indexObject(aemObject, extAttributes);
+                        } else if (ctdMappings.getSubType().equals(STATIC_FILE)) {
+                            aemObject.setDataPath("metadata");
+                            indexObject(aemObject, extAttributes);
+                        }
+                    }
+                    break;
+            }
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException |
+                 ClassNotFoundException | RepositoryException e) {
+            log.error(e.getMessage(), e);
+        }
     }
 
     private void itemsProcessedStatus() {
@@ -288,47 +311,6 @@ public class TurAEMIndexerTool {
         }
     }
 
-    private void getNode(Node node) {
-        try {
-            if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
-                NodeIterator nodeIterator = node.getNodes();
-                while (nodeIterator.hasNext()) {
-
-                    Node nodeChild = nodeIterator.nextNode();
-                    if (hasContentType(nodeChild, contentType) || contentType == null) {
-                        itemsProcessedStatus();
-                        AemObject aemObject = new AemObject(nodeChild);
-                        CTDMappings ctdMappings = getCTDMappingMap(config).get(contentType);
-                        if (!delivered || aemObject.isDelivered()) {
-                            final List<TurAttrDef> extAttributes = runCustomClassFromContentType(ctdMappings, aemObject);
-                            switch (Objects.requireNonNull(contentType)) {
-                                case CQ_PAGE:
-                                    indexObject(aemObject, extAttributes);
-                                    break;
-                                case DAM_ASSET:
-                                    if (ctdMappings.getSubType() != null) {
-                                        if (ctdMappings.getSubType().equals(CONTENT_FRAGMENT)
-                                                && aemObject.isContentFragment()) {
-                                            indexObject(new AemObject(nodeChild, "data/master"), extAttributes);
-                                        } else if (ctdMappings.getSubType().equals(STATIC_FILE)) {
-                                            indexObject(new AemObject(nodeChild, "metadata"), extAttributes);
-                                        }
-                                    }
-                                    break;
-                            }
-                        }
-                    }
-                    if (nodeChild.hasNodes()) {
-                        getNode(nodeChild);
-                    }
-                }
-            }
-        } catch (RepositoryException | ClassNotFoundException | InvocationTargetException | InstantiationException |
-                 IllegalAccessException | NoSuchMethodException e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
     private List<TurAttrDef> runCustomClassFromContentType(CTDMappings ctdMappings, AemObject aemObject)
             throws InstantiationException, IllegalAccessException, InvocationTargetException,
             NoSuchMethodException, ClassNotFoundException {
@@ -337,7 +319,7 @@ public class TurAEMIndexerTool {
             Object extAttribute = Class.forName(ctdMappings.getClassName())
                     .getDeclaredConstructor().newInstance();
             extAttributes = ((ExtContentInterface) extAttribute)
-                    .consume(aemObject, config);
+                    .consume(aemObject, config, this);
         }
         return extAttributes;
     }
@@ -351,21 +333,16 @@ public class TurAEMIndexerTool {
         String locale = config.getLocaleByPath(turSNSiteConfig.getName(), aemObject.getPath());
         final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE,
                 locale);
-        for (TurAttrDef turAttrDef : turAttrDefList) {
+        turAttrDefList.forEach(turAttrDef -> {
             String attributeName = turAttrDef.getTagName();
             turAttrDef.getMultiValue().forEach(attributeValue -> {
                 if (attributes.containsKey(attributeName)) {
-                    if (!(attributes.get(attributeName) instanceof ArrayList)) {
-                        attributeAsList(attributes, attributeName, attributeValue);
-                        turSNJobItem.setAttributes(attributes);
-                    } else {
-                        attributeAsObject(attributes, attributeName, attributeValue);
-                    }
+                    addItemInExistingAttribute(attributeValue, attributes, attributeName);
                 } else {
-                    attributes.put(turAttrDef.getTagName(), attributeValue);
+                    addFirstItemToAttribute(turAttrDef, attributeValue, attributes);
                 }
             });
-        }
+        });
         attributes.put("site", siteName);
 
         turSNJobItem.setAttributes(attributes);
@@ -375,7 +352,7 @@ public class TurAEMIndexerTool {
             try {
                 System.out.println(new ObjectMapper().writeValueAsString(turSNJobItems));
             } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+                log.error(e.getMessage(), e);
             }
         }
         TurUsernamePasswordCredentials credentials = new TurUsernamePasswordCredentials(config.getLogin(),
@@ -391,6 +368,12 @@ public class TurAEMIndexerTool {
                 log.error(e.getMessage(), e);
             }
         }
+    }
+
+    private static void addFirstItemToAttribute(TurAttrDef turAttrDef,
+                                                String attributeValue,
+                                                Map<String, Object> attributes) {
+        attributes.put(turAttrDef.getTagName(), attributeValue);
     }
 
     public static boolean isCTDIntoMapping(String contentTypeName, IHandlerConfiguration config) {
@@ -439,6 +422,7 @@ public class TurAEMIndexerTool {
         }
         return attributesDefs;
     }
+
     private static TurAttrDef getTurAttrDefUnique(TuringTag turingTag, List<TurAttrDef> attributeDefsXML) {
         TurMultiValue multiValue = new TurMultiValue();
         for (TurAttrDef turAttrDef : attributeDefsXML) {
@@ -450,20 +434,29 @@ public class TurAEMIndexerTool {
         }
         return new TurAttrDef(turingTag.getTagName(), multiValue);
     }
-    private static void attributeAsObject(Map<String, Object> attributes, String nodeName, String nodes) {
-        @SuppressWarnings("unchecked")
-        List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
-        attributeValues.add(nodes);
-        attributes.put(nodeName, attributeValues);
+
+    private static void addItemInExistingAttribute(String attributeValue,
+                                                   Map<String, Object> attributes,
+                                                   String attributeName) {
+        if (attributes.get(attributeName) instanceof ArrayList) {
+            addItemToArray(attributes, attributeName, attributeValue);
+        } else {
+            convertAttributeSingleValueToArray(attributes, attributeName, attributeValue);
+        }
     }
-    private static void attributeAsList(Map<String, Object> attributes, String nodeName, String attributeValue) {
+
+    private static void convertAttributeSingleValueToArray(Map<String, Object> attributes, String attributeName, String attributeValue) {
         List<Object> attributeValues = new ArrayList<>();
-        attributeValues.add(attributes.get(nodeName));
+        attributeValues.add(attributes.get(attributeName));
         attributeValues.add(attributeValue);
-
-        attributes.put(nodeName, attributeValues);
+        attributes.put(attributeName, attributeValues);
     }
-
+    private static void addItemToArray(Map<String, Object> attributes, String attributeName, String attributeValue) {
+        @SuppressWarnings("unchecked")
+        List<Object> attributeValues = (List<Object>) attributes.get(attributeName);
+        attributeValues.add(attributeValue);
+        attributes.put(attributeName, attributeValues);
+    }
     private static boolean hasContentType(Node nodeChild, String primaryType)
             throws RepositoryException {
         return primaryType != null && nodeChild.getProperty(JCR_PRIMARYTYPE).getString().equals(primaryType);
