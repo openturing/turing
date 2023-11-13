@@ -20,25 +20,32 @@
  */
 package com.viglet.turing.onstartup.auth;
 
+import com.viglet.turing.persistence.model.auth.TurRole;
+import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
 
+import java.util.Arrays;
+import java.util.Collections;
+
 @Component
 public class TurGroupOnStartup {
 	@Autowired
 	private TurGroupRepository turGroupRepository;
-
+	@Autowired
+	private TurRoleRepository turRoleRepository;
 	public void createDefaultRows() {
 
 		if (turGroupRepository.findAll().isEmpty()) {
-
+			TurRole adminRole = turRoleRepository.findByName("ROLE_ADMIN");
 			TurGroup turGroup = new TurGroup();
 
 			turGroup.setName("Administrator");
 			turGroup.setDescription("Administrator Group");
+			turGroup.setTurRoles(Collections.singletonList(adminRole));
 			turGroupRepository.save(turGroup);
 		}
 

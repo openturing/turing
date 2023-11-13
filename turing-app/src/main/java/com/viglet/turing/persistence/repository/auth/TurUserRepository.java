@@ -35,8 +35,6 @@ import com.viglet.turing.persistence.model.auth.TurUser;
 public interface TurUserRepository extends JpaRepository<TurUser, String> {
 
 	TurUser findByUsername(String username);
-	
-	boolean existsByUsernameAndPassword(String username, String password);
 
 	Set<TurUser> findByTurGroupsIn(Collection<TurGroup> groups);
 

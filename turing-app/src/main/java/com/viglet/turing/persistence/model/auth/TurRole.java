@@ -26,6 +26,7 @@ import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,18 +45,31 @@ public class TurRole implements Serializable {
 	@UuidGenerator
 	@GeneratedValue(generator = "UUID")
 
-	@Column(name = "id", updatable = false, nullable = false)
+	@Column(updatable = false, nullable = false)
 	private String id;
 
 
-	@Column(name = "name", nullable = false, length = 50)
+	@Column(nullable = false, length = 50)
 	private String name;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String description;
 
 	@ManyToMany
-	private Set<TurGroup> turGroups = new HashSet<>();
+	private Collection<TurGroup> turGroups = new HashSet<>();
+
+	@ManyToMany
+	@JoinTable(name = "roles_privileges",
+			joinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"),
+			inverseJoinColumns = @JoinColumn(name = "privilege_id", referencedColumnName = "id"))
+	private Collection<TurPrivilege> turPrivileges = new HashSet<>();
+
+	public TurRole() {
+		super();
+	}
+	public TurRole(String name) {
+		this.name = name;
+	}
 
 	public void setId(String id) {
 		this.id = id;
@@ -69,11 +83,16 @@ public class TurRole implements Serializable {
 		this.description = description;
 	}
 
-	public void setTurGroups(Set<TurGroup> turGroups) {
+	public void setTurGroups(Collection<TurGroup> turGroups) {
 		this.turGroups.clear();
 		if (turGroups != null) {
 			this.turGroups.addAll(turGroups);
 		}
 	}
-
+	public void setTurPrivileges(Collection<TurPrivilege> turPrivileges) {
+		this.turPrivileges.clear();
+		if (turPrivileges != null) {
+			this.turPrivileges.addAll(turPrivileges);
+		}
+	}
 }

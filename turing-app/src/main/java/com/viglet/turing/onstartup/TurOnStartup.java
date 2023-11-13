@@ -21,6 +21,7 @@
 package com.viglet.turing.onstartup;
 
 import com.viglet.turing.onstartup.auth.TurGroupOnStartup;
+import com.viglet.turing.onstartup.auth.TurRoleOnStartup;
 import com.viglet.turing.onstartup.auth.TurUserOnStartup;
 import com.viglet.turing.onstartup.converse.TurConverseAgentOnStartup;
 import com.viglet.turing.onstartup.ml.TurMLInstanceOnStartup;
@@ -84,6 +85,8 @@ public class TurOnStartup implements ApplicationRunner {
 	private TurUserOnStartup turUserOnStartup;
 	@Autowired
 	private TurGroupOnStartup turGroupOnStartup;
+	@Autowired
+	private TurRoleOnStartup turRoleOnStartup;
 	
 	@Override
 	public void run(ApplicationArguments arg0) throws Exception {
@@ -94,6 +97,7 @@ public class TurOnStartup implements ApplicationRunner {
 			log.info("First Time Configuration ...");
 
 			turLocaleOnStartup.createDefaultRows();
+			turRoleOnStartup.createDefaultRows();
 			turGroupOnStartup.createDefaultRows();
 			turUserOnStartup.createDefaultRows();		
 			turNLPFeatureOnStartup.createDefaultRows();

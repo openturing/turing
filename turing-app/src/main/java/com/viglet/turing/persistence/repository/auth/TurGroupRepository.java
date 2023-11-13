@@ -37,7 +37,5 @@ public interface TurGroupRepository extends JpaRepository<TurGroup, String> {
 	TurGroup findByName(String name);
 	
 	Set<TurGroup> findByTurUsersIn(Collection<TurUser> users);
-	
-	int countByNameAndTurUsersIn(String name, Collection<TurUser> turUsers);
-	
+
 }
