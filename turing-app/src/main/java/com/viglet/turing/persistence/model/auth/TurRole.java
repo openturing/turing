@@ -55,11 +55,11 @@ public class TurRole implements Serializable {
 	@Column
 	private String description;
 
-	@ManyToMany
+	@ManyToMany(mappedBy = "turRoles")
 	private Collection<TurGroup> turGroups = new HashSet<>();
 
 	@ManyToMany
-	@JoinTable(name = "roles_privileges",
+	@JoinTable(name = "tur_roles_privileges",
 			joinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"),
 			inverseJoinColumns = @JoinColumn(name = "privilege_id", referencedColumnName = "id"))
 	private Collection<TurPrivilege> turPrivileges = new HashSet<>();

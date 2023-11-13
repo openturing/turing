@@ -51,7 +51,7 @@ public class TurGroup implements Serializable {
 
 	private String description;
 
-	@ManyToMany(mappedBy = "turGroups")
+	@ManyToMany
 	private Collection<TurRole> turRoles = new HashSet<>();
 
 	@ManyToMany(mappedBy = "turGroups")
