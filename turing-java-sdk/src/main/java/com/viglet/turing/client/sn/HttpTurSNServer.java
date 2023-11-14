@@ -34,7 +34,6 @@ public class HttpTurSNServer extends TurSNServer {
 		super(turSNServer);
 
 	}
-
 	public HttpTurSNServer(URL serverURL, String siteName) {
 		super(serverURL, siteName);
 	}
@@ -43,12 +42,20 @@ public class HttpTurSNServer extends TurSNServer {
 		super(serverURL, siteName, locale);
 
 	}
-
+	@Deprecated
 	public HttpTurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials) {
 		super(serverURL, siteName, locale, credentials);
 
 	}
+	public HttpTurSNServer(URL serverURL, String siteName, String locale, String apiKey) {
+		super(serverURL, siteName, locale, apiKey);
 
+	}
+	public HttpTurSNServer(URL serverURL, String siteName, String locale, String apiKey, String userId) {
+		super(serverURL, siteName, locale, apiKey, userId);
+
+	}
+	@Deprecated
 	public HttpTurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials,
 			String userId) {
 		super(serverURL, siteName, locale, credentials, userId);

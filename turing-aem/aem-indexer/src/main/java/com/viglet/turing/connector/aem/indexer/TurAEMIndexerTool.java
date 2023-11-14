@@ -6,7 +6,6 @@ import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.TurSNServer;
-import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -355,15 +354,11 @@ public class TurAEMIndexerTool {
                 log.error(e.getMessage(), e);
             }
         }
-        TurUsernamePasswordCredentials credentials = new TurUsernamePasswordCredentials(config.getLogin(),
-                config.getPassword());
-        TurSNServer turSNServer;
         if (!dryRun) {
             try {
-                turSNServer = new TurSNServer(new URL(config.getTuringURL()), turSNSiteConfig.getName(),
-                        locale, credentials);
+                TurSNServer turSNServer = new TurSNServer(new URL(config.getTuringURL()), turSNSiteConfig.getName(),
+                        locale, config.getApiKey());
                 TurSNJobUtils.importItems(turSNJobItems, turSNServer, false);
-
             } catch (MalformedURLException e) {
                 log.error(e.getMessage(), e);
             }

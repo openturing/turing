@@ -76,7 +76,7 @@ import com.viglet.turing.commons.sn.search.TurSNParamType;
  */
 public class TurSNServer {
 
-	private static Logger logger = Logger.getLogger(TurSNServer.class.getName());
+	private static final Logger logger = Logger.getLogger(TurSNServer.class.getName());
 
 	private static final String SITE_NAME_DEFAULT = "Sample";
 
@@ -118,6 +118,8 @@ public class TurSNServer {
 
 	private TurUsernamePasswordCredentials credentials;
 
+	private String apiKey;
+
 	private String providerName;
 
 	@Deprecated
@@ -148,18 +150,35 @@ public class TurSNServer {
 
 	}
 
+	public TurSNServer(URL serverURL, String siteName, String locale, String apiKey,
+					   String userId) {
+		super();
+		this.serverURL = serverURL;
+		this.siteName = siteName;
+		this.locale = locale;
+		this.turSNServer = String.format("%s/api/sn/%s", this.serverURL, this.siteName);
+		this.apiKey = apiKey;
+		this.providerName = PROVIDER_NAME_DEFAULT;
+		this.turSNSitePostParams = new TurSNSitePostParamsBean();
+		this.turSNSitePostParams.setUserId(userId);
+		this.turSNSitePostParams.setPopulateMetrics(true);
+
+	}
+
 	public TurSNServer(URL serverURL, String siteName) {
 		this(serverURL, siteName, LOCALE_DEFAULT);
 	}
 
 	public TurSNServer(URL serverURL, String siteName, String locale) {
-		this(serverURL, siteName, locale, null);
+		this(serverURL, siteName, locale, (TurUsernamePasswordCredentials) null);
 	}
 
 	public TurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials) {
 		this(serverURL, siteName, locale, credentials, credentials != null ? credentials.getUsername() : null);
 	}
-
+	public TurSNServer(URL serverURL, String siteName, String locale, String apiKey) {
+		this(serverURL, siteName, locale, apiKey, null);
+	}
 	public TurSNServer(URL serverURL, TurUsernamePasswordCredentials credentials) {
 		this(serverURL, SITE_NAME_DEFAULT, LOCALE_DEFAULT, credentials,
 				credentials != null ? credentials.getUsername() : null);
@@ -217,6 +236,14 @@ public class TurSNServer {
 		return turSNSitePostParams;
 	}
 
+	public String getApiKey() {
+		return apiKey;
+	}
+
+	public void setApiKey(String apiKey) {
+		this.apiKey = apiKey;
+	}
+
 	public void setTurSNSitePostParams(TurSNSitePostParamsBean turSNSitePostParams) {
 		this.turSNSitePostParams = turSNSitePostParams;
 	}
@@ -240,7 +267,7 @@ public class TurSNServer {
 					String jsonResult = new ObjectMapper().writeValueAsString(turSNSearchLatestRequestBean);
 					httpPost.setEntity(new StringEntity(jsonResult, StandardCharsets.UTF_8));
 				}
-				TurSNClientUtils.basicAuth(httpPost, this.getCredentials());
+				TurSNClientUtils.authentication(httpPost, this.getCredentials(), this.getApiKey());
 				try {
 					return new ObjectMapper().readValue(openConnectionAndRequest(httpPost),
 							new TypeReference<List<String>>() {
@@ -398,7 +425,7 @@ public class TurSNServer {
 	}
 
 	private void groupByRequest(URIBuilder turingURL) {
-		if (this.turSNQuery.getGroupBy() != null && this.turSNQuery.getGroupBy().trim().length() > 0) {
+		if (this.turSNQuery.getGroupBy() != null && !this.turSNQuery.getGroupBy().trim().isEmpty()) {
 			turingURL.addParameter(TurSNParamType.GROUP, this.turSNQuery.getGroupBy());
 		}
 	}
@@ -450,9 +477,8 @@ public class TurSNServer {
 	}
 
 	private TurSNFacetFieldList setFacetFieldsResponse(TurSNSiteSearchBean turSNSiteSearchBean) {
-		TurSNFacetFieldList facetFields = new TurSNFacetFieldList(turSNSiteSearchBean.getWidget().getFacet(),
+        return new TurSNFacetFieldList(turSNSiteSearchBean.getWidget().getFacet(),
 				turSNSiteSearchBean.getWidget().getFacetToRemove());
-		return facetFields;
 	}
 
 	private TurSNDocumentList setResultsResponse(TurSNSiteSearchResultsBean turSNSiteSearchResultsBean,
@@ -501,7 +527,7 @@ public class TurSNServer {
 			String jsonResult = new ObjectMapper().writeValueAsString(this.getTurSNSitePostParams());
 			httpPost.setEntity(new StringEntity(jsonResult, StandardCharsets.UTF_8));
 
-			TurSNClientUtils.basicAuth(httpPost, this.getCredentials());
+			TurSNClientUtils.authentication(httpPost, this.getCredentials(), this.getApiKey());
 
 			logger.fine(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
 		} catch (JsonProcessingException | URISyntaxException e) {

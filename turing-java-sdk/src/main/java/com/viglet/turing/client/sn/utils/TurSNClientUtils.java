@@ -15,13 +15,12 @@
  */
 package com.viglet.turing.client.sn.utils;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
+import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 
-import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
  * Client Utils
@@ -32,8 +31,11 @@ import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
  *
  */
 public class TurSNClientUtils {
-	public static void basicAuth(HttpPost httpPost, TurUsernamePasswordCredentials credentials) {
-		if (credentials != null && credentials.getUsername() != null) {
+	public static void authentication(HttpPost httpPost, TurUsernamePasswordCredentials credentials, String apiKey) {
+		if (apiKey != null) {
+			httpPost.setHeader("Key", apiKey);
+		}
+		else  if (credentials != null && credentials.getUsername() != null) {
 			String auth = String.format("%s:%s", credentials.getUsername(), credentials.getPassword());
 			String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
 			String authHeader = "Basic " + encodedAuth;

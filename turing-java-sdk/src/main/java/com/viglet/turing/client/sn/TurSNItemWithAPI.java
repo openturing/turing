@@ -19,6 +19,7 @@ package com.viglet.turing.client.sn;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,7 +57,7 @@ public class TurSNItemWithAPI {
 					if (queryParams.containsKey(param.getName()))
 						queryParams.get(param.getName()).add(param.getValue());
 					else
-						queryParams.put(param.getName(), new ArrayList<>(Arrays.asList(param.getValue())));
+						queryParams.put(param.getName(), new ArrayList<>(Collections.singletonList(param.getValue())));
 				});
 			} catch (URISyntaxException e) {
 				logger.log(Level.SEVERE, e.getMessage(), e);

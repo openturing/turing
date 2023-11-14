@@ -31,9 +31,9 @@ public class TurSNJobItem implements Serializable{
 
 	private static final long serialVersionUID = 1L;
 	
-	private String locale;
+	private final String locale;
 	
-	private TurSNJobAction turSNJobAction;
+	private final TurSNJobAction turSNJobAction;
 	
 	private transient Map<String, Object> attributes;
 

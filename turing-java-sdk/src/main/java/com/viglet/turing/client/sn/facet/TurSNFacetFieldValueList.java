@@ -16,7 +16,6 @@ public class TurSNFacetFieldValueList implements Iterable<TurSNFacetFieldValue>{
 			turSNFacetFieldValue.setCount(facetItem.getCount());
 			turFacetFieldValues.add(turSNFacetFieldValue);
 		}
-
 	}
 
 	@Override

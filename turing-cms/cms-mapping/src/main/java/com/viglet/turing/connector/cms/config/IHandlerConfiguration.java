@@ -26,9 +26,7 @@ public interface IHandlerConfiguration {
 
 	String getCDAContextName(String site);
 
-	String getLogin();
-
-	String getPassword();
+	String getApiKey();
 
 	String getFileSourcePath();
 }

@@ -62,7 +62,7 @@ public class TurSNJobUtils {
 			httpPost.setHeader("Content-type", "application/json");
 			httpPost.setHeader("Accept-Encoding", StandardCharsets.UTF_8.name());
 
-			TurSNClientUtils.basicAuth(httpPost, turSNServer.getCredentials());
+			TurSNClientUtils.authentication(httpPost, turSNServer.getCredentials(), turSNServer.getApiKey());
 			try (CloseableHttpResponse response = client.execute(httpPost)) {
 				if (logger.isLoggable(Level.FINE)) {
 					logger.fine(String.format("Viglet Turing Index Request URI: %s", httpPost.getURI()));
