@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author Alexandre Oliveira
@@ -98,6 +99,11 @@ public class TurSNSiteSpotlightAPI {
 			turSNSiteSpotlightEdit.setName(turSNSiteSpotlight.getName());
 			turSNSiteSpotlightEdit.setProvider(turSNSiteSpotlight.getProvider());
 			turSNSiteSpotlightEdit.setTurSNSite(turSNSiteSpotlight.getTurSNSite());
+			turSNSiteSpotlightEdit.setTurSNSiteSpotlightTerms(turSNSiteSpotlight.getTurSNSiteSpotlightTerms()
+					.stream()
+					.peek(term ->
+							term.setTurSNSiteSpotlight(turSNSiteSpotlight))
+					.collect(Collectors.toSet()));
 			return saveSpotlight(turSNSiteSpotlight, turSNSiteSpotlightEdit);
 		}).orElse(new TurSNSiteSpotlight());
 	}

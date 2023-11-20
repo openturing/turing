@@ -21,7 +21,6 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
   private turSNSiteSEFields: TurSNSiteField[] = new Array<TurSNSiteField>;
   private readonly siteId: string;
   private readonly newObject: boolean = false;
-  private deletedConditions: Array<string> = new Array<string>;
 
   constructor(
     private readonly notifier: NotifierService,
@@ -61,8 +60,9 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
   }
 
   removeCondition(snRankingExpression: TurSNRankingExpression, snRankingCondition: TurSNRankingCondition) {
-    this.deletedConditions.push(snRankingCondition.id);
-    snRankingExpression.turSNRankingConditions = snRankingExpression.turSNRankingConditions.filter(condition => condition != snRankingCondition)
+    snRankingExpression.turSNRankingConditions =
+      snRankingExpression.turSNRankingConditions.filter(condition =>
+        condition != snRankingCondition)
   }
   ngOnInit(): void {
     // Empty

@@ -1,2 +1,1 @@
-
-gradlew turing-app:bootrun --args='--spring.profiles.active=dev-ui' -Pno-ui
+mvn -Dmaven.repo.local=D:\repo spring-boot:run -pl turing-app -Dskip.npm  -Dspring-boot.run.profiles=dev-ui

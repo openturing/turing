@@ -8,6 +8,7 @@ import { TurSNSiteSpotlight } from '../../../model/sn-site-spotlight.model';
 import { TurSNSiteSpotlightService } from '../../../service/sn-site-spotlight.service';
 import { TurSNSiteLocaleService } from '../../../service/sn-site-locale.service';
 import { TurSNSiteLocale } from '../../../model/sn-site-locale.model';
+import {TurSNSiteSpotlightTerm} from "../../../model/sn-site-spotlight-term.model";
 
 @Component({
   selector: 'sn-site-spotlight-page',
@@ -62,6 +63,10 @@ export class TurSNSiteSpotlightPageComponent implements OnInit {
     return this.newObject ? "Create spotlight" : "Update spotlight";
   }
 
+  newTerm(turSNSiteSpotlightTerms: TurSNSiteSpotlightTerm[]) {
+    turSNSiteSpotlightTerms.push(new TurSNSiteSpotlightTerm());
+
+  }
   public save(_turSNSiteSpotlight: TurSNSiteSpotlight) {
     this.turSNSiteSpotlightService.save(this.siteId, _turSNSiteSpotlight, this.newObject).subscribe(
       (turSNSiteSpotlight: TurSNSiteSpotlight) => {
@@ -95,5 +100,10 @@ export class TurSNSiteSpotlightPageComponent implements OnInit {
       () => {
         // The POST observable is now completed.
       });
+  }
+
+  removeTerm(snSiteSpotlight: TurSNSiteSpotlight, snSiteSpotlightTerm: TurSNSiteSpotlightTerm) {
+    snSiteSpotlight.turSNSiteSpotlightTerms =
+      snSiteSpotlight.turSNSiteSpotlightTerms.filter(term => term != snSiteSpotlightTerm);
   }
 }

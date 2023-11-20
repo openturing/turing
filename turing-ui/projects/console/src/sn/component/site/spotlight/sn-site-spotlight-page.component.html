@@ -1,135 +1,3 @@
-<style>
-  .topic-tag-action {
-    display: inline-flex;
-    padding-right: 0;
-    margin: .6em .5em 0 0;
-  }
-
-  .topic-tag-action,
-  .delete-topic-button,
-  .topic-tag {
-    display: inline-block;
-    padding: 0 7px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 18px;
-    border: 1px solid transparent;
-    border-radius: 2em;
-    padding-right: 10px;
-    padding-left: 10px;
-    line-height: 22px;
-    color: var(--color-accent-fg, var(--color-topic-tag-text));
-    background-color: var(--color-accent-subtle, var(--color-topic-tag-bg));
-    border: 1px solid var(--color-topic-tag-border, transparent);
-  }
-
-  .topic-tag-action {
-    display: inline-flex;
-    align-items: center;
-    padding-left: .8em;
-    margin: .4em .4em 0 0;
-    background-color: var(--color-bg-info);
-    border-radius: 6px;
-  }
-
-  .tag-input-container ul {
-    list-style: none;
-  }
-
-  .topic-input-container .tag-input {
-    /* width: 908px; */
-    cursor: text;
-  }
-
-  .tag-input-container ul {
-    list-style: none;
-  }
-
-  .d-inline {
-    display: inline !important;
-  }
-
-  .topic-tag-action,
-  .delete-topic-button,
-  .topic-tag {
-    display: inline-block;
-    padding: 0 7px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 18px;
-    border: 1px solid transparent;
-    border-radius: 2em;
-    padding-right: 10px;
-    padding-left: 10px;
-    line-height: 22px;
-    color: var(--color-accent-fg, var(--color-topic-tag-text));
-    background-color: var(--color-accent-subtle, var(--color-topic-tag-bg));
-    border: 1px solid var(--color-topic-tag-border, transparent);
-  }
-
-  .delete-topic-button,
-  .topic-tag-action .add-topic-button,
-  .topic-tag-action .remove-topic-button {
-    width: 24px;
-    padding: 0;
-    height: 24px;
-    color: inherit;
-    border-color: transparent;
-    border-left: 0;
-    border-radius: 2em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .topic-tag-action,
-  .delete-topic-button,
-  .topic-tag {
-    display: inline-block;
-    padding: 0 7px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 18px;
-    border: 1px solid transparent;
-    border-radius: 2em;
-    padding-right: 10px;
-    padding-left: 10px;
-    line-height: 22px;
-    color: var(--color-accent-fg, var(--color-topic-tag-text));
-    background-color: var(--color-accent-subtle, var(--color-topic-tag-bg));
-    border: 1px solid var(--color-topic-tag-border, transparent);
-  }
-
-  .delete-topic-button,
-  .delete-topic-link {
-    display: inline-block;
-    width: 26px;
-    color: var(--color-text-tertiary);
-    background-color: var(--color-bg-info);
-    border-top: 0;
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 1px solid #b4d9ff;
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
-  }
-
-  .tag-input input {
-    float: left;
-    padding-left: 2px;
-    margin: 0;
-    background: none;
-    border: 0;
-    box-shadow: none;
-  }
-
-  .tag-input-container .suggester {
-    position: absolute;
-    z-index: 100;
-    width: 100%;
-    margin-top: -1px;
-  }
-</style>
 <div *ngIf="(getTurSNSiteSpotlight() | async) as snSiteSpotlight; else loading">
   <div class="Subhead mt-4">
     <div class="Subhead-heading">
@@ -146,17 +14,19 @@
 
     <div class="Subhead-actions" style="display: inherit;">
       <details *ngIf="!isNewObject()" #modalDeleteSpotlight id="modalDeleteSpotlight"
-        class="details-reset details-overlay details-overlay-dark mr-2" style="display: unset;">
+               class="details-reset details-overlay details-overlay-dark mr-2" style="display: unset;">
         <summary class="btn btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
-            class="mr-1"></span>Delete spotlight</summary>
+                                                                          class="mr-1"></span>Delete spotlight
+        </summary>
         <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast" style="overflow: hidden;">
           <div class="Box-header">
             <button onclick='document.getElementById("modalDeleteSpotlight").removeAttribute("open");'
-              class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
-              <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
-                aria-hidden="true">
+                    class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog"
+                    data-close-dialog>
+              <svg class="octicon octicon-x" viewBox="0 0 12 16" width="12" height="16"
+                   aria-hidden="true">
                 <path fill-rule="evenodd"
-                  d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
+                      d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
                 </path>
               </svg>
             </button>
@@ -190,7 +60,7 @@
     </div>
     <div class="form-group-body">
       <input [(ngModel)]="snSiteSpotlight.name" class="form-control" type="text" id="sn-field-name"
-        style="width: 100%;" />
+             style="width: 100%;"/>
       <p class="note" id="sn-field-name-tip">
         Name will appear on semantic navigation site field list.
       </p>
@@ -202,7 +72,7 @@
     </div>
     <div class="form-group-body">
       <input [(ngModel)]="snSiteSpotlight.description" class="form-control" type="text" id="sn-field-description"
-        style="width: 100%;" />
+             style="width: 100%;"/>
       <p class="note" id="sn-field-description-tip">
         Description will appear on semantic navigation site field list.
       </p>
@@ -210,7 +80,7 @@
   </div>
   <div class="form-group">
     <div class="form-group-header">
-      <label for="sn-field-language">Language</label>
+      <label>Language</label>
     </div>
     <div class="form-group-body">
       <select [(ngModel)]="snSiteSpotlight.language" class="form-select" style="width: 100%;">
@@ -223,64 +93,33 @@
       </p>
     </div>
   </div>
-
-  <div class="js-tag-input-wrapper">
-    <div class="form-group my-0">
-      <div class="mb-2">
-        <label for="repo_topics" class="d-block">When searching for the following terms, ... <span
-            class="text-normal color-text-tertiary">(separate with
-            spaces)</span></label>
-      </div>
-      <div class="tag-input form-control d-inline-block color-bg-primary py-0 position-relative">
-        <ul class="js-tag-input-selected-tags d-inline">
-          <li class="d-none topic-tag-action my-1 mr-1 f6 float-left js-tag-input-tag js-template">
-            <span class="js-placeholder-tag-name"></span>
-            <button type="button" class="delete-topic-button f5 no-underline ml-1 js-remove" tabindex="-1">
-              <svg aria-label="Remove topic" role="img" height="16" viewBox="0 0 16 16" version="1.1" width="16"
-                data-view-component="true" class="octicon octicon-x">
-                <path fill-rule="evenodd"
-                  d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z">
-                </path>
-              </svg>
-            </button>
-            <input type="hidden" name="repo_topics[]" class="js-topic-input" value="">
-          </li>
-
-          <li *ngFor="let snSiteSpotlightTerm of snSiteSpotlight.turSNSiteSpotlightTerms"
-            class="topic-tag-action my-1 mr-1 f6 float-left js-tag-input-tag">
-            {{snSiteSpotlightTerm.name}}
-            <button type="button" class="delete-topic-button f5 no-underline ml-1 js-remove" tabindex="-1">
-              <svg aria-label="Remove topic" role="img" height="16" viewBox="0 0 16 16" version="1.1" width="16"
-                data-view-component="true" class="octicon octicon-x">
-                <path fill-rule="evenodd"
-                  d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z">
-                </path>
-              </svg>
-            </button>
-            <input type="hidden" name="repo_topics[]" value="{{snSiteSpotlightTerm.name}}">
-          </li>
-        </ul>
-
-        <auto-complete src="/openturing/turing/topic_autocomplete" for="repo-topic-popup">
-          <input type="text" id="repo_topics" placeholder="type here a new term..."
-            class="tag-input-inner form-control color-bg-primary shorter d-inline-block p-0 my-1 border-0"
-            autocomplete="off" autofocus="" role="combobox" aria-controls="repo-topic-popup" aria-expanded="false"
-            aria-autocomplete="list" aria-haspopup="listbox" spellcheck="false">
-          <ul class="suggester border width-full color-bg-primary left-0" id="repo-topic-popup" style="top: 100%;"
-            hidden="" role="listbox"></ul>
-        </auto-complete>
-      </div>
-      <p class="note" id="sn-field-description-tip">
-        If any of these terms are searched for, this will trigger documents to display as spotlights.
-      </p>
+  <div class="form-group my-0">
+    <div class="mb-3">
+      <label class="d-block">When searching for the following terms, ... </label>
     </div>
+    <div *ngFor="let snSiteSpotlightTerm of snSiteSpotlight.turSNSiteSpotlightTerms" style="display: flex" class="mb-3">
+      <input type="text" [(ngModel)]="snSiteSpotlightTerm.name" class="form-control">
+      <button class="btn btn-danger btn-octicon mr-1"
+              (click)="removeTerm(snSiteSpotlight, snSiteSpotlightTerm)">
+        <span octicon="trash" [size]=16></span>
+      </button>
+    </div>
+    <div class="mb-2 mt-4 ml-1">
+      <button class="btn btn-outline mr-1" (click)="newTerm(snSiteSpotlight.turSNSiteSpotlightTerms)">
+      <span octicon="plus-circle" [size]=16
+            class="mr-1"></span> Add
+      </button>
+    </div>
+    <p class="note">
+      If any of these terms are searched for, this will trigger documents to display as spotlights.
+    </p>
   </div>
   <div class="form-group">
     <div class="form-group-header">
       <label for="sn-field-description">... then will be showing the following documents as spotlight.</label>
     </div>
     <div class="form-group-body">
-      <p class="note" id="sn-field-description-tip">
+      <p class="note">
         These documents will display as spotlights when there are search terms.
       </p>
     </div>
@@ -296,14 +135,14 @@
       </button>
     </div>
     <div *ngFor="let snSiteSpotlightDocument of snSiteSpotlight.turSNSiteSpotlightDocuments" data-view-component="true"
-      class="Box-body">
+         class="Box-body">
       <div class="d-table">
         <div class="d-table-cell col-4">
           <a>
             <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
-              class="float-left">
+                 class="float-left">
               <svg width="24" height="24" style="border-radius: 50%;"
-                [identiconHash]="snSiteSpotlightDocument.title | lowercase">
+                   [identiconHash]="snSiteSpotlightDocument.title | lowercase">
                 Avatar
               </svg>
             </div>

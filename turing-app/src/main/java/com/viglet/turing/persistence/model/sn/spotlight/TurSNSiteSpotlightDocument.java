@@ -37,8 +37,7 @@ import java.io.Serializable;
  */
 @Getter
 @Entity
-@Table(name = "turSNSiteSpotlightDocument")
-@NamedQuery(name = "TurSNSiteSpotlightDocument.findAll", query = "SELECT snssd FROM TurSNSiteSpotlightDocument snssd")
+@Table(name = "tur_sn_site_spotlight_document")
 @JsonIgnoreProperties({ "turSNSiteSpotlight" })
 public class TurSNSiteSpotlightDocument implements Serializable {
 	@Serial
@@ -49,27 +48,27 @@ public class TurSNSiteSpotlightDocument implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	@Column(nullable = true, length = 50)
+	@Column(length = 50)
 	private int position;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String title;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String type;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String referenceId;
 
-	@Column(nullable = true, length = 2000)
+	@Column(length = 2000)
 	private String content;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String link;
 
 	// bi-directional many-to-one association to TurSNSiteSpotlight
-	@ManyToOne(fetch = FetchType.LAZY) // (cascade = {CascadeType.ALL})
-	@JoinColumn(name = "sn_site_spotlight_id")
+	@ManyToOne
+	@JoinColumn(name = "spotlight_id", nullable = false)
 	private TurSNSiteSpotlight turSNSiteSpotlight;
 
 	public void setId(String id) {
