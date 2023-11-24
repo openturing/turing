@@ -23,6 +23,7 @@ package com.viglet.turing.api.se;
 import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEVendorRepository;
+import com.viglet.turing.persistence.utils.TurPesistenceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +45,7 @@ public class TurSEVendorAPI {
 	@Operation(summary = "Search Engine Vendor List")
 	@GetMapping
 	public List<TurSEVendor> turSEVendorList() {
-		return this.turSEVendorRepository.findAll();
+		return this.turSEVendorRepository.findAll(TurPesistenceUtils.orderByTitleIgnoreCase());
 	}
 
 	@Operation(summary = "Show a Search Engine Vendor")

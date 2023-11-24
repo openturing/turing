@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.repository.sn.spotlight;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;
@@ -41,7 +42,7 @@ public interface TurSNSiteSpotlightRepository extends JpaRepository<TurSNSiteSpo
 
 	List<TurSNSiteSpotlight> findByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
 	
-	List<TurSNSiteSpotlight> findByTurSNSite(TurSNSite turSNSite);
+	List<TurSNSiteSpotlight> findByTurSNSite(Sort orders, TurSNSite turSNSite);
 
 	Set<TurSNSiteSpotlight> findByProvider(String provider);
 

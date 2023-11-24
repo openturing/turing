@@ -30,6 +30,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.persistence.utils.TurPesistenceUtils;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNQueue;
 import com.viglet.turing.sn.template.TurSNTemplate;
@@ -42,6 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -87,9 +89,9 @@ public class TurSNSiteAPI {
     @GetMapping
     public List<TurSNSite> turSNSiteList(Principal principal) {
         if (turConfigProperties.isMultiTenant()) {
-            return this.turSNSiteRepository.findByCreatedBy(principal.getName().toLowerCase());
+            return this.turSNSiteRepository.findByCreatedBy(TurPesistenceUtils.orderByNameIgnoreCase(),principal.getName().toLowerCase());
         } else {
-            return this.turSNSiteRepository.findAll();
+            return this.turSNSiteRepository.findAll(TurPesistenceUtils.orderByNameIgnoreCase());
         }
     }
 
@@ -148,7 +150,7 @@ public class TurSNSiteAPI {
     public boolean turSNSiteDelete(@PathVariable String id) {
         Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
         turSNSite.ifPresent(site ->
-                turSNSiteLocaleRepository.findByTurSNSite(site).forEach(locale ->
+                turSNSiteLocaleRepository.findByTurSNSite(Sort.by(Sort.Order.asc("name").ignoreCase()), site).forEach(locale ->
                         TurSolrUtils.deleteCore(site.getTurSEInstance(), locale.getCore())
                 )
         );
@@ -185,7 +187,7 @@ public class TurSNSiteAPI {
             TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
             turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
             long documentTotal = 0L;
-            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository.findByTurSNSite(turSNSite)) {
+            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository.findByTurSNSite(Sort.by(Sort.Order.asc("name").ignoreCase()), turSNSite)) {
                 Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
                 if (turSolrInstance.isPresent()) {
                     documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());

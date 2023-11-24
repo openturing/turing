@@ -28,11 +28,13 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.sn.template.TurSNTemplate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -61,8 +63,9 @@ public class TurSNSiteLocaleAPI {
 	@Operation(summary = "Semantic Navigation Site Locale List")
 	@GetMapping
 	public List<TurSNSiteLocale> turSNSiteLocaleList(@PathVariable String ignoredSnSiteId) {
-		return turSNSiteRepository.findById(ignoredSnSiteId).map(this.turSNSiteLocaleRepository::findByTurSNSite)
-				.orElse(new ArrayList<>());
+		return turSNSiteRepository.findById(ignoredSnSiteId).map(site -> this.turSNSiteLocaleRepository
+						.findByTurSNSite(Sort.by(Sort.Order.asc("language").ignoreCase()), site))
+				.orElse(Collections.emptyList());
 	}
 
 	@Operation(summary = "Show a Semantic Navigation Site Locale")

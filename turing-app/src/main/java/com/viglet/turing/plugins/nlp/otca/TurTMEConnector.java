@@ -105,7 +105,7 @@ public class TurTMEConnector implements TurNLPPlugin {
 				// Retrieve response content
 				data = new byte[length];
 				int pos = 0;
-				int size = 0;
+				int size;
 				while (length > 0) {
 					size = input.read(data, pos, length);
 					pos += size;

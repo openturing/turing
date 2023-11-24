@@ -97,23 +97,23 @@
     <div class="mb-3">
       <label class="d-block">When searching for the following terms, ... </label>
     </div>
-    <div *ngFor="let snSiteSpotlightTerm of snSiteSpotlight.turSNSiteSpotlightTerms" style="display: flex" class="mb-3">
-      <input type="text" [(ngModel)]="snSiteSpotlightTerm.name" class="form-control">
-      <button class="btn btn-danger btn-octicon mr-1"
-              (click)="removeTerm(snSiteSpotlight, snSiteSpotlightTerm)">
-        <span octicon="trash" [size]=16></span>
-      </button>
-    </div>
-    <div class="mb-2 mt-4 ml-1">
-      <button class="btn btn-outline mr-1" (click)="newTerm(snSiteSpotlight.turSNSiteSpotlightTerms)">
+  </div>
+  <div *ngFor="let snSiteSpotlightTerm of snSiteSpotlight.turSNSiteSpotlightTerms" style="display: flex" class="mb-3">
+    <input type="text" [(ngModel)]="snSiteSpotlightTerm.name" class="form-control">
+    <button class="btn btn-danger btn-octicon mr-1"
+            (click)="removeTerm(snSiteSpotlight, snSiteSpotlightTerm)">
+      <span octicon="trash" [size]=16></span>
+    </button>
+  </div>
+  <div class="mb-2 mt-4 ml-1">
+    <button class="btn btn-outline mr-1" (click)="newTerm(snSiteSpotlight.turSNSiteSpotlightTerms)">
       <span octicon="plus-circle" [size]=16
             class="mr-1"></span> Add
-      </button>
-    </div>
-    <p class="note">
-      If any of these terms are searched for, this will trigger documents to display as spotlights.
-    </p>
+    </button>
   </div>
+  <p class="note">
+    If any of these terms are searched for, this will trigger documents to display as spotlights.
+  </p>
   <div class="form-group">
     <div class="form-group-header">
       <label for="sn-field-description">... then will be showing the following documents as spotlight.</label>
@@ -126,48 +126,44 @@
   </div>
 
   <div class="Box">
-    <div class="Box-header d-flex flex-items-center">
-      <h3 class="Box-title overflow-hidden flex-auto">
-        Indexed Documents
-      </h3>
-      <button class="btn btn-primary btn-sm">
-        Add indexed document
-      </button>
-    </div>
-    <div *ngFor="let snSiteSpotlightDocument of snSiteSpotlight.turSNSiteSpotlightDocuments" data-view-component="true"
-         class="Box-body">
-      <div class="d-table">
-        <div class="d-table-cell col-4">
-          <a>
-            <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
-                 class="float-left">
-              <svg width="24" height="24" style="border-radius: 50%;"
-                   [identiconHash]="snSiteSpotlightDocument.title | lowercase">
-                Avatar
-              </svg>
-            </div>
-            {{snSiteSpotlightDocument.title}}
-          </a>
-        </div>
-        <div class="d-table-cell col-2">
-
-        </div>
-        <div class="d-table-cell col-2">
-          {{snSiteSpotlightDocument.type}}
-        </div>
-        <div class="d-table-cell col-2 d-flex flex-items-center">
-          {{snSiteSpotlightDocument.position}}
-        </div>
-        <div class="d-table-cell col-2 flex-auto ">
-          <button class="btn btn-sm btn-outline mr-1">Change document</button>
-
-        </div>
-        <div class="d-table-cell col-2">
-          <button class="btn btn-sm btn-danger"><span octicon="trash" [size]=16 class="mr-1"></span>Delete</button>
-        </div>
+    <div data-view-component="true"
+         class="Box-header">
+      <div class="d-table col-12">
+        <div class="d-table-cell col-2"> Position</div>
+        <div class="d-table-cell col-4"> Title</div>
+        <div class="d-table-cell col-4"> Type</div>
+        <div class="d-table-cell col-2"> Action</div>
       </div>
     </div>
+    <div data-view-component="true"
+         class="Box-body">
+    <div *ngFor="let snSiteSpotlightDocument of snSiteSpotlight.turSNSiteSpotlightDocuments" class="d-table mb-3">
+      <div class="d-table-cell col-2">
+        <input type="text" [(ngModel)]="snSiteSpotlightDocument.position" class="form-control  col-10 mr-2">
+      </div>
+      <div class="d-table-cell col-4">
+        <input type="text" [(ngModel)]="snSiteSpotlightDocument.title" class="form-control col-10 mr-2">
+      </div>
+      <div class="d-table-cell col-4">
+        <input type="text" [(ngModel)]="snSiteSpotlightDocument.type" class="form-control  col-10 mr-2">
+      </div>
+
+      <div class="col-2">
+
+      <button class="btn btn-danger btn-octicon mr-1"
+              (click)="removeDocument(snSiteSpotlight, snSiteSpotlightDocument)">
+        <span octicon="trash" [size]=16></span>
+      </button>
+      </div>
+    </div>
+    <div class="mb-2 mt-4 ml-1">
+      <button class="btn btn-outline mr-1" (click)="newDocument(snSiteSpotlight.turSNSiteSpotlightDocuments)">
+      <span octicon="plus-circle" [size]=16
+            class="mr-1"></span> Add
+      </button>
+    </div>
   </div>
+</div>
 </div>
 <ng-template #loading>
   <span>Loading</span><span class="AnimatedEllipsis"></span>

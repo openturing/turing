@@ -39,13 +39,15 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 @EnableJms
 @EnableCaching
 @EnableEncryptableProperties
-public class TuringAI {
+public class TuringES {
 	public static void main(String... args) {
 		if (args != null && args.length > 0 && args[0].equals("console")) {
 			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
 					.run(args);
 		} else {
-			SpringApplication.run(TuringAI.class, args);
+			System.out.println("Starting Turing ES ...");
+			SpringApplication.run(TuringES.class, args);
+			System.out.println("Started Turing ES");
 		}
 	}
 	@Bean

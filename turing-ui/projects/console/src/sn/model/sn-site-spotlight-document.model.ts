@@ -1,6 +1,6 @@
-export interface TurSNSiteSpotlightDocument {
-  id: string;
-  position: number;
-  title: string;
-  type: string;
+export class TurSNSiteSpotlightDocument {
+  id!: string;
+  position!: number;
+  title!: string;
+  type!: string;
 }

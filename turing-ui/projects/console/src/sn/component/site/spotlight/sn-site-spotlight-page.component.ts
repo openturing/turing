@@ -9,6 +9,7 @@ import { TurSNSiteSpotlightService } from '../../../service/sn-site-spotlight.se
 import { TurSNSiteLocaleService } from '../../../service/sn-site-locale.service';
 import { TurSNSiteLocale } from '../../../model/sn-site-locale.model';
 import {TurSNSiteSpotlightTerm} from "../../../model/sn-site-spotlight-term.model";
+import {TurSNSiteSpotlightDocument} from "../../../model/sn-site-spotlight-document.model";
 
 @Component({
   selector: 'sn-site-spotlight-page',
@@ -104,6 +105,17 @@ export class TurSNSiteSpotlightPageComponent implements OnInit {
 
   removeTerm(snSiteSpotlight: TurSNSiteSpotlight, snSiteSpotlightTerm: TurSNSiteSpotlightTerm) {
     snSiteSpotlight.turSNSiteSpotlightTerms =
-      snSiteSpotlight.turSNSiteSpotlightTerms.filter(term => term != snSiteSpotlightTerm);
+      snSiteSpotlight.turSNSiteSpotlightTerms
+        .filter(term => term != snSiteSpotlightTerm);
+  }
+
+  newDocument(turSNSiteSpotlightDocuments: TurSNSiteSpotlightDocument[]) {
+    turSNSiteSpotlightDocuments.push(new TurSNSiteSpotlightDocument());
+  }
+
+  removeDocument(snSiteSpotlight: TurSNSiteSpotlight, snSiteSpotlightDocument: TurSNSiteSpotlightDocument) {
+    snSiteSpotlight.turSNSiteSpotlightDocuments =
+      snSiteSpotlight.turSNSiteSpotlightDocuments
+        .filter(document => document != snSiteSpotlightDocument);
   }
 }

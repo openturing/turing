@@ -36,6 +36,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.persistence.utils.TurPesistenceUtils;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.template.TurSNTemplate;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,10 +53,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -104,7 +102,9 @@ public class TurSNSiteFieldExtAPI {
 
 			Map<String, TurNLPEntity> thesaurusMap = createThesaurusMap(turNLPEntityThesaurus);
 
-			List<TurSNSiteFieldExt> turSNSiteFieldExts = this.turSNSiteFieldExtRepository.findByTurSNSite(turSNSite);
+			List<TurSNSiteFieldExt> turSNSiteFieldExts =
+					this.turSNSiteFieldExtRepository
+							.findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(),turSNSite);
 
 			removeDuplicatedFields(fieldMap, nerMap, thesaurusMap, turSNSiteFieldExts);
 
@@ -119,9 +119,10 @@ public class TurSNSiteFieldExtAPI {
 			thesaurusMap.values().forEach(turNLPEntity -> addTurSNSiteFieldExt(TurSNFieldType.THESAURUS, turSNSite,
 					turSNSiteFieldExts, turNLPEntity));
 
-			return turSNSiteFieldExtRepository.findByTurSNSite(turSNSite);
+			return turSNSiteFieldExtRepository
+					.findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(),turSNSite);
 
-		}).orElse(new ArrayList<>());
+		}).orElse(Collections.emptyList());
 
 	}
 

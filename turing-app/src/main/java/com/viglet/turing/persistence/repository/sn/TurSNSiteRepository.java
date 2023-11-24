@@ -25,6 +25,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -36,10 +37,10 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 
 	@Cacheable("turSNSitefindAll")
 	@NotNull
-	List<TurSNSite> findAll();
+	List<TurSNSite> findAll(@NotNull Sort name);
 
 	@Cacheable("turSNSitefindAByCreatedBy")
-	List<TurSNSite> findByCreatedBy(String createdBy);
+	List<TurSNSite> findByCreatedBy(Sort name, String createdBy);
 	
 	@Cacheable("turSNSitefindById")
 	@NotNull

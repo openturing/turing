@@ -79,7 +79,7 @@ public class TurSNSiteMergeProvidersAPI {
 
 	@Operation(summary = "Update a Semantic Navigation Site Merge Providers")
 	@PutMapping("/{id}")
-	public TurSNSiteMergeProviders turSNSiteMergeUpdate(@PathVariable String id, @RequestBody TurSNSiteMergeProviders turSNSiteMerge) {
+	public TurSNSiteMergeProviders turSNSiteMergeUpdate(@PathVariable String id, @RequestBody TurSNSiteMergeProviders turSNSiteMerge, @PathVariable String ignoredSnSiteId) {
 		return this.turSNSiteMergeRepository.findById(id).map(turSNSiteMergeEdit -> {
 			turSNSiteMergeEdit.setProviderFrom(turSNSiteMerge.getProviderFrom());
 			turSNSiteMergeEdit.setProviderTo(turSNSiteMerge.getProviderTo());
@@ -103,14 +103,14 @@ public class TurSNSiteMergeProvidersAPI {
 	@Transactional
 	@Operation(summary = "Delete a Semantic Navigation Site Merge Providers")
 	@DeleteMapping("/{id}")
-	public boolean turSNSiteMergeDelete(@PathVariable String id) {
+	public boolean turSNSiteMergeDelete(@PathVariable String id, @PathVariable String ignoredSnSiteId) {
 		turSNSiteMergeRepository.deleteById(id);
 		return true;
 	}
 
 	@Operation(summary = "Create a Semantic Navigation Site Merge Providers")
 	@PostMapping
-	public TurSNSiteMergeProviders turSNSiteMergeAdd(@RequestBody TurSNSiteMergeProviders turSNSiteMerge) {
+	public TurSNSiteMergeProviders turSNSiteMergeAdd(@RequestBody TurSNSiteMergeProviders turSNSiteMerge, @PathVariable String ignoredSnSiteId) {
 		turSNSiteMergeRepository.save(turSNSiteMerge);
 		turSNSiteMerge.getOverwrittenFields().forEach(field -> {
 			field.setTurSNSiteMergeProviders(turSNSiteMerge);

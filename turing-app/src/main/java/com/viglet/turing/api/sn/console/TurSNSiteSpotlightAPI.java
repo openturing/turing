@@ -27,6 +27,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
+import com.viglet.turing.persistence.utils.TurPesistenceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -67,8 +69,9 @@ public class TurSNSiteSpotlightAPI {
 	@Operation(summary = "Semantic Navigation Site Spotlight List")
 	@GetMapping
 	public List<TurSNSiteSpotlight> turSNSiteSpotlightList(@PathVariable String ignoredSnSiteId) {
-		return turSNSiteRepository.findById(ignoredSnSiteId).map(this.turSNSiteSpotlightRepository::findByTurSNSite)
-				.orElse(new ArrayList<>());
+		return turSNSiteRepository.findById(ignoredSnSiteId).map(site -> this.turSNSiteSpotlightRepository
+						.findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(),site))
+				.orElse(Collections.emptyList());
 	}
 
 	@Operation(summary = "Show a Semantic Navigation Site Spotlight")

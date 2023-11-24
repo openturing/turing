@@ -35,6 +35,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
+import com.viglet.turing.persistence.utils.TurPesistenceUtils;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.result.TurSEGenericResults;
@@ -79,6 +80,7 @@ public class TurSolr {
     private final TurSNSiteFieldUtils turSNSiteFieldUtils;
     private final TurSNRankingExpressionRepository turSNRankingExpressionRepository;
     private final TurSNRankingConditionRepository turSNRankingConditionRepository;
+
     @Inject
     public TurSolr(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
                    TurSNTargetingRules turSNTargetingRules,
@@ -368,8 +370,9 @@ public class TurSolr {
 
     private void prepareBoostQuery(TurSNSite turSNSite, SolrQuery query) {
         List<String> bq = new ArrayList<>();
-        List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository.findByTurSNSite(turSNSite);
-        turSNRankingExpressionRepository.findByTurSNSite(turSNSite).forEach(expression -> {
+        List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository
+                .findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(),turSNSite);
+        turSNRankingExpressionRepository.findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), turSNSite).forEach(expression -> {
             String strExpression = "(" +
                     turSNRankingConditionRepository.findByTurSNRankingExpression(expression).stream().map(condition -> {
                                 TurSNSiteFieldExt turSNSiteFieldExt = turSNSiteFieldExts
@@ -380,8 +383,6 @@ public class TurSolr {
                                     if (condition.getValue().equalsIgnoreCase("asc")) {
                                         return String.format("_query_:\"{!func}recip(ms(NOW/DAY,%s),3.16e-11,1,1)\"",
                                                 condition.getAttribute());
-                                    } else {
-                                        return String.format("%s:%s", condition.getAttribute(), condition.getValue());
                                     }
                                 }
                                 return String.format("%s:%s", condition.getAttribute(), condition.getValue());
@@ -393,6 +394,8 @@ public class TurSolr {
         });
         query.set("bq", bq.toArray(new String[0]));
     }
+
+
 
     private void prepareGroup(TurSEParameters turSEParameters, SolrQuery query) {
 
@@ -610,7 +613,9 @@ public class TurSolr {
             List<String> filterQueriesModified = turSEParameters.getFilterQueries().stream().map(
                     q -> {
                         String[] split = q.split(":", 2);
-                        split[1] = String.format("\"%s\"", split[1]);
+                        if (!split[1].startsWith("[") && !split[1].startsWith("(")) {
+                            split[1] = String.format("\"%s\"", split[1]);
+                        }
                         return String.join(":", split);
                     }
             ).toList();

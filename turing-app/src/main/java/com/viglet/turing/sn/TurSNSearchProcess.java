@@ -48,6 +48,7 @@ import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -348,7 +349,8 @@ public class TurSNSearchProcess {
 
 	public List<TurSNSiteLocaleBean> responseLocales(TurSNSite turSNSite, URI uri) {
 		List<TurSNSiteLocaleBean> turSNSiteLocaleBeans = new ArrayList<>();
-		turSNSiteLocaleRepository.findByTurSNSite(turSNSite).forEach(turSNSiteLocale -> {
+		turSNSiteLocaleRepository.findByTurSNSite(Sort.by(Sort.Order.asc("language").ignoreCase()), turSNSite)
+				.forEach(turSNSiteLocale -> {
 			TurSNSiteLocaleBean turSNSiteLocaleBean = new TurSNSiteLocaleBean();
 			turSNSiteLocaleBean.setLocale(turSNSiteLocale.getLanguage());
 			turSNSiteLocaleBean.setLink(TurCommonsUtils
