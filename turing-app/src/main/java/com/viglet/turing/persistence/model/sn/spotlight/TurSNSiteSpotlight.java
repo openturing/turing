@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -37,7 +37,7 @@ import java.util.Set;
 
 /**
  * The persistent class for the turSNSiteSpotlight database table.
- * 
+ *
  * @author Alexandre Oliveira
  * @since 0.3.4
  */
@@ -45,99 +45,99 @@ import java.util.Set;
 @Entity
 @Table(name = "tur_sn_site_spotlight")
 public class TurSNSiteSpotlight implements Serializable {
-	@Serial
-	private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1L;
 
-	@Id
-	@UuidGenerator
-	@Column(name = "id", updatable = false, nullable = false)
-	private String id;
+    @Id
+    @UuidGenerator
+    @Column(name = "id", updatable = false, nullable = false)
+    private String id;
 
-	@Column(nullable = false, length = 50)
-	private String name;
+    @Column(nullable = false, length = 50)
+    private String name;
 
-	@Column
-	private String description;
+    @Column
+    private String description;
 
-	@Temporal(TemporalType.TIMESTAMP)
-	private Date modificationDate;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date modificationDate;
 
-	@Column
-	private int managed = 1;
+    @Column
+    private int managed = 1;
 
-	@Column
-	private String unmanagedId;
+    @Column
+    private String unmanagedId;
 
-	@Column
-	private String provider = "TURING";
-	
-	@Column
-	private String language;
+    @Column
+    private String provider = "TURING";
 
-	// bi-directional many-to-one association to TurSNSite
-	@ManyToOne
-	@JoinColumn(name = "sn_site_id", nullable = false)
-	private TurSNSite turSNSite;
+    @Column
+    private String language;
 
-	// bi-directional many-to-one association to turSNSiteSpotlightTerms
-	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true, fetch = FetchType.LAZY)
-	@Cascade({ org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN  })
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = new HashSet<>();
+    // bi-directional many-to-one association to TurSNSite
+    @ManyToOne
+    @JoinColumn(name = "sn_site_id", nullable = false)
+    private TurSNSite turSNSite;
 
-	// bi-directional many-to-one association to turSNSiteSpotlightDocuments
-	@OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true, fetch = FetchType.LAZY)
-	@Cascade({ org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN  })
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = new HashSet<>();
+    // bi-directional many-to-one association to turSNSiteSpotlightTerms
+    @OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true, fetch = FetchType.LAZY)
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = new HashSet<>();
 
-	public void setId(String id) {
-		this.id = id;
-	}
+    // bi-directional many-to-one association to turSNSiteSpotlightDocuments
+    @OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true, fetch = FetchType.LAZY)
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = new HashSet<>();
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public void setId(String id) {
+        this.id = id;
+    }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setModificationDate(Date modificationDate) {
-		this.modificationDate = modificationDate;
-	}
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-	public void setManaged(int managed) {
-		this.managed = managed;
-	}
+    public void setModificationDate(Date modificationDate) {
+        this.modificationDate = modificationDate;
+    }
 
-	public void setUnmanagedId(String unmanagedId) {
-		this.unmanagedId = unmanagedId;
-	}
+    public void setManaged(int managed) {
+        this.managed = managed;
+    }
 
-	public void setProvider(String provider) {
-		this.provider = provider;
-	}
+    public void setUnmanagedId(String unmanagedId) {
+        this.unmanagedId = unmanagedId;
+    }
 
-	public void setLanguage(String language) {
-		this.language = language;
-	}
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
 
-	public void setTurSNSite(TurSNSite turSNSite) {
-		this.turSNSite = turSNSite;
-	}
+    public void setLanguage(String language) {
+        this.language = language;
+    }
 
-	public void setTurSNSiteSpotlightTerms(Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms) {
-		this.turSNSiteSpotlightTerms.clear();
-		if (turSNSiteSpotlightTerms != null) {
-			this.turSNSiteSpotlightTerms.addAll(turSNSiteSpotlightTerms);
-		}
-	}
+    public void setTurSNSite(TurSNSite turSNSite) {
+        this.turSNSite = turSNSite;
+    }
 
-	public void setTurSNSiteSpotlightDocuments(Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments) {
-		this.turSNSiteSpotlightDocuments.clear();
-		if (turSNSiteSpotlightDocuments != null) {
-			this.turSNSiteSpotlightDocuments.addAll(turSNSiteSpotlightDocuments);
-		}
-	}
+    public void setTurSNSiteSpotlightTerms(Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms) {
+        this.turSNSiteSpotlightTerms.clear();
+        if (turSNSiteSpotlightTerms != null) {
+            this.turSNSiteSpotlightTerms.addAll(turSNSiteSpotlightTerms);
+        }
+    }
+
+    public void setTurSNSiteSpotlightDocuments(Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments) {
+        this.turSNSiteSpotlightDocuments.clear();
+        if (turSNSiteSpotlightDocuments != null) {
+            this.turSNSiteSpotlightDocuments.addAll(turSNSiteSpotlightDocuments);
+        }
+    }
 }
