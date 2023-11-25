@@ -6,39 +6,9 @@
 version: 2
 updates:
   - package-ecosystem: "maven" # See documentation for possible values
-    directory: "/turing-app" # Location of package manifests
+    directory: "/" # Location of package manifests
     schedule:
-      interval: "daily"
-    target-branch: "0.3.7"
-    open-pull-requests-limit: 15
-  - package-ecosystem: "maven" # See documentation for possible values
-    directory: "/turing-filesystem" # Location of package manifests
-    schedule:
-      interval: "daily"
-    target-branch: "0.3.7"
-    open-pull-requests-limit: 15
-  - package-ecosystem: "maven" # See documentation for possible values
-    directory: "/turing-jdbc" # Location of package manifests
-    schedule:
-      interval: "daily"
-    target-branch: "0.3.7"
-    open-pull-requests-limit: 15
-  - package-ecosystem: "maven" # See documentation for possible values
-    directory: "/turing-commons" # Location of package manifests
-    schedule:
-      interval: "daily"
-    target-branch: "0.3.7"
-    open-pull-requests-limit: 15
-  - package-ecosystem: "maven" # See documentation for possible values
-    directory: "/turing-cms" # Location of package manifests
-    schedule:
-      interval: "daily"
-    target-branch: "0.3.7"
-    open-pull-requests-limit: 15
-  - package-ecosystem: "maven" # See documentation for possible values
-    directory: "/turing-java-sdk" # Location of package manifests
-    schedule:
-      interval: "daily"
+      interval: "weekly"
     target-branch: "0.3.7"
     open-pull-requests-limit: 15
   - package-ecosystem: "npm" # See documentation for possible values
