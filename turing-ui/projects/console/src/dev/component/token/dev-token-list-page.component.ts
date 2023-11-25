@@ -11,11 +11,13 @@ import {TurDevToken} from "../../model/dev-token.model";
 })
 export class TurDevTokenListPageComponent implements OnInit {
   private turDevTokens: Observable<TurDevToken[]>;
+  filterText: string;
 
   constructor(private readonly notifier: NotifierService,
               private turDevTokenService: TurDevTokenService,
               private router: Router) {
     this.turDevTokens = turDevTokenService.query();
+    this.filterText = "";
   }
 
   getTurDevTokens(): Observable<TurDevToken[]> {

@@ -43,13 +43,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Slf4j
@@ -150,7 +151,7 @@ public class TurSNSiteAPI {
     public boolean turSNSiteDelete(@PathVariable String id) {
         Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
         turSNSite.ifPresent(site ->
-                turSNSiteLocaleRepository.findByTurSNSite(Sort.by(Sort.Order.asc("name").ignoreCase()), site).forEach(locale ->
+                turSNSiteLocaleRepository.findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), site).forEach(locale ->
                         TurSolrUtils.deleteCore(site.getTurSEInstance(), locale.getCore())
                 )
         );
@@ -163,13 +164,13 @@ public class TurSNSiteAPI {
     @PostMapping
     public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite, Principal principal) {
         turSNSiteRepository.save(turSNSite);
-        turSNTemplate.createSNSite(turSNSite, principal.getName(), "en_US");
+        turSNTemplate.createSNSite(turSNSite, principal.getName(), Locale.US);
         return turSNSite;
 
     }
 
     @ResponseBody
-    @GetMapping(value = "/export", produces = "application/zip")
+    @GetMapping(value = "/export", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public StreamingResponseBody turSNSiteExport(HttpServletResponse response) {
 
         try {
@@ -187,7 +188,7 @@ public class TurSNSiteAPI {
             TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
             turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
             long documentTotal = 0L;
-            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository.findByTurSNSite(Sort.by(Sort.Order.asc("name").ignoreCase()), turSNSite)) {
+            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository.findByTurSNSite(TurPesistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
                 Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
                 if (turSolrInstance.isPresent()) {
                     documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());

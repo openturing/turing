@@ -21,6 +21,8 @@
 
 package com.viglet.turing.onstartup.sn;
 
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,33 +34,39 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
 import com.viglet.turing.sn.template.TurSNTemplate;
 
+import java.util.Locale;
+
 @Component
 @Transactional
 public class TurSNSiteOnStartup {
+	private final TurSNSiteRepository turSNSiteRepository;
+	private final TurSEInstanceRepository turSEInstanceRepository;
+	private final TurNLPVendorRepository turNLPVendorRepository;
+	private final TurSNTemplate turSNTemplate;
 
-	@Autowired
-	private TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	private TurNLPVendorRepository turNLPVendorRepository;
-	@Autowired
-	private TurSNTemplate turSNTemplate;
-	
+	public TurSNSiteOnStartup(TurSNSiteRepository turSNSiteRepository,
+							  TurSEInstanceRepository turSEInstanceRepository,
+							  TurNLPVendorRepository turNLPVendorRepository,
+							  TurSNTemplate turSNTemplate) {
+		this.turSNSiteRepository = turSNSiteRepository;
+		this.turSEInstanceRepository = turSEInstanceRepository;
+		this.turNLPVendorRepository = turNLPVendorRepository;
+		this.turSNTemplate = turSNTemplate;
+	}
+
 	public void createDefaultRows() {
 
 		if (turSNSiteRepository.findAll().isEmpty()) {
-
 			TurSNSite turSNSite = new TurSNSite();
-
-			// Detail
 			turSNSite.setName("Sample");
 			turSNSite.setDescription("Semantic Sample Site");
-			turSNSite.setTurNLPVendor(turNLPVendorRepository.findAll().get(0));
-			turSNSite.setTurSEInstance(turSEInstanceRepository.findAll().get(0));
+			turSNSite.setTurNLPVendor(turNLPVendorRepository.findAll()
+					.stream().findFirst().orElse(new TurNLPVendor()));
+			turSNSite.setTurSEInstance(turSEInstanceRepository.findAll()
+					.stream().findFirst().orElse(new TurSEInstance()));
 						
 			turSNSiteRepository.save(turSNSite);
-			turSNTemplate.createSNSite(turSNSite, "admin", "en");
+			turSNTemplate.createSNSite(turSNSite, "admin", Locale.US);
 		}
 	}
 }

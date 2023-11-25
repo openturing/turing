@@ -11,12 +11,14 @@ import { Router, RouterModule } from '@angular/router';
 })
 export class TurSNSiteListPageComponent implements OnInit {
   private turSNSites: Observable<TurSNSite[]>;
+  filterText: string;
 
   constructor(
     private readonly notifier: NotifierService,
     private turSNSiteService: TurSNSiteService,
     private router: Router) {
     this.turSNSites = turSNSiteService.query();
+    this.filterText = "";
   }
 
   getTurSNSites(): Observable<TurSNSite[]> {

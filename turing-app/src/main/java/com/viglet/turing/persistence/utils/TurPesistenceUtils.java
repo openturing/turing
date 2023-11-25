@@ -11,4 +11,7 @@ public class TurPesistenceUtils {
     public static Sort orderByTitleIgnoreCase() {
         return Sort.by(Sort.Order.asc("title").ignoreCase());
     }
+    public static Sort orderByLanguageIgnoreCase() {
+        return Sort.by(Sort.Order.asc("language").ignoreCase());
+    }
 }

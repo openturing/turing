@@ -60,6 +60,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -100,7 +101,7 @@ public class TurSNTemplate {
 	private TurSNRankingConditionRepository turSNRankingConditionRepository;
 	@Autowired
 	private TurConfigProperties turConfigProperties;
-	public void createSNSite(TurSNSite turSNSite, String username, String locale) {
+	public void createSNSite(TurSNSite turSNSite, String username, Locale locale) {
 		defaultSNUI(turSNSite);
 		createSEFields(turSNSite);
 		createLocale(turSNSite, username, locale);
@@ -261,10 +262,10 @@ public class TurSNTemplate {
 		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm2);
 	}
 
-	public void createLocale(TurSNSite turSNSite, String username, String locale) {
+	public void createLocale(TurSNSite turSNSite, String username, Locale locale) {
 
 		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
-		turSNSiteLocale.setLanguage(locale);
+		turSNSiteLocale.setLanguage(locale.toString());
 		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
 		turSNSiteLocale.setTurSNSite(turSNSite);
 		turSNSiteLocale.setCore(createSolrCore(turSNSiteLocale, username));
