@@ -15,6 +15,8 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
   private turSNSiteSEFields: Observable<TurSNSiteField[]>;
   private turSNSiteNLPFields: Observable<TurSNSiteField[]>;
   private siteId: string;
+  filterCustomField: string;
+  filterNLPField: string;
   constructor(private readonly notifier: NotifierService,
     private turSNSiteService: TurSNSiteService,
     private route: ActivatedRoute) {
@@ -22,6 +24,8 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
     this.turSNSiteSEFields = turSNSiteService.getFieldsByType(this.siteId, "se");
     this.turSNSiteNLPFields = turSNSiteService.getFieldsByType(this.siteId, "ner");
     this.turSNSite = this.turSNSiteService.get(this.siteId);
+    this.filterCustomField = "";
+    this.filterNLPField = "";
   }
 
   getTurSNSite(): Observable<TurSNSite> {

@@ -11,9 +11,13 @@ import { Router, RouterModule } from '@angular/router';
 })
 export class TurNLPInstanceListPageComponent implements OnInit {
   private turNLPInstances: Observable<TurNLPInstance[]>;
+  filterText: string;
 
-  constructor(private readonly notifier: NotifierService, private turNLPInstanceService: TurNLPInstanceService, private router: Router) {
+  constructor(private readonly notifier: NotifierService,
+              private turNLPInstanceService: TurNLPInstanceService,
+              private router: Router) {
     this.turNLPInstances = turNLPInstanceService.query();
+    this.filterText = "";
   }
 
   getTurNLPInstances(): Observable<TurNLPInstance[]> {

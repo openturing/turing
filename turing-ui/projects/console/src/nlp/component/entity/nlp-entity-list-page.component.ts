@@ -11,9 +11,13 @@ import { Router, RouterModule } from '@angular/router';
 })
 export class TurNLPEntityListPageComponent implements OnInit {
   private turNLPEntities: Observable<TurNLPEntity[]>;
+  filterText: string;
 
-  constructor(private readonly notifier: NotifierService, private turNLPEntityService: TurNLPEntityService, private router: Router) {
+  constructor(private readonly notifier: NotifierService,
+              private turNLPEntityService: TurNLPEntityService,
+              private router: Router) {
     this.turNLPEntities = turNLPEntityService.query();
+    this.filterText = "";
   }
 
   getTurNLPEntities(): Observable<TurNLPEntity[]> {
