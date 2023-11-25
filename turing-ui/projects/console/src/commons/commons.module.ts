@@ -7,13 +7,15 @@ import {RouterModule} from '@angular/router';
 import {OcticonsModule} from 'angular-octicons';
 import {FormsModule} from "@angular/forms";
 import {FullTextSearchPipe} from "./pipe/fullTextSearch.pipe";
+import {SortByPipe} from "./pipe/sortBy.pipe";
 
 @NgModule({
   declarations: [
     TurHeaderComponent,
     TurLogoComponent,
     IdenticonHashDirective,
-    FullTextSearchPipe
+    FullTextSearchPipe,
+    SortByPipe
   ],
   imports: [
     CommonModule,
@@ -26,7 +28,8 @@ import {FullTextSearchPipe} from "./pipe/fullTextSearch.pipe";
     TurHeaderComponent,
     TurLogoComponent,
     IdenticonHashDirective,
-    FullTextSearchPipe
+    FullTextSearchPipe,
+    SortByPipe
   ]
 
 })

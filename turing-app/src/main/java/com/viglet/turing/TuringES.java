@@ -45,9 +45,9 @@ public class TuringES {
 			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
 					.run(args);
 		} else {
-			System.out.println("Starting Turing ES ...");
+			System.out.println(":: Starting Turing ES ...");
 			SpringApplication.run(TuringES.class, args);
-			System.out.println("Started Turing ES");
+			System.out.println(":: Started Turing ES");
 		}
 	}
 	@Bean

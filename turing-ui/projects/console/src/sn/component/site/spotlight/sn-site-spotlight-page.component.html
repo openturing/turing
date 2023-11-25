@@ -131,39 +131,101 @@
       <div class="d-table col-12">
         <div class="d-table-cell col-2"> Position</div>
         <div class="d-table-cell col-4"> Title</div>
-        <div class="d-table-cell col-4"> Type</div>
-        <div class="d-table-cell col-2"> Action</div>
+        <div class="d-table-cell col-3"> Type</div>
+        <div class="d-table-cell col-3"> Action</div>
       </div>
     </div>
     <div data-view-component="true"
          class="Box-body">
-    <div *ngFor="let snSiteSpotlightDocument of snSiteSpotlight.turSNSiteSpotlightDocuments" class="d-table mb-3">
-      <div class="d-table-cell col-2">
-        <input type="text" [(ngModel)]="snSiteSpotlightDocument.position" class="form-control  col-10 mr-2">
-      </div>
-      <div class="d-table-cell col-4">
-        <input type="text" [(ngModel)]="snSiteSpotlightDocument.title" class="form-control col-10 mr-2">
-      </div>
-      <div class="d-table-cell col-4">
-        <input type="text" [(ngModel)]="snSiteSpotlightDocument.type" class="form-control  col-10 mr-2">
-      </div>
+      <div
+        *ngFor="let snSiteSpotlightDocument of snSiteSpotlight.turSNSiteSpotlightDocuments | sortByOrder:'position':'desc'"
+        class="d-table mb-3">
+        <div class="d-table-cell col-2">
+          <input type="text" [(ngModel)]="snSiteSpotlightDocument.position" class="form-control col-10 mr-2">
+        </div>
+        <div class="d-table-cell col-4">
+          <input type="text" [(ngModel)]="snSiteSpotlightDocument.title" class="form-control col-10 mr-2">
+        </div>
+        <div class="d-table-cell col-3">
+          <input type="text" [(ngModel)]="snSiteSpotlightDocument.type" class="form-control  col-10 mr-2">
+        </div>
 
-      <div class="col-2">
-
-      <button class="btn btn-danger btn-octicon mr-1"
-              (click)="removeDocument(snSiteSpotlight, snSiteSpotlightDocument)">
-        <span octicon="trash" [size]=16></span>
-      </button>
+        <div class="d-table-cell col-3">
+          <button class="btn btn-outline mr-1">
+          <span octicon="file" [size]=16
+                class="mr-1"></span> Select Document
+          </button>
+          <button class="btn btn-danger btn-octicon mr-1"
+                  (click)="removeDocument(snSiteSpotlight, snSiteSpotlightDocument)">
+            <span octicon="trash" [size]=16></span>
+          </button>
+        </div>
       </div>
-    </div>
-    <div class="mb-2 mt-4 ml-1">
-      <button class="btn btn-outline mr-1" (click)="newDocument(snSiteSpotlight.turSNSiteSpotlightDocuments)">
-      <span octicon="plus-circle" [size]=16
-            class="mr-1"></span> Add
-      </button>
+      <div class="mb-2 mt-4 ml-1">
+        <details #modalSelectDocument id="modalSelectDocument" (click)="searchDocument(snSiteSpotlight, 1)"
+                 class="details-reset details-overlay details-overlay-dark mr-2" style="display: unset;">
+          <summary class="btn btn-outline mr-1" aria-haspopup="dialog"><span octicon="plus-circle" [size]=16
+                                                                             class="mr-1"></span> Add
+          </summary>
+          <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast"
+                          style="overflow: hidden;width:80%">
+            <div class="Box-header">
+              <button onclick='document.getElementById("modalAddOverwrittenField").removeAttribute("open");'
+                      class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog"
+                      data-close-dialog>
+               <span octicon="x" [size]=16
+                     class="mr-1"></span>
+              </button>
+              <h3 class="Box-title">Select Document</h3>
+            </div>
+            <div class="Box-body overflow-auto">
+              <div class="input-group mb-3">
+                <input class="form-control" type="text" placeholder="Search Document"
+                       aria-label="Search Document" [(ngModel)]="inputSearchDocument"
+                       (keyup.enter)='searchDocument(snSiteSpotlight,1)'/>
+                <span class="input-group-button">
+                  <button class="btn" type="button" (click)="searchDocument(snSiteSpotlight, 1)">
+                    Search
+                  </button>
+                </span>
+              </div>
+              <div *ngIf="(turSNSearchResults | async) as searchResult; else loading">
+                <div class="Box mb-3">
+                  <div data-view-component="true"
+                       class="Box-header">
+                    <div class="d-table col-12">
+                      <div class="d-table-cell col-6"> Title</div>
+                      <div class="d-table-cell col-6"> Type</div>
+                    </div>
+                  </div>
+                  <div data-view-component="true"
+                       class="Box-body"
+                       *ngFor="let searchItem of searchResult.results.document"
+                       (click)="addDocument(snSiteSpotlight, searchItem)">
+                    <div class="d-table col-12">
+                      <a class="d-table-cell col-6" [innerHTML]="searchItem.fields.title" style="cursor: pointer"></a>
+                      <div class="d-table-cell col-6" [innerHTML]="searchItem.fields.type"></div>
+                    </div>
+                  </div>
+                </div>
+                <nav class="paginate-container" aria-label="Pagination">
+                  <div class="pagination">
+                    <ng-container *ngFor="let page of searchResult.pagination">
+                      <em *ngIf="page.type == 'CURRENT'" aria-current="page">{{camelize(page.text)}}</em>
+                      <a *ngIf="page.type != 'CURRENT'"
+                         [ngClass]="{'next_page': page.type === 'NEXT'
+                       || page.type === 'LAST' , 'previous_page' : page.type === 'PREVIOUS'  || page.type === 'FIRST' }"
+                         (click)="searchDocument(snSiteSpotlight,page.page)">{{camelize(page.text)}}</a>
+                    </ng-container>
+                  </div>
+                </nav>
+              </div>
+            </div>
+          </details-dialog>
+        </details>
+      </div>
     </div>
   </div>
-</div>
 </div>
 <ng-template #loading>
   <span>Loading</span><span class="AnimatedEllipsis"></span>

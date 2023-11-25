@@ -46,6 +46,7 @@ import {
 } from "./component/site/ranking/sn-ranking-expression-list-page.component";
 import {TurSNRankingExpressionService} from "./service/sn-ranking-expression.service";
 import {TurSNRankingExpressionPageComponent} from "./component/site/ranking/sn-ranking-expression-page.component";
+import {TurSNSearchService} from "../../../sn/src/search/service/sn-search.service";
 
 @NgModule({
   declarations: [
@@ -94,7 +95,8 @@ import {TurSNRankingExpressionPageComponent} from "./component/site/ranking/sn-r
     TurSNSiteLocaleService,
     TurSNSiteMergeService,
     TurSNSiteMetricsService,
-    TurSNRankingExpressionService
+    TurSNRankingExpressionService,
+    TurSNSearchService
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

@@ -1,15 +1,16 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { Observable } from 'rxjs';
-import { TurSNSite } from '../../../model/sn-site.model';
+import {Observable} from 'rxjs';
 import { NotifierService } from 'angular-notifier';
-import { TurSNSiteService } from '../../../service/sn-site.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import { TurSNSiteSpotlight } from '../../../model/sn-site-spotlight.model';
 import { TurSNSiteSpotlightService } from '../../../service/sn-site-spotlight.service';
 import { TurSNSiteLocaleService } from '../../../service/sn-site-locale.service';
 import { TurSNSiteLocale } from '../../../model/sn-site-locale.model';
 import {TurSNSiteSpotlightTerm} from "../../../model/sn-site-spotlight-term.model";
 import {TurSNSiteSpotlightDocument} from "../../../model/sn-site-spotlight-document.model";
+import {TurSNSearchService} from "../../../../../../sn/src/search/service/sn-search.service";
+import {TurSNSearch} from "../../../../../../sn/src/search/model/sn-search.model";
+import {TurSNSearchDocument} from "../../../../../../sn/src/search/model/sn-search-document.model";
 
 @Component({
   selector: 'sn-site-spotlight-page',
@@ -18,29 +19,68 @@ import {TurSNSiteSpotlightDocument} from "../../../model/sn-site-spotlight-docum
 export class TurSNSiteSpotlightPageComponent implements OnInit {
   @ViewChild('modalDeleteSpotlight')
   modalDelete!: ElementRef;
-  private turSNSite: Observable<TurSNSite>;
-  private turSNSiteLocales: Observable<TurSNSiteLocale[]>;
-  private turSNSiteSpotlight: Observable<TurSNSiteSpotlight>;
-  private siteId: string;
-  private newObject: boolean = false;
+  @ViewChild('modalSelectDocument')
+  public modalSelectDocument!: ElementRef;
+  private readonly turSNSiteLocales: Observable<TurSNSiteLocale[]>;
+  private readonly turSNSiteSpotlight: Observable<TurSNSiteSpotlight>;
+  public turSNSearchResults: Observable<TurSNSearch> = new Observable<TurSNSearch>();
+  private readonly siteId: string;
+  private readonly newObject: boolean = false;
+  public inputSearchDocument: string;
 
   constructor(
+    private turSNSearchService: TurSNSearchService,
     private readonly notifier: NotifierService,
-    private turSNSiteService: TurSNSiteService,
     private turSNSiteLocaleService: TurSNSiteLocaleService,
     private turSNSiteSpotlightService: TurSNSiteSpotlightService,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
     this.siteId = this.activatedRoute.parent?.parent?.snapshot.paramMap.get('id') || "";
     let spotlightId = this.activatedRoute.snapshot.paramMap.get('spotlightId') || "";
-    this.turSNSite = this.turSNSiteService.get(this.siteId);
-    this.turSNSiteLocales = turSNSiteLocaleService.query(this.siteId);
+    this.turSNSiteLocales = this.turSNSiteLocaleService.query(this.siteId);
     this.newObject = (spotlightId.toLowerCase() === 'new');
-    this.turSNSiteSpotlight = this.newObject ? this.turSNSiteSpotlightService.getStructure(this.siteId) : this.turSNSiteSpotlightService.get(this.siteId, spotlightId);
+    this.turSNSiteSpotlight = this.newObject ? this.turSNSiteSpotlightService.getStructure(this.siteId) :
+      this.turSNSiteSpotlightService.get(this.siteId, spotlightId);
+    this.inputSearchDocument = "";
   }
 
-  getTurSNSite(): Observable<TurSNSite> {
-    return this.turSNSite;
+  getSearchResult(siteName: string, query: string, page: string, locale: string): Observable<TurSNSearch> {
+    let  turSort: string = "title:desc";
+    let  turFilterQuery!: string[];
+    let  turTargetingRule!: string[];
+    let  turAutoCorrectionDisabled!: string;
+
+    return this.turSNSearchService.query(
+      siteName,
+      query,
+      page,
+      locale,
+      turSort,
+      turFilterQuery,
+      turTargetingRule,
+      turAutoCorrectionDisabled);
+  }
+
+  camelize(str: string): string {
+    return str.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, function (match, index) {
+      if (+match === 0) return "";
+      return index === 0 ? match.toUpperCase() : match.toLowerCase();
+    });
+  }
+
+  public addDocument(_turSNSiteSpotlight: TurSNSiteSpotlight, turSNSearchDocument: TurSNSearchDocument) {
+    let turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument() ;
+    turSNSiteSpotlightDocument.id = undefined;
+    turSNSiteSpotlightDocument.title = turSNSearchDocument.fields.title;
+    turSNSiteSpotlightDocument.type = turSNSearchDocument.fields.type;
+    turSNSiteSpotlightDocument.position = 1;
+    turSNSiteSpotlightDocument.link = turSNSearchDocument.fields.url;
+    turSNSiteSpotlightDocument.content = turSNSearchDocument.fields.abstract;
+    turSNSiteSpotlightDocument.referenceId = "TURING";
+    _turSNSiteSpotlight.turSNSiteSpotlightDocuments.push(turSNSiteSpotlightDocument);
+
+    this.inputSearchDocument = "";
+    this.modalSelectDocument.nativeElement.removeAttribute("open");
   }
 
   getTurSNSiteLocales(): Observable<TurSNSiteLocale[]> {
@@ -109,13 +149,14 @@ export class TurSNSiteSpotlightPageComponent implements OnInit {
         .filter(term => term != snSiteSpotlightTerm);
   }
 
-  newDocument(turSNSiteSpotlightDocuments: TurSNSiteSpotlightDocument[]) {
-    turSNSiteSpotlightDocuments.push(new TurSNSiteSpotlightDocument());
-  }
-
   removeDocument(snSiteSpotlight: TurSNSiteSpotlight, snSiteSpotlightDocument: TurSNSiteSpotlightDocument) {
     snSiteSpotlight.turSNSiteSpotlightDocuments =
       snSiteSpotlight.turSNSiteSpotlightDocuments
         .filter(document => document != snSiteSpotlightDocument);
+  }
+
+  searchDocument(snSiteSpotlight: TurSNSiteSpotlight, pageNumber: number) {
+    this.turSNSearchResults = this.getSearchResult(snSiteSpotlight.turSNSite.name,
+      this.inputSearchDocument, pageNumber.toString(), snSiteSpotlight.language);
   }
 }

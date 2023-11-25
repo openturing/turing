@@ -107,6 +107,11 @@ public class TurSNSiteSpotlightAPI {
                     .peek(term ->
                             term.setTurSNSiteSpotlight(turSNSiteSpotlight))
                     .collect(Collectors.toSet()));
+            turSNSiteSpotlightEdit.setTurSNSiteSpotlightDocuments(turSNSiteSpotlight.getTurSNSiteSpotlightDocuments()
+                    .stream()
+                    .peek(document ->
+                            document.setTurSNSiteSpotlight(turSNSiteSpotlight))
+                    .collect(Collectors.toSet()));
             return saveSpotlight(turSNSiteSpotlight, turSNSiteSpotlightEdit);
         }).orElse(new TurSNSiteSpotlight());
     }
