@@ -60,7 +60,7 @@ public class TurSNTargetingRules {
 
 		String targetingRuleAND = "";
 
-		for (Entry<String, List<String>> trEntry : trMap.entrySet()) {			
+		for (Entry<String, List<String>> trEntry : trMap.entrySet()) {
 			String targetingRuleOR = "";
 			targetingRuleQuery.append(targetingRuleAND);
 			targetingRuleQuery.append("(");
@@ -79,7 +79,7 @@ public class TurSNTargetingRules {
 	}
 
 	private String orMethod(List<String> trs) {
-		// This is a example: "(groups:Group1 OR groups:Group2) OR (*:* NOT groups:*)"); //NOSONAR
+		// This is an example: "(groups:Group1 OR groups:Group2) OR (*:* NOT groups:*)"); //NOSONAR
 		List<String> emptyTargetingRules = new ArrayList<>();
 		StringBuilder targetingRuleQuery = new StringBuilder();
 		targetingRuleQuery.append("(");

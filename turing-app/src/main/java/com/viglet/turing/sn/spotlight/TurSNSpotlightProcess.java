@@ -23,6 +23,7 @@ package com.viglet.turing.sn.spotlight;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.viglet.turing.api.sn.job.TurSNJobItem;
 import com.viglet.turing.api.sn.queue.TurSpotlightContent;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
@@ -43,10 +44,9 @@ import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrUtils;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Component;
 
@@ -67,18 +67,26 @@ public class TurSNSpotlightProcess {
 	private static final String TERMS_ATTRIBUTE = "terms";
 	private static final String DOCUMENT_TYPE = "Page";
 	private static final String TYPE_VALUE = "TUR_SPOTLIGHT";
-	@Autowired
-	private TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
-	@Autowired
-	private TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository;
-	@Autowired
-	private TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
-	@Autowired
-	private TurSolr turSolr;
-	@Autowired
-	private TurSpotlightCache turSpotlightCache;
-	@Autowired
-	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+	private final TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
+	private final TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository;
+	private final TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
+	private final TurSolr turSolr;
+	private final TurSpotlightCache turSpotlightCache;
+	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+	@Inject
+	public TurSNSpotlightProcess(TurSNSiteSpotlightRepository turSNSiteSpotlightRepository,
+								 TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository,
+								 TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository,
+								 TurSolr turSolr,
+								 TurSpotlightCache turSpotlightCache,
+								 TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+		this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
+		this.turSNSiteSpotlightTermRepository = turSNSiteSpotlightTermRepository;
+		this.turSNSiteSpotlightDocumentRepository = turSNSiteSpotlightDocumentRepository;
+		this.turSolr = turSolr;
+		this.turSpotlightCache = turSpotlightCache;
+		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+	}
 
 	private void ifExistsDeleteSpotlightDependencies(TurSNSiteSpotlight turSNSiteSpotlight) {
 		if (turSNSiteSpotlight != null) {
@@ -174,13 +182,8 @@ public class TurSNSpotlightProcess {
 				}
 
 				for (TurSpotlightContent turSpotlightContent : turSpotlightContents) {
-					TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument();
-					turSNSiteSpotlightDocument.setPosition(turSpotlightContent.getPosition());
-					turSNSiteSpotlightDocument.setTitle(turSpotlightContent.getTitle());
-					turSNSiteSpotlightDocument.setTurSNSiteSpotlight(turSNSiteSpotlight);
-					turSNSiteSpotlightDocument.setContent(turSpotlightContent.getContent());
-					turSNSiteSpotlightDocument.setLink(turSpotlightContent.getLink());
-					turSNSiteSpotlightDocument.setType(DOCUMENT_TYPE);
+					final TurSNSiteSpotlightDocument turSNSiteSpotlightDocument =
+							getTurSNSiteSpotlightDocument(turSpotlightContent, turSNSiteSpotlight);
 					turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
 				}
 				logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was created.",
@@ -191,6 +194,19 @@ public class TurSNSpotlightProcess {
 			}
 			return true;
 		}
+	}
+
+	@NotNull
+	private static TurSNSiteSpotlightDocument getTurSNSiteSpotlightDocument(TurSpotlightContent turSpotlightContent,
+																			TurSNSiteSpotlight turSNSiteSpotlight) {
+		TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument();
+		turSNSiteSpotlightDocument.setPosition(turSpotlightContent.getPosition());
+		turSNSiteSpotlightDocument.setTitle(turSpotlightContent.getTitle());
+		turSNSiteSpotlightDocument.setTurSNSiteSpotlight(turSNSiteSpotlight);
+		turSNSiteSpotlightDocument.setContent(turSpotlightContent.getContent());
+		turSNSiteSpotlightDocument.setLink(turSpotlightContent.getLink());
+		turSNSiteSpotlightDocument.setType(DOCUMENT_TYPE);
+		return turSNSiteSpotlightDocument;
 	}
 
 	public void addSpotlightToResults(TurSNSiteSearchContext context, TurSolrInstance turSolrInstance,
@@ -229,10 +245,10 @@ public class TurSNSpotlightProcess {
 						turSEResult = new TurSEResult();
 						Map<String, Object> fields = new HashMap<>();
 						fields.put("id", document.getId());
-						fields.put("description", document.getContent());
-						fields.put("url", document.getLink());
+						fields.put(turSNSite.getDefaultDescriptionField(), document.getContent());
+						fields.put(turSNSite.getDefaultURLField(), document.getLink());
 						fields.put("referenceId", document.getReferenceId());
-						fields.put("title", document.getTitle());
+						fields.put(turSNSite.getDefaultTitleField(), document.getTitle());
 						fields.put("type", document.getType());
 						turSEResult.setFields(fields);
 						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,

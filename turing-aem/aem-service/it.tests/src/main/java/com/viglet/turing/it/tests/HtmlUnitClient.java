@@ -151,7 +151,7 @@ public class HtmlUnitClient extends CQClient {
                     String ref = src.replace("{.width}", "."+w);
                     result.add(baseUri.resolve(ref));
                 }
-            } else if (src != null && width == null) {
+            } else if (src != null) {
                 // happens with SVG and GIFs
                 String ref = src.replace("{.width}", "");
                 result.add(baseUri.resolve(ref));

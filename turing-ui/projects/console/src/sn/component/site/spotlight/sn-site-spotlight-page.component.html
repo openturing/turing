@@ -123,6 +123,7 @@
         These documents will display as spotlights when there are search terms.
       </p>
     </div>
+
   </div>
 
   <div class="Box">
@@ -132,45 +133,17 @@
         <div class="d-table-cell col-2"> Position</div>
         <div class="d-table-cell col-4"> Title</div>
         <div class="d-table-cell col-3"> Type</div>
-        <div class="d-table-cell col-3"> Action</div>
-      </div>
-    </div>
-    <div data-view-component="true"
-         class="Box-body">
-      <div
-        *ngFor="let snSiteSpotlightDocument of snSiteSpotlight.turSNSiteSpotlightDocuments | sortByOrder:'position':'desc'"
-        class="d-table mb-3">
-        <div class="d-table-cell col-2">
-          <input type="text" [(ngModel)]="snSiteSpotlightDocument.position" class="form-control col-10 mr-2">
-        </div>
-        <div class="d-table-cell col-4">
-          <input type="text" [(ngModel)]="snSiteSpotlightDocument.title" class="form-control col-10 mr-2">
-        </div>
-        <div class="d-table-cell col-3">
-          <input type="text" [(ngModel)]="snSiteSpotlightDocument.type" class="form-control  col-10 mr-2">
-        </div>
-
-        <div class="d-table-cell col-3">
-          <button class="btn btn-outline mr-1">
-          <span octicon="file" [size]=16
-                class="mr-1"></span> Select Document
-          </button>
-          <button class="btn btn-danger btn-octicon mr-1"
-                  (click)="removeDocument(snSiteSpotlight, snSiteSpotlightDocument)">
-            <span octicon="trash" [size]=16></span>
-          </button>
-        </div>
-      </div>
-      <div class="mb-2 mt-4 ml-1">
-        <details #modalSelectDocument id="modalSelectDocument" (click)="searchDocument(snSiteSpotlight, 1)"
-                 class="details-reset details-overlay details-overlay-dark mr-2" style="display: unset;">
-          <summary class="btn btn-outline mr-1" aria-haspopup="dialog"><span octicon="plus-circle" [size]=16
-                                                                             class="mr-1"></span> Add
+        <div class="d-table-cell col-3" style="text-align: right">
+          <details #modalSelectDocument id="modalSelectDocument" (click)="searchDocument(snSiteSpotlight, 1)"
+                                                      class="details-reset details-overlay details-overlay-dark mr-2"
+                   style="display: unset; text-align: left">
+          <summary class="btn btn-primary mr-1 btn-sm" aria-haspopup="dialog"><span octicon="file" [size]=16
+                                                                             class="mr-1"></span> Add Document
           </summary>
           <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast"
                           style="overflow: hidden;width:80%">
             <div class="Box-header">
-              <button onclick='document.getElementById("modalAddOverwrittenField").removeAttribute("open");'
+              <button onclick='document.getElementById("modalSelectDocument").removeAttribute("open");'
                       class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog"
                       data-close-dialog>
                <span octicon="x" [size]=16
@@ -222,7 +195,28 @@
               </div>
             </div>
           </details-dialog>
-        </details>
+        </details></div>
+      </div>
+    </div>
+    <div data-view-component="true"
+         class="Box-body" *ngFor="let snSiteSpotlightDocument of snSiteSpotlight.turSNSiteSpotlightDocuments | sortByOrder:'position':'desc'">
+      <div class="d-table">
+        <div class="d-table-cell col-2">
+          <input type="text" [(ngModel)]="snSiteSpotlightDocument.position" class="form-control col-10 mr-2">
+        </div>
+        <div class="d-table-cell col-4">
+          {{snSiteSpotlightDocument.title}}
+        </div>
+        <div class="d-table-cell col-3">
+          {{snSiteSpotlightDocument.type}}
+        </div>
+
+        <div class="d-table-cell col-3">
+          <button class="btn btn-danger btn-octicon mr-1"
+                  (click)="removeDocument(snSiteSpotlight, snSiteSpotlightDocument)">
+            <span octicon="trash" [size]=16></span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
