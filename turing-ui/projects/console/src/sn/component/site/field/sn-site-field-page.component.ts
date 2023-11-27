@@ -68,6 +68,7 @@ export class TurSNSiteFieldPageComponent implements OnInit {
 
         _turSNSiteField = turSNSiteField;
         this.notifier.notify("success", turSNSiteField.name.concat(message));
+        this.router.navigate(['/sn/site/', this.siteId, 'field', 'list']);
       },
       (response: string) => {
         this.notifier.notify("error", "Field was error: " + response);

@@ -80,9 +80,13 @@ public class TurSecurityConfigProduction {
         http.csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new TurSpaCsrfTokenRequestHandler())
-                        .ignoringRequestMatchers(mvc.pattern("/api/sn/**"),mvc.pattern("/error/**"),
-                                mvc.pattern("/logout"), mvc.pattern("/api/nlp/**"),
-                                mvc.pattern("/api/v2/guest/**"), AntPathRequestMatcher.antMatcher("/h2/**")))
+                        .ignoringRequestMatchers(
+                                mvc.pattern("/api/sn/**"),
+                                mvc.pattern("/error/**"),
+                                mvc.pattern("/logout"),
+                                mvc.pattern("/api/nlp/**"),
+                                mvc.pattern("/api/v2/guest/**"),
+                                AntPathRequestMatcher.antMatcher("/h2/**")))
                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
         if (turConfigProperties.isKeycloak()) {
             String keycloakUrlFormat =

@@ -27,19 +27,17 @@
         -->
     <div class="Subhead-actions" style="display: inherit;">
       <details *ngIf="!isNewObject()" #modalDelete id="modalDelete"
-        class="details-reset details-overlay details-overlay-dark" style="display: unset;">
+               class="details-reset details-overlay details-overlay-dark" style="display: unset;">
         <summary class="btn btn-sm btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
-            class="mr-1"></span>Delete</summary>
+                                                                                 class="mr-1"></span>Delete
+        </summary>
         <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast">
           <div class="Box-header">
             <button onclick='document.getElementById("modalDelete").removeAttribute("open");'
-              class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
-              <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
-                aria-hidden="true">
-                <path fill-rule="evenodd"
-                  d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
-                </path>
-              </svg>
+                    class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog"
+                    data-close-dialog>
+              <span
+                octicon="x" [size]=16 class="mr-1"></span>
             </button>
             <h3 class="Box-title">Are you absolutely sure?</h3>
 
@@ -65,26 +63,8 @@
   <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
     <nav class="menu" aria-label="Site settings">
       <a class="menu-item" [routerLink]="['/se/instance/', seInstance.id]" [routerLinkActive]="['selected']"><span
-          octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
+        octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
     </nav>
-    <!--
-    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
-      <span class="menu-heading" id="menu-heading"><span octicon="tools" [size]=16 class="mr-1"></span>
-        Maintenance</span>
-      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']" [routerLinkActive]="['selected']">
-        Create core</a>
-      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']" [routerLinkActive]="['selected']">
-        Create field</a>
-      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']" [routerLinkActive]="['selected']">
-        Restart service</a>
-    </nav>
-    <nav *ngIf="!isNewObject()" class="menu" aria-label="Site settings">
-      <span class="menu-heading" id="menu-heading"><span octicon="pulse" [size]=16 class="mr-1"></span>
-        Monitoring</span>
-      <a class="menu-item" [routerLink]="['/sn/site', 'advertising', 'top search']" [routerLinkActive]="['selected']">
-        Indexing</a>
-    </nav>
-    -->
   </div>
   <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
     <div class="Subhead">
@@ -97,27 +77,27 @@
         <label for="repo-name">Title</label>
       </div>
       <div class="form-group-body">
-        <input [(ngModel)]="seInstance.title" class="form-control" type="text" id="repo-name" style="width: 100%;" />
-        <p class="note" id="help-text-for-checkbox">
-          SE instance title will appear on SE list.
+        <input [(ngModel)]="seInstance.title" class="form-control" type="text" style="width: 100%;"/>
+        <p class="note">
+          Search engine instance title will appear on list.
         </p>
       </div>
     </div>
     <div class="form-group">
       <div class="form-group-header">
-        <label for="repo-description">Description</label>
+        <label>Description</label>
       </div>
       <div class="form-group-body">
-        <input [(ngModel)]="seInstance.description" class="form-control" type="text" id="repo-name"
-          style="width: 100%;" />
-        <p class="note" id="help-text-for-checkbox">
-          SE instance description will appear on SE list.
+        <input [(ngModel)]="seInstance.description" class="form-control" type="text"
+               style="width: 100%;"/>
+        <p class="note">
+          Search engine instance description will appear on list.
         </p>
       </div>
     </div>
     <div class="form-group">
       <div class="form-group-header">
-        <label for="repo-description">Vendor</label>
+        <label>Vendor</label>
       </div>
       <div class="form-group-body">
         <select [(ngModel)]="seInstance.turSEVendor.id" class="form-select">
@@ -126,41 +106,41 @@
           </option>
         </select>
         <p class="note" id="help-text-for-checkbox">
-          SE vendor that will be used.
+          Search engine vendor that will be used.
         </p>
       </div>
     </div>
     <div class="form-group">
       <div class="form-group-header">
-        <label for="repo-description">Hostname</label>
+        <label>Hostname</label>
       </div>
       <div class="form-group-body">
-        <input [(ngModel)]="seInstance.host" class="form-control" type="text" id="repo-name" style="width: 100%;" />
-        <p class="note" id="help-text-for-checkbox">
-          SE instance hostname will be connected.
+        <input [(ngModel)]="seInstance.host" class="form-control" type="text" style="width: 100%;"/>
+        <p class="note">
+          Search engine instance hostname will be connected.
         </p>
       </div>
     </div>
     <div class="form-group">
       <div class="form-group-header">
-        <label for="repo-description">Port</label>
+        <label>Port</label>
       </div>
       <div class="form-group-body">
         <input [(ngModel)]="seInstance.port" class="form-control" type="number" min="1" max="65535" id="repo-name"
-          [formControl]="portControl" style="width: 100%;" />
-        <p class="note" id="help-text-for-checkbox">
-          SE instance port will be connected.
+               [formControl]="portControl" style="width: 100%;"/>
+        <p class="note">
+          Search engine instance port will be connected.
         </p>
       </div>
     </div>
     <div class="form-checkbox">
       <label>
         <input [(ngModel)]="seInstance.enabled" type="checkbox" (ngModelChange)="seInstance.enabled = $event ? 1 : 0"
-          aria-describedby="help-text-for-checkbox" />
+               aria-describedby="help-text-for-checkbox"/>
         Enabled
       </label>
-      <p class="note" id="help-text-for-checkbox">
-        If this SE Instance will be used in others Turing AI Components.
+      <p class="note">
+        If this Search engine instance will be used in others Turing ES Components.
       </p>
     </div>
   </div>

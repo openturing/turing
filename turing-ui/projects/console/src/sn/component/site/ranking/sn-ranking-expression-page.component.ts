@@ -33,7 +33,7 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
     this.turSNSite = this.turSNSiteService.get(this.siteId);
     this.newObject = (rankingExpressionId.toLowerCase() === 'new');
     this.turSNRankingExpression = this.newObject ? this.turSNRankingExpressionService.getStructure(this.siteId) :
-        this.turSNRankingExpressionService.get(this.siteId, rankingExpressionId);
+      this.turSNRankingExpressionService.get(this.siteId, rankingExpressionId);
     turSNSiteService.getFieldsByType(this.siteId, "se").subscribe(fields => {
       this.turSNSiteSEFields = fields as TurSNSiteField[]
     });
@@ -42,9 +42,11 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
   getTurSNSite(): Observable<TurSNSite> {
     return this.turSNSite;
   }
+
   getTurSNRankingExpression(): Observable<TurSNRankingExpression> {
     return this.turSNRankingExpression;
   }
+
   getTurSNSiteSEFields(): TurSNSiteField[] {
     return this.turSNSiteSEFields;
   }
@@ -52,8 +54,9 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
   getFieldType(fieldName: string): string {
     return <string>this.turSNSiteSEFields.find(field => field.name == fieldName)?.type;
   }
+
   newCondition(turSNRankingConditions: TurSNRankingCondition[]) {
-    let turSNRankingCondition  = new TurSNRankingCondition();
+    let turSNRankingCondition = new TurSNRankingCondition();
     turSNRankingCondition.condition = 1;
     turSNRankingConditions.push(turSNRankingCondition);
 
@@ -64,6 +67,7 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
       snRankingExpression.turSNRankingConditions.filter(condition =>
         condition != snRankingCondition)
   }
+
   ngOnInit(): void {
     // Empty
   }
@@ -80,12 +84,9 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
     this.turSNRankingExpressionService.save(this.siteId, _turSNRankingExpression, this.newObject).subscribe(
       (turSNRankingExpression: TurSNRankingExpression) => {
         let message: string = this.newObject ? " ranking expression was created." : " ranking expression was updated.";
-
         _turSNRankingExpression = turSNRankingExpression;
-
         this.notifier.notify("success", turSNRankingExpression.name.concat(message));
-
-        this.router.navigate(['/sn/site/', this.siteId, 'ranking expression', 'list']);
+        this.router.navigate(['/sn/site/', this.siteId, 'ranking-expression', 'list']);
       },
       response => {
         this.notifier.notify("error", "Ranking Expression was error: " + response);
@@ -100,8 +101,7 @@ export class TurSNRankingExpressionPageComponent implements OnInit {
       (turSNRankingExpression: TurSNRankingExpression) => {
         this.notifier.notify("success", _turSNRankingExpression.name.concat(" ranking expression was deleted."));
         this.modalDelete.nativeElement.removeAttribute("open");
-
-       // this.router.navigate(['/sn/site/', this.siteId, 'ranking-expression', 'list']);
+        this.router.navigate(['/sn/site/', this.siteId, 'ranking-expression', 'list']);
       },
       response => {
         this.notifier.notify("error", "Ranking Expression was error: " + response);
