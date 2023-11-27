@@ -151,7 +151,7 @@ public class TurSNSiteAPI {
     public boolean turSNSiteDelete(@PathVariable String id) {
         Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
         turSNSite.ifPresent(site ->
-                turSNSiteLocaleRepository.findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), site).forEach(locale ->
+                turSNSiteLocaleRepository.findByTurSNSite(TurPesistenceUtils.orderByLanguageIgnoreCase(), site).forEach(locale ->
                         TurSolrUtils.deleteCore(site.getTurSEInstance(), locale.getCore())
                 )
         );
