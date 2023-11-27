@@ -40,7 +40,7 @@
     "@angular/cli": "16.2.9",
     "@angular/compiler-cli": "16.2.4",
     "@angular/language-service": "16.2.12",
-    "@types/jasmine": "5.1.2",
+    "@types/jasmine": "5.1.4",
     "@types/jasminewd2": "2.0.13",
     "@types/node": "20.9.2",
     "@types/primer__octicons": "^19.6.3",
