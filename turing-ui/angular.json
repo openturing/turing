@@ -35,8 +35,10 @@
               "projects/console/src/favicon.ico",
               "projects/console/src/assets"
             ],
-            "styles": ["projects/console/src/styles.scss"],
-            "scripts": []
+            "styles": ["node_modules/bootstrap-icons/font/bootstrap-icons.min.css",
+              "node_modules/bootstrap/dist/css/bootstrap.css",
+              "projects/welcome/src/styles.scss"],
+            "scripts": ["node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"]
           },
           "configurations": {
             "production": {
@@ -231,8 +233,10 @@
               "projects/welcome/src/favicon.ico",
               "projects/welcome/src/assets"
             ],
-            "styles": ["projects/welcome/src/styles.scss"],
-            "scripts": []
+            "styles": ["node_modules/bootstrap-icons/font/bootstrap-icons.min.css",
+              "node_modules/bootstrap/dist/css/bootstrap.css",
+              "projects/welcome/src/styles.scss"],
+            "scripts": ["node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"]
           },
           "configurations": {
             "production": {

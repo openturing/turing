@@ -10,6 +10,7 @@ import { TurLoginModule } from './login/login.module';
 import { TurSignupModule } from './signup/signup.module';
 import { TurPasswordResetModule } from './password-reset/password-reset.module';
 import { TurSignupService } from './_services/signup.service';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 @NgModule({
   declarations: [
@@ -24,7 +25,8 @@ import { TurSignupService } from './_services/signup.service';
     FormsModule,
     TurLoginModule,
     TurSignupModule,
-    TurPasswordResetModule
+    TurPasswordResetModule,
+    FontAwesomeModule
   ],
   providers: [
     TurSignupService

@@ -1,12 +1,15 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿import {Component, OnInit, ViewEncapsulation} from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { first } from 'rxjs/operators';
-
+import { faCertificate } from '@fortawesome/free-solid-svg-icons';
 import { AuthenticationService } from '../../_services';
 
-@Component({ templateUrl: 'login-page.component.html' })
+@Component({ templateUrl: 'login-page.component.html',
+styleUrls: ['./login.page.component.scss'],
+  encapsulation: ViewEncapsulation.None})
 export class TurLoginPageComponent implements OnInit {
+  faCertificate= faCertificate;
   loginForm!: UntypedFormGroup;
   loading = false;
   submitted = false;

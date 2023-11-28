@@ -1,3 +1,56 @@
+<nav *ngIf="(user | async) as userItem" class="navbar navbar-dark bg-dark fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Administration Console</a>
+    <ul class="nav nav-pills">
+      <li class="nav-item">
+        <a class="nav-link" href="#">NLP</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#">Search Engine</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#">Semantic Navigation</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link disabled" aria-disabled="true">API Token</a>
+      </li>
+    </ul>
+    <button   class="navbar-toggler" type="button" data-bs-toggle="offcanvas"
+             data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation">
+      <svg width="20" height="20" style="border-radius: 50%;" [identiconHash]="userItem.username | lowercase">
+        Avatar
+      </svg>
+    </button>
+    <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="offcanvasDarkNavbar" aria-labelledby="offcanvasDarkNavbarLabel">
+      <div class="offcanvas-header">
+        <svg width="32" height="32" style="border-radius: 50%;" [identiconHash]="userItem.username | lowercase">
+          Avatar
+        </svg>
+        <div>Signed in as <strong>{{userItem.username}}</strong>
+          <span style="width: 100%;white-space: nowrap;display: block" class="color-fg-subtle">
+              {{userItem.firstName}} {{userItem.lastName}}</span>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+
+          <li class="nav-item">
+            <a class="nav-link"  [routerLink]="['/adm/user']">Admin Console</a>
+          </li>
+          <li class="nav-item">
+            <form id="logout_form" action="/logout" method="post">
+              <a class="nav-link"  style="cursor:pointer"
+                 onclick="localStorage.removeItem('restInfo');localStorage.removeItem('user');document.getElementById('logout_form').submit(); return false;">Sign
+                out</a>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>
+
 <div class="Header py-lg-0 Details flex-wrap flex-lg-nowrap px-3">
   <div class="Header-item" style="padding: 6px 0px">
     <a [routerLink]="['/']" routerLinkActive="active" class="Header-link d-flex flex-items-center ">
@@ -15,6 +68,8 @@
         <span class="dropdown-caret"></span>
       </summary>
       <div class="dropdown-menu dropdown-menu-sw mt-n2" role="menu">
+
+
         <a [routerLink]="['/nlp/instance/new']" role="menuitem" class="dropdown-item" href>New NLP instance</a>
         <a [routerLink]="['/nlp/entity/new']" role="menuitem" class="dropdown-item" href>New NLP entity</a>
         <div role="none" class="dropdown-divider"></div>
