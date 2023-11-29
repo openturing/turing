@@ -62,6 +62,7 @@ import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.MoreLikeThisParams;
 import org.apache.solr.common.util.SimpleOrderedMap;
 import org.apache.tika.utils.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -600,7 +601,6 @@ public class TurSolr {
     }
 
     private void prepareQueryTargetingRules(TurSNSitePostParamsBean turSNSitePostParamsBean, SolrQuery query) {
-        // Targeting Rule
         if (turSNSitePostParamsBean.getTargetingRules() != null
                 && !turSNSitePostParamsBean.getTargetingRules().isEmpty())
             query.addFilterQuery(
@@ -608,18 +608,10 @@ public class TurSolr {
     }
 
     private void prepareQueryFilterQuery(TurSEParameters turSEParameters, SolrQuery query) {
-        // Filter Query
         if (turSEParameters.getFilterQueries() != null && !turSEParameters.getFilterQueries().isEmpty()) {
-            List<String> filterQueriesModified = turSEParameters.getFilterQueries().stream().map(
-                    q -> {
-                        String[] split = q.split(":", 2);
-                        if (!split[1].startsWith("[") && !split[1].startsWith("(")) {
-                            split[1] = String.format("\"%s\"", split[1]);
-                        }
-                        return String.join(":", split);
-                    }
-            ).toList();
-            if (turSEParameters.getFqOperator().equals(TurSNFilterQueryOperator.OR)) {
+            List<String> filterQueriesModified = turSEParameters.getFilterQueries().stream()
+                    .map(q -> queryWithoutExpression(q)? addDoubleQuotesToValue(q): q).toList();
+            if (isFilterQueryOR(turSEParameters)) {
                 String fqOr = String.format("(%s)", String.join(" OR ", filterQueriesModified));
                 query.setFilterQueries(String.valueOf(fqOr));
             } else {
@@ -629,8 +621,23 @@ public class TurSolr {
         }
     }
 
+    private static boolean isFilterQueryOR(TurSEParameters turSEParameters) {
+        return turSEParameters.getFqOperator().equals(TurSNFilterQueryOperator.OR);
+    }
+
+    @NotNull
+    private static String addDoubleQuotesToValue(String q) {
+        String[] split = q.split(":", 2);
+        split[1] = String.format("\"%s\"", split[1]);
+        return String.join(":", split);
+    }
+
+    private static boolean queryWithoutExpression(String q) {
+        String[] split = q.split(":", 2);
+        return !q.startsWith("(") && !split[1].startsWith("[") && !split[1].startsWith("(");
+    }
+
     private List<TurSNSiteFieldExt> prepareQueryMLT(TurSNSite turSNSite, SolrQuery query) {
-        // MLT
         List<TurSNSiteFieldExt> turSNSiteMLTFieldExts = turSNSiteFieldExtRepository
                 .findByTurSNSiteAndMltAndEnabled(turSNSite, 1, 1);
         if (hasMLT(turSNSite, turSNSiteMLTFieldExts)) {
