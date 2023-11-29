@@ -24,6 +24,8 @@ import org.apache.jackrabbit.commons.JcrUtils;
 import org.json.JSONObject;
 
 import javax.jcr.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.*;
@@ -35,6 +37,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
@@ -155,47 +158,96 @@ public class TurAEMIndexerTool {
         }
     }
 
-    public void getRead() throws Exception {
-        if (isCTDIntoMapping(contentType, config)) {
-            switch (mode) {
-                case JSON:
-                    getNodesFromJson();
-                    break;
-                case JCR:
-                    getNodesFromJcr();
-                    break;
-            }
-        } else {
-            jCommander.getConsole()
-                    .println(String.format("%s type is not configured in CTD Mapping XML file.", contentType));
+    public void getRead() {
+
+        switch (mode) {
+            case JSON:
+                getNodesFromJson();
+                break;
+            case JCR:
+                getNodesFromJcr();
+                break;
         }
+
     }
 
     private void getNodesFromJson() {
+        if (contentType != null) {
+            if (isCTDIntoMapping(contentType, config)) {
+                jsonByContentType();
+            } else {
+                jCommander.getConsole()
+                        .println(String.format("%s type is not configured in CTD Mapping XML file.", contentType));
+            }
+        } else if (guidFilePath != null) {
+            jsonByGuidList();
+        }
+    }
+
+    private void jsonByGuidList() {
+        ArrayList<String> contentInstances;
+        try (FileReader fr = new FileReader(guidFilePath); BufferedReader br = new BufferedReader(fr)) {
+            contentInstances = br.lines().collect(Collectors.toCollection(ArrayList::new));
+            if (!contentInstances.isEmpty())
+                this.indexGUIDList(contentInstances);
+
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    private void indexGUIDList(List<String> guids) {
+        jCommander.getConsole().println(String.format("Processing a total of %d GUID Strings", guids.size()));
+        guids.stream().filter(guid -> guid != null && !guid.isEmpty()).forEach(guid -> {
+            start = System.currentTimeMillis();
+            String jsonUrl = String.format("%s%s.infinity.json",
+                    hostAndPort, guid);
+            String json = getResponseBody(jsonUrl);
+            JSONObject jsonObject = new JSONObject(json);
+            siteName = jsonObject.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
+            contentType = jsonObject.getString(JCR_PRIMARYTYPE);
+            getNodeFromJson(guid, jsonObject);
+            long elapsed = System.currentTimeMillis() - start;
+            jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+        });
+
+    }
+
+    private void jsonByContentType() {
         start = System.currentTimeMillis();
         String jsonUrl = String.format("%s%s.infinity.json",
                 hostAndPort, sitePath);
         String json = getResponseBody(jsonUrl);
         JSONObject jsonObject = new JSONObject(json);
-        siteName = new JSONObject(json).getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
+        siteName = jsonObject.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
         getNodeFromJson(sitePath, jsonObject);
         long elapsed = System.currentTimeMillis() - start;
         jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
     }
 
-    private void getNodesFromJcr() throws RepositoryException {
-        Repository repository = JcrUtils.getRepository(hostAndPort + "/crx/server");
-        Session session = repository.login(new SimpleCredentials(username, password.toCharArray()));
-        try {
-            Node node = session.getNode(sitePath);
-            AemSite aemSite = new AemSite(node);
-            siteName = aemSite.getTitle();
-            start = System.currentTimeMillis();
-            getNodeFromJcr(node);
-            long elapsed = System.currentTimeMillis() - start;
-            jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
-        } finally {
-            session.logout();
+    private void getNodesFromJcr() {
+        if (isCTDIntoMapping(contentType, config)) {
+            Session session = null;
+            try {
+                Repository repository = JcrUtils.getRepository(hostAndPort + "/crx/server");
+                session = repository.login(new SimpleCredentials(username, password.toCharArray()));
+                Node node = session.getNode(sitePath);
+                AemSite aemSite = new AemSite(node);
+                siteName = aemSite.getTitle();
+                start = System.currentTimeMillis();
+                getNodeFromJcr(node);
+                long elapsed = System.currentTimeMillis() - start;
+                jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+            } catch (RepositoryException e) {
+                log.error(e.getMessage(), e);
+            } finally {
+                if (session != null) {
+                    session.logout();
+                }
+            }
+        } else {
+            jCommander.getConsole()
+                    .println(String.format("%s type is not configured in CTD Mapping XML file.", contentType));
         }
     }
 
@@ -446,12 +498,14 @@ public class TurAEMIndexerTool {
         attributeValues.add(attributeValue);
         attributes.put(attributeName, attributeValues);
     }
+
     private static void addItemToArray(Map<String, Object> attributes, String attributeName, String attributeValue) {
         @SuppressWarnings("unchecked")
         List<Object> attributeValues = (List<Object>) attributes.get(attributeName);
         attributeValues.add(attributeValue);
         attributes.put(attributeName, attributeValues);
     }
+
     private static boolean hasContentType(Node nodeChild, String primaryType)
             throws RepositoryException {
         return primaryType != null && nodeChild.getProperty(JCR_PRIMARYTYPE).getString().equals(primaryType);
