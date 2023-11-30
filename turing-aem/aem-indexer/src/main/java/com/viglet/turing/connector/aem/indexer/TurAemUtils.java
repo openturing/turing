@@ -7,7 +7,6 @@ import org.json.JSONObject;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
-import javax.jcr.ValueFormatException;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
@@ -16,15 +15,32 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+
 @Slf4j
 public class TurAemUtils {
     public static boolean hasProperty(JSONObject jsonObject, String property) {
         return jsonObject.has(property) && jsonObject.get(property) != null;
     }
+
     public static JSONObject getInfinityJson(String url, String hostAndPort, String username, String password) {
-        return new JSONObject(getResponseBody(String.format("%s%s.infinity.json",
-                hostAndPort, url), username, password));
+        String  responseBody = getResponseBody(String.format(url.endsWith(".json")? "%s%s": "%s%s.infinity.json",
+                    hostAndPort, url), username, password);
+        if (isResponseBodyJSONArray(responseBody) && !url.endsWith(".json")) {
+            JSONArray jsonArray = new JSONArray(responseBody);
+            return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
+        } else if (isResponseBodyJSONObject(responseBody)) {
+            return new JSONObject(responseBody);
+        }
+        return new JSONObject();
     }
+
+    private static boolean isResponseBodyJSONArray(String responseBody) {
+        return responseBody.startsWith("[");
+    }
+    private static boolean isResponseBodyJSONObject(String responseBody) {
+        return responseBody.startsWith("{");
+    }
+
     public static String getResponseBody(String url, String username, String password) {
         HttpClient client = HttpClient.newBuilder()
                 .authenticator(new Authenticator() {
@@ -42,19 +58,20 @@ public class TurAemUtils {
             throw new RuntimeException(ex);
         }
     }
+
     public static String getPropertyValue(Object property) {
         try {
             if (property instanceof JSONArray) {
                 JSONArray propertyArray = (JSONArray) property;
                 return !propertyArray.isEmpty() ? propertyArray.get(0).toString() : "";
-            }
-            else
+            } else
                 return property.toString();
         } catch (IllegalStateException e) {
             log.error(e.getMessage(), e);
         }
         return null;
     }
+
     public static String getJcrPropertyValue(Node node, String propertyName)
             throws RepositoryException {
         if (node.hasProperty(propertyName))
@@ -62,7 +79,7 @@ public class TurAemUtils {
         return null;
     }
 
-    public static void getNode(Node node, StringBuffer components) throws RepositoryException, ValueFormatException {
+    public static void getNode(Node node, StringBuffer components) throws RepositoryException {
 
         if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
             NodeIterator nodeIterator = node.getNodes();
