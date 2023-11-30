@@ -28,10 +28,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.*;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -159,7 +157,6 @@ public class TurAEMIndexerTool {
     }
 
     public void getRead() {
-
         switch (mode) {
             case JSON:
                 getNodesFromJson();
@@ -168,7 +165,6 @@ public class TurAEMIndexerTool {
                 getNodesFromJcr();
                 break;
         }
-
     }
 
     private void getNodesFromJson() {
@@ -200,11 +196,8 @@ public class TurAEMIndexerTool {
         jCommander.getConsole().println(String.format("Processing a total of %d GUID Strings", guids.size()));
         guids.stream().filter(guid -> guid != null && !guid.isEmpty()).forEach(guid -> {
             start = System.currentTimeMillis();
-            String jsonUrl = String.format("%s%s.infinity.json",
-                    hostAndPort, guid);
-            String json = getResponseBody(jsonUrl);
-            JSONObject jsonObject = new JSONObject(json);
-            siteName = jsonObject.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
+            final JSONObject jsonObject = TurAemUtils.getInfinityJson(guid, hostAndPort, username, password);
+            siteName = TurAemUtils.getInfinityJson(sitePath, hostAndPort, username, password).getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
             contentType = jsonObject.getString(JCR_PRIMARYTYPE);
             getNodeFromJson(guid, jsonObject);
             long elapsed = System.currentTimeMillis() - start;
@@ -213,14 +206,13 @@ public class TurAEMIndexerTool {
 
     }
 
+
+
     private void jsonByContentType() {
         start = System.currentTimeMillis();
-        String jsonUrl = String.format("%s%s.infinity.json",
-                hostAndPort, sitePath);
-        String json = getResponseBody(jsonUrl);
-        JSONObject jsonObject = new JSONObject(json);
-        siteName = jsonObject.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
-        getNodeFromJson(sitePath, jsonObject);
+        JSONObject jsonSite = TurAemUtils.getInfinityJson(sitePath, hostAndPort, username, password);
+        siteName = jsonSite.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
+        getNodeFromJson(sitePath, jsonSite);
         long elapsed = System.currentTimeMillis() - start;
         jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
     }
@@ -263,23 +255,7 @@ public class TurAEMIndexerTool {
         }
     }
 
-    private String getResponseBody(String url) {
-        HttpClient client = HttpClient.newBuilder()
-                .authenticator(new Authenticator() {
-                    @Override
-                    protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(username, password.toCharArray());
-                    }
-                })
-                .build();
-        try {
-            HttpRequest request = HttpRequest.newBuilder().GET().uri(new URI(url)).build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return response.body();
-        } catch (URISyntaxException | IOException | InterruptedException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
+
 
     private void getNodeFromJson(String nodePath, JSONObject jsonObject) {
         if (jsonObject.getString(JCR_PRIMARYTYPE).equals(contentType)) {
@@ -340,7 +316,7 @@ public class TurAEMIndexerTool {
                     break;
             }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException |
-                 ClassNotFoundException | RepositoryException e) {
+                 ClassNotFoundException e) {
             log.error(e.getMessage(), e);
         }
     }
@@ -375,15 +351,11 @@ public class TurAEMIndexerTool {
         return extAttributes;
     }
 
-    private void indexObject(AemObject aemObject, List<TurAttrDef> extAttributes) throws RepositoryException {
+    private void indexObject(AemObject aemObject, List<TurAttrDef> extAttributes) {
         MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
         List<TurAttrDef> turAttrDefList = prepareAttributeDefs(aemObject, config, mappingDefinitions);
         turAttrDefList.addAll(extAttributes);
-        TurSNSiteConfig turSNSiteConfig = config.getDefaultSNSiteConfig();
         Map<String, Object> attributes = new HashMap<>();
-        String locale = config.getLocaleByPath(turSNSiteConfig.getName(), aemObject.getPath());
-        final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE,
-                locale);
         turAttrDefList.forEach(turAttrDef -> {
             String attributeName = turAttrDef.getTagName();
             turAttrDef.getMultiValue().forEach(attributeValue -> {
@@ -395,7 +367,10 @@ public class TurAEMIndexerTool {
             });
         });
         attributes.put("site", siteName);
-
+        TurSNSiteConfig turSNSiteConfig = config.getDefaultSNSiteConfig();
+        String locale = config.getLocaleByPath(turSNSiteConfig.getName(), aemObject.getPath());
+        final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE,
+                locale);
         turSNJobItem.setAttributes(attributes);
         TurSNJobItems turSNJobItems = new TurSNJobItems();
         turSNJobItems.add(turSNJobItem);
@@ -417,55 +392,53 @@ public class TurAEMIndexerTool {
         }
     }
 
-    private static void addFirstItemToAttribute(TurAttrDef turAttrDef,
+    private void addFirstItemToAttribute(TurAttrDef turAttrDef,
                                                 String attributeValue,
                                                 Map<String, Object> attributes) {
         attributes.put(turAttrDef.getTagName(), attributeValue);
     }
 
-    public static boolean isCTDIntoMapping(String contentTypeName, IHandlerConfiguration config) {
+    public boolean isCTDIntoMapping(String contentTypeName, IHandlerConfiguration config) {
         TurCTDMappingMap mappings = getCTDMappingMap(config);
         CTDMappings ctdMappings = mappings.get(contentTypeName);
         return ctdMappings != null;
 
     }
 
-    public static TurCTDMappingMap getCTDMappingMap(IHandlerConfiguration config) {
+    public TurCTDMappingMap getCTDMappingMap(IHandlerConfiguration config) {
         MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config);
         return mappingDefinitions.getMappingDefinitions();
 
     }
 
-    private static List<TurAttrDef> prepareAttributeDefs(AemObject aemObject, IHandlerConfiguration config,
+    private List<TurAttrDef> prepareAttributeDefs(AemObject aemObject, IHandlerConfiguration config,
                                                          MappingDefinitions mappingDefinitions) {
         CTDMappings ctdMappings = mappingDefinitions.getMappingByContentType(aemObject.getType());
         List<TurAttrDef> attributesDefs = new ArrayList<>();
         if (ctdMappings == null) {
             log.error("Content Type not found: " + aemObject.getType());
         } else {
-            for (String tag : ctdMappings.getTagList()) {
-
+            ctdMappings.getTagList().forEach(tag -> {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("generateXMLToIndex: Tag: %s", tag));
                 }
-                for (TuringTag turingTag : ctdMappings.getTuringTagMap().get(tag)) {
-                    if (tag != null && turingTag != null && turingTag.getTagName() != null) {
-                        TurAttrDefContext turAttrDefContext = new TurAttrDefContext(aemObject, turingTag, config,
-                                mappingDefinitions);
-                        try {
-                            List<TurAttrDef> attributeDefsXML = TurAEMAttrXML.attributeXML(turAttrDefContext);
-                            // Unique
-                            if (turingTag.isSrcUniqueValues()) {
-                                attributesDefs.add(getTurAttrDefUnique(turingTag, attributeDefsXML));
-                            } else {
-                                attributesDefs.addAll(attributeDefsXML);
+                ctdMappings.getTuringTagMap().get(tag).stream()
+                        .filter(turingTag -> tag != null && turingTag != null && turingTag.getTagName() != null)
+                        .forEach(turingTag -> {
+                            TurAttrDefContext turAttrDefContext = new TurAttrDefContext(aemObject, turingTag, config,
+                                    mappingDefinitions);
+                            try {
+                                List<TurAttrDef> attributeDefsXML = TurAEMAttrXML.attributeXML(turAttrDefContext, this);
+                                if (turingTag.isSrcUniqueValues()) {
+                                    attributesDefs.add(getTurAttrDefUnique(turingTag, attributeDefsXML));
+                                } else {
+                                    attributesDefs.addAll(attributeDefsXML);
+                                }
+                            } catch (Exception e) {
+                                log.error(e.getMessage(), e);
                             }
-                        } catch (Exception e) {
-                            log.error(e.getMessage(), e);
-                        }
-                    }
-                }
-            }
+                        });
+            });
         }
         return attributesDefs;
     }

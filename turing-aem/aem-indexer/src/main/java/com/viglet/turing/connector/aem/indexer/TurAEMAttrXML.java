@@ -8,7 +8,9 @@ import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.util.HtmlManipulator;
 import lombok.extern.slf4j.Slf4j;
+import netscape.javascript.JSObject;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -18,25 +20,27 @@ import java.util.Objects;
 
 @Slf4j
 public class TurAEMAttrXML {
+    public static final String JCR_TITLE = "jcr:title";
+
     private TurAEMAttrXML() {
         throw new IllegalStateException("TurAEMAttrXML");
     }
 
-    public static List<TurAttrDef> attributeXML(TurAttrDefContext turAttrDefContext) {
+    public static List<TurAttrDef> attributeXML(TurAttrDefContext turAttrDefContext, TurAEMIndexerTool turAEMIndexerTool) {
         TuringTag turingTag = turAttrDefContext.getTuringTag();
         if (log.isDebugEnabled()) {
             log.debug(String.format("attributeXML getSrcXmlName(): %s", turingTag.getSrcXmlName()));
         }
-        if (isTextValue(turingTag)) {
+        if (hasTextValue(turingTag)) {
             return setLiteralTextValueToAttribute(turingTag);
         } else {
-            return hasCustomClass(turAttrDefContext)?
-                    attributeByClass(turAttrDefContext):
-                    attributeByCMS(turAttrDefContext);
+            return hasCustomClass(turAttrDefContext) ?
+                    attributeByClass(turAttrDefContext) :
+                    attributeByCMS(turAttrDefContext, turAEMIndexerTool);
         }
     }
 
-    private static boolean isTextValue(TuringTag turingTag) {
+    private static boolean hasTextValue(TuringTag turingTag) {
         return turingTag.getTextValue() != null && !turingTag.getTextValue().isEmpty();
     }
 
@@ -48,24 +52,40 @@ public class TurAEMAttrXML {
         return attributesDefs;
     }
 
-    private static List<TurAttrDef> attributeByCMS(TurAttrDefContext turAttrDefContext) {
+    private static List<TurAttrDef> attributeByCMS(TurAttrDefContext turAttrDefContext, TurAEMIndexerTool turAEMIndexerTool) {
+        List<TurAttrDef> turAttrDefList = new ArrayList<>();
         String attributeName = turAttrDefContext.getTuringTag().getSrcXmlName();
         Object jcrProperty = null;
         if (attributeName != null) {
             AemObject aemObject = (AemObject) turAttrDefContext.getCMSObjectInstance();
-            if (aemObject.getJcrContentNode().has(attributeName))
+            if (aemObject.getJcrContentNode().has(attributeName)) {
                 jcrProperty = aemObject.getJcrContentNode().get(attributeName);
-            else if (aemObject.getAttributes().containsKey(attributeName))
+                if ("cq:tags".equals(attributeName)) {
+                    JSONArray tags = (JSONArray) jcrProperty;
+                    if (tags != null) {
+                        tags.forEach(tag -> {
+                            String[] tagSplit = tag.toString().split(":");
+                            JSONObject infinityJson = TurAemUtils
+                                    .getInfinityJson("/content/_cq_tags/" + String.join("/", tagSplit),
+                                            turAEMIndexerTool.getHostAndPort(),
+                                            turAEMIndexerTool.getUsername(),
+                                            turAEMIndexerTool.getPassword());
+                            TurAttrDef tagDef = new TurAttrDef(tagSplit[0], TurMultiValue.singleItem(infinityJson.getString(JCR_TITLE)));
+                            turAttrDefList.add(tagDef);
+                        });
+                    }
+                }
+            } else if (aemObject.getAttributes().containsKey(attributeName))
                 jcrProperty = aemObject.getAttributes().get(attributeName);
         }
         if (hasJcrPropertyValue(jcrProperty)) {
-            return addValuesToAttributes(turAttrDefContext, jcrProperty);
+            turAttrDefList.addAll(addValuesToAttributes(turAttrDefContext.getTuringTag(), jcrProperty));
+            return turAttrDefList;
         }
         return Collections.emptyList();
     }
 
-    private static List<TurAttrDef> addValuesToAttributes(TurAttrDefContext turAttrDefContext, Object jcrProperty) {
-        TuringTag turingTag = turAttrDefContext.getTuringTag();
+    private static List<TurAttrDef> addValuesToAttributes(TuringTag turingTag, Object jcrProperty) {
         List<TurAttrDef> attributesDefs = new ArrayList<>();
         TurMultiValue turMultiValue = new TurMultiValue();
         if (isHtmlAttribute(turingTag)) {

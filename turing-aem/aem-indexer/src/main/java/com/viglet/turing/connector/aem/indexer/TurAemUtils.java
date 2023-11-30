@@ -8,15 +8,39 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.ValueFormatException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
+import java.io.IOException;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 @Slf4j
 public class TurAemUtils {
     public static boolean hasProperty(JSONObject jsonObject, String property) {
         return jsonObject.has(property) && jsonObject.get(property) != null;
+    }
+    public static JSONObject getInfinityJson(String url, String hostAndPort, String username, String password) {
+        return new JSONObject(getResponseBody(String.format("%s%s.infinity.json",
+                hostAndPort, url), username, password));
+    }
+    public static String getResponseBody(String url, String username, String password) {
+        HttpClient client = HttpClient.newBuilder()
+                .authenticator(new Authenticator() {
+                    @Override
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication(username, password.toCharArray());
+                    }
+                })
+                .build();
+        try {
+            HttpRequest request = HttpRequest.newBuilder().GET().uri(new URI(url)).build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return response.body();
+        } catch (URISyntaxException | IOException | InterruptedException ex) {
+            throw new RuntimeException(ex);
+        }
     }
     public static String getPropertyValue(Object property) {
         try {
