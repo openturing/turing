@@ -55,11 +55,11 @@ public class AemObject {
         getDataFolder(jcrContentNode);
         try {
             Calendar lastModifiedCalendar = Calendar.getInstance();
-            if (this.jcrContentNode.has(CQ_LAST_MODIFIED)) {
-                lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(CQ_LAST_MODIFIED)));
-                this.lastModified = lastModifiedCalendar;
-            } else if (this.jcrContentNode.has(JCR_LASTMODIFIED)) {
+           if (this.jcrContentNode.has(JCR_LASTMODIFIED)) {
                 lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(JCR_LASTMODIFIED)));
+                this.lastModified = lastModifiedCalendar;
+            } else if (this.jcrContentNode.has(CQ_LAST_MODIFIED)) {
+                lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(CQ_LAST_MODIFIED)));
                 this.lastModified = lastModifiedCalendar;
             }
             Calendar createdDateCalendar = Calendar.getInstance();

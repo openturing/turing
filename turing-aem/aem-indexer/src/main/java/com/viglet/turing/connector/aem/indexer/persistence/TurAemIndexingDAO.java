@@ -71,7 +71,7 @@ public class TurAemIndexingDAO {
         }
     }
 
-    public Optional<List<TurAemIndexing>> findContentShouldBeDeIndexed(@NotNull final String group,
+    public Optional<List<TurAemIndexing>> findContentsShouldBeDeIndexed(@NotNull final String group,
                                                                        @NotNull final String deltaId) {
         try {
             CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -88,6 +88,15 @@ public class TurAemIndexingDAO {
         } catch (NoResultException nre) {
             return Optional.empty();
         }
+    }
+
+    public void deleteContentsWereIndexed(@NotNull final String group,
+                                               @NotNull final String deltaId) {
+        findContentsShouldBeDeIndexed(group, deltaId).ifPresent(contents -> contents.forEach(turAemIndexing -> {
+                    entityManager.remove(turAemIndexing);
+                    entityManager.getTransaction().commit();
+                }
+        ));
     }
 
     public Optional<TurAemIndexing> findByAemIdAndGroup(@NotNull final String id, @NotNull final String group) {

@@ -95,6 +95,12 @@
           <version>3.13.0</version>
           <scope>compile</scope>
       </dependency>
+      <dependency>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-classic</artifactId>
+          <version>1.4.11</version>
+          <scope>compile</scope>
+      </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -137,6 +143,13 @@
                     <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
                   </excludes>
                 </filter>
+                <filter>
+                  <artifact>org.slf4j:slf4j-simple</artifact>
+                  <excludes>
+                    <exclude>META-INF/services/org.slf4j.spi.SLF4JServiceProvider</exclude>
+                  </excludes>
+                </filter>
+
                 <filter>
                   <artifact>commons-logging:commons-logging</artifact>
                   <excludes>

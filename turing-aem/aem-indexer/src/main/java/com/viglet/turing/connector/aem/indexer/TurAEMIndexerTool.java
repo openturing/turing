@@ -1,5 +1,6 @@
 package com.viglet.turing.connector.aem.indexer;
 
+import ch.qos.logback.classic.Level;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
@@ -25,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.jackrabbit.commons.JcrUtils;
 import org.json.JSONObject;
+import org.slf4j.LoggerFactory;
 
 import javax.jcr.*;
 import java.io.BufferedReader;
@@ -112,11 +114,11 @@ public class TurAEMIndexerTool {
         try {
             jCommander.parse(argv);
 
-            //   if (turAEMIndexerTool.debug) {
-            //     ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory.
-            //            getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-            //   root.setLevel(Level.DEBUG);
-            // }
+               if (turAEMIndexerTool.debug) {
+                 ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory.
+                        getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+               root.setLevel(Level.DEBUG);
+            }
 
             if (turAEMIndexerTool.help) {
                 jCommander.usage();
@@ -340,19 +342,22 @@ public class TurAEMIndexerTool {
     }
     private void deIndexObject() {
         System.out.println("DeIndex Content that was removed...");
-        turAemIndexingDAO.findContentShouldBeDeIndexed(group, deltaId).ifPresent(contents ->
-                contents.forEach(content -> {
-                    System.out.println("deIndexObject Item");
-                    TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE,
-                            LocaleUtils.toLocale(content.getLocale()));
-                    Map<String, Object> attributes = new HashMap<>();
-                    attributes.put(AemHandlerConfiguration.ID_ATTRIBUTE, content.getAemId());
-                    attributes.put(AemHandlerConfiguration.PROVIDER_ATTRIBUTE, AemHandlerConfiguration.DEFAULT_PROVIDER);
-                    turSNJobItem.setAttributes(attributes);
-                    TurSNJobItems turSNJobItems = new TurSNJobItems();
-                    turSNJobItems.add(turSNJobItem);
-                    sendJobToTuring(turSNJobItems);
-                }));
+        turAemIndexingDAO.findContentsShouldBeDeIndexed(group, deltaId).ifPresent(contents -> {
+                    contents.forEach(content -> {
+                        System.out.println("deIndexObject Item");
+                        TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE,
+                                LocaleUtils.toLocale(content.getLocale()));
+                        Map<String, Object> attributes = new HashMap<>();
+                        attributes.put(AemHandlerConfiguration.ID_ATTRIBUTE, content.getAemId());
+                        attributes.put(AemHandlerConfiguration.PROVIDER_ATTRIBUTE, AemHandlerConfiguration.DEFAULT_PROVIDER);
+                        turSNJobItem.setAttributes(attributes);
+                        TurSNJobItems turSNJobItems = new TurSNJobItems();
+                        turSNJobItems.add(turSNJobItem);
+                        sendJobToTuring(turSNJobItems);
+                    });
+                    turAemIndexingDAO.deleteContentsWereIndexed(group, deltaId);
+                }
+        );
 
     }
     private void indexObject(AemObject aemObject, List<TurAttrDef> extAttributes) {
