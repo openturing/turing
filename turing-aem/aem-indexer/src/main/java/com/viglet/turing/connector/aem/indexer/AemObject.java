@@ -46,24 +46,29 @@ public class AemObject {
         this.path = nodePath;
         this.url = nodePath + ".html";
         this.type = jcrNode.has(JCR_PRIMARYTYPE) ? jcrNode.getString(JCR_PRIMARYTYPE) : EMPTY_VALUE;
-        this.jcrContentNode = jcrNode.getJSONObject(JCR_CONTENT);
-        this.delivered = jcrContentNode.has(CQ_IS_DELIVERED) && this.jcrContentNode.getBoolean(CQ_IS_DELIVERED);
-        this.title = jcrContentNode.has(JCR_TITLE) ? this.jcrContentNode.getString(JCR_TITLE) : EMPTY_VALUE;
-        if (TurAemUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT)) {
-            this.contentFragment = this.jcrContentNode.getBoolean(CONTENT_FRAGMENT);
-        }
-        getDataFolder(jcrContentNode);
         try {
-            Calendar lastModifiedCalendar = Calendar.getInstance();
-           if (this.jcrContentNode.has(JCR_LASTMODIFIED)) {
-                lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(JCR_LASTMODIFIED)));
-                this.lastModified = lastModifiedCalendar;
-            } else if (this.jcrContentNode.has(CQ_LAST_MODIFIED)) {
-                lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(CQ_LAST_MODIFIED)));
-                this.lastModified = lastModifiedCalendar;
+            if (jcrNode.has(JCR_CONTENT)) {
+                this.jcrContentNode = jcrNode.getJSONObject(JCR_CONTENT);
+                this.delivered = jcrContentNode.has(CQ_IS_DELIVERED) && this.jcrContentNode.getBoolean(CQ_IS_DELIVERED);
+                this.title = jcrContentNode.has(JCR_TITLE) ? this.jcrContentNode.getString(JCR_TITLE) : EMPTY_VALUE;
+                if (TurAemUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT)) {
+                    this.contentFragment = this.jcrContentNode.getBoolean(CONTENT_FRAGMENT);
+                }
+                getDataFolder(jcrContentNode);
+
+                Calendar lastModifiedCalendar = Calendar.getInstance();
+                if (this.jcrContentNode.has(JCR_LASTMODIFIED)) {
+                    lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(JCR_LASTMODIFIED)));
+                    this.lastModified = lastModifiedCalendar;
+                } else if (this.jcrContentNode.has(CQ_LAST_MODIFIED)) {
+                    lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(CQ_LAST_MODIFIED)));
+                    this.lastModified = lastModifiedCalendar;
+                }
+
             }
             Calendar createdDateCalendar = Calendar.getInstance();
             if (jcrNode.has(JCR_CREATED)) {
+
                 createdDateCalendar.setTime(aemJsonDateFormat.parse(jcrNode.getString(JCR_CREATED)));
                 this.createdDate = createdDateCalendar;
             }
@@ -71,7 +76,6 @@ public class AemObject {
             log.error(e.getMessage(), e);
         }
     }
-
     public AemObject(Node node) {
         try {
             this.node = new JSONObject(new Gson().toJson(node));
@@ -113,8 +117,7 @@ public class AemObject {
             for (String node : dataPath.split("/")) {
                 if (dataJson.has(node)) {
                     dataJson = dataJson.getJSONObject(node);
-                }
-                else {
+                } else {
                     return;
                 }
             }

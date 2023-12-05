@@ -361,7 +361,9 @@ public class TurAEMIndexerTool {
 
     }
     private void indexObject(AemObject aemObject, List<TurAttrDef> extAttributes) {
-        if (!turAemIndexingDAO.existsByAemIdAndDateAndGroup(aemObject.getPath(),
+
+        if (aemObject.getPath() != null && aemObject.getLastModified() != null &&
+                !turAemIndexingDAO.existsByAemIdAndDateAndGroup(aemObject.getPath(),
                 aemObject.getLastModified().getTime(), group)) {
             turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresentOrElse(
                     turAemIndexing -> {

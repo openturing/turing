@@ -3,6 +3,7 @@ package com.viglet.turing.connector.aem.indexer.persistence;
 import com.sun.istack.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -72,7 +73,7 @@ public class TurAemIndexingDAO {
     }
 
     public Optional<List<TurAemIndexing>> findContentsShouldBeDeIndexed(@NotNull final String group,
-                                                                       @NotNull final String deltaId) {
+                                                                        @NotNull final String deltaId) {
         try {
             CriteriaBuilder builder = entityManager.getCriteriaBuilder();
             CriteriaQuery<TurAemIndexing> criteria = builder.createQuery(TurAemIndexing.class);
@@ -91,12 +92,21 @@ public class TurAemIndexingDAO {
     }
 
     public void deleteContentsWereIndexed(@NotNull final String group,
-                                               @NotNull final String deltaId) {
-        findContentsShouldBeDeIndexed(group, deltaId).ifPresent(contents -> contents.forEach(turAemIndexing -> {
-                    entityManager.remove(turAemIndexing);
-                    entityManager.getTransaction().commit();
-                }
-        ));
+                                          @NotNull final String deltaId) {
+        List<Integer> ids = new ArrayList<>();
+        findContentsShouldBeDeIndexed(group, deltaId).ifPresent(contents ->
+                contents.forEach(turAemIndexing -> ids.add(turAemIndexing.getId())
+                ));
+        try {
+            entityManager.getTransaction().begin();
+            Query query = entityManager.createQuery("DELETE TurAemIndexing tur WHERE id IN (:ids)");
+            query.setParameter("ids", ids);
+            query.executeUpdate();
+            entityManager.getTransaction().commit();
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
+            entityManager.getTransaction().rollback();
+        }
     }
 
     public Optional<TurAemIndexing> findByAemIdAndGroup(@NotNull final String id, @NotNull final String group) {

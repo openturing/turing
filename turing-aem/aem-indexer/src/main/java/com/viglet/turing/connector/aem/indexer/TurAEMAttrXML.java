@@ -65,13 +65,18 @@ public class TurAEMAttrXML {
                     if (tags != null) {
                         tags.forEach(tag -> {
                             String[] tagSplit = tag.toString().split(":");
-                            JSONObject infinityJson = TurAemUtils
-                                    .getInfinityJson("/content/_cq_tags/" + String.join("/", tagSplit),
-                                            turAEMIndexerTool.getHostAndPort(),
-                                            turAEMIndexerTool.getUsername(),
-                                            turAEMIndexerTool.getPassword());
-                            TurAttrDef tagDef = new TurAttrDef(tagSplit[0], TurMultiValue.singleItem(infinityJson.getString(JCR_TITLE)));
-                            turAttrDefList.add(tagDef);
+                            if (tagSplit.length >= 2) {
+                                JSONObject infinityJson = TurAemUtils
+                                        .getInfinityJson("/content/_cq_tags/" + String.join("/", tagSplit),
+                                                turAEMIndexerTool.getHostAndPort(),
+                                                turAEMIndexerTool.getUsername(),
+                                                turAEMIndexerTool.getPassword());
+                                turAttrDefList.add(new TurAttrDef(tagSplit[0],
+                                        TurMultiValue.singleItem(infinityJson.has(JCR_TITLE) ?
+                                                infinityJson.getString(JCR_TITLE) :
+                                                tagSplit[1])
+                                ));
+                            }
                         });
                     }
                 }
