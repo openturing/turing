@@ -111,7 +111,12 @@ public class AemObject {
         if (dataPath != null) {
             JSONObject dataJson = this.jcrContentNode;
             for (String node : dataPath.split("/")) {
-                dataJson = dataJson.getJSONObject(node);
+                if (dataJson.has(node)) {
+                    dataJson = dataJson.getJSONObject(node);
+                }
+                else {
+                    return;
+                }
             }
             JSONObject finalDataJson = dataJson;
             dataJson.keySet().forEach(key -> {

@@ -4,6 +4,7 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.nutch.commons.TurNutchCommons;
+import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
@@ -80,7 +81,8 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 		Map<String, Object> attributes = new HashMap<>();
 		Map<String, String> turCustomFields = this.config.getValByRegex("^" + FIELD_PROPERTY + "*");
-		String locale = this.config.get(TurNutchConstants.LOCALE_PROPERTY, TurNutchCommons.LOCALE_DEFAULT_VALUE);
+		Locale locale = LocaleUtils.toLocale(this.config.get(TurNutchConstants.LOCALE_PROPERTY,
+				TurNutchCommons.LOCALE_DEFAULT_VALUE.toLanguageTag()));
 		String localeField = this.config.get(TurNutchConstants.LOCALE_FIELD_PROPERTY);
 		for (final Entry<String, NutchField> fieldMap : doc) {
 			for (final Object originalValue : fieldMap.getValue().getValues()) {
@@ -98,7 +100,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 				}
 				if (localeField != null && fieldMap.getKey().equals(TurNutchCommons.META_TAG_VALUE + localeField)) {
                     assert originalValue instanceof String;
-                    locale = TurNutchCommons.stripNonCharCodepoints((String) originalValue);
+                    locale = LocaleUtils.toLocale(TurNutchCommons.stripNonCharCodepoints((String) originalValue));
 				}
 				if (fieldMap.getKey().equals(TurNutchCommons.TIMESTAMP_FIELD)) {
 					attributes.put(this.config.get(TIMESTAMP_PROPERTY, TurNutchCommons.TIMESTAMP_FIELD),

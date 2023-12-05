@@ -592,7 +592,7 @@ public class TurSolr {
 
     private static boolean queryWithoutExpression(String q) {
         String[] split = q.split(":", 2);
-        return !q.startsWith("(") && !split[1].startsWith("[") && !split[1].startsWith("(");
+        return !q.startsWith("(") && !split[1].startsWith("[") && !split[1].startsWith("(") && !split[1].endsWith("*");
     }
 
     private List<TurSNSiteFieldExt> prepareQueryMLT(TurSNSite turSNSite, SolrQuery query) {

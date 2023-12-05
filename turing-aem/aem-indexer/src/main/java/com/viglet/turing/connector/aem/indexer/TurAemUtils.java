@@ -1,5 +1,6 @@
 package com.viglet.turing.connector.aem.indexer;
 
+import com.google.common.net.UrlEscapers;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -51,7 +52,7 @@ public class TurAemUtils {
                 })
                 .build();
         try {
-            HttpRequest request = HttpRequest.newBuilder().GET().uri(new URI(url)).build();
+            HttpRequest request = HttpRequest.newBuilder().GET().uri(new URI(UrlEscapers.urlFragmentEscaper().escape(url))).build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             return response.body();
         } catch (URISyntaxException | IOException | InterruptedException ex) {

@@ -27,6 +27,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,7 +42,7 @@ public class TurSNClientSample {
 
 	private static final String TURING_URL = "http://localhost:2700";
 	private static final String TURING_SITE = "Sample";
-	private static final String TURING_LOCALE = "en_US";
+	private static final Locale TURING_LOCALE = Locale.US;
 	private static final String TURING_API_KEY = "apiKeySample";
 	private static final String TURING_USERID = "user1";
 	private static final String QUERY = "tast";

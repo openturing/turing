@@ -17,6 +17,7 @@
 package com.viglet.turing.client.sn.job;
 
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -31,23 +32,23 @@ public class TurSNJobItem implements Serializable{
 
 	private static final long serialVersionUID = 1L;
 	
-	private final String locale;
+	private final Locale locale;
 	
 	private final TurSNJobAction turSNJobAction;
-	
+
 	private transient Map<String, Object> attributes;
 
-	public TurSNJobItem(TurSNJobAction turSNJobAction, String locale) {
+	public TurSNJobItem(TurSNJobAction turSNJobAction, Locale locale) {
 		super();
 		this.locale = locale;
 		this.turSNJobAction = turSNJobAction;
 	}
 	public TurSNJobItem(TurSNJobAction turSNJobAction) {
 		super();
-		this.locale = "en_US";
+		this.locale = Locale.ENGLISH;
 		this.turSNJobAction = turSNJobAction;
 	}
-	public String getLocale() {
+	public Locale getLocale() {
 		return locale;
 	}
 

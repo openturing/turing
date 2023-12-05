@@ -22,18 +22,24 @@ package com.viglet.turing.connector.aem.indexer.conf;
 
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.*;
 import java.util.stream.Collectors;
-
+@Slf4j
 public class AemHandlerConfiguration implements IHandlerConfiguration {
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private static final String DEFAULT_PROVIDER = "WEM";
+
+    public static final String ID_ATTRIBUTE = "id";
+    public static final String TYPE_ATTRIBUTE = "type";
+    public static final String PROVIDER_ATTRIBUTE = "source_apps";
+
+    public static final String DEFAULT_PROVIDER = "AEM";
     private static final String DEFAULT_TURING_URL = "http://localhost:2700";
     private static final String DEFAULT_CTD_MAPPING_FILE = "/CTD-Turing-Mappings.xml";
     private static final String DEFAULT_SN_SITE = "Sample";
@@ -98,10 +104,14 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     private Properties getProperties() {
         Properties properties = new Properties();
         try {
-            properties.load(new FileReader(propertyFile));
+            if (new File(propertyFile).exists()) {
+                properties.load(new FileReader(propertyFile));
+            }
+            else {
+                System.out.printf("%nERROR: Cannot open %s file, use --property parameter correctly%n", propertyFile);
+            }
         } catch (IOException e) {
-            System.out.printf("%nERROR: Cannot open %s file, use --property parameter correctly%n", propertyFile);
-            logger.error(e.getMessage(), e);
+          log.error(e.getMessage(), e);
         }
         return properties;
     }
