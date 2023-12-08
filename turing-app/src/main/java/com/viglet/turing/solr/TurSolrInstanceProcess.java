@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.solr;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -28,15 +29,11 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.properties.TurConfigProperties;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.lang.invoke.MethodHandles;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
@@ -44,83 +41,83 @@ import java.util.Optional;
 /**
  * @author Alexandre Oliveira
  * @since 0.3.5
- *
  */
+@Slf4j
 @Component
 public class TurSolrInstanceProcess {
-	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+    private final TurConfigVarRepository turConfigVarRepository;
+    private final TurSEInstanceRepository turSEInstanceRepository;
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSolrCache turSolrCache;
+    private final CloseableHttpClient closeableHttpClient;
+    private final TurConfigProperties turConfigProperties;
+    @Inject
+    public TurSolrInstanceProcess(TurConfigVarRepository turConfigVarRepository,
+                                  TurSEInstanceRepository turSEInstanceRepository,
+                                  TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                                  TurSNSiteRepository turSNSiteRepository,
+                                  TurSolrCache turSolrCache, CloseableHttpClient closeableHttpClient,
+                                  TurConfigProperties turConfigProperties) {
+        this.turConfigVarRepository = turConfigVarRepository;
+        this.turSEInstanceRepository = turSEInstanceRepository;
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSolrCache = turSolrCache;
+        this.closeableHttpClient = closeableHttpClient;
+        this.turConfigProperties = turConfigProperties;
+    }
 
-	@Autowired
-	private TurConfigVarRepository turConfigVarRepository;
-	@Autowired
-	private TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	private CloseableHttpClient closeableHttpClient;
-	@Autowired
-	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-	@Autowired
-	private TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private TurSolrCache turSolrCache;
+    private Optional<TurSolrInstance> getSolrClient(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
+        return getSolrClient(turSNSite.getTurSEInstance(), turSNSiteLocale.getCore());
+    }
 
-	@Autowired
-	private TurConfigProperties turConfigProperties;
+    private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
+        String urlString = String.format("http://%s:%s/solr/%s", turSEInstance.getHost(), turSEInstance.getPort(),
+                core);
+        if (turSolrCache.isSolrCoreExists(urlString)) {
+            HttpSolrClient httpSolrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
+                    .withConnectionTimeout(turConfigProperties.getSolr().getTimeout())
+                    .withSocketTimeout(turConfigProperties.getSolr().getTimeout()).build();
+            try {
+                return Optional.of(new TurSolrInstance(closeableHttpClient, httpSolrClient, new URL(urlString), core));
+            } catch (MalformedURLException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+        return Optional.empty();
+    }
 
-	private Optional<TurSolrInstance> getSolrClient(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
-		return getSolrClient(turSNSite.getTurSEInstance(), turSNSiteLocale.getCore());
-	}
+    public Optional<TurSolrInstance> initSolrInstance(String siteName, String locale) {
+        return turSNSiteRepository.findByName(siteName).flatMap(turSNSite -> this.initSolrInstance(turSNSite, locale));
 
-	private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
-		String urlString = String.format("http://%s:%s/solr/%s", turSEInstance.getHost(), turSEInstance.getPort(),
-				core);
-		if (turSolrCache.isSolrCoreExists(urlString)) {
-			HttpSolrClient httpSolrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
-					.withConnectionTimeout(turConfigProperties.getSolr().getTimeout())
-					.withSocketTimeout(turConfigProperties.getSolr().getTimeout()).build();
-			try {
-				return Optional.of(new TurSolrInstance(closeableHttpClient, httpSolrClient, new URL(urlString), core));
-			} catch (MalformedURLException e) {
-				logger.error(e.getMessage(), e);
-			}
-		}
-		return Optional.empty();
-	}
+    }
 
-	public Optional<TurSolrInstance> initSolrInstance(String siteName, String locale) {
-		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
-		if (turSNSite != null) {
-			return this.initSolrInstance(turSNSite, locale);
-		} else {
-			logger.warn("{} site not found", siteName);
-			return Optional.empty();
-		}
-	}
+    private Optional<TurSolrInstance> initSolrInstance(TurSNSite turSNSite, String locale) {
+        TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
+        if (turSNSiteLocale != null) {
+            return this.initSolrInstance(turSNSiteLocale);
+        } else {
+            log.warn("{} site with {} locale not found", turSNSite.getName(), locale);
+            return Optional.empty();
+        }
+    }
 
-	private Optional<TurSolrInstance> initSolrInstance(TurSNSite turSNSite, String locale) {
-		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
-		if (turSNSiteLocale != null) {
-			return this.initSolrInstance(turSNSiteLocale);
-		} else {
-			logger.warn("{} site with {} locale not found", turSNSite.getName(), locale);
-			return Optional.empty();
-		}
-	}
+    public Optional<TurSolrInstance> initSolrInstance(TurSEInstance turSEInstance, String core) {
+        return this.getSolrClient(turSEInstance, core);
+    }
 
-	public Optional<TurSolrInstance> initSolrInstance(TurSEInstance turSEInstance, String core) {
-		return this.getSolrClient(turSEInstance, core);
-	}
+    public Optional<TurSolrInstance> initSolrInstance(TurSNSiteLocale turSNSiteLocale) {
+        return this.getSolrClient(turSNSiteLocale.getTurSNSite(), turSNSiteLocale);
 
-	public Optional<TurSolrInstance> initSolrInstance(TurSNSiteLocale turSNSiteLocale) {
-		return this.getSolrClient(turSNSiteLocale.getTurSNSite(), turSNSiteLocale);
+    }
 
-	}
-
-	public Optional<TurSolrInstance> initSolrInstance() {
-		return turConfigVarRepository.findById("DEFAULT_SE")
-				.flatMap(turConfigVar -> turSEInstanceRepository.findById(turConfigVar.getValue())
+    public Optional<TurSolrInstance> initSolrInstance() {
+        return turConfigVarRepository.findById("DEFAULT_SE")
+                .flatMap(turConfigVar -> turSEInstanceRepository.findById(turConfigVar.getValue())
                         .map(turSEInstance -> getSolrClient(turSEInstance, "turing")))
-				.orElse(turSEInstanceRepository.findAll().stream().findFirst().map(turSEInstance ->
-						getSolrClient(turSEInstance, "turing")).orElse(null));
-	}
+                .orElse(turSEInstanceRepository.findAll().stream().findFirst().map(turSEInstance ->
+                        getSolrClient(turSEInstance, "turing")).orElse(null));
+    }
 
 }

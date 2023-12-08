@@ -80,21 +80,33 @@ public class TurAemUtils {
         return null;
     }
 
-    public static void getNode(Node node, StringBuffer components) throws RepositoryException {
+    public static void getNodeToComponent(Node node, StringBuffer components) throws RepositoryException {
 
         if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
             NodeIterator nodeIterator = node.getNodes();
             while (nodeIterator.hasNext()) {
-
                 Node nodeChild = nodeIterator.nextNode();
                 if (nodeChild.hasProperty("jcr:title"))
                     components.append(TurAemUtils.getJcrPropertyValue(nodeChild, "jcr:title"));
                 if (nodeChild.hasProperty("text"))
                     components.append(TurAemUtils.getJcrPropertyValue(nodeChild, "text"));
                 if (nodeChild.hasNodes()) {
-                    getNode(nodeChild, components);
+                    getNodeToComponent(nodeChild, components);
                 }
             }
         }
+    }
+
+    public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuffer components) {
+        jsonObject.toMap().forEach((key, value) -> {
+            if (jsonObject.has("jcr:title"))
+                components.append(jsonObject.getString("jcr:title"));
+            if (jsonObject.has("text"))
+                components.append(jsonObject.getString("text"));
+            if (!key.startsWith("jcr:")) {
+                JSONObject jsonObjectNode = jsonObject.getJSONObject(key);
+                getJsonNodeToComponent(jsonObjectNode, components);
+            }
+        });
     }
 }

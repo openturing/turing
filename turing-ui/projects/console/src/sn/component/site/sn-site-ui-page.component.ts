@@ -48,6 +48,10 @@ export class TurSNSiteUIPageComponent implements OnInit {
 
     return this.turSEInstances;
   }
+
+  getFacetTypes(): string[] {
+    return ["AND", "OR"];
+  }
   ngOnInit(): void {
   }
 

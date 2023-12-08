@@ -26,7 +26,7 @@ public class AemPage extends AemObject {
 			Node jcrContent = node.getNode(JCR_CONTENT);
 			title = TurAemUtils.getJcrPropertyValue(jcrContent, "jcr:title");
 			description = TurAemUtils.getJcrPropertyValue(jcrContent, "jcr:description");
-			TurAemUtils.getNode(jcrContent, components);
+			TurAemUtils.getNodeToComponent(jcrContent, components);
 		} catch (RepositoryException e) {
 			logger.error(e.getMessage(), e);
 		}

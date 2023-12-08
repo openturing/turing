@@ -47,7 +47,7 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 	Optional<TurSNSite> findById(@NotNull String id);
 
 	@Cacheable("turSNSitefindByName")
-	TurSNSite findByName(String name);
+	Optional<TurSNSite> findByName(String name);
 
 	@SuppressWarnings("unchecked")
 	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindById", "turSNSitefindByName" }, allEntries = true)

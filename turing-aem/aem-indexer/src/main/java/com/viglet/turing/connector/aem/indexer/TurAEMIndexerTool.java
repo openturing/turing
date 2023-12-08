@@ -49,6 +49,7 @@ public class TurAEMIndexerTool {
     public static final String CONTENT_FRAGMENT = "content-fragment";
     private static final JCommander jCommander = new JCommander();
     public static final String STATIC_FILE = "static-file";
+    public static final String SITE = "site";
     @Parameter(names = {"--host",
             "-h"}, description = "The host on which Content Management server is installed.", required = true)
     private String hostAndPort = null;
@@ -71,8 +72,8 @@ public class TurAEMIndexerTool {
             "-g"}, description = "The path to a file containing the GUID(s) of content instances or static files to be indexed.")
     private String guidFilePath = null;
 
-    @Parameter(names = {"--site-path", "-s"}, description = "AEM site path.")
-    private String sitePath = "/content/we-retail";
+    @Parameter(names = {"--root-paths", "-r"}, description = "AEM root paths, you need use comma-separated.")
+    private List<String> rootPaths = List.of("/content/we-retail");
 
     @Parameter(names = "--delivered", description = "Publish delivery or author site", help = true)
     private boolean delivered = false;
@@ -185,21 +186,26 @@ public class TurAEMIndexerTool {
         guids.stream().filter(guid -> guid != null && !guid.isEmpty()).forEach(guid -> {
             start = System.currentTimeMillis();
             final JSONObject jsonObject = TurAemUtils.getInfinityJson(guid, hostAndPort, username, password);
-            siteName = TurAemUtils.getInfinityJson(sitePath, hostAndPort, username, password).getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
-            contentType = jsonObject.getString(JCR_PRIMARYTYPE);
-            getNodeFromJson(guid, jsonObject);
-            long elapsed = System.currentTimeMillis() - start;
-            jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+            rootPaths.forEach(rootPath -> {
+                siteName = TurAemUtils.getInfinityJson(rootPath, hostAndPort, username, password).getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
+                contentType = jsonObject.getString(JCR_PRIMARYTYPE);
+                getNodeFromJson(guid, jsonObject);
+                long elapsed = System.currentTimeMillis() - start;
+                jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+            });
+
         });
 
     }
     private void jsonByContentType() {
         start = System.currentTimeMillis();
-        JSONObject jsonSite = TurAemUtils.getInfinityJson(sitePath, hostAndPort, username, password);
-        siteName = jsonSite.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
-        getNodeFromJson(sitePath, jsonSite);
-        long elapsed = System.currentTimeMillis() - start;
-        jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+        rootPaths.forEach(rootPath -> {
+            JSONObject jsonSite = TurAemUtils.getInfinityJson(rootPath, hostAndPort, username, password);
+            siteName = jsonSite.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
+            getNodeFromJson(rootPath, jsonSite);
+            long elapsed = System.currentTimeMillis() - start;
+            jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+        });
     }
 
     private void getNodesFromJcr() {
@@ -208,13 +214,15 @@ public class TurAEMIndexerTool {
             try {
                 Repository repository = JcrUtils.getRepository(hostAndPort + "/crx/server");
                 session = repository.login(new SimpleCredentials(username, password.toCharArray()));
-                Node node = session.getNode(sitePath);
-                AemSite aemSite = new AemSite(node);
-                siteName = aemSite.getTitle();
-                start = System.currentTimeMillis();
-                getNodeFromJcr(node);
-                long elapsed = System.currentTimeMillis() - start;
-                jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+                for (String rootPath : rootPaths) {
+                    Node node = session.getNode(rootPath);
+                    AemSite aemSite = new AemSite(node);
+                    siteName = aemSite.getTitle();
+                    start = System.currentTimeMillis();
+                    getNodeFromJcr(node);
+                    long elapsed = System.currentTimeMillis() - start;
+                    jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+                }
             } catch (RepositoryException e) {
                 log.error(e.getMessage(), e);
             } finally {
@@ -368,14 +376,14 @@ public class TurAEMIndexerTool {
             turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresentOrElse(
                     turAemIndexing -> {
                         turAemIndexing.setDate(aemObject.getLastModified().getTime());
-                        turAemIndexingDAO.merge(turAemIndexing);
+                        turAemIndexingDAO.update(turAemIndexing);
                     }, () -> {
                         TurAemIndexing turAemIndexing = new TurAemIndexing();
                         turAemIndexing.setAemId(aemObject.getPath());
                         turAemIndexing.setIndexGroup(group);
                         turAemIndexing.setDate(aemObject.getLastModified().getTime());
                         turAemIndexing.setDeltaId(deltaId);
-                        turAemIndexingDAO.merge(turAemIndexing);
+                        turAemIndexingDAO.save(turAemIndexing);
                     });
             MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.getMappingDefinitions(config,
                     Paths.get(propertyPath).toAbsolutePath().getParent());
@@ -392,15 +400,13 @@ public class TurAEMIndexerTool {
                     }
                 });
             });
-            attributes.put("site", siteName);
+            attributes.put(SITE, siteName);
             TurSNSiteConfig turSNSiteConfig = config.getDefaultSNSiteConfig();
             Locale locale = LocaleUtils.toLocale(config.getLocaleByPath(turSNSiteConfig.getName(), aemObject.getPath()));
             TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE,
                     locale);
             turSNJobItem.setAttributes(attributes);
-            TurSNJobItems turSNJobItems = new TurSNJobItems();
-            turSNJobItems.add(turSNJobItem);
-            sendJobToTuring(turSNJobItems);
+            sendJobToTuring(new TurSNJobItems(turSNJobItem));
         }
     }
 

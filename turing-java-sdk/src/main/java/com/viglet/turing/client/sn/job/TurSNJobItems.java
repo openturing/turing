@@ -33,12 +33,19 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 	private static final long serialVersionUID = 1L;
 	private Queue<TurSNJobItem> turSNJobItems = new ConcurrentLinkedQueue<>();
-
+	public TurSNJobItems() {
+		super();
+	}
+	public TurSNJobItems(TurSNJobItem turSNJobItem) {
+		this.add(turSNJobItem);
+	}
+	public TurSNJobItems(List<TurSNJobItem> turSNJobItems) {
+		turSNJobItems.forEach(this::add);
+	}
 	@Override
 	public Iterator<TurSNJobItem> iterator() {
 		return turSNJobItems.iterator();
 	}
-
 	public Queue<TurSNJobItem>  getTuringDocuments() {
 		return turSNJobItems;
 	}

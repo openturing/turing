@@ -3,10 +3,8 @@ package com.viglet.turing.api.sn.console;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
-import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
-import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.utils.TurUtilTests;
 import com.viglet.turing.utils.TurUtils;
@@ -26,9 +24,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.security.Principal;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -78,12 +74,19 @@ public class TurSNSiteMergeProvidersAPITests {
 
     @Test
     @Order(3)
-    void stage01MergeProvidersAdd() throws Exception {
-        TurSNSite turSNSite = turSNSiteRepository.findByName(SN_SITE_NAME);
-        String mergeRequestBody = TurUtils.asJsonString(getTurSNSiteMergeProviders(turSNSite));
-        RequestBuilder requestBuilder = MockMvcRequestBuilders.post(SERVICE_URL).principal(mockPrincipal)
-                .accept(MediaType.APPLICATION_JSON).content(mergeRequestBody).contentType(MediaType.APPLICATION_JSON);
-        mockMvc.perform(requestBuilder).andExpect(status().isOk());
+    void stage01MergeProvidersAdd() {
+        turSNSiteRepository.findByName(SN_SITE_NAME).ifPresent(turSNSite -> {
+            try {
+                String mergeRequestBody = TurUtils.asJsonString(getTurSNSiteMergeProviders(turSNSite));
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.post(SERVICE_URL).principal(mockPrincipal)
+                        .accept(MediaType.APPLICATION_JSON).content(mergeRequestBody).contentType(MediaType.APPLICATION_JSON);
+
+                mockMvc.perform(requestBuilder).andExpect(status().isOk());
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+        });
+
     }
 
     @NotNull

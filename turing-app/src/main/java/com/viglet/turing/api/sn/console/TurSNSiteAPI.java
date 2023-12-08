@@ -123,6 +123,7 @@ public class TurSNSiteAPI {
 
             // UI
             turSNSiteEdit.setFacet(turSNSite.getFacet());
+            turSNSiteEdit.setFacetType(turSNSite.getFacetType());
             turSNSiteEdit.setHl(turSNSite.getHl());
             turSNSiteEdit.setHlPost(turSNSite.getHlPost());
             turSNSiteEdit.setHlPre(turSNSite.getHlPre());

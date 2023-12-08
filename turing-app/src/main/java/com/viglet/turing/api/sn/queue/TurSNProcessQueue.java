@@ -139,9 +139,9 @@ public class TurSNProcessQueue {
         logger.debug("Deindex");
         return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale()).map(turSolrInstance -> {
             if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
-                turSolr.desindexing(turSolrInstance, (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE));
+                turSolr.deIndexing(turSolrInstance, (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE));
             } else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.TYPE_ATTRIBUTE)) {
-                turSolr.desindexingByType(turSolrInstance, (String) turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE));
+                turSolr.deIndexingByType(turSolrInstance, (String) turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE));
             }
             return true;
         }).orElse(false);

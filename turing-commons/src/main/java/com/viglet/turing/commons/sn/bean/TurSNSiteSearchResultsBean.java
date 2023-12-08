@@ -19,6 +19,10 @@ package com.viglet.turing.commons.sn.bean;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * List of documents with results of query of Turing AI Semantic Navigation response.
@@ -27,18 +31,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * 
  * @since 0.3.4
  */
-
+@RequiredArgsConstructor
+@Accessors(chain = true)
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchResultsBean {
-
 	private List<TurSNSiteSearchDocumentBean> document;
-
-	public List<TurSNSiteSearchDocumentBean> getDocument() {
-		return document;
-	}
-
-	public void setDocument(List<TurSNSiteSearchDocumentBean> document) {
-		this.document = document;
-	}
 
 }

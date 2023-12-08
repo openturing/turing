@@ -128,7 +128,7 @@ public class TurAemIndexingDAO {
     }
 
 
-    public void persist(TurAemIndexing turAemIndexing) {
+    public void save(TurAemIndexing turAemIndexing) {
         try {
             entityManager.getTransaction().begin();
             entityManager.persist(turAemIndexing);
@@ -139,7 +139,7 @@ public class TurAemIndexingDAO {
         }
     }
 
-    public void merge(TurAemIndexing turAemIndexing) {
+    public void update(TurAemIndexing turAemIndexing) {
         try {
             entityManager.getTransaction().begin();
             entityManager.merge(turAemIndexing);

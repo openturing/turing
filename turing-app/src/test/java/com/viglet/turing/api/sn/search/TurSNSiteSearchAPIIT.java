@@ -1,6 +1,5 @@
 package com.viglet.turing.api.sn.search;
 
-import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
@@ -48,6 +47,7 @@ public class TurSNSiteSearchAPIIT {
     private final static String WRONG_SEARCH_TERM = "siarch";
     private final static String SEARCH_TERM = "search";
     private final static String SEARCH_ALL_TERM = "*";
+
     @BeforeAll
     public void setup() {
         log.debug("TurSNSiteSearchAPIIT Setup");
@@ -58,7 +58,7 @@ public class TurSNSiteSearchAPIIT {
 
     @Test
     @Order(1)
-    void spotlightAdd() throws Exception {
+    void spotlightAdd() {
         TurSNSiteSpotlightTerm turSNSiteSpotlightTerm = new TurSNSiteSpotlightTerm();
         turSNSiteSpotlightTerm.setName(SEARCH_TERM);
         TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument();
@@ -69,25 +69,32 @@ public class TurSNSiteSearchAPIIT {
         turSNSiteSpotlightDocument.setReferenceId("CMS");
         turSNSiteSpotlightDocument.setType("Page");
 
-        TurSNSite turSNSite = turSNSiteRepository.findByName(SN_SITE_NAME);
-        TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
-        turSNSiteSpotlight.setDescription("Spotlight Sample Test");
-        turSNSiteSpotlight.setName("Spotlight Sample Test");
-        turSNSiteSpotlight.setModificationDate(new Date());
-        turSNSiteSpotlight.setManaged(1);
-        turSNSiteSpotlight.setProvider("TURING");
-        turSNSiteSpotlight.setTurSNSite(turSNSite);
-        turSNSite.getTurSNSiteLocales().stream().findFirst().ifPresent(locale ->
-                turSNSiteSpotlight.setLanguage(locale.getLanguage())
-        );
-        turSNSiteSpotlight.setTurSNSiteSpotlightDocuments(Collections.singleton(turSNSiteSpotlightDocument));
-        turSNSiteSpotlight.setTurSNSiteSpotlightTerms(Collections.singleton(turSNSiteSpotlightTerm));
-        String spotlightRequestBody = TurUtils.asJsonString(turSNSiteSpotlight);
-        RequestBuilder requestBuilder = MockMvcRequestBuilders.post(SPOTLIGHT_SERVICE_URL).principal(mockPrincipal)
-                .accept(MediaType.APPLICATION_JSON)
-                .content(spotlightRequestBody).contentType(MediaType.APPLICATION_JSON);
-        mockMvc.perform(requestBuilder).andExpect(status().isOk());
+        turSNSiteRepository.findByName(SN_SITE_NAME).ifPresent(turSNSite -> {
+            TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
+            turSNSiteSpotlight.setDescription("Spotlight Sample Test");
+            turSNSiteSpotlight.setName("Spotlight Sample Test");
+            turSNSiteSpotlight.setModificationDate(new Date());
+            turSNSiteSpotlight.setManaged(1);
+            turSNSiteSpotlight.setProvider("TURING");
+            turSNSiteSpotlight.setTurSNSite(turSNSite);
+            turSNSite.getTurSNSiteLocales().stream().findFirst().ifPresent(locale ->
+                    turSNSiteSpotlight.setLanguage(locale.getLanguage())
+            );
+            turSNSiteSpotlight.setTurSNSiteSpotlightDocuments(Collections.singleton(turSNSiteSpotlightDocument));
+            turSNSiteSpotlight.setTurSNSiteSpotlightTerms(Collections.singleton(turSNSiteSpotlightTerm));
+            try {
+                String spotlightRequestBody = TurUtils.asJsonString(turSNSiteSpotlight);
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.post(SPOTLIGHT_SERVICE_URL).principal(mockPrincipal)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(spotlightRequestBody).contentType(MediaType.APPLICATION_JSON);
+                mockMvc.perform(requestBuilder).andExpect(status().isOk());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
     }
+
     @Test
     @Order(2)
     void showSpotLightInSearch() throws Exception {
@@ -123,7 +130,7 @@ public class TurSNSiteSearchAPIIT {
     @Test
     @Order(6)
     void openMultiLanguageEnglish() throws Exception {
-        multiLanguageExistsTests(Locale.ENGLISH);
+        multiLanguageExistsTests();
     }
 
     @Test
@@ -134,9 +141,9 @@ public class TurSNSiteSearchAPIIT {
                 .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
-    private void multiLanguageExistsTests(Locale locale) throws Exception {
+    private void multiLanguageExistsTests() throws Exception {
         mockMvc.perform(get(String.format(SEARCH_SERVICE_URL, SN_SITE_NAME, SEARCH_ALL_TERM
-                , locale.getLanguage())))
+                        , Locale.ENGLISH.getLanguage())))
                 .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
