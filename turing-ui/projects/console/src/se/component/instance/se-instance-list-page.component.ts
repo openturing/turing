@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TurSEInstance } from '../../model/se-instance.model';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { TurSEInstanceService } from '../../service/se-instance.service';
 import { Router, RouterModule } from '@angular/router';
 

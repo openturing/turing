@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TurAdmGroup } from '../../model/adm-group.model';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { TurAdmGroupService } from '../../service/adm-group.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UntypedFormControl, Validators } from '@angular/forms';

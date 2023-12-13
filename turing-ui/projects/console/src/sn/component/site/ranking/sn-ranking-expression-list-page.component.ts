@@ -1,6 +1,6 @@
 import {Component} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {NotifierService} from 'angular-notifier';
+import {NotifierService} from 'angular-notifier-updated';
 import {Observable} from 'rxjs';
 import {TurSNRankingExpression} from "../../../model/sn-ranking-expression.model";
 import {TurSNRankingExpressionService} from "../../../service/sn-ranking-expression.service";

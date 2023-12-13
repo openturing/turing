@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TurConverseAgent } from '../../model/converse-agent.model';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { TurConverseAgentService } from '../../service/converse-agent.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TurLocale } from '../../../locale/model/locale.model';

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TurLocale } from '../../../locale/model/locale.model';
 import { TurLocaleService } from '../../../locale/service/locale.service';

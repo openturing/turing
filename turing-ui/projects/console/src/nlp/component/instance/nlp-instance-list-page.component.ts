@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TurNLPInstance } from '../../model/nlp-instance.model';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { TurNLPInstanceService } from '../../service/nlp-instance.service';
 import { Router, RouterModule } from '@angular/router';
 

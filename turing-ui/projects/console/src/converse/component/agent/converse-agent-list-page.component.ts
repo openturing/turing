@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TurConverseAgent } from '../../model/converse-agent.model';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { TurConverseAgentService } from '../../service/converse-agent.service';
 import { Router} from '@angular/router';
 

@@ -2,7 +2,6 @@ import {Component, OnInit} from '@angular/core';
 import { Observable } from 'rxjs';
 import {User} from "../../../../../welcome/src/app/_models";
 import {AuthenticationService, UserService} from "../../../../../welcome/src/app/_services";
-import {NgForm} from "@angular/forms";
 
 @Component({
   selector: 'tur-header',

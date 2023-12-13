@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TurNLPInstance } from '../../model/nlp-instance.model';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { TurNLPInstanceService } from '../../service/nlp-instance.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TurNLPVendor } from '../../model/nlp-vendor.model';

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { Router } from '@angular/router';
 import {TurDevTokenService} from "../../service/dev-token.service";
 import {TurDevToken} from "../../model/dev-token.model";

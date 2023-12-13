@@ -1,7 +1,7 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {Observable, tap} from 'rxjs';
 import {TurSNSite} from '../../../model/sn-site.model';
-import {NotifierService} from 'angular-notifier';
+import {NotifierService} from 'angular-notifier-updated';
 import {TurSNSiteService} from '../../../service/sn-site.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {TurSNRankingExpression} from "../../../model/sn-ranking-expression.model";

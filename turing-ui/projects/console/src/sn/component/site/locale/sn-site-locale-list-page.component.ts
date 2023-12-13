@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { Observable } from 'rxjs';
 import { TurSNSiteLocale } from '../../../model/sn-site-locale.model';
 import { TurSNSiteLocaleService } from '../../../service/sn-site-locale.service';
