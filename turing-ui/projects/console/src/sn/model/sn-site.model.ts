@@ -27,4 +27,5 @@ export interface TurSNSite {
   spellCheckFixes: number;
   spotlightWithResults: number;
   facetType: TurSNSiteFacetEnum;
+  whenNoResultsUseAsterisk: number;
 }

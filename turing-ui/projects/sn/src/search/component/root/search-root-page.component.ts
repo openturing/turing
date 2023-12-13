@@ -48,7 +48,8 @@ export class TurSNSearchRootPageComponent implements OnInit {
   generateQueryString(): string {
     this.turPage = "1";
 
-    return TurSNSearchService.generateQueryString(this.turQuery, this.turPage, this.turLocale, this.turSort, this.turFilterQuery, this.turTargetingRule, this.turAutoCorrectionDisabled);
+    return TurSNSearchService.generateQueryString(this.turQuery, this.turPage, this.turLocale, this.turSort,
+        this.turFilterQuery, this.turTargetingRule, this.turAutoCorrectionDisabled);
   }
   getTurSNSearchItems(): Observable<TurSNSearch> {
     return this.turSNSearchItems;

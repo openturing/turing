@@ -17,6 +17,10 @@
 package com.viglet.turing.commons.sn.bean;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * Label of Facet with diferent locales of Turing AI Semantic Navigation response.
@@ -26,22 +30,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @since 0.3.4
  */
 
+@RequiredArgsConstructor
+@Accessors(chain = true)
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchFacetLabelBean {
-
 	private String lang;
 	private String text;
-	public String getLang() {
-		return lang;
-	}
-	public void setLang(String lang) {
-		this.lang = lang;
-	}
-	public String getText() {
-		return text;
-	}
-	public void setText(String text) {
-		this.text = text;
-	}
-
 }

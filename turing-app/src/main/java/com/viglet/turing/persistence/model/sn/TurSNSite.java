@@ -49,7 +49,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "tur_sn_site")
+@Table(name = "turSNSite")
 @NamedQuery(name = "TurSNSite.findAll", query = "SELECT sns FROM TurSNSite sns")
 @JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights",
 		"turSNSiteLocales", "turSNSiteMetricAccesses", "turSNRankingExpressions" })
@@ -71,7 +71,10 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	private String description;
 
 	@Column()
-	private Integer rowsPerPage;
+	private Integer rowsPerPage = 10;
+
+	@Column()
+	private Integer whenNoResultsUseAsterisk = 0;
 
 	@Column()
 	private Integer facet;
@@ -95,7 +98,7 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	private TurSNSiteFacetEnum facetType = TurSNSiteFacetEnum.AND;
 
 	@Column()
-	private Integer thesaurus;
+	private Integer thesaurus = 0;
 
 	@Column()
 	private String defaultTitleField;

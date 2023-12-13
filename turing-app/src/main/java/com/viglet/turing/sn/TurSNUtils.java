@@ -35,7 +35,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.tika.utils.StringUtils;
 import org.springframework.http.server.ServletServerHttpRequest;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.util.ForwardedHeaderUtils;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -61,7 +61,9 @@ public class TurSNUtils {
 	}
 
 	public static URI requestToURI(HttpServletRequest request) {
-		return UriComponentsBuilder.fromHttpRequest(new ServletServerHttpRequest(request)).build().toUri();
+		ServletServerHttpRequest servletServerHttpRequest = new ServletServerHttpRequest(request);
+		return ForwardedHeaderUtils.adaptFromForwardedHeaders(servletServerHttpRequest.getURI(),
+				servletServerHttpRequest.getHeaders()).build().toUri();
 	}
 
 	

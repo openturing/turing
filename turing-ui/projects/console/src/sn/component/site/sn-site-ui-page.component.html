@@ -19,6 +19,17 @@
       </p>
     </div>
   </div>
+  <div class="form-checkbox">
+    <label>
+      <input [(ngModel)]="snSite.whenNoResultsUseAsterisk" type="checkbox" [ngModelOptions]="{standalone: true}"
+             (ngModelChange)="snSite.whenNoResultsUseAsterisk = $event ? 1 : 0"
+             aria-describedby="sn-whenNoResultsUseAsterisk-tip"/>
+      Use Asterisk
+    </label>
+    <p class="note" id="sn-whenNoResultsUseAsterisk-tip">
+      When there are no results, the asterisk will be used at the end of the search term.
+    </p>
+  </div>
   <div class="Subhead mt-5">
     <div class="Subhead-heading"><span octicon="filter" [size]="24" class="mr-1"> </span> Facet</div>
     <div class="Subhead-description">Behavior filter on search page.</div>

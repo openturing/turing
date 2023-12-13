@@ -36,6 +36,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 @Configuration
@@ -60,7 +61,7 @@ public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
 							mvc.pattern("/"),
 							mvc.pattern("/assets/**"),
 							mvc.pattern("/swagger-resources/**"),
-							mvc.pattern("/sn/**"),
+							AntPathRequestMatcher.antMatcher("/api/sn/**"),
 							mvc.pattern("/fonts/**"),
 							mvc.pattern("/api/sn/**"),
 							mvc.pattern("/favicon.ico"),

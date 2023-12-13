@@ -137,9 +137,18 @@
           </div>
           <ul>
             <li *ngFor="let facet of facets.facets" class="Box-row">
-              <button class="btn-link" (click)="turRedirect(facet.link)">
+              <div *ngIf="snSearch.queryContext.facetType == 'OR'" class="d-table" style="width: 100%">
+                <div class="d-table-cell col-11" (click)="turRedirect(facet.link)">
+                  {{facet.label}} <span class="Counter Counter--gray">{{facet.count}}</span>
+                </div>
+                <div class="d-table-cell col-1" (click)="turRedirect(facet.link)">
+                  <input [(ngModel)]="facet.selected" type="checkbox" [ngModelOptions]="{standalone: true}"
+                         (ngModelChange)="facet.selected = $event ? 1 : 0"  />
+                </div>
+              </div>
+              <button *ngIf="snSearch.queryContext.facetType != 'OR'" class="btn-link" (click)="turRedirect(facet.link)">
                 {{facet.label}} <span class="Counter Counter--gray">{{facet.count}}</span></button>
-            </li>
+
           </ul>
         </div>
       </div>

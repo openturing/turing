@@ -121,7 +121,6 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setTurNLPVendor(turSNSite.getTurNLPVendor());
             turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
 
-            // UI
             turSNSiteEdit.setFacet(turSNSite.getFacet());
             turSNSiteEdit.setFacetType(turSNSite.getFacetType());
             turSNSiteEdit.setHl(turSNSite.getHl());
@@ -133,6 +132,7 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setMlt(turSNSite.getMlt());
             turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
             turSNSiteEdit.setSpotlightWithResults(turSNSite.getSpotlightWithResults());
+            turSNSiteEdit.setWhenNoResultsUseAsterisk(turSNSite.getWhenNoResultsUseAsterisk());
             turSNSiteEdit.setDefaultTitleField(turSNSite.getDefaultTitleField());
             turSNSiteEdit.setDefaultTextField(turSNSite.getDefaultTextField());
             turSNSiteEdit.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
