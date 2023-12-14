@@ -38,6 +38,13 @@ public class TurSNJobItem implements Serializable{
 
 	private transient Map<String, Object> attributes;
 
+	public TurSNJobItem(TurSNJobAction turSNJobAction, Locale locale, Map<String, Object> attributes) {
+		super();
+		this.locale = locale;
+		this.turSNJobAction = turSNJobAction;
+		this.attributes = attributes;
+	}
+
 	public TurSNJobItem(TurSNJobAction turSNJobAction, Locale locale) {
 		super();
 		this.locale = locale;

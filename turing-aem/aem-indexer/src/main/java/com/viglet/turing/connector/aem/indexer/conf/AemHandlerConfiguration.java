@@ -23,37 +23,39 @@ package com.viglet.turing.connector.aem.indexer.conf;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.LocaleUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
+
 @Slf4j
 public class AemHandlerConfiguration implements IHandlerConfiguration {
-
     public static final String ID_ATTRIBUTE = "id";
-    public static final String TYPE_ATTRIBUTE = "type";
     public static final String PROVIDER_ATTRIBUTE = "source_apps";
-
     public static final String DEFAULT_PROVIDER = "AEM";
     private static final String DEFAULT_TURING_URL = "http://localhost:2700";
     private static final String DEFAULT_CTD_MAPPING_FILE = "/CTD-Turing-Mappings.xml";
     private static final String DEFAULT_SN_SITE = "Sample";
-    private static final String DEFAULT_SN_LOCALE = "en_US";
+    private static final String DEFAULT_SN_LOCALE = Locale.US.toString();
     private static final String DEFAULT_DPS_CONTEXT = "sites";
 
-    private String turingURL;
+    private URL turingURL;
     private String snSite;
-    private String snLocale;
+    private Locale snLocale;
     private String mappingsXML;
     private String cdaContextName;
     private String cdaURLPrefix;
     private String sitesAssociationPriority;
-    private String fileSourcePath;
+    private Path fileSourcePath;
     private String apiKey;
     private String providerName;
 
@@ -66,7 +68,7 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     }
 
     @Override
-    public String getTuringURL() {
+    public URL getTuringURL() {
         return turingURL;
     }
 
@@ -82,8 +84,8 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
 
     @Override
     public String getCDAContextName(String site) {
-        String contextName = getDynamicProperties("dps.site." + site + ".contextname");
-        return contextName != null ? contextName : getCDAContextName();
+        return Objects.requireNonNullElse(getDynamicProperties("dps.site." + site + ".contextname"),
+                getCDAContextName());
     }
 
     @Override
@@ -93,8 +95,8 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
 
     @Override
     public String getCDAURLPrefix(String site) {
-        String urlPrefix = getDynamicProperties("dps.site." + site + ".urlprefix");
-        return urlPrefix != null ? urlPrefix : getCDAURLPrefix();
+        return Objects.requireNonNullElse(getDynamicProperties("dps.site." + site + ".urlprefix"),
+                getCDAURLPrefix());
     }
 
     private void parsePropertiesFromResource() {
@@ -106,95 +108,81 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
         try {
             if (new File(propertyFile).exists()) {
                 properties.load(new FileReader(propertyFile));
-            }
-            else {
+            } else {
                 System.out.printf("%nERROR: Cannot open %s file, use --property parameter correctly%n", propertyFile);
             }
         } catch (IOException e) {
-          log.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return properties;
     }
 
     private String getDynamicProperties(String property) {
         return getProperties().getProperty(property);
+
     }
 
     private void parseProperties(Properties properties) {
 
         // Turing
-        turingURL = properties.getProperty("turing.url", DEFAULT_TURING_URL);
+        try {
+            turingURL = new URL(properties.getProperty("turing.url", DEFAULT_TURING_URL));
+        } catch (MalformedURLException e) {
+            log.error(e.getMessage(), e);
+        }
         apiKey = properties.getProperty("turing.apiKey");
         mappingsXML = properties.getProperty("turing.mappingsxml", DEFAULT_CTD_MAPPING_FILE);
         providerName = properties.getProperty("turing.provider.name", DEFAULT_PROVIDER);
         // DPS
         snSite = properties.getProperty("dps.site.default.sn.site", DEFAULT_SN_SITE);
-        snLocale = properties.getProperty("dps.site.default.sn.locale", DEFAULT_SN_LOCALE);
+        snLocale = LocaleUtils.toLocale(properties.getProperty("dps.site.default.sn.locale", DEFAULT_SN_LOCALE));
         cdaContextName = properties.getProperty("dps.site.default.contextname", DEFAULT_DPS_CONTEXT);
         cdaURLPrefix = properties.getProperty("dps.site.default.urlprefix");
         sitesAssociationPriority = properties.getProperty("dps.config.association.priority");
-        fileSourcePath = properties.getProperty("dps.config.filesource.path");
-
+        if (properties.contains("dps.config.filesource.path")) {
+            fileSourcePath = Paths.get(properties.getProperty("dps.config.filesource.path"));
+        }
     }
 
     @Override
-    public TurSNSiteConfig getSNSiteConfig(String site, String locale) {
-        TurSNSiteConfig turSNSiteConfig = getDefaultSNSiteConfig();
+    public TurSNSiteConfig getSNSiteConfig(String site, @NotNull String locale) {
         // For example: dps.site.Intranet.en.sn.site=Intra
+        return setSiteName(site, locale)
+                .setLocale(LocaleUtils.toLocale(Objects.requireNonNullElse(
+                        getDynamicProperties(String.format("dps.site.%s.%s.sn.locale", site, locale)), locale)));
+    }
+
+    private TurSNSiteConfig setSiteName(String site, String locale) {
         String snSiteInternal = getDynamicProperties(String.format("dps.site.%s.%s.sn.site", site, locale));
-        if (snSiteInternal == null) {
-            turSNSiteConfig = getSNSiteConfig(site);
-        } else {
-            turSNSiteConfig.setName(snSiteInternal);
-        }
-
-
-        if (locale != null) {
-            // For example: dps.site.Intranet.en.sn.locale=en_US
-            String snLocaleInternal = getDynamicProperties(String.format("dps.site.%s.%s.sn.locale", site, locale));
-            if (snLocaleInternal == null) {
-                turSNSiteConfig.setLocale(locale);
-            } else {
-                turSNSiteConfig.setLocale(snLocaleInternal);
-            }
-        }
-        return turSNSiteConfig;
+        return StringUtils.isEmpty(snSiteInternal) ? getSNSiteConfig(site) :
+                getDefaultSNSiteConfig().setName(snSiteInternal);
     }
 
     @Override
     public TurSNSiteConfig getSNSiteConfig(String site) {
         TurSNSiteConfig turSNSiteConfig = getDefaultSNSiteConfig();
-
-        // For example: dps.site.Intranet.sn.site=Intra
-        String snSiteInternal = getDynamicProperties(String.format("dps.site.%s.sn.site", site));
-        if (snSiteInternal != null) {
-            turSNSiteConfig.setName(snSiteInternal);
-        }
-
-        // For example: dps.site.Intranet.sn.locale=en_US
-        String snLocaleInternal = getDynamicProperties(String.format("dps.site.%s.sn.locale", site));
-        if (snLocaleInternal == null) {
-            // For example: dps.site.default.sn.locale=en_US
-            turSNSiteConfig.setLocale(snLocale);
-        } else {
-            turSNSiteConfig.setLocale(snLocaleInternal);
-        }
-        return turSNSiteConfig;
+        return turSNSiteConfig.setName(Objects.requireNonNullElse(
+                        getDynamicProperties(String.format("dps.site.%s.sn.site", site)),
+                        turSNSiteConfig.getName()))
+                .setLocale(Objects.requireNonNullElse(
+                        LocaleUtils.toLocale(getDynamicProperties(String.format("dps.site.%s.sn.locale", site))),
+                        snLocale));
     }
 
-    public String getLocaleByPath(String snSite, String path) {
-
+    public Locale getLocaleByPath(String snSite, String path) {
         // dps.site.Intra.sn.locale.en_US.path=/content/sample/en
         for (Enumeration<?> e = getProperties().propertyNames(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement();
-            String value = getProperties().getProperty(name);
-            if (name.startsWith(String.format("sn.%s", snSite))
-                    && name.endsWith(".path") && path.startsWith(value)) {
-                String[] parts = name.split("\\.");
-                return parts[2];
+            if (hasPath(snSite, path, name)) {
+                return LocaleUtils.toLocale(name.split("\\.")[2]);
             }
         }
         return snLocale;
+    }
+
+    private boolean hasPath(String snSite, String path, String name) {
+        return name.startsWith(String.format("sn.%s", snSite))
+                && name.endsWith(".path") && path.startsWith(getProperties().getProperty(name));
     }
 
     @Override
@@ -203,19 +191,15 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     }
 
     @Override
-    public String getFileSourcePath() {
+    public Path getFileSourcePath() {
         return fileSourcePath;
     }
 
     @Override
     public List<String> getSitesAssocPriority() {
-        if (sitesAssociationPriority != null) {
-            String[] sites = sitesAssociationPriority.split(",");
-            List<String> siteList = Arrays.stream(sites).map(String::trim).collect(Collectors.toList());
-            if (!siteList.isEmpty())
-                return siteList;
-        }
-        return Collections.emptyList();
+        return !StringUtils.isEmpty(sitesAssociationPriority) ? Arrays.stream(
+                sitesAssociationPriority.split(",")).map(String::trim).collect(Collectors.toList())
+                : Collections.emptyList();
     }
 
     @Override

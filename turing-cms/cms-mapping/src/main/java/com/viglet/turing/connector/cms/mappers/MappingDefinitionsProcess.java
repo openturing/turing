@@ -53,7 +53,8 @@ public class MappingDefinitionsProcess {
 			DocumentBuilderFactory dlf = DocumentBuilderFactory.newInstance();
 			DocumentBuilder db = dlf.newDocumentBuilder();
 			if (workingDirectory != null) {
-				Path path = Paths.get(workingDirectory.toAbsolutePath().toString(), resourceXml);
+				Path path = Paths.get(workingDirectory.toAbsolutePath().toString(),
+						resourceXml);
 				if (path.toFile().isFile() && path.toFile().canRead()) {
 					InputStream resourceInputStream = Files.newInputStream(path);
 

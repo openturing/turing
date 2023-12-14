@@ -2,6 +2,7 @@ package com.viglet.turing.connector.aem.indexer;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,10 +13,9 @@ import javax.jcr.ValueFormatException;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
 
+@Slf4j
 @Getter
 public class AemPage extends AemObject {
-	private static final Logger logger = LoggerFactory.getLogger(AemPage.class);
-
 	private String title;
 	private String description;
 	private final StringBuffer components = new StringBuffer();
@@ -28,7 +28,7 @@ public class AemPage extends AemObject {
 			description = TurAemUtils.getJcrPropertyValue(jcrContent, "jcr:description");
 			TurAemUtils.getNodeToComponent(jcrContent, components);
 		} catch (RepositoryException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 	}
 

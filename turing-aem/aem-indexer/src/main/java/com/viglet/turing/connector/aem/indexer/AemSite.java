@@ -1,5 +1,7 @@
 package com.viglet.turing.connector.aem.indexer;
 
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,10 +9,10 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_CONTENT;
-
+@Getter
+@Slf4j
 public class AemSite extends AemObject {
-	private static final Logger logger = LoggerFactory.getLogger(AemSite.class);
-	
+
 	private String title;
 	private String url;
 	
@@ -22,17 +24,9 @@ public class AemSite extends AemObject {
 			if (jcrContent.hasProperty("jcr:title"))
 				title = jcrContent.getProperty("jcr:title").getString();
 		} catch (RepositoryException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 	}
-	
-	public String getTitle() {
-		return title;
-	}
 
-
-	public String getUrl() {
-		return url;
-	}
 
 }

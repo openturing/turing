@@ -1,10 +1,13 @@
 package com.viglet.turing.connector.cms.config;
 
+import java.io.File;
+import java.net.URL;
+import java.nio.file.Path;
 import java.util.List;
 
 public interface IHandlerConfiguration {
 
-	String getTuringURL();
+	URL getTuringURL();
 	
 	String getProviderName();
 	
@@ -28,5 +31,5 @@ public interface IHandlerConfiguration {
 
 	String getApiKey();
 
-	String getFileSourcePath();
+	Path getFileSourcePath();
 }

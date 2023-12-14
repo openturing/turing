@@ -1,11 +1,15 @@
 package com.viglet.turing.connector.aem.indexer.persistence;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import javax.persistence.*;
 import java.util.Date;
 
+@RequiredArgsConstructor
+@Accessors(chain = true)
 @Setter
 @Getter
 @Entity
