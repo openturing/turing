@@ -327,8 +327,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v18.10.0</nodeVersion>
-                    <npmVersion>8.19.2</npmVersion>
+                    <nodeVersion>v20.9.0</nodeVersion>
+                    <npmVersion>10.2.5</npmVersion>
                     <workingDirectory>../turing-ui</workingDirectory>
                 </configuration>
             </plugin>
