@@ -61,7 +61,7 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-java-sdk</artifactId>
-            <version>0.3.7</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
