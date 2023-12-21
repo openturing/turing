@@ -27,8 +27,8 @@ public class TurAemUtils {
     }
 
     public static JSONObject getInfinityJson(String url, String hostAndPort, String username, String password) {
-        String  responseBody = getResponseBody(String.format(url.endsWith(JSON)? "%s%s": "%s%s.infinity.json",
-                    hostAndPort, url), username, password);
+        String responseBody = getResponseBody(String.format(url.endsWith(JSON) ? "%s%s" : "%s%s.infinity.json",
+                hostAndPort, url), username, password);
         if (isResponseBodyJSONArray(responseBody) && !url.endsWith(JSON)) {
             JSONArray jsonArray = new JSONArray(responseBody);
             return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
@@ -41,6 +41,7 @@ public class TurAemUtils {
     private static boolean isResponseBodyJSONArray(String responseBody) {
         return responseBody.startsWith("[");
     }
+
     private static boolean isResponseBodyJSONObject(String responseBody) {
         return responseBody.startsWith("{");
     }
@@ -67,8 +68,9 @@ public class TurAemUtils {
         try {
             if (property instanceof JSONArray propertyArray) {
                 return !propertyArray.isEmpty() ? propertyArray.get(0).toString() : "";
-            } else
+            } else if (property != null) {
                 return property.toString();
+            }
         } catch (IllegalStateException e) {
             log.error(e.getMessage(), e);
         }

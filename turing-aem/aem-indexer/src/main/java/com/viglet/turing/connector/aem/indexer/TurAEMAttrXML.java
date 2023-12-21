@@ -41,7 +41,7 @@ public class TurAEMAttrXML {
     }
 
     private static boolean hasTextValue(TuringTag turingTag) {
-        return StringUtils.isEmpty(turingTag.getTextValue());
+        return StringUtils.isNotEmpty(turingTag.getTextValue());
     }
 
     private static List<TurAttrDef> setLiteralTextValueToAttribute(TuringTag turingTag) {

@@ -51,6 +51,7 @@ public class TurAEMIndexerTool {
     public static final String SITE = "site";
     public static final String DATA_MASTER = "data/master";
     public static final String METADATA = "metadata";
+    public static final String JCR = "jcr:";
     @Parameter(names = {"--host",
             "-h"}, description = "The host on which Content Management server is installed.", required = true)
     private String hostAndPort = null;
@@ -203,12 +204,21 @@ public class TurAEMIndexerTool {
 
     private void getChildrenFromJson(String nodePath, JSONObject jsonObject) {
         jsonObject.toMap().forEach((key, value) -> {
-            if (!key.startsWith("jcr:")) {
+            if (!key.startsWith(JCR)) {
                 String nodePathChild = nodePath + "/" + key;
-                this.getNodeFromJson(nodePathChild,
-                        TurAemUtils.getInfinityJson(nodePathChild, hostAndPort, username, password));
+                if (isAemObjectJsonFull(jsonObject, key)) {
+                    getNodeFromJson(nodePathChild,
+                            jsonObject.getJSONObject(key));
+                } else {
+                    getNodeFromJson(nodePathChild,
+                            TurAemUtils.getInfinityJson(nodePathChild, hostAndPort, username, password));
+                }
             }
         });
+    }
+
+    private static boolean isAemObjectJsonFull(JSONObject jsonObject, String key) {
+        return jsonObject.has(key) && jsonObject.getJSONObject(key).has(JCR_CONTENT);
     }
 
     private void prepareIndexObject(CTDMappings ctdMappings, AemObject aemObject) {
@@ -263,8 +273,8 @@ public class TurAEMIndexerTool {
     }
 
     private void deIndexObject() {
-        System.out.println("DeIndex Content that were removed...");
         turAemIndexingDAO.findContentsShouldBeDeIndexed(group, deltaId).ifPresent(contents -> {
+                    System.out.println("DeIndex Content that were removed...");
                     contents.forEach(content -> {
                         log.info(String.format("deIndex %s object from %s group and %s delta", content.getAemId(), group, deltaId));
                         Map<String, Object> attributes = new HashMap<>();
@@ -313,7 +323,7 @@ public class TurAEMIndexerTool {
                 turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresent(
                         turAemIndexing -> {
                             turAemIndexingDAO.update(turAemIndexing
-                                    .setDate(aemObject.getLastModified().getTime()));
+                                    .setDeltaId(deltaId));
                             log.info(String.format("Updated %s object (%s)", aemObject.getPath(), group));
                         });
             }
@@ -363,36 +373,34 @@ public class TurAEMIndexerTool {
                                                   MappingDefinitions mappingDefinitions) {
         return Optional.ofNullable(mappingDefinitions.getMappingByContentType(aemObject.getType()))
                 .map(ctdMappings -> {
-            List<TurAttrDef> attributesDefs = new ArrayList<>();
-            ctdMappings.getTagList().stream()
-                    .filter(Objects::nonNull).forEach(tag -> {
-                        if (log.isDebugEnabled()) {
-                            log.debug(String.format("generateXMLToIndex: Tag: %s", tag));
-                        }
-                        ctdMappings.getTuringTagMap()
-                                .get(tag)
-                                .stream()
-                                .filter(turingTag -> ObjectUtils.allNotNull(turingTag, turingTag.getTagName()))
-                                .forEach(turingTag -> {
-                                    try {
-                                        List<TurAttrDef> attributeDefsXML = TurAEMAttrXML.attributeXML(
-                                                new TurAttrDefContext(aemObject, turingTag, config,
-                                                        mappingDefinitions), this);
-                                        if (turingTag.isSrcUniqueValues()) {
-                                            attributesDefs.add(getTurAttrDefUnique(turingTag, attributeDefsXML));
-                                        } else {
-                                            attributesDefs.addAll(attributeDefsXML);
-                                        }
-                                    } catch (Exception e) {
-                                        log.error(e.getMessage(), e);
-                                    }
-                                });
-                    });
-            return attributesDefs;
-        }).orElseGet(() -> {
-            log.error("Content Type not found: " + aemObject.getType());
-            return Collections.emptyList();
-        });
+                    List<TurAttrDef> attributesDefs = new ArrayList<>();
+                    ctdMappings.getTagList().stream()
+                            .filter(Objects::nonNull).forEach(tag -> {
+                                log.debug(String.format("generateXMLToIndex: Tag: %s", tag));
+                                ctdMappings.getTuringTagMap()
+                                        .get(tag)
+                                        .stream()
+                                        .filter(turingTag -> ObjectUtils.allNotNull(turingTag, turingTag.getTagName()))
+                                        .forEach(turingTag -> {
+                                            try {
+                                                List<TurAttrDef> attributeDefsXML = TurAEMAttrXML.attributeXML(
+                                                        new TurAttrDefContext(aemObject, turingTag, config,
+                                                                mappingDefinitions), this);
+                                                if (turingTag.isSrcUniqueValues()) {
+                                                    attributesDefs.add(getTurAttrDefUnique(turingTag, attributeDefsXML));
+                                                } else {
+                                                    attributesDefs.addAll(attributeDefsXML);
+                                                }
+                                            } catch (Exception e) {
+                                                log.error(e.getMessage(), e);
+                                            }
+                                        });
+                            });
+                    return attributesDefs;
+                }).orElseGet(() -> {
+                    log.error("Content Type not found: " + aemObject.getType());
+                    return Collections.emptyList();
+                });
     }
 
     private static TurAttrDef getTurAttrDefUnique(TuringTag turingTag, List<TurAttrDef> attributeDefsXML) {

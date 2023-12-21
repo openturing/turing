@@ -122,4 +122,22 @@ public class AemObject {
             return false;
         }
     }
+
+    @Override
+    public String toString() {
+        return "AemObject{" +
+                "lastModified=" + lastModified +
+                ", createdDate=" + createdDate +
+                ", contentFragment=" + contentFragment +
+                ", delivered=" + delivered +
+                ", type='" + type + '\'' +
+                ", path='" + path + '\'' +
+                ", url='" + url + '\'' +
+                ", model='" + model + '\'' +
+                ", node=" + node +
+                ", jcrContentNode=" + jcrContentNode +
+                ", title='" + title + '\'' +
+                ", attributes=" + attributes +
+                '}';
+    }
 }

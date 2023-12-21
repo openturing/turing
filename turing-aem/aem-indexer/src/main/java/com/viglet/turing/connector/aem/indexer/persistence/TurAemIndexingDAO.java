@@ -27,7 +27,6 @@ public class TurAemIndexingDAO {
 
     public boolean existsByAemIdAndDateAndGroup(String id, Date date,
                                                 String group) {
-        EntityManager entityManager = getEntityManager();
         try {
             CriteriaBuilder builder = entityManager.getCriteriaBuilder();
             CriteriaQuery<TurAemIndexing> criteria = builder.createQuery(TurAemIndexing.class);
@@ -43,12 +42,9 @@ public class TurAemIndexingDAO {
                     )
             );
             TypedQuery<TurAemIndexing> typed = entityManager.createQuery(criteria);
-
             return typed.getSingleResult() != null;
         } catch (NoResultException nre) {
             return false;
-        } finally {
-            entityManager.close();
         }
     }
 
@@ -111,7 +107,6 @@ public class TurAemIndexingDAO {
 
 
     public void save(TurAemIndexing turAemIndexing) {
-        EntityManager entityManager = getEntityManager();
         try {
             entityManager.getTransaction().begin();
             entityManager.persist(turAemIndexing);
@@ -123,7 +118,6 @@ public class TurAemIndexingDAO {
     }
 
     public void update(TurAemIndexing turAemIndexing) {
-        EntityManager entityManager = getEntityManager();
         try {
             entityManager.getTransaction().begin();
             entityManager.merge(turAemIndexing);
