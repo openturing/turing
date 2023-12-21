@@ -1,12 +1,9 @@
 package com.viglet.turing.connector.aem.indexer;
 
-import com.google.gson.Gson;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -23,11 +20,11 @@ public class AemObject {
     private Calendar createdDate;
     private boolean contentFragment = false;
     private boolean delivered = false;
-    private String type;
-    private String path;
-    private String url;
+    private final String type;
+    private final String path;
+    private final String url;
     private String model;
-    private JSONObject node;
+    private final JSONObject node;
     private JSONObject jcrContentNode;
     private String title;
     private final Map<String, Object> attributes = new HashMap<>();
@@ -73,31 +70,6 @@ public class AemObject {
                 this.createdDate = createdDateCalendar;
             }
         } catch (ParseException e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-    public AemObject(Node node) {
-        try {
-            this.node = new JSONObject(new Gson().toJson(node));
-            this.path = node.getPath();
-            this.url = node.getPath() + ".html";
-            this.type = node.getProperty(JCR_PRIMARYTYPE).getString();
-            this.jcrContentNode = new JSONObject(new Gson().toJson(node.getNode(JCR_CONTENT)));
-            this.delivered = jcrContentNode.has(CQ_IS_DELIVERED) && this.jcrContentNode.getBoolean(CQ_IS_DELIVERED);
-            this.title = jcrContentNode.has(JCR_TITLE) ? this.jcrContentNode.getString(JCR_TITLE) : EMPTY_VALUE;
-            if (TurAemUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT)) {
-                this.contentFragment = this.jcrContentNode.getBoolean(CONTENT_FRAGMENT);
-            }
-            getDataFolder(this.jcrContentNode);
-            if (TurAemUtils.hasProperty(this.jcrContentNode, CQ_LAST_MODIFIED)) {
-                this.lastModified = (Calendar) this.jcrContentNode.get(CQ_LAST_MODIFIED);
-            } else if (TurAemUtils.hasProperty(this.jcrContentNode, JCR_LASTMODIFIED)) {
-                this.lastModified = (Calendar) this.jcrContentNode.get(JCR_LASTMODIFIED);
-            }
-            if (TurAemUtils.hasProperty(this.node, JCR_CREATED)) {
-                this.createdDate = node.getProperty(JCR_CREATED).getDate();
-            }
-        } catch (RepositoryException e) {
             log.error(e.getMessage(), e);
         }
     }

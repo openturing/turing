@@ -5,9 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
@@ -62,8 +59,7 @@ public class TurAemUtils {
 
     public static String getPropertyValue(Object property) {
         try {
-            if (property instanceof JSONArray) {
-                JSONArray propertyArray = (JSONArray) property;
+            if (property instanceof JSONArray propertyArray) {
                 return !propertyArray.isEmpty() ? propertyArray.get(0).toString() : "";
             } else
                 return property.toString();
@@ -71,30 +67,6 @@ public class TurAemUtils {
             log.error(e.getMessage(), e);
         }
         return null;
-    }
-
-    public static String getJcrPropertyValue(Node node, String propertyName)
-            throws RepositoryException {
-        if (node.hasProperty(propertyName))
-            return getPropertyValue(node.getProperty(propertyName));
-        return null;
-    }
-
-    public static void getNodeToComponent(Node node, StringBuffer components) throws RepositoryException {
-
-        if (node.hasNodes() && (node.getPath().startsWith("/content") || node.getPath().equals("/"))) {
-            NodeIterator nodeIterator = node.getNodes();
-            while (nodeIterator.hasNext()) {
-                Node nodeChild = nodeIterator.nextNode();
-                if (nodeChild.hasProperty("jcr:title"))
-                    components.append(TurAemUtils.getJcrPropertyValue(nodeChild, "jcr:title"));
-                if (nodeChild.hasProperty("text"))
-                    components.append(TurAemUtils.getJcrPropertyValue(nodeChild, "text"));
-                if (nodeChild.hasNodes()) {
-                    getNodeToComponent(nodeChild, components);
-                }
-            }
-        }
     }
 
     public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuffer components) {

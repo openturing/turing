@@ -3,54 +3,31 @@ package com.viglet.turing.connector.aem.indexer.persistence;
 import com.sun.istack.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
+import javax.persistence.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaDelete;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import javax.persistence.*;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 
 @Slf4j
 public class TurAemIndexingDAO {
-    private static TurAemIndexingDAO instance;
-    protected EntityManager entityManager;
-
-    public static TurAemIndexingDAO getInstance() {
-        if (instance == null) {
-            instance = new TurAemIndexingDAO();
-        }
-
-        return instance;
-    }
-
-    private TurAemIndexingDAO() {
+    EntityManager entityManager;
+    public TurAemIndexingDAO() {
         entityManager = getEntityManager();
     }
 
     private EntityManager getEntityManager() {
         EntityManagerFactory factory =
                 Persistence.createEntityManagerFactory("aemHibernate");
-        if (entityManager == null) {
-            entityManager = factory.createEntityManager();
-        }
-
-        return entityManager;
+            return factory.createEntityManager();
     }
 
-    public TurAemIndexing getById(final int id) {
-        return entityManager.find(TurAemIndexing.class, id);
-    }
-
-    @SuppressWarnings("unchecked")
-    public List<TurAemIndexing> findAll() {
-        return entityManager.createQuery("FROM " +
-                TurAemIndexing.class.getName()).getResultList();
-    }
-
-    public boolean existsByAemIdAndDateAndGroup(@NotNull final String id, @NotNull final Date date,
-                                                @NotNull final String group) {
+    public boolean existsByAemIdAndDateAndGroup(String id, Date date,
+                                                String group) {
+        EntityManager entityManager = getEntityManager();
         try {
             CriteriaBuilder builder = entityManager.getCriteriaBuilder();
             CriteriaQuery<TurAemIndexing> criteria = builder.createQuery(TurAemIndexing.class);
@@ -66,14 +43,17 @@ public class TurAemIndexingDAO {
                     )
             );
             TypedQuery<TurAemIndexing> typed = entityManager.createQuery(criteria);
+
             return typed.getSingleResult() != null;
         } catch (NoResultException nre) {
             return false;
+        } finally {
+            entityManager.close();
         }
     }
 
-    public Optional<List<TurAemIndexing>> findContentsShouldBeDeIndexed(@NotNull final String group,
-                                                                        @NotNull final String deltaId) {
+    public Optional<List<TurAemIndexing>> findContentsShouldBeDeIndexed(String group,
+                                                                        String deltaId) {
         try {
             CriteriaBuilder builder = entityManager.getCriteriaBuilder();
             CriteriaQuery<TurAemIndexing> criteria = builder.createQuery(TurAemIndexing.class);
@@ -91,17 +71,18 @@ public class TurAemIndexingDAO {
         }
     }
 
-    public void deleteContentsWereIndexed(@NotNull final String group,
-                                          @NotNull final String deltaId) {
-        List<Integer> ids = new ArrayList<>();
-        findContentsShouldBeDeIndexed(group, deltaId).ifPresent(contents ->
-                contents.forEach(turAemIndexing -> ids.add(turAemIndexing.getId())
-                ));
+    public void deleteContentsWereDeIndexed(String group,
+                                          String deltaId) {
         try {
             entityManager.getTransaction().begin();
-            Query query = entityManager.createQuery("DELETE TurAemIndexing tur WHERE id IN (:ids)");
-            query.setParameter("ids", ids);
-            query.executeUpdate();
+            CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+            CriteriaDelete<TurAemIndexing> criteria = builder.createCriteriaDelete(TurAemIndexing.class);
+            Root<TurAemIndexing> from = criteria.from(TurAemIndexing.class);
+            criteria.where(
+                    builder.and(
+                            builder.equal(from.get("indexGroup"), group),
+                            builder.notEqual(from.get("deltaId"), deltaId)
+                    ));
             entityManager.getTransaction().commit();
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
@@ -110,6 +91,7 @@ public class TurAemIndexingDAO {
     }
 
     public Optional<TurAemIndexing> findByAemIdAndGroup(@NotNull final String id, @NotNull final String group) {
+
         try {
             CriteriaBuilder builder = entityManager.getCriteriaBuilder();
             CriteriaQuery<TurAemIndexing> criteria = builder.createQuery(TurAemIndexing.class);
@@ -129,6 +111,7 @@ public class TurAemIndexingDAO {
 
 
     public void save(TurAemIndexing turAemIndexing) {
+        EntityManager entityManager = getEntityManager();
         try {
             entityManager.getTransaction().begin();
             entityManager.persist(turAemIndexing);
@@ -140,6 +123,7 @@ public class TurAemIndexingDAO {
     }
 
     public void update(TurAemIndexing turAemIndexing) {
+        EntityManager entityManager = getEntityManager();
         try {
             entityManager.getTransaction().begin();
             entityManager.merge(turAemIndexing);
@@ -150,24 +134,7 @@ public class TurAemIndexingDAO {
         }
     }
 
-    public void remove(TurAemIndexing turAemIndexing) {
-        try {
-            entityManager.getTransaction().begin();
-            turAemIndexing = entityManager.find(TurAemIndexing.class, turAemIndexing.getId());
-            entityManager.remove(turAemIndexing);
-            entityManager.getTransaction().commit();
-        } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
-            entityManager.getTransaction().rollback();
-        }
-    }
-
-    public void removeById(final int id) {
-        try {
-            TurAemIndexing turAemIndexing = getById(id);
-            remove(turAemIndexing);
-        } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
-        }
+    public void close() {
+        entityManager.close();
     }
 }

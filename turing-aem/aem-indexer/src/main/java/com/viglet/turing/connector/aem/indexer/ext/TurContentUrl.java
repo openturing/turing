@@ -5,11 +5,6 @@ import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.jcr.RepositoryException;
-import java.lang.invoke.MethodHandles;
 @Slf4j
 public class TurContentUrl implements ExtAttributeInterface {
 	@Override
