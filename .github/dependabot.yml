@@ -9,11 +9,11 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
-    target-branch: "0.3.7"
+    target-branch: "0.3.8"
     open-pull-requests-limit: 15
   - package-ecosystem: "npm" # See documentation for possible values
     directory: "/turing-ui" # Location of package manifests
     schedule:
       interval: "weekly"
-    target-branch: "0.3.7"
+    target-branch: "0.3.8"
     open-pull-requests-limit: 15
