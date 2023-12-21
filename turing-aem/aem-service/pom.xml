@@ -611,7 +611,7 @@
       <dependency>
         <groupId>org.apache.sling</groupId>
         <artifactId>org.apache.sling.servlets.annotations</artifactId>
-        <version>1.2.4</version>
+        <version>1.2.6</version>
         <scope>provided</scope>
       </dependency>
       <!-- Logging Dependencies -->
