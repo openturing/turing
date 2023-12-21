@@ -293,10 +293,10 @@ public class TurAEMIndexerTool {
     }
 
     private void indexObject(AemObject aemObject, List<TurAttrDef> extAttributes) {
-        if (!dryRun) {
-            if (objectNeedBeIndexed(aemObject)) {
-                Locale locale = LocaleUtils.toLocale(config.getLocaleByPath(config.getDefaultSNSiteConfig().getName(),
-                        aemObject.getPath()));
+        if (dryRun || objectNeedBeIndexed(aemObject)) {
+            Locale locale = LocaleUtils.toLocale(config.getLocaleByPath(config.getDefaultSNSiteConfig().getName(),
+                    aemObject.getPath()));
+            if (!dryRun) {
                 turAemIndexingDAO.save(new TurAemIndexing()
                         .setAemId(aemObject.getPath())
                         .setIndexGroup(group)
@@ -304,33 +304,33 @@ public class TurAEMIndexerTool {
                         .setDeltaId(deltaId)
                         .setLocale(locale.toLanguageTag()));
                 log.info(String.format("Created %s object (%s)", aemObject.getPath(), group));
-                List<TurAttrDef> turAttrDefList = prepareAttributeDefs(aemObject, config,
-                        MappingDefinitionsProcess.getMappingDefinitions(config,
-                                Paths.get(propertyPath).toAbsolutePath().getParent()));
-                turAttrDefList.addAll(extAttributes);
-                Map<String, Object> attributes = new HashMap<>();
-                attributes.put(SITE, siteName);
-                turAttrDefList.stream().filter(turAttrDef -> !CollectionUtils.isEmpty(turAttrDef.getMultiValue()))
-                        .forEach(turAttrDef -> {
-                            String attributeName = turAttrDef.getTagName();
-                            turAttrDef.getMultiValue().forEach(attributeValue -> {
-                                if (attributes.containsKey(attributeName)) {
-                                    addItemInExistingAttribute(attributeValue, attributes, attributeName);
-                                } else {
-                                    addFirstItemToAttribute(turAttrDef, attributeValue, attributes);
-                                }
-                            });
-                        });
-                sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.CREATE,
-                        locale, attributes)));
-            } else {
-                turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresent(
-                        turAemIndexing -> {
-                            turAemIndexingDAO.update(turAemIndexing
-                                    .setDeltaId(deltaId));
-                            log.info(String.format("Updated %s object (%s)", aemObject.getPath(), group));
-                        });
             }
+            List<TurAttrDef> turAttrDefList = prepareAttributeDefs(aemObject, config,
+                    MappingDefinitionsProcess.getMappingDefinitions(config,
+                            Paths.get(propertyPath).toAbsolutePath().getParent()));
+            turAttrDefList.addAll(extAttributes);
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put(SITE, siteName);
+            turAttrDefList.stream().filter(turAttrDef -> !CollectionUtils.isEmpty(turAttrDef.getMultiValue()))
+                    .forEach(turAttrDef -> {
+                        String attributeName = turAttrDef.getTagName();
+                        turAttrDef.getMultiValue().forEach(attributeValue -> {
+                            if (attributes.containsKey(attributeName)) {
+                                addItemInExistingAttribute(attributeValue, attributes, attributeName);
+                            } else {
+                                addFirstItemToAttribute(turAttrDef, attributeValue, attributes);
+                            }
+                        });
+                    });
+            sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.CREATE,
+                    locale, attributes)));
+        } else if (!dryRun) {
+            turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresent(
+                    turAemIndexing -> {
+                        turAemIndexingDAO.update(turAemIndexing
+                                .setDeltaId(deltaId));
+                        log.info(String.format("Updated %s object (%s)", aemObject.getPath(), group));
+                    });
         }
     }
 
@@ -342,11 +342,7 @@ public class TurAEMIndexerTool {
 
     private void sendJobToTuring(TurSNJobItems turSNJobItems) {
         TurSNSiteConfig turSNSiteConfig = config.getDefaultSNSiteConfig();
-        if (showOutput) try {
-            System.out.println(new ObjectMapper().writeValueAsString(turSNJobItems));
-        } catch (JsonProcessingException e) {
-            log.error(e.getMessage(), e);
-        }
+        showOutput(turSNJobItems);
         if (!dryRun) {
             turSNJobItems.getTuringDocuments().stream().findFirst().ifPresent(document ->
                     log.info(String.format("Send %s object job (%s) to Turing", document.getAttributes().get("id"), group)));
@@ -354,6 +350,14 @@ public class TurAEMIndexerTool {
                     new TurSNServer(config.getTuringURL(), turSNSiteConfig.getName(),
                             config.getApiKey()),
                     false);
+        }
+    }
+
+    private void showOutput(TurSNJobItems turSNJobItems) {
+        if (showOutput) try {
+            System.out.println(new ObjectMapper().writeValueAsString(turSNJobItems));
+        } catch (JsonProcessingException e) {
+            log.error(e.getMessage(), e);
         }
     }
 
