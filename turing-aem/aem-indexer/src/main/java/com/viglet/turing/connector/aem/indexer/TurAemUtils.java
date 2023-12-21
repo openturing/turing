@@ -16,14 +16,20 @@ import java.net.http.HttpResponse;
 
 @Slf4j
 public class TurAemUtils {
+
+    public static final String JCR_TITLE = "jcr:title";
+    public static final String TEXT = "text";
+    public static final String JCR = "jcr:";
+    public static final String JSON = ".json";
+
     public static boolean hasProperty(JSONObject jsonObject, String property) {
         return jsonObject.has(property) && jsonObject.get(property) != null;
     }
 
     public static JSONObject getInfinityJson(String url, String hostAndPort, String username, String password) {
-        String  responseBody = getResponseBody(String.format(url.endsWith(".json")? "%s%s": "%s%s.infinity.json",
+        String  responseBody = getResponseBody(String.format(url.endsWith(JSON)? "%s%s": "%s%s.infinity.json",
                     hostAndPort, url), username, password);
-        if (isResponseBodyJSONArray(responseBody) && !url.endsWith(".json")) {
+        if (isResponseBodyJSONArray(responseBody) && !url.endsWith(JSON)) {
             JSONArray jsonArray = new JSONArray(responseBody);
             return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
         } else if (isResponseBodyJSONObject(responseBody)) {
@@ -71,11 +77,11 @@ public class TurAemUtils {
 
     public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuffer components) {
         jsonObject.toMap().forEach((key, value) -> {
-            if (jsonObject.has("jcr:title"))
-                components.append(jsonObject.getString("jcr:title"));
-            if (jsonObject.has("text"))
-                components.append(jsonObject.getString("text"));
-            if (!key.startsWith("jcr:")) {
+            if (jsonObject.has(JCR_TITLE))
+                components.append(jsonObject.getString(JCR_TITLE));
+            if (jsonObject.has(TEXT))
+                components.append(jsonObject.getString(TEXT));
+            if (!key.startsWith(JCR)) {
                 JSONObject jsonObjectNode = jsonObject.getJSONObject(key);
                 getJsonNodeToComponent(jsonObjectNode, components);
             }

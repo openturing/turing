@@ -16,6 +16,8 @@ import static org.apache.jackrabbit.JcrConstants.*;
 @Slf4j
 public class AemObject {
     public static final String JCR_TITLE = "jcr:title";
+    public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+    public static final String HTML = ".html";
     private Calendar lastModified;
     private Calendar createdDate;
     private boolean contentFragment = false;
@@ -41,7 +43,7 @@ public class AemObject {
     public AemObject(String nodePath, JSONObject jcrNode) {
         this.node = jcrNode;
         this.path = nodePath;
-        this.url = nodePath + ".html";
+        this.url = nodePath + HTML;
         this.type = jcrNode.has(JCR_PRIMARYTYPE) ? jcrNode.getString(JCR_PRIMARYTYPE) : EMPTY_VALUE;
         try {
             if (jcrNode.has(JCR_CONTENT)) {
@@ -52,7 +54,6 @@ public class AemObject {
                     this.contentFragment = this.jcrContentNode.getBoolean(CONTENT_FRAGMENT);
                 }
                 getDataFolder(jcrContentNode);
-
                 Calendar lastModifiedCalendar = Calendar.getInstance();
                 if (this.jcrContentNode.has(JCR_LASTMODIFIED)) {
                     lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(JCR_LASTMODIFIED)));
@@ -63,9 +64,9 @@ public class AemObject {
                 }
 
             }
-            Calendar createdDateCalendar = Calendar.getInstance();
-            if (jcrNode.has(JCR_CREATED)) {
 
+            if (jcrNode.has(JCR_CREATED)) {
+                Calendar createdDateCalendar = Calendar.getInstance();
                 createdDateCalendar.setTime(aemJsonDateFormat.parse(jcrNode.getString(JCR_CREATED)));
                 this.createdDate = createdDateCalendar;
             }
@@ -99,9 +100,10 @@ public class AemObject {
                 if (isDate(value.toString())) {
                     try {
                         TimeZone tz = TimeZone.getTimeZone(UTC);
-                        DateFormat turingDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                        DateFormat turingDateFormat = new SimpleDateFormat(DATE_FORMAT);
                         turingDateFormat.setTimeZone(tz);
-                        this.attributes.put(key, turingDateFormat.format(aemJsonDateFormat.parse(value.toString()).getTime()));
+                        this.attributes.put(key, turingDateFormat
+                                .format(aemJsonDateFormat.parse(value.toString()).getTime()));
                     } catch (ParseException e) {
                         log.error(e.getMessage(), e);
                     }
@@ -115,9 +117,9 @@ public class AemObject {
     public boolean isDate(String dateStr) {
         try {
             aemJsonDateFormat.parse(dateStr);
+            return true;
         } catch (ParseException e) {
             return false;
         }
-        return true;
     }
 }

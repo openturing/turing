@@ -8,6 +8,8 @@ import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.util.HtmlManipulator;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -20,6 +22,7 @@ import java.util.Objects;
 @Slf4j
 public class TurAEMAttrXML {
     public static final String JCR_TITLE = "jcr:title";
+    public static final String HTML = "html";
 
     private TurAEMAttrXML() {
         throw new IllegalStateException("TurAEMAttrXML");
@@ -27,9 +30,7 @@ public class TurAEMAttrXML {
 
     public static List<TurAttrDef> attributeXML(TurAttrDefContext turAttrDefContext, TurAEMIndexerTool turAEMIndexerTool) {
         TuringTag turingTag = turAttrDefContext.getTuringTag();
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("attributeXML getSrcXmlName(): %s", turingTag.getSrcXmlName()));
-        }
+        log.debug(String.format("attributeXML getSrcXmlName(): %s", turingTag.getSrcXmlName()));
         if (hasTextValue(turingTag)) {
             return setLiteralTextValueToAttribute(turingTag);
         } else {
@@ -40,7 +41,7 @@ public class TurAEMAttrXML {
     }
 
     private static boolean hasTextValue(TuringTag turingTag) {
-        return turingTag.getTextValue() != null && !turingTag.getTextValue().isEmpty();
+        return StringUtils.isEmpty(turingTag.getTextValue());
     }
 
     private static List<TurAttrDef> setLiteralTextValueToAttribute(TuringTag turingTag) {
@@ -102,8 +103,7 @@ public class TurAEMAttrXML {
                 turMultiValue.add(TurAemUtils.getPropertyValue(jcrProperty));
             }
             if (!turMultiValue.isEmpty()) {
-                TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
-                attributesDefs.add(turAttrDef);
+                attributesDefs.add(new TurAttrDef(turingTag.getTagName(), turMultiValue));
             }
         }
         return attributesDefs;
@@ -114,8 +114,7 @@ public class TurAEMAttrXML {
         IHandlerConfiguration config = turAttrDefContext.getiHandlerConfiguration();
         List<TurAttrDef> attributesDefs = new ArrayList<>();
         String className = turingTag.getSrcClassName();
-        if (log.isDebugEnabled())
-            log.debug("ClassName : " + className);
+        log.debug("ClassName : " + className);
 
         Object extAttribute = null;
         try {
@@ -137,7 +136,7 @@ public class TurAEMAttrXML {
     }
 
     private static boolean isHtmlAttribute(TuringTag turingTag) {
-        return turingTag.getSrcAttributeType() != null && turingTag.getSrcAttributeType().equals("html");
+        return turingTag.getSrcAttributeType() != null && turingTag.getSrcAttributeType().equals(HTML);
     }
 
     private static boolean hasCustomClass(TurAttrDefContext turAttrDefContext) {
@@ -145,6 +144,6 @@ public class TurAEMAttrXML {
     }
 
     private static boolean hasJcrPropertyValue(Object jcrProperty) {
-        return jcrProperty != null && TurAemUtils.getPropertyValue(jcrProperty) != null;
+        return ObjectUtils.allNotNull(jcrProperty, TurAemUtils.getPropertyValue(jcrProperty));
     }
 }

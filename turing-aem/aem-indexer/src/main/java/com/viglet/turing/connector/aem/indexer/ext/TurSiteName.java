@@ -13,7 +13,6 @@ import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 @Slf4j
 public class TurSiteName implements ExtAttributeInterface {
 	private static final String EMPTY_STRING = "";
-
 	@Override
 	public TurMultiValue consume(TuringTag tag, AemObject aemObject, IHandlerConfiguration config) {
 		log.debug("Executing TurSiteName");

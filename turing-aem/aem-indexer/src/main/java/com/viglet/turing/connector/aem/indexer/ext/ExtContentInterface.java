@@ -8,5 +8,5 @@ import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import java.util.List;
 
 public interface ExtContentInterface {
-	public List<TurAttrDef> consume (AemObject aemObject, IHandlerConfiguration config, TurAEMIndexerTool turAEMIndexerTool);
+	List<TurAttrDef> consume(AemObject aemObject, IHandlerConfiguration config, TurAEMIndexerTool turAEMIndexerTool);
 }

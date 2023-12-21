@@ -25,6 +25,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.LocaleUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,8 @@ public class TurAEMIndexerTool {
     private static final JCommander jCommander = new JCommander();
     public static final String STATIC_FILE = "static-file";
     public static final String SITE = "site";
+    public static final String DATA_MASTER = "data/master";
+    public static final String METADATA = "metadata";
     @Parameter(names = {"--host",
             "-h"}, description = "The host on which Content Management server is installed.", required = true)
     private String hostAndPort = null;
@@ -76,8 +79,6 @@ public class TurAEMIndexerTool {
     private boolean debug = false;
     @Parameter(names = "--property", description = "Property file location path", help = true, required = true)
     private String propertyPath = "turing-aem.properties";
-    @Parameter(names = "--mode", description = "Mode connection type", converter = TurAemModeEnumConverter.class)
-    private TurAemMode mode = TurAemMode.JCR;
     @Parameter(names = "--group", description = "Identifier to verify delta updates", help = true, required = true)
     private String group;
     @Parameter(names = "--show-output", description = "Property file location path", help = true)
@@ -193,7 +194,6 @@ public class TurAEMIndexerTool {
     }
 
     private void getNodeFromJson(String nodePath, JSONObject jsonObject) {
-        log.info("getNodeFromJson");
         if (jsonObject.getString(JCR_PRIMARY_TYPE).equals(contentType)) {
             itemsProcessedStatus();
             prepareIndexObject(getCTDMappingMap(config).get(contentType), new AemObject(nodePath, jsonObject));
@@ -202,11 +202,9 @@ public class TurAEMIndexerTool {
     }
 
     private void getChildrenFromJson(String nodePath, JSONObject jsonObject) {
-        log.info("getChildrenFromJson");
         jsonObject.toMap().forEach((key, value) -> {
             if (!key.startsWith("jcr:")) {
                 String nodePathChild = nodePath + "/" + key;
-                log.info("getChildrenFromJson: nodePathChild");
                 this.getNodeFromJson(nodePathChild,
                         TurAemUtils.getInfinityJson(nodePathChild, hostAndPort, username, password));
             }
@@ -214,24 +212,19 @@ public class TurAEMIndexerTool {
     }
 
     private void prepareIndexObject(CTDMappings ctdMappings, AemObject aemObject) {
-        log.info("prepareIndexObject");
         final List<TurAttrDef> extAttributes = runCustomClassFromContentType(ctdMappings, aemObject);
         switch (Objects.requireNonNull(contentType)) {
             case CQ_PAGE:
-                log.info("prepareIndexObject: CQ_PAGE");
                 indexObject(aemObject, extAttributes);
                 break;
             case DAM_ASSET:
-                log.info("prepareIndexObject: DAM_ASSET");
                 if (!StringUtils.isEmpty(ctdMappings.getSubType())) {
                     if (ctdMappings.getSubType().equals(CONTENT_FRAGMENT)
                             && aemObject.isContentFragment()) {
-                        log.info("prepareIndexObject: CONTENT_FRAGMENT");
-                        aemObject.setDataPath("data/master");
+                        aemObject.setDataPath(DATA_MASTER);
                         indexObject(aemObject, extAttributes);
                     } else if (ctdMappings.getSubType().equals(STATIC_FILE)) {
-                        log.info("prepareIndexObject: STATIC_FILE");
-                        aemObject.setDataPath("metadata");
+                        aemObject.setDataPath(METADATA);
                         indexObject(aemObject, extAttributes);
                     }
                 }
@@ -287,9 +280,7 @@ public class TurAEMIndexerTool {
 
     private void indexObject(AemObject aemObject, List<TurAttrDef> extAttributes) {
         if (!dryRun) {
-            log.info("objectNeedBeIndexed: " + aemObject.getPath());
             if (objectNeedBeIndexed(aemObject)) {
-                log.info("indexObject: objectNeedBeIndexed");
                 Locale locale = LocaleUtils.toLocale(config.getLocaleByPath(config.getDefaultSNSiteConfig().getName(),
                         aemObject.getPath()));
                 turAemIndexingDAO.save(new TurAemIndexing()
@@ -305,7 +296,6 @@ public class TurAEMIndexerTool {
                 turAttrDefList.addAll(extAttributes);
                 Map<String, Object> attributes = new HashMap<>();
                 attributes.put(SITE, siteName);
-                log.info("indexObject set turAttrDef");
                 turAttrDefList.stream().filter(turAttrDef -> !CollectionUtils.isEmpty(turAttrDef.getMultiValue()))
                         .forEach(turAttrDef -> {
                             String attributeName = turAttrDef.getTagName();
@@ -319,7 +309,6 @@ public class TurAEMIndexerTool {
                         });
                 sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.CREATE,
                         locale, attributes)));
-                log.info("indexObject - Finish");
             } else {
                 turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresent(
                         turAemIndexing -> {
@@ -338,7 +327,6 @@ public class TurAEMIndexerTool {
     }
 
     private void sendJobToTuring(TurSNJobItems turSNJobItems) {
-        log.info("sendJobToTuring");
         TurSNSiteConfig turSNSiteConfig = config.getDefaultSNSiteConfig();
         if (showOutput) try {
             System.out.println(new ObjectMapper().writeValueAsString(turSNJobItems));
@@ -373,18 +361,18 @@ public class TurAEMIndexerTool {
 
     private List<TurAttrDef> prepareAttributeDefs(AemObject aemObject, IHandlerConfiguration config,
                                                   MappingDefinitions mappingDefinitions) {
-        CTDMappings ctdMappings = mappingDefinitions.getMappingByContentType(aemObject.getType());
-        List<TurAttrDef> attributesDefs = new ArrayList<>();
-        if (ctdMappings == null) {
-            log.error("Content Type not found: " + aemObject.getType());
-        } else {
+        return Optional.ofNullable(mappingDefinitions.getMappingByContentType(aemObject.getType()))
+                .map(ctdMappings -> {
+            List<TurAttrDef> attributesDefs = new ArrayList<>();
             ctdMappings.getTagList().stream()
                     .filter(Objects::nonNull).forEach(tag -> {
                         if (log.isDebugEnabled()) {
                             log.debug(String.format("generateXMLToIndex: Tag: %s", tag));
                         }
-                        ctdMappings.getTuringTagMap().get(tag).stream()
-                                .filter(turingTag -> turingTag != null && turingTag.getTagName() != null)
+                        ctdMappings.getTuringTagMap()
+                                .get(tag)
+                                .stream()
+                                .filter(turingTag -> ObjectUtils.allNotNull(turingTag, turingTag.getTagName()))
                                 .forEach(turingTag -> {
                                     try {
                                         List<TurAttrDef> attributeDefsXML = TurAEMAttrXML.attributeXML(
@@ -400,8 +388,11 @@ public class TurAEMIndexerTool {
                                     }
                                 });
                     });
-        }
-        return attributesDefs;
+            return attributesDefs;
+        }).orElseGet(() -> {
+            log.error("Content Type not found: " + aemObject.getType());
+            return Collections.emptyList();
+        });
     }
 
     private static TurAttrDef getTurAttrDefUnique(TuringTag turingTag, List<TurAttrDef> attributeDefsXML) {

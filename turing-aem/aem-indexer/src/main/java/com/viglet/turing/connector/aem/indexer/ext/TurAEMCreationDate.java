@@ -5,10 +5,7 @@ import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.lang.invoke.MethodHandles;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
