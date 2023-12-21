@@ -20,7 +20,7 @@
     <parent>
         <groupId>com.viglet.turing</groupId>
         <artifactId>aem-service</artifactId>
-        <version>0.3.7</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>aem-service.core</artifactId>

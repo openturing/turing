@@ -15,18 +15,19 @@
  |  limitations under the License.
 --><!--
  | DO NOT MODIFY
---><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-    <artifactId>aem-service</artifactId>
-    <groupId>com.viglet.turing</groupId>
-    <version>0.3.7</version>
-  </parent>
+        <artifactId>aem-service</artifactId>
+        <groupId>com.viglet.turing</groupId>
+        <version>${revision}</version>
+    </parent>
 
     <groupId>com.adobe.cq.cloud</groupId>
-    <version>0.0.1-SNAPSHOT</version>
     <artifactId>com.adobe.cq.cloud.testing.ui.cypress.tests</artifactId>
-    <name>com.adobe.cq.cloud.testing.ui.cypress - UI Tests</name>
+    <name>Turing AEM Service - UI Tests</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -104,37 +105,39 @@
                         <version>1.6.0</version>
                         <executions>
                             <execution>
-                            <id>docker-build</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>exec</goal>
-                            </goals>
-                            <configuration> 
-                                <executable>docker</executable>
-                                <workingDirectory>.</workingDirectory>
-                                <arguments>
-                                    <argument>build</argument>
-                                    <argument>-t</argument>
-                                    <argument>${project.groupId}-${project.artifactId}/ui.tests:${project.version}</argument>
-                                    <argument>.</argument>
-                                </arguments>
-                            </configuration>
+                                <id>docker-build</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>.</workingDirectory>
+                                    <arguments>
+                                        <argument>build</argument>
+                                        <argument>-t</argument>
+                                        <argument>${project.groupId}-${project.artifactId}/ui.tests:${project.version}
+                                        </argument>
+                                        <argument>.</argument>
+                                    </arguments>
+                                </configuration>
                             </execution>
                             <execution>
-                            <id>docker-tag</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>exec</goal>
-                            </goals>
-                            <configuration> 
-                                <executable>docker</executable>
-                                <workingDirectory>.</workingDirectory>
-                                <arguments>
-                                    <argument>tag</argument>
-                                    <argument>${project.groupId}-${project.artifactId}/ui.tests:${project.version}</argument>
-                                    <argument>${project.groupId}-${project.artifactId}/ui.tests:latest</argument>
-                                </arguments>
-                            </configuration>
+                                <id>docker-tag</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>.</workingDirectory>
+                                    <arguments>
+                                        <argument>tag</argument>
+                                        <argument>${project.groupId}-${project.artifactId}/ui.tests:${project.version}
+                                        </argument>
+                                        <argument>${project.groupId}-${project.artifactId}/ui.tests:latest</argument>
+                                    </arguments>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
