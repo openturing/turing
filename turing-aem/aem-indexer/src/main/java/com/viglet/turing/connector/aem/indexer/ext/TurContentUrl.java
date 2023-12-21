@@ -14,7 +14,6 @@ public class TurContentUrl implements ExtAttributeInterface {
 				.singleItem(getURL(aemObject, config));
 
 	}
-
 	public static String getURL(AemObject aemObject, IHandlerConfiguration config) {
 		return String.format("%s%s.html", config.getCDAURLPrefix(), aemObject.getPath());
 	}

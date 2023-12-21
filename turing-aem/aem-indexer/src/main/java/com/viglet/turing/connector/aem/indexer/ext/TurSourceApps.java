@@ -10,8 +10,6 @@ public class TurSourceApps implements ExtAttributeInterface {
 	@Override
 	public TurMultiValue consume(TuringTag tag, AemObject aemObject, IHandlerConfiguration config) {
 		log.debug("Executing TurSourceApps");
-
 		return TurMultiValue.singleItem(config.getProviderName());
-
 	}
 }

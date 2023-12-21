@@ -178,7 +178,11 @@ public class TurAEMIndexerTool {
         rootPaths.forEach(rootPath -> {
             JSONObject jsonSite = TurAemUtils.getInfinityJson(rootPath, hostAndPort, username, password);
             start = System.currentTimeMillis();
-            siteName = jsonSite.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
+            if (jsonSite.has(JCR_CONTENT) && jsonSite.getJSONObject(JCR_CONTENT).has(JCR_TITLE)) {
+                siteName = jsonSite.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
+            } else {
+                log.error(String.format("No site name the %s root path (%s)", rootPath, group));
+            }
             getNodeFromJson(rootPath, jsonSite);
             jCommander.getConsole().println(String.format("%d items processed in %dms", processed,
                     System.currentTimeMillis() - start));
@@ -195,7 +199,7 @@ public class TurAEMIndexerTool {
     }
 
     private void getNodeFromJson(String nodePath, JSONObject jsonObject) {
-        if (jsonObject.getString(JCR_PRIMARY_TYPE).equals(contentType)) {
+        if (jsonObject.has(JCR_PRIMARY_TYPE) && jsonObject.getString(JCR_PRIMARY_TYPE).equals(contentType)) {
             itemsProcessedStatus();
             prepareIndexObject(getCTDMappingMap(config).get(contentType), new AemObject(nodePath, jsonObject));
         }
