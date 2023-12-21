@@ -25,7 +25,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.LocaleUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
@@ -200,7 +199,6 @@ public class TurAEMIndexerTool {
 
     private void getNodeFromJson(String nodePath, JSONObject jsonObject) {
         if (jsonObject.has(JCR_PRIMARY_TYPE) && jsonObject.getString(JCR_PRIMARY_TYPE).equals(contentType)) {
-            itemsProcessedStatus();
             prepareIndexObject(getCTDMappingMap(config).get(contentType), new AemObject(nodePath, jsonObject));
         }
         getChildrenFromJson(nodePath, jsonObject);
@@ -226,20 +224,19 @@ public class TurAEMIndexerTool {
     }
 
     private void prepareIndexObject(CTDMappings ctdMappings, AemObject aemObject) {
-        final List<TurAttrDef> extAttributes = runCustomClassFromContentType(ctdMappings, aemObject);
         switch (Objects.requireNonNull(contentType)) {
             case CQ_PAGE:
-                indexObject(aemObject, extAttributes);
+                indexObject(aemObject, ctdMappings);
                 break;
             case DAM_ASSET:
                 if (!StringUtils.isEmpty(ctdMappings.getSubType())) {
                     if (ctdMappings.getSubType().equals(CONTENT_FRAGMENT)
                             && aemObject.isContentFragment()) {
                         aemObject.setDataPath(DATA_MASTER);
-                        indexObject(aemObject, extAttributes);
+                        indexObject(aemObject, ctdMappings);
                     } else if (ctdMappings.getSubType().equals(STATIC_FILE)) {
                         aemObject.setDataPath(METADATA);
-                        indexObject(aemObject, extAttributes);
+                        indexObject(aemObject, ctdMappings);
                     }
                 }
                 break;
@@ -278,7 +275,7 @@ public class TurAEMIndexerTool {
 
     private void deIndexObject() {
         turAemIndexingDAO.findContentsShouldBeDeIndexed(group, deltaId).ifPresent(contents -> {
-                    System.out.println("DeIndex Content that were removed...");
+                    jCommander.getConsole().println("DeIndex Content that were removed...");
                     contents.forEach(content -> {
                         log.info(String.format("deIndex %s object from %s group and %s delta", content.getAemId(), group, deltaId));
                         Map<String, Object> attributes = new HashMap<>();
@@ -292,7 +289,8 @@ public class TurAEMIndexerTool {
         );
     }
 
-    private void indexObject(AemObject aemObject, List<TurAttrDef> extAttributes) {
+    private void indexObject(AemObject aemObject, CTDMappings ctdMappings) {
+        itemsProcessedStatus();
         if (dryRun || objectNeedBeIndexed(aemObject)) {
             Locale locale = LocaleUtils.toLocale(config.getLocaleByPath(config.getDefaultSNSiteConfig().getName(),
                     aemObject.getPath()));
@@ -308,7 +306,7 @@ public class TurAEMIndexerTool {
             List<TurAttrDef> turAttrDefList = prepareAttributeDefs(aemObject, config,
                     MappingDefinitionsProcess.getMappingDefinitions(config,
                             Paths.get(propertyPath).toAbsolutePath().getParent()));
-            turAttrDefList.addAll(extAttributes);
+            turAttrDefList.addAll(runCustomClassFromContentType(ctdMappings, aemObject));
             Map<String, Object> attributes = new HashMap<>();
             attributes.put(SITE, siteName);
             turAttrDefList.stream().filter(turAttrDef -> !CollectionUtils.isEmpty(turAttrDef.getMultiValue()))
@@ -355,7 +353,7 @@ public class TurAEMIndexerTool {
 
     private void showOutput(TurSNJobItems turSNJobItems) {
         if (showOutput) try {
-            System.out.println(new ObjectMapper().writeValueAsString(turSNJobItems));
+            jCommander.getConsole().println(new ObjectMapper().writeValueAsString(turSNJobItems));
         } catch (JsonProcessingException e) {
             log.error(e.getMessage(), e);
         }
@@ -388,7 +386,7 @@ public class TurAEMIndexerTool {
                                 ctdMappings.getTuringTagMap()
                                         .get(tag)
                                         .stream()
-                                        .filter(turingTag -> ObjectUtils.allNotNull(turingTag, turingTag.getTagName()))
+                                        .filter(turingTag -> turingTag != null && turingTag.getTagName() != null)
                                         .forEach(turingTag -> {
                                             try {
                                                 List<TurAttrDef> attributeDefsXML = TurAEMAttrXML.attributeXML(
