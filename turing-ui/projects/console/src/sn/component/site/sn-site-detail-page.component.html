@@ -24,7 +24,7 @@
     <div class="form-group-body">
       <input [(ngModel)]="snSite.description" class="form-control" type="text" id="sn-description"
         style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+      <p class="note">
         Description will appear on semantic navigation site list.
       </p>
     </div>
@@ -39,36 +39,26 @@
           {{seInstance.title}}
         </option>
       </select>
-      <p class="note" id="help-text-for-checkbox">
+      <p class="note">
         Search engine that supports semantic navigation site.
       </p>
     </div>
   </div>
   <div class="form-group">
     <div class="form-group-header">
-      <label for="repo-description">NLP Vendor</label>
+      <label>NLP Vendor</label>
     </div>
     <div class="form-group-body">
       <select [(ngModel)]="snSite.turNLPVendor" [compareWith]="compareNLPVendor" class="form-select" style="width: 100%;">
-        <option [ngValue]=null>-- No NLP Vendor --</option>
+        <option [ngValue]=null >-- No NLP Vendor --</option>
         <option *ngFor="let nlpVendor of (getTurNLPVendors() | async)" [ngValue]="nlpVendor">
           {{nlpVendor.title}}
         </option>
       </select>
-      <p class="note" id="help-text-for-checkbox">
+      <p class="note">
         NLP vendor that will be used.
       </p>
     </div>
-  </div>
-  <div class="form-checkbox">
-    <label>
-      <input [(ngModel)]="snSite.thesaurus" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSite.thesaurus = $event ? 1 : 0" aria-describedby="sn-thesaurus-tip" />
-      Thesaurus
-    </label>
-    <p class="note" id="sn-thesaurus-tip">
-      Use thesaurus to detect terms.
-    </p>
   </div>
 </div>
 <ng-template #loading>

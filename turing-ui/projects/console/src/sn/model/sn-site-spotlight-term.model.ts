@@ -1,4 +1,4 @@
-export interface TurSNSiteSpotlightTerm {
-  id: string;
-  name: string;
+export class TurSNSiteSpotlightTerm {
+  id!: string;
+  name!: string;
 }

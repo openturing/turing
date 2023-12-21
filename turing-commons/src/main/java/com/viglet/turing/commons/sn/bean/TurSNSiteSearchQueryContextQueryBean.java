@@ -17,6 +17,10 @@
 package com.viglet.turing.commons.sn.bean;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * Details about the request query string of Turing AI Semantic Navigation
@@ -26,35 +30,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * 
  * @since 0.3.4
  */
-
+@RequiredArgsConstructor
+@Accessors(chain = true)
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchQueryContextQueryBean {
-
 	private String queryString;
 	private String sort;
 	private String locale;
-
-	public String getQueryString() {
-		return queryString;
-	}
-
-	public void setQueryString(String queryString) {
-		this.queryString = queryString;
-	}
-
-	public String getSort() {
-		return sort;
-	}
-
-	public void setSort(String sort) {
-		this.sort = sort;
-	}
-
-	public String getLocale() {
-		return locale;
-	}
-
-	public void setLocale(String locale) {
-		this.locale = locale;
-	}
 }

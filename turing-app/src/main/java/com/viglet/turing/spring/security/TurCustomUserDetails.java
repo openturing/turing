@@ -45,7 +45,6 @@ public class TurCustomUserDetails extends TurUser implements UserDetails {
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-
 		String roles = StringUtils.collectionToCommaDelimitedString(turUserRoles);
 		return AuthorityUtils.commaSeparatedStringToAuthorityList(roles);
 	}

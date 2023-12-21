@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { Observable } from 'rxjs';
 import { TurSNSiteSpotlight } from '../../../model/sn-site-spotlight.model';
 import { TurSNSiteSpotlightService } from '../../../service/sn-site-spotlight.service';

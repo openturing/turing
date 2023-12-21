@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup.auth;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -47,10 +48,6 @@ public class TurUserOnStartup {
 		if (turUserRepository.findAll().isEmpty()) {
 			
 			TurGroup turGroup = turGroupRepository.findByName("Administrator");
-			
-			Set<TurGroup> turGroups = new HashSet<>();
-			turGroups.add(turGroup);
-
 			TurUser turUser = new TurUser();
 
 			turUser.setEmail("admin@localhost.local");
@@ -63,11 +60,11 @@ public class TurUserOnStartup {
 			turUser.setUsername("admin");
 			turUser.setEnabled(1);
 
-			turUser.setTurGroups(turGroups);
+			turUser.setTurGroups(Collections.singletonList(turGroup));
 			
-			turUserRepository.save(turUser);			
-						
-			
+			turUserRepository.save(turUser);
+
+			TurGroup userGroup = turGroupRepository.findByName("User");
 			turUser = new TurUser();
 
 			turUser.setEmail("sample@localhost.local");
@@ -79,7 +76,7 @@ public class TurUserOnStartup {
 			turUser.setRealm("default");
 			turUser.setUsername("sample");
 			turUser.setEnabled(1);
-			
+			turUser.setTurGroups(Collections.singletonList(userGroup));
 			turUserRepository.save(turUser);			
 		}
 

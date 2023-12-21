@@ -25,13 +25,18 @@ import com.viglet.turing.commons.se.field.TurSEFieldType;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.TimeZone;
 
 public class TurSolrField {
 
+	public static final String EMPTY_STRING = "";
+
 	public static Integer convertFieldToInt(Object attrValue) {
-		if (attrValue instanceof String string) {
+		if (attrValue == null) {
+			return 0;
+		} else if (attrValue instanceof String string) {
 			return Integer.parseInt(string);
 		} else if (attrValue instanceof ArrayList<?> arrAttValue) {
 			if (arrAttValue.get(0) instanceof Long longValue) {
@@ -50,7 +55,9 @@ public class TurSolrField {
 	}
 
 	public static Long convertFieldToLong(Object attrValue) {
-		if (attrValue instanceof String stringValue) {
+		if (attrValue == null) {
+			return 0L;
+		} else if (attrValue instanceof String stringValue) {
 			return Long.parseLong(stringValue);
 		} else if (attrValue instanceof ArrayList<?> arrAttValue) {
 			if (arrAttValue.get(0) instanceof String stringValue) {
@@ -64,7 +71,9 @@ public class TurSolrField {
 	}
 
 	public static String convertFieldToString(Object attrValue) {
-		if (attrValue instanceof String) {
+		if (attrValue == null) {
+			return EMPTY_STRING;
+		} else if (attrValue instanceof String) {
 			return (String) attrValue;
 		} else if (attrValue instanceof ArrayList<?> arrayListValue) {
 			return arrayListToString(arrayListValue);
@@ -82,7 +91,9 @@ public class TurSolrField {
 	}
 
 	private static String objectArrayToString(Object[] arrAttrValue) {
-		if (arrAttrValue[0] instanceof String stringValue) {
+		if (arrAttrValue == null) {
+			return EMPTY_STRING;
+		} else if (arrAttrValue[0] instanceof String stringValue) {
 			return stringValue;
 		} else if (arrAttrValue[0] instanceof Long longValue) {
 			return longValue.toString();
@@ -94,7 +105,9 @@ public class TurSolrField {
 	}
 
 	private static String arrayListToString(ArrayList<?> arrAttValue) {
-		if (arrAttValue.get(0) instanceof String stringValue) {
+		if (arrAttValue == null) {
+			return EMPTY_STRING;
+		} else if (arrAttValue.get(0) instanceof String stringValue) {
 			return stringValue;
 		} else if (arrAttValue.get(0) instanceof Long longValue) {
 			return longValue.toString();
@@ -106,7 +119,9 @@ public class TurSolrField {
 	}
 
 	public static Object[] convertFieldToArray(Object attrValue) {
-		if (attrValue instanceof String stringValue) {
+		if (attrValue == null) {
+			return null;
+		} else if (attrValue instanceof String stringValue) {
 			return new String[] { stringValue };
 		} else if (attrValue instanceof Long longValue) {
 			return new Long[] { longValue };
@@ -118,7 +133,9 @@ public class TurSolrField {
 	}
 
 	public static String convertFieldToDate(Object attrValue) {
-		if (attrValue instanceof ArrayList<?> arrayListValue) {
+		if (attrValue == null) {
+			return EMPTY_STRING;
+		} else if (attrValue instanceof ArrayList<?> arrayListValue) {
 			return arrayListToString(arrayListValue);
 		} else if (attrValue instanceof Long longValue) {
 			return longToString(longValue);
@@ -141,7 +158,9 @@ public class TurSolrField {
 	}
 
 	public static boolean convertFieldToBoolean(Object attrValue) {
-		if (attrValue instanceof String) {
+		if (attrValue == null) {
+			return false;
+		} else if (attrValue instanceof String) {
 			return Boolean.parseBoolean((String) attrValue);
 		} else if (attrValue instanceof ArrayList<?> arrAttValue) {
 			if (arrAttValue.get(0) instanceof String) {

@@ -18,6 +18,10 @@ package com.viglet.turing.commons.sn.bean;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * Pagination of results of Turing AI Semantic Navigation response.
@@ -27,36 +31,14 @@ import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
  * @since 0.3.4
  */
 
+@RequiredArgsConstructor
+@Accessors(chain = true)
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchPaginationBean {
-
 	private TurSNPaginationType type;
 	private String text;
 	private String href;
 	private int page;
-	public TurSNPaginationType getType() {
-		return type;
-	}
-	public void setType(TurSNPaginationType type) {
-		this.type = type;
-	}
-	public String getText() {
-		return text;
-	}
-	public void setText(String text) {
-		this.text = text;
-	}
-	public String getHref() {
-		return href;
-	}
-	public void setHref(String href) {
-		this.href = href;
-	}
-	public int getPage() {
-		return page;
-	}
-	public void setPage(int page) {
-		this.page = page;
-	}
-	
 }

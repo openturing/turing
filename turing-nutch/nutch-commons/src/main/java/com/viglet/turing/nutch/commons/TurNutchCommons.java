@@ -21,6 +21,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Locale;
 
 public class TurNutchCommons {
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -32,7 +33,7 @@ public class TurNutchCommons {
 	public static final String TIMESTAMP_FIELD = "tstamp";
 	public static final String TYPE_FIELD = "type";
 	public static final String CONNECTOR_FIELD = "source_apps";
-	public static final String LOCALE_DEFAULT_VALUE = "en_US";
+	public static final Locale LOCALE_DEFAULT_VALUE = Locale.US;
 	public static final String TYPE_DEFAULT_VALUE = "Page";
 	public static final String CONNECTOR_DEFAULT_VALUE = "Nutch";
 	public static final String USERNAME_DEFAULT_VALUE = "admin";

@@ -75,9 +75,7 @@ public class TurSNSiteMetricAccess implements Serializable {
 
 	@ElementCollection
 	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
-	@CollectionTable(name = "tursnsite_metric_access_trs")
-	@JoinColumn(name = "tr_id")
-	@OnDelete(action = OnDeleteAction.CASCADE)
+	@CollectionTable(name = "tursnsite_metric_access_trs", joinColumns = @JoinColumn(name = "tr_id"))
 	private Set<String> targetingRules = new HashSet<>();
 
 	@Column

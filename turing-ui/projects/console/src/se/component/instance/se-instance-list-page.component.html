@@ -14,6 +14,7 @@
         <div class="Subhead" style="padding-bottom: 20px;">
           <div style="flex: 1 1 auto;">
             <input class="form-control" style="width: 50%;" type="text" placeholder="Find a search engine instance..."
+                   [(ngModel)]="filterText"
               aria-label="Find a search engine instance" />
           </div>
           <div class="Subhead-actions">
@@ -27,7 +28,8 @@
       </div>
     </div>
     <div>
-      <div *ngFor="let seInstance of seInstances" class="border-bottom d-flex flex-items-center"
+      <div *ngFor="let seInstance of seInstances | fullTextSearch:filterText:'title'"
+           class="border-bottom d-flex flex-items-center"
         style="margin-bottom: 20px;padding-bottom: 10px;">
         <div class="flex-auto">
           <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"

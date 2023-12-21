@@ -48,13 +48,8 @@ export class TurSNSearchRootPageComponent implements OnInit {
   generateQueryString(): string {
     this.turPage = "1";
 
-    return TurSNSearchService.generateQueryString(this.turQuery,
-      this.turPage,
-      this.turLocale,
-      this.turSort,
-      this.turFilterQuery,
-      this.turTargetingRule,
-      this.turAutoCorrectionDisabled);
+    return TurSNSearchService.generateQueryString(this.turQuery, this.turPage, this.turLocale, this.turSort,
+        this.turFilterQuery, this.turTargetingRule, this.turAutoCorrectionDisabled);
   }
   getTurSNSearchItems(): Observable<TurSNSearch> {
     return this.turSNSearchItems;
@@ -94,18 +89,6 @@ export class TurSNSearchRootPageComponent implements OnInit {
     this.turFilterQuery = this.activatedRoute.snapshot.queryParams["fq[]"];
     this.turTargetingRule = this.activatedRoute.snapshot.queryParams["tr[]"];
     this.turAutoCorrectionDisabled = this.activatedRoute.snapshot.queryParams["nfpr"];
-
-    /**
-    console.log(this.router.url);
-    console.log(this.turQueryString);
-    console.log(this.turQuery);
-    console.log(this.turPage);
-    console.log(this.turLocale);
-    console.log(this.turSort);
-    console.log(this.turFilterQuery);
-    console.log(this.turTargetingRule);
-    console.log(this.turAutoCorrectionDisabled);
-   */
   }
 
   showAll() {

@@ -22,10 +22,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,11 +73,11 @@ import com.viglet.turing.commons.sn.search.TurSNParamType;
  */
 public class TurSNServer {
 
-	private static Logger logger = Logger.getLogger(TurSNServer.class.getName());
+	private static final Logger logger = Logger.getLogger(TurSNServer.class.getName());
 
 	private static final String SITE_NAME_DEFAULT = "Sample";
 
-	private static final String LOCALE_DEFAULT = "en_US";
+	private static final Locale LOCALE_DEFAULT = Locale.US;
 
 	private static final String PAGE_DEFAULT = "1";
 
@@ -112,11 +109,13 @@ public class TurSNServer {
 
 	private String siteName;
 
-	private String locale;
+	private Locale locale;
 
 	private TurSNSitePostParamsBean turSNSitePostParams;
 
 	private TurUsernamePasswordCredentials credentials;
+
+	private String apiKey;
 
 	private String providerName;
 
@@ -125,7 +124,7 @@ public class TurSNServer {
 		super();
 		this.turSNServer = turSNServer;
 		this.siteName = SITE_NAME_DEFAULT;
-		this.locale = LOCALE_DEFAULT;
+		this.locale =   LOCALE_DEFAULT;
 		this.credentials = null;
 		this.providerName = PROVIDER_NAME_DEFAULT;
 		this.turSNSitePostParams = new TurSNSitePostParamsBean();
@@ -133,7 +132,7 @@ public class TurSNServer {
 		this.turSNSitePostParams.setPopulateMetrics(true);
 	}
 
-	public TurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials,
+	public TurSNServer(URL serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials,
 			String userId) {
 		super();
 		this.serverURL = serverURL;
@@ -148,18 +147,39 @@ public class TurSNServer {
 
 	}
 
+	public TurSNServer(URL serverURL, String siteName, Locale locale, String apiKey,
+					   String userId) {
+		super();
+		this.serverURL = serverURL;
+		this.siteName = siteName;
+		this.locale = locale;
+		this.turSNServer = String.format("%s/api/sn/%s", this.serverURL, this.siteName);
+		this.apiKey = apiKey;
+		this.providerName = PROVIDER_NAME_DEFAULT;
+		this.turSNSitePostParams = new TurSNSitePostParamsBean();
+		this.turSNSitePostParams.setUserId(userId);
+		this.turSNSitePostParams.setPopulateMetrics(true);
+
+	}
+
 	public TurSNServer(URL serverURL, String siteName) {
 		this(serverURL, siteName, LOCALE_DEFAULT);
 	}
 
-	public TurSNServer(URL serverURL, String siteName, String locale) {
-		this(serverURL, siteName, locale, null);
+	public TurSNServer(URL serverURL, String siteName, Locale locale) {
+		this(serverURL, siteName, locale, (TurUsernamePasswordCredentials) null);
 	}
 
-	public TurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials) {
+	public TurSNServer(URL serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials) {
 		this(serverURL, siteName, locale, credentials, credentials != null ? credentials.getUsername() : null);
 	}
+	public TurSNServer(URL serverURL, String siteName, Locale locale, String apiKey) {
+		this(serverURL, siteName, locale, apiKey, null);
+	}
 
+	public TurSNServer(URL serverURL, String siteName, String apiKey) {
+		this(serverURL, siteName, LOCALE_DEFAULT, apiKey, null);
+	}
 	public TurSNServer(URL serverURL, TurUsernamePasswordCredentials credentials) {
 		this(serverURL, SITE_NAME_DEFAULT, LOCALE_DEFAULT, credentials,
 				credentials != null ? credentials.getUsername() : null);
@@ -189,11 +209,11 @@ public class TurSNServer {
 		this.siteName = siteName;
 	}
 
-	public String getLocale() {
+	public Locale getLocale() {
 		return locale;
 	}
 
-	public void setLocale(String locale) {
+	public void setLocale(Locale locale) {
 		this.locale = locale;
 	}
 
@@ -217,6 +237,14 @@ public class TurSNServer {
 		return turSNSitePostParams;
 	}
 
+	public String getApiKey() {
+		return apiKey;
+	}
+
+	public void setApiKey(String apiKey) {
+		this.apiKey = apiKey;
+	}
+
 	public void setTurSNSitePostParams(TurSNSitePostParamsBean turSNSitePostParams) {
 		this.turSNSitePostParams = turSNSitePostParams;
 	}
@@ -224,7 +252,7 @@ public class TurSNServer {
 	public List<String> getLatestSearches(int rows) {
 		try {
 			URIBuilder turingURL = new URIBuilder(turSNServer.concat(LATEST_SEARCHES_CONTEXT))
-					.addParameter(TurSNParamType.LOCALE, getLocale())
+					.addParameter(TurSNParamType.LOCALE, getLocale().toLanguageTag())
 					.addParameter(TurSNParamType.ROWS, Integer.toString(rows));
 
 			if (this.getCredentials() != null) {
@@ -240,7 +268,7 @@ public class TurSNServer {
 					String jsonResult = new ObjectMapper().writeValueAsString(turSNSearchLatestRequestBean);
 					httpPost.setEntity(new StringEntity(jsonResult, StandardCharsets.UTF_8));
 				}
-				TurSNClientUtils.basicAuth(httpPost, this.getCredentials());
+				TurSNClientUtils.authentication(httpPost, this.getCredentials(), this.getApiKey());
 				try {
 					return new ObjectMapper().readValue(openConnectionAndRequest(httpPost),
 							new TypeReference<List<String>>() {
@@ -299,7 +327,7 @@ public class TurSNServer {
 	}
 
 	private List<TurSNLocale> executeLocalesRequest(HttpGet httpGet, CloseableHttpClient client)
-			throws IOException, ClientProtocolException, JsonParseException, JsonMappingException {
+			throws IOException {
 		HttpResponse response = client.execute(httpGet);
 		HttpEntity entity = response.getEntity();
 		String result = EntityUtils.toString(entity, StandardCharsets.UTF_8);
@@ -308,7 +336,7 @@ public class TurSNServer {
 	}
 
 	private List<String> executeAutoCompleteRequest(HttpGet httpGet, CloseableHttpClient client)
-			throws IOException, ClientProtocolException, JsonParseException, JsonMappingException {
+			throws IOException {
 		HttpResponse response = client.execute(httpGet);
 		HttpEntity entity = response.getEntity();
 		String result = EntityUtils.toString(entity, StandardCharsets.UTF_8);
@@ -323,7 +351,7 @@ public class TurSNServer {
 
 	private HttpGet prepareAutoCompleteRequest(TurSNAutoCompleteQuery autoCompleteQuery) throws URISyntaxException {
 		URIBuilder turingURL = new URIBuilder(turSNServer.concat(AUTO_COMPLETE_CONTEXT))
-				.addParameter(TurSNParamType.LOCALE, getLocale())
+				.addParameter(TurSNParamType.LOCALE, getLocale().toLanguageTag())
 				.addParameter(TurSNParamType.QUERY, autoCompleteQuery.getQuery())
 				.addParameter(TurSNParamType.ROWS, Integer.toString(autoCompleteQuery.getRows()));
 
@@ -374,7 +402,7 @@ public class TurSNServer {
 
 		try {
 			URIBuilder turingURL = new URIBuilder(turSNServer.concat(SEARCH_CONTEXT))
-					.addParameter(TurSNParamType.LOCALE, getLocale())
+					.addParameter(TurSNParamType.LOCALE, getLocale().toLanguageTag())
 					.addParameter(TurSNParamType.QUERY, this.turSNQuery.getQuery());
 
 			groupByRequest(turingURL);
@@ -398,7 +426,7 @@ public class TurSNServer {
 	}
 
 	private void groupByRequest(URIBuilder turingURL) {
-		if (this.turSNQuery.getGroupBy() != null && this.turSNQuery.getGroupBy().trim().length() > 0) {
+		if (this.turSNQuery.getGroupBy() != null && !this.turSNQuery.getGroupBy().trim().isEmpty()) {
 			turingURL.addParameter(TurSNParamType.GROUP, this.turSNQuery.getGroupBy());
 		}
 	}
@@ -450,9 +478,8 @@ public class TurSNServer {
 	}
 
 	private TurSNFacetFieldList setFacetFieldsResponse(TurSNSiteSearchBean turSNSiteSearchBean) {
-		TurSNFacetFieldList facetFields = new TurSNFacetFieldList(turSNSiteSearchBean.getWidget().getFacet(),
+        return new TurSNFacetFieldList(turSNSiteSearchBean.getWidget().getFacet(),
 				turSNSiteSearchBean.getWidget().getFacetToRemove());
-		return facetFields;
 	}
 
 	private TurSNDocumentList setResultsResponse(TurSNSiteSearchResultsBean turSNSiteSearchResultsBean,
@@ -501,7 +528,7 @@ public class TurSNServer {
 			String jsonResult = new ObjectMapper().writeValueAsString(this.getTurSNSitePostParams());
 			httpPost.setEntity(new StringEntity(jsonResult, StandardCharsets.UTF_8));
 
-			TurSNClientUtils.basicAuth(httpPost, this.getCredentials());
+			TurSNClientUtils.authentication(httpPost, this.getCredentials(), this.getApiKey());
 
 			logger.fine(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
 		} catch (JsonProcessingException | URISyntaxException e) {

@@ -20,7 +20,7 @@
     </div>
 
     <div class="Subhead-actions" style="display: inherit;">
-      <details *ngIf="!isNewObject()" #modalDeleteSpotlight id="modalDeleteSpotlight"
+      <details *ngIf="!isNewObject()" #modalDeleteRankingExpression id="modalDeleteSpotlight"
                class="details-reset details-overlay details-overlay-dark mr-2" style="display: unset;">
         <summary class="btn btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
                                                                           class="mr-1"></span>Delete rule
@@ -110,11 +110,8 @@
       <select *ngSwitchCase="'DATE'" [(ngModel)]="snRankingCondition.value"
               style="width: 100%"
               class="form-select mr-3">
-        <option value="asc">
-          ASC
-        </option>
-        <option value="desc">
-          DESC
+        <option value='asc'  [selected]=true>
+          newest
         </option>
       </select>
 

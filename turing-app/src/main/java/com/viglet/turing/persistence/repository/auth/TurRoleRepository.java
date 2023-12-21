@@ -37,5 +37,6 @@ import com.viglet.turing.persistence.model.auth.TurRole;
 public interface TurRoleRepository extends JpaRepository<TurRole, String> {
 	
 	Set<TurRole> findByTurGroupsIn(Collection<TurGroup> turGroup);
-	
+
+	TurRole findByName(String name);
 }

@@ -26,14 +26,11 @@ import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse
 import com.viglet.turing.persistence.repository.converse.chat.TurConverseChatResponseRepository;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.lang.invoke.MethodHandles;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;

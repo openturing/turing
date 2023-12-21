@@ -18,6 +18,10 @@ package com.viglet.turing.commons.sn.bean;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * List of documents with results by group of query of Turing AI Semantic
@@ -28,9 +32,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @since 0.3.6
  */
 
+@RequiredArgsConstructor
+@Accessors(chain = true)
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchGroupBean {
-
 	private String name;
 	private int count;
 	private int page;
@@ -40,76 +47,4 @@ public class TurSNSiteSearchGroupBean {
 	private int limit;
 	private TurSNSiteSearchResultsBean results;
 	private List<TurSNSiteSearchPaginationBean> pagination;
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public TurSNSiteSearchResultsBean getResults() {
-		return results;
-	}
-
-	public void setResults(TurSNSiteSearchResultsBean results) {
-		this.results = results;
-	}
-
-	public int getCount() {
-		return count;
-	}
-
-	public void setCount(int count) {
-		this.count = count;
-	}
-
-	public List<TurSNSiteSearchPaginationBean> getPagination() {
-		return pagination;
-	}
-
-	public void setPagination(List<TurSNSiteSearchPaginationBean> pagination) {
-		this.pagination = pagination;
-	}
-
-	public int getPage() {
-		return page;
-	}
-
-	public void setPage(int page) {
-		this.page = page;
-	}
-
-	public int getPageCount() {
-		return pageCount;
-	}
-
-	public void setPageCount(int pageCount) {
-		this.pageCount = pageCount;
-	}
-
-	public int getPageEnd() {
-		return pageEnd;
-	}
-
-	public void setPageEnd(int pageEnd) {
-		this.pageEnd = pageEnd;
-	}
-
-	public int getPageStart() {
-		return pageStart;
-	}
-
-	public void setPageStart(int pageStart) {
-		this.pageStart = pageStart;
-	}
-
-	public int getLimit() {
-		return limit;
-	}
-
-	public void setLimit(int limit) {
-		this.limit = limit;
-	}
 }

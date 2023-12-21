@@ -17,6 +17,7 @@
 package com.viglet.turing.client.sn;
 
 import java.net.URL;
+import java.util.Locale;
 
 import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 
@@ -34,22 +35,34 @@ public class HttpTurSNServer extends TurSNServer {
 		super(turSNServer);
 
 	}
-
 	public HttpTurSNServer(URL serverURL, String siteName) {
 		super(serverURL, siteName);
 	}
 
-	public HttpTurSNServer(URL serverURL, String siteName, String locale) {
+	public HttpTurSNServer(URL serverURL, String siteName, Locale locale) {
 		super(serverURL, siteName, locale);
 
 	}
-
-	public HttpTurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials) {
+	@Deprecated
+	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials) {
 		super(serverURL, siteName, locale, credentials);
 
 	}
+	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, String apiKey) {
+		super(serverURL, siteName, locale, apiKey);
 
-	public HttpTurSNServer(URL serverURL, String siteName, String locale, TurUsernamePasswordCredentials credentials,
+	}
+
+	public HttpTurSNServer(URL serverURL, String siteName, String apiKey) {
+		super(serverURL, siteName, apiKey);
+
+	}
+	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, String apiKey, String userId) {
+		super(serverURL, siteName, locale, apiKey, userId);
+
+	}
+	@Deprecated
+	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials,
 			String userId) {
 		super(serverURL, siteName, locale, credentials, userId);
 

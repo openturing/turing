@@ -23,11 +23,12 @@ package com.viglet.turing.sn;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @Controller
 public class TurSNContext {
-	@GetMapping("/sn/{siteName}")
-	public String sn() {
+	@GetMapping("/sn/{ignoredSiteName}")
+	public String sn(@PathVariable String ignoredSiteName) {
 		return "sn/templates/index";
 	}
 }

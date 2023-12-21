@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { Router, RouterModule } from '@angular/router';
 
 @Component({

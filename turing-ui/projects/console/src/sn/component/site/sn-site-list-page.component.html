@@ -12,8 +12,9 @@
     <div style="margin-top: 20px;">
       <div style="padding-bottom: 15px;">
         <div class="Subhead" style="padding-bottom: 20px;">
-          <div class="Subhead-heading"><span octicon="list-unordered" [size]="24" class="mr-1"></span> Semantic
-            Navigation
+          <div style="flex: 1 1 auto;">
+            <input class="form-control" style="width: 50%;" type="text" placeholder="Find a semantic navigation site..." [(ngModel)]="filterText"
+                   aria-label="Find a semantic navigation site" />
           </div>
           <div class="Subhead-actions">
             <a [routerLink]="['/sn/site/new']" class="btn btn-primary" role="button">
@@ -23,7 +24,7 @@
         </div>
       </div>
     </div>
-    <div *ngFor="let snSite of snSites" class="border-bottom d-flex flex-items-center"
+    <div *ngFor="let snSite of snSites | fullTextSearch:filterText:'name'" class="border-bottom d-flex flex-items-center"
          style="margin-bottom: 20px;padding-bottom: 10px;">
       <div class="flex-auto">
         <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;" class="float-left">

@@ -25,6 +25,7 @@ import lombok.Getter;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,7 +47,6 @@ public class TurUser implements Serializable {
 
 	private String confirmEmail;
 
-	@Column(name = "email")
 	private String email;
 
 	private String firstName;
@@ -60,19 +60,17 @@ public class TurUser implements Serializable {
 
 	private int loginTimes;
 
-	@Column(name = "password")
 	private String password;
 
 	private String realm;
 
 	private String recoverPassword;
 
-	@Column(name = "enabled")
 	private int enabled;
 	
 	@ManyToMany
-	private Set<TurGroup> turGroups = new HashSet<>();
-	
+	private Collection<TurGroup> turGroups  = new HashSet<>();
+
 	public TurUser(TurUser turUser) {
 		this.username = turUser.username;
 		this.email = turUser.email;
@@ -132,7 +130,7 @@ public class TurUser implements Serializable {
 		this.enabled = enabled;
 	}
 
-	public void setTurGroups(Set<TurGroup> turGroups) {
+	public void setTurGroups(Collection<TurGroup> turGroups) {
 		this.turGroups.clear();
 		if (turGroups != null) {
 			this.turGroups.addAll(turGroups);

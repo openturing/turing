@@ -12,7 +12,7 @@
       <div style="padding-bottom: 15px;">
         <div class="Subhead" style="padding-bottom: 20px;">
           <div style="flex: 1 1 auto;">
-            <input class="form-control" style="width: 50%;" type="text" placeholder="Find a NLP Entity..."
+            <input class="form-control" style="width: 50%;" type="text" placeholder="Find a NLP Entity..." [(ngModel)]="filterText"
               aria-label="Find a NLP Entity" />
           </div>
           <div class="Subhead-actions">
@@ -26,7 +26,7 @@
       </div>
     </div>
     <div>
-      <div *ngFor="let nlpEntity of nlpEntities" class="border-bottom d-flex flex-items-center"
+      <div *ngFor="let nlpEntity of nlpEntities | fullTextSearch:filterText:'name'" class="border-bottom d-flex flex-items-center"
         style="margin-bottom: 20px;padding-bottom: 10px;">
         <div class="flex-auto">
           <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TurSNSite } from '../../model/sn-site.model';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { TurSNSiteService } from '../../service/sn-site.service';
 import { ActivatedRoute } from '@angular/router';
 import { TurLocale } from '../../../locale/model/locale.model';
@@ -47,6 +47,10 @@ export class TurSNSiteUIPageComponent implements OnInit {
   getTurSEInstances(): Observable<TurSEInstance[]> {
 
     return this.turSEInstances;
+  }
+
+  getFacetTypes(): string[] {
+    return ["AND", "OR"];
   }
   ngOnInit(): void {
   }

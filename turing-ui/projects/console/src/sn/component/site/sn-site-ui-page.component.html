@@ -13,11 +13,22 @@
     </div>
     <div class="form-group-body">
       <input [(ngModel)]="snSite.rowsPerPage" class="form-control" type="text" id="sn-rowsPerPage"
-        style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+             style="width: 100%;"/>
+      <p class="note">
         Name will appear on semantic navigation site list.
       </p>
     </div>
+  </div>
+  <div class="form-checkbox">
+    <label>
+      <input [(ngModel)]="snSite.whenNoResultsUseAsterisk" type="checkbox" [ngModelOptions]="{standalone: true}"
+             (ngModelChange)="snSite.whenNoResultsUseAsterisk = $event ? 1 : 0"
+             aria-describedby="sn-whenNoResultsUseAsterisk-tip"/>
+      Use Asterisk
+    </label>
+    <p class="note" id="sn-whenNoResultsUseAsterisk-tip">
+      When there are no results, the asterisk will be used at the end of the search term.
+    </p>
   </div>
   <div class="Subhead mt-5">
     <div class="Subhead-heading"><span octicon="filter" [size]="24" class="mr-1"> </span> Facet</div>
@@ -26,7 +37,7 @@
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSite.facet" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSite.facet = $event ? 1 : 0" aria-describedby="sn-facet-tip" />
+             (ngModelChange)="snSite.facet = $event ? 1 : 0" aria-describedby="sn-facet-tip"/>
       Facet enabled
     </label>
     <p class="note" id="sn-facet-tip">
@@ -39,13 +50,27 @@
     </div>
     <div class="form-group-body">
       <input [(ngModel)]="snSite.itemsPerFacet" class="form-control" type="text" id="sn-itemsPerFacet"
-        style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+             style="width: 100%;"/>
+      <p class="note">
         Description will appear on semantic navigation site list.
       </p>
     </div>
   </div>
-
+  <div class="form-group">
+    <div class="form-group-header">
+      <label for="sn-itemsPerFacet">Facet Type</label>
+    </div>
+    <div class="form-group-body">
+      <select [(ngModel)]="snSite.facetType" class="form-select mr-3">
+        <option *ngFor="let facetType of getFacetTypes() " [value]="facetType">
+          {{facetType}}
+        </option>
+      </select>
+      <p class="note">
+        How Turing will join the facet attributes, using OR or AND.
+      </p>
+    </div>
+  </div>
   <div class="Subhead mt-5">
     <div class="Subhead-heading"><span octicon="pencil" [size]="24" class="mr-1"> </span> Highlighting</div>
     <div class="Subhead-description">Highlighting terms of search on results.</div>
@@ -53,7 +78,7 @@
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSite.hl" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSite.hl = $event ? 1 : 0" aria-describedby="sn-hl-tip" />
+             (ngModelChange)="snSite.hl = $event ? 1 : 0" aria-describedby="sn-hl-tip"/>
       Highlighting enabled
     </label>
     <p class="note" id="sn-hl-tip">
@@ -65,8 +90,8 @@
       <label for="sn-hlPre">Pre Tag</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSite.hlPre" class="form-control" type="text" id="sn-hlPre" style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+      <input [(ngModel)]="snSite.hlPre" class="form-control" type="text" id="sn-hlPre" style="width: 100%;"/>
+      <p class="note">
         Name will appear on semantic navigation site list.
       </p>
     </div>
@@ -76,8 +101,8 @@
       <label for="sn-hlPost">Post Tag</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSite.hlPost" class="form-control" type="text" id="sn-hlPost" style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+      <input [(ngModel)]="snSite.hlPost" class="form-control" type="text" id="sn-hlPost" style="width: 100%;"/>
+      <p class="note">
         Name will appear on semantic navigation site list.
       </p>
     </div>
@@ -85,20 +110,21 @@
   <div class="Subhead mt-5">
     <div class="Subhead-heading"><span octicon="question" [size]="24" class="mr-1"> </span> Did you mean?</div>
     <div class="Subhead-description">Corrects the searched term if you have a spelling error. It uses the contents
-      indexed in the Search Engine as a dictionary.</div>
+      indexed in the Search Engine as a dictionary.
+    </div>
   </div>
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSite.spellCheck" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSite.spellCheck = $event ? 1 : 0" aria-describedby="sn-mlt-tip" />
+             (ngModelChange)="snSite.spellCheck = $event ? 1 : 0" aria-describedby="sn-mlt-tip"/>
       "Did you mean?" enabled
     </label>
-    <p class="note" id="sn-spellCheck-tip">
+    <p class="note">
       Use "did you mean?" feature.
     </p>
     <label>
       <input [(ngModel)]="snSite.spellCheckFixes" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSite.spellCheckFixes = $event ? 1 : 0" aria-describedby="sn-mlt-tip" />
+             (ngModelChange)="snSite.spellCheckFixes = $event ? 1 : 0" aria-describedby="sn-mlt-tip"/>
       Always show the search with the corrected term.
     </label>
     <p class="note" id="sn-spellCheckFixes-tip">
@@ -109,12 +135,13 @@
   <div class="Subhead mt-5">
     <div class="Subhead-heading"><span octicon="copy" [size]="24" class="mr-1"> </span> MLT</div>
     <div class="Subhead-description">The More Like This Query finds other items that are "like" a given set of items of
-      search results.</div>
+      search results.
+    </div>
   </div>
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSite.mlt" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSite.mlt = $event ? 1 : 0" aria-describedby="sn-mlt-tip" />
+             (ngModelChange)="snSite.mlt = $event ? 1 : 0" aria-describedby="sn-mlt-tip"/>
       "More Like This" enabled
     </label>
     <p class="note" id="sn-mlt-tip">
@@ -130,7 +157,7 @@
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSite.spotlightWithResults" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSite.spotlightWithResults = $event ? 1 : 0" aria-describedby="sn-mlt-tip" />
+             (ngModelChange)="snSite.spotlightWithResults = $event ? 1 : 0" aria-describedby="sn-mlt-tip"/>
       "Spotlight with search results" enabled
     </label>
     <p class="note" id="sn-spellCheck-tip">
@@ -148,8 +175,8 @@
     </div>
     <div class="form-group-body">
       <input [(ngModel)]="snSite.defaultTitleField" class="form-control" type="text" id="sn-name"
-        style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+             style="width: 100%;"/>
+      <p class="note">
         Name will appear on semantic navigation site list.
       </p>
     </div>
@@ -159,8 +186,9 @@
       <label for="sn-name">Text</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSite.defaultTextField" class="form-control" type="text" id="sn-name" style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+      <input [(ngModel)]="snSite.defaultTextField" class="form-control" type="text" id="defaultTextField"
+             style="width: 100%;"/>
+      <p class="note">
         Name will appear on semantic navigation site list.
       </p>
     </div>
@@ -170,9 +198,9 @@
       <label for="sn-name">Description</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSite.defaultDescriptionField" class="form-control" type="text" id="sn-name"
-        style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+      <input [(ngModel)]="snSite.defaultDescriptionField" class="form-control" type="text" id="defaultDescriptionField"
+             style="width: 100%;"/>
+      <p class="note">
         Name will appear on semantic navigation site list.
       </p>
     </div>
@@ -182,8 +210,9 @@
       <label for="sn-name">Date</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSite.defaultDateField" class="form-control" type="text" id="sn-name" style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+      <input [(ngModel)]="snSite.defaultDateField" class="form-control" type="text" id="defaultDateField"
+             style="width: 100%;"/>
+      <p class="note">
         Name will appear on semantic navigation site list.
       </p>
     </div>
@@ -193,9 +222,9 @@
       <label for="sn-name">Image</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSite.defaultImageField" class="form-control" type="text" id="sn-name"
-        style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+      <input [(ngModel)]="snSite.defaultImageField" class="form-control" type="text" id="defaultImageField"
+             style="width: 100%;"/>
+      <p class="note">
         Name will appear on semantic navigation site list.
       </p>
     </div>
@@ -205,8 +234,9 @@
       <label for="sn-name">URL</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSite.defaultURLField" class="form-control" type="text" id="sn-name" style="width: 100%;" />
-      <p class="note" id="help-text-for-checkbox">
+      <input [(ngModel)]="snSite.defaultURLField" class="form-control" type="text" id="defaultURLField"
+             style="width: 100%;"/>
+      <p class="note">
         Name will appear on semantic navigation site list.
       </p>
     </div>

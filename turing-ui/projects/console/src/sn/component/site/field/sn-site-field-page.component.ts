@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { TurSNSite } from '../../../model/sn-site.model';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { TurSNSiteService } from '../../../service/sn-site.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TurSNSiteField } from '../../../model/sn-site-field.model';
@@ -68,6 +68,7 @@ export class TurSNSiteFieldPageComponent implements OnInit {
 
         _turSNSiteField = turSNSiteField;
         this.notifier.notify("success", turSNSiteField.name.concat(message));
+        this.router.navigate(['/sn/site/', this.siteId, 'field', 'list']);
       },
       (response: string) => {
         this.notifier.notify("error", "Field was error: " + response);

@@ -17,6 +17,10 @@
 package com.viglet.turing.commons.sn.bean;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * Facet Item of Turing AI Semantic Navigation response.
@@ -25,30 +29,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * 
  * @since 0.3.4
  */
-
+@RequiredArgsConstructor
+@Accessors(chain = true)
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchFacetItemBean {
-
 	private int count;
 	private String link;
 	private String label;
-	public int getCount() {
-		return count;
-	}
-	public void setCount(int count) {
-		this.count = count;
-	}
-	public String getLink() {
-		return link;
-	}
-	public void setLink(String link) {
-		this.link = link;
-	}
-	public String getLabel() {
-		return label;
-	}
-	public void setLabel(String label) {
-		this.label = label;
-	}
-	
+	private boolean selected;
+
 }

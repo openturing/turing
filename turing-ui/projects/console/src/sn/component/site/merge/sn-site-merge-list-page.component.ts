@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { Observable } from 'rxjs';
 import { TurSNSiteMerge } from '../../../model/sn-site-merge.model';
 import { TurSNSiteMergeService } from '../../../service/sn-site-merge.service';

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { Router } from '@angular/router';
 import {TurDevTokenService} from "../../service/dev-token.service";
 import {TurDevToken} from "../../model/dev-token.model";
@@ -11,11 +11,13 @@ import {TurDevToken} from "../../model/dev-token.model";
 })
 export class TurDevTokenListPageComponent implements OnInit {
   private turDevTokens: Observable<TurDevToken[]>;
+  filterText: string;
 
   constructor(private readonly notifier: NotifierService,
               private turDevTokenService: TurDevTokenService,
               private router: Router) {
     this.turDevTokens = turDevTokenService.query();
+    this.filterText = "";
   }
 
   getTurDevTokens(): Observable<TurDevToken[]> {

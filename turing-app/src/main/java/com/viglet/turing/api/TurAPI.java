@@ -22,6 +22,7 @@ package com.viglet.turing.api;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.json.JSONException;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,6 +38,14 @@ public class TurAPI {
 	public Map<String,String> info() throws JSONException {
 		Map<String,String> status = new HashMap<>();
 		status.put("status", "ok");
+		return status;
+	}
+
+	@Secured("ROLE_ADMIN")
+	@GetMapping("test")
+	public Map<String,String> secured() throws JSONException {
+		Map<String,String> status = new HashMap<>();
+		status.put("status", "secured");
 		return status;
 	}
 }

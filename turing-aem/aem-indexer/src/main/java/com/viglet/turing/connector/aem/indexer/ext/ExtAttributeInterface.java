@@ -6,5 +6,5 @@ import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 
 public interface ExtAttributeInterface {
-	public TurMultiValue consume (TuringTag tag, AemObject aemObject, IHandlerConfiguration config);
+	TurMultiValue consume (TuringTag tag, AemObject aemObject, IHandlerConfiguration config);
 }

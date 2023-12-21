@@ -71,7 +71,10 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	private String description;
 
 	@Column()
-	private Integer rowsPerPage;
+	private Integer rowsPerPage = 10;
+
+	@Column()
+	private Integer whenNoResultsUseAsterisk = 0;
 
 	@Column()
 	private Integer facet;
@@ -92,7 +95,10 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	private Integer mlt;
 
 	@Column()
-	private Integer thesaurus;
+	private TurSNSiteFacetEnum facetType = TurSNSiteFacetEnum.AND;
+
+	@Column()
+	private Integer thesaurus = 0;
 
 	@Column()
 	private String defaultTitleField;

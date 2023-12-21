@@ -36,6 +36,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 @Configuration
@@ -54,11 +55,20 @@ public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
 				frameOptions -> frameOptions.disable().cacheControl(HeadersConfigurer.CacheControlConfig::disable)));
 		http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
 				.authorizeHttpRequests(authorizeRequests -> {
-					authorizeRequests.requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/welcome/**"),
-							mvc.pattern("/"), mvc.pattern("/assets/**"), mvc.pattern("/swagger-resources/**"),
-							mvc.pattern("/sn/**"), mvc.pattern("/fonts/**"), mvc.pattern("/api/sn/**"),
-							mvc.pattern("/favicon.ico"), mvc.pattern("/*.png"), mvc.pattern("/manifest.json"),
-							mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"),
+					authorizeRequests.requestMatchers(
+							mvc.pattern("/index.html"),
+							mvc.pattern("/welcome/**"),
+							mvc.pattern("/"),
+							mvc.pattern("/assets/**"),
+							mvc.pattern("/swagger-resources/**"),
+							AntPathRequestMatcher.antMatcher("/api/sn/**"),
+							mvc.pattern("/fonts/**"),
+							mvc.pattern("/api/sn/**"),
+							mvc.pattern("/favicon.ico"),
+							mvc.pattern("/*.png"),
+							mvc.pattern("/manifest.json"),
+							mvc.pattern("/browserconfig.xml"),
+							mvc.pattern("/console/**"),
 							mvc.pattern("/api/v2/guest/**")).permitAll();
 					authorizeRequests.anyRequest().authenticated();
 				}).csrf(AbstractHttpConfigurer::disable).cors(Customizer.withDefaults());

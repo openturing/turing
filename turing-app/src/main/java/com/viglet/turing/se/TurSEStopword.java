@@ -64,13 +64,13 @@ public class TurSEStopword {
 					.process(turSolrInstance.getSolrClient());
 			if (initialFieldTypeResponse.getFieldType().getAnalyzer() != null) {
 				AnalyzerDefinition analyzer = initialFieldTypeResponse.getFieldType().getAnalyzer();
-				stopwordsStream = getStopword(turSolrInstance, stopwordsStream, analyzer);
+				stopwordsStream = getStopword(turSolrInstance, analyzer);
 			} else if (initialFieldTypeResponse.getFieldType().getQueryAnalyzer() != null) {
 				AnalyzerDefinition queryAnalyzer = initialFieldTypeResponse.getFieldType().getQueryAnalyzer();
-				stopwordsStream = getStopword(turSolrInstance, stopwordsStream, queryAnalyzer);
+				stopwordsStream = getStopword(turSolrInstance, queryAnalyzer);
 			} else if (initialFieldTypeResponse.getFieldType().getIndexAnalyzer() != null) {
 				AnalyzerDefinition indexAnalyzer = initialFieldTypeResponse.getFieldType().getIndexAnalyzer();
-				stopwordsStream = getStopword(turSolrInstance, stopwordsStream, indexAnalyzer);
+				stopwordsStream = getStopword(turSolrInstance, indexAnalyzer);
 			}
 		} catch (SolrServerException | IOException e) {
 			log.error(e.getMessage(), e);
@@ -105,8 +105,9 @@ public class TurSEStopword {
 		return Collections.emptyList();
 	}
 
-	private InputStream getStopword(TurSolrInstance turSolrInstance, InputStream stopwordsStream,
+	private InputStream getStopword(TurSolrInstance turSolrInstance,
 			AnalyzerDefinition analyzer) {
+		InputStream stopwordsStream = null;
 		if (analyzer.getFilters() != null && !analyzer.getFilters().isEmpty())
 			for (Map<String, Object> fieldTypeMap : analyzer.getFilters()) {
 				if (fieldTypeMap.get(CLASS_FILTER).equals(STOPWORD_CLASS_FILTER)) {

@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { NotifierService } from 'angular-notifier';
-import { Observable } from 'rxjs';
+import {Component} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {NotifierService} from 'angular-notifier-updated';
+import {Observable} from 'rxjs';
 import {TurSNRankingExpression} from "../../../model/sn-ranking-expression.model";
 import {TurSNRankingExpressionService} from "../../../service/sn-ranking-expression.service";
 
@@ -12,6 +12,7 @@ import {TurSNRankingExpressionService} from "../../../service/sn-ranking-express
 export class TurSNRankingExpressionListPageComponent {
   private turSNRankingExpressions: Observable<TurSNRankingExpression[]>;
   private siteId: string;
+  filterText: string;
 
   constructor(
     private readonly notifier: NotifierService,
@@ -19,6 +20,7 @@ export class TurSNRankingExpressionListPageComponent {
     private route: ActivatedRoute) {
     this.siteId = this.route.parent?.parent?.snapshot.paramMap.get('id') || "";
     this.turSNRankingExpressions = turSNRankingExpressionService.query(this.siteId);
+    this.filterText = "";
   }
 
   getId(): string {

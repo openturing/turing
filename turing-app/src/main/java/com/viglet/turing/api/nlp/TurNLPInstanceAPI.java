@@ -47,10 +47,12 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
+import com.viglet.turing.persistence.utils.TurPesistenceUtils;
 import com.viglet.turing.utils.TurUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -98,7 +100,7 @@ public class TurNLPInstanceAPI {
     @Operation(summary = "Natural Language Processing List")
     @GetMapping
     public List<TurNLPInstance> turNLPInstanceList() {
-        return this.turNLPInstanceRepository.findAll();
+        return this.turNLPInstanceRepository.findAll(TurPesistenceUtils.orderByTitleIgnoreCase());
     }
 
     @Operation(summary = "Show a Natural Language Processing")
@@ -310,7 +312,7 @@ public class TurNLPInstanceAPI {
         if (!stringBuffer.isEmpty()) {
             stringBuffer.deleteCharAt(stringBuffer.length() - 1);
             String pattern = "\\b(".concat(stringBuffer.toString().replace(")", "").replace("(", "")).concat(")\\b");
-            return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+            return Pattern.compile(Pattern.quote(pattern), Pattern.CASE_INSENSITIVE);
         } else {
             return Pattern.compile("", Pattern.CASE_INSENSITIVE);
         }
@@ -380,15 +382,8 @@ public class TurNLPInstanceAPI {
     }
 
     @Getter
+    @Setter
     public static class TurNLPTextValidate {
         String text;
-
-        public TurNLPTextValidate() {
-            super();
-        }
-
-        public void setText(String text) {
-            this.text = text;
-        }
     }
 }

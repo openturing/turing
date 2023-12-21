@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { Observable } from 'rxjs';
 import { TurSNSiteMetricsTerm } from '../../../model/sn-site-metrics-term.model';
 import { TurSNSiteMetricsService } from '../../../service/sn-site-metrics.service';

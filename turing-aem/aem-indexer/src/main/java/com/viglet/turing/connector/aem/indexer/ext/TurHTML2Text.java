@@ -26,6 +26,7 @@ import com.viglet.turing.connector.cms.beans.TuringTag;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.util.HtmlManipulator;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 
 @Slf4j
 public class TurHTML2Text implements ExtAttributeInterface {
@@ -34,7 +35,8 @@ public class TurHTML2Text implements ExtAttributeInterface {
     @Override
     public TurMultiValue consume(TuringTag tag, AemObject aemObject, IHandlerConfiguration config) {
         log.debug("Executing HTML2Text");
-        if (aemObject != null && aemObject.getAttributes().containsKey(tag.getSrcXmlName())) {
+        if (ObjectUtils.allNotNull(aemObject, aemObject.getAttributes())
+                && aemObject.getAttributes().containsKey(tag.getSrcXmlName())) {
             return TurMultiValue.singleItem(HtmlManipulator.html2Text(aemObject.getAttributes()
                     .get(tag.getSrcXmlName()).toString()));
         }

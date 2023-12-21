@@ -29,7 +29,7 @@ import com.viglet.turing.tool.jdbc.TurJDBCImportTool;
 **/
 public class TurFormatValue {
 	private static final String ID = "id";
-	private TurJDBCImportTool jdbcImportTool = null;
+	private final TurJDBCImportTool jdbcImportTool;
 	
 	public TurFormatValue(TurJDBCImportTool jdbcImportTool) {
 		this.jdbcImportTool = jdbcImportTool;

@@ -20,6 +20,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * List of jobs to index and deindex in Turing AI.
@@ -30,18 +32,25 @@ import java.util.List;
  */
 public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 	private static final long serialVersionUID = 1L;
-	private List<TurSNJobItem> turSNJobItems = new ArrayList<TurSNJobItem>();
-
+	private Queue<TurSNJobItem> turSNJobItems = new ConcurrentLinkedQueue<>();
+	public TurSNJobItems() {
+		super();
+	}
+	public TurSNJobItems(TurSNJobItem turSNJobItem) {
+		this.add(turSNJobItem);
+	}
+	public TurSNJobItems(List<TurSNJobItem> turSNJobItems) {
+		turSNJobItems.forEach(this::add);
+	}
 	@Override
 	public Iterator<TurSNJobItem> iterator() {
 		return turSNJobItems.iterator();
 	}
-
-	public List<TurSNJobItem> getTuringDocuments() {
+	public Queue<TurSNJobItem>  getTuringDocuments() {
 		return turSNJobItems;
 	}
 
-	public void setTuringDocuments(List<TurSNJobItem> turSNJobItems) {
+	public void setTuringDocuments(Queue<TurSNJobItem>  turSNJobItems) {
 		this.turSNJobItems = turSNJobItems;
 	}
 

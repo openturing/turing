@@ -45,16 +45,15 @@ public class TurSNPagination {
 	}
 
 	public List<TurSNPaginationItem> getAllPages() {
-		return paginationList.stream().map(turSNPaginationItem -> {
-			return new TurSNPaginationItem(turSNPaginationItem);
-		}).collect(Collectors.toList());
+		return paginationList.stream().map(TurSNPaginationItem::new).collect(Collectors.toList());
 	}
 
 	public Optional<TurSNPaginationItem> findByType(String type) {
 		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean = paginationList.stream()
-				.filter(paginationItem -> Objects.nonNull(paginationItem))
+				.filter(Objects::nonNull)
 				.filter(paginationItem -> Objects.nonNull(paginationItem.getType()))
-				.filter(paginationItem -> paginationItem.getType().toString().equalsIgnoreCase(type)).findFirst()
+				.filter(paginationItem -> paginationItem.getType().toString()
+						.equalsIgnoreCase(type)).findFirst()
 				.orElse(null);
 
 		return turSNSiteSearchPaginationBean == null ? Optional.empty()
@@ -90,6 +89,6 @@ public class TurSNPagination {
 	}
 
 	public List<Integer> getPageNumberList() {
-		return paginationList.stream().map(paginationItem -> paginationItem.getPage()).collect(Collectors.toList());
+		return paginationList.stream().map(TurSNSiteSearchPaginationBean::getPage).collect(Collectors.toList());
 	}
 }

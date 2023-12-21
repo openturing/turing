@@ -20,27 +20,43 @@
  */
 package com.viglet.turing.onstartup.auth;
 
+import com.viglet.turing.persistence.model.auth.TurRole;
+import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 @Component
 public class TurGroupOnStartup {
 	@Autowired
 	private TurGroupRepository turGroupRepository;
-
+	@Autowired
+	private TurRoleRepository turRoleRepository;
 	public void createDefaultRows() {
 
 		if (turGroupRepository.findAll().isEmpty()) {
+			TurRole adminRole = turRoleRepository.findByName("ROLE_ADMIN");
 
-			TurGroup turGroup = new TurGroup();
+			TurGroup adminGroup = new TurGroup();
+			adminGroup.setName("Administrator");
+			adminGroup.setDescription("Administrator Group");
+			adminGroup.setTurRoles(Collections.singletonList(adminRole));
+			turGroupRepository.save(adminGroup);
 
-			turGroup.setName("Administrator");
-			turGroup.setDescription("Administrator Group");
-			turGroupRepository.save(turGroup);
+			TurRole userRole = turRoleRepository.findByName("ROLE_USER");
+
+			TurGroup userGroup = new TurGroup();
+			userGroup.setName("User");
+			userGroup.setDescription("User Group");
+			userGroup.setTurRoles(Collections.singletonList(userRole));
+			turGroupRepository.save(userGroup);
 		}
-
 	}
 }

@@ -11,7 +11,7 @@
     <description>Viglet Turing AI</description>
 
     <properties>
-        <revision>0.3.7</revision>
+        <revision>0.3.8</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <sonar.organization>viglet-turing</sonar.organization>
@@ -104,12 +104,12 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.24.0</version>
+                <version>1.25.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.15.0</version>
+                <version>2.15.1</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -124,17 +124,17 @@
             <dependency>
                 <groupId>org.xerial</groupId>
                 <artifactId>sqlite-jdbc</artifactId>
-                <version>3.43.2.2</version>
+                <version>3.44.1.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-core</artifactId>
-                <version>2.21.1</version>
+                <version>2.22.0</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.12.7.1</version>
+                <version>2.16.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>

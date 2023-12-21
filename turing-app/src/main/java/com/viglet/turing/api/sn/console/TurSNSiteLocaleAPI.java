@@ -28,11 +28,13 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.sn.template.TurSNTemplate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -41,7 +43,7 @@ import java.util.List;
  */
 
 @RestController
-@RequestMapping("/api/sn/{snSiteId}/locale")
+@RequestMapping("/api/sn/{ignoredSnSiteId}/locale")
 @Tag(name = "Semantic Navigation Locale", description = "Semantic Navigation Locale API")
 public class TurSNSiteLocaleAPI {
 	private static final String DEFAULT_LANGUAGE = "en_US";
@@ -60,14 +62,15 @@ public class TurSNSiteLocaleAPI {
 
 	@Operation(summary = "Semantic Navigation Site Locale List")
 	@GetMapping
-	public List<TurSNSiteLocale> turSNSiteLocaleList(@PathVariable String snSiteId) {
-		return turSNSiteRepository.findById(snSiteId).map(this.turSNSiteLocaleRepository::findByTurSNSite)
-				.orElse(new ArrayList<>());
+	public List<TurSNSiteLocale> turSNSiteLocaleList(@PathVariable String ignoredSnSiteId) {
+		return turSNSiteRepository.findById(ignoredSnSiteId).map(site -> this.turSNSiteLocaleRepository
+						.findByTurSNSite(Sort.by(Sort.Order.asc("language").ignoreCase()), site))
+				.orElse(Collections.emptyList());
 	}
 
 	@Operation(summary = "Show a Semantic Navigation Site Locale")
 	@GetMapping("/{id}")
-	public TurSNSiteLocale turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
+	public TurSNSiteLocale turSNSiteFieldExtGet(@PathVariable String ignoredSnSiteId, @PathVariable String id) {
 		return turSNSiteLocaleRepository.findById(id).orElse(new TurSNSiteLocale());
 	}
 
@@ -75,7 +78,7 @@ public class TurSNSiteLocaleAPI {
 	@PutMapping("/{id}")
 	public TurSNSiteLocale turSNSiteLocaleUpdate(@PathVariable String id,
 												 @RequestBody TurSNSiteLocale turSNSiteLocale,
-												 @PathVariable String snSiteId) {
+												 @PathVariable String ignoredSnSiteId) {
 		return this.turSNSiteLocaleRepository.findById(id).map(turSNSiteLocaleEdit -> {
 			turSNSiteLocaleEdit.setCore(turSNSiteLocale.getCore());
 			turSNSiteLocaleEdit.setLanguage(turSNSiteLocale.getLanguage());
@@ -94,7 +97,7 @@ public class TurSNSiteLocaleAPI {
 	@Transactional
 	@Operation(summary = "Delete a Semantic Navigation Site Locale")
 	@DeleteMapping("/{id}")
-	public boolean turSNSiteLocaleDelete(@PathVariable String id, @PathVariable String snSiteId) {
+	public boolean turSNSiteLocaleDelete(@PathVariable String id, @PathVariable String ignoredSnSiteId) {
 		turSNSiteLocaleRepository.deleteById(id);
 		return true;
 	}
@@ -102,7 +105,7 @@ public class TurSNSiteLocaleAPI {
 	@Operation(summary = "Create a Semantic Navigation Site Locale")
 	@PostMapping
 	public TurSNSiteLocale turSNSiteLocaleAdd(@RequestBody TurSNSiteLocale turSNSiteLocale, Principal principal,
-											  @PathVariable String snSiteId) {
+											  @PathVariable String ignoredSnSiteId) {
 		if (turSNSiteLocale.getTurNLPInstance() != null && turSNSiteLocale.getTurNLPInstance().getId() == null) {
 			turSNSiteLocale.setTurNLPInstance(null);
 		}
@@ -114,8 +117,8 @@ public class TurSNSiteLocaleAPI {
 
 	@Operation(summary = "Semantic Navigation Site Locale structure")
 	@GetMapping("structure")
-	public TurSNSiteLocale turSNSiteLocaleStructure(@PathVariable String snSiteId) {
-		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
+	public TurSNSiteLocale turSNSiteLocaleStructure(@PathVariable String ignoredSnSiteId) {
+		return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
 			TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
 			turSNSiteLocale.setLanguage(DEFAULT_LANGUAGE);
 			turSNSiteLocale.setTurNLPInstance(new TurNLPInstance());

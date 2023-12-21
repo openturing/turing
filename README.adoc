@@ -1,4 +1,4 @@
-= Viglet Turing AI: README
+= Viglet Turing ES: README
 Viglet Team <opensource@viglet.com>
 :organization: Viglet Turing
 :toclevels: 5
@@ -14,7 +14,7 @@ image:https://img.shields.io/badge/Sonar-Code%20Quality-brightgreen?style=for-th
 
 = Preface
 
-Viglet Turing AI (https://openviglet.github.io/turing/) is an open source solution (https://github.com/openturing), which has Semantic Navigation and Chatbot as its main features. You can choose from several NLPs to enrich the data. All content is indexed in Solr as search engine.
+Viglet Turing ES (https://openviglet.github.io/turing/) is an open source solution (https://github.com/openturing), which has Semantic Navigation and Chatbot as its main features. You can choose from several NLPs to enrich the data. All content is indexed in Solr as search engine.
 
 :numbered:
 
@@ -22,17 +22,17 @@ Viglet Turing AI (https://openviglet.github.io/turing/) is an open source soluti
 
 === Documentation
 
-Technical documentation on Turing AI is available at https://openviglet.github.io/docs/turing/.
+Technical documentation on Turing ES is available at https://openviglet.github.io/docs/turing/.
 
 === Run
 
-To run Turing AI, just execute the following lines:
+To run Turing ES, just execute the following lines:
 
 ```shell
 # Turing App
 mvn -Dmaven.repo.local=D:\repo spring-boot:run -pl turing-app -Dskip.npm
 
-# New Turing AI UI using Angular 12 and Primer CSS.
+# New Turing ES UI using Angular 12 and Primer CSS.
 
 cd turing-ui
 
@@ -50,7 +50,7 @@ ng serve converse
 ```
 === Docker Compose
 
-You can start the Turing AI using MariaDB, Solr and Nginx.
+You can start the Turing ES using MariaDB, Solr and Nginx.
 
 ```shell
 docker-compose up
@@ -64,7 +64,7 @@ docker-compose up
 == Architecture
 
 [#img-architecture] 
-.Turing AI Architecture  
+.Turing ES Architecture  
 image::img/turing-diagram.png[Architecture]  
 
 == NLP
@@ -149,7 +149,7 @@ Define attributes that will be used as filters for your navigation, consolidatin
 Through attributes defined in the contents, it is possible to use them to restrict their display based on the user's profile.
 
 === SDK Java
-Java API (https://github.com/openturing/turing-java-sdk) facilitates the use and access to Viglet Turing AI, without the need for consumer search content with complex queries.
+Java API (https://github.com/openturing/turing-java-sdk) facilitates the use and access to Viglet Turing ES, without the need for consumer search content with complex queries.
 
 == Chatbot
 Communicate with your client and elaborate complex intents, obtain reports and progressively evolve your interaction.
@@ -176,17 +176,17 @@ Shows the conversation history and reports.
 
 == OpenText Blazon Integration
 
-Turing AI detects Entities of OpenText Blazon Documents using OCR and NLP, generating Blazon XML to show the entities into document.
+Turing ES detects Entities of OpenText Blazon Documents using OCR and NLP, generating Blazon XML to show the entities into document.
 
 [[turing-console]]
-== Turing AI Console
+== Turing ES Console
 
-Turing AI has many components: Search Engine, NLP, Converse (Chatbot), Semantic Navigation
+Turing ES has many components: Search Engine, NLP, Converse (Chatbot), Semantic Navigation
 
 [[turing-console-login]]
 === Login
 
-When access the Turing AI, appear a login page. For default the login/password is `admin`/`admin`
+When access the Turing ES, appear a login page. For default the login/password is `admin`/`admin`
 
 [#img-login] 
 .Login Page 
@@ -318,7 +318,7 @@ Contains the following attributes:
 
 [[turing-sn-site-page-html]]
 ===== HTML
-In `Turing AI Console` > `Semantic Navigation` > `<SITE_NAME>`, click in `Configure` button and click `Search Page` button. 
+In `Turing ES Console` > `Semantic Navigation` > `<SITE_NAME>`, click in `Configure` button and click `Search Page` button. 
 
 It will open a Search Page that uses the pattern:
 
@@ -348,10 +348,10 @@ GET http://localhost:2700/api/sn/<SITE_NAME>/search?p=1&q=*&sort=relevance
 == Customer Case Studies
 
 === Insurance Company
-On Intranet of Insurance Company uses OpenText WEM and OpenText Portal integrated with Dynamic Portal Module, a consolidated search was created in Viglet Turing AI, using the connectors: WEM, Database with File System. In this way it was possible to display all the contents and files of the search Intranet, with targeting rules, allowing only to display content that the user has permission. The OpenText Portal accesses Viglet Turing AI Java API, so it was not necessary to create complex queries to return the results.
+On Intranet of Insurance Company uses OpenText WEM and OpenText Portal integrated with Dynamic Portal Module, a consolidated search was created in Viglet Turing ES, using the connectors: WEM, Database with File System. In this way it was possible to display all the contents and files of the search Intranet, with targeting rules, allowing only to display content that the user has permission. The OpenText Portal accesses Viglet Turing ES Java API, so it was not necessary to create complex queries to return the results.
 
 === Government Company
-A set of API Rest was created to make all Government Company content available to partners. All these contents are in OpenText WEM and the WEM connector was used to index the contents on Viglet Turing AI. A Spring Boot application was created with the Rest API set that consumes Turing AI content through the Viglet Turing AI Java API.
+A set of API Rest was created to make all Government Company content available to partners. All these contents are in OpenText WEM and the WEM connector was used to index the contents on Viglet Turing ES. A Spring Boot application was created with the Rest API set that consumes Turing ES content through the Viglet Turing ES Java API.
 
 === Brazilian University
-Brazilian University website was developed using Viglet Shio CMS (https://viglet.com/shio), and all contents are indexed in Viglet Turing AI automatically. This configuration was made in content modeling and the development of the search template was made in Viglet Shio CMS.
+Brazilian University website was developed using Viglet Shio CMS (https://viglet.com/shio), and all contents are indexed in Viglet Turing ES automatically. This configuration was made in content modeling and the development of the search template was made in Viglet Shio CMS.

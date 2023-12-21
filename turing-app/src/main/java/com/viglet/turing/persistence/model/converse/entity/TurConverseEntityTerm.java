@@ -58,9 +58,7 @@ public class TurConverseEntityTerm implements Serializable {
 
 	@ElementCollection
 	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
-	@CollectionTable(name = "tur_converse_entity_synonyms")
-	@JoinColumn(name = "term_id")
-	@OnDelete(action = OnDeleteAction.CASCADE)
+	@CollectionTable(name = "tur_converse_entity_synonyms", joinColumns = @JoinColumn(name = "term_id"))
 	private Set<String> synonyms = new HashSet<>();
 
 	@ManyToOne

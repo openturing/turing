@@ -20,39 +20,12 @@
  */
 package com.viglet.turing.converse.exchange;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import jakarta.annotation.Nonnull;
-
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.viglet.turing.converse.exchange.agent.TurConverseAgentExchange;
 import com.viglet.turing.converse.exchange.entity.TurConverseEntityEntriesExchange;
 import com.viglet.turing.converse.exchange.entity.TurConverseEntityExchange;
-import com.viglet.turing.converse.exchange.intent.TurConverseIntentExchange;
-import com.viglet.turing.converse.exchange.intent.TurConverseIntentMessageExchange;
-import com.viglet.turing.converse.exchange.intent.TurConverseIntentPhraseDataExchange;
-import com.viglet.turing.converse.exchange.intent.TurConverseIntentPhraseExchange;
-import com.viglet.turing.converse.exchange.intent.TurConverseIntentPhrasesExchange;
-import com.viglet.turing.converse.exchange.intent.TurConverseIntentResponseExchange;
+import com.viglet.turing.converse.exchange.intent.*;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
@@ -63,6 +36,19 @@ import com.viglet.turing.persistence.repository.converse.intent.TurConversePhras
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.utils.TurUtils;
+import jakarta.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Objects;
 @Slf4j
 @Component
 public class TurConverseImportExchange {

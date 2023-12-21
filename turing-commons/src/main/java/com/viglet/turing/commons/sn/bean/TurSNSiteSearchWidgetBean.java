@@ -21,6 +21,10 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * Details about facets and facet and "more like this" of Turing AI Semantic
@@ -31,62 +35,17 @@ import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
  * @since 0.3.4
  */
 
+@RequiredArgsConstructor
+@Accessors(chain = true)
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchWidgetBean {
-
 	private List<TurSNSiteSearchFacetBean> facet;
 	private TurSNSiteSearchFacetBean facetToRemove;
 	private List<TurSESimilarResult> similar;
 	private TurSNSiteSpellCheckBean spellCheck;
 	private List<TurSNSiteLocaleBean> locales;
 	private List<TurSNSiteSpotlightDocumentBean> spotlights;
-	
-	public List<TurSNSiteSearchFacetBean> getFacet() {
-		return facet;
-	}
 
-	public void setFacet(List<TurSNSiteSearchFacetBean> facet) {
-		this.facet = facet;
-	}
-
-	public TurSNSiteSearchFacetBean getFacetToRemove() {
-		return facetToRemove;
-	}
-
-	public void setFacetToRemove(TurSNSiteSearchFacetBean facetToRemove) {
-		this.facetToRemove = facetToRemove;
-	}
-
-	public List<TurSESimilarResult> getSimilar() {
-		return similar;
-	}
-
-	public void setSimilar(List<TurSESimilarResult> similar) {
-		this.similar = similar;
-	}
-
-	public TurSNSiteSpellCheckBean getSpellCheck() {
-		return spellCheck;
-	}
-
-	public void setSpellCheck(TurSNSiteSpellCheckBean spellCheck) {
-		this.spellCheck = spellCheck;
-	}
-
-	public List<TurSNSiteLocaleBean> getLocales() {
-		return locales;
-	}
-
-	public void setLocales(List<TurSNSiteLocaleBean> locales) {
-		this.locales = locales;
-	}
-
-	public List<TurSNSiteSpotlightDocumentBean> getSpotlights() {
-		return spotlights;
-	}
-
-	public void setSpotlights(List<TurSNSiteSpotlightDocumentBean> spotlights) {
-		this.spotlights = spotlights;
-	}
-	
 }

@@ -1,6 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
-import { NotifierService } from 'angular-notifier';
+import { NotifierService } from 'angular-notifier-updated';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UntypedFormControl, Validators } from '@angular/forms';
 import {TurDevToken} from "../../model/dev-token.model";

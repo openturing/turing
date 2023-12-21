@@ -11,7 +11,7 @@
       <div style="padding-bottom: 15px;">
         <div class="Subhead" style="padding-bottom: 20px;">
           <div style="flex: 1 1 auto;">
-            <input class="form-control" style="width: 50%;" type="text" placeholder="Find a api token..."
+            <input class="form-control" style="width: 50%;" type="text" placeholder="Find a api token..." [(ngModel)]="filterText"
               aria-label="Find a api token" />
           </div>
           <div class="Subhead-actions">
@@ -23,7 +23,7 @@
       </div>
     </div>
     <div>
-      <div *ngFor="let devToken of devTokens" class="border-bottom d-flex flex-items-center"
+      <div *ngFor="let devToken of devTokens | fullTextSearch:filterText:'title'" class="border-bottom d-flex flex-items-center"
         style="margin-bottom: 20px;padding-bottom: 10px;">
         <div class="flex-auto">
           <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"

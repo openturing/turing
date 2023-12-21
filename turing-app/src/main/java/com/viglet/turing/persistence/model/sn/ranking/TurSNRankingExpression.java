@@ -43,8 +43,7 @@ import java.util.Set;
  */
 @Getter
 @Entity
-@Table(name = "turSNRankingExpression")
-@NamedQuery(name = "TurSNRankingExpression.findAll", query = "SELECT sre FROM TurSNRankingExpression sre")
+@Table(name = "tur_sn_ranking_expression")
 public class TurSNRankingExpression extends TurAuditable<String>  implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

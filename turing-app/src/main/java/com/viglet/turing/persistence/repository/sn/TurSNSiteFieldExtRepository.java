@@ -26,6 +26,7 @@ import com.viglet.turing.sn.TurSNFieldType;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -35,7 +36,7 @@ import java.util.List;
 public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFieldExt, String> {
 
 	@Cacheable("turSNSiteFieldExtfindByTurSNSite")
-	List<TurSNSiteFieldExt> findByTurSNSite(TurSNSite turSNSite);
+	List<TurSNSiteFieldExt> findByTurSNSite(Sort name, TurSNSite turSNSite);
 
 	@Cacheable("turSNSiteFieldExtfindByTurSNSiteAndEnabled")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndEnabled(TurSNSite turSNSite, int enabled);

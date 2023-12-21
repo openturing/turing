@@ -13,7 +13,7 @@
   <div class="clearfix" style="padding: 5px 0px;">
     <div class="float-left" style="flex: 1 1 auto;">
       <input class="form-control input-sm" style="min-width: 250px;" type="text"
-        i18n-placeholder="@@FindObjectCurrentFolder" placeholder="Search rules..."
+        i18n-placeholder="@@FindObjectCurrentFolder" placeholder="Search rules..." [(ngModel)]="filterText"
         aria-label="Search rules..." />
     </div>
     <div class="float-right" style="display: inline-flex;">
@@ -26,7 +26,7 @@
   <div style="margin-top: 20px;">
     <div class="Box Box--blue">
       <ul>
-        <li *ngFor="let snRankingExpression of snRankingExpressions" class="Box-row ">
+        <li *ngFor="let snRankingExpression of snRankingExpressions | fullTextSearch:filterText:'name'" class="Box-row ">
           <div class="d-flex flex-items-center">
             <a [routerLink]="['/sn/site', getId(), 'ranking-expression', snRankingExpression.id]" routerLinkActive="active" class="d-flex flex-items-center">
               <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"

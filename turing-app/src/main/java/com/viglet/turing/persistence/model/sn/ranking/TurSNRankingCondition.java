@@ -38,8 +38,7 @@ import java.io.Serializable;
  */
 @Getter
 @Entity
-@Table(name = "turSNRankingCondition")
-@NamedQuery(name = "TurSNRankingCondition.findAll", query = "SELECT src FROM TurSNRankingExpression src")
+@Table(name = "tur_sn_ranking_condition")
 @JsonIgnoreProperties({ "turSNRankingExpression" })
 public class TurSNRankingCondition extends TurAuditable<String>  implements Serializable {
 	@Serial

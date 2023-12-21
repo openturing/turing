@@ -6,7 +6,7 @@ import { HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angu
 import { AppComponent } from './page/app/app.component';
 import { BasicAuthInterceptor, ErrorInterceptor } from './_helpers';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { NotifierModule, NotifierOptions } from "angular-notifier";
+import { NotifierModule, NotifierOptions } from "angular-notifier-updated";
 
 import { OcticonsModule } from 'angular-octicons';
 import { TurConsolePageComponent } from '../console/console-page.component';

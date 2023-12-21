@@ -1,5 +1,32 @@
+## 0.3.7
+
+#### NEW FEATURES
+* Maven
+* Ranking Rules
+* Unit Tests
+* Integration Tests
+* AEM Connector
+* Keycloak Integration
+* ApiKey
+* SN: Facets using OR
+* SN: fq.op parameter
+* SN: Search using asterisk when return no results.
+* Create solr core automatically
+* Using Artemis
+
+#### IMPROVEMENTS
+* Spring Boot 3.2.0
+* Angular 17
+* Spotlight
+* UI Flow
+* UI: Order by
 
 ## 0.3.6
+
+#### NEW FEATURES
+* Store information about user accesses and searches performed.
+* Reports - Generates access report, including targeting rules.
+* Latest searches - Allows you to show the latest searches performed by the user
 
 #### IMPROVEMENTS
 * Java 17

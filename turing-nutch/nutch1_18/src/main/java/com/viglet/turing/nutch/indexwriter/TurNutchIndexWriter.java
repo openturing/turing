@@ -4,6 +4,7 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.nutch.commons.TurNutchCommons;
+import org.apache.commons.lang3.LocaleUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.nutch.indexer.*;
 import org.apache.solr.common.params.ModifiableSolrParams;
@@ -126,8 +127,10 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void write(NutchDocument doc) throws IOException {
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, this.config
-				.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY), TurNutchCommons.LOCALE_DEFAULT_VALUE));
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE,
+				LocaleUtils.toLocale(this.config
+				.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY),
+						TurNutchCommons.LOCALE_DEFAULT_VALUE.toLanguageTag())));
 		Map<String, Object> attributes = new HashMap<>();
 		for (final Entry<String, NutchField> e : doc) {
 

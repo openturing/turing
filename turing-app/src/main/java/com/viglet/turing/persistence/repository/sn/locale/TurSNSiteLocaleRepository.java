@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.repository.sn.locale;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -36,5 +37,5 @@ public interface TurSNSiteLocaleRepository extends JpaRepository<TurSNSiteLocale
 
 	TurSNSiteLocale findByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
 	boolean existsByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
-	List<TurSNSiteLocale> findByTurSNSite(TurSNSite turSNSite);
+	List<TurSNSiteLocale> findByTurSNSite(Sort name, TurSNSite turSNSite);
 }

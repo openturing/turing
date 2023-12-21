@@ -26,6 +26,7 @@ import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,30 +34,28 @@ import java.util.Set;
  * The persistent class for the TurGroup database table.
  * 
  */
+
+@Getter
 @Entity
 @Table(name = "tur_group")
 public class TurGroup implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
-	@Getter
 	@Id
 	@UuidGenerator
-	@Column(name = "id", updatable = false, nullable = false)
+	@Column(updatable = false, nullable = false)
 	private String id;
 
-	@Getter
 	private String name;
 
-	@Getter
 	private String description;
 
-	@ManyToMany(mappedBy = "turGroups")
-	private Set<TurRole> turRoles = new HashSet<>();
+	@ManyToMany
+	private Collection<TurRole> turRoles = new HashSet<>();
 
-	@Getter
 	@ManyToMany(mappedBy = "turGroups")
-	private Set<TurUser> turUsers = new HashSet<>();
+	private Collection<TurUser> turUsers = new HashSet<>();
 
 	public void setId(String id) {
 		this.id = id;
@@ -70,10 +69,16 @@ public class TurGroup implements Serializable {
 		this.description = description;
 	}
 
-	public void setTurUsers(Set<TurUser> turUsers) {
+	public void setTurUsers(Collection<TurUser> turUsers) {
 		this.turUsers.clear();
 		if (turUsers != null) {
 			this.turUsers.addAll(turUsers);
+		}
+	}
+	public void setTurRoles(Collection<TurRole> turRoles) {
+		this.turRoles.clear();
+		if (turRoles != null) {
+			this.turRoles.addAll(turRoles);
 		}
 	}
 }

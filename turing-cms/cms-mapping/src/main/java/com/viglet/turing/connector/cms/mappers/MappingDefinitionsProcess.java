@@ -33,9 +33,9 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
@@ -48,23 +48,28 @@ public class MappingDefinitionsProcess {
 		throw new IllegalStateException("MappingDefinitionsProcess");
 	}
 
-	public static MappingDefinitions loadMappings(String resourceXml) {
+	public static MappingDefinitions loadMappings(String resourceXml, Path workingDirectory) {
 		try {
 			DocumentBuilderFactory dlf = DocumentBuilderFactory.newInstance();
 			DocumentBuilder db = dlf.newDocumentBuilder();
+			if (workingDirectory != null) {
+				Path path = Paths.get(workingDirectory.toAbsolutePath().toString(),
+						resourceXml);
+				if (path.toFile().isFile() && path.toFile().canRead()) {
+					InputStream resourceInputStream = Files.newInputStream(path);
 
-			File f = new File(resourceXml);
-			if (f.isFile() && f.canRead()) {
-				InputStream resourceInputStream = Files.newInputStream(Paths.get(resourceXml));
+					Document document = db.parse(resourceInputStream);
+					Element rootElement = document.getDocumentElement();
 
-				Document document = db.parse(resourceInputStream);
-				Element rootElement = document.getDocumentElement();
+					// Loading mapping definitions
+					TurCTDMappingMap mappings = readCTDMappings(rootElement);
+					return new MappingDefinitions(path.toFile().getAbsolutePath(), mappings);
 
-				// Loading mapping definitions
-				TurCTDMappingMap mappings = readCTDMappings(rootElement);
-				return new MappingDefinitions(resourceXml, mappings);
-
-			} else {
+				} else {
+					logger.error("Can not read mapping file: " + path.toFile().getAbsolutePath());
+				}
+			}
+			else {
 				logger.error("Can not read mapping file: " + resourceXml);
 			}
 		} catch (Exception e) {
@@ -326,14 +331,14 @@ public class MappingDefinitionsProcess {
 
 	}
 
-	public static MappingDefinitions getMappingDefinitions(IHandlerConfiguration config) {
-
-		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.loadMappings(config.getMappingsXML());
-
+	public static MappingDefinitions getMappingDefinitions(IHandlerConfiguration config, Path workingDirectory) {
+		MappingDefinitions mappingDefinitions = MappingDefinitionsProcess.loadMappings(config.getMappingsXML(), workingDirectory);
 		if (mappingDefinitions == null) {
 			logger.error("Mapping definitions are not loaded properly from mappingsXML: " + config.getMappingsXML());
+			return new MappingDefinitions();
 		}
-		return mappingDefinitions;
+		else {
+			return mappingDefinitions;
+		}
 	}
-
 }

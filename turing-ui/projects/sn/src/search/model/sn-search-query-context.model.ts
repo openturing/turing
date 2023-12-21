@@ -13,4 +13,5 @@ export interface TurSNSearchQueryContext {
   pageStart: number;
   query: TurSNSearchQuery;
   responseTime: number;
+  facetType: string;
 }

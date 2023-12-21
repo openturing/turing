@@ -20,17 +20,16 @@
  */
 package com.viglet.turing.sn.spotlight;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.google.inject.Inject;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
-import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
-
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Alexandre Oliveira
@@ -39,29 +38,30 @@ import java.util.List;
  */
 @Component
 public class TurSpotlightCache {
-	@Autowired
-	private TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
+	private final TurSNSiteRepository turSNSiteRepository;
+	private final TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
+
+	@Inject
+	public TurSpotlightCache(TurSNSiteRepository turSNSiteRepository,
+							 TurSNSiteSpotlightRepository turSNSiteSpotlightRepository) {
+		this.turSNSiteRepository = turSNSiteRepository;
+		this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
+	}
 
 	@Cacheable(value = "spotlight", sync = true)
 	public List<TurSNSiteSpotlight> findSpotlightBySNSiteAndLanguage(String snSite, String language) {
-		return turSNSiteSpotlightRepository
-				.findByTurSNSiteAndLanguage(turSNSiteRepository.findByName(snSite), language);
+		return turSNSiteRepository.findByName(snSite).map( turSNSite -> turSNSiteSpotlightRepository
+				.findByTurSNSiteAndLanguage(turSNSite, language)).orElse(Collections.emptyList());
+
 	}
 	
 	@Cacheable(value = "spotlight_term", sync = true)
 	public List<TurSNSpotlightTermCacheBean> findTermsBySNSiteAndLanguage(String snSite, String language) {
-		List<TurSNSiteSpotlight> turSNSiteSpotlights = this.findSpotlightBySNSiteAndLanguage(snSite, language);
-		List<TurSNSpotlightTermCacheBean> terms = new ArrayList<>();
-		for (TurSNSiteSpotlight turSNSiteSpotlight : turSNSiteSpotlights) {
-			for (TurSNSiteSpotlightTerm turSNSiteSpotlightTerm : turSNSiteSpotlight.getTurSNSiteSpotlightTerms()) {
-				TurSNSpotlightTermCacheBean turSNSpotlightTermCacheBean = new TurSNSpotlightTermCacheBean(
-						turSNSiteSpotlightTerm.getName(), turSNSiteSpotlightTerm.getTurSNSiteSpotlight());
-				terms.add(turSNSpotlightTermCacheBean);
-			}
-		}
-		return terms;
+        return  this.findSpotlightBySNSiteAndLanguage(snSite, language).stream().flatMap(turSNSiteSpotlight ->
+				turSNSiteSpotlight.getTurSNSiteSpotlightTerms().stream()).map(turSNSiteSpotlightTerm ->
+				new TurSNSpotlightTermCacheBean(
+				turSNSiteSpotlightTerm.getName(), turSNSiteSpotlightTerm.getTurSNSiteSpotlight()))
+				.collect(Collectors.toList());
 	}
 	
 	

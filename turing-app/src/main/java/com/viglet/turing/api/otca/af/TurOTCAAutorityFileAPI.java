@@ -228,7 +228,7 @@ public class TurOTCAAutorityFileAPI {
 	}
 
 	public void setTerms(TurNLPEntity turNLPEntity, Terms terms) {
-		boolean overwrite = false;
+		boolean overwrite;
 
 		for (AFTermType afTermType : terms.getTerm()) {
 			String termId = afTermType.getId();

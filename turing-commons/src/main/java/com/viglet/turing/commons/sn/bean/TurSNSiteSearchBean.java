@@ -17,44 +17,22 @@
 
 package com.viglet.turing.commons.sn.bean;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import java.util.List;
 
-public class TurSNSiteSearchBean {
 
+@RequiredArgsConstructor
+@Accessors(chain = true)
+@Getter
+@Setter
+public class TurSNSiteSearchBean {
 	private List<TurSNSiteSearchPaginationBean> pagination;
 	private TurSNSiteSearchQueryContextBean queryContext;
 	private TurSNSiteSearchResultsBean results;
 	private List<TurSNSiteSearchGroupBean> groups;
 	private TurSNSiteSearchWidgetBean widget;
-	public List<TurSNSiteSearchPaginationBean> getPagination() {
-		return pagination;
-	}
-	public void setPagination(List<TurSNSiteSearchPaginationBean> pagination) {
-		this.pagination = pagination;
-	}
-	public TurSNSiteSearchQueryContextBean getQueryContext() {
-		return queryContext;
-	}
-	public void setQueryContext(TurSNSiteSearchQueryContextBean queryContext) {
-		this.queryContext = queryContext;
-	}
-	public TurSNSiteSearchResultsBean getResults() {
-		return results;
-	}
-	public void setResults(TurSNSiteSearchResultsBean results) {
-		this.results = results;
-	}
-	public TurSNSiteSearchWidgetBean getWidget() {
-		return widget;
-	}
-	public void setWidget(TurSNSiteSearchWidgetBean widget) {
-		this.widget = widget;
-	}
-	public List<TurSNSiteSearchGroupBean> getGroups() {
-		return groups;
-	}
-	public void setGroups(List<TurSNSiteSearchGroupBean> groups) {
-		this.groups = groups;
-	}
-
 }

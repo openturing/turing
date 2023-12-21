@@ -30,7 +30,8 @@ public class TurSNDocument {
 	private TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean;
 
 	public Object getFieldValue(String field) {
-		if (turSNSiteSearchDocumentBean != null && turSNSiteSearchDocumentBean.getFields() != null && turSNSiteSearchDocumentBean.getFields().containsKey(field)) {
+		if (turSNSiteSearchDocumentBean != null && turSNSiteSearchDocumentBean.getFields() != null
+				&& turSNSiteSearchDocumentBean.getFields().containsKey(field)) {
 			return turSNSiteSearchDocumentBean.getFields().get(field);
 		} else {
 			return null;

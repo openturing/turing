@@ -42,6 +42,8 @@ import java.util.*;
 @RequestMapping("/api/otsn/broker")
 @Tag(name = "OTSN Broker", description = "OTSN Broker API")
 public class TurOTSNBrokerAPI {
+	public static final String FAILED = "Failed";
+	public static final String OK = "Ok";
 	private final TurSNSiteRepository turSNSiteRepository;
 	private final TurSNImportAPI turSNImportAPI;
 	@Inject
@@ -53,35 +55,27 @@ public class TurOTSNBrokerAPI {
 	@PostMapping
 	public String turOTSNBrokerAdd(@RequestParam("index") String siteName, @RequestParam("config") String config,
 			@RequestParam("data") String data) {
-		siteName = getFirstSiteName(siteName);
-
-		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
-		Document document = readXML(data);
-
-		return indexItem(turSNSite, document);
+		return indexItem(getFirstSiteName(siteName), readXML(data));
 
 	}
 
-	private String indexItem(TurSNSite turSNSite, Document document) {
-		if (document != null) {
-			Element element = document.getDocumentElement();
+	private String indexItem(String siteName, Document document) {
+		return turSNSiteRepository.findByName(siteName).map(turSNSite -> {
+			if (document != null) {
+				Element element = document.getDocumentElement();
+				NodeList nodes = element.getChildNodes();
+				TurSNJobItem turSNJobItem = createJobItem(nodes);
+				TurSNJobItems turSNJobItems = new TurSNJobItems();
+				turSNJobItems.add(turSNJobItem);
+				TurSNJob turSNJob = createSNJob(turSNSite, turSNJobItems);
+				log.debug("Indexed Job by Id");
+				turSNImportAPI.send(turSNJob);
+				return OK;
+			} else {
+				return FAILED;
+			}
+		}).orElse(FAILED);
 
-			NodeList nodes = element.getChildNodes();
-
-			TurSNJobItem turSNJobItem = createJobItem(nodes);
-
-			TurSNJobItems turSNJobItems = new TurSNJobItems();
-
-			turSNJobItems.add(turSNJobItem);
-
-			TurSNJob turSNJob = createSNJob(turSNSite, turSNJobItems);
-			log.debug("Indexed Job by Id");
-			turSNImportAPI.send(turSNJob);
-
-			return "Ok";
-		} else {
-			return "Failed";
-		}
 	}
 
 	private TurSNJob createSNJob(TurSNSite turSNSite, TurSNJobItems turSNJobItems) {
@@ -94,13 +88,13 @@ public class TurOTSNBrokerAPI {
 
 	private TurSNJobItem createJobItem(NodeList nodes) {
 		TurSNJobItem turSNJobItem = new TurSNJobItem();
-		Map<String, Object> attributes = addAtributesToJobItem(nodes, turSNJobItem);
+		Map<String, Object> attributes = addAttributesToJobItem(nodes, turSNJobItem);
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 		turSNJobItem.setAttributes(attributes);
 		return turSNJobItem;
 	}
 
-	private Map<String, Object> addAtributesToJobItem(NodeList nodes, TurSNJobItem turSNJobItem) {
+	private Map<String, Object> addAttributesToJobItem(NodeList nodes, TurSNJobItem turSNJobItem) {
 		Map<String, Object> attributes = new HashMap<>();
 		for (int i = 0; i < nodes.getLength(); i++) {
 
@@ -164,25 +158,27 @@ public class TurOTSNBrokerAPI {
 			turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 
 			siteName = getFirstSiteName(siteName);
-			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
+
 			Map<String, Object> attributes = new HashMap<>();
 			if (id.isPresent()) {
-				log.debug("Deindexed Job by Id");
+				log.debug("DeIndexed Job by Id");
 				attributes.put("id", id.get());
 			} else if (type.isPresent()) {
-				log.debug("Deindexed Job by Type");
+				log.debug("DeIndexed Job by Type");
 				attributes.put("type", type.get());
 			}
 			turSNJobItem.setAttributes(attributes);
 			turSNJobItems.add(turSNJobItem);
 			TurSNJob turSNJob = new TurSNJob();
-			turSNJob.setSiteId(turSNSite.getId());
+			turSNSiteRepository.findByName(siteName)
+					.ifPresent(turSNSite -> turSNJob.setSiteId(turSNSite.getId()));
+
 			turSNJob.setTurSNJobItems(turSNJobItems);
 			turSNImportAPI.send(turSNJob);
-			return "Ok";
+			return OK;
 
 		} else {
-			return "Failed";
+			return FAILED;
 		}
 	}
 }

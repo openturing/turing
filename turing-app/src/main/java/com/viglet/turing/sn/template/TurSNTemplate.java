@@ -52,6 +52,7 @@ import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.solr.TurSolrUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
@@ -59,6 +60,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -66,6 +68,7 @@ import java.util.Optional;
  * @since 0.3.4
  */
 
+@Slf4j
 @Component
 public class TurSNTemplate {
 	@Autowired
@@ -98,7 +101,7 @@ public class TurSNTemplate {
 	private TurSNRankingConditionRepository turSNRankingConditionRepository;
 	@Autowired
 	private TurConfigProperties turConfigProperties;
-	public void createSNSite(TurSNSite turSNSite, String username, String locale) {
+	public void createSNSite(TurSNSite turSNSite, String username, Locale locale) {
 		defaultSNUI(turSNSite);
 		createSEFields(turSNSite);
 		createLocale(turSNSite, username, locale);
@@ -125,11 +128,17 @@ public class TurSNTemplate {
 	}
 
 	public String createSolrCore(TurSNSiteLocale turSNSiteLocale, String username) {
-
-        String coreName = String.format("%s_%s_%s", username,
-				turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
-				turSNSiteLocale.getLanguage());
-		Optional<TurSEInstance> turSEInstance = turSEInstanceRepository
+		String coreName;
+		if (turConfigProperties.isMultiTenant()) {
+			coreName = String.format("%s_%s_%s", username,
+					turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
+					turSNSiteLocale.getLanguage());
+		} else {
+			coreName = String.format("%s_%s",
+					turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
+					turSNSiteLocale.getLanguage());
+		}
+        Optional<TurSEInstance> turSEInstance = turSEInstanceRepository
 				.findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId());
 		turSEInstance.ifPresent(instance -> {
 			String configset = turSNSiteLocale.getLanguage();
@@ -147,11 +156,11 @@ public class TurSNTemplate {
 					TurSolrUtils.createCollection(solrURL, coreName,
 							resourceloader.getResource(String.format("classpath:solr/configsets/%s.zip", configset)).getInputStream());
 				} catch (IOException e) {
-					throw new RuntimeException(e);
+					log.error(e.getMessage(), e);
 				}
 			}
 			else {
-				TurSolrUtils.createCore(solrURL, coreName, "en");
+				TurSolrUtils.createCore(solrURL, coreName, configset);
 			}
 		});
 		return coreName;
@@ -201,7 +210,6 @@ public class TurSNTemplate {
 		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
 		turSNSiteFieldExt.setType(turSNSiteField.getType());
 		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
 		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
 
 	}
@@ -254,10 +262,10 @@ public class TurSNTemplate {
 		turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm2);
 	}
 
-	public void createLocale(TurSNSite turSNSite, String username, String locale) {
+	public void createLocale(TurSNSite turSNSite, String username, Locale locale) {
 
 		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
-		turSNSiteLocale.setLanguage(locale);
+		turSNSiteLocale.setLanguage(locale.toString());
 		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
 		turSNSiteLocale.setTurSNSite(turSNSite);
 		turSNSiteLocale.setCore(createSolrCore(turSNSiteLocale, username));
