@@ -52,7 +52,6 @@ import com.viglet.turing.sn.tr.TurSNTargetingRuleMethod;
 import com.viglet.turing.sn.tr.TurSNTargetingRules;
 import com.viglet.turing.utils.TurSNSiteFieldUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -164,7 +163,7 @@ public class TurSolr {
         }
     }
 
-    // Convert to String with concatenate attributes
+    // Convert to String with concatenated attributes
     private String concatenateString(@SuppressWarnings("rawtypes") List list) {
         int i = 0;
         StringBuilder sb = new StringBuilder();
@@ -172,7 +171,7 @@ public class TurSolr {
             sb.append(TurSolrField.convertFieldToString(valueItem));
             // Last Item
             if (i++ != list.size() - 1) {
-                sb.append(System.getProperty("line.separator"));
+                sb.append(System.lineSeparator());
             }
         }
         return sb.toString().trim();
@@ -231,8 +230,8 @@ public class TurSolr {
     private void processArrayList(Map<String, TurSNSiteField> turSNSiteFieldMap, SolrInputDocument document, String key,
                                   Object attribute) {
         @SuppressWarnings("rawtypes")
-        ArrayList values = (ArrayList) attribute;
-        if (values != null) {
+        List attributeList= (ArrayList) attribute;
+        Optional.ofNullable(attributeList).ifPresent(values -> {
             if (key.startsWith(TURING_ENTITY)
                     || (turSNSiteFieldMap.get(key) != null && turSNSiteFieldMap.get(key).getMultiValued() == 1)) {
                 for (Object valueItem : values) {
@@ -241,7 +240,7 @@ public class TurSolr {
             } else {
                 document.addField(key, concatenateString(values));
             }
-        }
+        });
     }
 
     private void addSolrDocument(TurSolrInstance turSolrInstance, SolrInputDocument document) {
@@ -666,14 +665,12 @@ public class TurSolr {
                     .setFacetLimit(turSNSite.getItemsPerFacet())
                     .setFacetMinCount(1)
                     .setFacetSort(COUNT);
-            turSNSiteFacetFieldExtList.forEach(turSNSiteFacetFieldExt -> {
-                        query.addFacetField(setFacetTypeConditionInFacet(
-                                (isNerOrThesaurus(turSNSiteFacetFieldExt.getSnType()) ? TURING_ENTITY : "")
-                                        .concat(turSNSiteFacetFieldExt.getName()),
-                                turSNSite)
+            turSNSiteFacetFieldExtList.forEach(turSNSiteFacetFieldExt -> query.addFacetField(setFacetTypeConditionInFacet(
+                    (isNerOrThesaurus(turSNSiteFacetFieldExt.getSnType()) ? TURING_ENTITY : "")
+                            .concat(turSNSiteFacetFieldExt.getName()),
+                    turSNSite)
 
-                        );
-                    }
+            )
             );
         }
         return turSNSiteFacetFieldExtList;
@@ -756,14 +753,11 @@ public class TurSolr {
     }
 
     private Map<String, Object> getRequiredFields(TurSNSite turSNSite) {
-        Map<String, Object> map = new HashMap<>();
-        for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExtRepository
-                .findByTurSNSiteAndRequiredAndEnabled(turSNSite, 1, 1)) {
-            if (turSNSiteFieldExt != null) {
-                map.put(turSNSiteFieldExt.getName(), turSNSiteFieldExt.getDefaultValue());
-            }
-        }
-        return map;
+        return turSNSiteFieldExtRepository
+                .findByTurSNSiteAndRequiredAndEnabled(turSNSite, 1, 1)
+                .stream().filter(Objects::nonNull)
+                .collect(Collectors
+                        .toMap(TurSNSiteFieldExt::getName, TurSNSiteFieldExt::getDefaultValue, (a, b) -> b));
     }
 
     private TurSEResult createTurSEResult(Map<String, TurSNSiteFieldExt> fieldExtMap,
