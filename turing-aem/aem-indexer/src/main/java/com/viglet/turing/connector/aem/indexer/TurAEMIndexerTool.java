@@ -208,19 +208,11 @@ public class TurAEMIndexerTool {
         jsonObject.toMap().forEach((key, value) -> {
             if (!key.startsWith(JCR)) {
                 String nodePathChild = nodePath + "/" + key;
-                if (isAemObjectJsonFull(jsonObject, key)) {
-                    getNodeFromJson(nodePathChild,
-                            jsonObject.getJSONObject(key));
-                } else {
                     getNodeFromJson(nodePathChild,
                             TurAemUtils.getInfinityJson(nodePathChild, hostAndPort, username, password));
-                }
+
             }
         });
-    }
-
-    private static boolean isAemObjectJsonFull(JSONObject jsonObject, String key) {
-        return jsonObject.has(key) && jsonObject.getJSONObject(key).has(JCR_CONTENT);
     }
 
     private void prepareIndexObject(CTDMappings ctdMappings, AemObject aemObject) {
