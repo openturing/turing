@@ -48,7 +48,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <aem.sdk.api>2023.10.13804.20231005T183332Z-230902</aem.sdk.api>
-        <aemanalyser.version>1.4.10</aemanalyser.version>
+        <aemanalyser.version>1.5.8</aemanalyser.version>
         <componentGroupName>AEM Turing Events</componentGroupName>
     </properties>
 
