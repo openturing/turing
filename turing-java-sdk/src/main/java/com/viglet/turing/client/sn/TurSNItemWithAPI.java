@@ -16,15 +16,15 @@ package com.viglet.turing.client.sn;
  * limitations under the License.
  */
 
+import org.apache.hc.core5.net.URIBuilder;
+
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.http.client.utils.URIBuilder;
 
 /**
  * Class with apiURL and method to return query parameters.

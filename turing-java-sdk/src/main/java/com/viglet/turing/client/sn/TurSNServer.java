@@ -16,34 +16,8 @@
 
 package com.viglet.turing.client.sn;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
-
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.TurSNQuery.ORDER;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
@@ -56,13 +30,28 @@ import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
 import com.viglet.turing.client.sn.utils.TurSNClientUtils;
-import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
-import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
+import com.viglet.turing.commons.sn.bean.*;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.*;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.net.URIBuilder;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * Connect to Turing AI Server.
@@ -71,9 +60,10 @@ import com.viglet.turing.commons.sn.search.TurSNParamType;
  * 
  * @since 0.3.4
  */
+@Getter
+@Setter
+@Slf4j
 public class TurSNServer {
-
-	private static final Logger logger = Logger.getLogger(TurSNServer.class.getName());
 
 	private static final String SITE_NAME_DEFAULT = "Sample";
 
@@ -114,6 +104,7 @@ public class TurSNServer {
 	private TurSNSitePostParamsBean turSNSitePostParams;
 
 	private TurUsernamePasswordCredentials credentials;
+
 
 	private String apiKey;
 
@@ -185,70 +176,6 @@ public class TurSNServer {
 				credentials != null ? credentials.getUsername() : null);
 	}
 
-	public String getTuringServer() {
-		return turSNServer;
-	}
-
-	public void setTuringServer(String turingServer) {
-		this.turSNServer = turingServer;
-	}
-
-	public URL getServerURL() {
-		return serverURL;
-	}
-
-	public void setServerURL(URL serverURL) {
-		this.serverURL = serverURL;
-	}
-
-	public String getSiteName() {
-		return siteName;
-	}
-
-	public void setSiteName(String siteName) {
-		this.siteName = siteName;
-	}
-
-	public Locale getLocale() {
-		return locale;
-	}
-
-	public void setLocale(Locale locale) {
-		this.locale = locale;
-	}
-
-	public TurUsernamePasswordCredentials getCredentials() {
-		return credentials;
-	}
-
-	public void setCredentials(TurUsernamePasswordCredentials credentials) {
-		this.credentials = credentials;
-	}
-
-	public String getProviderName() {
-		return providerName;
-	}
-
-	public void setProviderName(String providerName) {
-		this.providerName = providerName;
-	}
-
-	public TurSNSitePostParamsBean getTurSNSitePostParams() {
-		return turSNSitePostParams;
-	}
-
-	public String getApiKey() {
-		return apiKey;
-	}
-
-	public void setApiKey(String apiKey) {
-		this.apiKey = apiKey;
-	}
-
-	public void setTurSNSitePostParams(TurSNSitePostParamsBean turSNSitePostParams) {
-		this.turSNSitePostParams = turSNSitePostParams;
-	}
-
 	public List<String> getLatestSearches(int rows) {
 		try {
 			URIBuilder turingURL = new URIBuilder(turSNServer.concat(LATEST_SEARCHES_CONTEXT))
@@ -274,13 +201,13 @@ public class TurSNServer {
 							new TypeReference<List<String>>() {
 							});
 				} catch (IOException e) {
-					logger.log(Level.SEVERE, e.getMessage(), e);
+					log.error(e.getMessage(), e);
 				}
-				logger.fine(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
+				log.debug(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
 
 			}
 		} catch (JsonProcessingException | URISyntaxException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			log.error( e.getMessage(), e);
 		}
 		return Collections.emptyList();
 
@@ -290,28 +217,20 @@ public class TurSNServer {
 		TurSNJobUtils.importItems(turSNJobItems, this, showOutput);
 	}
 
-	public void importItems(TurSNJobItems turSNJobItems) {
-		if (credentials != null) {
-			importItems(turSNJobItems, false);
-		} else {
-			logger.severe("No credentials to import Items");
-		}
-	}
-
 	public void deleteItemsByType(String typeName) {
 		if (credentials != null) {
 			TurSNJobUtils.deleteItemsByType(this, typeName);
 		} else {
-			logger.severe(String.format("No credentials to delete items by %s type", typeName));
+			log.error(String.format("No credentials to delete items by %s type", typeName));
 		}
 	}
 
 	public List<TurSNLocale> getLocales() {
 
 		try (CloseableHttpClient client = HttpClients.createDefault()) {
-			return executeLocalesRequest(prepareLocalesRequest(), client);
+			return executeLocaleRequest(prepareLocalesRequest(), client);
 		} catch (IOException | URISyntaxException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			log.error( e.getMessage(), e);
 		}
 		return Collections.emptyList();
 	}
@@ -321,27 +240,32 @@ public class TurSNServer {
 		try (CloseableHttpClient client = HttpClients.createDefault()) {
 			return executeAutoCompleteRequest(prepareAutoCompleteRequest(autoCompleteQuery), client);
 		} catch (IOException | URISyntaxException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			log.error( e.getMessage(), e);
 		}
 		return Collections.emptyList();
 	}
 
-	private List<TurSNLocale> executeLocalesRequest(HttpGet httpGet, CloseableHttpClient client)
+	private List<TurSNLocale> executeLocaleRequest(HttpGet httpGet, CloseableHttpClient client)
 			throws IOException {
-		HttpResponse response = client.execute(httpGet);
-		HttpEntity entity = response.getEntity();
-		String result = EntityUtils.toString(entity, StandardCharsets.UTF_8);
-		return new ObjectMapper().readValue(result, new TypeReference<List<TurSNLocale>>() {
+		return new ObjectMapper().readValue(getHttpResponse(httpGet, client), new TypeReference<List<TurSNLocale>>() {
 		});
+	}
+
+	private String getHttpResponse(HttpGet httpGet, CloseableHttpClient client) throws IOException {
+		try {
+			return EntityUtils.toString(client.execute(httpGet).getEntity(), StandardCharsets.UTF_8);
+		} catch (ParseException e) {
+			log.error( e.getMessage(), e);
+		}
+
+		return null;
 	}
 
 	private List<String> executeAutoCompleteRequest(HttpGet httpGet, CloseableHttpClient client)
 			throws IOException {
-		HttpResponse response = client.execute(httpGet);
-		HttpEntity entity = response.getEntity();
-		String result = EntityUtils.toString(entity, StandardCharsets.UTF_8);
 
-		return new ObjectMapper().readValue(result, new TypeReference<List<String>>() {
+
+		return new ObjectMapper().readValue(getHttpResponse(httpGet, client), new TypeReference<List<String>>() {
 		});
 	}
 
@@ -368,37 +292,36 @@ public class TurSNServer {
 				return createTuringResponse(turSNSiteSearchBean);
 			}
 		} catch (IOException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			log.error( e.getMessage(), e);
 		}
 		return new QueryTurSNResponse();
 	}
 
-	private String openConnectionAndRequest(HttpRequestBase httpRequestBase) {
+	private String openConnectionAndRequest(HttpUriRequestBase httpRequestBase) {
 		try (CloseableHttpClient client = HttpClients.createDefault()) {
 			return executeQueryRequest(httpRequestBase, client);
 		} catch (IOException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			log.error( e.getMessage(), e);
 		}
 		return null;
 	}
 
-	private String executeQueryRequest(HttpRequestBase httpRequestBase, CloseableHttpClient client) {
+	private String executeQueryRequest(HttpUriRequestBase httpRequestBase, CloseableHttpClient client) {
 
 		try {
-			HttpResponse response = client.execute(httpRequestBase);
-			int statusCode = response.getStatusLine().getStatusCode();
-			if (statusCode == 200) {
+			ClassicHttpResponse response = client.execute(httpRequestBase);
+			if (response.getCode() == 200) {
 				return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
 			} else {
-				logger.log(Level.SEVERE, "Error Connection. Status Code: " + statusCode);
+				log.error( "Error Connection. Status Code: " + response.getCode());
 			}
-		} catch (IOException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+		} catch (IOException | ParseException e) {
+			log.error( e.getMessage(), e);
 		}
-		return null;
+        return null;
 	}
 
-	private HttpRequestBase prepareQueryRequest() {
+	private HttpUriRequestBase prepareQueryRequest() {
 
 		try {
 			URIBuilder turingURL = new URIBuilder(turSNServer.concat(SEARCH_CONTEXT))
@@ -420,7 +343,7 @@ public class TurSNServer {
 			}
 
 		} catch (URISyntaxException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 		return null;
 	}
@@ -501,15 +424,13 @@ public class TurSNServer {
 
 	private boolean hasSearchResults(TurSNSiteSearchResultsBean turSNSiteSearchResultsBean) {
 		if (turSNSiteSearchResultsBean == null) {
-			logger.severe("Empty result.");
+			log.error("Empty result.");
 			return false;
 		}
 
-		if (turSNSiteSearchResultsBean.getDocument() == null
-				|| (turSNSiteSearchResultsBean.getDocument() != null
-						&& turSNSiteSearchResultsBean.getDocument().isEmpty())) {
-			if (logger.isLoggable(Level.FINEST))
-				logger.finest("No results.");
+		if (turSNSiteSearchResultsBean.getDocument() == null || turSNSiteSearchResultsBean.getDocument().isEmpty()) {
+
+				log.debug("No results.");
 			return false;
 		}
 
@@ -530,9 +451,9 @@ public class TurSNServer {
 
 			TurSNClientUtils.authentication(httpPost, this.getCredentials(), this.getApiKey());
 
-			logger.fine(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
+			log.debug(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
 		} catch (JsonProcessingException | URISyntaxException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			log.error( e.getMessage(), e);
 		}
 
 		return httpPost;
@@ -547,10 +468,10 @@ public class TurSNServer {
 			httpGet.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
 			httpGet.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
 
-			logger.fine(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
+			log.debug(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
 
 		} catch (URISyntaxException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			log.error( e.getMessage(), e);
 		}
 
 		return httpGet;
