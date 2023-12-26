@@ -32,12 +32,8 @@ import org.springframework.stereotype.Component;
 public class TurEncryptCLI {
 
 	@Qualifier("turEncryptor")
+	@Autowired
 	private StringEncryptor stringEncryptor;
-
-	@Inject
-	public TurEncryptCLI(StringEncryptor stringEncryptor) {
-		this.stringEncryptor = stringEncryptor;
-	}
 
 	public String encrypt(String input) {
 		try {
