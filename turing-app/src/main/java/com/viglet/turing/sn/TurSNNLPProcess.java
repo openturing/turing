@@ -45,12 +45,17 @@ import java.util.Map;
 @Component
 public class TurSNNLPProcess {
     private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
-    @Autowired
-    private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-    @Autowired
-    private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-    @Autowired
-    private TurNLPProcess turNLPProcess;
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurNLPProcess turNLPProcess;
+
+    public TurSNNLPProcess(TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                           TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+                           TurNLPProcess turNLPProcess) {
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turNLPProcess = turNLPProcess;
+    }
 
     public void processNLP(TurSNJobItem turSNJobItem, TurSNSite turSNSite, Map<String, Object> consolidateResults) {
         TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite,

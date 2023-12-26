@@ -21,6 +21,7 @@
 
 package com.viglet.turing.console;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -32,8 +33,12 @@ import com.viglet.turing.console.encrypt.TurEncryptCLI;
 @Component
 @ComponentScan(basePackages = { "com.viglet.turing.console.encrypt", "com.viglet.turing.encrypt" })
 public class TurConsole implements ApplicationRunner {
-	@Autowired
-	private TurEncryptCLI turEncryptCLI;
+	private final TurEncryptCLI turEncryptCLI;
+
+	@Inject
+	public TurConsole(TurEncryptCLI turEncryptCLI) {
+		this.turEncryptCLI = turEncryptCLI;
+	}
 
 	@Override
 	public void run(ApplicationArguments args) {

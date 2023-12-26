@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup.storage;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +32,13 @@ import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 @Transactional
 public class TurDataGroupStartup {
 
-	@Autowired
-	private  TurDataGroupRepository turDataGroupRepository;
-	
+	private final TurDataGroupRepository turDataGroupRepository;
+
+	@Inject
+	public TurDataGroupStartup(TurDataGroupRepository turDataGroupRepository) {
+		this.turDataGroupRepository = turDataGroupRepository;
+	}
+
 	public void createDefaultRows() {
 
 		if (turDataGroupRepository.findAll().isEmpty()) {

@@ -102,8 +102,8 @@ public class TurNutchCommons {
 			if (auth) {
 				basicAuth(httpPost, username, password);
 			}
-			CloseableHttpClient client = HttpClients.createDefault();
-			try (CloseableHttpResponse ignored = client.execute(httpPost)) {
+			try (CloseableHttpClient client = HttpClients.createDefault();
+					CloseableHttpResponse ignored = client.execute(httpPost)) {
 				turSNJobItems.getTuringDocuments().clear();
 			}
 		}

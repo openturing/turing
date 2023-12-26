@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup.ml;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,9 +31,12 @@ import com.viglet.turing.persistence.repository.ml.TurMLVendorRepository;
 @Component
 @Transactional
 public class TurMLVendorOnStartup {
+	private final TurMLVendorRepository turMLVendorRepository;
 
-	@Autowired
-	private TurMLVendorRepository turMLVendorRepository;
+	@Inject
+	public TurMLVendorOnStartup(TurMLVendorRepository turMLVendorRepository) {
+		this.turMLVendorRepository = turMLVendorRepository;
+	}
 
 	public void createDefaultRows() {
 

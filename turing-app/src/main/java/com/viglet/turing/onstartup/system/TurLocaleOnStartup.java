@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup.system;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,8 +32,12 @@ import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 @Transactional
 public class TurLocaleOnStartup {
 
-	@Autowired
-	private TurLocaleRepository turLocaleRepository;
+	private final TurLocaleRepository turLocaleRepository;
+
+	@Inject
+	public TurLocaleOnStartup(TurLocaleRepository turLocaleRepository) {
+		this.turLocaleRepository = turLocaleRepository;
+	}
 
 	public void createDefaultRows() {
 

@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup.se;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,13 +34,18 @@ import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 @Component
 @Transactional
 public class TurSEInstanceOnStartup {
+	private final TurSEInstanceRepository turSEInstanceRepository;
+	private final TurSEVendorRepository turSEVendorRepository;
+	private final TurConfigVarRepository turConfigVarRepository;
 
-	@Autowired
-	private TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	private TurSEVendorRepository turSEVendorRepository;
-	@Autowired
-	private TurConfigVarRepository turConfigVarRepository;
+	@Inject
+	public TurSEInstanceOnStartup(TurSEInstanceRepository turSEInstanceRepository,
+								  TurSEVendorRepository turSEVendorRepository,
+								  TurConfigVarRepository turConfigVarRepository) {
+		this.turSEInstanceRepository = turSEInstanceRepository;
+		this.turSEVendorRepository = turSEVendorRepository;
+		this.turConfigVarRepository = turConfigVarRepository;
+	}
 
 	public void createDefaultRows() {
 

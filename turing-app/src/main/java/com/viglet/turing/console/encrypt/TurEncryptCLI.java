@@ -21,6 +21,7 @@
 
 package com.viglet.turing.console.encrypt;
 
+import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.jasypt.encryption.StringEncryptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,8 +32,12 @@ import org.springframework.stereotype.Component;
 public class TurEncryptCLI {
 
 	@Qualifier("turEncryptor")
-	@Autowired
 	private StringEncryptor stringEncryptor;
+
+	@Inject
+	public TurEncryptCLI(StringEncryptor stringEncryptor) {
+		this.stringEncryptor = stringEncryptor;
+	}
 
 	public String encrypt(String input) {
 		try {

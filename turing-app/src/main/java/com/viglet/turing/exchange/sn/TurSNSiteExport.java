@@ -22,6 +22,7 @@
 package com.viglet.turing.exchange.sn;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -31,7 +32,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -50,16 +50,23 @@ import java.util.UUID;
 @Component
 public class TurSNSiteExport {
 	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
-	@Autowired
-	private TurSNSiteRepository turSNSiteRepository;
+
+	private final TurSNSiteRepository turSNSiteRepository;
+
+	@Inject
+	public TurSNSiteExport(TurSNSiteRepository turSNSiteRepository) {
+		this.turSNSiteRepository = turSNSiteRepository;
+	}
 
 	public StreamingResponseBody exportObject(HttpServletResponse response) {
 		String folderName = UUID.randomUUID().toString();
 		File userDir = new File(System.getProperty("user.dir"));
 		if (userDir.exists() && userDir.isDirectory()) {
 			File tmpDir = new File(userDir.getAbsolutePath().concat(File.separator + "store" + File.separator + "tmp"));
-			if (!tmpDir.exists()) {
-				tmpDir.mkdirs();
+			try {
+				Files.createDirectories(tmpDir.toPath());
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
 			}
 
 			List<TurSNSite> turSNSites = turSNSiteRepository.findAll();
@@ -71,8 +78,10 @@ public class TurSNSiteExport {
 			}
 
 			File exportDir = new File(tmpDir.getAbsolutePath().concat(File.separator + folderName));
-			if (!exportDir.exists()) {
-				exportDir.mkdirs();
+			try {
+				Files.createDirectories(tmpDir.toPath());
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
 			}
 
 			TurExchange turExchange = new TurExchange();

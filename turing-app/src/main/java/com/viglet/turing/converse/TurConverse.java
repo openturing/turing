@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.converse;
 
+import com.google.inject.Inject;
 import com.viglet.turing.bean.converse.TurConverseAgentResponse;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
@@ -37,12 +38,17 @@ import java.util.AbstractMap.SimpleEntry;
 @Slf4j
 @Component
 public class TurConverse {
-	@Autowired
-	private TurConverseChatResponseRepository turConverseChatResponseRepository;
-	@Autowired
-	private TurConverseSE turConverseSE;
+	private final TurConverseChatResponseRepository turConverseChatResponseRepository;
+
+	private final TurConverseSE turConverseSE;
 
 	private final SecureRandom random = new SecureRandom();
+
+	@Inject
+	public TurConverse(TurConverseChatResponseRepository turConverseChatResponseRepository, TurConverseSE turConverseSE) {
+		this.turConverseChatResponseRepository = turConverseChatResponseRepository;
+		this.turConverseSE = turConverseSE;
+	}
 
 	public void saveChatResponseUser(String q, TurConverseChat chat, HttpSession session) {
 		boolean hasParameter = session.getAttribute(TurConverseConstants.HAS_PARAMETER) != null

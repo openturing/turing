@@ -71,36 +71,54 @@ import java.util.Optional;
 @Slf4j
 @Component
 public class TurSNTemplate {
-	@Autowired
-	private ResourceLoader resourceloader;
-	@Autowired
-	private TurSNSiteFieldRepository turSNSiteFieldRepository;
-	@Autowired
-	private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-	@Autowired
-	private TurNLPEntityRepository turNLPEntityRepository;
-	@Autowired
-	private TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
-	@Autowired
-	private TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
-	@Autowired
-	private TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository;
-	@Autowired
-	private TurNLPInstanceRepository turNLPInstanceRepository;
-	@Autowired
-	private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-	@Autowired
-	private TurSNSiteMergeProvidersRepository turSNSiteMergeRepository;
-	@Autowired
-	private TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository;
-	@Autowired
-	private TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	private TurSNRankingExpressionRepository turSNRankingExpressionRepository;
-	@Autowired
-	private TurSNRankingConditionRepository turSNRankingConditionRepository;
-	@Autowired
-	private TurConfigProperties turConfigProperties;
+	private final ResourceLoader resourceloader;
+	private final TurSNSiteFieldRepository turSNSiteFieldRepository;
+	private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+	private final TurNLPEntityRepository turNLPEntityRepository;
+	private final TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
+	private final TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
+	private final TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository;
+	private final TurNLPInstanceRepository turNLPInstanceRepository;
+	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+	private final TurSNSiteMergeProvidersRepository turSNSiteMergeRepository;
+	private final TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository;
+	private final TurSEInstanceRepository turSEInstanceRepository;
+	private final TurSNRankingExpressionRepository turSNRankingExpressionRepository;
+	private final TurSNRankingConditionRepository turSNRankingConditionRepository;
+	private final TurConfigProperties turConfigProperties;
+
+	public TurSNTemplate(ResourceLoader resourceloader,
+						 TurSNSiteFieldRepository turSNSiteFieldRepository,
+						 TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+						 TurNLPEntityRepository turNLPEntityRepository,
+						 TurSNSiteSpotlightRepository turSNSiteSpotlightRepository,
+						 TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository,
+						 TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository,
+						 TurNLPInstanceRepository turNLPInstanceRepository,
+						 TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+						 TurSNSiteMergeProvidersRepository turSNSiteMergeRepository,
+						 TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository,
+						 TurSEInstanceRepository turSEInstanceRepository,
+						 TurSNRankingExpressionRepository turSNRankingExpressionRepository,
+						 TurSNRankingConditionRepository turSNRankingConditionRepository,
+						 TurConfigProperties turConfigProperties) {
+		this.resourceloader = resourceloader;
+		this.turSNSiteFieldRepository = turSNSiteFieldRepository;
+		this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+		this.turNLPEntityRepository = turNLPEntityRepository;
+		this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
+		this.turSNSiteSpotlightDocumentRepository = turSNSiteSpotlightDocumentRepository;
+		this.turSNSiteSpotlightTermRepository = turSNSiteSpotlightTermRepository;
+		this.turNLPInstanceRepository = turNLPInstanceRepository;
+		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+		this.turSNSiteMergeRepository = turSNSiteMergeRepository;
+		this.turSNSiteMergeFieldRepository = turSNSiteMergeFieldRepository;
+		this.turSEInstanceRepository = turSEInstanceRepository;
+		this.turSNRankingExpressionRepository = turSNRankingExpressionRepository;
+		this.turSNRankingConditionRepository = turSNRankingConditionRepository;
+		this.turConfigProperties = turConfigProperties;
+	}
+
 	public void createSNSite(TurSNSite turSNSite, String username, Locale locale) {
 		defaultSNUI(turSNSite);
 		createSEFields(turSNSite);

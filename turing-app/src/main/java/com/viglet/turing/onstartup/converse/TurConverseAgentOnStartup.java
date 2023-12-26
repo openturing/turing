@@ -23,6 +23,7 @@ package com.viglet.turing.onstartup.converse;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,26 +51,39 @@ import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 @Component
 @Transactional
 public class TurConverseAgentOnStartup {
-	@Autowired
-	private TurConverseAgentRepository turConverseAgentRepository;
-	@Autowired
-	private TurConverseIntentRepository turConverseIntentRepository;
-	@Autowired
-	private TurConverseContextRepository turConverseContextRepository;
-	@Autowired
-	private TurConversePhraseRepository turConversePhraseRepository;
-	@Autowired
-	private TurConverseResponseRepository turConverseResponseRepository;
-	@Autowired
-	private TurConverseParameterRepository turConverseParameterRepository;
-	@Autowired
-	private TurConversePromptRepository turConversePromptRepository;
-	@Autowired
-	private TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	private TurConverseEntityRepository turConverseEntityRepository;
-	@Autowired
-	private TurConverseEntityTermRepository turConverseEntityTermRepository;
+	private final TurConverseAgentRepository turConverseAgentRepository;
+	private final TurConverseIntentRepository turConverseIntentRepository;
+	private final TurConverseContextRepository turConverseContextRepository;
+	private final TurConversePhraseRepository turConversePhraseRepository;
+	private final TurConverseResponseRepository turConverseResponseRepository;
+	private final TurConverseParameterRepository turConverseParameterRepository;
+	private final TurConversePromptRepository turConversePromptRepository;
+	private final TurSEInstanceRepository turSEInstanceRepository;
+	private final TurConverseEntityRepository turConverseEntityRepository;
+	private final TurConverseEntityTermRepository turConverseEntityTermRepository;
+
+	@Inject
+	public TurConverseAgentOnStartup(TurConverseAgentRepository turConverseAgentRepository,
+									 TurConverseIntentRepository turConverseIntentRepository,
+									 TurConverseContextRepository turConverseContextRepository,
+									 TurConversePhraseRepository turConversePhraseRepository,
+									 TurConverseResponseRepository turConverseResponseRepository,
+									 TurConverseParameterRepository turConverseParameterRepository,
+									 TurConversePromptRepository turConversePromptRepository,
+									 TurSEInstanceRepository turSEInstanceRepository,
+									 TurConverseEntityRepository turConverseEntityRepository,
+									 TurConverseEntityTermRepository turConverseEntityTermRepository) {
+		this.turConverseAgentRepository = turConverseAgentRepository;
+		this.turConverseIntentRepository = turConverseIntentRepository;
+		this.turConverseContextRepository = turConverseContextRepository;
+		this.turConversePhraseRepository = turConversePhraseRepository;
+		this.turConverseResponseRepository = turConverseResponseRepository;
+		this.turConverseParameterRepository = turConverseParameterRepository;
+		this.turConversePromptRepository = turConversePromptRepository;
+		this.turSEInstanceRepository = turSEInstanceRepository;
+		this.turConverseEntityRepository = turConverseEntityRepository;
+		this.turConverseEntityTermRepository = turConverseEntityTermRepository;
+	}
 
 	public void createDefaultRows() {
 

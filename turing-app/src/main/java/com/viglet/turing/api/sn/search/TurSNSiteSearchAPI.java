@@ -21,6 +21,7 @@
 
 package com.viglet.turing.api.sn.search;
 
+import com.google.inject.Inject;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
@@ -54,12 +55,18 @@ import java.util.Optional;
 @Tag(name = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
 
-    @Autowired
-    private TurSNSearchProcess turSNSearchProcess;
-    @Autowired
-    private TurSNSiteRepository turSNSiteRepository;
-    @Autowired
-    private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurSNSearchProcess turSNSearchProcess;
+    private final TurSNSiteRepository turSNSiteRepository;
+
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    @Inject
+    public TurSNSiteSearchAPI(TurSNSearchProcess turSNSearchProcess,
+                              TurSNSiteRepository turSNSiteRepository,
+                              TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+        this.turSNSearchProcess = turSNSearchProcess;
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+    }
 
     @GetMapping
     public ResponseEntity<TurSNSiteSearchBean> turSNSiteSearchSelectGet(@PathVariable String siteName,

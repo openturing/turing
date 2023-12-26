@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.sn.ac;
 
+import com.google.inject.Inject;
 import com.viglet.turing.se.TurSEStopword;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
@@ -40,12 +41,16 @@ public class TurSNAutoComplete {
 	private static final boolean USE_BIGGER_TERMS = false;
 	private static final boolean USE_TERMS_QUERY_EQUALS_AUTO_COMPLETE = true;
 	private static final boolean USE_REPEAT_QUERY_TEXT_ON_AUTOCOMPLETE = false;
-	@Autowired
-	private TurSolr turSolr;
-	@Autowired
-	private TurSEStopword turSEStopword;
-	@Autowired
-	private TurSolrInstanceProcess turSolrInstanceProcess;
+	private final TurSolr turSolr;
+	private final TurSEStopword turSEStopword;
+	private final TurSolrInstanceProcess turSolrInstanceProcess;
+
+	@Inject
+	public TurSNAutoComplete(TurSolr turSolr, TurSEStopword turSEStopword, TurSolrInstanceProcess turSolrInstanceProcess) {
+		this.turSolr = turSolr;
+		this.turSEStopword = turSEStopword;
+		this.turSolrInstanceProcess = turSolrInstanceProcess;
+	}
 
 	public List<String> autoComplete(String siteName, String q, String locale, long rows) {
 	

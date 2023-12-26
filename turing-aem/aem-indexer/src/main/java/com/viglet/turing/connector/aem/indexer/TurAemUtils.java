@@ -47,20 +47,22 @@ public class TurAemUtils {
     }
 
     public static String getResponseBody(String url, String username, String password) {
-        HttpClient client = HttpClient.newBuilder()
+        try(HttpClient client = HttpClient.newBuilder()
                 .authenticator(new Authenticator() {
                     @Override
                     protected PasswordAuthentication getPasswordAuthentication() {
                         return new PasswordAuthentication(username, password.toCharArray());
                     }
                 })
-                .build();
-        try {
-            HttpRequest request = HttpRequest.newBuilder().GET().uri(new URI(UrlEscapers.urlFragmentEscaper().escape(url))).build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return response.body();
-        } catch (URISyntaxException | IOException | InterruptedException ex) {
-            throw new RuntimeException(ex);
+                .build())
+        {
+            try {
+                HttpRequest request = HttpRequest.newBuilder().GET().uri(new URI(UrlEscapers.urlFragmentEscaper().escape(url))).build();
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                return response.body();
+            } catch (URISyntaxException | IOException | InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
         }
     }
 

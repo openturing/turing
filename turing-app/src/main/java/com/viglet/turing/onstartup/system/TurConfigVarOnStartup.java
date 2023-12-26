@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup.system;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +32,13 @@ import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 @Transactional
 public class TurConfigVarOnStartup {
 
-	@Autowired
-	private TurConfigVarRepository turConfigVarRepository;
-	
+	private final TurConfigVarRepository turConfigVarRepository;
+
+	@Inject
+	public TurConfigVarOnStartup(TurConfigVarRepository turConfigVarRepository) {
+		this.turConfigVarRepository = turConfigVarRepository;
+	}
+
 	public void createDefaultRows() {
 
 		final String FIRST_TIME = "FIRST_TIME";

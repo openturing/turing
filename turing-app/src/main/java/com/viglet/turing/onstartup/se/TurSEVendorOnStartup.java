@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup.se;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +32,13 @@ import com.viglet.turing.persistence.repository.se.TurSEVendorRepository;
 @Transactional
 public class TurSEVendorOnStartup {
 
-	@Autowired
-	private TurSEVendorRepository turSEVendorRepository;
-	
+	private final TurSEVendorRepository turSEVendorRepository;
+
+	@Inject
+	public TurSEVendorOnStartup(TurSEVendorRepository turSEVendorRepository) {
+		this.turSEVendorRepository = turSEVendorRepository;
+	}
+
 	public void createDefaultRows() {
 
 		if (turSEVendorRepository.findAll().isEmpty()) {

@@ -52,17 +52,18 @@ public class TurSolrUtils {
 	}
 
 	public static void deleteCore(String solrUrl, String name) {
-		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
-		HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create(String.format(
-						"%s/api/cores?action=UNLOAD&core=%s&deleteIndex=true&deleteDataDir=true&deleteInstanceDir=true",
-						solrUrl, name)))
-				.GET().setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
+		try (HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()) {
+			HttpRequest request = HttpRequest.newBuilder()
+					.uri(URI.create(String.format(
+							"%s/api/cores?action=UNLOAD&core=%s&deleteIndex=true&deleteDataDir=true&deleteInstanceDir=true",
+							solrUrl, name)))
+					.GET().setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
 
-		try {
-			client.send(request, HttpResponse.BodyHandlers.ofString());
-		} catch (IOException | InterruptedException e) {
-			log.error(e.getMessage(), e);
+			try {
+				client.send(request, HttpResponse.BodyHandlers.ofString());
+			} catch (IOException | InterruptedException e) {
+				log.error(e.getMessage(), e);
+			}
 		}
 	}
 
@@ -87,17 +88,18 @@ public class TurSolrUtils {
 				 		}
 				 	}
 				""";
-		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+		try (HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()) {
 
-		HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create(String.format("%s/solr/%s/schema", getSolrUrl(turSEInstance), coreName)))
-				.POST(BodyPublishers.ofString(String.format(json, action, fieldName, type, multiValued)))
-				.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
+			HttpRequest request = HttpRequest.newBuilder()
+					.uri(URI.create(String.format("%s/solr/%s/schema", getSolrUrl(turSEInstance), coreName)))
+					.POST(BodyPublishers.ofString(String.format(json, action, fieldName, type, multiValued)))
+					.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
 
-		try {
-			client.send(request, HttpResponse.BodyHandlers.ofString());
-		} catch (IOException | InterruptedException e) {
-			log.error(e.getMessage(), e);
+			try {
+				client.send(request, HttpResponse.BodyHandlers.ofString());
+			} catch (IOException | InterruptedException e) {
+				log.error(e.getMessage(), e);
+			}
 		}
 	}
 
@@ -109,17 +111,18 @@ public class TurSolrUtils {
 				 		}
 				 	}
 				""";
-		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+		try (HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()) {
 
-		HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create(String.format("%s/solr/%s/schema", getSolrUrl(turSEInstance), coreName)))
-				.POST(BodyPublishers.ofString(String.format(json, fieldName)))
-				.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
+			HttpRequest request = HttpRequest.newBuilder()
+					.uri(URI.create(String.format("%s/solr/%s/schema", getSolrUrl(turSEInstance), coreName)))
+					.POST(BodyPublishers.ofString(String.format(json, fieldName)))
+					.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
 
-		try {
-			client.send(request, HttpResponse.BodyHandlers.ofString());
-		} catch (IOException | InterruptedException e) {
-			log.error(e.getMessage(), e);
+			try {
+				client.send(request, HttpResponse.BodyHandlers.ofString());
+			} catch (IOException | InterruptedException e) {
+				log.error(e.getMessage(), e);
+			}
 		}
 	}
 
@@ -135,47 +138,50 @@ public class TurSolrUtils {
 				    ]
 				}
 				""";
-		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+		try (HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()) {
 
-		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(String.format("%s/api/cores", solrUrl)))
-				.POST(BodyPublishers.ofString(String.format(json, coreName, coreName, configSet)))
-				.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
+			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(String.format("%s/api/cores", solrUrl)))
+					.POST(BodyPublishers.ofString(String.format(json, coreName, coreName, configSet)))
+					.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
 
-		try {
-			client.send(request, HttpResponse.BodyHandlers.ofString());
-		} catch (IOException | InterruptedException e) {
-			log.error(e.getMessage(), e);
+			try {
+				client.send(request, HttpResponse.BodyHandlers.ofString());
+			} catch (IOException | InterruptedException e) {
+				log.error(e.getMessage(), e);
+			}
 		}
 	}
 	public static void createCollection(String solrUrl, String coreName, InputStream inputStream) {
-		HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
-
-		try {
-			HttpRequest configSetRequest = HttpRequest.newBuilder().uri(URI.create(String.format("%s/api/cluster/configs/%s", solrUrl, coreName)))
-					.PUT(BodyPublishers.ofByteArray(IOUtils.toByteArray(inputStream)))
-					.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE).build();
-			client.send(configSetRequest, HttpResponse.BodyHandlers.ofString());
-		} catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        String json = """
-					{
-				 	"name": "%s",
-				 	"config": "%s",
-				 	"numShards": 1
-				 	}
-				""";
+		try (HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()) {
+			try {
+				HttpRequest configSetRequest = HttpRequest.newBuilder().uri(
+								URI.create(String.format("%s/api/cluster/configs/%s", solrUrl, coreName)))
+						.PUT(BodyPublishers.ofByteArray(IOUtils.toByteArray(inputStream)))
+						.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE).build();
+				client.send(configSetRequest, HttpResponse.BodyHandlers.ofString());
+			} catch (IOException | InterruptedException e) {
+				throw new RuntimeException(e);
+			}
 
 
-		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(String.format("%s/api/collections", solrUrl)))
-				.POST(BodyPublishers.ofString(String.format(json, coreName, coreName)))
-				.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
+			String json = """
+						{
+					 	"name": "%s",
+					 	"config": "%s",
+					 	"numShards": 1
+					 	}
+					""";
 
-		try {
-			client.send(request, HttpResponse.BodyHandlers.ofString());
-		} catch (IOException | InterruptedException e) {
-			log.error(e.getMessage(), e);
+
+			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(String.format("%s/api/collections", solrUrl)))
+					.POST(BodyPublishers.ofString(String.format(json, coreName, coreName)))
+					.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).build();
+
+			try {
+				client.send(request, HttpResponse.BodyHandlers.ofString());
+			} catch (IOException | InterruptedException e) {
+				log.error(e.getMessage(), e);
+			}
 		}
 	}
 	public static TurSEResult createTurSEResultFromDocument(SolrDocument document) {

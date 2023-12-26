@@ -23,6 +23,7 @@ package com.viglet.turing.api.ml.data.sentence;
 
 import java.util.List;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -45,8 +46,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Machine Learning Sentence", description = "Machine Learning Sentence API")
 public class TurMLDataSentenceAPI {
 
-	@Autowired
-	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private final TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+
+	@Inject
+	public TurMLDataSentenceAPI(TurDataGroupSentenceRepository turDataGroupSentenceRepository) {
+		this.turDataGroupSentenceRepository = turDataGroupSentenceRepository;
+	}
 
 	@Operation(summary = "Machine Learning Data Sentence List")
 	@GetMapping

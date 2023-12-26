@@ -23,6 +23,7 @@ package com.viglet.turing.onstartup.nlp;
 
 import java.io.File;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,12 +42,18 @@ import com.viglet.turing.plugins.nlp.gcp.response.TurNLPGCPEntityTypeResponse;
 @Component
 @Transactional
 public class TurNLPVendorEntityOnStartup {
-	@Autowired
-	private TurNLPEntityRepository turNLPEntityRepository;
-	@Autowired
-	private TurNLPVendorRepository turNLPVendorRepository;
-	@Autowired
-	private TurNLPVendorEntityRepository turNLPVendorEntityRepository;
+	private final TurNLPEntityRepository turNLPEntityRepository;
+	private final TurNLPVendorRepository turNLPVendorRepository;
+	private final TurNLPVendorEntityRepository turNLPVendorEntityRepository;
+
+	@Inject
+	public TurNLPVendorEntityOnStartup(TurNLPEntityRepository turNLPEntityRepository,
+									   TurNLPVendorRepository turNLPVendorRepository,
+									   TurNLPVendorEntityRepository turNLPVendorEntityRepository) {
+		this.turNLPEntityRepository = turNLPEntityRepository;
+		this.turNLPVendorRepository = turNLPVendorRepository;
+		this.turNLPVendorEntityRepository = turNLPVendorEntityRepository;
+	}
 
 	public void createDefaultRows() {
 		if (turNLPVendorEntityRepository.findAll().isEmpty()) {

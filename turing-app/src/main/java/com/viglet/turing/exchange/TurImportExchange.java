@@ -39,6 +39,7 @@ package com.viglet.turing.exchange;
  */
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
 import com.viglet.turing.utils.TurUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -57,9 +58,14 @@ import java.util.Objects;
 @Component
 public class TurImportExchange {
 
-	@Autowired
-	private TurSNSiteImport turSNSiteImport;
+	private final TurSNSiteImport turSNSiteImport;
 	private static final String EXPORT_FILE = "export.json";
+
+	@Inject
+	public TurImportExchange(TurSNSiteImport turSNSiteImport) {
+		this.turSNSiteImport = turSNSiteImport;
+	}
+
 	public TurExchange importFromMultipartFile(MultipartFile multipartFile) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		File parentExtractFolder = null;

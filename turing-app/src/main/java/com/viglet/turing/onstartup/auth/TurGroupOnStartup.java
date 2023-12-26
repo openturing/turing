@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup.auth;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.auth.TurRole;
 import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,10 +36,16 @@ import java.util.Set;
 
 @Component
 public class TurGroupOnStartup {
-	@Autowired
-	private TurGroupRepository turGroupRepository;
-	@Autowired
-	private TurRoleRepository turRoleRepository;
+	private final TurGroupRepository turGroupRepository;
+
+	private final TurRoleRepository turRoleRepository;
+
+	@Inject
+	public TurGroupOnStartup(TurGroupRepository turGroupRepository, TurRoleRepository turRoleRepository) {
+		this.turGroupRepository = turGroupRepository;
+		this.turRoleRepository = turRoleRepository;
+	}
+
 	public void createDefaultRows() {
 
 		if (turGroupRepository.findAll().isEmpty()) {

@@ -134,13 +134,12 @@ public class TurSNProxyContext {
 	}
 
 	private String getResults(URIBuilder url) {
-		String result = StringUtils.EMPTY;
 		try (CloseableHttpClient client = HttpClients.createDefault()) {
-			result = EntityUtils.toString(client.execute(new HttpGet(url.build().toString())).getEntity(),
+			return EntityUtils.toString(client.execute(new HttpGet(url.build().toString())).getEntity(),
 					StandardCharsets.UTF_8);
 		} catch (IOException | ParseException | URISyntaxException e) {
 			logger.error(e.getMessage(), e);
 		}
-		return result;
+		return StringUtils.EMPTY;
 	}
 }

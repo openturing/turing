@@ -22,6 +22,7 @@ package com.viglet.turing.converse.exchange;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.viglet.turing.converse.exchange.agent.TurConverseAgentExchange;
 import com.viglet.turing.converse.exchange.entity.TurConverseEntityEntriesExchange;
 import com.viglet.turing.converse.exchange.entity.TurConverseEntityExchange;
@@ -53,16 +54,24 @@ import java.util.Objects;
 @Component
 public class TurConverseImportExchange {
 	private static final String AGENT_FILE = "agent.json";
-	@Autowired
-	private TurConverseAgentRepository turConverseAgentRepository;
-	@Autowired
-	private TurConverseIntentRepository turConverseIntentRepository;
-	@Autowired
-	private TurConversePhraseRepository turConversePhraseRepository;
-	@Autowired
-	private TurConverseResponseRepository turConverseResponseRepository;
-	@Autowired
-	private TurSEInstanceRepository turSEInstanceRepository;
+	private final TurConverseAgentRepository turConverseAgentRepository;
+	private final TurConverseIntentRepository turConverseIntentRepository;
+	private final TurConversePhraseRepository turConversePhraseRepository;
+	private final TurConverseResponseRepository turConverseResponseRepository;
+	private final TurSEInstanceRepository turSEInstanceRepository;
+
+	@Inject
+	public TurConverseImportExchange(TurConverseAgentRepository turConverseAgentRepository,
+									 TurConverseIntentRepository turConverseIntentRepository,
+									 TurConversePhraseRepository turConversePhraseRepository,
+									 TurConverseResponseRepository turConverseResponseRepository,
+									 TurSEInstanceRepository turSEInstanceRepository) {
+		this.turConverseAgentRepository = turConverseAgentRepository;
+		this.turConverseIntentRepository = turConverseIntentRepository;
+		this.turConversePhraseRepository = turConversePhraseRepository;
+		this.turConverseResponseRepository = turConverseResponseRepository;
+		this.turSEInstanceRepository = turSEInstanceRepository;
+	}
 
 	public TurConverseAgentExchange importFromMultipartFile(@Nonnull MultipartFile multipartFile) {
 		File extractFolder = this.extractZipFile(multipartFile);

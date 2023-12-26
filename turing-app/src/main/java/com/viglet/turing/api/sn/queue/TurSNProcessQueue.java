@@ -21,6 +21,7 @@
 
 package com.viglet.turing.api.sn.queue;
 
+import com.google.inject.Inject;
 import com.viglet.turing.api.sn.job.TurSNJob;
 import com.viglet.turing.api.sn.job.TurSNJobAction;
 import com.viglet.turing.api.sn.job.TurSNJobItem;
@@ -47,20 +48,30 @@ import java.util.Map.Entry;
 @Component
 public class TurSNProcessQueue {
     private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
-    @Autowired
     private TurSolr turSolr;
-    @Autowired
     private TurSNSiteRepository turSNSiteRepository;
-    @Autowired
     private TurSolrInstanceProcess turSolrInstanceProcess;
-    @Autowired
     private TurSNMergeProvidersProcess turSNMergeProvidersProcess;
-    @Autowired
     private TurSNSpotlightProcess turSNSpotlightProcess;
-    @Autowired
     private TurSNNLPProcess turSNNLPProcess;
-    @Autowired
+
     private TurSNThesaurusProcess turSNThesaurusProcess;
+
+    @Inject
+    public TurSNProcessQueue(TurSolr turSolr, TurSNSiteRepository turSNSiteRepository,
+                             TurSolrInstanceProcess turSolrInstanceProcess,
+                             TurSNMergeProvidersProcess turSNMergeProvidersProcess,
+                             TurSNSpotlightProcess turSNSpotlightProcess,
+                             TurSNNLPProcess turSNNLPProcess,
+                             TurSNThesaurusProcess turSNThesaurusProcess) {
+        this.turSolr = turSolr;
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSolrInstanceProcess = turSolrInstanceProcess;
+        this.turSNMergeProvidersProcess = turSNMergeProvidersProcess;
+        this.turSNSpotlightProcess = turSNSpotlightProcess;
+        this.turSNNLPProcess = turSNNLPProcess;
+        this.turSNThesaurusProcess = turSNThesaurusProcess;
+    }
 
     public TurSNProcessQueue() {
         // Empty

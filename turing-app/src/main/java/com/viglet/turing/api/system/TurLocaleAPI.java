@@ -23,6 +23,7 @@ package com.viglet.turing.api.system;
 
 import java.util.List;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,9 +45,12 @@ import io.swagger.v3.oas.annotations.Operation;
 @RequestMapping("/api/locale")
 @Tag(name = "Locale", description = "Locale API")
 public class TurLocaleAPI {
+	private final TurLocaleRepository turLocaleRepository;
 
-	@Autowired
-	private TurLocaleRepository turLocaleRepository;
+	@Inject
+	public TurLocaleAPI(TurLocaleRepository turLocaleRepository) {
+		this.turLocaleRepository = turLocaleRepository;
+	}
 
 	@Operation(summary = "Locale List")
 	@GetMapping

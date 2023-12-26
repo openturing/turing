@@ -21,6 +21,7 @@
 
 package com.viglet.turing.thesaurus;
 
+import com.google.inject.Inject;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.nlp.*;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
@@ -44,8 +45,12 @@ import java.util.Map.Entry;
 @Transactional
 public class TurThesaurusProcessor {
 
-	@Autowired
-	private TurTermVariationRepository turTermVariationRepository;
+	private final TurTermVariationRepository turTermVariationRepository;
+
+	@Inject
+	public TurThesaurusProcessor(TurTermVariationRepository turTermVariationRepository) {
+		this.turTermVariationRepository = turTermVariationRepository;
+	}
 
 	private final Map<String, TurTermVariation> terms = new LinkedHashMap<>();
 

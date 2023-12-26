@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.api.sn.search;
 
+import com.google.inject.Inject;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -44,10 +45,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/sn/{siteName}/{locale}/spell-check")
 @Tag(name = "Semantic Navigation Spell Check", description = "Semantic Navigation Spell Check API")
 public class TurSNSiteSpellCheckAPI {
-    @Autowired
-    private TurSolr turSolr;
-    @Autowired
-    private TurSolrInstanceProcess turSolrInstanceProcess;
+    private final TurSolr turSolr;
+
+    private final TurSolrInstanceProcess turSolrInstanceProcess;
+
+    @Inject
+    public TurSNSiteSpellCheckAPI(TurSolr turSolr, TurSolrInstanceProcess turSolrInstanceProcess) {
+        this.turSolr = turSolr;
+        this.turSolrInstanceProcess = turSolrInstanceProcess;
+    }
 
     @GetMapping
     public TurSNSiteSpellCheckBean turSNSiteSpellCheck(@PathVariable String siteName, @PathVariable String locale,

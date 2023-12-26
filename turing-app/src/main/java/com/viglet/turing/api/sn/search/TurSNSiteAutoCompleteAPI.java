@@ -21,6 +21,7 @@
 
 package com.viglet.turing.api.sn.search;
 
+import com.google.inject.Inject;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.sn.ac.TurSNAutoComplete;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,8 +34,13 @@ import java.util.List;
 @RequestMapping("/api/sn/{siteName}/ac")
 @Tag(name = "Semantic Navigation Auto Complete", description = "Semantic Navigation Auto Complete API")
 public class TurSNSiteAutoCompleteAPI {
-	@Autowired
-	private TurSNAutoComplete turSNAutoComplete;
+
+	private final TurSNAutoComplete turSNAutoComplete;
+
+	@Inject
+	public TurSNSiteAutoCompleteAPI(TurSNAutoComplete turSNAutoComplete) {
+		this.turSNAutoComplete = turSNAutoComplete;
+	}
 
 	@GetMapping
 	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,

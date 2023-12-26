@@ -23,6 +23,7 @@ package com.viglet.turing.nlp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.CharStreams;
+import com.google.inject.Inject;
 import com.viglet.turing.api.nlp.bean.TurNLPValidateEntity;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBean;
 import com.viglet.turing.nlp.bean.TurNLPTrainingBeans;
@@ -53,15 +54,22 @@ import java.util.Map.Entry;
 @Component
 public class TurNLPProcess {
 	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
-	@Autowired
-	private TurNLPInstanceRepository turNLPInstanceRepository;
-	@Autowired
-	private TurNLPVendorEntityRepository turNLPVendorEntityRepository;
-	@Autowired
-	private TurConfigVarRepository turConfigVarRepository;
+	private final TurNLPInstanceRepository turNLPInstanceRepository;
+	private final TurNLPVendorEntityRepository turNLPVendorEntityRepository;
+	private final TurConfigVarRepository turConfigVarRepository;
 
-	@Autowired
-	private ServletContext context;
+	private final ServletContext context;
+
+	@Inject
+	public TurNLPProcess(TurNLPInstanceRepository turNLPInstanceRepository,
+						 TurNLPVendorEntityRepository turNLPVendorEntityRepository,
+						 TurConfigVarRepository turConfigVarRepository,
+						 ServletContext context) {
+		this.turNLPInstanceRepository = turNLPInstanceRepository;
+		this.turNLPVendorEntityRepository = turNLPVendorEntityRepository;
+		this.turConfigVarRepository = turConfigVarRepository;
+		this.context = context;
+	}
 
 	public TurNLPInstance getDefaultNLPInstance() {
 		return init().map(TurNLPRequest::getTurNLPInstance).orElse(null);

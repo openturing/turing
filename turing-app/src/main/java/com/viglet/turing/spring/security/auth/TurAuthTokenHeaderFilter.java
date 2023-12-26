@@ -1,5 +1,6 @@
 package com.viglet.turing.spring.security.auth;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
 import com.viglet.turing.persistence.repository.dev.token.TurDevTokenRepository;
@@ -21,10 +22,15 @@ import java.util.Collections;
 @Component
 public class TurAuthTokenHeaderFilter extends OncePerRequestFilter {
     public static final String KEY = "Key";
-    @Autowired
-    private TurUserRepository turUserRepository;
-    @Autowired
-    private TurDevTokenRepository turDevTokenRepository;
+
+    private final TurUserRepository turUserRepository;
+    private final TurDevTokenRepository turDevTokenRepository;
+
+    @Inject
+    public TurAuthTokenHeaderFilter(TurUserRepository turUserRepository, TurDevTokenRepository turDevTokenRepository) {
+        this.turUserRepository = turUserRepository;
+        this.turDevTokenRepository = turDevTokenRepository;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NotNull HttpServletResponse response,

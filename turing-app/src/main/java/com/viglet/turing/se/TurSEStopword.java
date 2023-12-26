@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.se;
 
+import com.google.inject.Inject;
 import com.viglet.turing.solr.TurSolrInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -46,8 +47,13 @@ import java.util.*;
 @Component
 public class TurSEStopword {
 
-	@Autowired
-	private ResourceLoader resourceloader;
+	private final ResourceLoader resourceloader;
+
+	@Inject
+	public TurSEStopword(ResourceLoader resourceloader) {
+		this.resourceloader = resourceloader;
+	}
+
 	private static final String TEXT_GENERAL = "text_general";
 	private static final String CLASS_FILTER = "class";
 	private static final String STOPWORD_CLASS_FILTER = "solr.StopFilterFactory";

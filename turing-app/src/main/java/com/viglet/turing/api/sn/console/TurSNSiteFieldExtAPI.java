@@ -312,9 +312,9 @@ public class TurSNSiteFieldExtAPI {
 	@GetMapping("/create")
 	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String ignoredSnSiteId, @PathVariable String locale) {
 		return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
-			List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository
+			List<TurSNSiteFieldExt> turSNSiteFieldExtList = turSNSiteFieldExtRepository
 					.findByTurSNSiteAndEnabled(turSNSite, 1);
-			turSNSiteFieldExts.forEach(turSNSiteFieldExt -> this.createField(turSNSite, locale, turSNSiteFieldExt));
+			turSNSiteFieldExtList.forEach(turSNSiteFieldExt -> this.createField(turSNSite, locale, turSNSiteFieldExt));
 			return this.turSNSiteRepository.findAll();
 		}).orElse(new ArrayList<>());
 	}
