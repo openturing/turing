@@ -53,7 +53,6 @@ import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.solr.TurSolrUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 
@@ -184,24 +183,21 @@ public class TurSNTemplate {
 		return coreName;
 	}
 
-	public void createNERFields(TurSNSite turSNSite) {
-		TurSNSiteFieldExt turSNSiteFieldExt;
+	private void createNERFields(TurSNSite turSNSite) {
 		TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName("PN");
-		turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turNLPEntity.getInternalName());
-		turSNSiteFieldExt.setDescription(turNLPEntity.getDescription());
-		turSNSiteFieldExt.setFacet(1);
-		turSNSiteFieldExt.setFacetName("People");
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(1);
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turNLPEntity.getInternalName());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.NER);
-		turSNSiteFieldExt.setType(TurSEFieldType.STRING);
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
+		turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
+				.enabled(1)
+				.name(turNLPEntity.getInternalName())
+				.description(turNLPEntity.getDescription())
+				.facet(1)
+				.facetName("People")
+				.hl(0)
+				.multiValued(1)
+				.mlt(0)
+				.externalId(turNLPEntity.getInternalName())
+				.snType(TurSNFieldType.NER)
+				.type(TurSEFieldType.STRING)
+				.turSNSite(turSNSite).build());
 	}
 
 	private void createSNSiteField(TurSNSite turSNSite, String name, String description, TurSEFieldType type,
@@ -214,22 +210,19 @@ public class TurSNTemplate {
 		turSNSiteField.setTurSNSite(turSNSite);
 
 		turSNSiteFieldRepository.save(turSNSiteField);
-
-		TurSNSiteFieldExt turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(1);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName(facetName);
-		turSNSiteFieldExt.setHl(hl);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
+		turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
+				.enabled(1)
+				.name(turSNSiteField.getName())
+				.description(turSNSiteField.getDescription())
+				.facet(0)
+				.facetName(facetName)
+				.hl(hl)
+				.multiValued(turSNSiteField.getMultiValued())
+				.mlt(0)
+				.externalId(turSNSiteField.getId())
+				.snType(TurSNFieldType.SE)
+				.type(turSNSiteField.getType())
+				.turSNSite(turSNSite).build());
 	}
 
 	public void createSEFields(TurSNSite turSNSite) {
@@ -249,7 +242,7 @@ public class TurSNTemplate {
 		createSNSiteField(turSNSite, "source_apps", "Source Apps", TurSEFieldType.STRING, 1, "Source Apps", 0);
 	}
 
-	public void createSpotlight(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
+	private void createSpotlight(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
 		TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
 		turSNSiteSpotlight.setDescription("Spotlight Sample");
 		turSNSiteSpotlight.setName("Spotlight Sample");
@@ -284,7 +277,7 @@ public class TurSNTemplate {
 
 		TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
 		turSNSiteLocale.setLanguage(locale.toString());
-		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
+		turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().getFirst());
 		turSNSiteLocale.setTurSNSite(turSNSite);
 		turSNSiteLocale.setCore(createSolrCore(turSNSiteLocale, username));
 
@@ -318,7 +311,7 @@ public class TurSNTemplate {
 
 	}
 
-	public void createMergeProviders(TurSNSite turSNSite) {
+	private void createMergeProviders(TurSNSite turSNSite) {
 
 		TurSNSiteMergeProviders turSNSiteMerge = new TurSNSiteMergeProviders();
 		turSNSiteMerge.setTurSNSite(turSNSite);

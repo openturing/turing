@@ -185,7 +185,7 @@ public class TurSolrUtils {
 		}
 	}
 	public static TurSEResult createTurSEResultFromDocument(SolrDocument document) {
-		TurSEResult turSEResult = new TurSEResult();
+		TurSEResult turSEResult = TurSEResult.builder().build();
 		document.getFieldNames()
 				.forEach(attribute -> turSEResult.getFields().put(attribute, document.getFieldValue(attribute)));
 		return turSEResult;

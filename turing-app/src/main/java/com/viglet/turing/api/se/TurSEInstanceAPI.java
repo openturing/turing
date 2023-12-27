@@ -114,7 +114,8 @@ public class TurSEInstanceAPI {
 	public ResponseEntity<TurSEResults> turSEInstanceSelect(@RequestParam(required = false, name = TurSNParamType.QUERY) String q,
 															@RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
 															@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
-															@RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "AND") TurSNFilterQueryOperator fqOperator,
+															@RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "NONE")
+																TurSNFilterQueryOperator fqOperator,
 															@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
 															@RequestParam(required = false, name = TurSNParamType.ROWS) Integer rows,
 															@RequestParam(required = false, name = TurSNParamType.GROUP) String group) {

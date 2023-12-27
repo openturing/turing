@@ -14,15 +14,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
 public class TurAEMAttrXML {
     public static final String JCR_TITLE = "jcr:title";
     public static final String HTML = "html";
+    public static final String CQ_TAGS = "cq:tags";
 
     private TurAEMAttrXML() {
         throw new IllegalStateException("TurAEMAttrXML");
@@ -60,26 +58,7 @@ public class TurAEMAttrXML {
             AemObject aemObject = (AemObject) turAttrDefContext.getCMSObjectInstance();
             if (aemObject.getJcrContentNode().has(attributeName)) {
                 jcrProperty = aemObject.getJcrContentNode().get(attributeName);
-                if ("cq:tags".equals(attributeName)) {
-                    JSONArray tags = (JSONArray) jcrProperty;
-                    if (tags != null) {
-                        tags.forEach(tag -> {
-                            String[] tagSplit = tag.toString().split(":");
-                            if (tagSplit.length >= 2) {
-                                JSONObject infinityJson = TurAemUtils
-                                        .getInfinityJson("/content/_cq_tags/" + String.join("/", tagSplit),
-                                                turAEMIndexerTool.getHostAndPort(),
-                                                turAEMIndexerTool.getUsername(),
-                                                turAEMIndexerTool.getPassword());
-                                turAttrDefList.add(new TurAttrDef(tagSplit[0],
-                                        TurMultiValue.singleItem(infinityJson.has(JCR_TITLE) ?
-                                                infinityJson.getString(JCR_TITLE) :
-                                                tagSplit[1])
-                                ));
-                            }
-                        });
-                    }
-                }
+                generateNewAttributesFromCqTags(turAEMIndexerTool, attributeName, jcrProperty, turAttrDefList);
             } else if (aemObject.getAttributes().containsKey(attributeName))
                 jcrProperty = aemObject.getAttributes().get(attributeName);
         }
@@ -88,6 +67,32 @@ public class TurAEMAttrXML {
             return turAttrDefList;
         }
         return Collections.emptyList();
+    }
+
+    private static void generateNewAttributesFromCqTags(TurAEMIndexerTool turAEMIndexerTool,
+                                                        String attributeName,
+                                                        Object jcrProperty,
+                                                        List<TurAttrDef> turAttrDefList) {
+        if (CQ_TAGS.equals(attributeName)) {
+            Optional.ofNullable((JSONArray) jcrProperty).ifPresent(property ->
+                    property.forEach(tag -> {
+                        String[] tagSplit = tag.toString().split(":");
+                        if (tagSplit.length >= 2) {
+                            JSONObject infinityJson = TurAemUtils
+                                    .getInfinityJson("/content/_cq_tags/" + String.join("/", tagSplit),
+                                            turAEMIndexerTool.getHostAndPort(),
+                                            turAEMIndexerTool.getUsername(),
+                                            turAEMIndexerTool.getPassword());
+                            Optional.ofNullable(tagSplit[1]).ifPresent(value ->
+                                    turAttrDefList.add(new TurAttrDef(tagSplit[0],
+                                            TurMultiValue.singleItem(infinityJson.has(JCR_TITLE) ?
+                                                    infinityJson.getString(JCR_TITLE) :
+                                                    value)
+                                    )));
+                        }
+                    })
+            );
+        }
     }
 
     private static List<TurAttrDef> addValuesToAttributes(TuringTag turingTag, Object jcrProperty) {

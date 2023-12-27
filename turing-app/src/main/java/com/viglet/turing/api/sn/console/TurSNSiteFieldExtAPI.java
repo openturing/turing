@@ -172,47 +172,42 @@ public class TurSNSiteFieldExtAPI {
 	}
 
 	private TurSNSiteFieldExt saveSNSiteFieldExt(TurSNSite turSNSite, TurSNSiteField turSNSiteField) {
-		TurSNSiteFieldExt turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(0);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName(turSNSiteField.getName());
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-		return turSNSiteFieldExt;
+		return turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
+				.enabled(0)
+				.name(turSNSiteField.getName())
+				.description(turSNSiteField.getDescription())
+				.facet(0)
+				.facetName(turSNSiteField.getName())
+				.hl(0)
+				.multiValued(turSNSiteField.getMultiValued())
+				.mlt(0)
+				.externalId(turSNSiteField.getId())
+				.snType(TurSNFieldType.SE)
+				.type(turSNSiteField.getType())
+				.turSNSite(turSNSite).build());
 	}
 
 	private void addTurSNSiteFieldExt(TurSNFieldType turSNFieldType, TurSNSite turSNSite,
 			List<TurSNSiteFieldExt> turSNSiteFieldExts, TurNLPEntity turNLPEntity) {
-		TurSNSiteFieldExt turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(0);
-		turSNSiteFieldExt.setName(turNLPEntity.getInternalName());
-		turSNSiteFieldExt.setDescription(turNLPEntity.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName(turNLPEntity.getName());
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(1);
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turNLPEntity.getInternalName());
-		turSNSiteFieldExt.setSnType(turSNFieldType);
-		turSNSiteFieldExt.setType(TurSEFieldType.STRING);
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-		turSNSiteFieldExts.add(turSNSiteFieldExt);
+		turSNSiteFieldExts.add(turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
+				.enabled(0)
+				.name(turNLPEntity.getInternalName())
+				.description(turNLPEntity.getDescription())
+				.facet(0)
+				.facetName(turNLPEntity.getName())
+				.hl(0)
+				.multiValued(1)
+				.mlt(0)
+				.externalId(turNLPEntity.getInternalName())
+				.snType(turSNFieldType)
+				.type(TurSEFieldType.STRING)
+				.turSNSite(turSNSite).build()));
 	}
 
 	@Operation(summary = "Show a Semantic Navigation Site Field Ext")
 	@GetMapping("/{id}")
 	public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable String ignoredSnSiteId, @PathVariable String id) {
-		return turSNSiteFieldExtRepository.findById(id).orElse(new TurSNSiteFieldExt());
+		return turSNSiteFieldExtRepository.findById(id).orElse(TurSNSiteFieldExt.builder().build());
 	}
 
 	@Operation(summary = "Update a Semantic Navigation Site Field Ext")
@@ -238,7 +233,7 @@ public class TurSNSiteFieldExtAPI {
 
 			this.updateExternalField(turSNSiteFieldExt);
 			return turSNSiteFieldExtEdit;
-		}).orElse(new TurSNSiteFieldExt());
+		}).orElse(TurSNSiteFieldExt.builder().build());
 
 	}
 
@@ -280,7 +275,7 @@ public class TurSNSiteFieldExtAPI {
 
 			return turSNSiteFieldExt;
 
-		}).orElse(new TurSNSiteFieldExt());
+		}).orElse(TurSNSiteFieldExt.builder().build());
 
 	}
 

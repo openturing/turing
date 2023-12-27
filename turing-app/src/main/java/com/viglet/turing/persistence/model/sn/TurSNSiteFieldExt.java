@@ -25,8 +25,11 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 import jakarta.persistence.*;
+import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Tolerate;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -36,8 +39,9 @@ import java.io.Serializable;
  * The persistent class for the turSNSiteFieldExt database table.
  * 
  */
-@Getter
-@Setter
+
+@Builder
+@Data
 @Entity
 @Table(name = "turSNSiteFieldExt")
 @NamedQuery(name = "TurSNSiteFieldExt.findAll", query = "SELECT snsfe FROM TurSNSiteFieldExt snsfe")
@@ -97,4 +101,7 @@ public class TurSNSiteFieldExt implements Serializable {
 	@JoinColumn(name = "sn_site_id", nullable = false)
 	@JsonBackReference (value="turSNSiteFieldExt-turSNSite")
 	private TurSNSite turSNSite;
+
+	@Tolerate
+	TurSNSiteFieldExt() {}
 }

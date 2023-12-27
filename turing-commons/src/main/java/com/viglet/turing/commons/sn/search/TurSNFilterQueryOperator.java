@@ -13,4 +13,10 @@ public enum TurSNFilterQueryOperator {
             return "OR";
         }
     },
+    NONE {
+        @Override
+        public String toString() {
+            return "NONE";
+        }
+    }
 }

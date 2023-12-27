@@ -37,7 +37,6 @@ import com.viglet.turing.sn.TurSNUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,10 +53,8 @@ import java.util.Optional;
 @RequestMapping("/api/sn/{siteName}/search")
 @Tag(name = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
-
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurSNSiteRepository turSNSiteRepository;
-
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     @Inject
     public TurSNSiteSearchAPI(TurSNSearchProcess turSNSearchProcess,
@@ -73,7 +70,7 @@ public class TurSNSiteSearchAPI {
                                                                         @RequestParam(required = false, name = TurSNParamType.QUERY) String q,
                                                                         @RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
                                                                         @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
-                                                                        @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "AND")
+                                                                        @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "NONE")
                                                                         TurSNFilterQueryOperator fqOperator,
                                                                         @RequestParam(required = false, name = TurSNParamType.SORT) String sort,
                                                                         @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
@@ -100,7 +97,7 @@ public class TurSNSiteSearchAPI {
                                                                          @RequestParam(required = false, name = TurSNParamType.QUERY) String q,
                                                                          @RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
                                                                          @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
-                                                                         @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "AND")
+                                                                         @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "NONE")
                                                                          TurSNFilterQueryOperator fqOperator,
                                                                          @RequestParam(required = false, name = TurSNParamType.SORT) String sort,
                                                                          @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,

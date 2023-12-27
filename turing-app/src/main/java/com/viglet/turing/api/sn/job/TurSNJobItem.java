@@ -22,39 +22,28 @@
 package com.viglet.turing.api.sn.job;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.stereotype.Component;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 @Getter
+@Setter
 @Component
 public class TurSNJobItem implements Serializable{
-
 	@Serial
 	private static final long serialVersionUID = 1L;
-	
 	private String locale;
-	
 	private TurSNJobAction turSNJobAction;
-	
+	private List<TurSNJobSpecAttribute> specs;
 	private Map<String, Object> attributes;
 
-	public void setLocale(String locale) {
-		this.locale = locale;
-	}
-
-	public void setAttributes(Map<String, Object> attributes) {
-		this.attributes = attributes;
-	}
-
-	public void setTurSNJobAction(TurSNJobAction turSNJobAction) {
-		this.turSNJobAction = turSNJobAction;
-	}
-
 	public String toString() {
-		return String.format("locale: %s, action: %s, attributes %s", this.getLocale(), this.getTurSNJobAction(), this.getAttributes().toString());
+		return String.format("locale: %s, action: %s, attributes %s", this.getLocale(), this.getTurSNJobAction(),
+				this.getAttributes().toString());
 	}
 
 }

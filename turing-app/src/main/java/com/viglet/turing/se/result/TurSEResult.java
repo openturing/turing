@@ -20,19 +20,17 @@
  */
 package com.viglet.turing.se.result;
 
-import lombok.Getter;
+import lombok.*;
+import lombok.experimental.Tolerate;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@Getter
+@Builder
+@Data
 public class TurSEResult {
+	private Map<String, Object> fields;
 
-	private Map<String, Object> fields = new HashMap<>();
-
-	public void setFields(Map<String, Object> fields) {
-		this.fields = fields;
-	}
-
-	
+	@Tolerate
+	TurSEResult() {}
 }

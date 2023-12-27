@@ -242,7 +242,6 @@ public class TurSNSpotlightProcess {
 						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,
 								turSNSiteSearchDocumentsBean, turSEResult, true, currentPositionFromList);
 					} else {
-						turSEResult = new TurSEResult();
 						Map<String, Object> fields = new HashMap<>();
 						fields.put("id", document.getId());
 						fields.put(turSNSite.getDefaultDescriptionField(), document.getContent());
@@ -250,9 +249,9 @@ public class TurSNSpotlightProcess {
 						fields.put("referenceId", document.getReferenceId());
 						fields.put(turSNSite.getDefaultTitleField(), document.getTitle());
 						fields.put("type", document.getType());
-						turSEResult.setFields(fields);
 						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,
-								turSNSiteSearchDocumentsBean, turSEResult, true, currentPositionFromList);
+								turSNSiteSearchDocumentsBean, TurSEResult.builder().fields(fields).build(),
+								true, currentPositionFromList);
 					}
 
 				}
