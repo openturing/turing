@@ -198,7 +198,7 @@ Bundle-DocURL:
                         <dependency>
                             <groupId>org.apache.sling</groupId>
                             <artifactId>scriptingbundle-maven-plugin</artifactId>
-                            <version>0.5.0</version>
+                            <version>0.5.2</version>
                         </dependency>
                     </dependencies>
                 </plugin>
