@@ -18,30 +18,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.viglet.turing.api.sn.job;
+package com.viglet.turing.connector.cms.beans;
 
-import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
+import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
+import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.stereotype.Component;
 
-import java.io.Serial;
-import java.io.Serializable;
-
-@Setter
 @Getter
-@Component
-public class TurSNJob implements Serializable {
+@Setter
+public class TurCmsContext {
+	private Object cmsObjectInstance;
+	private TurCmsTargetAttr turCmsTargetAttr;
+	private TurCmsSourceAttr turCmsSourceAttr;
+	private IHandlerConfiguration configuration;
 
-	@Serial
-	private static final long serialVersionUID = 1L;
-
-	private String siteId;
-
-	private TurSNJobItems turSNJobItems;
-
-	public String toString() {
-		return String.format("siteId: %s, turSNJobItems: %s", this.getSiteId(), this.getTurSNJobItems());
+	public TurCmsContext(Object cmsObjectInstance, TurCmsTargetAttr turCmsTargetAttr,
+						 TurCmsSourceAttr turCmsSourceAttr, IHandlerConfiguration configuration) {
+		this.cmsObjectInstance = cmsObjectInstance;
+		this.turCmsTargetAttr = turCmsTargetAttr;
+		this.turCmsSourceAttr = turCmsSourceAttr;
+		this.configuration = configuration;
 	}
-
 }

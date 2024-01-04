@@ -145,9 +145,9 @@ public class TurFSImportTool {
 
     private void processFile(File file) throws IOException {
         TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE);
-        Map<String, Object> attributes = new HashMap<String, Object>();
+        Map<String, Object> attributes = new HashMap<>();
 
-        List<String> webImagesExtensions = new ArrayList<String>(
+        List<String> webImagesExtensions = new ArrayList<>(
                 Arrays.asList("pnm", "png", "jpg", "jpeg", "gif"));
         String extension = FilenameUtils.getExtension(file.getAbsolutePath()).toLowerCase();
         if (!extension.equals("ds_store")) {

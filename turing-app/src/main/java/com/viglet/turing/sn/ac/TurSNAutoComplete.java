@@ -27,12 +27,12 @@ import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 @Slf4j
 @Component
@@ -52,7 +52,7 @@ public class TurSNAutoComplete {
 		this.turSolrInstanceProcess = turSolrInstanceProcess;
 	}
 
-	public List<String> autoComplete(String siteName, String q, String locale, long rows) {
+	public List<String> autoComplete(String siteName, String q, Locale locale, long rows) {
 	
 		if (q.length() > 1) {
 			return turSolrInstanceProcess.initSolrInstance(siteName, locale).map(instance -> {
@@ -87,7 +87,7 @@ public class TurSNAutoComplete {
 			int numberOfWordsFromQuery) {
 		List<String> autoCompleteListFormatted = new ArrayList<>();
 		if (hasSuggestions(turSEResults)) {
-			List<String> autoCompleteList = turSEResults.getSuggestions().get(0).getAlternatives();
+			List<String> autoCompleteList = turSEResults.getSuggestions().getFirst().getAlternatives();
 			TurSNAutoCompleteListData autoCompleteListData = new TurSNAutoCompleteListData(turSEStopword.getStopWords(turSolrInstance));
 			autoCompleteList.forEach(autoCompleteItem -> processTerm(numberOfWordsFromQuery, autoCompleteListFormatted,
 					autoCompleteListData, autoCompleteItem));
@@ -135,7 +135,7 @@ public class TurSNAutoComplete {
 			List<String> resultList = autoCompleteWithoutDuplicated.stream().filter(s -> s.startsWith(term))
 					.toList();
 			if (resultList.size() == 1) {
-				autoCompleteOnlyBiggerTerms.add(resultList.get(0));
+				autoCompleteOnlyBiggerTerms.add(resultList.getFirst());
 			}
 		}
 

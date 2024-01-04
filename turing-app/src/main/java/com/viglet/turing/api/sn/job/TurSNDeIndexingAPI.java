@@ -20,28 +20,30 @@
  */
 package com.viglet.turing.api.sn.job;
 
+import com.google.inject.Inject;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.stereotype.Component;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.json.JSONException;
+import org.springframework.web.bind.annotation.*;
 
-import java.io.Serial;
-import java.io.Serializable;
-
-@Setter
-@Getter
-@Component
-public class TurSNJob implements Serializable {
-
-	@Serial
-	private static final long serialVersionUID = 1L;
-
-	private String siteId;
-
-	private TurSNJobItems turSNJobItems;
-
-	public String toString() {
-		return String.format("siteId: %s, turSNJobItems: %s", this.getSiteId(), this.getTurSNJobItems());
+@RestController
+@RequestMapping("/api/sn/{id}/deindex")
+@Tag(name = "Semantic Navigation DeIndexing", description = "Semantic Navigation DeIndexing API")
+public class TurSNDeIndexingAPI {
+	private final TurSNImportAPI turSNImportAPI;
+	@Inject
+	public TurSNDeIndexingAPI(TurSNImportAPI turSNImportAPI) {
+		this.turSNImportAPI = turSNImportAPI;
 	}
 
+	@PostMapping
+	public String turSNDesIndexingBroker(@PathVariable String id, @RequestBody TurSNJobItems turSNJobItems)
+			throws JSONException {
+		TurSNJob turSNJob = new TurSNJob();
+		turSNJob.setSiteId(id);
+		turSNJob.setTurSNJobItems(turSNJobItems);
+		turSNImportAPI.send(turSNJob);
+		return "Ok";
+
+	}
 }

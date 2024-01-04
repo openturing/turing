@@ -42,6 +42,7 @@ import java.nio.file.Files;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Alexandre Oliveira
@@ -57,6 +58,9 @@ public class TurCommonsUtils {
         throw new IllegalStateException("Utility class");
     }
 
+    public static URI addOrReplaceParameter(URI uri, String paramName, Locale locale) {
+       return addOrReplaceParameter(uri, paramName, locale.toLanguageTag());
+    }
     public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue) {
 
         List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);

@@ -20,7 +20,7 @@
  */
 package com.viglet.turing.sn;
 
-import com.viglet.turing.api.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.nlp.TurNLPResponse;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -30,7 +30,6 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.lang.invoke.MethodHandles;

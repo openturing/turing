@@ -17,11 +17,13 @@
 package com.viglet.turing.client.sn.job;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 /**
- * Job to index and deindex in Turing AI.
+ * Job to index and deIndex in Turing ES.
  * 
  * @author Alexandre Oliveira
  * 
@@ -36,12 +38,22 @@ public class TurSNJobItem implements Serializable{
 	
 	private final TurSNJobAction turSNJobAction;
 
+	private List<TurSNAttributeSpec> specs = new ArrayList<>();
 	private transient Map<String, Object> attributes;
 
-	public TurSNJobItem(TurSNJobAction turSNJobAction, Locale locale, Map<String, Object> attributes) {
+	public TurSNJobItem(TurSNJobAction turSNJobAction, Locale locale,
+						Map<String, Object> attributes) {
 		super();
 		this.locale = locale;
 		this.turSNJobAction = turSNJobAction;
+		this.attributes = attributes;
+	}
+	public TurSNJobItem(TurSNJobAction turSNJobAction, Locale locale, List<TurSNAttributeSpec> specs,
+						Map<String, Object> attributes) {
+		super();
+		this.locale = locale;
+		this.turSNJobAction = turSNJobAction;
+		this.specs = specs;
 		this.attributes = attributes;
 	}
 
@@ -69,6 +81,14 @@ public class TurSNJobItem implements Serializable{
 
 	public TurSNJobAction getTurSNJobAction() {
 		return turSNJobAction;
+	}
+
+	public List<TurSNAttributeSpec> getSpecs() {
+		return specs;
+	}
+
+	public void setSpecs(List<TurSNAttributeSpec> specs) {
+		this.specs = specs;
 	}
 
 	public String toString() {

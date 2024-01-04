@@ -42,6 +42,7 @@ import com.viglet.turing.sn.template.TurSNTemplate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.LocaleUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -305,7 +306,8 @@ public class TurSNSiteFieldExtAPI {
 	}
 
 	@GetMapping("/create")
-	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String ignoredSnSiteId, @PathVariable String locale) {
+	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String ignoredSnSiteId, @PathVariable String localeRequest) {
+		Locale locale = LocaleUtils.toLocale(localeRequest);
 		return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
 			List<TurSNSiteFieldExt> turSNSiteFieldExtList = turSNSiteFieldExtRepository
 					.findByTurSNSiteAndEnabled(turSNSite, 1);
@@ -314,26 +316,26 @@ public class TurSNSiteFieldExtAPI {
 		}).orElse(new ArrayList<>());
 	}
 
-	public void createField(TurSNSite turSNSite, String locale, TurSNSiteFieldExt turSNSiteFieldExts) {
+	public void createField(TurSNSite turSNSite, Locale locale, TurSNSiteFieldExt turSNSiteFieldExtList) {
 		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
 		JSONObject jsonAddField = new JSONObject();
 		String fieldName;
 
-		if (turSNSiteFieldExts.getSnType() == TurSNFieldType.NER) {
-			fieldName = String.format("turing_entity_%s", turSNSiteFieldExts.getName());
+		if (turSNSiteFieldExtList.getSnType() == TurSNFieldType.NER) {
+			fieldName = String.format("turing_entity_%s", turSNSiteFieldExtList.getName());
 		} else {
-			fieldName = turSNSiteFieldExts.getName();
+			fieldName = turSNSiteFieldExtList.getName();
 		}
 
 		jsonAddField.put("name", fieldName);
 
 		jsonAddField.put("indexed", true);
 		jsonAddField.put("stored", true);
-		if (turSNSiteFieldExts.getMultiValued() == 1) {
+		if (turSNSiteFieldExtList.getMultiValued() == 1) {
 			jsonAddField.put("type", "string");
 			jsonAddField.put("multiValued", true);
 		} else {
-			if (turSNSiteFieldExts.getType().equals(TurSEFieldType.DATE)) {
+			if (turSNSiteFieldExtList.getType().equals(TurSEFieldType.DATE)) {
 				jsonAddField.put("type", "pdate");
 			} else {
 				jsonAddField.put("type", "text_general");

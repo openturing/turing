@@ -33,9 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Alexandre Oliveira
@@ -46,7 +46,7 @@ import java.util.List;
 @RequestMapping("/api/sn/{ignoredSnSiteId}/locale")
 @Tag(name = "Semantic Navigation Locale", description = "Semantic Navigation Locale API")
 public class TurSNSiteLocaleAPI {
-	private static final String DEFAULT_LANGUAGE = "en_US";
+	private static final Locale DEFAULT_LANGUAGE = Locale.US;
 	private final TurSNSiteRepository turSNSiteRepository;
 	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 	private final TurSNTemplate turSNTemplate;

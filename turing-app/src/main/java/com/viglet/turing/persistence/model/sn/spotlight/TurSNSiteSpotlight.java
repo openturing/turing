@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.sn.spotlight;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -33,6 +34,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -48,33 +50,42 @@ public class TurSNSiteSpotlight implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
+    @Setter
     @Id
     @UuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 
+    @Setter
     @Column(nullable = false, length = 50)
     private String name;
 
+    @Setter
     @Column
     private String description;
 
+    @Setter
     @Temporal(TemporalType.TIMESTAMP)
     private Date modificationDate;
 
+    @Setter
     @Column
     private int managed = 1;
 
+    @Setter
     @Column
     private String unmanagedId;
 
+    @Setter
     @Column
     private String provider = "TURING";
 
+    @Setter
     @Column
-    private String language;
+    private Locale language;
 
     // bi-directional many-to-one association to TurSNSite
+    @Setter
     @ManyToOne
     @JoinColumn(name = "sn_site_id", nullable = false)
     private TurSNSite turSNSite;
@@ -90,42 +101,6 @@ public class TurSNSiteSpotlight implements Serializable {
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = new HashSet<>();
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setModificationDate(Date modificationDate) {
-        this.modificationDate = modificationDate;
-    }
-
-    public void setManaged(int managed) {
-        this.managed = managed;
-    }
-
-    public void setUnmanagedId(String unmanagedId) {
-        this.unmanagedId = unmanagedId;
-    }
-
-    public void setProvider(String provider) {
-        this.provider = provider;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
-    }
-
-    public void setTurSNSite(TurSNSite turSNSite) {
-        this.turSNSite = turSNSite;
-    }
 
     public void setTurSNSiteSpotlightTerms(Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms) {
         this.turSNSiteSpotlightTerms.clear();

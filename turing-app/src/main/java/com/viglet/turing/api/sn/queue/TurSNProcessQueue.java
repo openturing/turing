@@ -21,9 +21,8 @@
 
 package com.viglet.turing.api.sn.queue;
 
-import com.google.inject.Inject;
 import com.viglet.turing.api.sn.job.TurSNJob;
-import com.viglet.turing.api.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -39,6 +38,7 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,42 +51,29 @@ import java.util.Map.Entry;
 public class TurSNProcessQueue {
     public static final String CREATED = "Created";
     public static final String DELETED = "Deleted";
+    @Autowired
     private TurSolr turSolr;
+    @Autowired
     private TurSNSiteRepository turSNSiteRepository;
+    @Autowired
     private TurSolrInstanceProcess turSolrInstanceProcess;
+    @Autowired
     private TurSNMergeProvidersProcess turSNMergeProvidersProcess;
+    @Autowired
     private TurSNSpotlightProcess turSNSpotlightProcess;
+    @Autowired
     private TurSNNLPProcess turSNNLPProcess;
+    @Autowired
     private TurSNThesaurusProcess turSNThesaurusProcess;
+    @Autowired
     private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-    @Inject
-    public TurSNProcessQueue(TurSolr turSolr, TurSNSiteRepository turSNSiteRepository,
-                             TurSolrInstanceProcess turSolrInstanceProcess,
-                             TurSNMergeProvidersProcess turSNMergeProvidersProcess,
-                             TurSNSpotlightProcess turSNSpotlightProcess,
-                             TurSNNLPProcess turSNNLPProcess,
-                             TurSNThesaurusProcess turSNThesaurusProcess,
-                             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
-        this.turSolr = turSolr;
-        this.turSNSiteRepository = turSNSiteRepository;
-        this.turSolrInstanceProcess = turSolrInstanceProcess;
-        this.turSNMergeProvidersProcess = turSNMergeProvidersProcess;
-        this.turSNSpotlightProcess = turSNSpotlightProcess;
-        this.turSNNLPProcess = turSNNLPProcess;
-        this.turSNThesaurusProcess = turSNThesaurusProcess;
-        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
-    }
-
-    public TurSNProcessQueue() {
-        // Empty
-    }
 
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
     @Transactional
     public void receiveIndexingQueue(TurSNJob turSNJob) {
         log.debug("receiveQueue turSNJob: {}", turSNJob);
         Optional.ofNullable(turSNJob).ifPresentOrElse(job ->
-                this.turSNSiteRepository.findById(job.getSiteId())
+                turSNSiteRepository.findById(job.getSiteId())
                         .ifPresent(turSNSite ->
                                 job.getTurSNJobItems().forEach(turSNJobItem -> {
                                     if (processJob(turSNSite, turSNJobItem)) {
@@ -169,7 +156,7 @@ public class TurSNProcessQueue {
                 turSNMergeProvidersProcess.mergeDocuments(turSNSite,
                         getConsolidateResults(turSNJobItem, turSNSite),
                         turSNJobItem.getLocale()));
-        createMissingFields(turSNSite, attributes);
+      //  createMissingFields(turSNSite, attributes);
         return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale()).map(turSolrInstance -> {
             turSolr.indexing(turSolrInstance, turSNSite, attributes);
             return true;

@@ -30,6 +30,7 @@ import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Locale;
 
 /**
  * The persistent class for the turSNSiteLocale database table.
@@ -51,7 +52,7 @@ public class TurSNSiteLocale implements Serializable {
 	private String id;
 
 	@Column(nullable = false, length = 5)
-	private String language;
+	private Locale language;
 
 	@Column(nullable = false, length = 50)
 	private String core;

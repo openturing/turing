@@ -33,6 +33,7 @@ import org.hibernate.annotations.*;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -61,7 +62,7 @@ public class TurSNSiteMergeProviders implements Serializable {
 	private TurSNSite turSNSite;
 
 	@Column(nullable = false, length = 5)
-	private String locale;
+	private Locale locale;
 
 	@Column
 	private String description;

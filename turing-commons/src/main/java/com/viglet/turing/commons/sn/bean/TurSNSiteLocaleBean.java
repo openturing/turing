@@ -16,6 +16,10 @@
 package com.viglet.turing.commons.sn.bean;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.Locale;
 
 /**
  * Locale of Turing AI Semantic Navigation response.
@@ -25,25 +29,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @since 0.3.5
  */
 
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteLocaleBean {
-	private String locale;
+	private Locale locale;
 	private String link;
-
-	public String getLocale() {
-		return locale;
-	}
-
-	public void setLocale(String locale) {
-		this.locale = locale;
-	}
-
-	public String getLink() {
-		return link;
-	}
-
-	public void setLink(String link) {
-		this.link = link;
-	}
 
 }

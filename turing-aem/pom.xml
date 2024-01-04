@@ -13,8 +13,6 @@
   <description>Turing AEM Connector</description>
   <modules>
     <module>aem-indexer</module>
-    <module>aem-listener</module>
-    <module>aem-service</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>project.build.sourceEncoding&gt;UTF-8</project.build.sourceEncoding>

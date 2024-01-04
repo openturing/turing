@@ -26,6 +26,7 @@ import lombok.Getter;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Locale;
 
 /**
  * The persistent class for the vigNLPSolutions database table.
@@ -41,7 +42,7 @@ public class TurLocale implements Serializable {
 
 	@Id
 	@Column(unique = true, nullable = false, length = 5)
-	private String initials;
+	private Locale initials;
 
 	@Column(nullable = true, length = 255)
 	private String en;
@@ -49,7 +50,7 @@ public class TurLocale implements Serializable {
 	@Column(nullable = true, length = 255)
 	private String pt;
 
-	public TurLocale(String initials, String en, String pt) {
+	public TurLocale(Locale initials, String en, String pt) {
 		setInitials(initials);
 		setEn(en);
 		setPt(pt);
@@ -59,7 +60,7 @@ public class TurLocale implements Serializable {
 		super();
 	}
 
-	public void setInitials(String initials) {
+	public void setInitials(Locale initials) {
 		this.initials = initials;
 	}
 
