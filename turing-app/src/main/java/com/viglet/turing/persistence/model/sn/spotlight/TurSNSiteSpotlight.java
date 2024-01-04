@@ -45,7 +45,7 @@ import java.util.Set;
  */
 @Getter
 @Entity
-@Table(name = "tur_sn_site_spotlight")
+@Table(name = "sn_site_spotlight")
 public class TurSNSiteSpotlight implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

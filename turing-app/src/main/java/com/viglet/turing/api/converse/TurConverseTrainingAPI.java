@@ -67,7 +67,7 @@ public class TurConverseTrainingAPI {
 						.findByChatOrderByDate(turConverseChat);
 				turConverseChat.setUpdated(true);
 				if (!responses.isEmpty())
-					turConverseChat.setSummary(responses.get(0).getText());
+					turConverseChat.setSummary(responses.getFirst().getText());
 				turConverseChat
 						.setRequests(turConverseChatResponseRepository.countByChatAndIsUser(turConverseChat, true));
 				turConverseChat.setNoMatch(
@@ -106,7 +106,7 @@ public class TurConverseTrainingAPI {
 				TurConverseIntent intent;
 
 				if (!intents.isEmpty()) {
-					intent = intents.get(0);
+					intent = intents.getFirst();
 				} else {
 					intent = new TurConverseIntent();
 					intent.setName("Default Fallback");

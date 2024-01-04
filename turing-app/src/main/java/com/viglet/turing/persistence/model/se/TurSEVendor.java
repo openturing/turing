@@ -35,7 +35,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name = "tur_se_vendor")
+@Table(name = "se_vendor")
 public class TurSEVendor implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

@@ -37,7 +37,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name="tur_term_relation_to")
+@Table(name="term_relation_to")
 @JsonIgnoreProperties({ "turTerm", "turTermRelationFrom" } )
 public class TurTermRelationTo implements Serializable {
 	@Serial

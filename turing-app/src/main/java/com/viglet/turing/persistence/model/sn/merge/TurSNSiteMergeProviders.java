@@ -45,8 +45,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "turSNSiteMergeProviders")
-@NamedQuery(name = "TurSNSiteMerge.findAll", query = "SELECT snsmp FROM TurSNSiteMergeProviders snsmp")
+@Table(name = "sn_site_merge_provider")
 public class TurSNSiteMergeProviders implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

@@ -35,7 +35,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name = "tur_nlp_vendor")
+@Table(name = "nlp_vendor")
 public class TurNLPVendor implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

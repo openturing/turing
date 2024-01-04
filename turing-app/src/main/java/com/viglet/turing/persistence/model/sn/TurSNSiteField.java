@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -34,9 +35,10 @@ import java.io.Serializable;
  * The persistent class for the vigServices database table.
  * 
  */
+@Setter
 @Getter
 @Entity
-@Table(name = "turSNSiteField")
+@Table(name = "sn_site_field")
 @NamedQuery(name = "TurSNSiteField.findAll", query = "SELECT snsf FROM TurSNSiteField snsf")
 public class TurSNSiteField implements Serializable {
 	@Serial
@@ -65,29 +67,5 @@ public class TurSNSiteField implements Serializable {
 	@JsonBackReference (value="turSNSiteField-turSNSite")
 	private TurSNSite turSNSite;
 
-	public void setId(String id) {
-		this.id = id;
-	}
 
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setType(TurSEFieldType type) {
-		this.type = type;
-	}
-
-	public void setMultiValued(int multiValued) {
-		this.multiValued = multiValued;
-	}
-
-	public void setTurSNSite(TurSNSite turSNSite) {
-		this.turSNSite = turSNSite;
-	}
-
-	
 }

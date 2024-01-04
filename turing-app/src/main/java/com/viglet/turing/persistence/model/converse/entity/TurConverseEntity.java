@@ -26,6 +26,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -40,25 +41,31 @@ import java.util.Set;
  */
 @Entity
 @Getter
-@Table(name = "tur_converse_entity")
+@Table(name = "converse_entity")
 public class TurConverseEntity implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Setter
 	@Id
 	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	@Setter
 	@Column(nullable = false, length = 50)
 	private String name;
 
-	private boolean isSynonyms;
+	@Setter
+	private boolean synonyms;
 
+	@Setter
 	private boolean useRegexp;
 
+	@Setter
 	private boolean allowAutomatedExpansion;
 
+	@Setter
 	private boolean fuzzyMatching;
 
 
@@ -67,39 +74,11 @@ public class TurConverseEntity implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConverseEntityTerm> terms = new HashSet<>();
 
+	@Setter
 	@ManyToOne
 	@JoinColumn(name = "agent_id")
 	@JsonIdentityReference(alwaysAsId = true)
 	private TurConverseAgent agent;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public boolean isSynonyms() {
-		return isSynonyms;
-	}
-
-	public void setSynonyms(boolean isSynonyms) {
-		this.isSynonyms = isSynonyms;
-	}
-
-	public void setUseRegexp(boolean useRegexp) {
-		this.useRegexp = useRegexp;
-	}
-
-	public void setAllowAutomatedExpansion(boolean allowAutomatedExpansion) {
-		this.allowAutomatedExpansion = allowAutomatedExpansion;
-	}
-
-	public void setFuzzyMatching(boolean fuzzyMatching) {
-		this.fuzzyMatching = fuzzyMatching;
-	}
-
 	public void setTerms(Set<TurConverseEntityTerm> terms) {
 		this.terms.clear();
 		if (terms != null) {
@@ -107,11 +86,7 @@ public class TurConverseEntity implements Serializable {
 		}
 	}
 
-	public void setAgent(TurConverseAgent agent) {
-		this.agent = agent;
-	}
-
-	public void setAgent(String agentId) {
+	public void setAgentById(String agentId) {
 		agent = new TurConverseAgent();
 		agent.setId(agentId);
 

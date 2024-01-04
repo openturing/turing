@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.storage;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -31,10 +32,10 @@ import java.io.Serializable;
  * The persistent class for the vigServices database table.
  * 
  */
+@Setter
 @Getter
 @Entity
-@Table(name = "turStorageInstance")
-@NamedQuery(name = "TurStorageInstance.findAll", query = "SELECT si FROM TurStorageInstance si")
+@Table(name = "storage_instance")
 public class TurStorageInstance implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -68,35 +69,4 @@ public class TurStorageInstance implements Serializable {
 	@JoinColumn(name = "se_vendor_id", nullable = false)
 	private TurStorageVendor turStorageVendor;
 
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setEnabled(int enabled) {
-		this.enabled = enabled;
-	}
-
-	public void setHost(String host) {
-		this.host = host;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
-	}
-
-	public void setPort(int port) {
-		this.port = port;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public void setTurStorageVendor(TurStorageVendor turStorageVendor) {
-		this.turStorageVendor = turStorageVendor;
-	}
 }

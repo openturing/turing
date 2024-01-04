@@ -42,7 +42,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "tur_converse_entity_term")
+@Table(name = "converse_entity_term")
 @JsonIgnoreProperties({ "entity" })
 public class TurConverseEntityTerm implements Serializable {
 	@Serial
@@ -58,7 +58,7 @@ public class TurConverseEntityTerm implements Serializable {
 
 	@ElementCollection
 	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
-	@CollectionTable(name = "tur_converse_entity_synonyms", joinColumns = @JoinColumn(name = "term_id"))
+	@CollectionTable(name = "converse_entity_synonyms", joinColumns = @JoinColumn(name = "term_id"))
 	private Set<String> synonyms = new HashSet<>();
 
 	@ManyToOne

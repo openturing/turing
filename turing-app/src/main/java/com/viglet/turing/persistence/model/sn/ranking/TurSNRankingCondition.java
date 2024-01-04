@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.spring.security.TurAuditable;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -36,9 +37,10 @@ import java.io.Serializable;
  * @author Alexandre Oliveira
  * @since 0.3.7
  */
+@Setter
 @Getter
 @Entity
-@Table(name = "tur_sn_ranking_condition")
+@Table(name = "sn_ranking_condition")
 @JsonIgnoreProperties({ "turSNRankingExpression" })
 public class TurSNRankingCondition extends TurAuditable<String>  implements Serializable {
 	@Serial
@@ -63,23 +65,4 @@ public class TurSNRankingCondition extends TurAuditable<String>  implements Seri
 	@JoinColumn(name = "ranking_exp_id", nullable = false)
 	private TurSNRankingExpression turSNRankingExpression;
 
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setAttribute(String atribute) {
-		this.attribute = atribute;
-	}
-
-	public void setCondition(int condition) {
-		this.condition = condition;
-	}
-
-	public void setValue(String value) {
-		this.value = value;
-	}
-
-	public void setTurSNRankingExpression(TurSNRankingExpression turSNRankingExpression) {
-		this.turSNRankingExpression = turSNRankingExpression;
-	}
 }

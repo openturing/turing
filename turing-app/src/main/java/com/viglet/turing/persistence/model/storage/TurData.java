@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.storage;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Fetch;
 
 import java.io.Serial;
@@ -34,10 +35,10 @@ import java.util.List;
  * The persistent class for the turData database table.
  * 
  */
+@Setter
 @Getter
 @Entity
-@Table(name = "turData")
-@NamedQuery(name = "TurData.findAll", query = "SELECT d FROM TurData d")
+@Table(name = "data")
 @JsonIgnoreProperties({ "turDataGroupData" })
 public class TurData implements Serializable
 {
@@ -65,53 +66,4 @@ public class TurData implements Serializable
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turData", cascade = CascadeType.ALL)
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentences;
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public void setTurDataGroupData(List<TurDataGroupData> turDataGroupData) {
-		this.turDataGroupData = turDataGroupData;
-	}
-
-	public TurDataGroupData addTurDataGroupData(TurDataGroupData turDataGroupData) {
-		getTurDataGroupData().add(turDataGroupData);
-		turDataGroupData.setTurData(this);
-
-		return turDataGroupData;
-	}
-
-	public TurDataGroupData removeTurDataGroupData(TurDataGroupData turDataGroupData) {
-		getTurDataGroupData().remove(turDataGroupData);
-		turDataGroupData.setTurData(null);
-
-		return turDataGroupData;
-	}
-
-	public void setTurDataGroupSentences(List<TurDataGroupSentence> turDataSentences) {
-		this.turDataGroupSentences = turDataSentences;
-	}
-
-	public TurDataGroupSentence addTurDataSentence(TurDataGroupSentence turDataSentence) {
-		getTurDataGroupSentences().add(turDataSentence);
-		turDataSentence.setTurData(this);
-
-		return turDataSentence;
-	}
-
-	public TurDataGroupSentence removeTurDataSentence(TurDataGroupSentence turDataSentence) {
-		getTurDataGroupSentences().remove(turDataSentence);
-		turDataSentence.setTurData(null);
-
-		return turDataSentence;
-	}
-
 }

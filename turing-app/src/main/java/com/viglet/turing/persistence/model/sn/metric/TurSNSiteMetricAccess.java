@@ -22,19 +22,11 @@
 package com.viglet.turing.persistence.model.sn.metric;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.Table;
-
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UuidGenerator;
-
-import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -52,8 +44,7 @@ import java.util.Set;
  */
 @Getter
 @Entity
-@Table(name = "turSNSiteMetricAccess")
-@NamedQuery(name = "TurSNSiteMetricAccess.findAll", query = "SELECT snsma FROM TurSNSiteMetricAccess snsma")
+@Table(name = "sn_site_metric_access")
 public class TurSNSiteMetricAccess implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -81,7 +72,7 @@ public class TurSNSiteMetricAccess implements Serializable {
 	@Setter
 	@ElementCollection
 	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
-	@CollectionTable(name = "tursnsite_metric_access_trs", joinColumns = @JoinColumn(name = "tr_id"))
+	@CollectionTable(name = "sn_site_metric_access_trs", joinColumns = @JoinColumn(name = "tr_id"))
 	private Set<String> targetingRules = new HashSet<>();
 
 	@Setter

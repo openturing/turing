@@ -41,7 +41,7 @@ import java.util.Locale;
 @Getter
 @Setter
 @Entity
-@Table(name = "tur_sn_site_locale")
+@Table(name = "sn_site_locale")
 public class TurSNSiteLocale implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
