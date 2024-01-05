@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.converse.intent;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -33,10 +34,10 @@ import java.io.Serializable;
  * The persistent class for the turConversePrompt database table.
  * 
  */
+@Setter
 @Getter
 @Entity
-@Table(name = "turConversePrompt")
-@NamedQuery(name = "TurConversePrompt.findAll", query = "SELECT cp FROM TurConversePrompt cp")
+@Table(name = "converse_prompt")
 @JsonIgnoreProperties({ "parameter" })
 public class TurConversePrompt implements Serializable {
 	@Serial
@@ -65,21 +66,5 @@ public class TurConversePrompt implements Serializable {
 		this.setText(text);		
 	}
 
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setPosition(int position) {
-		this.position = position;
-	}
-
-	public void setText(String text) {
-		this.text = text;
-	}
-
-	public void setParameter(TurConverseParameter parameter) {
-		this.parameter = parameter;
-	}
 
 }

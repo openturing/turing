@@ -38,7 +38,7 @@ import java.util.Date;
 @Entity
 @Getter
 @Setter
-@Table(name = "tur_converse_chat_response")
+@Table(name = "converse_chat_response")
 @JsonIgnoreProperties({ "chat" })
 public class TurConverseChatResponse implements Serializable {
 	@Serial

@@ -76,6 +76,17 @@
         </dependency>
         <dependency>
             <groupId>com.viglet.turing</groupId>
+            <artifactId>turing-java-sdk</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.viglet.turing</groupId>
             <artifactId>fs-commons</artifactId>
             <version>${project.version}</version>
             <exclusions>
@@ -139,10 +150,6 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
         </dependency>
         <dependency>
             <groupId>edu.stanford.nlp</groupId>

@@ -20,33 +20,21 @@
  */
 package com.viglet.turing.onstartup.converse;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.google.inject.Inject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
 import com.viglet.turing.persistence.model.converse.entity.TurConverseEntityTerm;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseContext;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
-import com.viglet.turing.persistence.model.converse.intent.TurConversePhrase;
-import com.viglet.turing.persistence.model.converse.intent.TurConversePrompt;
-import com.viglet.turing.persistence.model.converse.intent.TurConverseResponse;
+import com.viglet.turing.persistence.model.converse.intent.*;
 import com.viglet.turing.persistence.repository.converse.TurConverseAgentRepository;
 import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityRepository;
 import com.viglet.turing.persistence.repository.converse.entity.TurConverseEntityTermRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseContextRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseIntentRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseParameterRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConversePromptRepository;
-import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
+import com.viglet.turing.persistence.repository.converse.intent.*;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Component
 @Transactional
@@ -94,7 +82,7 @@ public class TurConverseAgentOnStartup {
 			turConverseAgent.setDescription("Sample Agent");
 			turConverseAgent.setLanguage("pt_BR");
 			turConverseAgent.setCore("converse");
-			turConverseAgent.setTurSEInstance(turSEInstanceRepository.findAll().get(0));
+			turConverseAgent.setTurSEInstance(turSEInstanceRepository.findAll().getFirst());
 
 			turConverseAgentRepository.save(turConverseAgent);
 

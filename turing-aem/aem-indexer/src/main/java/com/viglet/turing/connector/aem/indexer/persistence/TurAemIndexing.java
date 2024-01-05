@@ -7,6 +7,7 @@ import lombok.experimental.Accessors;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.Locale;
 
 @RequiredArgsConstructor
 @Accessors(chain = true)
@@ -30,5 +31,5 @@ public class TurAemIndexing {
     @Column
     private String deltaId;
     @Column
-    private String locale;
+    private Locale locale;
 }

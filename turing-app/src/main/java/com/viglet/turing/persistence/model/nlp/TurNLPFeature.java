@@ -35,7 +35,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name="tur_nlp_feature")
+@Table(name="nlp_feature")
 public class TurNLPFeature implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

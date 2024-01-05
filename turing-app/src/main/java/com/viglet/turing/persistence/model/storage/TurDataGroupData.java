@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.storage;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -31,10 +32,10 @@ import java.io.Serializable;
  * The persistent class for the turDataGroupData database table.
  * 
  */
+@Setter
 @Getter
 @Entity
-@Table(name="turDataGroupData")
-@NamedQuery(name="TurDataGroupData.findAll", query="SELECT dgd FROM TurDataGroupData dgd")
+@Table(name="data_group_data")
 public class TurDataGroupData implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -55,17 +56,4 @@ public class TurDataGroupData implements Serializable {
 	@JoinColumn(name="data_group_id", nullable=false)
 	@JsonBackReference (value="turDataGroupData-turDataGroup")
 	private TurDataGroup turDataGroup;
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public void setTurData(TurData turData) {
-		this.turData = turData;
-	}
-
-	public void setTurDataGroup(TurDataGroup turDataGroup) {
-		this.turDataGroup = turDataGroup;
-	}
-
 }

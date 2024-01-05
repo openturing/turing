@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.viglet.turing.persistence.model.ml.TurMLModel;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -35,10 +36,10 @@ import java.io.Serializable;
  * The persistent class for the turDataSentence database table.
  * 
  */
+@Setter
 @Getter
 @Entity
-@Table(name = "turDataGroupModel")
-@NamedQuery(name = "TurDataGroupModel.findAll", query = "SELECT dm FROM TurDataGroupModel dm")
+@Table(name = "data_group_model")
 public class TurDataGroupModel implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -58,17 +59,5 @@ public class TurDataGroupModel implements Serializable {
 	@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 	@JsonIdentityReference(alwaysAsId = true)
 	private TurDataGroup turDataGroup;
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public void setTurMLModel(TurMLModel turMLModel) {
-		this.turMLModel = turMLModel;
-	}
-
-	public void setTurDataGroup(TurDataGroup turDataGroup) {
-		this.turDataGroup = turDataGroup;
-	}
 
 }

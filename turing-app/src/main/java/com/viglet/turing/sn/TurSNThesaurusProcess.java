@@ -21,11 +21,10 @@
 package com.viglet.turing.sn;
 
 import com.google.inject.Inject;
-import com.viglet.turing.api.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.thesaurus.TurThesaurusProcessor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -38,7 +37,6 @@ import java.util.Map;
 @Component
 public class TurSNThesaurusProcess {
     private final TurThesaurusProcessor turThesaurusProcessor;
-
     @Inject
     public TurSNThesaurusProcess(TurThesaurusProcessor turThesaurusProcessor) {
         this.turThesaurusProcessor = turThesaurusProcessor;

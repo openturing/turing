@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.sn.spotlight;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -35,9 +36,10 @@ import java.io.Serializable;
  * @author Alexandre Oliveira
  * @since 0.3.4
  */
+@Setter
 @Getter
 @Entity
-@Table(name = "tur_sn_site_spotlight_term")
+@Table(name = "sn_site_spotlight_term")
 @JsonIgnoreProperties({ "turSNSiteSpotlight"})
 public class TurSNSiteSpotlightTerm implements Serializable {
 	@Serial
@@ -55,17 +57,5 @@ public class TurSNSiteSpotlightTerm implements Serializable {
 	@ManyToOne
 	@JoinColumn(name = "spotlight_id", nullable = false)
 	private TurSNSiteSpotlight turSNSiteSpotlight;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setTurSNSiteSpotlight(TurSNSiteSpotlight turSNSiteSpotlight) {
-		this.turSNSiteSpotlight = turSNSiteSpotlight;
-	}
 
 }

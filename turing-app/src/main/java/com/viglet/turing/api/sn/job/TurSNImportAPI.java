@@ -23,6 +23,9 @@ package com.viglet.turing.api.sn.job;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import com.viglet.turing.client.sn.job.TurSNJobAction;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
@@ -60,7 +63,6 @@ import java.util.UUID;
 @RequestMapping("/api/sn/{siteName}/import")
 @Tag(name = "Semantic Navigation Import", description = "Semantic Navigation Import API")
 public class TurSNImportAPI {
-
     private final JmsMessagingTemplate jmsMessagingTemplate;
     private final TurSNSiteRepository turSNSiteRepository;
 
@@ -81,7 +83,7 @@ public class TurSNImportAPI {
         }).orElse(importUnsuccessful(siteName, turSNJobItems));
     }
 
-    private static boolean importUnsuccessful(String siteName, TurSNJobItems turSNJobItems) {
+    private boolean importUnsuccessful(String siteName, TurSNJobItems turSNJobItems) {
         turSNJobItems.forEach(turSNJobItem -> {
             if (turSNJobItem != null) {
                 if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {

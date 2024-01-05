@@ -41,7 +41,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name="tur_ml_category")
+@Table(name="ml_category")
 @JsonIgnoreProperties({ "turDataGroupCategories" })
 public class TurMLCategory implements Serializable {
 	@Serial
@@ -71,34 +71,5 @@ public class TurMLCategory implements Serializable {
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turMLCategory", cascade = CascadeType.ALL)
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentences;
-
-
-	public TurDataGroupCategory addTurDataGroupCategory(TurDataGroupCategory turDataGroupCategory) {
-		getTurDataGroupCategories().add(turDataGroupCategory);
-		turDataGroupCategory.setTurMLCategory(this);
-
-		return turDataGroupCategory;
-	}
-
-	public TurDataGroupCategory removeTurDataGroupCategory(TurDataGroupCategory turDataGroupCategory) {
-		getTurDataGroupCategories().remove(turDataGroupCategory);
-		turDataGroupCategory.setTurMLCategory(null);
-
-		return turDataGroupCategory;
-	}
-
-	public TurDataGroupSentence addTurDataSentence(TurDataGroupSentence turDataSentence) {
-		getTurDataGroupSentences().add(turDataSentence);
-		turDataSentence.setTurMLCategory(this);
-
-		return turDataSentence;
-	}
-
-	public TurDataGroupSentence removeTurDataSentence(TurDataGroupSentence turDataSentence) {
-		getTurDataGroupSentences().remove(turDataSentence);
-		turDataSentence.setTurMLCategory(null);
-
-		return turDataSentence;
-	}
 
 }

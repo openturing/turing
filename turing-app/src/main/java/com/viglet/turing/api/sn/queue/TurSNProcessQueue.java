@@ -21,14 +21,15 @@
 
 package com.viglet.turing.api.sn.queue;
 
-import com.google.inject.Inject;
 import com.viglet.turing.api.sn.job.TurSNJob;
-import com.viglet.turing.api.sn.job.TurSNJobItem;
-import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.sn.TurSNFieldType;
@@ -39,6 +40,7 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,42 +53,31 @@ import java.util.Map.Entry;
 public class TurSNProcessQueue {
     public static final String CREATED = "Created";
     public static final String DELETED = "Deleted";
+    @Autowired
     private TurSolr turSolr;
+    @Autowired
     private TurSNSiteRepository turSNSiteRepository;
+    @Autowired
     private TurSolrInstanceProcess turSolrInstanceProcess;
+    @Autowired
     private TurSNMergeProvidersProcess turSNMergeProvidersProcess;
+    @Autowired
     private TurSNSpotlightProcess turSNSpotlightProcess;
+    @Autowired
     private TurSNNLPProcess turSNNLPProcess;
+    @Autowired
     private TurSNThesaurusProcess turSNThesaurusProcess;
+    @Autowired
+    private TurSNSiteFieldRepository turSNSiteFieldRepository;
+    @Autowired
     private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-    @Inject
-    public TurSNProcessQueue(TurSolr turSolr, TurSNSiteRepository turSNSiteRepository,
-                             TurSolrInstanceProcess turSolrInstanceProcess,
-                             TurSNMergeProvidersProcess turSNMergeProvidersProcess,
-                             TurSNSpotlightProcess turSNSpotlightProcess,
-                             TurSNNLPProcess turSNNLPProcess,
-                             TurSNThesaurusProcess turSNThesaurusProcess,
-                             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
-        this.turSolr = turSolr;
-        this.turSNSiteRepository = turSNSiteRepository;
-        this.turSolrInstanceProcess = turSolrInstanceProcess;
-        this.turSNMergeProvidersProcess = turSNMergeProvidersProcess;
-        this.turSNSpotlightProcess = turSNSpotlightProcess;
-        this.turSNNLPProcess = turSNNLPProcess;
-        this.turSNThesaurusProcess = turSNThesaurusProcess;
-        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
-    }
-
-    public TurSNProcessQueue() {
-        // Empty
-    }
 
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
     @Transactional
     public void receiveIndexingQueue(TurSNJob turSNJob) {
         log.debug("receiveQueue turSNJob: {}", turSNJob);
         Optional.ofNullable(turSNJob).ifPresentOrElse(job ->
-                this.turSNSiteRepository.findById(job.getSiteId())
+                turSNSiteRepository.findById(job.getSiteId())
                         .ifPresent(turSNSite ->
                                 job.getTurSNJobItems().forEach(turSNJobItem -> {
                                     if (processJob(turSNSite, turSNJobItem)) {
@@ -169,52 +160,54 @@ public class TurSNProcessQueue {
                 turSNMergeProvidersProcess.mergeDocuments(turSNSite,
                         getConsolidateResults(turSNJobItem, turSNSite),
                         turSNJobItem.getLocale()));
-        createMissingFields(turSNSite, attributes);
-        return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale()).map(turSolrInstance -> {
+        createMissingFields(turSNSite, turSNJobItem.getSpecs());
+        return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(),
+                turSNJobItem.getLocale()).map(turSolrInstance -> {
             turSolr.indexing(turSolrInstance, turSNSite, attributes);
             return true;
         }).orElse(false);
 
     }
 
-    private void createMissingFields(TurSNSite turSNSite, Map<String, Object> attributes) {
-        attributes.forEach((key, value) -> {
-            if (!turSNSiteFieldExtRepository.existsByTurSNSiteAndName(turSNSite, key)) {
-                TurSEFieldType type = TurSEFieldType.STRING;
-                int multivalued = 0;
-                if (value instanceof ArrayList<?>) {
-                    multivalued = 1;
-                } else if (value instanceof Date) {
-                    type = TurSEFieldType.DATE;
-                } else if (value instanceof Boolean) {
-                    type = TurSEFieldType.BOOL;
-                } else if (value instanceof Integer) {
-                    type = TurSEFieldType.INT;
-                }
-                turSNSiteFieldExtRepository.save(TurSNSiteFieldExt
-                        .builder()
-                        .turSNSite(turSNSite)
+    private void createMissingFields(TurSNSite turSNSite, List<TurSNAttributeSpec> turSNAttributeSpecs) {
+        turSNAttributeSpecs.forEach(spec -> {
+            if (!turSNSiteFieldExtRepository.existsByTurSNSiteAndName(turSNSite, spec.getName())) {
+                TurSNSiteField turSNSiteField = TurSNSiteField.builder()
+                        .name(spec.getName())
+                        .description(spec.getDescription())
+                        .type(spec.getType())
+                        .multiValued(spec.isMultiValued() ? 1 : 0)
+                        .turSNSite(turSNSite).build();
+                turSNSiteFieldRepository.save(turSNSiteField);
+                turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
                         .enabled(1)
-                        .name(key)
-                        .description(key)
-                        .facetName(key + "s")
+                        .name(turSNSiteField.getName())
+                        .description(turSNSiteField.getDescription())
+                        .facet(spec.isFacet() ? 1 : 0)
+                        .facetName(spec.getFacetName())
+                        .hl(0)
+                        .multiValued(turSNSiteField.getMultiValued())
+                        .mlt(0)
+                        .externalId(turSNSiteField.getId())
                         .snType(TurSNFieldType.SE)
-                        .multiValued(multivalued)
-                        .type(type)
-                        .build());
+                        .type(turSNSiteField.getType())
+                        .turSNSite(turSNSite).build());
+
             }
         });
     }
 
     private Map<String, Object> getConsolidateResults(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
         Map<String, Object> consolidateResults = new HashMap<>();
-        turSNJobItem.getAttributes().forEach((key, value1) -> {
-            log.debug("SE Consolidate Value: {}", value1);
-            Optional.ofNullable(value1).ifPresent(value -> {
-                log.debug("SE Consolidate Class: {}", value.getClass().getName());
-                consolidateResults.put(key, value);
-            });
-        });
+        Optional.ofNullable(turSNJobItem.getAttributes()).ifPresent(attributes ->
+                attributes.forEach((key, value1) -> {
+                    log.debug("SE Consolidate Value: {}", value1);
+                    Optional.ofNullable(value1).ifPresent(value -> {
+                        log.debug("SE Consolidate Class: {}", value.getClass().getName());
+                        consolidateResults.put(key, value);
+                    });
+                }));
+
         turSNNLPProcess.processNLP(turSNJobItem, turSNSite, consolidateResults);
         turSNThesaurusProcess.processThesaurus(turSNJobItem, turSNSite, consolidateResults);
         return consolidateResults;

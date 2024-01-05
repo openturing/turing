@@ -37,7 +37,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name="tur_term_attribute")
+@Table(name="term_attribute")
 public class TurTermAttribute implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

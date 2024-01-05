@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
@@ -49,14 +50,14 @@ public class TurSpotlightCache {
 	}
 
 	@Cacheable(value = "spotlight", sync = true)
-	public List<TurSNSiteSpotlight> findSpotlightBySNSiteAndLanguage(String snSite, String language) {
+	public List<TurSNSiteSpotlight> findSpotlightBySNSiteAndLanguage(String snSite, Locale language) {
 		return turSNSiteRepository.findByName(snSite).map( turSNSite -> turSNSiteSpotlightRepository
 				.findByTurSNSiteAndLanguage(turSNSite, language)).orElse(Collections.emptyList());
 
 	}
 	
 	@Cacheable(value = "spotlight_term", sync = true)
-	public List<TurSNSpotlightTermCacheBean> findTermsBySNSiteAndLanguage(String snSite, String language) {
+	public List<TurSNSpotlightTermCacheBean> findTermsBySNSiteAndLanguage(String snSite, Locale language) {
         return  this.findSpotlightBySNSiteAndLanguage(snSite, language).stream().flatMap(turSNSiteSpotlight ->
 				turSNSiteSpotlight.getTurSNSiteSpotlightTerms().stream()).map(turSNSiteSpotlightTerm ->
 				new TurSNSpotlightTermCacheBean(

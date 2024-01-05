@@ -32,10 +32,10 @@ import java.io.Serializable;
  * The persistent class for the vigServices database table.
  * 
  */
-@Getter
 @Setter
+@Getter
 @Entity
-@Table(name = "tur_ml_instance")
+@Table(name = "ml_instance")
 public class TurMLInstance implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -55,7 +55,7 @@ public class TurMLInstance implements Serializable {
 	@Column(nullable = false)
 	private int enabled;
 
-	@Column(length = 255)
+	@Column
 	private String host;
 
 	@Column(nullable = false, length = 5)
@@ -69,35 +69,4 @@ public class TurMLInstance implements Serializable {
 	@JoinColumn(name = "ml_vendor_id", nullable = false)
 	private TurMLVendor turMLVendor;
 
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setEnabled(int enabled) {
-		this.enabled = enabled;
-	}
-
-	public void setHost(String host) {
-		this.host = host;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
-	}
-
-	public void setPort(int port) {
-		this.port = port;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public void setTurMLVendor(TurMLVendor turMLVendor) {
-		this.turMLVendor = turMLVendor;
-	}
 }

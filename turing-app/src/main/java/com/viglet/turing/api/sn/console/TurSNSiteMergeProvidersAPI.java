@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -44,7 +45,7 @@ import java.util.Optional;
 @RequestMapping("/api/sn/{ignoredSnSiteId}/merge")
 @Tag(name = "Semantic Navigation Merge Providers", description = "Semantic Navigation Merge API")
 public class TurSNSiteMergeProvidersAPI {
-	private static final String DEFAULT_LANGUAGE = "en_US";
+	private static final Locale DEFAULT_LANGUAGE = Locale.US;
 	private final TurSNSiteRepository turSNSiteRepository;
 	private final TurSNSiteMergeProvidersRepository turSNSiteMergeRepository;
 	private final TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository;

@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.system;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -31,10 +32,10 @@ import java.io.Serializable;
  * The persistent class for the vigNLPSolutions database table.
  * 
  */
+@Setter
 @Getter
 @Entity
-@Table(name = "turConfigVar")
-@NamedQuery(name = "TurConfigVar.findAll", query = "SELECT cv FROM TurConfigVar cv")
+@Table(name = "configuration")
 public class TurConfigVar implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -43,23 +44,11 @@ public class TurConfigVar implements Serializable {
 	@Column(unique = true, nullable = false, length = 25)
 	private String id;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String path;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String value;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setPath(String path) {
-		this.path = path;
-	}
-
-	public void setValue(String value) {
-		this.value = value;
-	}
 
 
 }

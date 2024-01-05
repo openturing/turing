@@ -20,8 +20,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * List of jobs to index and deindex in Turing AI.
@@ -32,7 +30,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 	private static final long serialVersionUID = 1L;
-	private Queue<TurSNJobItem> turSNJobItems = new ConcurrentLinkedQueue<>();
+	private List<TurSNJobItem> turSNJobItems = new ArrayList<>();
 	public TurSNJobItems() {
 		super();
 	}
@@ -46,12 +44,13 @@ public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 	public Iterator<TurSNJobItem> iterator() {
 		return turSNJobItems.iterator();
 	}
-	public Queue<TurSNJobItem>  getTuringDocuments() {
+
+	public List<TurSNJobItem> getTuringDocuments() {
 		return turSNJobItems;
 	}
 
-	public void setTuringDocuments(Queue<TurSNJobItem>  turSNJobItems) {
-		this.turSNJobItems = turSNJobItems;
+	public void setTuringDocuments(List<TurSNJobItem> jobItems) {
+		this.turSNJobItems = jobItems;
 	}
 
 	public boolean add(TurSNJobItem turSNJobItem) {
@@ -60,5 +59,13 @@ public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 
 	public boolean remove(TurSNJobItem turSNJobItem) {
 		return turSNJobItems.remove(turSNJobItem);
+	}
+
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for (TurSNJobItem turSNJobItem : this) {
+			sb.append(String.format("turSNJobItem: %s", turSNJobItem.toString()));
+		}
+		return sb.toString();
 	}
 }

@@ -2,6 +2,7 @@ package com.viglet.turing.persistence.model.sn.source;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -10,10 +11,10 @@ import java.io.Serializable;
  * The persistent class for the TurSNSite database table.
  * 
  */
+@Setter
 @Getter
 @Entity
-@Table(name = "turSNSourceType")
-@NamedQuery(name = "TurSNSourceType.findAll", query = "SELECT sns FROM TurSNSourceType sns")
+@Table(name = "sn_source_type")
 public class TurSNSourceType implements Serializable {
 
 	@Serial
@@ -26,17 +27,5 @@ public class TurSNSourceType implements Serializable {
 	private String name;
 	@Column(nullable = false, length = 255)
 	private String description;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
 
 }

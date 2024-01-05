@@ -43,8 +43,7 @@ import java.io.Serializable;
 @Builder
 @Data
 @Entity
-@Table(name = "turSNSiteFieldExt")
-@NamedQuery(name = "TurSNSiteFieldExt.findAll", query = "SELECT snsfe FROM TurSNSiteFieldExt snsfe")
+@Table(name = "sn_site_field_ext")
 public class TurSNSiteFieldExt implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -101,7 +100,8 @@ public class TurSNSiteFieldExt implements Serializable {
 	@JoinColumn(name = "sn_site_id", nullable = false)
 	@JsonBackReference (value="turSNSiteFieldExt-turSNSite")
 	private TurSNSite turSNSite;
-
 	@Tolerate
-	TurSNSiteFieldExt() {}
+	public TurSNSiteFieldExt() {
+
+	}
 }

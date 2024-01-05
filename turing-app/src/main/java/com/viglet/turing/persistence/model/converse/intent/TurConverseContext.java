@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -39,28 +40,30 @@ import java.util.Set;
  */
 @Getter
 @Entity
-@Table(name = "turConverseCtx")
-@NamedQuery(name = "TurConverseContext.findAll", query = "SELECT cc FROM TurConverseContext cc")
+@Table(name = "converse_context")
 @JsonIgnoreProperties({ "intentInputs", "intentOutputs" })
 public class TurConverseContext implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Setter
 	@Id
 	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	@Setter
 	private String text;
 
 	@ManyToMany
-	@JoinTable(name = "turConverseCtxIntentIn")
+	@JoinTable(name = "converse_context_intent_in")
 	private Set<TurConverseIntent> intentInputs = new HashSet<>();
 
 	@ManyToMany
-	@JoinTable(name = "turConverseCtxIntentOut")
+	@JoinTable(name = "converse_context_intent_out")
 	private Set<TurConverseIntent> intentOutputs = new HashSet<>();
 
+	@Setter
 	@ManyToOne
 	@JoinColumn(name = "agent_id")
 	@JsonIdentityReference(alwaysAsId = true)
@@ -73,14 +76,6 @@ public class TurConverseContext implements Serializable {
 	public TurConverseContext(String text) {
 		super();
 		this.setText(text);
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setText(String text) {
-		this.text = text;
 	}
 
 	public void setIntentInputs(Set<TurConverseIntent> intentInputs) {
@@ -97,11 +92,7 @@ public class TurConverseContext implements Serializable {
 		}
 	}
 
-	public void setAgent(TurConverseAgent agent) {
-		this.agent = agent;
-	}
-
-	public void setAgent(String agentId) {
+	public void setAgentById(String agentId) {
 		agent = new TurConverseAgent();
 		agent.setId(agentId);
 

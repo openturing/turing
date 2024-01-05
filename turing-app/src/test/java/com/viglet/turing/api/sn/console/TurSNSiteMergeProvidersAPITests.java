@@ -25,6 +25,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.security.Principal;
 import java.util.Collections;
+import java.util.Locale;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -93,7 +94,7 @@ public class TurSNSiteMergeProvidersAPITests {
     private static TurSNSiteMergeProviders getTurSNSiteMergeProviders(TurSNSite turSNSite) {
         TurSNSiteMergeProviders turSNSiteMerge = new TurSNSiteMergeProviders();
         turSNSiteMerge.setTurSNSite(turSNSite);
-        turSNSiteMerge.setLocale(TurLocaleRepository.EN_US);
+        turSNSiteMerge.setLocale(Locale.US);
         turSNSiteMerge.setProviderFrom("Nutch");
         turSNSiteMerge.setProviderTo("WEM");
         turSNSiteMerge.setRelationFrom("id");

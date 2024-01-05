@@ -26,6 +26,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -40,26 +41,31 @@ import java.util.Set;
  */
 @Getter
 @Entity
-@Table(name = "turConverseParameter")
-@NamedQuery(name = "TurConverseParameter.findAll", query = "SELECT cp FROM TurConverseParameter cp")
+@Table(name = "converse_parameter")
 @JsonIgnoreProperties({ "intent" })
 public class TurConverseParameter implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Setter
 	@Id
 	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	@Setter
 	private int position;
 
+	@Setter
 	private boolean required;
 
+	@Setter
 	private String name;
 
+	@Setter
 	private String entity;
 
+	@Setter
 	private String value;
 
 	@OneToMany(mappedBy = "parameter", orphanRemoval = true, fetch = FetchType.LAZY)
@@ -67,33 +73,10 @@ public class TurConverseParameter implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConversePrompt> prompts = new HashSet<>();
 
+	@Setter
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "intent_id")
 	private TurConverseIntent intent;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setPosition(int position) {
-		this.position = position;
-	}
-
-	public void setRequired(boolean required) {
-		this.required = required;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setEntity(String entity) {
-		this.entity = entity;
-	}
-
-	public void setValue(String value) {
-		this.value = value;
-	}
 
 	public void setPrompts(Set<TurConversePrompt> prompts) {
 		this.prompts.clear();
@@ -102,7 +85,4 @@ public class TurConverseParameter implements Serializable {
 		}
 	}
 
-	public void setIntent(TurConverseIntent intent) {
-		this.intent = intent;
-	}
 }

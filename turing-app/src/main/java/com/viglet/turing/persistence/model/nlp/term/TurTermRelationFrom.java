@@ -39,7 +39,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name="tur_term_relation_from")
+@Table(name="term_relation_from")
 @JsonIgnoreProperties({ "turTerm" } )
 public class TurTermRelationFrom implements Serializable {
 	@Serial
@@ -61,19 +61,4 @@ public class TurTermRelationFrom implements Serializable {
 	//bi-directional many-to-one association to TurTermRelationTo
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTermRelationFrom", cascade = CascadeType.ALL)
 	private List<TurTermRelationTo> turTermRelationTos;
-
-	public TurTermRelationTo addTurTermRelationTo(TurTermRelationTo turTermRelationTo) {
-		getTurTermRelationTos().add(turTermRelationTo);
-		turTermRelationTo.setTurTermRelationFrom(this);
-
-		return turTermRelationTo;
-	}
-
-	public TurTermRelationTo removeTurTermRelationTo(TurTermRelationTo turTermRelationTo) {
-		getTurTermRelationTos().remove(turTermRelationTo);
-		turTermRelationTo.setTurTermRelationFrom(null);
-
-		return turTermRelationTo;
-	}
-
 }

@@ -41,7 +41,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name="tur_term")
+@Table(name="term")
 @JsonIgnoreProperties({ "turNLPEntity" } )
 public class TurTerm implements Serializable {
 	@Serial
@@ -87,74 +87,4 @@ public class TurTerm implements Serializable {
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTerm", cascade = CascadeType.ALL)
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurTermVariationLanguage> turTermVariationLanguages;
-
-	public TurTermAttribute addTurTermAttribute(TurTermAttribute turTermAttribute) {
-		getTurTermAttributes().add(turTermAttribute);
-		turTermAttribute.setTurTerm(this);
-
-		return turTermAttribute;
-	}
-
-	public TurTermAttribute removeTurTermAttribute(TurTermAttribute turTermAttribute) {
-		getTurTermAttributes().remove(turTermAttribute);
-		turTermAttribute.setTurTerm(null);
-
-		return turTermAttribute;
-	}
-
-	public TurTermRelationFrom addTurTermRelationFrom(TurTermRelationFrom turTermRelationFrom) {
-		getTurTermRelationFroms().add(turTermRelationFrom);
-		turTermRelationFrom.setTurTerm(this);
-
-		return turTermRelationFrom;
-	}
-
-	public TurTermRelationFrom removeTurTermRelationFrom(TurTermRelationFrom turTermRelationFrom) {
-		getTurTermRelationFroms().remove(turTermRelationFrom);
-		turTermRelationFrom.setTurTerm(null);
-
-		return turTermRelationFrom;
-	}
-
-	public TurTermRelationTo addTurTermRelationTo(TurTermRelationTo turTermRelationTo) {
-		getTurTermRelationTos().add(turTermRelationTo);
-		turTermRelationTo.setTurTerm(this);
-
-		return turTermRelationTo;
-	}
-
-	public TurTermRelationTo removeTurTermRelationTo(TurTermRelationTo turTermRelationTo) {
-		getTurTermRelationTos().remove(turTermRelationTo);
-		turTermRelationTo.setTurTerm(null);
-
-		return turTermRelationTo;
-	}
-
-	public TurTermVariation addTurTermVariation(TurTermVariation turTermVariation) {
-		getTurTermVariations().add(turTermVariation);
-		turTermVariation.setTurTerm(this);
-
-		return turTermVariation;
-	}
-
-	public TurTermVariation removeTurTermVariation(TurTermVariation turTermVariation) {
-		getTurTermVariations().remove(turTermVariation);
-		turTermVariation.setTurTerm(null);
-
-		return turTermVariation;
-	}
-
-	public TurTermVariationLanguage addTurTermVariationLanguage(TurTermVariationLanguage turTermVariationLanguage) {
-		getTurTermVariationLanguages().add(turTermVariationLanguage);
-		turTermVariationLanguage.setTurTerm(this);
-
-		return turTermVariationLanguage;
-	}
-
-	public TurTermVariationLanguage removeTurTermVariationLanguage(TurTermVariationLanguage turTermVariationLanguage) {
-		getTurTermVariationLanguages().remove(turTermVariationLanguage);
-		turTermVariationLanguage.setTurTerm(null);
-
-		return turTermVariationLanguage;
-	}
 }

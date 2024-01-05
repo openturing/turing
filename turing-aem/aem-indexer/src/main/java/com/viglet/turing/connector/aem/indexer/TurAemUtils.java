@@ -80,7 +80,7 @@ public class TurAemUtils {
     }
 
     public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuffer components) {
-        jsonObject.toMap().forEach((key, value) -> {
+        jsonObject.toMap().forEach((key, _) -> {
             if (jsonObject.has(JCR_TITLE))
                 components.append(jsonObject.getString(JCR_TITLE));
             if (jsonObject.has(TEXT))

@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.sn.merge;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -34,10 +35,10 @@ import java.io.Serializable;
  * @author Alexandre Oliveira
  * @since 0.3.5
  */
+@Setter
 @Getter
 @Entity
-@Table(name = "turSNSiteMergeField")
-@NamedQuery(name = "TurSNSiteMergeProvidersField.findAll", query = "SELECT snsmpf FROM TurSNSiteMergeProvidersField snsmpf")
+@Table(name = "sn_site_merge_provider_field")
 @JsonIgnoreProperties({ "turSNSiteMergeProviders" })
 public class TurSNSiteMergeProvidersField implements Serializable {
 	@Serial
@@ -55,17 +56,5 @@ public class TurSNSiteMergeProvidersField implements Serializable {
 	@ManyToOne(fetch = FetchType.LAZY) // (cascade = {CascadeType.ALL})
 	@JoinColumn(name = "sn_site_merge_id")
 	private TurSNSiteMergeProviders turSNSiteMergeProviders;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setTurSNSiteMergeProviders(TurSNSiteMergeProviders turSNSiteMergeProviders) {
-		this.turSNSiteMergeProviders = turSNSiteMergeProviders;
-	}
 
 }

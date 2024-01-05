@@ -36,6 +36,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -88,12 +89,12 @@ public class TurSolrInstanceProcess {
         return Optional.empty();
     }
 
-    public Optional<TurSolrInstance> initSolrInstance(String siteName, String locale) {
+    public Optional<TurSolrInstance> initSolrInstance(String siteName, Locale locale) {
         return turSNSiteRepository.findByName(siteName).flatMap(turSNSite -> this.initSolrInstance(turSNSite, locale));
 
     }
 
-    private Optional<TurSolrInstance> initSolrInstance(TurSNSite turSNSite, String locale) {
+    private Optional<TurSolrInstance> initSolrInstance(TurSNSite turSNSite, Locale locale) {
         TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
         if (turSNSiteLocale != null) {
             return this.initSolrInstance(turSNSiteLocale);

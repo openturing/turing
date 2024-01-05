@@ -25,6 +25,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.spring.security.TurAuditable;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -43,25 +44,30 @@ import java.util.Set;
  */
 @Getter
 @Entity
-@Table(name = "tur_sn_ranking_expression")
+@Table(name = "sn_ranking_expression")
 public class TurSNRankingExpression extends TurAuditable<String>  implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Setter
 	@Id
 	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	@Setter
 	@Column(length = 50)
 	private String name;
 
+	@Setter
 	@Column(length = 255)
 	private String description;
+	@Setter
 	@Column
 	private float weight;
 
 	// bi-directional many-to-one association to TurSNSite
+	@Setter
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)
 	private TurSNSite turSNSite;
@@ -72,30 +78,10 @@ public class TurSNRankingExpression extends TurAuditable<String>  implements Ser
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNRankingCondition> turSNRankingConditions = new HashSet<>();
 
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setWeight(float weight) {
-		this.weight = weight;
-	}
-
-	public void setTurSNSite(TurSNSite turSNSite) {
-		this.turSNSite = turSNSite;
-	}
-
 	public void setTurSNRankingConditions(Set<TurSNRankingCondition> turSNRankingConditions) {
 		this.turSNRankingConditions.clear();
 		if (turSNRankingConditions != null) {
 			this.turSNRankingConditions.addAll(turSNRankingConditions);
 		}
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
 	}
 }
