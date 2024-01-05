@@ -92,12 +92,12 @@ public class TurCmsContentDefinitionProcess {
         }
         if (StringUtils.isNotBlank(turSNAttributeSpec.getClassName())) {
             if (CollectionUtils.isEmpty(targetAttr.getSourceAttrs())) {
-                List<TurCmsSourceAttr> turCmsSourceAttrs = Collections.singletonList(TurCmsSourceAttr.builder()
+                List<TurCmsSourceAttr> sourceAttrs = Collections.singletonList(TurCmsSourceAttr.builder()
                         .className(turSNAttributeSpec.getClassName())
                         .uniqueValues(false)
                         .convertHtmlToText(false)
                         .build());
-                targetAttr.setSourceAttrs(turCmsSourceAttrs);
+                targetAttr.setSourceAttrs(sourceAttrs);
                 targetAttr.setClassName(turSNAttributeSpec.getClassName());
             } else {
                 targetAttr.getSourceAttrs().stream()

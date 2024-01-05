@@ -9,8 +9,6 @@ import com.viglet.turing.spring.security.TurAuditorAwareImpl;
 @Configuration
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")
 public class TurJpaConfig {
-
-
     @Bean
     AuditorAware<String> auditorAware() {
         return new TurAuditorAwareImpl();

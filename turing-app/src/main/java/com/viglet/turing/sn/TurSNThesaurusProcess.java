@@ -37,7 +37,6 @@ import java.util.Map;
 @Component
 public class TurSNThesaurusProcess {
     private final TurThesaurusProcessor turThesaurusProcessor;
-
     @Inject
     public TurSNThesaurusProcess(TurThesaurusProcessor turThesaurusProcessor) {
         this.turThesaurusProcessor = turThesaurusProcessor;

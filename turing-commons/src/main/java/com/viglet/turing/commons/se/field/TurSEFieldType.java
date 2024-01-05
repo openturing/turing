@@ -17,10 +17,19 @@
 
 package com.viglet.turing.commons.se.field;
 
-public enum TurSEFieldType {
-	INT(1), LONG(2), STRING(3), ARRAY(4), DATE(5), BOOL(6);
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-	private int id;
+import java.io.Serializable;
+
+public enum TurSEFieldType implements Serializable  {
+	INT(1),
+	LONG(2),
+	STRING(3),
+	ARRAY(4),
+	DATE(5),
+	BOOL(6);
+
+	private final int id;
 
 	TurSEFieldType(int id) {
 		this.id = id;

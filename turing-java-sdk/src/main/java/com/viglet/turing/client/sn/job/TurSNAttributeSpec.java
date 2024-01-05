@@ -1,9 +1,13 @@
 package com.viglet.turing.client.sn.job;
 
-public class TurSNAttributeSpec {
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 
+import java.io.Serializable;
+
+public class TurSNAttributeSpec  implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String name;
-    private String type;
+    private TurSEFieldType type;
     private boolean mandatory;
     private boolean multiValued;
     private String description;
@@ -19,11 +23,11 @@ public class TurSNAttributeSpec {
         this.name = name;
     }
 
-    public String getType() {
+    public TurSEFieldType getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(TurSEFieldType type) {
         this.type = type;
     }
 

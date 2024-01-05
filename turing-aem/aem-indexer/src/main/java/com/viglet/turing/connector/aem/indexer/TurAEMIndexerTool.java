@@ -278,7 +278,7 @@ public class TurAEMIndexerTool {
                         attributes.put(AemHandlerConfiguration.ID_ATTRIBUTE, content.getAemId());
                         attributes.put(AemHandlerConfiguration.PROVIDER_ATTRIBUTE, AemHandlerConfiguration.DEFAULT_PROVIDER);
                         sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.DELETE,
-                                LocaleUtils.toLocale(content.getLocale()), attributes)));
+                                content.getLocale(), attributes)));
                     });
                     turAemIndexingDAO.deleteContentsWereDeIndexed(group, deltaId);
                 }
@@ -296,7 +296,7 @@ public class TurAEMIndexerTool {
                         .setIndexGroup(group)
                         .setDate(aemObject.getLastModified().getTime())
                         .setDeltaId(deltaId)
-                        .setLocale(locale.toLanguageTag()));
+                        .setLocale(locale));
                 log.info(String.format("Created %s object (%s)", aemObject.getPath(), group));
             }
             TurAEMAttrProcess turAEMAttrProcess = new TurAEMAttrProcess();
