@@ -375,7 +375,6 @@ public class TurSolr {
 
 
     private void prepareGroup(TurSEParameters turSEParameters, SolrQuery query) {
-
         query.set(GroupParams.GROUP, TRUE)
                 .set(GroupParams.GROUP_FIELD, turSEParameters.getGroup())
                 .set(GroupParams.GROUP_LIMIT, turSEParameters.getRows())
@@ -397,7 +396,7 @@ public class TurSolr {
                 getResults(turSNSite, turSEParameters, query, turSNSiteMLTFieldExtList,
                         turSNSiteFacetFieldExtList, turSNSiteHlFieldExtList,
                         turSESpellCheckResult,
-                        whenNoResultsUseAsterisk(turSNSite, query, queryResponse) ?
+                        whenNoResultsUseWildcard(turSNSite, query, queryResponse) ?
                                 executeSolrQuery(turSolrInstance, query).orElse(queryResponse) :
                                 queryResponse));
     }
@@ -430,18 +429,18 @@ public class TurSolr {
         return turSEResults;
     }
 
-    private static void addAsteriskInQuery(SolrQuery query) {
+    private static void addAWildcardInQuery(SolrQuery query) {
         query.setQuery(query.getQuery().trim() + "*");
     }
 
-    private static boolean whenNoResultsUseAsterisk(TurSNSite turSNSite, SolrQuery query, QueryResponse queryResponse) {
+    private static boolean whenNoResultsUseWildcard(TurSNSite turSNSite, SolrQuery query, QueryResponse queryResponse) {
         if (queryResponse.getResults() != null && queryResponse.getResults().isEmpty()
                 && turSNSite.getWhenNoResultsUseAsterisk() != null && turSNSite.getWhenNoResultsUseAsterisk() == 1
                 && !query.getQuery().endsWith("*")
                 && !query.getQuery().endsWith("\"")
                 && !query.getQuery().endsWith("]")
                 && !query.getQuery().endsWith(")")) {
-            addAsteriskInQuery(query);
+            addAWildcardInQuery(query);
             return true;
         } else {
             return false;
@@ -656,11 +655,13 @@ public class TurSolr {
         return turSNSiteMLTFieldExtList;
     }
 
-    private static String setFacetTypeConditionInFacet(String query, TurSEParameters turSEParameters, TurSNSite turSNSite) {
+    private static String setFacetTypeConditionInFacet(String query, TurSEParameters turSEParameters,
+                                                       TurSNSite turSNSite) {
         return isOr(turSEParameters, turSNSite) ? "{!ex=dt}".concat(query) : query;
     }
 
-    private List<TurSNSiteFieldExt> prepareQueryFacet(TurSEParameters turSEParameters, TurSNSite turSNSite, SolrQuery query) {
+    private List<TurSNSiteFieldExt> prepareQueryFacet(TurSEParameters turSEParameters, TurSNSite turSNSite,
+                                                      SolrQuery query) {
         List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList = turSNSiteFieldExtRepository
                 .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
         if (wasFacetConfigured(turSNSite, turSNSiteFacetFieldExtList)) {
@@ -668,15 +669,27 @@ public class TurSolr {
                     .setFacetLimit(turSNSite.getItemsPerFacet())
                     .setFacetMinCount(1)
                     .setFacetSort(COUNT);
-            turSNSiteFacetFieldExtList.forEach(turSNSiteFacetFieldExt -> query.addFacetField(setFacetTypeConditionInFacet(
-                    (isNerOrThesaurus(turSNSiteFacetFieldExt.getSnType()) ? TURING_ENTITY : "")
-                            .concat(turSNSiteFacetFieldExt.getName()),
+            turSNSiteFacetFieldExtList.forEach(turSNSiteFacetFieldExt ->
+                            query.addFacetField(setFacetTypeConditionInFacet(
+                                    setEntityPrefix(turSNSiteFacetFieldExt)
+                                            .concat(turSNSiteFacetFieldExt.getName())
+                                            .concat(setCopyFieldSuffix(turSNSiteFacetFieldExt)),
                             turSEParameters, turSNSite)
 
             )
             );
         }
         return turSNSiteFacetFieldExtList;
+    }
+
+    @NotNull
+    private static String setEntityPrefix(TurSNSiteFieldExt turSNSiteFacetFieldExt) {
+        return isNerOrThesaurus(turSNSiteFacetFieldExt.getSnType()) ? TURING_ENTITY : "";
+    }
+
+    @NotNull
+    private static String setCopyFieldSuffix(TurSNSiteFieldExt turSNSiteFacetFieldExt) {
+        return turSNSiteFacetFieldExt.getType().equals(TurSEFieldType.STRING) ? "_str" : "";
     }
 
     private static boolean isNerOrThesaurus(TurSNFieldType snType) {

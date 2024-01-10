@@ -4,6 +4,6 @@ ${AnsiColor.BRIGHT_BLUE}   | | | || || '_|| || ' \ / _` | | _| \__ \
 ${AnsiColor.BRIGHT_BLUE}   |_|  \_,_||_|  |_||_||_|\__, | |___||___/ ${AnsiColor.BRIGHT_WHITE}${application.version}
 ${AnsiColor.BRIGHT_BLUE}                           |___/
 
-${AnsiColor.BRIGHT_WHITE}:: Copyright (C) 2016-2023 Viglet Turing Enterprise Search
+${AnsiColor.BRIGHT_WHITE}:: Copyright (C) 2016-2024 Viglet Turing Enterprise Search
 
 ${AnsiColor.BRIGHT_WHITE}:: Built with Spring Boot :: ${spring-boot.version}

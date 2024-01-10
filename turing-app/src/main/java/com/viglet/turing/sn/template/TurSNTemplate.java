@@ -88,8 +88,8 @@ public class TurSNTemplate {
 
 	public void createSNSite(TurSNSite turSNSite, String username, Locale locale) {
 		defaultSNUI(turSNSite);
-		createSEFields(turSNSite);
 		createLocale(turSNSite, username, locale);
+		createSEFields(turSNSite);
 		createRankingExpression(turSNSite);
 	}
 
@@ -113,38 +113,44 @@ public class TurSNTemplate {
 	}
 
 	public String createSolrCore(TurSNSiteLocale turSNSiteLocale, String username) {
-		String coreName;
-		if (turConfigProperties.isMultiTenant()) {
-			coreName = String.format("%s_%s_%s", username,
-					turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
-					turSNSiteLocale.getLanguage());
-		} else {
-			coreName = String.format("%s_%s",
-					turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
-					turSNSiteLocale.getLanguage());
-		}
-        Optional<TurSEInstance> turSEInstance = turSEInstanceRepository
+		final String coreName = getCoreName(turSNSiteLocale, username);
+		Optional<TurSEInstance> turSEInstance = turSEInstanceRepository
 				.findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId());
 		turSEInstance.ifPresent(instance -> {
-			String configset = turSNSiteLocale.getLanguage().getLanguage();
+			String configSet = turSNSiteLocale.getLanguage().getLanguage();
 			String[] locales = {"en", "es", "pt"};
-			if(!Arrays.asList(locales).contains(configset)) {
-				configset = "en";
+			if (!Arrays.asList(locales).contains(configSet)) {
+				configSet = "en";
 			}
 			String solrURL = String.format("http://%s:%s", instance.getHost(), instance.getPort());
 			if (turConfigProperties.getSolr().isCloud()) {
 				try {
 					TurSolrUtils.createCollection(solrURL, coreName,
-							resourceloader.getResource(String.format("classpath:solr/configsets/%s.zip", configset)).getInputStream());
+							resourceloader.getResource(
+											String.format("classpath:solr/configsets/%s.zip", configSet))
+									.getInputStream(),
+							1);
 				} catch (IOException e) {
 					log.error(e.getMessage(), e);
 				}
 			}
 			else {
-				TurSolrUtils.createCore(solrURL, coreName, configset);
+				TurSolrUtils.createCore(solrURL, coreName, configSet);
 			}
 		});
 		return coreName;
+	}
+
+	private String getCoreName(TurSNSiteLocale turSNSiteLocale, String username) {
+		if (turConfigProperties.isMultiTenant()) {
+			return String.format("%s_%s_%s", username,
+					turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
+					turSNSiteLocale.getLanguage());
+		} else {
+			return String.format("%s_%s",
+					turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
+					turSNSiteLocale.getLanguage());
+		}
 	}
 
 	private void createSNSiteField(TurSNSite turSNSite, String name, String description, TurSEFieldType type,
@@ -170,23 +176,36 @@ public class TurSNTemplate {
 				.snType(TurSNFieldType.SE)
 				.type(turSNSiteField.getType())
 				.turSNSite(turSNSite).build());
+		turSNSiteLocaleRepository.findByTurSNSite(turSNSite).forEach(turSNSiteLocale ->
+				createCopyField(multiValued, turSNSiteLocale, turSNSiteField));
+	}
+
+	private void createCopyField(int multiValued, TurSNSiteLocale turSNSiteLocale, TurSNSiteField turSNSiteField) {
+		turSEInstanceRepository
+				.findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId()).ifPresent(turSEInstance -> {
+					if (TurSolrUtils.isCreateCopyFieldByCore(turSEInstance, turSNSiteLocale.getCore(),
+							turSNSiteField.getName(), turSNSiteField.getType())) {
+						TurSolrUtils.createCopyFieldByCore(turSEInstance, turSNSiteLocale.getCore(),
+								turSNSiteField.getName(), multiValued == 1);
+					}
+				});
 	}
 
 	public void createSEFields(TurSNSite turSNSite) {
-		createSNSiteField(turSNSite, "title", "Title Field", TurSEFieldType.STRING, 0, "Titles", 1);
-		createSNSiteField(turSNSite, "text", "Text Field", TurSEFieldType.STRING, 0, "Texts", 1);
-		createSNSiteField(turSNSite, "abstract", "Short Description Field", TurSEFieldType.STRING, 0, "Abstracts", 1);
-		createSNSiteField(turSNSite, "type", "Content Type Field", TurSEFieldType.STRING, 0, "Types", 1);
-		createSNSiteField(turSNSite, "image", "Image Field", TurSEFieldType.STRING, 0, "Images", 0);
-		createSNSiteField(turSNSite, "url", "URL Field", TurSEFieldType.STRING, 0, "URLs", 0);
+		createSNSiteField(turSNSite, "title", "Title Field", TurSEFieldType.TEXT, 0, "Titles", 1);
+		createSNSiteField(turSNSite, "text", "Text Field", TurSEFieldType.TEXT, 0, "Texts", 1);
+		createSNSiteField(turSNSite, "abstract", "Short Description Field", TurSEFieldType.TEXT, 0, "Abstracts", 1);
+		createSNSiteField(turSNSite, "type", "Content Type Field", TurSEFieldType.TEXT, 0, "Types", 1);
+		createSNSiteField(turSNSite, "image", "Image Field", TurSEFieldType.TEXT, 0, "Images", 0);
+		createSNSiteField(turSNSite, "url", "URL Field", TurSEFieldType.TEXT, 0, "URLs", 0);
 		createSNSiteField(turSNSite, "publication_date", "Publication Date", TurSEFieldType.DATE, 0,
 				"Publication Dates", 0);
 		createSNSiteField(turSNSite, "modification_date", "Modification Date", TurSEFieldType.DATE, 0,
 				"Modification Dates", 0);
-		createSNSiteField(turSNSite, "site", "Site Name", TurSEFieldType.STRING, 0, "Sites", 0);
-		createSNSiteField(turSNSite, "author", "Author", TurSEFieldType.STRING, 0, "Authors", 0);
-		createSNSiteField(turSNSite, "section", "Section", TurSEFieldType.STRING, 0, "Sections", 0);
-		createSNSiteField(turSNSite, "source_apps", "Source Apps", TurSEFieldType.STRING, 1, "Source Apps", 0);
+		createSNSiteField(turSNSite, "site", "Site Name", TurSEFieldType.TEXT, 0, "Sites", 0);
+		createSNSiteField(turSNSite, "author", "Author", TurSEFieldType.TEXT, 0, "Authors", 0);
+		createSNSiteField(turSNSite, "section", "Section", TurSEFieldType.TEXT, 0, "Sections", 0);
+		createSNSiteField(turSNSite, "source_apps", "Source Apps", TurSEFieldType.TEXT, 1, "Source Apps", 0);
 	}
 
 	public void createLocale(TurSNSite turSNSite, String username, Locale locale) {
@@ -196,7 +215,6 @@ public class TurSNTemplate {
 		turSNSiteLocale.setTurSNSite(turSNSite);
 		turSNSiteLocale.setCore(createSolrCore(turSNSiteLocale, username));
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
-
 	}
 
 	private void createRankingExpression(TurSNSite turSNSite) {

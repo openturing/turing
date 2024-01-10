@@ -85,7 +85,7 @@
       <label for="sn-field-type">Type</label>
     </div>
     <div class="form-group-body">
-      <select [(ngModel)]="snSiteField.type" class="form-select">
+      <select [(ngModel)]="snSiteField.type" class="form-select" id="sn-field-type">
         <option *ngFor="let snFieldTypes of (getTurSNFieldTypes() | async)" [value]="snFieldTypes.id" style="width: 100%;">
           {{snFieldTypes.name}}
         </option>

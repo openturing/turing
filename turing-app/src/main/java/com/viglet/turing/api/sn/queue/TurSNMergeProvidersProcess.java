@@ -97,7 +97,7 @@ public class TurSNMergeProvidersProcess {
                     turSEResultFromAndTo.getFields(), turSNSiteMergeProviders);
         } else {
             if (hasSolrDocuments(resultsFrom) && hasSolrDocuments(resultsTo)) {
-                desindexSolrDocuments(turSNSiteMergeProviders, resultsFrom);
+                deIndexSolrDocuments(turSNSiteMergeProviders, resultsFrom);
             }
             if (hasSolrDocuments(resultsTo)) {
                 TurSEResult turSEResultTo = TurSolrUtils.createTurSEResultFromDocument(resultsTo.getFirst());
@@ -123,7 +123,7 @@ public class TurSNMergeProvidersProcess {
             TurSEResult turSEResultFrom = TurSolrUtils.createTurSEResultFromDocument(resultsFrom.getFirst());
             Map<String, Object> mergedDocumentAttributes = doMergeContent(turSEResultFrom.getFields(), queueDocumentAttrs,
                     turSNSiteMergeProviders);
-            desindexSolrDocuments(turSNSiteMergeProviders, resultsFrom);
+            deIndexSolrDocuments(turSNSiteMergeProviders, resultsFrom);
             return mergedDocumentAttributes;
         }
         return queueDocumentAttrs;
@@ -168,7 +168,7 @@ public class TurSNMergeProvidersProcess {
         return solrResultAnd(turSNSiteMergeProviders, queryMapFrom, locale);
     }
 
-    private void desindexSolrDocuments(TurSNSiteMergeProviders turSNSiteMergeProviders, List<SolrDocument> results) {
+    private void deIndexSolrDocuments(TurSNSiteMergeProviders turSNSiteMergeProviders, List<SolrDocument> results) {
         turSolrInstanceProcess
                 .initSolrInstance(turSNSiteMergeProviders.getTurSNSite().getName(), turSNSiteMergeProviders.getLocale())
                 .ifPresent(turSolrInstance -> results

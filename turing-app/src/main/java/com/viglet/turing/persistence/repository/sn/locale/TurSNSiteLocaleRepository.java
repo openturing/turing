@@ -39,4 +39,5 @@ public interface TurSNSiteLocaleRepository extends JpaRepository<TurSNSiteLocale
 	TurSNSiteLocale findByTurSNSiteAndLanguage(TurSNSite turSNSite, Locale language);
 	boolean existsByTurSNSiteAndLanguage(TurSNSite turSNSite, Locale language);
 	List<TurSNSiteLocale> findByTurSNSite(Sort name, TurSNSite turSNSite);
+	List<TurSNSiteLocale> findByTurSNSite(TurSNSite turSNSite);
 }

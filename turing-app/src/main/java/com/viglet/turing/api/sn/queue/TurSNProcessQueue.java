@@ -28,16 +28,20 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.TurSNNLPProcess;
 import com.viglet.turing.sn.TurSNThesaurusProcess;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolr;
+import com.viglet.turing.solr.TurSolrFieldAction;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
+import com.viglet.turing.solr.TurSolrUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +62,8 @@ public class TurSNProcessQueue {
     @Autowired
     private TurSNSiteRepository turSNSiteRepository;
     @Autowired
+    private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    @Autowired
     private TurSolrInstanceProcess turSolrInstanceProcess;
     @Autowired
     private TurSNMergeProvidersProcess turSNMergeProvidersProcess;
@@ -71,7 +77,8 @@ public class TurSNProcessQueue {
     private TurSNSiteFieldRepository turSNSiteFieldRepository;
     @Autowired
     private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-
+    @Autowired
+    private TurSEInstanceRepository turSEInstanceRepository;
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
     @Transactional
     public void receiveIndexingQueue(TurSNJob turSNJob) {
@@ -192,9 +199,31 @@ public class TurSNProcessQueue {
                         .snType(TurSNFieldType.SE)
                         .type(turSNSiteField.getType())
                         .turSNSite(turSNSite).build());
+                turSNSiteLocaleRepository.findByTurSNSite(turSNSite).forEach(turSNSiteLocale -> {
+                    if (!existsFieldInSearchEngine(turSNSite, turSNSiteLocale.getCore(), spec.getName())) {
+                        createFieldInSearchEngine(turSNSite, turSNSiteLocale.getCore(), turSNSiteField);
+                    }
+                });
 
             }
         });
+    }
+
+    private void createFieldInSearchEngine(TurSNSite turSNSite, String coreName, TurSNSiteField turSNSiteField) {
+        turSEInstanceRepository
+                .findById(turSNSite.getTurSEInstance().getId()).ifPresent(turSEInstance ->
+                        TurSolrUtils.addOrUpdateField(TurSolrFieldAction.ADD,
+                        turSEInstance,
+                        coreName,
+                        turSNSiteField.getName(),
+                        turSNSiteField.getType(),
+                        true,
+                        turSNSiteField.getMultiValued() == 1));
+
+    }
+
+    private boolean existsFieldInSearchEngine(TurSNSite turSNSite, String coreName, String name) {
+        return TurSolrUtils.existsField(turSNSite.getTurSEInstance(), coreName, name);
     }
 
     private Map<String, Object> getConsolidateResults(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {

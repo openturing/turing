@@ -21,7 +21,9 @@
 package com.viglet.turing.api.sn.queue;
 
 import lombok.Getter;
+import lombok.Setter;
 
+@Setter
 @Getter
 public class TurSpotlightContent {
 	private int position;
@@ -29,25 +31,5 @@ public class TurSpotlightContent {
 	private String content;
 	private String link;
 	private String type;
-
-	public void setPosition(int position) {
-		this.position = position;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public void setContent(String content) {
-		this.content = content;
-	}
-
-	public void setLink(String link) {
-		this.link = link;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
 
 }

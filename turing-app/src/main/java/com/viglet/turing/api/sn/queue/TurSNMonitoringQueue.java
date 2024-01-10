@@ -21,12 +21,10 @@
 package com.viglet.turing.api.sn.queue;
 
 import com.google.inject.Inject;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.viglet.turing.sn.TurSNQueue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.viglet.turing.sn.TurSNQueue;
 
 @RestController
 @RequestMapping("/api/queue")
