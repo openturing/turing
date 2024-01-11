@@ -25,7 +25,11 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.sn.TurSNFieldType;
 import jakarta.persistence.*;
+import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Tolerate;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -35,10 +39,11 @@ import java.io.Serializable;
  * The persistent class for the turSNSiteFieldExt database table.
  * 
  */
-@Getter
+
+@Builder
+@Data
 @Entity
-@Table(name = "turSNSiteFieldExt")
-@NamedQuery(name = "TurSNSiteFieldExt.findAll", query = "SELECT snsfe FROM TurSNSiteFieldExt snsfe")
+@Table(name = "sn_site_field_ext")
 public class TurSNSiteFieldExt implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -54,10 +59,10 @@ public class TurSNSiteFieldExt implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String name;
 	
-	@Column(nullable = true, length = 255)
+	@Column()
 	private String description;
 	
-	@Column(nullable = true, length = 50)
+	@Column(length = 50)
 	private String facetName;
 
 	@Column(nullable = false)
@@ -66,28 +71,28 @@ public class TurSNSiteFieldExt implements Serializable {
 	@Column(nullable = false)
 	private TurSEFieldType type;
 
-	@Column(nullable = true)
+	@Column()
 	private int multiValued;
 	
-	@Column(nullable = true)
+	@Column()
 	private int facet;
 	
-	@Column(nullable = true)
+	@Column()
 	private int hl;
 
-	@Column(nullable = true)
+	@Column()
 	private int mlt;
 
-	@Column(nullable = true)
+	@Column()
 	private int enabled;
 
-	@Column(nullable = true)
+	@Column()
 	private int required;
 	
-	@Column(nullable = true, length = 50)
+	@Column(length = 50)
 	private String defaultValue;
 	
-	@Column(nullable = true)
+	@Column()
 	private int nlp;
 	
 	// bi-directional many-to-one association to TurSNSite
@@ -95,74 +100,8 @@ public class TurSNSiteFieldExt implements Serializable {
 	@JoinColumn(name = "sn_site_id", nullable = false)
 	@JsonBackReference (value="turSNSiteFieldExt-turSNSite")
 	private TurSNSite turSNSite;
+	@Tolerate
+	public TurSNSiteFieldExt() {
 
-	public void setId(String id) {
-		this.id = id;
 	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setFacetName(String facetName) {
-		this.facetName = facetName;
-	}
-
-	public void setType(TurSEFieldType type) {
-		this.type = type;
-	}
-
-	public void setMultiValued(int multiValued) {
-		this.multiValued = multiValued;
-	}
-
-	public void setTurSNSite(TurSNSite turSNSite) {
-		this.turSNSite = turSNSite;
-	}
-
-	public static long getSerialversionuid() {
-		return serialVersionUID;
-	}
-
-	public void setFacet(int facet) {
-		this.facet = facet;
-	}
-
-	public void setHl(int hl) {
-		this.hl = hl;
-	}
-
-	public void setSnType(TurSNFieldType snType) {
-		this.snType = snType;
-	}
-
-	public void setMlt(int mlt) {
-		this.mlt = mlt;
-	}
-
-	public void setEnabled(int enabled) {
-		this.enabled = enabled;
-	}
-
-	public void setExternalId(String externalId) {
-		this.externalId = externalId;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setRequired(int required) {
-		this.required = required;
-	}
-
-	public void setDefaultValue(String defaultValue) {
-		this.defaultValue = defaultValue;
-	}
-
-	public void setNlp(int nlp) {
-		this.nlp = nlp;
-	}
-
-	
 }

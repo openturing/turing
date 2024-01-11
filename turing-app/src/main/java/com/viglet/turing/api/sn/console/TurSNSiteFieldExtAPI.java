@@ -42,6 +42,7 @@ import com.viglet.turing.sn.template.TurSNTemplate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.LocaleUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -172,47 +173,42 @@ public class TurSNSiteFieldExtAPI {
 	}
 
 	private TurSNSiteFieldExt saveSNSiteFieldExt(TurSNSite turSNSite, TurSNSiteField turSNSiteField) {
-		TurSNSiteFieldExt turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(0);
-		turSNSiteFieldExt.setName(turSNSiteField.getName());
-		turSNSiteFieldExt.setDescription(turSNSiteField.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName(turSNSiteField.getName());
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(turSNSiteField.getMultiValued());
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-		turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-		turSNSiteFieldExt.setType(turSNSiteField.getType());
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-		return turSNSiteFieldExt;
+		return turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
+				.enabled(0)
+				.name(turSNSiteField.getName())
+				.description(turSNSiteField.getDescription())
+				.facet(0)
+				.facetName(turSNSiteField.getName())
+				.hl(0)
+				.multiValued(turSNSiteField.getMultiValued())
+				.mlt(0)
+				.externalId(turSNSiteField.getId())
+				.snType(TurSNFieldType.SE)
+				.type(turSNSiteField.getType())
+				.turSNSite(turSNSite).build());
 	}
 
 	private void addTurSNSiteFieldExt(TurSNFieldType turSNFieldType, TurSNSite turSNSite,
 			List<TurSNSiteFieldExt> turSNSiteFieldExts, TurNLPEntity turNLPEntity) {
-		TurSNSiteFieldExt turSNSiteFieldExt = new TurSNSiteFieldExt();
-		turSNSiteFieldExt.setEnabled(0);
-		turSNSiteFieldExt.setName(turNLPEntity.getInternalName());
-		turSNSiteFieldExt.setDescription(turNLPEntity.getDescription());
-		turSNSiteFieldExt.setFacet(0);
-		turSNSiteFieldExt.setFacetName(turNLPEntity.getName());
-		turSNSiteFieldExt.setHl(0);
-		turSNSiteFieldExt.setMultiValued(1);
-		turSNSiteFieldExt.setMlt(0);
-		turSNSiteFieldExt.setExternalId(turNLPEntity.getInternalName());
-		turSNSiteFieldExt.setSnType(turSNFieldType);
-		turSNSiteFieldExt.setType(TurSEFieldType.STRING);
-		turSNSiteFieldExt.setTurSNSite(turSNSite);
-		turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-		turSNSiteFieldExts.add(turSNSiteFieldExt);
+		turSNSiteFieldExts.add(turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
+				.enabled(0)
+				.name(turNLPEntity.getInternalName())
+				.description(turNLPEntity.getDescription())
+				.facet(0)
+				.facetName(turNLPEntity.getName())
+				.hl(0)
+				.multiValued(1)
+				.mlt(0)
+				.externalId(turNLPEntity.getInternalName())
+				.snType(turSNFieldType)
+				.type(TurSEFieldType.STRING)
+				.turSNSite(turSNSite).build()));
 	}
 
 	@Operation(summary = "Show a Semantic Navigation Site Field Ext")
 	@GetMapping("/{id}")
 	public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable String ignoredSnSiteId, @PathVariable String id) {
-		return turSNSiteFieldExtRepository.findById(id).orElse(new TurSNSiteFieldExt());
+		return turSNSiteFieldExtRepository.findById(id).orElse(TurSNSiteFieldExt.builder().build());
 	}
 
 	@Operation(summary = "Update a Semantic Navigation Site Field Ext")
@@ -238,7 +234,7 @@ public class TurSNSiteFieldExtAPI {
 
 			this.updateExternalField(turSNSiteFieldExt);
 			return turSNSiteFieldExtEdit;
-		}).orElse(new TurSNSiteFieldExt());
+		}).orElse(TurSNSiteFieldExt.builder().build());
 
 	}
 
@@ -280,7 +276,7 @@ public class TurSNSiteFieldExtAPI {
 
 			return turSNSiteFieldExt;
 
-		}).orElse(new TurSNSiteFieldExt());
+		}).orElse(TurSNSiteFieldExt.builder().build());
 
 	}
 
@@ -310,35 +306,36 @@ public class TurSNSiteFieldExtAPI {
 	}
 
 	@GetMapping("/create")
-	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String ignoredSnSiteId, @PathVariable String locale) {
+	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String ignoredSnSiteId, @PathVariable String localeRequest) {
+		Locale locale = LocaleUtils.toLocale(localeRequest);
 		return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
-			List<TurSNSiteFieldExt> turSNSiteFieldExts = turSNSiteFieldExtRepository
+			List<TurSNSiteFieldExt> turSNSiteFieldExtList = turSNSiteFieldExtRepository
 					.findByTurSNSiteAndEnabled(turSNSite, 1);
-			turSNSiteFieldExts.forEach(turSNSiteFieldExt -> this.createField(turSNSite, locale, turSNSiteFieldExt));
+			turSNSiteFieldExtList.forEach(turSNSiteFieldExt -> this.createField(turSNSite, locale, turSNSiteFieldExt));
 			return this.turSNSiteRepository.findAll();
 		}).orElse(new ArrayList<>());
 	}
 
-	public void createField(TurSNSite turSNSite, String locale, TurSNSiteFieldExt turSNSiteFieldExts) {
+	public void createField(TurSNSite turSNSite, Locale locale, TurSNSiteFieldExt turSNSiteFieldExtList) {
 		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
 		JSONObject jsonAddField = new JSONObject();
 		String fieldName;
 
-		if (turSNSiteFieldExts.getSnType() == TurSNFieldType.NER) {
-			fieldName = String.format("turing_entity_%s", turSNSiteFieldExts.getName());
+		if (turSNSiteFieldExtList.getSnType() == TurSNFieldType.NER) {
+			fieldName = String.format("turing_entity_%s", turSNSiteFieldExtList.getName());
 		} else {
-			fieldName = turSNSiteFieldExts.getName();
+			fieldName = turSNSiteFieldExtList.getName();
 		}
 
 		jsonAddField.put("name", fieldName);
 
 		jsonAddField.put("indexed", true);
 		jsonAddField.put("stored", true);
-		if (turSNSiteFieldExts.getMultiValued() == 1) {
+		if (turSNSiteFieldExtList.getMultiValued() == 1) {
 			jsonAddField.put("type", "string");
 			jsonAddField.put("multiValued", true);
 		} else {
-			if (turSNSiteFieldExts.getType().equals(TurSEFieldType.DATE)) {
+			if (turSNSiteFieldExtList.getType().equals(TurSEFieldType.DATE)) {
 				jsonAddField.put("type", "pdate");
 			} else {
 				jsonAddField.put("type", "text_general");

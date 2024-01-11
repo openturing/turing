@@ -22,6 +22,7 @@ package com.viglet.turing.persistence.model.auth;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -37,18 +38,21 @@ import java.util.Set;
 
 @Getter
 @Entity
-@Table(name = "tur_group")
+@Table(name = "auth_group")
 public class TurGroup implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Setter
 	@Id
 	@UuidGenerator
 	@Column(updatable = false, nullable = false)
 	private String id;
 
+	@Setter
 	private String name;
 
+	@Setter
 	private String description;
 
 	@ManyToMany
@@ -56,18 +60,6 @@ public class TurGroup implements Serializable {
 
 	@ManyToMany(mappedBy = "turGroups")
 	private Collection<TurUser> turUsers = new HashSet<>();
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
 
 	public void setTurUsers(Collection<TurUser> turUsers) {
 		this.turUsers.clear();

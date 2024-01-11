@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -33,10 +34,10 @@ import java.io.Serializable;
  * The persistent class for the turDataGroupCategory database table.
  * 
  */
+@Setter
 @Getter
 @Entity
-@Table(name="turDataGroupCategory")
-@NamedQuery(name="TurDataGroupCategory.findAll", query="SELECT dgc FROM TurDataGroupCategory dgc")
+@Table(name="data_group_category")
 public class TurDataGroupCategory implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -57,17 +58,5 @@ public class TurDataGroupCategory implements Serializable {
 	@JoinColumn(name="data_group_id", nullable=false)
 	@JsonBackReference (value="turDataGroupCategory-turDataGroup")
 	private TurDataGroup turDataGroup;
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public void setTurMLCategory(TurMLCategory turCategory) {
-		this.turMLCategory = turCategory;
-	}
-
-	public void setTurDataGroup(TurDataGroup turDataGroup) {
-		this.turDataGroup = turDataGroup;
-	}
 
 }

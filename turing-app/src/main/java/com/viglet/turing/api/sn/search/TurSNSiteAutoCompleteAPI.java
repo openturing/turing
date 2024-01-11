@@ -21,26 +21,34 @@
 
 package com.viglet.turing.api.sn.search;
 
+import com.google.inject.Inject;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.sn.ac.TurSNAutoComplete;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang.LocaleUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/sn/{siteName}/ac")
 @Tag(name = "Semantic Navigation Auto Complete", description = "Semantic Navigation Auto Complete API")
 public class TurSNSiteAutoCompleteAPI {
-	@Autowired
-	private TurSNAutoComplete turSNAutoComplete;
+
+	private final TurSNAutoComplete turSNAutoComplete;
+
+	@Inject
+	public TurSNSiteAutoCompleteAPI(TurSNAutoComplete turSNAutoComplete) {
+		this.turSNAutoComplete = turSNAutoComplete;
+	}
 
 	@GetMapping
 	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,
 			@RequestParam(required = true, name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, defaultValue = "20", name = TurSNParamType.ROWS) long rows,
-			@RequestParam(required = false, name = TurSNParamType.LOCALE) String locale) {
+			@RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest) {
+		Locale locale = LocaleUtils.toLocale(localeRequest);
 		return turSNAutoComplete.autoComplete(siteName, q, locale, rows);
 	}
 }

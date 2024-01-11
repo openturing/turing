@@ -37,7 +37,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name = "tur_dev_token")
+@Table(name = "dev_token")
 public class TurDevToken extends TurAuditable<String>  implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

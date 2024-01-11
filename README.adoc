@@ -3,7 +3,7 @@ Viglet Team <opensource@viglet.com>
 :organization: Viglet Turing
 :toclevels: 5
 :toc-title: Table of Content
-:viglet-version: 0.3.6
+:viglet-version: 0.3.7
 
 [preface]
 image:https://img.shields.io/badge/Download-Release%20{viglet-version}-blue?style=for-the-badge&logo=Java[link="https://viglet.com/turing/download/"]
@@ -12,9 +12,9 @@ image:https://img.shields.io/github/last-commit/openturing/turing.svg?style=for-
 image:https://img.shields.io/github/actions/workflow/status/openturing/turing/build.yml?branch=0.3.7&style=for-the-badge&logo=GitHub[link="https://github.com/openturing/turing/actions/workflows/build.yml"]
 image:https://img.shields.io/badge/Sonar-Code%20Quality-brightgreen?style=for-the-badge&logo=SonarCloud[link="https://sonarcloud.io/organizations/viglet-turing/projects"]
 
-= Preface
+== Preface
 
-Viglet Turing ES (https://openviglet.github.io/turing/) is an open source solution (https://github.com/openturing), which has Semantic Navigation and Chatbot as its main features. You can choose from several NLPs to enrich the data. All content is indexed in Solr as search engine.
+Viglet Turing ES (https://openviglet.github.io/turing/) is an open source solution (https://github.com/openturing), which has Semantic Navigation and Chat bot as its main features. You can choose from several NLPs to enrich the data. All content is indexed in Solr as search engine.
 
 :numbered:
 
@@ -28,7 +28,8 @@ Technical documentation on Turing ES is available at https://openviglet.github.i
 
 To run Turing ES, just execute the following lines:
 
-```shell
+[source,shell]
+----
 # Turing App
 mvn -Dmaven.repo.local=D:\repo spring-boot:run -pl turing-app -Dskip.npm
 
@@ -45,16 +46,17 @@ ng serve console
 ## Search
 ng serve sn
 
-## Chatbot
+## Chat bot
 ng serve converse
-```
+----
 === Docker Compose
 
 You can start the Turing ES using MariaDB, Solr and Nginx.
 
-```shell
+[source,shell]
+----
 docker-compose up
-```
+----
 
 === URLs
 
@@ -82,7 +84,7 @@ It transforms data into insights for better decision-making and information mana
 Website: https://www.opentext.com/
 
 === CoreNLP
-CoreNLP is your one stop shop for natural language processing in Java! CoreNLP enables users to derive linguistic annotations for text, including token and sentence boundaries, parts of speech, named entities, numeric and time values, dependency and constituency parses, coreference, sentiment, quote attributions, and relations. CoreNLP currently supports 6 languages: Arabic, Chinese, English, French, German, and Spanish.
+CoreNLP is your one-stop shop for natural language processing in Java! CoreNLP enables users to derive linguistic annotations for text, including token and sentence boundaries, parts of speech, named entities, numeric and time values, dependency and constituency parses, coreference, sentiment, quote attributions, and relations. CoreNLP currently supports 6 languages: Arabic, Chinese, English, French, German, and Spanish.
 
 Website: https://stanfordnlp.github.io/CoreNLP/,
 
@@ -98,7 +100,7 @@ Website: https://polyglot.readthedocs.io
 
 == Documents and OCR
 
-It can read PDFs and Documents and convert to plain text and also it uses OCR to detect text in images and images into documents.
+It can read PDFs and Documents and convert to plain text, and also it uses OCR to detect text in images and images into documents.
 
 == Semantic Navigation
 
@@ -126,14 +128,14 @@ OpenText WEM Listener to publish content to Viglet Turing.
 
 Learn more at https://docs.viglet.com/turing/connectors/#wem
 
-==== Wordpress
-Wordpress plugin that allows you to index posts.
+==== WordPress
+WordPress plugin that allows you to index posts.
 
 Learn more at https://docs.viglet.com/turing/connectors/#wordpress
 
 
 === Named Entity Recognition (NER)
-With NLP it is possible to detect entities such as:
+With NLP, it is possible to detect entities such as:
 
 * People
 * Places
@@ -181,7 +183,7 @@ Turing ES detects Entities of OpenText Blazon Documents using OCR and NLP, gener
 [[turing-console]]
 == Turing ES Console
 
-Turing ES has many components: Search Engine, NLP, Converse (Chatbot), Semantic Navigation
+Turing ES has many components: Search Engine, NLP, Converse (Chat bot), Semantic Navigation
 
 [[turing-console-login]]
 === Login
@@ -197,7 +199,7 @@ image::img/screenshots/turing-login.png[Login]
 === Search Engine
 
 ==== Configuration
-Search Engine is used by Turing to store and retrieve data of Converse (Chatbot) and Semantic Navigation Sites.
+Search Engine is used by Turing to store and retrieve data of Converse (Chat bot) and Semantic Navigation Sites.
 
 [#img-se] 
 .Search Engine Page
@@ -211,7 +213,7 @@ It is possible create or edit a Search Engine with following attributes:
 | Attribute | Description
 | Name | Name of Search Engine
 | Description | Description of Search Engine
-| Vendor | Select the Vendor of Search Engine. For now it only supports Solr.
+| Vendor | Select the Vendor of Search Engine. For now, it only supports Solr.
 | Host | Host name where the Search Engine service is installed
 | Port | Port of Search Engine Service
 | Language | Language of Search Engine Service.
@@ -232,7 +234,7 @@ image::img/screenshots/turing-sn.png[Semantic Navigation Page]
 
 The Detail of Semantic Navigation Site contains the following attributes:
 
-.Semantic Navitation Site Detail
+.Semantic Navigation Site Detail
 [%header,cols=2*] 
 |===
 | Attribute | Description
@@ -240,7 +242,7 @@ The Detail of Semantic Navigation Site contains the following attributes:
 | Description | Description of Semantic Navigation Site.
 | Search Engine | Select the Search Engine that was created in Search Engine Section. The Semantic Navigation Site will use this Search Engine to store and retrieve data.
 | NLP | Select the NLP that was created in NLP Section. THe Semantic Navigation Site will use this NLP to detect entities during indexing.
-| Thesaurus | If will use Thesaurus.
+| Thesaurus | If you use Thesaurus.
 | Language | Language of Semantic Navigation Site.
 | Core | Name of core of Search Engine where will be stored and retrieved the data.
 |===
@@ -250,7 +252,7 @@ The Detail of Semantic Navigation Site contains the following attributes:
 ===== Fields Tab
 
 Fields Tab contains a table with the following columns:
-.Semantic Navitation Site Fields Columns
+.Semantic Navigation Site Fields Columns
 [%header,cols=2*] 
 |===
 | Column Name | Description
@@ -258,7 +260,7 @@ Fields Tab contains a table with the following columns:
 
 - NER (Named Entity Recognition) used by NLP.
 
-- Seach Engine used by Solr.
+- Search Engine used by Solr.
 | Field | Name of Field.
 | Enabled | If the field is enabled or not.
 | MLT | If this field will be used in MLT.
@@ -269,14 +271,14 @@ Fields Tab contains a table with the following columns:
 
 When click in Field appear a new page with Field Details with the following attributes:
 
-.Semantic Navitation Site Fields Detail Attributes
+.Semantic Navigation Site Fields Detail Attributes
 [%header,cols=2*] 
 |===
 | Attribute | Description
 | Name | Name of Field
 | Description | Description of Field
 | Type | Type of Field. It can be: `INT`, `LONG`, `STRING`, `DATE` and `BOOL`
-| Multi Valued | If is a array
+| Multi Valued | If is an array
 | Facet Name | Name of Label of Facet (Filter) on Search Page.
 | Facet | To use this field like a facet (filter)
 | Highlighting | If this field will show highlighted lines.
@@ -293,7 +295,7 @@ When click in Field appear a new page with Field Details with the following attr
 
 Contains the following attributes:
 
-.Semantic Navitation Site Appearance Attributes
+.Semantic Navigation Site Appearance Attributes
 [%header,cols=3*] 
 |===
 | Section | Attribute | Description

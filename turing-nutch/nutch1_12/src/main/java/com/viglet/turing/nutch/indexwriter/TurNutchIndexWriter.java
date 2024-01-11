@@ -54,10 +54,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 			logger.warn("Could not decode: " + key + ", it probably wasn't encoded in the first place..");
 		}
 
-		// escape solr hash separator
-		key = key.replaceAll("!", "\\!");
-
-		Map<String, Object> attributes = new HashMap<String, Object>();
+		Map<String, Object> attributes = new HashMap<>();
 		attributes.put(TurNutchCommons.ID_FIELD, key);
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);

@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.util.Locale;
+
 /**
  * Details about the request query string of Turing AI Semantic Navigation
  * response.
@@ -38,5 +40,5 @@ import lombok.experimental.Accessors;
 public class TurSNSiteSearchQueryContextQueryBean {
 	private String queryString;
 	private String sort;
-	private String locale;
+	private Locale locale;
 }

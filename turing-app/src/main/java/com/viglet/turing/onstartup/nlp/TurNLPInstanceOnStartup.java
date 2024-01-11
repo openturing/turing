@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup.nlp;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,13 +37,19 @@ import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 @Transactional
 public class TurNLPInstanceOnStartup {
 	private static final String LOCALHOST = "http://localhost";
-	@Autowired
-	private TurNLPInstanceRepository turNLPInstanceRepository;
-	@Autowired
-	private TurNLPVendorRepository turNLPVendorRepository;
-	@Autowired
-	private TurConfigVarRepository turConfigVarRepository;
-	
+	private final TurNLPInstanceRepository turNLPInstanceRepository;
+	private final TurNLPVendorRepository turNLPVendorRepository;
+	private final TurConfigVarRepository turConfigVarRepository;
+
+	@Inject
+	public TurNLPInstanceOnStartup(TurNLPInstanceRepository turNLPInstanceRepository,
+								   TurNLPVendorRepository turNLPVendorRepository,
+								   TurConfigVarRepository turConfigVarRepository) {
+		this.turNLPInstanceRepository = turNLPInstanceRepository;
+		this.turNLPVendorRepository = turNLPVendorRepository;
+		this.turConfigVarRepository = turConfigVarRepository;
+	}
+
 	public void createDefaultRows() {
 
 		TurConfigVar turConfigVar = new TurConfigVar();

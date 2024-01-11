@@ -39,7 +39,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name="tur_term_variation")
+@Table(name="term_variation")
 @JsonIgnoreProperties({ "turTerm" } )
 public class TurTermVariation implements Serializable {
 	@Serial
@@ -85,19 +85,4 @@ public class TurTermVariation implements Serializable {
 	//bi-directional many-to-one association to TurTermVariationLanguage
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTermVariation", cascade = CascadeType.ALL)
 	private List<TurTermVariationLanguage> turTermVariationLanguages;
-
-	public TurTermVariationLanguage addTurTermVariationLanguage(TurTermVariationLanguage turTermVariationLanguage) {
-		getTurTermVariationLanguages().add(turTermVariationLanguage);
-		turTermVariationLanguage.setTurTermVariation(this);
-
-		return turTermVariationLanguage;
-	}
-
-	public TurTermVariationLanguage removeTurTermVariationLanguage(TurTermVariationLanguage turTermVariationLanguage) {
-		getTurTermVariationLanguages().remove(turTermVariationLanguage);
-		turTermVariationLanguage.setTurTermVariation(null);
-
-		return turTermVariationLanguage;
-	}
-
 }

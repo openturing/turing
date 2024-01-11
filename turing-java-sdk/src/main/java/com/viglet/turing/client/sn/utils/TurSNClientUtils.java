@@ -16,8 +16,8 @@
 package com.viglet.turing.client.sn.utils;
 
 import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.core5.http.HttpHeaders;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;

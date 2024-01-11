@@ -39,6 +39,12 @@ public class TurMultiValue extends ArrayList<String> {
 		return turMultiValue;
 	}
 
+	public static TurMultiValue singleItem(boolean bool) {
+		TurMultiValue turMultiValue = new TurMultiValue();
+		turMultiValue.add(bool? "true": "false");
+		return turMultiValue;
+	}
+
 	public static TurMultiValue singleItem(Date date) {
 		if (date == null) {
 			return null;

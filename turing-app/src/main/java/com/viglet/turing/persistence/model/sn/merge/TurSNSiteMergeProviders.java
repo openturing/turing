@@ -33,6 +33,7 @@ import org.hibernate.annotations.*;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -44,8 +45,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "turSNSiteMergeProviders")
-@NamedQuery(name = "TurSNSiteMerge.findAll", query = "SELECT snsmp FROM TurSNSiteMergeProviders snsmp")
+@Table(name = "sn_site_merge_provider")
 public class TurSNSiteMergeProviders implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -61,7 +61,7 @@ public class TurSNSiteMergeProviders implements Serializable {
 	private TurSNSite turSNSite;
 
 	@Column(nullable = false, length = 5)
-	private String locale;
+	private Locale locale;
 
 	@Column
 	private String description;

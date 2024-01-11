@@ -15,11 +15,11 @@
     <url>https://github.com/openturing/turing</url>
     <packaging>jar</packaging>
     <properties>
-        <spring-boot.version>3.2.0</spring-boot.version>
+        <spring-boot.version>3.2.1</spring-boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <sonar.organization>viglet-turing</sonar.organization>
         <sonar.projectKey>turing-app</sonar.projectKey>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
@@ -66,6 +66,17 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-commons</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.viglet.turing</groupId>
+            <artifactId>turing-java-sdk</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
@@ -139,10 +150,6 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
         </dependency>
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
@@ -276,6 +283,10 @@
             <version>6.2.1</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>
@@ -293,8 +304,9 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.12.0</version>
+                    <version>3.12.1</version>
                     <configuration>
                         <parameters>true</parameters>
                     </configuration>
@@ -346,7 +358,6 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <!-- everything else is default -->
                     <generateGitPropertiesFile>false</generateGitPropertiesFile>
                 </configuration>
             </plugin>
@@ -381,12 +392,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.1</version>
+                <version>3.2.3</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.22.1</version>
+                <version>3.2.3</version>
                 <executions>
                     <execution>
                         <goals>

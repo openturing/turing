@@ -20,12 +20,15 @@
  */
 package com.viglet.turing.api.sn.job;
 
+import com.viglet.turing.client.sn.job.TurSNJobItems;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.stereotype.Component;
 
 import java.io.Serial;
 import java.io.Serializable;
 
+@Setter
 @Getter
 @Component
 public class TurSNJob implements Serializable {
@@ -37,14 +40,6 @@ public class TurSNJob implements Serializable {
 
 	private TurSNJobItems turSNJobItems;
 
-	public void setSiteId(String siteId) {
-		this.siteId = siteId;
-	}
-
-	public void setTurSNJobItems(TurSNJobItems turSNJobItems) {
-		this.turSNJobItems = turSNJobItems;
-	}
-	
 	public String toString() {
 		return String.format("siteId: %s, turSNJobItems: %s", this.getSiteId(), this.getTurSNJobItems());
 	}

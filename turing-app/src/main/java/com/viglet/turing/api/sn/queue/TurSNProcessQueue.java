@@ -22,35 +22,47 @@
 package com.viglet.turing.api.sn.queue;
 
 import com.viglet.turing.api.sn.job.TurSNJob;
-import com.viglet.turing.api.sn.job.TurSNJobAction;
-import com.viglet.turing.api.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteField;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNConstants;
+import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.TurSNNLPProcess;
 import com.viglet.turing.sn.TurSNThesaurusProcess;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolr;
+import com.viglet.turing.solr.TurSolrFieldAction;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.viglet.turing.solr.TurSolrUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.invoke.MethodHandles;
 import java.util.*;
 import java.util.Map.Entry;
 
 @Component
+@Slf4j
 public class TurSNProcessQueue {
-    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+    public static final String CREATED = "Created";
+    public static final String DELETED = "Deleted";
     @Autowired
     private TurSolr turSolr;
     @Autowired
     private TurSNSiteRepository turSNSiteRepository;
+    @Autowired
+    private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     @Autowired
     private TurSolrInstanceProcess turSolrInstanceProcess;
     @Autowired
@@ -61,52 +73,48 @@ public class TurSNProcessQueue {
     private TurSNNLPProcess turSNNLPProcess;
     @Autowired
     private TurSNThesaurusProcess turSNThesaurusProcess;
-
-    public TurSNProcessQueue() {
-        // Empty
-    }
-
+    @Autowired
+    private TurSNSiteFieldRepository turSNSiteFieldRepository;
+    @Autowired
+    private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    @Autowired
+    private TurSEInstanceRepository turSEInstanceRepository;
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
     @Transactional
     public void receiveIndexingQueue(TurSNJob turSNJob) {
-        logger.debug("receiveQueue turSNJob: {}", turSNJob);
-        if (turSNJob != null) {
-            this.turSNSiteRepository.findById(turSNJob.getSiteId()).ifPresent(turSNSite ->
-                    turSNJob.getTurSNJobItems().forEach(turSNJobItem -> {
-                        if (processJob(turSNSite, turSNJobItem)) {
-                            processQueueInfo(turSNSite, turSNJobItem);
-                        } else {
-                            noProcessedWarning(turSNSite, turSNJobItem);
-                        }
-                    })
-            );
-        } else {
-            logger.debug("turSNJob empty or siteId empty");
-        }
+        log.debug("receiveQueue turSNJob: {}", turSNJob);
+        Optional.ofNullable(turSNJob).ifPresentOrElse(job ->
+                turSNSiteRepository.findById(job.getSiteId())
+                        .ifPresent(turSNSite ->
+                                job.getTurSNJobItems().forEach(turSNJobItem -> {
+                                    if (processJob(turSNSite, turSNJobItem)) {
+                                        processQueueInfo(turSNSite, turSNJobItem);
+                                    } else {
+                                        noProcessedWarning(turSNSite, turSNJobItem);
+                                    }
+                                })
+                        ), () -> log.debug("turSNJob empty or siteId empty"));
     }
 
     private void noProcessedWarning(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
-        logger.warn("Object ID '{}' of '{}' SN Site ({}) was not processed",
-                turSNJobItem.getAttributes().get("id"),
+        log.warn("Object ID '{}' of '{}' SN Site ({}) was not processed",
+                turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
                 turSNSite.getName(),
                 turSNJobItem.getLocale());
     }
 
     private boolean processJob(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
-        boolean status = false;
-        logger.debug("processJob TurSNJobItem: {}", turSNJobItem);
-        if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
-            status = createJob(turSNSite, turSNJobItem);
-        } else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
-            status = deleteJob(turSNSite, turSNJobItem);
-        }
-        return status;
+        log.debug("processJob TurSNJobItem: {}", turSNJobItem);
+        return switch (turSNJobItem.getTurSNJobAction()) {
+            case CREATE -> createJob(turSNSite, turSNJobItem);
+            case DELETE -> deleteJob(turSNSite, turSNJobItem);
+        };
     }
 
     private boolean deleteJob(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
         return (turSNSpotlightProcess.isSpotlightJob(turSNJobItem))
                 ? turSNSpotlightProcess.deleteUnmanagedSpotlight(turSNJobItem, turSNSite)
-                : deindex(turSNJobItem, turSNSite);
+                : deIndex(turSNJobItem, turSNSite);
     }
 
     private boolean createJob(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
@@ -116,87 +124,140 @@ public class TurSNProcessQueue {
     }
 
     private void processQueueInfo(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
-        if (turSNSite != null && turSNJobItem != null && turSNJobItem.getAttributes() != null) {
-            String action = null;
-            if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
-                action = "Created";
-            } else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
-                action = "Deleted";
-            }
-            if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
-                logger.info("{} the Object ID '{}' of '{}' SN Site ({}).", action,
-                        turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
-                        turSNSite.getName(), turSNJobItem.getLocale());
-            } else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.TYPE_ATTRIBUTE)) {
-                logger.info("{} the Object Type '{}' of '{}' SN Site ({}).", action,
-                        turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE),
-                        turSNSite.getName(), turSNJobItem.getLocale());
+        if (ObjectUtils.allNotNull(turSNSite, turSNJobItem) && turSNJobItem.getAttributes() != null) {
+            switch (turSNJobItem.getTurSNJobAction()) {
+                case CREATE -> logCrudObject(turSNSite, turSNJobItem, CREATED);
+                case DELETE -> logCrudObject(turSNSite, turSNJobItem, DELETED);
             }
         }
     }
 
-    public boolean deindex(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
-        logger.debug("Deindex");
-        return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale()).map(turSolrInstance -> {
+    private static void logCrudObject(TurSNSite turSNSite, TurSNJobItem turSNJobItem, String action) {
+        if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE))
+            logCrudObjectMessage(turSNSite, turSNJobItem, action, TurSNConstants.ID_ATTRIBUTE);
+        else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.TYPE_ATTRIBUTE))
+            logCrudObjectMessage(turSNSite, turSNJobItem, action, TurSNConstants.TYPE_ATTRIBUTE);
+    }
+
+    private static void logCrudObjectMessage(TurSNSite turSNSite, TurSNJobItem turSNJobItem,
+                                             String action, String attribute) {
+        log.info("{} the Object ID '{}' of '{}' SN Site ({}).", action,
+                turSNJobItem.getAttributes().get(attribute),
+                turSNSite.getName(), turSNJobItem.getLocale());
+    }
+
+    public boolean deIndex(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
+        log.debug("DeIndex");
+        return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale())
+                .map(turSolrInstance -> {
             if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
-                turSolr.deIndexing(turSolrInstance, (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE));
+                turSolr.deIndexing(turSolrInstance,
+                        (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE));
             } else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.TYPE_ATTRIBUTE)) {
-                turSolr.deIndexingByType(turSolrInstance, (String) turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE));
+                turSolr.deIndexingByType(turSolrInstance,
+                        (String) turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE));
             }
             return true;
         }).orElse(false);
     }
 
-    public boolean index(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
-        logger.debug("Index");
-        Map<String, Object> consolidateResults = new HashMap<>();
-
-        processSEAttributes(turSNJobItem, consolidateResults);
-
-        turSNNLPProcess.processNLP(turSNJobItem, turSNSite, consolidateResults);
-
-        turSNThesaurusProcess.processThesaurus(turSNJobItem, turSNSite, consolidateResults);
-
+    private boolean index(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
+        log.debug("Index");
         Map<String, Object> attributes = this.removeDuplicateTerms(
-                turSNMergeProvidersProcess.mergeDocuments(turSNSite, consolidateResults, turSNJobItem.getLocale()));
-
-        // SE
-        return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale()).map(turSolrInstance -> {
+                turSNMergeProvidersProcess.mergeDocuments(turSNSite,
+                        getConsolidateResults(turSNJobItem, turSNSite),
+                        turSNJobItem.getLocale()));
+        createMissingFields(turSNSite, turSNJobItem.getSpecs());
+        return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(),
+                turSNJobItem.getLocale()).map(turSolrInstance -> {
             turSolr.indexing(turSolrInstance, turSNSite, attributes);
             return true;
         }).orElse(false);
 
     }
 
-    private void processSEAttributes(TurSNJobItem turSNJobItem, Map<String, Object> consolidateResults) {
-        for (Entry<String, Object> attribute : turSNJobItem.getAttributes().entrySet()) {
-            if (logger.isDebugEnabled())
-                logger.debug("SE Consolidate Value: {}", attribute.getValue());
-            if (attribute.getValue() != null) {
-                if (logger.isDebugEnabled())
-                    logger.debug("SE Consolidate Class: {}", attribute.getValue().getClass().getName());
-                consolidateResults.put(attribute.getKey(), attribute.getValue());
+    private void createMissingFields(TurSNSite turSNSite, List<TurSNAttributeSpec> turSNAttributeSpecs) {
+        turSNAttributeSpecs.forEach(spec -> {
+            if (!turSNSiteFieldExtRepository.existsByTurSNSiteAndName(turSNSite, spec.getName())) {
+                TurSNSiteField turSNSiteField = TurSNSiteField.builder()
+                        .name(spec.getName())
+                        .description(spec.getDescription())
+                        .type(spec.getType())
+                        .multiValued(spec.isMultiValued() ? 1 : 0)
+                        .turSNSite(turSNSite).build();
+                turSNSiteFieldRepository.save(turSNSiteField);
+                turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
+                        .enabled(1)
+                        .name(turSNSiteField.getName())
+                        .description(turSNSiteField.getDescription())
+                        .facet(spec.isFacet() ? 1 : 0)
+                        .facetName(spec.getFacetName())
+                        .hl(0)
+                        .multiValued(turSNSiteField.getMultiValued())
+                        .mlt(0)
+                        .externalId(turSNSiteField.getId())
+                        .snType(TurSNFieldType.SE)
+                        .type(turSNSiteField.getType())
+                        .turSNSite(turSNSite).build());
+                turSNSiteLocaleRepository.findByTurSNSite(turSNSite).forEach(turSNSiteLocale -> {
+                    if (!existsFieldInSearchEngine(turSNSite, turSNSiteLocale.getCore(), spec.getName())) {
+                        createFieldInSearchEngine(turSNSite, turSNSiteLocale.getCore(), turSNSiteField);
+                    }
+                });
+
             }
-        }
+        });
+    }
+
+    private void createFieldInSearchEngine(TurSNSite turSNSite, String coreName, TurSNSiteField turSNSiteField) {
+        turSEInstanceRepository
+                .findById(turSNSite.getTurSEInstance().getId()).ifPresent(turSEInstance ->
+                        TurSolrUtils.addOrUpdateField(TurSolrFieldAction.ADD,
+                        turSEInstance,
+                        coreName,
+                        turSNSiteField.getName(),
+                        turSNSiteField.getType(),
+                        true,
+                        turSNSiteField.getMultiValued() == 1));
+
+    }
+
+    private boolean existsFieldInSearchEngine(TurSNSite turSNSite, String coreName, String name) {
+        return TurSolrUtils.existsField(turSNSite.getTurSEInstance(), coreName, name);
+    }
+
+    private Map<String, Object> getConsolidateResults(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
+        Map<String, Object> consolidateResults = new HashMap<>();
+        Optional.ofNullable(turSNJobItem.getAttributes()).ifPresent(attributes ->
+                attributes.forEach((key, value1) -> {
+                    log.debug("SE Consolidate Value: {}", value1);
+                    Optional.ofNullable(value1).ifPresent(value -> {
+                        log.debug("SE Consolidate Class: {}", value.getClass().getName());
+                        consolidateResults.put(key, value);
+                    });
+                }));
+
+        turSNNLPProcess.processNLP(turSNJobItem, turSNSite, consolidateResults);
+        turSNThesaurusProcess.processThesaurus(turSNJobItem, turSNSite, consolidateResults);
+        return consolidateResults;
     }
 
     public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {
         Map<String, Object> attributesWithUniqueTerms = new HashMap<>();
-        if (attributes != null) {
-            for (Entry<String, Object> attribute : attributes.entrySet()) {
-                if (attribute.getValue() != null) {
-                    logger.debug("removeDuplicateTerms: attribute Value: {}", attribute.getValue());
-                    logger.debug("removeDuplicateTerms: attribute Class: {}",
+        Optional.ofNullable(attributes).ifPresent(attr ->
+                attr.entrySet().stream()
+                        .filter(attribute -> attribute.getValue() != null)
+                        .forEach(attribute -> {
+                            log.debug("removeDuplicateTerms: attribute Value: {}", attribute.getValue());
+                            log.debug("removeDuplicateTerms: attribute Class: {}",
                             attribute.getValue().getClass().getName());
                     if (attribute.getValue() instanceof ArrayList) {
                         removeDuplicateTermsFromMultiValue(attributesWithUniqueTerms, attribute);
                     } else {
                         attributesWithUniqueTerms.put(attribute.getKey(), attribute.getValue());
                     }
-                }
-            }
-            logger.debug("removeDuplicateTerms: attributesWithUniqueTerms: {}", attributesWithUniqueTerms);
-        }
+                        }));
+        log.debug("removeDuplicateTerms: attributesWithUniqueTerms: {}", attributesWithUniqueTerms);
         return attributesWithUniqueTerms;
     }
 
@@ -209,7 +270,7 @@ public class TurSNProcessQueue {
             List<Object> arrayValue = new ArrayList<>(termsUnique);
             attributesWithUniqueTerms.put(attribute.getKey(), arrayValue);
             termsUnique.forEach(
-                    term -> logger.debug("removeDuplicateTerms: attributesWithUniqueTerms Array Value: {}", term));
+                    term -> log.debug("removeDuplicateTerms: attributesWithUniqueTerms Array Value: {}", term));
         }
     }
 }

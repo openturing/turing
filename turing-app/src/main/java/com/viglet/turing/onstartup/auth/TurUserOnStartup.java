@@ -20,29 +20,32 @@
  */
 package com.viglet.turing.onstartup.auth;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
-
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+import java.util.Collections;
+import java.util.Date;
 
 @Component
 public class TurUserOnStartup {
-	@Autowired
-	private PasswordEncoder passwordEncoder;
-	@Autowired
-	private TurUserRepository turUserRepository;
-	@Autowired
-	private TurGroupRepository turGroupRepository;
-	
+	private final PasswordEncoder passwordEncoder;
+	private final TurUserRepository turUserRepository;
+	private final TurGroupRepository turGroupRepository;
+
+	@Inject
+	public TurUserOnStartup(PasswordEncoder passwordEncoder,
+							TurUserRepository turUserRepository,
+							TurGroupRepository turGroupRepository) {
+		this.passwordEncoder = passwordEncoder;
+		this.turUserRepository = turUserRepository;
+		this.turGroupRepository = turGroupRepository;
+	}
+
 	public void createDefaultRows() {
 
 		if (turUserRepository.findAll().isEmpty()) {

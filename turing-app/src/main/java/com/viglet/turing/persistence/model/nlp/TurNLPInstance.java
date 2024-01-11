@@ -38,7 +38,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name = "tur_nlp_instance")
+@Table(name = "nlp_instance")
 @JsonIgnoreProperties({ "turNLPInstanceEntities" })
 public class TurNLPInstance implements Serializable {
 	@Serial

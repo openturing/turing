@@ -24,8 +24,8 @@ import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.net.URLEncodedUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -42,6 +42,7 @@ import java.nio.file.Files;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Alexandre Oliveira
@@ -57,6 +58,9 @@ public class TurCommonsUtils {
         throw new IllegalStateException("Utility class");
     }
 
+    public static URI addOrReplaceParameter(URI uri, String paramName, Locale locale) {
+       return addOrReplaceParameter(uri, paramName, locale.toLanguageTag());
+    }
     public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue) {
 
         List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
@@ -139,7 +143,7 @@ public class TurCommonsUtils {
     public static void addFilesToZip(File source, File destination) {
 
         try (OutputStream archiveStream = Files.newOutputStream(destination.toPath());
-             ArchiveOutputStream archive = new ArchiveStreamFactory()
+             ArchiveOutputStream<ZipArchiveEntry> archive = new ArchiveStreamFactory()
                      .createArchiveOutputStream(ArchiveStreamFactory.ZIP, archiveStream)) {
 
             FileUtils.listFiles(source, null, true).forEach(file -> addFileToZip(source, archive, file));
@@ -150,7 +154,7 @@ public class TurCommonsUtils {
         }
     }
 
-    private static void addFileToZip(File source, ArchiveOutputStream archive, File file) {
+    private static void addFileToZip(File source, ArchiveOutputStream<ZipArchiveEntry> archive, File file) {
         String entryName;
         try {
             entryName = getEntryName(source, file);
@@ -183,8 +187,10 @@ public class TurCommonsUtils {
 
     public static File getStoreDir() {
         File store = new File(userDir.getAbsolutePath().concat(File.separator + "store"));
-        if (!store.exists()) {
-            store.mkdirs();
+        try {
+            Files.createDirectories(store.toPath());
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
         }
         return store;
     }
@@ -192,8 +198,10 @@ public class TurCommonsUtils {
     public static File addSubDirToStoreDir(String directoryName) {
         File storeDir = getStoreDir();
         File newDir = new File(storeDir.getAbsolutePath().concat(File.separator + directoryName));
-        if (!newDir.exists()) {
-            newDir.mkdirs();
+        try {
+            Files.createDirectories(newDir.toPath());
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
         }
         return newDir;
     }

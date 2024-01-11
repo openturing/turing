@@ -24,8 +24,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import com.viglet.turing.api.sn.job.TurSNJobItem;
 import com.viglet.turing.api.sn.queue.TurSpotlightContent;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -242,7 +242,6 @@ public class TurSNSpotlightProcess {
 						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,
 								turSNSiteSearchDocumentsBean, turSEResult, true, currentPositionFromList);
 					} else {
-						turSEResult = new TurSEResult();
 						Map<String, Object> fields = new HashMap<>();
 						fields.put("id", document.getId());
 						fields.put(turSNSite.getDefaultDescriptionField(), document.getContent());
@@ -250,9 +249,9 @@ public class TurSNSpotlightProcess {
 						fields.put("referenceId", document.getReferenceId());
 						fields.put(turSNSite.getDefaultTitleField(), document.getTitle());
 						fields.put("type", document.getType());
-						turSEResult.setFields(fields);
 						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,
-								turSNSiteSearchDocumentsBean, turSEResult, true, currentPositionFromList);
+								turSNSiteSearchDocumentsBean, TurSEResult.builder().fields(fields).build(),
+								true, currentPositionFromList);
 					}
 
 				}

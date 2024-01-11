@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -33,9 +34,13 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 
 @Component
 public class TurSNSiteFieldUtils {
-	@Autowired
-	private TurSNSiteFieldRepository turSNSiteFieldRepository;
-	
+	private final TurSNSiteFieldRepository turSNSiteFieldRepository;
+
+	@Inject
+	public TurSNSiteFieldUtils(TurSNSiteFieldRepository turSNSiteFieldRepository) {
+		this.turSNSiteFieldRepository = turSNSiteFieldRepository;
+	}
+
 	public Map<String, TurSNSiteField> toMap(TurSNSite turSNSite) {
 		List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
 		Map<String, TurSNSiteField> turSNSiteFieldsMap = new HashMap<>();

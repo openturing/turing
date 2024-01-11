@@ -106,9 +106,6 @@ public class TurNutchIndexWriter implements IndexWriter {
 			logger.warn("Could not decode: " + key + ", it probably wasn't encoded in the first place..");
 		}
 
-		// escape Solr hash separator
-		key = key.replaceAll("!", "\\!");
-
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put(TurNutchCommons.ID_FIELD, key);
 		turSNJobItem.setAttributes(attributes);
@@ -171,13 +168,13 @@ public class TurNutchIndexWriter implements IndexWriter {
 	}
 
 	@Override
-	public void close() throws IOException {
-		// Nothing
+	public void commit() throws IOException {
+		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
 	}
 
 	@Override
-	public void commit() throws IOException {
-		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
+	public void close() throws IOException {
+
 	}
 
 	@Override

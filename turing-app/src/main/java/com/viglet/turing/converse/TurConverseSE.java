@@ -21,6 +21,7 @@
 
 package com.viglet.turing.converse;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
 import com.viglet.turing.persistence.model.converse.entity.TurConverseEntity;
@@ -39,7 +40,6 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -56,20 +56,31 @@ public class TurConverseSE {
 	private static final String FQ_KEY_VALUE_EXACT = "%s:\"%s\"";
 	private static final String SOLR_ANY = "[\"\" TO *]";
 	private static final String SOLR_FULL_QUERY = "*:*";
-	@Autowired
-	private TurConversePhraseRepository turConversePhraseRepository;
-	@Autowired
-	private TurConverseResponseRepository turConverseResponseRepository;
-	@Autowired
-	private TurConverseContextRepository turConverseContextRepository;
-	@Autowired
-	private TurConverseParameterRepository turConverseParameterRepository;
-	@Autowired
-	private TurConversePromptRepository turConversePromptRepository;
-	@Autowired
-	private TurConverseEntityRepository turConverseEntityRepository;
-	@Autowired
-	private TurSolrInstanceProcess turSolrInstanceProcess;
+	private final TurConversePhraseRepository turConversePhraseRepository;
+	private final TurConverseResponseRepository turConverseResponseRepository;
+	private final TurConverseContextRepository turConverseContextRepository;
+	private final TurConverseParameterRepository turConverseParameterRepository;
+	private final TurConversePromptRepository turConversePromptRepository;
+	private final TurConverseEntityRepository turConverseEntityRepository;
+
+	private final TurSolrInstanceProcess turSolrInstanceProcess;
+
+	@Inject
+	public TurConverseSE(TurConversePhraseRepository turConversePhraseRepository,
+						 TurConverseResponseRepository turConverseResponseRepository,
+						 TurConverseContextRepository turConverseContextRepository,
+						 TurConverseParameterRepository turConverseParameterRepository,
+						 TurConversePromptRepository turConversePromptRepository,
+						 TurConverseEntityRepository turConverseEntityRepository,
+						 TurSolrInstanceProcess turSolrInstanceProcess) {
+		this.turConversePhraseRepository = turConversePhraseRepository;
+		this.turConverseResponseRepository = turConverseResponseRepository;
+		this.turConverseContextRepository = turConverseContextRepository;
+		this.turConverseParameterRepository = turConverseParameterRepository;
+		this.turConversePromptRepository = turConversePromptRepository;
+		this.turConverseEntityRepository = turConverseEntityRepository;
+		this.turSolrInstanceProcess = turSolrInstanceProcess;
+	}
 
 	private Optional<SolrClient> getSolrClient(TurConverseAgent turConverseAgent) {
 		TurSEInstance turSEInstance = turConverseAgent.getTurSEInstance();

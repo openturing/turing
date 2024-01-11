@@ -29,16 +29,17 @@ import com.viglet.turing.client.sn.job.TurSNJobItems;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.mime.FileBody;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.entity.mime.HttpMultipartMode;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -144,9 +145,9 @@ public class TurFSImportTool {
 
     private void processFile(File file) throws IOException {
         TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE);
-        Map<String, Object> attributes = new HashMap<String, Object>();
+        Map<String, Object> attributes = new HashMap<>();
 
-        List<String> webImagesExtensions = new ArrayList<String>(
+        List<String> webImagesExtensions = new ArrayList<>(
                 Arrays.asList("pnm", "png", "jpg", "jpeg", "gif"));
         String extension = FilenameUtils.getExtension(file.getAbsolutePath()).toLowerCase();
         if (!extension.equals("ds_store")) {
@@ -205,7 +206,7 @@ public class TurFSImportTool {
             HttpPost httpPost = new HttpPost(restAPI);
 
             MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-            builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+            builder.setMode(HttpMultipartMode.LEGACY);
             builder.addPart("file", fileBody);
 
             HttpEntity entity = builder.build();
@@ -213,7 +214,12 @@ public class TurFSImportTool {
             httpPost.setEntity(entity);
 
             CloseableHttpResponse response = client.execute(httpPost);
-            String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+            String responseBody = null;
+            try {
+                responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+            } catch (ParseException e) {
+                logger.error(e.getMessage(), e);
+            }
             if (showOutput) {
                 System.out.println(responseBody);
 

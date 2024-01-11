@@ -20,11 +20,11 @@
  */
 package com.viglet.turing.sn;
 
-import com.viglet.turing.api.sn.job.TurSNJobItem;
+import com.google.inject.Inject;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.thesaurus.TurThesaurusProcessor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -36,8 +36,12 @@ import java.util.Map;
 @Slf4j
 @Component
 public class TurSNThesaurusProcess {
-    @Autowired
-    private TurThesaurusProcessor turThesaurusProcessor;
+    private final TurThesaurusProcessor turThesaurusProcessor;
+    @Inject
+    public TurSNThesaurusProcess(TurThesaurusProcessor turThesaurusProcessor) {
+        this.turThesaurusProcessor = turThesaurusProcessor;
+    }
+
     public void processThesaurus(TurSNJobItem turSNJobItem, TurSNSite turSNSite,
                                  Map<String, Object> consolidateResults) {
         boolean thesaurus = false;

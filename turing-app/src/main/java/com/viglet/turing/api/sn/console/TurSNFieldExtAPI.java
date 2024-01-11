@@ -45,7 +45,8 @@ public class TurSNFieldExtAPI {
 		types.add(new TurSNFieldExtType("DATE", "Date"));
 		types.add(new TurSNFieldExtType("LONG", "Long"));
 		types.add(new TurSNFieldExtType("INT", "Number"));
-		types.add(new TurSNFieldExtType("STRING", "Text"));
+		types.add(new TurSNFieldExtType("STRING", "String"));
+		types.add(new TurSNFieldExtType("TEXT", "Text"));
 
 		return types;
 	}

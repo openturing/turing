@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup;
 
+import com.google.inject.Inject;
 import com.viglet.turing.onstartup.auth.TurGroupOnStartup;
 import com.viglet.turing.onstartup.auth.TurRoleOnStartup;
 import com.viglet.turing.onstartup.auth.TurUserOnStartup;
@@ -49,45 +50,67 @@ import java.lang.invoke.MethodHandles;
 @Component
 @Transactional
 public class TurOnStartup implements ApplicationRunner {
-	@Autowired
-	private TurConfigVarRepository turConfigVarRepository;
-	@Autowired
-	private TurLocaleOnStartup turLocaleOnStartup;
-	@Autowired
-	private TurNLPVendorOnStartup turNLPVendorOnStartup;
-	@Autowired
-	private TurNLPEntityOnStartup turNLPEntityOnStartup;
-	@Autowired
-	private TurNLPVendorEntityOnStartup turNLPVendorEntityOnStartup;
-	@Autowired
-	private TurNLPFeatureOnStartup turNLPFeatureOnStartup;
-	@Autowired
-	private TurNLPInstanceOnStartup turNLPInstanceOnStartup;
-	@Autowired
-	private TurMLVendorOnStartup turMLVendorOnStartup;
-	@Autowired
-	private TurMLInstanceOnStartup turMLInstanceOnStartup;
-	@Autowired
-	private TurSEVendorOnStartup turSEVendorOnStartup;
-	@Autowired
-	private TurSEInstanceOnStartup turSEInstanceOnStartup;
-	@Autowired
-	private TurDataGroupStartup turDataGroupStartup;
-	@Autowired
-	private TurConfigVarOnStartup turConfigVarOnStartup;
-	@Autowired
-	private TurSNSiteOnStartup turSNSiteOnStartup;
-	@Autowired
-	private TurSNSourceTypeOnStartup turSNSourceTypeOnStartup;
-	@Autowired
-	private TurConverseAgentOnStartup turConverseAgentOnStartup;
-	@Autowired
-	private TurUserOnStartup turUserOnStartup;
-	@Autowired
-	private TurGroupOnStartup turGroupOnStartup;
-	@Autowired
-	private TurRoleOnStartup turRoleOnStartup;
-	
+	private final TurConfigVarRepository turConfigVarRepository;
+	private final TurLocaleOnStartup turLocaleOnStartup;
+	private final TurNLPVendorOnStartup turNLPVendorOnStartup;
+	private final TurNLPEntityOnStartup turNLPEntityOnStartup;
+	private final TurNLPVendorEntityOnStartup turNLPVendorEntityOnStartup;
+	private final TurNLPFeatureOnStartup turNLPFeatureOnStartup;
+	private final TurNLPInstanceOnStartup turNLPInstanceOnStartup;
+	private final TurMLVendorOnStartup turMLVendorOnStartup;
+	private final TurMLInstanceOnStartup turMLInstanceOnStartup;
+	private final TurSEVendorOnStartup turSEVendorOnStartup;
+	private final TurSEInstanceOnStartup turSEInstanceOnStartup;
+	private final TurDataGroupStartup turDataGroupStartup;
+	private final TurConfigVarOnStartup turConfigVarOnStartup;
+	private final TurSNSiteOnStartup turSNSiteOnStartup;
+	private final TurSNSourceTypeOnStartup turSNSourceTypeOnStartup;
+	private final TurConverseAgentOnStartup turConverseAgentOnStartup;
+	private final TurUserOnStartup turUserOnStartup;
+	private final TurGroupOnStartup turGroupOnStartup;
+	private final TurRoleOnStartup turRoleOnStartup;
+
+	@Inject
+	public TurOnStartup(TurConfigVarRepository turConfigVarRepository,
+						TurLocaleOnStartup turLocaleOnStartup,
+						TurNLPVendorOnStartup turNLPVendorOnStartup,
+						TurNLPEntityOnStartup turNLPEntityOnStartup,
+						TurNLPVendorEntityOnStartup turNLPVendorEntityOnStartup,
+						TurNLPFeatureOnStartup turNLPFeatureOnStartup,
+						TurNLPInstanceOnStartup turNLPInstanceOnStartup,
+						TurMLVendorOnStartup turMLVendorOnStartup,
+						TurMLInstanceOnStartup turMLInstanceOnStartup,
+						TurSEVendorOnStartup turSEVendorOnStartup,
+						TurSEInstanceOnStartup turSEInstanceOnStartup,
+						TurDataGroupStartup turDataGroupStartup,
+						TurConfigVarOnStartup turConfigVarOnStartup,
+						TurSNSiteOnStartup turSNSiteOnStartup,
+						TurSNSourceTypeOnStartup turSNSourceTypeOnStartup,
+						TurConverseAgentOnStartup turConverseAgentOnStartup,
+						TurUserOnStartup turUserOnStartup,
+						TurGroupOnStartup turGroupOnStartup,
+						TurRoleOnStartup turRoleOnStartup) {
+		this.turConfigVarRepository = turConfigVarRepository;
+		this.turLocaleOnStartup = turLocaleOnStartup;
+		this.turNLPVendorOnStartup = turNLPVendorOnStartup;
+		this.turNLPEntityOnStartup = turNLPEntityOnStartup;
+		this.turNLPVendorEntityOnStartup = turNLPVendorEntityOnStartup;
+		this.turNLPFeatureOnStartup = turNLPFeatureOnStartup;
+		this.turNLPInstanceOnStartup = turNLPInstanceOnStartup;
+		this.turMLVendorOnStartup = turMLVendorOnStartup;
+		this.turMLInstanceOnStartup = turMLInstanceOnStartup;
+		this.turSEVendorOnStartup = turSEVendorOnStartup;
+		this.turSEInstanceOnStartup = turSEInstanceOnStartup;
+		this.turDataGroupStartup = turDataGroupStartup;
+		this.turConfigVarOnStartup = turConfigVarOnStartup;
+		this.turSNSiteOnStartup = turSNSiteOnStartup;
+		this.turSNSourceTypeOnStartup = turSNSourceTypeOnStartup;
+		this.turConverseAgentOnStartup = turConverseAgentOnStartup;
+		this.turUserOnStartup = turUserOnStartup;
+		this.turGroupOnStartup = turGroupOnStartup;
+		this.turRoleOnStartup = turRoleOnStartup;
+	}
+
 	@Override
 	public void run(ApplicationArguments arg0) throws Exception {
 		final String FIRST_TIME = "FIRST_TIME";

@@ -23,7 +23,6 @@ package com.viglet.turing.persistence.model.nlp;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.term.TurTerm;
-import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -42,7 +41,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "tur_nlp_entity")
+@Table(name = "nlp_entity")
 @JsonIgnoreProperties({ "turNLPInstanceEntities", "turNLPVendorEntities" } )
 public class TurNLPEntity implements Serializable {
 	@Serial
@@ -95,32 +94,4 @@ public class TurNLPEntity implements Serializable {
 	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurTerm> turTerms;
-
-	public TurNLPVendorEntity addTurNLPVendorEntity(TurNLPVendorEntity turNLPVendorEntity) {
-		getTurNLPVendorEntities().add(turNLPVendorEntity);
-		turNLPVendorEntity.setTurNLPEntity(this);
-
-		return turNLPVendorEntity;
-	}
-
-	public TurNLPVendorEntity removeTurNLPVendorEntity(TurNLPVendorEntity turNLPVendorEntity) {
-		getTurNLPVendorEntities().remove(turNLPVendorEntity);
-		turNLPVendorEntity.setTurNLPEntity(null);
-
-		return turNLPVendorEntity;
-	}
-
-	public TurTerm addTurTerm(TurTerm turTerm) {
-		getTurTerms().add(turTerm);
-		turTerm.setTurNLPEntity(this);
-
-		return turTerm;
-	}
-
-	public TurTerm removeTurTerm(TurTerm turTerm) {
-		getTurTerms().remove(turTerm);
-		turTerm.setTurNLPEntity(null);
-
-		return turTerm;
-	}
 }

@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.sn;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
@@ -28,8 +29,12 @@ import java.util.Enumeration;
 
 @Component
 public class TurSNQueue {
-	@Autowired
-	private JmsTemplate jmsTemplate;
+	private final JmsTemplate jmsTemplate;
+
+	@Inject
+	public TurSNQueue(JmsTemplate jmsTemplate) {
+		this.jmsTemplate = jmsTemplate;
+	}
 
 	public int getQueueSize() {
 		return jmsTemplate.browse(TurSNConstants.INDEXING_QUEUE, (session, browser) -> {

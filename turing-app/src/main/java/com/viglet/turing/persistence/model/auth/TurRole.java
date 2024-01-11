@@ -22,6 +22,7 @@ package com.viglet.turing.persistence.model.auth;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
@@ -36,11 +37,12 @@ import java.util.Set;
  */
 @Getter
 @Entity
-@Table(name = "tur_role")
+@Table(name = "auth_role")
 public class TurRole implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Setter
 	@Id
 	@UuidGenerator
 	@GeneratedValue(generator = "UUID")
@@ -49,9 +51,11 @@ public class TurRole implements Serializable {
 	private String id;
 
 
+	@Setter
 	@Column(nullable = false, length = 50)
 	private String name;
 
+	@Setter
 	@Column
 	private String description;
 
@@ -59,7 +63,7 @@ public class TurRole implements Serializable {
 	private Collection<TurGroup> turGroups = new HashSet<>();
 
 	@ManyToMany
-	@JoinTable(name = "tur_roles_privileges",
+	@JoinTable(name = "auth_roles_privileges",
 			joinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"),
 			inverseJoinColumns = @JoinColumn(name = "privilege_id", referencedColumnName = "id"))
 	private Collection<TurPrivilege> turPrivileges = new HashSet<>();
@@ -71,24 +75,6 @@ public class TurRole implements Serializable {
 		this.name = name;
 	}
 
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setTurGroups(Collection<TurGroup> turGroups) {
-		this.turGroups.clear();
-		if (turGroups != null) {
-			this.turGroups.addAll(turGroups);
-		}
-	}
 	public void setTurPrivileges(Collection<TurPrivilege> turPrivileges) {
 		this.turPrivileges.clear();
 		if (turPrivileges != null) {

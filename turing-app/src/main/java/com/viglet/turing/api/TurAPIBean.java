@@ -22,26 +22,14 @@
 package com.viglet.turing.api;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.stereotype.Component;
 
+@Setter
 @Getter
 @Component
 public class TurAPIBean {
-
 	private String product;
 	private boolean multiTenant;
-
 	private boolean keycloak;
-
-	public void setProduct(String product) {
-		this.product = product;
-	}
-
-	public void setMultiTenant(boolean multiTenant) {
-		this.multiTenant = multiTenant;
-	}
-
-	public void setKeycloak(boolean keycloak) {
-		this.keycloak = keycloak;
-	}
 }

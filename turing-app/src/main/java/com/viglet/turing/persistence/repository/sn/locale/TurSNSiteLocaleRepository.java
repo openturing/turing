@@ -27,6 +27,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Alexandre Oliveira
@@ -35,7 +36,8 @@ import java.util.List;
 public interface TurSNSiteLocaleRepository extends JpaRepository<TurSNSiteLocale, String> {
 
 
-	TurSNSiteLocale findByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
-	boolean existsByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
+	TurSNSiteLocale findByTurSNSiteAndLanguage(TurSNSite turSNSite, Locale language);
+	boolean existsByTurSNSiteAndLanguage(TurSNSite turSNSite, Locale language);
 	List<TurSNSiteLocale> findByTurSNSite(Sort name, TurSNSite turSNSite);
+	List<TurSNSiteLocale> findByTurSNSite(TurSNSite turSNSite);
 }

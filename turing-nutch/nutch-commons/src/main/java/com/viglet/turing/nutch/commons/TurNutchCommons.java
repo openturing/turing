@@ -4,13 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,26 +45,21 @@ public class TurNutchCommons {
 	public static final String SLASH = "/";
 	
 	public static String stripNonCharCodepoints(String input) {
-		StringBuilder retval = new StringBuilder();
+		StringBuilder returnValue = new StringBuilder();
 		char ch;
 
 		for (int i = 0; i < input.length(); i++) {
 			ch = input.charAt(i);
-
-			// Strip all non-characters
-			// http://unicode.org/cldr/utility/list-unicodeset.jsp?a=[:Noncharacter_Code_Point=True:]
-			// and non-printable control characters except tabulator, new line and
-			// carriage return
 			if (ch % 0x10000 != 0xffff && // 0xffff - 0x10ffff range step 0x10000
 					ch % 0x10000 != 0xfffe && // 0xfffe - 0x10fffe range
 					(ch <= 0xfdd0 || ch >= 0xfdef) && // 0xfdd0 - 0xfdef
 					(ch > 0x1F || ch == 0x9 || ch == 0xa || ch == 0xd)) {
 
-				retval.append(ch);
+				returnValue.append(ch);
 			}
 		}
 
-		return retval.toString();
+		return returnValue.toString();
 	}
 
 	public static void push(TurSNJobItems turSNJobItems, boolean auth, int totalAdds, String username, String password,
@@ -88,9 +83,7 @@ public class TurNutchCommons {
 			logger.info(String.format("Indexing %d/%d documents", totalCreate, totalAdds));
 			logger.info(String.format("Deleting %d documents", totalDelete));
 
-			boolean showOutput = false;
-
-			ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = new ObjectMapper();
 			String jsonResult = mapper.writeValueAsString(turSNJobItems);
 
 			Charset utf8Charset = StandardCharsets.UTF_8;
@@ -104,24 +97,29 @@ public class TurNutchCommons {
 			// encode
 			ByteBuffer outputBuffer = customCharset.encode(data);
 
-			byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
-			String jsonUTF8 = new String(outputData);
-
-			HttpPost httpPost = new HttpPost(String.format("%s/api/sn/%s/import", url, site));
-			StringEntity entity = new StringEntity(jsonUTF8, StandardCharsets.UTF_8);
-			httpPost.setEntity(entity);
-			httpPost.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-			httpPost.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
-			httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
+			final HttpPost httpPost = getHttpPost(url, site, outputBuffer);
 
 			if (auth) {
 				basicAuth(httpPost, username, password);
 			}
-			CloseableHttpClient client = HttpClients.createDefault();
-			try (CloseableHttpResponse ignored = client.execute(httpPost)) {
+			try (CloseableHttpClient client = HttpClients.createDefault();
+					CloseableHttpResponse ignored = client.execute(httpPost)) {
 				turSNJobItems.getTuringDocuments().clear();
 			}
 		}
+	}
+
+	private static HttpPost getHttpPost(String url, String site, ByteBuffer outputBuffer) {
+		byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
+		String jsonUTF8 = new String(outputData);
+
+		HttpPost httpPost = new HttpPost(String.format("%s/api/sn/%s/import", url, site));
+		StringEntity entity = new StringEntity(jsonUTF8, StandardCharsets.UTF_8);
+		httpPost.setEntity(entity);
+		httpPost.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+		httpPost.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+		httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
+		return httpPost;
 	}
 
 	private static void basicAuth(HttpPost httpPost, String username, String password) {

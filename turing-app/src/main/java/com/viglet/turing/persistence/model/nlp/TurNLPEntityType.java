@@ -41,8 +41,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name = "tur_nlp_entity_type")
-@NamedQuery(name = "TurNLPEntityType.findAll", query = "SELECT net FROM TurNLPEntityType net")
+@Table(name = "nlp_entity_type")
 public class TurNLPEntityType implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

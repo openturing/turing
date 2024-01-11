@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.storage;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Fetch;
 
 import java.io.Serial;
@@ -34,12 +35,12 @@ import java.util.List;
  * 
  */
 @Entity
-@Table(name = "turDataGroup")
-@NamedQuery(name = "TurDataGroup.findAll", query = "SELECT dg FROM TurDataGroup dg")
+@Table(name = "data_group")
 public class TurDataGroup implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Setter
 	@Getter
 	@Id
 	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator = "id_Sequence")
@@ -47,15 +48,18 @@ public class TurDataGroup implements Serializable {
 	@Column(unique = true, nullable = false)
 	private int id;
 
+	@Setter
 	@Getter
 	@Column(length = 250)
 	private String description;
 
+	@Setter
 	@Getter
 	@Column(nullable = false, length = 50)
 	private String name;
 
 	// bi-directional many-to-one association to TurDataGroupCategory
+	@Setter
 	@Getter
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turDataGroup", cascade = CascadeType.ALL)
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
@@ -71,53 +75,4 @@ public class TurDataGroup implements Serializable {
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turDataGroup", cascade = CascadeType.ALL)
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentence;
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setTurDataGroupCategories(List<TurDataGroupCategory> turDataGroupCategories) {
-		this.turDataGroupCategories = turDataGroupCategories;
-	}
-
-	public TurDataGroupCategory addTurDataGroupCategory(TurDataGroupCategory turDataGroupCategory) {
-		getTurDataGroupCategories().add(turDataGroupCategory);
-		turDataGroupCategory.setTurDataGroup(this);
-
-		return turDataGroupCategory;
-	}
-
-	public TurDataGroupCategory removeTurDataGroupCategory(TurDataGroupCategory turDataGroupCategory) {
-		getTurDataGroupCategories().remove(turDataGroupCategory);
-		turDataGroupCategory.setTurDataGroup(null);
-
-		return turDataGroupCategory;
-	}
-
-	public void setTurDataGroupData(List<TurDataGroupData> turDataGroupData) {
-		this.turDataGroupData = turDataGroupData;
-	}
-
-	public TurDataGroupData addTurDataGroupData(TurDataGroupData turDataGroupData) {
-		getTurDataGroupData().add(turDataGroupData);
-		turDataGroupData.setTurDataGroup(this);
-
-		return turDataGroupData;
-	}
-
-	public TurDataGroupData removeTurDataGroupData(TurDataGroupData turDataGroupData) {
-		getTurDataGroupData().remove(turDataGroupData);
-		turDataGroupData.setTurDataGroup(null);
-
-		return turDataGroupData;
-	}
-
 }

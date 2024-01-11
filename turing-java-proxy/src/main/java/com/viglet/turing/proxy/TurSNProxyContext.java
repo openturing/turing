@@ -20,19 +20,19 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import javax.servlet.http.HttpServletRequest;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.ParseException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.net.URIBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -68,12 +68,12 @@ public class TurSNProxyContext {
 
 	@GetMapping("/search")
 	public ResponseEntity<Object> turSNSiteSearchSelect(HttpServletRequest request, @PathVariable String siteName,
-			@RequestParam(required = false, name = PARAM_Q) String q,
-			@RequestParam(required = false, name = PARAM_P) String p,
-			@RequestParam(required = false, name = PARAM_ROWS) String rows,
-			@RequestParam(required = false, name = PARAM_FQ) String[] fq,
-			@RequestParam(required = false, name = PARAM_TR) String[] tr,
-			@RequestParam(required = false, name = PARAM_SORT) String sort) {
+														@RequestParam(required = false, name = PARAM_Q) String q,
+														@RequestParam(required = false, name = PARAM_P) String p,
+														@RequestParam(required = false, name = PARAM_ROWS) String rows,
+														@RequestParam(required = false, name = PARAM_FQ) String[] fq,
+														@RequestParam(required = false, name = PARAM_TR) String[] tr,
+														@RequestParam(required = false, name = PARAM_SORT) String sort) {
 
 		try {
 			URIBuilder turingURL = new URIBuilder(
@@ -134,13 +134,12 @@ public class TurSNProxyContext {
 	}
 
 	private String getResults(URIBuilder url) {
-		String result = StringUtils.EMPTY;
 		try (CloseableHttpClient client = HttpClients.createDefault()) {
-			result = EntityUtils.toString(client.execute(new HttpGet(url.build().toString())).getEntity(),
+			return EntityUtils.toString(client.execute(new HttpGet(url.build().toString())).getEntity(),
 					StandardCharsets.UTF_8);
 		} catch (IOException | ParseException | URISyntaxException e) {
 			logger.error(e.getMessage(), e);
 		}
-		return result;
+		return StringUtils.EMPTY;
 	}
 }

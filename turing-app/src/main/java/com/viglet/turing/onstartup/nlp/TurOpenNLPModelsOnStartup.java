@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.net.URL;
+import java.nio.file.Files;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -149,10 +150,11 @@ public class TurOpenNLPModelsOnStartup {
 		if (userDir.exists() && userDir.isDirectory()) {
 			File modelDir = new File(userDir.getAbsolutePath().concat(File.separator).concat("models")
 					.concat(File.separator).concat("opennlp").concat(File.separator).concat(locale));
-			if (!modelDir.exists()) {
-				modelDir.mkdirs();
+			try {
+				Files.createDirectories(modelDir.toPath());
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
 			}
-
 			String toFileFullPath = modelDir.getAbsolutePath().concat(File.separator).concat(toFile);
 
 			File file = new File(toFileFullPath);

@@ -21,22 +21,19 @@
 
 package com.viglet.turing.persistence.model.converse.intent;
 
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.viglet.turing.persistence.model.converse.TurConverseAgent;
+import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.*;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-
-import jakarta.persistence.*;
-
-import lombok.Getter;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UuidGenerator;
-
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 
 /**
  * The persistent class for the turConverseIntent database table.
@@ -44,21 +41,24 @@ import com.viglet.turing.persistence.model.converse.TurConverseAgent;
  */
 @Getter
 @Entity
-@Table(name = "turConverseIntent")
-@NamedQuery(name = "TurConverseIntent.findAll", query = "SELECT ci FROM TurConverseIntent ci")
+@Table(name = "converse_intent")
 public class TurConverseIntent implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Setter
 	@Id
 	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	@Setter
 	private boolean fallback = false;
 
+	@Setter
 	private String name;
 
+	@Setter
 	private String actionName;
 
 	@ManyToMany(mappedBy = "intentInputs")
@@ -87,22 +87,11 @@ public class TurConverseIntent implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConverseResponse> responses = new HashSet<>();
 
+	@Setter
 	@ManyToOne
 	@JoinColumn(name = "agent_id")
 	@JsonIdentityReference(alwaysAsId = true)
 	private TurConverseAgent agent;
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setActionName(String actionName) {
-		this.actionName = actionName;
-	}
 
 	public void setContextInputs(Set<TurConverseContext> contextInputs) {
 		this.contextInputs.clear();
@@ -146,18 +135,9 @@ public class TurConverseIntent implements Serializable {
 		}
 	}
 
-	public void setAgent(TurConverseAgent agent) {
-		this.agent = agent;
-	}
-
-	public void setAgent(String agentId) {
+	public void setAgentById(String agentId) {
 		agent = new TurConverseAgent();
 		agent.setId(agentId);
 
 	}
-
-	public void setFallback(boolean fallback) {
-		this.fallback = fallback;
-	}
-
 }

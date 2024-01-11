@@ -25,17 +25,17 @@ import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Enumeration;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Properties;
 
 @Slf4j
 public class AemHandlerConfiguration implements IHandlerConfiguration {
@@ -51,11 +51,9 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     private URL turingURL;
     private String snSite;
     private Locale snLocale;
-    private String mappingsXML;
+    private String mappingFile;
     private String cdaContextName;
     private String cdaURLPrefix;
-    private String sitesAssociationPriority;
-    private Path fileSourcePath;
     private String apiKey;
     private String providerName;
 
@@ -73,8 +71,8 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     }
 
     @Override
-    public String getMappingsXML() {
-        return mappingsXML;
+    public String getMappingFile() {
+        return mappingFile;
     }
 
     @Override
@@ -83,21 +81,10 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     }
 
     @Override
-    public String getCDAContextName(String site) {
-        return Objects.requireNonNullElse(getDynamicProperties("dps.site." + site + ".contextname"),
-                getCDAContextName());
-    }
-
-    @Override
     public String getCDAURLPrefix() {
         return cdaURLPrefix;
     }
 
-    @Override
-    public String getCDAURLPrefix(String site) {
-        return Objects.requireNonNullElse(getDynamicProperties("dps.site." + site + ".urlprefix"),
-                getCDAURLPrefix());
-    }
 
     private void parsePropertiesFromResource() {
         parseProperties(getProperties());
@@ -126,26 +113,22 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
 
         // Turing
         try {
-            turingURL = new URL(properties.getProperty("turing.url", DEFAULT_TURING_URL));
+            turingURL = URI.create(properties.getProperty("turing.url", DEFAULT_TURING_URL)).toURL();
         } catch (MalformedURLException e) {
             log.error(e.getMessage(), e);
         }
         apiKey = properties.getProperty("turing.apiKey");
-        mappingsXML = properties.getProperty("turing.mappingsxml", DEFAULT_CTD_MAPPING_FILE);
+        mappingFile = properties.getProperty("turing.mapping.file", DEFAULT_CTD_MAPPING_FILE);
         providerName = properties.getProperty("turing.provider.name", DEFAULT_PROVIDER);
         // DPS
         snSite = properties.getProperty("dps.site.default.sn.site", DEFAULT_SN_SITE);
         snLocale = LocaleUtils.toLocale(properties.getProperty("dps.site.default.sn.locale", DEFAULT_SN_LOCALE));
-        cdaContextName = properties.getProperty("dps.site.default.contextname", DEFAULT_DPS_CONTEXT);
-        cdaURLPrefix = properties.getProperty("dps.site.default.urlprefix");
-        sitesAssociationPriority = properties.getProperty("dps.config.association.priority");
-        if (properties.contains("dps.config.filesource.path")) {
-            fileSourcePath = Paths.get(properties.getProperty("dps.config.filesource.path"));
-        }
+        cdaContextName = properties.getProperty("dps.site.default.context.name", DEFAULT_DPS_CONTEXT);
+        cdaURLPrefix = properties.getProperty("dps.site.default.url.prefix");
     }
 
     @Override
-    public TurSNSiteConfig getSNSiteConfig(String site, @NotNull String locale) {
+    public TurSNSiteConfig getSNSiteConfig(String site, String locale) {
         // For example: dps.site.Intranet.en.sn.site=Intra
         return setSiteName(site, locale)
                 .setLocale(LocaleUtils.toLocale(Objects.requireNonNullElse(
@@ -188,18 +171,6 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     @Override
     public TurSNSiteConfig getDefaultSNSiteConfig() {
         return new TurSNSiteConfig(snSite, snLocale);
-    }
-
-    @Override
-    public Path getFileSourcePath() {
-        return fileSourcePath;
-    }
-
-    @Override
-    public List<String> getSitesAssocPriority() {
-        return !StringUtils.isEmpty(sitesAssociationPriority) ? Arrays.stream(
-                sitesAssociationPriority.split(",")).map(String::trim).collect(Collectors.toList())
-                : Collections.emptyList();
     }
 
     @Override

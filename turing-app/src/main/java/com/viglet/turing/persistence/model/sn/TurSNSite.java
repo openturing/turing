@@ -49,8 +49,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "turSNSite")
-@NamedQuery(name = "TurSNSite.findAll", query = "SELECT sns FROM TurSNSite sns")
+@Table(name = "sn_site")
 @JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights",
 		"turSNSiteLocales", "turSNSiteMetricAccesses", "turSNRankingExpressions" })
 @EntityListeners(AuditingEntityListener.class)
@@ -172,17 +171,4 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNRankingExpression> turSNRankingExpressions = new HashSet<>();
-
-	public TurSNSiteField addTurSNSiteField(TurSNSiteField turSNSiteField) {
-		getTurSNSiteFields().add(turSNSiteField);
-		turSNSiteField.setTurSNSite(this);
-
-		return turSNSiteField;
-	}
-	public TurSNSiteField removeTurSNSiteField(TurSNSiteField turSNSiteField) {
-		getTurSNSiteFields().remove(turSNSiteField);
-		turSNSiteField.setTurSNSite(this);
-
-		return turSNSiteField;
-	}
 }

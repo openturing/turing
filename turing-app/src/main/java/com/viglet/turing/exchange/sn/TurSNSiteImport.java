@@ -21,6 +21,7 @@
 
 package com.viglet.turing.exchange.sn;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -33,12 +34,19 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
 @Component
 public class TurSNSiteImport {
-	@Autowired
-	private TurSNSiteRepository turSNSiteRepository;
-	@Autowired
-	private TurSEInstanceRepository turSEInstanceRepository;
-	@Autowired
-	private TurSNSiteFieldRepository turSNSiteFieldRepository;
+	private final TurSNSiteRepository turSNSiteRepository;
+	private final TurSEInstanceRepository turSEInstanceRepository;
+
+	private final TurSNSiteFieldRepository turSNSiteFieldRepository;
+
+	@Inject
+	public TurSNSiteImport(TurSNSiteRepository turSNSiteRepository,
+						   TurSEInstanceRepository turSEInstanceRepository,
+						   TurSNSiteFieldRepository turSNSiteFieldRepository) {
+		this.turSNSiteRepository = turSNSiteRepository;
+		this.turSEInstanceRepository = turSEInstanceRepository;
+		this.turSNSiteFieldRepository = turSNSiteFieldRepository;
+	}
 
 	public void importSNSite(TurExchange turExchange){
 		for (TurSNSiteExchange turSNSiteExchange : turExchange.getSnSites()) {

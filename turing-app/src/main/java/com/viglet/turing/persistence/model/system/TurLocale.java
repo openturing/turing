@@ -23,33 +23,35 @@ package com.viglet.turing.persistence.model.system;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Locale;
 
 /**
  * The persistent class for the vigNLPSolutions database table.
  * 
  */
+@Setter
 @Getter
 @Entity
-@Table(name = "turLocale")
-@NamedQuery(name = "TurLocale.findAll", query = "SELECT l FROM TurLocale l")
+@Table(name = "locale")
 public class TurLocale implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id
 	@Column(unique = true, nullable = false, length = 5)
-	private String initials;
+	private Locale initials;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String en;
 
-	@Column(nullable = true, length = 255)
+	@Column
 	private String pt;
 
-	public TurLocale(String initials, String en, String pt) {
+	public TurLocale(Locale initials, String en, String pt) {
 		setInitials(initials);
 		setEn(en);
 		setPt(pt);
@@ -57,18 +59,6 @@ public class TurLocale implements Serializable {
 
 	public TurLocale() {
 		super();
-	}
-
-	public void setInitials(String initials) {
-		this.initials = initials;
-	}
-
-	public void setEn(String en) {
-		this.en = en;
-	}
-
-	public void setPt(String pt) {
-		this.pt = pt;
 	}
 
 }

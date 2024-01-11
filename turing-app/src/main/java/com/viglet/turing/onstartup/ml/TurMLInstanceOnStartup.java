@@ -21,6 +21,7 @@
 
 package com.viglet.turing.onstartup.ml;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,12 +36,18 @@ import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 @Component
 @Transactional
 public class TurMLInstanceOnStartup {
-	@Autowired
-	private TurMLInstanceRepository turMLInstanceRepository;
-	@Autowired
-	private TurMLVendorRepository turMLVendorRepository;
-	@Autowired
-	private TurConfigVarRepository turConfigVarRepository;
+	private final TurMLInstanceRepository turMLInstanceRepository;
+	private final TurMLVendorRepository turMLVendorRepository;
+	private final TurConfigVarRepository turConfigVarRepository;
+
+	@Inject
+	public TurMLInstanceOnStartup(TurMLInstanceRepository turMLInstanceRepository,
+								  TurMLVendorRepository turMLVendorRepository,
+								  TurConfigVarRepository turConfigVarRepository) {
+		this.turMLInstanceRepository = turMLInstanceRepository;
+		this.turMLVendorRepository = turMLVendorRepository;
+		this.turConfigVarRepository = turConfigVarRepository;
+	}
 
 	public void createDefaultRows() {
 

@@ -22,6 +22,7 @@ package com.viglet.turing.persistence.model.auth;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -36,36 +37,48 @@ import java.util.Set;
  */
 @Getter
 @Entity
-@Table(name = "tur_user")
+@Table(name = "auth_user")
 public class TurUser implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Setter
 	@Id
 	@Column(name = "username")
 	private String username;
 
+	@Setter
 	private String confirmEmail;
 
+	@Setter
 	private String email;
 
+	@Setter
 	private String firstName;
 
+	@Setter
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date lastLogin;
 
+	@Setter
 	private String lastName;
 
+	@Setter
 	private String lastPostType;
 
+	@Setter
 	private int loginTimes;
 
+	@Setter
 	private String password;
 
+	@Setter
 	private String realm;
 
+	@Setter
 	private String recoverPassword;
 
+	@Setter
 	private int enabled;
 	
 	@ManyToMany
@@ -80,54 +93,6 @@ public class TurUser implements Serializable {
 
 	public TurUser() {
 		super();
-	}
-
-	public void setConfirmEmail(String confirmEmail) {
-		this.confirmEmail = confirmEmail;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-
-	public void setLastLogin(Date lastLogin) {
-		this.lastLogin = lastLogin;
-	}
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
-	}
-
-	public void setLastPostType(String lastPostType) {
-		this.lastPostType = lastPostType;
-	}
-
-	public void setLoginTimes(int loginTimes) {
-		this.loginTimes = loginTimes;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public void setRealm(String realm) {
-		this.realm = realm;
-	}
-
-	public void setRecoverPassword(String recoverPassword) {
-		this.recoverPassword = recoverPassword;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public void setEnabled(int enabled) {
-		this.enabled = enabled;
 	}
 
 	public void setTurGroups(Collection<TurGroup> turGroups) {

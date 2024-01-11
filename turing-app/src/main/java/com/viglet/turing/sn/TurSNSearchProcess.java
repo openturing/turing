@@ -325,7 +325,7 @@ public class TurSNSearchProcess {
     }
 
     private TurSNSiteSearchQueryContextBean responseQueryContext(TurSNSite turSNSite, TurSEResults turSEResults,
-                                                                 String locale) {
+                                                                 Locale locale) {
         int lastItemOfFullPage = (int) turSEResults.getStart() + turSEResults.getLimit();
         int firstItemOfFullPage = (int) turSEResults.getStart() + 1;
         int count = (int) turSEResults.getNumFound();

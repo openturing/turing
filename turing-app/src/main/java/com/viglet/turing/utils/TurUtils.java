@@ -23,25 +23,27 @@ package com.viglet.turing.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.inject.Inject;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.spring.security.auth.ITurAuthenticationFacade;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
-import java.lang.invoke.MethodHandles;
+import java.io.File;
+import java.io.IOException;
 import java.util.UUID;
 @Slf4j
 @Component
 public class TurUtils {
-	@Autowired
-	private ITurAuthenticationFacade authenticationFacade;
+	private final ITurAuthenticationFacade authenticationFacade;
+
+	@Inject
+	public TurUtils(ITurAuthenticationFacade authenticationFacade) {
+		this.authenticationFacade = authenticationFacade;
+	}
 
 	private static File getTempDirectory() {
 		return TurCommonsUtils.addSubDirToStoreDir("tmp");
@@ -79,11 +81,6 @@ public class TurUtils {
 
 	private static String randomTempFileOrDirectory() {
 		return getTempDirectory().getAbsolutePath().concat(File.separator + "imp_" + UUID.randomUUID());
-	}
-
-	public String getCurrentUsername() {
-		Authentication authentication = authenticationFacade.getAuthentication();
-		return authentication.getName();
 	}
 
 	public static String asJsonString(final Object obj) throws Exception {

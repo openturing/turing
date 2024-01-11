@@ -37,7 +37,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name="tur_term_variation_language")
+@Table(name="term_variation_language")
 @JsonIgnoreProperties({ "turTerm", "turTermVariation" } )
 public class TurTermVariationLanguage implements Serializable {
 	@Serial

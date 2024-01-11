@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.auth.TurPrivilege;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -44,12 +45,19 @@ import com.viglet.turing.persistence.repository.auth.TurUserRepository;
 
 @Service("customUserDetailsService")
 public class TurCustomUserDetailsService implements UserDetailsService {
-    @Autowired
-    private TurUserRepository turUserRepository;
-    @Autowired
-    private TurRoleRepository turRoleRepository;
-    @Autowired
-    private TurGroupRepository turGroupRepository;
+
+    private final TurUserRepository turUserRepository;
+    private final TurRoleRepository turRoleRepository;
+    private final TurGroupRepository turGroupRepository;
+
+    @Inject
+    public TurCustomUserDetailsService(TurUserRepository turUserRepository,
+                                       TurRoleRepository turRoleRepository,
+                                       TurGroupRepository turGroupRepository) {
+        this.turUserRepository = turUserRepository;
+        this.turRoleRepository = turRoleRepository;
+        this.turGroupRepository = turGroupRepository;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

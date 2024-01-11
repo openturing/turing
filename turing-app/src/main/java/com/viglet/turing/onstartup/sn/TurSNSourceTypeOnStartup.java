@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup.sn;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -29,8 +30,13 @@ import com.viglet.turing.persistence.repository.sn.source.TurSNSourceTypeReposit
 @Component
 public class TurSNSourceTypeOnStartup {
 	
-	@Autowired
-	private TurSNSourceTypeRepository turSNSourceTypeRepository;
+	private final TurSNSourceTypeRepository turSNSourceTypeRepository;
+
+	@Inject
+	public TurSNSourceTypeOnStartup(TurSNSourceTypeRepository turSNSourceTypeRepository) {
+		this.turSNSourceTypeRepository = turSNSourceTypeRepository;
+	}
+
 	public void createDefaultRows() {
 
 		if (turSNSourceTypeRepository.findAll().isEmpty()) {

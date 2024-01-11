@@ -36,7 +36,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name="tur_ml_model")
+@Table(name="ml_model")
 public class TurMLModel implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

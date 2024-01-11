@@ -30,7 +30,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-
+import java.util.Locale;
 /**
  * @author Alexandre Oliveira
  * @since 0.3.4
@@ -38,14 +38,14 @@ import java.util.Set;
 public interface TurSNSiteSpotlightRepository extends JpaRepository<TurSNSiteSpotlight, String> {
 
 	Set<TurSNSiteSpotlight> findByUnmanagedIdAndTurSNSiteAndLanguage(String unmanagedId, TurSNSite turSNSite,
-			String language);
+			Locale language);
 
-	List<TurSNSiteSpotlight> findByTurSNSiteAndLanguage(TurSNSite turSNSite, String language);
+	List<TurSNSiteSpotlight> findByTurSNSiteAndLanguage(TurSNSite turSNSite, Locale language);
 	
 	List<TurSNSiteSpotlight> findByTurSNSite(Sort orders, TurSNSite turSNSite);
 
 	Set<TurSNSiteSpotlight> findByProvider(String provider);
 
-	List<TurSNSiteSpotlight> findDistinctByTurSNSiteAndLanguageAndTurSNSiteSpotlightTermsIn(TurSNSite turSNSite, String language,
+	List<TurSNSiteSpotlight> findDistinctByTurSNSiteAndLanguageAndTurSNSiteSpotlightTermsIn(TurSNSite turSNSite, Locale language,
 			Collection<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms);
 }

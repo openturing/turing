@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.onstartup.nlp;
 
+import com.google.inject.Inject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,8 +32,12 @@ import com.viglet.turing.persistence.repository.nlp.TurNLPFeatureRepository;
 @Transactional
 public class TurNLPFeatureOnStartup {
 
-	@Autowired
-	private TurNLPFeatureRepository turNLPFeatureRepository;
+	private final TurNLPFeatureRepository turNLPFeatureRepository;
+
+	@Inject
+	public TurNLPFeatureOnStartup(TurNLPFeatureRepository turNLPFeatureRepository) {
+		this.turNLPFeatureRepository = turNLPFeatureRepository;
+	}
 
 	public void createDefaultRows() {
 

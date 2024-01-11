@@ -17,6 +17,7 @@ public class TurAuditorAwareImpl implements AuditorAware<String> {
 	@Autowired
 	private TurConfigProperties turConfigProperties;
 
+
 	@Override
 	public @NotNull Optional<String> getCurrentAuditor() {
 		if (SecurityContextHolder.getContext().getAuthentication() != null)

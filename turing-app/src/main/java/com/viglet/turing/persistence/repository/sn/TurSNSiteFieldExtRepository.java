@@ -36,7 +36,7 @@ import java.util.List;
 public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFieldExt, String> {
 
 	@Cacheable("turSNSiteFieldExtfindByTurSNSite")
-	List<TurSNSiteFieldExt> findByTurSNSite(Sort name, TurSNSite turSNSite);
+	List<TurSNSiteFieldExt> findByTurSNSite(Sort sort, TurSNSite turSNSite);
 
 	@Cacheable("turSNSiteFieldExtfindByTurSNSiteAndEnabled")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndEnabled(TurSNSite turSNSite, int enabled);
@@ -55,6 +55,10 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 
 	@Cacheable("turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndNlpAndEnabled(TurSNSite turSNSite, int nlp, int enabled);
+
+	List<TurSNSiteFieldExt> findByTurSNSiteAndName(TurSNSite turSNSite, String name);
+
+	boolean existsByTurSNSiteAndName(TurSNSite turSNSite, String name);
 
 	@SuppressWarnings("unchecked")
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",

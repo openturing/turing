@@ -41,7 +41,7 @@ import java.util.List;
  */
 @Getter
 @Entity
-@Table(name = "tur_converse_chat")
+@Table(name = "converse_chat")
 public class TurConverseChat implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;

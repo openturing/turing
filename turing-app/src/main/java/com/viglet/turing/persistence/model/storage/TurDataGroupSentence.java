@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.viglet.turing.persistence.model.ml.TurMLCategory;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -35,9 +36,9 @@ import java.io.Serializable;
  * The persistent class for the turDataSentence database table.
  * 
  */
+@Setter
 @Entity
-@Table(name = "turDataGroupSentence")
-@NamedQuery(name = "TurDataGroupSentence.findAll", query = "SELECT ds FROM TurDataGroupSentence ds")
+@Table(name = "data_group_sequence")
 public class TurDataGroupSentence implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -74,30 +75,10 @@ public class TurDataGroupSentence implements Serializable {
 	@JsonIdentityReference(alwaysAsId = true)
 	private TurData turData;
 
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public void setSentence(String sentence) {
-		this.sentence = sentence;
-	}
-	
 	@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 	@JsonIdentityReference(alwaysAsId = true)
 	public TurMLCategory getTurMLCategory() {
 		return this.turMLCategory;
-	}
-
-	public void setTurMLCategory(TurMLCategory turMLCategory) {
-		this.turMLCategory = turMLCategory;
-	}
-
-	public void setTurData(TurData turData) {
-		this.turData = turData;
-	}
-
-	public void setTurDataGroup(TurDataGroup turDataGroup) {
-		this.turDataGroup = turDataGroup;
 	}
 
 }

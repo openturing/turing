@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 @Setter
 @Getter
 @Entity
+@Table(name = "auth_privilege")
 public class TurPrivilege implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

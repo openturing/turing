@@ -95,7 +95,7 @@ public class AemObject {
                 }
             }
             JSONObject finalDataJson = dataJson;
-            dataJson.keySet().forEach(key -> {
+            dataJson.keySet().stream().filter(key -> !key.endsWith("@LastModified")) .forEach(key -> {
                 Object value = finalDataJson.get(key);
                 if (isDate(value.toString())) {
                     try {

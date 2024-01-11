@@ -33,6 +33,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.*;
 
@@ -48,32 +49,36 @@ import java.util.Set;
  * 
  */
 @Entity
-@Table(name = "turConverseAgent")
-@NamedQuery(name = "TurConverseAgent.findAll", query = "SELECT ca FROM TurConverseAgent ca")
+@Table(name = "converse_agent")
 @JsonIgnoreProperties({ "intents", "contexts", "chats" })
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class TurConverseAgent implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
+	@Setter
 	@Getter
 	@Id
 	@UuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	@Setter
 	@Getter
 	@Column(nullable = false, length = 50)
 	private String name;
 
+	@Setter
 	@Getter
 	@Column(nullable = false, length = 200)
 	private String description;
 
+	@Setter
 	@Getter
 	@Column(nullable = false, length = 5)
 	private String language;
 
+	@Setter
 	@Getter
 	@Column(nullable = false, length = 50)
 	private String core;
@@ -96,6 +101,7 @@ public class TurConverseAgent implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurConverseContext> contexts = new HashSet<>();
 
+	@Setter
 	@Getter
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
@@ -106,30 +112,6 @@ public class TurConverseAgent implements Serializable {
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private List<TurConverseChat> chats = new ArrayList<>();
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
-	}
-
-	public void setCore(String core) {
-		this.core = core;
-	}
-
-	public void setTurSEInstance(TurSEInstance turSEInstance) {
-		this.turSEInstance = turSEInstance;
-	}
 
 	public void setIntents(Set<TurConverseIntent> intents) {
 		this.intents.clear();

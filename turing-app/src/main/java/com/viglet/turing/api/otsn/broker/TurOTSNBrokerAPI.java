@@ -22,6 +22,9 @@ package com.viglet.turing.api.otsn.broker;
 
 import com.google.inject.Inject;
 import com.viglet.turing.api.sn.job.*;
+import com.viglet.turing.client.sn.job.TurSNJobAction;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -87,9 +90,8 @@ public class TurOTSNBrokerAPI {
 	}
 
 	private TurSNJobItem createJobItem(NodeList nodes) {
-		TurSNJobItem turSNJobItem = new TurSNJobItem();
+		TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE);
 		Map<String, Object> attributes = addAttributesToJobItem(nodes, turSNJobItem);
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
 		turSNJobItem.setAttributes(attributes);
 		return turSNJobItem;
 	}
@@ -154,9 +156,7 @@ public class TurOTSNBrokerAPI {
 
 		if (action.equals("delete")) {
 			TurSNJobItems turSNJobItems = new TurSNJobItems();
-			TurSNJobItem turSNJobItem = new TurSNJobItem();
-			turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-
+			TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE);
 			siteName = getFirstSiteName(siteName);
 
 			Map<String, Object> attributes = new HashMap<>();

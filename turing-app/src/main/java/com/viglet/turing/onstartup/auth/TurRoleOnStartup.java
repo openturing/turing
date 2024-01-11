@@ -1,5 +1,6 @@
 package com.viglet.turing.onstartup.auth;
 
+import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.auth.TurPrivilege;
 import com.viglet.turing.persistence.model.auth.TurRole;
 import com.viglet.turing.persistence.repository.auth.TurPrivilegeRepository;
@@ -15,10 +16,16 @@ import java.util.List;
 
 @Component
 public class TurRoleOnStartup {
-    @Autowired
-    private TurPrivilegeRepository turPrivilegeRepository;
-    @Autowired
-    private TurRoleRepository turRoleRepository;
+    private final TurPrivilegeRepository turPrivilegeRepository;
+
+    private final TurRoleRepository turRoleRepository;
+
+    @Inject
+    public TurRoleOnStartup(TurPrivilegeRepository turPrivilegeRepository, TurRoleRepository turRoleRepository) {
+        this.turPrivilegeRepository = turPrivilegeRepository;
+        this.turRoleRepository = turRoleRepository;
+    }
+
     @Transactional
     public void createDefaultRows() {
         TurPrivilege readPrivilege
