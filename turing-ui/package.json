@@ -12,7 +12,7 @@
   "private": true,
   "dependencies": {
     "@angular/animations": "17.0.6",
-    "@angular/cdk": "17.0.4",
+    "@angular/cdk": "17.0.5",
     "@angular/common": "17.0.6",
     "@angular/compiler": "17.0.6",
     "@angular/core": "17.0.6",
@@ -35,13 +35,13 @@
     "tslib": "2.6.2"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "17.0.9",
-    "@angular/cli": "17.0.9",
+    "@angular-devkit/build-angular": "17.0.10",
+    "@angular/cli": "17.0.10",
     "@angular/compiler-cli": "17.0.6",
-    "@angular/language-service": "17.0.8",
+    "@angular/language-service": "17.0.9",
     "@types/jasmine": "5.1.4",
     "@types/jasminewd2": "2.0.13",
-    "@types/node": "20.10.7",
+    "@types/node": "20.11.1",
     "@types/primer__octicons": "^19.6.3",
     "jasmine-core": "5.1.1",
     "jasmine-spec-reporter": "7.0.0",
