@@ -86,7 +86,7 @@ public class TurAemIndexingDAO {
         }
     }
 
-    public Optional<TurAemIndexing> findByAemIdAndGroup(@NotNull final String id, @NotNull final String group) {
+    public Optional<List<TurAemIndexing>> findByAemIdAndGroup(@NotNull final String id, @NotNull final String group) {
 
         try {
             CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -99,7 +99,7 @@ public class TurAemIndexingDAO {
                             builder.equal(from.get("indexGroup"), group)
                     ));
             TypedQuery<TurAemIndexing> typed = entityManager.createQuery(criteria);
-            return Optional.ofNullable(typed.getSingleResult());
+            return Optional.ofNullable(typed.getResultList());
         } catch (NoResultException nre) {
             return Optional.empty();
         }

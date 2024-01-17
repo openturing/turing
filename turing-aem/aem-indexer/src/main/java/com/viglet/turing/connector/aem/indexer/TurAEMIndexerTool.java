@@ -322,8 +322,8 @@ public class TurAEMIndexerTool {
                     locale, targetAttrDefinitions, attributes)));
         } else if (!dryRun) {
             turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresent(
-                    turAemIndexing -> {
-                        turAemIndexingDAO.update(turAemIndexing
+                    turAemIndexingList -> {
+                        turAemIndexingDAO.update(turAemIndexingList.getFirst()
                                 .setDeltaId(deltaId));
                         log.info(String.format("Updated %s object (%s)", aemObject.getPath(), group));
                     });
