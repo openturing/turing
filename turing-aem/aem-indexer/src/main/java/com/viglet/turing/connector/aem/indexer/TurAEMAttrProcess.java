@@ -227,8 +227,9 @@ public class TurAEMAttrProcess {
     private TurCmsTargetAttrValue getTurAttrDefUnique(TurCmsTargetAttr turCmsTargetAttr,
                                                       TurCmsTargetAttrValueList turCmsTargetAttrValueList) {
         TurMultiValue multiValue = new TurMultiValue();
-        turCmsTargetAttrValueList.stream().flatMap(targetAttrValue ->
-                targetAttrValue.getMultiValue().stream()).distinct().forEach(multiValue::add);
+        turCmsTargetAttrValueList.stream()
+                .flatMap(targetAttrValue -> targetAttrValue.getMultiValue().stream())
+                .distinct().forEach(multiValue::add);
         return new TurCmsTargetAttrValue(turCmsTargetAttr.getName(), multiValue);
     }
 }

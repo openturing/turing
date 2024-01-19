@@ -157,15 +157,15 @@ public class TurAEMIndexerTool {
         jCommander.getConsole().println(String.format("Processing a total of %d GUID Strings", guids.size()));
         guids.stream().filter(guid -> !StringUtils.isEmpty(guid)).forEach(guid -> {
             start = System.currentTimeMillis();
+            rootPaths.forEach(rootPath ->
+                    siteName = TurAemUtils.getInfinityJson(rootPath, this).getJSONObject(JCR_CONTENT)
+                            .getString(JCR_TITLE));
             final JSONObject jsonObject = TurAemUtils.getInfinityJson(guid, this);
-            rootPaths.forEach(rootPath -> {
-                siteName = TurAemUtils.getInfinityJson(rootPath, this).getJSONObject(JCR_CONTENT)
-                        .getString(JCR_TITLE);
-                contentType = jsonObject.getString(JCR_PRIMARY_TYPE);
-                getNodeFromJson(guid, jsonObject);
-                long elapsed = System.currentTimeMillis() - start;
-                jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
-            });
+            contentType = jsonObject.getString(JCR_PRIMARY_TYPE);
+            getNodeFromJson(guid, jsonObject);
+            long elapsed = System.currentTimeMillis() - start;
+            jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+
         });
     }
 
@@ -300,7 +300,8 @@ public class TurAEMIndexerTool {
             TurAEMAttrProcess turAEMAttrProcess = new TurAEMAttrProcess();
             TurCmsTargetAttrValueList turCmsTargetAttrValueList = turAEMAttrProcess
                     .prepareAttributeDefs(aemObject, turCmsContentDefinitionProcess, this);
-            turCmsTargetAttrValueList.addAll(runCustomClassFromContentType(turCmsModel, aemObject));
+            mergeTargetAttrValueCMSWithCustomClass(turCmsTargetAttrValueList,
+                    runCustomClassFromContentType(turCmsModel, aemObject));
             Map<String, Object> attributes = new HashMap<>();
             attributes.put(SITE, siteName);
             turCmsTargetAttrValueList.stream()
@@ -326,6 +327,19 @@ public class TurAEMIndexerTool {
                         log.info(String.format("Updated %s object (%s)", aemObject.getPath(), group));
                     });
         }
+    }
+
+    private void mergeTargetAttrValueCMSWithCustomClass(TurCmsTargetAttrValueList turCmsTargetAttrValueList,
+                                                        TurCmsTargetAttrValueList turCmsTargetAttrValueCustomClassList) {
+        turCmsTargetAttrValueCustomClassList.forEach(targetAttrValueFromClass ->
+                turCmsTargetAttrValueList.stream()
+                        .filter(targetAttrValue ->
+                                targetAttrValue.getTargetAttrName()
+                                        .equals(targetAttrValueFromClass.getTargetAttrName()))
+                        .findFirst()
+                        .ifPresentOrElse(targetAttrValue ->
+                                        targetAttrValue.setMultiValue(targetAttrValueFromClass.getMultiValue()),
+                                () -> turCmsTargetAttrValueList.add(targetAttrValueFromClass)));
     }
 
     private boolean objectNeedBeIndexed(AemObject aemObject) {

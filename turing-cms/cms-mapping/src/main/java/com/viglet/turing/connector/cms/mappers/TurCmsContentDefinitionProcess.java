@@ -64,9 +64,27 @@ public class TurCmsContentDefinitionProcess {
     public Optional<TurCmsModel> findByNameFromModelWithDefinition(String modelName) {
         return Optional.ofNullable(json).map(path -> {
             TurCmsContentMapping turCmsContentMapping = getMappingDefinitions();
-            return findByNameFromModel(turCmsContentMapping.getModels(), modelName).map(model -> {
-                List<TurCmsTargetAttr> turCmsTargetAttrs = new ArrayList<>();
-                turCmsContentMapping.getTargetAttrDefinitions().forEach(targetAttrDefinition ->
+            return findByNameFromModel(turCmsContentMapping.getModels(), modelName)
+                    .map(model -> {
+                        List<TurCmsTargetAttr> turCmsTargetAttrs =
+                                new ArrayList<>(addTargetAttrFromDefinition(model, turCmsContentMapping));
+                        model.getTargetAttrs().forEach(turCmsTargetAttr -> {
+                            if (turCmsTargetAttrs.stream()
+                                    .noneMatch(o -> o.getName().equals(turCmsTargetAttr.getName())))
+                                turCmsTargetAttrs.add(turCmsTargetAttr);
+                        });
+                        model.setTargetAttrs(turCmsTargetAttrs);
+                return model;
+
+            });
+        }).orElse(Optional.empty());
+    }
+
+    private List<TurCmsTargetAttr> addTargetAttrFromDefinition(TurCmsModel model,
+                                                               TurCmsContentMapping turCmsContentMapping) {
+        List<TurCmsTargetAttr> turCmsTargetAttrs = new ArrayList<>();
+        turCmsContentMapping.getTargetAttrDefinitions()
+                .forEach(targetAttrDefinition ->
                         findByNameFromTargetAttrs(model.getTargetAttrs(), targetAttrDefinition.getName())
                                 .ifPresentOrElse(targetAttr ->
                                                 turCmsTargetAttrs.add(
@@ -78,11 +96,8 @@ public class TurCmsContentDefinitionProcess {
                                                                 new TurCmsTargetAttr()));
                                             }
                                         }));
-                model.setTargetAttrs(turCmsTargetAttrs);
-                return model;
 
-            });
-        }).orElse(Optional.empty());
+        return turCmsTargetAttrs;
     }
 
     private TurCmsTargetAttr setTargetAttrFromDefinition(TurSNAttributeSpec turSNAttributeSpec,

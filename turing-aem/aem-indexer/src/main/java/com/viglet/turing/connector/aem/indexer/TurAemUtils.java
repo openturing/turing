@@ -25,6 +25,7 @@ public class TurAemUtils {
     public static final String TEXT = "text";
     public static final String JCR = "jcr:";
     public static final String JSON = ".json";
+    public static final String SLING = "sling:";
 
     public static Locale getLocaleFromAemObject(AemHandlerConfiguration config, AemObject aemObject) {
          return LocaleUtils.toLocale(config.getLocaleByPath(config.getDefaultSNSiteConfig().getName(),
@@ -40,11 +41,14 @@ public class TurAemUtils {
     }
 
     public static JSONObject getInfinityJson(String url, TurAEMIndexerTool tool) {
+
             return getInfinityJson(url, tool.getHostAndPort(),tool.getUsername(),tool.getPassword());
     }
     public static JSONObject getInfinityJson(String url, String hostAndPort, String username, String password) {
-        String responseBody = getResponseBody(String.format(url.endsWith(JSON) ? "%s%s" : "%s%s.infinity.json",
-                hostAndPort, url), username, password);
+        String infinityJsonUrl = String.format(url.endsWith(JSON) ? "%s%s" : "%s%s.infinity.json",
+                hostAndPort, url);
+        log.info(STR."Request \{infinityJsonUrl}");
+        String responseBody = getResponseBody(infinityJsonUrl, username, password);
         if (isResponseBodyJSONArray(responseBody) && !url.endsWith(JSON)) {
             JSONArray jsonArray = new JSONArray(responseBody);
             return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
@@ -101,7 +105,7 @@ public class TurAemUtils {
                 components.append(jsonObject.getString(JCR_TITLE));
             if (jsonObject.has(TEXT))
                 components.append(jsonObject.getString(TEXT));
-            if (!key.startsWith(JCR)) {
+            if (!key.startsWith(JCR) && !key.startsWith(SLING) && (jsonObject.get(key) instanceof JSONObject)) {
                 JSONObject jsonObjectNode = jsonObject.getJSONObject(key);
                 getJsonNodeToComponent(jsonObjectNode, components);
             }
