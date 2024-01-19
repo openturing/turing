@@ -61,7 +61,7 @@ public class TurCmsContentDefinitionProcess {
     public List<TurSNAttributeSpec> getTargetAttrDefinitions() {
         return getMappingDefinitions().getTargetAttrDefinitions();
     }
-    public TurCmsModel findByNameFromModelWithDefinition(String modelName) {
+    public Optional<TurCmsModel> findByNameFromModelWithDefinition(String modelName) {
         return Optional.ofNullable(json).map(path -> {
             TurCmsContentMapping turCmsContentMapping = getMappingDefinitions();
             return findByNameFromModel(turCmsContentMapping.getModels(), modelName).map(model -> {
@@ -81,8 +81,8 @@ public class TurCmsContentDefinitionProcess {
                 model.setTargetAttrs(turCmsTargetAttrs);
                 return model;
 
-            }).orElse(new TurCmsModel());
-        }).orElse(new TurCmsModel());
+            });
+        }).orElse(Optional.empty());
     }
 
     private TurCmsTargetAttr setTargetAttrFromDefinition(TurSNAttributeSpec turSNAttributeSpec,

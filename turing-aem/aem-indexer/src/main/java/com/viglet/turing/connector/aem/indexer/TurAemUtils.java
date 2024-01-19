@@ -1,7 +1,10 @@
 package com.viglet.turing.connector.aem.indexer;
 
 import com.google.common.net.UrlEscapers;
+import com.viglet.turing.connector.aem.indexer.conf.AemHandlerConfiguration;
+import com.viglet.turing.connector.cms.beans.TurCmsContext;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.LocaleUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -13,6 +16,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Locale;
 
 @Slf4j
 public class TurAemUtils {
@@ -22,10 +26,22 @@ public class TurAemUtils {
     public static final String JCR = "jcr:";
     public static final String JSON = ".json";
 
+    public static Locale getLocaleFromAemObject(AemHandlerConfiguration config, AemObject aemObject) {
+         return LocaleUtils.toLocale(config.getLocaleByPath(config.getDefaultSNSiteConfig().getName(),
+                aemObject.getPath()));
+    }
+    public static Locale getLocaleFromContext(TurCmsContext context) {
+        AemHandlerConfiguration config = (AemHandlerConfiguration) context.getConfiguration();
+        AemObject aemObject = (AemObject) context.getCmsObjectInstance();
+        return getLocaleFromAemObject(config, aemObject);
+    }
     public static boolean hasProperty(JSONObject jsonObject, String property) {
         return jsonObject.has(property) && jsonObject.get(property) != null;
     }
 
+    public static JSONObject getInfinityJson(String url, TurAEMIndexerTool tool) {
+            return getInfinityJson(url, tool.getHostAndPort(),tool.getUsername(),tool.getPassword());
+    }
     public static JSONObject getInfinityJson(String url, String hostAndPort, String username, String password) {
         String responseBody = getResponseBody(String.format(url.endsWith(JSON) ? "%s%s" : "%s%s.infinity.json",
                 hostAndPort, url), username, password);
