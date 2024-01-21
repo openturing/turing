@@ -22,7 +22,7 @@
 package com.viglet.turing.api.sn.queue;
 
 import com.viglet.turing.api.sn.job.TurSNJob;
-import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
+import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -176,7 +176,7 @@ public class TurSNProcessQueue {
 
     }
 
-    private void createMissingFields(TurSNSite turSNSite, List<TurSNAttributeSpec> turSNAttributeSpecs) {
+    private void createMissingFields(TurSNSite turSNSite, List<TurSNJobAttributeSpec> turSNAttributeSpecs) {
         turSNAttributeSpecs.forEach(spec -> {
             if (!turSNSiteFieldExtRepository.existsByTurSNSiteAndName(turSNSite, spec.getName())) {
                 TurSNSiteField turSNSiteField = TurSNSiteField.builder()

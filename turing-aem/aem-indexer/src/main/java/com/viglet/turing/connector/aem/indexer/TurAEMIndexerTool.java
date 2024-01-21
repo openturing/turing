@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,8 @@ public class TurAEMIndexerTool {
     public static final String DATA_MASTER = "data/master";
     public static final String METADATA = "metadata";
     public static final String JCR = "jcr:";
+    public static final String ID = "id";
+    public static final String STATIC_FILE_SUB_TYPE = "STATIC_FILE";
     @Parameter(names = {"--host",
             "-h"}, description = "The host on which Content Management server is installed.", required = true)
     private String hostAndPort = null;
@@ -147,7 +150,6 @@ public class TurAEMIndexerTool {
             contentInstances = br.lines().collect(Collectors.toCollection(ArrayList::new));
             if (!contentInstances.isEmpty())
                 this.indexGUIDList(contentInstances);
-
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -165,7 +167,6 @@ public class TurAEMIndexerTool {
             getNodeFromJson(guid, jsonObject);
             long elapsed = System.currentTimeMillis() - start;
             jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
-
         });
     }
 
@@ -184,7 +185,6 @@ public class TurAEMIndexerTool {
         });
     }
 
-
     public static String ordinal(int i) {
         String[] suffixes = new String[]{"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"};
         return switch (i % 100) {
@@ -197,19 +197,29 @@ public class TurAEMIndexerTool {
         if (jsonObject.has(JCR_PRIMARY_TYPE) && jsonObject.getString(JCR_PRIMARY_TYPE).equals(contentType)) {
             turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(contentType).ifPresent(model ->
                     prepareIndexObject(model, new AemObject(nodePath, jsonObject),
-                    turCmsContentDefinitionProcess.getTargetAttrDefinitions()));
-
+                            getDefinitionFromModel(turCmsContentDefinitionProcess.getTargetAttrDefinitions(), model)));
         }
         getChildrenFromJson(nodePath, jsonObject);
+    }
+
+    private List<TurSNAttributeSpec> getDefinitionFromModel(List<TurSNAttributeSpec> turSNAttributeSpecList,
+                                                            TurCmsModel model) {
+        List<TurSNAttributeSpec> turSNAttributeSpecFromModelList = new ArrayList<>();
+        model.getTargetAttrs().forEach(turCmsTargetAttr -> turSNAttributeSpecList.stream()
+                .filter(turSNAttributeSpec -> turSNAttributeSpec.getName().equals(turCmsTargetAttr.getName()))
+                .findFirst().ifPresent(turSNAttributeSpecFromModelList::add));
+        return turSNAttributeSpecFromModelList;
     }
 
     public static boolean checkIfFileHasImageExtension(String s) {
         String[] imageExtensions = {".jpg", ".png", ".jpeg", ".svg", ".webp"};
         return Arrays.stream(imageExtensions).anyMatch(suffix -> s.toLowerCase().endsWith(suffix));
     }
+
     private void getChildrenFromJson(String nodePath, JSONObject jsonObject) {
         jsonObject.toMap().forEach((key, _) -> {
-            if (!key.startsWith(JCR) && (getSubType().equals("STATIC_FILE") || !checkIfFileHasImageExtension(key))) {
+            if (!key.startsWith(JCR) && (getSubType().equals(STATIC_FILE_SUB_TYPE)
+                    || !checkIfFileHasImageExtension(key))) {
                 String nodePathChild = STR."\{nodePath}/\{key}";
                 getNodeFromJson(nodePathChild, TurAemUtils.getInfinityJson(nodePathChild, this));
             }
@@ -256,7 +266,7 @@ public class TurAEMIndexerTool {
         try {
             if (!StringUtils.isEmpty(turCmsModel.getClassName()))
                 return ((ExtContentInterface) Class.forName(turCmsModel.getClassName())
-                            .getDeclaredConstructor().newInstance())
+                        .getDeclaredConstructor().newInstance())
                         .consume(aemObject, config, this);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                  ClassNotFoundException e) {
@@ -309,16 +319,18 @@ public class TurAEMIndexerTool {
                     .forEach(targetAttrValue -> {
                         String attributeName = targetAttrValue.getTargetAttrName();
                         targetAttrValue.getMultiValue().forEach(attributeValue -> {
-                            if (attributes.containsKey(attributeName)) {
-                                addItemInExistingAttribute(attributeValue, attributes, attributeName);
-                            } else {
-                                addFirstItemToAttribute(targetAttrValue, attributeValue, attributes);
-                                addFirstItemToAttribute(targetAttrValue, attributeValue, attributes);
+                            if (!StringUtils.isBlank(attributeValue)) {
+                                if (attributes.containsKey(attributeName)) {
+                                    addItemInExistingAttribute(attributeValue, attributes, attributeName);
+                                } else {
+                                    addFirstItemToAttribute(targetAttrValue, attributeValue, attributes);
+                                    addFirstItemToAttribute(targetAttrValue, attributeValue, attributes);
+                                }
                             }
                         });
                     });
             sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.CREATE,
-                    locale, targetAttrDefinitions, attributes)));
+                    locale, convertSpecToJobSpec(targetAttrDefinitions), attributes)));
         } else if (!dryRun) {
             turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresent(
                     turAemIndexingList -> {
@@ -327,6 +339,14 @@ public class TurAEMIndexerTool {
                         log.info(String.format("Updated %s object (%s)", aemObject.getPath(), group));
                     });
         }
+    }
+
+    @NotNull
+    private static List<TurSNJobAttributeSpec> convertSpecToJobSpec(List<TurSNAttributeSpec> targetAttrDefinitions) {
+        return targetAttrDefinitions.stream()
+                .filter(Objects::nonNull)
+                .map(TurSNJobAttributeSpec.class::cast)
+                .collect(Collectors.toList());
     }
 
     private void mergeTargetAttrValueCMSWithCustomClass(TurCmsTargetAttrValueList turCmsTargetAttrValueList,
@@ -353,7 +373,7 @@ public class TurAEMIndexerTool {
         if (!dryRun) {
             turSNJobItems.getTuringDocuments().stream().findFirst().ifPresent(document ->
                     log.info(String.format("Send %s object job (%s) to Turing",
-                            document.getAttributes().get("id"), group)));
+                            document.getAttributes().get(ID), group)));
             TurSNJobUtils.importItems(turSNJobItems,
                     new TurSNServer(config.getTuringURL(), config.getDefaultSNSiteConfig().getName(),
                             config.getApiKey()),
