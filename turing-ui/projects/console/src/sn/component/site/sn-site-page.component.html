@@ -1,6 +1,6 @@
 <div *ngIf="(getTurSNSite() | async) as snSite; else loading">
   <div class="Subhead mt-4">
-    <div class="Subhead-heading">
+    <div class="Subhead-heading Subhead-heading--large">
       <div *ngIf="!isNewObject()" class="d-flex">
         <div style="height: 32px; border-radius: 50%;">
           <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="snSite.name | lowercase">

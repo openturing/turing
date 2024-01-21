@@ -27,7 +27,7 @@ import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.solr.TurSolrField;
 import jakarta.servlet.http.HttpServletRequest;

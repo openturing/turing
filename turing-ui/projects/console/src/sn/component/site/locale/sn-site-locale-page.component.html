@@ -1,6 +1,6 @@
 <div *ngIf="(getTurSNSiteLocale() | async) as snSiteLocale; else loading">
   <div class="Subhead mt-4">
-    <div class="Subhead-heading">
+    <div class="Subhead-heading Subhead-heading--large">
       <div class="d-flex">
         <div style="height: 32px;">
           <svg width="35" height="35" [identiconHash]="snSiteLocale.language | lowercase">

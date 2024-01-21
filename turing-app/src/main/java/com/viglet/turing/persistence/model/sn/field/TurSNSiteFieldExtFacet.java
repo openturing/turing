@@ -19,8 +19,9 @@
  * under the License.
  */
 
-package com.viglet.turing.persistence.model.sn;
+package com.viglet.turing.persistence.model.sn.field;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
@@ -38,6 +39,7 @@ import java.util.Locale;
 @Data
 @Entity
 @Table(name = "sn_site_field_ext_facet")
+@JsonIgnoreProperties({ "turSNSiteFieldExt" })
 public class TurSNSiteFieldExtFacet  implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

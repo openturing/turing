@@ -99,7 +99,6 @@ public class TurSolrUtils {
 						""", turSolrFieldAction.getSolrAction(), fieldName,
 				getSolrFieldType(turSEFieldType), stored, multiValued);
 		try (HttpClient client = getHttpClient()) {
-			System.out.println("addOrUpdateField: " + json);
 				client.send(getHttpRequestSchemaApi(turSEInstance, coreName, json), HttpResponse.BodyHandlers.ofString());
 			if (isCreateCopyFieldByCore(turSEInstance, coreName, fieldName, turSEFieldType)) {
 				createCopyFieldByCore(turSEInstance, coreName, fieldName, multiValued);

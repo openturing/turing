@@ -29,7 +29,7 @@ import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;

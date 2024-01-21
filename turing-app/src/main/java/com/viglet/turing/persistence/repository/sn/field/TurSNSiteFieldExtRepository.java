@@ -18,10 +18,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.viglet.turing.persistence.repository.sn;
+package com.viglet.turing.persistence.repository.sn.field;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.sn.TurSNFieldType;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;

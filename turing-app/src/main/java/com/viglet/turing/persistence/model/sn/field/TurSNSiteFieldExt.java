@@ -19,16 +19,15 @@
  * under the License.
  */
 
-package com.viglet.turing.persistence.model.sn;
+package com.viglet.turing.persistence.model.sn.field;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.sn.TurSNFieldType;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.experimental.Tolerate;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.OnDelete;
@@ -38,7 +37,6 @@ import org.hibernate.annotations.UuidGenerator;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**

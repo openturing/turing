@@ -1,6 +1,6 @@
 <div *ngIf="(getTurSNRankingExpression() | async) as snRankingExpression; else loading">
   <div class="Subhead mt-4">
-    <div class="Subhead-heading">
+    <div class="Subhead-heading Subhead-heading--large">
       <div *ngIf="isNewObject()" class="d-flex">
         <div class="ml-2">
           <span>New Result Ranking</span>
@@ -87,7 +87,7 @@
   </div>
 
   <div class="Subhead">
-    <div class="Subhead-heading">Content that matches</div>
+    <div class="Subhead-heading Subhead-heading--large">Content that matches</div>
     <div class="Subhead-description">Create simple filter expressions to target specific content.</div>
   </div>
 

@@ -19,10 +19,11 @@
  * under the License.
  */
 
-package com.viglet.turing.persistence.model.sn;
+package com.viglet.turing.persistence.model.sn.field;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;

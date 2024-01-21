@@ -19,10 +19,10 @@
  * under the License.
  */
 
-package com.viglet.turing.persistence.repository.sn;
+package com.viglet.turing.persistence.repository.sn.field;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteField;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;

@@ -22,8 +22,8 @@
 package com.viglet.turing.api.sn.console;
 
 import com.google.inject.Inject;
-import com.viglet.turing.persistence.model.sn.TurSNSiteField;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
