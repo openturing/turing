@@ -197,16 +197,16 @@ public class TurAEMIndexerTool {
         if (jsonObject.has(JCR_PRIMARY_TYPE) && jsonObject.getString(JCR_PRIMARY_TYPE).equals(contentType)) {
             turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(contentType).ifPresent(model ->
                     prepareIndexObject(model, new AemObject(nodePath, jsonObject),
-                            getDefinitionFromModel(turCmsContentDefinitionProcess.getTargetAttrDefinitions(), model)));
+                            turCmsContentDefinitionProcess.getTargetAttrDefinitions()));
         }
         getChildrenFromJson(nodePath, jsonObject);
     }
 
     private List<TurSNAttributeSpec> getDefinitionFromModel(List<TurSNAttributeSpec> turSNAttributeSpecList,
-                                                            TurCmsModel model) {
+                                                            Map<String, Object> targetAttrMap) {
         List<TurSNAttributeSpec> turSNAttributeSpecFromModelList = new ArrayList<>();
-        model.getTargetAttrs().forEach(turCmsTargetAttr -> turSNAttributeSpecList.stream()
-                .filter(turSNAttributeSpec -> turSNAttributeSpec.getName().equals(turCmsTargetAttr.getName()))
+        targetAttrMap.forEach((key, _) -> turSNAttributeSpecList.stream()
+                .filter(turSNAttributeSpec -> turSNAttributeSpec.getName().equals(key))
                 .findFirst().ifPresent(turSNAttributeSpecFromModelList::add));
         return turSNAttributeSpecFromModelList;
     }
@@ -294,7 +294,7 @@ public class TurAEMIndexerTool {
     }
 
     private void indexObject(AemObject aemObject, TurCmsModel turCmsModel,
-                             List<TurSNAttributeSpec> targetAttrDefinitions) {
+                             List<TurSNAttributeSpec> turSNAttributeSpecList) {
         itemsProcessedStatus();
         if (dryRun || objectNeedBeIndexed(aemObject)) {
             final Locale locale = TurAemUtils.getLocaleFromAemObject(config, aemObject);
@@ -309,7 +309,7 @@ public class TurAEMIndexerTool {
             }
             TurAEMAttrProcess turAEMAttrProcess = new TurAEMAttrProcess();
             TurCmsTargetAttrValueList turCmsTargetAttrValueList = turAEMAttrProcess
-                    .prepareAttributeDefs(aemObject, turCmsContentDefinitionProcess, this);
+                    .prepareAttributeDefs(aemObject, turCmsContentDefinitionProcess, turSNAttributeSpecList, this);
             mergeTargetAttrValueCMSWithCustomClass(turCmsTargetAttrValueList,
                     runCustomClassFromContentType(turCmsModel, aemObject));
             Map<String, Object> attributes = new HashMap<>();
@@ -330,7 +330,9 @@ public class TurAEMIndexerTool {
                         });
                     });
             sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.CREATE,
-                    locale, convertSpecToJobSpec(targetAttrDefinitions), attributes)));
+                    locale, castSpecToJobSpec(
+                    getDefinitionFromModel(turSNAttributeSpecList, attributes)),
+                    attributes)));
         } else if (!dryRun) {
             turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresent(
                     turAemIndexingList -> {
@@ -342,8 +344,8 @@ public class TurAEMIndexerTool {
     }
 
     @NotNull
-    private static List<TurSNJobAttributeSpec> convertSpecToJobSpec(List<TurSNAttributeSpec> targetAttrDefinitions) {
-        return targetAttrDefinitions.stream()
+    private static List<TurSNJobAttributeSpec> castSpecToJobSpec(List<TurSNAttributeSpec> turSNAttributeSpecList) {
+        return turSNAttributeSpecList.stream()
                 .filter(Objects::nonNull)
                 .map(TurSNJobAttributeSpec.class::cast)
                 .collect(Collectors.toList());

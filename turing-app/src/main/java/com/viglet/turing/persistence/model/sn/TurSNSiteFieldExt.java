@@ -30,10 +30,16 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Tolerate;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * The persistent class for the turSNSiteFieldExt database table.
@@ -59,11 +65,15 @@ public class TurSNSiteFieldExt implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String name;
 	
-	@Column()
 	private String description;
 	
 	@Column(length = 50)
 	private String facetName;
+
+	@OneToMany(mappedBy = "turSNSiteFieldExt", orphanRemoval = true, fetch = FetchType.LAZY)
+	@Cascade({ org.hibernate.annotations.CascadeType.ALL })
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
 
 	@Column(nullable = false)
 	private TurSNFieldType snType;
@@ -71,28 +81,21 @@ public class TurSNSiteFieldExt implements Serializable {
 	@Column(nullable = false)
 	private TurSEFieldType type;
 
-	@Column()
 	private int multiValued;
 	
-	@Column()
 	private int facet;
-	
-	@Column()
+
 	private int hl;
 
-	@Column()
 	private int mlt;
 
-	@Column()
 	private int enabled;
 
-	@Column()
 	private int required;
 	
 	@Column(length = 50)
 	private String defaultValue;
 	
-	@Column()
 	private int nlp;
 	
 	// bi-directional many-to-one association to TurSNSite

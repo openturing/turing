@@ -3,6 +3,7 @@ package com.viglet.turing.client.sn.job;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 
 import java.io.Serializable;
+import java.util.Map;
 
 public class TurSNJobAttributeSpec implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -12,7 +13,7 @@ public class TurSNJobAttributeSpec implements Serializable {
     protected boolean multiValued;
     protected String description;
     protected boolean facet;
-    protected String facetName;
+    protected Map<String, String> facetName;
 
     public String getName() {
         return name;
@@ -62,11 +63,11 @@ public class TurSNJobAttributeSpec implements Serializable {
         this.facet = facet;
     }
 
-    public String getFacetName() {
+    public Map<String, String> getFacetName() {
         return facetName;
     }
 
-    public void setFacetName(String facetName) {
+    public void setFacetName(Map<String, String> facetName) {
         this.facetName = facetName;
     }
 

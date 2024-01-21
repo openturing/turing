@@ -56,7 +56,7 @@ public class TurCmsContentDefinitionProcess {
 
     private Optional<TurCmsModel> findByNameFromModel(final List<TurCmsModel> turCmsModels,
                                                       final String name) {
-        return turCmsModels.stream().filter(o -> o.getType().equals(name)).findFirst();
+        return turCmsModels.stream().filter(o ->  o != null && o.getType().equals(name)).findFirst();
     }
     public List<TurSNAttributeSpec> getTargetAttrDefinitions() {
         return getMappingDefinitions().getTargetAttrDefinitions();

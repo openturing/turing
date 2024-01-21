@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -28,6 +28,7 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
@@ -43,6 +44,7 @@ import com.viglet.turing.solr.TurSolrFieldAction;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.TurSolrUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
@@ -57,6 +59,7 @@ import java.util.Map.Entry;
 public class TurSNProcessQueue {
     public static final String CREATED = "Created";
     public static final String DELETED = "Deleted";
+    public static final String DEFAULT = "default";
     @Autowired
     private TurSolr turSolr;
     @Autowired
@@ -79,6 +82,7 @@ public class TurSNProcessQueue {
     private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     @Autowired
     private TurSEInstanceRepository turSEInstanceRepository;
+
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
     @Transactional
     public void receiveIndexingQueue(TurSNJob turSNJob) {
@@ -150,15 +154,15 @@ public class TurSNProcessQueue {
         log.debug("DeIndex");
         return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale())
                 .map(turSolrInstance -> {
-            if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
-                turSolr.deIndexing(turSolrInstance,
-                        (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE));
-            } else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.TYPE_ATTRIBUTE)) {
-                turSolr.deIndexingByType(turSolrInstance,
-                        (String) turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE));
-            }
-            return true;
-        }).orElse(false);
+                    if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
+                        turSolr.deIndexing(turSolrInstance,
+                                (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE));
+                    } else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.TYPE_ATTRIBUTE)) {
+                        turSolr.deIndexingByType(turSolrInstance,
+                                (String) turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE));
+                    }
+                    return true;
+                }).orElse(false);
     }
 
     private boolean index(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
@@ -186,12 +190,21 @@ public class TurSNProcessQueue {
                         .multiValued(spec.isMultiValued() ? 1 : 0)
                         .turSNSite(turSNSite).build();
                 turSNSiteFieldRepository.save(turSNSiteField);
+
+                Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
+                spec.getFacetName().forEach((key, value) ->
+                        facetLocales.add(TurSNSiteFieldExtFacet.builder()
+                                .locale(LocaleUtils.toLocale(key))
+                                .label(value)
+                                .build()));
                 turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
                         .enabled(1)
                         .name(turSNSiteField.getName())
                         .description(turSNSiteField.getDescription())
                         .facet(spec.isFacet() ? 1 : 0)
-                        .facetName(spec.getFacetName())
+                        .facetName(spec.getFacetName().get(DEFAULT))
+                        .facetLocales(facetLocales)
+                        .facetName(spec.getFacetName().get(DEFAULT))
                         .hl(0)
                         .multiValued(turSNSiteField.getMultiValued())
                         .mlt(0)
@@ -204,7 +217,6 @@ public class TurSNProcessQueue {
                         createFieldInSearchEngine(turSNSite, turSNSiteLocale.getCore(), turSNSiteField);
                     }
                 });
-
             }
         });
     }
@@ -213,12 +225,12 @@ public class TurSNProcessQueue {
         turSEInstanceRepository
                 .findById(turSNSite.getTurSEInstance().getId()).ifPresent(turSEInstance ->
                         TurSolrUtils.addOrUpdateField(TurSolrFieldAction.ADD,
-                        turSEInstance,
-                        coreName,
-                        turSNSiteField.getName(),
-                        turSNSiteField.getType(),
-                        true,
-                        turSNSiteField.getMultiValued() == 1));
+                                turSEInstance,
+                                coreName,
+                                turSNSiteField.getName(),
+                                turSNSiteField.getType(),
+                                true,
+                                turSNSiteField.getMultiValued() == 1));
 
     }
 
@@ -250,12 +262,12 @@ public class TurSNProcessQueue {
                         .forEach(attribute -> {
                             log.debug("removeDuplicateTerms: attribute Value: {}", attribute.getValue());
                             log.debug("removeDuplicateTerms: attribute Class: {}",
-                            attribute.getValue().getClass().getName());
-                    if (attribute.getValue() instanceof ArrayList) {
-                        removeDuplicateTermsFromMultiValue(attributesWithUniqueTerms, attribute);
-                    } else {
-                        attributesWithUniqueTerms.put(attribute.getKey(), attribute.getValue());
-                    }
+                                    attribute.getValue().getClass().getName());
+                            if (attribute.getValue() instanceof ArrayList) {
+                                removeDuplicateTermsFromMultiValue(attributesWithUniqueTerms, attribute);
+                            } else {
+                                attributesWithUniqueTerms.put(attribute.getKey(), attribute.getValue());
+                            }
                         }));
         log.debug("removeDuplicateTerms: attributesWithUniqueTerms: {}", attributesWithUniqueTerms);
         return attributesWithUniqueTerms;

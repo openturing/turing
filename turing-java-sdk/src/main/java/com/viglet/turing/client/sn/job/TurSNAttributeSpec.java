@@ -1,7 +1,5 @@
 package com.viglet.turing.client.sn.job;
 
-import com.viglet.turing.commons.se.field.TurSEFieldType;
-
 import java.io.Serializable;
 
 public class TurSNAttributeSpec  extends TurSNJobAttributeSpec implements Serializable {
