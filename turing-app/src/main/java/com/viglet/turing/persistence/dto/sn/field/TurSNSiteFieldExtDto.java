@@ -19,26 +19,21 @@
  * under the License.
  */
 
-package com.viglet.turing.persistence.model.sn.field;
+package com.viglet.turing.persistence.dto.sn.field;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.sn.TurSNFieldType;
-import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Tolerate;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UuidGenerator;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The persistent class for the turSNSiteFieldExt database table.
@@ -47,71 +42,56 @@ import java.util.Set;
 @Builder
 @Setter
 @Getter
-@Entity
-@Table(name = "sn_site_field_ext")
-public class TurSNSiteFieldExt implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    @Id
-    @UuidGenerator
-    @Column(name = "id", updatable = false, nullable = false)
+public class TurSNSiteFieldExtDto {
     private String id;
-
-    @Column(nullable = false)
     private String externalId;
-
-    @Column(nullable = false, length = 50)
     private String name;
-
     private String description;
-
-    @Column(length = 50)
     private String facetName;
-
-
-    @OneToMany(mappedBy = "turSNSiteFieldExt", orphanRemoval = true, fetch = FetchType.LAZY)
-    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
-
-    @Column(nullable = false)
+    private Set<TurSNSiteFieldExtFacetDto> facetLocales = new HashSet<>();
     private TurSNFieldType snType;
-
-    @Column(nullable = false)
     private TurSEFieldType type;
-
     private int multiValued;
-
     private int facet;
-
     private int hl;
-
     private int mlt;
-
     private int enabled;
-
     private int required;
-
-    @Column(length = 50)
     private String defaultValue;
-
     private int nlp;
-
-    // bi-directional many-to-one association to TurSNSite
-    @ManyToOne
-    @JoinColumn(name = "sn_site_id", nullable = false)
-    @JsonBackReference(value = "turSNSiteFieldExt-turSNSite")
     private TurSNSite turSNSite;
 
     @Tolerate
-    public TurSNSiteFieldExt() {
+    public TurSNSiteFieldExtDto() {
 
     }
+    @Tolerate
+    public TurSNSiteFieldExtDto(TurSNSiteFieldExt turSNSiteFieldExt) {
+        this.id = turSNSiteFieldExt.getId();
+        this.externalId = turSNSiteFieldExt.getExternalId();
+        this.name = turSNSiteFieldExt.getName();
+        this.description = turSNSiteFieldExt.getDescription();
+        this.facetName = turSNSiteFieldExt.getFacetName();
+        this.snType = turSNSiteFieldExt.getSnType();
+        this.type = turSNSiteFieldExt.getType();
+        this.multiValued = turSNSiteFieldExt.getMultiValued();
+        this.facet = turSNSiteFieldExt.getFacet();
+        this.hl = turSNSiteFieldExt.getHl();
+        this.mlt = turSNSiteFieldExt.getMlt();
+        this.enabled = turSNSiteFieldExt.getEnabled();
+        this.required = turSNSiteFieldExt.getRequired();
+        this.defaultValue = turSNSiteFieldExt.getDefaultValue();
+        this.nlp = turSNSiteFieldExt.getNlp();
+        this.turSNSite = turSNSiteFieldExt.getTurSNSite();
+    }
+
     public void setFacetLocales(Set<TurSNSiteFieldExtFacet> facetLocales) {
-        this.facetLocales.clear();
         if (facetLocales != null) {
-            this.facetLocales.addAll(facetLocales);
+            this.facetLocales.clear();
+            this.facetLocales.addAll(facetLocales.stream().map(TurSNSiteFieldExtFacetDto::new)
+                    .collect(Collectors.toSet()));
         }
     }
+
+
 }

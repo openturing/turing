@@ -28,8 +28,8 @@ import com.viglet.turing.api.sn.queue.TurSpotlightContent;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
@@ -210,8 +210,8 @@ public class TurSNSpotlightProcess {
 	}
 
 	public void addSpotlightToResults(TurSNSiteSearchContext context, TurSolrInstance turSolrInstance,
-			TurSNSite turSNSite, Map<String, TurSNSiteFieldExt> facetMap, Map<String, TurSNSiteFieldExt> fieldExtMap,
-			List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean) {
+									  TurSNSite turSNSite, Map<String, TurSNSiteFieldExtDto> facetMap, Map<String, TurSNSiteFieldExtDto> fieldExtMap,
+									  List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean) {
 
 		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = getSpotlightsFromQuery(context,
 				turSNSite);
@@ -239,7 +239,7 @@ public class TurSNSpotlightProcess {
 				for (TurSNSiteSpotlightDocument document : turSNSiteSpotlightDocuments) {
 					TurSEResult turSEResult = turSolr.findById(turSolrInstance, turSNSite, document.getReferenceId());
 					if (turSEResult != null) {
-						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,
+						TurSNUtils.addSNDocumentWithPosition(context.getUri(), fieldExtMap, facetMap,
 								turSNSiteSearchDocumentsBean, turSEResult, true, currentPositionFromList);
 					} else {
 						Map<String, Object> fields = new HashMap<>();
@@ -249,7 +249,7 @@ public class TurSNSpotlightProcess {
 						fields.put("referenceId", document.getReferenceId());
 						fields.put(turSNSite.getDefaultTitleField(), document.getTitle());
 						fields.put("type", document.getType());
-						TurSNUtils.addSNDocumentWithPostion(context.getUri(), fieldExtMap, facetMap,
+						TurSNUtils.addSNDocumentWithPosition(context.getUri(), fieldExtMap, facetMap,
 								turSNSiteSearchDocumentsBean, TurSEResult.builder().fields(fields).build(),
 								true, currentPositionFromList);
 					}
