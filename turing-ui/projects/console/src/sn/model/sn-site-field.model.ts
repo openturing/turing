@@ -1,3 +1,5 @@
+import {TurSNSiteFieldFacet} from "./sn-site-field-facet.model";
+
 export interface TurSNSiteField {
   id: string;
   name: string;
@@ -7,6 +9,7 @@ export interface TurSNSiteField {
   externalId: string;
   facet: number;
   facetName: string;
+  facetLocales: TurSNSiteFieldFacet[]
   mlt: number;
   multiValued: number;
   nlp: number;
