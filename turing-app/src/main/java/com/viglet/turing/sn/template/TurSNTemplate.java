@@ -58,6 +58,7 @@ import java.util.*;
 @Slf4j
 @Component
 public class TurSNTemplate {
+    public static final String PT_BR = "pt_BR";
     private final ResourceLoader resourceloader;
     private final TurSNSiteFieldRepository turSNSiteFieldRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
@@ -93,10 +94,10 @@ public class TurSNTemplate {
 
     @NotNull
     private static HashSet<TurSNSiteFieldExtFacet> getFacetLocales(String label) {
-        return new HashSet<>(List.of(TurSNSiteFieldExtFacet.builder()
-                .locale(LocaleUtils.toLocale("pt_BR"))
-                .label(label)
-                .build()));
+        TurSNSiteFieldExtFacet turSNSiteFieldExtFacet = new TurSNSiteFieldExtFacet();
+        turSNSiteFieldExtFacet.setLocale(LocaleUtils.toLocale(PT_BR));
+        turSNSiteFieldExtFacet.setLabel(label);
+        return new HashSet<>(List.of(turSNSiteFieldExtFacet));
     }
 
     public void createSNSite(TurSNSite turSNSite, String username, Locale locale) {

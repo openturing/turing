@@ -24,7 +24,9 @@ package com.viglet.turing.persistence.model.sn.field;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.Tolerate;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -36,7 +38,8 @@ import java.util.Locale;
  *
  */
 @Builder
-@Data
+@Setter
+@Getter
 @Entity
 @Table(name = "sn_site_field_ext_facet")
 @JsonIgnoreProperties({ "turSNSiteFieldExt" })
@@ -54,6 +57,7 @@ public class TurSNSiteFieldExtFacet  implements Serializable {
     @ManyToOne
     @JoinColumn(name = "field_ext_id", nullable = false)
     private TurSNSiteFieldExt turSNSiteFieldExt;
+
     @Tolerate
     public TurSNSiteFieldExtFacet() {
 

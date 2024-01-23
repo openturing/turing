@@ -32,9 +32,11 @@ import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
@@ -47,6 +49,7 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.LocaleUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -62,6 +65,7 @@ import java.util.*;
 @Component
 public class TurSNSearchProcess {
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSolrInstanceProcess turSolrInstanceProcess;
@@ -71,6 +75,7 @@ public class TurSNSearchProcess {
 
     @Inject
     public TurSNSearchProcess(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+                              TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
                               TurSNSiteRepository turSNSiteRepository,
                               TurSNSiteLocaleRepository turSNSiteLocaleRepository,
                               TurSolrInstanceProcess turSolrInstanceProcess,
@@ -78,6 +83,7 @@ public class TurSNSearchProcess {
                               TurSNSpotlightProcess turSNSpotlightProcess,
                               TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turSolrInstanceProcess = turSolrInstanceProcess;
@@ -103,24 +109,36 @@ public class TurSNSearchProcess {
                 .orElse(new TurSNSiteSearchBean());
     }
 
-    private TurSNSiteSearchBean searchResponse(TurSNSiteSearchContext turSNSiteSearchContext,
+    private TurSNSiteSearchBean searchResponse(TurSNSiteSearchContext context,
                                                TurSolrInstance turSolrInstance,
                                                TurSEResults turSEResults) {
-        return turSNSiteRepository.findByName(turSNSiteSearchContext.getSiteName()).map(turSNSite -> {
-            populateMetrics(turSNSite, turSNSiteSearchContext, turSEResults.getNumFound());
+        return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
+            populateMetrics(turSNSite, context, turSEResults.getNumFound());
+            /**    List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList = turSNSiteFieldExtRepository
+             .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1).stream()
+             .peek(turSNSiteFieldExt ->
+             turSNSiteFieldExt.setFacetLocales(new HashSet<>(
+             Collections.singletonList(turSNSiteFieldExtFacetRepository
+             .findByTurSNSiteFieldExtAndAndLocale(turSNSiteFieldExt, context.getLocale())
+             .stream().findFirst()
+             .orElse(TurSNSiteFieldExtFacet.builder()
+             .locale(context.getLocale())
+             .label(turSNSiteFieldExt.getFacetName())
+             .build()))))).toList();
+             **/
             List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList = turSNSiteFieldExtRepository
                     .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
             Map<String, TurSNSiteFieldExt> facetMap = setFacetMap(turSNSiteFacetFieldExtList);
             return new TurSNSiteSearchBean()
-                    .setResults(responseDocuments(turSNSiteSearchContext,
+                    .setResults(responseDocuments(context,
                             turSolrInstance, turSNSite, facetMap, turSEResults.getResults()))
-                    .setGroups(responseGroups(turSNSiteSearchContext, turSolrInstance,
+                    .setGroups(responseGroups(context, turSolrInstance,
                             turSNSite, facetMap, turSEResults))
-                    .setPagination(responsePagination(turSNSiteSearchContext.getUri(), turSEResults))
-                    .setWidget(responseWidget(turSNSiteSearchContext, turSNSite,
+                    .setPagination(responsePagination(context.getUri(), turSEResults))
+                    .setWidget(responseWidget(context, turSNSite,
                             turSNSiteFacetFieldExtList, facetMap, turSEResults))
                     .setQueryContext(responseQueryContext(turSNSite, turSEResults,
-                            turSNSiteSearchContext.getLocale()));
+                            context.getLocale()));
         }).orElse(new TurSNSiteSearchBean());
     }
 
@@ -388,9 +406,10 @@ public class TurSNSearchProcess {
                                                          TurSNSite turSNSite, List<String> hiddenFilterQuery,
                                                          List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList, Map<String,
             TurSNSiteFieldExt> facetMap, TurSEResults turSEResults) {
+
         if (turSNSite.getFacet() == 1 && hasFacetFields(turSNSiteFacetFieldExtList)) {
             List<String> usedFacetItems = new ArrayList<>();
-            if (context.getTurSEParameters() != null && context.getTurSEParameters().getFilterQueries() != null )
+            if (context.getTurSEParameters() != null && context.getTurSEParameters().getFilterQueries() != null)
                 usedFacetItems.addAll(context.getTurSEParameters().getFilterQueries());
             List<TurSNSiteSearchFacetBean> turSNSiteSearchFacetBeans = new ArrayList<>();
             turSEResults.getFacetResults().forEach(facet -> {
@@ -408,7 +427,7 @@ public class TurSNSearchProcess {
                         );
 
                     });
-                    turSNSiteSearchFacetBeans.add(getTurSNSiteSearchFacetBean(facetMap.get(facet.getFacet()),
+                    turSNSiteSearchFacetBeans.add(getTurSNSiteSearchFacetBean(context, facetMap.get(facet.getFacet()),
                             turSNSiteSearchFacetItemBeans));
                 }
             });
@@ -434,21 +453,18 @@ public class TurSNSearchProcess {
     }
 
     @NotNull
-    private static TurSNSiteSearchFacetBean getTurSNSiteSearchFacetBean(TurSNSiteFieldExt turSNSiteFieldExt,
+    private static TurSNSiteSearchFacetBean getTurSNSiteSearchFacetBean(TurSNSiteSearchContext context,
+                                                                        TurSNSiteFieldExt turSNSiteFieldExt,
                                                                         List<TurSNSiteSearchFacetItemBean>
                                                                                 turSNSiteSearchFacetItemBeans) {
-        TurSNSiteSearchFacetBean turSNSiteSearchFacetBean = new TurSNSiteSearchFacetBean();
-        turSNSiteSearchFacetBean.setLabel(new TurSNSiteSearchFacetLabelBean()
-                .setLang(TurSNUtils.DEFAULT_LANGUAGE)
-                .setText(turSNSiteFieldExt.getFacetName()));
-        turSNSiteSearchFacetBean.setName(turSNSiteFieldExt.getName());
-        turSNSiteSearchFacetBean.setDescription(turSNSiteFieldExt.getDescription());
-        turSNSiteSearchFacetBean.setMultiValuedWithInt(turSNSiteFieldExt.getMultiValued());
-        turSNSiteSearchFacetBean.setType(turSNSiteFieldExt.getType());
-        turSNSiteSearchFacetBean.setFacets(turSNSiteSearchFacetItemBeans);
+       /* TurSNSiteFieldExtFacet turSNSiteFieldExtFacet = turSNSiteFieldExt.getFacetLocales()
+                .stream()
+                .filter(o -> o.getLocale().toString().equals(context.getLocale().toString())).findFirst()
+                .orElse(TurSNSiteFieldExtFacet.builder().locale(LocaleUtils.toLocale(context.getSiteName()))
+                        .label(turSNSiteFieldExt.getFacetName()).build()); */
         return new TurSNSiteSearchFacetBean()
                 .setLabel(new TurSNSiteSearchFacetLabelBean()
-                        .setLang(TurSNUtils.DEFAULT_LANGUAGE)
+                        .setLang(context.getLocale().toString())
                         .setText(turSNSiteFieldExt.getFacetName()))
                 .setName(turSNSiteFieldExt.getName())
                 .setDescription(turSNSiteFieldExt.getDescription())

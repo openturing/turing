@@ -672,8 +672,7 @@ public class TurSolr {
             turSNSiteFacetFieldExtList.forEach(turSNSiteFacetFieldExt ->
                             query.addFacetField(setFacetTypeConditionInFacet(
                                     setEntityPrefix(turSNSiteFacetFieldExt)
-                                            .concat(turSNSiteFacetFieldExt.getName())
-                                            .concat(setCopyFieldSuffix(turSNSiteFacetFieldExt)),
+                                            .concat(turSNSiteFacetFieldExt.getName()),
                             turSEParameters, turSNSite)
 
             )
@@ -689,7 +688,7 @@ public class TurSolr {
 
     @NotNull
     private static String setCopyFieldSuffix(TurSNSiteFieldExt turSNSiteFacetFieldExt) {
-        return turSNSiteFacetFieldExt.getType().equals(TurSEFieldType.STRING) ? "_str" : "";
+        return turSNSiteFacetFieldExt.getType().equals(TurSEFieldType.TEXT) ? "_str" : "";
     }
 
     private static boolean isNerOrThesaurus(TurSNFieldType snType) {

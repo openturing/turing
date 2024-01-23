@@ -30,9 +30,10 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.sn.TurSNFieldType;
@@ -80,6 +81,8 @@ public class TurSNProcessQueue {
     private TurSNSiteFieldRepository turSNSiteFieldRepository;
     @Autowired
     private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    @Autowired
+    private TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
     @Autowired
     private TurSEInstanceRepository turSEInstanceRepository;
 
@@ -190,20 +193,11 @@ public class TurSNProcessQueue {
                         .multiValued(spec.isMultiValued() ? 1 : 0)
                         .turSNSite(turSNSite).build();
                 turSNSiteFieldRepository.save(turSNSiteField);
-
-                Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
-                spec.getFacetName().forEach((key, value) ->
-                        facetLocales.add(TurSNSiteFieldExtFacet.builder()
-                                .locale(LocaleUtils.toLocale(key))
-                                .label(value)
-                                .build()));
-                turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
+                TurSNSiteFieldExt turSNSiteFieldExt = TurSNSiteFieldExt.builder()
                         .enabled(1)
                         .name(turSNSiteField.getName())
                         .description(turSNSiteField.getDescription())
                         .facet(spec.isFacet() ? 1 : 0)
-                        .facetName(spec.getFacetName().get(DEFAULT))
-                        .facetLocales(facetLocales)
                         .facetName(spec.getFacetName().get(DEFAULT))
                         .hl(0)
                         .multiValued(turSNSiteField.getMultiValued())
@@ -211,7 +205,19 @@ public class TurSNProcessQueue {
                         .externalId(turSNSiteField.getId())
                         .snType(TurSNFieldType.SE)
                         .type(turSNSiteField.getType())
-                        .turSNSite(turSNSite).build());
+                        .turSNSite(turSNSite).build();
+                turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
+                Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
+                spec.getFacetName().forEach((key, value) -> {
+                    if (!key.equals(DEFAULT)) {
+                        TurSNSiteFieldExtFacet turSNSiteFieldExtFacet = new TurSNSiteFieldExtFacet();
+                        turSNSiteFieldExtFacet.setLocale(LocaleUtils.toLocale(key));
+                        turSNSiteFieldExtFacet.setLabel(value);
+                        turSNSiteFieldExtFacet.setTurSNSiteFieldExt(turSNSiteFieldExt);
+                        facetLocales.add(turSNSiteFieldExtFacet);
+                    }
+                });
+                turSNSiteFieldExtFacetRepository.saveAll(facetLocales);
                 turSNSiteLocaleRepository.findByTurSNSite(turSNSite).forEach(turSNSiteLocale -> {
                     if (!existsFieldInSearchEngine(turSNSite, turSNSiteLocale.getCore(), spec.getName())) {
                         createFieldInSearchEngine(turSNSite, turSNSiteLocale.getCore(), turSNSiteField);

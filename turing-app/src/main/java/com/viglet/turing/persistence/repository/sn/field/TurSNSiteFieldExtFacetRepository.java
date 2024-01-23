@@ -24,9 +24,11 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Locale;
 import java.util.Set;
 
 public interface TurSNSiteFieldExtFacetRepository extends JpaRepository<TurSNSiteFieldExtFacet, String> {
 
     Set<TurSNSiteFieldExtFacet> findByTurSNSiteFieldExt(TurSNSiteFieldExt turSNSiteFieldExt);
+    Set<TurSNSiteFieldExtFacet> findByTurSNSiteFieldExtAndAndLocale(TurSNSiteFieldExt turSNSiteFieldExt, Locale locale);
 }

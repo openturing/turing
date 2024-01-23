@@ -170,9 +170,7 @@ public class TurAEMAttrProcess {
         Locale locale = TurAemUtils.getLocaleFromContext(context);
         String titleLocale = locale.toString().toLowerCase();
         String titleLanguage = locale.getLanguage().toLowerCase();
-        log.error(STR."\{titleLocale} \{titleLanguage}");
         Map<String, String> tagLabels = getTagLabels(infinityJson);
-        log.error(tagLabels.toString());
         if (tagLabels.containsKey(titleLocale))
             return tagLabels.get(titleLocale);
         else if (tagLabels.containsKey(titleLanguage))
@@ -210,7 +208,12 @@ public class TurAEMAttrProcess {
             String key = keys.next();
             String titleStartWith = STR."\{JCR_TITLE}.";
             if (key.startsWith(titleStartWith)) {
-                labels.put(key.replaceAll(titleStartWith, ""), tagJson.getString(key));
+                String locale = key.replaceAll(titleStartWith, "");
+                if (locale.equals("pt_br"))
+                    locale = "pt_BR";
+                else if (locale.equals("en_us"))
+                    locale = "en_US";
+                labels.put(locale, tagJson.getString(key));
             }
         }
         return labels;

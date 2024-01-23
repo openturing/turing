@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -27,7 +27,8 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.sn.TurSNFieldType;
 import jakarta.persistence.*;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.Tolerate;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.OnDelete;
@@ -41,68 +42,77 @@ import java.util.Set;
 
 /**
  * The persistent class for the turSNSiteFieldExt database table.
- * 
  */
 
 @Builder
-@Data
+@Setter
+@Getter
 @Entity
 @Table(name = "sn_site_field_ext")
 public class TurSNSiteFieldExt implements Serializable {
-	@Serial
-	private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1L;
 
-	@Id
-	@UuidGenerator
-	@Column(name = "id", updatable = false, nullable = false)
-	private String id;
+    @Id
+    @UuidGenerator
+    @Column(name = "id", updatable = false, nullable = false)
+    private String id;
 
-	@Column(nullable = false)
-	private String externalId;
-	
-	@Column(nullable = false, length = 50)
-	private String name;
-	
-	private String description;
-	
-	@Column(length = 50)
-	private String facetName;
+    @Column(nullable = false)
+    private String externalId;
 
-	@OneToMany(mappedBy = "turSNSiteFieldExt", orphanRemoval = true, fetch = FetchType.LAZY)
-	@Cascade({ org.hibernate.annotations.CascadeType.ALL })
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
+    @Column(nullable = false, length = 50)
+    private String name;
 
-	@Column(nullable = false)
-	private TurSNFieldType snType;
+    private String description;
 
-	@Column(nullable = false)
-	private TurSEFieldType type;
+    @Column(length = 50)
+    private String facetName;
 
-	private int multiValued;
-	
-	private int facet;
 
-	private int hl;
+    @OneToMany(mappedBy = "turSNSiteFieldExt", orphanRemoval = true, fetch = FetchType.LAZY)
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
 
-	private int mlt;
+    @Column(nullable = false)
+    private TurSNFieldType snType;
 
-	private int enabled;
+    @Column(nullable = false)
+    private TurSEFieldType type;
 
-	private int required;
-	
-	@Column(length = 50)
-	private String defaultValue;
-	
-	private int nlp;
-	
-	// bi-directional many-to-one association to TurSNSite
-	@ManyToOne
-	@JoinColumn(name = "sn_site_id", nullable = false)
-	@JsonBackReference (value="turSNSiteFieldExt-turSNSite")
-	private TurSNSite turSNSite;
-	@Tolerate
-	public TurSNSiteFieldExt() {
+    private int multiValued;
 
-	}
+    private int facet;
+
+    private int hl;
+
+    private int mlt;
+
+    private int enabled;
+
+    private int required;
+
+    @Column(length = 50)
+    private String defaultValue;
+
+    private int nlp;
+
+    // bi-directional many-to-one association to TurSNSite
+    @ManyToOne
+    @JoinColumn(name = "sn_site_id", nullable = false)
+    @JsonBackReference(value = "turSNSiteFieldExt-turSNSite")
+    private TurSNSite turSNSite;
+
+    @Tolerate
+    public TurSNSiteFieldExt() {
+
+    }
+
+    public void setFacetLocales(Set<TurSNSiteFieldExtFacet> facetLocales) {
+        this.facetLocales.clear();
+        if (facetLocales != null) {
+            this.facetLocales.addAll(facetLocales);
+        }
+    }
 }
