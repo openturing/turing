@@ -25,4 +25,16 @@ public interface IHandlerConfiguration {
 	String getApiKey();
 
 	String getOncePatternPath();
+
+	String getCmsHost();
+
+	String getCmsUsername();
+
+	String getCmsPassword() ;
+
+	String getCmsGroup();
+
+	String getCmsContentType();
+
+	String getCmsRootPath();
 }

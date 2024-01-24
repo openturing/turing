@@ -53,12 +53,12 @@ public class TurAEMIndexerTool {
     public static final String STATIC_FILE_SUB_TYPE = "STATIC_FILE";
     public static final String ONCE = "once";
     @Parameter(names = {"--host",
-            "-h"}, description = "The host on which Content Management server is installed.", required = true)
+            "-h"}, description = "The host on which Content Management server is installed.")
     private String hostAndPort = null;
     @Parameter(names = {"--username",
-            "-u"}, description = "A username to log in to the Content Management Server.", required = true)
+            "-u"}, description = "A username to log in to the Content Management Server.")
     private String username = null;
-    @Parameter(names = {"--password", "-p"}, description = "The password for the user name.", required = true)
+    @Parameter(names = {"--password", "-p"}, description = "The password for the user name.")
     private String password = null;
     @Parameter(names = {"--all", "-a"}, description = "Index all instances of all content types and object types.")
     private boolean allObjectTypes = false;
