@@ -22,6 +22,7 @@ public interface IHandlerConfiguration {
 
 	String getCDAURLPrefix();
 
-
 	String getApiKey();
+
+	String getOncePatternPath();
 }

@@ -32,4 +32,6 @@ public class TurAemIndexing {
     private String deltaId;
     @Column
     private Locale locale;
+    @Column
+    private boolean once;
 }

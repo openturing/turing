@@ -14,6 +14,12 @@ import java.util.Optional;
 
 @Slf4j
 public class TurAemIndexingDAO {
+    public static final String ONCE = "once";
+    public static final String DELTA_ID = "deltaId";
+    public static final String INDEX_GROUP = "indexGroup";
+    public static final String DATE = "date";
+    public static final String AEM_ID = "aemId";
+    public static final String MANAGER_FACTORY = "aemHibernate";
     EntityManager entityManager;
     public TurAemIndexingDAO() {
         entityManager = getEntityManager();
@@ -21,7 +27,7 @@ public class TurAemIndexingDAO {
 
     private EntityManager getEntityManager() {
         EntityManagerFactory factory =
-                Persistence.createEntityManagerFactory("aemHibernate");
+                Persistence.createEntityManagerFactory(MANAGER_FACTORY);
             return factory.createEntityManager();
     }
 
@@ -35,10 +41,10 @@ public class TurAemIndexingDAO {
             criteria.where(
                     builder.and(
                             builder.and(
-                                    builder.equal(from.get("aemId"), id),
-                                    builder.equal(from.get("date"), date)
+                                    builder.equal(from.get(AEM_ID), id),
+                                    builder.equal(from.get(DATE), date)
                             ),
-                            builder.equal(from.get("indexGroup"), group)
+                            builder.equal(from.get(INDEX_GROUP), group)
                     )
             );
             TypedQuery<TurAemIndexing> typed = entityManager.createQuery(criteria);
@@ -57,8 +63,9 @@ public class TurAemIndexingDAO {
             criteria.select(from);
             criteria.where(
                     builder.and(
-                            builder.equal(from.get("indexGroup"), group),
-                            builder.notEqual(from.get("deltaId"), deltaId)
+                            builder.equal(from.get(INDEX_GROUP), group),
+                            builder.notEqual(from.get(DELTA_ID), deltaId),
+                            builder.notEqual(from.get(ONCE), true)
                     ));
             TypedQuery<TurAemIndexing> typed = entityManager.createQuery(criteria);
             return Optional.ofNullable(typed.getResultList());
@@ -76,8 +83,8 @@ public class TurAemIndexingDAO {
             Root<TurAemIndexing> from = criteria.from(TurAemIndexing.class);
             criteria.where(
                     builder.and(
-                            builder.equal(from.get("indexGroup"), group),
-                            builder.notEqual(from.get("deltaId"), deltaId)
+                            builder.equal(from.get(INDEX_GROUP), group),
+                            builder.notEqual(from.get(DELTA_ID), deltaId)
                     ));
             entityManager.getTransaction().commit();
         } catch (Exception ex) {
@@ -95,8 +102,8 @@ public class TurAemIndexingDAO {
             criteria.select(from);
             criteria.where(
                     builder.and(
-                            builder.equal(from.get("aemId"), id),
-                            builder.equal(from.get("indexGroup"), group)
+                            builder.equal(from.get(AEM_ID), id),
+                            builder.equal(from.get(INDEX_GROUP), group)
                     ));
             TypedQuery<TurAemIndexing> typed = entityManager.createQuery(criteria);
             return Optional.ofNullable(typed.getResultList());

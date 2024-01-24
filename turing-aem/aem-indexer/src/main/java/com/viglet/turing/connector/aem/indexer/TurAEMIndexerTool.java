@@ -12,6 +12,8 @@ import com.viglet.turing.connector.aem.indexer.conf.AemHandlerConfiguration;
 import com.viglet.turing.connector.aem.indexer.ext.ExtContentInterface;
 import com.viglet.turing.connector.aem.indexer.persistence.TurAemIndexing;
 import com.viglet.turing.connector.aem.indexer.persistence.TurAemIndexingDAO;
+import com.viglet.turing.connector.aem.indexer.persistence.TurAemSystem;
+import com.viglet.turing.connector.aem.indexer.persistence.TurAemSystemDAO;
 import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValue;
 import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueList;
 import com.viglet.turing.connector.cms.mappers.TurCmsContentDefinitionProcess;
@@ -30,6 +32,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -47,6 +51,7 @@ public class TurAEMIndexerTool {
     public static final String JCR = "jcr:";
     public static final String ID = "id";
     public static final String STATIC_FILE_SUB_TYPE = "STATIC_FILE";
+    public static final String ONCE = "once";
     @Parameter(names = {"--host",
             "-h"}, description = "The host on which Content Management server is installed.", required = true)
     private String hostAndPort = null;
@@ -95,6 +100,7 @@ public class TurAEMIndexerTool {
     private String siteName;
     private final String deltaId = UUID.randomUUID().toString();
     private final TurAemIndexingDAO turAemIndexingDAO = new TurAemIndexingDAO();
+    private final TurAemSystemDAO turAemSystemDAO = new TurAemSystemDAO();
     private TurCmsContentDefinitionProcess turCmsContentDefinitionProcess;
 
     public static void main(String... argv) {
@@ -125,10 +131,26 @@ public class TurAEMIndexerTool {
         try {
             this.getNodesFromJson();
             if (!dryRun) deIndexObject();
+            updateSystemOnce();
             turAemIndexingDAO.close();
+            turAemSystemDAO.close();
+
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
+    }
+
+    private void updateSystemOnce() {
+        turAemSystemDAO.findByConfig(configOnce()).ifPresentOrElse(turAemSystem -> {
+                    turAemSystem.setBooleanValue(true);
+                    turAemSystemDAO.update(turAemSystem);
+                },
+                () -> turAemSystemDAO.save(new TurAemSystem(configOnce(), true)));
+    }
+
+    @NotNull
+    private String configOnce() {
+        return STR."\{group}/\{ONCE}";
     }
 
     private void getNodesFromJson() {
@@ -174,15 +196,19 @@ public class TurAEMIndexerTool {
         rootPaths.forEach(rootPath -> {
             JSONObject jsonSite = TurAemUtils.getInfinityJson(rootPath, this);
             start = System.currentTimeMillis();
-            if (jsonSite.has(JCR_CONTENT) && jsonSite.getJSONObject(JCR_CONTENT).has(JCR_TITLE)) {
-                siteName = jsonSite.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
-            } else {
-                log.error(String.format("No site name the %s root path (%s)", rootPath, group));
-            }
+            setSiteName(rootPath, jsonSite);
             getNodeFromJson(rootPath, jsonSite);
             jCommander.getConsole().println(String.format("%d items processed in %dms", processed,
                     System.currentTimeMillis() - start));
         });
+    }
+
+    private void setSiteName(String rootPath, JSONObject jsonSite) {
+        if (jsonSite.has(JCR_CONTENT) && jsonSite.getJSONObject(JCR_CONTENT).has(JCR_TITLE)) {
+            siteName = jsonSite.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
+        } else {
+            log.error(String.format("No site name the %s root path (%s)", rootPath, group));
+        }
     }
 
     public static String ordinal(int i) {
@@ -221,9 +247,17 @@ public class TurAEMIndexerTool {
             if (!key.startsWith(JCR) && (getSubType().equals(STATIC_FILE_SUB_TYPE)
                     || !checkIfFileHasImageExtension(key))) {
                 String nodePathChild = STR."\{nodePath}/\{key}";
-                getNodeFromJson(nodePathChild, TurAemUtils.getInfinityJson(nodePathChild, this));
+                Pattern p = Pattern.compile(config.getOncePatternPath());
+                Matcher m = p.matcher(nodePathChild);
+                if (!isOnce() || !m.lookingAt()) {
+                    getNodeFromJson(nodePathChild, TurAemUtils.getInfinityJson(nodePathChild, this));
+                }
             }
         });
+    }
+
+    private boolean isOnce() {
+        return turAemSystemDAO.findByConfig(configOnce()).map(TurAemSystem::isBooleanValue).orElse(false);
     }
 
     private void prepareIndexObject(TurCmsModel turCmsModel, AemObject aemObject,
@@ -299,11 +333,14 @@ public class TurAEMIndexerTool {
         if (dryRun || objectNeedBeIndexed(aemObject)) {
             final Locale locale = TurAemUtils.getLocaleFromAemObject(config, aemObject);
             if (!dryRun) {
+                Pattern p = Pattern.compile(config.getOncePatternPath());
+                Matcher m = p.matcher(aemObject.getPath());
                 turAemIndexingDAO.save(new TurAemIndexing()
                         .setAemId(aemObject.getPath())
                         .setIndexGroup(group)
                         .setDate(aemObject.getLastModified().getTime())
                         .setDeltaId(deltaId)
+                        .setOnce(m.lookingAt())
                         .setLocale(locale));
                 log.info(String.format("Created %s object (%s)", aemObject.getPath(), group));
             }

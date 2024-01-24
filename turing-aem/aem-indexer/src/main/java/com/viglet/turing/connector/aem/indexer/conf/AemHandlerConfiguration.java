@@ -56,6 +56,7 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     private String cdaURLPrefix;
     private String apiKey;
     private String providerName;
+    private String oncePatternPath;
 
     private final String propertyFile;
     // Load up from Generic Resource
@@ -84,7 +85,10 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     public String getCDAURLPrefix() {
         return cdaURLPrefix;
     }
-
+    @Override
+    public String getOncePatternPath() {
+        return oncePatternPath;
+    }
 
     private void parsePropertiesFromResource() {
         parseProperties(getProperties());
@@ -125,6 +129,7 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
         snLocale = LocaleUtils.toLocale(properties.getProperty("dps.site.default.sn.locale", DEFAULT_SN_LOCALE));
         cdaContextName = properties.getProperty("dps.site.default.context.name", DEFAULT_DPS_CONTEXT);
         cdaURLPrefix = properties.getProperty("dps.site.default.url.prefix");
+        oncePatternPath = properties.getProperty("sn.default.once.pattern.path");
     }
 
     @Override
