@@ -85,6 +85,10 @@ public class TurAEMIndexerTool {
     private String propertyPath = "turing-aem.properties";
     @Parameter(names = "--group", description = "Identifier to verify delta updates", help = true, required = true)
     private String group;
+    @Parameter(names = "--reindex", description = "Reindex all content except once pattern", help = true)
+    private boolean reindex = false;
+    @Parameter(names = "--reindex-once", description = "Reindex only once pattern", help = true)
+    private boolean reindexOnce = false;
     @Parameter(names = "--show-output", description = "Property file location path", help = true)
     private boolean showOutput = false;
     @Parameter(names = "--dry-run", description = "Execute without connect to Turing", help = true)
@@ -129,8 +133,14 @@ public class TurAEMIndexerTool {
         turCmsContentDefinitionProcess = new TurCmsContentDefinitionProcess(config,
                 Paths.get(propertyPath).toAbsolutePath().getParent());
         try {
+            if (reindex) {
+                turAemIndexingDAO.deleteContentsToReindex(group);
+            }
+            if (reindexOnce) {
+                turAemIndexingDAO.deleteContentsToReindexOnce(group);
+            }
             this.getNodesFromJson();
-            if (!dryRun) deIndexObject();
+            if (!dryRun && !usingGuidParameter()) deIndexObject();
             updateSystemOnce();
             turAemIndexingDAO.close();
             turAemSystemDAO.close();
@@ -154,15 +164,23 @@ public class TurAEMIndexerTool {
     }
 
     private void getNodesFromJson() {
-        if (!StringUtils.isEmpty(contentType)) {
+        if (usingContentTypeParameter()) {
             turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(contentType)
                     .ifPresentOrElse(_ -> jsonByContentType(),
                             () -> jCommander.getConsole()
                                     .println(String.format("%s type is not configured in CTD Mapping XML file.",
                                             contentType)));
-        } else if (!StringUtils.isEmpty(guidFilePath)) {
+        } else if (usingGuidParameter()) {
             jsonByGuidList();
         }
+    }
+
+    private boolean usingContentTypeParameter() {
+        return StringUtils.isNotBlank(contentType);
+    }
+
+    private boolean usingGuidParameter() {
+        return StringUtils.isNotBlank(guidFilePath);
     }
 
     private void jsonByGuidList() {
@@ -247,9 +265,7 @@ public class TurAEMIndexerTool {
             if (!key.startsWith(JCR) && (getSubType().equals(STATIC_FILE_SUB_TYPE)
                     || !checkIfFileHasImageExtension(key))) {
                 String nodePathChild = STR."\{nodePath}/\{key}";
-                Pattern p = Pattern.compile(config.getOncePatternPath());
-                Matcher m = p.matcher(nodePathChild);
-                if (!isOnce() || !m.lookingAt()) {
+                  if (!isOnce() || !isOnceConfig(nodePathChild)) {
                     getNodeFromJson(nodePathChild, TurAemUtils.getInfinityJson(nodePathChild, this));
                 }
             }
@@ -258,6 +274,14 @@ public class TurAEMIndexerTool {
 
     private boolean isOnce() {
         return turAemSystemDAO.findByConfig(configOnce()).map(TurAemSystem::isBooleanValue).orElse(false);
+    }
+    private boolean isOnceConfig(String path) {
+        if (StringUtils.isNotBlank(config.getOncePatternPath())) {
+            Pattern p = Pattern.compile(config.getOncePatternPath());
+            Matcher m = p.matcher(path);
+            return m.lookingAt();
+        }
+        return false;
     }
 
     private void prepareIndexObject(TurCmsModel turCmsModel, AemObject aemObject,
@@ -333,14 +357,12 @@ public class TurAEMIndexerTool {
         if (dryRun || objectNeedBeIndexed(aemObject)) {
             final Locale locale = TurAemUtils.getLocaleFromAemObject(config, aemObject);
             if (!dryRun) {
-                Pattern p = Pattern.compile(config.getOncePatternPath());
-                Matcher m = p.matcher(aemObject.getPath());
                 turAemIndexingDAO.save(new TurAemIndexing()
                         .setAemId(aemObject.getPath())
                         .setIndexGroup(group)
                         .setDate(aemObject.getLastModified().getTime())
                         .setDeltaId(deltaId)
-                        .setOnce(m.lookingAt())
+                        .setOnce(isOnceConfig(aemObject.getPath()))
                         .setLocale(locale));
                 log.info(String.format("Created %s object (%s)", aemObject.getPath(), group));
             }

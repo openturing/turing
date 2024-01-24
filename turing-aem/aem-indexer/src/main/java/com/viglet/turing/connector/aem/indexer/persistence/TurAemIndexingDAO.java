@@ -21,6 +21,7 @@ public class TurAemIndexingDAO {
     public static final String AEM_ID = "aemId";
     public static final String MANAGER_FACTORY = "aemHibernate";
     EntityManager entityManager;
+
     public TurAemIndexingDAO() {
         entityManager = getEntityManager();
     }
@@ -28,7 +29,7 @@ public class TurAemIndexingDAO {
     private EntityManager getEntityManager() {
         EntityManagerFactory factory =
                 Persistence.createEntityManagerFactory(MANAGER_FACTORY);
-            return factory.createEntityManager();
+        return factory.createEntityManager();
     }
 
     public boolean existsByAemIdAndDateAndGroup(String id, Date date,
@@ -74,8 +75,7 @@ public class TurAemIndexingDAO {
         }
     }
 
-    public void deleteContentsWereDeIndexed(String group,
-                                          String deltaId) {
+    public void deleteContentsToReindex(String group) {
         try {
             entityManager.getTransaction().begin();
             CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -84,7 +84,45 @@ public class TurAemIndexingDAO {
             criteria.where(
                     builder.and(
                             builder.equal(from.get(INDEX_GROUP), group),
-                            builder.notEqual(from.get(DELTA_ID), deltaId)
+                            builder.notEqual(from.get(ONCE), true)
+                    ));
+            entityManager.getTransaction().commit();
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
+            entityManager.getTransaction().rollback();
+        }
+    }
+
+    public void deleteContentsToReindexOnce(String group) {
+        try {
+            entityManager.getTransaction().begin();
+            CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+            CriteriaDelete<TurAemIndexing> criteria = builder.createCriteriaDelete(TurAemIndexing.class);
+            Root<TurAemIndexing> from = criteria.from(TurAemIndexing.class);
+            criteria.where(
+                    builder.and(
+                            builder.equal(from.get(INDEX_GROUP), group),
+                            builder.equal(from.get(ONCE), true)
+                    ));
+            entityManager.getTransaction().commit();
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
+            entityManager.getTransaction().rollback();
+        }
+    }
+
+    public void deleteContentsWereDeIndexed(String group,
+                                            String deltaId) {
+        try {
+            entityManager.getTransaction().begin();
+            CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+            CriteriaDelete<TurAemIndexing> criteria = builder.createCriteriaDelete(TurAemIndexing.class);
+            Root<TurAemIndexing> from = criteria.from(TurAemIndexing.class);
+            criteria.where(
+                    builder.and(
+                            builder.equal(from.get(INDEX_GROUP), group),
+                            builder.notEqual(from.get(DELTA_ID), deltaId),
+                            builder.notEqual(from.get(ONCE), true)
                     ));
             entityManager.getTransaction().commit();
         } catch (Exception ex) {
