@@ -1,6 +1,7 @@
 package com.viglet.turing.connector.webcrawler;
 
 import com.google.common.collect.Iterators;
+import com.google.inject.Inject;
 import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
@@ -8,6 +9,11 @@ import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.client.sn.job.TurSNJobUtils;
 import com.viglet.turing.connector.webcrawler.ext.TurWCExtInterface;
 import com.viglet.turing.connector.webcrawler.ext.TurWCExtLocaleInterface;
+import com.viglet.turing.connector.webcrawler.persistence.model.TurWCSource;
+import com.viglet.turing.connector.webcrawler.persistence.repository.TurWCAllowUrlRepository;
+import com.viglet.turing.connector.webcrawler.persistence.repository.TurWCAttributeMappingRepository;
+import com.viglet.turing.connector.webcrawler.persistence.repository.TurWCFileExtensionRepository;
+import com.viglet.turing.connector.webcrawler.persistence.repository.TurWCNotAllowUrlRepository;
 import generator.RandomUserAgentGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -48,33 +54,47 @@ public class TurWCProcess {
     private final int timeout;
     private final int jobSize;
     private final String referrer;
+    private final TurWCAllowUrlRepository turWCAllowUrlRepository;
+    private final TurWCNotAllowUrlRepository turWCNotAllowUrlRepository;
+    private final TurWCFileExtensionRepository turWCFileExtensionRepository;
+    private final TurWCAttributeMappingRepository turWCAttributeMappingRepository;
 
+    @Inject
     public TurWCProcess(@Value("${turing.url}") String turingUrl,
                         @Value("${turing.apiKey}") String turingApiKey,
                         @Value("${turing.wc.timeout:5000}") int timeout,
-                        @Value("${turing.turing.wc.job.size:50}") int jobSize,
-                        @Value("${turing.wc.referrer:https://www.google.com}") String referrer) {
-
+                        @Value("${turing.wc.job.size:50}") int jobSize,
+                        @Value("${turing.wc.referrer:https://www.google.com}") String referrer,
+                        TurWCAllowUrlRepository turWCAllowUrlRepository,
+                        TurWCNotAllowUrlRepository turWCNotAllowUrlRepository,
+                        TurWCFileExtensionRepository turWCFileExtensionRepository,
+                        TurWCAttributeMappingRepository turWCAttributeMappingRepository) {
         this.turingUrl = turingUrl;
         this.turingApiKey = turingApiKey;
         this.timeout = timeout;
         this.jobSize = jobSize;
         this.referrer = referrer;
+        this.turWCAllowUrlRepository = turWCAllowUrlRepository;
+        this.turWCNotAllowUrlRepository = turWCNotAllowUrlRepository;
+        this.turWCFileExtensionRepository = turWCFileExtensionRepository;
+        this.turWCAttributeMappingRepository = turWCAttributeMappingRepository;
     }
 
-    public void start(String website, String snSite, TurWCCustomDocument turWCCustomDocument,
-                      List<String> allowUrls,
-                      List<String> notAllowUrls,
-                      List<String> notAllowExtensions) {
-        this.notAllowExtensions.addAll(notAllowExtensions);
-        this.notAllowUrls.addAll(notAllowUrls);
-        this.website = website;
-        this.snSite = snSite;
+    public void start(TurWCSource turWCSource) {
+        turWCFileExtensionRepository.findByTurWCSource(turWCSource).forEach(turWCFileExtension ->
+                this.notAllowExtensions.add(turWCFileExtension.getExtension()));
+        turWCNotAllowUrlRepository.findByTurWCSource(turWCSource).forEach(turWCNotAllowUrl ->
+                this.notAllowUrls.add(turWCNotAllowUrl.getUrl()));
+
+        this.website = turWCSource.getUrl();
+        this.snSite = turWCSource.getTurSNSite();
         log.info("User Agent: " + userAgent);
-        allowUrls.forEach(url -> {
-            remainingLinks.add(this.website + url);
-            getPageLinks(turWCCustomDocument);
-        });
+        turWCAllowUrlRepository
+                .findByTurWCSource(turWCSource)
+                .forEach(turWCAllowUrl -> {
+                    remainingLinks.add(this.website + turWCAllowUrl.getUrl());
+                    getPageLinks(turWCSource);
+                });
         if (turSNJobItems.size() > 0) {
             sendToTuring();
             turSNJobItems = new TurSNJobItems();
@@ -88,14 +108,14 @@ public class TurWCProcess {
         log.info("Queue Size: " + (long) remainingLinks.size());
     }
 
-    public void getPageLinks(TurWCCustomDocument turWCCustomDocument) {
+    public void getPageLinks(TurWCSource turWCSource) {
         while (!remainingLinks.isEmpty()) {
             String url = remainingLinks.poll();
             try {
                 log.info(url);
                 Document document = getHTML(url);
-                addTurSNJobItems(getLocale(turWCCustomDocument, url, document),
-                        getJobItemAttributes(turWCCustomDocument.getAttributes(), url, document));
+                addTurSNJobItems(getLocale(turWCSource, document, url),
+                        getJobItemAttributes(turWCSource, document, url));
                 getInfoQueue();
                 for (Element page : document.select(A_HREF)) {
                     String attr = page.attr(ABS_HREF);
@@ -114,20 +134,19 @@ public class TurWCProcess {
         }
     }
 
-    private Map<String, Object> getJobItemAttributes(List<TurWCCustomClass> turWCCustomClasses,
-                                                     String url, Document document) {
+    private Map<String, Object> getJobItemAttributes(TurWCSource turWCSource, Document document, String url) {
         Map<String, Object> turSNJobItemAttributes = new HashMap<>();
-        turWCCustomClasses.forEach(turWCCustomClass ->
+        turWCAttributeMappingRepository.findByTurWCSource(turWCSource).forEach(turWCCustomClass ->
                 Optional.ofNullable(turWCCustomClass.getText()).ifPresentOrElse(text ->
-                                turSNJobItemAttributes.put(turWCCustomClass.getAttribute(), text)
+                                turSNJobItemAttributes.put(turWCCustomClass.getName(), text)
                         , () -> {
                             try {
                                 if (!StringUtils.isEmpty(turWCCustomClass.getClassName()))
 
-                                    turSNJobItemAttributes.put(turWCCustomClass.getAttribute(),
+                                    turSNJobItemAttributes.put(turWCCustomClass.getName(),
                                             ((TurWCExtInterface) Class.forName(turWCCustomClass.getClassName())
                                                     .getDeclaredConstructor().newInstance())
-                                                    .consume(getTurWCContext(url, document)));
+                                                    .consume(getTurWCContext(document, url)));
                             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                      NoSuchMethodException |
                                      ClassNotFoundException e) {
@@ -164,15 +183,15 @@ public class TurWCProcess {
 
     }
 
-    private Locale getLocale(TurWCCustomDocument turWCCustomDocument, String url, Document document) {
+    private Locale getLocale(TurWCSource turWCSource, Document document, String url) {
 
-        return Optional.ofNullable(turWCCustomDocument.getLocale())
+        return Optional.ofNullable(turWCSource.getLocale())
                 .orElseGet(() -> {
-                    if (!StringUtils.isEmpty(turWCCustomDocument.getLocaleClass())) {
+                    if (!StringUtils.isEmpty(turWCSource.getLocaleClass())) {
                         try {
-                            return ((TurWCExtLocaleInterface) Class.forName(turWCCustomDocument.getLocaleClass())
+                            return ((TurWCExtLocaleInterface) Class.forName(turWCSource.getLocaleClass())
                                     .getDeclaredConstructor().newInstance())
-                                    .consume(getTurWCContext(url, document));
+                                    .consume(getTurWCContext(document, url));
                         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                  NoSuchMethodException | ClassNotFoundException e) {
                             log.error(e.getMessage(), e);
@@ -182,7 +201,7 @@ public class TurWCProcess {
                 });
     }
 
-    private TurWCContext getTurWCContext(String url, Document document) {
+    private TurWCContext getTurWCContext(Document document, String url) {
         return TurWCContext.builder()
                 .document(document)
                 .url(url)
