@@ -55,7 +55,7 @@ import java.util.Optional;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/sn")
+@RequestMapping("/api/v2/wc")
 @Tag(name = "Semantic Navigation Site", description = "Semantic Navigation Site API")
 @ComponentScan("com.viglet.turing")
 public class TurSNSiteAPI {
