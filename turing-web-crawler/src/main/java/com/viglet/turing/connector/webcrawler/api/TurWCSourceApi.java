@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v2")
-@Tag(name = "Heartbeat", description = "Heartbeat")
+@RequestMapping("/api/v2/wc")
+@Tag(name = "Web Crawler Source", description = "Web Crawler Source API")
 public class TurWCSourceApi {
     private final TurWCSourceRepository turWCSourceRepository;
     @Inject
