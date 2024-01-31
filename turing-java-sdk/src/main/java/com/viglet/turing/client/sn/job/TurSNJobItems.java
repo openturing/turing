@@ -16,6 +16,8 @@
 
 package com.viglet.turing.client.sn.job;
 
+import com.google.common.collect.Iterators;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -44,7 +46,9 @@ public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 	public Iterator<TurSNJobItem> iterator() {
 		return turSNJobItems.iterator();
 	}
-
+	public int size () {
+		return Iterators.size(this.iterator());
+	}
 	public List<TurSNJobItem> getTuringDocuments() {
 		return turSNJobItems;
 	}

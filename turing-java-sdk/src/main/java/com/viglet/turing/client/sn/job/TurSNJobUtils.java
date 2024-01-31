@@ -17,6 +17,7 @@
 package com.viglet.turing.client.sn.job;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.utils.TurSNClientUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -49,7 +50,7 @@ public class TurSNJobUtils {
 	public static void importItems(TurSNJobItems turSNJobItems, TurSNServer turSNServer, boolean showOutput) {
 
 		try (CloseableHttpClient client = HttpClients.createDefault()) {
-			String jsonResult = new ObjectMapper().writeValueAsString(turSNJobItems);
+			String jsonResult = new ObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(turSNJobItems);
 			ByteBuffer buffer = StandardCharsets.UTF_8.encode(jsonResult);
 			String jsonUTF8  = StandardCharsets.UTF_8.decode(buffer).toString();
 

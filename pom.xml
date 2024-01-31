@@ -26,6 +26,7 @@
         <module>turing-cms</module>
       <!--  <module>turing-wem</module> -->
         <module>turing-aem</module>
+        <module>turing-web-crawler</module>
         <module>turing-java-proxy</module>
         <module>turing-app</module>
     </modules>
