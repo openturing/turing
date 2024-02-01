@@ -116,6 +116,7 @@ public class TurWCProcess {
                 Document document = getHTML(url);
                 addTurSNJobItems(getLocale(turWCSource, document, url),
                         getJobItemAttributes(turWCSource, document, url));
+                sendToTuringWhenMaxSize();
                 getInfoQueue();
                 for (Element page : document.select(A_HREF)) {
                     String attr = page.attr(ABS_HREF);
@@ -131,6 +132,13 @@ public class TurWCProcess {
             } catch (IOException e) {
                 log.error(e.getMessage());
             }
+        }
+    }
+
+    private void sendToTuringWhenMaxSize() {
+        if (turSNJobItems.size() >= jobSize) {
+            sendToTuring();
+            turSNJobItems = new TurSNJobItems();
         }
     }
 
@@ -160,10 +168,6 @@ public class TurWCProcess {
     private void addTurSNJobItems(Locale locale, Map<String, Object> turSNJobItemAttributes) {
         turSNJobItems.add(new TurSNJobItem(TurSNJobAction.CREATE, locale,
                 turSNJobItemAttributes));
-        if (turSNJobItems.size() >= jobSize) {
-            sendToTuring();
-            turSNJobItems = new TurSNJobItems();
-        }
     }
 
     private void sendToTuring() {

@@ -1,8 +1,6 @@
 package com.viglet.turing.connector.cms.config;
 
 import java.net.URL;
-import java.nio.file.Path;
-import java.util.List;
 
 public interface IHandlerConfiguration {
 
