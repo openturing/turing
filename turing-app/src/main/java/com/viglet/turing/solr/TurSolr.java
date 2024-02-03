@@ -35,8 +35,8 @@ import com.viglet.turing.persistence.model.sn.TurSNSiteFacetEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
 import com.viglet.turing.persistence.utils.TurPesistenceUtils;
@@ -259,7 +259,7 @@ public class TurSolr {
                 new SolrQuery()
                         .setQuery("*:*")
                         .setFilterQueries(attributes.entrySet().stream()
-                .map(entry -> entry.getKey() + ":\"" + entry.getValue() + "\"")
+                                .map(entry -> entry.getKey() + ":\"" + entry.getValue() + "\"")
                                 .toArray(String[]::new)))
                 .map(QueryResponse::getResults).orElse(new SolrDocumentList());
     }
@@ -434,17 +434,40 @@ public class TurSolr {
     }
 
     private static boolean whenNoResultsUseWildcard(TurSNSite turSNSite, SolrQuery query, QueryResponse queryResponse) {
-        if (queryResponse.getResults() != null && queryResponse.getResults().isEmpty()
-                && turSNSite.getWhenNoResultsUseAsterisk() != null && turSNSite.getWhenNoResultsUseAsterisk() == 1
-                && !query.getQuery().endsWith("*")
-                && !query.getQuery().endsWith("\"")
-                && !query.getQuery().endsWith("]")
-                && !query.getQuery().endsWith(")")) {
+        if (enabledWildcard(turSNSite)
+                && isNotQueryExpression(query)
+                && noResultGroups(queryResponse)
+                && noResults(queryResponse)
+                ) {
             addAWildcardInQuery(query);
             return true;
         } else {
             return false;
         }
+    }
+
+    private static boolean enabledWildcard(TurSNSite turSNSite) {
+        return turSNSite.getWhenNoResultsUseAsterisk() != null
+                && turSNSite.getWhenNoResultsUseAsterisk() == 1;
+    }
+
+    private static boolean isNotQueryExpression(SolrQuery query) {
+        return !query.getQuery().endsWith("*")
+                || !query.getQuery().endsWith("\"")
+                || !query.getQuery().endsWith("]")
+                || !query.getQuery().endsWith(")");
+    }
+
+    private static boolean noResults(QueryResponse queryResponse) {
+        return queryResponse.getResults() == null ||
+                (queryResponse.getResults() != null && queryResponse.getResults().isEmpty());
+    }
+
+    private static boolean noResultGroups(QueryResponse queryResponse) {
+        return queryResponse.getGroupResponse() == null ||
+                (queryResponse.getGroupResponse() != null && queryResponse.getGroupResponse().getValues().isEmpty()) ||
+                (queryResponse.getGroupResponse() != null && queryResponse.getGroupResponse().getValues().size() == 1 &&
+                        queryResponse.getGroupResponse().getValues().getFirst().getValues().isEmpty());
     }
 
     private void processResults(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteMLTFieldExtList,
@@ -670,12 +693,12 @@ public class TurSolr {
                     .setFacetMinCount(1)
                     .setFacetSort(COUNT);
             turSNSiteFacetFieldExtList.forEach(turSNSiteFacetFieldExt ->
-                            query.addFacetField(setFacetTypeConditionInFacet(
-                                    setEntityPrefix(turSNSiteFacetFieldExt)
-                                            .concat(turSNSiteFacetFieldExt.getName()),
+                    query.addFacetField(setFacetTypeConditionInFacet(
+                            setEntityPrefix(turSNSiteFacetFieldExt)
+                                    .concat(turSNSiteFacetFieldExt.getName()),
                             turSEParameters, turSNSite)
 
-            )
+                    )
             );
         }
         return turSNSiteFacetFieldExtList;
