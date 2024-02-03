@@ -128,7 +128,7 @@ public class TurAEMAttrProcess {
     private Object getJcrProperty(TurCmsContext context, String sourceAttrName) {
         return Optional.ofNullable(sourceAttrName).map(attrName -> {
             AemObject aemObject = (AemObject) context.getCmsObjectInstance();
-            if (aemObject.getJcrContentNode().has(attrName)) {
+            if (aemObject.getJcrContentNode() != null && aemObject.getJcrContentNode().has(attrName)) {
                 return aemObject.getJcrContentNode().get(attrName);
             } else if (aemObject.getAttributes().containsKey(attrName))
                 return aemObject.getAttributes().get(attrName);
