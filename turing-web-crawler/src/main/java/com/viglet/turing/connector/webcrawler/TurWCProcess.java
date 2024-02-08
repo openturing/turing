@@ -81,6 +81,7 @@ public class TurWCProcess {
     }
 
     public void start(TurWCSource turWCSource) {
+        reset();
         turWCFileExtensionRepository.findByTurWCSource(turWCSource).forEach(turWCFileExtension ->
                 this.notAllowExtensions.add(turWCFileExtension.getExtension()));
         turWCNotAllowUrlRepository.findByTurWCSource(turWCSource).forEach(turWCNotAllowUrl ->
@@ -97,9 +98,13 @@ public class TurWCProcess {
                 });
         if (turSNJobItems.size() > 0) {
             sendToTuring();
-            turSNJobItems = new TurSNJobItems();
             getInfoQueue();
         }
+    }
+
+    private void reset() {
+        turSNJobItems = new TurSNJobItems();
+        visitedLinks.clear();
     }
 
     private void getInfoQueue() {

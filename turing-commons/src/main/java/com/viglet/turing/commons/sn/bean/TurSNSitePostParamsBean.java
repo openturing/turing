@@ -15,8 +15,16 @@
  */
 package com.viglet.turing.commons.sn.bean;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.MapSerializer;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Post Parameters for Search with sensitive data
@@ -26,35 +34,16 @@ import java.util.List;
  * @since 0.3.6
  *
  */
+
+@Getter
+@Setter
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSitePostParamsBean {
-
 	private String userId;
-
 	private boolean populateMetrics = true;
-
 	private List<String> targetingRules = new ArrayList<>();
 
-	public String getUserId() {
-		return userId;
-	}
+	@JsonSerialize(keyUsing = MapSerializer.class)
+	private Map<String, List<String>> targetingRulesWithCondition = new HashMap<>();
 
-	public void setUserId(String userId) {
-		this.userId = userId;
-	}
-
-	public boolean isPopulateMetrics() {
-		return populateMetrics;
-	}
-
-	public void setPopulateMetrics(boolean populateMetrics) {
-		this.populateMetrics = populateMetrics;
-	}
-
-	public List<String> getTargetingRules() {
-		return targetingRules;
-	}
-
-	public void setTargetingRules(List<String> targetingRules) {
-		this.targetingRules = targetingRules;
-	}
 }

@@ -28,7 +28,6 @@ public class TurWCFileExtension implements Serializable {
     // bi-directional many-to-one association to TurWCSource
     @ManyToOne
     @JoinColumn(name = "ws_source_id", nullable = false)
-    @JsonBackReference(value="turSNSiteField-turSNSite")
     private TurWCSource turWCSource;
 
     public TurWCFileExtension() {
