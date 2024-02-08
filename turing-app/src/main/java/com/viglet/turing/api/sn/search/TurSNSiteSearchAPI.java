@@ -109,7 +109,8 @@ public class TurSNSiteSearchAPI {
                                                                          @RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0")
                                                                          Integer autoCorrectionDisabled,
                                                                          @RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest,
-                                                                         @RequestBody TurSNSitePostParamsBean turSNSitePostParamsBean, Principal principal,
+                                                                         @RequestBody TurSNSitePostParamsBean turSNSitePostParamsBean,
+                                                                         Principal principal,
                                                                          HttpServletRequest request) {
         if (principal != null) {
             Locale locale = LocaleUtils.toLocale(localeRequest);

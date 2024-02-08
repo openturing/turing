@@ -438,7 +438,7 @@ public class TurSolr {
                 && isNotQueryExpression(query)
                 && noResultGroups(queryResponse)
                 && noResults(queryResponse)
-                ) {
+        ) {
             addAWildcardInQuery(query);
             return true;
         } else {
@@ -602,6 +602,14 @@ public class TurSolr {
             query.addFilterQuery(
                     turSNTargetingRules.run(TurSNTargetingRuleMethod.AND,
                             turSNSitePostParamsBean.getTargetingRules()));
+        if (!CollectionUtils.isEmpty(turSNSitePostParamsBean.getTargetingRulesWithCondition())) {
+            List<String> targetingRulesWithCondition = new ArrayList<>();
+            turSNSitePostParamsBean.getTargetingRulesWithCondition().forEach((key, value) ->
+                    targetingRulesWithCondition.add(
+                    turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, key,
+                            value)));
+            query.setFilterQueries(String.join(" OR ", targetingRulesWithCondition));
+        }
     }
 
     private void prepareQueryFilterQuery(TurSEParameters turSEParameters, SolrQuery query, TurSNSite turSNSite) {
