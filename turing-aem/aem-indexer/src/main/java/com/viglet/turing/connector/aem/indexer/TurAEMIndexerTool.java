@@ -430,7 +430,8 @@ public class TurAEMIndexerTool {
                         new Date();
     }
 
-    private void sendToTuringToBeIndexed(AemObject aemObject, TurCmsModel turCmsModel, List<TurSNAttributeSpec> turSNAttributeSpecList, Locale locale) {
+    private void sendToTuringToBeIndexed(AemObject aemObject, TurCmsModel turCmsModel,
+                                         List<TurSNAttributeSpec> turSNAttributeSpecList, Locale locale) {
         TurAEMAttrProcess turAEMAttrProcess = new TurAEMAttrProcess();
         TurCmsTargetAttrValueList turCmsTargetAttrValueList = turAEMAttrProcess
                 .prepareAttributeDefs(aemObject, turCmsContentDefinitionProcess, turSNAttributeSpecList, this);

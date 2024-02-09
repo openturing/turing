@@ -81,7 +81,7 @@ public class TurAemUtils {
     }
 
     public static String getResponseBody(String url, String username, String password) {
-        try (HttpClient client = HttpClient.newBuilder()
+        try (HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
                 .authenticator(new Authenticator() {
                     @Override
                     protected PasswordAuthentication getPasswordAuthentication() {
