@@ -333,7 +333,7 @@ public class TurSolr {
                         .setStart(TurSolrUtils.firstRowPositionFromCurrentPage(turSEParameters));
             }
             prepareQueryFilterQuery(turSEParameters, query, turSNSite);
-            prepareQueryTargetingRules(context.getTurSNSitePostParamsBean(), query);
+            prepareQueryTargetingRules(TurSNTargetingRuleMethod.AND, context.getTurSNSitePostParamsBean(), query);
             if (hasGroup(turSEParameters)) {
                 prepareGroup(turSEParameters, query);
             }
@@ -597,18 +597,22 @@ public class TurSolr {
         return turSNSite.getFacet() == 1 && turSNSiteFacetFieldExtList != null && !turSNSiteFacetFieldExtList.isEmpty();
     }
 
-    private void prepareQueryTargetingRules(TurSNSitePostParamsBean turSNSitePostParamsBean, SolrQuery query) {
+    private void prepareQueryTargetingRules(TurSNTargetingRuleMethod turSNTargetingRuleMethod,
+                                            TurSNSitePostParamsBean turSNSitePostParamsBean, SolrQuery query) {
         if (!CollectionUtils.isEmpty(turSNSitePostParamsBean.getTargetingRules()))
             query.addFilterQuery(
-                    turSNTargetingRules.run(TurSNTargetingRuleMethod.AND,
+                    turSNTargetingRules.run(turSNTargetingRuleMethod,
                             turSNSitePostParamsBean.getTargetingRules()));
         if (!CollectionUtils.isEmpty(turSNSitePostParamsBean.getTargetingRulesWithCondition())) {
-            List<String> targetingRulesWithCondition = new ArrayList<>();
-            turSNSitePostParamsBean.getTargetingRulesWithCondition().forEach((key, value) ->
-                    targetingRulesWithCondition.add(
-                    turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, key,
-                            value)));
-            query.setFilterQueries(String.join(" OR ", targetingRulesWithCondition));
+            List<String> condition = new ArrayList<>();
+            List<String> rules = new ArrayList<>();
+            turSNSitePostParamsBean.getTargetingRulesWithCondition().forEach((key, value) -> {
+                condition.add(key);
+                rules.add(turSNTargetingRules.run(turSNTargetingRuleMethod, key, value));
+            });
+            query.setFilterQueries(String.format("%s OR (*:* NOT (%s))",
+                    String.join(" OR ", rules),
+                    String.join(" OR ", condition)));
         }
     }
 
