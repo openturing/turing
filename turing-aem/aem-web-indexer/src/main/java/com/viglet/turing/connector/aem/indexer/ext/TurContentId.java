@@ -10,12 +10,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TurContentId implements ExtAttributeInterface {
 
-	@Override
-	public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-								 AemObject aemObject, IHandlerConfiguration config) {
-		log.debug("Executing TurContentUrl");
-		return TurMultiValue
-				.singleItem(String.format(aemObject.getPath()));
+    @Override
+    public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
+                                 AemObject aemObject, IHandlerConfiguration config) {
+        log.debug("Executing TurContentUrl");
+        return TurMultiValue
+                .singleItem(String.format(aemObject.getPath()));
 
-	}
+    }
 }

@@ -16,15 +16,15 @@ import java.util.Locale;
 @Setter
 @Getter
 @Entity
-@Table(name="aem_indexing", uniqueConstraints={@UniqueConstraint(columnNames={"id"})})
+@Table(name = "aem_indexing", uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
 public class TurAemIndexing implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id", nullable=false, unique=true, length=11)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false, unique = true, length = 11)
     private int id;
     @Column
     private String aemId;

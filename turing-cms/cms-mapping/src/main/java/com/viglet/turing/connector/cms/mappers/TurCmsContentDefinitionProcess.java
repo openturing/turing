@@ -40,12 +40,23 @@ import java.util.*;
 public class TurCmsContentDefinitionProcess {
     private IHandlerConfiguration config;
     private Path workingDirectory;
-    private Path json;
+    private Path jsonFile;
+    private String json;
+
 
     public TurCmsContentDefinitionProcess(IHandlerConfiguration config, Path workingDirectory) {
         this.config = config;
         this.workingDirectory = workingDirectory;
-        this.json = getContentMappingPath(config, workingDirectory);
+        this.jsonFile = getContentMappingPath(config, workingDirectory);
+        this.json = null;
+
+    }
+
+    public TurCmsContentDefinitionProcess(IHandlerConfiguration config, String json) {
+        this.config = config;
+        this.workingDirectory = null;
+        this.jsonFile = null;
+        this.json = json;
 
     }
 
@@ -62,7 +73,6 @@ public class TurCmsContentDefinitionProcess {
         return getMappingDefinitions().getTargetAttrDefinitions();
     }
     public Optional<TurCmsModel> findByNameFromModelWithDefinition(String modelName) {
-        return Optional.ofNullable(json).map(path -> {
             TurCmsContentMapping turCmsContentMapping = getMappingDefinitions();
             return findByNameFromModel(turCmsContentMapping.getModels(), modelName)
                     .map(model -> {
@@ -75,9 +85,7 @@ public class TurCmsContentDefinitionProcess {
                         });
                         model.setTargetAttrs(turCmsTargetAttrs);
                 return model;
-
             });
-        }).orElse(Optional.empty());
     }
 
     private List<TurCmsTargetAttr> addTargetAttrFromDefinition(TurCmsModel model,
@@ -133,14 +141,27 @@ public class TurCmsContentDefinitionProcess {
     }
 
     public TurCmsContentMapping getMappingDefinitions() {
-        return Optional.ofNullable(json).map(path -> {
-            try {
-                return new ObjectMapper().readValue(path.toFile(), TurCmsContentMapping.class);
-            } catch (IOException e) {
-                log.error("Can not read mapping file, because is not valid: " + path.toFile().getAbsolutePath(), e);
-                return new TurCmsContentMapping();
-            }
-        }).orElse(new TurCmsContentMapping());
+        return Optional.ofNullable(json).map(TurCmsContentDefinitionProcess::readJsonMapping)
+                .orElse(Optional.ofNullable(jsonFile).map(TurCmsContentDefinitionProcess::readJsonMapping)
+                        .orElse(new TurCmsContentMapping()));
+    }
+
+    private static TurCmsContentMapping readJsonMapping(Path path) {
+        try {
+            return new ObjectMapper().readValue(path.toFile(), TurCmsContentMapping.class);
+        } catch (IOException e) {
+            log.error("Can not read mapping file, because is not valid: " + path.toFile().getAbsolutePath(), e);
+            return new TurCmsContentMapping();
+        }
+    }
+
+    private static TurCmsContentMapping readJsonMapping(String json) {
+        try {
+            return new ObjectMapper().readValue(json, TurCmsContentMapping.class);
+        } catch (IOException e) {
+            log.error("Can not read mapping,  because is not valid.", e);
+            return new TurCmsContentMapping();
+        }
     }
 
     private Path getContentMappingPath(IHandlerConfiguration config, Path workingDirectory) {

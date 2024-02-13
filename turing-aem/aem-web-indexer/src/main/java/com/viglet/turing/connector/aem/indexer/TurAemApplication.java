@@ -27,6 +27,7 @@ public class TurAemApplication {
         registrationBean.setFilter(characterEncodingFilter);
         return registrationBean;
     }
+
     @Bean
     Module hibernate5Module() {
         return new Hibernate5JakartaModule();

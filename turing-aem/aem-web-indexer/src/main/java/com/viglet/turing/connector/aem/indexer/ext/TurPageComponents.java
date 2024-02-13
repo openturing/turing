@@ -13,20 +13,20 @@ import org.json.JSONObject;
 @Slf4j
 public class TurPageComponents implements ExtAttributeInterface {
 
-	public static final String RESPONSIVE_GRID = "responsivegrid";
-	public static final String ROOT = "root";
+    public static final String RESPONSIVE_GRID = "responsivegrid";
+    public static final String ROOT = "root";
 
-	@Override
-	public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-								 AemObject aemObject, IHandlerConfiguration config) {
-		log.debug("Executing TurPageComponents");
-		StringBuffer components = new StringBuffer();
-		if(aemObject.getJcrContentNode().has(ROOT)
-				&& aemObject.getJcrContentNode().get(ROOT) instanceof JSONObject root
-				&& root.has(RESPONSIVE_GRID)
-				&& root.get(RESPONSIVE_GRID) instanceof JSONObject responsiveGrid) {
-			TurAemUtils.getJsonNodeToComponent(responsiveGrid, components);
-		}
-		return TurMultiValue.singleItem(HtmlManipulator.html2Text(components.toString()));
-	}
+    @Override
+    public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
+                                 AemObject aemObject, IHandlerConfiguration config) {
+        log.debug("Executing TurPageComponents");
+        StringBuffer components = new StringBuffer();
+        if (aemObject.getJcrContentNode().has(ROOT)
+                && aemObject.getJcrContentNode().get(ROOT) instanceof JSONObject root
+                && root.has(RESPONSIVE_GRID)
+                && root.get(RESPONSIVE_GRID) instanceof JSONObject responsiveGrid) {
+            TurAemUtils.getJsonNodeToComponent(responsiveGrid, components);
+        }
+        return TurMultiValue.singleItem(HtmlManipulator.html2Text(components.toString()));
+    }
 }

@@ -46,24 +46,20 @@ public class TurAemUtils {
         return jsonObject.has(property) && jsonObject.get(property) != null;
     }
 
-    public static JSONObject getInfinityJson(String url, TurAemIndexerTool tool) {
-        return getInfinityJson(url, tool.getHostAndPort(), tool.getUsername(), tool.getPassword());
-    }
-
-    public static JSONObject getInfinityJson(String url, String hostAndPort, String username, String password) {
+    public static JSONObject getInfinityJson(String url, TurAemContext context) {
 
         String infinityJsonUrl = String.format(url.endsWith(JSON) ? "%s%s" : "%s%s.infinity.json",
-                hostAndPort, url);
+                context.getUrl(), url);
 
         if (responseHttpCache.containsKey(infinityJsonUrl)) {
-            log.info("Cached Response " +infinityJsonUrl);
+            log.info("Cached Response " + infinityJsonUrl);
             return new JSONObject(responseHttpCache.get(infinityJsonUrl));
         } else {
             log.info("Request " + infinityJsonUrl);
-            String responseBody = getResponseBody(infinityJsonUrl, username, password);
+            String responseBody = getResponseBody(infinityJsonUrl, context.getUsername(), context.getPassword());
             if (isResponseBodyJSONArray(responseBody) && !url.endsWith(JSON)) {
                 JSONArray jsonArray = new JSONArray(responseBody);
-                return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
+                return getInfinityJson(jsonArray.getString(0), context);
             } else if (isResponseBodyJSONObject(responseBody)) {
                 responseHttpCache.put(infinityJsonUrl, responseBody);
                 return new JSONObject(responseBody);
@@ -115,8 +111,7 @@ public class TurAemUtils {
     public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuffer components) {
         if (jsonObject.has(JCR_TITLE) && jsonObject.get(JCR_TITLE) instanceof String title) {
             components.append(title);
-        }
-        else if (jsonObject.has(TEXT) && jsonObject.get(TEXT) instanceof String text) {
+        } else if (jsonObject.has(TEXT) && jsonObject.get(TEXT) instanceof String text) {
             components.append(text);
         }
         jsonObject.toMap().forEach((key, value) -> {

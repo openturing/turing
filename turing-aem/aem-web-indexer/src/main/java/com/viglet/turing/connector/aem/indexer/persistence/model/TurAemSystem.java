@@ -1,14 +1,11 @@
 package com.viglet.turing.connector.aem.indexer.persistence.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import jakarta.persistence.*;
+
 import java.io.Serial;
 import java.io.Serializable;
 
@@ -17,8 +14,8 @@ import java.io.Serializable;
 @Setter
 @Getter
 @Entity
-@Table(name="aem_system", uniqueConstraints={@UniqueConstraint(columnNames={"config"})})
-public class TurAemSystem  implements Serializable {
+@Table(name = "aem_system", uniqueConstraints = {@UniqueConstraint(columnNames = {"config"})})
+public class TurAemSystem implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

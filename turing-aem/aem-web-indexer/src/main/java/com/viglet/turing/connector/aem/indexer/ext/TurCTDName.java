@@ -6,12 +6,13 @@ import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 public class TurCTDName implements ExtAttributeInterface {
-	@Override
-	public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-								 AemObject aemObject, IHandlerConfiguration config) {
-		log.debug("Executing TurCTDName");
-		return TurMultiValue.singleItem(aemObject.getType());
-	}
+    @Override
+    public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
+                                 AemObject aemObject, IHandlerConfiguration config) {
+        log.debug("Executing TurCTDName");
+        return TurMultiValue.singleItem(aemObject.getType());
+    }
 }

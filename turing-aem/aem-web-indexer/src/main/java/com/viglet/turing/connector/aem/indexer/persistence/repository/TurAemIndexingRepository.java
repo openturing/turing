@@ -32,7 +32,7 @@ public interface TurAemIndexingRepository extends JpaRepository<TurAemIndexing, 
     }
 
     void deleteByIndexGroupAndDeltaIdNotAndOnceTrue(String indexGroup,
-                                                 String deltaId);
+                                                    String deltaId);
 
     default void deleteContentsWereDeIndexed(String indexGroup,
                                              String deltaId) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TurHTML2Text implements ExtAttributeInterface {
     private static final String EMPTY_STRING = "";
+
     @Override
     public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
                                  AemObject aemObject, IHandlerConfiguration config) {
