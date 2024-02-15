@@ -392,6 +392,9 @@ public class TurSolr {
                                                           List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList,
                                                           List<TurSNSiteFieldExt> turSNSiteHlFieldExtList,
                                                           TurSESpellCheckResult turSESpellCheckResult) {
+        if (enabledWildcardAlways(turSNSite)) {
+            addAWildcardInQuery(query);
+        }
         return executeSolrQuery(turSolrInstance, query).map(queryResponse ->
                 getResults(turSNSite, turSEParameters, query, turSNSiteMLTFieldExtList,
                         turSNSiteFacetFieldExtList, turSNSiteHlFieldExtList,
@@ -434,7 +437,8 @@ public class TurSolr {
     }
 
     private static boolean whenNoResultsUseWildcard(TurSNSite turSNSite, SolrQuery query, QueryResponse queryResponse) {
-        if (enabledWildcard(turSNSite)
+        if (!enabledWildcardAlways(turSNSite)
+                && enabledWildcardNoResults(turSNSite)
                 && isNotQueryExpression(query)
                 && noResultGroups(queryResponse)
                 && noResults(queryResponse)
@@ -446,9 +450,14 @@ public class TurSolr {
         }
     }
 
-    private static boolean enabledWildcard(TurSNSite turSNSite) {
-        return turSNSite.getWhenNoResultsUseAsterisk() != null
-                && turSNSite.getWhenNoResultsUseAsterisk() == 1;
+    private static boolean enabledWildcardNoResults(TurSNSite turSNSite) {
+        return turSNSite.getWildcardNoResults() != null
+                && turSNSite.getWildcardNoResults() == 1;
+    }
+
+    private static boolean enabledWildcardAlways(TurSNSite turSNSite) {
+        return turSNSite.getWildcardAlways() != null
+                && turSNSite.getWildcardAlways() == 1;
     }
 
     private static boolean isNotQueryExpression(SolrQuery query) {
@@ -727,7 +736,7 @@ public class TurSolr {
     }
 
     private static boolean isNerOrThesaurus(TurSNFieldType snType) {
-        return snType == TurSNFieldType.NER || snType == TurSNFieldType.THESAURUS;
+        return Collections.unmodifiableSet(EnumSet.of(TurSNFieldType.NER, TurSNFieldType.THESAURUS)).contains(snType);
     }
 
     public TurSEResults retrieveSolr(TurSolrInstance turSolrInstance, TurSEParameters turSEParameters,
@@ -845,7 +854,8 @@ public class TurSolr {
     private static boolean isHLAttribute(Map<String, TurSNSiteFieldExt> fieldExtMap, Map<String,
             List<String>> hl, String attribute) {
         return fieldExtMap.containsKey(attribute) &&
-                fieldExtMap.get(attribute).getType() == TurSEFieldType.STRING &&
+                (Collections.unmodifiableSet(EnumSet.of(TurSEFieldType.TEXT, TurSEFieldType.STRING))
+                        .contains(fieldExtMap.get(attribute).getType())) &&
                 hl != null && hl.containsKey(attribute);
     }
 

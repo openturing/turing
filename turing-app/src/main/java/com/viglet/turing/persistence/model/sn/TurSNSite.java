@@ -70,19 +70,22 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Column(nullable = false)
 	private String description;
 
-	@Column()
+	@Column
 	private Integer rowsPerPage = 10;
 
-	@Column()
-	private Integer whenNoResultsUseAsterisk = 0;
+	@Column
+	private Integer wildcardNoResults = 0;
 
-	@Column()
+	@Column
+	private Integer wildcardAlways = 0;
+
+	@Column
 	private Integer facet;
 
-	@Column()
+	@Column
 	private Integer itemsPerFacet;
 
-	@Column()
+	@Column
 	private Integer hl;
 
 	@Column(length = 50)
@@ -91,40 +94,40 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Column(length = 50)
 	private String hlPost;
 
-	@Column()
+	@Column
 	private Integer mlt;
 
-	@Column()
+	@Column
 	private TurSNSiteFacetEnum facetType = TurSNSiteFacetEnum.AND;
 
-	@Column()
+	@Column
 	private Integer thesaurus = 0;
 
-	@Column()
+	@Column
 	private String defaultTitleField;
 
-	@Column()
+	@Column
 	private String defaultTextField;
 
-	@Column()
+	@Column
 	private String defaultDescriptionField;
 
-	@Column()
+	@Column
 	private String defaultDateField;
 
-	@Column()
+	@Column
 	private String defaultImageField;
 
-	@Column()
+	@Column
 	private String defaultURLField;
 
-	@Column()
+	@Column
 	private Integer spellCheck;
 
-	@Column()
+	@Column
 	private Integer spellCheckFixes;
 
-	@Column()
+	@Column
 	private Integer spotlightWithResults;
 	
 	// bi-directional many-to-one association to TurSEInstance

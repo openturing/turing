@@ -132,7 +132,8 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setMlt(turSNSite.getMlt());
             turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
             turSNSiteEdit.setSpotlightWithResults(turSNSite.getSpotlightWithResults());
-            turSNSiteEdit.setWhenNoResultsUseAsterisk(turSNSite.getWhenNoResultsUseAsterisk());
+            turSNSiteEdit.setWildcardNoResults(turSNSite.getWildcardNoResults());
+            turSNSiteEdit.setWildcardAlways(turSNSite.getWildcardAlways());
             turSNSiteEdit.setDefaultTitleField(turSNSite.getDefaultTitleField());
             turSNSiteEdit.setDefaultTextField(turSNSite.getDefaultTextField());
             turSNSiteEdit.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
