@@ -92,7 +92,7 @@ public class TurAEMAttrProcess {
             return TurCmsTargetAttrValueList.singleItem(context.getTurCmsTargetAttr());
         } else {
             return hasCustomClass(context) ?
-                    attributeByClass(context) :
+                    attributeByClass(context, turAEMIndexerTool) :
                     attributeByCMS(context, turSNAttributeSpecList, turAEMIndexerTool);
         }
     }
@@ -240,7 +240,7 @@ public class TurAEMAttrProcess {
         return new TurCmsTargetAttrValueList();
     }
 
-    private TurCmsTargetAttrValueList attributeByClass(TurCmsContext context) {
+    private TurCmsTargetAttrValueList attributeByClass(TurCmsContext context, TurAEMIndexerTool turAEMIndexerTool) {
         String className = context.getTurCmsSourceAttr().getClassName();
         log.debug(STR."ClassName : \{className}");
         try {
@@ -249,7 +249,7 @@ public class TurAEMAttrProcess {
                     ((ExtAttributeInterface) Objects.requireNonNull(Class.forName(className)
                             .getDeclaredConstructor().newInstance()))
                             .consume(context.getTurCmsTargetAttr(), context.getTurCmsSourceAttr(),
-                                    (AemObject) context.getCmsObjectInstance(), context.getConfiguration()));
+                                    (AemObject) context.getCmsObjectInstance(), context.getConfiguration(), turAEMIndexerTool));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException | ClassNotFoundException e) {
             log.error(e.getMessage(), e);
