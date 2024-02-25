@@ -17,6 +17,7 @@
 
 package com.viglet.turing.commons.sn.bean;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -24,11 +25,11 @@ import lombok.experimental.Accessors;
 
 import java.util.List;
 
-
 @RequiredArgsConstructor
 @Accessors(chain = true)
 @Getter
 @Setter
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class TurSNSiteSearchBean {
 	private List<TurSNSiteSearchPaginationBean> pagination;
 	private TurSNSiteSearchQueryContextBean queryContext;

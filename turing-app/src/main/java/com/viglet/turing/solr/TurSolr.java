@@ -383,7 +383,7 @@ public class TurSolr {
 
     }
 
-    private boolean hasGroup(TurSEParameters turSEParameters) {
+    public boolean hasGroup(TurSEParameters turSEParameters) {
         return turSEParameters.getGroup() != null && !turSEParameters.getGroup().trim().isEmpty();
     }
 
@@ -671,7 +671,7 @@ public class TurSolr {
                 condition.add(key);
                 rules.add(turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, key, value));
             });
-            query.setFilterQueries(String.format("%s OR (*:* NOT (%s))",
+            query.addFilterQuery(String.format("%s OR (*:* NOT (%s))",
                     String.join(" OR ", rules),
                     String.join(" OR ", condition)));
         }
@@ -684,7 +684,7 @@ public class TurSolr {
                 List<String> filterQueriesModified = turSEParameters.getFilterQueries().stream()
                         .map(q -> queryWithoutExpression(q) ? addDoubleQuotesToValue(q) : q
                         ).toList();
-                query.setFilterQueries(
+                query.addFilterQuery(
                         String.valueOf(String.format("%s(%s)", facetTypeCondition,
                                 String.join(" OR ", filterQueriesModified))));
             } else {
@@ -692,7 +692,7 @@ public class TurSolr {
                         .map(q -> facetTypeCondition.concat(queryWithoutExpression(q) ? addDoubleQuotesToValue(q) : q)
                         ).toList();
                 String[] filterQueryArr = new String[filterQueriesModified.size()];
-                query.setFilterQueries(filterQueriesModified.toArray(filterQueryArr));
+                query.addFilterQuery(filterQueriesModified.toArray(filterQueryArr));
             }
         }
     }
