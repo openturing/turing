@@ -27,6 +27,7 @@ import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -63,6 +64,20 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/sn/{ignoredSnSiteId}/field/ext")
 @Tag(name = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
 public class TurSNSiteFieldExtAPI {
+    public static final String TEXT_GENERAL = "text_general";
+    public static final String MULTI_VALUED = "multiValued";
+    public static final String STORED = "stored";
+    public static final String INDEXED = "indexed";
+    public static final String TYPE = "type";
+    public static final String STRING = "string";
+    public static final String ADD_FIELD = "add-field";
+    public static final String TEXT_ = "_text_";
+    public static final String SOURCE = "source";
+    public static final String ADD_COPY_FIELD = "add-copy-field";
+    public static final String DEST = "dest";
+    public static final String PDATE = "pdate";
+    public static final String NAME = "name";
+    public static final String SOLR_SCHEMA_REQUEST = "http://%s:%d/solr/%s/schema";
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
@@ -176,6 +191,7 @@ public class TurSNSiteFieldExtAPI {
                 .description(turSNSiteField.getDescription())
                 .facet(0)
                 .facetName(turSNSiteField.getName())
+                .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
                 .hl(0)
                 .multiValued(turSNSiteField.getMultiValued())
                 .mlt(0)
@@ -186,13 +202,14 @@ public class TurSNSiteFieldExtAPI {
     }
 
     private void addTurSNSiteFieldExt(TurSNFieldType turSNFieldType, TurSNSite turSNSite,
-                                      List<TurSNSiteFieldExt> turSNSiteFieldExts, TurNLPEntity turNLPEntity) {
-        turSNSiteFieldExts.add(turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
+                                      List<TurSNSiteFieldExt> turSNSiteFieldExtList, TurNLPEntity turNLPEntity) {
+        turSNSiteFieldExtList.add(turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
                 .enabled(0)
                 .name(turNLPEntity.getInternalName())
                 .description(turNLPEntity.getDescription())
                 .facet(0)
                 .facetName(turNLPEntity.getName())
+                .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
                 .hl(0)
                 .multiValued(1)
                 .mlt(0)
@@ -227,6 +244,7 @@ public class TurSNSiteFieldExtAPI {
                     .peek(fieldExtFacet ->
                             fieldExtFacet.setTurSNSiteFieldExt(turSNSiteFieldExt))
                     .collect(Collectors.toSet()));
+            turSNSiteFieldExtEdit.setFacetRange(turSNSiteFieldExt.getFacetRange());
             turSNSiteFieldExtEdit.setHl(turSNSiteFieldExt.getHl());
             turSNSiteFieldExtEdit.setEnabled(turSNSiteFieldExt.getEnabled());
             turSNSiteFieldExtEdit.setMlt(turSNSiteFieldExt.getMlt());
@@ -317,7 +335,7 @@ public class TurSNSiteFieldExtAPI {
         }
     }
 
-    @GetMapping("/create")
+    @GetMapping("/create/{localeRequest}")
     public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String ignoredSnSiteId, @PathVariable String localeRequest) {
         Locale locale = LocaleUtils.toLocale(localeRequest);
         return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
@@ -328,64 +346,59 @@ public class TurSNSiteFieldExtAPI {
         }).orElse(new ArrayList<>());
     }
 
-    public void createField(TurSNSite turSNSite, Locale locale, TurSNSiteFieldExt turSNSiteFieldExtList) {
+    public void createField(TurSNSite turSNSite, Locale locale, TurSNSiteFieldExt turSNSiteFieldExt) {
         TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
         JSONObject jsonAddField = new JSONObject();
         String fieldName;
-
-        if (turSNSiteFieldExtList.getSnType() == TurSNFieldType.NER) {
-            fieldName = String.format("turing_entity_%s", turSNSiteFieldExtList.getName());
+        if (turSNSiteFieldExt.getSnType() == TurSNFieldType.NER) {
+            fieldName = String.format("turing_entity_%s", turSNSiteFieldExt.getName());
         } else {
-            fieldName = turSNSiteFieldExtList.getName();
+            fieldName = turSNSiteFieldExt.getName();
         }
 
-        jsonAddField.put("name", fieldName);
+        jsonAddField.put(NAME, fieldName);
 
-        jsonAddField.put("indexed", true);
-        jsonAddField.put("stored", true);
-        if (turSNSiteFieldExtList.getMultiValued() == 1) {
-            jsonAddField.put("type", "string");
-            jsonAddField.put("multiValued", true);
+        jsonAddField.put(INDEXED, true);
+        jsonAddField.put(STORED, true);
+        if (turSNSiteFieldExt.getMultiValued() == 1) {
+            jsonAddField.put(TYPE, STRING);
+            jsonAddField.put(MULTI_VALUED, true);
         } else {
-            if (turSNSiteFieldExtList.getType().equals(TurSEFieldType.DATE)) {
-                jsonAddField.put("type", "pdate");
+            if (turSNSiteFieldExt.getType().equals(TurSEFieldType.DATE)) {
+                jsonAddField.put(TYPE, PDATE);
             } else {
-                jsonAddField.put("type", "text_general");
+                jsonAddField.put(TYPE, TEXT_GENERAL);
             }
-            jsonAddField.put("multiValued", false);
+            jsonAddField.put(MULTI_VALUED, false);
         }
         JSONObject json = new JSONObject();
-        json.put("add-field", jsonAddField);
+        json.put(ADD_FIELD, jsonAddField);
         HttpPost httpPost = new HttpPost(
-                String.format("http://%s:%d/solr/%s/schema", turSNSite.getTurSEInstance().getHost(),
+                String.format(SOLR_SCHEMA_REQUEST, turSNSite.getTurSEInstance().getHost(),
                         turSNSite.getTurSEInstance().getPort(), turSNSiteLocale.getCore()));
         executeHttpPost(json, httpPost);
-        this.copyField(turSNSiteLocale, fieldName, "_text_");
+        this.copyField(turSNSiteLocale, fieldName, TEXT_);
     }
 
     public void copyField(TurSNSiteLocale turSNSiteLocale, String field, String dest) {
-
         JSONObject jsonAddField = new JSONObject();
-        jsonAddField.put("source", field);
-
-        jsonAddField.put("dest", dest);
+        jsonAddField.put(SOURCE, field);
+        jsonAddField.put(DEST, dest);
         JSONObject json = new JSONObject();
-        json.put("add-copy-field", jsonAddField);
+        json.put(ADD_COPY_FIELD, jsonAddField);
         TurSEInstance turSEInstance = turSNSiteLocale.getTurSNSite().getTurSEInstance();
-        HttpPost httpPost = new HttpPost(String.format("http://%s:%d/solr/%s/schema", turSEInstance.getHost(),
+        HttpPost httpPost = new HttpPost(String.format(SOLR_SCHEMA_REQUEST, turSEInstance.getHost(),
                 turSEInstance.getPort(), turSNSiteLocale.getCore()));
         executeHttpPost(json, httpPost);
     }
 
     private void executeHttpPost(JSONObject json, HttpPost httpPost) {
-        try {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
             StringEntity entity = new StringEntity(json.toString());
             httpPost.setEntity(entity);
             httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
             httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-            try (CloseableHttpClient client = HttpClients.createDefault()) {
-                client.execute(httpPost);
-            }
+            client.execute(httpPost);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }

@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.sn.field;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.turing.sn.TurSNFieldType;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -57,45 +58,39 @@ public class TurSNSiteFieldExt implements Serializable {
     @UuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
-
     @Column(nullable = false)
     private String externalId;
-
     @Column(nullable = false, length = 50)
     private String name;
-
+    @Column
     private String description;
-
     @Column(length = 50)
     private String facetName;
-
-
     @OneToMany(mappedBy = "turSNSiteFieldExt", orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
-
+    @Column
+    private TurSNSiteFacetRangeEnum facetRange = TurSNSiteFacetRangeEnum.DISABLED;
     @Column(nullable = false)
     private TurSNFieldType snType;
-
     @Column(nullable = false)
     private TurSEFieldType type;
-
+    @Column
     private int multiValued;
-
+    @Column
     private int facet;
-
+    @Column
     private int hl;
-
+    @Column
     private int mlt;
-
+    @Column
     private int enabled;
-
+    @Column
     private int required;
-
     @Column(length = 50)
     private String defaultValue;
-
+    @Column
     private int nlp;
 
     // bi-directional many-to-one association to TurSNSite
@@ -108,6 +103,7 @@ public class TurSNSiteFieldExt implements Serializable {
     public TurSNSiteFieldExt() {
 
     }
+
     public void setFacetLocales(Set<TurSNSiteFieldExtFacet> facetLocales) {
         this.facetLocales.clear();
         if (facetLocales != null) {

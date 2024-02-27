@@ -20,14 +20,20 @@
  */
 package com.viglet.turing.se.result;
 
+import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
+import java.util.List;
+
+@Setter
 @Getter
 public class TurSEGroup extends TurSEGenericResults {
 	private String name;
 
-	public void setName(String name) {
+	@Builder
+	TurSEGroup(long numFound, long start, int limit, int pageCount, int currentPage, List<TurSEResult> results, String name) {
+		super(numFound, start, limit, pageCount, currentPage, results);
 		this.name = name;
 	}
-
 }

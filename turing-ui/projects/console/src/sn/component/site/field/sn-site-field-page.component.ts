@@ -49,6 +49,10 @@ export class TurSNSiteFieldPageComponent implements OnInit {
     return this.turSNFieldTypes;
   }
 
+  getTurSNFieldFacetRange(): string[] {
+    return ["DISABLED", "DAY", "MONTH", "YEAR"];
+  }
+
   getTurSNSite(): Observable<TurSNSite> {
     return this.turSNSite;
   }
