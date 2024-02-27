@@ -51,7 +51,7 @@ public class TurNLPFeatureOnStartup {
 			saveNLPFeature("Dependency Parsing");
 			saveNLPFeature("Sentiment Analysis");
 			saveNLPFeature("Mention Detection");
-			saveNLPFeature("Coreference");
+			saveNLPFeature("Conference");
 			saveNLPFeature("Open IE");
 		}
 	}

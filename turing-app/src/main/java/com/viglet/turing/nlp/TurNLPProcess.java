@@ -136,12 +136,16 @@ public class TurNLPProcess {
 	private List<TurNLPValidateEntity> getEntitiesFromNLPVendor(TurNLPInstance turNLPInstance) {
 		List<TurNLPValidateEntity> entities = new ArrayList<>();
 		turNLPVendorEntityRepository.findByTurNLPVendor(turNLPInstance.getTurNLPVendor())
-				.forEach(entity -> entities.add(new TurNLPValidateEntity(entity.getName())));
+				.forEach(entity -> {
+					entities.add(new TurNLPValidateEntity(entity.getName()));
+				});
+
 		return entities;
 	}
 
 	public TurNLPResponse processTextByNLP(TurNLPInstance turNLPInstance, String text,
 			List<TurNLPValidateEntity> turNLPValidateEntities) {
+		System.out.println(text);
 		Optional<TurNLPRequest> turNLPRequest = this.init(turNLPInstance, createDataWithTextAttrib(text),
 				turNLPValidateEntities);
 		return getNLPResponse(turNLPRequest);

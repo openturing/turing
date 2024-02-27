@@ -73,12 +73,10 @@ import org.xml.sax.SAXException;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Scanner;
-import java.util.UUID;
 import java.util.regex.Pattern;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/nlp")
@@ -216,11 +214,9 @@ public class TurNLPInstanceAPI {
             TurNLPTextValidate textValidate = new TurNLPTextValidate();
             contentFile.append(TurCommonsUtils.cleanTextContent(handler.toString()));
             textValidate.setText(contentFile.toString());
-
-            return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
-                TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
-                return createRedactionScript(turNLPResponse);
-            }).orElse(new RedactionScript());
+            return this.turNLPInstanceRepository.findById(id).map(turNLPInstance ->
+                    createRedactionScript(turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText())))
+                    .orElse(new RedactionScript());
 
         } catch (IOException | SAXException | TikaException e) {
             log.error(e.getMessage(), e);
@@ -233,20 +229,20 @@ public class TurNLPInstanceAPI {
         List<RedactionCommand> redactionCommands = new ArrayList<>();
         RedactionScript redactionScript = new RedactionScript();
         redactionScript.setVersion("1");
-        if (turNLPResponse != null) {
-            turNLPResponse.getEntityMapWithProcessedValues().forEach((key, value) -> {
-                if (value != null) {
-                    value.forEach(term -> {
-                        RedactionCommand redactionCommand = new RedactionCommand();
-                        SearchString searchString = new SearchString();
-                        searchString.setMatchWholeWord(true);
-                        searchString.setString(String.format("%s", term));
-                        redactionCommand.setSearchString(searchString);
-                        redactionCommands.add(redactionCommand);
-                    });
-                }
-            });
-        }
+        Optional.ofNullable(turNLPResponse)
+                .map(TurNLPResponse::getEntityMapWithProcessedValues)
+                .ifPresent(entityMap -> {
+                    entityMap.forEach((key, value) ->
+                            Optional.ofNullable(value).ifPresent(v ->
+                                    v.forEach(term -> {
+                                        RedactionCommand redactionCommand = new RedactionCommand();
+                                        SearchString searchString = new SearchString();
+                                        searchString.setMatchWholeWord(true);
+                                        searchString.setString(String.format("%s", term));
+                                        redactionCommand.setSearchString(searchString);
+                                        redactionCommands.add(redactionCommand);
+                                    })));
+                });
         redactionScript.setRedactionCommands(redactionCommands);
         return redactionScript;
     }
@@ -369,7 +365,7 @@ public class TurNLPInstanceAPI {
     }
 
     public boolean isPDF(File file) {
-        try(Scanner input = new Scanner(new FileReader(file))) {
+        try (Scanner input = new Scanner(new FileReader(file))) {
             while (input.hasNextLine()) {
                 if (input.nextLine().contains("%PDF-")) {
                     return true;
