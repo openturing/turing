@@ -96,7 +96,6 @@ public class TurAemIndexingDAO {
 
     public void deleteContentsToReindex(String group) {
         try {
-            entityManager.getTransaction().begin();
             CriteriaBuilder builder = entityManager.getCriteriaBuilder();
             CriteriaDelete<TurAemIndexing> criteria = builder.createCriteriaDelete(TurAemIndexing.class);
             Root<TurAemIndexing> from = criteria.from(TurAemIndexing.class);
