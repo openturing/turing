@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.persistence.repository.sn.field;
 
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.sn.TurSNFieldType;
@@ -43,6 +44,9 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 
 	@Cacheable("turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabled(TurSNSite turSNSite, int facet, int enabled);
+	@Cacheable("findByTurSNSiteAndFacetAndEnabledAndType")
+	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabledAndType(TurSNSite turSNSite, int facet, int enabled,
+																	 TurSEFieldType type);
 
 	@Cacheable("turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndHlAndEnabled(TurSNSite turSNSite, int hl, int enabled);
@@ -64,14 +68,14 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
-			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled" }, allEntries = true)
+			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled", "findByTurSNSiteAndFacetAndEnabledAndType" }, allEntries = true)
 	@NotNull
 	TurSNSiteFieldExt save(@NotNull TurSNSiteFieldExt turSNSiteFieldExt);
 
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
-			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled" }, allEntries = true)
+			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled", "findByTurSNSiteAndFacetAndEnabledAndType" }, allEntries = true)
 	void delete(@NotNull TurSNSiteFieldExt turSNSiteFieldExt);
 
 	@Modifying
@@ -87,6 +91,6 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
-			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled" }, allEntries = true)
+			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled", "findByTurSNSiteAndFacetAndEnabledAndType" }, allEntries = true)
 	void deleteByTurSNSiteAndSnType(TurSNSite turSNSite, TurSNFieldType turSNFieldType);
 }

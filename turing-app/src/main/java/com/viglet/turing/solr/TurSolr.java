@@ -73,6 +73,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -99,15 +101,18 @@ public class TurSolr {
     public static final String TRUE = "true";
     public static final String EDISMAX = "edismax";
     public static final String DEF_TYPE = "defType";
+
     public static final String AND = "AND";
     public static final String Q_OP = "q.op";
     public static final String RECENT_DATES = "{!func}recip(ms(NOW/DAY,%s),3.16e-11,1,1)";
     public static final String TUR_SUGGEST = "/tur_suggest";
     public static final String TUR_SPELL = "/tur_spell";
-    public static final String TAG_DT = "{!tag=dt}";
-    public static final String EX_DT = "{!ex=dt}";
+    public static final String FILTER_QUERY_OR = "{!tag=dt}";
+    public static final String FACET_OR = "{!ex=dt}";
     public static final String PLUS_ONE = "+1";
     public static final String EMPTY = "";
+    public static final String SOLR_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+    public static final String GMT = "GMT";
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNTargetingRules turSNTargetingRules;
     private final TurSNSiteFieldUtils turSNSiteFieldUtils;
@@ -644,7 +649,7 @@ public class TurSolr {
     private void processSEResultsFacet(TurSNSite turSNSite, TurSEResults turSEResults, QueryResponse queryResponse,
                                        List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList) {
         if (wasFacetConfigured(turSNSite, turSNSiteFacetFieldExtList)) {
-            List<TurSEFacetResult> facetRangeResults  = setFacetRanges(queryResponse);
+            List<TurSEFacetResult> facetRangeResults = setFacetRanges(queryResponse);
             List<TurSEFacetResult> facetResults = new ArrayList<>(facetRangeResults);
             facetResults.addAll(setFacetFields(queryResponse, facetRangeResults));
             turSEResults.setFacetResults(facetResults);
@@ -704,18 +709,19 @@ public class TurSolr {
     }
 
     private void prepareQueryFilterQuery(TurSEParameters turSEParameters, SolrQuery query, TurSNSite turSNSite) {
-        String facetTypeCondition = getFacetTypeConditionInQueryFilter(turSEParameters, turSNSite);
+        String facetTypeCondition = getFacetTypeConditionInFilterQuery(turSEParameters, turSNSite);
         if (!CollectionUtils.isEmpty(turSEParameters.getFilterQueries())) {
+            final List<String> filterQueriesRangeFormatted = setFilterQueryByDateRange(turSEParameters, turSNSite);
             if (isFilterQueryOr(turSEParameters, turSNSite)) {
-                List<String> filterQueriesModified = turSEParameters.getFilterQueries().stream()
-                        .map(q -> queryWithoutExpression(q) ? addDoubleQuotesToValue(q) : q
+                List<String> filterQueriesModified = filterQueriesRangeFormatted.stream()
+                        .map(fq -> queryWithoutExpression(fq) ? addDoubleQuotesToValue(fq) : fq
                         ).toList();
                 query.addFilterQuery(
                         String.valueOf(String.format("%s(%s)", facetTypeCondition,
                                 String.join(" OR ", filterQueriesModified))));
             } else {
-                List<String> filterQueriesModified = turSEParameters.getFilterQueries().stream()
-                        .map(q -> facetTypeCondition.concat(queryWithoutExpression(q) ? addDoubleQuotesToValue(q) : q)
+                List<String> filterQueriesModified = filterQueriesRangeFormatted.stream()
+                        .map(fq -> facetTypeCondition.concat(queryWithoutExpression(fq) ? addDoubleQuotesToValue(fq) : fq)
                         ).toList();
                 String[] filterQueryArr = new String[filterQueriesModified.size()];
                 query.addFilterQuery(filterQueriesModified.toArray(filterQueryArr));
@@ -723,9 +729,93 @@ public class TurSolr {
         }
     }
 
-    private static String getFacetTypeConditionInQueryFilter(TurSEParameters turSEParameters, TurSNSite turSNSite) {
+    private List<String> setFilterQueryByDateRange(TurSEParameters turSEParameters, TurSNSite turSNSite) {
+        List<TurSNSiteFieldExt> dateFacet = turSNSiteFieldExtRepository
+                .findByTurSNSiteAndFacetAndEnabledAndType(turSNSite, 1, 1, TurSEFieldType.DATE);
+        List<String> filterQueriesRangeFormatted;
+        if (!dateFacet.isEmpty()) {
+            filterQueriesRangeFormatted = turSEParameters.getFilterQueries().stream()
+                    .map(fq -> {
+                        String[] attributeKV = fq.split(":");
+                        if (attributeKV.length > 2) {
+                            String key = attributeKV[0];
+                            String value = Arrays.stream(attributeKV).skip(1).collect(Collectors.joining(":"));
+                            return dateFacet.stream()
+                                    .filter(dateFacetItem -> key.equals(dateFacetItem.getName()) && isDateRangeFacet(dateFacetItem))
+                                    .findFirst().map(dateFacetItem -> {
+                                        try {
+                                            Date date = solrDateFormatter().parse(value);
+                                            return switch (dateFacetItem.getFacetRange()) {
+                                                case DAY -> setFilterQueryRangeDay(date, key, value);
+                                                case MONTH -> setFilterQueryRangeMonth(date, key, value);
+                                                case YEAR -> setFilterQueryRangeYear(date, key, value);
+                                                case DISABLED -> fq;
+                                            };
+                                        } catch (ParseException e) {
+                                            log.error(e.getMessage(), e);
+                                        }
+                                        return fq;
+                                    }).orElse(fq);
+                        }
+                        return fq;
+                    }).toList();
+        } else {
+            filterQueriesRangeFormatted = turSEParameters.getFilterQueries();
+        }
+        return filterQueriesRangeFormatted;
+    }
+
+    @NotNull
+    private static SimpleDateFormat solrDateFormatter() {
+        return new SimpleDateFormat(SOLR_DATE_PATTERN, Locale.ENGLISH);
+    }
+
+    private static String setFilterQueryRangeDay(Date date, String key, String value) {
+        Calendar endOfDay = Calendar.getInstance();
+        endOfDay.setTime(date);
+        endOfDay.set(Calendar.HOUR, 23);
+        endOfDay.set(Calendar.MINUTE, 59);
+        endOfDay.set(Calendar.SECOND, 59);
+        endOfDay.set(Calendar.MILLISECOND, 59);
+        return setFilterQueryDateRange(key, value, endOfDay);
+    }
+
+    private static String setFilterQueryDateRange(String key, String value, Calendar endOfDay) {
+        return String.format("%s:[ %s TO %s ]", key, value, solrDateFormatter().format(endOfDay.getTime()));
+    }
+
+    private static String setFilterQueryRangeYear(Date date, String key, String value) {
+        Calendar lastDateOfYear = Calendar.getInstance();
+        lastDateOfYear.setTime(date);
+        lastDateOfYear.set(Calendar.MONTH, 11);
+        lastDateOfYear.set(Calendar.DAY_OF_MONTH, 31);
+        lastDateOfYear.set(Calendar.HOUR, 23);
+        lastDateOfYear.set(Calendar.MINUTE, 59);
+        lastDateOfYear.set(Calendar.SECOND, 59);
+        lastDateOfYear.set(Calendar.MILLISECOND, 59);
+        return setFilterQueryDateRange(key, value, lastDateOfYear);
+    }
+
+    private static String setFilterQueryRangeMonth(Date date, String key, String value) {
+        Calendar lastDateOfMonth = Calendar.getInstance();
+        lastDateOfMonth.setTime(date);
+        lastDateOfMonth.set(Calendar.DATE, lastDateOfMonth.getActualMaximum(Calendar.DATE));
+        lastDateOfMonth.set(Calendar.HOUR, 23);
+        lastDateOfMonth.set(Calendar.MINUTE, 59);
+        lastDateOfMonth.set(Calendar.SECOND, 59);
+        lastDateOfMonth.set(Calendar.MILLISECOND, 59);
+        return setFilterQueryDateRange(key, value, lastDateOfMonth);
+    }
+
+    private static boolean isDateRangeFacet(TurSNSiteFieldExt dateFacetItem) {
+        return dateFacetItem.getType().equals(TurSEFieldType.DATE)
+                && dateFacetItem.getFacetRange() != null
+                && !dateFacetItem.getFacetRange().equals(TurSNSiteFacetRangeEnum.DISABLED);
+    }
+
+    private static String getFacetTypeConditionInFilterQuery(TurSEParameters turSEParameters, TurSNSite turSNSite) {
         if (isOr(turSEParameters, turSNSite)) {
-            return TAG_DT;
+            return FILTER_QUERY_OR;
         }
         return EMPTY;
     }
@@ -779,7 +869,7 @@ public class TurSolr {
 
     private static String setFacetTypeConditionInFacet(String query, TurSEParameters turSEParameters,
                                                        TurSNSite turSNSite) {
-        return isOr(turSEParameters, turSNSite) ? EX_DT.concat(query) : query;
+        return isOr(turSEParameters, turSNSite) ? FACET_OR.concat(query) : query;
     }
 
     private List<TurSNSiteFieldExt> prepareQueryFacet(TurSEParameters turSEParameters, TurSNSite turSNSite,
@@ -792,30 +882,37 @@ public class TurSolr {
                     .setFacetMinCount(1)
                     .setFacetSort(COUNT);
             turSNSiteFacetFieldExtList.forEach(turSNSiteFacetFieldExt -> {
-                query.addFacetField(setFacetTypeConditionInFacet(
-                        setEntityPrefix(turSNSiteFacetFieldExt)
-                                .concat(turSNSiteFacetFieldExt.getName()),
-                        turSEParameters, turSNSite));
-                if (turSNSiteFacetFieldExt.getType().equals(TurSEFieldType.DATE)
-                        && turSNSiteFacetFieldExt.getFacetRange() != null
-                        && !turSNSiteFacetFieldExt.getFacetRange().equals(TurSNSiteFacetRangeEnum.DISABLED)) {
-                    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-                    cal.setTime(new Date());
-                    cal.set(Calendar.DAY_OF_MONTH, 1);
-                    cal.set(Calendar.MONTH, 0);
-                    cal.set(Calendar.HOUR_OF_DAY, 0);
-                    cal.set(Calendar.MINUTE, 0);
-                    cal.set(Calendar.SECOND, 0);
-                    cal.set(Calendar.MILLISECOND, 0);
-
-                    query.addDateRangeFacet(turSNSiteFacetFieldExt.getName(),
-                            DateUtils.addYears(cal.getTime(), -100),
-                            DateUtils.addYears(cal.getTime(), 100),
-                            PLUS_ONE + turSNSiteFacetFieldExt.getFacetRange());
+                if (isDateRangeFacet(turSNSiteFacetFieldExt)) {
+                    addFacetRange(turSEParameters, turSNSite, query, turSNSiteFacetFieldExt);
+                } else {
+                    addFacetField(turSEParameters, turSNSite, query, turSNSiteFacetFieldExt);
                 }
             });
         }
         return turSNSiteFacetFieldExtList;
+    }
+
+    private static void addFacetField(TurSEParameters turSEParameters, TurSNSite turSNSite, SolrQuery query, TurSNSiteFieldExt turSNSiteFacetFieldExt) {
+        query.addFacetField(setFacetTypeConditionInFacet(
+                setEntityPrefix(turSNSiteFacetFieldExt)
+                        .concat(turSNSiteFacetFieldExt.getName()),
+                turSEParameters, turSNSite));
+    }
+
+    private static void addFacetRange(TurSEParameters turSEParameters, TurSNSite turSNSite, SolrQuery query, TurSNSiteFieldExt turSNSiteFacetFieldExt) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date());
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        cal.set(Calendar.MONTH, 0);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        query.set("f." + turSNSiteFacetFieldExt.getName() + ".facet.range.gap", PLUS_ONE + turSNSiteFacetFieldExt.getFacetRange());
+        query.set("f." + turSNSiteFacetFieldExt.getName() + ".facet.range.start", solrDateFormatter().format(DateUtils.addYears(cal.getTime(), -100)));
+        query.set("f." + turSNSiteFacetFieldExt.getName() + ".facet.range.end", solrDateFormatter().format(DateUtils.addYears(cal.getTime(), 100)));
+        query.set("facet.range", setFacetTypeConditionInFacet(turSNSiteFacetFieldExt.getName(),
+                turSEParameters, turSNSite));
     }
 
     @NotNull
@@ -883,7 +980,8 @@ public class TurSolr {
         return turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1);
     }
 
-    private Map<String, List<String>> getHL(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteHlFieldExtList,
+    private Map<String, List<String>> getHL(TurSNSite
+                                                    turSNSite, List<TurSNSiteFieldExt> turSNSiteHlFieldExtList,
                                             QueryResponse queryResponse, SolrDocument document) {
         return isHL(turSNSite, turSNSiteHlFieldExtList) ?
                 queryResponse.getHighlighting().get(document.get(ID).toString()) : null;

@@ -27,6 +27,7 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepositor
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
