@@ -73,6 +73,10 @@ public class TurSNSiteFieldExt implements Serializable {
     private Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
     @Column
     private TurSNSiteFacetRangeEnum facetRange = TurSNSiteFacetRangeEnum.DISABLED;
+    @Column
+    private TurSNSiteFacetFieldEnum facetType;
+    @Column
+    private TurSNSiteFacetSortEnum facetSort;
     @Column(nullable = false)
     private TurSNFieldType snType;
     @Column(nullable = false)
@@ -93,8 +97,7 @@ public class TurSNSiteFieldExt implements Serializable {
     private String defaultValue;
     @Column
     private int nlp;
-    @Column
-    private TurSNSiteFacetFieldEnum facetType;
+
 
     // bi-directional many-to-one association to TurSNSite
     @ManyToOne

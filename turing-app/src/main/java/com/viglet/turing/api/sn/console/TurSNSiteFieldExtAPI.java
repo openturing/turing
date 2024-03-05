@@ -29,6 +29,7 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetSortEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -193,6 +194,8 @@ public class TurSNSiteFieldExtAPI {
                 .facet(0)
                 .facetName(turSNSiteField.getName())
                 .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
+                .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
+                .facetSort(TurSNSiteFacetSortEnum.COUNT)
                 .hl(0)
                 .multiValued(turSNSiteField.getMultiValued())
                 .mlt(0)
@@ -212,6 +215,7 @@ public class TurSNSiteFieldExtAPI {
                 .facetName(turNLPEntity.getName())
                 .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
                 .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
+                .facetSort(TurSNSiteFacetSortEnum.COUNT)
                 .hl(0)
                 .multiValued(1)
                 .mlt(0)
@@ -247,6 +251,7 @@ public class TurSNSiteFieldExtAPI {
                             fieldExtFacet.setTurSNSiteFieldExt(turSNSiteFieldExt))
                     .collect(Collectors.toSet()));
             turSNSiteFieldExtEdit.setFacetRange(turSNSiteFieldExt.getFacetRange());
+            turSNSiteFieldExtEdit.setFacetSort(turSNSiteFieldExt.getFacetSort());
             turSNSiteFieldExtEdit.setHl(turSNSiteFieldExt.getHl());
             turSNSiteFieldExtEdit.setEnabled(turSNSiteFieldExt.getEnabled());
             turSNSiteFieldExtEdit.setMlt(turSNSiteFieldExt.getMlt());

@@ -55,6 +55,10 @@ export class TurSNSiteFieldPageComponent implements OnInit {
   getFacetTypes(): string[] {
     return ["DEFAULT", "AND", "OR"];
   }
+
+  getFacetSorts(): string[] {
+    return ["COUNT", "ALPHABETICAL"];
+  }
   getTurSNSite(): Observable<TurSNSite> {
     return this.turSNSite;
   }

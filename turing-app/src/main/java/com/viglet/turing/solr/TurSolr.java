@@ -35,6 +35,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetEnum;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetSortEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
@@ -116,6 +117,7 @@ public class TurSolr {
     public static final String PLUS_ONE = "+1";
     public static final String EMPTY = "";
     public static final String SOLR_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+    public static final String INDEX = "index";
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNTargetingRules turSNTargetingRules;
     private final TurSNSiteFieldUtils turSNSiteFieldUtils;
@@ -993,6 +995,12 @@ public class TurSolr {
                     .setFacetMinCount(1)
                     .setFacetSort(COUNT);
             turSNSiteFacetFieldExtList.forEach(turSNSiteFacetFieldExt -> {
+                Optional.of(turSNSiteFacetFieldExt)
+                        .map(TurSNSiteFieldExt::getFacetSort)
+                        .ifPresent(field ->
+                        query.set("f." + turSNSiteFacetFieldExt.getName() + ".facet.sort",
+                        turSNSiteFacetFieldExt.getFacetSort()
+                                .equals(TurSNSiteFacetSortEnum.ALPHABETICAL) ? INDEX : COUNT));
                 if (isDateRangeFacet(turSNSiteFacetFieldExt)) {
                     addFacetRange(turSNSite, query, turSNSiteFacetFieldExt);
                 } else {
@@ -1007,7 +1015,7 @@ public class TurSolr {
                                       TurSNSiteFieldExt turSNSiteFacetFieldExt) {
         query.addFacetField(setFacetTypeConditionInFacet(
                 setEntityPrefix(turSNSiteFacetFieldExt)
-                        .concat(turSNSiteFacetFieldExt.getName()),turSNSiteFacetFieldExt, turSNSite));
+                        .concat(turSNSiteFacetFieldExt.getName()), turSNSiteFacetFieldExt, turSNSite));
     }
 
     private static void addFacetRange(TurSNSite turSNSite, SolrQuery query,
