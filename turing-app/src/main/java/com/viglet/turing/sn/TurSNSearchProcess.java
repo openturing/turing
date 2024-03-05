@@ -22,6 +22,7 @@ package com.viglet.turing.sn;
 
 import com.google.inject.Inject;
 import com.viglet.turing.api.sn.bean.TurSNSiteFilterQueryBean;
+import com.viglet.turing.commons.se.TurSEFilterQueryParameters;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.commons.sn.bean.*;
@@ -314,7 +315,7 @@ public class TurSNSearchProcess {
                                                      TurSEResults turSEResults) {
         return new TurSNSiteSearchWidgetBean()
                 .setFacet(responseFacet(context, turSNSite,
-                        requestFilterQuery(context.getTurSEParameters().getFilterQueries())
+                        requestFilterQuery(context.getTurSEParameters().getFilterQueries().getFq())
                                 .getHiddenItems(), turSNSiteFacetFieldList, facetMap, turSEResults))
                 .setFacetToRemove(responseFacetToRemove(context))
                 .setSimilar(responseMLT(turSNSite, turSEResults))
@@ -397,9 +398,9 @@ public class TurSNSearchProcess {
     }
 
     private TurSNSiteSearchFacetBean responseFacetToRemove(TurSNSiteSearchContext context) {
-        if (!CollectionUtils.isEmpty(context.getTurSEParameters().getFilterQueries())) {
+        if (!CollectionUtils.isEmpty(context.getTurSEParameters().getFilterQueries().getFq())) {
             List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<>();
-            context.getTurSEParameters().getFilterQueries().forEach(facetToRemove -> {
+            context.getTurSEParameters().getFilterQueries().getFq().forEach(facetToRemove -> {
                 String[] facetToRemoveParts = facetToRemove.split(":", 2);
                 if (facetToRemoveParts.length == 2) {
                     turSNSiteSearchFacetToRemoveItemBeans.add(new TurSNSiteSearchFacetItemBean()
@@ -421,6 +422,7 @@ public class TurSNSearchProcess {
         if (turSNSite.getFacet() == 1 && !CollectionUtils.isEmpty(turSNSiteFacetFieldExtList)) {
             List<String> usedFacetItems = Optional.ofNullable(context.getTurSEParameters())
                     .map(TurSEParameters::getFilterQueries)
+                    .map(TurSEFilterQueryParameters::getFq)
                     .orElse(Collections.emptyList());
             List<TurSNSiteSearchFacetBean> turSNSiteSearchFacetBeans = new ArrayList<>();
             turSEResults.getFacetResults().forEach(facet -> {
@@ -524,7 +526,7 @@ public class TurSNSearchProcess {
 
     private URI changeGroupURIForPagination(URI uri, String fieldName) {
         return TurCommonsUtils.addOrReplaceParameter(TurSNUtils.removeQueryField(uri, GROUP),
-                TurSNParamType.FILTER_QUERIES, fieldName);
+                TurSNParamType.FILTER_QUERIES_DEFAULT, fieldName);
     }
 
     private TurSNSiteSearchPaginationBean setPreviousPage(URI uri, TurSEGenericResults turSEResults) {

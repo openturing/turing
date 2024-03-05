@@ -57,7 +57,7 @@ public class TurSNSiteSpellCheckAPI {
         Locale locale = LocaleUtils.toLocale(localeRequest);
         return turSolrInstanceProcess.initSolrInstance(siteName, locale).map(turSolrInstance -> {
             TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName,
-                    new TurSEParameters(q, null, TurSNFilterQueryOperator.AND,
+                    new TurSEParameters(q, null,
                             1, "relevance", 10, null, 0), locale,
                     TurSNUtils.requestToURI(request));
             return new TurSNSiteSpellCheckBean(turSNSiteSearchContext, turSolr.spellCheckTerm(turSolrInstance, q));

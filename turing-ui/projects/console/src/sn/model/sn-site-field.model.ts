@@ -1,5 +1,6 @@
 import {TurSNSiteFieldFacet} from "./sn-site-field-facet.model";
 import {TurSNSiteFacetRangeEnum} from "./sn-site-facet-range.enum";
+import {TurSNSiteFacetFieldEnum} from "./sn-site-facet.field.enum";
 
 export interface TurSNSiteField {
   id: string;
@@ -12,6 +13,7 @@ export interface TurSNSiteField {
   facetName: string;
   facetRange: TurSNSiteFacetRangeEnum;
   facetLocales: TurSNSiteFieldFacet[]
+  facetType: TurSNSiteFacetFieldEnum;
   mlt: number;
   multiValued: number;
   nlp: number;

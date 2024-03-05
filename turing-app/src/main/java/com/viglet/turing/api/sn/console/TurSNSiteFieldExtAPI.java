@@ -28,6 +28,7 @@ import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -210,6 +211,7 @@ public class TurSNSiteFieldExtAPI {
                 .facet(0)
                 .facetName(turNLPEntity.getName())
                 .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
+                .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
                 .hl(0)
                 .multiValued(1)
                 .mlt(0)
@@ -253,6 +255,7 @@ public class TurSNSiteFieldExtAPI {
             turSNSiteFieldExtEdit.setDefaultValue(turSNSiteFieldExt.getDefaultValue());
             turSNSiteFieldExtEdit.setNlp(turSNSiteFieldExt.getNlp());
             turSNSiteFieldExtEdit.setSnType(turSNSiteFieldExt.getSnType());
+            turSNSiteFieldExtEdit.setFacetType(turSNSiteFieldExt.getFacetType());
             this.turSNSiteFieldExtRepository.save(turSNSiteFieldExtEdit);
 
 

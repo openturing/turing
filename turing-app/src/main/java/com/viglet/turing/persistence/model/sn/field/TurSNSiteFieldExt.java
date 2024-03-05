@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.sn.field;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFacetEnum;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.turing.sn.TurSNFieldType;
 import jakarta.persistence.*;
@@ -92,6 +93,8 @@ public class TurSNSiteFieldExt implements Serializable {
     private String defaultValue;
     @Column
     private int nlp;
+    @Column
+    private TurSNSiteFacetFieldEnum facetType;
 
     // bi-directional many-to-one association to TurSNSite
     @ManyToOne

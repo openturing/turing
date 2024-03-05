@@ -193,6 +193,21 @@
     </div>
     <div class="form-group">
       <div class="form-group-header">
+        <label>Facet Type</label>
+      </div>
+      <div class="form-group-body">
+        <select [(ngModel)]="snSiteField.facetType" class="form-select mr-3">
+          <option *ngFor="let facetType of getFacetTypes() " [value]="facetType">
+            {{ facetType }}
+          </option>
+        </select>
+        <p class="note">
+          How Turing will join the facet attributes, using OR or AND.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
         <label for="sn-facet-range">Range</label>
       </div>
       <div class="form-group-body">

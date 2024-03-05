@@ -499,7 +499,7 @@ public class TurSNServer {
 				String startDate = df.format(turClientBetweenDates.getStartDate());
 				String endDate = df.format(turClientBetweenDates.getEndDate());
 
-				turingURL.addParameter(TurSNParamType.FILTER_QUERIES,
+				turingURL.addParameter(TurSNParamType.FILTER_QUERIES_DEFAULT,
 						String.format("%s:[%s TO %s]", fieldDate, startDate, endDate));
 			}
 		}
@@ -531,7 +531,7 @@ public class TurSNServer {
 	private void fieldQueryRequest(URIBuilder turingURL) {
 		if (this.turSNQuery.getFieldQueries() != null) {
 			for (String fieldQuery : this.turSNQuery.getFieldQueries()) {
-				turingURL.addParameter(TurSNParamType.FILTER_QUERIES, fieldQuery);
+				turingURL.addParameter(TurSNParamType.FILTER_QUERIES_DEFAULT, fieldQuery);
 			}
 		}
 	}
