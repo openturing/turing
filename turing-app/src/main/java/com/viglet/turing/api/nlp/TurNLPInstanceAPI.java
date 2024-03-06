@@ -231,18 +231,16 @@ public class TurNLPInstanceAPI {
         redactionScript.setVersion("1");
         Optional.ofNullable(turNLPResponse)
                 .map(TurNLPResponse::getEntityMapWithProcessedValues)
-                .ifPresent(entityMap -> {
-                    entityMap.forEach((key, value) ->
-                            Optional.ofNullable(value).ifPresent(v ->
-                                    v.forEach(term -> {
-                                        RedactionCommand redactionCommand = new RedactionCommand();
-                                        SearchString searchString = new SearchString();
-                                        searchString.setMatchWholeWord(true);
-                                        searchString.setString(String.format("%s", term));
-                                        redactionCommand.setSearchString(searchString);
-                                        redactionCommands.add(redactionCommand);
-                                    })));
-                });
+                .ifPresent(entityMap -> entityMap.forEach((key, value) ->
+                        Optional.ofNullable(value).ifPresent(v ->
+                                v.forEach(term -> {
+                                    RedactionCommand redactionCommand = new RedactionCommand();
+                                    SearchString searchString = new SearchString();
+                                    searchString.setMatchWholeWord(true);
+                                    searchString.setString(String.format("%s", term));
+                                    redactionCommand.setSearchString(searchString);
+                                    redactionCommands.add(redactionCommand);
+                                }))));
         redactionScript.setRedactionCommands(redactionCommands);
         return redactionScript;
     }
