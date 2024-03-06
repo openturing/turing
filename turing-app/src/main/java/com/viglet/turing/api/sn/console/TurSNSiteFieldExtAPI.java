@@ -29,7 +29,7 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetSortEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldSortEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -195,7 +195,7 @@ public class TurSNSiteFieldExtAPI {
                 .facetName(turSNSiteField.getName())
                 .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
                 .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
-                .facetSort(TurSNSiteFacetSortEnum.COUNT)
+                .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
                 .hl(0)
                 .multiValued(turSNSiteField.getMultiValued())
                 .mlt(0)
@@ -215,7 +215,7 @@ public class TurSNSiteFieldExtAPI {
                 .facetName(turNLPEntity.getName())
                 .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
                 .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
-                .facetSort(TurSNSiteFacetSortEnum.COUNT)
+                .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
                 .hl(0)
                 .multiValued(1)
                 .mlt(0)

@@ -23,6 +23,7 @@ package com.viglet.turing.persistence.model.sn;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldSortEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -99,6 +100,9 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 
 	@Column
 	private TurSNSiteFacetEnum facetType = TurSNSiteFacetEnum.AND;
+
+	@Column
+	private TurSNSiteFacetSortEnum facetSort = TurSNSiteFacetSortEnum.COUNT;
 
 	@Column
 	private Integer thesaurus = 0;
