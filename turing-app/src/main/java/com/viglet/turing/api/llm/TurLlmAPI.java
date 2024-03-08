@@ -80,7 +80,7 @@ public class TurLlmAPI {
         return getFirstContentFromMessage(response).map(content -> {
             try {
                 return objectMapper
-                        .readValue(content,TurLlmQa.class);
+                        .readValue(content, TurLlmQa.class);
             } catch (JsonProcessingException e) {
                 log.error(e.getMessage(), e);
             }
@@ -111,15 +111,14 @@ public class TurLlmAPI {
                 - PERSONAL_ID for document id named entity.
                 Sentence below:
                 """;
-        TurLlmResponse turLlmResponse = geOpenAiResponse(List.of(
+        TurLlmResponse turLlmResponse = getOpenAiResponse(List.of(
                 TurLlmRoleRequest.builder()
                         .role(USER)
                         .content(base_prompt + text)
                         .build()));
         return getFirstContentFromMessage(turLlmResponse).map(content -> {
             try {
-                return turNLPUtils.createRedactionScript( objectMapper
-                        .readValue(content,TurLlmEntities.class));
+                return turNLPUtils.createRedactionScript(objectMapper.readValue(content, TurLlmEntities.class));
             } catch (JsonProcessingException e) {
                 log.error(e.getMessage(), e);
             }
@@ -129,7 +128,7 @@ public class TurLlmAPI {
     }
 
     public TurLlmResponse chatGPT(String prompt) throws IOException, InterruptedException {
-        return geOpenAiResponse(List.of(
+        return getOpenAiResponse(List.of(
                 TurLlmRoleRequest.builder()
                         .role(SYSTEM)
                         .content(DATA_SCHEMA_SYSTEM_ROLE + objectMapper.writer().writeValueAsString(getQaSample()))
@@ -140,7 +139,7 @@ public class TurLlmAPI {
                         .build()));
     }
 
-    private TurLlmResponse geOpenAiResponse(List<TurLlmRoleRequest> roles) throws IOException, InterruptedException {
+    private TurLlmResponse getOpenAiResponse(List<TurLlmRoleRequest> roles) throws IOException, InterruptedException {
         TurLlmRequest llmRequest = TurLlmRequest.builder()
                 .model(GPT_3_5_TURBO)
                 .responseFormat(TurLlmResponseFormatRequest.builder()
