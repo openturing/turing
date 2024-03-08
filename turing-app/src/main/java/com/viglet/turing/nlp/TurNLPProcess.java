@@ -109,7 +109,6 @@ public class TurNLPProcess {
 
 	public TurNLPResponse processTextByNLP(TurNLPInstance turNLPInstance, String text,
 			List<TurNLPValidateEntity> turNLPValidateEntities) {
-		System.out.println(text);
 		Optional<TurNLPRequest> turNLPRequest = this.init(turNLPInstance, createDataWithTextAttrib(text),
 				turNLPValidateEntities);
 		return getNLPResponse(turNLPRequest);

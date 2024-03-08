@@ -18,6 +18,8 @@ package com.viglet.turing.filesystem.commons;
 
 import java.io.File;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -27,6 +29,8 @@ import org.apache.tika.metadata.Metadata;
 * @since 0.3.0
 *
 **/
+@Setter
+@Getter
 public class TurFileAttributes {
 	private File file;
 	private String content;	
@@ -38,24 +42,6 @@ public class TurFileAttributes {
 		this.content = content;
 		this.metadata = metadata;
 	}
-	public File getFile() {
-		return file;
-	}
-	public void setFile(File file) {
-		this.file = file;
-	}
-	public String getContent() {
-		return content;
-	}
-	public void setContent(String content) {
-		this.content = content;
-	}
-	public Metadata getMetadata() {
-		return metadata;
-	}
-	public void setMetadata(Metadata metadata) {
-		this.metadata = metadata;
-	}
-	
-	
+
+
 }

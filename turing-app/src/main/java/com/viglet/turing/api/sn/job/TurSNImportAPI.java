@@ -27,36 +27,24 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.filesystem.commons.TurFileAttributes;
+import com.viglet.turing.filesystem.commons.TurFileUtils;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.utils.TurUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ocr.TesseractOCRConfig;
-import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -141,62 +129,14 @@ public class TurSNImportAPI {
             String fileName = attribute.getValue().toString().replace(TurSNConstants.FILE_PROTOCOL, "");
             try (FileInputStream fileInputStreamAttribute = new FileInputStream(
                     extractFolder.getAbsolutePath() + File.separator + fileName)) {
-                StringBuilder contentFile = new StringBuilder();
-                AutoDetectParser parser = new AutoDetectParser();
-                // -1 = no limit of number of characters
-                BodyContentHandler handler = new BodyContentHandler(-1);
-                Metadata metadata = new Metadata();
-
-                TesseractOCRConfig config = new TesseractOCRConfig();
-                PDFParserConfig pdfConfig = new PDFParserConfig();
-                pdfConfig.setExtractInlineImages(true);
-
-                ParseContext parseContext = new ParseContext();
-                parseContext.set(TesseractOCRConfig.class, config);
-                parseContext.set(PDFParserConfig.class, pdfConfig);
-
-                parseContext.set(Parser.class, parser);
-
-                EmbeddedDocumentExtractor embeddedDocumentExtractor = new EmbeddedDocumentExtractor() {
-                    @Override
-                    public boolean shouldParseEmbedded(Metadata metadata) {
-                        return true;
-                    }
-
-                    @Override
-                    public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
-                                              boolean outputHtml) throws IOException {
-
-                        BodyContentHandler handlerInner = new BodyContentHandler(-1);
-                        AutoDetectParser parserInner = new AutoDetectParser();
-                        Metadata metadataInner = new Metadata();
-                        TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
-                        PDFParserConfig pdfConfigInner = new PDFParserConfig();
-                        pdfConfigInner.setExtractInlineImages(true);
-                        ParseContext parseContextInner = new ParseContext();
-                        parseContextInner.set(TesseractOCRConfig.class, tesseractOCRConfig);
-                        parseContextInner.set(PDFParserConfig.class, pdfConfigInner);
-                        parseContextInner.set(Parser.class, parserInner);
-                        File tempFile = File.createTempFile(UUID.randomUUID().toString(), null,
-                                TurCommonsUtils.addSubDirToStoreDir("tmp"));
-                        Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
-                            parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
-                            contentFile.append(handlerInner);
-
-                        } catch (IOException | SAXException | TikaException e) {
-                            log.error(e.getMessage(), e);
-                        }
-                        FileUtils.delete(tempFile);
-                    }
-                };
-                parseContext.set(EmbeddedDocumentExtractor.class, embeddedDocumentExtractor);
-                parser.parse(fileInputStreamAttribute, handler, metadata, parseContext);
-                contentFile.append(handler);
-                attribute.setValue(TurCommonsUtils.cleanTextContent(contentFile.toString()));
-            } catch (IOException | SAXException | TikaException e) {
+                TurFileAttributes turFileAttributes = TurFileUtils.parseFile(fileInputStreamAttribute, null);
+                Optional.ofNullable(turFileAttributes)
+                        .map(TurFileAttributes::getContent)
+                        .ifPresent(content -> attribute.setValue(TurCommonsUtils.cleanTextContent(content)));
+            } catch (IOException e) {
                 log.error(e.getMessage(), e);
             }
+
         }
     }
 
@@ -212,11 +152,11 @@ public class TurSNImportAPI {
     private void sentQueueInfo(TurSNJob turSNJob) {
         turSNSiteRepository.findById(turSNJob.getSiteId()).ifPresent(turSNSite ->
                 turSNJob.getTurSNJobItems().forEach(turJobItem -> {
-            if (isValidJobItem(turJobItem))
-                log.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).", actionType(turJobItem),
-                        turJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(),
-                        turJobItem.getLocale());
-        }));
+                    if (isValidJobItem(turJobItem))
+                        log.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).", actionType(turJobItem),
+                                turJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(),
+                                turJobItem.getLocale());
+                }));
     }
 
     private static boolean isValidJobItem(TurSNJobItem turJobItem) {
