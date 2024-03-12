@@ -17,6 +17,7 @@ import com.viglet.turing.connector.webcrawler.persistence.repository.TurWCNotAll
 import generator.RandomUserAgentGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -54,6 +55,8 @@ public class TurWCProcess {
     private final int timeout;
     private final int jobSize;
     private final String referrer;
+    private String username;
+    private String password;
     private final TurWCAllowUrlRepository turWCAllowUrlRepository;
     private final TurWCNotAllowUrlRepository turWCNotAllowUrlRepository;
     private final TurWCFileExtensionRepository turWCFileExtensionRepository;
@@ -89,6 +92,8 @@ public class TurWCProcess {
 
         this.website = turWCSource.getUrl();
         this.snSite = turWCSource.getTurSNSite();
+        this.username = turWCSource.getUsername();
+        this.password = turWCSource.getPassword();
         log.info("User Agent: " + userAgent);
         turWCAllowUrlRepository
                 .findByTurWCSource(turWCSource)
@@ -155,11 +160,20 @@ public class TurWCProcess {
                         , () -> {
                             try {
                                 if (!StringUtils.isEmpty(turWCCustomClass.getClassName()))
-
-                                    turSNJobItemAttributes.put(turWCCustomClass.getName(),
-                                            ((TurWCExtInterface) Class.forName(turWCCustomClass.getClassName())
-                                                    .getDeclaredConstructor().newInstance())
-                                                    .consume(getTurWCContext(document, url)));
+                                    ((TurWCExtInterface) Class.forName(turWCCustomClass.getClassName())
+                                            .getDeclaredConstructor().newInstance())
+                                            .consume(getTurWCContext(document, url))
+                                            .ifPresent(turMultiValue -> turMultiValue.forEach(attributeValue -> {
+                                                if (!StringUtils.isBlank(attributeValue)) {
+                                                    if (turSNJobItemAttributes.containsKey(turWCCustomClass.getName())) {
+                                                        addItemInExistingAttribute(attributeValue,
+                                                                turSNJobItemAttributes, turWCCustomClass.getName());
+                                                    } else {
+                                                        addFirstItemToAttribute(turWCCustomClass.getName(),
+                                                                attributeValue, turSNJobItemAttributes);
+                                                    }
+                                                }
+                                            }));
                             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                      NoSuchMethodException |
                                      ClassNotFoundException e) {
@@ -169,6 +183,37 @@ public class TurWCProcess {
                 ));
         return turSNJobItemAttributes;
     }
+
+    private static void addItemInExistingAttribute(String attributeValue,
+                                                   Map<String, Object> attributes,
+                                                   String attributeName) {
+        if (attributes.get(attributeName) instanceof ArrayList)
+            addItemToArray(attributes, attributeName, attributeValue);
+        else convertAttributeSingleValueToArray(attributes, attributeName, attributeValue);
+    }
+
+    private static void convertAttributeSingleValueToArray(Map<String, Object> attributes,
+                                                           String attributeName, String attributeValue) {
+        List<Object> attributeValues = new ArrayList<>();
+        attributeValues.add(attributes.get(attributeName));
+        attributeValues.add(attributeValue);
+        attributes.put(attributeName, attributeValues);
+    }
+
+    private static void addItemToArray(Map<String, Object> attributes, String attributeName, String attributeValue) {
+        List<String> attributeValues = new ArrayList<>(((List<?>) attributes.get(attributeName))
+                .stream().map(String.class::cast).toList());
+        attributeValues.add(attributeValue);
+        attributes.put(attributeName, attributeValues);
+
+    }
+
+    private void addFirstItemToAttribute(String attributeName,
+                                         String attributeValue,
+                                         Map<String, Object> attributes) {
+        attributes.put(attributeName, attributeValue);
+    }
+
 
     private void addTurSNJobItems(Locale locale, Map<String, Object> turSNJobItemAttributes) {
         turSNJobItems.add(new TurSNJobItem(TurSNJobAction.CREATE, locale,
@@ -253,15 +298,29 @@ public class TurWCProcess {
     }
 
     private Document getHTML(String url) throws IOException {
-        Document document = Jsoup.connect(url)
+
+        Connection connection = Jsoup.connect(url)
                 .userAgent(userAgent)
                 .referrer(referrer)
-                .timeout(timeout)
-                .get();
+                .timeout(timeout);
+        if (isBasicAuth()) {
+            connection.header("Authorization", "Basic " + getBasicAuth());
+        }
+        Document document = connection.get();
+
         document.outputSettings().escapeMode(Entities.EscapeMode.xhtml);
         document.outputSettings().charset(StandardCharsets.ISO_8859_1);
         document.charset(StandardCharsets.ISO_8859_1);
         return document;
+    }
+
+    private String getBasicAuth() {
+        String authString = this.username + ":" + this.password;
+        return Base64.getEncoder().encodeToString(authString.getBytes());
+    }
+
+    private boolean isBasicAuth() {
+        return this.username != null;
     }
 
     private String getRelativePageUrl(String pageUrl) {

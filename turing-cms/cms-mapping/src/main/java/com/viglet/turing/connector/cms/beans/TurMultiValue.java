@@ -75,4 +75,8 @@ public class TurMultiValue extends ArrayList<String> {
 		turMultiValue.addAll(list);
 		return turMultiValue;
 	}
+
+	public static TurMultiValue empty() {
+        return new TurMultiValue();
+	}
 }

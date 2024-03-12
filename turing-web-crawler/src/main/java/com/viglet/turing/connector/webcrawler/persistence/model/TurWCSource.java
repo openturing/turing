@@ -59,4 +59,8 @@ public class TurWCSource implements Serializable {
     private String url;
 
     private String turSNSite;
+
+    private String username;
+
+    private String password;
 }

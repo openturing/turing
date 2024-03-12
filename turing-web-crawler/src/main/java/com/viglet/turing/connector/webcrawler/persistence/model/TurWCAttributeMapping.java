@@ -1,6 +1,5 @@
 package com.viglet.turing.connector.webcrawler.persistence.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,6 +7,7 @@ import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
 import java.io.Serializable;
+
 @Getter
 @Setter
 @Entity
@@ -35,9 +35,16 @@ public class TurWCAttributeMapping implements Serializable {
         super();
     }
 
-    public TurWCAttributeMapping(String name, String className, String text, TurWCSource turWCSource) {
+    public TurWCAttributeMapping(String name, Class<?> className, TurWCSource turWCSource) {
         this.name = name;
-        this.className = className;
+        this.className = className.getName();
+        this.text = null;
+        this.turWCSource = turWCSource;
+    }
+
+    public TurWCAttributeMapping(String name, String text, TurWCSource turWCSource) {
+        this.name = name;
+        this.className = null;
         this.text = text;
         this.turWCSource = turWCSource;
     }
