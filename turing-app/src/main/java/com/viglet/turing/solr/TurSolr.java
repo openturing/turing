@@ -576,15 +576,15 @@ public class TurSolr {
     }
 
     private void setSortEntry(TurSNSite turSNSite, SolrQuery query, TurSEParameters turSEParameters) {
-        Optional.ofNullable(turSEParameters.getSort()).ifPresent(sort -> {
-            String[] splitSort = sort.split(":");
-            if (splitSort.length == 2)
-                query.setSort(splitSort[0], splitSort[1].equals(ASC) ? ORDER.asc : ORDER.desc);
-            else if (sort.equalsIgnoreCase(NEWEST))
-                query.setSort(turSNSite.getDefaultDateField(), ORDER.desc);
-            else if (sort.equalsIgnoreCase(OLDEST))
-                query.setSort(turSNSite.getDefaultDateField(), ORDER.asc);
-        });
+        Optional.ofNullable(turSEParameters.getSort()).ifPresent(sort ->
+                        getQueryKeyValue(sort).ifPresentOrElse(kv ->
+                                query.setSort(kv.getKey(), kv.getValue().equals(ASC) ? ORDER.asc : ORDER.desc),
+                        () -> {
+                            if (sort.equalsIgnoreCase(NEWEST))
+                                query.setSort(turSNSite.getDefaultDateField(), ORDER.desc);
+                            else if (sort.equalsIgnoreCase(OLDEST))
+                                query.setSort(turSNSite.getDefaultDateField(), ORDER.asc);
+                        }));
     }
 
     private void turSEResultsParameters(TurSEParameters turSEParameters, SolrQuery query, TurSEResults turSEResults,
@@ -784,7 +784,7 @@ public class TurSolr {
                                             Map<TurSNSiteFacetFieldEnum, List<String>> fqMap, TurSNSite turSNSite,
                                             TurSNFilterQueryOperator operator) {
 
-        getFacetKeyValue(fq).flatMap(kv ->
+        getQueryKeyValue(fq).flatMap(kv ->
                         enabledFacets.stream()
                                 .filter(facet -> facet.getName().equals(kv.getKey()))
                                 .findFirst())
@@ -870,7 +870,7 @@ public class TurSolr {
     @NotNull
     private static List<String> setFilterQueryRangeValue(List<String> filterQueries, List<TurSNSiteFieldExt> dateFacet) {
         return filterQueries.stream()
-                .map(fq -> getFacetKeyValue(fq)
+                .map(fq -> getQueryKeyValue(fq)
                         .map(facetKv ->
                                 dateFacet.stream()
                                         .filter(dateFacetItem -> facetKv.getKey().equals(dateFacetItem.getName()) &&
@@ -899,8 +899,8 @@ public class TurSolr {
         return fq;
     }
 
-    private static Optional<KeyValue<String, String>> getFacetKeyValue(String fq) {
-        String[] attributeKV = fq.split(":");
+    private static Optional<KeyValue<String, String>> getQueryKeyValue(String query) {
+        String[] attributeKV = query.split(":");
         if (attributeKV.length >= 2) {
             String key = attributeKV[0];
             String value = Arrays.stream(attributeKV).skip(1).collect(Collectors.joining(":"));
@@ -974,14 +974,19 @@ public class TurSolr {
 
     @NotNull
     private static String addDoubleQuotesToValue(String q) {
-        String[] split = q.split(":", 2);
-        split[1] = String.format("\"%s\"", split[1]);
-        return String.join(":", split);
+        return getQueryKeyValue(q)
+                .map(kv -> String.format("%s:\"%s\"", kv.getKey(), kv.getValue()))
+                .orElse(String.format("\"%s\"", q));
     }
 
     private static boolean queryWithoutExpression(String q) {
-        String[] split = q.split(":", 2);
-        return !q.startsWith("(") && !split[1].startsWith("[") && !split[1].startsWith("(") && !split[1].endsWith("*");
+        String value = getValueFromQuery(q);
+        return !q.startsWith("(") && !value.startsWith("[") && !value.startsWith("(") && !value.endsWith("*");
+
+    }
+
+    private static String getValueFromQuery(String q) {
+       return getQueryKeyValue(q).map(KeyValue::getValue).orElse(q);
     }
 
     private List<TurSNSiteFieldExt> prepareQueryMLT(TurSNSite turSNSite, SolrQuery query) {

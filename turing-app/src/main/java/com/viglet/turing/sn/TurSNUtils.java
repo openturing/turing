@@ -73,11 +73,13 @@ public class TurSNUtils {
 		StringBuilder sbQueryString = new StringBuilder();
 		boolean alreadyExists = false;
 		for (NameValuePair nameValuePair : params) {
-			if ((nameValuePair.getValue().equals(fq)
-					&& nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT))) {
-				alreadyExists = true;
+			if (nameValuePair.getValue() != null) {
+				if (nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT) &&
+						nameValuePair.getValue().equals(fq)) {
+					alreadyExists = true;
+				}
+				resetPaginationOrAddParameter(sbQueryString, nameValuePair);
 			}
-			resetPaginationOrAddParameter(sbQueryString, nameValuePair);
 		}
 		if (!alreadyExists) {
 			TurCommonsUtils.addParameterToQueryString(sbQueryString, TurSNParamType.FILTER_QUERIES_DEFAULT, fq);
