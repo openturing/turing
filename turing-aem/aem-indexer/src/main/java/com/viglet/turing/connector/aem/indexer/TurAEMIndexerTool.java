@@ -448,8 +448,7 @@ public class TurAEMIndexerTool {
                             if (attributes.containsKey(attributeName)) {
                                 addItemInExistingAttribute(attributeValue, attributes, attributeName);
                             } else {
-                                addFirstItemToAttribute(targetAttrValue, attributeValue, attributes);
-                                addFirstItemToAttribute(targetAttrValue, attributeValue, attributes);
+                                addFirstItemToAttribute(attributeName, attributeValue, attributes);
                             }
                         }
                     });
@@ -502,10 +501,10 @@ public class TurAEMIndexerTool {
         }
     }
 
-    private void addFirstItemToAttribute(TurCmsTargetAttrValue targetAttrValue,
+    private void addFirstItemToAttribute(String attributeName,
                                          String attributeValue,
                                          Map<String, Object> attributes) {
-        attributes.put(targetAttrValue.getTargetAttrName(), attributeValue);
+        attributes.put(attributeName, attributeValue);
     }
 
     private static void addItemInExistingAttribute(String attributeValue,
