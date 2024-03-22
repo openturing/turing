@@ -52,6 +52,10 @@ export class TurSNSiteUIPageComponent implements OnInit {
   getFacetTypes(): string[] {
     return ["AND", "OR"];
   }
+
+  getFacetSorts(): string[] {
+    return ["ALPHABETICAL", "COUNT"];
+  }
   ngOnInit(): void {
   }
 

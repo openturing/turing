@@ -1,13 +1,13 @@
 <div *ngIf="(getTurSNSiteField() | async) as snSiteField; else loading">
   <div class="Subhead mt-4">
-    <div class="Subhead-heading">
+    <div class="Subhead-heading Subhead-heading--large">
       <div *ngIf="!isNewObject()" class="d-flex">
         <div style="height: 32px; border-radius: 50%;">
           <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="snSiteField.name | lowercase">
           </svg>
         </div>
         <div class="ml-2">
-          <span>{{snSiteField.name}}</span>
+          <span>{{ snSiteField.name }}</span>
         </div>
       </div>
       <div *ngIf="isNewObject()" class="d-flex">
@@ -22,47 +22,51 @@
     </div>
     <div class="Subhead-actions">
       <details *ngIf="!isNewObject() && snSiteField.snType != 'NER'" #modalDeleteField id="modalDeleteField"
-      class="details-reset details-overlay details-overlay-dark mr-2" style="display: unset;">
-      <summary class="btn btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
-          class="mr-1"></span>Delete field</summary>
-      <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast" style="overflow: hidden;">
-        <div class="Box-header">
-          <button onclick='document.getElementById("modalDeleteField").removeAttribute("open");'
-            class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
-            <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16"
-              aria-hidden="true">
-              <path fill-rule="evenodd"
-                d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
-              </path>
-            </svg>
-          </button>
-          <h3 class="Box-title">Are you absolutely sure?</h3>
+               class="details-reset details-overlay details-overlay-dark mr-2" style="display: unset;">
+        <summary class="btn btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
+                                                                          class="mr-1"></span>Delete field
+        </summary>
+        <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast" style="overflow: hidden;">
+          <div class="Box-header">
+            <button onclick='document.getElementById("modalDeleteField").removeAttribute("open");'
+                    class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog"
+                    data-close-dialog>
+              <svg class="octicon octicon-x" viewBox="0 0 12 16" width="12" height="16"
+                   aria-hidden="true">
+                <path fill-rule="evenodd"
+                      d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z">
+                </path>
+              </svg>
+            </button>
+            <h3 class="Box-title">Are you absolutely sure?</h3>
 
-        </div>
-        <div class="flash flash-warn flash-full">
-          Unexpected bad things will happen if you don’t read this!
-        </div>
+          </div>
+          <div class="flash flash-warn flash-full">
+            Unexpected bad things will happen if you don’t read this!
+          </div>
 
-        <div class="Box-body overflow-auto">
-          <p>
-            This action <strong>cannot</strong> be undone. This will permanently delete the
-            <strong>{{snSiteField.name}}</strong> field.
-          </p>
-          <button (click)="delete(snSiteField)" class="btn-danger btn btn-block">
-            <span class="d-md-inline-block d-none">I understand the consequences, delete this field</span>
-          </button>
-        </div>
-      </details-dialog>
-    </details>
-      <button (click)="saveSiteField(snSiteField)" type="button" class="btn btn-primary">{{saveButtonCaption()}}</button></div>
-    <div class="Subhead-description">{{snSiteField.description}}</div>
+          <div class="Box-body overflow-auto">
+            <p>
+              This action <strong>cannot</strong> be undone. This will permanently delete the
+              <strong>{{ snSiteField.name }}</strong> field.
+            </p>
+            <button (click)="delete(snSiteField)" class="btn-danger btn btn-block">
+              <span class="d-md-inline-block d-none">I understand the consequences, delete this field</span>
+            </button>
+          </div>
+        </details-dialog>
+      </details>
+      <button (click)="saveSiteField(snSiteField)" type="button" class="btn btn-primary">{{ saveButtonCaption() }}
+      </button>
+    </div>
+    <div class="Subhead-description">{{ snSiteField.description }}</div>
   </div>
   <div class="form-group">
     <div class="form-group-header">
       <label for="sn-field-name">Name</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSiteField.name" class="form-control" type="text" id="sn-field-name" style="width: 100%;" />
+      <input [(ngModel)]="snSiteField.name" class="form-control" type="text" id="sn-field-name" style="width: 100%;"/>
       <p class="note" id="sn-field-name-tip">
         Name will appear on semantic navigation site field list.
       </p>
@@ -73,7 +77,8 @@
       <label for="sn-field-description">Description</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSiteField.description" class="form-control" type="text" id="sn-field-description" style="width: 100%;" />
+      <input [(ngModel)]="snSiteField.description" class="form-control" type="text" id="sn-field-description"
+             style="width: 100%;"/>
       <p class="note" id="sn-field-description-tip">
         Description will appear on semantic navigation site field list.
       </p>
@@ -86,8 +91,9 @@
     </div>
     <div class="form-group-body">
       <select [(ngModel)]="snSiteField.type" class="form-select" id="sn-field-type">
-        <option *ngFor="let snFieldTypes of (getTurSNFieldTypes() | async)" [value]="snFieldTypes.id" style="width: 100%;">
-          {{snFieldTypes.name}}
+        <option *ngFor="let snFieldTypes of (getTurSNFieldTypes() | async)" [value]="snFieldTypes.id"
+                style="width: 100%;">
+          {{ snFieldTypes.name }}
         </option>
       </select>
       <p class="note" id="sn-field-type-tip">
@@ -98,39 +104,19 @@
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSiteField.multiValued" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSiteField.multiValued = $event ? 1 : 0" aria-describedby="sn-multiValued-tip" />
+             (ngModelChange)="snSiteField.multiValued = $event ? 1 : 0" aria-describedby="sn-multiValued-tip"/>
       Multi Value
     </label>
     <p class="note" id="sn-field-multiValued-tip">
       If the field allows a list of items.
     </p>
   </div>
-  <div class="form-checkbox">
-    <label>
-      <input [(ngModel)]="snSiteField.facet" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSiteField.facet = $event ? 1 : 0" aria-describedby="sn-facet-tip" />
-      Facet
-    </label>
-    <p class="note" id="sn-field-facet-tip">
-      Enable filter into search page.
-    </p>
-  </div>
-  <div class="form-group">
-    <div class="form-group-header">
-      <label for="sn-field-facetName">Facet Name</label>
-    </div>
-    <div class="form-group-body">
-      <input [(ngModel)]="snSiteField.facetName" class="form-control" type="text" id="sn-field-facetName" style="width: 100%;" />
-      <p class="note" id="sn-field-facetName-tip">
-        Name of this field into filter box.
-      </p>
-    </div>
-  </div>
+
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSiteField.hl" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSiteField.hl = $event ? 1 : 0" aria-describedby="sn-field-hl-tip" />
-        Highlighting
+             (ngModelChange)="snSiteField.hl = $event ? 1 : 0" aria-describedby="sn-field-hl-tip"/>
+      Highlighting
     </label>
     <p class="note" id="sn-field-hl-tip">
       Enable highlighting terms of search on results.
@@ -139,8 +125,8 @@
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSiteField.mlt" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSiteField.mlt = $event ? 1 : 0" aria-describedby="sn-field-mlt-tip" />
-        MLT
+             (ngModelChange)="snSiteField.mlt = $event ? 1 : 0" aria-describedby="sn-field-mlt-tip"/>
+      MLT
     </label>
     <p class="note" id="sn-field-mlt-tip">
       Enable "more like this" into search on results.
@@ -149,8 +135,8 @@
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSiteField.enabled" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSiteField.enabled = $event ? 1 : 0" aria-describedby="sn-field-enabled-tip" />
-        Enabled
+             (ngModelChange)="snSiteField.enabled = $event ? 1 : 0" aria-describedby="sn-field-enabled-tip"/>
+      Enabled
     </label>
     <p class="note" id="sn-field-enabled-tip">
       Enable this field during search and indexing.
@@ -159,8 +145,8 @@
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSiteField.required" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSiteField.required = $event ? 1 : 0" aria-describedby="sn-field-required-tip" />
-        Required
+             (ngModelChange)="snSiteField.required = $event ? 1 : 0" aria-describedby="sn-field-required-tip"/>
+      Required
     </label>
     <p class="note" id="sn-field-required-tip">
       If this field is required during indexing.
@@ -169,8 +155,8 @@
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSiteField.nlp" type="checkbox" [ngModelOptions]="{standalone: true}"
-        (ngModelChange)="snSiteField.nlp = $event ? 1 : 0" aria-describedby="sn-field-nlp-tip" />
-        NLP
+             (ngModelChange)="snSiteField.nlp = $event ? 1 : 0" aria-describedby="sn-field-nlp-tip"/>
+      NLP
     </label>
     <p class="note" id="sn-field-nlp-tip">
       If the text of this field will be processed by NLP that was configured in semantic navigation site.
@@ -178,13 +164,112 @@
   </div>
   <div class="form-group">
     <div class="form-group-header">
-      <label for="sn-name">Default Value</label>
+      <label>Default Value</label>
     </div>
     <div class="form-group-body">
-      <input [(ngModel)]="snSiteField.defaultValue" class="form-control" type="text" id="sn-defaultValue" style="width: 100%;" />
+      <input [(ngModel)]="snSiteField.defaultValue" class="form-control" type="text" id="sn-defaultValue"
+             style="width: 100%;"/>
       <p class="note" id="help-text-for-checkbox">
         Default value used of this field during indexing is empty or null.
       </p>
+    </div>
+  </div>
+  <div>
+    <div class="Subhead">
+      <div class="Subhead-heading Subhead-heading--medium"><span octicon="filter" [size]="16" class="mr-1"> </span>
+        Facet
+      </div>
+      <div class="Subhead-description">Filters on Search.</div>
+    </div>
+    <div class="form-checkbox">
+      <label>
+        <input [(ngModel)]="snSiteField.facet" type="checkbox" [ngModelOptions]="{standalone: true}"
+               (ngModelChange)="snSiteField.facet = $event ? 1 : 0" aria-describedby="sn-facet-tip"/>
+        Facet
+      </label>
+      <p class="note" id="sn-field-facet-tip">
+        Enable filter into search page.
+      </p>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Facet Sort</label>
+      </div>
+      <div class="form-group-body">
+        <select [(ngModel)]="snSiteField.facetSort" class="form-select mr-3">
+          <option *ngFor="let facetSort of getFacetSorts() " [value]="facetSort">
+            {{ facetSort }}
+          </option>
+        </select>
+        <p class="note">
+          How Turing will sort the facet.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Facet Type</label>
+      </div>
+      <div class="form-group-body">
+        <select [(ngModel)]="snSiteField.facetType" class="form-select mr-3">
+          <option *ngFor="let facetType of getFacetTypes() " [value]="facetType">
+            {{ facetType }}
+          </option>
+        </select>
+        <p class="note">
+          How Turing will join the facet attributes, using OR or AND.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label for="sn-facet-range">Range</label>
+      </div>
+      <div class="form-group-body">
+        <select [(ngModel)]="snSiteField.facetRange" class="form-select" id="sn-facet-range">
+          <option *ngFor="let snFieldRangeType of getTurSNFieldFacetRange()" [value]="snFieldRangeType"
+                  style="width: 100%;">
+            {{ snFieldRangeType }}
+          </option>
+        </select>
+        <p class="note" id="sn-field-range-tip">
+          Facet Range Gap.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label for="sn-field-facetName">Default Name</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="snSiteField.facetName" class="form-control" type="text" id="sn-field-facetName"
+               style="width: 100%;"/>
+        <p class="note" id="sn-field-facetName-tip">
+          Default Name of this field into filter box.
+        </p>
+      </div>
+      <div *ngFor="let facetLocale of snSiteField.facetLocales;"
+           data-view-component="true" class="mt-3">
+        <div style="display: flex">
+          <select [(ngModel)]="facetLocale.locale" class="form-select mr-2" style="width: 100%;">
+            <option *ngFor="let locale of (getTurLocales() | async)" [value]="locale.initials">
+              {{ locale.en }} ({{ locale.initials }})
+            </option>
+          </select>
+          <input [(ngModel)]="facetLocale.label"
+                 style="width: 100%"
+                 class="form-control  mr-3" type="text" id="sn-field-value"/>
+          <button class="btn btn-danger btn-octicon mr-1" (click)="removeFacetLocale(snSiteField, facetLocale)">
+            <span octicon="trash" [size]=16></span>
+          </button>
+        </div>
+      </div>
+      <div class="mb-2 mt-4 ml-1">
+        <button class="btn btn-outline mr-1" (click)="newFacetLocale(snSiteField.facetLocales)">
+      <span octicon="plus-circle" [size]=16
+            class="mr-1"></span> Add
+        </button>
+      </div>
     </div>
   </div>
 </div>

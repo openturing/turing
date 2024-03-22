@@ -68,7 +68,7 @@ export class TurSNSitePageComponent implements OnInit {
       (turSNSite: TurSNSite) => {
         this.notifier.notify("success", _turSNSite.name.concat(" semantic navigation site was deleted."));
         this.modalDelete.nativeElement.removeAttribute("open");
-        this.router.navigate(['/console/sn/site']);
+        this.router.navigate(['/sn/site']);
       },
       response => {
         this.notifier.notify("error", "SN site was error: " + response);

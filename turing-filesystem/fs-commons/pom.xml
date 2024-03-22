@@ -81,5 +81,11 @@
       <artifactId>turing-commons</artifactId>
       <version>${project.version}</version>
     </dependency>
+      <dependency>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-web</artifactId>
+          <version>6.1.5</version>
+          <scope>compile</scope>
+      </dependency>
   </dependencies>
 </project>

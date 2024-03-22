@@ -7,7 +7,9 @@ public class TurSNParamType {
 
 	public static final String QUERY = "q";
 	public static final String PAGE = "p";
-	public static final String FILTER_QUERIES = "fq[]";
+	public static final String FILTER_QUERIES_DEFAULT = "fq[]";
+	public static final String FILTER_QUERIES_AND = "fq.and[]";
+	public static final String FILTER_QUERIES_OR = "fq.or[]";
 	public static final String FILTER_QUERY_OPERATOR = "fq.op";
 	public static final String SORT = "sort";
 	public static final String ROWS = "rows";

@@ -23,12 +23,14 @@ package com.viglet.turing.persistence.model.sn;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldSortEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.spring.security.TurAuditable;
-import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -69,19 +71,22 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Column(nullable = false)
 	private String description;
 
-	@Column()
+	@Column
 	private Integer rowsPerPage = 10;
 
-	@Column()
-	private Integer whenNoResultsUseAsterisk = 0;
+	@Column
+	private Integer wildcardNoResults = 0;
 
-	@Column()
+	@Column
+	private Integer wildcardAlways = 0;
+
+	@Column
 	private Integer facet;
 
-	@Column()
+	@Column
 	private Integer itemsPerFacet;
 
-	@Column()
+	@Column
 	private Integer hl;
 
 	@Column(length = 50)
@@ -90,40 +95,43 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Column(length = 50)
 	private String hlPost;
 
-	@Column()
+	@Column
 	private Integer mlt;
 
-	@Column()
+	@Column
 	private TurSNSiteFacetEnum facetType = TurSNSiteFacetEnum.AND;
 
-	@Column()
+	@Column
+	private TurSNSiteFacetSortEnum facetSort = TurSNSiteFacetSortEnum.COUNT;
+
+	@Column
 	private Integer thesaurus = 0;
 
-	@Column()
+	@Column
 	private String defaultTitleField;
 
-	@Column()
+	@Column
 	private String defaultTextField;
 
-	@Column()
+	@Column
 	private String defaultDescriptionField;
 
-	@Column()
+	@Column
 	private String defaultDateField;
 
-	@Column()
+	@Column
 	private String defaultImageField;
 
-	@Column()
+	@Column
 	private String defaultURLField;
 
-	@Column()
+	@Column
 	private Integer spellCheck;
 
-	@Column()
+	@Column
 	private Integer spellCheckFixes;
 
-	@Column()
+	@Column
 	private Integer spotlightWithResults;
 	
 	// bi-directional many-to-one association to TurSEInstance

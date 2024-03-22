@@ -25,6 +25,7 @@ import java.util.Map;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * 
@@ -33,22 +34,10 @@ import lombok.Getter;
  * @since 0.3.6
  *
  */
+@Setter
 @Getter
 public class TurNLPRequest {
 	private TurNLPInstance turNLPInstance;
 	private Map<String, Object> data;
 	private List<TurNLPEntityRequest> entities;
-
-	public void setTurNLPInstance(TurNLPInstance turNLPInstance) {
-		this.turNLPInstance = turNLPInstance;
-	}
-
-	public void setData(Map<String, Object> data) {
-		this.data = data;
-	}
-
-	public void setEntities(List<TurNLPEntityRequest> entities) {
-		this.entities = entities;
-	}
-
 }

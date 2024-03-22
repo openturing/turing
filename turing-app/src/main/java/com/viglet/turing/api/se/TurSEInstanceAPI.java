@@ -21,6 +21,7 @@
 package com.viglet.turing.api.se;
 
 import com.google.inject.Inject;
+import com.viglet.turing.commons.se.TurSEFilterQueryParameters;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
@@ -113,7 +114,9 @@ public class TurSEInstanceAPI {
 	@GetMapping("/select")
 	public ResponseEntity<TurSEResults> turSEInstanceSelect(@RequestParam(required = false, name = TurSNParamType.QUERY) String q,
 															@RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
-															@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
+															@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_DEFAULT) List<String> filterQueriesDefault,
+															@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_AND) List<String> filterQueriesAnd,
+															@RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_OR) List<String> filterQueriesOr,
 															@RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "NONE")
 																TurSNFilterQueryOperator fqOperator,
 															@RequestParam(required = false, name = TurSNParamType.SORT) String sort,
@@ -122,8 +125,7 @@ public class TurSEInstanceAPI {
 
 		currentPage = (currentPage == null || currentPage <= 0) ? 1 : currentPage;
 		rows = rows == null ? 0 : rows;
-
-		TurSEParameters turSEParameters = new TurSEParameters(q, fq, fqOperator, currentPage,
+		TurSEParameters turSEParameters = new TurSEParameters(q, new TurSEFilterQueryParameters(filterQueriesDefault, filterQueriesAnd, filterQueriesOr, fqOperator), currentPage,
 				sort, rows, group, 0);
 		return turSolrInstanceProcess.initSolrInstance()
 				.map(turSolrInstance -> new ResponseEntity<>(turSolr.retrieveSolr(turSolrInstance, turSEParameters,

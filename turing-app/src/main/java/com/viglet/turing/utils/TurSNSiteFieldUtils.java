@@ -25,12 +25,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.inject.Inject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteField;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 
 @Component
 public class TurSNSiteFieldUtils {

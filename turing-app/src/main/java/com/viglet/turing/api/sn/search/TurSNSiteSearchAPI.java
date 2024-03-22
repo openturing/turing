@@ -22,6 +22,7 @@
 package com.viglet.turing.api.sn.search;
 
 import com.google.inject.Inject;
+import com.viglet.turing.commons.se.TurSEFilterQueryParameters;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
@@ -45,10 +46,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -58,6 +56,7 @@ public class TurSNSiteSearchAPI {
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+
     @Inject
     public TurSNSiteSearchAPI(TurSNSearchProcess turSNSearchProcess,
                               TurSNSiteRepository turSNSiteRepository,
@@ -68,23 +67,27 @@ public class TurSNSiteSearchAPI {
     }
 
     @GetMapping
-    public ResponseEntity<TurSNSiteSearchBean> turSNSiteSearchSelectGet(@PathVariable String siteName,
-                                                                        @RequestParam(required = false, name = TurSNParamType.QUERY) String q,
-                                                                        @RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
-                                                                        @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
-                                                                        @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "NONE")
-                                                                        TurSNFilterQueryOperator fqOperator,
-                                                                        @RequestParam(required = false, name = TurSNParamType.SORT) String sort,
-                                                                        @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
-                                                                        @RequestParam(required = false, name = TurSNParamType.GROUP) String group,
-                                                                        @RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0")
-                                                                        Integer autoCorrectionDisabled,
-                                                                        @RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest,
-                                                                        HttpServletRequest request) {
+    public ResponseEntity<TurSNSiteSearchBean> turSNSiteSearchSelectGet(
+            @PathVariable String siteName,
+            @RequestParam(required = false, name = TurSNParamType.QUERY) String q,
+            @RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
+            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_DEFAULT) List<String> filterQueriesDefault,
+            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_AND) List<String> filterQueriesAnd,
+            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_OR) List<String> filterQueriesOr,
+            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "NONE")
+            TurSNFilterQueryOperator fqOperator,
+            @RequestParam(required = false, name = TurSNParamType.SORT) String sort,
+            @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
+            @RequestParam(required = false, name = TurSNParamType.GROUP) String group,
+            @RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0")
+            Integer autoCorrectionDisabled,
+            @RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest,
+            HttpServletRequest request) {
         Locale locale = LocaleUtils.toLocale(localeRequest);
         if (existsByTurSNSiteAndLanguage(siteName, locale)) {
             return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-                    new TurSEParameters(q, fq, fqOperator, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
+                    new TurSEParameters(q, new TurSEFilterQueryParameters(filterQueriesDefault, filterQueriesAnd,
+                            filterQueriesOr, fqOperator), currentPage, sort, rows, group, autoCorrectionDisabled), locale,
                     TurSNUtils.requestToURI(request))), HttpStatus.OK);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -97,27 +100,32 @@ public class TurSNSiteSearchAPI {
     }
 
     @PostMapping
-    public ResponseEntity<TurSNSiteSearchBean> turSNSiteSearchSelectPost(@PathVariable String siteName,
-                                                                         @RequestParam(required = false, name = TurSNParamType.QUERY) String q,
-                                                                         @RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
-                                                                         @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES) List<String> fq,
-                                                                         @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "NONE")
-                                                                         TurSNFilterQueryOperator fqOperator,
-                                                                         @RequestParam(required = false, name = TurSNParamType.SORT) String sort,
-                                                                         @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
-                                                                         @RequestParam(required = false, name = TurSNParamType.GROUP) String group,
-                                                                         @RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0")
-                                                                         Integer autoCorrectionDisabled,
-                                                                         @RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest,
-                                                                         @RequestBody TurSNSitePostParamsBean turSNSitePostParamsBean, Principal principal,
-                                                                         HttpServletRequest request) {
+    public ResponseEntity<TurSNSiteSearchBean> turSNSiteSearchSelectPost(
+            @PathVariable String siteName,
+            @RequestParam(required = false, name = TurSNParamType.QUERY) String q,
+            @RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
+            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_DEFAULT) List<String> filterQueriesDefault,
+            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_AND) List<String> filterQueriesAnd,
+            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_OR) List<String> filterQueriesOr,
+            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "NONE")
+            TurSNFilterQueryOperator fqOperator,
+            @RequestParam(required = false, name = TurSNParamType.SORT) String sort,
+            @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
+            @RequestParam(required = false, name = TurSNParamType.GROUP) String group,
+            @RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0")
+            Integer autoCorrectionDisabled,
+            @RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest,
+            @RequestBody TurSNSitePostParamsBean turSNSitePostParamsBean,
+            Principal principal,
+            HttpServletRequest request) {
         if (principal != null) {
             Locale locale = LocaleUtils.toLocale(localeRequest);
             if (existsByTurSNSiteAndLanguage(siteName, locale)) {
                 turSNSitePostParamsBean.setTargetingRules(
                         turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
                 return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-                        new TurSEParameters(q, fq, fqOperator, currentPage, sort, rows, group, autoCorrectionDisabled), locale,
+                        new TurSEParameters(q, new TurSEFilterQueryParameters(filterQueriesDefault, filterQueriesAnd,
+                                filterQueriesOr, fqOperator), currentPage, sort, rows, group, autoCorrectionDisabled), locale,
                         TurSNUtils.requestToURI(request), turSNSitePostParamsBean)), HttpStatus.OK);
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -132,16 +140,18 @@ public class TurSNSiteSearchAPI {
             try {
                 return turSNSearchProcess.responseLocales(turSNSite, new URI(String.format("/api/sn/%s/search", siteName)));
             } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
+                log.error(e.getMessage(), e);
             }
+            return new ArrayList<TurSNSiteLocaleBean>();
         }).orElse(Collections.emptyList());
     }
 
     @PostMapping("latest")
-    public ResponseEntity<List<String>> turSNSiteSearchLatestImpersonate(@PathVariable String siteName,
-                                                                         @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "5") Integer rows,
-                                                                         @RequestParam(name = TurSNParamType.LOCALE) String locale,
-                                                                         @RequestBody Optional<TurSNSearchLatestRequestBean> turSNSearchLatestRequestBean, Principal principal) {
+    public ResponseEntity<List<String>> turSNSiteSearchLatestImpersonate(
+            @PathVariable String siteName,
+            @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "5") Integer rows,
+            @RequestParam(name = TurSNParamType.LOCALE) String locale,
+            @RequestBody Optional<TurSNSearchLatestRequestBean> turSNSearchLatestRequestBean, Principal principal) {
         if (principal != null) {
             return new ResponseEntity<>(turSNSearchProcess.latestSearches(siteName, locale,
                     isLatestImpersonate(turSNSearchLatestRequestBean, principal),

@@ -22,14 +22,13 @@
 package com.viglet.turing.exchange.sn;
 
 import com.google.inject.Inject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteField;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
 @Component

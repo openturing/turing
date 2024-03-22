@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,6 +21,7 @@
 package com.viglet.turing.api.ml.data;
 
 import com.google.inject.Inject;
+import com.viglet.turing.filesystem.commons.TurFileUtils;
 import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.persistence.model.storage.TurData;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
@@ -31,22 +32,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ocr.TesseractOCRConfig;
-import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.sax.BodyContentHandler;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -54,108 +46,77 @@ import java.util.List;
 @RequestMapping("/api/ml/data")
 @Tag(name = "Machine Learning Data", description = "Machine Learning Data API")
 public class TurMLDataAPI {
-	private final TurDataRepository turDataRepository;
-	private final TurNLPProcess turNLPProcess;
-	private final TurDataGroupSentenceRepository turDataGroupSentenceRepository;
-	private final TurOpenNLPConnector turOpenNLPConnector;
+    private final TurDataRepository turDataRepository;
+    private final TurNLPProcess turNLPProcess;
+    private final TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+    private final TurOpenNLPConnector turOpenNLPConnector;
 
-	@Inject
-	public TurMLDataAPI(TurDataRepository turDataRepository,
-						TurNLPProcess turNLPProcess,
-						TurDataGroupSentenceRepository turDataGroupSentenceRepository,
-						TurOpenNLPConnector turOpenNLPConnector) {
-		this.turDataRepository = turDataRepository;
-		this.turNLPProcess = turNLPProcess;
-		this.turDataGroupSentenceRepository = turDataGroupSentenceRepository;
-		this.turOpenNLPConnector = turOpenNLPConnector;
-	}
+    @Inject
+    public TurMLDataAPI(TurDataRepository turDataRepository,
+                        TurNLPProcess turNLPProcess,
+                        TurDataGroupSentenceRepository turDataGroupSentenceRepository,
+                        TurOpenNLPConnector turOpenNLPConnector) {
+        this.turDataRepository = turDataRepository;
+        this.turNLPProcess = turNLPProcess;
+        this.turDataGroupSentenceRepository = turDataGroupSentenceRepository;
+        this.turOpenNLPConnector = turOpenNLPConnector;
+    }
 
-	@Operation(summary = "Machine Learning Data List")
-	@GetMapping
-	public List<TurData> turDataList() throws JSONException {
-		return this.turDataRepository.findAll();
-	}
+    @Operation(summary = "Machine Learning Data List")
+    @GetMapping
+    public List<TurData> turDataList() throws JSONException {
+        return this.turDataRepository.findAll();
+    }
 
-	@Operation(summary = "Show a Machine Learning Data")
-	@GetMapping("/{id}")
-	public TurData turDataGet(@PathVariable int id) throws JSONException {
-		return this.turDataRepository.findById(id);
-	}
+    @Operation(summary = "Show a Machine Learning Data")
+    @GetMapping("/{id}")
+    public TurData turDataGet(@PathVariable int id) throws JSONException {
+        return this.turDataRepository.findById(id);
+    }
 
-	@Operation(summary = "Update a Machine Learning Data")
-	@PutMapping("/{id}")
-	public TurData turDataUpdate(@PathVariable int id, @RequestBody TurData turData) {
-		TurData turDataEdit = this.turDataRepository.findById(id);
-		turDataEdit.setName(turData.getName());
-		turDataEdit.setType(turData.getType());
-		this.turDataRepository.save(turDataEdit);
-		return turDataEdit;
-	}
+    @Operation(summary = "Update a Machine Learning Data")
+    @PutMapping("/{id}")
+    public TurData turDataUpdate(@PathVariable int id, @RequestBody TurData turData) {
+        TurData turDataEdit = this.turDataRepository.findById(id);
+        turDataEdit.setName(turData.getName());
+        turDataEdit.setType(turData.getType());
+        this.turDataRepository.save(turDataEdit);
+        return turDataEdit;
+    }
 
-	@Transactional
-	@Operation(summary = "Delete a Machine Learning Data")
-	@DeleteMapping("/{id}")
-	public boolean turDataDelete(@PathVariable int id) {
-		this.turDataRepository.deleteById(id);
-		return true;
-	}
+    @Transactional
+    @Operation(summary = "Delete a Machine Learning Data")
+    @DeleteMapping("/{id}")
+    public boolean turDataDelete(@PathVariable int id) {
+        this.turDataRepository.deleteById(id);
+        return true;
+    }
 
-	@Operation(summary = "Create a Machine Learning Data")
-	@PostMapping
-	public TurData turDataAdd(@RequestBody TurData turData) {
-		this.turDataRepository.save(turData);
-		return turData;
+    @Operation(summary = "Create a Machine Learning Data")
+    @PostMapping
+    public TurData turDataAdd(@RequestBody TurData turData) {
+        this.turDataRepository.save(turData);
+        return turData;
 
-	}
+    }
 
-	@PostMapping("/import")
-	@Transactional
-	public String turDataImport(@RequestParam("file") MultipartFile multipartFile)
-			 {
-
-		BodyContentHandler handler = processMultifileAsPDF(multipartFile);
-
-		String[] sentences = turOpenNLPConnector.sentenceDetect(turNLPProcess.getDefaultNLPInstance(), handler.toString());
-
-		TurData turData = new TurData();
-
-		turData.setName(multipartFile.getOriginalFilename());
-		turData.setType(FilenameUtils.getExtension(multipartFile.getOriginalFilename()));
-		this.turDataRepository.save(turData);
-
-		for (String sentence : sentences) {
-			TurDataGroupSentence turDataGroupSentence = new TurDataGroupSentence();
-			turDataGroupSentence.setTurData(turData);
-			turDataGroupSentence.setSentence(sentence);
-			this.turDataGroupSentenceRepository.save(turDataGroupSentence);
-		}
-
-		JSONObject jsonTraining = new JSONObject();
-		jsonTraining.put("sentences", sentences);
-		return jsonTraining.toString();
-	}
-
-	private BodyContentHandler processMultifileAsPDF(MultipartFile multipartFile) {
-		AutoDetectParser autoDetectParser = new AutoDetectParser();
-		BodyContentHandler bodyContentHandler = new BodyContentHandler(-1);
-		Metadata metadata = new Metadata();
-
-		TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
-		PDFParserConfig pdfParserConfig = new PDFParserConfig();
-		pdfParserConfig.setExtractInlineImages(true);
-
-		ParseContext parseContext = new ParseContext();
-		parseContext.set(TesseractOCRConfig.class, tesseractOCRConfig);
-		parseContext.set(PDFParserConfig.class, pdfParserConfig);
-
-		parseContext.set(Parser.class, autoDetectParser);
-
-		try {
-			autoDetectParser.parse(multipartFile.getInputStream(), bodyContentHandler, metadata, parseContext);
-		} catch (IOException | SAXException | TikaException e) {
-			log.error(e.getMessage(), null, multipartFile, autoDetectParser, bodyContentHandler, metadata,
-					tesseractOCRConfig, pdfParserConfig, parseContext, e);
-		}
-		return bodyContentHandler;
-	}
+    @PostMapping("/import")
+    @Transactional
+    public String turDataImport(@RequestParam("file") MultipartFile multipartFile) {
+        String[] sentences = turOpenNLPConnector.sentenceDetect(turNLPProcess.getDefaultNLPInstance(),
+                TurFileUtils.documentToText(multipartFile));
+        TurData turData = new TurData();
+        turData.setName(multipartFile.getOriginalFilename());
+        turData.setType(FilenameUtils.getExtension(multipartFile.getOriginalFilename()));
+        this.turDataRepository.save(turData);
+        Arrays.stream(sentences).forEach(sentence -> {
+            TurDataGroupSentence turDataGroupSentence = new TurDataGroupSentence();
+            turDataGroupSentence.setTurData(turData);
+            turDataGroupSentence.setSentence(sentence);
+            this.turDataGroupSentenceRepository.save(turDataGroupSentence);
+        });
+        JSONObject jsonTraining = new JSONObject();
+        jsonTraining.put("sentences", sentences);
+        return jsonTraining.toString();
+    }
 }

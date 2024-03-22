@@ -51,13 +51,10 @@ public class TurSNRankingCondition extends TurAuditable<String>  implements Seri
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	@Column(length = 255)
 	private String attribute;
 
-	@Column
 	private int condition;
 
-	@Column(length = 255)
 	private String value;
 
 	// bi-directional many-to-one association to TurSNSite

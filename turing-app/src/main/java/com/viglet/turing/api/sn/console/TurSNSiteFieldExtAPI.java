@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -27,14 +27,18 @@ import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteField;
-import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldSortEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorEntityRepository;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.utils.TurPesistenceUtils;
 import com.viglet.turing.sn.TurSNFieldType;
@@ -55,327 +59,356 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/sn/{ignoredSnSiteId}/field/ext")
 @Tag(name = "Semantic Navigation Field Ext", description = "Semantic Navigation Field Ext API")
 public class TurSNSiteFieldExtAPI {
-	private final TurSNSiteRepository turSNSiteRepository;
-	private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-	private final TurSNSiteFieldRepository turSNSiteFieldRepository;
-	private final TurNLPEntityRepository turNLPEntityRepository;
-	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-	private final TurNLPVendorEntityRepository turNLPVendorEntityRepository;
-	private final TurSNTemplate turSNTemplate;
+    public static final String TEXT_GENERAL = "text_general";
+    public static final String MULTI_VALUED = "multiValued";
+    public static final String STORED = "stored";
+    public static final String INDEXED = "indexed";
+    public static final String TYPE = "type";
+    public static final String STRING = "string";
+    public static final String ADD_FIELD = "add-field";
+    public static final String TEXT_ = "_text_";
+    public static final String SOURCE = "source";
+    public static final String ADD_COPY_FIELD = "add-copy-field";
+    public static final String DEST = "dest";
+    public static final String PDATE = "pdate";
+    public static final String NAME = "name";
+    public static final String SOLR_SCHEMA_REQUEST = "http://%s:%d/solr/%s/schema";
+    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
+    private final TurSNSiteFieldRepository turSNSiteFieldRepository;
+    private final TurNLPEntityRepository turNLPEntityRepository;
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurNLPVendorEntityRepository turNLPVendorEntityRepository;
+    private final TurSNTemplate turSNTemplate;
 
-	@Inject
-	public TurSNSiteFieldExtAPI(TurSNSiteRepository turSNSiteRepository,
-								TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
-								TurSNSiteFieldRepository turSNSiteFieldRepository,
-								TurNLPEntityRepository turNLPEntityRepository,
-								TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-								TurNLPVendorEntityRepository turNLPVendorEntityRepository,
-								TurSNTemplate turSNTemplate) {
-		this.turSNSiteRepository = turSNSiteRepository;
-		this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
-		this.turSNSiteFieldRepository = turSNSiteFieldRepository;
-		this.turNLPEntityRepository = turNLPEntityRepository;
-		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
-		this.turNLPVendorEntityRepository = turNLPVendorEntityRepository;
-		this.turSNTemplate = turSNTemplate;
-	}
+    @Inject
+    public TurSNSiteFieldExtAPI(TurSNSiteRepository turSNSiteRepository,
+                                TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+                                TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
+                                TurSNSiteFieldRepository turSNSiteFieldRepository,
+                                TurNLPEntityRepository turNLPEntityRepository,
+                                TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                                TurNLPVendorEntityRepository turNLPVendorEntityRepository,
+                                TurSNTemplate turSNTemplate) {
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
+        this.turSNSiteFieldRepository = turSNSiteFieldRepository;
+        this.turNLPEntityRepository = turNLPEntityRepository;
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turNLPVendorEntityRepository = turNLPVendorEntityRepository;
+        this.turSNTemplate = turSNTemplate;
+    }
 
-	@Operation(summary = "Semantic Navigation Site Field Ext List")
-	@Transactional
-	@GetMapping
-	public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String ignoredSnSiteId) {
-		return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
-			Map<String, TurNLPEntity> nerMap = new HashMap<>();
-			if (turSNSite.getTurNLPVendor() != null) {
-				nerMap = createNERMap(turSNSite.getTurNLPVendor());
-			} else {
-				turSNSiteFieldExtRepository.deleteByTurSNSiteAndSnType(turSNSite, TurSNFieldType.NER);
-			}
-			List<TurNLPEntity> turNLPEntityThesaurus = turNLPEntityRepository.findByLocal(1);
-			
-			Map<String, TurSNSiteField> fieldMap = createFieldMap(turSNSite);
+    @Operation(summary = "Semantic Navigation Site Field Ext List")
+    @Transactional
+    @GetMapping
+    public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String ignoredSnSiteId) {
+        return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
+            Map<String, TurNLPEntity> nerMap = new HashMap<>();
+            if (turSNSite.getTurNLPVendor() != null) {
+                nerMap = createNERMap(turSNSite.getTurNLPVendor());
+            } else {
+                turSNSiteFieldExtRepository.deleteByTurSNSiteAndSnType(turSNSite, TurSNFieldType.NER);
+            }
+            List<TurNLPEntity> turNLPEntityThesaurus = turNLPEntityRepository.findByLocal(1);
+            Map<String, TurSNSiteField> fieldMap = createFieldMap(turSNSite);
+            Map<String, TurNLPEntity> thesaurusMap = createThesaurusMap(turNLPEntityThesaurus);
+            List<TurSNSiteFieldExt> turSNSiteFieldExtList =
+                    this.turSNSiteFieldExtRepository
+                            .findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), turSNSite);
+            removeDuplicatedFields(fieldMap, nerMap, thesaurusMap, turSNSiteFieldExtList);
+            for (TurSNSiteField turSNSiteField : fieldMap.values()) {
+                TurSNSiteFieldExt turSNSiteFieldExt = saveSNSiteFieldExt(turSNSite, turSNSiteField);
+                turSNSiteFieldExtList.add(turSNSiteFieldExt);
+            }
+            nerMap.values().forEach(turNLPEntity -> addTurSNSiteFieldExt(TurSNFieldType.NER, turSNSite,
+                    turSNSiteFieldExtList, turNLPEntity));
+            thesaurusMap.values().forEach(turNLPEntity -> addTurSNSiteFieldExt(TurSNFieldType.THESAURUS, turSNSite,
+                    turSNSiteFieldExtList, turNLPEntity));
+            return turSNSiteFieldExtRepository
+                    .findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), turSNSite);
 
-			Map<String, TurNLPEntity> thesaurusMap = createThesaurusMap(turNLPEntityThesaurus);
+        }).orElse(Collections.emptyList());
 
-			List<TurSNSiteFieldExt> turSNSiteFieldExts =
-					this.turSNSiteFieldExtRepository
-							.findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(),turSNSite);
+    }
 
-			removeDuplicatedFields(fieldMap, nerMap, thesaurusMap, turSNSiteFieldExts);
+    private Map<String, TurNLPEntity> createNERMap(TurNLPVendor turNLPVendor) {
+        Map<String, TurNLPEntity> nerMap = new HashMap<>();
+        turNLPVendorEntityRepository.findByTurNLPVendor(turNLPVendor).forEach(turNLPVendorEntity -> {
+            TurNLPEntity turNLPEntity = turNLPVendorEntity.getTurNLPEntity();
+            nerMap.put(turNLPEntity.getInternalName(), turNLPEntity);
+        });
 
-			for (TurSNSiteField turSNSiteField : fieldMap.values()) {
-				TurSNSiteFieldExt turSNSiteFieldExt = saveSNSiteFieldExt(turSNSite, turSNSiteField);
+        return nerMap;
+    }
 
-				turSNSiteFieldExts.add(turSNSiteFieldExt);
-			}
+    private Map<String, TurNLPEntity> createThesaurusMap(List<TurNLPEntity> turNLPEntityThesaurus) {
+        Map<String, TurNLPEntity> thesaurusMap = new HashMap<>();
+        turNLPEntityThesaurus.forEach(turNLPEntityThesaurusSingle -> thesaurusMap
+                .put(turNLPEntityThesaurusSingle.getInternalName(), turNLPEntityThesaurusSingle));
+        return thesaurusMap;
+    }
 
-			nerMap.values().forEach(turNLPEntity -> addTurSNSiteFieldExt(TurSNFieldType.NER, turSNSite,
-					turSNSiteFieldExts, turNLPEntity));
-			thesaurusMap.values().forEach(turNLPEntity -> addTurSNSiteFieldExt(TurSNFieldType.THESAURUS, turSNSite,
-					turSNSiteFieldExts, turNLPEntity));
-
-			return turSNSiteFieldExtRepository
-					.findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(),turSNSite);
-
-		}).orElse(Collections.emptyList());
-
-	}
-
-	private Map<String, TurNLPEntity> createNERMap(TurNLPVendor turNLPVendor) {
-		Map<String, TurNLPEntity> nerMap = new HashMap<>();
-		turNLPVendorEntityRepository.findByTurNLPVendor(turNLPVendor).forEach(turNLPVendorEntity -> {
-			TurNLPEntity turNLPEntity = turNLPVendorEntity.getTurNLPEntity();
-			nerMap.put(turNLPEntity.getInternalName(), turNLPEntity);
-		});
-		
-		return nerMap;
-	}
-
-	private Map<String, TurNLPEntity> createThesaurusMap(List<TurNLPEntity> turNLPEntityThesaurus) {
-		Map<String, TurNLPEntity> thesaurusMap = new HashMap<>();
-		turNLPEntityThesaurus.forEach(turNLPEntityThesaurusSingle -> thesaurusMap
-				.put(turNLPEntityThesaurusSingle.getInternalName(), turNLPEntityThesaurusSingle));
-		return thesaurusMap;
-	}
-
-	private Map<String, TurSNSiteField> createFieldMap(TurSNSite turSNSite) {
-		List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
-		Map<String, TurSNSiteField> fieldMap = new HashMap<>();
-		if (turSNSiteFields.isEmpty()) {
-			turSNTemplate.createSEFields(turSNSite);
-		} else {
-			turSNSiteFields.forEach(turSNSiteField -> fieldMap.put(turSNSiteField.getId(), turSNSiteField));
-		}
-		return fieldMap;
-	}
-
-	private void removeDuplicatedFields(Map<String, TurSNSiteField> fieldMap, Map<String, TurNLPEntity> nerMap,
-			Map<String, TurNLPEntity> thesaurusMap, List<TurSNSiteFieldExt> turSNSiteFieldExts) {
-		for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExts) {
-			switch (turSNSiteFieldExt.getSnType()) {
-			case SE:
-				fieldMap.remove(turSNSiteFieldExt.getExternalId());
-				break;
-			case NER:
-				nerMap.remove(turSNSiteFieldExt.getExternalId());
-				break;
-			case THESAURUS:
-				thesaurusMap.remove(turSNSiteFieldExt.getExternalId());
-				break;
-			}
-		}
-	}
-
-	private TurSNSiteFieldExt saveSNSiteFieldExt(TurSNSite turSNSite, TurSNSiteField turSNSiteField) {
-		return turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
-				.enabled(0)
-				.name(turSNSiteField.getName())
-				.description(turSNSiteField.getDescription())
-				.facet(0)
-				.facetName(turSNSiteField.getName())
-				.hl(0)
-				.multiValued(turSNSiteField.getMultiValued())
-				.mlt(0)
-				.externalId(turSNSiteField.getId())
-				.snType(TurSNFieldType.SE)
-				.type(turSNSiteField.getType())
-				.turSNSite(turSNSite).build());
-	}
-
-	private void addTurSNSiteFieldExt(TurSNFieldType turSNFieldType, TurSNSite turSNSite,
-			List<TurSNSiteFieldExt> turSNSiteFieldExts, TurNLPEntity turNLPEntity) {
-		turSNSiteFieldExts.add(turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
-				.enabled(0)
-				.name(turNLPEntity.getInternalName())
-				.description(turNLPEntity.getDescription())
-				.facet(0)
-				.facetName(turNLPEntity.getName())
-				.hl(0)
-				.multiValued(1)
-				.mlt(0)
-				.externalId(turNLPEntity.getInternalName())
-				.snType(turSNFieldType)
-				.type(TurSEFieldType.STRING)
-				.turSNSite(turSNSite).build()));
-	}
-
-	@Operation(summary = "Show a Semantic Navigation Site Field Ext")
-	@GetMapping("/{id}")
-	public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable String ignoredSnSiteId, @PathVariable String id) {
-		return turSNSiteFieldExtRepository.findById(id).orElse(TurSNSiteFieldExt.builder().build());
-	}
-
-	@Operation(summary = "Update a Semantic Navigation Site Field Ext")
-	@PutMapping("/{id}")
-	public TurSNSiteFieldExt turSNSiteFieldExtUpdate(@PathVariable String ignoredSnSiteId, @PathVariable String id,
-													 @RequestBody TurSNSiteFieldExt turSNSiteFieldExt) {
-		return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExtEdit -> {
-			turSNSiteFieldExtEdit.setFacetName(turSNSiteFieldExt.getFacetName());
-			turSNSiteFieldExtEdit.setMultiValued(turSNSiteFieldExt.getMultiValued());
-			turSNSiteFieldExtEdit.setName(turSNSiteFieldExt.getName());
-			turSNSiteFieldExtEdit.setDescription(turSNSiteFieldExt.getDescription());
-			turSNSiteFieldExtEdit.setType(turSNSiteFieldExt.getType());
-			turSNSiteFieldExtEdit.setFacet(turSNSiteFieldExt.getFacet());
-			turSNSiteFieldExtEdit.setHl(turSNSiteFieldExt.getHl());
-			turSNSiteFieldExtEdit.setEnabled(turSNSiteFieldExt.getEnabled());
-			turSNSiteFieldExtEdit.setMlt(turSNSiteFieldExt.getMlt());
-			turSNSiteFieldExtEdit.setExternalId(turSNSiteFieldExt.getExternalId());
-			turSNSiteFieldExtEdit.setRequired(turSNSiteFieldExt.getRequired());
-			turSNSiteFieldExtEdit.setDefaultValue(turSNSiteFieldExt.getDefaultValue());
-			turSNSiteFieldExtEdit.setNlp(turSNSiteFieldExt.getNlp());
-			turSNSiteFieldExtEdit.setSnType(turSNSiteFieldExt.getSnType());
-			this.turSNSiteFieldExtRepository.save(turSNSiteFieldExtEdit);
-
-			this.updateExternalField(turSNSiteFieldExt);
-			return turSNSiteFieldExtEdit;
-		}).orElse(TurSNSiteFieldExt.builder().build());
-
-	}
-
-	@Transactional
-	@Operation(summary = "Delete a Semantic Navigation Site Field Ext")
-	@DeleteMapping("/{id}")
-	public boolean turSNSiteFieldExtDelete(@PathVariable String ignoredSnSiteId, @PathVariable String id) {
-		return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExtEdit -> {
-			if (turSNSiteFieldExtEdit.getSnType().equals(TurSNFieldType.SE)) {
-				this.turSNSiteFieldRepository.delete(turSNSiteFieldExtEdit.getExternalId());
-			}
-			this.turSNSiteFieldExtRepository.delete(id);
-			return true;
-		}).orElse(false);
-	}
-
-	@Operation(summary = "Create a Semantic Navigation Site Field Ext")
-	@PostMapping
-	public TurSNSiteFieldExt turSNSiteFieldExtAdd(@PathVariable String ignoredSnSiteId,
-			@RequestBody TurSNSiteFieldExt turSNSiteFieldExt) {
-		return createSEField(ignoredSnSiteId, turSNSiteFieldExt);
-	}
-
-	private TurSNSiteFieldExt createSEField(String snSiteId, TurSNSiteFieldExt turSNSiteFieldExt) {
-		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
-			TurSNSiteField turSNSiteField = new TurSNSiteField();
-			turSNSiteField.setDescription(turSNSiteFieldExt.getDescription());
-			turSNSiteField.setMultiValued(turSNSiteFieldExt.getMultiValued());
-			turSNSiteField.setName(turSNSiteFieldExt.getName());
-			turSNSiteField.setType(turSNSiteFieldExt.getType());
-			turSNSiteField.setTurSNSite(turSNSite);
-			this.turSNSiteFieldRepository.save(turSNSiteField);
-
-			turSNSiteFieldExt.setTurSNSite(turSNSite);
-			turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
-			turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-
-			this.turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-
-			return turSNSiteFieldExt;
-
-		}).orElse(TurSNSiteFieldExt.builder().build());
-
-	}
-
-	public void updateExternalField(TurSNSiteFieldExt turSNSiteFieldExt) {
-		switch (turSNSiteFieldExt.getSnType()) {
-		case SE:
-			turSNSiteFieldRepository.findById(turSNSiteFieldExt.getExternalId()).ifPresent(turSNSiteField -> {
-				turSNSiteField.setDescription(turSNSiteFieldExt.getDescription());
-				turSNSiteField.setMultiValued(turSNSiteFieldExt.getMultiValued());
-				turSNSiteField.setName(turSNSiteFieldExt.getName());
-				turSNSiteField.setType(turSNSiteFieldExt.getType());
-				this.turSNSiteFieldRepository.save(turSNSiteField);
-			});
-
-			break;
-
-		case NER, THESAURUS:
-			turNLPEntityRepository.findById(turSNSiteFieldExt.getExternalId()).ifPresent(turNLPEntityNER -> {
-				turNLPEntityNER.setDescription(turSNSiteFieldExt.getDescription());
-				turNLPEntityNER.setInternalName(turSNSiteFieldExt.getName());
-				this.turNLPEntityRepository.save(turNLPEntityNER);
-			});
-
-			break;
-
+    private Map<String, TurSNSiteField> createFieldMap(TurSNSite turSNSite) {
+        List<TurSNSiteField> turSNSiteFields = turSNSiteFieldRepository.findByTurSNSite(turSNSite);
+        Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+        if (turSNSiteFields.isEmpty()) {
+            turSNTemplate.createSEFields(turSNSite);
+        } else {
+            turSNSiteFields.forEach(turSNSiteField -> fieldMap.put(turSNSiteField.getId(), turSNSiteField));
         }
-	}
+        return fieldMap;
+    }
 
-	@GetMapping("/create")
-	public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String ignoredSnSiteId, @PathVariable String localeRequest) {
-		Locale locale = LocaleUtils.toLocale(localeRequest);
-		return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
-			List<TurSNSiteFieldExt> turSNSiteFieldExtList = turSNSiteFieldExtRepository
-					.findByTurSNSiteAndEnabled(turSNSite, 1);
-			turSNSiteFieldExtList.forEach(turSNSiteFieldExt -> this.createField(turSNSite, locale, turSNSiteFieldExt));
-			return this.turSNSiteRepository.findAll();
-		}).orElse(new ArrayList<>());
-	}
+    private void removeDuplicatedFields(Map<String, TurSNSiteField> fieldMap, Map<String, TurNLPEntity> nerMap,
+                                        Map<String, TurNLPEntity> thesaurusMap, List<TurSNSiteFieldExt> turSNSiteFieldExts) {
+        for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExts) {
+            switch (turSNSiteFieldExt.getSnType()) {
+                case SE:
+                    fieldMap.remove(turSNSiteFieldExt.getExternalId());
+                    break;
+                case NER:
+                    nerMap.remove(turSNSiteFieldExt.getExternalId());
+                    break;
+                case THESAURUS:
+                    thesaurusMap.remove(turSNSiteFieldExt.getExternalId());
+                    break;
+            }
+        }
+    }
 
-	public void createField(TurSNSite turSNSite, Locale locale, TurSNSiteFieldExt turSNSiteFieldExtList) {
-		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
-		JSONObject jsonAddField = new JSONObject();
-		String fieldName;
+    private TurSNSiteFieldExt saveSNSiteFieldExt(TurSNSite turSNSite, TurSNSiteField turSNSiteField) {
+        return turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
+                .enabled(0)
+                .name(turSNSiteField.getName())
+                .description(turSNSiteField.getDescription())
+                .facet(0)
+                .facetName(turSNSiteField.getName())
+                .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
+                .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
+                .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
+                .hl(0)
+                .multiValued(turSNSiteField.getMultiValued())
+                .mlt(0)
+                .externalId(turSNSiteField.getId())
+                .snType(TurSNFieldType.SE)
+                .type(turSNSiteField.getType())
+                .turSNSite(turSNSite).build());
+    }
 
-		if (turSNSiteFieldExtList.getSnType() == TurSNFieldType.NER) {
-			fieldName = String.format("turing_entity_%s", turSNSiteFieldExtList.getName());
-		} else {
-			fieldName = turSNSiteFieldExtList.getName();
-		}
+    private void addTurSNSiteFieldExt(TurSNFieldType turSNFieldType, TurSNSite turSNSite,
+                                      List<TurSNSiteFieldExt> turSNSiteFieldExtList, TurNLPEntity turNLPEntity) {
+        turSNSiteFieldExtList.add(turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
+                .enabled(0)
+                .name(turNLPEntity.getInternalName())
+                .description(turNLPEntity.getDescription())
+                .facet(0)
+                .facetName(turNLPEntity.getName())
+                .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
+                .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
+                .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
+                .hl(0)
+                .multiValued(1)
+                .mlt(0)
+                .externalId(turNLPEntity.getInternalName())
+                .snType(turSNFieldType)
+                .type(TurSEFieldType.STRING)
+                .turSNSite(turSNSite).build()));
+    }
 
-		jsonAddField.put("name", fieldName);
+    @Operation(summary = "Show a Semantic Navigation Site Field Ext")
+    @GetMapping("/{id}")
+    public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable String ignoredSnSiteId, @PathVariable String id) {
+        TurSNSiteFieldExt turSNSiteFieldExt = turSNSiteFieldExtRepository.findById(id)
+                .orElse(TurSNSiteFieldExt.builder().build());
+        turSNSiteFieldExt.setFacetLocales(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExt(turSNSiteFieldExt));
+        return turSNSiteFieldExt;
+    }
 
-		jsonAddField.put("indexed", true);
-		jsonAddField.put("stored", true);
-		if (turSNSiteFieldExtList.getMultiValued() == 1) {
-			jsonAddField.put("type", "string");
-			jsonAddField.put("multiValued", true);
-		} else {
-			if (turSNSiteFieldExtList.getType().equals(TurSEFieldType.DATE)) {
-				jsonAddField.put("type", "pdate");
-			} else {
-				jsonAddField.put("type", "text_general");
-			}
-			jsonAddField.put("multiValued", false);
-		}
-		JSONObject json = new JSONObject();
-		json.put("add-field", jsonAddField);
-		HttpPost httpPost = new HttpPost(
-				String.format("http://%s:%d/solr/%s/schema", turSNSite.getTurSEInstance().getHost(),
-						turSNSite.getTurSEInstance().getPort(), turSNSiteLocale.getCore()));
-		executeHttpPost(json, httpPost);
-		this.copyField(turSNSiteLocale, fieldName, "_text_");
-	}
+    @Operation(summary = "Update a Semantic Navigation Site Field Ext")
+    @PutMapping("/{id}")
+    public TurSNSiteFieldExt turSNSiteFieldExtUpdate(@PathVariable String ignoredSnSiteId, @PathVariable String id,
+                                                     @RequestBody TurSNSiteFieldExt turSNSiteFieldExt) {
+        return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExtEdit -> {
+            turSNSiteFieldExtEdit.setFacetName(turSNSiteFieldExt.getFacetName());
+            turSNSiteFieldExtEdit.setMultiValued(turSNSiteFieldExt.getMultiValued());
+            turSNSiteFieldExtEdit.setName(turSNSiteFieldExt.getName());
+            turSNSiteFieldExtEdit.setDescription(turSNSiteFieldExt.getDescription());
+            turSNSiteFieldExtEdit.setType(turSNSiteFieldExt.getType());
+            turSNSiteFieldExtEdit.setFacet(turSNSiteFieldExt.getFacet());
+            turSNSiteFieldExtEdit.setFacetLocales(turSNSiteFieldExt.getFacetLocales()
+                    .stream()
+                    .peek(fieldExtFacet ->
+                            fieldExtFacet.setTurSNSiteFieldExt(turSNSiteFieldExt))
+                    .collect(Collectors.toSet()));
+            turSNSiteFieldExtEdit.setFacetRange(turSNSiteFieldExt.getFacetRange());
+            turSNSiteFieldExtEdit.setFacetSort(turSNSiteFieldExt.getFacetSort());
+            turSNSiteFieldExtEdit.setHl(turSNSiteFieldExt.getHl());
+            turSNSiteFieldExtEdit.setEnabled(turSNSiteFieldExt.getEnabled());
+            turSNSiteFieldExtEdit.setMlt(turSNSiteFieldExt.getMlt());
+            turSNSiteFieldExtEdit.setExternalId(turSNSiteFieldExt.getExternalId());
+            turSNSiteFieldExtEdit.setRequired(turSNSiteFieldExt.getRequired());
+            turSNSiteFieldExtEdit.setDefaultValue(turSNSiteFieldExt.getDefaultValue());
+            turSNSiteFieldExtEdit.setNlp(turSNSiteFieldExt.getNlp());
+            turSNSiteFieldExtEdit.setSnType(turSNSiteFieldExt.getSnType());
+            turSNSiteFieldExtEdit.setFacetType(turSNSiteFieldExt.getFacetType());
+            this.turSNSiteFieldExtRepository.save(turSNSiteFieldExtEdit);
 
-	public void copyField(TurSNSiteLocale turSNSiteLocale, String field, String dest) {
 
-		JSONObject jsonAddField = new JSONObject();
-		jsonAddField.put("source", field);
+            this.updateExternalField(turSNSiteFieldExt);
+            return turSNSiteFieldExtEdit;
+        }).orElse(TurSNSiteFieldExt.builder().build());
 
-		jsonAddField.put("dest", dest);
-		JSONObject json = new JSONObject();
-		json.put("add-copy-field", jsonAddField);
-		TurSEInstance turSEInstance = turSNSiteLocale.getTurSNSite().getTurSEInstance();
-		HttpPost httpPost = new HttpPost(String.format("http://%s:%d/solr/%s/schema", turSEInstance.getHost(),
-				turSEInstance.getPort(), turSNSiteLocale.getCore()));
-		executeHttpPost(json, httpPost);
-	}
+    }
 
-	private void executeHttpPost(JSONObject json, HttpPost httpPost) {
-		try {
-			StringEntity entity = new StringEntity(json.toString());
-			httpPost.setEntity(entity);
-			httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-			httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-			try (CloseableHttpClient client = HttpClients.createDefault()) {
-				client.execute(httpPost);
-			}
-		} catch (IOException e) {
-			log.error(e.getMessage(), e);
-		}
-	}
+    @Transactional
+    @Operation(summary = "Delete a Semantic Navigation Site Field Ext")
+    @DeleteMapping("/{id}")
+    public boolean turSNSiteFieldExtDelete(@PathVariable String ignoredSnSiteId, @PathVariable String id) {
+        return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExtEdit -> {
+            if (turSNSiteFieldExtEdit.getSnType().equals(TurSNFieldType.SE)) {
+                this.turSNSiteFieldRepository.delete(turSNSiteFieldExtEdit.getExternalId());
+            }
+            this.turSNSiteFieldExtRepository.delete(id);
+            return true;
+        }).orElse(false);
+    }
+
+    @Operation(summary = "Create a Semantic Navigation Site Field Ext")
+    @PostMapping
+    public TurSNSiteFieldExt turSNSiteFieldExtAdd(@PathVariable String ignoredSnSiteId,
+                                                  @RequestBody TurSNSiteFieldExt turSNSiteFieldExt) {
+        return createSEField(ignoredSnSiteId, turSNSiteFieldExt);
+    }
+
+    @Operation(summary = "Semantic Navigation Site Field Ext structure")
+    @GetMapping("structure")
+    public TurSNSiteFieldExt urSNSiteFieldExtStructure(@PathVariable String ignoredSnSiteId) {
+        return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
+            TurSNSiteFieldExt turSNSiteFieldExt = new TurSNSiteFieldExt();
+            turSNSiteFieldExt.setTurSNSite(turSNSite);
+            return turSNSiteFieldExt;
+        }).orElse(new TurSNSiteFieldExt());
+    }
+
+    private TurSNSiteFieldExt createSEField(String snSiteId, TurSNSiteFieldExt turSNSiteFieldExt) {
+        return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
+            TurSNSiteField turSNSiteField = new TurSNSiteField();
+            turSNSiteField.setDescription(turSNSiteFieldExt.getDescription());
+            turSNSiteField.setMultiValued(turSNSiteFieldExt.getMultiValued());
+            turSNSiteField.setName(turSNSiteFieldExt.getName());
+            turSNSiteField.setType(turSNSiteFieldExt.getType());
+            turSNSiteField.setTurSNSite(turSNSite);
+            this.turSNSiteFieldRepository.save(turSNSiteField);
+
+            turSNSiteFieldExt.setTurSNSite(turSNSite);
+            turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
+            turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
+
+            this.turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
+
+            return turSNSiteFieldExt;
+
+        }).orElse(TurSNSiteFieldExt.builder().build());
+
+    }
+
+    public void updateExternalField(TurSNSiteFieldExt turSNSiteFieldExt) {
+        switch (turSNSiteFieldExt.getSnType()) {
+            case SE:
+                turSNSiteFieldRepository.findById(turSNSiteFieldExt.getExternalId()).ifPresent(turSNSiteField -> {
+                    turSNSiteField.setDescription(turSNSiteFieldExt.getDescription());
+                    turSNSiteField.setMultiValued(turSNSiteFieldExt.getMultiValued());
+                    turSNSiteField.setName(turSNSiteFieldExt.getName());
+                    turSNSiteField.setType(turSNSiteFieldExt.getType());
+                    this.turSNSiteFieldRepository.save(turSNSiteField);
+                });
+                break;
+            case NER, THESAURUS:
+                turNLPEntityRepository.findById(turSNSiteFieldExt.getExternalId()).ifPresent(turNLPEntityNER -> {
+                    turNLPEntityNER.setDescription(turSNSiteFieldExt.getDescription());
+                    turNLPEntityNER.setInternalName(turSNSiteFieldExt.getName());
+                    this.turNLPEntityRepository.save(turNLPEntityNER);
+                });
+                break;
+        }
+    }
+
+    @GetMapping("/create/{localeRequest}")
+    public List<TurSNSite> turSNSiteFieldExtCreate(@PathVariable String ignoredSnSiteId, @PathVariable String localeRequest) {
+        Locale locale = LocaleUtils.toLocale(localeRequest);
+        return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
+            List<TurSNSiteFieldExt> turSNSiteFieldExtList = turSNSiteFieldExtRepository
+                    .findByTurSNSiteAndEnabled(turSNSite, 1);
+            turSNSiteFieldExtList.forEach(turSNSiteFieldExt -> this.createField(turSNSite, locale, turSNSiteFieldExt));
+            return this.turSNSiteRepository.findAll();
+        }).orElse(new ArrayList<>());
+    }
+
+    public void createField(TurSNSite turSNSite, Locale locale, TurSNSiteFieldExt turSNSiteFieldExt) {
+        TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
+        JSONObject jsonAddField = new JSONObject();
+        String fieldName;
+        if (turSNSiteFieldExt.getSnType() == TurSNFieldType.NER) {
+            fieldName = String.format("turing_entity_%s", turSNSiteFieldExt.getName());
+        } else {
+            fieldName = turSNSiteFieldExt.getName();
+        }
+
+        jsonAddField.put(NAME, fieldName);
+
+        jsonAddField.put(INDEXED, true);
+        jsonAddField.put(STORED, true);
+        if (turSNSiteFieldExt.getMultiValued() == 1) {
+            jsonAddField.put(TYPE, STRING);
+            jsonAddField.put(MULTI_VALUED, true);
+        } else {
+            if (turSNSiteFieldExt.getType().equals(TurSEFieldType.DATE)) {
+                jsonAddField.put(TYPE, PDATE);
+            } else {
+                jsonAddField.put(TYPE, TEXT_GENERAL);
+            }
+            jsonAddField.put(MULTI_VALUED, false);
+        }
+        JSONObject json = new JSONObject();
+        json.put(ADD_FIELD, jsonAddField);
+        HttpPost httpPost = new HttpPost(
+                String.format(SOLR_SCHEMA_REQUEST, turSNSite.getTurSEInstance().getHost(),
+                        turSNSite.getTurSEInstance().getPort(), turSNSiteLocale.getCore()));
+        executeHttpPost(json, httpPost);
+        this.copyField(turSNSiteLocale, fieldName, TEXT_);
+    }
+
+    public void copyField(TurSNSiteLocale turSNSiteLocale, String field, String dest) {
+        JSONObject jsonAddField = new JSONObject();
+        jsonAddField.put(SOURCE, field);
+        jsonAddField.put(DEST, dest);
+        JSONObject json = new JSONObject();
+        json.put(ADD_COPY_FIELD, jsonAddField);
+        TurSEInstance turSEInstance = turSNSiteLocale.getTurSNSite().getTurSEInstance();
+        HttpPost httpPost = new HttpPost(String.format(SOLR_SCHEMA_REQUEST, turSEInstance.getHost(),
+                turSEInstance.getPort(), turSNSiteLocale.getCore()));
+        executeHttpPost(json, httpPost);
+    }
+
+    private void executeHttpPost(JSONObject json, HttpPost httpPost) {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            StringEntity entity = new StringEntity(json.toString());
+            httpPost.setEntity(entity);
+            httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+            httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+            client.execute(httpPost);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
 }

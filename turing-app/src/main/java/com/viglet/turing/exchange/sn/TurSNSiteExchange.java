@@ -23,7 +23,7 @@ package com.viglet.turing.exchange.sn;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteField;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import lombok.Getter;
 
 import java.util.Set;

@@ -18,6 +18,10 @@
 package com.viglet.turing.commons.sn.bean;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * List of spotlight documents of Turing AI Semantic Navigation response.
@@ -25,7 +29,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @author Alexandre Oliveira
  * @since 0.3.5
  */
-
+@RequiredArgsConstructor
+@Accessors(chain = true)
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSpotlightDocumentBean {
 
@@ -43,59 +50,4 @@ public class TurSNSiteSpotlightDocumentBean {
 
 	private String link;
 
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public int getPosition() {
-		return position;
-	}
-
-	public void setPosition(int position) {
-		this.position = position;
-	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public String getReferenceId() {
-		return referenceId;
-	}
-
-	public void setReferenceId(String referenceId) {
-		this.referenceId = referenceId;
-	}
-
-	public String getContent() {
-		return content;
-	}
-
-	public void setContent(String content) {
-		this.content = content;
-	}
-
-	public String getLink() {
-		return link;
-	}
-
-	public void setLink(String link) {
-		this.link = link;
-	}
 }

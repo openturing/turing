@@ -22,7 +22,8 @@ package com.viglet.turing.sn;
 
 import com.google.inject.Inject;
 import com.viglet.turing.api.sn.bean.TurSNSiteFilterQueryBean;
-import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
+import com.viglet.turing.commons.se.TurSEFilterQueryParameters;
+import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.commons.sn.bean.*;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
@@ -30,11 +31,14 @@ import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
+import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtFacetDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
@@ -54,6 +58,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.*;
+import java.util.stream.IntStream;
 
 /**
  * @author Alexandre Oliveira
@@ -61,7 +66,15 @@ import java.util.*;
  */
 @Component
 public class TurSNSearchProcess {
+    public static final String PREVIOUS = "Previous";
+    public static final String GROUP = "group";
+    public static final String LAST = "Last";
+    public static final String NEXT = "Next";
+    public static final String FIRST = "First";
+    public static final String LANGUAGE = "language";
+    public static final String FACETS_TO_REMOVE = "Facets To Remove";
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSolrInstanceProcess turSolrInstanceProcess;
@@ -71,6 +84,7 @@ public class TurSNSearchProcess {
 
     @Inject
     public TurSNSearchProcess(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+                              TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
                               TurSNSiteRepository turSNSiteRepository,
                               TurSNSiteLocaleRepository turSNSiteLocaleRepository,
                               TurSolrInstanceProcess turSolrInstanceProcess,
@@ -78,6 +92,7 @@ public class TurSNSearchProcess {
                               TurSNSpotlightProcess turSNSpotlightProcess,
                               TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turSolrInstanceProcess = turSolrInstanceProcess;
@@ -103,52 +118,85 @@ public class TurSNSearchProcess {
                 .orElse(new TurSNSiteSearchBean());
     }
 
-    private TurSNSiteSearchBean searchResponse(TurSNSiteSearchContext turSNSiteSearchContext,
+    private TurSNSiteSearchBean searchResponse(TurSNSiteSearchContext context,
                                                TurSolrInstance turSolrInstance,
                                                TurSEResults turSEResults) {
-        return turSNSiteRepository.findByName(turSNSiteSearchContext.getSiteName()).map(turSNSite -> {
-            populateMetrics(turSNSite, turSNSiteSearchContext, turSEResults.getNumFound());
-            List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList = turSNSiteFieldExtRepository
-                    .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
-            Map<String, TurSNSiteFieldExt> facetMap = setFacetMap(turSNSiteFacetFieldExtList);
-            return new TurSNSiteSearchBean()
-                    .setResults(responseDocuments(turSNSiteSearchContext,
-                            turSolrInstance, turSNSite, facetMap, turSEResults.getResults()))
-                    .setGroups(responseGroups(turSNSiteSearchContext, turSolrInstance,
-                            turSNSite, facetMap, turSEResults))
-                    .setPagination(responsePagination(turSNSiteSearchContext.getUri(), turSEResults))
-                    .setWidget(responseWidget(turSNSiteSearchContext, turSNSite,
-                            turSNSiteFacetFieldExtList, facetMap, turSEResults))
-                    .setQueryContext(responseQueryContext(turSNSite, turSEResults,
-                            turSNSiteSearchContext.getLocale()));
+        return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
+            populateMetrics(turSNSite, context, turSEResults.getNumFound());
+            List<TurSNSiteFieldExtDto> turSNSiteFieldExtDtoList = turSNSiteFieldExtRepository
+                    .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1).stream()
+                    .map(turSNSiteFieldExt -> {
+                        TurSNSiteFieldExtDto turSNSiteFieldExtDto = new TurSNSiteFieldExtDto(turSNSiteFieldExt);
+                        turSNSiteFieldExtDto.setFacetLocales(
+                                new HashSet<>(
+                                        Collections.singletonList(turSNSiteFieldExtFacetRepository
+                                                .findByTurSNSiteFieldExtAndAndLocale(turSNSiteFieldExt, context.getLocale())
+                                                .stream().findFirst()
+                                                .orElse(TurSNSiteFieldExtFacet.builder()
+                                                        .locale(context.getLocale())
+                                                        .label(turSNSiteFieldExt.getFacetName())
+                                                        .build()))));
+                        return turSNSiteFieldExtDto;
+                    }).toList();
+            Map<String, TurSNSiteFieldExtDto> facetMap = setFacetMap(turSNSiteFieldExtDtoList);
+            if (turSolr.hasGroup(context.getTurSEParameters())) {
+                return getSearchBeanForGroup(context, turSolrInstance, turSEResults, turSNSite, facetMap,
+                        turSNSiteFieldExtDtoList);
+            } else {
+                return getSearchBeanForResults(context, turSolrInstance, turSEResults, turSNSite, facetMap,
+                        turSNSiteFieldExtDtoList);
+            }
         }).orElse(new TurSNSiteSearchBean());
+    }
+
+    private TurSNSiteSearchBean getSearchBeanForResults(TurSNSiteSearchContext context, TurSolrInstance turSolrInstance,
+                                                        TurSEResults turSEResults, TurSNSite turSNSite,
+                                                        Map<String, TurSNSiteFieldExtDto> facetMap,
+                                                        List<TurSNSiteFieldExtDto> turSNSiteFieldExtDtoList) {
+        return new TurSNSiteSearchBean()
+                .setResults(responseDocuments(context, turSolrInstance, turSNSite, facetMap, turSEResults.getResults()))
+                .setPagination(responsePagination(context.getUri(), turSEResults))
+                .setWidget(responseWidget(context, turSNSite,
+                        turSNSiteFieldExtDtoList, facetMap, turSEResults))
+                .setQueryContext(responseQueryContext(turSNSite, turSEResults,
+                        context.getLocale()));
+    }
+
+    private TurSNSiteSearchBean getSearchBeanForGroup(TurSNSiteSearchContext context, TurSolrInstance turSolrInstance,
+                                                      TurSEResults turSEResults, TurSNSite turSNSite,
+                                                      Map<String, TurSNSiteFieldExtDto> facetMap,
+                                                      List<TurSNSiteFieldExtDto> turSNSiteFieldExtDtoList) {
+        return new TurSNSiteSearchBean()
+                .setGroups(responseGroups(context, turSolrInstance, turSNSite, facetMap, turSEResults))
+                .setWidget(responseWidget(context, turSNSite,
+                        turSNSiteFieldExtDtoList, facetMap, turSEResults))
+                .setQueryContext(responseQueryContext(turSNSite, turSEResults,
+                        context.getLocale()));
     }
 
     private List<TurSNSiteSearchGroupBean> responseGroups(TurSNSiteSearchContext context,
                                                           TurSolrInstance turSolrInstance, TurSNSite turSNSite,
-                                                          Map<String, TurSNSiteFieldExt> facetMap,
+                                                          Map<String, TurSNSiteFieldExtDto> facetMap,
                                                           TurSEResults turSEResults) {
         List<TurSNSiteSearchGroupBean> turSNSiteSearchGroupBeans = new ArrayList<>();
-        if (turSEResults.getGroups() != null) {
-            turSEResults.getGroups().forEach(group -> {
-                int lastItemOfFullPage = (int) group.getStart() + group.getLimit();
-                int firstItemOfFullPage = (int) group.getStart() + 1;
-                int count = (int) group.getNumFound();
-                int pageEnd = Math.min(lastItemOfFullPage, count);
-                turSNSiteSearchGroupBeans.add(new TurSNSiteSearchGroupBean()
-                        .setName(group.getName())
-                        .setCount((int) group.getNumFound())
-                        .setPageCount(group.getPageCount())
-                        .setPage(group.getCurrentPage())
-                        .setCount(count)
-                        .setPageEnd(pageEnd)
-                        .setPageStart(Math.min(firstItemOfFullPage, pageEnd))
-                        .setLimit(group.getLimit())
-                        .setPagination(responsePagination(changeGroupURIForPagination(context.getUri(),
-                                group.getName()), group))
-                        .setResults(responseDocuments(context, turSolrInstance, turSNSite, facetMap, group.getResults())));
-            });
-        }
+        Optional.ofNullable(turSEResults.getGroups()).ifPresent(g -> g.forEach(group -> {
+            int lastItemOfFullPage = (int) group.getStart() + group.getLimit();
+            int firstItemOfFullPage = (int) group.getStart() + 1;
+            int count = (int) group.getNumFound();
+            int pageEnd = Math.min(lastItemOfFullPage, count);
+            turSNSiteSearchGroupBeans.add(new TurSNSiteSearchGroupBean()
+                    .setName(group.getName())
+                    .setCount((int) group.getNumFound())
+                    .setPageCount(group.getPageCount())
+                    .setPage(group.getCurrentPage())
+                    .setCount(count)
+                    .setPageEnd(pageEnd)
+                    .setPageStart(Math.min(firstItemOfFullPage, pageEnd))
+                    .setLimit(group.getLimit())
+                    .setPagination(responsePagination(changeGroupURIForPagination(context.getUri(),
+                            group.getName()), group))
+                    .setResults(responseDocuments(context, turSolrInstance, turSNSite, facetMap, group.getResults())));
+        }));
         return turSNSiteSearchGroupBeans;
     }
 
@@ -161,13 +209,11 @@ public class TurSNSearchProcess {
             turSNSiteMetricAccess.setTerm(turSNSiteSearchContext.getTurSEParameters().getQuery());
             turSNSiteMetricAccess.setTurSNSite(turSNSite);
             turSNSiteMetricAccess.setNumFound(numFound);
-            if (turSNSiteSearchContext.getTurSNSitePostParamsBean() != null) {
-                turSNSiteMetricAccess.setTargetingRules(
-                        turSNSiteSearchContext.getTurSNSitePostParamsBean().getTargetingRules() != null
-                                ? new HashSet<>(turSNSiteSearchContext.getTurSNSitePostParamsBean().getTargetingRules())
-                                : Collections.emptySet());
-                turSNSiteMetricAccess.setUserId(turSNSiteSearchContext.getTurSNSitePostParamsBean().getUserId());
-            }
+            Optional.ofNullable(turSNSiteSearchContext.getTurSNSitePostParamsBean()).ifPresent(p -> {
+                turSNSiteMetricAccess.setTargetingRules(Optional.ofNullable(p.getTargetingRules()).map(HashSet::new)
+                        .orElse(new HashSet<>()));
+                turSNSiteMetricAccess.setUserId(p.getUserId());
+            });
             turSNSiteMetricAccessRepository.save(turSNSiteMetricAccess);
         }
     }
@@ -177,14 +223,12 @@ public class TurSNSearchProcess {
                 || turSNSiteSearchContext.getTurSNSitePostParamsBean().isPopulateMetrics();
     }
 
-    private Map<String, TurSNSiteFieldExt> setFacetMap(List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList) {
-        Map<String, TurSNSiteFieldExt> facetMap = new HashMap<>();
+    private Map<String, TurSNSiteFieldExtDto> setFacetMap(List<TurSNSiteFieldExtDto> turSNSiteFacetFieldExtList) {
+        Map<String, TurSNSiteFieldExtDto> facetMap = new HashMap<>();
         turSNSiteFacetFieldExtList.forEach(turSNSiteFacetFieldExt -> {
             if (istTuringEntity(turSNSiteFacetFieldExt.getSnType())) {
                 facetMap.put(String.format("%s_%s", TurSNUtils.TURING_ENTITY, turSNSiteFacetFieldExt.getName()),
                         turSNSiteFacetFieldExt);
-            } else {
-                facetMap.put(turSNSiteFacetFieldExt.getName(), turSNSiteFacetFieldExt);
             }
             facetMap.put(turSNSiteFacetFieldExt.getName(), turSNSiteFacetFieldExt);
         });
@@ -193,17 +237,16 @@ public class TurSNSearchProcess {
     }
 
     private static boolean istTuringEntity(TurSNFieldType snType) {
-        return snType == TurSNFieldType.NER || snType == TurSNFieldType.THESAURUS;
+        return Collections.unmodifiableSet(EnumSet.of(TurSNFieldType.NER, TurSNFieldType.THESAURUS)).contains(snType);
     }
 
     private TurSNSiteFilterQueryBean requestFilterQuery(List<String> fq) {
         List<String> hiddenFilterQuery = new ArrayList<>();
         List<String> filterQueryModified = new ArrayList<>();
         processFilterQuery(fq, hiddenFilterQuery, filterQueryModified);
-        TurSNSiteFilterQueryBean turSNSiteFilterQueryBean = new TurSNSiteFilterQueryBean();
-        turSNSiteFilterQueryBean.setHiddenItems(hiddenFilterQuery);
-        turSNSiteFilterQueryBean.setItems(filterQueryModified);
-        return turSNSiteFilterQueryBean;
+        return new TurSNSiteFilterQueryBean()
+                .setHiddenItems(hiddenFilterQuery)
+                .setItems(filterQueryModified);
     }
 
     private void processFilterQuery(List<String> fq, List<String> hiddenFilterQuery, List<String> filterQueryModified) {
@@ -249,36 +292,34 @@ public class TurSNSearchProcess {
 
     private TurSNSiteSearchResultsBean responseDocuments(TurSNSiteSearchContext context,
                                                          TurSolrInstance turSolrInstance,
-                                                         TurSNSite turSNSite, Map<String, TurSNSiteFieldExt> facetMap,
+                                                         TurSNSite turSNSite, Map<String, TurSNSiteFieldExtDto> facetMap,
                                                          List<TurSEResult> seResults) {
-        Map<String, TurSNSiteFieldExt> fieldExtMap = new HashMap<>();
-        List<TurSNSiteFieldExt> turSNSiteFieldExtList = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,
-                1);
-        turSNSiteFieldExtList
-                .forEach(turSNSiteFieldExt -> fieldExtMap.put(turSNSiteFieldExt.getName(), turSNSiteFieldExt));
+        Map<String, TurSNSiteFieldExtDto> fieldExtMap = new HashMap<>();
+        turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite,
+                        1).stream().map(TurSNSiteFieldExtDto::new).toList()
+                .forEach(turSNSiteFieldExtDto -> fieldExtMap.put(turSNSiteFieldExtDto.getName(), turSNSiteFieldExtDto));
         List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean = new ArrayList<>();
         seResults.forEach(result -> TurSNUtils.addSNDocument(context.getUri(), fieldExtMap, facetMap,
                 turSNSiteSearchDocumentsBean, result, false));
-        if (turSNSite != null && turSNSite.getSpotlightWithResults() != null
-                && turSNSite.getSpotlightWithResults() == 1) {
-            turSNSpotlightProcess.addSpotlightToResults(context, turSolrInstance, turSNSite, facetMap, fieldExtMap,
-                    turSNSiteSearchDocumentsBean);
-        }
+        Optional.ofNullable(turSNSite)
+                .map(TurSNSite::getSpotlightWithResults)
+                .filter(spotLightResults -> spotLightResults == 1).ifPresent(r ->
+                        turSNSpotlightProcess.addSpotlightToResults(context, turSolrInstance, turSNSite, facetMap,
+                                fieldExtMap, turSNSiteSearchDocumentsBean));
         return new TurSNSiteSearchResultsBean().setDocument(turSNSiteSearchDocumentsBean);
-
     }
 
     private TurSNSiteSearchWidgetBean responseWidget(TurSNSiteSearchContext context, TurSNSite turSNSite,
-                                                     List<TurSNSiteFieldExt> turSNSiteFacetFieldList, Map<String,
-            TurSNSiteFieldExt> facetMap,
+                                                     List<TurSNSiteFieldExtDto> turSNSiteFacetFieldList,
+                                                     Map<String, TurSNSiteFieldExtDto> facetMap,
                                                      TurSEResults turSEResults) {
         return new TurSNSiteSearchWidgetBean()
                 .setFacet(responseFacet(context, turSNSite,
-                        requestFilterQuery(context.getTurSEParameters().getFilterQueries())
+                        requestFilterQuery(context.getTurSEParameters().getFilterQueries().getFq())
                                 .getHiddenItems(), turSNSiteFacetFieldList, facetMap, turSEResults))
                 .setFacetToRemove(responseFacetToRemove(context))
                 .setSimilar(responseMLT(turSNSite, turSEResults))
-                .setSpellCheck(responseSpellCheck(context, turSEResults.getSpellCheck()))
+                .setSpellCheck(new TurSNSiteSpellCheckBean(context, turSEResults.getSpellCheck()))
                 .setLocales(responseLocales(turSNSite, context.getUri()))
                 .setSpotlights(responseSpotlights(context, turSNSite));
     }
@@ -289,39 +330,28 @@ public class TurSNSearchProcess {
         turSNSpotlightProcess
                 .getSpotlightsFromQuery(context, turSNSite)
                 .forEach((key, value) -> value
-                        .forEach(document -> {
-                            TurSNSiteSpotlightDocumentBean turSNSiteSpotlightDocumentBean = new TurSNSiteSpotlightDocumentBean();
-                            turSNSiteSpotlightDocumentBean.setId(document.getId());
-                            turSNSiteSpotlightDocumentBean.setContent(document.getContent());
-                            turSNSiteSpotlightDocumentBean.setLink(document.getLink());
-                            turSNSiteSpotlightDocumentBean.setPosition(document.getPosition());
-                            turSNSiteSpotlightDocumentBean.setReferenceId(document.getReferenceId());
-                            turSNSiteSpotlightDocumentBean.setTitle(document.getTitle());
-                            turSNSiteSpotlightDocumentBean.setType(document.getType());
-                            turSNSiteSpotlightDocumentBeans.add(turSNSiteSpotlightDocumentBean);
-                        }));
+                        .forEach(document -> turSNSiteSpotlightDocumentBeans.add(new TurSNSiteSpotlightDocumentBean()
+                                .setId(document.getId())
+                                .setContent(document.getContent())
+                                .setLink(document.getLink())
+                                .setPosition(document.getPosition())
+                                .setReferenceId(document.getReferenceId())
+                                .setTitle(document.getTitle())
+                                .setType(document.getType()))));
         turSNSiteSpotlightDocumentBeans.sort(Comparator.comparingInt(TurSNSiteSpotlightDocumentBean::getPosition));
         return turSNSiteSpotlightDocumentBeans;
     }
 
     public List<TurSNSiteLocaleBean> responseLocales(TurSNSite turSNSite, URI uri) {
         List<TurSNSiteLocaleBean> turSNSiteLocaleBeans = new ArrayList<>();
-        turSNSiteLocaleRepository.findByTurSNSite(Sort.by(Sort.Order.asc("language").ignoreCase()), turSNSite)
-                .forEach(turSNSiteLocale -> {
-                    TurSNSiteLocaleBean turSNSiteLocaleBean = new TurSNSiteLocaleBean();
-                    turSNSiteLocaleBean.setLocale(turSNSiteLocale.getLanguage());
-                    turSNSiteLocaleBean.setLink(TurCommonsUtils
-                            .addOrReplaceParameter(uri, TurSNParamType.LOCALE, turSNSiteLocale.getLanguage()).toString());
-                    turSNSiteLocaleBeans.add(turSNSiteLocaleBean);
-                });
+        turSNSiteLocaleRepository.findByTurSNSite(Sort.by(Sort.Order.asc(LANGUAGE).ignoreCase()), turSNSite)
+                .forEach(turSNSiteLocale -> turSNSiteLocaleBeans.add(new TurSNSiteLocaleBean()
+                        .setLocale(turSNSiteLocale.getLanguage())
+                        .setLink(TurCommonsUtils
+                                .addOrReplaceParameter(uri, TurSNParamType.LOCALE,
+                                        turSNSiteLocale.getLanguage()).toString())));
 
         return turSNSiteLocaleBeans;
-    }
-
-    private TurSNSiteSpellCheckBean responseSpellCheck(TurSNSiteSearchContext context,
-                                                       TurSESpellCheckResult turSESpellCheckResult) {
-        return new TurSNSiteSpellCheckBean(context, turSESpellCheckResult);
-
     }
 
     private TurSNSiteSearchQueryContextBean responseQueryContext(TurSNSite turSNSite, TurSEResults turSEResults,
@@ -368,9 +398,9 @@ public class TurSNSearchProcess {
     }
 
     private TurSNSiteSearchFacetBean responseFacetToRemove(TurSNSiteSearchContext context) {
-        if (!CollectionUtils.isEmpty(context.getTurSEParameters().getFilterQueries())) {
+        if (!CollectionUtils.isEmpty(context.getTurSEParameters().getFilterQueries().getFq())) {
             List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<>();
-            context.getTurSEParameters().getFilterQueries().forEach(facetToRemove -> {
+            context.getTurSEParameters().getFilterQueries().getFq().forEach(facetToRemove -> {
                 String[] facetToRemoveParts = facetToRemove.split(":", 2);
                 if (facetToRemoveParts.length == 2) {
                     turSNSiteSearchFacetToRemoveItemBeans.add(new TurSNSiteSearchFacetItemBean()
@@ -386,12 +416,14 @@ public class TurSNSearchProcess {
 
     private List<TurSNSiteSearchFacetBean> responseFacet(TurSNSiteSearchContext context,
                                                          TurSNSite turSNSite, List<String> hiddenFilterQuery,
-                                                         List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList, Map<String,
-            TurSNSiteFieldExt> facetMap, TurSEResults turSEResults) {
-        if (turSNSite.getFacet() == 1 && hasFacetFields(turSNSiteFacetFieldExtList)) {
-            List<String> usedFacetItems = new ArrayList<>();
-            if (context.getTurSEParameters() != null && context.getTurSEParameters().getFilterQueries() != null )
-                usedFacetItems.addAll(context.getTurSEParameters().getFilterQueries());
+                                                         List<TurSNSiteFieldExtDto> turSNSiteFacetFieldExtList,
+                                                         Map<String, TurSNSiteFieldExtDto> facetMap,
+                                                         TurSEResults turSEResults) {
+        if (turSNSite.getFacet() == 1 && !CollectionUtils.isEmpty(turSNSiteFacetFieldExtList)) {
+            List<String> usedFacetItems = Optional.ofNullable(context.getTurSEParameters())
+                    .map(TurSEParameters::getFilterQueries)
+                    .map(TurSEFilterQueryParameters::getFq)
+                    .orElse(Collections.emptyList());
             List<TurSNSiteSearchFacetBean> turSNSiteSearchFacetBeans = new ArrayList<>();
             turSEResults.getFacetResults().forEach(facet -> {
                 if (showFacet(hiddenFilterQuery, facetMap, facet, turSNSite)) {
@@ -408,7 +440,7 @@ public class TurSNSearchProcess {
                         );
 
                     });
-                    turSNSiteSearchFacetBeans.add(getTurSNSiteSearchFacetBean(facetMap.get(facet.getFacet()),
+                    turSNSiteSearchFacetBeans.add(getTurSNSiteSearchFacetBean(context, facetMap.get(facet.getFacet()),
                             turSNSiteSearchFacetItemBeans));
                 }
             });
@@ -426,7 +458,7 @@ public class TurSNSearchProcess {
     }
 
     private static boolean showFacet(List<String> hiddenFilterQuery,
-                                     Map<String, TurSNSiteFieldExt> facetMap,
+                                     Map<String, TurSNSiteFieldExtDto> facetMap,
                                      TurSEFacetResult facet, TurSNSite turSNSite) {
         return facetMap.containsKey(facet.getFacet())
                 && (!hiddenFilterQuery.contains(facet.getFacet()) || showFacetByFacetType(turSNSite))
@@ -434,31 +466,24 @@ public class TurSNSearchProcess {
     }
 
     @NotNull
-    private static TurSNSiteSearchFacetBean getTurSNSiteSearchFacetBean(TurSNSiteFieldExt turSNSiteFieldExt,
+    private static TurSNSiteSearchFacetBean getTurSNSiteSearchFacetBean(TurSNSiteSearchContext context,
+                                                                        TurSNSiteFieldExtDto turSNSiteFieldExtDto,
                                                                         List<TurSNSiteSearchFacetItemBean>
                                                                                 turSNSiteSearchFacetItemBeans) {
-        TurSNSiteSearchFacetBean turSNSiteSearchFacetBean = new TurSNSiteSearchFacetBean();
-        turSNSiteSearchFacetBean.setLabel(new TurSNSiteSearchFacetLabelBean()
-                .setLang(TurSNUtils.DEFAULT_LANGUAGE)
-                .setText(turSNSiteFieldExt.getFacetName()));
-        turSNSiteSearchFacetBean.setName(turSNSiteFieldExt.getName());
-        turSNSiteSearchFacetBean.setDescription(turSNSiteFieldExt.getDescription());
-        turSNSiteSearchFacetBean.setMultiValuedWithInt(turSNSiteFieldExt.getMultiValued());
-        turSNSiteSearchFacetBean.setType(turSNSiteFieldExt.getType());
-        turSNSiteSearchFacetBean.setFacets(turSNSiteSearchFacetItemBeans);
+        TurSNSiteFieldExtFacetDto turSNSiteFieldExtFacetDto = turSNSiteFieldExtDto.getFacetLocales()
+                .stream()
+                .filter(o -> o.getLocale().toString().equals(context.getLocale().toString())).findFirst()
+                .orElse(TurSNSiteFieldExtFacetDto.builder().locale(context.getLocale())
+                        .label(turSNSiteFieldExtDto.getFacetName()).build());
         return new TurSNSiteSearchFacetBean()
                 .setLabel(new TurSNSiteSearchFacetLabelBean()
-                        .setLang(TurSNUtils.DEFAULT_LANGUAGE)
-                        .setText(turSNSiteFieldExt.getFacetName()))
-                .setName(turSNSiteFieldExt.getName())
-                .setDescription(turSNSiteFieldExt.getDescription())
-                .setType(turSNSiteFieldExt.getType())
+                        .setLang(context.getLocale().toString())
+                        .setText(turSNSiteFieldExtFacetDto.getLabel()))
+                .setName(turSNSiteFieldExtDto.getName())
+                .setDescription(turSNSiteFieldExtDto.getDescription())
+                .setType(turSNSiteFieldExtDto.getType())
                 .setFacets(turSNSiteSearchFacetItemBeans)
-                .setMultiValued(turSNSiteFieldExt.getMultiValued() == 1);
-    }
-
-    private static boolean hasFacetFields(List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList) {
-        return turSNSiteFacetFieldExtList != null && !turSNSiteFacetFieldExtList.isEmpty();
+                .setMultiValued(turSNSiteFieldExtDto.getMultiValued() == 1);
     }
 
     @NotNull
@@ -467,124 +492,103 @@ public class TurSNSearchProcess {
         return new TurSNSiteSearchFacetBean()
                 .setLabel(new TurSNSiteSearchFacetLabelBean()
                         .setLang(TurSNUtils.DEFAULT_LANGUAGE)
-                        .setText("Facets To Remove"))
+                        .setText(FACETS_TO_REMOVE))
                 .setFacets(turSNSiteSearchFacetToRemoveItemBeans);
     }
 
     private List<TurSNSiteSearchPaginationBean> responsePagination(URI uri, TurSEGenericResults turSEResults) {
-
-        List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans = new ArrayList<>();
-        int firstPagination = setFirstPagination(turSEResults);
-        int lastPagination = setLastPagination(turSEResults, turSEResults.getPageCount());
-        if (turSEResults.getCurrentPage() > turSEResults.getPageCount()) {
-            lastPagination = turSEResults.getPageCount();
-            firstPagination = setFirstPagination(turSEResults);
-        }
-        TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
+        List<TurSNSiteSearchPaginationBean> pagination = new ArrayList<>();
         if (turSEResults.getCurrentPage() > 1) {
-            setFirstPage(uri, turSNSiteSearchPaginationBeans, turSNSiteSearchPaginationBean);
-            setPreviousPage(uri, turSEResults, turSNSiteSearchPaginationBeans);
-        }
-        for (int page = firstPagination; page <= lastPagination; page++) {
-            if (page == turSEResults.getCurrentPage()) {
-                setCurrentPage(uri, turSNSiteSearchPaginationBeans, page);
-            } else {
-                setOthersPages(uri, turSNSiteSearchPaginationBeans, page);
+            pagination.add(setFirstPage(uri));
+            if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
+                pagination.add(setPreviousPage(uri, turSEResults));
             }
         }
-        if (turSEResults.getCurrentPage() != turSEResults.getPageCount() && turSEResults.getPageCount() > 1) {
-            setNextPage(uri, turSEResults, turSNSiteSearchPaginationBeans);
-            setLastPage(uri, turSEResults, turSNSiteSearchPaginationBeans);
+        IntStream.rangeClosed(getFirstPagination(turSEResults), getLastPagination(turSEResults)).forEach(page ->
+                pagination.add(isCurrentPage(turSEResults, page) ? setCurrentPage(uri, page) :
+                        setOtherPages(uri, page)));
+        if (isNotLastPage(turSEResults)) {
+            if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
+                pagination.add(setNextPage(uri, turSEResults));
+            }
+            pagination.add(setLastPage(uri, turSEResults));
         }
-        return turSNSiteSearchPaginationBeans;
+        return pagination;
+    }
+
+    private static boolean isCurrentPage(TurSEGenericResults turSEResults, int page) {
+        return page == turSEResults.getCurrentPage();
+    }
+
+    private static boolean isNotLastPage(TurSEGenericResults turSEResults) {
+        return turSEResults.getCurrentPage() != turSEResults.getPageCount() && turSEResults.getPageCount() > 1;
     }
 
     private URI changeGroupURIForPagination(URI uri, String fieldName) {
-        return TurCommonsUtils.addOrReplaceParameter(TurSNUtils.removeQueryField(uri, "group"),
-                TurSNParamType.FILTER_QUERIES, fieldName);
+        return TurCommonsUtils.addOrReplaceParameter(TurSNUtils.removeQueryField(uri, GROUP),
+                TurSNParamType.FILTER_QUERIES_DEFAULT, fieldName);
     }
 
-    private void setPreviousPage(URI uri, TurSEGenericResults turSEResults,
-                                 List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans) {
-        if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
-            turSNSiteSearchPaginationBeans.add(new TurSNSiteSearchPaginationBean()
-                    .setType(TurSNPaginationType.PREVIOUS)
-                    .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
-                            Integer.toString(turSEResults.getCurrentPage() - 1)).toString())
-                    .setText("Previous")
-                    .setPage(turSEResults.getCurrentPage() - 1)
-            );
-        }
+    private TurSNSiteSearchPaginationBean setPreviousPage(URI uri, TurSEGenericResults turSEResults) {
+        return new TurSNSiteSearchPaginationBean()
+                .setType(TurSNPaginationType.PREVIOUS)
+                .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
+                        Integer.toString(turSEResults.getCurrentPage() - 1)).toString())
+                .setText(PREVIOUS)
+                .setPage(turSEResults.getCurrentPage() - 1);
     }
 
-    private void setFirstPage(URI uri, List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans,
-                              TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean) {
-        turSNSiteSearchPaginationBean.setType(TurSNPaginationType.FIRST);
-        turSNSiteSearchPaginationBean.setHref(
-                TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(1)).toString());
-        turSNSiteSearchPaginationBean.setText("First");
-        turSNSiteSearchPaginationBean.setPage(1);
-        turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+    private TurSNSiteSearchPaginationBean setFirstPage(URI uri) {
+        return new TurSNSiteSearchPaginationBean()
+                .setType(TurSNPaginationType.FIRST)
+                .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(1))
+                        .toString())
+                .setText(FIRST)
+                .setPage(1);
     }
 
-    private void setLastPage(URI uri, TurSEGenericResults turSEResults,
-                             List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans) {
-        TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
-        turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-        turSNSiteSearchPaginationBean.setType(TurSNPaginationType.LAST);
-        turSNSiteSearchPaginationBean.setHref(TurCommonsUtils
-                .addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(turSEResults.getPageCount()))
-                .toString());
-        turSNSiteSearchPaginationBean.setText("Last");
-        turSNSiteSearchPaginationBean.setPage(turSEResults.getPageCount());
-        turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+    private TurSNSiteSearchPaginationBean setLastPage(URI uri, TurSEGenericResults turSEResults) {
+        return new TurSNSiteSearchPaginationBean()
+                .setType(TurSNPaginationType.LAST)
+                .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
+                        Integer.toString(turSEResults.getPageCount())).toString())
+                .setText(LAST)
+                .setPage(turSEResults.getPageCount());
     }
 
-    private void setNextPage(URI uri, TurSEGenericResults turSEResults,
-                             List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans) {
-        TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
-        if (turSEResults.getCurrentPage() <= turSEResults.getPageCount()) {
-            turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-            turSNSiteSearchPaginationBean.setType(TurSNPaginationType.NEXT);
-            turSNSiteSearchPaginationBean.setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
-                    Integer.toString(turSEResults.getCurrentPage() + 1)).toString());
-            turSNSiteSearchPaginationBean.setText("Next");
-            turSNSiteSearchPaginationBean.setPage(turSEResults.getCurrentPage() + 1);
-            turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+    private TurSNSiteSearchPaginationBean setNextPage(URI uri, TurSEGenericResults turSEResults) {
+        return new TurSNSiteSearchPaginationBean()
+                .setType(TurSNPaginationType.NEXT)
+                .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
+                        Integer.toString(turSEResults.getCurrentPage() + 1)).toString())
+                .setText(NEXT)
+                .setPage(turSEResults.getCurrentPage() + 1);
 
-        }
     }
 
-    private void setGenericPages(URI uri, List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans, int page,
-                                 TurSNPaginationType type) {
-        TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean;
-        turSNSiteSearchPaginationBean = new TurSNSiteSearchPaginationBean();
-        turSNSiteSearchPaginationBean.setHref(
-                TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page)).toString());
-        turSNSiteSearchPaginationBean.setText(Integer.toString(page));
-        turSNSiteSearchPaginationBean.setType(type);
-        turSNSiteSearchPaginationBean.setPage(page);
-        turSNSiteSearchPaginationBeans.add(turSNSiteSearchPaginationBean);
+    private TurSNSiteSearchPaginationBean setGenericPages(URI uri, int page,
+                                                          TurSNPaginationType type) {
+        return new TurSNSiteSearchPaginationBean()
+                .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page))
+                        .toString())
+                .setText(Integer.toString(page))
+                .setType(type)
+                .setPage(page);
     }
 
-    private void setOthersPages(URI uri, List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans, int page) {
-        setGenericPages(uri, turSNSiteSearchPaginationBeans, page, TurSNPaginationType.PAGE);
+    private TurSNSiteSearchPaginationBean setOtherPages(URI uri, int page) {
+        return setGenericPages(uri, page, TurSNPaginationType.PAGE);
     }
 
-    private void setCurrentPage(URI uri, List<TurSNSiteSearchPaginationBean> turSNSiteSearchPaginationBeans, int page) {
-        setGenericPages(uri, turSNSiteSearchPaginationBeans, page, TurSNPaginationType.CURRENT);
+    private TurSNSiteSearchPaginationBean setCurrentPage(URI uri, int page) {
+        return setGenericPages(uri, page, TurSNPaginationType.CURRENT);
     }
 
-    private int setLastPagination(TurSEGenericResults turSEResults, int lastPagination) {
-        if (turSEResults.getCurrentPage() + 3 <= turSEResults.getPageCount()) {
-            lastPagination = turSEResults.getCurrentPage() + 3;
-        } else if (turSEResults.getCurrentPage() + 3 > turSEResults.getPageCount()) {
-            lastPagination = turSEResults.getPageCount();
-        }
-        return lastPagination;
+    private int getLastPagination(TurSEGenericResults turSEResults) {
+        return Math.min(turSEResults.getCurrentPage() + 3, turSEResults.getPageCount());
     }
 
-    private int setFirstPagination(TurSEGenericResults turSEResults) {
+    private int getFirstPagination(TurSEGenericResults turSEResults) {
         return turSEResults.getCurrentPage() - 3 > 0 ? turSEResults.getCurrentPage() - 3 : 1;
     }
 }

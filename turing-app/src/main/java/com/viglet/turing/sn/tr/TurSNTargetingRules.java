@@ -31,6 +31,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TurSNTargetingRules {
+	public String run(TurSNTargetingRuleMethod method, String condition,  List<String> trs) {
+		return String.format("( %s AND %s )",  condition, this.run(method, trs));
+	}
+
 	public String run(TurSNTargetingRuleMethod method, List<String> trs) {
 		if (method.equals(TurSNTargetingRuleMethod.AND))
 			return this.andMethod(trs);
@@ -38,7 +42,6 @@ public class TurSNTargetingRules {
 			return this.orMethod(trs);
 		else
 			return "";
-
 	}
 
 	private String andMethod(List<String> trs) {

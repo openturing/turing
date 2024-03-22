@@ -1,6 +1,6 @@
 <div *ngIf="(getTurSNSiteSEFields() | async) as snSiteFields; else loading">
   <div class="Subhead">
-    <div class="Subhead-heading"><span octicon="rows" [size]="24" class="mr-1"></span> Search Engine Fields</div>
+    <div class="Subhead-heading Subhead-heading--large"><span octicon="rows" [size]="24" class="mr-1"></span> Search Engine Fields</div>
 
     <div class="Subhead-description">Custom Solr Fields.</div>
   </div>
@@ -80,7 +80,7 @@
 </div>
 <div *ngIf="(getTurSNSiteNLPFields() | async) as snSiteFields; else loading" class="mt-4">
   <div class="Subhead">
-    <div class="Subhead-heading">NLP Fields</div>
+    <div class="Subhead-heading Subhead-heading--large">NLP Fields</div>
     <div class="Subhead-description">NLP fields that is used when detected entities, these fields are static.</div>
   </div>
   <div class="clearfix mb-3" style="padding: 5px 0px;">

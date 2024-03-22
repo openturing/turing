@@ -1,12 +1,17 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { Observable } from 'rxjs';
-import { TurSNSite } from '../../../model/sn-site.model';
-import { NotifierService } from 'angular-notifier-updated';
-import { TurSNSiteService } from '../../../service/sn-site.service';
-import { ActivatedRoute, Router } from '@angular/router';
-import { TurSNSiteField } from '../../../model/sn-site-field.model';
-import { TurSNFieldTypeService } from '../../../service/sn-field-type.service';
-import { TurSNFieldType } from '../../../model/sn-field-type.model';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Observable} from 'rxjs';
+import {TurSNSite} from '../../../model/sn-site.model';
+import {NotifierService} from 'angular-notifier-updated';
+import {TurSNSiteService} from '../../../service/sn-site.service';
+import {ActivatedRoute, Router} from '@angular/router';
+import {TurSNSiteField} from '../../../model/sn-site-field.model';
+import {TurSNFieldTypeService} from '../../../service/sn-field-type.service';
+import {TurSNFieldType} from '../../../model/sn-field-type.model';
+import {TurLocale} from "../../../../locale/model/locale.model";
+import {TurLocaleService} from "../../../../locale/service/locale.service";
+import {TurSNSiteFieldFacet} from "../../../model/sn-site-field-facet.model";
+import {TurSNRankingExpression} from "../../../model/sn-ranking-expression.model";
+import {TurSNRankingCondition} from "../../../model/sn-ranking-condition.model";
 
 @Component({
   selector: 'sn-site-field-page',
@@ -19,14 +24,17 @@ export class TurSNSiteFieldPageComponent implements OnInit {
   private turSNSite: Observable<TurSNSite>;
   private turSNSiteField: Observable<TurSNSiteField>;
   private turSNFieldTypes: Observable<TurSNFieldType[]>;
+  private turLocales: Observable<TurLocale[]>;
   private siteId!: string;
   private newObject: boolean = false;
 
   constructor(private readonly notifier: NotifierService,
-    private turSNSiteService: TurSNSiteService,
-    private turSNFieldTypeService: TurSNFieldTypeService,
-    private activatedRoute: ActivatedRoute,
-    private router: Router) {
+              private turSNSiteService: TurSNSiteService,
+              private turSNFieldTypeService: TurSNFieldTypeService,
+              private turLocaleService: TurLocaleService,
+              private activatedRoute: ActivatedRoute,
+              private router: Router) {
+    this.turLocales = turLocaleService.query();
     this.siteId = this.activatedRoute.parent?.parent?.snapshot.paramMap.get('id') || "";
     let fieldId: string = this.activatedRoute.snapshot.paramMap.get('fieldId') || "";
     this.newObject = (fieldId.toLowerCase() === 'new');
@@ -41,8 +49,23 @@ export class TurSNSiteFieldPageComponent implements OnInit {
     return this.turSNFieldTypes;
   }
 
+  getTurSNFieldFacetRange(): string[] {
+    return ["DISABLED", "DAY", "MONTH", "YEAR"];
+  }
+  getFacetTypes(): string[] {
+    return ["DEFAULT", "AND", "OR"];
+  }
+
+  getFacetSorts(): string[] {
+    return ["DEFAULT", "ALPHABETICAL", "COUNT"];
+  }
   getTurSNSite(): Observable<TurSNSite> {
     return this.turSNSite;
+  }
+
+  getTurLocales(): Observable<TurLocale[]> {
+
+    return this.turLocales;
   }
 
   getTurSNSiteField(): Observable<TurSNSiteField> {
@@ -55,6 +78,17 @@ export class TurSNSiteFieldPageComponent implements OnInit {
 
   isNewObject(): boolean {
     return this.newObject;
+  }
+
+  newFacetLocale(turSNSiteFieldFacets: TurSNSiteFieldFacet[]) {
+    let turSNSiteFieldFacet = new TurSNSiteFieldFacet();
+    turSNSiteFieldFacets.push(turSNSiteFieldFacet);
+  }
+
+  removeFacetLocale(turSNSiteField: TurSNSiteField, turSNSiteFieldFacet: TurSNSiteFieldFacet) {
+    turSNSiteField.facetLocales =
+      turSNSiteField.facetLocales.filter(facetLocale =>
+        facetLocale != turSNSiteFieldFacet)
   }
 
   saveButtonCaption(): string {

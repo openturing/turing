@@ -27,6 +27,8 @@ import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFacetEnum;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -100,6 +102,8 @@ public class TurSNSiteAPI {
     @GetMapping("/structure")
     public TurSNSite turSNSiteStructure() {
         TurSNSite turSNSite = new TurSNSite();
+        turSNSite.setFacetSort(TurSNSiteFacetSortEnum.COUNT);
+        turSNSite.setFacetType(TurSNSiteFacetEnum.AND);
         turSNSite.setTurSEInstance(new TurSEInstance());
         turSNSite.setTurNLPVendor(new TurNLPVendor());
         return turSNSite;
@@ -120,9 +124,9 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
             turSNSiteEdit.setTurNLPVendor(turSNSite.getTurNLPVendor());
             turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
-
             turSNSiteEdit.setFacet(turSNSite.getFacet());
             turSNSiteEdit.setFacetType(turSNSite.getFacetType());
+            turSNSiteEdit.setFacetSort(turSNSite.getFacetSort());
             turSNSiteEdit.setHl(turSNSite.getHl());
             turSNSiteEdit.setHlPost(turSNSite.getHlPost());
             turSNSiteEdit.setHlPre(turSNSite.getHlPre());
@@ -132,7 +136,8 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setMlt(turSNSite.getMlt());
             turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
             turSNSiteEdit.setSpotlightWithResults(turSNSite.getSpotlightWithResults());
-            turSNSiteEdit.setWhenNoResultsUseAsterisk(turSNSite.getWhenNoResultsUseAsterisk());
+            turSNSiteEdit.setWildcardNoResults(turSNSite.getWildcardNoResults());
+            turSNSiteEdit.setWildcardAlways(turSNSite.getWildcardAlways());
             turSNSiteEdit.setDefaultTitleField(turSNSite.getDefaultTitleField());
             turSNSiteEdit.setDefaultTextField(turSNSite.getDefaultTextField());
             turSNSiteEdit.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());

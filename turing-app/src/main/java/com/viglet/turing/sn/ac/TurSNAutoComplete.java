@@ -21,7 +21,7 @@
 package com.viglet.turing.sn.ac;
 
 import com.google.inject.Inject;
-import com.viglet.turing.se.TurSEStopword;
+import com.viglet.turing.se.TurSEStopWord;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
@@ -42,11 +42,11 @@ public class TurSNAutoComplete {
 	private static final boolean USE_TERMS_QUERY_EQUALS_AUTO_COMPLETE = true;
 	private static final boolean USE_REPEAT_QUERY_TEXT_ON_AUTOCOMPLETE = false;
 	private final TurSolr turSolr;
-	private final TurSEStopword turSEStopword;
+	private final TurSEStopWord turSEStopword;
 	private final TurSolrInstanceProcess turSolrInstanceProcess;
 
 	@Inject
-	public TurSNAutoComplete(TurSolr turSolr, TurSEStopword turSEStopword, TurSolrInstanceProcess turSolrInstanceProcess) {
+	public TurSNAutoComplete(TurSolr turSolr, TurSEStopWord turSEStopword, TurSolrInstanceProcess turSolrInstanceProcess) {
 		this.turSolr = turSolr;
 		this.turSEStopword = turSEStopword;
 		this.turSolrInstanceProcess = turSolrInstanceProcess;

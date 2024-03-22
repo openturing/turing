@@ -38,7 +38,7 @@ public class TurSNJobItem implements Serializable{
 	
 	private TurSNJobAction turSNJobAction;
 
-	private List<TurSNAttributeSpec> specs = new ArrayList<>();
+	private List<TurSNJobAttributeSpec> specs = new ArrayList<>();
 	private Map<String, Object> attributes;
 	public TurSNJobItem() {
 		super();
@@ -50,7 +50,7 @@ public class TurSNJobItem implements Serializable{
 		this.turSNJobAction = turSNJobAction;
 		this.attributes = attributes;
 	}
-	public TurSNJobItem(TurSNJobAction turSNJobAction, Locale locale, List<TurSNAttributeSpec> specs,
+	public TurSNJobItem(TurSNJobAction turSNJobAction, Locale locale, List<TurSNJobAttributeSpec> specs,
 						Map<String, Object> attributes) {
 		super();
 		this.locale = locale;
@@ -85,11 +85,11 @@ public class TurSNJobItem implements Serializable{
 		return turSNJobAction;
 	}
 
-	public List<TurSNAttributeSpec> getSpecs() {
+	public List<TurSNJobAttributeSpec> getSpecs() {
 		return specs;
 	}
 
-	public void setSpecs(List<TurSNAttributeSpec> specs) {
+	public void setSpecs(List<TurSNJobAttributeSpec> specs) {
 		this.specs = specs;
 	}
 

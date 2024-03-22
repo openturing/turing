@@ -27,7 +27,7 @@ public class AemObject {
     private final String url;
     private String model;
     private final JSONObject node;
-    private JSONObject jcrContentNode;
+    private JSONObject jcrContentNode = new JSONObject();
     private String title;
     private final Map<String, Object> attributes = new HashMap<>();
 

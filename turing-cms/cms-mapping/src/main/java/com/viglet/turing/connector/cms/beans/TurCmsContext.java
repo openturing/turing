@@ -34,11 +34,11 @@ public class TurCmsContext {
 	private TurCmsSourceAttr turCmsSourceAttr;
 	private IHandlerConfiguration configuration;
 
-	public TurCmsContext(Object cmsObjectInstance, TurCmsTargetAttr turCmsTargetAttr,
-						 TurCmsSourceAttr turCmsSourceAttr, IHandlerConfiguration configuration) {
+	public TurCmsContext(Object cmsObjectInstance,
+						 IHandlerConfiguration configuration) {
 		this.cmsObjectInstance = cmsObjectInstance;
-		this.turCmsTargetAttr = turCmsTargetAttr;
-		this.turCmsSourceAttr = turCmsSourceAttr;
+		this.turCmsTargetAttr = null;
+		this.turCmsSourceAttr = null;
 		this.configuration = configuration;
 	}
 }

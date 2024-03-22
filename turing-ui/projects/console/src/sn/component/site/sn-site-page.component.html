@@ -1,6 +1,6 @@
 <div *ngIf="(getTurSNSite() | async) as snSite; else loading">
   <div class="Subhead mt-4">
-    <div class="Subhead-heading">
+    <div class="Subhead-heading Subhead-heading--large">
       <div *ngIf="!isNewObject()" class="d-flex">
         <div style="height: 32px; border-radius: 50%;">
           <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="snSite.name | lowercase">
@@ -24,7 +24,7 @@
       <details #modalDelete id="modalDelete" class="details-reset details-overlay details-overlay-dark mr-2"
         style="display: unset;">
         <summary class="btn btn-sm btn-danger mr-1" aria-haspopup="dialog"><span octicon="trash" [size]=16
-            class="mr-1"></span>Delete</summary>
+            class="mr-1"></span>Delete site</summary>
         <details-dialog class="Box Box--overlay d-flex flex-column anim-fade-in fast" style="overflow: hidden;">
           <div class="Box-header">
             <button onclick='document.getElementById("modalDelete").removeAttribute("open");'

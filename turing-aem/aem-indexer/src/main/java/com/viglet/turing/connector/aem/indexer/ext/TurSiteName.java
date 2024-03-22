@@ -1,6 +1,7 @@
 package com.viglet.turing.connector.aem.indexer.ext;
 
 import com.viglet.turing.connector.aem.indexer.AemObject;
+import com.viglet.turing.connector.aem.indexer.TurAEMIndexerTool;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
@@ -12,7 +13,7 @@ public class TurSiteName implements ExtAttributeInterface {
 
 	@Override
 	public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-								 AemObject aemObject, IHandlerConfiguration config) {
+								 AemObject aemObject, IHandlerConfiguration config, TurAEMIndexerTool turAEMIndexerTool) {
 		log.debug("Executing TurSiteName");
 		return TurMultiValue.singleItem(EMPTY_STRING);
 	}

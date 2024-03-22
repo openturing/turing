@@ -1,0 +1,189 @@
+{
+  "targetAttrDefinitions": [
+    {
+      "name": "id",
+      "type": "string",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Id",
+      "facet": false,
+      "facetName": "Ids",
+      "className": "com.viglet.turing.connector.aem.indexer.ext.TurContentId"
+    },
+    {
+      "name": "type",
+      "type": "string",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Content Type",
+      "facet": false,
+      "facetName": "Content Types",
+      "className": "com.viglet.turing.connector.aem.indexer.ext.TurCTDName"
+    },
+    {
+      "name": "publication_date",
+      "type": "string",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Publication Date",
+      "facet": false,
+      "facetName": "Publication Dates",
+      "className": "com.viglet.turing.connector.aem.indexer.ext.TurAEMCreationDate"
+    },
+    {
+      "name": "modification_date",
+      "type": "string",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Modification Date",
+      "facet": false,
+      "facetName": "Modification Dates",
+      "className": "com.viglet.turing.connector.aem.indexer.ext.TurAEMModificationDate"
+    },
+    {
+      "name": "site",
+      "type": "string",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Site Name",
+      "facet": false,
+      "facetName": "Sites",
+      "className": "com.viglet.turing.connector.aem.indexer.ext.TurSiteName"
+    },
+    {
+      "name": "text",
+      "type": "string",
+      "multiValued": false,
+      "description": "Generic Text",
+      "facet": false,
+      "facetName": "Texts",
+      "className": "com.viglet.turing.connector.aem.indexer.ext.TurHTML2Text"
+    },
+    {
+      "name": "description",
+      "type": "string",
+      "multiValued": false,
+      "description": "Generic Text",
+      "facet": false,
+      "facetName": "Texts",
+      "className": "com.viglet.turing.connector.aem.indexer.ext.TurHTML2Text"
+    },
+    {
+      "name": "url",
+      "type": "string",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "URL",
+      "facet": false,
+      "facetName": "URLs",
+      "className": "com.viglet.turing.connector.aem.indexer.ext.TurContentUrl"
+    },
+    {
+      "name": "source_apps",
+      "type": "string",
+      "mandatory": true,
+      "multiValued": true,
+      "description": "Source Apps",
+      "facet": true,
+      "facetName": "Source Apps",
+      "className": "com.viglet.turing.connector.aem.indexer.ext.TurSourceApps"
+    },
+    {
+      "name": "group",
+      "type": "string",
+      "mandatory": false,
+      "multiValued": true,
+      "description": "Groups",
+      "facet": true,
+      "facetName": "Groups"
+    },
+    {
+      "name": "theme",
+      "type": "string",
+      "mandatory": false,
+      "multiValued": true,
+      "description": "Theme",
+      "facet": true,
+      "facetName": "Themes"
+    }
+  ],
+  "models": [
+    {
+      "type": "cq:Page",
+      "targetAttrs": [
+        {
+          "name": "title",
+          "sourceAttrs": [
+            {
+              "name": "jcr:title"
+            }
+          ]
+        },
+        {
+          "name": "abstract",
+          "sourceAttrs": [
+            {
+              "name": "jcr:description"
+            }
+          ]
+        },
+        {
+          "name": "tags",
+          "sourceAttrs": [
+            {
+              "name": "cq:tags"
+            }
+          ]
+        },
+        {
+          "name": "text",
+          "sourceAttrs": [
+            {
+              "name": "text",
+              "className": "com.viglet.turing.connector.aem.indexer.ext.TurPageComponents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "dam:Asset",
+      "subType": "content-fragment",
+      "targetAttrs": [
+        {
+          "name": "title",
+          "sourceAttrs": [
+            {
+              "name": "jcr:title"
+            }
+          ]
+        },
+        {
+          "name": "abstract",
+          "sourceAttrs": [
+            {
+              "name": "content",
+              "className": "com.viglet.turing.connector.aem.indexer.ext.TurHTML2Text"
+            }
+          ]
+        },
+        {
+          "name": "group",
+          "sourceAttrs": [
+            {
+              "name": "group"
+            }
+          ]
+        },
+        {
+          "name": "theme",
+          "sourceAttrs": [
+            {
+              "name": "theme"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
