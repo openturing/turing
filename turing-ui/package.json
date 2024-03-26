@@ -23,7 +23,7 @@
     "@angular/router": "17.0.6",
     "@primer/css": "21.2.2",
     "@primer/octicons": "19.9.0",
-    "@primer/styled-octicons": "19.8.0",
+    "@primer/styled-octicons": "19.9.0",
     "angular-notifier-updated": "15.0.0",
     "jdenticon": "3.2.0",
     "moment": "^2.30.1",
