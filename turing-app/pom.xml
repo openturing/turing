@@ -249,7 +249,7 @@
         <dependency>
             <groupId>org.languagetool</groupId>
             <artifactId>language-pt</artifactId>
-            <version>6.3</version>
+            <version>6.4</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
