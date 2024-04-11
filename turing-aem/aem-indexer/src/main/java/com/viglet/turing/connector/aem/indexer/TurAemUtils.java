@@ -5,20 +5,21 @@ import com.viglet.turing.connector.aem.indexer.conf.AemHandlerConfiguration;
 import com.viglet.turing.connector.cms.beans.TurCmsContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.message.BasicHeader;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 public class TurAemUtils {
@@ -50,26 +51,25 @@ public class TurAemUtils {
         return getInfinityJson(url, tool.getHostAndPort(), tool.getUsername(), tool.getPassword());
     }
 
-    public static JSONObject getInfinityJson(String url, String hostAndPort, String username, String password) {
-
-        String infinityJsonUrl = String.format(url.endsWith(JSON) ? "%s%s" : "%s%s.infinity.json",
-                hostAndPort, url);
-
+    public static JSONObject getInfinityJson(String originalUrl, String hostAndPort, String username, String password) {
+        String infinityJsonUrl = String.format(originalUrl.endsWith(JSON) ? "%s%s" : "%s%s.infinity.json",
+                hostAndPort, originalUrl);
         if (responseHttpCache.containsKey(infinityJsonUrl)) {
             log.info(STR."Cached Response \{infinityJsonUrl}");
             return new JSONObject(responseHttpCache.get(infinityJsonUrl));
         } else {
             log.info(STR."Request \{infinityJsonUrl}");
-            String responseBody = getResponseBody(infinityJsonUrl, username, password);
-            if (isResponseBodyJSONArray(responseBody) && !url.endsWith(JSON)) {
-                JSONArray jsonArray = new JSONArray(responseBody);
-                return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
-            } else if (isResponseBodyJSONObject(responseBody)) {
-                responseHttpCache.put(infinityJsonUrl, responseBody);
-                return new JSONObject(responseBody);
-            }
+            return getResponseBody(infinityJsonUrl, username, password).map(responseBody -> {
+                if (isResponseBodyJSONArray(responseBody) && !originalUrl.endsWith(JSON)) {
+                    JSONArray jsonArray = new JSONArray(responseBody);
+                    return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
+                } else if (isResponseBodyJSONObject(responseBody)) {
+                    responseHttpCache.put(infinityJsonUrl, responseBody);
+                    return new JSONObject(responseBody);
+                }
+               return new JSONObject();
+            }).orElse(new JSONObject());
         }
-        return new JSONObject();
     }
 
     private static boolean isResponseBodyJSONArray(String responseBody) {
@@ -80,23 +80,24 @@ public class TurAemUtils {
         return responseBody.startsWith("{");
     }
 
-    public static String getResponseBody(String url, String username, String password) {
-        try (HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
-                .authenticator(new Authenticator() {
-                    @Override
-                    protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(username, password.toCharArray());
-                    }
-                })
-                .build()) {
-            try {
-                HttpRequest request = HttpRequest.newBuilder().GET().uri(new URI(UrlEscapers.urlFragmentEscaper().escape(url))).build();
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                return response.body();
-            } catch (URISyntaxException | IOException | InterruptedException ex) {
-                throw new RuntimeException(ex);
+    public static Optional<String> getResponseBody(String url, String username, String password) {
+        HttpGet request = new HttpGet(URI.create(UrlEscapers.urlFragmentEscaper().escape(url)).normalize());
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create()
+                .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.AUTHORIZATION, basicAuth(username, password))))
+                .build();
+             CloseableHttpResponse response = httpClient.execute(request)) {
+            HttpEntity entity = response.getEntity();
+            if (entity != null) {
+                return Optional.of(EntityUtils.toString(entity));
             }
+        } catch (IOException | ParseException e) {
+            log.error(e.getMessage(), e);
         }
+        return Optional.empty();
+    }
+
+    private static String basicAuth(String username, String password) {
+        return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
     }
 
     public static String getPropertyValue(Object property) {
@@ -115,8 +116,7 @@ public class TurAemUtils {
     public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuffer components) {
         if (jsonObject.has(JCR_TITLE) && jsonObject.get(JCR_TITLE) instanceof String title) {
             components.append(title);
-        }
-        else if (jsonObject.has(TEXT) && jsonObject.get(TEXT) instanceof String text) {
+        } else if (jsonObject.has(TEXT) && jsonObject.get(TEXT) instanceof String text) {
             components.append(text);
         }
         jsonObject.toMap().forEach((key, _) -> {
