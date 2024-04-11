@@ -119,6 +119,7 @@ public class TurSolr {
     public static final String EMPTY = "";
     public static final String SOLR_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     public static final String INDEX = "index";
+    public static final String ROWS = "rows";
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNTargetingRules turSNTargetingRules;
     private final TurSNSiteFieldUtils turSNSiteFieldUtils;
@@ -392,7 +393,8 @@ public class TurSolr {
         query.set(GroupParams.GROUP, TRUE)
                 .set(GroupParams.GROUP_FIELD, turSEParameters.getGroup())
                 .set(GroupParams.GROUP_LIMIT, turSEParameters.getRows())
-                .set(GroupParams.GROUP_OFFSET, TurSolrUtils.firstRowPositionFromCurrentPage(turSEParameters));
+                .set(GroupParams.GROUP_OFFSET, TurSolrUtils.firstRowPositionFromCurrentPage(turSEParameters))
+                .set(ROWS, 100);
 
     }
 
