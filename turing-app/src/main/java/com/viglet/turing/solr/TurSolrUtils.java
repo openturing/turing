@@ -25,6 +25,8 @@ import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.se.result.TurSEResult;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.KeyValue;
+import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.solr.common.SolrDocument;
@@ -38,6 +40,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Slf4j
 public class TurSolrUtils {
 
@@ -222,6 +228,11 @@ public class TurSolrUtils {
 			throw new RuntimeException(e);
 		}
 	}
+
+
+	public static String getValueFromQuery(String q) {
+		return getQueryKeyValue(q).map(KeyValue::getValue).orElse(q);
+	}
 	public static TurSEResult createTurSEResultFromDocument(SolrDocument document) {
 		TurSEResult turSEResult = TurSEResult.builder().build();
 		document.getFieldNames()
@@ -235,5 +246,16 @@ public class TurSolrUtils {
 
 	public static int lastRowPositionFromCurrentPage(TurSEParameters turSEParameters) {
 		return (turSEParameters.getCurrentPage() * turSEParameters.getRows());
+	}
+
+	public static Optional<KeyValue<String, String>> getQueryKeyValue(String query) {
+		String[] attributeKV = query.split(":");
+		if (attributeKV.length >= 2) {
+			String key = attributeKV[0];
+			String value = Arrays.stream(attributeKV).skip(1).collect(Collectors.joining(":"));
+			return Optional.of(new DefaultMapEntry<>(key, value));
+		} else {
+			return Optional.empty();
+		}
 	}
 }

@@ -58,7 +58,6 @@ import com.viglet.turing.sn.tr.TurSNTargetingRules;
 import com.viglet.turing.utils.TurSNSiteFieldUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.KeyValue;
-import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
@@ -579,7 +578,7 @@ public class TurSolr {
 
     private void setSortEntry(TurSNSite turSNSite, SolrQuery query, TurSEParameters turSEParameters) {
         Optional.ofNullable(turSEParameters.getSort()).ifPresent(sort ->
-                        getQueryKeyValue(sort).ifPresentOrElse(kv ->
+                TurSolrUtils.getQueryKeyValue(sort).ifPresentOrElse(kv ->
                                 query.setSort(kv.getKey(), kv.getValue().equals(ASC) ? ORDER.asc : ORDER.desc),
                         () -> {
                             if (sort.equalsIgnoreCase(NEWEST))
@@ -696,20 +695,77 @@ public class TurSolr {
     }
 
     private void prepareQueryTargetingRules(TurSNSitePostParamsBean turSNSitePostParamsBean, SolrQuery query) {
+        if (isTargetingRulesWithoutCondition(turSNSitePostParamsBean)) {
+            targetingRulesWithoutCondition(turSNSitePostParamsBean, query);
+        } else if (isTargetingRulesWithCondition(turSNSitePostParamsBean)) {
+            targetingRulesWithCondition(turSNSitePostParamsBean, query);
+        }
+    }
+
+    private static boolean isTargetingRulesWithCondition(TurSNSitePostParamsBean turSNSitePostParamsBean) {
+        return !CollectionUtils.isEmpty(turSNSitePostParamsBean.getTargetingRulesWithCondition()) ||
+                !CollectionUtils.isEmpty(turSNSitePostParamsBean.getTargetingRulesWithConditionAND()) ||
+                !CollectionUtils.isEmpty(turSNSitePostParamsBean.getTargetingRulesWithConditionOR());
+    }
+
+    private static boolean isTargetingRulesWithoutCondition(TurSNSitePostParamsBean turSNSitePostParamsBean) {
+        return !CollectionUtils.isEmpty(turSNSitePostParamsBean.getTargetingRules());
+    }
+
+    private void targetingRulesWithoutCondition(TurSNSitePostParamsBean turSNSitePostParamsBean, SolrQuery query) {
         if (!CollectionUtils.isEmpty(turSNSitePostParamsBean.getTargetingRules()))
             query.addFilterQuery(
-                    turSNTargetingRules.run(TurSNTargetingRuleMethod.AND,
+                    turSNTargetingRules.ruleExpression(TurSNTargetingRuleMethod.AND,
                             turSNSitePostParamsBean.getTargetingRules()));
-        if (!CollectionUtils.isEmpty(turSNSitePostParamsBean.getTargetingRulesWithCondition())) {
-            List<String> condition = new ArrayList<>();
-            List<String> rules = new ArrayList<>();
-            turSNSitePostParamsBean.getTargetingRulesWithCondition().forEach((key, value) -> {
-                condition.add(key);
-                rules.add(turSNTargetingRules.run(TurSNTargetingRuleMethod.AND, key, value));
+    }
+
+    private void targetingRulesWithCondition(TurSNSitePostParamsBean turSNSitePostParamsBean, SolrQuery query) {
+        Map<String, List<String>> formattedRulesAND = new HashMap<>();
+        Map<String, List<String>> formattedRulesOR = new HashMap<>();
+        Set<String> conditions = new HashSet<>();
+        targetingRulesWithCondition(turSNSitePostParamsBean.getTargetingRulesWithCondition(), formattedRulesAND,
+                conditions);
+        targetingRulesWithCondition(turSNSitePostParamsBean.getTargetingRulesWithConditionAND(), formattedRulesAND,
+                conditions);
+        targetingRulesWithCondition(turSNSitePostParamsBean.getTargetingRulesWithConditionOR(), formattedRulesOR,
+                conditions);
+        List<String> rules = new ArrayList<>();
+        conditions.forEach(condition -> {
+            StringBuilder rule = new StringBuilder();
+            boolean containAndRules = formattedRulesAND.containsKey(condition);
+            boolean containOrRules = formattedRulesOR.containsKey(condition);
+            if (containAndRules)
+                rule.append(turSNTargetingRules.andMethod(formattedRulesAND.get(condition)));
+            if (containOrRules) {
+                rule.append(containAndRules ?
+                        String.format(" AND (%s)", turSNTargetingRules.orMethod(formattedRulesOR.get(condition))) :
+                        turSNTargetingRules.orMethod(formattedRulesOR.get(condition)));
+            }
+            System.out.println("Rule: " + rule);
+            rules.add(String.format("( %s AND ( %s ) )", condition, rule));
+        });
+
+        String targetingRuleQuery = String.format("%s OR (*:* NOT ( %s ) )",
+                String.join(" OR ", rules),
+                String.join(" OR ", conditions));
+        System.out.println(targetingRuleQuery);
+        query.addFilterQuery(targetingRuleQuery);
+    }
+
+    private void addFormattedRules(Map<String, List<String>> formattedRules, String key, List<String> value) {
+        if (formattedRules.containsKey(key))
+            formattedRules.get(key).addAll(value);
+        else
+            formattedRules.put(key, value);
+    }
+
+    private void targetingRulesWithCondition(Map<String, List<String>> targetingRulesWithCondition,
+                                             Map<String, List<String>> formattedRules, Set<String> conditions) {
+        if (!CollectionUtils.isEmpty(targetingRulesWithCondition)) {
+            targetingRulesWithCondition.forEach((key, value) -> {
+                conditions.add(key);
+                addFormattedRules(formattedRules, key, value);
             });
-            query.addFilterQuery(String.format("%s OR (*:* NOT (%s))",
-                    String.join(" OR ", rules),
-                    String.join(" OR ", condition)));
         }
     }
 
@@ -786,7 +842,7 @@ public class TurSolr {
                                             Map<TurSNSiteFacetFieldEnum, List<String>> fqMap, TurSNSite turSNSite,
                                             TurSNFilterQueryOperator operator) {
 
-        getQueryKeyValue(fq).flatMap(kv ->
+        TurSolrUtils.getQueryKeyValue(fq).flatMap(kv ->
                         enabledFacets.stream()
                                 .filter(facet -> facet.getName().equals(kv.getKey()))
                                 .findFirst())
@@ -872,7 +928,7 @@ public class TurSolr {
     @NotNull
     private static List<String> setFilterQueryRangeValue(List<String> filterQueries, List<TurSNSiteFieldExt> dateFacet) {
         return filterQueries.stream()
-                .map(fq -> getQueryKeyValue(fq)
+                .map(fq -> TurSolrUtils.getQueryKeyValue(fq)
                         .map(facetKv ->
                                 dateFacet.stream()
                                         .filter(dateFacetItem -> facetKv.getKey().equals(dateFacetItem.getName()) &&
@@ -899,17 +955,6 @@ public class TurSolr {
             log.error(e.getMessage(), e);
         }
         return fq;
-    }
-
-    private static Optional<KeyValue<String, String>> getQueryKeyValue(String query) {
-        String[] attributeKV = query.split(":");
-        if (attributeKV.length >= 2) {
-            String key = attributeKV[0];
-            String value = Arrays.stream(attributeKV).skip(1).collect(Collectors.joining(":"));
-            return Optional.of(new DefaultMapEntry<>(key, value));
-        } else {
-            return Optional.empty();
-        }
     }
 
     @NotNull
@@ -976,20 +1021,17 @@ public class TurSolr {
 
     @NotNull
     private static String addDoubleQuotesToValue(String q) {
-        return getQueryKeyValue(q)
+        return TurSolrUtils.getQueryKeyValue(q)
                 .map(kv -> String.format("%s:\"%s\"", kv.getKey(), kv.getValue()))
                 .orElse(String.format("\"%s\"", q));
     }
 
     private static boolean queryWithoutExpression(String q) {
-        String value = getValueFromQuery(q);
+        String value = TurSolrUtils.getValueFromQuery(q);
         return !q.startsWith("(") && !value.startsWith("[") && !value.startsWith("(") && !value.endsWith("*");
 
     }
 
-    private static String getValueFromQuery(String q) {
-       return getQueryKeyValue(q).map(KeyValue::getValue).orElse(q);
-    }
 
     private List<TurSNSiteFieldExt> prepareQueryMLT(TurSNSite turSNSite, SolrQuery query) {
         List<TurSNSiteFieldExt> turSNSiteMLTFieldExtList = turSNSiteFieldExtRepository
