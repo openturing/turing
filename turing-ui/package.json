@@ -31,7 +31,7 @@
     "ngx-smart-modal": "14.0.3",
     "num2fraction": "1.2.2",
     "rxjs": "7.8.1",
-    "sass": "^1.75.0",
+    "sass": "^1.77.1",
     "tslib": "2.6.2"
   },
   "devDependencies": {
