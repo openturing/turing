@@ -96,7 +96,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void delete(String key) throws IOException {
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE);
+
 		try {
 			key = URLDecoder.decode(key, "UTF8");
 		} catch (UnsupportedEncodingException e) {
@@ -105,14 +105,14 @@ public class TurNutchIndexWriter implements IndexWriter {
 		} catch (IllegalArgumentException e) {
 			logger.warn("Could not decode: " + key + ", it probably wasn't encoded in the first place..");
 		}
-
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, Collections.singletonList(site));
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put(TurNutchCommons.ID_FIELD, key);
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 
 		if (turSNJobItems.getTuringDocuments().size() >= batchSize) {
-			TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
+			TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url);
 		}
 
 	}
@@ -124,7 +124,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void write(NutchDocument doc) throws IOException {
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE,
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, Collections.singletonList(site),
 				LocaleUtils.toLocale(this.config
 				.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY),
 						TurNutchCommons.LOCALE_DEFAULT_VALUE.toLanguageTag())));
@@ -163,13 +163,13 @@ public class TurNutchIndexWriter implements IndexWriter {
 		totalAdds++;
 
 		if (turSNJobItems.getTuringDocuments().size() >= batchSize) {
-			TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
+			TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url);
 		}
 	}
 
 	@Override
 	public void commit() throws IOException {
-		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
+		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url);
 	}
 
 	@Override

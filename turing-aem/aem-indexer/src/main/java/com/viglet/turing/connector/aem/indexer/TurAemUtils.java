@@ -67,7 +67,7 @@ public class TurAemUtils {
                     responseHttpCache.put(infinityJsonUrl, responseBody);
                     return new JSONObject(responseBody);
                 }
-               return new JSONObject();
+                return new JSONObject();
             }).orElse(new JSONObject());
         }
     }

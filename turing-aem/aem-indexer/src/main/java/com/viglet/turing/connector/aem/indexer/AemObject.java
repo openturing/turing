@@ -18,6 +18,7 @@ public class AemObject {
     public static final String JCR_TITLE = "jcr:title";
     public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     public static final String HTML = ".html";
+    public static final String ACTIVATE = "Activate";
     private Calendar lastModified;
     private Calendar createdDate;
     private boolean contentFragment = false;
@@ -32,7 +33,7 @@ public class AemObject {
     private final Map<String, Object> attributes = new HashMap<>();
 
     public static final String CONTENT_FRAGMENT = "contentFragment";
-    public static final String CQ_IS_DELIVERED = "cq:isDelivered";
+    public static final String CQ_LAST_REPLICATION_ACTION_PUBLISH = "cq:lastReplicationAction_publish";
     public static final String CQ_LAST_MODIFIED = "cq:lastModified";
     public static final String CQ_MODEL = "cq:model";
     public static final String DATA_FOLDER = "data";
@@ -48,7 +49,8 @@ public class AemObject {
         try {
             if (jcrNode.has(JCR_CONTENT)) {
                 this.jcrContentNode = jcrNode.getJSONObject(JCR_CONTENT);
-                this.delivered = jcrContentNode.has(CQ_IS_DELIVERED) && this.jcrContentNode.getBoolean(CQ_IS_DELIVERED);
+                this.delivered = jcrContentNode.has(CQ_LAST_REPLICATION_ACTION_PUBLISH)
+                        && this.jcrContentNode.getString(CQ_LAST_REPLICATION_ACTION_PUBLISH).equals(ACTIVATE);
                 this.title = jcrContentNode.has(JCR_TITLE) ? this.jcrContentNode.getString(JCR_TITLE) : EMPTY_VALUE;
                 if (TurAemUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT)) {
                     this.contentFragment = this.jcrContentNode.getBoolean(CONTENT_FRAGMENT);

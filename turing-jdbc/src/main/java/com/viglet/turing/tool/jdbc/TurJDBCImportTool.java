@@ -267,7 +267,8 @@ public class TurJDBCImportTool {
 		addFileAttributes(attributes);
 		attributes = modifyAttributesByCustomClass(turJDBCCustomImpl, conn, attributes);
 		addMultiValuedAttributes(attributes);
-		TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, LocaleUtils.toLocale(locale));
+		TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, Collections.singletonList(this.site),
+				LocaleUtils.toLocale(locale));
 		turSNJobItem.setAttributes(attributes);
 
 		return turSNJobItem;

@@ -94,7 +94,7 @@ public class TurWCProcess {
         this.snSite = turWCSource.getTurSNSite();
         this.username = turWCSource.getUsername();
         this.password = turWCSource.getPassword();
-        log.info("User Agent: " + userAgent);
+        log.info("User Agent: {}", userAgent);
         turWCAllowUrlRepository
                 .findByTurWCSource(turWCSource)
                 .forEach(turWCAllowUrl -> {
@@ -113,16 +113,16 @@ public class TurWCProcess {
     }
 
     private void getInfoQueue() {
-        log.info("Total Job Item: " + Iterators.size(turSNJobItems.iterator()));
-        log.info("Total Visited Links: " + (long) visitedLinks.size());
-        log.info("Queue Size: " + (long) remainingLinks.size());
+        log.info("Total Job Item: {}", Iterators.size(turSNJobItems.iterator()));
+        log.info("Total Visited Links: {}", (long) visitedLinks.size());
+        log.info("Queue Size: {}", (long) remainingLinks.size());
     }
 
     public void getPageLinks(TurWCSource turWCSource) {
         while (!remainingLinks.isEmpty()) {
             String url = remainingLinks.poll();
             try {
-                log.info(url);
+                log.info("{}: {}", turWCSource.getTurSNSite(), url);
                 Document document = getHTML(url);
                 addTurSNJobItems(getLocale(turWCSource, document, url),
                         getJobItemAttributes(turWCSource, document, url));
@@ -133,10 +133,10 @@ public class TurWCProcess {
                     final String pageUrl = getPageUrl(attr);
                     if (canBeIndexed(pageUrl)) {
                         if (visitedLinks.add(pageUrl) && !remainingLinks.offer(pageUrl)) {
-                            log.error("Item didn't add to queue: " + pageUrl);
+                            log.error("Item didn't add to queue: {}", pageUrl);
                         }
                     } else {
-                        log.debug("Ignored: " + pageUrl);
+                        log.debug("Ignored: {}", pageUrl);
                     }
                 }
             } catch (IOException e) {
@@ -216,19 +216,19 @@ public class TurWCProcess {
 
 
     private void addTurSNJobItems(Locale locale, Map<String, Object> turSNJobItemAttributes) {
-        turSNJobItems.add(new TurSNJobItem(TurSNJobAction.CREATE, locale,
+        turSNJobItems.add(new TurSNJobItem(TurSNJobAction.CREATE, Collections.singletonList(snSite), locale,
                 turSNJobItemAttributes));
     }
 
     private void sendToTuring() {
         if (log.isDebugEnabled()) {
             for (TurSNJobItem turSNJobItem : turSNJobItems) {
-                log.debug("TurSNJobItem Id: " + turSNJobItem.getAttributes().get(ID_ATTR));
+                log.debug("TurSNJobItem Id: {}", turSNJobItem.getAttributes().get(ID_ATTR));
             }
         }
         try {
             TurSNJobUtils.importItems(turSNJobItems,
-                    new TurSNServer(URI.create(turingUrl).toURL(), snSite,
+                    new TurSNServer(URI.create(turingUrl).toURL(),
                             turingApiKey),
                     false);
         } catch (MalformedURLException e) {

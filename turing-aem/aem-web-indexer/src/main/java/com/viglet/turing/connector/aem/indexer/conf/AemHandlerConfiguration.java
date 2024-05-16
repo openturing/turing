@@ -69,7 +69,7 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     @Inject
     public AemHandlerConfiguration(TurAemConfigVarRepository turAemConfigVarRepository) {
         this.turAemConfigVarRepository = turAemConfigVarRepository;
-        parsePropertiesFromResource();
+        this.consume();
     }
 
     @Override
@@ -128,7 +128,7 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
         return oncePatternPath;
     }
 
-    private void parsePropertiesFromResource() {
+    public void consume() {
         parseProperties();
     }
 

@@ -21,10 +21,7 @@
 
 package com.viglet.turing.connector.aem.indexer.persistence.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -49,7 +46,7 @@ public class TurAemConfigVar implements Serializable {
     @Column
     private String path;
 
-    @Column
+    @Lob
     private String value;
 
     public TurAemConfigVar() {

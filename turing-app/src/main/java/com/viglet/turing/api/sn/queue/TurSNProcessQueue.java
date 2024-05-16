@@ -21,9 +21,9 @@
 
 package com.viglet.turing.api.sn.queue;
 
-import com.viglet.turing.api.sn.job.TurSNJob;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
+import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
@@ -88,19 +88,21 @@ public class TurSNProcessQueue {
 
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
     @Transactional
-    public void receiveIndexingQueue(TurSNJob turSNJob) {
-        log.debug("receiveQueue turSNJob: {}", turSNJob);
-        Optional.ofNullable(turSNJob).ifPresentOrElse(job ->
-                turSNSiteRepository.findById(job.getSiteId())
-                        .ifPresent(turSNSite ->
-                                job.getTurSNJobItems().forEach(turSNJobItem -> {
-                                    if (processJob(turSNSite, turSNJobItem)) {
-                                        processQueueInfo(turSNSite, turSNJobItem);
-                                    } else {
-                                        noProcessedWarning(turSNSite, turSNJobItem);
-                                    }
-                                })
-                        ), () -> log.debug("turSNJob empty or siteId empty"));
+    public void receiveIndexingQueue(TurSNJobItems turSNJobItems) {
+        log.debug("receiveQueue turSNJob: {}", turSNJobItems);
+        Optional.ofNullable(turSNJobItems)
+                .ifPresentOrElse(jobItems ->
+                                jobItems.forEach(turSNJobItem ->
+                                        turSNJobItem.getSiteNames().forEach(siteName ->
+                                                turSNSiteRepository.findById(siteName)
+                                                        .ifPresent(turSNSite -> {
+                                                            if (processJob(turSNSite, turSNJobItem)) {
+                                                                processQueueInfo(turSNSite, turSNJobItem);
+                                                            } else {
+                                                                noProcessedWarning(turSNSite, turSNJobItem);
+                                                            }
+                                                        })))
+                        , () -> log.debug("turSNJob empty or siteId empty"));
     }
 
     private void noProcessedWarning(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {

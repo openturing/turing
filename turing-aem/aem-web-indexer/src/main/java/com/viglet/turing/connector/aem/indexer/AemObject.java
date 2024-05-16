@@ -36,7 +36,7 @@ public class AemObject {
     private boolean contentFragment = false;
     private boolean delivered = false;
     private String model;
-    private JSONObject jcrContentNode;
+    private JSONObject jcrContentNode = new JSONObject();
     private String title;
 
     public AemObject(String nodePath, JSONObject jcrNode) {

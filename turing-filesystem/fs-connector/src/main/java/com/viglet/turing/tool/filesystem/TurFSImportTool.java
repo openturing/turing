@@ -144,7 +144,7 @@ public class TurFSImportTool {
     }
 
     private void processFile(File file) throws IOException {
-        TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE);
+        TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, null);
         Map<String, Object> attributes = new HashMap<>();
 
         List<String> webImagesExtensions = new ArrayList<>(
