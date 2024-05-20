@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -55,7 +57,7 @@ public class TurSNJobUtils {
 			String jsonUTF8  = StandardCharsets.UTF_8.decode(buffer).toString();
 
 			HttpPost httpPost = new HttpPost(
-					String.format("%s/api/sn/%s/import", turSNServer.getServerURL(), turSNServer.getSiteName()));
+					String.format("%s/api/sn/import", turSNServer.getServerURL()));
 			if (showOutput) {
 				System.out.println(jsonUTF8);
 			}
@@ -85,7 +87,8 @@ public class TurSNJobUtils {
 
 	public static void deleteItemsByType(TurSNServer turSNServer, String typeName) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, turSNServer.getLocale());
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE,
+				Collections.singletonList(turSNServer.getSiteName()), turSNServer.getLocale());
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put(TYPE_ATTRIBUTE, typeName);
 		attributes.put(PROVIDER_ATTRIBUTE, turSNServer.getProviderName());

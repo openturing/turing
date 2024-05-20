@@ -23,7 +23,7 @@ public class TurWCScheduledTasks {
         this.turWCProcess = turWCProcess;
     }
 
-    @Scheduled(fixedDelay = 15, timeUnit = TimeUnit.MINUTES)
+    @Scheduled(fixedDelay = 60, timeUnit = TimeUnit.MINUTES)
     public void executeWebCrawler() {
         log.info("The time is now {}", dateFormat.format(new Date()));
         turWCSourceRepository.findAll().forEach(turWCProcess::start);

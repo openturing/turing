@@ -47,24 +47,21 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void delete(String key) throws IOException {
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE);
+
 		try {
 			key = decode(key, StandardCharsets.UTF_8.name());
 		} catch (IllegalArgumentException e) {
-			logger.warn("Could not decode: " + key + ", it probably wasn't encoded in the first place..");
+            logger.warn("Could not decode: {}, it probably wasn't encoded in the first place..", key);
 		}
-
+		String snSite = turMapping.getSNSite(key);
+		if (snSite != null)
+			site = snSite;
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, Collections.singletonList(site));
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put(TurNutchCommons.ID_FIELD, key);
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
-		String snSite = turMapping.getSNSite(turSNJobItem.getAttributes().get(TurNutchCommons.ID_FIELD).toString());
-
-		if (snSite != null) {
-			site = snSite;
-		}
-
-		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
+		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url);
 
 	}
 
@@ -127,7 +124,7 @@ public class TurNutchIndexWriter implements IndexWriter {
                 attributes.put(key, value);
             }
         });
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, locale);
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, Collections.singletonList(site), locale);
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
 		totalAdds++;
@@ -137,7 +134,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 			site = snSite;
 		}
 
-		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
+		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url);
 	}
 
 	@Override
@@ -147,7 +144,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 
 	@Override
 	public void commit() throws IOException {
-		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url, site);
+		TurNutchCommons.push(turSNJobItems, auth, totalAdds, username, password, url);
 	}
 
 	@Override

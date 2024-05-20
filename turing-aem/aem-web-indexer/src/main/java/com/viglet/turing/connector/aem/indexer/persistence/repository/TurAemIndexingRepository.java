@@ -16,7 +16,8 @@ public interface TurAemIndexingRepository extends JpaRepository<TurAemIndexing, 
     }
 
     boolean existsByAemIdAndDateAndIndexGroup(String aemId, Date date, String indexGroup);
-
+    boolean existsByAemIdAndIndexGroup(String aemId, String indexGroup);
+    boolean existsByAemIdAndIndexGroupAndDateNotEqual(String aemId, String indexGroup, Date date);
     Optional<List<TurAemIndexing>> findByAemIdAndIndexGroup(String aemId, String indexGroup);
 
     void deleteByIndexGroupAndOnceFalse(String indexGroup);
@@ -38,4 +39,5 @@ public interface TurAemIndexingRepository extends JpaRepository<TurAemIndexing, 
                                              String deltaId) {
         deleteByIndexGroupAndDeltaIdNotAndOnceTrue(indexGroup, deltaId);
     }
+    void deleteByAemIdAndIndexGroup(String aemId, String indexGroup);
 }

@@ -45,5 +45,8 @@ public class TurSNSitePostParamsBean {
 
 	@JsonSerialize(keyUsing = MapSerializer.class)
 	private Map<String, List<String>> targetingRulesWithCondition = new HashMap<>();
-
+	@JsonSerialize(keyUsing = MapSerializer.class)
+	private Map<String, List<String>> targetingRulesWithConditionAND = new HashMap<>();
+	@JsonSerialize(keyUsing = MapSerializer.class)
+	private Map<String, List<String>> targetingRulesWithConditionOR = new HashMap<>();
 }

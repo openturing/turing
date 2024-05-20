@@ -41,11 +41,5 @@ public class TurAPI {
 		return status;
 	}
 
-	@Secured("ROLE_ADMIN")
-	@GetMapping("test")
-	public Map<String,String> secured() throws JSONException {
-		Map<String,String> status = new HashMap<>();
-		status.put("status", "secured");
-		return status;
-	}
+
 }

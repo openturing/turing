@@ -19,6 +19,7 @@ import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 public class TurAemUtils {
@@ -56,16 +57,16 @@ public class TurAemUtils {
             return new JSONObject(responseHttpCache.get(infinityJsonUrl));
         } else {
             log.info("Request " + infinityJsonUrl);
-            String responseBody = getResponseBody(infinityJsonUrl, context.getUsername(), context.getPassword());
-            if (isResponseBodyJSONArray(responseBody) && !url.endsWith(JSON)) {
-                JSONArray jsonArray = new JSONArray(responseBody);
-                return getInfinityJson(jsonArray.getString(0), context);
-            } else if (isResponseBodyJSONObject(responseBody)) {
-                responseHttpCache.put(infinityJsonUrl, responseBody);
-                return new JSONObject(responseBody);
-            }
+            return getResponseBody(infinityJsonUrl, context.getUsername(), context.getPassword()).map(responseBody -> {
+                if (isResponseBodyJSONArray(responseBody) && !url.endsWith(JSON)) {
+                    return getInfinityJson(new JSONArray(responseBody).getString(0), context);
+                } else if (isResponseBodyJSONObject(responseBody)) {
+                    responseHttpCache.put(infinityJsonUrl, responseBody);
+                    return new JSONObject(responseBody);
+                }
+                return new JSONObject();
+            }).orElse(new JSONObject());
         }
-        return new JSONObject();
     }
 
     private static boolean isResponseBodyJSONArray(String responseBody) {
@@ -76,8 +77,8 @@ public class TurAemUtils {
         return responseBody.startsWith("{");
     }
 
-    public static String getResponseBody(String url, String username, String password) {
-        try (HttpClient client = HttpClient.newBuilder()
+    public static Optional<String> getResponseBody(String url, String username, String password) {
+        try (HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
                 .authenticator(new Authenticator() {
                     @Override
                     protected PasswordAuthentication getPasswordAuthentication() {
@@ -88,11 +89,13 @@ public class TurAemUtils {
             try {
                 HttpRequest request = HttpRequest.newBuilder().GET().uri(new URI(UrlEscapers.urlFragmentEscaper().escape(url))).build();
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                return response.body();
+                return response.body().describeConstable();
             } catch (URISyntaxException | IOException | InterruptedException ex) {
-                throw new RuntimeException(ex);
+                log.error(ex.getMessage(), ex);
+                return Optional.empty();
             }
         }
+
     }
 
     public static String getPropertyValue(Object property) {

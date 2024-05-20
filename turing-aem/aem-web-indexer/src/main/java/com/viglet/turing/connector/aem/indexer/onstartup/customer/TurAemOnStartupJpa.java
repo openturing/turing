@@ -4,11 +4,16 @@ import com.google.inject.Inject;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemConfigVar;
 import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemConfigVarRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
+import org.json.JSONObject;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Slf4j
@@ -16,11 +21,14 @@ import java.util.List;
 @Transactional
 public class TurAemOnStartupJpa implements ApplicationRunner {
     public static final String FIRST_TIME = "FIRST_TIME";
+    public static final String CONTENT_MAPPING_JSON = "classpath:/customer/content-mapping-insper.json";
     private final TurAemConfigVarRepository turAemConfigVarRepository;
-
+    private final ResourceLoader resourceloader;
     @Inject
-    public TurAemOnStartupJpa(TurAemConfigVarRepository turAemConfigVarRepository) {
+    public TurAemOnStartupJpa(TurAemConfigVarRepository turAemConfigVarRepository,
+                              ResourceLoader resourceloader) {
         this.turAemConfigVarRepository = turAemConfigVarRepository;
+        this.resourceloader = resourceloader;
     }
 
     @Override
@@ -30,7 +38,7 @@ public class TurAemOnStartupJpa implements ApplicationRunner {
             turAemConfigVarRepository.saveAll(List.of(
                     new TurAemConfigVar("turing.url", "/system", "http://localhost:2700"),
                     new TurAemConfigVar("turing.apiKey", "/system", "4618ac5e0e5640f8bd8ea8c83"),
-                    new TurAemConfigVar("turing.mapping.file", "/system", "content-mapping-insper.json"),
+                    new TurAemConfigVar("turing.mapping.json", "/system", new JSONObject(getContentMappingJson()).toString()),
                     new TurAemConfigVar("turing.provider.name", "/system", "AEM"),
                     new TurAemConfigVar("cms.url", "/system", "https://author-p120653-e1241062.adobeaemcloud.com"),
                     new TurAemConfigVar("cms.username", "/system", "vilttester"),
@@ -49,6 +57,11 @@ public class TurAemOnStartupJpa implements ApplicationRunner {
             setFirstTIme();
             log.info("Configuration finished.");
         }
+    }
+
+    private String getContentMappingJson() throws IOException {
+        return IOUtils.toString(resourceloader
+                .getResource(CONTENT_MAPPING_JSON).getInputStream(), StandardCharsets.UTF_8);
     }
 
     private void setFirstTIme() {

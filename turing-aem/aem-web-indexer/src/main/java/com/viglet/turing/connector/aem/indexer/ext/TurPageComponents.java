@@ -21,7 +21,7 @@ public class TurPageComponents implements ExtAttributeInterface {
                                  AemObject aemObject, IHandlerConfiguration config) {
         log.debug("Executing TurPageComponents");
         StringBuffer components = new StringBuffer();
-        if (aemObject.getJcrContentNode().has(ROOT)
+        if (aemObject.getJcrContentNode() != null && aemObject.getJcrContentNode().has(ROOT)
                 && aemObject.getJcrContentNode().get(ROOT) instanceof JSONObject root
                 && root.has(RESPONSIVE_GRID)
                 && root.get(RESPONSIVE_GRID) instanceof JSONObject responsiveGrid) {

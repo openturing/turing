@@ -48,7 +48,7 @@ import java.util.Optional;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/sn/{siteName}/import")
+@RequestMapping("/api/sn/import")
 @Tag(name = "Semantic Navigation Import", description = "Semantic Navigation Import API")
 public class TurSNImportAPI {
     private final JmsMessagingTemplate jmsMessagingTemplate;
@@ -61,17 +61,12 @@ public class TurSNImportAPI {
     }
 
     @PostMapping
-    public boolean turSNImportBroker(@PathVariable String siteName, @RequestBody TurSNJobItems turSNJobItems) {
-        return turSNSiteRepository.findByName(siteName).map(turSNSite -> {
-            TurSNJob turSNJob = new TurSNJob();
-            turSNJob.setSiteId(turSNSite.getId());
-            turSNJob.setTurSNJobItems(turSNJobItems);
-            send(turSNJob);
-            return true;
-        }).orElse(importUnsuccessful(siteName, turSNJobItems));
+    public boolean turSNImportBroker(@RequestBody TurSNJobItems turSNJobItems) {
+      send(turSNJobItems);
+      return true;
     }
 
-    private boolean importUnsuccessful(String siteName, TurSNJobItems turSNJobItems) {
+    private void importUnsuccessful(String siteName, TurSNJobItems turSNJobItems) {
         turSNJobItems.forEach(turSNJobItem -> {
             if (turSNJobItem != null) {
                 if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
@@ -100,12 +95,10 @@ public class TurSNImportAPI {
                 log.warn("No JobItem' of '{}' SN Site", siteName);
             }
         });
-        return false;
     }
 
     @PostMapping("zip")
-    public boolean turSNImportZipFileBroker(@PathVariable String siteName,
-                                            @RequestParam("file") MultipartFile multipartFile) {
+    public boolean turSNImportZipFileBroker(@RequestParam("file") MultipartFile multipartFile) {
         File extractFolder = TurUtils.extractZipFile(multipartFile);
         try (FileInputStream fileInputStream = new FileInputStream(
                 extractFolder.getAbsolutePath().concat(File.separator).concat(TurSNConstants.EXPORT_FILE))) {
@@ -117,7 +110,7 @@ public class TurSNImportAPI {
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
             }
-            return turSNImportBroker(siteName, turSNJobItems);
+            return turSNImportBroker(turSNJobItems);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -140,23 +133,28 @@ public class TurSNImportAPI {
         }
     }
 
-    public void send(TurSNJob turSNJob) {
-        sentQueueInfo(turSNJob);
+    public void send(TurSNJobItems turSNJobItems) {
+        sentQueueInfo(turSNJobItems);
         if (log.isDebugEnabled()) {
             log.debug("Sent job - {}", TurSNConstants.INDEXING_QUEUE);
-            log.debug("turSNJob: {}", turSNJob.getTurSNJobItems());
+            log.debug("turSNJob: {}", turSNJobItems);
         }
-        this.jmsMessagingTemplate.convertAndSend(TurSNConstants.INDEXING_QUEUE, turSNJob);
+        this.jmsMessagingTemplate.convertAndSend(TurSNConstants.INDEXING_QUEUE, turSNJobItems);
     }
 
-    private void sentQueueInfo(TurSNJob turSNJob) {
-        turSNSiteRepository.findById(turSNJob.getSiteId()).ifPresent(turSNSite ->
-                turSNJob.getTurSNJobItems().forEach(turJobItem -> {
-                    if (isValidJobItem(turJobItem))
-                        log.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).", actionType(turJobItem),
-                                turJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(),
-                                turJobItem.getLocale());
-                }));
+    private void sentQueueInfo(TurSNJobItems turSNJobItems) {
+        turSNJobItems.forEach(turJobItem -> {
+            if (isValidJobItem(turJobItem)) {
+                turJobItem.getSiteNames().forEach(siteName ->
+                        turSNSiteRepository.findByName(siteName).ifPresentOrElse(turSNSite ->
+                                log.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).",
+                                        actionType(turJobItem),
+                                        turJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
+                                        turSNSite.getName(),
+                                        turJobItem.getLocale()),
+                                () -> importUnsuccessful(siteName, turSNJobItems)));
+            }
+        });
     }
 
     private static boolean isValidJobItem(TurSNJobItem turJobItem) {

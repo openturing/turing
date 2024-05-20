@@ -73,7 +73,8 @@ public class TurFileUtils {
 				@Override
 				public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
 										  boolean outputHtml) throws IOException {
-					contentFile.append(parseDocument(stream));
+					parseDocument(stream).ifPresent(contentFile::append);
+
 				}
 			};
 			final ParseContext parseContext = getParseContext(parser);

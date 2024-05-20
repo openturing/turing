@@ -14,7 +14,6 @@ import com.viglet.turing.connector.aem.indexer.persistence.TurAemIndexing;
 import com.viglet.turing.connector.aem.indexer.persistence.TurAemIndexingDAO;
 import com.viglet.turing.connector.aem.indexer.persistence.TurAemSystem;
 import com.viglet.turing.connector.aem.indexer.persistence.TurAemSystemDAO;
-import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValue;
 import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueList;
 import com.viglet.turing.connector.cms.mappers.TurCmsContentDefinitionProcess;
 import com.viglet.turing.connector.cms.mappers.TurCmsModel;
@@ -346,6 +345,7 @@ public class TurAEMIndexerTool {
                         attributes.put(AemHandlerConfiguration.PROVIDER_ATTRIBUTE,
                                 AemHandlerConfiguration.DEFAULT_PROVIDER);
                         sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.DELETE,
+                                Collections.singletonList(config.getDefaultSNSiteConfig().getName()),
                                 content.getLocale(), attributes)));
                     });
                     turAemIndexingDAO.deleteContentsWereDeIndexed(group, deltaId);
@@ -368,19 +368,25 @@ public class TurAEMIndexerTool {
                              List<TurSNAttributeSpec> turSNAttributeSpecList) {
         itemsProcessedStatus();
         if (!dryRun) {
-            final Locale locale = TurAemUtils.getLocaleFromAemObject(config, aemObject);
-            if (objectNeedBeIndexed(aemObject)) {
-                createIndexingStatus(aemObject, locale);
-                sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale);
-            } else {
-                if (objectNeedBeReIndexed(aemObject)) {
-                    turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresent(turAemIndexingsList ->
-                            log.info(String.format("ReIndexed %s object (%s) from %tc to %tc and deltaId = %s",
-                                    aemObject.getPath(), group, turAemIndexingsList.getFirst().getDate(),
-                                    getDeltaDate(aemObject), deltaId)));
+            if (!delivered || aemObject.isDelivered()) {
+                final Locale locale = TurAemUtils.getLocaleFromAemObject(config, aemObject);
+                if (objectNeedBeIndexed(aemObject)) {
+                    createIndexingStatus(aemObject, locale);
                     sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale);
+                } else {
+                    if (objectNeedBeReIndexed(aemObject)) {
+                        turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresent(turAemIndexingsList ->
+                                log.info(String.format("ReIndexed %s object (%s) from %tc to %tc and deltaId = %s",
+                                        aemObject.getPath(), group, turAemIndexingsList.getFirst().getDate(),
+                                        getDeltaDate(aemObject), deltaId)));
+                        sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale);
+                    }
+                    updateIndexingStatus(aemObject, locale);
                 }
-                updateIndexingStatus(aemObject, locale);
+            }
+            else {
+                log.info(String.format("Unpublished %s object (%s) deltaId = %s",
+                        aemObject.getPath(), group, deltaId));
             }
         }
     }
@@ -453,8 +459,8 @@ public class TurAEMIndexerTool {
                         }
                     });
                 });
-        sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.CREATE,
-                locale, castSpecToJobSpec(
+        sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.CREATE, locale,
+                Collections.singletonList(config.getDefaultSNSiteConfig().getName()), castSpecToJobSpec(
                 getDefinitionFromModel(turSNAttributeSpecList, attributes)),
                 attributes)));
     }

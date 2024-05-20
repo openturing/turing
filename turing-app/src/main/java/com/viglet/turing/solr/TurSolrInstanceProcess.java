@@ -24,6 +24,7 @@ import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -35,7 +36,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -81,7 +82,7 @@ public class TurSolrInstanceProcess {
                     .withConnectionTimeout(turConfigProperties.getSolr().getTimeout())
                     .withSocketTimeout(turConfigProperties.getSolr().getTimeout()).build();
             try {
-                return Optional.of(new TurSolrInstance(closeableHttpClient, httpSolrClient, new URL(urlString), core));
+                return Optional.of(new TurSolrInstance(closeableHttpClient, httpSolrClient, URI.create(urlString).toURL(), core));
             } catch (MalformedURLException e) {
                 log.error(e.getMessage(), e);
             }

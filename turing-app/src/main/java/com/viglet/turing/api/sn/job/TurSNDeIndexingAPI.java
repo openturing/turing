@@ -27,7 +27,7 @@ import org.json.JSONException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/sn/{id}/deindex")
+@RequestMapping("/api/sn/deindex")
 @Tag(name = "Semantic Navigation DeIndexing", description = "Semantic Navigation DeIndexing API")
 public class TurSNDeIndexingAPI {
 	private final TurSNImportAPI turSNImportAPI;
@@ -37,12 +37,8 @@ public class TurSNDeIndexingAPI {
 	}
 
 	@PostMapping
-	public String turSNDesIndexingBroker(@PathVariable String id, @RequestBody TurSNJobItems turSNJobItems)
-			throws JSONException {
-		TurSNJob turSNJob = new TurSNJob();
-		turSNJob.setSiteId(id);
-		turSNJob.setTurSNJobItems(turSNJobItems);
-		turSNImportAPI.send(turSNJob);
+	public String turSNDesIndexingBroker(@RequestBody TurSNJobItems turSNJobItems) {
+		turSNImportAPI.send(turSNJobItems);
 		return "Ok";
 
 	}

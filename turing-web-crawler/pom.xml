@@ -13,7 +13,7 @@
 	<name>Turing Web Crawler</name>
 	<description>Turing Web Crawler Connector</description>
 	<properties>
-		<spring-boot.version>3.2.3</spring-boot.version>
+		<spring-boot.version>3.2.5</spring-boot.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>21</java.version>
@@ -77,7 +77,7 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>33.1.0-jre</version>
+			<version>33.2.0-jre</version>
 			<scope>compile</scope>
 		</dependency>
         <dependency>
@@ -93,13 +93,13 @@
 		<dependency>
 			<groupId>io.swagger.core.v3</groupId>
 			<artifactId>swagger-annotations-jakarta</artifactId>
-			<version>2.2.20</version>
+			<version>2.2.21</version>
 			<scope>compile</scope>
 		</dependency>
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>cms-mapping</artifactId>
-            <version>0.3.8</version>
+            <version>0.3.9</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -121,7 +121,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.12.1</version>
+					<version>3.13.0</version>
 					<configuration>
 						<parameters>true</parameters>
 					</configuration>

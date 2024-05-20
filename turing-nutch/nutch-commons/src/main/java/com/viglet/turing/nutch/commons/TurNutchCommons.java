@@ -63,7 +63,7 @@ public class TurNutchCommons {
 	}
 
 	public static void push(TurSNJobItems turSNJobItems, boolean auth, int totalAdds, String username, String password,
-			String url, String site) throws IOException {
+			String url) throws IOException {
 		if (!turSNJobItems.getTuringDocuments().isEmpty()) {
 			int totalCreate = 0;
 			int totalDelete = 0;
@@ -97,7 +97,7 @@ public class TurNutchCommons {
 			// encode
 			ByteBuffer outputBuffer = customCharset.encode(data);
 
-			final HttpPost httpPost = getHttpPost(url, site, outputBuffer);
+			final HttpPost httpPost = getHttpPost(url, outputBuffer);
 
 			if (auth) {
 				basicAuth(httpPost, username, password);
@@ -109,11 +109,11 @@ public class TurNutchCommons {
 		}
 	}
 
-	private static HttpPost getHttpPost(String url, String site, ByteBuffer outputBuffer) {
+	private static HttpPost getHttpPost(String url, ByteBuffer outputBuffer) {
 		byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
 		String jsonUTF8 = new String(outputData);
 
-		HttpPost httpPost = new HttpPost(String.format("%s/api/sn/%s/import", url, site));
+		HttpPost httpPost = new HttpPost(String.format("%s/api/sn/import", url));
 		StringEntity entity = new StringEntity(jsonUTF8, StandardCharsets.UTF_8);
 		httpPost.setEntity(entity);
 		httpPost.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
