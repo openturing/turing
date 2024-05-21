@@ -99,7 +99,7 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>cms-mapping</artifactId>
-            <version>0.3.9</version>
+            <version>${revision}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

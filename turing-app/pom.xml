@@ -11,7 +11,7 @@
     </parent>
     <artifactId>turing-app</artifactId>
     <version>${revision}</version>
-    <name>Turing Application</name>
+    <name>Turing ES Application</name>
     <url>https://github.com/openturing/turing</url>
     <packaging>jar</packaging>
     <properties>
@@ -31,7 +31,6 @@
             <groupId>co.elastic.clients</groupId>
             <artifactId>elasticsearch-java</artifactId>
             <version>8.13.4</version>
-
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -276,7 +275,7 @@
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-solrj</artifactId>
-            <version>9.4.0</version>
+            <version>9.6.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>

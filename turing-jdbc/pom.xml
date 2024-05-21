@@ -50,6 +50,12 @@
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -70,6 +76,16 @@
             <groupId>com.viglet.turing</groupId>
             <artifactId>fs-commons</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-jcl</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.oracle.ojdbc</groupId>
@@ -80,6 +96,16 @@
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
             <version>3.4.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>jcl-over-slf4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -114,6 +140,88 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/LICENSE</exclude>
+                                        <exclude>META-INF/LICENSE.*</exclude>
+                                        <exclude>META-INF/license.*</exclude>
+                                        <exclude>META-INF/DEPENDENCIES</exclude>
+                                        <exclude>META-INF/NOTICE</exclude>
+                                        <exclude>META-INF/NOTICE.*</exclude>
+                                        <exclude>META-INF/notice.*</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>**/9/module-info.class</exclude>
+                                        <exclude>META-INF/AL2.0</exclude>
+                                        <exclude>META-INF/LGPL2.1</exclude>
+                                        <exclude>META-INF/services/org.apache.tika.parser.Parser</exclude>
+                                        <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>META-INF/BC2048KE.DSA</exclude>
+                                        <exclude>META-INF/BC2048KE.SF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.apache.logging.log4j:log4j-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:poi-scratchpad</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/org.apache.poi.sl.usermodel.SlideShowProvider</exclude>
+                                        <exclude>META-INF/services/org.apache.poi.extractor.ExtractorProvider</exclude>
+                                        <exclude>META-INF/services/org.apache.poi.sl.draw.ImageRenderer</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:jai-imageio-*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/javax.imageio.spi.ImageReaderSpi</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:jai-imageio-jpeg2000</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/javax.imageio.spi.ImageWriterSpi</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:spring-web</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/reactor.blockhound.integration.BlockHoundIntegration</exclude>
+                                        <exclude>META-INF/spring/aot.factories</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:spring-beans</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/spring/aot.factories</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:tika-parser-zip-commons</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/org.apache.tika.detect.*</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:tika-parser-text-module</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/org.apache.tika.detect.EncodingDetector</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:poi-ooxml</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/org.apache.poi.ss.usermodel.WorkbookProvider</exclude>
+                                        <exclude>META-INF/services/org.apache.poi.extractor.ExtractorProvider</exclude>
+                                        <exclude>META-INF/services/org.apache.poi.sl.draw.ImageRenderer</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <finalName>turing-jdbc</finalName>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>indexer</shadedClassifierName>
