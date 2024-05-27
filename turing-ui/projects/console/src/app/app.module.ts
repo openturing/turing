@@ -2,7 +2,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 
 import { AppRoutingModule } from './app-routing.module';
-import { HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXsrfConfiguration } from '@angular/common/http';
 import { AppComponent } from './page/app/app.component';
 import { BasicAuthInterceptor, ErrorInterceptor } from './_helpers';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -54,31 +54,24 @@ const notifierDefaultOptions: NotifierOptions = {
       overlap: 150
   }
 };
-@NgModule({
-  declarations: [
-    AppComponent,
-    TurConsolePageComponent
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    HttpClientModule,
-    HttpClientXsrfModule.withOptions({
-      cookieName: 'XSRF-TOKEN',
-      headerName: 'X-CSRF-TOKEN'
-    }),
-    ReactiveFormsModule,
-    FormsModule,
-    NotifierModule.withConfig(notifierDefaultOptions),
-    OcticonsModule,
-    TurCommonsModule,
-    DragDropModule,
-    RouterModule
-  ],
-  providers: [
-    { provide: HTTP_INTERCEPTORS, useClass: BasicAuthInterceptor, multi: true },
-    { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true }
-  ],
-  bootstrap: [AppComponent]
-})
+@NgModule({ declarations: [
+        AppComponent,
+        TurConsolePageComponent
+    ],
+    bootstrap: [AppComponent], imports: [BrowserModule,
+        AppRoutingModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NotifierModule.withConfig(notifierDefaultOptions),
+        OcticonsModule,
+        TurCommonsModule,
+        DragDropModule,
+        RouterModule], providers: [
+        { provide: HTTP_INTERCEPTORS, useClass: BasicAuthInterceptor, multi: true },
+        { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true },
+        provideHttpClient(withInterceptorsFromDi(), withXsrfConfiguration({
+            cookieName: 'XSRF-TOKEN',
+            headerName: 'X-CSRF-TOKEN'
+        }))
+    ] })
 export class AppModule { }

@@ -339,8 +339,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v20.9.0</nodeVersion>
-                    <npmVersion>10.2.5</npmVersion>
+                    <nodeVersion>v20.13.1</nodeVersion>
+                    <npmVersion>10.8.0</npmVersion>
                     <workingDirectory>../turing-ui</workingDirectory>
                 </configuration>
             </plugin>
