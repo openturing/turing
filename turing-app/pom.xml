@@ -280,7 +280,7 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
-            <version>6.2.4</version>
+            <version>6.3.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
