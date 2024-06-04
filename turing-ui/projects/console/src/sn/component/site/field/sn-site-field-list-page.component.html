@@ -1,15 +1,17 @@
 <div *ngIf="(getTurSNSiteSEFields() | async) as snSiteFields; else loading">
   <div class="Subhead">
-    <div class="Subhead-heading Subhead-heading--large"><span octicon="rows" [size]="24" class="mr-1"></span> Search Engine Fields</div>
+    <div class="Subhead-heading Subhead-heading--large"><span octicon="rows" [size]="24" class="mr-1"></span> Search
+      Engine Fields
+    </div>
 
     <div class="Subhead-description">Custom Solr Fields.</div>
   </div>
-  <div class="clearfix mb-3" style="padding: 5px 0px;">
+  <div class="clearfix mb-3" style="padding: 5px 0;">
     <div class="float-left" style="flex: 1 1 auto;">
       <input class="form-control input-sm" style="min-width: 250px;" type="text"
              i18n-placeholder="@@FindObjectCurrentFolder" placeholder="Search custom field..."
              [(ngModel)]="filterCustomField"
-             aria-label="Search custom field..." />
+             aria-label="Search custom field..."/>
     </div>
     <div class="float-right" style="display: inline-flex;">
       <div class="d-flex flex-justify-end position-relative">
@@ -41,38 +43,98 @@
         </div>
       </div>
     </div>
-    <div *ngFor="let snSiteField of snSiteFields | fullTextSearch:filterCustomField:'name'" data-view-component="true" class="Box-body">
-      <div class="d-table">
-        <div class="d-table-cell col-4">
-          <a [routerLink]="['/sn/site', getId(), 'field', snSiteField.id ]">
-            <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
-              class="float-left">
-              <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSiteField.name | lowercase">
-                Avatar
-              </svg>
+    <div *ngIf="(getTurSNSiteStatusFields() | async) as snSiteStatusFields; else loading">
+      <div *ngFor="let snSiteField of snSiteFields | fullTextSearch:filterCustomField:'name'" data-view-component="true"
+           class="Box-body">
+        <div class="d-table" *ngIf="getTurSNSiteStatusField(snSiteStatusFields, snSiteField.id) as statusField">
+          <div class="d-table-cell col-4">
+
+            <div *ngIf="statusField.correct"
+                 class="float-left">
+              <details class="dropdown details-reset
+                 details-overlay d-inline-block">
+                <summary aria-haspopup="true">
+                  <span octicon="check-circle" [size]="16" class="mr-2" style="color: mediumseagreen"> </span>
+                </summary>
+                <ul class="dropdown-menu dropdown-menu-se" style="width:320px">
+                  <li *ngFor="let core of statusField.cores">
+                    <a class="dropdown-item" href="#">
+                      <span octicon="check-circle" [size]="16" class="mr-2"
+                            style="color: mediumseagreen"> </span> {{ core.name }}
+                    </a>
+                  </li>
+                </ul>
+              </details>
             </div>
-            {{snSiteField.name}}
-          </a>
-        </div>
-        <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.enabled" type="checkbox"
-            (ngModelChange)="updateField(snSiteField, 'enabled', $event)" />
-        </div>
-        <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.mlt" type="checkbox"
-            (ngModelChange)="updateField(snSiteField, 'mlt', $event)" />
-        </div>
-        <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.facet" type="checkbox"
-            (ngModelChange)="updateField(snSiteField, 'facet', $event)" />
-        </div>
-        <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.hl" type="checkbox"
-            (ngModelChange)="updateField(snSiteField, 'hl', $event)" />
-        </div>
-        <div class="d-table-cell col-2">
-          <input [(ngModel)]="snSiteField.nlp" type="checkbox"
-            (ngModelChange)="updateField(snSiteField, 'nlp', $event)" />
+            <div *ngIf="!statusField.correct" class="float-left">
+              <details class="dropdown details-reset
+                 details-overlay d-inline-block">
+                <summary aria-haspopup="true">
+                  <span octicon="alert" [size]="16" class="mr-2" style="color:indianred"> </span>
+                </summary>
+                <ul class="dropdown-menu dropdown-menu-se" style="width:320px">
+                  <div *ngFor="let core of statusField.cores">
+                    <li class="dropdown-item" *ngIf="core.correct">
+
+                      <span octicon="check-circle" [size]="16" class="mr-2"
+                            style="color: darkgreen"> </span> {{ core.name }}
+                    </li>
+
+                    <div *ngIf="!core.correct" class="dropdown-header">
+                      {{ core.name }} <a style="float: right;" class="btn-link" href="#">Repair All</a>
+                    </div>
+                    <li class="dropdown-simple-item" *ngIf="!core.correct && !core.exists">
+                      <span octicon="alert"
+                            [size]="16"
+                            class="mr-2"
+                            style="color: indianred"> </span>
+                      Missing field <a style="float: right;" class="btn-link mr-3" href="#">Repair</a>
+                    </li>
+                    <li class="dropdown-simple-item" *ngIf="!core.correct && core.exists && !statusField.facetIsCorrect">
+                      <span
+                        octicon="alert" [size]="16" class="mr-2"
+                        style="color: indianred"> </span> Facet Type is incorrect <a style="float: right;" class="btn-link mr-3" href="#">Repair</a>
+                    </li>
+                    <li class="dropdown-simple-item" *ngIf="!core.correct && core.exists && !core.multiValuedIsCorrect">
+                      <span
+                        octicon="alert" [size]="16" class="mr-2"
+                        style="color: indianred"> </span> SE MultiValued isn't configured
+                      <a style="float: right;" class="btn-link mr-3" href="#">Repair</a>
+                    </li>
+                    <li class="dropdown-simple-item" *ngIf="!core.correct && core.exists &&  statusField.facetIsCorrect && !core.typeIsCorrect">
+                      <span
+                        octicon="alert" [size]="16" class="mr-2"
+                        style="color: indianred"> </span>
+                      Using {{ core.type }} <a style="float: right;" class="btn-link mr-3" href="#">Repair</a>
+                    </li>
+                  </div>
+                </ul>
+              </details>
+            </div>
+            <a [routerLink]="['/sn/site', getId(), 'field', snSiteField.id ]">
+              {{ snSiteField.name }}
+            </a>
+          </div>
+          <div class="d-table-cell col-2">
+            <input [(ngModel)]="snSiteField.enabled" type="checkbox"
+                   (ngModelChange)="updateField(snSiteField, 'enabled', $event)"/>
+          </div>
+          <div class="d-table-cell col-2">
+            <input [(ngModel)]="snSiteField.mlt" type="checkbox"
+                   (ngModelChange)="updateField(snSiteField, 'mlt', $event)"/>
+          </div>
+          <div class="d-table-cell col-2">
+            <input [(ngModel)]="snSiteField.facet" type="checkbox"
+                   (ngModelChange)="updateField(snSiteField, 'facet', $event)"/>
+          </div>
+          <div class="d-table-cell col-2">
+            <input [(ngModel)]="snSiteField.hl" type="checkbox"
+                   (ngModelChange)="updateField(snSiteField, 'hl', $event)"/>
+          </div>
+          <div class="d-table-cell col-2">
+            <input [(ngModel)]="snSiteField.nlp" type="checkbox"
+                   (ngModelChange)="updateField(snSiteField, 'nlp', $event)"/>
+          </div>
         </div>
       </div>
     </div>
@@ -88,7 +150,7 @@
       <input class="form-control input-sm" style="min-width: 250px;" type="text"
              i18n-placeholder="@@FindObjectCurrentFolder" placeholder="Search nlp field..."
              [(ngModel)]="filterNLPField"
-             aria-label="Search nlp field..." />
+             aria-label="Search nlp field..."/>
     </div>
 
   </div>
@@ -117,29 +179,29 @@
         <div class="d-table-cell col-6">
           <a [routerLink]="['/sn/site', getId(), 'field', snSiteField.id ]">
             <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
-              class="float-left">
+                 class="float-left">
               <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="snSiteField.name | lowercase">
                 Avatar
               </svg>
             </div>
-            {{snSiteField.name}}
+            {{ snSiteField.name }}
           </a>
         </div>
         <div class="d-table-cell col-2">
           <input [(ngModel)]="snSiteField.enabled" type="checkbox"
-            (ngModelChange)="updateField(snSiteField, 'enabled', $event)" />
+                 (ngModelChange)="updateField(snSiteField, 'enabled', $event)"/>
         </div>
         <div class="d-table-cell col-2">
           <input [(ngModel)]="snSiteField.mlt" type="checkbox"
-            (ngModelChange)="updateField(snSiteField, 'mlt', $event)" />
+                 (ngModelChange)="updateField(snSiteField, 'mlt', $event)"/>
         </div>
         <div class="d-table-cell col-2">
           <input [(ngModel)]="snSiteField.facet" type="checkbox"
-            (ngModelChange)="updateField(snSiteField, 'facet', $event)" />
+                 (ngModelChange)="updateField(snSiteField, 'facet', $event)"/>
         </div>
         <div class="d-table-cell col-2">
           <input [(ngModel)]="snSiteField.hl" type="checkbox"
-            (ngModelChange)="updateField(snSiteField, 'hl', $event)" />
+                 (ngModelChange)="updateField(snSiteField, 'hl', $event)"/>
         </div>
       </div>
     </div>

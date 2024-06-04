@@ -15,18 +15,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from '../../../../../environments/environment';
-import { TurSNSite } from '../model/sn-site.model';
-import { TurSNSiteField } from '../model/sn-site-field.model';
-import { map } from 'rxjs/operators';
-import { TurSNSiteStatus } from '../model/sn-site-monitoring.model';
+import {Injectable} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
+import {Observable} from 'rxjs';
+import {environment} from '../../../../../environments/environment';
+import {TurSNSite} from '../model/sn-site.model';
+import {TurSNSiteField} from '../model/sn-site-field.model';
+import {map} from 'rxjs/operators';
+import {TurSNSiteStatus} from '../model/sn-site-monitoring.model';
+import {TurSNStatusFields} from "../model/sn-field-status.model";
 
 @Injectable()
 export class TurSNSiteService {
-  constructor(private httpClient: HttpClient) { }
+  constructor(private httpClient: HttpClient) {
+  }
 
   query(): Observable<TurSNSite[]> {
     return this.httpClient.get<TurSNSite[]>(`${environment.apiUrl}/api/sn`);
@@ -44,6 +46,10 @@ export class TurSNSiteService {
     return this.httpClient.get<TurSNSiteField[]>(`${environment.apiUrl}/api/sn/${id}/field/ext`);
   }
 
+  getStatusFields(id: string): Observable<TurSNStatusFields> {
+    return this.httpClient.get<TurSNStatusFields>(`${environment.apiUrl}/api/sn/${id}/field/check`);
+  }
+
   getField(id: string, fieldId: string): Observable<TurSNSiteField> {
     return this.httpClient.get<TurSNSiteField>(`${environment.apiUrl}/api/sn/${id}/field/ext/${fieldId}`);
   }
@@ -55,6 +61,7 @@ export class TurSNSiteService {
   getStatus(id: string): Observable<TurSNSiteStatus> {
     return this.httpClient.get<TurSNSiteStatus>(`${environment.apiUrl}/api/sn/${id}/monitoring`);
   }
+
   getFieldsByType(id: string, type: string): Observable<TurSNSiteField[]> {
     return this.httpClient.get<TurSNSiteField[]>(`${environment.apiUrl}/api/sn/${id}/field/ext`).pipe(map(items =>
       items.filter(item => item.snType.toLowerCase() === type)));
@@ -64,8 +71,7 @@ export class TurSNSiteService {
     if (newObject) {
       return this.httpClient.post<TurSNSite>(`${environment.apiUrl}/api/sn`,
         JSON.stringify(turSNSite));
-    }
-    else {
+    } else {
       return this.httpClient.put<TurSNSite>(`${environment.apiUrl}/api/sn/${turSNSite.id}`,
         JSON.stringify(turSNSite));
     }
@@ -80,8 +86,7 @@ export class TurSNSiteService {
     if (newObject) {
       return this.httpClient.post<TurSNSiteField>(`${environment.apiUrl}/api/sn/${siteId}/field/ext`,
         JSON.stringify(turSNSiteField));
-    }
-    else {
+    } else {
       return this.httpClient.put<TurSNSiteField>(`${environment.apiUrl}/api/sn/${siteId}/field/ext/${turSNSiteField.id}`,
         JSON.stringify(turSNSiteField));
     }

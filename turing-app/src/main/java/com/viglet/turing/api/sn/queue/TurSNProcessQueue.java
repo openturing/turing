@@ -21,6 +21,9 @@
 
 package com.viglet.turing.api.sn.queue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -89,20 +92,27 @@ public class TurSNProcessQueue {
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
     @Transactional
     public void receiveIndexingQueue(TurSNJobItems turSNJobItems) {
-        log.debug("receiveQueue turSNJob: {}", turSNJobItems);
+        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        try {
+            log.debug("receiveQueue turSNJobItems: {}", ow.writeValueAsString(turSNJobItems));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         Optional.ofNullable(turSNJobItems)
-                .ifPresentOrElse(jobItems ->
-                                jobItems.forEach(turSNJobItem ->
-                                        turSNJobItem.getSiteNames().forEach(siteName ->
-                                                turSNSiteRepository.findById(siteName)
-                                                        .ifPresent(turSNSite -> {
-                                                            if (processJob(turSNSite, turSNJobItem)) {
-                                                                processQueueInfo(turSNSite, turSNJobItem);
-                                                            } else {
-                                                                noProcessedWarning(turSNSite, turSNJobItem);
-                                                            }
-                                                        })))
-                        , () -> log.debug("turSNJob empty or siteId empty"));
+                .ifPresentOrElse(jobItems -> {
+                    jobItems.forEach(turSNJobItem -> {
+                        turSNJobItem.getSiteNames().forEach(siteName -> {
+                                turSNSiteRepository.findByName(siteName)
+                                        .ifPresent(turSNSite -> {
+                                            if (processJob(turSNSite, turSNJobItem)) {
+                                                processQueueInfo(turSNSite, turSNJobItem);
+                                            } else {
+                                                noProcessedWarning(turSNSite, turSNJobItem);
+                                            }
+                                        });
+                        });
+                    });
+                } , () -> log.debug("turSNJob empty or siteId empty"));
     }
 
     private void noProcessedWarning(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
