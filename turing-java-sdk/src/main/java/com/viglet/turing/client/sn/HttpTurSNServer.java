@@ -19,6 +19,7 @@ package com.viglet.turing.client.sn;
 import java.net.URL;
 import java.util.Locale;
 
+import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 
 /**
@@ -48,17 +49,17 @@ public class HttpTurSNServer extends TurSNServer {
 		super(serverURL, siteName, locale, credentials);
 
 	}
-	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, String apiKey) {
-		super(serverURL, siteName, locale, apiKey);
+	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials) {
+		super(serverURL, siteName, locale, apiKeyCredentials);
 
 	}
 
-	public HttpTurSNServer(URL serverURL, String siteName, String apiKey) {
-		super(serverURL, siteName, apiKey);
+	public HttpTurSNServer(URL serverURL, String siteName, TurApiKeyCredentials apiKeyCredentials) {
+		super(serverURL, siteName, apiKeyCredentials);
 
 	}
-	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, String apiKey, String userId) {
-		super(serverURL, siteName, locale, apiKey, userId);
+	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials, String userId) {
+		super(serverURL, siteName, locale, apiKeyCredentials, userId);
 
 	}
 	@Deprecated

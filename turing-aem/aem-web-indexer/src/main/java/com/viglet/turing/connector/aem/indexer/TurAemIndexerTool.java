@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 import com.viglet.turing.client.sn.TurSNServer;
+import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.*;
 import com.viglet.turing.connector.aem.indexer.conf.AemHandlerConfiguration;
 import com.viglet.turing.connector.aem.indexer.ext.ExtContentInterface;
@@ -299,7 +300,7 @@ public class TurAemIndexerTool {
         try {
             TurSNJobUtils.importItems(turSNJobItems,
                     new TurSNServer(URI.create(turingUrl).toURL(), getProperty("dps.site.default.sn.site"),
-                            turingApiKey),
+                            new TurApiKeyCredentials(turingApiKey)),
                     false);
         } catch (MalformedURLException e) {
             log.error(e.getMessage(), e);
@@ -518,7 +519,7 @@ public class TurAemIndexerTool {
             TurSNJobUtils.importItems(turSNJobItems,
                     new TurSNServer(aemHandlerConfiguration.getTuringURL(),
                             aemHandlerConfiguration.getDefaultSNSiteConfig().getName(),
-                            aemHandlerConfiguration.getApiKey()),
+                            new TurApiKeyCredentials(aemHandlerConfiguration.getApiKey())),
                     false);
         }
     }
