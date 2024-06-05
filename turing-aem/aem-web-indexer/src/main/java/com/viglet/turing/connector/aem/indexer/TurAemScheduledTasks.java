@@ -29,5 +29,6 @@ public class TurAemScheduledTasks {
         log.info("The time is now {}", dateFormat.format(new Date()));
         aemHandlerConfiguration.consume();
         turAemIndexerTool.run();
+        TurAemUtils.cleanCache();
     }
 }

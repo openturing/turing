@@ -62,8 +62,8 @@ public class TurSNImportAPI {
 
     @PostMapping
     public boolean turSNImportBroker(@RequestBody TurSNJobItems turSNJobItems) {
-      send(turSNJobItems);
-      return true;
+        send(turSNJobItems);
+        return true;
     }
 
     private void importUnsuccessful(String siteName, TurSNJobItems turSNJobItems) {
@@ -77,19 +77,11 @@ public class TurSNImportAPI {
                                     : null,
                             siteName, turSNJobItem.getLocale(), siteName);
                 } else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
-                    if (turSNJobItem.getAttributes() != null
-                            && turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
-                        log.warn(
-                                "Delete Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
-                                turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), siteName,
-                                turSNJobItem.getLocale(), siteName);
-                    } else {
-                        log.warn(
-                                "Delete Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
-                                turSNJobItem.getAttributes() != null ?
-                                        turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE) : "empty", siteName,
-                                turSNJobItem.getLocale(), siteName);
-                    }
+                    log.warn(
+                            "Delete Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
+                            turSNJobItem.getAttributes() != null ?
+                                    turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE) : "empty", siteName,
+                            turSNJobItem.getLocale(), siteName);
                 }
             } else {
                 log.warn("No JobItem' of '{}' SN Site", siteName);
@@ -147,11 +139,11 @@ public class TurSNImportAPI {
             if (isValidJobItem(turJobItem)) {
                 turJobItem.getSiteNames().forEach(siteName ->
                         turSNSiteRepository.findByName(siteName).ifPresentOrElse(turSNSite ->
-                                log.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).",
-                                        actionType(turJobItem),
-                                        turJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
-                                        turSNSite.getName(),
-                                        turJobItem.getLocale()),
+                                        log.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).",
+                                                actionType(turJobItem),
+                                                turJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
+                                                turSNSite.getName(),
+                                                turJobItem.getLocale()),
                                 () -> importUnsuccessful(siteName, turSNJobItems)));
             }
         });

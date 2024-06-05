@@ -2,6 +2,7 @@ package com.viglet.turing.connector.aem.indexer.persistence.repository;
 
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemIndexing;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -17,7 +18,7 @@ public interface TurAemIndexingRepository extends JpaRepository<TurAemIndexing, 
 
     boolean existsByAemIdAndDateAndIndexGroup(String aemId, Date date, String indexGroup);
     boolean existsByAemIdAndIndexGroup(String aemId, String indexGroup);
-    boolean existsByAemIdAndIndexGroupAndDateNotEqual(String aemId, String indexGroup, Date date);
+    boolean existsByAemIdAndIndexGroupAndDateNot(String aemId, String indexGroup, Date date);
     Optional<List<TurAemIndexing>> findByAemIdAndIndexGroup(String aemId, String indexGroup);
 
     void deleteByIndexGroupAndOnceFalse(String indexGroup);
@@ -32,12 +33,12 @@ public interface TurAemIndexingRepository extends JpaRepository<TurAemIndexing, 
         deleteByIndexGroupAndOnceTrue(indexGroup);
     }
 
-    void deleteByIndexGroupAndDeltaIdNotAndOnceTrue(String indexGroup,
+    void deleteByIndexGroupAndDeltaIdNotAndOnceFalse(String indexGroup,
                                                     String deltaId);
-
+    @Transactional
     default void deleteContentsWereDeIndexed(String indexGroup,
                                              String deltaId) {
-        deleteByIndexGroupAndDeltaIdNotAndOnceTrue(indexGroup, deltaId);
+        deleteByIndexGroupAndDeltaIdNotAndOnceFalse(indexGroup, deltaId);
     }
     void deleteByAemIdAndIndexGroup(String aemId, String indexGroup);
 }

@@ -113,32 +113,36 @@ public class TurSNSiteFieldExtAPI {
     @GetMapping
     public List<TurSNSiteFieldExt> turSNSiteFieldExtList(@PathVariable String ignoredSnSiteId) {
         return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
-            Map<String, TurNLPEntity> nerMap = new HashMap<>();
-            if (turSNSite.getTurNLPVendor() != null) {
-                nerMap = createNERMap(turSNSite.getTurNLPVendor());
-            } else {
-                turSNSiteFieldExtRepository.deleteByTurSNSiteAndSnType(turSNSite, TurSNFieldType.NER);
-            }
-            List<TurNLPEntity> turNLPEntityThesaurus = turNLPEntityRepository.findByLocal(1);
-            Map<String, TurSNSiteField> fieldMap = createFieldMap(turSNSite);
-            Map<String, TurNLPEntity> thesaurusMap = createThesaurusMap(turNLPEntityThesaurus);
-            List<TurSNSiteFieldExt> turSNSiteFieldExtList =
-                    this.turSNSiteFieldExtRepository
-                            .findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), turSNSite);
-            removeDuplicatedFields(fieldMap, nerMap, thesaurusMap, turSNSiteFieldExtList);
-            for (TurSNSiteField turSNSiteField : fieldMap.values()) {
-                TurSNSiteFieldExt turSNSiteFieldExt = saveSNSiteFieldExt(turSNSite, turSNSiteField);
-                turSNSiteFieldExtList.add(turSNSiteFieldExt);
-            }
-            nerMap.values().forEach(turNLPEntity -> addTurSNSiteFieldExt(TurSNFieldType.NER, turSNSite,
-                    turSNSiteFieldExtList, turNLPEntity));
-            thesaurusMap.values().forEach(turNLPEntity -> addTurSNSiteFieldExt(TurSNFieldType.THESAURUS, turSNSite,
-                    turSNSiteFieldExtList, turNLPEntity));
+            updateFieldExtFromSNSite(turSNSite);
             return turSNSiteFieldExtRepository
                     .findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), turSNSite);
 
         }).orElse(Collections.emptyList());
 
+    }
+
+    private void updateFieldExtFromSNSite(TurSNSite turSNSite) {
+        Map<String, TurNLPEntity> nerMap = new HashMap<>();
+        if (turSNSite.getTurNLPVendor() != null) {
+            nerMap = createNERMap(turSNSite.getTurNLPVendor());
+        } else {
+            turSNSiteFieldExtRepository.deleteByTurSNSiteAndSnType(turSNSite, TurSNFieldType.NER);
+        }
+        List<TurNLPEntity> turNLPEntityThesaurus = turNLPEntityRepository.findByLocal(1);
+        Map<String, TurSNSiteField> fieldMap = createFieldMap(turSNSite);
+        Map<String, TurNLPEntity> thesaurusMap = createThesaurusMap(turNLPEntityThesaurus);
+        List<TurSNSiteFieldExt> turSNSiteFieldExtList =
+                this.turSNSiteFieldExtRepository
+                        .findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), turSNSite);
+        removeDuplicatedFields(fieldMap, nerMap, thesaurusMap, turSNSiteFieldExtList);
+        for (TurSNSiteField turSNSiteField : fieldMap.values()) {
+            TurSNSiteFieldExt turSNSiteFieldExt = saveSNSiteFieldExt(turSNSite, turSNSiteField);
+            turSNSiteFieldExtList.add(turSNSiteFieldExt);
+        }
+        nerMap.values().forEach(turNLPEntity -> addTurSNSiteFieldExt(TurSNFieldType.NER, turSNSite,
+                turSNSiteFieldExtList, turNLPEntity));
+        thesaurusMap.values().forEach(turNLPEntity -> addTurSNSiteFieldExt(TurSNFieldType.THESAURUS, turSNSite,
+                turSNSiteFieldExtList, turNLPEntity));
     }
 
     private Map<String, TurNLPEntity> createNERMap(TurNLPVendor turNLPVendor) {

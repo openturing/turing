@@ -7,7 +7,6 @@
 /* node_modules/ngx-smart-modal/ngx-smart-modal */
 @import "node_modules/ngx-smart-modal/styles/ngx-smart-modal";
 
-//@import "https://unpkg.com/@github/details-dialog-element/dist/index.css"
 details-dialog {
   position: fixed;
   margin: 10vh auto;
@@ -19,4 +18,8 @@ details-dialog {
   max-width: 90vw;
   width: 448px;
   overflow: auto;
+}
+
+.dropdown-simple-item {
+  padding: var(--control-small-paddingBlock, 0.25rem) var(--control-medium-paddingInline-condensed, 0.5rem) var(--control-small-paddingBlock, 0.25rem) var(--control-medium-paddingInline-spacious, 1rem);
 }

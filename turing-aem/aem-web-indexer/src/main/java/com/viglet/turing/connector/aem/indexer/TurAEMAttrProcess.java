@@ -118,7 +118,7 @@ public class TurAEMAttrProcess {
                             });
                     return turCmsTargetAttrValues;
                 }).orElseGet(() -> {
-                    log.error("Content Type not found: " + aemObject.getType());
+                    log.error("Content Type not found: {}", aemObject.getType());
                     return new TurCmsTargetAttrValueList();
                 });
     }
@@ -153,7 +153,7 @@ public class TurAEMAttrProcess {
             return TurCmsTargetAttrValueList.singleItem(context.getTurCmsTargetAttr());
         } else {
             return hasCustomClass(context) ?
-                    attributeByClass(context) :
+                    attributeByClass(context, turAemContext) :
                     attributeByCMS(context, turSNAttributeSpecList, turAemContext);
         }
     }
@@ -240,16 +240,16 @@ public class TurAEMAttrProcess {
         return new TurCmsTargetAttrValueList();
     }
 
-    private TurCmsTargetAttrValueList attributeByClass(TurCmsContext context) {
+    private TurCmsTargetAttrValueList attributeByClass(TurCmsContext context, TurAemContext turAemContext) {
         String className = context.getTurCmsSourceAttr().getClassName();
-        log.debug("ClassName : " + className);
+        log.debug("ClassName : {}", className);
         try {
             return TurCmsTargetAttrValueList.singleItem(context
                             .getTurCmsTargetAttr().getName(),
                     ((ExtAttributeInterface) Objects.requireNonNull(Class.forName(className)
                             .getDeclaredConstructor().newInstance()))
                             .consume(context.getTurCmsTargetAttr(), context.getTurCmsSourceAttr(),
-                                    (AemObject) context.getCmsObjectInstance(), context.getConfiguration()));
+                                    (AemObject) context.getCmsObjectInstance(), context.getConfiguration(), turAemContext));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException | ClassNotFoundException e) {
             log.error(e.getMessage(), e);

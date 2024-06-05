@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.TurSNQuery.ORDER;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
+import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
 import com.viglet.turing.client.sn.facet.TurSNFacetFieldList;
@@ -138,21 +139,23 @@ public class TurSNServer {
 
 	}
 
-	public TurSNServer(URL serverURL, String siteName, Locale locale, String apiKey,
+	public TurSNServer(URL serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials,
 					   String userId) {
 		super();
 		this.serverURL = serverURL;
 		this.siteName = siteName;
 		this.locale = locale;
 		this.turSNServer = String.format("%s/api/sn/%s", this.serverURL, this.siteName);
-		this.apiKey = apiKey;
+		this.apiKey = apiKeyCredentials.getApiKey();
 		this.providerName = PROVIDER_NAME_DEFAULT;
 		this.turSNSitePostParams = new TurSNSitePostParamsBean();
 		this.turSNSitePostParams.setUserId(userId);
 		this.turSNSitePostParams.setPopulateMetrics(true);
 
 	}
-
+	public TurSNServer(URL serverURL, TurApiKeyCredentials apiKeyCredentials) {
+		this(serverURL, SITE_NAME_DEFAULT, LOCALE_DEFAULT, apiKeyCredentials);
+	}
 	public TurSNServer(URL serverURL, String siteName) {
 		this(serverURL, siteName, LOCALE_DEFAULT);
 	}
@@ -164,12 +167,12 @@ public class TurSNServer {
 	public TurSNServer(URL serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials) {
 		this(serverURL, siteName, locale, credentials, credentials != null ? credentials.getUsername() : null);
 	}
-	public TurSNServer(URL serverURL, String siteName, Locale locale, String apiKey) {
-		this(serverURL, siteName, locale, apiKey, null);
+	public TurSNServer(URL serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials) {
+		this(serverURL, siteName, locale, apiKeyCredentials, null);
 	}
 
-	public TurSNServer(URL serverURL, String siteName, String apiKey) {
-		this(serverURL, siteName, LOCALE_DEFAULT, apiKey, null);
+	public TurSNServer(URL serverURL, String siteName, TurApiKeyCredentials apiKeyCredentials) {
+		this(serverURL, siteName, LOCALE_DEFAULT, apiKeyCredentials, null);
 	}
 	public TurSNServer(URL serverURL, TurUsernamePasswordCredentials credentials) {
 		this(serverURL, SITE_NAME_DEFAULT, LOCALE_DEFAULT, credentials,

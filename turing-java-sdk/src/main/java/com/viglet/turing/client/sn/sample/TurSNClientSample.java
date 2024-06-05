@@ -18,6 +18,7 @@ package com.viglet.turing.client.sn.sample;
 
 import com.viglet.turing.client.sn.*;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
+import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
 import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;
@@ -57,7 +58,7 @@ public class TurSNClientSample {
 			locales();
 
 			turSNServer = new HttpTurSNServer(new URL(TURING_URL), TURING_SITE, TURING_LOCALE,
-					TURING_API_KEY, TURING_USERID);
+					new TurApiKeyCredentials(TURING_API_KEY), TURING_USERID);
 
 			System.out.println("--- Auto complete");
 			autoComplete(turSNServer);

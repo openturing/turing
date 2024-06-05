@@ -29,16 +29,13 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-public class TurUsernamePasswordCredentials implements TurCredentials {
+public class TurApiKeyCredentials implements TurCredentials {
 
-	private String username;
+	private String apiKey;
 
-	private String password;
-
-	public TurUsernamePasswordCredentials(String username, String password) {
+	public TurApiKeyCredentials(String apiKey) {
 		super();
-		this.username = username;
-		this.password = password;
+		this.apiKey = apiKey;
 	}
 
 }

@@ -3,6 +3,7 @@ package com.viglet.turing.connector.webcrawler;
 import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 import com.viglet.turing.client.sn.TurSNServer;
+import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -228,8 +229,8 @@ public class TurWCProcess {
         }
         try {
             TurSNJobUtils.importItems(turSNJobItems,
-                    new TurSNServer(URI.create(turingUrl).toURL(),
-                            turingApiKey),
+                    new TurSNServer(URI.create(turingUrl).toURL(),null,
+                            new TurApiKeyCredentials(turingApiKey)),
                     false);
         } catch (MalformedURLException e) {
             log.error(e.getMessage(), e);
