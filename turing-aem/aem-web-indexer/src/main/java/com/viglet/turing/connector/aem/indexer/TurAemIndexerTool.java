@@ -15,7 +15,6 @@ import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSystem;
 import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemConfigVarRepository;
 import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemIndexingRepository;
 import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemSystemRepository;
-import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValue;
 import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueList;
 import com.viglet.turing.connector.cms.mappers.TurCmsContentDefinitionProcess;
 import com.viglet.turing.connector.cms.mappers.TurCmsModel;
@@ -229,10 +228,8 @@ public class TurAemIndexerTool {
     private void jsonByContentType() {
         JSONObject jsonSite = TurAemUtils.getInfinityJson(getRootPath(), getTurAemContext());
         setSiteName(getRootPath(), jsonSite);
-        log.info("Site Name: " + siteName);
-        if (visitedLinks.add(getRootPath()) && !remainingLinks.offer(getRootPath())) {
-            log.error("Item didn't add to queue: " + getRootPath());
-        }
+        log.info("Site Name: {}", siteName);
+        checkItemToQueue(getRootPath());
         while (!remainingLinks.isEmpty()) {
             String url = remainingLinks.poll();
             JSONObject jsonObject = TurAemUtils.getInfinityJson(url, getTurAemContext());
@@ -248,17 +245,21 @@ public class TurAemIndexerTool {
         }
     }
 
+    private void checkItemToQueue(String path) {
+        if (visitedLinks.add(path) && !remainingLinks.offer(path)) {
+            log.error("Item didn't add to queue: {}", path);
+        }
+    }
+
     private void getNodeFromJson(String url, JSONObject jsonObject) {
         jsonObject.toMap().forEach((key, value) -> {
             if (!key.startsWith(JCR) && !key.startsWith(REP) && (getSubType().equals(STATIC_FILE_SUB_TYPE)
                     || !checkIfFileHasImageExtension(key))) {
                 String urlChild = url + "/" + key;
-                log.info("Once: " + isOnce() + ": " + urlChild);
+                log.info("Once: {}: {}", isOnce(), urlChild);
                 if (!isOnce() || !isOnceConfig(urlChild)) {
                     log.info("Once Access");
-                    if (visitedLinks.add(urlChild) && !remainingLinks.offer(urlChild)) {
-                        log.error("Item didn't add to queue: " + urlChild);
-                    }
+                    checkItemToQueue(urlChild);
                 }
             }
         });
@@ -279,9 +280,9 @@ public class TurAemIndexerTool {
     }
 
     private void getInfoQueue() {
-        log.info("Total Job Item: " + Iterators.size(turSNJobItems.iterator()));
-        log.info("Total Visited Links: " + (long) visitedLinks.size());
-        log.info("Queue Size: " + (long) remainingLinks.size());
+        log.info("Total Job Item: {}", Iterators.size(turSNJobItems.iterator()));
+        log.info("Total Visited Links: {}", (long) visitedLinks.size());
+        log.info("Queue Size: {}", (long) remainingLinks.size());
     }
 
     private void sendToTuringWhenMaxSize() {
@@ -294,7 +295,7 @@ public class TurAemIndexerTool {
     private void sendToTuring() {
         if (log.isDebugEnabled()) {
             for (TurSNJobItem turSNJobItem : turSNJobItems) {
-                log.debug("TurSNJobItem Id: " + turSNJobItem.getAttributes().get(ID_ATTR));
+                log.debug("TurSNJobItem Id: {}", turSNJobItem.getAttributes().get(ID_ATTR));
             }
         }
         try {
@@ -429,8 +430,7 @@ public class TurAemIndexerTool {
                             if (attributes.containsKey(attributeName)) {
                                 addItemInExistingAttribute(attributeValue, attributes, attributeName);
                             } else {
-                                addFirstItemToAttribute(targetAttrValue, attributeValue, attributes);
-                                addFirstItemToAttribute(targetAttrValue, attributeValue, attributes);
+                                addFirstItemToAttribute(attributeName, attributeValue, attributes);
                             }
                         }
                     });
@@ -536,9 +536,9 @@ public class TurAemIndexerTool {
         }
     }
 
-    private void addFirstItemToAttribute(TurCmsTargetAttrValue targetAttrValue,
+    private void addFirstItemToAttribute(String attributeName,
                                          String attributeValue,
                                          Map<String, Object> attributes) {
-        attributes.put(targetAttrValue.getTargetAttrName(), attributeValue);
+        attributes.put(attributeName, attributeValue);
     }
 }

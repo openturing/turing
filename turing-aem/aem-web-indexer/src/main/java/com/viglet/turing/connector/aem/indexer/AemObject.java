@@ -18,26 +18,28 @@ public class AemObject {
     public static final String JCR_TITLE = "jcr:title";
     public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     public static final String HTML = ".html";
+    public static final String ACTIVATE = "Activate";
+    private Calendar lastModified;
+    private Calendar createdDate;
+    private boolean contentFragment = false;
+    private boolean delivered = false;
+    private final String type;
+    private final String path;
+    private final String url;
+    private String model;
+    private final JSONObject node;
+    private JSONObject jcrContentNode = new JSONObject();
+    private String title;
+    private final Map<String, Object> attributes = new HashMap<>();
+
     public static final String CONTENT_FRAGMENT = "contentFragment";
-    public static final String CQ_IS_DELIVERED = "cq:isDelivered";
+    public static final String CQ_LAST_REPLICATION_ACTION_PUBLISH = "cq:lastReplicationAction_publish";
     public static final String CQ_LAST_MODIFIED = "cq:lastModified";
     public static final String CQ_MODEL = "cq:model";
     public static final String DATA_FOLDER = "data";
     public static final String DATE_JSON_FORMAT = "E MMM dd yyyy HH:mm:ss 'GMT'Z";
     public static final String EMPTY_VALUE = "";
     public static final SimpleDateFormat aemJsonDateFormat = new SimpleDateFormat(DATE_JSON_FORMAT, Locale.ENGLISH);
-    private final String type;
-    private final String path;
-    private final String url;
-    private final JSONObject node;
-    private final Map<String, Object> attributes = new HashMap<>();
-    private Calendar lastModified;
-    private Calendar createdDate;
-    private boolean contentFragment = false;
-    private boolean delivered = false;
-    private String model;
-    private JSONObject jcrContentNode = new JSONObject();
-    private String title;
 
     public AemObject(String nodePath, JSONObject jcrNode) {
         this.node = jcrNode;
@@ -47,7 +49,8 @@ public class AemObject {
         try {
             if (jcrNode.has(JCR_CONTENT)) {
                 this.jcrContentNode = jcrNode.getJSONObject(JCR_CONTENT);
-                this.delivered = jcrContentNode.has(CQ_IS_DELIVERED) && this.jcrContentNode.getBoolean(CQ_IS_DELIVERED);
+                this.delivered = jcrContentNode.has(CQ_LAST_REPLICATION_ACTION_PUBLISH)
+                        && this.jcrContentNode.getString(CQ_LAST_REPLICATION_ACTION_PUBLISH).equals(ACTIVATE);
                 this.title = jcrContentNode.has(JCR_TITLE) ? this.jcrContentNode.getString(JCR_TITLE) : EMPTY_VALUE;
                 if (TurAemUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT)) {
                     this.contentFragment = this.jcrContentNode.getBoolean(CONTENT_FRAGMENT);
@@ -94,7 +97,7 @@ public class AemObject {
                 }
             }
             JSONObject finalDataJson = dataJson;
-            dataJson.keySet().stream().filter(key -> !key.endsWith("@LastModified")).forEach(key -> {
+            dataJson.keySet().stream().filter(key -> !key.endsWith("@LastModified")) .forEach(key -> {
                 Object value = finalDataJson.get(key);
                 if (isDate(value.toString())) {
                     try {

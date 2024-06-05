@@ -1,6 +1,7 @@
 package com.viglet.turing.connector.aem.indexer.ext;
 
 import com.viglet.turing.connector.aem.indexer.AemObject;
+import com.viglet.turing.connector.aem.indexer.TurAemContext;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
@@ -11,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TurSourceApps implements ExtAttributeInterface {
     @Override
     public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-                                 AemObject aemObject, IHandlerConfiguration config) {
+                                 AemObject aemObject, IHandlerConfiguration config, TurAemContext turAemContext) {
         log.debug("Executing TurSourceApps");
         return TurMultiValue.singleItem(config.getProviderName());
     }

@@ -5,21 +5,21 @@ import com.viglet.turing.connector.aem.indexer.conf.AemHandlerConfiguration;
 import com.viglet.turing.connector.cms.beans.TurCmsContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.message.BasicHeader;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 public class TurAemUtils {
@@ -48,15 +48,13 @@ public class TurAemUtils {
     }
 
     public static JSONObject getInfinityJson(String url, TurAemContext context) {
-
         String infinityJsonUrl = String.format(url.endsWith(JSON) ? "%s%s" : "%s%s.infinity.json",
                 context.getUrl(), url);
-
         if (responseHttpCache.containsKey(infinityJsonUrl)) {
-            log.info("Cached Response " + infinityJsonUrl);
+            log.info("Cached Response {}", infinityJsonUrl);
             return new JSONObject(responseHttpCache.get(infinityJsonUrl));
         } else {
-            log.info("Request " + infinityJsonUrl);
+            log.info("Request {}", infinityJsonUrl);
             return getResponseBody(infinityJsonUrl, context.getUsername(), context.getPassword()).map(responseBody -> {
                 if (isResponseBodyJSONArray(responseBody) && !url.endsWith(JSON)) {
                     return getInfinityJson(new JSONArray(responseBody).getString(0), context);
@@ -78,24 +76,23 @@ public class TurAemUtils {
     }
 
     public static Optional<String> getResponseBody(String url, String username, String password) {
-        try (HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
-                .authenticator(new Authenticator() {
-                    @Override
-                    protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(username, password.toCharArray());
-                    }
-                })
-                .build()) {
-            try {
-                HttpRequest request = HttpRequest.newBuilder().GET().uri(new URI(UrlEscapers.urlFragmentEscaper().escape(url))).build();
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                return response.body().describeConstable();
-            } catch (URISyntaxException | IOException | InterruptedException ex) {
-                log.error(ex.getMessage(), ex);
-                return Optional.empty();
+        HttpGet request = new HttpGet(URI.create(UrlEscapers.urlFragmentEscaper().escape(url)).normalize());
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create()
+                .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.AUTHORIZATION, basicAuth(username, password))))
+                .build();
+             CloseableHttpResponse response = httpClient.execute(request)) {
+            HttpEntity entity = response.getEntity();
+            if (entity != null) {
+                return Optional.of(EntityUtils.toString(entity));
             }
+        } catch (IOException | ParseException e) {
+            log.error(e.getMessage(), e);
         }
+        return Optional.empty();
+    }
 
+    private static String basicAuth(String username, String password) {
+        return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
     }
 
     public static String getPropertyValue(Object property) {
