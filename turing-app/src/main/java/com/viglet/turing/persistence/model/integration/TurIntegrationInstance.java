@@ -18,8 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.viglet.turing.persistence.model.se;
+package com.viglet.turing.persistence.model.integration;
 
+import com.viglet.turing.persistence.bean.integration.TurIntegrationVendor;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,14 +30,14 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * The persistent class for the TurSEInstance database table.
+ * The persistent class for the TurIntegrationInstance database table.
  * 
  */
 @Getter
 @Setter
 @Entity
-@Table(name = "se_instance")
-public class TurSEInstance implements Serializable {
+@Table(name = "integration_instance")
+public class TurIntegrationInstance implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
@@ -55,13 +56,8 @@ public class TurSEInstance implements Serializable {
 	private int enabled;
 
 	@Column(nullable = false)
-	private String host;
+	private String endpoint;
 
 	@Column(nullable = false)
-	private int port;
-
-	// bi-directional many-to-one association to TurSEVendor
-	@ManyToOne
-	@JoinColumn(name = "se_vendor_id", nullable = false)
-	private TurSEVendor turSEVendor;
+	private String vendor;
 }

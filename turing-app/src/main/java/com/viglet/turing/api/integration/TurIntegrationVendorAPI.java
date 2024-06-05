@@ -18,41 +18,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package com.viglet.turing.api.integration;
 
-package com.viglet.turing.persistence.model.se;
+import com.viglet.turing.persistence.bean.integration.TurIntegrationVendor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.bind.annotation.*;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import java.util.List;
 
-import java.io.Serial;
-import java.io.Serializable;
+@RestController
+@RequestMapping("/api/integration/vendor")
+@Tag(name = "Integration Vendor", description = "Integration Vendor API")
+public class TurIntegrationVendorAPI {
 
-/**
- * The persistent class for the TurSEVendor database table.
- * 
- */
-@Getter
-@Setter
-@Entity
-@Table(name = "se_vendor")
-public class TurSEVendor implements Serializable {
-	@Serial
-	private static final long serialVersionUID = 1L;
+	@Operation(summary = "Integration Vendor List")
+	@GetMapping
+	public List<TurIntegrationVendor> turIntegrationVendorList() {
+		return List.of(new TurIntegrationVendor("AEM", "AEM"),
+				new TurIntegrationVendor("WEB-CRAWLER", "Web Crawler"));
+	}
 
-	@Id
-	@Column(unique = true, nullable = false, length = 10)
-	private String id;
 
-	@Column
-	private String description;
-
-	@Column
-	private String plugin;
-
-	@Column(nullable = false, length = 100)
-	private String title;
-
-	@Column
-	private String website;
 }

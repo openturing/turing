@@ -18,50 +18,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.viglet.turing.persistence.model.se;
 
-import jakarta.persistence.*;
+package com.viglet.turing.persistence.bean.integration;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
 import java.io.Serializable;
 
-/**
- * The persistent class for the TurSEInstance database table.
- * 
- */
 @Getter
 @Setter
-@Entity
-@Table(name = "se_instance")
-public class TurSEInstance implements Serializable {
+public class TurIntegrationVendor implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
-	@Id
-	@UuidGenerator
-	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	@Column(nullable = false, length = 100)
 	private String title;
 
-	@Column(nullable = false, length = 100)
-	private String description;
-
-	@Column(nullable = false)
-	private int enabled;
-
-	@Column(nullable = false)
-	private String host;
-
-	@Column(nullable = false)
-	private int port;
-
-	// bi-directional many-to-one association to TurSEVendor
-	@ManyToOne
-	@JoinColumn(name = "se_vendor_id", nullable = false)
-	private TurSEVendor turSEVendor;
+	public TurIntegrationVendor(String id, String title) {
+		this.id = id;
+		this.title = title;
+	}
 }

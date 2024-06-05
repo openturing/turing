@@ -19,40 +19,15 @@
  * under the License.
  */
 
-package com.viglet.turing.persistence.model.se;
+package com.viglet.turing.persistence.repository.integration;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import com.viglet.turing.persistence.model.integration.TurIntegrationInstance;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
-import java.io.Serial;
-import java.io.Serializable;
-
-/**
- * The persistent class for the TurSEVendor database table.
- * 
- */
-@Getter
-@Setter
-@Entity
-@Table(name = "se_vendor")
-public class TurSEVendor implements Serializable {
-	@Serial
-	private static final long serialVersionUID = 1L;
-
-	@Id
-	@Column(unique = true, nullable = false, length = 10)
-	private String id;
-
-	@Column
-	private String description;
-
-	@Column
-	private String plugin;
-
-	@Column(nullable = false, length = 100)
-	private String title;
-
-	@Column
-	private String website;
+public interface TurIntegrationInstanceRepository extends JpaRepository<TurIntegrationInstance, String> {
+    @Modifying
+    @Query("delete from TurIntegrationInstance iv where iv.id = ?1")
+    void delete(String id);
 }
