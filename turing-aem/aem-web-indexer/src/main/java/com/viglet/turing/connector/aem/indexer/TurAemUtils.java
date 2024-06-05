@@ -37,6 +37,9 @@ public class TurAemUtils {
                 aemObject.getPath()));
     }
 
+    public static void cleanCache() {
+        responseHttpCache.clear();
+    }
     public static Locale getLocaleFromContext(TurCmsContext context) {
         AemHandlerConfiguration config = (AemHandlerConfiguration) context.getConfiguration();
         AemObject aemObject = (AemObject) context.getCmsObjectInstance();
