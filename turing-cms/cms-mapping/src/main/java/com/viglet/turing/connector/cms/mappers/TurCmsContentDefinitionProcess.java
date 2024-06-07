@@ -47,13 +47,21 @@ public class TurCmsContentDefinitionProcess {
     public TurCmsContentDefinitionProcess(IHandlerConfiguration config, Path workingDirectory) {
         this.config = config;
         this.workingDirectory = workingDirectory;
-        this.jsonFile = getContentMappingPath(config, workingDirectory);
+        this.jsonFile = getContentMappingPath(workingDirectory);
         this.json = null;
 
     }
 
     public TurCmsContentDefinitionProcess(IHandlerConfiguration config, String json) {
         this.config = config;
+        this.workingDirectory = null;
+        this.jsonFile = null;
+        this.json = json;
+
+    }
+
+    public TurCmsContentDefinitionProcess(String json) {
+        this.config = null;
         this.workingDirectory = null;
         this.jsonFile = null;
         this.json = json;
@@ -150,7 +158,7 @@ public class TurCmsContentDefinitionProcess {
         try {
             return new ObjectMapper().readValue(path.toFile(), TurCmsContentMapping.class);
         } catch (IOException e) {
-            log.error("Can not read mapping file, because is not valid: " + path.toFile().getAbsolutePath(), e);
+            log.error("Can not read mapping file, because is not valid: {}", path.toFile().getAbsolutePath(), e);
             return new TurCmsContentMapping();
         }
     }
@@ -164,7 +172,7 @@ public class TurCmsContentDefinitionProcess {
         }
     }
 
-    private Path getContentMappingPath(IHandlerConfiguration config, Path workingDirectory) {
+    private Path getContentMappingPath(Path workingDirectory) {
         String contentMappingFile = config.getMappingFile();
         if (workingDirectory != null) {
             Path path = Paths.get(workingDirectory.toAbsolutePath().toString(),
@@ -172,12 +180,12 @@ public class TurCmsContentDefinitionProcess {
             if (path.toFile().isFile() && path.toFile().canRead()) {
                 return path;
             } else {
-                log.error("Can not read mapping file, because not exist: " + path.toFile().getAbsolutePath());
+                log.error("Can not read mapping file, because not exist: {}", path.toFile().getAbsolutePath());
             }
         } else {
-            log.error("Can not read mapping file, because WorkDirectory is empty: " + contentMappingFile);
+            log.error("Can not read mapping file, because WorkDirectory is empty: {}", contentMappingFile);
         }
-        log.error("Mapping definitions are not loaded properly from mappingsXML: " + contentMappingFile);
+        log.error("Mapping definitions are not loaded properly from mappingsXML: {}", contentMappingFile);
         return null;
     }
 }

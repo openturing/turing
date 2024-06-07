@@ -13,7 +13,7 @@ public class TurContentId implements ExtAttributeInterface {
 
     @Override
     public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-                                 AemObject aemObject, IHandlerConfiguration config, TurAemContext turAemContext) {
+                                 AemObject aemObject, TurAemContext turAemContext) {
         log.debug("Executing TurContentUrl");
         return TurMultiValue
                 .singleItem(String.format(aemObject.getPath()));

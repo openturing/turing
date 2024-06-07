@@ -9,5 +9,5 @@ import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 
 public interface ExtAttributeInterface {
     TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-                          AemObject aemObject, IHandlerConfiguration config, TurAemContext turAemContext);
+                          AemObject aemObject, TurAemContext turAemContext);
 }

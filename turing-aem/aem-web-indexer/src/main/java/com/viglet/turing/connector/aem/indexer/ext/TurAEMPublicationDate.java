@@ -14,7 +14,7 @@ import java.util.Optional;
 public class TurAEMPublicationDate implements ExtAttributeInterface {
 	@Override
 	public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-								 AemObject aemObject, IHandlerConfiguration config, TurAemContext turAemContext) {
+								 AemObject aemObject, TurAemContext turAemContext) {
 		log.debug("Executing TurAEMPublicationDate");
 		return Optional.ofNullable(aemObject.getPublicationDate())
 				.map(publicationDate -> TurMultiValue.singleItem(publicationDate.getTime())).orElse(null);

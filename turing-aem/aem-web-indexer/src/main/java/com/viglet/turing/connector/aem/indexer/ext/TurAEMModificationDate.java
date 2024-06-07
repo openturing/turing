@@ -14,7 +14,7 @@ import java.util.Optional;
 public class TurAEMModificationDate implements ExtAttributeInterface {
     @Override
     public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-                                 AemObject aemObject, IHandlerConfiguration config, TurAemContext turAemContext) {
+                                 AemObject aemObject, TurAemContext turAemContext) {
         log.debug("Executing TurAEMModificationDate");
         return Optional.ofNullable(aemObject.getLastModified())
                 .map(lastModified -> TurMultiValue.singleItem(lastModified.getTime())).orElse(null);

@@ -2,7 +2,6 @@ package com.viglet.turing.connector.aem.indexer.persistence.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.Accessors;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -56,6 +55,8 @@ public class TurAemSource implements Serializable {
     private String urlPrefix;
     @Column
     private String oncePattern;
+    @Column(columnDefinition = "TEXT")
+    private String mappingJson;
 
     // bi-directional many-to-one association to TurAemSourceLocalePath
     @Builder.Default
