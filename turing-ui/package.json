@@ -41,7 +41,7 @@
     "@angular/language-service": "18.0.2",
     "@types/jasmine": "5.1.4",
     "@types/jasminewd2": "2.0.13",
-    "@types/node": "20.14.0",
+    "@types/node": "20.14.2",
     "@types/primer__octicons": "^19.6.3",
     "jasmine-core": "5.1.2",
     "jasmine-spec-reporter": "7.0.0",
