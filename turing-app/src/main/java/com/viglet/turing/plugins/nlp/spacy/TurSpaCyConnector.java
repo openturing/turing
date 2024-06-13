@@ -85,7 +85,6 @@ public class TurSpaCyConnector implements TurNLPPlugin {
                 }
             }
         }
-        System.out.println(entityList);
         return entityList;
     }
 

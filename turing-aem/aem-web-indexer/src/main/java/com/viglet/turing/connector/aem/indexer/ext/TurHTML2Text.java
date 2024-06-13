@@ -25,8 +25,8 @@ import com.viglet.turing.connector.aem.indexer.TurAemContext;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
-import com.viglet.turing.connector.cms.util.HtmlManipulator;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
 
 @Slf4j
 public class TurHTML2Text implements ExtAttributeInterface {
@@ -39,8 +39,8 @@ public class TurHTML2Text implements ExtAttributeInterface {
         if (turCmsSourceAttr.getName() != null && aemObject != null && aemObject.getAttributes() != null
                 && aemObject.getAttributes().containsKey(turCmsSourceAttr.getName())
                 && aemObject.getAttributes().get(turCmsSourceAttr.getName()) != null) {
-            return TurMultiValue.singleItem(HtmlManipulator.html2Text(aemObject.getAttributes()
-                    .get(turCmsSourceAttr.getName()).toString()));
+            return TurMultiValue.singleItem(Jsoup.parse(aemObject.getAttributes()
+                    .get(turCmsSourceAttr.getName()).toString()).text());
         }
         return TurMultiValue.singleItem(EMPTY_STRING);
     }

@@ -46,7 +46,6 @@ public class TurSNTargetingRules {
         Map<String, List<String>> trMap = new HashMap<>();
 
         for (String tr : trs) {
-            System.out.println("TRS: " + trs);
             if (tr.contains(":")) {
                 String attribute = tr.substring(0, tr.indexOf(":"));
                 String value = tr.substring(tr.indexOf(":") + 1);

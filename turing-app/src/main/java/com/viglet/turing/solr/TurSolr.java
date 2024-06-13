@@ -741,14 +741,12 @@ public class TurSolr {
                         String.format(" AND (%s)", turSNTargetingRules.orMethod(formattedRulesOR.get(condition))) :
                         turSNTargetingRules.orMethod(formattedRulesOR.get(condition)));
             }
-            System.out.println("Rule: " + rule);
             rules.add(String.format("( %s AND ( %s ) )", condition, rule));
         });
 
         String targetingRuleQuery = String.format("%s OR (*:* NOT ( %s ) )",
                 String.join(" OR ", rules),
                 String.join(" OR ", conditions));
-        System.out.println(targetingRuleQuery);
         query.addFilterQuery(targetingRuleQuery);
     }
 
