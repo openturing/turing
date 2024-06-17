@@ -95,6 +95,10 @@
         [routerLinkActive]="['selected']">
         <span octicon="rows" [size]=16 class="mr-1"></span>
         Fields</a>
+      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'facet-ordering']"
+         [routerLinkActive]="['selected']">
+        <span octicon="filter" [size]=16 class="mr-1"></span>
+        Facet Ordering</a>
       <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'spotlight']"
         [routerLinkActive]="['selected']"><span octicon="megaphone" [size]=16 class="mr-1"></span> Spotlight</a>
     </nav>

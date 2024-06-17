@@ -26,8 +26,6 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.sn.TurSNFieldType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import lombok.*;
 import lombok.experimental.Tolerate;
 
@@ -41,7 +39,6 @@ import java.util.stream.Collectors;
 
 @Builder(toBuilder = true)
 @AllArgsConstructor
-@NoArgsConstructor
 @Setter
 @Getter
 public class TurSNSiteFieldExtDto {
@@ -65,6 +62,11 @@ public class TurSNSiteFieldExtDto {
     private TurSNSite turSNSite;
 
     @Tolerate
+    public TurSNSiteFieldExtDto() {
+        this.facetLocales = new HashSet<>();
+    }
+
+    @Tolerate
     public TurSNSiteFieldExtDto(TurSNSiteFieldExt turSNSiteFieldExt) {
         this.id = turSNSiteFieldExt.getId();
         this.externalId = turSNSiteFieldExt.getExternalId();
@@ -85,8 +87,13 @@ public class TurSNSiteFieldExtDto {
     }
 
     public void setFacetLocales(Set<TurSNSiteFieldExtFacet> facetLocales) {
-        if (facetLocales != null) {
+        if (this.facetLocales != null) {
             this.facetLocales.clear();
+        } else {
+            this.facetLocales = new HashSet<>();
+        }
+        if (facetLocales != null) {
+            this.facetLocales = new HashSet<>();
             this.facetLocales.addAll(facetLocales.stream().map(TurSNSiteFieldExtFacetDto::new)
                     .collect(Collectors.toSet()));
         }
