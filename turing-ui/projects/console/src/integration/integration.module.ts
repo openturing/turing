@@ -11,14 +11,25 @@ import {TurIntegrationRootPageComponent} from './component/root/integration-root
 import {TurIntegrationVendorService} from './service/integration-vendor.service';
 import {TurLocaleService} from '../locale/service/locale.service';
 import {TurIntegrationInstancePageComponent} from "./component/instance/integration-instance-page.component";
-import {TurIntegrationAEMPageComponent} from "./component/instance/aem/integration-aem-page.component";
+import {TurIntegrationAemPageComponent} from "./component/instance/aem/integration-aem-page.component";
+import {TurIntegrationAemSourceService} from "./service/integration-aem-source.service";
+import {TurIntegrationAemListPageComponent} from "./component/instance/aem/integration-aem-list-page.component";
+import {ACE_CONFIG, AceConfigInterface, AceModule} from 'ngx-ace-wrapper';
+
+const DEFAULT_ACE_CONFIG: AceConfigInterface = {
+  tabSize: 2,
+  mode: 'ace/mode/json',
+  theme: 'github',
+  readOnly: false,
+};
 
 @NgModule({
   declarations: [
     TurIntegrationRootPageComponent,
     TurIntegrationInstanceListPageComponent,
     TurIntegrationInstancePageComponent,
-    TurIntegrationAEMPageComponent
+    TurIntegrationAemPageComponent,
+    TurIntegrationAemListPageComponent
   ],
   imports: [
     CommonModule,
@@ -27,12 +38,18 @@ import {TurIntegrationAEMPageComponent} from "./component/instance/aem/integrati
     OcticonsModule,
     TurIntegrationRoutingModule,
     TurCommonsModule,
-    RouterModule
+    RouterModule,
+    AceModule
   ],
   providers: [
     TurIntegrationInstanceService,
     TurIntegrationVendorService,
-    TurLocaleService
+    TurLocaleService,
+    TurIntegrationAemSourceService,
+    {
+      provide: ACE_CONFIG,
+      useValue: DEFAULT_ACE_CONFIG
+    },
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

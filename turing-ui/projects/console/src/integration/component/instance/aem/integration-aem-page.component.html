@@ -1,15 +1,15 @@
 <h1>AEM</h1>
-<div *ngIf="(getTurIntegrationInstance() | async) as integrationInstance; else loading">
+<div *ngIf="(getTurIntegrationAemSource() | async) as aemSource; else loading">
 
   <div class="Subhead mt-4">
     <div class="Subhead-heading Subhead-heading--large">
       <div *ngIf="!isNewObject()" class="d-flex">
         <div style="height: 32px; border-radius: 50%;">
-          <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="integrationInstance.title | lowercase">
+          <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="aemSource.group | lowercase">
           </svg>
         </div>
         <div class="ml-2">
-          <span>{{integrationInstance.title}}</span>
+          <span>{{aemSource.group}}</span>
         </div>
       </div>
       <div *ngIf="isNewObject()" class="d-flex">
@@ -18,14 +18,10 @@
           </svg>
         </div>
         <div class="ml-2">
-          <span>New Instance</span>
+          <span>New AEM Source</span>
         </div>
       </div>
     </div>
-    <!--
-    <div *ngIf="!isNewObject()" style="position: relative;width: 100px;"><span class="Label mr-1 Label--success"
-        style="position: absolute;top: 50%; left: 50%;transform: translate(-50%,-50%);">Running</span></div>
-        -->
     <div class="Subhead-actions" style="display: inherit;">
       <details *ngIf="!isNewObject()" #modalDelete id="modalDelete"
                class="details-reset details-overlay details-overlay-dark" style="display: unset;">
@@ -50,88 +46,187 @@
           <div class="Box-body overflow-auto">
             <p>
               This action <strong>cannot</strong> be undone. This will permanently delete the
-              <strong>{{integrationInstance.title}}</strong> integration.
+              <strong>{{aemSource.group}}</strong> AEM Source.
             </p>
-            <button (click)="delete(integrationInstance)" class="btn-danger btn btn-block">
+            <button (click)="delete(aemSource)" class="btn-danger btn btn-block">
               <span class="d-md-inline-block d-none">I understand the consequences, delete this integration</span>
             </button>
           </div>
         </details-dialog>
       </details>
     </div>
-    <div *ngIf="!isNewObject()" class="Subhead-description">{{integrationInstance.description}}</div>
+    <div *ngIf="!isNewObject()" class="Subhead-description">{{aemSource.group}}</div>
   </div>
   <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
     <nav class="menu" aria-label="Site settings">
-      <a class="menu-item" [routerLink]="['/se/instance/', integrationInstance.id]" [routerLinkActive]="['selected']"><span
+      <a class="menu-item" [routerLink]="['/se/instance/', aemSource.id]" [routerLinkActive]="['selected']"><span
         octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
     </nav>
   </div>
   <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
     <div class="Subhead">
       <div class="Subhead-heading Subhead-heading--large"><span octicon="gear" [size]="24" class="mr-1"></span> Settings</div>
-      <button (click)="save(integrationInstance)" type="button" class="btn btn-primary">{{saveButtonCaption()}}</button>
+      <button (click)="save(aemSource)" type="button" class="btn btn-primary">{{saveButtonCaption()}}</button>
       <div class="Subhead-description">Integration settings.</div>
     </div>
     <div class="form-group">
       <div class="form-group-header">
-        <label>Title</label>
+        <label>Group</label>
       </div>
       <div class="form-group-body">
-        <input [(ngModel)]="integrationInstance.title" class="form-control" type="text" style="width: 100%;"/>
+        <input [(ngModel)]="aemSource.group" class="form-control" type="text" style="width: 100%;"/>
         <p class="note">
-          Integration instance title will appear on list.
+         AEM Source Group.
         </p>
       </div>
     </div>
     <div class="form-group">
       <div class="form-group-header">
-        <label>Description</label>
+        <label>Site Name</label>
       </div>
       <div class="form-group-body">
-        <input [(ngModel)]="integrationInstance.description" class="form-control" type="text"
+        <input [(ngModel)]="aemSource.siteName" class="form-control" type="text"
                style="width: 100%;"/>
         <p class="note">
-          Integration instance description will appear on list.
+          AEM Source Site Name.
         </p>
       </div>
     </div>
     <div class="form-group">
       <div class="form-group-header">
-        <label>Vendor</label>
+        <label>URL</label>
       </div>
       <div class="form-group-body">
-        <select [(ngModel)]="integrationInstance.vendor" class="form-select">
-          <option *ngFor="let integrationVendor of (getTurIntegrationVendors() | async)" [value]="integrationVendor.id" style="width: 100%;">
-            {{integrationVendor.title}}
-          </option>
-        </select>
-        <p class="note" id="help-text-for-checkbox">
-          Integration vendor that will be used.
-        </p>
-      </div>
-    </div>
-    <div class="form-group">
-      <div class="form-group-header">
-        <label>Endpoint</label>
-      </div>
-      <div class="form-group-body">
-        <input [(ngModel)]="integrationInstance.endpoint" class="form-control" type="text" style="width: 100%;"/>
+        <input [(ngModel)]="aemSource.url" class="form-control" type="text" style="width: 100%;"/>
         <p class="note">
-          Integration instance hostname will be connected.
+         AEM URL.
         </p>
       </div>
     </div>
-    <div class="form-checkbox">
-      <label>
-        <input [(ngModel)]="integrationInstance.enabled" type="checkbox" (ngModelChange)="integrationInstance.enabled = $event ? 1 : 0"
-               aria-describedby="help-text-for-checkbox"/>
-        Enabled
-      </label>
-      <p class="note">
-        If this Integration instance will be used in others Turing ES Components.
-      </p>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Username</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="aemSource.username" class="form-control" type="text" style="width: 100%;"/>
+        <p class="note">
+          AEM Username.
+        </p>
+      </div>
     </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Password</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="aemSource.password" class="form-control" type="password" style="width: 100%;"/>
+        <p class="note">
+          AEM Password.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Semantic Navigation Site Name</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="aemSource.turSNSite" class="form-control" type="text" style="width: 100%;"/>
+        <p class="note">
+          Semantic Navigation Site Name.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>URL Prefix</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="aemSource.urlPrefix" class="form-control" type="text" style="width: 100%;"/>
+        <p class="note">
+          URL Prefix.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Content Type</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="aemSource.contentType" class="form-control" type="text" style="width: 100%;"/>
+        <p class="note">
+         AEM Content Type.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Sub Type</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="aemSource.subType" class="form-control" type="text" style="width: 100%;"/>
+        <p class="note">
+          AEM Sub Type.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Default Locale</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="aemSource.defaultLocale" class="form-control" type="text" style="width: 100%;"/>
+        <p class="note">
+          AEM Default Locale.
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Mapping</label>
+      </div>
+      <div class="form-group-body">
+        <ace [config]="config" [(value)]="aemSource.mappingJson" style="height: 400px;">
+        </ace>
+        <p class="note">
+          Mapping
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Provider Name</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="aemSource.providerName" class="form-control" type="text" style="width: 100%;"/>
+        <p class="note">
+          Provider Name
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Once Pattern</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="aemSource.oncePattern" class="form-control" type="text" style="width: 100%;"/>
+        <p class="note">
+          Once Pattern
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-group-header">
+        <label>Root Path</label>
+      </div>
+      <div class="form-group-body">
+        <input [(ngModel)]="aemSource.rootPath" class="form-control" type="text" style="width: 100%;"/>
+        <p class="note">
+         Root Path
+        </p>
+      </div>
+    </div>
+
+
   </div>
 </div>
 <ng-template #loading>

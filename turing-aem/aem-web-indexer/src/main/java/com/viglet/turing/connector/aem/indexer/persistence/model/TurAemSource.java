@@ -55,7 +55,8 @@ public class TurAemSource implements Serializable {
     private String urlPrefix;
     @Column
     private String oncePattern;
-    @Column(columnDefinition = "TEXT")
+    @Lob
+    @Column
     private String mappingJson;
 
     // bi-directional many-to-one association to TurAemSourceLocalePath
