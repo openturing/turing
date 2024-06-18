@@ -15,6 +15,9 @@ import {TurIntegrationAemPageComponent} from "./component/instance/aem/integrati
 import {TurIntegrationAemSourceService} from "./service/integration-aem-source.service";
 import {TurIntegrationAemListPageComponent} from "./component/instance/aem/integration-aem-list-page.component";
 import {ACE_CONFIG, AceConfigInterface, AceModule} from 'ngx-ace-wrapper';
+import {
+  TurIntegrationInstanceDetailPageComponent
+} from "./component/instance/integration-instance-detail-page.component";
 
 const DEFAULT_ACE_CONFIG: AceConfigInterface = {
   tabSize: 2,
@@ -26,6 +29,7 @@ const DEFAULT_ACE_CONFIG: AceConfigInterface = {
 @NgModule({
   declarations: [
     TurIntegrationRootPageComponent,
+    TurIntegrationInstanceDetailPageComponent,
     TurIntegrationInstanceListPageComponent,
     TurIntegrationInstancePageComponent,
     TurIntegrationAemPageComponent,

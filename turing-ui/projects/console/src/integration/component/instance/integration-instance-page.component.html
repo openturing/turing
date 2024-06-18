@@ -62,75 +62,15 @@
   </div>
   <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
     <nav class="menu" aria-label="Site settings">
-      <a class="menu-item" [routerLink]="['/se/instance/', integrationInstance.id]" [routerLinkActive]="['selected']"><span
+      <a class="menu-item" [routerLink]="['/integration/instance/', integrationInstance.id, 'detail']" [routerLinkActive]="['selected']"><span
         octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
+      <a class="menu-item" [routerLink]="['/integration/instance/', integrationInstance.id, 'aem']" [routerLinkActive]="['selected']"><span
+        octicon="git-commit" [size]=16 class="mr-1"></span> AEM Sources</a>
     </nav>
   </div>
   <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
-    <div class="Subhead">
-      <div class="Subhead-heading Subhead-heading--large"><span octicon="gear" [size]="24" class="mr-1"></span> Settings</div>
-      <button (click)="save(integrationInstance)" type="button" class="btn btn-primary">{{saveButtonCaption()}}</button>
-      <div class="Subhead-description">Integration settings.</div>
-    </div>
-    <div class="form-group">
-      <div class="form-group-header">
-        <label>Title</label>
-      </div>
-      <div class="form-group-body">
-        <input [(ngModel)]="integrationInstance.title" class="form-control" type="text" style="width: 100%;"/>
-        <p class="note">
-          Integration instance title will appear on list.
-        </p>
-      </div>
-    </div>
-    <div class="form-group">
-      <div class="form-group-header">
-        <label>Description</label>
-      </div>
-      <div class="form-group-body">
-        <input [(ngModel)]="integrationInstance.description" class="form-control" type="text"
-               style="width: 100%;"/>
-        <p class="note">
-          Integration instance description will appear on list.
-        </p>
-      </div>
-    </div>
-    <div class="form-group">
-      <div class="form-group-header">
-        <label>Vendor</label>
-      </div>
-      <div class="form-group-body">
-        <select [(ngModel)]="integrationInstance.vendor" class="form-select">
-          <option *ngFor="let integrationVendor of (getTurIntegrationVendors() | async)" [value]="integrationVendor.id" style="width: 100%;">
-            {{integrationVendor.title}}
-          </option>
-        </select>
-        <p class="note" id="help-text-for-checkbox">
-          Integration vendor that will be used.
-        </p>
-      </div>
-    </div>
-    <div class="form-group">
-      <div class="form-group-header">
-        <label>Endpoint</label>
-      </div>
-      <div class="form-group-body">
-        <input [(ngModel)]="integrationInstance.endpoint" class="form-control" type="text" style="width: 100%;"/>
-        <p class="note">
-          Integration instance hostname will be connected.
-        </p>
-      </div>
-    </div>
-    <div class="form-checkbox">
-      <label>
-        <input [(ngModel)]="integrationInstance.enabled" type="checkbox" (ngModelChange)="integrationInstance.enabled = $event ? 1 : 0"
-               aria-describedby="help-text-for-checkbox"/>
-        Enabled
-      </label>
-      <p class="note">
-        If this Integration instance will be used in others Turing ES Components.
-      </p>
-    </div>
+    <router-outlet>
+    </router-outlet>
   </div>
 </div>
 <ng-template #loading>

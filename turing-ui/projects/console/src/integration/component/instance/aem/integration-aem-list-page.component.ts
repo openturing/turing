@@ -17,7 +17,9 @@ export class TurIntegrationAemListPageComponent implements OnInit {
               private turIntegrationAemSourceService: TurIntegrationAemSourceService,
               private activatedRoute: ActivatedRoute,
               private router: Router) {
-    this.integrationId = this.activatedRoute.parent?.snapshot.paramMap.get('id') || "";
+
+    this.integrationId = this.activatedRoute.parent?.parent?.snapshot.paramMap.get('id') || "";
+    turIntegrationAemSourceService.setIntegrationId(this.integrationId);
     this.turIntegrationAemSources = turIntegrationAemSourceService.query();
     this.filterText = "";
   }

@@ -1,8 +1,8 @@
-import {Component, ElementRef, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
-import { Observable } from 'rxjs';
-import { NotifierService } from 'angular-notifier-updated';
-import { ActivatedRoute, Router } from '@angular/router';
-import { UntypedFormControl, Validators } from '@angular/forms';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Observable} from 'rxjs';
+import {NotifierService} from 'angular-notifier-updated';
+import {ActivatedRoute, Router} from '@angular/router';
+import {UntypedFormControl, Validators} from '@angular/forms';
 import {TurIntegrationAemSource} from "../../../model/integration-aem-source.model";
 import {TurIntegrationAemSourceService} from "../../../service/integration-aem-source.service";
 import 'brace';
@@ -27,15 +27,15 @@ export class TurIntegrationAemPageComponent implements OnInit {
     theme: 'github',
     readOnly: false,
   };
-  @ViewChild(AceComponent, { static: false })
+  @ViewChild(AceComponent, {static: false})
   componentRef?: AceComponent;
-  @ViewChild(AceDirective, { static: false })
+  @ViewChild(AceDirective, {static: false})
   directiveRef?: AceDirective;
   @ViewChild('modalDelete')
   modalDelete!: ElementRef;
   private turIntegrationAemSource: Observable<TurIntegrationAemSource>;
   private newObject: boolean = false;
-
+  private integrationId: string;
   portControl = new UntypedFormControl(80, [Validators.max(100), Validators.min(0)])
 
 
@@ -48,22 +48,26 @@ export class TurIntegrationAemPageComponent implements OnInit {
     this.config.tabSize = 2;
     this.config.wrap = true;
     let id: string = this.activatedRoute.snapshot.paramMap.get('aemId') || "";
-
+    this.integrationId = this.activatedRoute.parent?.parent?.snapshot.paramMap.get('id') || "";
+    turIntegrationAemSourceService.setIntegrationId(this.integrationId);
     this.newObject = (id != null && id.toLowerCase() === 'new');
 
     this.turIntegrationAemSource = this.newObject ? this.turIntegrationAemSourceService.getStructure() :
       this.turIntegrationAemSourceService.get(id);
   }
-  public toggleMode(_turIntegrationAemSource: TurIntegrationAemSource): void {
-    _turIntegrationAemSource.mappingJson =  _turIntegrationAemSource.mappingJson.replace(/,/g, ',\n');
-  }
 
+  public toggleMode(_turIntegrationAemSource: TurIntegrationAemSource): void {
+    _turIntegrationAemSource.mappingJson = _turIntegrationAemSource.mappingJson.replace(/,/g, ',\n');
+  }
+  getIntegrationId(): string {
+    return this.integrationId;
+  }
   isNewObject(): boolean {
     return this.newObject;
   }
 
   saveButtonCaption(): string {
-    return this.newObject ? "Create AEM source" : "Update AEM source instance";
+    return this.newObject ? "Create AEM source" : "Update AEM source";
   }
 
   getTurIntegrationAemSource(): Observable<TurIntegrationAemSource> {
@@ -83,9 +87,9 @@ export class TurIntegrationAemPageComponent implements OnInit {
 
         this.notifier.notify("success", turIntegrationAemSource.group.concat(message));
 
-        this.router.navigate(['/integration/instance']);
+        this.router.navigate(['/integration/instance', this.getIntegrationId(), 'aem']);
       },
-        (response: string) => {
+      (response: string) => {
         this.notifier.notify("error", "Integration AEM source was error: " + response);
       },
       () => {
@@ -98,9 +102,9 @@ export class TurIntegrationAemPageComponent implements OnInit {
       () => {
         this.notifier.notify("success", _turIntegrationAemSource.group.concat(" Integration AEM source was deleted."));
         this.modalDelete.nativeElement.removeAttribute("open");
-        this.router.navigate(['/integration/instance']);
+        this.router.navigate(['/integration/instance', this.getIntegrationId(), 'aem']);
       },
-        (response: string) => {
+      (response: string) => {
         this.notifier.notify("error", "Integration AEM source was error: " + response);
       });
   }

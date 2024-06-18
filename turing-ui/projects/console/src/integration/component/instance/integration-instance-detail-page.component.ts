@@ -9,12 +9,10 @@ import { TurIntegrationVendorService } from '../../service/integration-vendor.se
 import { UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'integration-instance-page',
-  templateUrl: './integration-instance-page.component.html'
+  selector: 'integration-instance-detail-page',
+  templateUrl: './integration-instance-detail-page.component.html'
 })
-export class TurIntegrationInstancePageComponent implements OnInit {
-  @ViewChild('modalDelete')
-  modalDelete!: ElementRef;
+export class TurIntegrationInstanceDetailPageComponent implements OnInit {
   private turIntegrationInstance: Observable<TurIntegrationInstance>;
   private turIntegrationVendors: Observable<TurIntegrationVendor[]>;
   private newObject: boolean = false;
@@ -31,7 +29,7 @@ export class TurIntegrationInstancePageComponent implements OnInit {
 
     this.turIntegrationVendors = turIntegrationVendorService.query();
 
-    let id: string = this.activatedRoute.snapshot.paramMap.get('id') || "";
+    let id: string = this.activatedRoute.parent?.snapshot.paramMap.get('id') || "";
 
     this.newObject = (id != null && id.toLowerCase() === 'new');
 
@@ -42,22 +40,38 @@ export class TurIntegrationInstancePageComponent implements OnInit {
     return this.newObject;
   }
 
+  saveButtonCaption(): string {
+    return this.newObject ? "Create integration instance" : "Update integration instance";
+  }
+
   getTurIntegrationInstance(): Observable<TurIntegrationInstance> {
     return this.turIntegrationInstance;
+  }
+
+  getTurIntegrationVendors(): Observable<TurIntegrationVendor[]> {
+
+    return this.turIntegrationVendors;
   }
 
   ngOnInit(): void {
   }
 
-  public delete(_turIntegrationInstance: TurIntegrationInstance) {
-    this.turIntegrationInstanceService.delete(_turIntegrationInstance).subscribe(
-      () => {
-        this.notifier.notify("success", _turIntegrationInstance.title.concat(" Integration instance was deleted."));
-        this.modalDelete.nativeElement.removeAttribute("open");
+  public save(_turIntegrationInstance: TurIntegrationInstance) {
+    this.turIntegrationInstanceService.save(_turIntegrationInstance, this.newObject).subscribe(
+      (turIntegrationInstance: TurIntegrationInstance) => {
+        let message: string = this.newObject ? " Integration instance was created." : " Integration instance was updated.";
+
+        _turIntegrationInstance = turIntegrationInstance;
+
+        this.notifier.notify("success", turIntegrationInstance.title.concat(message));
+
         this.router.navigate(['/integration/instance']);
       },
       response => {
         this.notifier.notify("error", "Integration instance was error: " + response);
+      },
+      () => {
+        // console.log('The POST observable is now completed.');
       });
   }
 }
