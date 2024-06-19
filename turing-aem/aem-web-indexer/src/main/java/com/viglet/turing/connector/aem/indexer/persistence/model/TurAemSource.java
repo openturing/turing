@@ -62,15 +62,21 @@ public class TurAemSource implements Serializable {
     // bi-directional many-to-one association to TurAemSourceLocalePath
     @Builder.Default
     @OneToMany(mappedBy = "turAemSource", orphanRemoval = true, fetch = FetchType.LAZY)
-    @Cascade({org.hibernate.annotations.CascadeType.ALL})
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurAemSourceLocalePath> localePaths = new HashSet<>();
 
     // bi-directional many-to-one association to TurAemTargetAttribute
     @Builder.Default
     @OneToMany(mappedBy = "turAemSource", orphanRemoval = true, fetch = FetchType.LAZY)
-    @Cascade({org.hibernate.annotations.CascadeType.ALL})
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurAemTargetAttribute> attributeMappings = new HashSet<>();
 
+    public void setLocalePaths(Collection<TurAemSourceLocalePath> localePaths) {
+        this.localePaths.clear();
+        if (localePaths != null) {
+            this.localePaths.addAll(localePaths);
+        }
+    }
 }

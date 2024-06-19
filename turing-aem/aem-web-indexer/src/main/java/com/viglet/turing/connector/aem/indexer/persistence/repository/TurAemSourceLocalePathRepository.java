@@ -5,7 +5,8 @@ import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSourceLoc
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;
+import java.util.Optional;
 
 public interface TurAemSourceLocalePathRepository extends JpaRepository<TurAemSourceLocalePath, String> {
-    Collection<TurAemSourceLocalePath> findByTurAemSource(TurAemSource turAemSource);
+    Optional<Collection<TurAemSourceLocalePath>> findByTurAemSource(TurAemSource turAemSource);
 }

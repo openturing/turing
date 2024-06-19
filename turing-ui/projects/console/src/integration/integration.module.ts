@@ -11,13 +11,16 @@ import {TurIntegrationRootPageComponent} from './component/root/integration-root
 import {TurIntegrationVendorService} from './service/integration-vendor.service';
 import {TurLocaleService} from '../locale/service/locale.service';
 import {TurIntegrationInstancePageComponent} from "./component/instance/integration-instance-page.component";
-import {TurIntegrationAemPageComponent} from "./component/instance/aem/integration-aem-page.component";
+import {
+  TurIntegrationAemPageComponent
+} from "./component/instance/aem/integration-aem-page.component";
 import {TurIntegrationAemSourceService} from "./service/integration-aem-source.service";
 import {TurIntegrationAemListPageComponent} from "./component/instance/aem/integration-aem-list-page.component";
 import {ACE_CONFIG, AceConfigInterface, AceModule} from 'ngx-ace-wrapper';
 import {
   TurIntegrationInstanceDetailPageComponent
 } from "./component/instance/integration-instance-detail-page.component";
+import {TurIntegrationAemMappingPageComponent} from "./component/instance/aem/integration-aem-mapping-page.component";
 
 const DEFAULT_ACE_CONFIG: AceConfigInterface = {
   tabSize: 2,
@@ -33,7 +36,8 @@ const DEFAULT_ACE_CONFIG: AceConfigInterface = {
     TurIntegrationInstanceListPageComponent,
     TurIntegrationInstancePageComponent,
     TurIntegrationAemPageComponent,
-    TurIntegrationAemListPageComponent
+    TurIntegrationAemListPageComponent,
+    TurIntegrationAemMappingPageComponent
   ],
   imports: [
     CommonModule,

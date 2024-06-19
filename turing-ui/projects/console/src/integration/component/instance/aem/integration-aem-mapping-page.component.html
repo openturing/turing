@@ -56,21 +56,16 @@
       <button (click)="save(aemSource)" type="button" class="btn btn-primary">{{ saveButtonCaption() }}</button>
     </div>
   </div>
-  <div class="Subhead mt-5">
-    <div class="Subhead-heading Subhead-heading--large"><span octicon="git-commit" [size]="24" class="mr-1"> </span>
-      AEM Source
-    </div>
-    <div class="Subhead-description">AEM Source will be indexed.</div>
-  </div>
+
 
   <div class="form-group">
     <div class="form-group-header">
-      <label>Identifier</label>
+      <label>Group</label>
     </div>
     <div class="form-group-body">
       <input [(ngModel)]="aemSource.group" class="form-control" type="text" style="width: 100%;"/>
       <p class="note">
-        AEM Source Identifier.
+        AEM Source Group.
       </p>
     </div>
   </div>
@@ -82,18 +77,18 @@
       <input [(ngModel)]="aemSource.siteName" class="form-control" type="text"
              style="width: 100%;"/>
       <p class="note">
-        AEM Site Name
+        AEM Source Site Name.
       </p>
     </div>
   </div>
   <div class="form-group">
     <div class="form-group-header">
-      <label>Site URL</label>
+      <label>URL</label>
     </div>
     <div class="form-group-body">
       <input [(ngModel)]="aemSource.url" class="form-control" type="text" style="width: 100%;"/>
       <p class="note">
-        AEM Site URL.
+        AEM URL.
       </p>
     </div>
   </div>
@@ -119,12 +114,6 @@
       </p>
     </div>
   </div>
-  <div class="Subhead mt-5">
-    <div class="Subhead-heading Subhead-heading--large"><span octicon="search" [size]="24" class="mr-1"> </span>
-      Semantic Navigation Target
-    </div>
-    <div class="Subhead-description">Semantic Navigation that will be the target.</div>
-  </div>
   <div class="form-group">
     <div class="form-group-header">
       <label>Semantic Navigation Site Name</label>
@@ -135,27 +124,6 @@
         Semantic Navigation Site Name.
       </p>
     </div>
-  </div>
-  <div class="form-group">
-    <div class="form-group-header">
-      <label>Default Locale</label>
-    </div>
-    <div class="form-group-body">
-      <select [(ngModel)]="aemSource.defaultLocale" class="form-select" style="width: 100%;">
-        <option *ngFor="let locale of (getTurLocales() | async)" [value]="locale.initials">
-          {{locale.en}} ({{locale.initials}})
-        </option>
-      </select>
-      <p class="note">
-        Semantic Navigation Default Locale.
-      </p>
-    </div>
-  </div>
-  <div class="Subhead mt-5">
-    <div class="Subhead-heading Subhead-heading--large"><span octicon="git-commit" [size]="24" class="mr-1"> </span>
-      Indexing Configuration
-    </div>
-    <div class="Subhead-description">Indexing Configuration.</div>
   </div>
   <div class="form-group">
     <div class="form-group-header">
@@ -190,7 +158,17 @@
       </p>
     </div>
   </div>
-
+  <div class="form-group">
+    <div class="form-group-header">
+      <label>Default Locale</label>
+    </div>
+    <div class="form-group-body">
+      <input [(ngModel)]="aemSource.defaultLocale" class="form-control" type="text" style="width: 100%;"/>
+      <p class="note">
+        AEM Default Locale.
+      </p>
+    </div>
+  </div>
   <div class="form-group">
     <div class="form-group-header">
       <label>Mapping</label>
@@ -235,40 +213,6 @@
         Root Path
       </p>
     </div>
-  </div>
-  <div class="Subhead mt-5">
-    <div class="Subhead-heading Subhead-heading--large"><span octicon="typography" [size]="24" class="mr-1"> </span>
-      Locales by AEM Path
-    </div>
-    <div class="Subhead-description">Define indexing mapping locale by AEM Path.</div>
-  </div>
-  <div *ngFor="let localePath of aemSource.localePaths; last as isLast"
-       data-view-component="true">
-    <div style="display: flex">
-      <select [(ngModel)]="localePath.locale" class="form-select" style="width: 100%;">
-        <option *ngFor="let locale of (getTurLocales() | async)" [value]="locale.initials">
-          {{locale.en}} ({{locale.initials}})
-        </option>
-      </select>
-      <input [(ngModel)]="localePath.path"
-             style="width: 100%"
-             class="form-control  mr-3" type="text" id="sn-locale-path{{localePath.id}}"/>
-
-      <button class="btn btn-danger btn-octicon mr-1"
-              (click)="removeLocale(aemSource, localePath)">
-        <span octicon="trash" [size]=16></span>
-      </button>
-    </div>
-    <div *ngIf="!isLast" class="mb-2 mt-2 ml-1">
-      And
-    </div>
-
-  </div>
-  <div class="mb-2 mt-4 ml-1">
-    <button class="btn btn-outline mr-1" (click)="newLocale(aemSource.localePaths)">
-      <span octicon="plus-circle" [size]=16
-            class="mr-1"></span> Add
-    </button>
   </div>
 </div>
 <ng-template #loading>

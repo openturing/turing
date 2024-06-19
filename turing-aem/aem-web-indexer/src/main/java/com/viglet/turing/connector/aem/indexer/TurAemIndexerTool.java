@@ -136,7 +136,9 @@ public class TurAemIndexerTool {
 
     public void run(TurAemSource turAemSource) {
         this.turAemSource = turAemSource;
-        this.turAemSource.setLocalePaths(turAemSourceLocalePathRepository.findByTurAemSource(turAemSource));
+        turAemSourceLocalePathRepository.findByTurAemSource(turAemSource).ifPresent(turAemSourceLocalePaths ->
+                this.turAemSource.setLocalePaths(turAemSourceLocalePaths));
+
         if (turAemConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
             log.info("This is the first time, waiting next schedule.");
         } else {

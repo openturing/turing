@@ -15,18 +15,13 @@ import 'brace/mode/javascript';
 
 import 'brace/mode/json';
 import {AceComponent, AceConfigInterface, AceDirective} from "ngx-ace-wrapper";
-import {TurSNRankingCondition} from "../../../../sn/model/sn-ranking-condition.model";
-import {TurSNRankingExpression} from "../../../../sn/model/sn-ranking-expression.model";
-import {TurIntegrationAemLocalePath} from "../../../model/integration-aem-locale-path.model";
-import {TurLocale} from "../../../../locale/model/locale.model";
-import {TurLocaleService} from "../../../../locale/service/locale.service";
 
 @Component({
-  selector: 'integration-aem-page',
-  templateUrl: './integration-aem-page.component.html'
+  selector: 'integration-aem-mapping-page',
+  templateUrl: './integration-aem-mapping-page.component.html'
 })
 
-export class TurIntegrationAemPageComponent implements OnInit {
+export class TurIntegrationAemMappingPageComponent implements OnInit {
   public config: AceConfigInterface = {
     mode: 'ace/mode/json',
     theme: 'github',
@@ -41,20 +36,17 @@ export class TurIntegrationAemPageComponent implements OnInit {
   private turIntegrationAemSource: Observable<TurIntegrationAemSource>;
   private newObject: boolean = false;
   private integrationId: string;
-  private turLocales: Observable<TurLocale[]>;
   portControl = new UntypedFormControl(80, [Validators.max(100), Validators.min(0)])
 
 
   constructor(
     private readonly notifier: NotifierService,
     private turIntegrationAemSourceService: TurIntegrationAemSourceService,
-    private turLocaleService: TurLocaleService,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
     this.config.mode = 'json';
     this.config.tabSize = 2;
     this.config.wrap = true;
-    this.turLocales = turLocaleService.query();
     let id: string = this.activatedRoute.snapshot.paramMap.get('aemId') || "";
     this.integrationId = this.activatedRoute.parent?.parent?.snapshot.paramMap.get('id') || "";
     turIntegrationAemSourceService.setIntegrationId(this.integrationId);
@@ -84,22 +76,6 @@ export class TurIntegrationAemPageComponent implements OnInit {
 
 
   ngOnInit(): void {
-  }
-
-  newLocale(turIntegrationAemLocalePaths: TurIntegrationAemLocalePath[]) {
-    let turIntegrationAemLocalePath: TurIntegrationAemLocalePath = new TurIntegrationAemLocalePath();
-    turIntegrationAemLocalePaths.push(turIntegrationAemLocalePath);
-
-  }
-
-  removeLocale(turIntegrationAemSource: TurIntegrationAemSource, turIntegrationAemLocalePath: TurIntegrationAemLocalePath) {
-    turIntegrationAemSource.localePaths =
-      turIntegrationAemSource.localePaths.filter(condition =>
-        condition != turIntegrationAemLocalePath)
-  }
-
-  getTurLocales(): Observable<TurLocale[]> {
-    return this.turLocales;
   }
 
   public save(_turIntegrationAemSource: TurIntegrationAemSource) {

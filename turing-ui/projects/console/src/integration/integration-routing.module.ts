@@ -10,6 +10,7 @@ import {TurIntegrationAemPageComponent} from "./component/instance/aem/integrati
 import {
   TurIntegrationInstanceDetailPageComponent
 } from "./component/instance/integration-instance-detail-page.component";
+import {TurIntegrationAemMappingPageComponent} from "./component/instance/aem/integration-aem-mapping-page.component";
 
 const routes: Routes = [
   {
@@ -25,9 +26,10 @@ const routes: Routes = [
           {
             path: 'aem', component: TurIntegrationRootPageComponent, canActivate: [AuthGuard],
             children: [
-              {path: 'list', component: TurIntegrationAemListPageComponent, canActivate: [AuthGuard]},
-              {path: ':aemId', component: TurIntegrationAemPageComponent, canActivate: [AuthGuard]},
-              {path: '', redirectTo: 'list', pathMatch: 'full'}
+              {path: 'mapping', component: TurIntegrationAemMappingPageComponent, canActivate: [AuthGuard]},
+              {path: 'instance', component: TurIntegrationAemListPageComponent, canActivate: [AuthGuard]},
+              {path: 'instance/:aemId', component: TurIntegrationAemPageComponent, canActivate: [AuthGuard]},
+              {path: '', redirectTo: 'instance', pathMatch: 'full'}
             ]
           }
         ]

@@ -2,6 +2,7 @@ package com.viglet.turing.connector.aem.indexer.api;
 
 import com.google.inject.Inject;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSource;
+import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemSourceLocalePathRepository;
 import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemSourceRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*")
 @RestController
@@ -17,10 +19,13 @@ import java.util.List;
 public class TurAemSourceApi {
 
     private final TurAemSourceRepository turAemSourceRepository;
+    private final TurAemSourceLocalePathRepository turAemSourceLocalePathRepository;
     
     @Inject
-    public TurAemSourceApi(TurAemSourceRepository turAemSourceRepository) {
+    public TurAemSourceApi(TurAemSourceRepository turAemSourceRepository,
+    TurAemSourceLocalePathRepository turAemSourceLocalePathRepository) {
         this.turAemSourceRepository = turAemSourceRepository;
+        this.turAemSourceLocalePathRepository = turAemSourceLocalePathRepository;
     }
 
     @GetMapping
@@ -38,7 +43,11 @@ public class TurAemSourceApi {
     @Operation(summary = "Show a AEM Source")
     @GetMapping("/{id}")
     public TurAemSource turAemSourceGet(@PathVariable String id) {
-        return this.turAemSourceRepository.findById(id).orElse(new TurAemSource());
+        return this.turAemSourceRepository.findById(id).map(turAemSource -> {
+            turAemSourceLocalePathRepository.findByTurAemSource(turAemSource)
+                    .ifPresent(turAemSource::setLocalePaths);
+            return turAemSource;
+        }).orElse(new TurAemSource());
     }
 
 
@@ -46,6 +55,9 @@ public class TurAemSourceApi {
     @PutMapping("/{id}")
     public TurAemSource turAemSourceUpdate(@PathVariable String id, @RequestBody TurAemSource turAemSource) {
         return turAemSourceRepository.findById(id).map(turAemSourceEdit -> {
+            turAemSource.getLocalePaths().forEach( turAemSourceLocalePath -> {
+
+            });
             turAemSourceEdit.setGroup(turAemSource.getGroup());
             turAemSourceEdit.setUrl(turAemSource.getUrl());
             turAemSourceEdit.setUsername(turAemSource.getUsername());
@@ -60,7 +72,14 @@ public class TurAemSourceApi {
             turAemSourceEdit.setProviderName(turAemSource.getProviderName());
             turAemSourceEdit.setOncePattern(turAemSource.getOncePattern());
             turAemSourceEdit.setRootPath(turAemSource.getRootPath());
+            turAemSourceEdit.setLocalePaths(turAemSource.getLocalePaths()
+                    .stream()
+                    .peek(localePath ->
+                            localePath.setTurAemSource(turAemSource))
+                    .collect(Collectors.toSet()));
             this.turAemSourceRepository.save(turAemSourceEdit);
+
+
             return turAemSourceEdit;
         }).orElse(new TurAemSource());
 

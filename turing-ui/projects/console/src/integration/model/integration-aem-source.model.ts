@@ -1,3 +1,5 @@
+import {TurIntegrationAemLocalePath} from "./integration-aem-locale-path.model";
+
 export interface TurIntegrationAemSource {
   id: string;
   url: string;
@@ -14,6 +16,6 @@ export interface TurIntegrationAemSource {
   urlPrefix: string;
   oncePattern: string;
   mappingJson: string;
-  localePaths: string;
+  localePaths: TurIntegrationAemLocalePath[];
   attributeMappings: string;
 }

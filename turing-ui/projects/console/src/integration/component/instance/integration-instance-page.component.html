@@ -62,10 +62,19 @@
   </div>
   <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
     <nav class="menu" aria-label="Site settings">
+
       <a class="menu-item" [routerLink]="['/integration/instance/', integrationInstance.id, 'detail']" [routerLinkActive]="['selected']"><span
         octicon="gear" [size]=16 class="mr-1"></span> Settings</a>
-      <a class="menu-item" [routerLink]="['/integration/instance/', integrationInstance.id, 'aem']" [routerLinkActive]="['selected']"><span
-        octicon="git-commit" [size]=16 class="mr-1"></span> AEM Sources</a>
+    </nav>
+      <nav class="menu" aria-label="AEM">
+      <div class="menu-heading">AEM Connector</div>
+        <a class="menu-item" [routerLink]="['/integration/instance/', integrationInstance.id, 'aem', 'sn']" [routerLinkActive]="['selected']"><span
+          octicon="server" [size]=16 class="mr-1"></span> Turing Servers</a>
+        <a class="menu-item" [routerLink]="['/integration/instance/', integrationInstance.id, 'aem', 'mapping']" [routerLinkActive]="['selected']"><span
+          octicon="project-roadmap" [size]=16 class="mr-1"></span> Mappings</a>
+      <a class="menu-item" [routerLink]="['/integration/instance/', integrationInstance.id, 'aem','instance']" [routerLinkActive]="['selected']"><span
+        octicon="git-commit" [size]=16 class="mr-1"></span> Sources</a>
+
     </nav>
   </div>
   <div id="col-right" class="float-right" style="width: calc(100% - 300px);">

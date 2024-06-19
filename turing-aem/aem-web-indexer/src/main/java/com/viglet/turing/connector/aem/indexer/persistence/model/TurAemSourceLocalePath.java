@@ -1,5 +1,6 @@
 package com.viglet.turing.connector.aem.indexer.persistence.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
@@ -15,6 +16,7 @@ import java.util.Locale;
 @Setter
 @Getter
 @Table(name = "aem_source_locale_path")
+@JsonIgnoreProperties({ "turAemSource" })
 public class TurAemSourceLocalePath implements Serializable {
 
     @Serial
