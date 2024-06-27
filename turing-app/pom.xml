@@ -15,7 +15,7 @@
     <url>https://github.com/openturing/turing</url>
     <packaging>jar</packaging>
     <properties>
-
+        <spring-boot.version>3.3.1</spring-boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>21</maven.compiler.source>
@@ -135,7 +135,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
-            <version>6.1.9</version>
+            <version>6.1.10</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -280,7 +280,7 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
-            <version>6.3.0</version>
+            <version>6.3.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -374,7 +374,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.1</version>
+                <version>3.4.2</version>
                 <configuration>
                     <archive>
                         <manifestEntries>
