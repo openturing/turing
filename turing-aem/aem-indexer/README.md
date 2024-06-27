@@ -21,5 +21,5 @@ dps.config.association.priority=Sample
 dps.config.filesource.path=/appl/aem/
 ```
 ## Run Command Line
-
+mvn package -pl :turing-aem-indexer -am
 java -jar turing-aem.jar -h http://localhost:4502/crx/server -u admin -p admin -c cq:Page -s /content/we-retail
