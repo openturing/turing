@@ -47,7 +47,7 @@ public class TurSEVendorOnStartup {
 			turSEVendor.setDescription("Apache Solr");
 			turSEVendor.setPlugin("");
 			turSEVendor.setTitle("Apache Solr");
-			turSEVendor.setWebsite("http://lucene.apache.org/solr");
+			turSEVendor.setWebsite("https://solr.apache.org");
 			turSEVendorRepository.save(turSEVendor);
 		}
 	}

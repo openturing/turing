@@ -14,9 +14,9 @@
         <revision>0.3.9</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <spring-boot.version>3.3.1</spring-boot.version>
         <sonar.organization>viglet-turing</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <spring-boot.version>3.3.1</spring-boot.version>
     </properties>
     <modules>
         <module>turing-commons</module>
@@ -25,7 +25,7 @@
         <module>turing-jdbc</module>
         <module>turing-nutch</module>
         <module>turing-cms</module>
-      <!--  <module>turing-wem</module> -->
+        <!--  <module>turing-wem</module> -->
         <module>turing-aem</module>
         <module>turing-web-crawler</module>
         <module>turing-java-proxy</module>
