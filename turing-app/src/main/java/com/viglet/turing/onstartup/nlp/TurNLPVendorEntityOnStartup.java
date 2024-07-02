@@ -35,8 +35,6 @@ import com.viglet.turing.plugins.nlp.gcp.response.TurNLPGCPEntityTypeResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
-
 @Component
 @Transactional
 public class TurNLPVendorEntityOnStartup {
@@ -72,55 +70,6 @@ public class TurNLPVendorEntityOnStartup {
 						TurLocaleRepository.EN_US);
 				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.TIME_INTERNAL, TurNLPEntityConstant.TIME_CORENLP,
 						TurLocaleRepository.EN_US);
-			});
-			turNLPVendorRepository.findById(TurNLPVendorsConstant.OPENNLP).ifPresent(turNLPVendor -> {
-				TurOpenNLPModelsOnStartup.downloadModels();
-				File userDir = new File(System.getProperty("user.dir"));
-				if (userDir.exists() && userDir.isDirectory()) {
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-person.bin"),
-							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-location.bin"),
-							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-organization.bin"),
-							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.MONEY_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-money.bin"),
-							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.DATE_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-date.bin"),
-							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERCENTAGE_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-percentage.bin"),
-							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.TIME_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-time.bin"),
-							TurLocaleRepository.EN_US);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-person.bin"),
-							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-location.bin"),
-							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-organization.bin"),
-							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.MONEY_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-money.bin"),
-							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.DATE_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-date.bin"),
-							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERCENTAGE_INTERNAL,
-							userDir.getAbsolutePath().concat("/models/opennlp/en/en-ner-percentage.bin"),
-							TurLocaleRepository.PT_BR);
-					this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.TIME_INTERNAL,
-							userDir.getAbsolutePath()
-									.concat("/models/opennlp/en/en-ner-time.bin"),
-							TurLocaleRepository.PT_BR);
-				}
 			});
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.OTCA).ifPresent(turNLPVendor -> {
 				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL,
