@@ -25,7 +25,7 @@ public class TurPageComponents implements ExtAttributeInterface {
     }
     @NotNull
     public static TurMultiValue getResponsiveGridContent(AemObject aemObject) {
-        StringBuffer components = new StringBuffer();
+        StringBuilder components = new StringBuilder();
         if(aemObject.getJcrContentNode() != null && aemObject.getJcrContentNode().has(ROOT)
                 && aemObject.getJcrContentNode().get(ROOT) instanceof JSONObject root
                 && root.has(RESPONSIVE_GRID)
