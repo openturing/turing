@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v2")
+@RequestMapping("/api/v2/aem")
 @Tag(name = "Heartbeat", description = "Heartbeat")
 public class TurAemApi {
     private final TurAemIndexingRepository turAemIndexingRepository;

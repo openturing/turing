@@ -1,10 +1,10 @@
 package com.viglet.turing.connector.aem.indexer;
 
 import com.google.common.net.UrlEscapers;
-import com.viglet.turing.connector.aem.indexer.conf.AemHandlerConfiguration;
+import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSource;
+import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSourceLocalePath;
 import com.viglet.turing.connector.cms.beans.TurCmsContext;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.LocaleUtils;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
@@ -32,18 +32,28 @@ public class TurAemUtils {
 
     public static final Map<String, String> responseHttpCache = new HashMap<>();
 
-    public static Locale getLocaleFromAemObject(AemHandlerConfiguration config, AemObject aemObject) {
-        return LocaleUtils.toLocale(config.getLocaleByPath(config.getDefaultSNSiteConfig().getName(),
-                aemObject.getPath()));
+    public static Locale getLocaleByPath(TurAemSource turAemSource, String path) {
+        for (TurAemSourceLocalePath turAemSourceLocalePath : turAemSource.getLocalePaths()) {
+            if (hasPath(turAemSourceLocalePath, path)) {
+                return turAemSourceLocalePath.getLocale();
+            }
+        }
+        return turAemSource.getDefaultLocale();
+    }
+    private static boolean hasPath(TurAemSourceLocalePath turAemSourceLocalePath, String path) {
+        return path.startsWith(turAemSourceLocalePath.getPath());
+    }
+    public static Locale getLocaleFromAemObject(TurAemSource turAemSource,
+                                                AemObject aemObject) {
+        return getLocaleByPath(turAemSource, aemObject.getPath());
     }
 
     public static void cleanCache() {
         responseHttpCache.clear();
     }
-    public static Locale getLocaleFromContext(TurCmsContext context) {
-        AemHandlerConfiguration config = (AemHandlerConfiguration) context.getConfiguration();
+    public static Locale getLocaleFromContext(TurAemContext turAemContext, TurCmsContext context) {
         AemObject aemObject = (AemObject) context.getCmsObjectInstance();
-        return getLocaleFromAemObject(config, aemObject);
+        return getLocaleFromAemObject(turAemContext.getSource(), aemObject);
     }
 
     public static boolean hasProperty(JSONObject jsonObject, String property) {

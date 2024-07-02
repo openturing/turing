@@ -29,7 +29,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * The persistent class for the vigServices database table.
+ * The persistent class for the TurSEInstance database table.
  * 
  */
 @Getter
@@ -60,7 +60,7 @@ public class TurSEInstance implements Serializable {
 	@Column(nullable = false)
 	private int port;
 
-	// bi-directional many-to-one association to VigService
+	// bi-directional many-to-one association to TurSEVendor
 	@ManyToOne
 	@JoinColumn(name = "se_vendor_id", nullable = false)
 	private TurSEVendor turSEVendor;

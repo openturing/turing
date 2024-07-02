@@ -35,6 +35,13 @@ export class BasicAuthInterceptor implements HttpInterceptor {
           'X-XSRF-TOKEN': token
         }
       })
+    } else {
+      request = request.clone({
+        setHeaders: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json'
+        }
+      })
     }
     return next.handle(request);
   }

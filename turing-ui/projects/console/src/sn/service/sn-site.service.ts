@@ -45,7 +45,9 @@ export class TurSNSiteService {
   getFields(id: string): Observable<TurSNSiteField[]> {
     return this.httpClient.get<TurSNSiteField[]>(`${environment.apiUrl}/api/sn/${id}/field/ext`);
   }
-
+  getFacetedFields(id: string): Observable<TurSNSiteField[]> {
+    return this.httpClient.get<TurSNSiteField[]>(`${environment.apiUrl}/api/sn/${id}/facet`);
+  }
   getStatusFields(id: string): Observable<TurSNStatusFields> {
     return this.httpClient.get<TurSNStatusFields>(`${environment.apiUrl}/api/sn/${id}/field/check`);
   }

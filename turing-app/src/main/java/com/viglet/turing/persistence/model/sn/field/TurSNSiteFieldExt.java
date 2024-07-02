@@ -24,14 +24,10 @@ package com.viglet.turing.persistence.model.sn.field;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteFacetEnum;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.turing.sn.TurSNFieldType;
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Tolerate;
+import lombok.*;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -46,10 +42,12 @@ import java.util.Set;
  * The persistent class for the turSNSiteFieldExt database table.
  */
 
-@Builder
+@Entity
+@Builder(toBuilder = true)
+@AllArgsConstructor
+@NoArgsConstructor
 @Setter
 @Getter
-@Entity
 @Table(name = "sn_site_field_ext")
 public class TurSNSiteFieldExt implements Serializable {
     @Serial
@@ -67,16 +65,22 @@ public class TurSNSiteFieldExt implements Serializable {
     private String description;
     @Column(length = 50)
     private String facetName;
+    @Builder.Default
     @OneToMany(mappedBy = "turSNSiteFieldExt", orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
+    @Builder.Default
     @Column
     private TurSNSiteFacetRangeEnum facetRange = TurSNSiteFacetRangeEnum.DISABLED;
+    @Builder.Default
     @Column
     private TurSNSiteFacetFieldEnum facetType = TurSNSiteFacetFieldEnum.DEFAULT;
+    @Builder.Default
     @Column
     private TurSNSiteFacetFieldSortEnum facetSort = TurSNSiteFacetFieldSortEnum.DEFAULT;
+    @Column
+    private Integer facetPosition;
     @Column(nullable = false)
     private TurSNFieldType snType;
     @Column(nullable = false)
@@ -104,11 +108,6 @@ public class TurSNSiteFieldExt implements Serializable {
     @JoinColumn(name = "sn_site_id", nullable = false)
     @JsonBackReference(value = "turSNSiteFieldExt-turSNSite")
     private TurSNSite turSNSite;
-
-    @Tolerate
-    public TurSNSiteFieldExt() {
-
-    }
 
     public void setFacetLocales(Set<TurSNSiteFieldExtFacet> facetLocales) {
         this.facetLocales.clear();

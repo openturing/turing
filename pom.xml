@@ -14,6 +14,7 @@
         <revision>0.3.9</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <spring-boot.version>3.3.1</spring-boot.version>
         <sonar.organization>viglet-turing</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     </properties>
@@ -24,7 +25,7 @@
         <module>turing-jdbc</module>
         <module>turing-nutch</module>
         <module>turing-cms</module>
-      <!--  <module>turing-wem</module> -->
+        <!--  <module>turing-wem</module> -->
         <module>turing-aem</module>
         <module>turing-web-crawler</module>
         <module>turing-java-proxy</module>
@@ -32,6 +33,14 @@
     </modules>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
@@ -92,6 +101,11 @@
     </profiles>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.5.6</version>
+            </dependency>
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>

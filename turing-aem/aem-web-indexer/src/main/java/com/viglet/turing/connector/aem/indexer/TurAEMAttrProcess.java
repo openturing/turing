@@ -43,7 +43,7 @@ public class TurAEMAttrProcess {
         JSONObject infinityJson = TurAemUtils
                 .getInfinityJson("/content/_cq_tags/" + facet + "/" + value,
                         turAemContext);
-        Locale locale = TurAemUtils.getLocaleFromContext(context);
+        Locale locale = TurAemUtils.getLocaleFromContext(turAemContext, context);
         String titleLocale = locale.toString().toLowerCase();
         String titleLanguage = locale.getLanguage().toLowerCase();
         Map<String, String> tagLabels = getTagLabels(infinityJson);
@@ -54,7 +54,7 @@ public class TurAEMAttrProcess {
         else return tagLabels.getOrDefault(DEFAULT, value);
     }
 
-    private static TurSNAttributeSpec setTagFacet( TurAemContext turAemContext,
+    private static TurSNAttributeSpec setTagFacet(TurAemContext turAemContext,
                                                   String facetId) {
         JSONObject tagFacet = TurAemUtils
                 .getInfinityJson("/content/_cq_tags/" + facetId,
@@ -169,7 +169,7 @@ public class TurAEMAttrProcess {
 
     @NotNull
     private TurCmsTargetAttrValueList getTargetAttrValueListFromJcrProperty(TurCmsContext context,
-                                                                             TurAemContext turAemContext,
+                                                                            TurAemContext turAemContext,
                                                                             List<TurSNAttributeSpec> turSNAttributeSpecList,
                                                                             String sourceAttrName,
                                                                             Object jcrProperty) {
@@ -249,7 +249,7 @@ public class TurAEMAttrProcess {
                     ((ExtAttributeInterface) Objects.requireNonNull(Class.forName(className)
                             .getDeclaredConstructor().newInstance()))
                             .consume(context.getTurCmsTargetAttr(), context.getTurCmsSourceAttr(),
-                                    (AemObject) context.getCmsObjectInstance(), context.getConfiguration(), turAemContext));
+                                    (AemObject) context.getCmsObjectInstance(), turAemContext));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException | ClassNotFoundException e) {
             log.error(e.getMessage(), e);

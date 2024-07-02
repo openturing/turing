@@ -19,8 +19,11 @@ public class AemObject {
     public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     public static final String HTML = ".html";
     public static final String ACTIVATE = "Activate";
+    public static final String CQ_LAST_REPLICATED_PUBLISH = "cq:lastReplicated_publish";
+    public static final String CQ_LAST_REPLICATED = "cq:lastReplicated";
     private Calendar lastModified;
     private Calendar createdDate;
+    private Calendar publicationDate;
     private boolean contentFragment = false;
     private boolean delivered = false;
     private final String type;
@@ -64,9 +67,15 @@ public class AemObject {
                     lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(CQ_LAST_MODIFIED)));
                     this.lastModified = lastModifiedCalendar;
                 }
-
+                Calendar publicationDateCalendar = Calendar.getInstance();
+                if (this.jcrContentNode.has(CQ_LAST_REPLICATED_PUBLISH)) {
+                    publicationDateCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(CQ_LAST_REPLICATED_PUBLISH)));
+                    this.publicationDate = publicationDateCalendar;
+                } else if (this.jcrContentNode.has(CQ_LAST_REPLICATED)) {
+                    lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(CQ_LAST_REPLICATED)));
+                    this.publicationDate = publicationDateCalendar;
+                }
             }
-
             if (jcrNode.has(JCR_CREATED)) {
                 Calendar createdDateCalendar = Calendar.getInstance();
                 createdDateCalendar.setTime(aemJsonDateFormat.parse(jcrNode.getString(JCR_CREATED)));

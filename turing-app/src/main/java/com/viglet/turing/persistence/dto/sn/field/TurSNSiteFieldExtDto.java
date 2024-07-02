@@ -26,9 +26,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.sn.TurSNFieldType;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.Tolerate;
 
 import java.util.HashSet;
@@ -39,7 +37,8 @@ import java.util.stream.Collectors;
  * The persistent class for the turSNSiteFieldExt database table.
  */
 
-@Builder
+@Builder(toBuilder = true)
+@AllArgsConstructor
 @Setter
 @Getter
 public class TurSNSiteFieldExtDto {
@@ -48,6 +47,7 @@ public class TurSNSiteFieldExtDto {
     private String name;
     private String description;
     private String facetName;
+    @Builder.Default
     private Set<TurSNSiteFieldExtFacetDto> facetLocales = new HashSet<>();
     private TurSNFieldType snType;
     private TurSEFieldType type;
@@ -63,8 +63,9 @@ public class TurSNSiteFieldExtDto {
 
     @Tolerate
     public TurSNSiteFieldExtDto() {
-
+        this.facetLocales = new HashSet<>();
     }
+
     @Tolerate
     public TurSNSiteFieldExtDto(TurSNSiteFieldExt turSNSiteFieldExt) {
         this.id = turSNSiteFieldExt.getId();
@@ -86,8 +87,13 @@ public class TurSNSiteFieldExtDto {
     }
 
     public void setFacetLocales(Set<TurSNSiteFieldExtFacet> facetLocales) {
-        if (facetLocales != null) {
+        if (this.facetLocales != null) {
             this.facetLocales.clear();
+        } else {
+            this.facetLocales = new HashSet<>();
+        }
+        if (facetLocales != null) {
+            this.facetLocales = new HashSet<>();
             this.facetLocales.addAll(facetLocales.stream().map(TurSNSiteFieldExtFacetDto::new)
                     .collect(Collectors.toSet()));
         }

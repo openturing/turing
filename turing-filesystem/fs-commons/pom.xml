@@ -24,6 +24,7 @@
     <maven.compiler.target>21</maven.compiler.target>
     <sonar.organization>viglet-turing</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.projectKey>fs-commons</sonar.projectKey>
   </properties>
   <dependencies>
      <dependency>
@@ -84,7 +85,7 @@
       <dependency>
           <groupId>org.springframework</groupId>
           <artifactId>spring-web</artifactId>
-          <version>6.1.8</version>
+          <version>6.1.10</version>
           <scope>compile</scope>
       </dependency>
   </dependencies>

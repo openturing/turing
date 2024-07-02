@@ -17,7 +17,7 @@
         <module>aem-web-indexer</module>
     </modules>
     <properties>
-        <project.build.sourceEncoding>project.build.sourceEncoding&gt;UTF-8</project.build.sourceEncoding>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -28,6 +28,11 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
                 <version>1.5.6</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing</groupId>
+                <artifactId>turing-java-sdk</artifactId>
+                <version>${project.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

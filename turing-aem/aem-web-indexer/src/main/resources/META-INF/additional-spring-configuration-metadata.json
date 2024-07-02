@@ -19,6 +19,11 @@
       "name": "turing.aem.job.size",
       "type": "java.lang.Integer",
       "description": "Turing Job Max Size."
+    },
+    {
+      "name": "turing.aem.job.interval.minutes",
+      "type": "java.lang.Long",
+      "description": "Job interval in minutes."
     }
   ]
 }

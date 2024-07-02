@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TurCTDName implements ExtAttributeInterface {
     @Override
     public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-                                 AemObject aemObject, IHandlerConfiguration config, TurAemContext turAemContext) {
+                                 AemObject aemObject, TurAemContext turAemContext) {
         log.debug("Executing TurCTDName");
         return TurMultiValue.singleItem(aemObject.getType());
     }
