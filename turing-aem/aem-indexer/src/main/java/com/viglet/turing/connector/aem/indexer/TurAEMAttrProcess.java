@@ -1,21 +1,16 @@
 package com.viglet.turing.connector.aem.indexer;
 
 import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
-import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.connector.aem.commons.AemObject;
+import com.viglet.turing.connector.aem.commons.TurAEMCommonAttrProcess;
 import com.viglet.turing.connector.aem.indexer.ext.ExtAttributeInterface;
 import com.viglet.turing.connector.cms.beans.TurCmsContext;
-import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValue;
 import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueList;
-import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.mappers.TurCmsContentDefinitionProcess;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
-import com.viglet.turing.connector.cms.util.HtmlManipulator;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -24,10 +19,6 @@ import java.util.*;
 
 @Slf4j
 public class TurAEMAttrProcess {
-    public static final String JCR_TITLE = "jcr:title";
-    public static final String CQ_TAGS = "cq:tags";
-    public static final String TAG_SEPARATOR = ":";
-    public static final String DEFAULT = "default";
 
     public TurCmsTargetAttrValueList prepareAttributeDefs(AemObject aemObject,
                                                           TurCmsContentDefinitionProcess turCmsContentDefinitionProcess,
@@ -40,7 +31,7 @@ public class TurAEMAttrProcess {
                             .forEach(targetAttr -> {
                                 log.debug(String.format("TargetAttr: %s", targetAttr));
                                 context.setTurCmsTargetAttr(targetAttr);
-                                if (hasClassNoSource(targetAttr)) {
+                                if (TurAEMCommonAttrProcess.hasClassNoSource(targetAttr)) {
                                     turCmsTargetAttrValues.addAll(process(context, turSNAttributeSpecList, turAEMIndexerTool));
                                 } else {
                                     targetAttr.getSourceAttrs().stream().filter(Objects::nonNull)
@@ -67,7 +58,7 @@ public class TurAEMAttrProcess {
             TurCmsTargetAttrValueList targetAttrValues = process(
                     context, turSNAttributeSpecList, turAEMIndexerTool);
             if (sourceAttr.isUniqueValues()) {
-                turCmsTargetAttrValueList.add(getTurAttrDefUnique(targetAttr,
+                turCmsTargetAttrValueList.add(TurAEMCommonAttrProcess.getTurAttrDefUnique(targetAttr,
                         targetAttrValues));
             } else {
                 turCmsTargetAttrValueList.addAll(targetAttrValues);
@@ -79,33 +70,25 @@ public class TurAEMAttrProcess {
         return turCmsTargetAttrValueList;
     }
 
-    private static boolean hasClassNoSource(TurCmsTargetAttr targetAttr) {
-        return targetAttr.getSourceAttrs() == null
-                && StringUtils.isNotBlank(targetAttr.getClassName());
-    }
-
     private TurCmsTargetAttrValueList process(TurCmsContext context,
                                               List<TurSNAttributeSpec> turSNAttributeSpecList, TurAEMIndexerTool turAEMIndexerTool) {
         log.debug(String.format("Target Attribute Name: %s and Source Attribute Name: %s",
                 context.getTurCmsTargetAttr().getName(), context.getTurCmsSourceAttr().getName()));
-        if (hasTextValue(context.getTurCmsTargetAttr())) {
+        if (TurAEMCommonAttrProcess.hasTextValue(context.getTurCmsTargetAttr())) {
             return TurCmsTargetAttrValueList.singleItem(context.getTurCmsTargetAttr());
         } else {
-            return hasCustomClass(context) ?
+            return TurAEMCommonAttrProcess.hasCustomClass(context) ?
                     attributeByClass(context, turAEMIndexerTool) :
                     attributeByCMS(context, turSNAttributeSpecList, turAEMIndexerTool);
         }
     }
 
-    private static boolean hasTextValue(TurCmsTargetAttr turCmsTargetAttr) {
-        return StringUtils.isNotEmpty(turCmsTargetAttr.getTextValue());
-    }
 
     private TurCmsTargetAttrValueList attributeByCMS(TurCmsContext context,
                                                      List<TurSNAttributeSpec> turSNAttributeSpecList, TurAEMIndexerTool turAEMIndexerTool) {
         String sourceAttrName = context.getTurCmsSourceAttr().getName();
-        final Object jcrProperty = getJcrProperty(context, sourceAttrName);
-        return hasJcrPropertyValue(jcrProperty) ?
+        final Object jcrProperty = TurAEMCommonAttrProcess.getJcrProperty(context, sourceAttrName);
+        return TurAEMCommonAttrProcess.hasJcrPropertyValue(jcrProperty) ?
                 getTargetAttrValueListFromJcrProperty(context, turAEMIndexerTool, turSNAttributeSpecList, sourceAttrName, jcrProperty) :
                 new TurCmsTargetAttrValueList();
     }
@@ -119,23 +102,11 @@ public class TurAEMAttrProcess {
         TurCmsTargetAttrValueList turCmsTargetAttrValueList = new TurCmsTargetAttrValueList();
         turCmsTargetAttrValueList.addAll(generateNewAttributesFromCqTags(context, turAEMIndexerTool, turSNAttributeSpecList,
                 sourceAttrName, jcrProperty));
-        turCmsTargetAttrValueList.addAll(addValuesToAttributes(context.getTurCmsTargetAttr(),
+        turCmsTargetAttrValueList.addAll(TurAEMCommonAttrProcess.addValuesToAttributes(context.getTurCmsTargetAttr(),
                 context.getTurCmsSourceAttr(), jcrProperty));
         return turCmsTargetAttrValueList;
     }
 
-    @Nullable
-    private Object getJcrProperty(TurCmsContext context, String sourceAttrName) {
-        return Optional.ofNullable(sourceAttrName).map(attrName -> {
-            AemObject aemObject = (AemObject) context.getCmsObjectInstance();
-            if (aemObject.getJcrContentNode() != null && aemObject.getJcrContentNode().has(attrName)) {
-                return aemObject.getJcrContentNode().get(attrName);
-            } else if (aemObject.getAttributes().containsKey(attrName))
-                return aemObject.getAttributes().get(attrName);
-            return null;
-        }).orElse(null);
-
-    }
 
     private TurCmsTargetAttrValueList generateNewAttributesFromCqTags(TurCmsContext context,
                                                                       TurAEMIndexerTool turAEMIndexerTool,
@@ -143,10 +114,10 @@ public class TurAEMAttrProcess {
                                                                       String attributeName,
                                                                       Object jcrProperty) {
         TurCmsTargetAttrValueList turCmsTargetAttrValueList = new TurCmsTargetAttrValueList();
-        if (CQ_TAGS.equals(attributeName)) {
+        if (TurAEMCommonAttrProcess.CQ_TAGS.equals(attributeName)) {
             Optional.ofNullable((JSONArray) jcrProperty).ifPresent(property ->
                     property.forEach(tag -> {
-                        String[] tagSplit = tag.toString().split(TAG_SEPARATOR);
+                        String[] tagSplit = tag.toString().split(TurAEMCommonAttrProcess.TAG_SEPARATOR);
                         if (tagSplit.length >= 2) {
                             Optional.ofNullable(tagSplit[0]).ifPresent(facet -> {
                                 turSNAttributeSpecList.add(setTagFacet(turAEMIndexerTool, facet));
@@ -170,12 +141,12 @@ public class TurAEMAttrProcess {
         Locale locale = TurAemUtils.getLocaleFromContext(context);
         String titleLocale = locale.toString().toLowerCase();
         String titleLanguage = locale.getLanguage().toLowerCase();
-        Map<String, String> tagLabels = getTagLabels(infinityJson);
+        Map<String, String> tagLabels = TurAEMCommonAttrProcess.getTagLabels(infinityJson);
         if (tagLabels.containsKey(titleLocale))
             return tagLabels.get(titleLocale);
         else if (tagLabels.containsKey(titleLanguage))
             return tagLabels.get(titleLanguage);
-        else return tagLabels.getOrDefault(DEFAULT, value);
+        else return tagLabels.getOrDefault(TurAEMCommonAttrProcess.DEFAULT, value);
     }
 
     private static TurSNAttributeSpec setTagFacet(TurAEMIndexerTool turAEMIndexerTool,
@@ -183,62 +154,9 @@ public class TurAEMAttrProcess {
         JSONObject tagFacet = TurAemUtils
                 .getInfinityJson(STR."/content/_cq_tags/\{facetId}",
                         turAEMIndexerTool);
-        return getTurSNAttributeSpec(facetId, getTagLabels(tagFacet));
+        return TurAEMCommonAttrProcess.getTurSNAttributeSpec(facetId, TurAEMCommonAttrProcess.getTagLabels(tagFacet));
     }
 
-    @NotNull
-    private static TurSNAttributeSpec getTurSNAttributeSpec(String facet, Map<String, String> facetLabel) {
-        TurSNAttributeSpec turSNAttributeSpec = new TurSNAttributeSpec();
-        turSNAttributeSpec.setName(facet);
-        turSNAttributeSpec.setDescription(facetLabel.get(DEFAULT));
-        turSNAttributeSpec.setFacetName(facetLabel);
-        turSNAttributeSpec.setFacet(true);
-        turSNAttributeSpec.setMandatory(false);
-        turSNAttributeSpec.setType(TurSEFieldType.STRING);
-        turSNAttributeSpec.setMultiValued(true);
-        return turSNAttributeSpec;
-    }
-
-    private static Map<String, String> getTagLabels(JSONObject tagJson) {
-        Map<String, String> labels = new HashMap<>();
-        if (tagJson.has(JCR_TITLE))
-            labels.put(DEFAULT, tagJson.getString(JCR_TITLE));
-        Iterator<String> keys = tagJson.keys();
-        while (keys.hasNext()) {
-            String key = keys.next();
-            String titleStartWith = STR."\{JCR_TITLE}.";
-            if (key.startsWith(titleStartWith)) {
-                String locale = key.replaceAll(titleStartWith, "");
-                if (locale.equals("pt_br"))
-                    locale = "pt_BR";
-                else if (locale.equals("en_us"))
-                    locale = "en_US";
-                labels.put(locale, tagJson.getString(key));
-            }
-        }
-        return labels;
-    }
-
-    private TurCmsTargetAttrValueList addValuesToAttributes(TurCmsTargetAttr turCmsTargetAttr,
-                                                            TurCmsSourceAttr turCmsSourceAttr,
-                                                            Object jcrProperty) {
-
-        if (turCmsSourceAttr.isConvertHtmlToText()) {
-            return TurCmsTargetAttrValueList.singleItem(turCmsTargetAttr.getName(),
-                    HtmlManipulator.html2Text(TurAemUtils.getPropertyValue(jcrProperty)));
-        } else if (jcrProperty != null) {
-            TurMultiValue turMultiValue = new TurMultiValue();
-            if (isJSONArray(jcrProperty)) {
-                ((JSONArray) jcrProperty).forEach(item -> turMultiValue.add(item.toString()));
-            } else {
-                turMultiValue.add(TurAemUtils.getPropertyValue(jcrProperty));
-            }
-            if (!turMultiValue.isEmpty()) {
-                return TurCmsTargetAttrValueList.singleItem(turCmsTargetAttr.getName(), turMultiValue);
-            }
-        }
-        return new TurCmsTargetAttrValueList();
-    }
 
     private TurCmsTargetAttrValueList attributeByClass(TurCmsContext context, TurAEMIndexerTool turAEMIndexerTool) {
         String className = context.getTurCmsSourceAttr().getClassName();
@@ -255,27 +173,5 @@ public class TurAEMAttrProcess {
             log.error(e.getMessage(), e);
         }
         return new TurCmsTargetAttrValueList();
-    }
-
-    private boolean isJSONArray(Object jcrProperty) {
-        return (jcrProperty instanceof JSONArray)
-                && !((JSONArray) jcrProperty).isEmpty();
-    }
-
-    private boolean hasCustomClass(TurCmsContext context) {
-        return StringUtils.isNotBlank(context.getTurCmsSourceAttr().getClassName());
-    }
-
-    private boolean hasJcrPropertyValue(Object jcrProperty) {
-        return ObjectUtils.allNotNull(jcrProperty, TurAemUtils.getPropertyValue(jcrProperty));
-    }
-
-    private TurCmsTargetAttrValue getTurAttrDefUnique(TurCmsTargetAttr turCmsTargetAttr,
-                                                      TurCmsTargetAttrValueList turCmsTargetAttrValueList) {
-        TurMultiValue multiValue = new TurMultiValue();
-        turCmsTargetAttrValueList.stream()
-                .flatMap(targetAttrValue -> targetAttrValue.getMultiValue().stream())
-                .distinct().forEach(multiValue::add);
-        return new TurCmsTargetAttrValue(turCmsTargetAttr.getName(), multiValue);
     }
 }

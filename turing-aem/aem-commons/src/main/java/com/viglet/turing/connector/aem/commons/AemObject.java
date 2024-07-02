@@ -1,4 +1,4 @@
-package com.viglet.turing.connector.aem.indexer;
+package com.viglet.turing.connector.aem.commons;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -55,7 +55,7 @@ public class AemObject {
                 this.delivered = jcrContentNode.has(CQ_LAST_REPLICATION_ACTION_PUBLISH)
                         && this.jcrContentNode.getString(CQ_LAST_REPLICATION_ACTION_PUBLISH).equals(ACTIVATE);
                 this.title = jcrContentNode.has(JCR_TITLE) ? this.jcrContentNode.getString(JCR_TITLE) : EMPTY_VALUE;
-                if (TurAemUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT)) {
+                if (TurAEMCommonsUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT)) {
                     this.contentFragment = this.jcrContentNode.getBoolean(CONTENT_FRAGMENT);
                 }
                 getDataFolder(jcrContentNode);
@@ -87,9 +87,9 @@ public class AemObject {
     }
 
     private void getDataFolder(JSONObject jcrContentNode) {
-        if (TurAemUtils.hasProperty(jcrContentNode, DATA_FOLDER)) {
+        if (TurAEMCommonsUtils.hasProperty(jcrContentNode, DATA_FOLDER)) {
             JSONObject jcrDataRootNode = jcrContentNode.getJSONObject(DATA_FOLDER);
-            if (TurAemUtils.hasProperty(jcrDataRootNode, CQ_MODEL)) {
+            if (TurAEMCommonsUtils.hasProperty(jcrDataRootNode, CQ_MODEL)) {
                 this.model = jcrDataRootNode.getString(CQ_MODEL);
             }
         }

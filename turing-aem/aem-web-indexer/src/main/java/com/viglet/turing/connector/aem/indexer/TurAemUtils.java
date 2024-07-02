@@ -1,34 +1,19 @@
 package com.viglet.turing.connector.aem.indexer;
 
-import com.google.common.net.UrlEscapers;
+import com.viglet.turing.connector.aem.commons.AemObject;
+import com.viglet.turing.connector.aem.commons.TurAEMCommonAttrProcess;
+import com.viglet.turing.connector.aem.commons.TurAEMCommonsUtils;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSource;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSourceLocalePath;
 import com.viglet.turing.connector.cms.beans.TurCmsContext;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.HttpHeaders;
-import org.apache.hc.core5.http.ParseException;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.message.BasicHeader;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.net.URI;
 import java.util.*;
 
 @Slf4j
 public class TurAemUtils {
-
-    public static final String JCR_TITLE = "jcr:title";
-    public static final String TEXT = "text";
-    public static final String JCR = "jcr:";
-    public static final String JSON = ".json";
-    public static final String SLING = "sling:";
 
     protected static final Map<String, String> responseHttpCache = new HashMap<>();
 
@@ -56,22 +41,18 @@ public class TurAemUtils {
         return getLocaleFromAemObject(turAemContext.getSource(), aemObject);
     }
 
-    public static boolean hasProperty(JSONObject jsonObject, String property) {
-        return jsonObject.has(property) && jsonObject.get(property) != null;
-    }
-
     public static JSONObject getInfinityJson(String url, TurAemContext context) {
-        String infinityJsonUrl = String.format(url.endsWith(JSON) ? "%s%s" : "%s%s.infinity.json",
+        String infinityJsonUrl = String.format(url.endsWith(TurAEMCommonAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
                 context.getUrl(), url);
         if (responseHttpCache.containsKey(infinityJsonUrl)) {
             log.info("Cached Response {}", infinityJsonUrl);
             return new JSONObject(responseHttpCache.get(infinityJsonUrl));
         } else {
             log.info("Request {}", infinityJsonUrl);
-            return getResponseBody(infinityJsonUrl, context.getUsername(), context.getPassword()).map(responseBody -> {
-                if (isResponseBodyJSONArray(responseBody) && !url.endsWith(JSON)) {
+            return TurAEMCommonsUtils.getResponseBody(infinityJsonUrl, context.getUsername(), context.getPassword()).map(responseBody -> {
+                if (TurAEMCommonsUtils.isResponseBodyJSONArray(responseBody) && !url.endsWith(TurAEMCommonAttrProcess.JSON)) {
                     return getInfinityJson(new JSONArray(responseBody).getString(0), context);
-                } else if (isResponseBodyJSONObject(responseBody)) {
+                } else if (TurAEMCommonsUtils.isResponseBodyJSONObject(responseBody)) {
                     responseHttpCache.put(infinityJsonUrl, responseBody);
                     return new JSONObject(responseBody);
                 }
@@ -80,55 +61,14 @@ public class TurAemUtils {
         }
     }
 
-    private static boolean isResponseBodyJSONArray(String responseBody) {
-        return responseBody.startsWith("[");
-    }
-
-    private static boolean isResponseBodyJSONObject(String responseBody) {
-        return responseBody.startsWith("{");
-    }
-
-    public static Optional<String> getResponseBody(String url, String username, String password) {
-        HttpGet request = new HttpGet(URI.create(UrlEscapers.urlFragmentEscaper().escape(url)).normalize());
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create()
-                .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.AUTHORIZATION, basicAuth(username, password))))
-                .build();
-             CloseableHttpResponse response = httpClient.execute(request)) {
-            HttpEntity entity = response.getEntity();
-            if (entity != null) {
-                return Optional.of(EntityUtils.toString(entity));
-            }
-        } catch (IOException | ParseException e) {
-            log.error(e.getMessage(), e);
-        }
-        return Optional.empty();
-    }
-
-    private static String basicAuth(String username, String password) {
-        return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
-    }
-
-    public static String getPropertyValue(Object property) {
-        try {
-            if (property instanceof JSONArray propertyArray) {
-                return !propertyArray.isEmpty() ? propertyArray.get(0).toString() : "";
-            } else if (property != null) {
-                return property.toString();
-            }
-        } catch (IllegalStateException e) {
-            log.error(e.getMessage(), e);
-        }
-        return null;
-    }
-
     public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuilder components) {
-        if (jsonObject.has(JCR_TITLE) && jsonObject.get(JCR_TITLE) instanceof String title) {
+        if (jsonObject.has(TurAEMCommonAttrProcess.JCR_TITLE) && jsonObject.get(TurAEMCommonAttrProcess.JCR_TITLE) instanceof String title) {
             components.append(title);
-        } else if (jsonObject.has(TEXT) && jsonObject.get(TEXT) instanceof String text) {
+        } else if (jsonObject.has(TurAEMCommonAttrProcess.TEXT) && jsonObject.get(TurAEMCommonAttrProcess.TEXT) instanceof String text) {
             components.append(text);
         }
         jsonObject.toMap().forEach((key, value) -> {
-            if (!key.startsWith(JCR) && !key.startsWith(SLING)
+            if (!key.startsWith(TurAEMCommonAttrProcess.JCR) && !key.startsWith(TurAEMCommonAttrProcess.SLING)
                     && (jsonObject.get(key) instanceof JSONObject jsonObjectNode)) {
                 getJsonNodeToComponent(jsonObjectNode, components);
             }

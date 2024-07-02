@@ -7,6 +7,7 @@ import com.google.inject.Inject;
 import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.*;
+import com.viglet.turing.connector.aem.commons.AemObject;
 import com.viglet.turing.connector.aem.indexer.ext.ExtContentInterface;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemIndexing;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSource;
