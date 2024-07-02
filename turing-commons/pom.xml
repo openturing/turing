@@ -24,6 +24,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <sonar.organization>viglet-turing</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.projectKey>turing-commons</sonar.projectKey>
   </properties>
   <dependencies>
     <dependency>
