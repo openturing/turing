@@ -30,7 +30,7 @@ public class TurAemUtils {
     public static final String JSON = ".json";
     public static final String SLING = "sling:";
 
-    public static final Map<String, String> responseHttpCache = new HashMap<>();
+    protected static final Map<String, String> responseHttpCache = new HashMap<>();
 
     public static Locale getLocaleByPath(TurAemSource turAemSource, String path) {
         for (TurAemSourceLocalePath turAemSourceLocalePath : turAemSource.getLocalePaths()) {
@@ -121,7 +121,7 @@ public class TurAemUtils {
         return null;
     }
 
-    public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuffer components) {
+    public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuilder components) {
         if (jsonObject.has(JCR_TITLE) && jsonObject.get(JCR_TITLE) instanceof String title) {
             components.append(title);
         } else if (jsonObject.has(TEXT) && jsonObject.get(TEXT) instanceof String text) {
