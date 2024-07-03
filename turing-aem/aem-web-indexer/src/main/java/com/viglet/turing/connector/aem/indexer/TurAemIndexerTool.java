@@ -141,7 +141,14 @@ public class TurAemIndexerTool {
     }
 
     public TurAemSourceContext getTurAemSourceContext(TurAemSource turAemSource) {
-        TurAemSourceContext turAemSourceContext = TurAemSourceContext.builder()
+        Collection<TurAemLocalePathContext> turAemLocalePathContexts = new HashSet<>();
+        turAemSourceLocalePathRepository.findByTurAemSource(turAemSource).ifPresent(turAemSourceLocalePaths -> {
+            turAemSourceLocalePaths.forEach(localePath -> turAemLocalePathContexts.add(TurAemLocalePathContext.builder()
+                    .locale(localePath.getLocale())
+                    .path(localePath.getPath())
+                    .build()));
+        });
+        return TurAemSourceContext.builder()
                 .group(turAemSource.getGroup())
                 .contentType(turAemSource.getContentType())
                 .defaultLocale(turAemSource.getDefaultLocale())
@@ -155,16 +162,8 @@ public class TurAemIndexerTool {
                 .password(turAemSource.getPassword())
                 .urlPrefix(turAemSource.getUrlPrefix())
                 .username(turAemSource.getUsername())
+                .localePaths(turAemLocalePathContexts)
                 .build();
-        turAemSourceLocalePathRepository.findByTurAemSource(turAemSource).ifPresent(turAemSourceLocalePaths -> {
-            Collection<TurAemLocalePathContext> turAemLocalePathContexts = new HashSet<>();
-            turAemSourceLocalePaths.forEach(localePath -> turAemLocalePathContexts.add(TurAemLocalePathContext.builder()
-                    .locale(localePath.getLocale())
-                    .path(localePath.getPath())
-                    .build()));
-            this.turAemSourceContext.setLocalePaths(turAemLocalePathContexts);
-        });
-        return turAemSourceContext;
     }
 
     public void run(TurAemSource turAemSource) {
