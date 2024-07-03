@@ -205,11 +205,6 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
         return turAemLocalePathContexts;
     }
 
-    private boolean hasPath(String snSite, String path, String name) {
-        return name.startsWith(String.format("sn.%s", snSite))
-                && name.endsWith(".path") && path.startsWith(getProperties().getProperty(name));
-    }
-
     @Override
     public TurSNSiteConfig getDefaultSNSiteConfig() {
         return new TurSNSiteConfig(snSite, snLocale);

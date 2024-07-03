@@ -57,6 +57,7 @@ public class TurAEMIndexerTool {
     public static final String STATIC_FILE_SUB_TYPE = "STATIC_FILE";
     public static final String ONCE = "once";
     public static final String REP = "rep:";
+    public static final String ITEMS_PROCESSED_MESSAGE = "%d items processed in %dms";
     @Parameter(names = {"--host",
             "-h"}, description = "The host on which Content Management server is installed.")
     private String hostAndPort = null;
@@ -232,7 +233,7 @@ public class TurAEMIndexerTool {
             contentType = jsonObject.getString(JCR_PRIMARY_TYPE);
             getNodeFromJson(guid, jsonObject, turAemSourceContext);
             long elapsed = System.currentTimeMillis() - start;
-            jCommander.getConsole().println("%d items processed in %dms".formatted(processed, elapsed));
+            jCommander.getConsole().println(ITEMS_PROCESSED_MESSAGE.formatted(processed, elapsed));
         });
     }
 
@@ -242,7 +243,7 @@ public class TurAEMIndexerTool {
             start = System.currentTimeMillis();
             setSiteName(rootPath, jsonSite);
             getNodeFromJson(rootPath, jsonSite, turAemSourceContext);
-            jCommander.getConsole().println("%d items processed in %dms".formatted(processed,
+            jCommander.getConsole().println(ITEMS_PROCESSED_MESSAGE.formatted(processed,
                     System.currentTimeMillis() - start));
         });
     }
@@ -340,7 +341,7 @@ public class TurAEMIndexerTool {
                     ordinal((currentPage * pageSize) - pageSize + 1)));
         }
         if (processed >= pageSize) {
-            jCommander.getConsole().println("%d items processed in %dms".formatted(processed,
+            jCommander.getConsole().println(ITEMS_PROCESSED_MESSAGE.formatted(processed,
                     System.currentTimeMillis() - start));
             processed = 0;
             start = System.currentTimeMillis();
@@ -502,7 +503,7 @@ public class TurAEMIndexerTool {
         return turSNAttributeSpecList.stream()
                 .filter(Objects::nonNull)
                 .map(TurSNJobAttributeSpec.class::cast)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private void mergeTargetAttrValueCMSWithCustomClass(TurCmsTargetAttrValueList turCmsTargetAttrValueList,

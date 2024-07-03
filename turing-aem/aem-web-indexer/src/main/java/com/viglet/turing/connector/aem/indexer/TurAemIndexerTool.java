@@ -142,12 +142,12 @@ public class TurAemIndexerTool {
 
     public TurAemSourceContext getTurAemSourceContext(TurAemSource turAemSource) {
         Collection<TurAemLocalePathContext> turAemLocalePathContexts = new HashSet<>();
-        turAemSourceLocalePathRepository.findByTurAemSource(turAemSource).ifPresent(turAemSourceLocalePaths -> {
-            turAemSourceLocalePaths.forEach(localePath -> turAemLocalePathContexts.add(TurAemLocalePathContext.builder()
-                    .locale(localePath.getLocale())
-                    .path(localePath.getPath())
-                    .build()));
-        });
+        turAemSourceLocalePathRepository.findByTurAemSource(turAemSource).ifPresent(turAemSourceLocalePaths ->
+                turAemSourceLocalePaths.forEach(localePath -> turAemLocalePathContexts
+                        .add(TurAemLocalePathContext.builder()
+                                .locale(localePath.getLocale())
+                                .path(localePath.getPath())
+                                .build())));
         return TurAemSourceContext.builder()
                 .group(turAemSource.getGroup())
                 .contentType(turAemSource.getContentType())
