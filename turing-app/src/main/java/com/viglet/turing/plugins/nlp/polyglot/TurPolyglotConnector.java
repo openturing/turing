@@ -42,6 +42,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -143,7 +144,7 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 
 	private URL getServerURL(TurNLPRequest turNLPRequest) {
 		try {
-			return new URL(turNLPRequest.getTurNLPInstance().getEndpointURL().concat("/ent"));
+			return URI.create(turNLPRequest.getTurNLPInstance().getEndpointURL().concat("/ent")).toURL();
 		} catch (MalformedURLException e) {
 			logger.error(e.getMessage(), e);
 		}

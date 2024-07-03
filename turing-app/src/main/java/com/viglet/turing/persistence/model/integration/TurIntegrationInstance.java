@@ -20,7 +20,6 @@
  */
 package com.viglet.turing.persistence.model.integration;
 
-import com.viglet.turing.persistence.bean.integration.TurIntegrationVendor;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

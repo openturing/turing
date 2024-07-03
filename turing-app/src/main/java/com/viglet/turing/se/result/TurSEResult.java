@@ -23,7 +23,6 @@ package com.viglet.turing.se.result;
 import lombok.*;
 import lombok.experimental.Tolerate;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Builder

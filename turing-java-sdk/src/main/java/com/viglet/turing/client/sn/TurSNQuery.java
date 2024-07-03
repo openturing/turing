@@ -112,7 +112,7 @@ public class TurSNQuery {
 
 	public void addFilterQuery(String... fq) {
 		if (this.fieldQueries == null) {
-			this.fieldQueries = new ArrayList<String>();
+			this.fieldQueries = new ArrayList<>();
 		}
 		fieldQueries.addAll(Arrays.asList(fq));
 	}

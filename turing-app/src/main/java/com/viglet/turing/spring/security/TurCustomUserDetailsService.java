@@ -28,7 +28,6 @@ import java.util.Set;
 
 import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.auth.TurPrivilege;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

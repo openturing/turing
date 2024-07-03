@@ -175,7 +175,6 @@ public class TurSNSiteAPI {
 
     }
 
-    @ResponseBody
     @GetMapping(value = "/export", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public StreamingResponseBody turSNSiteExport(HttpServletResponse response) {
 

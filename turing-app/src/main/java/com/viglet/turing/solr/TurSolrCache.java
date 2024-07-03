@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 
 /**
@@ -39,7 +40,7 @@ public class TurSolrCache {
         int responseCode = 0;
         URL url;
         try {
-            url = new URL(urlString.concat("/select"));
+            url = URI.create(urlString.concat("/select")).toURL();
             HttpURLConnection huc = (HttpURLConnection) url.openConnection();
             responseCode = huc.getResponseCode();
         } catch (IOException e) {

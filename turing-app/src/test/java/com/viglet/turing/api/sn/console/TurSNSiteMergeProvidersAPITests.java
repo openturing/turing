@@ -5,7 +5,6 @@ import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
-import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 import com.viglet.turing.utils.TurUtilTests;
 import com.viglet.turing.utils.TurUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class TurSNSiteMergeProvidersAPITests {
+class TurSNSiteMergeProvidersAPITests {
     @Autowired
     private WebApplicationContext webApplicationContext;
     @Autowired
@@ -44,10 +43,10 @@ public class TurSNSiteMergeProvidersAPITests {
     @Autowired
     private TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository;
 
-    private final static String SN_SITE_NAME = "Sample";
+    private static final String SN_SITE_NAME = "Sample";
     private MockMvc mockMvc;
     private Principal mockPrincipal;
-    private final static String SERVICE_URL = String.format("/api/sn/%s/merge", SN_SITE_NAME);
+    private static final String SERVICE_URL = String.format("/api/sn/%s/merge", SN_SITE_NAME);
 
     @BeforeAll
     void setup() {

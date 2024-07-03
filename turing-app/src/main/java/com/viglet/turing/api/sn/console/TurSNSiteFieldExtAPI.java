@@ -327,23 +327,20 @@ public class TurSNSiteFieldExtAPI {
     }
 
     public void updateExternalField(TurSNSiteFieldExt turSNSiteFieldExt) {
-        switch (turSNSiteFieldExt.getSnType()) {
-            case SE:
-                turSNSiteFieldRepository.findById(turSNSiteFieldExt.getExternalId()).ifPresent(turSNSiteField -> {
-                    turSNSiteField.setDescription(turSNSiteFieldExt.getDescription());
-                    turSNSiteField.setMultiValued(turSNSiteFieldExt.getMultiValued());
-                    turSNSiteField.setName(turSNSiteFieldExt.getName());
-                    turSNSiteField.setType(turSNSiteFieldExt.getType());
-                    this.turSNSiteFieldRepository.save(turSNSiteField);
-                });
-                break;
-            case NER, THESAURUS:
-                turNLPEntityRepository.findById(turSNSiteFieldExt.getExternalId()).ifPresent(turNLPEntityNER -> {
-                    turNLPEntityNER.setDescription(turSNSiteFieldExt.getDescription());
-                    turNLPEntityNER.setInternalName(turSNSiteFieldExt.getName());
-                    this.turNLPEntityRepository.save(turNLPEntityNER);
-                });
-                break;
+        if (Objects.requireNonNull(turSNSiteFieldExt.getSnType()) == TurSNFieldType.SE) {
+            turSNSiteFieldRepository.findById(turSNSiteFieldExt.getExternalId()).ifPresent(turSNSiteField -> {
+                turSNSiteField.setDescription(turSNSiteFieldExt.getDescription());
+                turSNSiteField.setMultiValued(turSNSiteFieldExt.getMultiValued());
+                turSNSiteField.setName(turSNSiteFieldExt.getName());
+                turSNSiteField.setType(turSNSiteFieldExt.getType());
+                this.turSNSiteFieldRepository.save(turSNSiteField);
+            });
+        } else if (turSNSiteFieldExt.getSnType() == TurSNFieldType.NER || turSNSiteFieldExt.getSnType() == TurSNFieldType.THESAURUS) {
+            turNLPEntityRepository.findById(turSNSiteFieldExt.getExternalId()).ifPresent(turNLPEntityNER -> {
+                turNLPEntityNER.setDescription(turSNSiteFieldExt.getDescription());
+                turNLPEntityNER.setInternalName(turSNSiteFieldExt.getName());
+                this.turNLPEntityRepository.save(turNLPEntityNER);
+            });
         }
     }
 

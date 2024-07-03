@@ -23,8 +23,6 @@ package com.viglet.turing.persistence.repository.ml;
 import com.viglet.turing.persistence.model.ml.TurMLVendor;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
 public interface TurMLVendorRepository extends JpaRepository<TurMLVendor, String> {
 }

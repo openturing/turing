@@ -69,14 +69,13 @@ public class TurIntegrationAEMAPI {
             httpURLConnection.setRequestMethod(request.getMethod());
             request.getHeaderNames().asIterator().forEachRemaining(headerName ->
                     httpURLConnection.setRequestProperty(headerName, request.getHeader(headerName)));
-            switch (request.getMethod()) {
-                case PUT, POST -> {
-                    httpURLConnection.setDoOutput(true);
-                    OutputStream outputStream = httpURLConnection.getOutputStream();
-                    outputStream.write(CharStreams.toString(request.getReader()).getBytes());
-                    outputStream.flush();
-                    outputStream.close();
-                }
+            String method = request.getMethod();
+            if (method.equals(PUT) || method.equals(POST)) {
+                httpURLConnection.setDoOutput(true);
+                OutputStream outputStream = httpURLConnection.getOutputStream();
+                outputStream.write(CharStreams.toString(request.getReader()).getBytes());
+                outputStream.flush();
+                outputStream.close();
             }
             ByteStreams.copy(httpURLConnection.getInputStream(), response.getOutputStream());
             response.setStatus(httpURLConnection.getResponseCode());

@@ -34,17 +34,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class TurSNSiteSpotlightAPITests {
+class TurSNSiteSpotlightAPITests {
     @Autowired
     private WebApplicationContext webApplicationContext;
     @Autowired
     private TurSNSiteRepository turSNSiteRepository;
     @Autowired
     private TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
-    private final static String SN_SITE_NAME = "Sample";
+    private static final String SN_SITE_NAME = "Sample";
     private MockMvc mockMvc;
     private Principal mockPrincipal;
-    private final static String SERVICE_URL = String.format("/api/sn/%s/spotlight", SN_SITE_NAME);
+    private static final String SERVICE_URL = String.format("/api/sn/%s/spotlight", SN_SITE_NAME);
 
     @BeforeAll
     void setup() {
@@ -53,6 +53,7 @@ public class TurSNSiteSpotlightAPITests {
         mockPrincipal = Mockito.mock(Principal.class);
         Mockito.when(mockPrincipal.getName()).thenReturn("admin");
     }
+
     @Test
     @Order(1)
     void turSpotlightList() throws Exception {
@@ -60,6 +61,7 @@ public class TurSNSiteSpotlightAPITests {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
     }
+
     @Test
     @Order(2)
     void turSpotlightModel() throws Exception {
@@ -67,6 +69,7 @@ public class TurSNSiteSpotlightAPITests {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
     }
+
     @Test
     @Order(3)
     void stage01SpotlightAdd() {
@@ -80,34 +83,34 @@ public class TurSNSiteSpotlightAPITests {
         turSNSiteSpotlightDocument.setReferenceId("CMS");
         turSNSiteSpotlightDocument.setType("Page");
 
-       turSNSiteRepository.findByName(SN_SITE_NAME).ifPresent(turSNSite -> {
-           TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
-           turSNSiteSpotlight.setDescription("Spotlight Sample Test");
-           turSNSiteSpotlight.setName("Spotlight Sample Test");
-           turSNSiteSpotlight.setModificationDate(new Date());
-           turSNSiteSpotlight.setManaged(1);
-           turSNSiteSpotlight.setProvider("TURING");
-           turSNSiteSpotlight.setTurSNSite(turSNSite);
-           turSNSite.getTurSNSiteLocales().stream().findFirst().ifPresent(locale ->
-                   turSNSiteSpotlight.setLanguage(locale.getLanguage())
-           );
-           turSNSiteSpotlight.setTurSNSiteSpotlightDocuments(Collections.singleton(turSNSiteSpotlightDocument));
-           turSNSiteSpotlight.setTurSNSiteSpotlightTerms(Collections.singleton(turSNSiteSpotlightTerm));
-           try {
-           String spotlightRequestBody = TurUtils.asJsonString(turSNSiteSpotlight);
-           RequestBuilder requestBuilder = MockMvcRequestBuilders.post(SERVICE_URL).principal(mockPrincipal)
-                   .accept(MediaType.APPLICATION_JSON)
-                   .content(spotlightRequestBody).contentType(MediaType.APPLICATION_JSON);
+        turSNSiteRepository.findByName(SN_SITE_NAME).ifPresent(turSNSite -> {
+            TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
+            turSNSiteSpotlight.setDescription("Spotlight Sample Test");
+            turSNSiteSpotlight.setName("Spotlight Sample Test");
+            turSNSiteSpotlight.setModificationDate(new Date());
+            turSNSiteSpotlight.setManaged(1);
+            turSNSiteSpotlight.setProvider("TURING");
+            turSNSiteSpotlight.setTurSNSite(turSNSite);
+            turSNSite.getTurSNSiteLocales().stream().findFirst().ifPresent(locale ->
+                    turSNSiteSpotlight.setLanguage(locale.getLanguage())
+            );
+            turSNSiteSpotlight.setTurSNSiteSpotlightDocuments(Collections.singleton(turSNSiteSpotlightDocument));
+            turSNSiteSpotlight.setTurSNSiteSpotlightTerms(Collections.singleton(turSNSiteSpotlightTerm));
+            try {
+                String spotlightRequestBody = TurUtils.asJsonString(turSNSiteSpotlight);
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.post(SERVICE_URL).principal(mockPrincipal)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(spotlightRequestBody).contentType(MediaType.APPLICATION_JSON);
 
-               mockMvc.perform(requestBuilder).andExpect(status().isOk());
-           } catch (Exception e) {
-              log.error(e.getMessage(),e);
-           }
-       });
-
+                mockMvc.perform(requestBuilder).andExpect(status().isOk());
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+        });
 
 
     }
+
     @Test
     @Order(4)
     void stage02SpotlightGet() {
@@ -121,6 +124,7 @@ public class TurSNSiteSpotlightAPITests {
             }
         });
     }
+
     @Test
     @Order(5)
     void stage03SpotlightUpdate() {
@@ -140,6 +144,7 @@ public class TurSNSiteSpotlightAPITests {
             }
         });
     }
+
     @Test
     @Order(6)
     void stage04SpotlightDelete() {

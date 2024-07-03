@@ -1,6 +1,5 @@
 package com.viglet.turing.utils;
 
-import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import org.jetbrains.annotations.NotNull;
 
 public class TurUtilTests {

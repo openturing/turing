@@ -338,21 +338,19 @@ public class TurAemIndexerTool {
 
     private void addTurSNJobItemByType(TurCmsModel turCmsModel, AemObject aemObject,
                                        List<TurSNAttributeSpec> targetAttrDefinitions) {
-        switch (Objects.requireNonNull(getContentType())) {
-            case CQ_PAGE:
-                addTurSNJobItemToIndex(aemObject, turCmsModel, targetAttrDefinitions);
-                break;
-            case DAM_ASSET:
-                if (!StringUtils.isEmpty(turCmsModel.getSubType())) {
-                    if (turCmsModel.getSubType().equals(CONTENT_FRAGMENT) && aemObject.isContentFragment()) {
-                        aemObject.setDataPath(DATA_MASTER);
-                        addTurSNJobItemToIndex(aemObject, turCmsModel, targetAttrDefinitions);
-                    } else if (turCmsModel.getSubType().equals(STATIC_FILE)) {
-                        aemObject.setDataPath(METADATA);
-                        addTurSNJobItemToIndex(aemObject, turCmsModel, targetAttrDefinitions);
-                    }
+        String contentType = Objects.requireNonNull(getContentType());
+        if (contentType.equals(CQ_PAGE)) {
+            addTurSNJobItemToIndex(aemObject, turCmsModel, targetAttrDefinitions);
+        } else if (contentType.equals(DAM_ASSET)) {
+            if (!StringUtils.isEmpty(turCmsModel.getSubType())) {
+                if (turCmsModel.getSubType().equals(CONTENT_FRAGMENT) && aemObject.isContentFragment()) {
+                    aemObject.setDataPath(DATA_MASTER);
+                    addTurSNJobItemToIndex(aemObject, turCmsModel, targetAttrDefinitions);
+                } else if (turCmsModel.getSubType().equals(STATIC_FILE)) {
+                    aemObject.setDataPath(METADATA);
+                    addTurSNJobItemToIndex(aemObject, turCmsModel, targetAttrDefinitions);
                 }
-                break;
+            }
         }
     }
 

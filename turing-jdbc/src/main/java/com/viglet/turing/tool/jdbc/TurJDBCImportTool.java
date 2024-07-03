@@ -35,7 +35,7 @@ import org.apache.commons.lang3.LocaleUtils;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
@@ -234,7 +234,7 @@ public class TurJDBCImportTool {
 	private TurSNServer createTurSNServer() {
 		TurSNServer turSNServer;
 		try {
-			turSNServer = new TurSNServer(new URL(turingServer), this.site, LocaleUtils.toLocale(this.locale),
+			turSNServer = new TurSNServer(URI.create(turingServer).toURL(), this.site, LocaleUtils.toLocale(this.locale),
 					new TurUsernamePasswordCredentials(turUsername, turPassword));
 
 			turSNServer.setProviderName(PROVIDER_ATTRIBUTE_VALUE);
