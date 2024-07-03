@@ -83,7 +83,6 @@ public class TurAEMAttrProcess {
         }
     }
 
-
     private TurCmsTargetAttrValueList attributeByCMS(TurCmsContext context,
                                                      List<TurSNAttributeSpec> turSNAttributeSpecList, TurAEMIndexerTool turAEMIndexerTool) {
         String sourceAttrName = context.getTurCmsSourceAttr().getName();
@@ -106,7 +105,6 @@ public class TurAEMAttrProcess {
                 context.getTurCmsSourceAttr(), jcrProperty));
         return turCmsTargetAttrValueList;
     }
-
 
     private TurCmsTargetAttrValueList generateNewAttributesFromCqTags(TurCmsContext context,
                                                                       TurAEMIndexerTool turAEMIndexerTool,

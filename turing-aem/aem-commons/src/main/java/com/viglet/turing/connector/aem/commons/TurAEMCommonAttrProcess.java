@@ -17,7 +17,10 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 public class TurAEMCommonAttrProcess {
@@ -35,13 +38,9 @@ public class TurAEMCommonAttrProcess {
                 && StringUtils.isNotBlank(targetAttr.getClassName());
     }
 
-
     public static boolean hasTextValue(TurCmsTargetAttr turCmsTargetAttr) {
         return StringUtils.isNotEmpty(turCmsTargetAttr.getTextValue());
     }
-
-
-
 
     @Nullable
     public static Object getJcrProperty(TurCmsContext context, String sourceAttrName) {
@@ -55,8 +54,6 @@ public class TurAEMCommonAttrProcess {
         }).orElse(null);
 
     }
-
-
 
     @NotNull
     public static TurSNAttributeSpec getTurSNAttributeSpec(String facet, Map<String, String> facetLabel) {
@@ -111,7 +108,6 @@ public class TurAEMCommonAttrProcess {
         }
         return new TurCmsTargetAttrValueList();
     }
-
 
     private static boolean isJSONArray(Object jcrProperty) {
         return (jcrProperty instanceof JSONArray)

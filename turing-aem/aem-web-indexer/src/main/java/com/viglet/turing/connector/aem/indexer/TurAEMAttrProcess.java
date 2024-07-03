@@ -3,6 +3,7 @@ package com.viglet.turing.connector.aem.indexer;
 import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
 import com.viglet.turing.connector.aem.commons.AemObject;
 import com.viglet.turing.connector.aem.commons.TurAEMCommonAttrProcess;
+import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.aem.indexer.ext.ExtAttributeInterface;
 import com.viglet.turing.connector.cms.beans.TurCmsContext;
 import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueList;
@@ -19,12 +20,12 @@ import java.util.*;
 
 @Slf4j
 public class TurAEMAttrProcess {
-    private static String addTagToAttrValueList(TurCmsContext context, TurAemContext turAemContext,
+    private static String addTagToAttrValueList(TurCmsContext context, TurAemSourceContext turAemSourceContext,
                                                 String facet, String value) {
         JSONObject infinityJson = TurAemUtils
                 .getInfinityJson("/content/_cq_tags/" + facet + "/" + value,
-                        turAemContext);
-        Locale locale = TurAemUtils.getLocaleFromContext(turAemContext, context);
+                        turAemSourceContext);
+        Locale locale = TurAemUtils.getLocaleFromContext(turAemSourceContext, context);
         String titleLocale = locale.toString().toLowerCase();
         String titleLanguage = locale.getLanguage().toLowerCase();
         Map<String, String> tagLabels = TurAEMCommonAttrProcess.getTagLabels(infinityJson);
@@ -35,18 +36,18 @@ public class TurAEMAttrProcess {
         else return tagLabels.getOrDefault(TurAEMCommonAttrProcess.DEFAULT, value);
     }
 
-    private static TurSNAttributeSpec setTagFacet(TurAemContext turAemContext,
+    private static TurSNAttributeSpec setTagFacet(TurAemSourceContext turAemSourceContext,
                                                   String facetId) {
         JSONObject tagFacet = TurAemUtils
                 .getInfinityJson("/content/_cq_tags/" + facetId,
-                        turAemContext);
+                        turAemSourceContext);
         return TurAEMCommonAttrProcess.getTurSNAttributeSpec(facetId, TurAEMCommonAttrProcess.getTagLabels(tagFacet));
     }
 
 
     public TurCmsTargetAttrValueList prepareAttributeDefs(AemObject aemObject,
                                                           TurCmsContentDefinitionProcess turCmsContentDefinitionProcess,
-                                                          List<TurSNAttributeSpec> turSNAttributeSpecList, TurAemContext turAemContext) {
+                                                          List<TurSNAttributeSpec> turSNAttributeSpecList, TurAemSourceContext turAemSourceContext) {
         return turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(aemObject.getType())
                 .map(turCmsModel -> {
                     TurCmsContext context = new TurCmsContext(aemObject, turCmsContentDefinitionProcess.getConfig());
@@ -56,12 +57,12 @@ public class TurAEMAttrProcess {
                                 log.debug(String.format("TargetAttr: %s", targetAttr));
                                 context.setTurCmsTargetAttr(targetAttr);
                                 if (TurAEMCommonAttrProcess.hasClassNoSource(targetAttr)) {
-                                    turCmsTargetAttrValues.addAll(process(context, turSNAttributeSpecList, turAemContext));
+                                    turCmsTargetAttrValues.addAll(process(context, turSNAttributeSpecList, turAemSourceContext));
                                 } else {
                                     targetAttr.getSourceAttrs().stream().filter(Objects::nonNull)
                                             .forEach(sourceAttr ->
                                                     turCmsTargetAttrValues.addAll(
-                                                            addTargetAttrValuesBySourceAttr(turAemContext, turSNAttributeSpecList,
+                                                            addTargetAttrValuesBySourceAttr(turAemSourceContext, turSNAttributeSpecList,
                                                                     targetAttr, sourceAttr, context)));
                                 }
                             });
@@ -72,7 +73,7 @@ public class TurAEMAttrProcess {
                 });
     }
 
-    private TurCmsTargetAttrValueList addTargetAttrValuesBySourceAttr(TurAemContext turAemContext,
+    private TurCmsTargetAttrValueList addTargetAttrValuesBySourceAttr(TurAemSourceContext turAemSourceContext,
                                                                       List<TurSNAttributeSpec> turSNAttributeSpecList, TurCmsTargetAttr targetAttr,
                                                                       TurCmsSourceAttr sourceAttr,
                                                                       TurCmsContext context) {
@@ -80,7 +81,7 @@ public class TurAEMAttrProcess {
         try {
             context.setTurCmsSourceAttr(sourceAttr);
             TurCmsTargetAttrValueList targetAttrValues = process(
-                    context, turSNAttributeSpecList, turAemContext);
+                    context, turSNAttributeSpecList, turAemSourceContext);
             if (sourceAttr.isUniqueValues()) {
                 turCmsTargetAttrValueList.add(TurAEMCommonAttrProcess.getTurAttrDefUnique(targetAttr,
                         targetAttrValues));
@@ -95,35 +96,35 @@ public class TurAEMAttrProcess {
     }
 
     private TurCmsTargetAttrValueList process(TurCmsContext context,
-                                              List<TurSNAttributeSpec> turSNAttributeSpecList, TurAemContext turAemContext) {
+                                              List<TurSNAttributeSpec> turSNAttributeSpecList, TurAemSourceContext turAemSourceContext) {
         log.debug(String.format("Target Attribute Name: %s and Source Attribute Name: %s",
                 context.getTurCmsTargetAttr().getName(), context.getTurCmsSourceAttr().getName()));
         if (TurAEMCommonAttrProcess.hasTextValue(context.getTurCmsTargetAttr())) {
             return TurCmsTargetAttrValueList.singleItem(context.getTurCmsTargetAttr());
         } else {
             return TurAEMCommonAttrProcess.hasCustomClass(context) ?
-                    attributeByClass(context, turAemContext) :
-                    attributeByCMS(context, turSNAttributeSpecList, turAemContext);
+                    attributeByClass(context, turAemSourceContext) :
+                    attributeByCMS(context, turSNAttributeSpecList, turAemSourceContext);
         }
     }
 
     private TurCmsTargetAttrValueList attributeByCMS(TurCmsContext context,
-                                                     List<TurSNAttributeSpec> turSNAttributeSpecList, TurAemContext turAemContext) {
+                                                     List<TurSNAttributeSpec> turSNAttributeSpecList, TurAemSourceContext turAemSourceContext) {
         String sourceAttrName = context.getTurCmsSourceAttr().getName();
         final Object jcrProperty = TurAEMCommonAttrProcess.getJcrProperty(context, sourceAttrName);
         return TurAEMCommonAttrProcess.hasJcrPropertyValue(jcrProperty) ?
-                getTargetAttrValueListFromJcrProperty(context, turAemContext, turSNAttributeSpecList, sourceAttrName, jcrProperty) :
+                getTargetAttrValueListFromJcrProperty(context, turAemSourceContext, turSNAttributeSpecList, sourceAttrName, jcrProperty) :
                 new TurCmsTargetAttrValueList();
     }
 
     @NotNull
     private TurCmsTargetAttrValueList getTargetAttrValueListFromJcrProperty(TurCmsContext context,
-                                                                            TurAemContext turAemContext,
+                                                                            TurAemSourceContext turAemSourceContext,
                                                                             List<TurSNAttributeSpec> turSNAttributeSpecList,
                                                                             String sourceAttrName,
                                                                             Object jcrProperty) {
         TurCmsTargetAttrValueList turCmsTargetAttrValueList = new TurCmsTargetAttrValueList();
-        turCmsTargetAttrValueList.addAll(generateNewAttributesFromCqTags(context, turAemContext, turSNAttributeSpecList,
+        turCmsTargetAttrValueList.addAll(generateNewAttributesFromCqTags(context, turAemSourceContext, turSNAttributeSpecList,
                 sourceAttrName, jcrProperty));
         turCmsTargetAttrValueList.addAll(TurAEMCommonAttrProcess.addValuesToAttributes(context.getTurCmsTargetAttr(),
                 context.getTurCmsSourceAttr(), jcrProperty));
@@ -131,7 +132,7 @@ public class TurAEMAttrProcess {
     }
 
     private TurCmsTargetAttrValueList generateNewAttributesFromCqTags(TurCmsContext context,
-                                                                      TurAemContext turAemContext,
+                                                                      TurAemSourceContext turAemSourceContext,
                                                                       List<TurSNAttributeSpec> turSNAttributeSpecList,
                                                                       String attributeName,
                                                                       Object jcrProperty) {
@@ -142,10 +143,10 @@ public class TurAEMAttrProcess {
                         String[] tagSplit = tag.toString().split(TurAEMCommonAttrProcess.TAG_SEPARATOR);
                         if (tagSplit.length >= 2) {
                             Optional.ofNullable(tagSplit[0]).ifPresent(facet -> {
-                                turSNAttributeSpecList.add(setTagFacet(turAemContext, facet));
+                                turSNAttributeSpecList.add(setTagFacet(turAemSourceContext, facet));
                                 Optional.ofNullable(tagSplit[1]).ifPresent(value ->
                                         turCmsTargetAttrValueList.addWithSingleValue(facet,
-                                                addTagToAttrValueList(context, turAemContext, facet, value))
+                                                addTagToAttrValueList(context, turAemSourceContext, facet, value))
                                 );
                             });
                         }
@@ -155,8 +156,7 @@ public class TurAEMAttrProcess {
         return turCmsTargetAttrValueList;
     }
 
-
-    private TurCmsTargetAttrValueList attributeByClass(TurCmsContext context, TurAemContext turAemContext) {
+    private TurCmsTargetAttrValueList attributeByClass(TurCmsContext context, TurAemSourceContext turAemSourceContext) {
         String className = context.getTurCmsSourceAttr().getClassName();
         log.debug("ClassName : {}", className);
         try {
@@ -165,7 +165,7 @@ public class TurAEMAttrProcess {
                     ((ExtAttributeInterface) Objects.requireNonNull(Class.forName(className)
                             .getDeclaredConstructor().newInstance()))
                             .consume(context.getTurCmsTargetAttr(), context.getTurCmsSourceAttr(),
-                                    (AemObject) context.getCmsObjectInstance(), turAemContext));
+                                    (AemObject) context.getCmsObjectInstance(), turAemSourceContext));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException | ClassNotFoundException e) {
             log.error(e.getMessage(), e);

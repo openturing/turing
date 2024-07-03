@@ -1,7 +1,7 @@
 package com.viglet.turing.connector.aem.indexer.ext;
 
 import com.viglet.turing.connector.aem.commons.AemObject;
-import com.viglet.turing.connector.aem.indexer.TurAemContext;
+import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
@@ -9,15 +9,15 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TurContentUrl implements ExtAttributeInterface {
-    public static String getURL(AemObject aemObject, TurAemContext turAemContext) {
-        return String.format("%s%s.html", turAemContext.getSource().getUrlPrefix(), aemObject.getPath());
+    public static String getURL(AemObject aemObject, TurAemSourceContext turAemSourceContext) {
+        return String.format("%s%s.html", turAemSourceContext.getUrlPrefix(), aemObject.getPath());
     }
 
     @Override
     public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-                                 AemObject aemObject, TurAemContext turAemContext) {
+                                 AemObject aemObject, TurAemSourceContext turAemSourceContext) {
         log.debug("Executing TurContentUrl");
         return TurMultiValue
-                .singleItem(getURL(aemObject, turAemContext));
+                .singleItem(getURL(aemObject, turAemSourceContext));
     }
 }

@@ -1,7 +1,7 @@
 package com.viglet.turing.connector.aem.indexer.ext;
 
 import com.viglet.turing.connector.aem.commons.AemObject;
-import com.viglet.turing.connector.aem.indexer.TurAemContext;
+import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
@@ -12,7 +12,7 @@ public class TurContentId implements ExtAttributeInterface {
 
     @Override
     public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-                                 AemObject aemObject, TurAemContext turAemContext) {
+                                 AemObject aemObject, TurAemSourceContext turAemSourceContext) {
         log.debug("Executing TurContentUrl");
         return TurMultiValue
                 .singleItem(String.format(aemObject.getPath()));
