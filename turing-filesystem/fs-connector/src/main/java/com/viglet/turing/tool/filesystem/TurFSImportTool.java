@@ -1,47 +1,33 @@
 package com.viglet.turing.tool.filesystem;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitOption;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.entity.mime.FileBody;
+import org.apache.hc.client5.http.entity.mime.HttpMultipartMode;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.entity.mime.HttpMultipartMode;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class TurFSImportTool {
     static final Logger logger = LogManager.getLogger(TurFSImportTool.class.getName());
@@ -52,16 +38,13 @@ public class TurFSImportTool {
     @Parameter(names = "--source-dir", description = "Source Directory that contains files", required = true)
     private String sourceDir = null;
 
-    @Parameter(names = "--prefix-from-replace", description = "Prefix from Replace", required = false)
+    @Parameter(names = "--prefix-from-replace", description = "Prefix from Replace")
     private String prefixFromReplace = null;
 
-    @Parameter(names = "--prefix-to-replace", description = "Prefix to Replace", required = false)
+    @Parameter(names = "--prefix-to-replace", description = "Prefix to Replace")
     private String prefixToReplace = null;
 
-    @Parameter(names = {"--site"}, description = "Specify the Semantic Navigation Site", required = false)
-    private String site = null;
-
-    @Parameter(names = {"--nlp"}, description = "Specify the NLP Instance", required = false)
+    @Parameter(names = {"--nlp"}, description = "Specify the NLP Instance")
     private String nlpInstance = null;
 
     @Parameter(names = {"--server", "-s"}, description = "Viglet Turing Server", required = true)
@@ -75,9 +58,6 @@ public class TurFSImportTool {
 
     @Parameter(names = {"--include-type-in-id", "-i"}, description = "Include Content Type name in Id", arity = 1)
     public boolean typeInId = false;
-
-    @Parameter(names = "--file-content-field", description = "Field that shows Content of File", help = true)
-    private String fileContentField = "text";
 
     @Parameter(names = "--file-size-field", description = "Field that shows Size of File in bytes", help = true)
     private String fileSizeField = "fileSize";
@@ -111,7 +91,7 @@ public class TurFSImportTool {
             main.run();
         } catch (ParameterException e) {
             // Handle everything on your own, i.e.
-            logger.info("Error: " + e.getLocalizedMessage());
+            logger.info("Error: {}", e.getLocalizedMessage());
             jCommander.usage();
         }
 
@@ -123,7 +103,7 @@ public class TurFSImportTool {
         try {
 
             Files.walkFileTree(startPath, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
-                    new SimpleFileVisitor<Path>() {
+                    new SimpleFileVisitor<>() {
                         @Override
                         public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
                             File file = new File(path.toAbsolutePath().toString());
@@ -201,32 +181,25 @@ public class TurFSImportTool {
             FileBody fileBody = new FileBody(fileItem, ContentType.DEFAULT_BINARY);
 
             System.out.print("Processing " + initial + " to " + chunkTotal + " items\n");
-            CloseableHttpClient client = HttpClients.createDefault();
-            String restAPI = String.format("%s/api/nlp/%s/validate/file/blazon", turingServer, nlpInstance);
-            HttpPost httpPost = new HttpPost(restAPI);
-
-            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-            builder.setMode(HttpMultipartMode.LEGACY);
-            builder.addPart("file", fileBody);
-
-            HttpEntity entity = builder.build();
-
-            httpPost.setEntity(entity);
-
-            CloseableHttpResponse response = client.execute(httpPost);
-            String responseBody = null;
-            try {
-                responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-            } catch (ParseException e) {
-                logger.error(e.getMessage(), e);
+            try (CloseableHttpClient client = HttpClients.createDefault()) {
+                String restAPI = String.format("%s/api/nlp/%s/validate/file/blazon", turingServer, nlpInstance);
+                HttpPost httpPost = new HttpPost(restAPI);
+                MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                builder.setMode(HttpMultipartMode.LEGACY);
+                builder.addPart("file", fileBody);
+                HttpEntity entity = builder.build();
+                httpPost.setEntity(entity);
+                client.execute(httpPost, response -> {
+                    String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+                    if (showOutput) {
+                        System.out.println(responseBody);
+                    }
+                    File outputFile = new File(String.format("%s%s%s", outputDir, File.separator,
+                            changeExtension(fileItem, "xml").getName()));
+                    FileUtils.writeStringToFile(outputFile, responseBody, StandardCharsets.UTF_8);
+                    return null;
+                });
             }
-            if (showOutput) {
-                System.out.println(responseBody);
-
-            }
-            File outputFile = new File(String.format("%s%s%s", outputDir, File.separator, changeExtension(fileItem, "xml").getName()));
-            FileUtils.writeStringToFile(outputFile, responseBody, StandardCharsets.UTF_8);
-            client.close();
             initial++;
         }
     }

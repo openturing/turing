@@ -38,7 +38,7 @@ import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import com.viglet.turing.utils.TurUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -80,7 +80,7 @@ public class TurNLPInstanceAPI {
     @Operation(summary = "Natural Language Processing List")
     @GetMapping
     public List<TurNLPInstance> turNLPInstanceList() {
-        return this.turNLPInstanceRepository.findAll(TurPesistenceUtils.orderByTitleIgnoreCase());
+        return this.turNLPInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase());
     }
 
     @Operation(summary = "Show a Natural Language Processing")

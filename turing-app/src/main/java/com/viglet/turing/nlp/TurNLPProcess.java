@@ -140,7 +140,7 @@ public class TurNLPProcess {
 			nlpService = (TurNLPPlugin) Class.forName(turNLPRequest.getTurNLPInstance().getTurNLPVendor().getPlugin())
 					.getDeclaredConstructor().newInstance();
 			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(context);
-			Optional.ofNullable(applicationContext).ifPresent(context -> {
+			Optional.ofNullable(applicationContext).ifPresent(appContext -> {
 				applicationContext.getAutowireCapableBeanFactory().autowireBean(nlpService);
 				turNLPResponse.setEntityMapWithProcessedValues(nlpService.processAttributesToEntityMap(turNLPRequest));
 			});

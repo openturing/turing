@@ -24,7 +24,7 @@ package com.viglet.turing.api.nlp;
 import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +45,7 @@ public class TurNLPVendorAPI {
 	@Operation(summary = "Natural Language Processing Vendor List")
 	@GetMapping
 	public List<TurNLPVendor> turNLPVendorList() {
-		return this.turNLPVendorRepository.findAll(TurPesistenceUtils.orderByTitleIgnoreCase());
+		return this.turNLPVendorRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase());
 	}
 
 	@Operation(summary = "Show a Natural Language Processing Vendor")

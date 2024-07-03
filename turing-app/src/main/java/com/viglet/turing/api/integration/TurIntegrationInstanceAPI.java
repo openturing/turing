@@ -23,7 +23,7 @@ package com.viglet.turing.api.integration;
 import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.integration.TurIntegrationInstance;
 import com.viglet.turing.persistence.repository.integration.TurIntegrationInstanceRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +46,7 @@ public class TurIntegrationInstanceAPI {
 	@Operation(summary = "Integration List")
 	@GetMapping
 	public List<TurIntegrationInstance> turIntegrationInstanceList() {
-		return this.turIntegrationInstanceRepository.findAll(TurPesistenceUtils.orderByTitleIgnoreCase());
+		return this.turIntegrationInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase());
 	}
 
 	@Operation(summary = "Integration structure")

@@ -37,7 +37,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Getter
@@ -113,7 +112,7 @@ public class TurAemIndexerTool {
         return turSNAttributeSpecList.stream()
                 .filter(Objects::nonNull)
                 .map(TurSNJobAttributeSpec.class::cast)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static void addItemInExistingAttribute(String attributeValue,
@@ -341,15 +340,13 @@ public class TurAemIndexerTool {
         String contentType = Objects.requireNonNull(getContentType());
         if (contentType.equals(CQ_PAGE)) {
             addTurSNJobItemToIndex(aemObject, turCmsModel, targetAttrDefinitions);
-        } else if (contentType.equals(DAM_ASSET)) {
-            if (!StringUtils.isEmpty(turCmsModel.getSubType())) {
-                if (turCmsModel.getSubType().equals(CONTENT_FRAGMENT) && aemObject.isContentFragment()) {
-                    aemObject.setDataPath(DATA_MASTER);
-                    addTurSNJobItemToIndex(aemObject, turCmsModel, targetAttrDefinitions);
-                } else if (turCmsModel.getSubType().equals(STATIC_FILE)) {
-                    aemObject.setDataPath(METADATA);
-                    addTurSNJobItemToIndex(aemObject, turCmsModel, targetAttrDefinitions);
-                }
+        } else if (contentType.equals(DAM_ASSET) && !StringUtils.isEmpty(turCmsModel.getSubType())) {
+            if (turCmsModel.getSubType().equals(CONTENT_FRAGMENT) && aemObject.isContentFragment()) {
+                aemObject.setDataPath(DATA_MASTER);
+                addTurSNJobItemToIndex(aemObject, turCmsModel, targetAttrDefinitions);
+            } else if (turCmsModel.getSubType().equals(STATIC_FILE)) {
+                aemObject.setDataPath(METADATA);
+                addTurSNJobItemToIndex(aemObject, turCmsModel, targetAttrDefinitions);
             }
         }
     }
@@ -511,11 +508,11 @@ public class TurAemIndexerTool {
 
     @NotNull
     private static Date getDeltaDate(AemObject aemObject) {
-        return aemObject.getLastModified() != null ?
-                aemObject.getLastModified().getTime() :
-                aemObject.getCreatedDate() != null ?
-                        aemObject.getCreatedDate().getTime() :
-                        new Date();
+        if (aemObject.getLastModified() != null)
+            return aemObject.getLastModified().getTime();
+        if (aemObject.getCreatedDate() != null)
+            return aemObject.getCreatedDate().getTime();
+        return new Date();
     }
 
     private void addJobItemToItems(TurSNJobItem turSNJobItem) {

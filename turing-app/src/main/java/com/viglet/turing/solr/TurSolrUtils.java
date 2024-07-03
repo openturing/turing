@@ -79,8 +79,11 @@ public class TurSolrUtils {
                             solrUrl, name)))
                     .GET().build();
             client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             log.error(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -97,8 +100,11 @@ public class TurSolrUtils {
                     return new Gson().fromJson(jsonObject.getJSONObject("field").toString(), TurSolrFieldBean.class);
                 }
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             log.error(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+            Thread.currentThread().interrupt();
         }
         return TurSolrFieldBean.builder().build();
     }
@@ -110,8 +116,12 @@ public class TurSolrUtils {
                             getSolrUrl(turSEInstance), coreName, fieldName)))
                     .build();
             return client.send(request, HttpResponse.BodyHandlers.ofString()).statusCode() == 200;
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             log.error(e.getMessage(), e);
+            return false;
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+            Thread.currentThread().interrupt();
             return false;
         }
     }
@@ -128,7 +138,7 @@ public class TurSolrUtils {
                         		"multiValued": %s
                         		}
                         	}
-                        	""", turSolrFieldAction.getSolrAction(), fieldName,
+                        """, turSolrFieldAction.getSolrAction(), fieldName,
                 getSolrFieldType(turSEFieldType), stored, multiValued);
         try (HttpClient client = getHttpClient()) {
             client.send(getHttpRequestSchemaApi(turSEInstance, coreName, json), HttpResponse.BodyHandlers.ofString());
@@ -224,8 +234,11 @@ public class TurSolrUtils {
                     .POST(BodyPublishers.ofString(json))
                     .build();
             client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             log.error(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -250,8 +263,11 @@ public class TurSolrUtils {
                     .POST(BodyPublishers.ofString(json))
                     .build();
             client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -298,8 +314,11 @@ public class TurSolrUtils {
                 DocumentContext jsonContext = JsonPath.parse(httpResponse.body(), configuration);
                 return jsonContext.read("$.status." + core + ".name") != null;
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             log.error(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+            Thread.currentThread().interrupt();
         }
         return false;
     }

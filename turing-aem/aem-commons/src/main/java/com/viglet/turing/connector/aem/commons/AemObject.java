@@ -42,7 +42,7 @@ public class AemObject {
     public static final String DATA_FOLDER = "data";
     public static final String DATE_JSON_FORMAT = "E MMM dd yyyy HH:mm:ss 'GMT'Z";
     public static final String EMPTY_VALUE = "";
-    public static final SimpleDateFormat aemJsonDateFormat = new SimpleDateFormat(DATE_JSON_FORMAT, Locale.ENGLISH);
+    public final SimpleDateFormat aemJsonDateFormat = new SimpleDateFormat(DATE_JSON_FORMAT, Locale.ENGLISH);
 
     public AemObject(String nodePath, JSONObject jcrNode) {
         this.jcrNode = jcrNode;

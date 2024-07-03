@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 public class TurAemScheduledTasks {
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
     private final TurAemIndexerTool turAemIndexerTool;
     private final TurAemSourceRepository turAemSourceRepository;
     @Inject

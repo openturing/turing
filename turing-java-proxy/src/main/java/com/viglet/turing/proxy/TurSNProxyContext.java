@@ -127,7 +127,7 @@ public class TurSNProxyContext {
 		return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 	}
 
-	private ResponseEntity<Object> responseTuring(URIBuilder turingURL) throws URISyntaxException {
+	private ResponseEntity<Object> responseTuring(URIBuilder turingURL) {
 		final HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 		return new ResponseEntity<>(this.getResults(turingURL), httpHeaders, HttpStatus.OK);
@@ -135,9 +135,9 @@ public class TurSNProxyContext {
 
 	private String getResults(URIBuilder url) {
 		try (CloseableHttpClient client = HttpClients.createDefault()) {
-			return EntityUtils.toString(client.execute(new HttpGet(url.build().toString())).getEntity(),
-					StandardCharsets.UTF_8);
-		} catch (IOException | ParseException | URISyntaxException e) {
+			return client.execute(new HttpGet(url.build().toString()), response ->
+					EntityUtils.toString(response.getEntity(),StandardCharsets.UTF_8));
+		} catch (IOException | URISyntaxException e) {
 			logger.error(e.getMessage(), e);
 		}
 		return StringUtils.EMPTY;

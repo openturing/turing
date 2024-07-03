@@ -316,21 +316,19 @@ public class TurAEMIndexerTool {
     private void prepareIndexObject(TurCmsModel turCmsModel, AemObject aemObject,
                                     List<TurSNAttributeSpec> targetAttrDefinitions,
                                     TurAemSourceContext turAemSourceContext) {
-        switch (Objects.requireNonNull(contentType)) {
-            case CQ_PAGE:
-                indexObject(aemObject, turCmsModel, targetAttrDefinitions, turAemSourceContext);
-                break;
-            case DAM_ASSET:
-                if (!StringUtils.isEmpty(turCmsModel.getSubType())) {
-                    if (turCmsModel.getSubType().equals(CONTENT_FRAGMENT) && aemObject.isContentFragment()) {
-                        aemObject.setDataPath(DATA_MASTER);
-                        indexObject(aemObject, turCmsModel, targetAttrDefinitions, turAemSourceContext);
-                    } else if (turCmsModel.getSubType().equals(STATIC_FILE)) {
-                        aemObject.setDataPath(METADATA);
-                        indexObject(aemObject, turCmsModel, targetAttrDefinitions, turAemSourceContext);
-                    }
+        String type = Objects.requireNonNull(contentType);
+        if (type.equals(CQ_PAGE)) {
+            indexObject(aemObject, turCmsModel, targetAttrDefinitions, turAemSourceContext);
+        } else if (type.equals(DAM_ASSET)) {
+            if (!StringUtils.isEmpty(turCmsModel.getSubType())) {
+                if (turCmsModel.getSubType().equals(CONTENT_FRAGMENT) && aemObject.isContentFragment()) {
+                    aemObject.setDataPath(DATA_MASTER);
+                    indexObject(aemObject, turCmsModel, targetAttrDefinitions, turAemSourceContext);
+                } else if (turCmsModel.getSubType().equals(STATIC_FILE)) {
+                    aemObject.setDataPath(METADATA);
+                    indexObject(aemObject, turCmsModel, targetAttrDefinitions, turAemSourceContext);
                 }
-                break;
+            }
         }
     }
 
@@ -460,11 +458,11 @@ public class TurAEMIndexerTool {
 
     @NotNull
     private static Date getDeltaDate(AemObject aemObject) {
-        return aemObject.getLastModified() != null ?
-                aemObject.getLastModified().getTime() :
-                aemObject.getCreatedDate() != null ?
-                        aemObject.getCreatedDate().getTime() :
-                        new Date();
+        if (aemObject.getLastModified() != null)
+            return aemObject.getLastModified().getTime();
+        if (aemObject.getCreatedDate() != null)
+            return aemObject.getCreatedDate().getTime();
+        return new Date();
     }
 
     private void sendToTuringToBeIndexed(AemObject aemObject, TurCmsModel turCmsModel,

@@ -289,6 +289,7 @@ public class TurWCProcess {
             try {
                 return URI.create(pageUrlNormalized).normalize().toString();
             } catch (IllegalArgumentException ignored) {
+               // No error
             }
         }
         return pageUrlNormalized;

@@ -97,11 +97,7 @@ public class TurSNImportAPI {
             TurSNJobItems turSNJobItems = new ObjectMapper().readValue(fileInputStream, TurSNJobItems.class);
             turSNJobItems.forEach(turSNJobItem -> turSNJobItem.getAttributes().entrySet()
                     .forEach(attribute -> extractTextOfFileAttribute(extractFolder, attribute)));
-            try {
-                FileUtils.deleteDirectory(extractFolder);
-            } catch (IOException e) {
-                log.error(e.getMessage(), e);
-            }
+            FileUtils.deleteDirectory(extractFolder);
             return turSNImportBroker(turSNJobItems);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
