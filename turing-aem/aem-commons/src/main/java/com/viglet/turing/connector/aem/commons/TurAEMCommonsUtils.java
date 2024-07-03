@@ -49,7 +49,7 @@ public class TurAEMCommonsUtils {
     }
 
     public static JSONObject getInfinityJson(String originalUrl, String hostAndPort, String username, String password) {
-        String infinityJsonUrl = String.format(originalUrl.endsWith(TurAEMCommonAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
+        String infinityJsonUrl = String.format(originalUrl.endsWith(TurAEMAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
                 hostAndPort, originalUrl);
         if (responseHttpCache.containsKey(infinityJsonUrl)) {
             log.info("Cached Response {}", infinityJsonUrl);
@@ -57,7 +57,7 @@ public class TurAEMCommonsUtils {
         } else {
             log.info("Request {}", infinityJsonUrl);
             return TurAEMCommonsUtils.getResponseBody(infinityJsonUrl, username, password).map(responseBody -> {
-                if (TurAEMCommonsUtils.isResponseBodyJSONArray(responseBody) && !originalUrl.endsWith(TurAEMCommonAttrProcess.JSON)) {
+                if (TurAEMCommonsUtils.isResponseBodyJSONArray(responseBody) && !originalUrl.endsWith(TurAEMAttrProcess.JSON)) {
                     JSONArray jsonArray = new JSONArray(responseBody);
                     return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
                 } else if (TurAEMCommonsUtils.isResponseBodyJSONObject(responseBody)) {
@@ -114,15 +114,15 @@ public class TurAEMCommonsUtils {
     }
 
     public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuilder components) {
-        if (jsonObject.has(TurAEMCommonAttrProcess.JCR_TITLE) && jsonObject.get(TurAEMCommonAttrProcess.JCR_TITLE)
+        if (jsonObject.has(TurAEMAttrProcess.JCR_TITLE) && jsonObject.get(TurAEMAttrProcess.JCR_TITLE)
                 instanceof String title) {
             components.append(title);
-        } else if (jsonObject.has(TurAEMCommonAttrProcess.TEXT) && jsonObject.get(TurAEMCommonAttrProcess.TEXT)
+        } else if (jsonObject.has(TurAEMAttrProcess.TEXT) && jsonObject.get(TurAEMAttrProcess.TEXT)
                 instanceof String text) {
             components.append(text);
         }
         jsonObject.toMap().forEach((key, value) -> {
-            if (!key.startsWith(TurAEMCommonAttrProcess.JCR) && !key.startsWith(TurAEMCommonAttrProcess.SLING)
+            if (!key.startsWith(TurAEMAttrProcess.JCR) && !key.startsWith(TurAEMAttrProcess.SLING)
                     && (jsonObject.get(key) instanceof JSONObject jsonObjectNode)) {
                 getJsonNodeToComponent(jsonObjectNode, components);
             }

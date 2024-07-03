@@ -30,7 +30,7 @@ public class AemObject {
     private final String path;
     private final String url;
     private String model;
-    private final JSONObject node;
+    private final JSONObject jcrNode;
     private JSONObject jcrContentNode = new JSONObject();
     private String title;
     private final Map<String, Object> attributes = new HashMap<>();
@@ -45,7 +45,7 @@ public class AemObject {
     public static final SimpleDateFormat aemJsonDateFormat = new SimpleDateFormat(DATE_JSON_FORMAT, Locale.ENGLISH);
 
     public AemObject(String nodePath, JSONObject jcrNode) {
-        this.node = jcrNode;
+        this.jcrNode = jcrNode;
         this.path = nodePath;
         this.url = nodePath + HTML;
         this.type = jcrNode.has(JCR_PRIMARYTYPE) ? jcrNode.getString(JCR_PRIMARYTYPE) : EMPTY_VALUE;
@@ -145,7 +145,7 @@ public class AemObject {
                 ", path='" + path + '\'' +
                 ", url='" + url + '\'' +
                 ", model='" + model + '\'' +
-                ", node=" + node +
+                ", jcrNode=" + jcrNode +
                 ", jcrContentNode=" + jcrContentNode +
                 ", title='" + title + '\'' +
                 ", attributes=" + attributes +

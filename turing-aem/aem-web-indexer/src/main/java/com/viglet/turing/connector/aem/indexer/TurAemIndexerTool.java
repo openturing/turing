@@ -8,6 +8,7 @@ import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.*;
 import com.viglet.turing.connector.aem.commons.AemObject;
+import com.viglet.turing.connector.aem.commons.TurAEMAttrProcess;
 import com.viglet.turing.connector.aem.commons.TurAEMCommonsUtils;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
