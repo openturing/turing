@@ -32,7 +32,7 @@ public class TurAEMAttrProcess {
                     TurCmsTargetAttrValueList turCmsTargetAttrValues = new TurCmsTargetAttrValueList();
                     turCmsModel.getTargetAttrs().stream().filter(Objects::nonNull)
                             .forEach(targetAttr -> {
-                                log.debug(String.format("TargetAttr: %s", targetAttr));
+                                log.debug("TargetAttr: {}", targetAttr);
                                 context.setTurCmsTargetAttr(targetAttr);
                                 if (TurAEMCommonAttrProcess.hasClassNoSource(targetAttr)) {
                                     turCmsTargetAttrValues.addAll(process(context, turSNAttributeSpecList, turAemSourceContext, aemObject));
@@ -79,8 +79,8 @@ public class TurAEMAttrProcess {
                                               List<TurSNAttributeSpec> turSNAttributeSpecList,
                                               TurAemSourceContext turAemSourceContext,
                                               AemObject aemObject) {
-        log.debug(String.format("Target Attribute Name: %s and Source Attribute Name: %s",
-                context.getTurCmsTargetAttr().getName(), context.getTurCmsSourceAttr().getName()));
+        log.debug("Target Attribute Name: {} and Source Attribute Name: {}",
+                context.getTurCmsTargetAttr().getName(), context.getTurCmsSourceAttr().getName());
         if (TurAEMCommonAttrProcess.hasTextValue(context.getTurCmsTargetAttr())) {
             return TurCmsTargetAttrValueList.singleItem(context.getTurCmsTargetAttr());
         } else {

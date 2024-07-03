@@ -24,7 +24,7 @@ public class TurAEMAttrProcess {
     private static String addTagToAttrValueList(TurCmsContext context, TurAemSourceContext turAemSourceContext,
                                                 String facet, String value) {
         JSONObject infinityJson = TurAEMCommonsUtils
-                .getInfinityJson("/content/_cq_tags/" + facet + "/" + value,
+                .getInfinityJson("/content/_cq_tags/%s/%s".formatted(facet, value),
                         turAemSourceContext);
         Locale locale = TurAEMCommonsUtils.getLocaleFromContext(turAemSourceContext, context);
         String titleLocale = locale.toString().toLowerCase();
@@ -40,7 +40,7 @@ public class TurAEMAttrProcess {
     private static TurSNAttributeSpec setTagFacet(TurAemSourceContext turAemSourceContext,
                                                   String facetId) {
         JSONObject tagFacet = TurAEMCommonsUtils
-                .getInfinityJson("/content/_cq_tags/" + facetId,
+                .getInfinityJson("/content/_cq_tags/%s".formatted(facetId),
                         turAemSourceContext);
         return TurAEMCommonAttrProcess.getTurSNAttributeSpec(facetId, TurAEMCommonAttrProcess.getTagLabels(tagFacet));
     }
@@ -98,8 +98,8 @@ public class TurAEMAttrProcess {
 
     private TurCmsTargetAttrValueList process(TurCmsContext context,
                                               List<TurSNAttributeSpec> turSNAttributeSpecList, TurAemSourceContext turAemSourceContext) {
-        log.debug(String.format("Target Attribute Name: %s and Source Attribute Name: %s",
-                context.getTurCmsTargetAttr().getName(), context.getTurCmsSourceAttr().getName()));
+        log.debug("Target Attribute Name: {} and Source Attribute Name: {}",
+                context.getTurCmsTargetAttr().getName(), context.getTurCmsSourceAttr().getName());
         if (TurAEMCommonAttrProcess.hasTextValue(context.getTurCmsTargetAttr())) {
             return TurCmsTargetAttrValueList.singleItem(context.getTurCmsTargetAttr());
         } else {

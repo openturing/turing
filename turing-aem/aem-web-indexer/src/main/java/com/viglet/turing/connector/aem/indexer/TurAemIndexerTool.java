@@ -208,8 +208,8 @@ public class TurAemIndexerTool {
         if (usingContentTypeParameter()) {
             turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(getContentType())
                     .ifPresentOrElse(cmsModel -> jsonByContentType(),
-                            () -> log.error(String.format("%s type is not configured in CTD Mapping XML file.",
-                                    getContentType())));
+                            () -> log.error("{} type is not configured in CTD Mapping XML file.",
+                                    getContentType()));
         }
     }
 
@@ -323,7 +323,7 @@ public class TurAemIndexerTool {
         if (jsonSite.has(JCR_CONTENT) && jsonSite.getJSONObject(JCR_CONTENT).has(JCR_TITLE)) {
             siteName = jsonSite.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
         } else {
-            log.error(String.format("No site name the %s root path (%s)", rootPath, getGroup()));
+            log.error("No site name the {} root path ({})", rootPath, getGroup());
         }
     }
 
@@ -384,8 +384,8 @@ public class TurAemIndexerTool {
     private void deIndexObject() {
         turAemIndexingRepository.findContentsShouldBeDeIndexed(getGroup(), deltaId).ifPresent(contents -> {
                     contents.forEach(content -> {
-                        log.info(String.format("deIndex %s object from %s group and %s delta",
-                                content.getAemId(), getGroup(), deltaId));
+                        log.info("deIndex {} object from {} group and {} delta",
+                                content.getAemId(), getGroup(), deltaId);
                         Map<String, Object> attributes = new HashMap<>();
                         attributes.put("id", content.getAemId());
                         attributes.put("source_apps",
@@ -411,9 +411,9 @@ public class TurAemIndexerTool {
                 if (objectNeedBeReIndexed(aemObject)) {
                     turAemIndexingRepository.findByAemIdAndIndexGroup(aemObject.getPath(), getGroup())
                             .ifPresent(turAemIndexingsList ->
-                                    log.info(String.format("ReIndexed %s object (%s) from %tc to %tc and deltaId = %s",
+                                    log.info("ReIndexed {} object ({}) from {} to {} and deltaId = {}",
                                             aemObject.getPath(), getGroup(), turAemIndexingsList.getFirst().getDate(),
-                                            getDeltaDate(aemObject), deltaId)));
+                                            getDeltaDate(aemObject), deltaId));
                     sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale);
                 }
                 updateIndexingStatus(aemObject, locale);
@@ -457,24 +457,24 @@ public class TurAemIndexerTool {
                 .ifPresent(turAemIndexingList -> {
                     if (turAemIndexingList.size() > 1) {
                         turAemIndexingRepository.deleteByAemIdAndIndexGroup(aemObject.getPath(), getGroup());
-                        log.info(String.format("Removed duplicated %s object (%s)",
-                                aemObject.getPath(), getGroup()));
+                        log.info("Removed duplicated {} object ({})",
+                                aemObject.getPath(), getGroup());
                         turAemIndexingRepository.save(createTurAemIndexing(aemObject, locale));
-                        log.info(String.format("Recreated %s object (%s) and deltaId = %s",
-                                aemObject.getPath(), getGroup(), deltaId));
+                        log.info("Recreated {} object ({}) and deltaId = {}",
+                                aemObject.getPath(), getGroup(), deltaId);
                     } else {
                         turAemIndexingRepository.save(turAemIndexingList.getFirst()
                                 .setDate(getDeltaDate(aemObject))
                                 .setDeltaId(deltaId));
-                        log.info(String.format("Updated %s object (%s) deltaId = %s",
-                                aemObject.getPath(), getGroup(), deltaId));
+                        log.info("Updated {} object ({}) deltaId = {}",
+                                aemObject.getPath(), getGroup(), deltaId);
                     }
                 });
     }
 
     private void createIndexingStatus(AemObject aemObject, Locale locale) {
         turAemIndexingRepository.save(createTurAemIndexing(aemObject, locale));
-        log.info(String.format("Created %s object (%s)", aemObject.getPath(), getGroup()));
+        log.info("Created {} object ({})", aemObject.getPath(), getGroup());
     }
 
     private TurAemIndexing createTurAemIndexing(AemObject aemObject, Locale locale) {

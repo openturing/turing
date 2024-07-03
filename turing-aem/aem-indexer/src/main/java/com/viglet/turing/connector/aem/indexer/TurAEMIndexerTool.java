@@ -193,7 +193,7 @@ public class TurAEMIndexerTool {
             turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(contentType)
                     .ifPresentOrElse(turCmsModel -> jsonByContentType(turAemSourceContext),
                             () -> jCommander.getConsole()
-                                    .println(String.format("%s type is not configured in CTD Mapping XML file.",
+                                    .println("%s type is not configured in CTD Mapping XML file.".formatted(
                                             contentType)));
         } else if (usingGuidParameter()) {
             jsonByGuidList(turAemSourceContext);
@@ -221,7 +221,7 @@ public class TurAEMIndexerTool {
     }
 
     private void indexGUIDList(List<String> guids, TurAemSourceContext turAemSourceContext) {
-        jCommander.getConsole().println(String.format("Processing a total of %d GUID Strings", guids.size()));
+        jCommander.getConsole().println("Processing a total of %d GUID Strings".formatted(guids.size()));
         guids.stream().filter(guid -> !StringUtils.isEmpty(guid)).forEach(guid -> {
             start = System.currentTimeMillis();
             rootPaths.forEach(rootPath ->
@@ -231,7 +231,7 @@ public class TurAEMIndexerTool {
             contentType = jsonObject.getString(JCR_PRIMARY_TYPE);
             getNodeFromJson(guid, jsonObject, turAemSourceContext);
             long elapsed = System.currentTimeMillis() - start;
-            jCommander.getConsole().println(String.format("%d items processed in %dms", processed, elapsed));
+            jCommander.getConsole().println("%d items processed in %dms".formatted(processed, elapsed));
         });
     }
 
@@ -241,7 +241,7 @@ public class TurAEMIndexerTool {
             start = System.currentTimeMillis();
             setSiteName(rootPath, jsonSite);
             getNodeFromJson(rootPath, jsonSite, turAemSourceContext);
-            jCommander.getConsole().println(String.format("%d items processed in %dms", processed,
+            jCommander.getConsole().println("%d items processed in %dms".formatted(processed,
                     System.currentTimeMillis() - start));
         });
     }
@@ -250,7 +250,7 @@ public class TurAEMIndexerTool {
         if (jsonSite.has(JCR_CONTENT) && jsonSite.getJSONObject(JCR_CONTENT).has(JCR_TITLE)) {
             siteName = jsonSite.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
         } else {
-            log.error(String.format("No site name the %s root path (%s)", rootPath, group));
+            log.error("No site name the {} root path ({})", rootPath, group);
         }
     }
 
@@ -335,11 +335,11 @@ public class TurAEMIndexerTool {
     private void itemsProcessedStatus() {
         if (processed == 0) {
             currentPage++;
-            jCommander.getConsole().println(String.format("Processing %s item",
+            jCommander.getConsole().println("Processing %s item".formatted(
                     ordinal((currentPage * pageSize) - pageSize + 1)));
         }
         if (processed >= pageSize) {
-            jCommander.getConsole().println(String.format("%d items processed in %dms", processed,
+            jCommander.getConsole().println("%d items processed in %dms".formatted(processed,
                     System.currentTimeMillis() - start));
             processed = 0;
             start = System.currentTimeMillis();
@@ -366,8 +366,8 @@ public class TurAEMIndexerTool {
         turAemIndexingDAO.findContentsShouldBeDeIndexed(group, deltaId).ifPresent(contents -> {
                     jCommander.getConsole().println("DeIndex Content that were removed...");
                     contents.forEach(content -> {
-                        log.info(String.format("deIndex %s object from %s group and %s delta",
-                                content.getAemId(), group, deltaId));
+                        log.info("deIndex {} object from {} group and {} delta",
+                                content.getAemId(), group, deltaId);
                         Map<String, Object> attributes = new HashMap<>();
                         attributes.put(AemHandlerConfiguration.ID_ATTRIBUTE, content.getAemId());
                         attributes.put(AemHandlerConfiguration.PROVIDER_ATTRIBUTE,
@@ -405,24 +405,24 @@ public class TurAEMIndexerTool {
                 } else {
                     if (objectNeedBeReIndexed(aemObject)) {
                         turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), group).ifPresent(turAemIndexingsList ->
-                                log.info(String.format("ReIndexed %s object (%s) from %tc to %tc and deltaId = %s",
+                                log.info("ReIndexed {} object ({}) from {} to {} and deltaId = {}",
                                         aemObject.getPath(), group, turAemIndexingsList.getFirst().getDate(),
-                                        getDeltaDate(aemObject), deltaId)));
+                                        getDeltaDate(aemObject), deltaId));
                         sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale,
                                 turAemSourceContext);
                     }
                     updateIndexingStatus(aemObject, locale);
                 }
             } else {
-                log.info(String.format("Unpublished %s object (%s) deltaId = %s",
-                        aemObject.getPath(), group, deltaId));
+                log.info("Unpublished {} object ({}) deltaId = {}",
+                        aemObject.getPath(), group, deltaId);
             }
         }
     }
 
     private void createIndexingStatus(AemObject aemObject, Locale locale) {
         turAemIndexingDAO.save(createTurAemIndexing(aemObject, locale));
-        log.info(String.format("Created %s object (%s) and deltaId = %s", aemObject.getPath(), group, deltaId));
+        log.info("Created {} object ({}) and deltaId = {}", aemObject.getPath(), group, deltaId);
     }
 
     private void updateIndexingStatus(AemObject aemObject, Locale locale) {
@@ -431,17 +431,17 @@ public class TurAEMIndexerTool {
                 .ifPresent(turAemIndexingList -> {
                     if (turAemIndexingList.size() > 1) {
                         turAemIndexingDAO.deleteByAemIdAndGroup(aemObject.getPath(), group);
-                        log.info(String.format("Removed duplicated %s object (%s)",
-                                aemObject.getPath(), group));
+                        log.info("Removed duplicated {} object ({})",
+                                aemObject.getPath(), group);
                         turAemIndexingDAO.save(createTurAemIndexing(aemObject, locale));
-                        log.info(String.format("Recreated %s object (%s) and deltaId = %s",
-                                aemObject.getPath(), group, deltaId));
+                        log.info("Recreated {} object ({}) and deltaId = {}",
+                                aemObject.getPath(), group, deltaId);
                     } else {
                         turAemIndexingDAO.update(turAemIndexingList.getFirst()
                                 .setDate(getDeltaDate(aemObject))
                                 .setDeltaId(deltaId));
-                        log.info(String.format("Updated %s object (%s) deltaId = %s",
-                                aemObject.getPath(), group, deltaId));
+                        log.info("Updated {} object ({}) deltaId = {}",
+                                aemObject.getPath(), group, deltaId);
                     }
                 });
     }
@@ -521,8 +521,8 @@ public class TurAEMIndexerTool {
         showOutput(turSNJobItems);
         if (!dryRun) {
             turSNJobItems.getTuringDocuments().stream().findFirst().ifPresent(document ->
-                    log.info(String.format("Send %s object job (%s) to Turing",
-                            document.getAttributes().get(ID), group)));
+                    log.info("Send {} object job ({}) to Turing",
+                            document.getAttributes().get(ID), group));
             TurSNJobUtils.importItems(turSNJobItems,
                     new TurSNServer(config.getTuringURL(), config.getDefaultSNSiteConfig().getName(),
                             new TurApiKeyCredentials(config.getApiKey())),

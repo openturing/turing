@@ -193,16 +193,6 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
                         snLocale));
     }
 
-    public Locale getLocaleByPath(String snSite, String path) {
-        // dps.site.Intra.sn.locale.en_US.path=/content/sample/en
-        for (Enumeration<?> e = getProperties().propertyNames(); e.hasMoreElements(); ) {
-            String name = (String) e.nextElement();
-            if (hasPath(snSite, path, name)) {
-                return LocaleUtils.toLocale(name.split("\\.")[2]);
-            }
-        }
-        return snLocale;
-    }
     public Collection<TurAemLocalePathContext> getLocales() {
         Collection<TurAemLocalePathContext> turAemLocalePathContexts = new HashSet<>();
         for (Enumeration<?> e = getProperties().propertyNames(); e.hasMoreElements(); ) {
