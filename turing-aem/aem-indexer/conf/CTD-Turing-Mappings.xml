@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mappingDefinitions>
     <common-index-attrs>
-        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurCTDName" mandatory="true">
+        <srcAttr className="com.viglet.turing.connector.aem.commons.ext.TurCTDName" mandatory="true">
             <tag>type</tag>
         </srcAttr>
-        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurAEMCreationDate" mandatory="true">
+        <srcAttr className="com.viglet.turing.connector.aem.commons.ext.TurAEMCreationDate" mandatory="true">
             <tag>publication_date</tag>
         </srcAttr>
-        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurAEMModificationDate" mandatory="true">
+        <srcAttr className="com.viglet.turing.connector.aem.commons.ext.TurAEMModificationDate" mandatory="true">
             <tag>modification_date</tag>
         </srcAttr>
-        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurSiteName" mandatory="true">
+        <srcAttr className="com.viglet.turing.connector.aem.commons.ext.TurSiteName" mandatory="true">
             <tag>site</tag>
         </srcAttr>
-        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurHTML2Text">
+        <srcAttr className="com.viglet.turing.connector.aem.commons.ext.TurHTML2Text">
             <tag>text</tag>
         </srcAttr>
-        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurHTML2Text">
+        <srcAttr className="com.viglet.turing.connector.aem.commons.ext.TurHTML2Text">
             <tag>description</tag>
         </srcAttr>
-        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurContentUrl" mandatory="true">
+        <srcAttr className="com.viglet.turing.connector.aem.commons.ext.TurContentUrl" mandatory="true">
             <tag>url</tag>
         </srcAttr>
-        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurContentId" mandatory="true">
+        <srcAttr className="com.viglet.turing.connector.aem.commons.ext.TurContentId" mandatory="true">
             <tag>id</tag>
         </srcAttr>
-        <srcAttr className="com.viglet.turing.connector.aem.indexer.ext.TurSourceApps" mandatory="true">
+        <srcAttr className="com.viglet.turing.connector.aem.commons.ext.TurSourceApps" mandatory="true">
             <tag>source_apps</tag>
         </srcAttr>
     </common-index-attrs>
@@ -40,7 +40,7 @@
             <srcAttr xmlName="cq:tags">
                 <tag>tags</tag>
             </srcAttr>
-            <srcAttr xmlName="text" className="com.viglet.turing.connector.aem.indexer.ext.TurPageComponents">
+            <srcAttr xmlName="text" className="com.viglet.turing.connector.aem.commons.ext.TurPageComponents">
                 <tag>text</tag>
             </srcAttr>
         </index-attrs>
@@ -50,7 +50,7 @@
             <srcAttr xmlName="jcr:title">
                 <tag>title</tag>
             </srcAttr>
-            <srcAttr xmlName="content" className="com.viglet.turing.connector.aem.indexer.ext.TurHTML2Text">
+            <srcAttr xmlName="content" className="com.viglet.turing.connector.aem.commons.ext.TurHTML2Text">
                 <tag>abstract</tag>
             </srcAttr>
             <srcAttr xmlName="group">

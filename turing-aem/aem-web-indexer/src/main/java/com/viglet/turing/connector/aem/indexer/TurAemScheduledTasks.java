@@ -1,6 +1,7 @@
 package com.viglet.turing.connector.aem.indexer;
 
 import com.google.inject.Inject;
+import com.viglet.turing.connector.aem.commons.TurAEMCommonsUtils;
 import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemSourceRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -29,7 +30,7 @@ public class TurAemScheduledTasks {
         log.info("The time is now {}", dateFormat.format(new Date()));
         turAemSourceRepository.findAll().forEach(turAemSource -> {
             turAemIndexerTool.run(turAemSource);
-            TurAemUtils.cleanCache();
+            TurAEMCommonsUtils.cleanCache();
         });
 
 

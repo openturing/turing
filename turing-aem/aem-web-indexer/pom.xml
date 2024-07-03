@@ -8,7 +8,7 @@
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>turing-aem-web-indexer</artifactId>
+    <artifactId>aem-web-indexer</artifactId>
     <version>${revision}</version>
     <name>Turing AEM Web Indexer</name>
     <description>Turing AEM Web Indexer Connector</description>
@@ -70,6 +70,11 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>cms-mapping</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.viglet.turing</groupId>
+            <artifactId>aem-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -147,6 +152,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
+                    <skip>false</skip>
                     <executable>true</executable>
                 </configuration>
                 <executions>

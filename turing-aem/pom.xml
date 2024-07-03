@@ -13,6 +13,7 @@
     <name>Turing AEM Connector</name>
     <description>Turing AEM Connector</description>
     <modules>
+        <module>aem-commons</module>
         <module>aem-indexer</module>
         <module>aem-web-indexer</module>
     </modules>

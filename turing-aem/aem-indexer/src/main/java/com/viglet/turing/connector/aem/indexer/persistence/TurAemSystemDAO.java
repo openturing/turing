@@ -32,7 +32,7 @@ public class TurAemSystemDAO {
             );
             TypedQuery<TurAemSystem> typed = entityManager.createQuery(criteria);
             return Optional.ofNullable(typed.getSingleResult());
-        } catch (NoResultException _) {
+        } catch (NoResultException e) {
             return Optional.empty();
         }
     }

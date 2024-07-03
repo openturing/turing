@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.connector.aem.indexer.conf;
 
+import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +33,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Properties;
+import java.util.*;
 
 @Slf4j
 public class AemHandlerConfiguration implements IHandlerConfiguration {
@@ -195,20 +193,16 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
                         snLocale));
     }
 
-    public Locale getLocaleByPath(String snSite, String path) {
-        // dps.site.Intra.sn.locale.en_US.path=/content/sample/en
+    public Collection<TurAemLocalePathContext> getLocales() {
+        Collection<TurAemLocalePathContext> turAemLocalePathContexts = new HashSet<>();
         for (Enumeration<?> e = getProperties().propertyNames(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement();
-            if (hasPath(snSite, path, name)) {
-                return LocaleUtils.toLocale(name.split("\\.")[2]);
-            }
+            turAemLocalePathContexts.add(TurAemLocalePathContext.builder()
+                    .path(getProperties().getProperty(name))
+                    .locale(LocaleUtils.toLocale(name.split("\\.")[2]))
+                    .build());
         }
-        return snLocale;
-    }
-
-    private boolean hasPath(String snSite, String path, String name) {
-        return name.startsWith(String.format("sn.%s", snSite))
-                && name.endsWith(".path") && path.startsWith(getProperties().getProperty(name));
+        return turAemLocalePathContexts;
     }
 
     @Override

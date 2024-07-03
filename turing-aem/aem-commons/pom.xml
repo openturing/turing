@@ -9,10 +9,10 @@
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>aem-indexer</artifactId>
+    <artifactId>aem-commons</artifactId>
     <packaging>jar</packaging>
-    <name>Turing AEM Connector - Indexer</name>
-    <description>Turing AEM Connector - Indexer</description>
+    <name>Turing AEM Connector - Commons</name>
+    <description>Turing AEM Connector - Commons</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -64,11 +64,6 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>cms-mapping</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.viglet.turing</groupId>
-            <artifactId>aem-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
