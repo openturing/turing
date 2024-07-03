@@ -57,6 +57,7 @@ public class TurSNProxyContext {
 	private String turingEndpoint;
 
 	private static final String API_ENDPOINT_FORMAT = "%s/api/sn/%s/%s";
+	private static final String API_ENDPOINT_SEARCH = "search";
 	private static final String API_ENDPOINT_AUTO_COMPLETE = "ac";
 	private static final String PARAM_Q = "q";
 	private static final String PARAM_P = "p";
