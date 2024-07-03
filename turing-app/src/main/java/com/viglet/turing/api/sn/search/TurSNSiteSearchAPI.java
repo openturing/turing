@@ -39,6 +39,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -142,8 +143,12 @@ public class TurSNSiteSearchAPI {
             } catch (URISyntaxException e) {
                 log.error(e.getMessage(), e);
             }
-            return new ArrayList<TurSNSiteLocaleBean>();
+            return getTurSNSiteLocaleBeans();
         }).orElse(Collections.emptyList());
+    }
+
+    private static @NotNull List<TurSNSiteLocaleBean> getTurSNSiteLocaleBeans() {
+        return new ArrayList<>();
     }
 
     @PostMapping("latest")

@@ -1,6 +1,5 @@
 package com.viglet.turing.commons.se;
 
-import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import lombok.Getter;
 import lombok.Setter;
 

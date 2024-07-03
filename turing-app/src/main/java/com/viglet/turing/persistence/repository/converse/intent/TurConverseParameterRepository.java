@@ -23,13 +23,10 @@ package com.viglet.turing.persistence.repository.converse.intent;
 
 import com.viglet.turing.persistence.model.converse.intent.TurConverseIntent;
 import com.viglet.turing.persistence.model.converse.intent.TurConverseParameter;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 public interface TurConverseParameterRepository extends JpaRepository<TurConverseParameter, String> {

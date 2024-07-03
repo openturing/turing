@@ -24,8 +24,6 @@ package com.viglet.turing.persistence.repository.ml;
 import com.viglet.turing.persistence.model.ml.TurMLModel;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
 public interface TurMLModelRepository extends JpaRepository<TurMLModel, Integer> {
 }

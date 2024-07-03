@@ -68,10 +68,10 @@ public final class HtmlManipulator {
 	private static final int RAW_HTML_ENTITY_TABLE_HASHCODE = -301953893;
 
 	/** mapping: HTML entity ---> Unicode character */
-	private static final Map<String, Character> HTML_ENTITY_TO_UNICODE_MAP = new HashMap<String, Character>();
+	private static final Map<String, Character> HTML_ENTITY_TO_UNICODE_MAP = new HashMap<>();
 
 	/** mapping: Unicode character ---> HTML entity */
-	private static final Map<Character, String> UNICODE_TO_HTML_ENTITY_MAP = new HashMap<Character, String>();
+	private static final Map<Character, String> UNICODE_TO_HTML_ENTITY_MAP = new HashMap<>();
 
 	/**
 	 * Static initialization block. Populates HTML_ENTITY_TO_UNICODE_MAP and

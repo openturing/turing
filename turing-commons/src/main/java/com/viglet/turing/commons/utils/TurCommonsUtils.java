@@ -63,7 +63,7 @@ public class TurCommonsUtils {
     }
     public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue) {
 
-        List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
+        List<NameValuePair> params =   URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
 
         StringBuilder sbQueryString = new StringBuilder();
         boolean alreadyExists = false;
@@ -163,6 +163,7 @@ public class TurCommonsUtils {
 
             try (BufferedInputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
                 IOUtils.copy(input, archive);
+
                 archive.closeArchiveEntry();
             }
         } catch (IOException e) {

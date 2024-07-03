@@ -6,7 +6,6 @@ import com.viglet.turing.persistence.model.auth.TurRole;
 import com.viglet.turing.persistence.repository.auth.TurPrivilegeRepository;
 import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;

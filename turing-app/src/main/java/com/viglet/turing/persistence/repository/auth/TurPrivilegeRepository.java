@@ -21,19 +21,12 @@
 
 package com.viglet.turing.persistence.repository.auth;
 
-import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurPrivilege;
-import com.viglet.turing.persistence.model.auth.TurRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.Collection;
-import java.util.Set;
 
 
 @Repository
 public interface TurPrivilegeRepository extends JpaRepository<TurPrivilege, String> {
-
-
 	TurPrivilege findByName(String name);
 }

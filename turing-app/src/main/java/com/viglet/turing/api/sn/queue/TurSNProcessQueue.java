@@ -24,6 +24,7 @@ package com.viglet.turing.api.sn.queue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -99,20 +100,17 @@ public class TurSNProcessQueue {
             throw new RuntimeException(e);
         }
         Optional.ofNullable(turSNJobItems)
-                .ifPresentOrElse(jobItems -> {
-                    jobItems.forEach(turSNJobItem -> {
-                        turSNJobItem.getSiteNames().forEach(siteName -> {
-                                turSNSiteRepository.findByName(siteName)
-                                        .ifPresent(turSNSite -> {
-                                            if (processJob(turSNSite, turSNJobItem)) {
-                                                processQueueInfo(turSNSite, turSNJobItem);
-                                            } else {
-                                                noProcessedWarning(turSNSite, turSNJobItem);
-                                            }
-                                        });
-                        });
-                    });
-                } , () -> log.debug("turSNJob empty or siteId empty"));
+                .ifPresentOrElse(jobItems ->
+                        jobItems.forEach(turSNJobItem ->
+                                turSNJobItem.getSiteNames().forEach(siteName ->
+                                        turSNSiteRepository.findByName(siteName)
+                                                .ifPresent(turSNSite -> {
+                                                    if (processJob(turSNSite, turSNJobItem)) {
+                                                        processQueueInfo(turSNSite, turSNJobItem);
+                                                    } else {
+                                                        noProcessedWarning(turSNSite, turSNJobItem);
+                                                    }
+                                                }))), () -> log.debug("turSNJob empty or siteId empty"));
     }
 
     private void noProcessedWarning(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
@@ -144,9 +142,10 @@ public class TurSNProcessQueue {
 
     private void processQueueInfo(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
         if (ObjectUtils.allNotNull(turSNSite, turSNJobItem) && turSNJobItem.getAttributes() != null) {
-            switch (turSNJobItem.getTurSNJobAction()) {
-                case CREATE -> logCrudObject(turSNSite, turSNJobItem, CREATED);
-                case DELETE -> logCrudObject(turSNSite, turSNJobItem, DELETED);
+            if (Objects.requireNonNull(turSNJobItem.getTurSNJobAction()) == TurSNJobAction.CREATE) {
+                logCrudObject(turSNSite, turSNJobItem, CREATED);
+            } else if (turSNJobItem.getTurSNJobAction() == TurSNJobAction.DELETE) {
+                logCrudObject(turSNSite, turSNJobItem, DELETED);
             }
         }
     }

@@ -20,7 +20,6 @@
  */
 package com.viglet.turing.api.nlp.bean;
 
-import com.viglet.turing.api.nlp.bean.TurNLPEntityValidateResponse;
 import lombok.Getter;
 import lombok.Setter;
 

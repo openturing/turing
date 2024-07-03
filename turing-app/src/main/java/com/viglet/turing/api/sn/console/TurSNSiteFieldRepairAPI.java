@@ -56,32 +56,30 @@ public class TurSNSiteFieldRepairAPI {
     @PostMapping
     public String turSNSiteFieldRepair(@PathVariable String siteId,
                                                    @RequestBody TurSNFieldRepairPayload turSNFieldRepairPayload) {
-        turSNSiteRepository.findById(siteId).ifPresent(turSNSite -> {
-            turSNSiteFieldExtRepository.findById(turSNFieldRepairPayload.getId()).ifPresent(turSNSiteFieldExt ->
-                    turSEInstanceRepository
-                            .findById(turSNSite.getTurSEInstance().getId()).ifPresent(turSEInstance -> {
-                                switch (turSNFieldRepairPayload.getRepairType()) {
-                                    case SE_CREATE_FIELD -> TurSolrUtils.addOrUpdateField(
-                                            TurSolrFieldAction.ADD,
-                                            turSEInstance,
-                                            turSNFieldRepairPayload.getCore(),
-                                            turSNSiteFieldExt.getName(),
-                                            turSNSiteFieldExt.getType(),
-                                            true,
-                                            turSNSiteFieldExt.getMultiValued() == 1);
-                                    case SE_CHANGE_TYPE, SE_ENABLE_MULTI_VALUE -> TurSolrUtils.addOrUpdateField(
-                                            TurSolrFieldAction.REPLACE,
-                                            turSEInstance,
-                                            turSNFieldRepairPayload.getCore(),
-                                            turSNSiteFieldExt.getName(),
-                                            turSNSiteFieldExt.getType(),
-                                            true,
-                                            turSNSiteFieldExt.getMultiValued() == 1);
-                                    case SN_CHANGE_TYPE -> turSNSiteFieldExt.setType(TurSEFieldType.STRING);
-                                }
-                            }));
-
-        });
+        turSNSiteRepository.findById(siteId).ifPresent(turSNSite ->
+                turSNSiteFieldExtRepository.findById(turSNFieldRepairPayload.getId()).ifPresent(turSNSiteFieldExt ->
+                turSEInstanceRepository
+                        .findById(turSNSite.getTurSEInstance().getId()).ifPresent(turSEInstance -> {
+                            switch (turSNFieldRepairPayload.getRepairType()) {
+                                case SE_CREATE_FIELD -> TurSolrUtils.addOrUpdateField(
+                                        TurSolrFieldAction.ADD,
+                                        turSEInstance,
+                                        turSNFieldRepairPayload.getCore(),
+                                        turSNSiteFieldExt.getName(),
+                                        turSNSiteFieldExt.getType(),
+                                        true,
+                                        turSNSiteFieldExt.getMultiValued() == 1);
+                                case SE_CHANGE_TYPE, SE_ENABLE_MULTI_VALUE -> TurSolrUtils.addOrUpdateField(
+                                        TurSolrFieldAction.REPLACE,
+                                        turSEInstance,
+                                        turSNFieldRepairPayload.getCore(),
+                                        turSNSiteFieldExt.getName(),
+                                        turSNSiteFieldExt.getType(),
+                                        true,
+                                        turSNSiteFieldExt.getMultiValued() == 1);
+                                case SN_CHANGE_TYPE -> turSNSiteFieldExt.setType(TurSEFieldType.STRING);
+                            }
+                        })));
         return "ok";
     }
 }

@@ -33,11 +33,11 @@ public class TurSNPagination {
 
 	List<TurSNSiteSearchPaginationBean> paginationList;
 
-	private static String NEXT = "next";
-	private static String PREVIOUS = "previous";
-	private static String LAST = "last";
-	private static String FIRST = "first";
-	private static String CURRENT = "current";
+	private static final String NEXT = "next";
+	private static final String PREVIOUS = "previous";
+	private static final String LAST = "last";
+	private static final String FIRST = "first";
+	private static final String CURRENT = "current";
 
 	public TurSNPagination(List<TurSNSiteSearchPaginationBean> paginationList) {
 		super();

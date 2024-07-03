@@ -146,7 +146,7 @@ public class TurSecurityConfigProduction {
 
     @Bean
     WebSecurityCustomizer webSecurityCustomizer(MvcRequestMatcher.Builder mvc) {
-        return (web) ->
+        return web ->
             web.httpFirewall(allowUrlEncodedSlaturHttpFirewall()).ignoring().requestMatchers(mvc.pattern("/h2/**"));
     }
 
@@ -176,10 +176,7 @@ public class TurSecurityConfigProduction {
 
     @Bean
     public RoleHierarchy roleHierarchy() {
-        RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
-        String hierarchy = "ROLE_ADMIN > ROLE_STAFF \n ROLE_STAFF > ROLE_USER";
-        roleHierarchy.setHierarchy(hierarchy);
-        return roleHierarchy;
+        return RoleHierarchyImpl.fromHierarchy("ROLE_ADMIN > ROLE_STAFF \n ROLE_STAFF > ROLE_USER");
     }
     @Bean
     public DefaultWebSecurityExpressionHandler customWebSecurityExpressionHandler() {

@@ -75,8 +75,8 @@ public class TurLlmAPI {
 
     @PostMapping
     public TurLlmQa llm(@RequestParam("text") String createQA) throws IOException, InterruptedException {
-        String base_prompt = "Create 25 questions and answers in json format for the text below:";
-        TurLlmResponse response = chatGPT(base_prompt + createQA);
+        String basePrompt = "Create 25 questions and answers in json format for the text below:";
+        TurLlmResponse response = chatGPT(basePrompt + createQA);
         return getFirstContentFromMessage(response).map(content -> {
             try {
                 return objectMapper
@@ -92,7 +92,7 @@ public class TurLlmAPI {
     public RedactionScript validateFile(@RequestParam("file") MultipartFile multipartFile)
             throws IOException, InterruptedException {
         final String text = TurFileUtils.documentToText(multipartFile);
-        String base_prompt = """
+        String basePrompt = """
                 In the sentence below, give me the list of:
                 - organization named entity
                 - location named entity
@@ -114,7 +114,7 @@ public class TurLlmAPI {
         TurLlmResponse turLlmResponse = getOpenAiResponse(List.of(
                 TurLlmRoleRequest.builder()
                         .role(USER)
-                        .content(base_prompt + text)
+                        .content(basePrompt + text)
                         .build()));
         return getFirstContentFromMessage(turLlmResponse).map(content -> {
             try {

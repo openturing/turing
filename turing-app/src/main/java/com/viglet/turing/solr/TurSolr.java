@@ -780,7 +780,7 @@ public class TurSolr {
     private Map<TurSNSiteFacetFieldEnum, List<String>> setFilterQueryMapModified(
             TurSNSite turSNSite,
             Map<TurSNSiteFacetFieldEnum, List<String>> filterQueryMap) {
-        Map<TurSNSiteFacetFieldEnum, List<String>> filterQueryMapModified = new HashMap<>();
+        Map<TurSNSiteFacetFieldEnum, List<String>> filterQueryMapModified = new EnumMap<>(TurSNSiteFacetFieldEnum.class);
         getFilterQueryByDateRange(filterQueryMap, turSNSite).forEach((key, value) -> {
             if (filterQueryMapModified.containsKey(key)) {
                 filterQueryMapModified.get(key).addAll(getFilterQueryValue(value));
@@ -817,7 +817,7 @@ public class TurSolr {
 
     private Map<TurSNSiteFacetFieldEnum, List<String>> getFilterQueryMap(
             TurSEFilterQueryParameters filterQueries, TurSNSite turSNSite) {
-        Map<TurSNSiteFacetFieldEnum, List<String>> fqMap = new HashMap<>();
+        Map<TurSNSiteFacetFieldEnum, List<String>> fqMap = new EnumMap<>(TurSNSiteFacetFieldEnum.class);;
         List<TurSNSiteFieldExt> enabledFacets = turSNSiteFieldExtRepository
                 .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
         Optional.ofNullable(filterQueries)
@@ -907,7 +907,7 @@ public class TurSolr {
         List<TurSNSiteFieldExt> dateFacet = turSNSiteFieldExtRepository
                 .findByTurSNSiteAndFacetAndEnabledAndType(turSNSite, 1, 1, TurSEFieldType.DATE);
         if (!dateFacet.isEmpty()) {
-            Map<TurSNSiteFacetFieldEnum, List<String>> fqMapFormatted = new HashMap<>();
+            Map<TurSNSiteFacetFieldEnum, List<String>> fqMapFormatted = new EnumMap<>(TurSNSiteFacetFieldEnum.class);
             filterQueryMap.forEach((conditional, fq) -> {
                 if (fqMapFormatted.containsKey(conditional)) {
                     fqMapFormatted.get(conditional).addAll(setFilterQueryRangeValue(fq, dateFacet));
@@ -1251,8 +1251,7 @@ public class TurSolr {
     }
 
     private void addRequiredFieldsToDocument(Map<String, Object> requiredFields, SolrDocument document) {
-        Arrays.stream(requiredFields.keySet().toArray()).map(requiredFieldObject ->
-                        (String) requiredFieldObject).filter(requiredField ->
+        Arrays.stream(requiredFields.keySet().toArray()).map(String.class::cast).filter(requiredField ->
                         !document.containsKey(requiredField))
                 .forEach(requiredField -> document.addField(requiredField, requiredFields.get(requiredField)));
     }

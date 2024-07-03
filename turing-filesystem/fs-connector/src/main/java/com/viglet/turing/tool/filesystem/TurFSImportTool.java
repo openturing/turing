@@ -225,7 +225,7 @@ public class TurFSImportTool {
 
             }
             File outputFile = new File(String.format("%s%s%s", outputDir, File.separator, changeExtension(fileItem, "xml").getName()));
-            FileUtils.writeStringToFile(outputFile, responseBody, "UTF-8");
+            FileUtils.writeStringToFile(outputFile, responseBody, StandardCharsets.UTF_8);
             client.close();
             initial++;
         }

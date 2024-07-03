@@ -22,6 +22,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Locale;
+import java.util.Objects;
 
 public class TurNutchCommons {
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -70,14 +71,11 @@ public class TurNutchCommons {
 
 			for (TurSNJobItem turSNJobItem : turSNJobItems.getTuringDocuments()) {
 				TurSNJobAction turSNJobAction = turSNJobItem.getTurSNJobAction();
-				switch (turSNJobAction) {
-				case CREATE:
-					totalCreate++;
-					break;
-				case DELETE:
-					totalDelete++;
-					break;
-				}
+                if (Objects.requireNonNull(turSNJobAction) == TurSNJobAction.CREATE) {
+                    totalCreate++;
+                } else if (turSNJobAction == TurSNJobAction.DELETE) {
+                    totalDelete++;
+                }
 			}
 
 			logger.info(String.format("Indexing %d/%d documents", totalCreate, totalAdds));

@@ -22,7 +22,6 @@
 package com.viglet.turing.persistence.repository.nlp;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

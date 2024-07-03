@@ -42,6 +42,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -101,7 +102,7 @@ public class TurNLPGCPConnector implements TurNLPPlugin {
     }
 
     private String convertObjectToJson(TurNLPGCPRequest turNLPGCPRequest)
-            throws UnsupportedEncodingException, JsonProcessingException {
+            throws JsonProcessingException {
         return new ObjectMapper().writer().withDefaultPrettyPrinter().writeValueAsString(turNLPGCPRequest);
     }
 
@@ -117,8 +118,12 @@ public class TurNLPGCPConnector implements TurNLPPlugin {
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
             }
-            return new HashMap<String, Set<String>>();
+            return getStringSetHashMap();
         }).orElse(Collections.emptyMap());
+    }
+
+    private static @NotNull Map<String, Set<String>> getStringSetHashMap() {
+        return new HashMap<>();
     }
 
     public Map<String, List<String>> generateEntityMapFromSentenceTokens(TurNLPRequest turNLPRequest,

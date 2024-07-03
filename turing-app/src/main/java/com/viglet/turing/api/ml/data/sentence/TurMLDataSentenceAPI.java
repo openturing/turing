@@ -24,7 +24,6 @@ package com.viglet.turing.api.ml.data.sentence;
 import java.util.List;
 
 import com.google.inject.Inject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;

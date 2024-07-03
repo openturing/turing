@@ -21,7 +21,6 @@
 
 package com.viglet.turing.se.result;
 
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 

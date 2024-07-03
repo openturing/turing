@@ -21,8 +21,6 @@
 package com.viglet.turing.persistence.repository.converse;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
 

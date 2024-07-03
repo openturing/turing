@@ -23,7 +23,6 @@ package com.viglet.turing.api.sn.job;
 import com.google.inject.Inject;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.json.JSONException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

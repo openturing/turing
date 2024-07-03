@@ -23,16 +23,12 @@ package com.viglet.turing.onstartup.auth;
 import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.auth.TurRole;
 import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 @Component
 public class TurGroupOnStartup {
