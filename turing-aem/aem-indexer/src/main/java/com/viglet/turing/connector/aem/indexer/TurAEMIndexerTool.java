@@ -127,7 +127,7 @@ public class TurAEMIndexerTool {
             jCommander.getConsole().println("Viglet Turing AEM Indexer Tool.");
             turAEMIndexerTool.run();
         } catch (ParameterException e) {
-            log.info(STR."Error: \{e.getLocalizedMessage()}");
+            log.info("Error: {}", e.getLocalizedMessage());
             jCommander.usage();
         }
     }
@@ -185,13 +185,13 @@ public class TurAEMIndexerTool {
 
     @NotNull
     private String configOnce() {
-        return STR."\{group}/\{ONCE}";
+        return "%s/%s".formatted(group, ONCE);
     }
 
     private void getNodesFromJson(TurAemSourceContext turAemSourceContext) {
         if (usingContentTypeParameter()) {
             turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(contentType)
-                    .ifPresentOrElse(_ -> jsonByContentType(turAemSourceContext),
+                    .ifPresentOrElse(turCmsModel -> jsonByContentType(turAemSourceContext),
                             () -> jCommander.getConsole()
                                     .println(String.format("%s type is not configured in CTD Mapping XML file.",
                                             contentType)));
@@ -257,7 +257,7 @@ public class TurAEMIndexerTool {
     public static String ordinal(int i) {
         String[] suffixes = new String[]{"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"};
         return switch (i % 100) {
-            case 11, 12, 13 -> STR."\{i}th";
+            case 11, 12, 13 -> i + "th";
             default -> i + suffixes[i % 10];
         };
     }
@@ -274,7 +274,7 @@ public class TurAEMIndexerTool {
     private List<TurSNAttributeSpec> getDefinitionFromModel(List<TurSNAttributeSpec> turSNAttributeSpecList,
                                                             Map<String, Object> targetAttrMap) {
         List<TurSNAttributeSpec> turSNAttributeSpecFromModelList = new ArrayList<>();
-        targetAttrMap.forEach((key, _) -> turSNAttributeSpecList.stream()
+        targetAttrMap.forEach((key, value) -> turSNAttributeSpecList.stream()
                 .filter(turSNAttributeSpec -> turSNAttributeSpec.getName().equals(key))
                 .findFirst().ifPresent(turSNAttributeSpecFromModelList::add));
         return turSNAttributeSpecFromModelList;
@@ -286,10 +286,10 @@ public class TurAEMIndexerTool {
     }
 
     private void getChildrenFromJson(String nodePath, JSONObject jsonObject, TurAemSourceContext turAemSourceContext) {
-        jsonObject.toMap().forEach((key, _) -> {
+        jsonObject.toMap().forEach((key, value) -> {
             if (!key.startsWith(JCR) && !key.startsWith(REP) && (getSubType().equals(STATIC_FILE_SUB_TYPE)
                     || !checkIfFileHasImageExtension(key))) {
-                String nodePathChild = STR."\{nodePath}/\{key}";
+                String nodePathChild = "%s/%s".formatted(nodePath, key);
                 if (!isOnce() || !isOnceConfig(nodePathChild)) {
                     getNodeFromJson(nodePathChild, TurAEMCommonsUtils.getInfinityJson(nodePathChild, turAemSourceContext),
                             turAemSourceContext);

@@ -3,7 +3,6 @@ package com.viglet.turing.connector.aem.indexer.persistence;
 import com.sun.istack.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.imageio.spi.ServiceRegistry;
 import javax.persistence.*;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;

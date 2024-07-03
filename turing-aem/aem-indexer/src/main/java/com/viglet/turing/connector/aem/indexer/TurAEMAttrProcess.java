@@ -46,7 +46,7 @@ public class TurAEMAttrProcess {
                             });
                     return turCmsTargetAttrValues;
                 }).orElseGet(() -> {
-                    log.error(STR."Content Type not found: \{aemObject.getType()}");
+                    log.error("Content Type not found: {}", aemObject.getType());
                     return new TurCmsTargetAttrValueList();
                 });
     }
@@ -145,7 +145,7 @@ public class TurAEMAttrProcess {
     private static String addTagToAttrValueList(TurAemSourceContext turAemSourceContext,
                                                 String facet, String value, AemObject aemObject) {
         JSONObject infinityJson = TurAEMCommonsUtils
-                .getInfinityJson(STR."/content/_cq_tags/\{facet}/\{value}",
+                .getInfinityJson("/content/_cq_tags/%s/%s".formatted(facet, value),
                         turAemSourceContext);
         Locale locale = TurAEMCommonsUtils.getLocaleFromAemObject(turAemSourceContext, aemObject);
         String titleLocale = locale.toString().toLowerCase();
@@ -161,7 +161,7 @@ public class TurAEMAttrProcess {
     private static TurSNAttributeSpec setTagFacet(TurAemSourceContext turAemSourceContext,
                                                   String facetId) {
         JSONObject tagFacet = TurAEMCommonsUtils
-                .getInfinityJson(STR."/content/_cq_tags/\{facetId}",
+                .getInfinityJson("/content/_cq_tags/%s".formatted(facetId),
                         turAemSourceContext);
         return TurAEMCommonAttrProcess.getTurSNAttributeSpec(facetId, TurAEMCommonAttrProcess.getTagLabels(tagFacet));
     }
@@ -169,7 +169,7 @@ public class TurAEMAttrProcess {
 
     private TurCmsTargetAttrValueList attributeByClass(TurCmsContext context, TurAemSourceContext turAemSourceContext) {
         String className = context.getTurCmsSourceAttr().getClassName();
-        log.debug(STR."ClassName : \{className}");
+        log.debug("ClassName : {}", className);
         try {
             return TurCmsTargetAttrValueList.singleItem(context
                             .getTurCmsTargetAttr().getName(),
