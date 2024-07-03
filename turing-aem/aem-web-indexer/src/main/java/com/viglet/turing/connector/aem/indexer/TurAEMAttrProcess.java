@@ -3,8 +3,9 @@ package com.viglet.turing.connector.aem.indexer;
 import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
 import com.viglet.turing.connector.aem.commons.AemObject;
 import com.viglet.turing.connector.aem.commons.TurAEMCommonAttrProcess;
+import com.viglet.turing.connector.aem.commons.TurAEMCommonsUtils;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
-import com.viglet.turing.connector.aem.indexer.ext.ExtAttributeInterface;
+import com.viglet.turing.connector.aem.commons.ext.ExtAttributeInterface;
 import com.viglet.turing.connector.cms.beans.TurCmsContext;
 import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueList;
 import com.viglet.turing.connector.cms.mappers.TurCmsContentDefinitionProcess;
@@ -22,10 +23,10 @@ import java.util.*;
 public class TurAEMAttrProcess {
     private static String addTagToAttrValueList(TurCmsContext context, TurAemSourceContext turAemSourceContext,
                                                 String facet, String value) {
-        JSONObject infinityJson = TurAemUtils
+        JSONObject infinityJson = TurAEMCommonsUtils
                 .getInfinityJson("/content/_cq_tags/" + facet + "/" + value,
                         turAemSourceContext);
-        Locale locale = TurAemUtils.getLocaleFromContext(turAemSourceContext, context);
+        Locale locale = TurAEMCommonsUtils.getLocaleFromContext(turAemSourceContext, context);
         String titleLocale = locale.toString().toLowerCase();
         String titleLanguage = locale.getLanguage().toLowerCase();
         Map<String, String> tagLabels = TurAEMCommonAttrProcess.getTagLabels(infinityJson);
@@ -38,7 +39,7 @@ public class TurAEMAttrProcess {
 
     private static TurSNAttributeSpec setTagFacet(TurAemSourceContext turAemSourceContext,
                                                   String facetId) {
-        JSONObject tagFacet = TurAemUtils
+        JSONObject tagFacet = TurAEMCommonsUtils
                 .getInfinityJson("/content/_cq_tags/" + facetId,
                         turAemSourceContext);
         return TurAEMCommonAttrProcess.getTurSNAttributeSpec(facetId, TurAEMCommonAttrProcess.getTagLabels(tagFacet));

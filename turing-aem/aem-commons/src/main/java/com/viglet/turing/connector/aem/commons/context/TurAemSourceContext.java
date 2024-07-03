@@ -26,7 +26,6 @@ public class TurAemSourceContext {
     private String group;
     private String urlPrefix;
     private String oncePattern;
-    private String mappingJson;
     @Builder.Default
     private Collection<TurAemLocalePathContext> localePaths = new HashSet<>();
 }

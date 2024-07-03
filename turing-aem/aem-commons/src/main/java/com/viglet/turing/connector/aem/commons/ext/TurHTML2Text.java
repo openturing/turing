@@ -18,12 +18,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.viglet.turing.connector.aem.indexer.ext;
+package com.viglet.turing.connector.aem.commons.ext;
 
 import com.viglet.turing.connector.aem.commons.AemObject;
-import com.viglet.turing.connector.aem.indexer.TurAEMIndexerTool;
+import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
-import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +34,7 @@ public class TurHTML2Text implements ExtAttributeInterface {
 
     @Override
     public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-                                 AemObject aemObject, IHandlerConfiguration config, TurAEMIndexerTool turAEMIndexerTool) {
+                                 AemObject aemObject, TurAemSourceContext turAemSourceContext) {
         log.debug("Executing HTML2Text");
         if (turCmsSourceAttr.getName() != null && aemObject != null && aemObject.getAttributes() != null
                 && aemObject.getAttributes().containsKey(turCmsSourceAttr.getName())

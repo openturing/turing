@@ -8,9 +8,10 @@ import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.*;
 import com.viglet.turing.connector.aem.commons.AemObject;
+import com.viglet.turing.connector.aem.commons.TurAEMCommonsUtils;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
-import com.viglet.turing.connector.aem.indexer.ext.ExtContentInterface;
+import com.viglet.turing.connector.aem.commons.ext.ExtContentInterface;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemIndexing;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSource;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSystem;
@@ -148,7 +149,6 @@ public class TurAemIndexerTool {
                 .siteName(turAemSource.getSiteName())
                 .subType(turAemSource.getSubType())
                 .turSNSite(turAemSource.getTurSNSite())
-                .mappingJson(turAemSource.getMappingJson())
                 .oncePattern(turAemSource.getOncePattern())
                 .providerName(turAemSource.getProviderName())
                 .password(turAemSource.getPassword())
@@ -163,7 +163,6 @@ public class TurAemIndexerTool {
                     .build()));
             this.turAemSourceContext.setLocalePaths(turAemLocalePathContexts);
         });
-
         return turAemSourceContext;
     }
 
@@ -173,7 +172,7 @@ public class TurAemIndexerTool {
             log.info("This is the first time, waiting next schedule.");
         } else {
             log.info("Starting indexing");
-            turCmsContentDefinitionProcess = new TurCmsContentDefinitionProcess(this.turAemSourceContext.getMappingJson());
+            turCmsContentDefinitionProcess = new TurCmsContentDefinitionProcess(turAemSource.getMappingJson());
             getNodesFromJson();
             deIndexObject();
             updateSystemOnce();
@@ -229,7 +228,7 @@ public class TurAemIndexerTool {
     }
 
     private void jsonByContentType() {
-        JSONObject jsonSite = TurAemUtils.getInfinityJson(getRootPath(), this.turAemSourceContext);
+        JSONObject jsonSite = TurAEMCommonsUtils.getInfinityJson(getRootPath(), this.turAemSourceContext);
         setSiteName(getRootPath(), jsonSite);
         log.info("Site Name: {}", siteName);
         addItemToQueue(getRootPath());
@@ -239,7 +238,7 @@ public class TurAemIndexerTool {
     private void processQueue() {
         while (!remainingLinks.isEmpty()) {
             String url = remainingLinks.poll();
-            JSONObject jsonObject = TurAemUtils.getInfinityJson(url, this.turAemSourceContext);
+            JSONObject jsonObject = TurAEMCommonsUtils.getInfinityJson(url, this.turAemSourceContext);
             turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(getContentType()).ifPresent(model ->
                     addTurSNJobItemByType(model, new AemObject(url, jsonObject),
                             turCmsContentDefinitionProcess.getTargetAttrDefinitions()));
@@ -404,7 +403,7 @@ public class TurAemIndexerTool {
                                         List<TurSNAttributeSpec> turSNAttributeSpecList) {
         itemsProcessedStatus();
         if (isNotDryRun()) {
-            final Locale locale = TurAemUtils.getLocaleFromAemObject(this.turAemSourceContext, aemObject);
+            final Locale locale = TurAEMCommonsUtils.getLocaleFromAemObject(this.turAemSourceContext, aemObject);
             if (objectNeedBeIndexed(aemObject)) {
                 createIndexingStatus(aemObject, locale);
                 sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale);

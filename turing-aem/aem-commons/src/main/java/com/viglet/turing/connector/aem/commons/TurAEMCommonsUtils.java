@@ -1,6 +1,9 @@
 package com.viglet.turing.connector.aem.commons;
 
 import com.google.common.net.UrlEscapers;
+import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
+import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
+import com.viglet.turing.connector.cms.beans.TurCmsContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -16,13 +19,55 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 public class TurAEMCommonsUtils {
 
+    protected static final Map<String, String> responseHttpCache = new HashMap<>();
+
+    public static Locale getLocaleByPath(TurAemSourceContext turAemSourceContext, String path) {
+        for (TurAemLocalePathContext turAemSourceLocalePath : turAemSourceContext.getLocalePaths()) {
+            if (hasPath(turAemSourceLocalePath, path)) {
+                return turAemSourceLocalePath.getLocale();
+            }
+        }
+        return turAemSourceContext.getDefaultLocale();
+    }
+
+    private static boolean hasPath(TurAemLocalePathContext turAemSourceLocalePath, String path) {
+        return path.startsWith(turAemSourceLocalePath.getPath());
+    }
+
+    public static Locale getLocaleFromAemObject(TurAemSourceContext turAemSourceContext,
+                                                AemObject aemObject) {
+        return getLocaleByPath(turAemSourceContext, aemObject.getPath());
+    }
+
+    public static JSONObject getInfinityJson(String url, TurAemSourceContext turAemSourceContext) {
+        return getInfinityJson(url, turAemSourceContext.getUrl(), turAemSourceContext.getUsername(), turAemSourceContext.getPassword());
+    }
+
+    public static JSONObject getInfinityJson(String originalUrl, String hostAndPort, String username, String password) {
+        String infinityJsonUrl = String.format(originalUrl.endsWith(TurAEMCommonAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
+                hostAndPort, originalUrl);
+        if (responseHttpCache.containsKey(infinityJsonUrl)) {
+            log.info("Cached Response {}", infinityJsonUrl);
+            return new JSONObject(responseHttpCache.get(infinityJsonUrl));
+        } else {
+            log.info("Request {}", infinityJsonUrl);
+            return TurAEMCommonsUtils.getResponseBody(infinityJsonUrl, username, password).map(responseBody -> {
+                if (TurAEMCommonsUtils.isResponseBodyJSONArray(responseBody) && !originalUrl.endsWith(TurAEMCommonAttrProcess.JSON)) {
+                    JSONArray jsonArray = new JSONArray(responseBody);
+                    return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
+                } else if (TurAEMCommonsUtils.isResponseBodyJSONObject(responseBody)) {
+                    responseHttpCache.put(infinityJsonUrl, responseBody);
+                    return new JSONObject(responseBody);
+                }
+                return new JSONObject();
+            }).orElse(new JSONObject());
+        }
+    }
     public static boolean hasProperty(JSONObject jsonObject, String property) {
         return jsonObject.has(property) && jsonObject.get(property) != null;
     }
@@ -66,5 +111,29 @@ public class TurAEMCommonsUtils {
 
     private static String basicAuth(String username, String password) {
         return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+    }
+
+    public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuilder components) {
+        if (jsonObject.has(TurAEMCommonAttrProcess.JCR_TITLE) && jsonObject.get(TurAEMCommonAttrProcess.JCR_TITLE)
+                instanceof String title) {
+            components.append(title);
+        } else if (jsonObject.has(TurAEMCommonAttrProcess.TEXT) && jsonObject.get(TurAEMCommonAttrProcess.TEXT)
+                instanceof String text) {
+            components.append(text);
+        }
+        jsonObject.toMap().forEach((key, value) -> {
+            if (!key.startsWith(TurAEMCommonAttrProcess.JCR) && !key.startsWith(TurAEMCommonAttrProcess.SLING)
+                    && (jsonObject.get(key) instanceof JSONObject jsonObjectNode)) {
+                getJsonNodeToComponent(jsonObjectNode, components);
+            }
+        });
+    }
+    public static Locale getLocaleFromContext(TurAemSourceContext turAemSourceContext, TurCmsContext context) {
+        AemObject aemObject = (AemObject) context.getCmsObjectInstance();
+        return getLocaleFromAemObject(turAemSourceContext, aemObject);
+    }
+
+    public static void cleanCache() {
+        responseHttpCache.clear();
     }
 }

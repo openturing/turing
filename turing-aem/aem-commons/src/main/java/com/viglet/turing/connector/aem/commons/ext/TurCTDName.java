@@ -1,4 +1,4 @@
-package com.viglet.turing.connector.aem.indexer.ext;
+package com.viglet.turing.connector.aem.commons.ext;
 
 import com.viglet.turing.connector.aem.commons.AemObject;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
@@ -8,13 +8,11 @@ import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class TurSiteName implements ExtAttributeInterface {
-    private static final String EMPTY_STRING = "";
-
+public class TurCTDName implements ExtAttributeInterface {
     @Override
     public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
                                  AemObject aemObject, TurAemSourceContext turAemSourceContext) {
-        log.debug("Executing TurSiteName");
-        return TurMultiValue.singleItem(EMPTY_STRING);
+        log.debug("Executing TurCTDName");
+        return TurMultiValue.singleItem(aemObject.getType());
     }
 }

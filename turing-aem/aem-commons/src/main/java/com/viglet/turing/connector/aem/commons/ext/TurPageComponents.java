@@ -1,10 +1,9 @@
-package com.viglet.turing.connector.aem.indexer.ext;
+package com.viglet.turing.connector.aem.commons.ext;
 
 import com.viglet.turing.connector.aem.commons.AemObject;
-import com.viglet.turing.connector.aem.indexer.TurAEMIndexerTool;
-import com.viglet.turing.connector.aem.indexer.TurAemUtils;
+import com.viglet.turing.connector.aem.commons.TurAEMCommonsUtils;
+import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
-import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 import com.viglet.turing.connector.cms.util.HtmlManipulator;
@@ -20,7 +19,7 @@ public class TurPageComponents implements ExtAttributeInterface {
 
 	@Override
 	public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-								 AemObject aemObject, IHandlerConfiguration config, TurAEMIndexerTool turAEMIndexerTool) {
+								 AemObject aemObject, TurAemSourceContext turAemSourceContext) {
 		log.debug("Executing TurPageComponents");
 		return getResponsiveGridContent(aemObject);
 	}
@@ -32,7 +31,7 @@ public class TurPageComponents implements ExtAttributeInterface {
 				&& aemObject.getJcrContentNode().get(ROOT) instanceof JSONObject root
 				&& root.has(RESPONSIVE_GRID)
 				&& root.get(RESPONSIVE_GRID) instanceof JSONObject responsiveGrid) {
-			TurAemUtils.getJsonNodeToComponent(responsiveGrid, components);
+			TurAEMCommonsUtils.getJsonNodeToComponent(responsiveGrid, components);
 		}
 		return TurMultiValue.singleItem(HtmlManipulator.html2Text(components.toString()));
 	}
