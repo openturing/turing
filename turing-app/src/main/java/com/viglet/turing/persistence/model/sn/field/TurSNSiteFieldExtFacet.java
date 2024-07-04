@@ -59,6 +59,6 @@ public class TurSNSiteFieldExtFacet  implements Serializable {
 
     @Tolerate
     public TurSNSiteFieldExtFacet() {
-
+            super();
     }
 }

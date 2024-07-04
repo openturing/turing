@@ -40,10 +40,7 @@ public class TurMultiValue extends ArrayList<String> {
             case String string -> singleItem(string);
             case Boolean bool -> singleItem(bool);
             case Date date -> singleItem(date);
-            case null, default -> {
-                assert value != null;
-                yield singleItem(value.toString());
-            }
+            case null, default -> value != null ? singleItem(value.toString()) : null;
         };
 	}
 

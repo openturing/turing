@@ -119,6 +119,7 @@ public class TurSolr {
     public static final String SOLR_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     public static final String INDEX = "index";
     public static final String ROWS = "rows";
+    public static final String OR = "OR";
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNTargetingRules turSNTargetingRules;
     private final TurSNSiteFieldUtils turSNSiteFieldUtils;
@@ -384,7 +385,7 @@ public class TurSolr {
                     }
                     return String.format("%s:%s", condition.getAttribute(), condition.getValue());
                 })
-                .collect(Collectors.joining(" AND "));
+                .collect(Collectors.joining(betweenSpaces(AND)));
     }
 
 
@@ -745,8 +746,8 @@ public class TurSolr {
         });
 
         String targetingRuleQuery = String.format("%s OR (*:* NOT ( %s ) )",
-                String.join(" OR ", rules),
-                String.join(" OR ", conditions));
+                String.join(betweenSpaces(OR), rules),
+                String.join(betweenSpaces(OR), conditions));
         query.addFilterQuery(targetingRuleQuery);
     }
 
@@ -796,16 +797,20 @@ public class TurSolr {
         StringBuilder filterQueryString = new StringBuilder();
         if (filterQueryMapModified.containsKey(TurSNSiteFacetFieldEnum.OR)) {
             filterQueryString.append(String.format("(%s)",
-                    String.join(" OR ", filterQueryMapModified.get(TurSNSiteFacetFieldEnum.OR))));
+                    String.join(betweenSpaces(OR), filterQueryMapModified.get(TurSNSiteFacetFieldEnum.OR))));
             if (filterQueryMapModified.containsKey(TurSNSiteFacetFieldEnum.AND)) {
-                filterQueryString.append(" AND ");
+                filterQueryString.append(betweenSpaces(AND));
             }
         }
         if (filterQueryMapModified.containsKey(TurSNSiteFacetFieldEnum.AND)) {
-            filterQueryString.append(String.format("%s",
-                    String.join(" AND ", filterQueryMapModified.get(TurSNSiteFacetFieldEnum.AND))));
+            filterQueryString.append(String.join(betweenSpaces(AND),
+                    filterQueryMapModified.get(TurSNSiteFacetFieldEnum.AND)));
         }
         return filterQueryString;
+    }
+
+    private static String betweenSpaces(String operator) {
+        return " %s ".formatted(operator);
     }
 
     @NotNull

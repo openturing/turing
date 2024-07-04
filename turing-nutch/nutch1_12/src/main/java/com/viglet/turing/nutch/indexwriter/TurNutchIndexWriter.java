@@ -3,6 +3,7 @@ package com.viglet.turing.nutch.indexwriter;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.nutch.commons.TurNutchCommons;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.StringUtils;
@@ -138,7 +139,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 	}
 
 	@Override
-	public void close() throws IOException {
+	public void close() {
 		// Nothing
 	}
 
@@ -174,7 +175,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 		if (url == null) {
 			String message = String.format("Missing Turing URL. %s %s", System.lineSeparator(), describe());
 			logger.error(message);
-			throw new RuntimeException();
+			throw new TurRuntimeException(message);
 		}
 
 		this.auth = this.config.getBoolean(TurNutchConstants.USE_AUTH, false);
@@ -182,8 +183,9 @@ public class TurNutchIndexWriter implements IndexWriter {
 		this.password = this.config.get(TurNutchConstants.PASSWORD, TurNutchCommons.PASSWORD_DEFAULT_VALUE);
 
 		init(job);
-
-		logger.info(describeText());
+		if (logger.isInfoEnabled()) {
+			logger.info(describeText());
+		}
 	}
 
 	private String describeText() {

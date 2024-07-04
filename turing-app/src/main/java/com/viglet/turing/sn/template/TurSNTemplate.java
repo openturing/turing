@@ -59,6 +59,7 @@ import java.util.*;
 @Component
 public class TurSNTemplate {
     public static final String PT_BR = "pt_BR";
+    public static final String TITLE = "title";
     private final ResourceLoader resourceloader;
     private final TurSNSiteFieldRepository turSNSiteFieldRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
@@ -118,7 +119,7 @@ public class TurSNTemplate {
         turSNSite.setSpellCheck(1);
         turSNSite.setSpellCheckFixes(1);
         turSNSite.setThesaurus(0);
-        turSNSite.setDefaultTitleField("title");
+        turSNSite.setDefaultTitleField(TITLE);
         turSNSite.setDefaultTextField("text");
         turSNSite.setDefaultDescriptionField("abstract");
         turSNSite.setDefaultDateField("publication_date");
@@ -210,7 +211,7 @@ public class TurSNTemplate {
     }
 
     public void createSEFields(TurSNSite turSNSite) {
-        createSNSiteField(turSNSite, "title", "Title Field", TurSEFieldType.TEXT, 0,
+        createSNSiteField(turSNSite, TITLE, "Title Field", TurSEFieldType.TEXT, 0,
                 "Titles", getFacetLocales("Titulos"), 1);
         createSNSiteField(turSNSite, "text", "Text Field", TurSEFieldType.TEXT, 0,
                 "Texts", getFacetLocales("Textos"), 1);
@@ -256,7 +257,7 @@ public class TurSNTemplate {
         turSNRankingExpressionRepository.save(turSNRankingExpression);
 
         TurSNRankingCondition turSNRankingCondition1 = new TurSNRankingCondition();
-        turSNRankingCondition1.setAttribute("title");
+        turSNRankingCondition1.setAttribute(TITLE);
         turSNRankingCondition1.setCondition(1);
         turSNRankingCondition1.setValue("viglet");
         turSNRankingCondition1.setTurSNRankingExpression(turSNRankingExpression);

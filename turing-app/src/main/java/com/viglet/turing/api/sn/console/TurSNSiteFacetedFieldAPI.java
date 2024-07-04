@@ -58,13 +58,7 @@ public class TurSNSiteFacetedFieldAPI {
     @Operation(summary = "Semantic Navigation Site Faceted Field List")
     @GetMapping
     public List<TurSNSiteFieldExt> turSNSiteFacetdFieldExtList(@PathVariable String snSiteId) {
-        System.out.println(snSiteId);
-        turSNSiteRepository.findById(snSiteId).ifPresent(turSNSite -> System.out.println(turSNSite.getName()));
-        return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
-            System.out.println("BBB");
-            return turSNSiteFieldExtRepository
-                .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
-        }).orElse(Collections.emptyList());
-
+        return turSNSiteRepository.findById(snSiteId).map(turSNSite -> turSNSiteFieldExtRepository
+            .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1)).orElse(Collections.emptyList());
     }
 }

@@ -3,6 +3,7 @@ package com.viglet.turing.nutch.indexwriter;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.nutch.commons.TurNutchCommons;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -22,6 +23,7 @@ import java.util.Map.Entry;
 public class TurNutchIndexWriter implements IndexWriter {
 
 	private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+	public static final String TURING_PREFIX = "turing.";
 	private final TurSNJobItems turSNJobItems = new TurSNJobItems();
 	private Configuration config;
 
@@ -49,28 +51,28 @@ public class TurNutchIndexWriter implements IndexWriter {
 			String[] partialUrl = Arrays.copyOf(fullUrl, fullUrl.length - 1);
 			this.url = String.join("/", partialUrl);
 		} else {
-			this.url = this.config.get("turing.".concat(TurNutchConstants.SERVER_URL)) != null
-					? this.config.get("turing.".concat(TurNutchConstants.SERVER_URL))
+			this.url = this.config.get(TURING_PREFIX.concat(TurNutchConstants.SERVER_URL)) != null
+					? this.config.get(TURING_PREFIX.concat(TurNutchConstants.SERVER_URL))
 					: parameters.get(TurNutchConstants.SERVER_URL);
 
-			this.site = this.config.get("turing.".concat(TurNutchConstants.SITE)) != null
-					? this.config.get("turing.".concat(TurNutchConstants.SITE))
+			this.site = this.config.get(TURING_PREFIX.concat(TurNutchConstants.SITE)) != null
+					? this.config.get(TURING_PREFIX.concat(TurNutchConstants.SITE))
 					: parameters.get(TurNutchConstants.SITE);
 		}
 		if (url == null) {
 			String message = "Missing Turing URL.\n" + describe();
 			logger.error(message);
-			throw new RuntimeException();
+			throw new TurRuntimeException(message);
 		}
-		this.auth = this.config.get("turing.".concat(TurNutchConstants.USE_AUTH)) != null
-				? this.config.getBoolean("turing.".concat(TurNutchConstants.USE_AUTH), false)
+		this.auth = this.config.get(TURING_PREFIX.concat(TurNutchConstants.USE_AUTH)) != null
+				? this.config.getBoolean(TURING_PREFIX.concat(TurNutchConstants.USE_AUTH), false)
 				: parameters.getBoolean(TurNutchConstants.USE_AUTH, false);
 
-		this.username = this.config.get("turing.".concat(TurNutchConstants.USERNAME)) != null
-				? this.config.get("turing.".concat(TurNutchConstants.USERNAME))
+		this.username = this.config.get(TURING_PREFIX.concat(TurNutchConstants.USERNAME)) != null
+				? this.config.get(TURING_PREFIX.concat(TurNutchConstants.USERNAME))
 				: parameters.get(TurNutchConstants.USERNAME);
-		this.password = this.config.get("turing.".concat(TurNutchConstants.PASSWORD)) != null
-				? this.config.get("turing.".concat(TurNutchConstants.PASSWORD))
+		this.password = this.config.get(TURING_PREFIX.concat(TurNutchConstants.PASSWORD)) != null
+				? this.config.get(TURING_PREFIX.concat(TurNutchConstants.PASSWORD))
 				: parameters.get(TurNutchConstants.PASSWORD);
 
 		init(parameters);
@@ -126,7 +128,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 	public void write(NutchDocument doc) throws IOException {
 		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, Collections.singletonList(site),
 				LocaleUtils.toLocale(this.config
-				.get("turing.".concat(TurNutchConstants.LOCALE_PROPERTY),
+				.get(TURING_PREFIX.concat(TurNutchConstants.LOCALE_PROPERTY),
 						TurNutchCommons.LOCALE_DEFAULT_VALUE.toLanguageTag())));
 		Map<String, Object> attributes = new HashMap<>();
 		for (final Entry<String, NutchField> e : doc) {

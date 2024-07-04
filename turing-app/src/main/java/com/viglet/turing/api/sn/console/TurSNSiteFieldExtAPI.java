@@ -73,7 +73,7 @@ public class TurSNSiteFieldExtAPI {
     public static final String TYPE = "type";
     public static final String STRING = "string";
     public static final String ADD_FIELD = "add-field";
-    public static final String TEXT_ = "_text_";
+    public static final String TEXT = "_text_";
     public static final String SOURCE = "source";
     public static final String ADD_COPY_FIELD = "add-copy-field";
     public static final String DEST = "dest";
@@ -386,7 +386,7 @@ public class TurSNSiteFieldExtAPI {
                 String.format(SOLR_SCHEMA_REQUEST, turSNSite.getTurSEInstance().getHost(),
                         turSNSite.getTurSEInstance().getPort(), turSNSiteLocale.getCore()));
         executeHttpPost(json, httpPost);
-        this.copyField(turSNSiteLocale, fieldName, TEXT_);
+        this.copyField(turSNSiteLocale, fieldName, TEXT);
     }
 
     public void copyField(TurSNSiteLocale turSNSiteLocale, String field, String dest) {

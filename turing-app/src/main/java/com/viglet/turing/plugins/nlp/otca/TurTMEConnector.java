@@ -21,7 +21,7 @@
 
 package com.viglet.turing.plugins.nlp.otca;
 
-import com.viglet.turing.exception.TurException;
+import com.viglet.turing.commons.exception.TurException;
 import com.viglet.turing.nlp.TurNLPEntityRequest;
 import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;

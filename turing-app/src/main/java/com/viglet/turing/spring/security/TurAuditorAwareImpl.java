@@ -14,24 +14,24 @@ import java.util.Optional;
 @Component
 public class TurAuditorAwareImpl implements AuditorAware<String> {
 
-	@Autowired
-	private TurConfigProperties turConfigProperties;
+    @Autowired
+    private TurConfigProperties turConfigProperties;
 
 
-	@Override
-	public @NotNull Optional<String> getCurrentAuditor() {
-		if (SecurityContextHolder.getContext().getAuthentication() != null)
-			if (turConfigProperties.isKeycloak()) {
-				OAuth2User user = ((OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-				return Optional
-						.of(((String) Objects.requireNonNull(user.getAttribute("preferred_username"))).toLowerCase());
-			}
-		else {
-				return Optional
-						.of(((TurCustomUserDetails) SecurityContextHolder.getContext().getAuthentication()
-								.getPrincipal()).getUsername().toLowerCase());
-			}
-		else
-			return Optional.of("admin");
-	}
+    @Override
+    public @NotNull Optional<String> getCurrentAuditor() {
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            if (turConfigProperties.isKeycloak()) {
+                OAuth2User user = ((OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+                return Optional
+                        .of(((String) Objects.requireNonNull(user.getAttribute("preferred_username"))).toLowerCase());
+            } else {
+                return Optional
+                        .of(((TurCustomUserDetails) SecurityContextHolder.getContext().getAuthentication()
+                                .getPrincipal()).getUsername().toLowerCase());
+            }
+        } else {
+            return Optional.of("admin");
+        }
+    }
 }

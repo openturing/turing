@@ -145,8 +145,11 @@ public class TurSolrUtils {
             if (isCreateCopyFieldByCore(turSEInstance, coreName, fieldName, turSEFieldType)) {
                 createCopyFieldByCore(turSEInstance, coreName, fieldName, multiValued);
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             log.error(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -173,8 +176,11 @@ public class TurSolrUtils {
         try (HttpClient client = getHttpClient()) {
             HttpRequest request = getHttpRequestSchemaApi(turSEInstance, coreName, json);
             client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             log.error(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+            Thread.currentThread().interrupt();
         }
 
     }

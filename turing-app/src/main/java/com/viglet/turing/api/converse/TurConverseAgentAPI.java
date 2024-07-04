@@ -188,7 +188,7 @@ public class TurConverseAgentAPI {
 	@GetMapping("/{id}/chat")
 	public TurConverseAgentResponse turConverseAgentChat(@PathVariable String id,
 			@RequestParam(required = false, name = "q") String q,
-			@RequestParam(required = false, name = "start") boolean start, HttpSession session) {
+			@RequestParam(required = false, name = "start") Boolean start, HttpSession session) {
 
 		String conversationId;
 
