@@ -174,7 +174,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 		if (url == null) {
 			String message = String.format("Missing Turing URL. %s %s", System.lineSeparator(), describe());
 			logger.error(message);
-			throw new RuntimeException(message);
+			throw new RuntimeException();
 		}
 
 		this.auth = this.config.getBoolean(TurNutchConstants.USE_AUTH, false);
@@ -187,7 +187,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 	}
 
 	private String describeText() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		describeLine(sb, TurNutchConstants.SERVER_URL, "Defines the fully qualified URL of Turing.", this.url);
 		describeLine(sb, TurNutchConstants.SITE, "Defines the Turing Semantic Navigation Site.", this.site);
 		describeLine(sb, TurNutchConstants.WEIGHT_FIELD,
@@ -237,7 +237,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 				"Indexing to Viglet Turing Semantic Navigation";
 	}
 
-	void describeLine(StringBuffer sb, String variable, String description, String value) {
+	void describeLine(StringBuilder sb, String variable, String description, String value) {
 		sb.append(System.lineSeparator()).append(variable).append(TurNutchCommons.TAB).append(description)
 				.append(TurNutchCommons.TAB).append(value);
 

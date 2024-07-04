@@ -24,7 +24,7 @@ package com.viglet.turing.api.entity;
 import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.nlp.term.TurTerm;
 import com.viglet.turing.persistence.repository.nlp.term.TurTermRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +46,7 @@ public class TurNLPEntityTermAPI {
 	@Operation(summary = "Entity Term list")
 	@GetMapping
 	public List<TurTerm> turTermList() {
-		return this.turTermRepository.findAll(TurPesistenceUtils.orderByNameIgnoreCase());
+		return this.turTermRepository.findAll(TurPersistenceUtils.orderByNameIgnoreCase());
 	}
 
 	@Operation(summary = "Show a Entity Term")

@@ -67,16 +67,14 @@ public class TurMappingReader {
             if (fieldList.getLength() > 0)
                 for (int i = 0; i < fieldList.getLength(); i++) {
                     Element element = (Element) fieldList.item(i);
-                    logger.info("source: {} dest: {}",
-                            element.getAttribute(SOURCE_ATTRIBUTE), element.getAttribute(DESTINATION_ATTRIBUTE));
+                    sourceDestLog("source: {} dest: {}", element, SOURCE_ATTRIBUTE, DESTINATION_ATTRIBUTE);
                     this.keyMap.put(element.getAttribute(SOURCE_ATTRIBUTE), element.getAttribute(DESTINATION_ATTRIBUTE));
                 }
             NodeList copyFieldList = rootElement.getElementsByTagName(COPY_FIELD_TAG);
             if (copyFieldList.getLength() > 0)
                 for (int i = 0; i < copyFieldList.getLength(); i++) {
                     Element element = (Element) copyFieldList.item(i);
-                    logger.info("source: {} dest: {}",
-                            element.getAttribute(SOURCE_ATTRIBUTE), element.getAttribute(DESTINATION_ATTRIBUTE));
+                    sourceDestLog("source: {} dest: {}", element, SOURCE_ATTRIBUTE, DESTINATION_ATTRIBUTE);
                     this.copyMap.put(element.getAttribute(SOURCE_ATTRIBUTE), element.getAttribute(DESTINATION_ATTRIBUTE));
                 }
             NodeList uniqueKeyItem = rootElement.getElementsByTagName(UNIQUE_KEY_TAG);
@@ -89,14 +87,21 @@ public class TurMappingReader {
             if (siteList.getLength() > 0)
                 for (int i = 0; i < siteList.getLength(); i++) {
                     Element element = (Element) siteList.item(i);
-                    logger.info("url: {} snSite: {}",
-                            element.getAttribute(URL_ATTRIBUTE), element.getAttribute(SN_SITE_ATTRIBUTE));
+                    sourceDestLog("url: {} snSite: {}", element, URL_ATTRIBUTE, SN_SITE_ATTRIBUTE);
                     this.siteMap.put(element.getAttribute(URL_ATTRIBUTE), element.getAttribute(SN_SITE_ATTRIBUTE));
                 }
         } catch (SAXException | IOException | ParserConfigurationException e) {
             logger.warn(e.toString());
         }
     }
+
+    private static void sourceDestLog(String s, Element element, String sourceAttribute, String destinationAttribute) {
+        if (logger.isInfoEnabled()) {
+            logger.info(s,
+                    element.getAttribute(sourceAttribute), element.getAttribute(destinationAttribute));
+        }
+    }
+
     public String hasCopy(String key) {
         if (this.copyMap.containsKey(key))
             key = this.copyMap.get(key);

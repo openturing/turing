@@ -34,7 +34,7 @@ import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import com.viglet.turing.solr.TurSolrUtils;
 import com.viglet.turing.solr.bean.TurSolrFieldBean;
 import io.swagger.v3.oas.annotations.Operation;
@@ -81,7 +81,7 @@ public class TurSNSiteFieldCheckAPI {
     private List<TurSolrFieldStatus> fieldsCheck(TurSNSite turSNSite) {
         List<TurSolrFieldStatus> fieldsExist = new ArrayList<>();
         turSNSiteFieldExtRepository
-                .findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), turSNSite).forEach(turSNSiteFieldExt -> {
+                .findByTurSNSite(TurPersistenceUtils.orderByNameIgnoreCase(), turSNSite).forEach(turSNSiteFieldExt -> {
                     AtomicBoolean correct = new AtomicBoolean(true);
                     TurSEInstance turSEInstance = turSNSite.getTurSEInstance();
                     List<TurSolrFieldCore> turSolrFieldCores = new ArrayList<>();

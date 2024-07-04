@@ -27,7 +27,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jetbrains.annotations.NotNull;
@@ -69,7 +69,7 @@ public class TurSNSiteSpotlightAPI {
     @GetMapping
     public List<TurSNSiteSpotlight> turSNSiteSpotlightList(@PathVariable String ignoredSnSiteId) {
         return turSNSiteRepository.findById(ignoredSnSiteId).map(site -> this.turSNSiteSpotlightRepository
-                        .findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), site))
+                        .findByTurSNSite(TurPersistenceUtils.orderByNameIgnoreCase(), site))
                 .orElse(Collections.emptyList());
     }
 

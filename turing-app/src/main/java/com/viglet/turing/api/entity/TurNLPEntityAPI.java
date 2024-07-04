@@ -24,7 +24,7 @@ package com.viglet.turing.api.entity;
 import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +45,7 @@ public class TurNLPEntityAPI {
 	@Operation(summary = "Entity List")
 	@GetMapping
 	public List<TurNLPEntity> turNLPEntityList() {
-		return this.turNLPEntityRepository.findAll(TurPesistenceUtils.orderByNameIgnoreCase());
+		return this.turNLPEntityRepository.findAll(TurPersistenceUtils.orderByNameIgnoreCase());
 	}
 
 	@Operation(summary = "Entity structure")

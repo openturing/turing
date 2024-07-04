@@ -46,7 +46,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -73,31 +72,31 @@ public class TurNLPGCPConnector implements TurNLPPlugin {
             URL serverURL = URI.create(String.format("%s?key=%s", turNLPRequest.getTurNLPInstance().getEndpointURL(),
                     turNLPRequest.getTurNLPInstance().getKey())).toURL();
             HttpPost httpPost = new HttpPost(serverURL.toString());
-            for (Object attrValue : turNLPRequest.getData().values()) {
-                String text = TurSolrField.convertFieldToString(attrValue);
-                List<String> newLineList = new ArrayList<>();
-                Arrays.asList(text.split(LINE_BREAK)).forEach(newLine -> {
-                    List<String> textWords = Arrays.asList(newLine.split(SPACE));
-                    List<String> convertTextWords = new ArrayList<>();
-                    textWords.forEach(word ->
-                            convertTextWords.add(StringUtils.isAllUpperCase(word.trim()) ?
-                            StringUtils.capitalize(word.toLowerCase()) : word));
-                    newLineList.add(StringUtils.join(convertTextWords, SPACE));
-                });
-                TurNLPGCPDocumentRequest turNLPGCPDocumentRequest = new TurNLPGCPDocumentRequest(
-                        TurNLPGCPTypeResponse.PLAIN_TEXT, turNLPRequest.getTurNLPInstance().getLanguage(),
-                        StringUtils.join(newLineList, LINE_BREAK));
-                TurNLPGCPRequest turNLPGCPRequest = new TurNLPGCPRequest(turNLPGCPDocumentRequest,
-                        TurNLPGCPEncodingResponse.UTF16);
-                httpPost.addHeader("Content-Type", "application/json");
-                httpPost.setEntity(new StringEntity(convertObjectToJson(turNLPGCPRequest), StandardCharsets.UTF_8));
-                return this.generateEntityMapFromSentenceTokens(turNLPRequest,
-                        updateEntityList(httpclient.execute(httpPost).getEntity(), turNLPRequest.getEntities()));
-            }
+            Object attrValue = turNLPRequest.getData().values().stream().findFirst();
+            String text = TurSolrField.convertFieldToString(attrValue);
+            List<String> newLineList = new ArrayList<>();
+            Arrays.asList(text.split(LINE_BREAK)).forEach(newLine -> {
+                List<String> textWords = Arrays.asList(newLine.split(SPACE));
+                List<String> convertTextWords = new ArrayList<>();
+                textWords.forEach(word ->
+                        convertTextWords.add(StringUtils.isAllUpperCase(word.trim()) ?
+                                StringUtils.capitalize(word.toLowerCase()) : word));
+                newLineList.add(StringUtils.join(convertTextWords, SPACE));
+            });
+            TurNLPGCPDocumentRequest turNLPGCPDocumentRequest = new TurNLPGCPDocumentRequest(
+                    TurNLPGCPTypeResponse.PLAIN_TEXT, turNLPRequest.getTurNLPInstance().getLanguage(),
+                    StringUtils.join(newLineList, LINE_BREAK));
+            TurNLPGCPRequest turNLPGCPRequest = new TurNLPGCPRequest(turNLPGCPDocumentRequest,
+                    TurNLPGCPEncodingResponse.UTF16);
+            httpPost.addHeader("Content-Type", "application/json");
+            httpPost.setEntity(new StringEntity(convertObjectToJson(turNLPGCPRequest), StandardCharsets.UTF_8));
+            return this.generateEntityMapFromSentenceTokens(turNLPRequest,
+                    updateEntityList(httpclient.execute(httpPost).getEntity(), turNLPRequest.getEntities()));
+
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
-       return Collections.emptyMap();
+        return Collections.emptyMap();
 
     }
 

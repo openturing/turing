@@ -60,7 +60,7 @@ public class TurNutchIndexWriter implements IndexWriter {
 		if (url == null) {
 			String message = "Missing Turing URL.\n" + describe();
 			logger.error(message);
-			throw new RuntimeException(message);
+			throw new RuntimeException();
 		}
 		this.auth = this.config.get("turing.".concat(TurNutchConstants.USE_AUTH)) != null
 				? this.config.getBoolean("turing.".concat(TurNutchConstants.USE_AUTH), false)
@@ -100,10 +100,10 @@ public class TurNutchIndexWriter implements IndexWriter {
 		try {
 			key = URLDecoder.decode(key, "UTF8");
 		} catch (UnsupportedEncodingException e) {
-			logger.error("Error decoding: " + key);
+            logger.error("Error decoding: {}", key);
 			throw new IOException("UnsupportedEncodingException for " + key);
 		} catch (IllegalArgumentException e) {
-			logger.warn("Could not decode: " + key + ", it probably wasn't encoded in the first place..");
+            logger.warn("Could not decode: {}, it probably wasn't encoded in the first place..", key);
 		}
 		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, Collections.singletonList(site));
 		Map<String, Object> attributes = new HashMap<>();

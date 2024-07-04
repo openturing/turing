@@ -3,7 +3,10 @@ package com.viglet.turing.persistence.utils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Sort;
 
-public class TurPesistenceUtils {
+public class TurPersistenceUtils {
+    private TurPersistenceUtils() {
+        throw new IllegalStateException("Utility class");
+    }
     @NotNull
     public static Sort orderByNameIgnoreCase() {
         return Sort.by(Sort.Order.asc("name").ignoreCase());

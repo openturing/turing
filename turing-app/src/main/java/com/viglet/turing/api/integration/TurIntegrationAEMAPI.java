@@ -33,11 +33,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
 
 @Slf4j
 @RestController
@@ -53,7 +51,7 @@ public class TurIntegrationAEMAPI {
         this.turIntegrationInstanceRepository = turIntegrationInstanceRepository;
     }
     @RequestMapping("**")
-    private void indexAnyRequest(HttpServletRequest request, HttpServletResponse response,
+    public void indexAnyRequest(HttpServletRequest request, HttpServletResponse response,
                                  @PathVariable String integrationId) {
             turIntegrationInstanceRepository.findById(integrationId).ifPresent(turIntegrationInstance ->
                     proxy(turIntegrationInstance, request, response));

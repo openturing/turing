@@ -26,7 +26,7 @@ import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.cache.annotation.CacheEvict;
@@ -64,7 +64,7 @@ public class TurSNRankingExpressionAPI {
     public Set<TurSNRankingExpression> turSNRankingExpressionList(@PathVariable String snSiteId) {
         return turSNSiteRepository.findById(snSiteId).map(site ->
                         this.turSNRankingExpressionRepository
-                                .findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), site))
+                                .findByTurSNSite(TurPersistenceUtils.orderByNameIgnoreCase(), site))
                 .orElse(new HashSet<>());
     }
 

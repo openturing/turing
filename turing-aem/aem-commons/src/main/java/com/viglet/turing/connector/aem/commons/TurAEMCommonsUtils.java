@@ -7,11 +7,9 @@ import com.viglet.turing.connector.cms.beans.TurCmsContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpHeaders;
-import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.json.JSONArray;
@@ -23,6 +21,9 @@ import java.util.*;
 
 @Slf4j
 public class TurAEMCommonsUtils {
+    private TurAEMCommonsUtils() {
+        throw new IllegalStateException("Utility class");
+    }
 
     protected static final Map<String, String> responseHttpCache = new HashMap<>();
 
@@ -68,6 +69,7 @@ public class TurAEMCommonsUtils {
             }).orElse(new JSONObject());
         }
     }
+
     public static boolean hasProperty(JSONObject jsonObject, String property) {
         return jsonObject.has(property) && jsonObject.get(property) != null;
     }
@@ -94,16 +96,15 @@ public class TurAEMCommonsUtils {
     }
 
     public static Optional<String> getResponseBody(String url, String username, String password) {
-        HttpGet request = new HttpGet(URI.create(UrlEscapers.urlFragmentEscaper().escape(url)).normalize());
         try (CloseableHttpClient httpClient = HttpClientBuilder.create()
                 .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.AUTHORIZATION, basicAuth(username, password))))
-                .build();
-             CloseableHttpResponse response = httpClient.execute(request)) {
-            HttpEntity entity = response.getEntity();
-            if (entity != null) {
-                return Optional.of(EntityUtils.toString(entity));
-            }
-        } catch (IOException | ParseException e) {
+                .build()) {
+            HttpGet request = new HttpGet(URI.create(UrlEscapers.urlFragmentEscaper().escape(url)).normalize());
+            return httpClient.execute(request, response -> {
+                HttpEntity entity = response.getEntity();
+                return entity != null ? Optional.of(EntityUtils.toString(entity)) : Optional.empty();
+            });
+        } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
         return Optional.empty();
@@ -128,6 +129,7 @@ public class TurAEMCommonsUtils {
             }
         });
     }
+
     public static Locale getLocaleFromContext(TurAemSourceContext turAemSourceContext, TurCmsContext context) {
         AemObject aemObject = (AemObject) context.getCmsObjectInstance();
         return getLocaleFromAemObject(turAemSourceContext, aemObject);

@@ -28,27 +28,29 @@ public class TurNLPUtils {
     public static final String PDF_SIGNATURE = "%PDF-";
 
     public RedactionScript createRedactionScript(TurNLPResponse turNLPResponse) {
-       return Optional.ofNullable(turNLPResponse)
+        return Optional.ofNullable(turNLPResponse)
                 .map(TurNLPResponse::getEntityMapWithProcessedValues)
                 .map(this::createRedactionScript).orElse(new RedactionScript());
     }
+
     public RedactionScript createRedactionScript(Map<String, List<String>> entityMap) {
         List<RedactionCommand> redactionCommands = new ArrayList<>();
         RedactionScript redactionScript = new RedactionScript();
         redactionScript.setVersion("1");
         entityMap.forEach((key, value) ->
-                        Optional.ofNullable(value).ifPresent(v ->
-                                v.forEach(term -> {
-                                    RedactionCommand redactionCommand = new RedactionCommand();
-                                    SearchString searchString = new SearchString();
-                                    searchString.setMatchWholeWord(true);
-                                    searchString.setString(term);
-                                    redactionCommand.setSearchString(searchString);
-                                    redactionCommands.add(redactionCommand);
-                                })));
+                Optional.ofNullable(value).ifPresent(v ->
+                        v.forEach(term -> {
+                            RedactionCommand redactionCommand = new RedactionCommand();
+                            SearchString searchString = new SearchString();
+                            searchString.setMatchWholeWord(true);
+                            searchString.setString(term);
+                            redactionCommand.setSearchString(searchString);
+                            redactionCommands.add(redactionCommand);
+                        })));
         redactionScript.setRedactionCommands(redactionCommands);
         return redactionScript;
     }
+
     public void redactPdf(File file, List<String> terms) {
         if (isPDF(file)) {
             PdfReader pdfReader = null;
@@ -62,14 +64,9 @@ public class TurNLPUtils {
                 try (PdfDocument pdf = new PdfDocument(pdfReader,
                         new PdfWriter(file.getAbsolutePath().concat(REDACT_PDF)))) {
                     CompositeCleanupStrategy strategy = new CompositeCleanupStrategy();
-
                     strategy.add(new RegexBasedCleanupStrategy(redactRegex(terms))
                             .setRedactionColor(ColorConstants.DARK_GRAY));
-                    try {
-                        PdfCleaner.autoSweepCleanUp(pdf, strategy);
-                    } catch (IOException e) {
-                        log.error(e.getMessage(), e);
-                    }
+                    PdfCleaner.autoSweepCleanUp(pdf, strategy);
                 } catch (IOException e) {
                     log.error(e.getMessage(), e);
                 }
@@ -91,12 +88,11 @@ public class TurNLPUtils {
     }
 
     private Pattern redactRegex(List<String> terms) {
-
-        StringBuffer stringBuffer = new StringBuffer();
-        terms.forEach(term -> stringBuffer.append(term.concat("|")));
-        if (!stringBuffer.isEmpty()) {
-            stringBuffer.deleteCharAt(stringBuffer.length() - 1);
-            String pattern = "\\b(".concat(stringBuffer.toString().replace(")", "")
+        StringBuilder stringBuilder = new StringBuilder();
+        terms.forEach(term -> stringBuilder.append(term.concat("|")));
+        if (!stringBuilder.isEmpty()) {
+            stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+            String pattern = "\\b(".concat(stringBuilder.toString().replace(")", "")
                     .replace("(", "")).concat(")\\b");
             return Pattern.compile(Pattern.quote(pattern), Pattern.CASE_INSENSITIVE);
         } else {

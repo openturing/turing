@@ -44,7 +44,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.result.TurSEGenericResults;
@@ -363,8 +363,8 @@ public class TurSolr {
 
     private void prepareBoostQuery(TurSNSite turSNSite, SolrQuery query) {
         List<TurSNSiteFieldExt> turSNSiteFieldExtList = turSNSiteFieldExtRepository
-                .findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(), turSNSite);
-        query.set(BOOST_QUERY, turSNRankingExpressionRepository.findByTurSNSite(TurPesistenceUtils.orderByNameIgnoreCase(),
+                .findByTurSNSite(TurPersistenceUtils.orderByNameIgnoreCase(), turSNSite);
+        query.set(BOOST_QUERY, turSNRankingExpressionRepository.findByTurSNSite(TurPersistenceUtils.orderByNameIgnoreCase(),
                 turSNSite).stream().map(expression ->
                 String.format(Locale.US, "%s^%.1f",
                         "(" + boostQueryAttributes(expression, turSNSiteFieldExtList) + ")",
@@ -817,7 +817,7 @@ public class TurSolr {
 
     private Map<TurSNSiteFacetFieldEnum, List<String>> getFilterQueryMap(
             TurSEFilterQueryParameters filterQueries, TurSNSite turSNSite) {
-        Map<TurSNSiteFacetFieldEnum, List<String>> fqMap = new EnumMap<>(TurSNSiteFacetFieldEnum.class);;
+        Map<TurSNSiteFacetFieldEnum, List<String>> fqMap = new EnumMap<>(TurSNSiteFacetFieldEnum.class);
         List<TurSNSiteFieldExt> enabledFacets = turSNSiteFieldExtRepository
                 .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
         Optional.ofNullable(filterQueries)
@@ -1146,7 +1146,7 @@ public class TurSolr {
             TurSEResults turSEResults = TurSEResults.builder()
                     .spellCheck(spellCheckTerm(turSolrInstance, turSEParameters.getQuery()))
                     .results(queryResponse.getResults()
-                            .stream().map(TurSolrUtils::createTurSEResultFromDocument).collect(Collectors.toList()))
+                            .stream().map(TurSolrUtils::createTurSEResultFromDocument).toList())
                     .build();
             turSEResultsParameters(turSEParameters, query, turSEResults, queryResponse);
             return turSEResults;

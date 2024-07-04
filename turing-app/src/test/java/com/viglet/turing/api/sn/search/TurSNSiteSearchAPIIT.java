@@ -40,7 +40,7 @@ class TurSNSiteSearchAPIIT {
     @Autowired
     private TurSNSiteRepository turSNSiteRepository;
     private MockMvc mockMvc;
-    private final static String SN_SITE_NAME = "Sample";
+    private static final String SN_SITE_NAME = "Sample";
     private Principal mockPrincipal;
     private static final String SPOTLIGHT_SERVICE_URL = String.format("/api/sn/%s/spotlight", SN_SITE_NAME);
     private static final String SEARCH_SERVICE_URL = "/api/sn/%s/search?q=%s&_setlocale=%s";

@@ -32,7 +32,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNQueue;
 import com.viglet.turing.sn.template.TurSNTemplate;
@@ -92,9 +92,9 @@ public class TurSNSiteAPI {
     @GetMapping
     public List<TurSNSite> turSNSiteList(Principal principal) {
         if (turConfigProperties.isMultiTenant()) {
-            return this.turSNSiteRepository.findByCreatedBy(TurPesistenceUtils.orderByNameIgnoreCase(),principal.getName().toLowerCase());
+            return this.turSNSiteRepository.findByCreatedBy(TurPersistenceUtils.orderByNameIgnoreCase(),principal.getName().toLowerCase());
         } else {
-            return this.turSNSiteRepository.findAll(TurPesistenceUtils.orderByNameIgnoreCase());
+            return this.turSNSiteRepository.findAll(TurPersistenceUtils.orderByNameIgnoreCase());
         }
     }
 
@@ -157,7 +157,7 @@ public class TurSNSiteAPI {
     public boolean turSNSiteDelete(@PathVariable String id) {
         Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
         turSNSite.ifPresent(site ->
-                turSNSiteLocaleRepository.findByTurSNSite(TurPesistenceUtils.orderByLanguageIgnoreCase(), site).forEach(locale ->
+                turSNSiteLocaleRepository.findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), site).forEach(locale ->
                         TurSolrUtils.deleteCore(site.getTurSEInstance(), locale.getCore())
                 )
         );
@@ -193,7 +193,7 @@ public class TurSNSiteAPI {
             TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
             turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
             long documentTotal = 0L;
-            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository.findByTurSNSite(TurPesistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
+            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository.findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
                 Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
                 if (turSolrInstance.isPresent()) {
                     documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());

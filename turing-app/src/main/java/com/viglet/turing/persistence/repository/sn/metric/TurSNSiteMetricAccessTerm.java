@@ -53,6 +53,6 @@ public class TurSNSiteMetricAccessTerm {
 		super();
 		this.term = term;
 		this.total = total;
-		this.numFound =  new BigDecimal(numFound).setScale(0, RoundingMode.HALF_UP).doubleValue();
+		this.numFound =  BigDecimal.valueOf(numFound).setScale(0, RoundingMode.HALF_UP).doubleValue();
 	}
 }

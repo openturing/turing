@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 public class TurWCScheduledTasks {
     private final TurWCSourceRepository turWCSourceRepository;
     private final TurWCProcess turWCProcess;
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 
     @Inject
     public TurWCScheduledTasks(TurWCSourceRepository turWCSourceRepository, TurWCProcess turWCProcess) {

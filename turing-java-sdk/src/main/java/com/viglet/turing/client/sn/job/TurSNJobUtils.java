@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
- * 
+ * Copyright (C) 2016-2022 the original author or authors.
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -22,15 +22,14 @@ import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.utils.TurSNClientUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,61 +38,68 @@ import java.util.logging.Logger;
 
 /**
  * Turing Semantic Navigation Utilities.
- * 
+ *
  * @author Alexandre Oliveira
- * 
  * @since 0.3.5
  */
 public class TurSNJobUtils {
-	private static final Logger logger = Logger.getLogger(TurSNJobUtils.class.getName());
-	private static final String TYPE_ATTRIBUTE = "type";
-	private static final String PROVIDER_ATTRIBUTE = "source_apps";
+    private static final Logger logger = Logger.getLogger(TurSNJobUtils.class.getName());
+    private static final String TYPE_ATTRIBUTE = "type";
+    private static final String PROVIDER_ATTRIBUTE = "source_apps";
 
-	public static void importItems(TurSNJobItems turSNJobItems, TurSNServer turSNServer, boolean showOutput) {
+    private TurSNJobUtils() {
+        throw new IllegalStateException("Utility class");
+    }
 
-		try (CloseableHttpClient client = HttpClients.createDefault()) {
-			String jsonResult = new ObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(turSNJobItems);
-			ByteBuffer buffer = StandardCharsets.UTF_8.encode(jsonResult);
-			String jsonUTF8  = StandardCharsets.UTF_8.decode(buffer).toString();
+    public static void importItems(TurSNJobItems turSNJobItems, TurSNServer turSNServer, boolean showOutput) {
 
-			HttpPost httpPost = new HttpPost(
-					String.format("%s/api/sn/import", turSNServer.getServerURL()));
-			if (showOutput) {
-				System.out.println(jsonUTF8);
-			}
-			httpPost.setEntity(new StringEntity(jsonUTF8, StandardCharsets.UTF_8));
-			httpPost.setHeader("Accept", "application/json");
-			httpPost.setHeader("Content-type", "application/json");
-			httpPost.setHeader("Accept-Encoding", StandardCharsets.UTF_8.name());
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            String jsonResult = new ObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(turSNJobItems);
+            ByteBuffer buffer = StandardCharsets.UTF_8.encode(jsonResult);
+            String jsonUTF8 = StandardCharsets.UTF_8.decode(buffer).toString();
 
-			TurSNClientUtils.authentication(httpPost, turSNServer.getCredentials(), turSNServer.getApiKey());
-			try (CloseableHttpResponse response = client.execute(httpPost)) {
-				if (logger.isLoggable(Level.FINE)) {
-					logger.fine(String.format("Viglet Turing Index Request URI: %s", httpPost.getUri()));
-					logger.fine(String.format("JSON: %s", jsonResult));
-					logger.fine(String.format("Viglet Turing indexer response HTTP result is: %s, for request uri: %s",
-							response.getCode(), httpPost.getUri()));
-					logger.fine(String.format("Viglet Turing indexer response HTTP result is: %s",
-							httpPost.getEntity().toString()));
-				}
-
-			} catch (URISyntaxException e) {
-				logger.log(Level.SEVERE, e.getMessage(), e);
+            HttpPost httpPost = new HttpPost(
+                    String.format("%s/api/sn/import", turSNServer.getServerURL()));
+            if (showOutput) {
+                System.out.println(jsonUTF8);
             }
-        } catch (IOException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-		}
-	}
+            httpPost.setEntity(new StringEntity(jsonUTF8, StandardCharsets.UTF_8));
+            httpPost.setHeader("Accept", "application/json");
+            httpPost.setHeader("Content-type", "application/json");
+            httpPost.setHeader("Accept-Encoding", StandardCharsets.UTF_8.name());
 
-	public static void deleteItemsByType(TurSNServer turSNServer, String typeName) {
-		final TurSNJobItems turSNJobItems = new TurSNJobItems();
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE,
-				Collections.singletonList(turSNServer.getSiteName()), turSNServer.getLocale());
-		Map<String, Object> attributes = new HashMap<>();
-		attributes.put(TYPE_ATTRIBUTE, typeName);
-		attributes.put(PROVIDER_ATTRIBUTE, turSNServer.getProviderName());
-		turSNJobItem.setAttributes(attributes);
-		turSNJobItems.add(turSNJobItem);
-		importItems(turSNJobItems, turSNServer, false);
-	}
+            TurSNClientUtils.authentication(httpPost, turSNServer.getCredentials(), turSNServer.getApiKey());
+            client.execute(httpPost, response -> importItemsLog(response, httpPost, jsonResult));
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+        }
+    }
+
+    private static String importItemsLog(ClassicHttpResponse response, HttpPost httpPost, String jsonResult) {
+        if (logger.isLoggable(Level.FINE)) {
+            try {
+                logger.fine(String.format("Viglet Turing Index Request URI: %s", httpPost.getUri()));
+                logger.fine(String.format("JSON: %s", jsonResult));
+                logger.fine(String.format("Viglet Turing indexer response HTTP result is: %s, for request uri: %s",
+                        response.getCode(), httpPost.getUri()));
+            } catch (URISyntaxException e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+            }
+            logger.fine(String.format("Viglet Turing indexer response HTTP result is: %s",
+                    httpPost.getEntity().toString()));
+        }
+        return null;
+    }
+
+    public static void deleteItemsByType(TurSNServer turSNServer, String typeName) {
+        final TurSNJobItems turSNJobItems = new TurSNJobItems();
+        final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE,
+                Collections.singletonList(turSNServer.getSiteName()), turSNServer.getLocale());
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(TYPE_ATTRIBUTE, typeName);
+        attributes.put(PROVIDER_ATTRIBUTE, turSNServer.getProviderName());
+        turSNJobItem.setAttributes(attributes);
+        turSNJobItems.add(turSNJobItem);
+        importItems(turSNJobItems, turSNServer, false);
+    }
 }

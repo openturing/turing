@@ -36,15 +36,15 @@ public class TurMultiValue extends ArrayList<String> {
 	public static final String UTC = "UTC";
 
 	public static <T> TurMultiValue singleItem(T value) {
-		if (value instanceof String string) {
-			return singleItem(string);
-		} else if (value instanceof Boolean bool) {
-			return singleItem(bool);
-		} else if (value instanceof Date date) {
-			return singleItem(date);
-		} else {
-			return singleItem(value.toString());
-		}
+        return switch (value) {
+            case String string -> singleItem(string);
+            case Boolean bool -> singleItem(bool);
+            case Date date -> singleItem(date);
+            case null, default -> {
+                assert value != null;
+                yield singleItem(value.toString());
+            }
+        };
 	}
 
 	public static TurMultiValue singleItem(String text) {
@@ -61,7 +61,7 @@ public class TurMultiValue extends ArrayList<String> {
 
 	public static TurMultiValue singleItem(Date date) {
 		if (date == null) {
-			return null;
+			return new TurMultiValue();
 		}
 		else {
 			TimeZone tz = TimeZone.getTimeZone(UTC);
