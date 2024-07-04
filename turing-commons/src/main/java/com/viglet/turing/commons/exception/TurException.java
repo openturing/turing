@@ -18,16 +18,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.viglet.turing.exception;
-
-import java.io.Serial;
+package com.viglet.turing.commons.exception;
 
 public class TurException extends Exception {
 	public TurException(String string) {
 		super(string);
 	}
-
-	@Serial
+	public TurException(Throwable throwable) {super(throwable);}
 	private static final long serialVersionUID = 1L;
 
 }

@@ -70,5 +70,6 @@ public class TurSNSiteField implements Serializable {
 
 	@Tolerate
 	public TurSNSiteField() {
+		super();
 	}
 }

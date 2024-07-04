@@ -200,7 +200,7 @@ public class TurSNServer {
                     httpPost.setEntity(new StringEntity(jsonResult, StandardCharsets.UTF_8));
                 }
                 TurSNClientUtils.authentication(httpPost, this.getCredentials(), this.getApiKey());
-                log.debug(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
+                requestLog(turingURL);
                 return new ObjectMapper().readValue(openConnectionAndRequest(httpPost),
                         new TypeReference<List<String>>() {
                         });
@@ -212,6 +212,10 @@ public class TurSNServer {
 
     }
 
+    private static void requestLog(URIBuilder turingURL) throws URISyntaxException {
+        log.debug("Viglet Turing Request: {}", turingURL.build().toString());
+    }
+
     public void importItems(TurSNJobItems turSNJobItems, boolean showOutput) {
         TurSNJobUtils.importItems(turSNJobItems, this, showOutput);
     }
@@ -220,7 +224,7 @@ public class TurSNServer {
         if (credentials != null) {
             TurSNJobUtils.deleteItemsByType(this, typeName);
         } else {
-            log.error(String.format("No credentials to delete items by %s type", typeName));
+            log.error("No credentials to delete items by {} type", typeName);
         }
     }
 
@@ -450,7 +454,7 @@ public class TurSNServer {
 
             TurSNClientUtils.authentication(httpPost, this.getCredentials(), this.getApiKey());
 
-            log.debug(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
+            requestLog(turingURL);
         } catch (JsonProcessingException | URISyntaxException e) {
             log.error(e.getMessage(), e);
         }
@@ -467,7 +471,7 @@ public class TurSNServer {
             httpGet.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
             httpGet.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
 
-            log.debug(String.format("Viglet Turing Request: %s", turingURL.build().toString()));
+            requestLog(turingURL);
 
         } catch (URISyntaxException e) {
             log.error(e.getMessage(), e);
