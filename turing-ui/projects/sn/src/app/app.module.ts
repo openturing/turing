@@ -1,4 +1,4 @@
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { MomentModule } from 'ngx-moment';
@@ -12,26 +12,20 @@ import { FormsModule } from '@angular/forms';
 import { APP_BASE_HREF, Location } from '@angular/common';
 import { SafeHtmlPipe } from './safe-html.pipe';
 
-@NgModule({
-  declarations: [
-    AppComponent,
-    IdenticonHashDirective,
-    TurSNSearchRootPageComponent,
-    SafeHtmlPipe
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    OcticonsModule,
-    HttpClientModule,
-    MomentModule,
-    FormsModule
-  ],
-  providers: [
-    TurSNSearchService,
-    { provide: APP_BASE_HREF, useValue: (window as any)['_app_base'] || '/' }
-  ],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  bootstrap: [AppComponent]
-})
+@NgModule({ declarations: [
+        AppComponent,
+        IdenticonHashDirective,
+        TurSNSearchRootPageComponent,
+        SafeHtmlPipe
+    ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA],
+    bootstrap: [AppComponent], imports: [BrowserModule,
+        AppRoutingModule,
+        OcticonsModule,
+        MomentModule,
+        FormsModule], providers: [
+        TurSNSearchService,
+        { provide: APP_BASE_HREF, useValue: (window as any)['_app_base'] || '/' },
+        provideHttpClient(withInterceptorsFromDi())
+    ] })
 export class AppModule { }

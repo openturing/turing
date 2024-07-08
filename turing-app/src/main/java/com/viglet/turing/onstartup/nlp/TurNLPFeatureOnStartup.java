@@ -21,7 +21,6 @@
 package com.viglet.turing.onstartup.nlp;
 
 import com.google.inject.Inject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +50,7 @@ public class TurNLPFeatureOnStartup {
 			saveNLPFeature("Dependency Parsing");
 			saveNLPFeature("Sentiment Analysis");
 			saveNLPFeature("Mention Detection");
-			saveNLPFeature("Coreference");
+			saveNLPFeature("Conference");
 			saveNLPFeature("Open IE");
 		}
 	}

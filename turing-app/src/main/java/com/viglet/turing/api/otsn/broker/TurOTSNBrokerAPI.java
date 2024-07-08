@@ -25,7 +25,6 @@ import com.viglet.turing.api.sn.job.*;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -67,12 +66,11 @@ public class TurOTSNBrokerAPI {
 			if (document != null) {
 				Element element = document.getDocumentElement();
 				NodeList nodes = element.getChildNodes();
-				TurSNJobItem turSNJobItem = createJobItem(nodes);
+				TurSNJobItem turSNJobItem = createJobItem(nodes, Collections.singletonList(siteName));
 				TurSNJobItems turSNJobItems = new TurSNJobItems();
 				turSNJobItems.add(turSNJobItem);
-				TurSNJob turSNJob = createSNJob(turSNSite, turSNJobItems);
 				log.debug("Indexed Job by Id");
-				turSNImportAPI.send(turSNJob);
+				turSNImportAPI.send(createSNJobItems(turSNJobItems));
 				return OK;
 			} else {
 				return FAILED;
@@ -81,16 +79,12 @@ public class TurOTSNBrokerAPI {
 
 	}
 
-	private TurSNJob createSNJob(TurSNSite turSNSite, TurSNJobItems turSNJobItems) {
-		TurSNJob turSNJob = new TurSNJob();
-		turSNJob.setSiteId(turSNSite.getId());
-
-		turSNJob.setTurSNJobItems(turSNJobItems);
-		return turSNJob;
+	private TurSNJobItems createSNJobItems(TurSNJobItems turSNJobItems) {
+		return turSNJobItems;
 	}
 
-	private TurSNJobItem createJobItem(NodeList nodes) {
-		TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE);
+	private TurSNJobItem createJobItem(NodeList nodes, List<String> siteNames) {
+		TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, siteNames);
 		Map<String, Object> attributes = addAttributesToJobItem(nodes, turSNJobItem);
 		turSNJobItem.setAttributes(attributes);
 		return turSNJobItem;
@@ -156,8 +150,8 @@ public class TurOTSNBrokerAPI {
 
 		if (action.equals("delete")) {
 			TurSNJobItems turSNJobItems = new TurSNJobItems();
-			TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE);
-			siteName = getFirstSiteName(siteName);
+			TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE,
+					Collections.singletonList(getFirstSiteName(siteName)));
 
 			Map<String, Object> attributes = new HashMap<>();
 			if (id.isPresent()) {
@@ -169,12 +163,7 @@ public class TurOTSNBrokerAPI {
 			}
 			turSNJobItem.setAttributes(attributes);
 			turSNJobItems.add(turSNJobItem);
-			TurSNJob turSNJob = new TurSNJob();
-			turSNSiteRepository.findByName(siteName)
-					.ifPresent(turSNSite -> turSNJob.setSiteId(turSNSite.getId()));
-
-			turSNJob.setTurSNJobItems(turSNJobItems);
-			turSNImportAPI.send(turSNJob);
+			turSNImportAPI.send(turSNJobItems);
 			return OK;
 
 		} else {

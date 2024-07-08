@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<appender name="CONSOLE"
+		class="ch.qos.logback.core.ConsoleAppender">
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<Pattern>
+				%msg%n
+			</Pattern>
+		</layout>
+	</appender>
+	<logger name="com.viglet.turing.connector.aem.indexer.TurAemApplication" level="info"
+		additivity="false">
+		<appender-ref ref="CONSOLE" />
+	</logger>
+	<logger name="com.viglet.turing.connector.aem.indexer.onstartup"
+			level="info" additivity="false">
+		<appender-ref ref="CONSOLE" />
+	</logger>
+	<include
+		resource="org/springframework/boot/logging/logback/defaults.xml" />
+	<property name="LOG_FILE"
+		value="${LOG_FILE:-${LOG_PATH:-${LOG_TEMP:-${java.io.tmpdir:-/tmp}}/}spring.log}" />
+	<include
+		resource="org/springframework/boot/logging/logback/file-appender.xml" />
+	<root level="INFO">
+		<appender-ref ref="FILE" />
+	</root>
+</configuration>

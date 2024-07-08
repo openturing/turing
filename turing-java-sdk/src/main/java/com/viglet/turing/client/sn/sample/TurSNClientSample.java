@@ -18,13 +18,14 @@ package com.viglet.turing.client.sn.sample;
 
 import com.viglet.turing.client.sn.*;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
+import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
 import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -38,7 +39,7 @@ import java.util.logging.Logger;
  * @since 0.3.4
  */
 public class TurSNClientSample {
-	private static final Logger logger = Logger.getLogger(TurSNServer.class.getName());
+	private static final Logger logger = Logger.getLogger(TurSNClientSample.class.getName());
 
 	private static final String TURING_URL = "http://localhost:2700";
 	private static final String TURING_SITE = "Sample";
@@ -56,8 +57,8 @@ public class TurSNClientSample {
 			System.out.println("--- Locales");
 			locales();
 
-			turSNServer = new HttpTurSNServer(new URL(TURING_URL), TURING_SITE, TURING_LOCALE,
-					TURING_API_KEY, TURING_USERID);
+			turSNServer = new HttpTurSNServer(URI.create(TURING_URL).toURL(), TURING_SITE, TURING_LOCALE,
+					new TurApiKeyCredentials(TURING_API_KEY), TURING_USERID);
 
 			System.out.println("--- Auto complete");
 			autoComplete(turSNServer);
@@ -90,7 +91,7 @@ public class TurSNClientSample {
 
 	private static void locales() throws MalformedURLException {
 		HttpTurSNServer turSNServer;
-		turSNServer = new HttpTurSNServer(new URL(TURING_URL), TURING_SITE);
+		turSNServer = new HttpTurSNServer(URI.create(TURING_URL).toURL(), TURING_SITE);
 		turSNServer.getLocales().forEach(System.out::println);
 	}
 

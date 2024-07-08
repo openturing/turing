@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpXsrfTokenExtractor} from '@angular/common/http';
+import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpXsrfTokenExtractor } from '@angular/common/http';
 import {Observable} from 'rxjs';
 
 import {environment} from '../../../../../environments/environment';
@@ -33,6 +33,13 @@ export class BasicAuthInterceptor implements HttpInterceptor {
           'X-Requested-With': 'XMLHttpRequest',
           'Content-Type': 'application/json',
           'X-XSRF-TOKEN': token
+        }
+      })
+    } else {
+      request = request.clone({
+        setHeaders: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json'
         }
       })
     }

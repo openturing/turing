@@ -29,7 +29,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 /**
  * The persistent class for the TurGroup database table.

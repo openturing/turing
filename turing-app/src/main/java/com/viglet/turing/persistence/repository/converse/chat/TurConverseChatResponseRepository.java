@@ -23,13 +23,9 @@ package com.viglet.turing.persistence.repository.converse.chat;
 
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
 import com.viglet.turing.persistence.model.converse.chat.TurConverseChatResponse;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface TurConverseChatResponseRepository extends JpaRepository<TurConverseChatResponse, String> {
 

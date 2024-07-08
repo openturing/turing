@@ -17,6 +17,9 @@
 
 package com.viglet.turing.client.sn.credentials;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Turing Server Credentials.
  * 
@@ -24,6 +27,8 @@ package com.viglet.turing.client.sn.credentials;
  * 
  * @since 0.3.5
  */
+@Setter
+@Getter
 public class TurUsernamePasswordCredentials implements TurCredentials {
 
 	private String username;
@@ -33,22 +38,6 @@ public class TurUsernamePasswordCredentials implements TurCredentials {
 	public TurUsernamePasswordCredentials(String username, String password) {
 		super();
 		this.username = username;
-		this.password = password;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
 		this.password = password;
 	}
 

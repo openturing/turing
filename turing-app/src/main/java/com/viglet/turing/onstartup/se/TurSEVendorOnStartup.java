@@ -21,7 +21,6 @@
 package com.viglet.turing.onstartup.se;
 
 import com.google.inject.Inject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +46,7 @@ public class TurSEVendorOnStartup {
 			turSEVendor.setDescription("Apache Solr");
 			turSEVendor.setPlugin("");
 			turSEVendor.setTitle("Apache Solr");
-			turSEVendor.setWebsite("http://lucene.apache.org/solr");
+			turSEVendor.setWebsite("https://solr.apache.org");
 			turSEVendorRepository.save(turSEVendor);
 		}
 	}

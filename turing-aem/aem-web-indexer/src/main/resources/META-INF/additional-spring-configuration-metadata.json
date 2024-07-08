@@ -1,0 +1,29 @@
+{
+  "properties": [
+    {
+      "name": "turing.url",
+      "type": "java.lang.String",
+      "description": "Turing URL."
+    },
+    {
+      "name": "turing.apiKey",
+      "type": "java.lang.String",
+      "description": "Turing API Key."
+    },
+    {
+      "name": "turing.aem.timeout",
+      "type": "java.lang.Integer",
+      "description": "Web Crawler Page Timeout."
+    },
+    {
+      "name": "turing.aem.job.size",
+      "type": "java.lang.Integer",
+      "description": "Turing Job Max Size."
+    },
+    {
+      "name": "turing.aem.job.interval.minutes",
+      "type": "java.lang.Long",
+      "description": "Job interval in minutes."
+    }
+  ]
+}

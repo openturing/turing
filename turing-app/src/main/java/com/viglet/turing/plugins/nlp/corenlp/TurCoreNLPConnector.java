@@ -38,6 +38,7 @@ import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -60,8 +61,8 @@ public class TurCoreNLPConnector implements TurNLPPlugin {
 
 			String queryParams = String.format("properties=%s", URLEncoder.encode(props, StandardCharsets.UTF_8));
 
-			URL serverURL = new URL(
-					String.format("%s/?%s", turNLPRequest.getTurNLPInstance().getEndpointURL(), queryParams));
+			URL serverURL = URI.create(
+					String.format("%s/?%s", turNLPRequest.getTurNLPInstance().getEndpointURL(), queryParams)).toURL();
 
 			HttpPost httppost = new HttpPost(serverURL.toString());
 

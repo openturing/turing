@@ -1,6 +1,6 @@
 <div *ngIf="(getTurNLPEntity() | async) as nlpEntity; else loading">
   <div class="Subhead mt-4 mb-3">
-    <div class="Subhead-heading">
+    <div class="Subhead-heading Subhead-heading--large">
       <div *ngIf="!isNewObject()" class="d-flex">
         <div style="height: 35px; border-radius: 50%;">
           <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="nlpEntity.name | lowercase">

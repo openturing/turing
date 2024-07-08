@@ -21,10 +21,13 @@
 package com.viglet.turing.api.sn.bean;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.util.List;
-
+@RequiredArgsConstructor
+@Accessors(chain = true)
 @Getter
 @Setter
 public class TurSNSiteFilterQueryBean {

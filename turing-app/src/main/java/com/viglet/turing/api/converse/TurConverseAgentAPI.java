@@ -39,7 +39,6 @@ import com.viglet.turing.persistence.repository.converse.intent.TurConverseInten
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -189,7 +188,7 @@ public class TurConverseAgentAPI {
 	@GetMapping("/{id}/chat")
 	public TurConverseAgentResponse turConverseAgentChat(@PathVariable String id,
 			@RequestParam(required = false, name = "q") String q,
-			@RequestParam(required = false, name = "start") boolean start, HttpSession session) {
+			@RequestParam(required = false, name = "start") Boolean start, HttpSession session) {
 
 		String conversationId;
 

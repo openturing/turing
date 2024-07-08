@@ -1,7 +1,7 @@
 <div *ngIf="(getTurSNSite() | async) as snSite; else loading">
 
   <div class="Subhead">
-    <div class="Subhead-heading"><span octicon="gear" [size]="24" class="mr-1"></span> Settings</div>
+    <div class="Subhead-heading Subhead-heading--large"><span octicon="gear" [size]="24" class="mr-1"></span> Settings</div>
     <div class="Subhead-actions">
       <button (click)="save(snSite)" type="button" class="btn btn-primary">{{saveButtonCaption()}}</button>
     </div>

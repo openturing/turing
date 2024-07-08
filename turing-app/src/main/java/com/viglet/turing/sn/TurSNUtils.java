@@ -26,8 +26,8 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentMetadataBean;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteFieldExt;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.solr.TurSolrField;
 import jakarta.servlet.http.HttpServletRequest;
@@ -73,14 +73,16 @@ public class TurSNUtils {
 		StringBuilder sbQueryString = new StringBuilder();
 		boolean alreadyExists = false;
 		for (NameValuePair nameValuePair : params) {
-			if ((nameValuePair.getValue().equals(fq)
-					&& nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES))) {
-				alreadyExists = true;
+			if (nameValuePair.getValue() != null) {
+				if (nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT) &&
+						nameValuePair.getValue().equals(fq)) {
+					alreadyExists = true;
+				}
+				resetPaginationOrAddParameter(sbQueryString, nameValuePair);
 			}
-			resetPaginationOrAddParameter(sbQueryString, nameValuePair);
 		}
 		if (!alreadyExists) {
-			TurCommonsUtils.addParameterToQueryString(sbQueryString, TurSNParamType.FILTER_QUERIES, fq);
+			TurCommonsUtils.addParameterToQueryString(sbQueryString, TurSNParamType.FILTER_QUERIES_DEFAULT, fq);
 		}
 
 		return TurCommonsUtils.modifiedURI(uri, sbQueryString);
@@ -91,7 +93,7 @@ public class TurSNUtils {
 		StringBuilder sbQueryString = new StringBuilder();
 		for (NameValuePair nameValuePair : params) {
 			if (!(java.net.URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8).equals(fq)
-					&& nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES))) {
+					&& nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT))) {
 				resetPaginationOrAddParameter(sbQueryString, nameValuePair);
 			}
 		}
@@ -121,14 +123,14 @@ public class TurSNUtils {
 		}
 	}
 
-	public static void addSNDocument(URI uri, Map<String, TurSNSiteFieldExt> fieldExtMap,
-			Map<String, TurSNSiteFieldExt> facetMap, List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean,
-			TurSEResult result, boolean isElevate) {
-		addSNDocumentWithPostion(uri, fieldExtMap, facetMap, turSNSiteSearchDocumentsBean, result, isElevate, null);
+	public static void addSNDocument(URI uri, Map<String, TurSNSiteFieldExtDto> fieldExtMap,
+                                     Map<String, TurSNSiteFieldExtDto> facetMap, List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean,
+                                     TurSEResult result, boolean isElevate) {
+		addSNDocumentWithPosition(uri, fieldExtMap, facetMap, turSNSiteSearchDocumentsBean, result, isElevate, null);
 	}
 
-	public static void addSNDocumentWithPostion(URI uri, Map<String, TurSNSiteFieldExt> fieldExtMap,
-			Map<String, TurSNSiteFieldExt> facetMap, List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean,
+	public static void addSNDocumentWithPosition(URI uri, Map<String, TurSNSiteFieldExtDto> fieldExtMap,
+			Map<String, TurSNSiteFieldExtDto> facetMap, List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean,
 			TurSEResult result, boolean isElevate, Integer position) {
 		TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean = new TurSNSiteSearchDocumentBean();
 		Map<String, Object> turSEResultAttr = result.getFields();
@@ -141,7 +143,7 @@ public class TurSNUtils {
 
 		turSNSiteSearchDocumentBean.setMetadata(turSNSiteSearchDocumentMetadataBeans);
 
-		setSourcefromDocument(turSNSiteSearchDocumentBean, turSEResultAttr);
+		setSourceFromDocument(turSNSiteSearchDocumentBean, turSEResultAttr);
 
 		Map<String, Object> fields = addFieldsFromDocument(fieldExtMap, turSEResultAttr, attribs);
 		turSNSiteSearchDocumentBean.setFields(fields);
@@ -152,29 +154,29 @@ public class TurSNUtils {
 		}
 	}
 
-	private static Map<String, Object> addFieldsFromDocument(Map<String, TurSNSiteFieldExt> fieldExtMap,
-			Map<String, Object> turSEResultAttr, Set<String> attribs) {
+	private static Map<String, Object> addFieldsFromDocument(Map<String, TurSNSiteFieldExtDto> fieldExtMap,
+															 Map<String, Object> turSEResultAttr, Set<String> attribs) {
 		Map<String, Object> fields = new HashMap<>();
 		attribs.forEach(attribute -> {
 			if (!attribute.startsWith(TURING_ENTITY)) {
-				addFieldandValueToMap(turSEResultAttr, fields, attribute, getFieldName(fieldExtMap, attribute));
+				addFieldAndValueToMap(turSEResultAttr, fields, attribute, getFieldName(fieldExtMap, attribute));
 			}
 		});
 		return fields;
 	}
 
-	private static String getFieldName(Map<String, TurSNSiteFieldExt> fieldExtMap, String attribute) {
+	private static String getFieldName(Map<String, TurSNSiteFieldExtDto> fieldExtMap, String attribute) {
 		String nodeName;
 		if (fieldExtMap.containsKey(attribute)) {
-			TurSNSiteFieldExt turSNSiteFieldExt = fieldExtMap.get(attribute);
-			nodeName = turSNSiteFieldExt.getName();
+			TurSNSiteFieldExtDto turSNSiteFieldExtDto = fieldExtMap.get(attribute);
+			nodeName = turSNSiteFieldExtDto.getName();
 		} else {
 			nodeName = attribute;
 		}
 		return nodeName;
 	}
 
-	private static void addFieldandValueToMap(Map<String, Object> turSEResultAttr, Map<String, Object> fields,
+	private static void addFieldAndValueToMap(Map<String, Object> turSEResultAttr, Map<String, Object> fields,
 			String attribute, String nodeName) {
 		if (nodeName != null && fields.containsKey(nodeName)) {
 			addValueToExistingFieldMap(turSEResultAttr, fields, attribute, nodeName);
@@ -197,7 +199,7 @@ public class TurSNUtils {
 		}
 	}
 
-	private static void setSourcefromDocument(TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean,
+	private static void setSourceFromDocument(TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean,
 			Map<String, Object> turSEResultAttr) {
 		if (turSEResultAttr.containsKey(URL)) {
 			turSNSiteSearchDocumentBean.setSource((String) turSEResultAttr.get(URL));
@@ -205,7 +207,7 @@ public class TurSNUtils {
 	}
 
 	private static List<TurSNSiteSearchDocumentMetadataBean> addMetadataFromDocument(URI uri,
-			Map<String, TurSNSiteFieldExt> facetMap, Map<String, Object> turSEResultAttr) {
+																					 Map<String, TurSNSiteFieldExtDto> facetMap, Map<String, Object> turSEResultAttr) {
 		List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans = new ArrayList<>();
 		facetMap.keySet().forEach(facet -> {
 			if (turSEResultAttr.containsKey(facet)) {

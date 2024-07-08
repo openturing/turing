@@ -22,7 +22,6 @@ package com.viglet.turing.persistence.repository.nlp.term;
 
 import com.viglet.turing.persistence.model.nlp.term.TurTermVariationLanguage;
 
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TurTermVariationLanguageRepository extends JpaRepository<TurTermVariationLanguage, String> {

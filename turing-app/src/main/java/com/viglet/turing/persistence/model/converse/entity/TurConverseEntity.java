@@ -22,7 +22,6 @@ package com.viglet.turing.persistence.model.converse.entity;
 
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.viglet.turing.persistence.model.converse.TurConverseAgent;
-import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import lombok.Getter;

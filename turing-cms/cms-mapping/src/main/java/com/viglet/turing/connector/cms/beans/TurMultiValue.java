@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.connector.cms.beans;
 
+import java.io.Serial;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -29,9 +30,19 @@ import java.util.TimeZone;
 
 public class TurMultiValue extends ArrayList<String> {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 	public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 	public static final String UTC = "UTC";
+
+	public static <T> TurMultiValue singleItem(T value) {
+        return switch (value) {
+            case String string -> singleItem(string);
+            case Boolean bool -> singleItem(bool);
+            case Date date -> singleItem(date);
+            case null, default -> value != null ? singleItem(value.toString()) : null;
+        };
+	}
 
 	public static TurMultiValue singleItem(String text) {
 		TurMultiValue turMultiValue = new TurMultiValue();
@@ -47,7 +58,7 @@ public class TurMultiValue extends ArrayList<String> {
 
 	public static TurMultiValue singleItem(Date date) {
 		if (date == null) {
-			return null;
+			return new TurMultiValue();
 		}
 		else {
 			TimeZone tz = TimeZone.getTimeZone(UTC);
@@ -60,5 +71,9 @@ public class TurMultiValue extends ArrayList<String> {
 		TurMultiValue turMultiValue = new TurMultiValue();
 		turMultiValue.addAll(list);
 		return turMultiValue;
+	}
+
+	public static TurMultiValue empty() {
+        return new TurMultiValue();
 	}
 }

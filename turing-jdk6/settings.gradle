@@ -1,3 +1,0 @@
-ootProject.name = 'turing-jdk6'
-include ':turing-java-sdk-jdk6'
-include ':turing-wem-jdk6'

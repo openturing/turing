@@ -56,15 +56,15 @@ public class TurSNProxyContext {
 	@Value("${turing.endpoint}")
 	private String turingEndpoint;
 
-	private final static String API_ENDPOINT_FORMAT = "%s/api/sn/%s/%s";
-	private final static String API_ENDPOINT_SEARCH = "search";
-	private final static String API_ENDPOINT_AUTO_COMPLETE = "ac";
-	private final static String PARAM_Q = "q";
-	private final static String PARAM_P = "p";
-	private final static String PARAM_ROWS = "rows";
-	private final static String PARAM_FQ = "fq[]";
-	private final static String PARAM_TR = "tr[]";
-	private final static String PARAM_SORT = "SORT";
+	private static final String API_ENDPOINT_FORMAT = "%s/api/sn/%s/%s";
+	private static final String API_ENDPOINT_SEARCH = "search";
+	private static final String API_ENDPOINT_AUTO_COMPLETE = "ac";
+	private static final String PARAM_Q = "q";
+	private static final String PARAM_P = "p";
+	private static final String PARAM_ROWS = "rows";
+	private static final String PARAM_FQ = "fq[]";
+	private static final String PARAM_TR = "tr[]";
+	private static final String PARAM_SORT = "SORT";
 
 	@GetMapping("/search")
 	public ResponseEntity<Object> turSNSiteSearchSelect(HttpServletRequest request, @PathVariable String siteName,
@@ -105,9 +105,9 @@ public class TurSNProxyContext {
 	}
 
 	@GetMapping("/ac")
-	public ResponseEntity<Object> turSNSiteAutoComplete(HttpServletRequest request, @PathVariable String siteName,
-			@RequestParam(required = true, name = PARAM_Q) String q,
-			@RequestParam(required = false, name = PARAM_ROWS) String rows) {
+	public ResponseEntity<Object> turSNSiteAutoComplete(@PathVariable String siteName,
+														@RequestParam(name = PARAM_Q) String q,
+														@RequestParam(required = false, name = PARAM_ROWS) String rows) {
 
 		try {
 			URIBuilder turingURL = new URIBuilder(
@@ -127,7 +127,7 @@ public class TurSNProxyContext {
 		return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 	}
 
-	private ResponseEntity<Object> responseTuring(URIBuilder turingURL) throws URISyntaxException {
+	private ResponseEntity<Object> responseTuring(URIBuilder turingURL) {
 		final HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 		return new ResponseEntity<>(this.getResults(turingURL), httpHeaders, HttpStatus.OK);
@@ -135,9 +135,9 @@ public class TurSNProxyContext {
 
 	private String getResults(URIBuilder url) {
 		try (CloseableHttpClient client = HttpClients.createDefault()) {
-			return EntityUtils.toString(client.execute(new HttpGet(url.build().toString())).getEntity(),
-					StandardCharsets.UTF_8);
-		} catch (IOException | ParseException | URISyntaxException e) {
+			return client.execute(new HttpGet(url.build().toString()), response ->
+					EntityUtils.toString(response.getEntity(),StandardCharsets.UTF_8));
+		} catch (IOException | URISyntaxException e) {
 			logger.error(e.getMessage(), e);
 		}
 		return StringUtils.EMPTY;

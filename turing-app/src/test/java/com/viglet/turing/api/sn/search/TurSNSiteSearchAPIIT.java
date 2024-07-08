@@ -33,20 +33,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class TurSNSiteSearchAPIIT {
+class TurSNSiteSearchAPIIT {
+    public static final String PT = "pt";
     @Autowired
     private WebApplicationContext webApplicationContext;
     @Autowired
     private TurSNSiteRepository turSNSiteRepository;
     private MockMvc mockMvc;
-    private final static String SN_SITE_NAME = "Sample";
+    private static final String SN_SITE_NAME = "Sample";
     private Principal mockPrincipal;
-    private final static String SPOTLIGHT_SERVICE_URL = String.format("/api/sn/%s/spotlight", SN_SITE_NAME);
-    private final static String SEARCH_SERVICE_URL = "/api/sn/%s/search?q=%s&_setlocale=%s";
-    private final static String SEARCH_INSTANCE_SERVICE_URL = "/api/se/select?q=*:*";
-    private final static String WRONG_SEARCH_TERM = "siarch";
-    private final static String SEARCH_TERM = "search";
-    private final static String SEARCH_ALL_TERM = "*";
+    private static final String SPOTLIGHT_SERVICE_URL = String.format("/api/sn/%s/spotlight", SN_SITE_NAME);
+    private static final String SEARCH_SERVICE_URL = "/api/sn/%s/search?q=%s&_setlocale=%s";
+    private static final String SEARCH_INSTANCE_SERVICE_URL = "/api/se/select?q=*:*";
+    private static final String WRONG_SEARCH_TERM = "siarch";
+    private static final String SEARCH_TERM = "search";
+    private static final String SEARCH_ALL_TERM = "*";
 
     @BeforeAll
     public void setup() {
@@ -118,7 +119,7 @@ public class TurSNSiteSearchAPIIT {
     @Test
     @Order(4)
     void openMultiLanguagePortuguese() throws Exception {
-        multiLanguageNotExistsTests(new Locale("pt"));
+        multiLanguageNotExistsTests(Locale.of(PT));
     }
 
     @Test

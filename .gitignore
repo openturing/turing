@@ -37,3 +37,6 @@ hs_err_pid*
 
 .flattened-pom.xml
 dependency-reduced-pom.xml
+/turing-aem/aem-web-indexer/src/main/resources/customer/
+/turing-aem/aem-web-indexer/store/db/
+/turing-aem/aem-web-indexer/store/logs/

@@ -23,5 +23,10 @@
     "name": "turing.keycloak",
     "type": "java.lang.Boolean",
     "description": "A description for 'turing.keycloak'."
+  },
+  {
+    "name": "turing.openai.key",
+    "type": "java.lang.String",
+    "description": "A description for 'turing.openai.key'."
   }
 ]}

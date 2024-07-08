@@ -1,39 +1,58 @@
 # This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
 
-# This workflow uses actions that are not certified by GitHub.
+# This workflow uses actions that GitHub does not certify.
 # They are provided by a third-party and are governed by
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Java CI with Maven
+name: Java CI with Maven and SonarCloud
 
 on:
   push:
-    branches: [ "0.3.8" ]
+    branches: [ "master", "0.3.9" ]
   pull_request:
-    branches: [ "0.3.8" ]
-
+      types: [ opened, synchronize, reopened ]
 jobs:
   build:
 
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
       - name: Use Node.js 18.10.0
         uses: actions/setup-node@v1
         with:
           node-version: 18.10.0
+
       - name: Install Angular Cli
         run: npm i -g @angular/cli
 
-      - uses: actions/checkout@v3
       - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-      - name: Build with Maven
-        run: mvn -B package --file pom.xml
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build and analyze
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=turing-app

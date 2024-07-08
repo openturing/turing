@@ -1,7 +1,7 @@
 <div *ngIf="(getTurSEInstance() | async) as seInstance; else loading">
 
   <div class="Subhead mt-4">
-    <div class="Subhead-heading">
+    <div class="Subhead-heading Subhead-heading--large">
       <div *ngIf="!isNewObject()" class="d-flex">
         <div style="height: 32px; border-radius: 50%;">
           <svg width="35" height="35" style="border-radius: 50%;" [identiconHash]="seInstance.title | lowercase">
@@ -68,7 +68,7 @@
   </div>
   <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
     <div class="Subhead">
-      <div class="Subhead-heading"><span octicon="gear" [size]="24" class="mr-1"></span> Settings</div>
+      <div class="Subhead-heading Subhead-heading--large"><span octicon="gear" [size]="24" class="mr-1"></span> Settings</div>
       <button (click)="save(seInstance)" type="button" class="btn btn-primary">{{saveButtonCaption()}}</button>
       <div class="Subhead-description">Search engine settings.</div>
     </div>

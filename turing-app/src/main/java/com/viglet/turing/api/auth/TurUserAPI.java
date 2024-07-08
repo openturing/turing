@@ -29,9 +29,7 @@ import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -68,7 +66,7 @@ public class TurUserAPI {
     }
 
     @GetMapping("/current")
-    public TurCurrentUser turUserCurrent( HttpServletRequest request) {
+    public TurCurrentUser turUserCurrent() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!(authentication instanceof AnonymousAuthenticationToken)) {
             boolean isAdmin = false;

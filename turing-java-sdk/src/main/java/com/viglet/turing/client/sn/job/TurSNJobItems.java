@@ -16,13 +16,16 @@
 
 package com.viglet.turing.client.sn.job;
 
+import com.google.common.collect.Iterators;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 /**
- * List of jobs to index and deindex in Turing AI.
+ * List of jobs to index and deIndex in Turing AI.
  * 
  * @author Alexandre Oliveira
  * 
@@ -30,7 +33,7 @@ import java.util.List;
  */
 public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 	private static final long serialVersionUID = 1L;
-	private List<TurSNJobItem> turSNJobItems = new ArrayList<>();
+	private List<TurSNJobItem> snJobItems = new ArrayList<>();
 	public TurSNJobItems() {
 		super();
 	}
@@ -42,23 +45,25 @@ public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 	}
 	@Override
 	public Iterator<TurSNJobItem> iterator() {
-		return turSNJobItems.iterator();
+		return snJobItems.iterator();
 	}
-
+	public int size () {
+		return Iterators.size(this.iterator());
+	}
 	public List<TurSNJobItem> getTuringDocuments() {
-		return turSNJobItems;
+		return snJobItems;
 	}
 
 	public void setTuringDocuments(List<TurSNJobItem> jobItems) {
-		this.turSNJobItems = jobItems;
+		this.snJobItems = jobItems;
 	}
 
 	public boolean add(TurSNJobItem turSNJobItem) {
-		return turSNJobItems.add(turSNJobItem);
+		return snJobItems.add(turSNJobItem);
 	}
 
 	public boolean remove(TurSNJobItem turSNJobItem) {
-		return turSNJobItems.remove(turSNJobItem);
+		return snJobItems.remove(turSNJobItem);
 	}
 
 	public String toString() {

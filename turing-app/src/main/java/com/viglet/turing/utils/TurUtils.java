@@ -23,12 +23,10 @@ package com.viglet.turing.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.google.inject.Inject;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.spring.security.auth.ITurAuthenticationFacade;
+import com.viglet.turing.commons.exception.TurException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,13 +36,6 @@ import java.util.UUID;
 @Slf4j
 @Component
 public class TurUtils {
-	private final ITurAuthenticationFacade authenticationFacade;
-
-	@Inject
-	public TurUtils(ITurAuthenticationFacade authenticationFacade) {
-		this.authenticationFacade = authenticationFacade;
-	}
-
 	private static File getTempDirectory() {
 		return TurCommonsUtils.addSubDirToStoreDir("tmp");
 	}
@@ -83,13 +74,13 @@ public class TurUtils {
 		return getTempDirectory().getAbsolutePath().concat(File.separator + "imp_" + UUID.randomUUID());
 	}
 
-	public static String asJsonString(final Object obj) throws Exception {
+	public static String asJsonString(final Object obj) throws TurException {
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 			return mapper.writeValueAsString(obj);
 		} catch (Exception e) {
-			throw new Exception(e);
+			throw new TurException(e);
 		}
     }
 }

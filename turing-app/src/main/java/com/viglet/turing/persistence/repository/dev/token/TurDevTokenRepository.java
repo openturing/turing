@@ -21,11 +21,8 @@
 
 package com.viglet.turing.persistence.repository.dev.token;
 
-import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.dev.token.TurDevToken;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 

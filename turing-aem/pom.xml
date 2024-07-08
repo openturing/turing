@@ -1,23 +1,40 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>com.viglet.turing</groupId>
-    <artifactId>turing</artifactId>
-    <version>${revision}</version>
-    <relativePath>../pom.xml</relativePath>
-  </parent>
-  <artifactId>turing-aem</artifactId>
-  <packaging>pom</packaging>
-  <name>Turing AEM Connector</name>
-  <description>Turing AEM Connector</description>
-  <modules>
-    <module>aem-indexer</module>
-  </modules>
-  <properties>
-    <project.build.sourceEncoding>project.build.sourceEncoding&gt;UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-  </properties>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.viglet.turing</groupId>
+        <artifactId>turing</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>turing-aem</artifactId>
+    <packaging>pom</packaging>
+    <name>Turing AEM Connector</name>
+    <description>Turing AEM Connector</description>
+    <modules>
+        <module>aem-commons</module>
+        <module>aem-indexer</module>
+        <module>aem-web-indexer</module>
+    </modules>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.5.6</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing</groupId>
+                <artifactId>turing-java-sdk</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>

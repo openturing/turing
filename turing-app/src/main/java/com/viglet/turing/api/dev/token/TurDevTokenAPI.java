@@ -24,7 +24,7 @@ package com.viglet.turing.api.dev.token;
 import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.dev.token.TurDevToken;
 import com.viglet.turing.persistence.repository.dev.token.TurDevTokenRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +48,7 @@ public class TurDevTokenAPI {
 	@Operation(summary = "Developer Token List")
 	@GetMapping
 	public List<TurDevToken> turDevTokenList() {
-		return this.turDevTokenRepository.findAll(TurPesistenceUtils.orderByTitleIgnoreCase());
+		return this.turDevTokenRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase());
 	}
 
 	@Operation(summary = "Show a Developer Token")

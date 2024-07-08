@@ -2,6 +2,7 @@ import { TurNLPVendor } from "../../nlp/model/nlp-vendor.model";
 import { TurSEInstance } from "../../se/model/se-instance.model";
 import { TurSNSiteLocale } from "./sn-site-locale.model";
 import { TurSNSiteFacetEnum} from "./sn-site-facet.enum";
+import {TurSNSiteFacetSortEnum} from "./sn-site-facet-sort.enum";
 export interface TurSNSite {
   id: string;
   name: string;
@@ -27,5 +28,7 @@ export interface TurSNSite {
   spellCheckFixes: number;
   spotlightWithResults: number;
   facetType: TurSNSiteFacetEnum;
-  whenNoResultsUseAsterisk: number;
+  facetSort: TurSNSiteFacetSortEnum;
+  wildcardNoResults: number;
+  wildcardAlways: number;
 }

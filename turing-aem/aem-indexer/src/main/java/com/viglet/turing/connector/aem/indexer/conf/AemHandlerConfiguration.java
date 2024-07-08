@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.connector.aem.indexer.conf;
 
+import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
 import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +33,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Properties;
+import java.util.*;
 
 @Slf4j
 public class AemHandlerConfiguration implements IHandlerConfiguration {
@@ -56,6 +54,38 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     private String cdaURLPrefix;
     private String apiKey;
     private String providerName;
+    private String oncePatternPath;
+
+    private String cmsHost;
+    private String cmsUsername;
+    private String cmsPassword;
+    private String cmsGroup;
+    private String cmsContentType;
+    private String cmsRootPath;
+    @Override
+    public String getCmsHost() {
+        return cmsHost;
+    }
+    @Override
+    public String getCmsUsername() {
+        return cmsUsername;
+    }
+    @Override
+    public String getCmsPassword() {
+        return cmsPassword;
+    }
+    @Override
+    public String getCmsGroup() {
+        return cmsGroup;
+    }
+    @Override
+    public String getCmsContentType() {
+        return cmsContentType;
+    }
+    @Override
+    public String getCmsRootPath() {
+        return cmsRootPath;
+    }
 
     private final String propertyFile;
     // Load up from Generic Resource
@@ -84,7 +114,10 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     public String getCDAURLPrefix() {
         return cdaURLPrefix;
     }
-
+    @Override
+    public String getOncePatternPath() {
+        return oncePatternPath;
+    }
 
     private void parsePropertiesFromResource() {
         parseProperties(getProperties());
@@ -125,6 +158,14 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
         snLocale = LocaleUtils.toLocale(properties.getProperty("dps.site.default.sn.locale", DEFAULT_SN_LOCALE));
         cdaContextName = properties.getProperty("dps.site.default.context.name", DEFAULT_DPS_CONTEXT);
         cdaURLPrefix = properties.getProperty("dps.site.default.url.prefix");
+        oncePatternPath = properties.getProperty("sn.default.once.pattern.path");
+
+        cmsHost = properties.getProperty("cms.url");
+        cmsUsername = properties.getProperty("cms.username");
+        cmsPassword = properties.getProperty("cms.password");
+        cmsGroup = properties.getProperty("cms.group");
+        cmsContentType = properties.getProperty("cms.content-type");
+        cmsRootPath = properties.getProperty("cms.root.path");
     }
 
     @Override
@@ -152,20 +193,16 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
                         snLocale));
     }
 
-    public Locale getLocaleByPath(String snSite, String path) {
-        // dps.site.Intra.sn.locale.en_US.path=/content/sample/en
+    public Collection<TurAemLocalePathContext> getLocales() {
+        Collection<TurAemLocalePathContext> turAemLocalePathContexts = new HashSet<>();
         for (Enumeration<?> e = getProperties().propertyNames(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement();
-            if (hasPath(snSite, path, name)) {
-                return LocaleUtils.toLocale(name.split("\\.")[2]);
-            }
+            turAemLocalePathContexts.add(TurAemLocalePathContext.builder()
+                    .path(getProperties().getProperty(name))
+                    .locale(LocaleUtils.toLocale(name.split("\\.")[2]))
+                    .build());
         }
-        return snLocale;
-    }
-
-    private boolean hasPath(String snSite, String path, String name) {
-        return name.startsWith(String.format("sn.%s", snSite))
-                && name.endsWith(".path") && path.startsWith(getProperties().getProperty(name));
+        return turAemLocalePathContexts;
     }
 
     @Override

@@ -31,6 +31,11 @@ import java.util.Base64;
  *
  */
 public class TurSNClientUtils {
+
+	private TurSNClientUtils() {
+		throw new IllegalStateException("Utility class");
+	}
+
 	public static void authentication(HttpPost httpPost, TurUsernamePasswordCredentials credentials, String apiKey) {
 		if (apiKey != null) {
 			httpPost.setHeader("Key", apiKey);

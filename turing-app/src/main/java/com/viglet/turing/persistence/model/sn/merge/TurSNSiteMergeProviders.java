@@ -22,7 +22,6 @@
 package com.viglet.turing.persistence.model.sn.merge;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import lombok.Getter;

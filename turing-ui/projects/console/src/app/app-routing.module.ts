@@ -12,6 +12,7 @@ const routes: Routes = [
       { path: 'nlp', loadChildren: () => import('../nlp/nlp.module').then(m => m.TurNLPModule) },
       { path: 'se', loadChildren: () => import('../se/se.module').then(m => m.TurSEModule) },
       { path: 'sn', loadChildren: () => import('../sn/sn.module').then(m => m.TurSNModule) },
+      { path: 'integration', loadChildren: () => import('../integration/integration.module').then(m => m.TurIntegrationModule) },
       { path: 'dev', loadChildren: () => import('../dev/dev.module').then(m => m.TurDevModule) },
       { path: '', redirectTo: '/nlp', pathMatch: 'full' }
     ]

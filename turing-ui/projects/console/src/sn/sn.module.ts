@@ -40,13 +40,15 @@ import {
 } from './component/site/metrics/sn-site-metrics-top-terms-root-page.component';
 import {
   TurSNRankingExpressionRootPageComponent
-} from "./component/site/ranking/sn-site-ranking-expression-root-page.component";
+} from "./component/site/ranking/sn-ranking-expression-root-page.component";
 import {
   TurSNRankingExpressionListPageComponent
 } from "./component/site/ranking/sn-ranking-expression-list-page.component";
 import {TurSNRankingExpressionService} from "./service/sn-ranking-expression.service";
 import {TurSNRankingExpressionPageComponent} from "./component/site/ranking/sn-ranking-expression-page.component";
 import {TurSNSearchService} from "../../../sn/src/search/service/sn-search.service";
+import {TurSNFacetOrderingListPageComponent} from "./component/site/facet/sn-facet-ordering-list-page.component";
+import {TurSNFacetOrderingRootPageComponent} from "./component/site/facet/sn-facet-ordering-root-page.component";
 
 @NgModule({
   declarations: [
@@ -57,6 +59,8 @@ import {TurSNSearchService} from "../../../sn/src/search/service/sn-search.servi
     TurSNSiteFieldRootPageComponent,
     TurSNSiteFieldListPageComponent,
     TurSNSiteFieldPageComponent,
+    TurSNFacetOrderingRootPageComponent,
+    TurSNFacetOrderingListPageComponent,
     TurSNSiteListPageComponent,
     TurSNSiteSpotlightRootPageComponent,
     TurSNSiteSpotlightListPageComponent,

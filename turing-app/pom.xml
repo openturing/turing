@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.viglet.turing</groupId>
@@ -11,11 +11,11 @@
     </parent>
     <artifactId>turing-app</artifactId>
     <version>${revision}</version>
-    <name>Turing Application</name>
+    <name>Turing ES Application</name>
     <url>https://github.com/openturing/turing</url>
     <packaging>jar</packaging>
     <properties>
-        <spring-boot.version>3.2.1</spring-boot.version>
+        <spring-boot.version>3.3.1</spring-boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>21</maven.compiler.source>
@@ -27,6 +27,11 @@
         </sonar.cpd.exclusions>
     </properties>
     <dependencies>
+        <dependency>
+            <groupId>co.elastic.clients</groupId>
+            <artifactId>elasticsearch-java</artifactId>
+            <version>8.14.2</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -99,23 +104,23 @@
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>artemis-jms-server</artifactId>
-            <version>2.31.2</version>
+            <version>2.35.0</version>
         </dependency>
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>itext-core</artifactId>
-            <version>8.0.2</version>
+            <version>8.0.4</version>
             <type>pom</type>
         </dependency>
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>cleanup</artifactId>
-            <version>4.0.1</version>
+            <version>4.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-imaging</artifactId>
-            <version>1.0-alpha3</version>
+            <version>1.0.0-alpha5</version>
         </dependency>
         <dependency>
             <groupId>com.oracle.ojdbc</groupId>
@@ -130,7 +135,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
-            <version>6.1.2</version>
+            <version>6.1.10</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -144,22 +149,22 @@
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>3.3.2</version>
+            <version>3.4.0</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.1</version>
+            <version>42.7.3</version>
         </dependency>
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
-            <version>4.5.5</version>
+            <version>4.5.7</version>
         </dependency>
         <dependency>
             <groupId>org.apache.opennlp</groupId>
             <artifactId>opennlp-tools</artifactId>
-            <version>2.3.1</version>
+            <version>2.3.3</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -178,33 +183,33 @@
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
-            <version>2.9.1</version>
+            <version>2.9.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parsers</artifactId>
-            <version>2.9.1</version>
+            <version>2.9.2</version>
             <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parser-pdf-module</artifactId>
-            <version>2.9.1</version>
+            <version>2.9.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parser-text-module</artifactId>
-            <version>2.9.1</version>
+            <version>2.9.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parser-ocr-module</artifactId>
-            <version>2.9.1</version>
+            <version>2.9.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parser-microsoft-module</artifactId>
-            <version>2.9.1</version>
+            <version>2.9.2</version>
         </dependency>
         <dependency>
             <groupId>com.levigo.jbig2</groupId>
@@ -224,7 +229,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.3.0</version>
+            <version>2.6.0</version>
         </dependency>
         <dependency>
             <groupId>com.squins.google.fork.schema-org-client</groupId>
@@ -232,29 +237,24 @@
             <version>1.0.1</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.pdfbox</groupId>
-            <artifactId>pdfbox</artifactId>
-            <version>3.0.1</version>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.0.0-jre</version>
+            <version>33.2.1-jre</version>
         </dependency>
         <dependency>
             <groupId>org.languagetool</groupId>
             <artifactId>language-es</artifactId>
-            <version>6.3</version>
+            <version>6.4</version>
         </dependency>
         <dependency>
             <groupId>org.languagetool</groupId>
             <artifactId>language-en</artifactId>
-            <version>6.3</version>
+            <version>6.4</version>
         </dependency>
         <dependency>
             <groupId>org.languagetool</groupId>
             <artifactId>language-pt</artifactId>
-            <version>6.3</version>
+            <version>6.4</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -275,17 +275,27 @@
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-solrj</artifactId>
-            <version>9.4.0</version>
+            <version>9.6.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
-            <version>6.2.1</version>
+            <version>6.3.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+            <version>3.1</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
     <dependencyManagement>
@@ -306,7 +316,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.12.1</version>
+                    <version>3.13.0</version>
                     <configuration>
                         <parameters>true</parameters>
                     </configuration>
@@ -339,8 +349,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v20.9.0</nodeVersion>
-                    <npmVersion>10.2.5</npmVersion>
+                    <nodeVersion>v20.13.1</nodeVersion>
+                    <npmVersion>10.8.0</npmVersion>
                     <workingDirectory>../turing-ui</workingDirectory>
                 </configuration>
             </plugin>
@@ -364,12 +374,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.4.2</version>
                 <configuration>
                     <archive>
                         <manifestEntries>
                             <!--suppress UnresolvedMavenProperty -->
-                            <Implementation-Version>${project.version}-${git.commit.id.abbrev} (${git.commit.time})</Implementation-Version>
+                            <Implementation-Version>${project.version}-${git.commit.id.abbrev} (${git.commit.time})
+                            </Implementation-Version>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -379,8 +390,10 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
+                    <skip>false</skip>
                     <executable>true</executable>
                 </configuration>
+
                 <executions>
                     <execution>
                         <goals>
@@ -392,12 +405,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.3</version>
+                <version>3.3.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.2.3</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -419,7 +432,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.6.1</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -433,7 +446,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.22.2</version>
+                <version>3.3.0</version>
             </plugin>
         </plugins>
     </reporting>

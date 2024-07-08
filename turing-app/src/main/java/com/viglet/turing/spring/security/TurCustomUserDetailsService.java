@@ -22,19 +22,14 @@
 package com.viglet.turing.spring.security;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 import com.google.inject.Inject;
-import com.viglet.turing.persistence.model.auth.TurPrivilege;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurRole;
@@ -77,33 +72,4 @@ public class TurCustomUserDetailsService implements UserDetailsService {
             return new TurCustomUserDetails(turUser, roles);
         }
     }
-
-    private Collection<? extends GrantedAuthority> getAuthorities(
-            Collection<TurRole> turRoles) {
-
-        return getGrantedAuthorities(getPrivileges(turRoles));
-    }
-
-    private List<String> getPrivileges(Collection<TurRole> turRoles) {
-
-        List<String> privileges = new ArrayList<>();
-        List<TurPrivilege> collection = new ArrayList<>();
-        for (TurRole turRole : turRoles) {
-            privileges.add(turRole.getName());
-            collection.addAll(turRole.getTurPrivileges());
-        }
-        for (TurPrivilege item : collection) {
-            privileges.add(item.getName());
-        }
-        return privileges;
-    }
-
-    private List<GrantedAuthority> getGrantedAuthorities(List<String> privileges) {
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        for (String privilege : privileges) {
-            authorities.add(new SimpleGrantedAuthority(privilege));
-        }
-        return authorities;
-    }
-
 }

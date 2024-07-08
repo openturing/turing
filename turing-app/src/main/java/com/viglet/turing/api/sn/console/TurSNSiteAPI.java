@@ -27,10 +27,12 @@ import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFacetEnum;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
-import com.viglet.turing.persistence.utils.TurPesistenceUtils;
+import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNQueue;
 import com.viglet.turing.sn.template.TurSNTemplate;
@@ -90,9 +92,9 @@ public class TurSNSiteAPI {
     @GetMapping
     public List<TurSNSite> turSNSiteList(Principal principal) {
         if (turConfigProperties.isMultiTenant()) {
-            return this.turSNSiteRepository.findByCreatedBy(TurPesistenceUtils.orderByNameIgnoreCase(),principal.getName().toLowerCase());
+            return this.turSNSiteRepository.findByCreatedBy(TurPersistenceUtils.orderByNameIgnoreCase(),principal.getName().toLowerCase());
         } else {
-            return this.turSNSiteRepository.findAll(TurPesistenceUtils.orderByNameIgnoreCase());
+            return this.turSNSiteRepository.findAll(TurPersistenceUtils.orderByNameIgnoreCase());
         }
     }
 
@@ -100,6 +102,8 @@ public class TurSNSiteAPI {
     @GetMapping("/structure")
     public TurSNSite turSNSiteStructure() {
         TurSNSite turSNSite = new TurSNSite();
+        turSNSite.setFacetSort(TurSNSiteFacetSortEnum.COUNT);
+        turSNSite.setFacetType(TurSNSiteFacetEnum.AND);
         turSNSite.setTurSEInstance(new TurSEInstance());
         turSNSite.setTurNLPVendor(new TurNLPVendor());
         return turSNSite;
@@ -120,9 +124,9 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
             turSNSiteEdit.setTurNLPVendor(turSNSite.getTurNLPVendor());
             turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
-
             turSNSiteEdit.setFacet(turSNSite.getFacet());
             turSNSiteEdit.setFacetType(turSNSite.getFacetType());
+            turSNSiteEdit.setFacetSort(turSNSite.getFacetSort());
             turSNSiteEdit.setHl(turSNSite.getHl());
             turSNSiteEdit.setHlPost(turSNSite.getHlPost());
             turSNSiteEdit.setHlPre(turSNSite.getHlPre());
@@ -132,7 +136,8 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setMlt(turSNSite.getMlt());
             turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
             turSNSiteEdit.setSpotlightWithResults(turSNSite.getSpotlightWithResults());
-            turSNSiteEdit.setWhenNoResultsUseAsterisk(turSNSite.getWhenNoResultsUseAsterisk());
+            turSNSiteEdit.setWildcardNoResults(turSNSite.getWildcardNoResults());
+            turSNSiteEdit.setWildcardAlways(turSNSite.getWildcardAlways());
             turSNSiteEdit.setDefaultTitleField(turSNSite.getDefaultTitleField());
             turSNSiteEdit.setDefaultTextField(turSNSite.getDefaultTextField());
             turSNSiteEdit.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
@@ -152,7 +157,7 @@ public class TurSNSiteAPI {
     public boolean turSNSiteDelete(@PathVariable String id) {
         Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
         turSNSite.ifPresent(site ->
-                turSNSiteLocaleRepository.findByTurSNSite(TurPesistenceUtils.orderByLanguageIgnoreCase(), site).forEach(locale ->
+                turSNSiteLocaleRepository.findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), site).forEach(locale ->
                         TurSolrUtils.deleteCore(site.getTurSEInstance(), locale.getCore())
                 )
         );
@@ -170,7 +175,6 @@ public class TurSNSiteAPI {
 
     }
 
-    @ResponseBody
     @GetMapping(value = "/export", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public StreamingResponseBody turSNSiteExport(HttpServletResponse response) {
 
@@ -189,7 +193,7 @@ public class TurSNSiteAPI {
             TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
             turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
             long documentTotal = 0L;
-            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository.findByTurSNSite(TurPesistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
+            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository.findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
                 Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
                 if (turSolrInstance.isPresent()) {
                     documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());

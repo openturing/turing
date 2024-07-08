@@ -20,7 +20,6 @@
  */
 package com.viglet.turing.connector.cms.beans;
 
-import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 import lombok.Getter;
 import lombok.Setter;
 

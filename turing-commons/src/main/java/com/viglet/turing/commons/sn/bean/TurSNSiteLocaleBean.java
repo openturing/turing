@@ -17,7 +17,9 @@ package com.viglet.turing.commons.sn.bean;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.util.Locale;
 
@@ -28,7 +30,8 @@ import java.util.Locale;
  * 
  * @since 0.3.5
  */
-
+@RequiredArgsConstructor
+@Accessors(chain = true)
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)

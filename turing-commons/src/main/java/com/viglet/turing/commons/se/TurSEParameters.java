@@ -1,6 +1,5 @@
 package com.viglet.turing.commons.se;
 
-import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,8 +8,7 @@ import java.util.List;
 @Setter
 public class TurSEParameters {
 	private String query;
-	private List<String> filterQueries;
-	private TurSNFilterQueryOperator fqOperator;
+	private TurSEFilterQueryParameters filterQueries;
 	private List<String> boostQueries;
 	private Integer currentPage;
 	private String sort;
@@ -18,13 +16,12 @@ public class TurSEParameters {
 	private String group;
 	private Integer autoCorrectionDisabled;
 
-	public TurSEParameters(String query, List<String> filterQueries, TurSNFilterQueryOperator fqOperator,
+	public TurSEParameters(String query, TurSEFilterQueryParameters filterQueries,
 						   Integer currentPage, String sort, Integer rows,
 						   String group, Integer autoCorrectionDisabled) {
 		super();
 		this.query = query;
 		this.filterQueries = filterQueries;
-		this.fqOperator = fqOperator;
 		this.currentPage = currentPage;
 		this.sort = sort;
 		this.rows = rows;
