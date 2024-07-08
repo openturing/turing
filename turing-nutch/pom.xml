@@ -32,8 +32,7 @@
 
     <modules>
         <module>nutch-commons</module>
-        <module>nutch1_12</module>
-        <module>nutch1_18</module>
+        <module>nutch1_20</module>
     </modules>
 
     <properties>
