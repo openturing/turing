@@ -92,6 +92,7 @@
             </activation>
             <modules>
                 <module>turing-commons</module>
+                <module>turing-cms</module>
                 <module>turing-java-sdk</module>
                 <module>turing-aem</module>
             </modules>
