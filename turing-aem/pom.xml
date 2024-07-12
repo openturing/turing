@@ -12,11 +12,6 @@
     <packaging>pom</packaging>
     <name>Turing AEM Connector</name>
     <description>Turing AEM Connector</description>
-    <modules>
-        <module>aem-commons</module>
-        <module>aem-indexer</module>
-        <module>aem-web-indexer</module>
-    </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
