@@ -41,7 +41,6 @@
             <activation>
                 <property>
                     <name>!env.JITPACK</name>
-
                 </property>
             </activation>
             <modules>
@@ -65,6 +64,7 @@
                 </property>
             </activation>
             <modules>
+                <module>turing-commons</module>
                 <module>turing-java-sdk</module>
                 <module>turing-aem</module>
             </modules>
