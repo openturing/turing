@@ -20,8 +20,6 @@
  */
 package com.viglet.turing.commons.exception;
 
-import java.io.Serial;
-
 public class TurRuntimeException extends RuntimeException {
 	public TurRuntimeException(String string) {
 		super(string);
