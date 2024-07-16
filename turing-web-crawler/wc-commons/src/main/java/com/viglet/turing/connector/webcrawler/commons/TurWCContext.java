@@ -1,4 +1,4 @@
-package com.viglet.turing.connector.webcrawler;
+package com.viglet.turing.connector.webcrawler.commons;
 
 import lombok.Builder;
 import lombok.Getter;

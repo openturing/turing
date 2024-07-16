@@ -40,3 +40,5 @@ dependency-reduced-pom.xml
 /turing-aem/aem-web-indexer/src/main/resources/customer/
 /turing-aem/aem-web-indexer/store/db/
 /turing-aem/aem-web-indexer/store/logs/
+/turing-web-crawler/wc-app/store/
+/turing-web-crawler/wc-commons/target/

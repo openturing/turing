@@ -33,4 +33,4 @@ build/
 .vscode/
 
 /store/db/
-/store/logs/
+/wc/store/logs/
