@@ -46,7 +46,7 @@ public class TurImportAPI {
 
 	@PostMapping
 	@Transactional
-	public TurExchange shImport(@RequestParam("file") MultipartFile multipartFile) {
+	public TurExchange turImport(@RequestParam("file") MultipartFile multipartFile) {
 		return turImportExchange.importFromMultipartFile(multipartFile);
 	}
 }

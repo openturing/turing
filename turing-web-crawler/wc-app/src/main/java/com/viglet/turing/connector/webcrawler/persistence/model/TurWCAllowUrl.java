@@ -2,12 +2,15 @@ package com.viglet.turing.connector.webcrawler.persistence.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serial;
 import java.io.Serializable;
 
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 @Entity
@@ -25,9 +28,5 @@ public class TurWCAllowUrl extends TurWCUrl implements Serializable {
     public TurWCAllowUrl(String url, TurWCSource turWCSource) {
         this.url = url;
         this.turWCSource = turWCSource;
-    }
-
-    public TurWCAllowUrl() {
-        super();
     }
 }

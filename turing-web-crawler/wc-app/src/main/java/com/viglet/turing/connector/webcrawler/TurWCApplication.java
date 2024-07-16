@@ -15,7 +15,10 @@ public class TurWCApplication {
     public static final String UTF_8 = "UTF-8";
 
     public static void main(String[] args) {
+
+        System.out.println(":: Starting Turing Web Crawler ...");
         SpringApplication.run(TurWCApplication.class, args);
+        System.out.println(":: Started Turing Web Crawler");
     }
 
     @Bean

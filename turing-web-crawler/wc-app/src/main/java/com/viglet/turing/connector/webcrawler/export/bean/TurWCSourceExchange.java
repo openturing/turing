@@ -19,9 +19,13 @@ public class TurWCSourceExchange {
     private String turSNSite;
     private String username;
     private String password;
+    @Builder.Default
     private Collection<String> allowUrls = new HashSet<>();
+    @Builder.Default
     private Collection<String> notAllowUrls = new HashSet<>();
+    @Builder.Default
     private Collection<String> notAllowExtensions = new HashSet<>();
+    @Builder.Default
     private Collection<TurWCAttribExchange> attributes = new HashSet<>();
 
 

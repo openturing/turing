@@ -4,12 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serial;
 import java.io.Serializable;
 
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 @Entity
@@ -27,9 +30,5 @@ public class TurWCNotAllowUrl extends TurWCUrl implements Serializable {
     public TurWCNotAllowUrl(String url, TurWCSource turWCSource) {
         this.url = url;
         this.turWCSource = turWCSource;
-    }
-
-    public TurWCNotAllowUrl() {
-        super();
     }
 }

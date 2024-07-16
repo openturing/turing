@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v2/wc")
+@RequestMapping("/api/v2/connector/wc/source")
 @Tag(name = "Web Crawler Source", description = "Web Crawler Source API")
 public class TurWCSourceApi {
     private final TurWCSourceRepository turWCSourceRepository;

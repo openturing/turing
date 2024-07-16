@@ -1,14 +1,16 @@
 package com.viglet.turing.connector.webcrawler.persistence.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.viglet.turing.commons.jpa.TurUuid;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.*;
 
 import java.io.Serial;
 import java.io.Serializable;
 
+@Builder(toBuilder = true)
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 @Entity
@@ -20,7 +22,7 @@ public class TurWCFileExtension implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @UuidGenerator
+    @TurUuid
     @Column(name = "id", nullable = false)
     private String id;
 
@@ -30,10 +32,6 @@ public class TurWCFileExtension implements Serializable {
     @ManyToOne
     @JoinColumn(name = "ws_source_id", nullable = false)
     private TurWCSource turWCSource;
-
-    public TurWCFileExtension() {
-        super();
-    }
 
     public TurWCFileExtension(String extension, TurWCSource turWCSource) {
         this.extension = extension;
