@@ -15,7 +15,7 @@
   </parent>
   <artifactId>cms-mapping</artifactId>
   <packaging>jar</packaging>
-  <name>Turing CMS Connector - Mapping</name>
+  <name>Turing CMS - Mapping</name>
   <description>Turing CMS Connector - Mapping</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

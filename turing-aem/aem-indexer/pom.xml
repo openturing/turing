@@ -11,7 +11,7 @@
     </parent>
     <artifactId>aem-indexer</artifactId>
     <packaging>jar</packaging>
-    <name>Turing AEM Connector - Indexer</name>
+    <name>Turing AEM - Indexer</name>
     <description>Turing AEM Connector - Indexer</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

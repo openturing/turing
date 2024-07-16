@@ -33,7 +33,6 @@ import org.apache.hc.core5.net.URLEncodedUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -44,7 +43,6 @@ import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 
 /**
  * @author Alexandre Oliveira
@@ -231,43 +229,6 @@ public class TurCommonsUtils {
         return true;
     }
 
-    private static File getTempDirectory() {
-        return TurCommonsUtils.addSubDirToStoreDir("tmp");
-    }
-
-    public static File getFileFromMultipart(MultipartFile file) {
-        File localFile = new File(
-                randomTempFileOrDirectory());
-
-        try {
-            file.transferTo(localFile);
-        } catch (IllegalStateException | IOException e) {
-            log.error(e.getMessage(), e);
-        }
-
-        return localFile;
-    }
-
-    public static File extractZipFile(MultipartFile file) {
-
-        File zipFile = getFileFromMultipart(file);
-
-        File extractFolder = new File(
-                randomTempFileOrDirectory());
-        try {
-            TurCommonsUtils.unZipIt(zipFile, extractFolder);
-            FileUtils.deleteQuietly(zipFile);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-
-        return extractFolder;
-    }
-
-    private static String randomTempFileOrDirectory() {
-        return getTempDirectory().getAbsolutePath().concat(File.separator + "imp_" + UUID.randomUUID());
-    }
-
     public static String asJsonString(final Object obj) throws TurException {
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -276,5 +237,9 @@ public class TurCommonsUtils {
         } catch (Exception e) {
             throw new TurException(e);
         }
+    }
+
+    public static File getTempDirectory() {
+        return TurCommonsUtils.addSubDirToStoreDir("tmp");
     }
 }

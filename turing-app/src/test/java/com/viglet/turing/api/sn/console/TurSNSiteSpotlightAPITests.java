@@ -1,12 +1,12 @@
 package com.viglet.turing.api.sn.console;
 
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.utils.TurUtilTests;
-import com.viglet.turing.utils.TurUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -97,7 +97,7 @@ class TurSNSiteSpotlightAPITests {
             turSNSiteSpotlight.setTurSNSiteSpotlightDocuments(Collections.singleton(turSNSiteSpotlightDocument));
             turSNSiteSpotlight.setTurSNSiteSpotlightTerms(Collections.singleton(turSNSiteSpotlightTerm));
             try {
-                String spotlightRequestBody = TurUtils.asJsonString(turSNSiteSpotlight);
+                String spotlightRequestBody = TurCommonsUtils.asJsonString(turSNSiteSpotlight);
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.post(SERVICE_URL).principal(mockPrincipal)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(spotlightRequestBody).contentType(MediaType.APPLICATION_JSON);
@@ -131,7 +131,7 @@ class TurSNSiteSpotlightAPITests {
         turSNSiteSpotlightRepository.findAll().stream().findFirst().ifPresent(spotlight -> {
             try {
                 spotlight.setDescription("Description Changed");
-                String spotlightRequestBody = TurUtils.asJsonString(spotlight);
+                String spotlightRequestBody = TurCommonsUtils.asJsonString(spotlight);
 
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.put(TurUtilTests
                                 .getUrlTemplate(SERVICE_URL, spotlight.getId()))

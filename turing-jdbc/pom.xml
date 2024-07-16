@@ -11,8 +11,8 @@
     </parent>
     <artifactId>turing-jdbc</artifactId>
     <packaging>jar</packaging>
-    <name>Turing JDBC</name>
-    <description>Turing JDBC</description>
+    <name>Turing Database - Connector</name>
+    <description>Turing Database - Connector</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

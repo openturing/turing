@@ -10,7 +10,7 @@
     </parent>
     <artifactId>aem-web-indexer</artifactId>
     <version>${revision}</version>
-    <name>Turing AEM Web Indexer</name>
+    <name>Turing AEM - Connector</name>
     <description>Turing AEM Web Indexer Connector</description>
     <properties>
         <spring-boot.version>3.3.1</spring-boot.version>

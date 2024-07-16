@@ -8,7 +8,7 @@
   </parent>
 
   <artifactId>wc-app</artifactId>
-  <name>Turing Web Crawler - Application</name>
+  <name>Turing Web Crawler - Connector</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -16,7 +16,6 @@
     <java.version>21</java.version>
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
-    <spring-boot.version>3.3.1</spring-boot.version>
   </properties>
 
   <dependencies>
@@ -64,6 +63,11 @@
     <dependency>
       <groupId>com.viglet.turing</groupId>
       <artifactId>turing-java-sdk</artifactId>
+      <version>${revision}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.viglet.turing</groupId>
+      <artifactId>turing-spring</artifactId>
       <version>${revision}</version>
     </dependency>
     <dependency>

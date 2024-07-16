@@ -10,8 +10,8 @@
     </parent>
     <artifactId>turing-aem</artifactId>
     <packaging>pom</packaging>
-    <name>Turing AEM Connector</name>
-    <description>Turing AEM Connector</description>
+    <name>Turing AEM</name>
+    <description>Turing AEM</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

@@ -27,6 +27,7 @@ import com.google.inject.Inject;
 import com.viglet.turing.api.nlp.bean.TurNLPEntityValidateResponse;
 import com.viglet.turing.api.nlp.bean.TurNLPValidateDocument;
 import com.viglet.turing.api.nlp.bean.TurNLPValidateResponse;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.filesystem.commons.TurFileAttributes;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
 import com.viglet.turing.nlp.TurNLPProcess;
@@ -39,7 +40,6 @@ import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.utils.TurPersistenceUtils;
-import com.viglet.turing.utils.TurUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Getter;
@@ -147,7 +147,7 @@ public class TurNLPInstanceAPI {
                                                    @RequestParam("file") MultipartFile multipartFile,
                                                    @RequestParam("config") String turNLPValidateDocumentRequest) {
 
-        File file = TurUtils.getFileFromMultipart(multipartFile);
+        File file = TurCommonsUtils.getFileFromMultipart(multipartFile);
         TurFileAttributes turFileAttributes = TurFileUtils.readFile(file);
         return this.turNLPInstanceRepository.findById(id)
                 .map(turNLPInstance -> {

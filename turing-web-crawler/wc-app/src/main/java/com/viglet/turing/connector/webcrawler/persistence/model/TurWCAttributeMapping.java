@@ -1,7 +1,7 @@
 package com.viglet.turing.connector.webcrawler.persistence.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.viglet.turing.commons.jpa.TurUuid;
+import com.viglet.turing.spring.jpa.TurUuid;
 import jakarta.persistence.*;
 import lombok.*;
 

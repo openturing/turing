@@ -72,6 +72,7 @@
             </activation>
             <modules>
                 <module>turing-commons</module>
+                <module>turing-spring</module>
                 <module>turing-java-sdk</module>
                 <module>turing-filesystem</module>
                 <module>turing-jdbc</module>

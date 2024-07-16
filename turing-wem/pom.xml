@@ -17,7 +17,7 @@
     <artifactId>turing-wem</artifactId>
     <packaging>jar</packaging>
     <name>Turing WEM Connector</name>
-    <description>Turing WEM Connector</description>
+    <description>Turing WEM - Connector</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

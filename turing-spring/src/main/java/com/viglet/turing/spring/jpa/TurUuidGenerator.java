@@ -1,4 +1,4 @@
-package com.viglet.turing.commons.jpa;
+package com.viglet.turing.spring.jpa;
 
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.generator.EventType;
@@ -15,7 +15,8 @@ public class TurUuidGenerator extends UuidGenerator {
     }
 
     @Override
-    public Serializable generate(SharedSessionContractImplementor session, Object owner, Object currentValue, EventType eventType) {
+    public Serializable generate(SharedSessionContractImplementor session, Object owner, Object currentValue,
+                                 EventType eventType) {
         Serializable id = (Serializable) session.getEntityPersister(owner.getClass().getName(), owner)
                 .getIdentifier(owner, session);
         return id != null ? id : (Serializable) super.generate(session, owner, currentValue, eventType);

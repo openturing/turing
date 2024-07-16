@@ -31,7 +31,6 @@ import com.viglet.turing.filesystem.commons.TurFileAttributes;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
-import com.viglet.turing.utils.TurUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -91,7 +90,7 @@ public class TurSNImportAPI {
 
     @PostMapping("zip")
     public boolean turSNImportZipFileBroker(@RequestParam("file") MultipartFile multipartFile) {
-        File extractFolder = TurUtils.extractZipFile(multipartFile);
+        File extractFolder = TurCommonsUtils.extractZipFile(multipartFile);
         try (FileInputStream fileInputStream = new FileInputStream(
                 extractFolder.getAbsolutePath().concat(File.separator).concat(TurSNConstants.EXPORT_FILE))) {
             TurSNJobItems turSNJobItems = new ObjectMapper().readValue(fileInputStream, TurSNJobItems.class);

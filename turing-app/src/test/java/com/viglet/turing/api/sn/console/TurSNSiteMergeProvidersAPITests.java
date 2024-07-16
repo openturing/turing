@@ -1,12 +1,12 @@
 package com.viglet.turing.api.sn.console;
 
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
 import com.viglet.turing.utils.TurUtilTests;
-import com.viglet.turing.utils.TurUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
@@ -77,7 +77,7 @@ class TurSNSiteMergeProvidersAPITests {
     void stage01MergeProvidersAdd() {
         turSNSiteRepository.findByName(SN_SITE_NAME).ifPresent(turSNSite -> {
             try {
-                String mergeRequestBody = TurUtils.asJsonString(getTurSNSiteMergeProviders(turSNSite));
+                String mergeRequestBody = TurCommonsUtils.asJsonString(getTurSNSiteMergeProviders(turSNSite));
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.post(SERVICE_URL).principal(mockPrincipal)
                         .accept(MediaType.APPLICATION_JSON).content(mergeRequestBody).contentType(MediaType.APPLICATION_JSON);
 
@@ -125,7 +125,7 @@ class TurSNSiteMergeProvidersAPITests {
         turSNSiteMergeProvidersRepository.findAll().stream().findFirst().ifPresent(mergeProviders -> {
             try {
                 mergeProviders.setDescription("Description Changed");
-                String spotlightRequestBody = TurUtils.asJsonString(mergeProviders);
+                String spotlightRequestBody = TurCommonsUtils.asJsonString(mergeProviders);
 
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.put(TurUtilTests
                                 .getUrlTemplate(SERVICE_URL, mergeProviders.getId()))

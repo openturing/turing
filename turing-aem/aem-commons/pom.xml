@@ -11,7 +11,7 @@
     </parent>
     <artifactId>aem-commons</artifactId>
     <packaging>jar</packaging>
-    <name>Turing AEM Connector - Commons</name>
+    <name>Turing AEM - Commons</name>
     <description>Turing AEM Connector - Commons</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

@@ -1,10 +1,10 @@
 package com.viglet.turing.api.sn.search;
 
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.utils.TurUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -84,7 +84,7 @@ class TurSNSiteSearchAPIIT {
             turSNSiteSpotlight.setTurSNSiteSpotlightDocuments(Collections.singleton(turSNSiteSpotlightDocument));
             turSNSiteSpotlight.setTurSNSiteSpotlightTerms(Collections.singleton(turSNSiteSpotlightTerm));
             try {
-                String spotlightRequestBody = TurUtils.asJsonString(turSNSiteSpotlight);
+                String spotlightRequestBody = TurCommonsUtils.asJsonString(turSNSiteSpotlight);
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.post(SPOTLIGHT_SERVICE_URL).principal(mockPrincipal)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(spotlightRequestBody).contentType(MediaType.APPLICATION_JSON);

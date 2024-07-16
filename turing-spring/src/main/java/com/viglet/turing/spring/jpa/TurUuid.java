@@ -1,4 +1,4 @@
-package com.viglet.turing.commons.jpa;
+package com.viglet.turing.spring.jpa;
 
 import org.hibernate.annotations.IdGeneratorType;
 import org.hibernate.annotations.ValueGenerationType;

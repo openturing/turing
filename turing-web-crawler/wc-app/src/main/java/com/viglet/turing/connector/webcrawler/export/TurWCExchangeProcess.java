@@ -9,6 +9,7 @@ import com.viglet.turing.connector.webcrawler.export.bean.TurWCExchange;
 import com.viglet.turing.connector.webcrawler.export.bean.TurWCSourceExchange;
 import com.viglet.turing.connector.webcrawler.persistence.model.*;
 import com.viglet.turing.connector.webcrawler.persistence.repository.*;
+import com.viglet.turing.spring.utils.TurSpringUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -137,7 +138,7 @@ public class TurWCExchangeProcess {
     }
 
     public void importFromMultipartFile(MultipartFile multipartFile) {
-        File extractFolder = TurCommonsUtils.extractZipFile(multipartFile);
+        File extractFolder = TurSpringUtils.extractZipFile(multipartFile);
         File parentExtractFolder = null;
         if (!(new File(extractFolder, EXPORT_FILE).exists()) && Objects.requireNonNull(extractFolder.listFiles()).length == 1) {
             for (File fileOrDirectory : Objects.requireNonNull(extractFolder.listFiles())) {
