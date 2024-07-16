@@ -23,7 +23,7 @@
     "@angular/router": "18.0.0",
     "@primer/css": "21.3.1",
     "@primer/octicons": "19.11.0",
-    "@primer/styled-octicons": "19.10.0",
+    "@primer/styled-octicons": "19.11.0",
     "ace-builds": "^1.35.2",
     "angular-notifier-updated": "15.0.0",
     "brace": "^0.11.1",
