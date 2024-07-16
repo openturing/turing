@@ -28,6 +28,7 @@ import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -47,9 +48,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+@Log4j2
 @Component
 public class TurSNSiteExport {
-	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 
 	private final TurSNSiteRepository turSNSiteRepository;
 
@@ -66,7 +67,7 @@ public class TurSNSiteExport {
 			try {
 				Files.createDirectories(tmpDir.toPath());
 			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
+				log.error(e.getMessage(), e);
 			}
 
 			List<TurSNSite> turSNSites = turSNSiteRepository.findAll();
@@ -81,7 +82,7 @@ public class TurSNSiteExport {
 			try {
 				Files.createDirectories(tmpDir.toPath());
 			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
+				log.error(e.getMessage(), e);
 			}
 
 			TurExchange turExchange = new TurExchange();
@@ -119,12 +120,12 @@ public class TurSNSiteExport {
 							FileUtils.deleteQuietly(zipFile);
 
 						} catch (Exception e) {
-							logger.error(e.getMessage(), e);
+							log.error(e.getMessage(), e);
 						}
 					}
 				};
 			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
+				log.error(e.getMessage(), e);
 			}
 		} 
 		return null;

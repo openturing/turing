@@ -1,5 +1,6 @@
 package com.viglet.turing.connector.webcrawler.persistence.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -12,6 +13,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
+@JsonIgnoreProperties({ "turWCSource" })
 public class TurWCNotAllowUrl extends TurWCUrl implements Serializable {
 
     @Serial

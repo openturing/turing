@@ -1,5 +1,6 @@
 package com.viglet.turing.connector.webcrawler.persistence.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +13,7 @@ import java.io.Serializable;
 @Setter
 @Entity
 @Table(name = "wc_file_extension")
+@JsonIgnoreProperties({ "turWCSource" })
 public class TurWCFileExtension implements Serializable {
 
     @Serial
