@@ -5,7 +5,8 @@ import com.viglet.turing.connector.webcrawler.persistence.model.TurWCSource;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TurWCNotAllowUrlRepository extends JpaRepository<TurWCNotAllowUrl, String> {
-    List<TurWCNotAllowUrl> findByTurWCSource(TurWCSource turWCSource);
+    Optional<List<TurWCNotAllowUrl>> findByTurWCSource(TurWCSource turWCSource);
 }

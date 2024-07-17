@@ -87,10 +87,10 @@ public class TurWCProcess {
 
     public void start(TurWCSource turWCSource) {
         reset();
-        turWCFileExtensionRepository.findByTurWCSource(turWCSource).forEach(turWCFileExtension ->
-                this.notAllowExtensions.add(turWCFileExtension.getExtension()));
-        turWCNotAllowUrlRepository.findByTurWCSource(turWCSource).forEach(turWCNotAllowUrl ->
-                this.notAllowUrls.add(turWCNotAllowUrl.getUrl()));
+        turWCFileExtensionRepository.findByTurWCSource(turWCSource).ifPresent(source -> source.forEach(turWCFileExtension ->
+                this.notAllowExtensions.add(turWCFileExtension.getExtension())));
+        turWCNotAllowUrlRepository.findByTurWCSource(turWCSource).ifPresent(source -> source.forEach(turWCNotAllowUrl ->
+                this.notAllowUrls.add(turWCNotAllowUrl.getUrl())));
 
         this.website = turWCSource.getUrl();
         this.snSite = turWCSource.getTurSNSite();
@@ -98,11 +98,11 @@ public class TurWCProcess {
         this.password = turWCSource.getPassword();
         log.info("User Agent: {}", userAgent);
         turWCAllowUrlRepository
-                .findByTurWCSource(turWCSource)
-                .forEach(turWCAllowUrl -> {
+                .findByTurWCSource(turWCSource).ifPresent(source ->
+                source.forEach(turWCAllowUrl -> {
                     remainingLinks.add(this.website + turWCAllowUrl.getUrl());
                     getPageLinks(turWCSource);
-                });
+                }));
         if (turSNJobItems.size() > 0) {
             sendToTuring();
             getInfoQueue();
@@ -156,7 +156,7 @@ public class TurWCProcess {
 
     private Map<String, Object> getJobItemAttributes(TurWCSource turWCSource, Document document, String url) {
         Map<String, Object> turSNJobItemAttributes = new HashMap<>();
-        turWCAttributeMappingRepository.findByTurWCSource(turWCSource).forEach(turWCCustomClass ->
+        turWCAttributeMappingRepository.findByTurWCSource(turWCSource).ifPresent(source -> source.forEach(turWCCustomClass ->
                 Optional.ofNullable(turWCCustomClass.getText()).ifPresentOrElse(text ->
                                 turSNJobItemAttributes.put(turWCCustomClass.getName(), text)
                         , () -> {
@@ -182,7 +182,7 @@ public class TurWCProcess {
                                 log.error(e.getMessage(), e);
                             }
                         }
-                ));
+                )));
         return turSNJobItemAttributes;
     }
 

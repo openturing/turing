@@ -19,7 +19,6 @@ import java.util.Locale;
 @Setter
 @Entity
 @Table(name = "wc_source")
-
 public class TurWCSource implements Serializable {
 
     @Serial
@@ -29,43 +28,72 @@ public class TurWCSource implements Serializable {
     @TurUuid
     @Column(name = "id", nullable = false)
     private String id;
-
+    @Column
+    private String title;
+    @Column
+    private String description;
+    @Column
     private Locale locale;
-
+    @Column
     private String localeClass;
-
+    @Column
     private String url;
-
+    @Column
     private String turSNSite;
-
+    @Column
     private String username;
-
+    @Column
     private String password;
+
     @Builder.Default
-    // bi-directional many-to-one association to turWCUrl
     @OneToMany(mappedBy = "turWCSource", orphanRemoval = true, fetch = FetchType.LAZY)
-    @Cascade({org.hibernate.annotations.CascadeType.ALL})
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurWCAllowUrl> allowUrls  = new HashSet<>();
 
     @Builder.Default
-    // bi-directional many-to-one association to turWCUrl
     @OneToMany(mappedBy = "turWCSource", orphanRemoval = true, fetch = FetchType.LAZY)
-    @Cascade({org.hibernate.annotations.CascadeType.ALL})
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurWCNotAllowUrl> notAllowUrls = new HashSet<>();
 
     @Builder.Default
-    // bi-directional many-to-one association to turWCFileExtension
     @OneToMany(mappedBy = "turWCSource", orphanRemoval = true, fetch = FetchType.LAZY)
-    @Cascade({org.hibernate.annotations.CascadeType.ALL})
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurWCFileExtension> notAllowExtensions = new HashSet<>();
 
     @Builder.Default
-    // bi-directional many-to-one association to turWCAttributeMapping
     @OneToMany(mappedBy = "turWCSource", orphanRemoval = true, fetch = FetchType.LAZY)
-    @Cascade({org.hibernate.annotations.CascadeType.ALL})
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurWCAttributeMapping> attributeMappings = new HashSet<>();
+
+    public void setAllowUrls(Collection<TurWCAllowUrl> allowUrls) {
+        this.allowUrls.clear();
+        if (allowUrls != null) {
+            this.allowUrls.addAll(allowUrls);
+        }
+    }
+
+    public void setNotAllowUrls(Collection<TurWCNotAllowUrl> notAllowUrls) {
+        this.notAllowUrls.clear();
+        if (notAllowUrls != null) {
+            this.notAllowUrls.addAll(notAllowUrls);
+        }
+    }
+    public void setNotAllowExtensions(Collection<TurWCFileExtension> notAllowExtensions) {
+        this.notAllowExtensions.clear();
+        if (notAllowExtensions != null) {
+            this.notAllowExtensions.addAll(notAllowExtensions);
+        }
+    }
+
+    public void setAttributeMappings(Collection<TurWCAttributeMapping> attributeMappings) {
+        this.attributeMappings.clear();
+        if (attributeMappings != null) {
+            this.attributeMappings.addAll(attributeMappings);
+        }
+    }
+
 }

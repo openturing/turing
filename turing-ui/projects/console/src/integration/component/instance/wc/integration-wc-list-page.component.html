@@ -1,23 +1,23 @@
-<div *ngIf="(getTurIntegrationAemSources() | async) as aemSources; else loading">
-  <div *ngIf="aemSources.length < 1" class="blankslate">
+<div *ngIf="(getTurIntegrationWcSources() | async) as wcSources; else loading">
+  <div *ngIf="wcSources.length < 1" class="blankslate">
     <span octicon="codescan" [size]=48 class="mb-3"></span>
     <h3 class="mb-1">You don’t seem to have any integration instance.</h3>
     <p>Create a new instance and integrate it with Turing.</p>
-    <a [routerLink]="['/integration/instance', getIntegrationId(), 'aem', 'new']" class="btn btn-primary my-3" type="button">New AEM Source
+    <a [routerLink]="['/integration', 'web-crawler', getIntegrationId(), 'new']" class="btn btn-primary my-3" type="button">New Web Crawler
       </a>
   </div>
 
-  <div *ngIf="aemSources.length >= 1">
+  <div *ngIf="wcSources.length >= 1">
     <div style="margin-top: 20px;">
       <div style="padding-bottom: 15px;">
         <div class="Subhead" style="padding-bottom: 20px;">
           <div style="flex: 1 1 auto;">
-            <input class="form-control" style="width: 50%;" type="text" placeholder="Find a AEM source..."
+            <input class="form-control" style="width: 50%;" type="text" placeholder="Find a web crawler..."
                    [(ngModel)]="filterText"
                    aria-label="Find a AEM source"/>
           </div>
           <div class="Subhead-actions">
-            <a [routerLink]="['/integration/instance', getIntegrationId(), 'aem', 'new']" class="btn btn-primary" role="button">
+            <a [routerLink]="['/integration', 'web-crawler', getIntegrationId(), 'new']" class="btn btn-primary" role="button">
               <span octicon="package" [size]=16 class="mr-1"></span> New
             </a>
           </div>
@@ -25,22 +25,22 @@
       </div>
     </div>
     <div>
-      <div *ngFor="let aemSource of aemSources | fullTextSearch:filterText:'title'"
+      <div *ngFor="let wcSource of wcSources | fullTextSearch:filterText:'turSNSite'"
            class="border-bottom d-flex flex-items-center"
            style="margin-bottom: 20px;padding-bottom: 10px;">
         <div class="flex-auto">
           <div style="width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
                class="float-left">
-            <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="aemSource.group | lowercase">
+            <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="wcSource.turSNSite | lowercase">
               Avatar
             </svg>
           </div>
-          <a [routerLink]="['/integration/instance', getIntegrationId(), 'aem', 'instance', aemSource.id]"
+          <a [routerLink]="['/integration', 'web-crawler', getIntegrationId(), 'instance', wcSource.id]"
              routerLinkActive="active"
              style="font-weight: bolder; font-size: large;">
-            {{ aemSource.group }} </a>
+            {{ wcSource.turSNSite }} </a>
           <div class="text-gray-light" style="margin-top: 5px;">
-            {{ aemSource.siteName }}
+            {{ wcSource.siteName }}
           </div>
           <div style="margin-top: 5px;">
             <span title="Label: green outline label" class="Label Label--outline Label--outline-green">Active</span>
@@ -50,7 +50,7 @@
             <div class="mr-3">
               <span
                 style="position: relative;top: 1px;display: inline-block;width: 12px;height: 12px;border-radius: 50%;background-color: #2b7489;"></span>
-              <span class="ml-1">AEM Source</span>
+              <span class="ml-1">Web Crawler</span>
             </div>
           </div>
         </div>

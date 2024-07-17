@@ -39,15 +39,15 @@ import java.net.URI;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v2/integration/{integrationId}/aem")
+@RequestMapping("/api/v2/integration/{integrationId}")
 @Tag(name = "AEM API", description = "AEM API")
-public class TurIntegrationAEMAPI {
+public class TurIntegrationAPI {
     public static final String PUT = "PUT";
     public static final String POST = "POST";
     private final TurIntegrationInstanceRepository turIntegrationInstanceRepository;
 
     @Inject
-    TurIntegrationAEMAPI(TurIntegrationInstanceRepository turIntegrationInstanceRepository) {
+    TurIntegrationAPI(TurIntegrationInstanceRepository turIntegrationInstanceRepository) {
         this.turIntegrationInstanceRepository = turIntegrationInstanceRepository;
     }
     @RequestMapping("**")
@@ -75,8 +75,8 @@ public class TurIntegrationAEMAPI {
                 outputStream.flush();
                 outputStream.close();
             }
-            ByteStreams.copy(httpURLConnection.getInputStream(), response.getOutputStream());
             response.setStatus(httpURLConnection.getResponseCode());
+            ByteStreams.copy(httpURLConnection.getInputStream(), response.getOutputStream());
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }

@@ -1,18 +1,19 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
-import { TurIntegrationInstance } from '../../model/integration-instance.model';
+
 import { NotifierService } from 'angular-notifier-updated';
-import { TurIntegrationInstanceService } from '../../service/integration-instance.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TurIntegrationVendor } from '../../model/integration-vendor.model';
-import { TurIntegrationVendorService } from '../../service/integration-vendor.service';
 import { UntypedFormControl, Validators } from '@angular/forms';
+import {TurIntegrationInstance} from "../../../model/integration-instance.model";
+import {TurIntegrationVendor} from "../../../model/integration-vendor.model";
+import {TurIntegrationInstanceService} from "../../../service/integration-instance.service";
+import {TurIntegrationVendorService} from "../../../service/integration-vendor.service";
 
 @Component({
-  selector: 'integration-instance-page',
-  templateUrl: './integration-instance-page.component.html'
+  selector: 'integration-wc-menu-page',
+  templateUrl: './integration-wc-menu-page.component.html'
 })
-export class TurIntegrationInstancePageComponent implements OnInit {
+export class TurIntegrationWcMenuPageComponent implements OnInit {
   @ViewChild('modalDelete')
   modalDelete!: ElementRef;
   private turIntegrationInstance: Observable<TurIntegrationInstance>;

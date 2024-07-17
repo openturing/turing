@@ -21,10 +21,6 @@
         </div>
       </div>
     </div>
-    <!--
-    <div *ngIf="!isNewObject()" style="position: relative;width: 100px;"><span class="Label mr-1 Label--success"
-        style="position: absolute;top: 50%; left: 50%;transform: translate(-50%,-50%);">Running</span></div>
-        -->
     <div class="Subhead-actions" style="display: inherit;">
       <details *ngIf="!isNewObject()" #modalDelete id="modalDelete"
                class="details-reset details-overlay details-overlay-dark" style="display: unset;">
@@ -68,11 +64,11 @@
     </nav>
       <nav class="menu" aria-label="AEM">
       <div class="menu-heading">AEM Connector</div>
-        <a class="menu-item" [routerLink]="['/integration/instance/', integrationInstance.id, 'aem', 'sn']" [routerLinkActive]="['selected']"><span
+        <a class="menu-item" [routerLink]="['/integration/', 'aem', integrationInstance.id,  'sn']" [routerLinkActive]="['selected']"><span
           octicon="server" [size]=16 class="mr-1"></span> Turing Servers</a>
-        <a class="menu-item" [routerLink]="['/integration/instance/', integrationInstance.id, 'aem', 'mapping']" [routerLinkActive]="['selected']"><span
+        <a class="menu-item" [routerLink]="['/integration/', 'aem', integrationInstance.id, 'mapping']" [routerLinkActive]="['selected']"><span
           octicon="project-roadmap" [size]=16 class="mr-1"></span> Mappings</a>
-      <a class="menu-item" [routerLink]="['/integration/instance/', integrationInstance.id, 'aem','instance']" [routerLinkActive]="['selected']"><span
+      <a class="menu-item" [routerLink]="['/integration/', 'aem', integrationInstance.id, 'instance']" [routerLinkActive]="['selected']"><span
         octicon="git-commit" [size]=16 class="mr-1"></span> Sources</a>
 
     </nav>

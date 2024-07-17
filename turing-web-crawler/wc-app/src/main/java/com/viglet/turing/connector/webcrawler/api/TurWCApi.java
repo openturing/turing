@@ -16,7 +16,7 @@ import java.util.Map;
 
 @Log4j2
 @RestController
-@RequestMapping("/api/v2/connector/wc")
+@RequestMapping("/api/v2/wc")
 @Tag(name = "Heartbeat", description = "Heartbeat")
 public class TurWCApi {
     private final TurWCExchangeProcess turWCExchangeProcess;

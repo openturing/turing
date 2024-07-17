@@ -37,6 +37,7 @@ import com.viglet.turing.persistence.repository.converse.intent.TurConverseInten
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
+import com.viglet.turing.spring.utils.TurSpringUtils;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -284,7 +285,7 @@ public class TurConverseImportExchange {
 	}
 
 	public File extractZipFile(MultipartFile file) {
-		return TurCommonsUtils.extractZipFile(file);
+		return TurSpringUtils.extractZipFile(file);
 	}
 
 }

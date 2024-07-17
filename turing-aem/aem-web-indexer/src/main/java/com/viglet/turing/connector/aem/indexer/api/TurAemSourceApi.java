@@ -55,9 +55,6 @@ public class TurAemSourceApi {
     @PutMapping("/{id}")
     public TurAemSource turAemSourceUpdate(@PathVariable String id, @RequestBody TurAemSource turAemSource) {
         return turAemSourceRepository.findById(id).map(turAemSourceEdit -> {
-            turAemSource.getLocalePaths().forEach( turAemSourceLocalePath -> {
-
-            });
             turAemSourceEdit.setGroup(turAemSource.getGroup());
             turAemSourceEdit.setUrl(turAemSource.getUrl());
             turAemSourceEdit.setUsername(turAemSource.getUsername());
@@ -78,8 +75,6 @@ public class TurAemSourceApi {
                             localePath.setTurAemSource(turAemSource))
                     .collect(Collectors.toSet()));
             this.turAemSourceRepository.save(turAemSourceEdit);
-
-
             return turAemSourceEdit;
         }).orElse(new TurAemSource());
 

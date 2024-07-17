@@ -40,8 +40,8 @@ package com.viglet.turing.exchange;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
+import com.viglet.turing.spring.utils.TurSpringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -118,6 +118,6 @@ public class TurImportExchange {
 	}
 
 	public File extractZipFile(MultipartFile file) {
-		return TurCommonsUtils.extractZipFile(file);
+		return TurSpringUtils.extractZipFile(file);
 	}
 }

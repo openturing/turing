@@ -5,7 +5,8 @@ import com.viglet.turing.connector.webcrawler.persistence.model.TurWCSource;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TurWCFileExtensionRepository extends JpaRepository<TurWCFileExtension, String> {
-    List<TurWCFileExtension> findByTurWCSource(TurWCSource turWCSource);
+    Optional<List<TurWCFileExtension>> findByTurWCSource(TurWCSource turWCSource);
 }
