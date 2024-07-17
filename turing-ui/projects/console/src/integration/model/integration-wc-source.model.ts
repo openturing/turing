@@ -1,3 +1,7 @@
+import {TurIntegrationWcExtension} from "./integration-wc-extension.model";
+import {TurIntegrationWcUrl} from "./integration-wc-url.model";
+import {TurIntegrationWcAttrib} from "./integration-wc-attrib.model";
+
 export interface TurIntegrationWcSource {
   id: string;
   title: string;
@@ -8,8 +12,8 @@ export interface TurIntegrationWcSource {
   turSNSite: string;
   username: string;
   password: string;
-  allowUrls: string[];
-  notAllowUrls: string[];
-  notAllowExtensions: string[];
-  attributeMappings: string[];
+  allowUrls: TurIntegrationWcUrl[];
+  notAllowUrls: TurIntegrationWcUrl[];
+  notAllowExtensions: TurIntegrationWcExtension[];
+  attributeMappings: TurIntegrationWcAttrib[];
 }

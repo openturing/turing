@@ -3,11 +3,13 @@ import {Observable} from 'rxjs';
 import {NotifierService} from 'angular-notifier-updated';
 import {ActivatedRoute, Router} from '@angular/router';
 import {UntypedFormControl, Validators} from '@angular/forms';
-
 import {TurLocale} from "../../../../locale/model/locale.model";
 import {TurIntegrationWcSource} from "../../../model/integration-wc-source.model";
 import {TurIntegrationWcSourceService} from "../../../service/integration-wc-source.service";
 import {TurLocaleService} from "../../../../locale/service/locale.service";
+import {TurIntegrationWcUrl} from "../../../model/integration-wc-url.model";
+import {TurIntegrationWcExtension} from "../../../model/integration-wc-extension.model";
+import {TurIntegrationWcAttrib} from "../../../model/integration-wc-attrib.model";
 
 @Component({
   selector: 'integration-wc-page',
@@ -96,4 +98,36 @@ export class TurIntegrationWcPageComponent implements OnInit {
   }
 
   protected readonly JSON = JSON;
+
+  removeAllowUrl(wcSource: TurIntegrationWcSource, allowUrl: TurIntegrationWcUrl) {
+
+  }
+
+  newAllowUrl(allowUrls: TurIntegrationWcUrl[]) {
+
+  }
+
+  removeNotAllowUrl(wcSource: TurIntegrationWcSource, notAllowUrl: TurIntegrationWcUrl) {
+
+  }
+
+  newNotAllowUrl(notAllowUrls: TurIntegrationWcUrl[]) {
+
+  }
+
+  removeNotAllowExtension(wcSource: TurIntegrationWcSource, notAllowExtension: TurIntegrationWcExtension) {
+
+  }
+
+  newNotAllowExtension(notAllowExtensions: TurIntegrationWcExtension[]) {
+
+  }
+
+  removeAttributeMapping(wcSource: TurIntegrationWcSource, attributeMapping: TurIntegrationWcAttrib) {
+
+  }
+
+  newAttributeMapping(attributeMappings: TurIntegrationWcAttrib[]) {
+
+  }
 }

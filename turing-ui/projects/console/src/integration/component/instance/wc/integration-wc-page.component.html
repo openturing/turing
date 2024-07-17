@@ -157,7 +157,126 @@
     </div>
   </div>
 
+  <div class="Subhead mt-5">
+    <div class="Subhead-heading Subhead-heading--large"><span octicon="typography" [size]="24" class="mr-1"> </span>
+      Allow Urls
+    </div>
+    <div class="Subhead-description">Urls that will be indexed.</div>
+  </div>
+  <div *ngFor="let allowUrl of wcSource.allowUrls; last as isLast"
+       data-view-component="true">
+    <div style="display: flex" class="form-group">
+      <div  class="form-group-body" style="width: 100%">
+      <input [(ngModel)]="allowUrl.url"
+             style="width: calc(100% - 55px);"
+             class="form-control  mr-3" type="text" id="allow-url-{{allowUrl.id}}"/>
 
+      <button class="btn btn-danger btn-octicon mr-1"
+              (click)="removeAllowUrl(wcSource, allowUrl)">
+        <span octicon="trash" [size]=16></span>
+      </button>
+      </div>
+    </div>
+  </div>
+  <div class="mb-2 mt-4 ml-1">
+    <button class="btn btn-outline mr-1" (click)="newAllowUrl(wcSource.allowUrls)">
+      <span octicon="plus-circle" [size]=16
+            class="mr-1"></span> Add
+    </button>
+  </div>
+
+  <div class="Subhead mt-5">
+    <div class="Subhead-heading Subhead-heading--large"><span octicon="typography" [size]="24" class="mr-1"> </span>
+      Not Allow Urls
+    </div>
+    <div class="Subhead-description">Urls that will not be indexed.</div>
+  </div>
+  <div *ngFor="let notAllowUrl of wcSource.notAllowUrls; last as isLast"
+       data-view-component="true">
+    <div style="display: flex" class="form-group">
+      <div  class="form-group-body" style="width: 100%">
+        <input [(ngModel)]="notAllowUrl.url"
+               style="width: calc(100% - 55px);"
+               class="form-control  mr-3" type="text" id="allow-url-{{notAllowUrl.id}}"/>
+
+        <button class="btn btn-danger btn-octicon mr-1"
+                (click)="removeNotAllowUrl(wcSource, notAllowUrl)">
+          <span octicon="trash" [size]=16></span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="mb-2 mt-4 ml-1">
+    <button class="btn btn-outline mr-1" (click)="newNotAllowUrl(wcSource.notAllowUrls)">
+      <span octicon="plus-circle" [size]=16
+            class="mr-1"></span> Add
+    </button>
+  </div>
+
+  <div class="Subhead mt-5">
+    <div class="Subhead-heading Subhead-heading--large"><span octicon="typography" [size]="24" class="mr-1"> </span>
+      Not Allow Extensions
+    </div>
+    <div class="Subhead-description">Extensions that will not be indexed.</div>
+  </div>
+  <div *ngFor="let notAllowExtension of wcSource.notAllowExtensions; last as isLast"
+       data-view-component="true">
+    <div style="display: flex" class="form-group">
+      <div  class="form-group-body" style="width: 100%">
+        <input [(ngModel)]="notAllowExtension.extension"
+               style="width: calc(100% - 55px);"
+               class="form-control  mr-3" type="text" id="allow-url-{{notAllowExtension.id}}"/>
+
+        <button class="btn btn-danger btn-octicon mr-1"
+                (click)="removeNotAllowExtension(wcSource, notAllowExtension)">
+          <span octicon="trash" [size]=16></span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="mb-2 mt-4 ml-1">
+    <button class="btn btn-outline mr-1" (click)="newNotAllowExtension(wcSource.notAllowExtensions)">
+      <span octicon="plus-circle" [size]=16
+            class="mr-1"></span> Add
+    </button>
+  </div>
+
+  <div class="Subhead mt-5">
+    <div class="Subhead-heading Subhead-heading--large"><span octicon="typography" [size]="24" class="mr-1"> </span>
+      Attribute Mappings
+    </div>
+    <div class="Subhead-description">Behavior of Attributes </div>
+  </div>
+  <div *ngFor="let attributeMapping of wcSource.attributeMappings; last as isLast"
+       data-view-component="true">
+    <div style="display: flex" class="form-group">
+      <div  class="form-group-body" style="width: 100%">
+        <input [(ngModel)]="attributeMapping.name"
+               style="width: 15%;"
+               class="form-control  mr-3" type="text" id="attrib-map-name-{{attributeMapping.id}}"/>
+
+        <input [(ngModel)]="attributeMapping.className"
+               style="width: 50%;"
+               class="form-control  mr-3" type="text" id="attrib-map-class-{{attributeMapping.id}}"/>
+
+        <input [(ngModel)]="attributeMapping.text"
+               style="width: 25%;"
+               class="form-control  mr-3" type="text" id="attrib-map-text-{{attributeMapping.id}}"/>
+
+
+        <button class="btn btn-danger btn-octicon mr-1"
+                (click)="removeAttributeMapping(wcSource, attributeMapping)">
+          <span octicon="trash" [size]=16></span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="mb-2 mt-4 ml-1">
+    <button class="btn btn-outline mr-1" (click)="newAttributeMapping(wcSource.attributeMappings)">
+      <span octicon="plus-circle" [size]=16
+            class="mr-1"></span> Add
+    </button>
+  </div>
 </div>
 <ng-template #loading>
   <span>Loading</span><span class="AnimatedEllipsis"></span>
