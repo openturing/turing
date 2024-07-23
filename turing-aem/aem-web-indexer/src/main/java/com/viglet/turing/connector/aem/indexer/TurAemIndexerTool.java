@@ -12,7 +12,6 @@ import com.viglet.turing.connector.aem.commons.TurAEMAttrProcess;
 import com.viglet.turing.connector.aem.commons.TurAEMCommonsUtils;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
-import com.viglet.turing.connector.aem.commons.ext.ExtContentInterface;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemIndexing;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSource;
 import com.viglet.turing.connector.aem.indexer.persistence.model.TurAemSystem;
@@ -32,7 +31,6 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.*;
@@ -100,43 +98,6 @@ public class TurAemIndexerTool {
         this.turAemConfigVarRepository = turAemConfigVarRepository;
         this.turAemSourceLocalePathRepository = turAemSourceLocalePathRepository;
         this.turAemSourceContext = TurAemSourceContext.builder().build();
-    }
-
-    public static boolean checkIfFileHasImageExtension(String s) {
-        String[] imageExtensions = {".jpg", ".png", ".jpeg", ".svg", ".webp"};
-        return Arrays.stream(imageExtensions).anyMatch(suffix -> s.toLowerCase().endsWith(suffix));
-    }
-
-    @NotNull
-    private static List<TurSNJobAttributeSpec> castSpecToJobSpec(List<TurSNAttributeSpec> turSNAttributeSpecList) {
-        return turSNAttributeSpecList.stream()
-                .filter(Objects::nonNull)
-                .map(TurSNJobAttributeSpec.class::cast)
-                .toList();
-    }
-
-    private static void addItemInExistingAttribute(String attributeValue,
-                                                   Map<String, Object> attributes,
-                                                   String attributeName) {
-        if (attributes.get(attributeName) instanceof ArrayList)
-            addItemToArray(attributes, attributeName, attributeValue);
-        else convertAttributeSingleValueToArray(attributes, attributeName, attributeValue);
-    }
-
-    private static void convertAttributeSingleValueToArray(Map<String, Object> attributes,
-                                                           String attributeName, String attributeValue) {
-        List<Object> attributeValues = new ArrayList<>();
-        attributeValues.add(attributes.get(attributeName));
-        attributeValues.add(attributeValue);
-        attributes.put(attributeName, attributeValues);
-    }
-
-    private static void addItemToArray(Map<String, Object> attributes, String attributeName, String attributeValue) {
-        List<String> attributeValues = new ArrayList<>(((List<?>) attributes.get(attributeName))
-                .stream().map(String.class::cast).toList());
-        attributeValues.add(attributeValue);
-        attributes.put(attributeName, attributeValues);
-
     }
 
     public TurAemSourceContext getTurAemSourceContext(TurAemSource turAemSource) {
@@ -228,7 +189,8 @@ public class TurAemIndexerTool {
 
     private void jsonByContentType() {
         JSONObject jsonSite = TurAEMCommonsUtils.getInfinityJson(getRootPath(), this.turAemSourceContext);
-        setSiteName(getRootPath(), jsonSite);
+        TurAEMCommonsUtils.getSiteName(jsonSite).ifPresentOrElse(siteName -> this.siteName = siteName,
+                () -> log.error("No site name the {} root path ({})", getRootPath(), getGroup()));
         log.info("Site Name: {}", siteName);
         addItemToQueue(getRootPath());
         processQueue();
@@ -260,7 +222,7 @@ public class TurAemIndexerTool {
     private void getNodeFromJson(String url, JSONObject jsonObject) {
         jsonObject.toMap().forEach((key, value) -> {
             if (!key.startsWith(JCR) && !key.startsWith(REP) && (getSubType().equals(STATIC_FILE_SUB_TYPE)
-                    || !checkIfFileHasImageExtension(key))) {
+                    || !TurAEMCommonsUtils.checkIfFileHasImageExtension(key))) {
                 String urlChild = url + "/" + key;
                 if (!isOnce() || !isOnceConfig(urlChild)) {
                     addItemToQueue(urlChild);
@@ -318,23 +280,6 @@ public class TurAemIndexerTool {
 
     }
 
-    private void setSiteName(String rootPath, JSONObject jsonSite) {
-        if (jsonSite.has(JCR_CONTENT) && jsonSite.getJSONObject(JCR_CONTENT).has(JCR_TITLE)) {
-            siteName = jsonSite.getJSONObject(JCR_CONTENT).getString(JCR_TITLE);
-        } else {
-            log.error("No site name the {} root path ({})", rootPath, getGroup());
-        }
-    }
-
-    private List<TurSNAttributeSpec> getDefinitionFromModel(List<TurSNAttributeSpec> turSNAttributeSpecList,
-                                                            Map<String, Object> targetAttrMap) {
-        List<TurSNAttributeSpec> turSNAttributeSpecFromModelList = new ArrayList<>();
-        targetAttrMap.forEach((key, value) -> turSNAttributeSpecList.stream()
-                .filter(turSNAttributeSpec -> turSNAttributeSpec.getName().equals(key))
-                .findFirst().ifPresent(turSNAttributeSpecFromModelList::add));
-        return turSNAttributeSpecFromModelList;
-    }
-
     private void addTurSNJobItemByType(TurCmsModel turCmsModel, AemObject aemObject,
                                        List<TurSNAttributeSpec> targetAttrDefinitions) {
         String contentType = Objects.requireNonNull(getContentType());
@@ -361,19 +306,6 @@ public class TurAemIndexerTool {
         } else {
             processed++;
         }
-    }
-
-    private TurCmsTargetAttrValueList runCustomClassFromContentType(TurCmsModel turCmsModel, AemObject aemObject) {
-        try {
-            if (!StringUtils.isEmpty(turCmsModel.getClassName()))
-                return ((ExtContentInterface) Class.forName(turCmsModel.getClassName())
-                        .getDeclaredConstructor().newInstance())
-                        .consume(aemObject, this.turAemSourceContext);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException |
-                 ClassNotFoundException e) {
-            log.error(e.getMessage(), e);
-        }
-        return new TurCmsTargetAttrValueList();
     }
 
     private void deIndexObject() {
@@ -408,7 +340,7 @@ public class TurAemIndexerTool {
                             .ifPresent(turAemIndexingsList ->
                                     log.info("ReIndexed {} object ({}) from {} to {} and deltaId = {}",
                                             aemObject.getPath(), getGroup(), turAemIndexingsList.getFirst().getDate(),
-                                            getDeltaDate(aemObject), deltaId));
+                                            TurAEMCommonsUtils.getDeltaDate(aemObject), deltaId));
                     sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale);
                 }
                 updateIndexingStatus(aemObject, locale);
@@ -421,8 +353,10 @@ public class TurAemIndexerTool {
                                          List<TurSNAttributeSpec> turSNAttributeSpecList, Locale locale) {
         TurAEMAttrProcess turAEMAttrProcess = new TurAEMAttrProcess();
         TurCmsTargetAttrValueList turCmsTargetAttrValueList = turAEMAttrProcess
-                .prepareAttributeDefs(aemObject, turCmsContentDefinitionProcess, turSNAttributeSpecList, this.turAemSourceContext);
-        turCmsTargetAttrValueList.merge(runCustomClassFromContentType(turCmsModel, aemObject));
+                .prepareAttributeDefs(aemObject, turCmsContentDefinitionProcess, turSNAttributeSpecList,
+                        this.turAemSourceContext);
+        turCmsTargetAttrValueList.merge(TurAEMCommonsUtils.runCustomClassFromContentType(turCmsModel, aemObject,
+                this.turAemSourceContext));
         Map<String, Object> attributes = new HashMap<>();
         attributes.put(SITE, siteName);
         turCmsTargetAttrValueList.stream()
@@ -432,16 +366,16 @@ public class TurAemIndexerTool {
                     targetAttrValue.getMultiValue().forEach(attributeValue -> {
                         if (!StringUtils.isBlank(attributeValue)) {
                             if (attributes.containsKey(attributeName)) {
-                                addItemInExistingAttribute(attributeValue, attributes, attributeName);
+                                TurAEMCommonsUtils.addItemInExistingAttribute(attributeValue, attributes, attributeName);
                             } else {
-                                addFirstItemToAttribute(attributeName, attributeValue, attributes);
+                                TurAEMCommonsUtils.addFirstItemToAttribute(attributeName, attributeValue, attributes);
                             }
                         }
                     });
                 });
         addJobItemToItems(new TurSNJobItem(TurSNJobAction.CREATE,
-                locale, Collections.singletonList(this.turAemSourceContext.getTurSNSite()), castSpecToJobSpec(
-                getDefinitionFromModel(turSNAttributeSpecList, attributes)),
+                locale, Collections.singletonList(this.turAemSourceContext.getTurSNSite()), TurAEMCommonsUtils.castSpecToJobSpec(
+                TurAEMCommonsUtils.getDefinitionFromModel(turSNAttributeSpecList, attributes)),
                 attributes));
     }
 
@@ -458,7 +392,7 @@ public class TurAemIndexerTool {
                                 aemObject.getPath(), getGroup(), deltaId);
                     } else {
                         turAemIndexingRepository.save(turAemIndexingList.getFirst()
-                                .setDate(getDeltaDate(aemObject))
+                                .setDate(TurAEMCommonsUtils.getDeltaDate(aemObject))
                                 .setDeltaId(deltaId));
                         log.info("Updated {} object ({}) deltaId = {}",
                                 aemObject.getPath(), getGroup(), deltaId);
@@ -489,16 +423,7 @@ public class TurAemIndexerTool {
     private boolean objectNeedBeReIndexed(AemObject aemObject) {
         return !StringUtils.isEmpty(aemObject.getPath()) &&
                 turAemIndexingRepository.existsByAemIdAndIndexGroupAndDateNot(aemObject.getPath(),
-                        getGroup(), getDeltaDate(aemObject));
-    }
-
-    @NotNull
-    private static Date getDeltaDate(AemObject aemObject) {
-        if (aemObject.getLastModified() != null)
-            return aemObject.getLastModified().getTime();
-        if (aemObject.getCreatedDate() != null)
-            return aemObject.getCreatedDate().getTime();
-        return new Date();
+                        getGroup(), TurAEMCommonsUtils.getDeltaDate(aemObject));
     }
 
     private void addJobItemToItems(TurSNJobItem turSNJobItem) {
@@ -517,9 +442,5 @@ public class TurAemIndexerTool {
         }
     }
 
-    private void addFirstItemToAttribute(String attributeName,
-                                         String attributeValue,
-                                         Map<String, Object> attributes) {
-        attributes.put(attributeName, attributeValue);
-    }
+
 }
