@@ -95,7 +95,7 @@ public class TurAEMAttrProcess {
 
         if (turCmsSourceAttr.isConvertHtmlToText()) {
             return TurCmsTargetAttrValueList.singleItem(turCmsTargetAttr.getName(),
-                    HtmlManipulator.html2Text(TurAEMCommonsUtils.getPropertyValue(jcrProperty)));
+                    HtmlManipulator.html2Text(TurAEMCommonsUtils.getPropertyValue(jcrProperty)), false);
         } else if (jcrProperty != null) {
             TurMultiValue turMultiValue = new TurMultiValue();
             if (isJSONArray(jcrProperty)) {
@@ -104,7 +104,7 @@ public class TurAEMAttrProcess {
                 turMultiValue.add(TurAEMCommonsUtils.getPropertyValue(jcrProperty));
             }
             if (!turMultiValue.isEmpty()) {
-                return TurCmsTargetAttrValueList.singleItem(turCmsTargetAttr.getName(), turMultiValue);
+                return TurCmsTargetAttrValueList.singleItem(turCmsTargetAttr.getName(), turMultiValue, false);
             }
         }
         return new TurCmsTargetAttrValueList();
@@ -213,7 +213,7 @@ public class TurAEMAttrProcess {
         log.debug("Target Attribute Name: {} and Source Attribute Name: {}",
                 context.getTurCmsTargetAttr().getName(), context.getTurCmsSourceAttr().getName());
         if (hasTextValue(context.getTurCmsTargetAttr())) {
-            return TurCmsTargetAttrValueList.singleItem(context.getTurCmsTargetAttr());
+            return TurCmsTargetAttrValueList.singleItem(context.getTurCmsTargetAttr(), false);
         } else {
             return hasCustomClass(context) ?
                     attributeByClass(context, turAemSourceContext) :
@@ -259,7 +259,7 @@ public class TurAEMAttrProcess {
                                 turSNAttributeSpecList.add(setTagFacet(turAemSourceContext, facet));
                                 Optional.ofNullable(tagSplit[1]).ifPresent(value ->
                                         turCmsTargetAttrValueList.addWithSingleValue(facet,
-                                               addTagToAttrValueList(context, turAemSourceContext, facet, value))
+                                               addTagToAttrValueList(context, turAemSourceContext, facet, value), false)
                                 );
                             });
                         }
@@ -278,7 +278,7 @@ public class TurAEMAttrProcess {
                     ((ExtAttributeInterface) Objects.requireNonNull(Class.forName(className)
                             .getDeclaredConstructor().newInstance()))
                             .consume(context.getTurCmsTargetAttr(), context.getTurCmsSourceAttr(),
-                                    (AemObject) context.getCmsObjectInstance(), turAemSourceContext));
+                                    (AemObject) context.getCmsObjectInstance(), turAemSourceContext), false);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException | ClassNotFoundException e) {
             log.error(e.getMessage(), e);

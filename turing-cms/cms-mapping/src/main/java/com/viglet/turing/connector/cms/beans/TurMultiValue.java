@@ -20,6 +20,9 @@
  */
 package com.viglet.turing.connector.cms.beans;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serial;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -28,37 +31,59 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+@Setter
+@Getter
 public class TurMultiValue extends ArrayList<String> {
 
 	@Serial
 	private static final long serialVersionUID = 1L;
 	public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 	public static final String UTC = "UTC";
+	private final boolean override;
 
-	public static <T> TurMultiValue singleItem(T value) {
-        return switch (value) {
-            case String string -> singleItem(string);
-            case Boolean bool -> singleItem(bool);
-            case Date date -> singleItem(date);
-            case null, default -> value != null ? singleItem(value.toString()) : null;
-        };
+	public TurMultiValue() {
+		this.override = false;
+	}
+    public TurMultiValue(boolean override) {
+        this.override = override;
+    }
+
+	public static <T> TurMultiValue singleItem(T value, boolean override) {
+		return switch (value) {
+			case String string -> singleItem(string, override);
+			case Boolean bool -> singleItem(bool, override);
+			case Date date -> singleItem(date, override);
+			case null, default -> value != null ? singleItem(value.toString(), override) : null;
+		};
 	}
 
-	public static TurMultiValue singleItem(String text) {
-		TurMultiValue turMultiValue = new TurMultiValue();
+    public static <T> TurMultiValue singleItem(T value) {
+		return singleItem(value, false);
+	}
+	public static TurMultiValue singleItem(String text, boolean override) {
+		TurMultiValue turMultiValue = new TurMultiValue(override);
 		turMultiValue.add(text);
 		return turMultiValue;
 	}
 
-	public static TurMultiValue singleItem(boolean bool) {
-		TurMultiValue turMultiValue = new TurMultiValue();
+	public static TurMultiValue singleItem(String text) {
+		return singleItem(text, false);
+	}
+
+	public static TurMultiValue singleItem(boolean bool, boolean override) {
+		TurMultiValue turMultiValue = new TurMultiValue(override);
 		turMultiValue.add(bool? "true": "false");
 		return turMultiValue;
 	}
 
-	public static TurMultiValue singleItem(Date date) {
+
+	public static TurMultiValue singleItem(boolean bool) {
+		return singleItem(bool, false);
+	}
+
+	public static TurMultiValue singleItem(Date date, boolean override) {
 		if (date == null) {
-			return new TurMultiValue();
+			return new TurMultiValue(override);
 		}
 		else {
 			TimeZone tz = TimeZone.getTimeZone(UTC);
@@ -66,6 +91,9 @@ public class TurMultiValue extends ArrayList<String> {
 			df.setTimeZone(tz);
 			return singleItem(df.format(date));
 		}
+	}
+	public static TurMultiValue singleItem(Date date) {
+		return singleItem(date, false);
 	}
 	public static TurMultiValue fromList(List<String> list) {
 		TurMultiValue turMultiValue = new TurMultiValue();

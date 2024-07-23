@@ -422,8 +422,7 @@ public class TurAemIndexerTool {
         TurAEMAttrProcess turAEMAttrProcess = new TurAEMAttrProcess();
         TurCmsTargetAttrValueList turCmsTargetAttrValueList = turAEMAttrProcess
                 .prepareAttributeDefs(aemObject, turCmsContentDefinitionProcess, turSNAttributeSpecList, this.turAemSourceContext);
-        mergeTargetAttrValueCMSWithCustomClass(turCmsTargetAttrValueList,
-                runCustomClassFromContentType(turCmsModel, aemObject));
+        turCmsTargetAttrValueList.merge(runCustomClassFromContentType(turCmsModel, aemObject));
         Map<String, Object> attributes = new HashMap<>();
         attributes.put(SITE, siteName);
         turCmsTargetAttrValueList.stream()
@@ -480,19 +479,6 @@ public class TurAemIndexerTool {
                 .setDeltaId(deltaId)
                 .setOnce(isOnceConfig(aemObject.getPath()))
                 .setLocale(locale);
-    }
-
-    private void mergeTargetAttrValueCMSWithCustomClass(TurCmsTargetAttrValueList turCmsTargetAttrValueList,
-                                                        TurCmsTargetAttrValueList turCmsTargetAttrValueCustomClassList) {
-        turCmsTargetAttrValueCustomClassList.forEach(targetAttrValueFromClass ->
-                turCmsTargetAttrValueList.stream()
-                        .filter(targetAttrValue ->
-                                targetAttrValue.getTargetAttrName()
-                                        .equals(targetAttrValueFromClass.getTargetAttrName()))
-                        .findFirst()
-                        .ifPresentOrElse(targetAttrValue ->
-                                        targetAttrValue.setMultiValue(targetAttrValueFromClass.getMultiValue()),
-                                () -> turCmsTargetAttrValueList.add(targetAttrValueFromClass)));
     }
 
     private boolean objectNeedBeIndexed(AemObject aemObject) {

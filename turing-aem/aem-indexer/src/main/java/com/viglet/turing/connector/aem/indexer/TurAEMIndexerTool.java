@@ -479,8 +479,7 @@ public class TurAEMIndexerTool {
         TurCmsTargetAttrValueList turCmsTargetAttrValueList = turAEMAttrProcess
                 .prepareAttributeDefs(aemObject, turCmsContentDefinitionProcess, turSNAttributeSpecList,
                         turAemSourceContext);
-        mergeTargetAttrValueCMSWithCustomClass(turCmsTargetAttrValueList,
-                runCustomClassFromContentType(turCmsModel, aemObject, turAemSourceContext));
+        turCmsTargetAttrValueList.merge(runCustomClassFromContentType(turCmsModel, aemObject, turAemSourceContext));
         Map<String, Object> attributes = new HashMap<>();
         attributes.put(SITE, siteName);
         turCmsTargetAttrValueList.stream()
@@ -509,19 +508,6 @@ public class TurAEMIndexerTool {
                 .filter(Objects::nonNull)
                 .map(TurSNJobAttributeSpec.class::cast)
                 .toList();
-    }
-
-    private void mergeTargetAttrValueCMSWithCustomClass(TurCmsTargetAttrValueList turCmsTargetAttrValueList,
-                                                        TurCmsTargetAttrValueList turCmsTargetAttrValueCustomClassList) {
-        turCmsTargetAttrValueCustomClassList.forEach(targetAttrValueFromClass ->
-                turCmsTargetAttrValueList.stream()
-                        .filter(targetAttrValue ->
-                                targetAttrValue.getTargetAttrName()
-                                        .equals(targetAttrValueFromClass.getTargetAttrName()))
-                        .findFirst()
-                        .ifPresentOrElse(targetAttrValue ->
-                                        targetAttrValue.setMultiValue(targetAttrValueFromClass.getMultiValue()),
-                                () -> turCmsTargetAttrValueList.add(targetAttrValueFromClass)));
     }
 
     private void sendJobToTuring(TurSNJobItems turSNJobItems) {
