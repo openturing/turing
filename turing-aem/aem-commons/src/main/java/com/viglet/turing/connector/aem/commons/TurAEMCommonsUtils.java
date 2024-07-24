@@ -135,16 +135,16 @@ public class TurAEMCommonsUtils {
         return getLocaleByPath(turAemSourceContext, aemObject.getPath());
     }
 
-    public static JSONObject getInfinityJson(String url, TurAemSourceContext turAemSourceContext) {
+    public static Optional<JSONObject> getInfinityJson(String url, TurAemSourceContext turAemSourceContext) {
         return getInfinityJson(url, turAemSourceContext.getUrl(), turAemSourceContext.getUsername(), turAemSourceContext.getPassword());
     }
 
-    public static JSONObject getInfinityJson(String originalUrl, String hostAndPort, String username, String password) {
+    public static Optional<JSONObject> getInfinityJson(String originalUrl, String hostAndPort, String username, String password) {
         String infinityJsonUrl = String.format(originalUrl.endsWith(TurAEMAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
                 hostAndPort, originalUrl);
         if (responseHttpCache.containsKey(infinityJsonUrl)) {
             log.info("Cached Response {}", infinityJsonUrl);
-            return new JSONObject(responseHttpCache.get(infinityJsonUrl));
+            return Optional.of(new JSONObject(responseHttpCache.get(infinityJsonUrl)));
         } else {
             log.info("Request {}", infinityJsonUrl);
             return TurAEMCommonsUtils.getResponseBody(infinityJsonUrl, username, password).map(responseBody -> {
@@ -153,10 +153,10 @@ public class TurAEMCommonsUtils {
                     return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
                 } else if (TurAEMCommonsUtils.isResponseBodyJSONObject(responseBody)) {
                     responseHttpCache.put(infinityJsonUrl, responseBody);
-                    return new JSONObject(responseBody);
+                    return Optional.of(new JSONObject(responseBody));
                 }
-                return new JSONObject();
-            }).orElse(new JSONObject());
+                return Optional.<JSONObject>empty();
+            }).orElse(Optional.empty());
         }
     }
 

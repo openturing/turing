@@ -188,27 +188,30 @@ public class TurAemIndexerTool {
     }
 
     private void jsonByContentType() {
-        JSONObject jsonSite = TurAEMCommonsUtils.getInfinityJson(getRootPath(), this.turAemSourceContext);
-        TurAEMCommonsUtils.getSiteName(jsonSite).ifPresentOrElse(siteName -> this.siteName = siteName,
-                () -> log.error("No site name the {} root path ({})", getRootPath(), getGroup()));
-        log.info("Site Name: {}", siteName);
-        addItemToQueue(getRootPath());
-        processQueue();
+        TurAEMCommonsUtils.getInfinityJson(getRootPath(), this.turAemSourceContext).ifPresent(jsonObject -> {
+            TurAEMCommonsUtils.getSiteName(jsonObject).ifPresentOrElse(siteName -> this.siteName = siteName,
+                    () -> log.error("No site name the {} root path ({})", getRootPath(), getGroup()));
+            log.info("Site Name: {}", siteName);
+            addItemToQueue(getRootPath());
+            processQueue();
+        });
+
     }
 
     private void processQueue() {
         while (!remainingLinks.isEmpty()) {
             String url = remainingLinks.poll();
-            JSONObject jsonObject = TurAEMCommonsUtils.getInfinityJson(url, this.turAemSourceContext);
-            turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(getContentType()).ifPresent(model ->
-                    addTurSNJobItemByType(model, new AemObject(url, jsonObject),
-                            turCmsContentDefinitionProcess.getTargetAttrDefinitions()));
-            sendToTuringWhenMaxSize();
-            getInfoQueue();
-            if (jsonObject.has(JCR_PRIMARY_TYPE)
-                    && jsonObject.getString(JCR_PRIMARY_TYPE).equals(getContentType())) {
-                getNodeFromJson(url, jsonObject);
-            }
+            TurAEMCommonsUtils.getInfinityJson(url, this.turAemSourceContext).ifPresent(jsonObject -> {
+                turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(getContentType()).ifPresent(model ->
+                        addTurSNJobItemByType(model, new AemObject(url, jsonObject),
+                                turCmsContentDefinitionProcess.getTargetAttrDefinitions()));
+                sendToTuringWhenMaxSize();
+                getInfoQueue();
+                if (jsonObject.has(JCR_PRIMARY_TYPE)
+                        && jsonObject.getString(JCR_PRIMARY_TYPE).equals(getContentType())) {
+                    getNodeFromJson(url, jsonObject);
+                }
+            });
         }
         sendToTuring();
     }

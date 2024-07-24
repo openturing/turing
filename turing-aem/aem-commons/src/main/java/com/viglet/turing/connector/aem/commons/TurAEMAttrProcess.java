@@ -130,26 +130,28 @@ public class TurAEMAttrProcess {
 
     public static TurSNAttributeSpec setTagFacet(TurAemSourceContext turAemSourceContext,
                                                  String facetId) {
-        JSONObject tagFacet = TurAEMCommonsUtils
+        return TurAEMCommonsUtils
                 .getInfinityJson("/content/_cq_tags/%s".formatted(facetId),
-                        turAemSourceContext);
-        return getTurSNAttributeSpec(facetId, getTagLabels(tagFacet));
+                        turAemSourceContext).map(jsonObject ->
+                        getTurSNAttributeSpec(facetId, getTagLabels(jsonObject))).orElse(new TurSNAttributeSpec());
     }
 
     public static String addTagToAttrValueList(TurCmsContext context, TurAemSourceContext turAemSourceContext,
                                                String facet, String value) {
-        JSONObject infinityJson = TurAEMCommonsUtils
+        return TurAEMCommonsUtils
                 .getInfinityJson("/content/_cq_tags/%s/%s".formatted(facet, value),
-                        turAemSourceContext);
-        Locale locale = TurAEMCommonsUtils.getLocaleFromContext(turAemSourceContext, context);
-        String titleLocale = locale.toString().toLowerCase();
-        String titleLanguage = locale.getLanguage().toLowerCase();
-        Map<String, String> tagLabels = getTagLabels(infinityJson);
-        if (tagLabels.containsKey(titleLocale))
-            return tagLabels.get(titleLocale);
-        else if (tagLabels.containsKey(titleLanguage))
-            return tagLabels.get(titleLanguage);
-        else return tagLabels.getOrDefault(DEFAULT, value);
+                        turAemSourceContext).map(infinityJson -> {
+                    Locale locale = TurAEMCommonsUtils.getLocaleFromContext(turAemSourceContext, context);
+                    String titleLocale = locale.toString().toLowerCase();
+                    String titleLanguage = locale.getLanguage().toLowerCase();
+                    Map<String, String> tagLabels = getTagLabels(infinityJson);
+                    if (tagLabels.containsKey(titleLocale))
+                        return tagLabels.get(titleLocale);
+                    else if (tagLabels.containsKey(titleLanguage))
+                        return tagLabels.get(titleLanguage);
+                    else return tagLabels.getOrDefault(DEFAULT, value);
+                }).orElse(value);
+
     }
 
     public TurCmsTargetAttrValueMap prepareAttributeDefs(AemObject aemObject,

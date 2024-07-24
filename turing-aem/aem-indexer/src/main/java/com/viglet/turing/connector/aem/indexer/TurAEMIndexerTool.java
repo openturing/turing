@@ -212,24 +212,29 @@ public class TurAEMIndexerTool {
         jCommander.getConsole().println("Processing a total of %d GUID Strings".formatted(guids.size()));
         guids.stream().filter(guid -> !StringUtils.isEmpty(guid)).forEach(guid -> {
             long start = System.currentTimeMillis();
-            siteName = TurAEMCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext).getJSONObject(JCR_CONTENT)
-                    .getString(JCR_TITLE);
-            final JSONObject jsonObject = TurAEMCommonsUtils.getInfinityJson(guid, turAemSourceContext);
-            turAemSourceContext.setContentType(jsonObject.getString(JCR_PRIMARY_TYPE));
-            getNodeFromJson(guid, jsonObject, turAemSourceContext, start);
-            long elapsed = System.currentTimeMillis() - start;
-            jCommander.getConsole().println(ITEMS_PROCESSED_MESSAGE.formatted(processed.get(), elapsed));
+            TurAEMCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext)
+                    .ifPresent(jsonObject -> siteName = jsonObject.getJSONObject(JCR_CONTENT).getString(JCR_TITLE));
+            TurAEMCommonsUtils.getInfinityJson(guid, turAemSourceContext).ifPresent(jsonObject -> {
+                turAemSourceContext.setContentType(jsonObject.getString(JCR_PRIMARY_TYPE));
+                getNodeFromJson(guid, jsonObject, turAemSourceContext, start);
+                long elapsed = System.currentTimeMillis() - start;
+                jCommander.getConsole().println(ITEMS_PROCESSED_MESSAGE.formatted(processed.get(), elapsed));
+            });
+
         });
     }
 
     private void jsonByContentType(TurAemSourceContext turAemSourceContext) {
-        JSONObject jsonSite = TurAEMCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext);
-        long start = System.currentTimeMillis();
-        TurAEMCommonsUtils.getSiteName(jsonSite).ifPresentOrElse(siteName -> this.siteName = siteName,
-                () -> log.error("No site name the {} root path ({})", turAemSourceContext.getRootPath(), turAemSourceContext.getGroup()));
-        getNodeFromJson(turAemSourceContext.getRootPath(), jsonSite, turAemSourceContext, start);
-        jCommander.getConsole().println(ITEMS_PROCESSED_MESSAGE.formatted(processed.get(),
-                System.currentTimeMillis() - start));
+        TurAEMCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext).ifPresent(jsonObject -> {
+            long start = System.currentTimeMillis();
+            TurAEMCommonsUtils.getSiteName(jsonObject).ifPresentOrElse(siteName -> this.siteName = siteName,
+                    () -> log.error("No site name the {} root path ({})", turAemSourceContext.getRootPath(),
+                            turAemSourceContext.getGroup()));
+            getNodeFromJson(turAemSourceContext.getRootPath(), jsonObject, turAemSourceContext, start);
+            jCommander.getConsole().println(ITEMS_PROCESSED_MESSAGE.formatted(processed.get(),
+                    System.currentTimeMillis() - start));
+        });
+
 
     }
 
@@ -261,8 +266,8 @@ public class TurAEMIndexerTool {
                     || TurAEMCommonsUtils.checkIfFileHasNotImageExtension(key))) {
                 String nodePathChild = "%s/%s".formatted(nodePath, key);
                 if (!isOnce(turAemSourceContext) || !isOnceConfig(nodePathChild)) {
-                    getNodeFromJson(nodePathChild, TurAEMCommonsUtils.getInfinityJson(nodePathChild, turAemSourceContext),
-                            turAemSourceContext, start);
+                    TurAEMCommonsUtils.getInfinityJson(nodePathChild, turAemSourceContext).ifPresent(json ->
+                            getNodeFromJson(nodePathChild, json, turAemSourceContext, start));
                 }
             }
         });
