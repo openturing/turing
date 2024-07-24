@@ -19,7 +19,7 @@ import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemConf
 import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemIndexingRepository;
 import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemSourceLocalePathRepository;
 import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemSystemRepository;
-import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueList;
+import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueMap;
 import com.viglet.turing.connector.cms.mappers.TurCmsContentDefinitionProcess;
 import com.viglet.turing.connector.cms.mappers.TurCmsModel;
 import lombok.Getter;
@@ -222,7 +222,7 @@ public class TurAemIndexerTool {
     private void getNodeFromJson(String url, JSONObject jsonObject) {
         jsonObject.toMap().forEach((key, value) -> {
             if (!key.startsWith(JCR) && !key.startsWith(REP) && (getSubType().equals(STATIC_FILE_SUB_TYPE)
-                    || !TurAEMCommonsUtils.checkIfFileHasImageExtension(key))) {
+                    || TurAEMCommonsUtils.checkIfFileHasNotImageExtension(key))) {
                 String urlChild = url + "/" + key;
                 if (!isOnce() || !isOnceConfig(urlChild)) {
                     addItemToQueue(urlChild);
@@ -352,18 +352,18 @@ public class TurAemIndexerTool {
     private void sendToTuringToBeIndexed(AemObject aemObject, TurCmsModel turCmsModel,
                                          List<TurSNAttributeSpec> turSNAttributeSpecList, Locale locale) {
         TurAEMAttrProcess turAEMAttrProcess = new TurAEMAttrProcess();
-        TurCmsTargetAttrValueList turCmsTargetAttrValueList = turAEMAttrProcess
+        TurCmsTargetAttrValueMap turCmsTargetAttrValueMap = turAEMAttrProcess
                 .prepareAttributeDefs(aemObject, turCmsContentDefinitionProcess, turSNAttributeSpecList,
                         this.turAemSourceContext);
-        turCmsTargetAttrValueList.merge(TurAEMCommonsUtils.runCustomClassFromContentType(turCmsModel, aemObject,
+        turCmsTargetAttrValueMap.merge(TurAEMCommonsUtils.runCustomClassFromContentType(turCmsModel, aemObject,
                 this.turAemSourceContext));
         Map<String, Object> attributes = new HashMap<>();
         attributes.put(SITE, siteName);
-        turCmsTargetAttrValueList.stream()
-                .filter(turCmsTargetAttrValue -> !CollectionUtils.isEmpty(turCmsTargetAttrValue.getMultiValue()))
-                .forEach(targetAttrValue -> {
-                    String attributeName = targetAttrValue.getTargetAttrName();
-                    targetAttrValue.getMultiValue().forEach(attributeValue -> {
+        turCmsTargetAttrValueMap.entrySet().stream()
+                .filter(entry -> !CollectionUtils.isEmpty(entry.getValue()))
+                .forEach(entry -> {
+                    String attributeName = entry.getKey();
+                    entry.getValue().forEach(attributeValue -> {
                         if (!StringUtils.isBlank(attributeValue)) {
                             if (attributes.containsKey(attributeName)) {
                                 TurAEMCommonsUtils.addItemInExistingAttribute(attributeValue, attributes, attributeName);

@@ -7,7 +7,7 @@ import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.aem.commons.ext.ExtContentInterface;
 import com.viglet.turing.connector.cms.beans.TurCmsContext;
-import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueList;
+import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueMap;
 import com.viglet.turing.connector.cms.mappers.TurCmsModel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -37,8 +37,8 @@ public class TurAEMCommonsUtils {
     public static final String JCR_CONTENT = "jcr:content";
     public static final String JCR_TITLE = "jcr:title";
 
-    public static TurCmsTargetAttrValueList runCustomClassFromContentType(TurCmsModel turCmsModel, AemObject aemObject,
-                                                                    TurAemSourceContext turAemSourceContext) {
+    public static TurCmsTargetAttrValueMap runCustomClassFromContentType(TurCmsModel turCmsModel, AemObject aemObject,
+                                                                         TurAemSourceContext turAemSourceContext) {
         try {
             if (!StringUtils.isEmpty(turCmsModel.getClassName()))
                 return ((ExtContentInterface) Class.forName(turCmsModel.getClassName())
@@ -48,7 +48,7 @@ public class TurAEMCommonsUtils {
                  ClassNotFoundException e) {
             log.error(e.getMessage(), e);
         }
-        return new TurCmsTargetAttrValueList();
+        return new TurCmsTargetAttrValueMap();
     }
     public static void addFirstItemToAttribute(String attributeName,
                                          String attributeValue,
@@ -81,9 +81,9 @@ public class TurAEMCommonsUtils {
         return Optional.empty();
     }
 
-    public static boolean checkIfFileHasImageExtension(String s) {
+    public static boolean checkIfFileHasNotImageExtension(String s) {
         String[] imageExtensions = {".jpg", ".png", ".jpeg", ".svg", ".webp"};
-        return Arrays.stream(imageExtensions).anyMatch(suffix -> s.toLowerCase().endsWith(suffix));
+        return Arrays.stream(imageExtensions).noneMatch(suffix -> s.toLowerCase().endsWith(suffix));
     }
 
     public static void addItemInExistingAttribute(String attributeValue,
