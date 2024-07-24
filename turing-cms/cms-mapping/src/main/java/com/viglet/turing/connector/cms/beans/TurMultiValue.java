@@ -89,7 +89,7 @@ public class TurMultiValue extends ArrayList<String> {
 			TimeZone tz = TimeZone.getTimeZone(UTC);
 			DateFormat df = new SimpleDateFormat(DATE_FORMAT);
 			df.setTimeZone(tz);
-			return singleItem(df.format(date));
+			return singleItem(df.format(date), override);
 		}
 	}
 	public static TurMultiValue singleItem(Date date) {

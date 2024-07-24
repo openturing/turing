@@ -90,8 +90,9 @@ public class TurAEMIndexerTool {
     private final TurAemIndexingDAO turAemIndexingDAO = new TurAemIndexingDAO();
     private final TurAemSystemDAO turAemSystemDAO = new TurAemSystemDAO();
     private TurCmsContentDefinitionProcess turCmsContentDefinitionProcess;
-    private AtomicInteger  processed = new AtomicInteger(0);
+    private AtomicInteger processed = new AtomicInteger(0);
     private AtomicInteger currentPage = new AtomicInteger(0);
+
     public static void main(String... argv) {
         TurAEMIndexerTool turAEMIndexerTool = new TurAEMIndexerTool();
         jCommander.addObject(turAEMIndexerTool);
@@ -176,14 +177,14 @@ public class TurAEMIndexerTool {
     }
 
     private void getNodesFromJson(TurAemSourceContext turAemSourceContext) {
-        if (usingContentTypeParameter(turAemSourceContext)) {
+        if (usingGuidParameter()) {
+            jsonByGuidList(turAemSourceContext);
+        } else if (usingContentTypeParameter(turAemSourceContext)) {
             turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(turAemSourceContext.getContentType())
                     .ifPresentOrElse(turCmsModel -> jsonByContentType(turAemSourceContext),
                             () -> jCommander.getConsole()
                                     .println("%s type is not configured in CTD Mapping XML file.".formatted(
                                             turAemSourceContext.getContentType())));
-        } else if (usingGuidParameter()) {
-            jsonByGuidList(turAemSourceContext);
         }
     }
 
@@ -212,7 +213,7 @@ public class TurAEMIndexerTool {
         guids.stream().filter(guid -> !StringUtils.isEmpty(guid)).forEach(guid -> {
             long start = System.currentTimeMillis();
             siteName = TurAEMCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext).getJSONObject(JCR_CONTENT)
-                            .getString(JCR_TITLE);
+                    .getString(JCR_TITLE);
             final JSONObject jsonObject = TurAEMCommonsUtils.getInfinityJson(guid, turAemSourceContext);
             turAemSourceContext.setContentType(jsonObject.getString(JCR_PRIMARY_TYPE));
             getNodeFromJson(guid, jsonObject, turAemSourceContext, start);
@@ -222,13 +223,13 @@ public class TurAEMIndexerTool {
     }
 
     private void jsonByContentType(TurAemSourceContext turAemSourceContext) {
-            JSONObject jsonSite = TurAEMCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext);
-            long start = System.currentTimeMillis();
-            TurAEMCommonsUtils.getSiteName(jsonSite).ifPresentOrElse(siteName -> this.siteName = siteName,
-                    () -> log.error("No site name the {} root path ({})", turAemSourceContext.getRootPath(), turAemSourceContext.getGroup()));
-            getNodeFromJson(turAemSourceContext.getRootPath(), jsonSite, turAemSourceContext, start);
-            jCommander.getConsole().println(ITEMS_PROCESSED_MESSAGE.formatted(processed.get(),
-                    System.currentTimeMillis() - start));
+        JSONObject jsonSite = TurAEMCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext);
+        long start = System.currentTimeMillis();
+        TurAEMCommonsUtils.getSiteName(jsonSite).ifPresentOrElse(siteName -> this.siteName = siteName,
+                () -> log.error("No site name the {} root path ({})", turAemSourceContext.getRootPath(), turAemSourceContext.getGroup()));
+        getNodeFromJson(turAemSourceContext.getRootPath(), jsonSite, turAemSourceContext, start);
+        jCommander.getConsole().println(ITEMS_PROCESSED_MESSAGE.formatted(processed.get(),
+                System.currentTimeMillis() - start));
 
     }
 
@@ -250,7 +251,6 @@ public class TurAEMIndexerTool {
         }
         getChildrenFromJson(nodePath, jsonObject, turAemSourceContext, start);
     }
-
 
 
     private void getChildrenFromJson(String nodePath, JSONObject jsonObject, TurAemSourceContext turAemSourceContext,
@@ -350,29 +350,34 @@ public class TurAEMIndexerTool {
                              TurAemSourceContext turAemSourceContext,
                              Long start) {
         itemsProcessedStatus(start);
-        if (!dryRun) {
-            if (!delivered || aemObject.isDelivered()) {
-                final Locale locale = TurAEMCommonsUtils.getLocaleFromAemObject(turAemSourceContext, aemObject);
-                if (objectNeedBeIndexed(aemObject, turAemSourceContext)) {
+
+        if (!delivered || aemObject.isDelivered()) {
+            final Locale locale = TurAEMCommonsUtils.getLocaleFromAemObject(turAemSourceContext, aemObject);
+            if (objectNeedBeIndexed(aemObject, turAemSourceContext)) {
+                if (!dryRun) {
                     createIndexingStatus(aemObject, locale, turAemSourceContext);
-                    sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale,
-                            turAemSourceContext);
-                } else {
-                    if (objectNeedBeReIndexed(aemObject, turAemSourceContext)) {
+                }
+                sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale,
+                        turAemSourceContext);
+            } else {
+                if (objectNeedBeReIndexed(aemObject, turAemSourceContext)) {
+                    if (!dryRun) {
                         turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), turAemSourceContext.getGroup())
                                 .ifPresent(turAemIndexingsList ->
-                                log.info("ReIndexed {} object ({}) from {} to {} and deltaId = {}",
-                                        aemObject.getPath(), turAemSourceContext.getGroup(), turAemIndexingsList.getFirst().getDate(),
-                                        TurAEMCommonsUtils.getDeltaDate(aemObject), deltaId));
-                        sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale,
-                                turAemSourceContext);
+                                        log.info("ReIndexed {} object ({}) from {} to {} and deltaId = {}",
+                                                aemObject.getPath(), turAemSourceContext.getGroup(), turAemIndexingsList.getFirst().getDate(),
+                                                TurAEMCommonsUtils.getDeltaDate(aemObject), deltaId));
                     }
+                    sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale,
+                            turAemSourceContext);
+                }
+                if (!dryRun) {
                     updateIndexingStatus(aemObject, locale, turAemSourceContext);
                 }
-            } else {
-                log.info("Unpublished {} object ({}) deltaId = {}",
-                        aemObject.getPath(), turAemSourceContext.getGroup(), deltaId);
             }
+        } else {
+            log.info("Unpublished {} object ({}) deltaId = {}",
+                    aemObject.getPath(), turAemSourceContext.getGroup(), deltaId);
         }
     }
 
@@ -442,7 +447,7 @@ public class TurAEMIndexerTool {
                 attributes)), turAemSourceContext);
     }
 
-    private void sendJobToTuring(TurSNJobItems turSNJobItems,TurAemSourceContext turAemSourceContext) {
+    private void sendJobToTuring(TurSNJobItems turSNJobItems, TurAemSourceContext turAemSourceContext) {
         showOutput(turSNJobItems);
         if (!dryRun) {
             turSNJobItems.getTuringDocuments().stream().findFirst().ifPresent(document ->
@@ -457,7 +462,8 @@ public class TurAEMIndexerTool {
 
     private void showOutput(TurSNJobItems turSNJobItems) {
         if (showOutput) try {
-            jCommander.getConsole().println(new ObjectMapper().writeValueAsString(turSNJobItems));
+            jCommander.getConsole().println(new ObjectMapper().writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(turSNJobItems));
         } catch (JsonProcessingException e) {
             log.error(e.getMessage(), e);
         }

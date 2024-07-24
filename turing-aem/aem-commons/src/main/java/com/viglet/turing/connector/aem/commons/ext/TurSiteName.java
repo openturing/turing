@@ -8,12 +8,12 @@ import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TurSiteName implements ExtAttributeInterface {
-	private static final String EMPTY_STRING = "";
+	private static final TurMultiValue EMPTY = null;
 
 	@Override
 	public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
 								 AemObject aemObject, TurAemSourceContext turAemSourceContext) {
 		log.debug("Executing TurSiteName");
-		return TurMultiValue.singleItem(EMPTY_STRING);
+		return EMPTY;
 	}
 }
