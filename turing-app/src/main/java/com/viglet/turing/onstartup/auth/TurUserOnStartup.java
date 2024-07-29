@@ -66,21 +66,6 @@ public class TurUserOnStartup {
 			turUser.setTurGroups(Collections.singletonList(turGroup));
 			
 			turUserRepository.save(turUser);
-
-			TurGroup userGroup = turGroupRepository.findByName("User");
-			turUser = new TurUser();
-
-			turUser.setEmail("sample@localhost.local");
-			turUser.setFirstName("Sample user");
-			turUser.setLastLogin(new Date());
-			turUser.setLastName("Sample");
-			turUser.setLoginTimes(0);
-			turUser.setPassword(passwordEncoder.encode("sample123"));
-			turUser.setRealm("default");
-			turUser.setUsername("sample");
-			turUser.setEnabled(1);
-			turUser.setTurGroups(Collections.singletonList(userGroup));
-			turUserRepository.save(turUser);			
 		}
 
 	}

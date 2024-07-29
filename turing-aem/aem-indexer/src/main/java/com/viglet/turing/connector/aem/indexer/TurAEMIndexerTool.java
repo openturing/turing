@@ -227,7 +227,7 @@ public class TurAEMIndexerTool {
     private void jsonByContentType(TurAemSourceContext turAemSourceContext) {
         TurAEMCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext).ifPresent(jsonObject -> {
             long start = System.currentTimeMillis();
-            TurAEMCommonsUtils.getSiteName(jsonObject).ifPresentOrElse(siteName -> this.siteName = siteName,
+            TurAEMCommonsUtils.getSiteName(jsonObject).ifPresentOrElse(s -> this.siteName = s,
                     () -> log.error("No site name the {} root path ({})", turAemSourceContext.getRootPath(),
                             turAemSourceContext.getGroup()));
             getNodeFromJson(turAemSourceContext.getRootPath(), jsonObject, turAemSourceContext, start);

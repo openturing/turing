@@ -17,9 +17,6 @@
 
 package com.viglet.turing.spring.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.viglet.turing.commons.exception.TurException;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -35,13 +32,10 @@ import java.util.UUID;
  */
 @Slf4j
 public class TurSpringUtils {
-    private static final String USER_DIR = "user.dir";
-    private static final File userDir = new File(System.getProperty(USER_DIR));
 
     private TurSpringUtils() {
         throw new IllegalStateException("Utility class");
     }
-
 
     public static File getFileFromMultipart(MultipartFile file) {
         File localFile = new File(

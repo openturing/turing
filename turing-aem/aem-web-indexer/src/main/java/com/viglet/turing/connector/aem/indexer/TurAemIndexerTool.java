@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -55,8 +56,8 @@ public class TurAemIndexerTool {
     public static final String ID_ATTR = "id";
     private static final String CQ_PAGE = "cq:Page";
     private static final String DAM_ASSET = "dam:Asset";
-    private static int processed = 0;
-    private static int currentPage = 0;
+    private static AtomicInteger processed = new AtomicInteger(0);
+    private static final AtomicInteger currentPage =  new AtomicInteger(0);
     private static long start;
     private final String deltaId = UUID.randomUUID().toString();
     private final Set<String> visitedLinks = new HashSet<>();
@@ -189,7 +190,7 @@ public class TurAemIndexerTool {
 
     private void jsonByContentType() {
         TurAEMCommonsUtils.getInfinityJson(getRootPath(), this.turAemSourceContext).ifPresent(jsonObject -> {
-            TurAEMCommonsUtils.getSiteName(jsonObject).ifPresentOrElse(siteName -> this.siteName = siteName,
+            TurAEMCommonsUtils.getSiteName(jsonObject).ifPresentOrElse(s -> this.siteName = s,
                     () -> log.error("No site name the {} root path ({})", getRootPath(), getGroup()));
             log.info("Site Name: {}", siteName);
             addItemToQueue(getRootPath());
@@ -300,14 +301,14 @@ public class TurAemIndexerTool {
     }
 
     private void itemsProcessedStatus() {
-        if (processed == 0) {
-            currentPage++;
+        if (processed.get() == 0) {
+            currentPage.incrementAndGet();
         }
-        if (processed >= jobSize) {
-            processed = 0;
+        if (processed.get() >= jobSize) {
+            processed = new AtomicInteger(0);
             start = System.currentTimeMillis();
         } else {
-            processed++;
+            processed.incrementAndGet();
         }
     }
 

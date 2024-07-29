@@ -212,12 +212,10 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
             String name = (String) e.nextElement();
             String[] tokens = name.split("\\.");
             if (tokens.length == 4 && name.startsWith("sn.") && name.endsWith(".path")) {
-                String snSite = tokens[1];
-                String locale = tokens[2];
                 turAemLocalePathContexts.add(TurAemLocalePathContext.builder()
-                        .snSite(snSite)
+                        .snSite(tokens[1])
                         .path(getProperties().getProperty(name))
-                        .locale(LocaleUtils.toLocale(locale))
+                        .locale(LocaleUtils.toLocale(tokens[2]))
                         .build());
             }
         }
