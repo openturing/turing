@@ -39,11 +39,15 @@ public class TurWCSource implements Serializable {
     @Column
     private String url;
     @Column
-    private String turSNSite;
-    @Column
     private String username;
     @Column
     private String password;
+
+    @Builder.Default
+    @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
+    @CollectionTable(name = "wc_sn_site", joinColumns = @JoinColumn(name = "source_id"))
+    @Column(name = "sn_site", nullable = false)
+    private Collection<String> turSNSites = new HashSet<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "turWCSource", orphanRemoval = true, fetch = FetchType.LAZY)
@@ -95,5 +99,10 @@ public class TurWCSource implements Serializable {
             this.attributeMappings.addAll(attributeMappings);
         }
     }
-
+    public void setTurSNSites(Collection<String> turSNSites) {
+        this.turSNSites.clear();
+        if (turSNSites != null) {
+            this.turSNSites.addAll(turSNSites);
+        }
+    }
 }

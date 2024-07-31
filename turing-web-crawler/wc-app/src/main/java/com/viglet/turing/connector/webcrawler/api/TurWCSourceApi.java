@@ -1,9 +1,6 @@
 package com.viglet.turing.connector.webcrawler.api;
 
 import com.google.inject.Inject;
-import com.viglet.turing.connector.webcrawler.persistence.model.TurWCAllowUrl;
-import com.viglet.turing.connector.webcrawler.persistence.model.TurWCAttributeMapping;
-import com.viglet.turing.connector.webcrawler.persistence.model.TurWCFileExtension;
 import com.viglet.turing.connector.webcrawler.persistence.model.TurWCSource;
 import com.viglet.turing.connector.webcrawler.persistence.repository.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -70,7 +67,7 @@ public class TurWCSourceApi {
             turWCSourceEdit.setTitle(turWCSource.getTitle());
             turWCSourceEdit.setDescription(turWCSource.getDescription());
             turWCSourceEdit.setLocale(turWCSource.getLocale());
-            turWCSourceEdit.setTurSNSite(turWCSource.getTurSNSite());
+            turWCSourceEdit.setTurSNSites(turWCSource.getTurSNSites());
             turWCSourceEdit.setUrl(turWCSource.getUrl());
             turWCSourceEdit.setAllowUrls(turWCSource.getAllowUrls()
                     .stream()

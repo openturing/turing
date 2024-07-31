@@ -56,6 +56,7 @@ public class TurAemIndexerTool {
     public static final String ID_ATTR = "id";
     private static final String CQ_PAGE = "cq:Page";
     private static final String DAM_ASSET = "dam:Asset";
+    public static final String CQ = "cq:";
     private static AtomicInteger processed = new AtomicInteger(0);
     private static final AtomicInteger currentPage =  new AtomicInteger(0);
     private static long start;
@@ -225,7 +226,8 @@ public class TurAemIndexerTool {
 
     private void getNodeFromJson(String url, JSONObject jsonObject) {
         jsonObject.toMap().forEach((key, value) -> {
-            if (!key.startsWith(JCR) && !key.startsWith(REP) && (getSubType().equals(STATIC_FILE_SUB_TYPE)
+            if (!key.startsWith(JCR) && !key.startsWith(REP) && !key.startsWith(CQ)
+                    && (getSubType().equals(STATIC_FILE_SUB_TYPE)
                     || TurAEMCommonsUtils.checkIfFileHasNotImageExtension(key))) {
                 String urlChild = url + "/" + key;
                 if (!isOnce() || !isOnceConfig(urlChild)) {

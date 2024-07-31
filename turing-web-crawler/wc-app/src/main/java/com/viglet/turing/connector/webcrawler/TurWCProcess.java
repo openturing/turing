@@ -8,9 +8,11 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.client.sn.job.TurSNJobUtils;
+import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.webcrawler.commons.TurWCContext;
 import com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtInterface;
 import com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtLocaleInterface;
+import com.viglet.turing.connector.webcrawler.persistence.model.TurWCAttributeMapping;
 import com.viglet.turing.connector.webcrawler.persistence.model.TurWCSource;
 import com.viglet.turing.connector.webcrawler.persistence.repository.TurWCAllowUrlRepository;
 import com.viglet.turing.connector.webcrawler.persistence.repository.TurWCAttributeMappingRepository;
@@ -22,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Entities;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -53,7 +54,7 @@ public class TurWCProcess {
     private final Set<String> visitedLinks = new HashSet<>();
     private final Queue<String> remainingLinks = new LinkedList<>();
     private String website;
-    private String snSite;
+    private Collection<String> snSites;
     private final int timeout;
     private final int jobSize;
     private final String referrer;
@@ -93,16 +94,16 @@ public class TurWCProcess {
                 this.notAllowUrls.add(turWCNotAllowUrl.getUrl())));
 
         this.website = turWCSource.getUrl();
-        this.snSite = turWCSource.getTurSNSite();
+        this.snSites = turWCSource.getTurSNSites();
         this.username = turWCSource.getUsername();
         this.password = turWCSource.getPassword();
         log.info("User Agent: {}", userAgent);
         turWCAllowUrlRepository
                 .findByTurWCSource(turWCSource).ifPresent(source ->
-                source.forEach(turWCAllowUrl -> {
-                    remainingLinks.add(this.website + turWCAllowUrl.getUrl());
-                    getPageLinks(turWCSource);
-                }));
+                        source.forEach(turWCAllowUrl -> {
+                            remainingLinks.add(this.website + turWCAllowUrl.getUrl());
+                            getPagesFromQueue(turWCSource);
+                        }));
         if (turSNJobItems.size() > 0) {
             sendToTuring();
             getInfoQueue();
@@ -120,30 +121,47 @@ public class TurWCProcess {
         log.info("Queue Size: {}", (long) remainingLinks.size());
     }
 
-    public void getPageLinks(TurWCSource turWCSource) {
+    public void getPagesFromQueue(TurWCSource turWCSource) {
         while (!remainingLinks.isEmpty()) {
             String url = remainingLinks.poll();
-            try {
-                log.info("{}: {}", turWCSource.getTurSNSite(), url);
-                Document document = getHTML(url);
-                addTurSNJobItems(getLocale(turWCSource, document, url),
-                        getJobItemAttributes(turWCSource, document, url));
-                sendToTuringWhenMaxSize();
-                getInfoQueue();
-                for (Element page : document.select(A_HREF)) {
-                    String attr = page.attr(ABS_HREF);
-                    final String pageUrl = getPageUrl(attr);
-                    if (canBeIndexed(pageUrl)) {
-                        if (visitedLinks.add(pageUrl) && !remainingLinks.offer(pageUrl)) {
-                            log.error("Item didn't add to queue: {}", pageUrl);
-                        }
-                    } else {
-                        log.debug("Ignored: {}", pageUrl);
-                    }
-                }
-            } catch (IOException e) {
-                log.error(e.getMessage());
+            getPage(turWCSource, url);
+            sendToTuringWhenMaxSize();
+            getInfoQueue();
+        }
+    }
+
+    public TurSNJobItem getPage(TurWCSource turWCSource, String url) {
+        try {
+            log.info("{}: {}",url, turWCSource.getTurSNSites());
+            Document document = getHTML(url);
+            getPageLinks(document);
+           return addTurSNJobItems(turWCSource, document, url);
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+
+        return new TurSNJobItem();
+    }
+
+    private TurSNJobItem addTurSNJobItems(TurWCSource turWCSource, Document document, String url) {
+        TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, new ArrayList<>(snSites),
+                getLocale(turWCSource, document, url),
+                getJobItemAttributes(turWCSource, document, url));
+        turSNJobItems.add(turSNJobItem);
+        return turSNJobItem;
+    }
+
+    private void getPageLinks(Document document) {
+        document.select(A_HREF).forEach(page -> addPageToQueue(getPageUrl(page.attr(ABS_HREF))));
+    }
+
+    private void addPageToQueue(String pageUrl) {
+        if (canBeIndexed(pageUrl)) {
+            if (visitedLinks.add(pageUrl) && !remainingLinks.offer(pageUrl)) {
+                log.error("Item didn't add to queue: {}", pageUrl);
             }
+        } else {
+            log.debug("Ignored: {}", pageUrl);
         }
     }
 
@@ -154,36 +172,41 @@ public class TurWCProcess {
         }
     }
 
-    private Map<String, Object> getJobItemAttributes(TurWCSource turWCSource, Document document, String url) {
+    public Map<String, Object> getJobItemAttributes(TurWCSource turWCSource, Document document, String url) {
         Map<String, Object> turSNJobItemAttributes = new HashMap<>();
         turWCAttributeMappingRepository.findByTurWCSource(turWCSource).ifPresent(source -> source.forEach(turWCCustomClass ->
                 Optional.ofNullable(turWCCustomClass.getText()).ifPresentOrElse(text ->
                                 turSNJobItemAttributes.put(turWCCustomClass.getName(), text)
                         , () -> {
-                            try {
-                                if (!StringUtils.isEmpty(turWCCustomClass.getClassName()))
-                                    ((TurWCExtInterface) Class.forName(turWCCustomClass.getClassName())
-                                            .getDeclaredConstructor().newInstance())
-                                            .consume(getTurWCContext(document, url))
-                                            .ifPresent(turMultiValue -> turMultiValue.forEach(attributeValue -> {
-                                                if (!StringUtils.isBlank(attributeValue)) {
-                                                    if (turSNJobItemAttributes.containsKey(turWCCustomClass.getName())) {
-                                                        addItemInExistingAttribute(attributeValue,
-                                                                turSNJobItemAttributes, turWCCustomClass.getName());
-                                                    } else {
-                                                        addFirstItemToAttribute(turWCCustomClass.getName(),
-                                                                attributeValue, turSNJobItemAttributes);
-                                                    }
+
+                            if (!StringUtils.isEmpty(turWCCustomClass.getClassName()))
+                                getCustomClass(document, url, turWCCustomClass)
+                                        .ifPresent(turMultiValue -> turMultiValue.forEach(attributeValue -> {
+                                            if (!StringUtils.isBlank(attributeValue)) {
+                                                if (turSNJobItemAttributes.containsKey(turWCCustomClass.getName())) {
+                                                    addItemInExistingAttribute(attributeValue,
+                                                            turSNJobItemAttributes, turWCCustomClass.getName());
+                                                } else {
+                                                    addFirstItemToAttribute(turWCCustomClass.getName(),
+                                                            attributeValue, turSNJobItemAttributes);
                                                 }
-                                            }));
-                            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                                     NoSuchMethodException |
-                                     ClassNotFoundException e) {
-                                log.error(e.getMessage(), e);
-                            }
+                                            }
+                                        }));
                         }
                 )));
         return turSNJobItemAttributes;
+    }
+
+    private Optional<TurMultiValue> getCustomClass(Document document, String url, TurWCAttributeMapping turWCCustomClass) {
+        try {
+            return ((TurWCExtInterface) Class.forName(turWCCustomClass.getClassName())
+                    .getDeclaredConstructor().newInstance())
+                    .consume(getTurWCContext(document, url));
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException |
+                 ClassNotFoundException e) {
+            log.error(e.getMessage(), e);
+            return Optional.empty();
+        }
     }
 
     private static void addItemInExistingAttribute(String attributeValue,
@@ -217,11 +240,6 @@ public class TurWCProcess {
     }
 
 
-    private void addTurSNJobItems(Locale locale, Map<String, Object> turSNJobItemAttributes) {
-        turSNJobItems.add(new TurSNJobItem(TurSNJobAction.CREATE, Collections.singletonList(snSite), locale,
-                turSNJobItemAttributes));
-    }
-
     private void sendToTuring() {
         if (log.isDebugEnabled()) {
             for (TurSNJobItem turSNJobItem : turSNJobItems) {
@@ -230,7 +248,7 @@ public class TurWCProcess {
         }
         try {
             TurSNJobUtils.importItems(turSNJobItems,
-                    new TurSNServer(URI.create(turingUrl).toURL(),null,
+                    new TurSNServer(URI.create(turingUrl).toURL(), null,
                             new TurApiKeyCredentials(turingApiKey)),
                     false);
         } catch (MalformedURLException e) {
@@ -239,7 +257,7 @@ public class TurWCProcess {
 
     }
 
-    private Locale getLocale(TurWCSource turWCSource, Document document, String url) {
+    public Locale getLocale(TurWCSource turWCSource, Document document, String url) {
 
         return Optional.ofNullable(turWCSource.getLocale())
                 .orElseGet(() -> {
@@ -257,7 +275,7 @@ public class TurWCProcess {
                 });
     }
 
-    private TurWCContext getTurWCContext(Document document, String url) {
+    public TurWCContext getTurWCContext(Document document, String url) {
         return TurWCContext.builder()
                 .document(document)
                 .url(url)
@@ -290,7 +308,7 @@ public class TurWCProcess {
             try {
                 return URI.create(pageUrlNormalized).normalize().toString();
             } catch (IllegalArgumentException ignored) {
-               // No error
+                // No error
             }
         }
         return pageUrlNormalized;

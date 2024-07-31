@@ -36,6 +36,7 @@ public class AemObject {
     private final Map<String, Object> attributes = new HashMap<>();
 
     public static final String CONTENT_FRAGMENT = "contentFragment";
+    public static final String CQ_LAST_REPLICATION_ACTION = "cq:lastReplicationAction";
     public static final String CQ_LAST_REPLICATION_ACTION_PUBLISH = "cq:lastReplicationAction_publish";
     public static final String CQ_LAST_MODIFIED = "cq:lastModified";
     public static final String CQ_MODEL = "cq:model";
@@ -52,8 +53,8 @@ public class AemObject {
         try {
             if (jcrNode.has(JCR_CONTENT)) {
                 this.jcrContentNode = jcrNode.getJSONObject(JCR_CONTENT);
-                this.delivered = jcrContentNode.has(CQ_LAST_REPLICATION_ACTION_PUBLISH)
-                        && this.jcrContentNode.getString(CQ_LAST_REPLICATION_ACTION_PUBLISH).equals(ACTIVATE);
+                this.delivered = isActivated(CQ_LAST_REPLICATION_ACTION)
+                        && isActivated(CQ_LAST_REPLICATION_ACTION_PUBLISH);
                 this.title = jcrContentNode.has(JCR_TITLE) ? this.jcrContentNode.getString(JCR_TITLE) : EMPTY_VALUE;
                 if (TurAEMCommonsUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT)) {
                     this.contentFragment = this.jcrContentNode.getBoolean(CONTENT_FRAGMENT);
@@ -86,6 +87,10 @@ public class AemObject {
         }
     }
 
+    private boolean isActivated(String attribute) {
+        return jcrContentNode.has(attribute) && this.jcrContentNode.getString(attribute).equals(ACTIVATE);
+    }
+
     private void getDataFolder(JSONObject jcrContentNode) {
         if (TurAEMCommonsUtils.hasProperty(jcrContentNode, DATA_FOLDER)) {
             JSONObject jcrDataRootNode = jcrContentNode.getJSONObject(DATA_FOLDER);
@@ -106,7 +111,7 @@ public class AemObject {
                 }
             }
             JSONObject finalDataJson = dataJson;
-            dataJson.keySet().stream().filter(key -> !key.endsWith("@LastModified")) .forEach(key -> {
+            dataJson.keySet().stream().filter(key -> !key.endsWith("@LastModified")).forEach(key -> {
                 Object value = finalDataJson.get(key);
                 if (isDate(value.toString())) {
                     try {

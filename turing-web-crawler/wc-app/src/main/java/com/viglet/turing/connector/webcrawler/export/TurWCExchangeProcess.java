@@ -19,7 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -96,7 +95,7 @@ public class TurWCExchangeProcess {
                                         .locale(turWCSource.getLocale())
                                         .password(turWCSource.getPassword())
                                         .localeClass(turWCSource.getLocaleClass())
-                                        .turSNSite(turWCSource.getTurSNSite())
+                                        .turSNSites(turWCSource.getTurSNSites())
                                         .username(turWCSource.getUsername())
                                         .notAllowUrls(turWCSource.getNotAllowUrls().stream().map(TurWCUrl::getUrl)
                                                 .toList())
@@ -148,21 +147,26 @@ public class TurWCExchangeProcess {
                 }
             }
         }
-        ObjectMapper mapper = new ObjectMapper();
+        File exportFile = new File(extractFolder.getAbsolutePath().concat(File.separator + EXPORT_FILE));
+        importFromFile(exportFile);
         try {
-            TurWCExchange turWCExchange = mapper.readValue(
-                    new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator).concat(EXPORT_FILE)),
-                    TurWCExchange.class);
-
-            if (turWCExchange.getSources() != null && !turWCExchange.getSources().isEmpty()) {
-                importWCSource(turWCExchange);
-            }
-
             FileUtils.deleteDirectory(extractFolder);
             if (parentExtractFolder != null) {
                 FileUtils.deleteDirectory(parentExtractFolder);
             }
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
 
+    }
+
+    public void importFromFile(File exportFile) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            TurWCExchange turWCExchange = mapper.readValue(exportFile, TurWCExchange.class);
+            if (turWCExchange.getSources() != null && !turWCExchange.getSources().isEmpty()) {
+                importWCSource(turWCExchange);
+            }
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -176,7 +180,7 @@ public class TurWCExchangeProcess {
                         .url(turWCSourceExchange.getUrl())
                         .username(turWCSourceExchange.getUsername())
                         .password(turWCSourceExchange.getPassword())
-                        .turSNSite(turWCSourceExchange.getTurSNSite())
+                        .turSNSites(turWCSourceExchange.getTurSNSites())
                         .locale(turWCSourceExchange.getLocale())
                         .localeClass(turWCSourceExchange.getLocaleClass())
                         .build();

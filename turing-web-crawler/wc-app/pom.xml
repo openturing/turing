@@ -140,6 +140,7 @@
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${spring-boot.version}</version>
         <configuration>
+          <layout>ZIP</layout>
           <skip>false</skip>
           <executable>true</executable>
         </configuration>

@@ -57,6 +57,7 @@ public class TurAEMIndexerTool {
     public static final String ONCE = "once";
     public static final String REP = "rep:";
     public static final String ITEMS_PROCESSED_MESSAGE = "%d items processed in %dms";
+    public static final String CQ = "cq:";
     @Parameter(names = {"--all", "-a"}, description = "Index all instances of all content types and object types.")
     private boolean allObjectTypes = false;
     @Parameter(names = {"--guids",
@@ -261,7 +262,7 @@ public class TurAEMIndexerTool {
     private void getChildrenFromJson(String nodePath, JSONObject jsonObject, TurAemSourceContext turAemSourceContext,
                                      long start) {
         jsonObject.toMap().forEach((key, value) -> {
-            if (!key.startsWith(JCR) && !key.startsWith(REP)
+            if (!key.startsWith(JCR) && !key.startsWith(REP) && !key.startsWith(CQ)
                     && (turAemSourceContext.getSubType().equals(STATIC_FILE_SUB_TYPE)
                     || TurAEMCommonsUtils.checkIfFileHasNotImageExtension(key))) {
                 String nodePathChild = "%s/%s".formatted(nodePath, key);
