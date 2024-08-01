@@ -8,7 +8,7 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>sprinklr-app</artifactId>
+  <artifactId>turing-sprinklr</artifactId>
   <name>Turing Sprinklr - Connector</name>
 
   <properties>

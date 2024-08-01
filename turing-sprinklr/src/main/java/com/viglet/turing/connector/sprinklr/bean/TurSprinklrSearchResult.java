@@ -1,12 +1,14 @@
 package com.viglet.turing.connector.sprinklr.bean;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.viglet.turing.connector.sprinklr.TurSprinklrProcess;
 import com.viglet.turing.connector.sprinklr.deserializer.TurSprinklrDates;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 @Getter
 @Setter
@@ -27,4 +29,23 @@ public class TurSprinklrSearchResult {
     private Object inactiveLngVariants;
     private Object countryVariants;
     private TurSprinklrStats stats;
+    private String status;
+    private boolean saveInLngVariantEnabled;
+    private Locale locale;
+    private boolean countryBaseContent;
+    private String contentTemplateId;
+    private List<String> linkedAssets;
+    private TurSprinklrTranslation translationProcess;
+    private List<String> grants;
+    private int clientId;
+    private int ownerUserId;
+    @JsonDeserialize(using = TurSprinklrDates.class)
+    private Date createdTime;
+    @JsonDeserialize(using = TurSprinklrDates.class)
+    private Date modifiedTime;
+    private int lastModifiedUserId;
+    private boolean deleted;
+    private TurSprinklrFolder folderMetadata;
+    private boolean canEdit;
+
 }
