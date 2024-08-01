@@ -1,0 +1,29 @@
+{
+  "properties": [
+    {
+      "name": "turing.url",
+      "type": "java.lang.String",
+      "description": "Turing URL."
+    },
+    {
+      "name": "turing.apiKey",
+      "type": "java.lang.String",
+      "description": "Turing API Key."
+    },
+    {
+      "name": "turing.sprinklr.environment",
+      "type": "java.lang.String",
+      "description": "Sprinklr Environment."
+    },
+    {
+      "name": "turing.sprinklr.authorization.code",
+      "type": "java.lang.String",
+      "description": "Sprinklr Authorization Code."
+    },
+    {
+      "name": "turing.sprinklr.apiKey",
+      "type": "java.lang.String",
+      "description": "Sprinklr API Key."
+    }
+  ]
+}

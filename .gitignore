@@ -42,3 +42,4 @@ dependency-reduced-pom.xml
 /turing-aem/aem-web-indexer/store/logs/
 /turing-web-crawler/wc-app/store/
 /turing-web-crawler/wc-commons/target/
+/turing-sprinklr/store/
