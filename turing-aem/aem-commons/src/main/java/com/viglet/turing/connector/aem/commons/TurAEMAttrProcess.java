@@ -2,6 +2,7 @@ package com.viglet.turing.connector.aem.commons;
 
 import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.aem.commons.ext.ExtAttributeInterface;
 import com.viglet.turing.connector.cms.beans.TurCmsContext;
@@ -10,7 +11,7 @@ import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.mappers.TurCmsContentDefinitionProcess;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
-import com.viglet.turing.connector.cms.util.HtmlManipulator;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -94,7 +95,7 @@ public class TurAEMAttrProcess {
 
         if (turCmsSourceAttr.isConvertHtmlToText()) {
             return TurCmsTargetAttrValueMap.singleItem(turCmsTargetAttr.getName(),
-                    HtmlManipulator.html2Text(TurAEMCommonsUtils.getPropertyValue(jcrProperty)), false);
+                    TurCommonsUtils.html2Text(TurAEMCommonsUtils.getPropertyValue(jcrProperty)), false);
         } else if (jcrProperty != null) {
             TurMultiValue turMultiValue = new TurMultiValue();
             if (isJSONArray(jcrProperty)) {

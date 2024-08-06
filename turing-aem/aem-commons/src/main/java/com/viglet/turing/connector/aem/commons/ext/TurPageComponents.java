@@ -1,12 +1,13 @@
 package com.viglet.turing.connector.aem.commons.ext;
 
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.connector.aem.commons.AemObject;
 import com.viglet.turing.connector.aem.commons.TurAEMCommonsUtils;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
-import com.viglet.turing.connector.cms.util.HtmlManipulator;
+
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -33,6 +34,6 @@ public class TurPageComponents implements ExtAttributeInterface {
 				&& root.get(RESPONSIVE_GRID) instanceof JSONObject responsiveGrid) {
 			TurAEMCommonsUtils.getJsonNodeToComponent(responsiveGrid, components);
 		}
-		return TurMultiValue.singleItem(HtmlManipulator.html2Text(components.toString()));
+		return TurMultiValue.singleItem(TurCommonsUtils.html2Text(components.toString()));
 	}
 }

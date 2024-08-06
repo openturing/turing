@@ -97,6 +97,7 @@
                 <module>turing-cms</module>
                 <module>turing-java-sdk</module>
                 <module>turing-aem</module>
+                <module>turing-sprinklr</module>
                 <module>turing-web-crawler</module>
             </modules>
         </profile>

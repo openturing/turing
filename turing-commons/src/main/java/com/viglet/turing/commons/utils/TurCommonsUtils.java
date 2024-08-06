@@ -33,12 +33,15 @@ import org.apache.hc.core5.net.URLEncodedUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.text.BreakIterator;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +58,30 @@ public class TurCommonsUtils {
 
     private TurCommonsUtils() {
         throw new IllegalStateException("Utility class");
+    }
+
+    public static String html2Text(String text) {
+        return Jsoup.parse(text).text();
+    }
+
+    public static String text2Description(String text, int maxLength) {
+        if(text != null && text.length() > maxLength) {
+            BreakIterator bi = BreakIterator.getWordInstance();
+            bi.setText(text);
+
+            if(bi.isBoundary(maxLength-1)) {
+                return text.substring(0, maxLength-2) + " ...";
+            } else {
+                int preceding = bi.preceding(maxLength-1);
+                return text.substring(0, preceding-1) + " ...";
+            }
+        } else {
+            return text + " ...";
+        }
+    }
+
+    public static String html2Description(String text, int number_chars) {
+        return text2Description(html2Text(text), number_chars);
     }
 
     public static URI addOrReplaceParameter(URI uri, String paramName, Locale locale) {

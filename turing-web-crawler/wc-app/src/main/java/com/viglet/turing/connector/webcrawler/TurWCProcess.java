@@ -197,9 +197,9 @@ public class TurWCProcess {
         return turSNJobItemAttributes;
     }
 
-    private Optional<TurMultiValue> getCustomClass(Document document, String url, TurWCAttributeMapping turWCCustomClass) {
+    private Optional<TurMultiValue> getCustomClass(Document document, String url, TurWCAttributeMapping turWCAttributeMapping) {
         try {
-            return ((TurWCExtInterface) Class.forName(turWCCustomClass.getClassName())
+            return ((TurWCExtInterface) Class.forName(turWCAttributeMapping.getClassName())
                     .getDeclaredConstructor().newInstance())
                     .consume(getTurWCContext(document, url));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException |

@@ -8,7 +8,7 @@
 			</Pattern>
 		</layout>
 	</appender>
-	<logger name="com.viglet.turing.connector.webcrawler.TuringWebCrawlerApplication" level="info"
+	<logger name="com.viglet.turing.connector.webcrawler.TuringSprinklrApplication" level="info"
 		additivity="false">
 		<appender-ref ref="CONSOLE" />
 	</logger>
