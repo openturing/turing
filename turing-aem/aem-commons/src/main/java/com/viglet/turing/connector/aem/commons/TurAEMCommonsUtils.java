@@ -3,6 +3,7 @@ package com.viglet.turing.connector.aem.commons;
 import com.google.common.net.UrlEscapers;
 import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
+import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.aem.commons.ext.ExtContentInterface;
@@ -26,7 +27,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.*;
-import org.json.JSONException;
 
 @Slf4j
 public class TurAEMCommonsUtils {
@@ -197,8 +197,8 @@ public class TurAEMCommonsUtils {
             });
         } catch (IOException e) {
             log.error(e.getMessage(), e);
+            throw new TurRuntimeException(e);
         }
-        return Optional.empty();
     }
 
     private static String basicAuth(String username, String password) {

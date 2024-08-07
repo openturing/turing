@@ -4,9 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
+import com.viglet.turing.client.sn.TurSNConstants;
 import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.*;
+import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.connector.aem.commons.AemObject;
 import com.viglet.turing.connector.aem.commons.TurAEMAttrProcess;
 import com.viglet.turing.connector.aem.commons.TurAEMCommonsUtils;
@@ -276,10 +278,12 @@ public class TurAemIndexerTool {
             showOutput(turSNJobItems);
         }
         try {
-            TurSNJobUtils.importItems(turSNJobItems,
+            if (!TurSNJobUtils.importItems(turSNJobItems,
                     new TurSNServer(URI.create(turingUrl).toURL(), this.turAemSourceContext.getTurSNSite(),
                             new TurApiKeyCredentials(turingApiKey)),
-                    false);
+                    false)) {
+                throw new TurRuntimeException("Import Job Failed");
+            }
         } catch (MalformedURLException e) {
             log.error(e.getMessage(), e);
         }
@@ -317,11 +321,11 @@ public class TurAemIndexerTool {
     private void deIndexObject() {
         turAemIndexingRepository.findContentsShouldBeDeIndexed(getGroup(), deltaId).ifPresent(contents -> {
                     contents.forEach(content -> {
-                        log.info("deIndex {} object from {} group and {} delta",
+                        log.info("DeIndex {} object from {} group and {} delta",
                                 content.getAemId(), getGroup(), deltaId);
                         Map<String, Object> attributes = new HashMap<>();
-                        attributes.put("id", content.getAemId());
-                        attributes.put("source_apps",
+                        attributes.put(TurSNConstants.ID_ATTR, content.getAemId());
+                        attributes.put(TurSNConstants.SOURCE_APPS_ATTR,
                                 this.turAemSourceContext.getProviderName());
                         addJobItemToItems(new TurSNJobItem(TurSNJobAction.DELETE,
                                 Collections.singletonList(this.turAemSourceContext.getTurSNSite()),
@@ -391,16 +395,16 @@ public class TurAemIndexerTool {
                 .ifPresent(turAemIndexingList -> {
                     if (turAemIndexingList.size() > 1) {
                         turAemIndexingRepository.deleteByAemIdAndIndexGroup(aemObject.getPath(), getGroup());
-                        log.info("Removed duplicated {} object ({})",
+                        log.info("Removed duplicated status {} object ({})",
                                 aemObject.getPath(), getGroup());
                         turAemIndexingRepository.save(createTurAemIndexing(aemObject, locale));
-                        log.info("Recreated {} object ({}) and deltaId = {}",
+                        log.info("Recreated status {} object ({}) and deltaId = {}",
                                 aemObject.getPath(), getGroup(), deltaId);
                     } else {
                         turAemIndexingRepository.save(turAemIndexingList.getFirst()
                                 .setDate(TurAEMCommonsUtils.getDeltaDate(aemObject))
                                 .setDeltaId(deltaId));
-                        log.info("Updated {} object ({}) deltaId = {}",
+                        log.info("Updated status {} object ({}) deltaId = {}",
                                 aemObject.getPath(), getGroup(), deltaId);
                     }
                 });
@@ -408,7 +412,7 @@ public class TurAemIndexerTool {
 
     private void createIndexingStatus(AemObject aemObject, Locale locale) {
         turAemIndexingRepository.save(createTurAemIndexing(aemObject, locale));
-        log.info("Created {} object ({})", aemObject.getPath(), getGroup());
+        log.info("Created status {} object ({})", aemObject.getPath(), getGroup());
     }
 
     private TurAemIndexing createTurAemIndexing(AemObject aemObject, Locale locale) {

@@ -1,6 +1,7 @@
 package com.viglet.turing.connector.aem.indexer.persistence;
 
 import com.sun.istack.NotNull;
+import com.viglet.turing.commons.exception.TurRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.persistence.*;
@@ -30,47 +31,6 @@ public class TurAemIndexingDAO {
         EntityManagerFactory factory =
                 Persistence.createEntityManagerFactory(MANAGER_FACTORY);
         return factory.createEntityManager();
-    }
-
-    public boolean existsByAemIdAndDateAndGroup(String id, Date date,
-                                                String group) {
-        try {
-            CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-            CriteriaQuery<TurAemIndexing> criteria = builder.createQuery(TurAemIndexing.class);
-            Root<TurAemIndexing> from = criteria.from(TurAemIndexing.class);
-            criteria.select(from);
-            criteria.where(
-                    builder.and(
-                            builder.equal(from.get(AEM_ID), id),
-                            builder.equal(from.get(DATE), date),
-                            builder.equal(from.get(INDEX_GROUP), group)
-                    )
-            );
-            TypedQuery<TurAemIndexing> typed = entityManager.createQuery(criteria);
-            return typed.getSingleResult() != null;
-        } catch (NoResultException nre) {
-            return false;
-        }
-    }
-
-    public boolean existsByAemIdAndGroup(String id,
-                                                String group) {
-        try {
-            CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-            CriteriaQuery<TurAemIndexing> criteria = builder.createQuery(TurAemIndexing.class);
-            Root<TurAemIndexing> from = criteria.from(TurAemIndexing.class);
-            criteria.select(from);
-            criteria.where(
-                    builder.and(
-                            builder.equal(from.get(AEM_ID), id),
-                            builder.equal(from.get(INDEX_GROUP), group)
-                    )
-            );
-            TypedQuery<TurAemIndexing> typed = entityManager.createQuery(criteria);
-            return typed.getSingleResult() != null;
-        } catch (NoResultException nre) {
-            return false;
-        }
     }
 
     public Optional<List<TurAemIndexing>> findContentsShouldBeDeIndexed(String group,
@@ -129,6 +89,7 @@ public class TurAemIndexingDAO {
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             entityManager.getTransaction().rollback();
+            throw new TurRuntimeException(ex);
         }
     }
 
@@ -150,44 +111,38 @@ public class TurAemIndexingDAO {
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             entityManager.getTransaction().rollback();
+            throw new TurRuntimeException(ex);
         }
     }
 
     public Optional<List<TurAemIndexing>> findByAemIdAndGroup(@NotNull final String id, @NotNull final String group) {
 
         try {
-            CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-            CriteriaQuery<TurAemIndexing> criteria = builder.createQuery(TurAemIndexing.class);
-            Root<TurAemIndexing> from = criteria.from(TurAemIndexing.class);
-            criteria.select(from);
-            criteria.where(
-                    builder.and(
-                            builder.equal(from.get(AEM_ID), id),
-                            builder.equal(from.get(INDEX_GROUP), group)
-                    ));
-            TypedQuery<TurAemIndexing> typed = entityManager.createQuery(criteria);
-            return Optional.ofNullable(typed.getResultList());
+            return Optional.ofNullable(typedQueryByAemIdAndGroup(id, group).getResultList());
         } catch (NoResultException nre) {
             return Optional.empty();
         }
     }
 
-    public Optional<List<TurAemIndexing>> findByAemIdAndGroupAndDeltaNotEqual(String id, String group, String deltaId) {
+    private TypedQuery<TurAemIndexing> typedQueryByAemIdAndGroup(@NotNull String id, @NotNull String group) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<TurAemIndexing> criteria = builder.createQuery(TurAemIndexing.class);
+        Root<TurAemIndexing> from = criteria.from(TurAemIndexing.class);
+        criteria.select(from);
+        criteria.where(
+                builder.and(
+                        builder.equal(from.get(AEM_ID), id),
+                        builder.equal(from.get(INDEX_GROUP), group)
+                ));
+        return entityManager.createQuery(criteria);
+    }
+
+    public boolean existsByAemIdAndGroup(String id,
+                                         String group) {
         try {
-            CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-            CriteriaQuery<TurAemIndexing> criteria = builder.createQuery(TurAemIndexing.class);
-            Root<TurAemIndexing> from = criteria.from(TurAemIndexing.class);
-            criteria.select(from);
-            criteria.where(
-                    builder.and(
-                            builder.equal(from.get(AEM_ID), id),
-                            builder.equal(from.get(INDEX_GROUP), group),
-                            builder.notEqual(from.get(DELTA_ID), deltaId)
-                    ));
-            TypedQuery<TurAemIndexing> typed = entityManager.createQuery(criteria);
-            return Optional.ofNullable(typed.getResultList());
+            return typedQueryByAemIdAndGroup(id, group).getSingleResult() != null;
         } catch (NoResultException nre) {
-            return Optional.empty();
+            return false;
         }
     }
 
@@ -199,6 +154,7 @@ public class TurAemIndexingDAO {
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             entityManager.getTransaction().rollback();
+            throw new TurRuntimeException(ex);
         }
     }
 
@@ -210,6 +166,7 @@ public class TurAemIndexingDAO {
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             entityManager.getTransaction().rollback();
+            throw new TurRuntimeException(ex);
         }
     }
 
@@ -253,6 +210,7 @@ public class TurAemIndexingDAO {
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             entityManager.getTransaction().rollback();
+            throw new TurRuntimeException(ex);
         }
     }
 }

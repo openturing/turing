@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.*;
+import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.connector.aem.commons.AemObject;
 import com.viglet.turing.connector.aem.commons.TurAEMAttrProcess;
 import com.viglet.turing.connector.aem.commons.TurAEMCommonsUtils;
@@ -130,11 +131,12 @@ public class TurAEMIndexerTool {
                 turAemIndexingDAO.deleteContentsToReindexOnce(turAemSourceContext.getGroup());
             }
             this.getNodesFromJson(turAemSourceContext);
-            if (!dryRun && !usingGuidParameter()) deIndexObject(turAemSourceContext);
-            updateSystemOnce(turAemSourceContext);
+            if (!dryRun && !usingGuidParameter()) {
+                deIndexObject(turAemSourceContext);
+                updateSystemOnce(turAemSourceContext);
+            }
             turAemIndexingDAO.close();
             turAemSystemDAO.close();
-
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -325,7 +327,7 @@ public class TurAEMIndexerTool {
         turAemIndexingDAO.findContentsShouldBeDeIndexed(turAemSourceContext.getGroup(), deltaId).ifPresent(contents -> {
                     jCommander.getConsole().println("DeIndex Content that were removed...");
                     contents.forEach(content -> {
-                        log.info("deIndex {} object from {} group and {} delta",
+                        log.info("DeIndex {} object from {} group and {} delta",
                                 content.getAemId(), turAemSourceContext.getGroup(), deltaId);
                         Map<String, Object> attributes = new HashMap<>();
                         attributes.put(AemHandlerConfiguration.ID_ATTRIBUTE, content.getAemId());
@@ -389,7 +391,7 @@ public class TurAEMIndexerTool {
 
     private void createIndexingStatus(AemObject aemObject, Locale locale, TurAemSourceContext turAemSourceContext) {
         turAemIndexingDAO.save(createTurAemIndexing(aemObject, locale, turAemSourceContext));
-        log.info("Created {} object ({}) and deltaId = {}", aemObject.getPath(), turAemSourceContext.getGroup(), deltaId);
+        log.info("Created status: {} object ({}) and deltaId = {}", aemObject.getPath(), turAemSourceContext.getGroup(), deltaId);
     }
 
     private void updateIndexingStatus(AemObject aemObject, Locale locale, TurAemSourceContext turAemSourceContext) {
@@ -398,16 +400,16 @@ public class TurAEMIndexerTool {
                 .ifPresent(turAemIndexingList -> {
                     if (turAemIndexingList.size() > 1) {
                         turAemIndexingDAO.deleteByAemIdAndGroup(aemObject.getPath(), turAemSourceContext.getGroup());
-                        log.info("Removed duplicated {} object ({})",
+                        log.info("Removed duplicated status {} object ({})",
                                 aemObject.getPath(), turAemSourceContext.getGroup());
                         turAemIndexingDAO.save(createTurAemIndexing(aemObject, locale, turAemSourceContext));
-                        log.info("Recreated {} object ({}) and deltaId = {}",
+                        log.info("Recreated status {} object ({}) and deltaId = {}",
                                 aemObject.getPath(), turAemSourceContext.getGroup(), deltaId);
                     } else {
                         turAemIndexingDAO.update(turAemIndexingList.getFirst()
                                 .setDate(TurAEMCommonsUtils.getDeltaDate(aemObject))
                                 .setDeltaId(deltaId));
-                        log.info("Updated {} object ({}) deltaId = {}",
+                        log.info("Updated status {} object ({}) deltaId = {}",
                                 aemObject.getPath(), turAemSourceContext.getGroup(), deltaId);
                     }
                 });
@@ -459,10 +461,12 @@ public class TurAEMIndexerTool {
             turSNJobItems.getTuringDocuments().stream().findFirst().ifPresent(document ->
                     log.info("Send {} object job ({}) to Turing",
                             document.getAttributes().get(ID), turAemSourceContext.getGroup()));
-            TurSNJobUtils.importItems(turSNJobItems,
+            if (!TurSNJobUtils.importItems(turSNJobItems,
                     new TurSNServer(config.getTuringURL(), config.getDefaultSNSiteConfig().getName(),
                             new TurApiKeyCredentials(config.getApiKey())),
-                    false);
+                    false)) {
+                throw new TurRuntimeException("Import Job Failed");
+            }
         }
     }
 

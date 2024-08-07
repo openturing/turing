@@ -46,5 +46,6 @@ public class TurSprinklrSearchResult {
     private boolean deleted;
     private TurSprinklrFolder folderMetadata;
     private boolean canEdit;
+    private List<TurSprinklrMapping> mappingDetails;
 
 }
