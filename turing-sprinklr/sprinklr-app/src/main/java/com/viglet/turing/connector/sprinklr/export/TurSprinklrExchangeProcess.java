@@ -167,7 +167,7 @@ public class TurSprinklrExchangeProcess {
                         .locale(turSprinklrSourceExchange.getLocale())
                         .localeClass(turSprinklrSourceExchange.getLocaleClass())
                         .environment(turSprinklrSourceExchange.getEnvironment())
-                        .authorizationCode(turSprinklrSourceExchange.getAuthorizationCode())
+                        .secretKey(turSprinklrSourceExchange.getSecretKey())
                         .apiKey(turSprinklrSourceExchange.getApiKey())
                         .build();
 

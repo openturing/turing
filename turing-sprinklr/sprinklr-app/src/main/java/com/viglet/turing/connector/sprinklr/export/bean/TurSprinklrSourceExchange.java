@@ -17,7 +17,7 @@ public class TurSprinklrSourceExchange {
     private String localeClass;
     private String url;
     private String environment;
-    private String authorizationCode;
+    private String secretKey;
     private String apiKey;
     @Builder.Default
     private Collection<String> turSNSites = new HashSet<>();;

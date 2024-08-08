@@ -42,9 +42,9 @@ public class TurSprinklrSource implements Serializable {
     @Column
     private String environment;
     @Column
-    private String authorizationCode;
-    @Column
     private String apiKey;
+    @Column
+    private String secretKey;
 
     @Builder.Default
     @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)

@@ -15,7 +15,7 @@ import com.viglet.turing.connector.sprinklr.commons.bean.TurSprinklrSearchResult
 import com.viglet.turing.connector.sprinklr.commons.TurSprinklrContext;
 import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtInterface;
 import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtLocaleInterface;
-import com.viglet.turing.connector.sprinklr.kb.TurSprinklrKB;
+import com.viglet.turing.connector.sprinklr.kb.TurSprinklrKBService;
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrAttributeMapping;
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrSource;
 import com.viglet.turing.connector.sprinklr.persistence.repository.TurSprinklrAttributeMappingRepository;
@@ -38,25 +38,25 @@ public class TurSprinklrProcess {
     private final int jobSize;
     private final TurSprinklrAttributeMappingRepository turSprinklrAttributeMappingRepository;
 
-    private final TurSprinklrKB turSprinklrKB;
+    private final TurSprinklrKBService turSprinklrKBService;
 
 
     @Inject
     public TurSprinklrProcess(@Value("${turing.url}") String turingUrl,
                               @Value("${turing.apiKey}") String turingApiKey,
                               @Value("${turing.sprinklr.job.size}") int jobSize,
-                              TurSprinklrKB turSprinklrKB,
+                              TurSprinklrKBService turSprinklrKBService,
                               TurSprinklrAttributeMappingRepository turSprinklrAttributeMappingRepository) {
         this.turingUrl = turingUrl;
         this.turingApiKey = turingApiKey;
         this.jobSize = jobSize;
-        this.turSprinklrKB = turSprinklrKB;
+        this.turSprinklrKBService = turSprinklrKBService;
         this.turSprinklrAttributeMappingRepository = turSprinklrAttributeMappingRepository;
     }
 
     public void start(TurSprinklrSource turSprinklrSource){
         reset();
-        TurSprinklrSearch turSprinklrSearch = turSprinklrKB.run(turSprinklrSource);
+        TurSprinklrSearch turSprinklrSearch = turSprinklrKBService.run(turSprinklrSource);
         turSprinklrSearch.getData().getSearchResults().forEach(searchResult -> {
             getPage(turSprinklrSource, searchResult);
             sendToTuringWhenMaxSize();
