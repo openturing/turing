@@ -203,42 +203,30 @@ public class TurAEMAttrProcess {
         if (hasTextValue(context.getTurCmsTargetAttr())) {
             return TurCmsTargetAttrValueMap.singleItem(context.getTurCmsTargetAttr(), false);
         } else {
-            return hasCustomClass(context) ?
+            TurCmsTargetAttrValueMap turCmsTargetAttrValueMap = hasCustomClass(context) ?
                     attributeByClass(context, turAemSourceContext) :
-                    attributeByCMS(context, turSNAttributeSpecList, turAemSourceContext);
+                    attributeByCMS(context);
+            turCmsTargetAttrValueMap.merge(generateNewAttributesFromCqTags(context,
+                    turAemSourceContext, turSNAttributeSpecList));
+            return turCmsTargetAttrValueMap;
         }
     }
 
-    private TurCmsTargetAttrValueMap attributeByCMS(TurCmsContext context,
-                                                    List<TurSNAttributeSpec> turSNAttributeSpecList,
-                                                    TurAemSourceContext turAemSourceContext) {
+    private TurCmsTargetAttrValueMap attributeByCMS(TurCmsContext context) {
         String sourceAttrName = context.getTurCmsSourceAttr().getName();
         final Object jcrProperty = getJcrProperty(context, sourceAttrName);
         return hasJcrPropertyValue(jcrProperty) ?
-                getTargetAttrValueListFromJcrProperty(context, turAemSourceContext, turSNAttributeSpecList,
-                        sourceAttrName, jcrProperty) :
+                addValuesToAttributes(context.getTurCmsTargetAttr(),
+                        context.getTurCmsSourceAttr(), jcrProperty) :
                 new TurCmsTargetAttrValueMap();
-    }
-
-    @NotNull
-    private TurCmsTargetAttrValueMap getTargetAttrValueListFromJcrProperty(TurCmsContext context,
-                                                                           TurAemSourceContext turAemSourceContext,
-                                                                           List<TurSNAttributeSpec> turSNAttributeSpecList,
-                                                                           String sourceAttrName,
-                                                                           Object jcrProperty) {
-        TurCmsTargetAttrValueMap turCmsTargetAttrValueMap = generateNewAttributesFromCqTags(context,
-                turAemSourceContext, turSNAttributeSpecList, sourceAttrName, jcrProperty);
-        turCmsTargetAttrValueMap.merge(addValuesToAttributes(context.getTurCmsTargetAttr(),
-                context.getTurCmsSourceAttr(), jcrProperty));
-        return turCmsTargetAttrValueMap;
     }
 
     private TurCmsTargetAttrValueMap generateNewAttributesFromCqTags(TurCmsContext context,
                                                                      TurAemSourceContext turAemSourceContext,
-                                                                     List<TurSNAttributeSpec> turSNAttributeSpecList,
-                                                                     String attributeName,
-                                                                     Object jcrProperty) {
+                                                                     List<TurSNAttributeSpec> turSNAttributeSpecList) {
         TurCmsTargetAttrValueMap turCmsTargetAttrValueMap = new TurCmsTargetAttrValueMap();
+        String attributeName = context.getTurCmsSourceAttr().getName();
+        Object jcrProperty = getJcrProperty(context, attributeName);
         if (CQ_TAGS.equals(attributeName)) {
             Optional.ofNullable((JSONArray) jcrProperty).ifPresent(property ->
                     property.forEach(tag -> {
