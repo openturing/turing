@@ -10,9 +10,9 @@ import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.client.sn.job.TurSNJobUtils;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
+import com.viglet.turing.connector.sprinklr.commons.TurSprinklrContext;
 import com.viglet.turing.connector.sprinklr.commons.bean.TurSprinklrSearch;
 import com.viglet.turing.connector.sprinklr.commons.bean.TurSprinklrSearchResult;
-import com.viglet.turing.connector.sprinklr.commons.TurSprinklrContext;
 import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtInterface;
 import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtLocaleInterface;
 import com.viglet.turing.connector.sprinklr.kb.TurSprinklrKBService;
@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
@@ -54,14 +55,23 @@ public class TurSprinklrProcess {
         this.turSprinklrAttributeMappingRepository = turSprinklrAttributeMappingRepository;
     }
 
-    public void start(TurSprinklrSource turSprinklrSource){
+    public void start(TurSprinklrSource turSprinklrSource) {
         reset();
-        TurSprinklrSearch turSprinklrSearch = turSprinklrKBService.run(turSprinklrSource);
-        turSprinklrSearch.getData().getSearchResults().forEach(searchResult -> {
-            getPage(turSprinklrSource, searchResult);
-            sendToTuringWhenMaxSize();
-            getInfoQueue();
-        });
+        AtomicInteger page = new AtomicInteger(0);
+        while (true) {
+            TurSprinklrSearch turSprinklrSearch = turSprinklrKBService.run(turSprinklrSource, page.get());
+            List<TurSprinklrSearchResult> results = turSprinklrSearch.getData().getSearchResults();
+            if (results.isEmpty()) {
+                break;
+            } else {
+                results.forEach(searchResult -> {
+                    getPage(turSprinklrSource, searchResult);
+                    sendToTuringWhenMaxSize();
+                    getInfoQueue();
+                });
+                page.incrementAndGet();
+            }
+        }
         if (turSNJobItems.size() > 0) {
             sendToTuring();
             getInfoQueue();
@@ -115,6 +125,7 @@ public class TurSprinklrProcess {
             turSNJobItems = new TurSNJobItems();
         }
     }
+
     public Map<String, Object> getJobItemAttributes(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult) {
         Map<String, Object> turSNJobItemAttributes = new HashMap<>();
         turSprinklrAttributeMappingRepository.findByTurSprinklrSource(turSprinklrSource).ifPresent(source -> source.forEach(turSprinklrCustomClass ->

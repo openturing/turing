@@ -33,14 +33,14 @@ public class TurSprinklrKBService {
         this.turSprinklrTokenService = turSprinklrTokenService;
     }
 
-    public TurSprinklrSearch run(TurSprinklrSource turSprinklrSource) {
+    public TurSprinklrSearch run(TurSprinklrSource turSprinklrSource, int page) {
         TurSprinklrToken turSprinklrToken = turSprinklrTokenService.getAccessToken(turSprinklrSource);
         OkHttpClient client = new OkHttpClient().newBuilder()
                 .build();
         try {
             Request request = new Request.Builder()
                     .url(KB_SERVICE.formatted(turSprinklrSource.getEnvironment()))
-                    .method(POST, RequestBody.create(new ObjectMapper().writeValueAsString(getRequestBody()), JSON))
+                    .method(POST, RequestBody.create(new ObjectMapper().writeValueAsString(getRequestBody(page)), JSON))
                     .addHeader(AUTHORIZATION, "%s %s".formatted(BEARER, turSprinklrToken.getAccessToken()))
                     .addHeader(KEY, turSprinklrSource.getApiKey())
                     .addHeader(CONTENT_TYPE, JSON.toString())
@@ -61,15 +61,15 @@ public class TurSprinklrKBService {
         return null;
     }
 
-    private static TurSprinklrKBRequestBody getRequestBody() {
+    private static TurSprinklrKBRequestBody getRequestBody(int page) {
         return TurSprinklrKBRequestBody.builder()
-                .page(getPage()).build();
+                .page(getPage(page)).build();
     }
 
-    private static TurSprinklrKBPage getPage() {
+    private static TurSprinklrKBPage getPage(int page) {
         return TurSprinklrKBPage.builder()
-                .size(500)
-                .page(0).build();
+                .size(50)
+                .page(page).build();
     }
 
 
