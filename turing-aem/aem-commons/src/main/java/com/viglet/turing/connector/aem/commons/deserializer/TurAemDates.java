@@ -10,15 +10,15 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 @Slf4j
 public class TurAemDates extends StdDeserializer<Date> {
 
     private static final SimpleDateFormat[] DATE_FORMATTERS = new SimpleDateFormat[]{
-            new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss'Z'"),
-            new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'"),
-            new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSSX"),
-            new SimpleDateFormat("dd/MM/yyyy' 'HH'h'mm")
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX", Locale.ENGLISH),
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH),
+            new SimpleDateFormat("dd/MM/yyyy' 'HH'h'mm", Locale.ENGLISH)
     };
 
     public TurAemDates() {
