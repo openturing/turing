@@ -11,11 +11,11 @@ import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.client.sn.job.TurSNJobUtils;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.sprinklr.commons.TurSprinklrContext;
-import com.viglet.turing.connector.sprinklr.commons.bean.TurSprinklrSearch;
-import com.viglet.turing.connector.sprinklr.commons.bean.TurSprinklrSearchResult;
+import com.viglet.turing.connector.sprinklr.commons.bean.kb.TurSprinklrKBSearch;
+import com.viglet.turing.connector.sprinklr.commons.bean.kb.TurSprinklrSearchResult;
 import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtInterface;
 import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtLocaleInterface;
-import com.viglet.turing.connector.sprinklr.kb.TurSprinklrKBService;
+import com.viglet.turing.connector.sprinklr.service.kb.TurSprinklrKBService;
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrAttributeMapping;
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrSource;
 import com.viglet.turing.connector.sprinklr.persistence.repository.TurSprinklrAttributeMappingRepository;
@@ -59,8 +59,8 @@ public class TurSprinklrProcess {
         reset();
         AtomicInteger page = new AtomicInteger(0);
         while (true) {
-            TurSprinklrSearch turSprinklrSearch = turSprinklrKBService.run(turSprinklrSource, page.get());
-            List<TurSprinklrSearchResult> results = turSprinklrSearch.getData().getSearchResults();
+            TurSprinklrKBSearch turSprinklrKBSearch = turSprinklrKBService.run(turSprinklrSource, page.get());
+            List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
             if (results.isEmpty()) {
                 break;
             } else {

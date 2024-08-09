@@ -1,4 +1,4 @@
-package com.viglet.turing.connector.sprinklr.commons.bean;
+package com.viglet.turing.connector.sprinklr.commons.bean.kb;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.viglet.turing.connector.sprinklr.commons.deserializer.TurSprinklrDates;

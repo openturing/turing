@@ -1,4 +1,4 @@
-package com.viglet.turing.connector.sprinklr.commons.bean;
+package com.viglet.turing.connector.sprinklr.commons.bean.kb;
 
 import lombok.Getter;
 import lombok.Setter;

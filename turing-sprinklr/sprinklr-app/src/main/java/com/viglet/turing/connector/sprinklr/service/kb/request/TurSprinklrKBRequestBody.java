@@ -1,4 +1,4 @@
-package com.viglet.turing.connector.sprinklr.kb.request;
+package com.viglet.turing.connector.sprinklr.service.kb.request;
 
 import lombok.*;
 

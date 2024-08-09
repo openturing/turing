@@ -1,4 +1,4 @@
-package com.viglet.turing.connector.sprinklr.token;
+package com.viglet.turing.connector.sprinklr.service.token;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,15 +18,16 @@ import java.util.Optional;
 @Slf4j
 @Component
 public class TurSprinklrTokenService {
-    public static final String CLIENT_ID = "client_id";
-    public static final String CLIENT_SECRET = "client_secret";
-    public static final String GRANT_TYPE = "grant_type";
-    public static final String CLIENT_CREDENTIALS = "client_credentials";
+    private static final String CLIENT_ID = "client_id";
+    private static final String CLIENT_SECRET = "client_secret";
+    private static final String GRANT_TYPE = "grant_type";
+    private static final String CLIENT_CREDENTIALS = "client_credentials";
     private final TurSprinklrTokenRepository turSprinklrTokenRepository;
-    public static final String SPRINKLR_TOKEN_SERVICE = "https://api2.sprinklr.com/prod2/oauth/token";
-    public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
-    public static final String POST = "POST";
-    public static final String CONTENT_TYPE = "Content-Type";
+    private static final String SPRINKLR_TOKEN_SERVICE = "https://api2.sprinklr.com/prod2/oauth/token";
+    private static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
+    private static final String POST = "POST";
+    private static final String CONTENT_TYPE = "Content-Type";
+
     @Inject
     public TurSprinklrTokenService(TurSprinklrTokenRepository turSprinklrTokenRepository) {
         this.turSprinklrTokenRepository = turSprinklrTokenRepository;
