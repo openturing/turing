@@ -12,6 +12,9 @@
     <version>${revision}</version>
     <name>Turing Sprinklr</name>
     <description>Turing Sprinklr Connector</description>
+    <modules>
+        <module>sprinklr-java-sdk</module>
+    </modules>
     <packaging>pom</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -37,6 +40,7 @@
                 </property>
             </activation>
             <modules>
+                <module>sprinklr-java-sdk</module>
                 <module>sprinklr-commons</module>
                 <module>sprinklr-app</module>
             </modules>
@@ -49,6 +53,7 @@
                 </property>
             </activation>
             <modules>
+                <module>sprinklr-java-sdk</module>
                 <module>sprinklr-commons</module>
             </modules>
         </profile>

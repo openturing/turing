@@ -2,7 +2,7 @@ package com.viglet.turing.connector.sprinklr.commons.ext;
 
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.sprinklr.commons.TurSprinklrContext;
-import com.viglet.turing.connector.sprinklr.commons.bean.kb.TurSprinklrSearchResult;
+import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrSearchResult;
 
 import java.util.Optional;
 

@@ -11,14 +11,17 @@ import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.client.sn.job.TurSNJobUtils;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.sprinklr.commons.TurSprinklrContext;
-import com.viglet.turing.connector.sprinklr.commons.bean.kb.TurSprinklrKBSearch;
-import com.viglet.turing.connector.sprinklr.commons.bean.kb.TurSprinklrSearchResult;
 import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtInterface;
 import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtLocaleInterface;
-import com.viglet.turing.connector.sprinklr.service.kb.TurSprinklrKBService;
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrAttributeMapping;
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrSource;
 import com.viglet.turing.connector.sprinklr.persistence.repository.TurSprinklrAttributeMappingRepository;
+import com.viglet.turing.sprinklr.client.service.kb.TurSprinklrKBService;
+import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrKBSearch;
+import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrSearchResult;
+import com.viglet.turing.sprinklr.client.service.token.TurSprinklrAccessToken;
+import com.viglet.turing.sprinklr.client.service.token.TurSprinklrSecretKey;
+import com.viglet.turing.sprinklr.client.service.token.TurSprinklrTokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,43 +42,54 @@ public class TurSprinklrProcess {
     private final int jobSize;
     private final TurSprinklrAttributeMappingRepository turSprinklrAttributeMappingRepository;
 
-    private final TurSprinklrKBService turSprinklrKBService;
-
-
     @Inject
     public TurSprinklrProcess(@Value("${turing.url}") String turingUrl,
                               @Value("${turing.apiKey}") String turingApiKey,
                               @Value("${turing.sprinklr.job.size}") int jobSize,
-                              TurSprinklrKBService turSprinklrKBService,
                               TurSprinklrAttributeMappingRepository turSprinklrAttributeMappingRepository) {
         this.turingUrl = turingUrl;
         this.turingApiKey = turingApiKey;
         this.jobSize = jobSize;
-        this.turSprinklrKBService = turSprinklrKBService;
         this.turSprinklrAttributeMappingRepository = turSprinklrAttributeMappingRepository;
     }
 
     public void start(TurSprinklrSource turSprinklrSource) {
         reset();
-        AtomicInteger page = new AtomicInteger(0);
-        while (true) {
-            TurSprinklrKBSearch turSprinklrKBSearch = turSprinklrKBService.run(turSprinklrSource, page.get());
-            List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
-            if (results.isEmpty()) {
-                break;
-            } else {
-                results.forEach(searchResult -> {
-                    getPage(turSprinklrSource, searchResult);
-                    sendToTuringWhenMaxSize();
-                    getInfoQueue();
-                });
-                page.incrementAndGet();
+        AtomicInteger kbPage = new AtomicInteger(0);
+        TurSprinklrTokenService turSprinklrTokenService = new TurSprinklrTokenService(
+                TurSprinklrSecretKey.builder()
+                        .apiKey(turSprinklrSource.getApiKey())
+                        .secretKey(turSprinklrSource.getSecretKey())
+                        .environment(turSprinklrSource.getEnvironment())
+                        .build());
+        TurSprinklrAccessToken turSprinklrAccessToken = turSprinklrTokenService
+                .getAccessToken();
+        if (turSprinklrAccessToken != null) {
+            while (true) {
+                log.info("While" );
+                TurSprinklrKBSearch turSprinklrKBSearch = TurSprinklrKBService.run(turSprinklrAccessToken, kbPage.get());
+                if (!(turSprinklrKBSearch == null)) {
+                    List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
+                    if (results.isEmpty()) {
+                        break;
+                    } else {
+                        results.forEach(searchResult -> {
+                            getPage(turSprinklrSource, searchResult, turSprinklrAccessToken);
+                            sendToTuringWhenMaxSize();
+                            getInfoQueue();
+                        });
+                        kbPage.incrementAndGet();
+                        log.info("Page " + kbPage.get());
+                    }
+                }
             }
         }
         if (turSNJobItems.size() > 0) {
             sendToTuring();
             getInfoQueue();
         }
+        log.info("Finish");
+
     }
 
     private void reset() {
@@ -86,22 +100,25 @@ public class TurSprinklrProcess {
         log.info("Total Job Item: {}", Iterators.size(turSNJobItems.iterator()));
     }
 
-    public void getPage(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult) {
+    public void getPage(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
+                        TurSprinklrAccessToken token) {
         if (searchResult.getStatus().equals("APPROVED") && searchResult.isPublicContent()) {
             log.info("{}: {}", searchResult.getId(), turSprinklrSource.getTurSNSites());
-            addTurSNJobItems(turSprinklrSource, searchResult);
+            addTurSNJobItems(turSprinklrSource, searchResult, token);
         }
 
     }
 
-    private void addTurSNJobItems(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult) {
+    private void addTurSNJobItems(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
+                                  TurSprinklrAccessToken token) {
         TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, new ArrayList<>(turSprinklrSource.getTurSNSites()),
-                getLocale(turSprinklrSource, searchResult),
-                getJobItemAttributes(turSprinklrSource, searchResult));
+                getLocale(turSprinklrSource, searchResult, token),
+                getJobItemAttributes(turSprinklrSource, token, searchResult));
         turSNJobItems.add(turSNJobItem);
     }
 
-    public Locale getLocale(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult) {
+    public Locale getLocale(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
+                            TurSprinklrAccessToken token) {
 
         return Optional.ofNullable(turSprinklrSource.getLocale())
                 .orElseGet(() -> {
@@ -109,7 +126,7 @@ public class TurSprinklrProcess {
                         try {
                             return ((TurSprinklrExtLocaleInterface) Class.forName(turSprinklrSource.getLocaleClass())
                                     .getDeclaredConstructor().newInstance())
-                                    .consume(getTurSprinklrContext(searchResult));
+                                    .consume(getTurSprinklrContext(searchResult, token));
                         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                  NoSuchMethodException | ClassNotFoundException e) {
                             log.error(e.getMessage(), e);
@@ -126,14 +143,15 @@ public class TurSprinklrProcess {
         }
     }
 
-    public Map<String, Object> getJobItemAttributes(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult) {
+    public Map<String, Object> getJobItemAttributes(TurSprinklrSource turSprinklrSource, TurSprinklrAccessToken token,
+                                                    TurSprinklrSearchResult searchResult) {
         Map<String, Object> turSNJobItemAttributes = new HashMap<>();
         turSprinklrAttributeMappingRepository.findByTurSprinklrSource(turSprinklrSource).ifPresent(source -> source.forEach(turSprinklrCustomClass ->
                 Optional.ofNullable(turSprinklrCustomClass.getText()).ifPresentOrElse(text ->
                                 turSNJobItemAttributes.put(turSprinklrCustomClass.getName(), text)
                         , () -> {
                             if (!StringUtils.isEmpty(turSprinklrCustomClass.getClassName()))
-                                getCustomClass(searchResult, turSprinklrCustomClass)
+                                getCustomClass(searchResult, token, turSprinklrCustomClass)
                                         .ifPresent(turMultiValue -> turMultiValue.forEach(attributeValue -> {
                                             if (!StringUtils.isBlank(attributeValue)) {
                                                 if (turSNJobItemAttributes.containsKey(turSprinklrCustomClass.getName())) {
@@ -150,11 +168,11 @@ public class TurSprinklrProcess {
         return turSNJobItemAttributes;
     }
 
-    private Optional<TurMultiValue> getCustomClass(TurSprinklrSearchResult searchResult, TurSprinklrAttributeMapping turSprinklrAttributeMapping) {
+    private Optional<TurMultiValue> getCustomClass(TurSprinklrSearchResult searchResult, TurSprinklrAccessToken token, TurSprinklrAttributeMapping turSprinklrAttributeMapping) {
         try {
             return ((TurSprinklrExtInterface) Class.forName(turSprinklrAttributeMapping.getClassName())
                     .getDeclaredConstructor().newInstance())
-                    .consume(getTurSprinklrContext(searchResult));
+                    .consume(getTurSprinklrContext(searchResult, token));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                  ClassNotFoundException e) {
             log.error(e.getMessage(), e);
@@ -162,9 +180,10 @@ public class TurSprinklrProcess {
         }
     }
 
-    public TurSprinklrContext getTurSprinklrContext(TurSprinklrSearchResult searchResult) {
+    public TurSprinklrContext getTurSprinklrContext(TurSprinklrSearchResult searchResult, TurSprinklrAccessToken token) {
         return TurSprinklrContext.builder()
                 .searchResult(searchResult)
+                .accessToken(token)
                 .build();
     }
 

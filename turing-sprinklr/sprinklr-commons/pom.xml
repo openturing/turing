@@ -30,6 +30,11 @@
       <artifactId>cms-mapping</artifactId>
       <version>${revision}</version>
     </dependency>
+    <dependency>
+      <groupId>com.viglet.turing</groupId>
+      <artifactId>sprinklr-java-sdk</artifactId>
+      <version>${revision}</version>
+    </dependency>
   </dependencies>
 
   <build>

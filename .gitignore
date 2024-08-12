@@ -44,3 +44,4 @@ dependency-reduced-pom.xml
 /turing-web-crawler/wc-commons/target/
 /turing-sprinklr/store/
 /turing-sprinklr/sprinklr-commons/target/
+/turing-sprinklr/sprinklr-java-sdk/target/
