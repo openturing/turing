@@ -66,7 +66,6 @@ public class TurSprinklrProcess {
                 .getAccessToken();
         if (turSprinklrAccessToken != null) {
             while (true) {
-                log.info("While" );
                 TurSprinklrKBSearch turSprinklrKBSearch = TurSprinklrKBService.run(turSprinklrAccessToken, kbPage.get());
                 if (!(turSprinklrKBSearch == null)) {
                     List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
@@ -79,7 +78,6 @@ public class TurSprinklrProcess {
                             getInfoQueue();
                         });
                         kbPage.incrementAndGet();
-                        log.info("Page " + kbPage.get());
                     }
                 }
             }
@@ -88,8 +86,6 @@ public class TurSprinklrProcess {
             sendToTuring();
             getInfoQueue();
         }
-        log.info("Finish");
-
     }
 
     private void reset() {
