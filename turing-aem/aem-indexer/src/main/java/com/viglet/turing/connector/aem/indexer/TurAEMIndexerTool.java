@@ -14,6 +14,8 @@ import com.viglet.turing.connector.aem.commons.AemObject;
 import com.viglet.turing.connector.aem.commons.TurAEMAttrProcess;
 import com.viglet.turing.connector.aem.commons.TurAEMCommonsUtils;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
+import com.viglet.turing.connector.aem.commons.ext.ExtDeltaDateInterface;
+import com.viglet.turing.connector.aem.commons.ext.TurAEMDeltaDate;
 import com.viglet.turing.connector.aem.indexer.conf.AemHandlerConfiguration;
 import com.viglet.turing.connector.aem.indexer.persistence.TurAemIndexing;
 import com.viglet.turing.connector.aem.indexer.persistence.TurAemIndexingDAO;
@@ -33,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -348,9 +351,29 @@ public class TurAEMIndexerTool {
     }
 
     private boolean objectNeedBeReIndexed(AemObject aemObject, TurAemSourceContext turAemSourceContext) {
+        Date deltaDate = Optional.ofNullable(turCmsContentDefinitionProcess.getDeltaClassName()).map(className -> {
+            try {
+                return ((ExtDeltaDateInterface) Objects.requireNonNull(Class.forName(className)
+                        .getDeclaredConstructor().newInstance()))
+                        .consume(aemObject, turAemSourceContext);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException | ClassNotFoundException e) {
+                log.error(e.getMessage(), e);
+            }
+            return defaultDeltaDate(aemObject, turAemSourceContext);
+        }).orElse(defaultDeltaDate(aemObject, turAemSourceContext));
+        return ddlNeedBeReIndexed(aemObject, turAemSourceContext, deltaDate);
+    }
+
+    private static Date defaultDeltaDate(AemObject aemObject, TurAemSourceContext turAemSourceContext) {
+        return new TurAEMDeltaDate().consume(aemObject,
+                turAemSourceContext);
+    }
+
+    private boolean ddlNeedBeReIndexed(AemObject aemObject, TurAemSourceContext turAemSourceContext, Date deltaDate) {
         return !StringUtils.isEmpty(aemObject.getPath()) &&
                 turAemIndexingDAO.existsByAemIdAndGroupAndDateNotEqual(aemObject.getPath(),
-                        turAemSourceContext.getGroup(), TurAEMCommonsUtils.getDeltaDate(aemObject));
+                        turAemSourceContext.getGroup(), deltaDate);
     }
 
     private void indexObject(AemObject aemObject, TurCmsModel turCmsModel,

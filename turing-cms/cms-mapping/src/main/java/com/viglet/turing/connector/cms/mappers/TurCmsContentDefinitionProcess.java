@@ -80,6 +80,9 @@ public class TurCmsContentDefinitionProcess {
     public List<TurSNAttributeSpec> getTargetAttrDefinitions() {
         return getMappingDefinitions().getTargetAttrDefinitions();
     }
+    public String getDeltaClassName() {
+        return getMappingDefinitions().getDeltaClassName();
+    }
     public Optional<TurCmsModel> findByNameFromModelWithDefinition(String modelName) {
             TurCmsContentMapping turCmsContentMapping = getMappingDefinitions();
             return findByNameFromModel(turCmsContentMapping.getModels(), modelName)
