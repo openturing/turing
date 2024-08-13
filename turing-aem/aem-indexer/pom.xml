@@ -157,7 +157,6 @@
                                         <exclude>META-INF/services/org.slf4j.spi.SLF4JServiceProvider</exclude>
                                     </excludes>
                                 </filter>
-
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
@@ -165,7 +164,6 @@
                                         <exclude>**/9/module-info.class</exclude>
                                     </excludes>
                                 </filter>
-
                             </filters>
                             <finalName>turing-aem</finalName>
                             <shadedArtifactAttached>true</shadedArtifactAttached>

@@ -1,6 +1,7 @@
 package com.viglet.turing.connector.aem.commons;
 
 import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
+import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
@@ -11,7 +12,6 @@ import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.cms.mappers.TurCmsContentDefinitionProcess;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 @Slf4j
@@ -248,19 +247,21 @@ public class TurAEMAttrProcess {
 
     private TurCmsTargetAttrValueMap attributeByClass(TurCmsContext context, TurAemSourceContext turAemSourceContext) {
         String className = context.getTurCmsSourceAttr().getClassName();
-        log.debug("ClassName : {}", className);
-        try {
-            return TurCmsTargetAttrValueMap.singleItem(context
-                            .getTurCmsTargetAttr().getName(),
-                    ((ExtAttributeInterface) Objects.requireNonNull(Class.forName(className)
-                            .getDeclaredConstructor().newInstance()))
-                            .consume(context.getTurCmsTargetAttr(), context.getTurCmsSourceAttr(),
-                                    (AemObject) context.getCmsObjectInstance(), turAemSourceContext), false);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                 NoSuchMethodException | ClassNotFoundException e) {
-            log.error(e.getMessage(), e);
-        }
-        return new TurCmsTargetAttrValueMap();
+        log.info("ClassName : {}", className);
+        return TurCustomClassCache.getCustomClassMap(className)
+                .map(classInstance -> TurCmsTargetAttrValueMap.singleItem(context
+                                .getTurCmsTargetAttr().getName(),
+                        ((ExtAttributeInterface) classInstance)
+                                .consume(context.getTurCmsTargetAttr(),
+                                        context.getTurCmsSourceAttr(),
+                                        (AemObject) context.getCmsObjectInstance(),
+                                        turAemSourceContext),
+                        false))
+                .orElseGet(() -> {
+                    log.info("ClassName Not found AAA: {}", className);
+                    return new TurCmsTargetAttrValueMap();
+                });
+
     }
 
 }

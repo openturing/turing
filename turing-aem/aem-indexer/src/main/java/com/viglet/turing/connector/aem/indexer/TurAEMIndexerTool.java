@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.*;
+import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.connector.aem.commons.AemObject;
 import com.viglet.turing.connector.aem.commons.TurAEMAttrProcess;
@@ -35,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -97,6 +97,7 @@ public class TurAEMIndexerTool {
     private TurCmsContentDefinitionProcess turCmsContentDefinitionProcess;
     private AtomicInteger processed = new AtomicInteger(0);
     private AtomicInteger currentPage = new AtomicInteger(0);
+
 
     public static void main(String... argv) {
         TurAEMIndexerTool turAEMIndexerTool = new TurAEMIndexerTool();
@@ -240,10 +241,7 @@ public class TurAEMIndexerTool {
             jCommander.getConsole().println(ITEMS_PROCESSED_MESSAGE.formatted(processed.get(),
                     System.currentTimeMillis() - start));
         });
-
-
     }
-
 
     public static String ordinal(int i) {
         String[] suffixes = new String[]{"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"};
@@ -351,18 +349,18 @@ public class TurAEMIndexerTool {
     }
 
     private boolean objectNeedBeReIndexed(AemObject aemObject, TurAemSourceContext turAemSourceContext) {
-        Date deltaDate = Optional.ofNullable(turCmsContentDefinitionProcess.getDeltaClassName()).map(className -> {
-            try {
-                return ((ExtDeltaDateInterface) Objects.requireNonNull(Class.forName(className)
-                        .getDeclaredConstructor().newInstance()))
-                        .consume(aemObject, turAemSourceContext);
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                     NoSuchMethodException | ClassNotFoundException e) {
-                log.error(e.getMessage(), e);
-            }
-            return defaultDeltaDate(aemObject, turAemSourceContext);
-        }).orElse(defaultDeltaDate(aemObject, turAemSourceContext));
-        return ddlNeedBeReIndexed(aemObject, turAemSourceContext, deltaDate);
+        return ddlNeedBeReIndexed(aemObject, turAemSourceContext, getDeltaDate(aemObject, turAemSourceContext));
+    }
+
+    private Date getDeltaDate(AemObject aemObject, TurAemSourceContext turAemSourceContext) {
+        Date deltaDate = Optional.ofNullable(turCmsContentDefinitionProcess.getDeltaClassName())
+                .map(className -> TurCustomClassCache.getCustomClassMap(className)
+                        .map(classInstance -> ((ExtDeltaDateInterface) classInstance)
+                                .consume(aemObject, turAemSourceContext))
+                        .orElseGet(() -> defaultDeltaDate(aemObject, turAemSourceContext)))
+                .orElseGet(() -> defaultDeltaDate(aemObject, turAemSourceContext));
+        log.info("Delta Date {} from {}", deltaDate.toString(), aemObject.getPath());
+        return deltaDate;
     }
 
     private static Date defaultDeltaDate(AemObject aemObject, TurAemSourceContext turAemSourceContext) {
@@ -442,7 +440,7 @@ public class TurAEMIndexerTool {
         return new TurAemIndexing()
                 .setAemId(aemObject.getPath())
                 .setIndexGroup(turAemSourceContext.getGroup())
-                .setDate(TurAEMCommonsUtils.getDeltaDate(aemObject))
+                .setDate(getDeltaDate(aemObject, turAemSourceContext))
                 .setDeltaId(deltaId)
                 .setOnce(isOnceConfig(aemObject.getPath()))
                 .setLocale(locale);

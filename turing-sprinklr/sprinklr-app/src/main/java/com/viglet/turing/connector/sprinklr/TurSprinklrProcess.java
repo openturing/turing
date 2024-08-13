@@ -9,6 +9,7 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.client.sn.job.TurSNJobUtils;
+import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.connector.cms.beans.TurMultiValue;
 import com.viglet.turing.connector.sprinklr.commons.TurSprinklrContext;
 import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtInterface;
@@ -27,7 +28,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.*;
@@ -115,18 +115,12 @@ public class TurSprinklrProcess {
 
     public Locale getLocale(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
                             TurSprinklrAccessToken token) {
-
         return Optional.ofNullable(turSprinklrSource.getLocale())
                 .orElseGet(() -> {
                     if (!StringUtils.isEmpty(turSprinklrSource.getLocaleClass())) {
-                        try {
-                            return ((TurSprinklrExtLocaleInterface) Class.forName(turSprinklrSource.getLocaleClass())
-                                    .getDeclaredConstructor().newInstance())
-                                    .consume(getTurSprinklrContext(searchResult, token));
-                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                                 NoSuchMethodException | ClassNotFoundException e) {
-                            log.error(e.getMessage(), e);
-                        }
+                        return TurCustomClassCache.getCustomClassMap(turSprinklrSource.getLocaleClass())
+                                .map(classInstance -> ((TurSprinklrExtLocaleInterface) classInstance)
+                                        .consume(getTurSprinklrContext(searchResult, token))).orElse(Locale.US);
                     }
                     return Locale.US;
                 });
@@ -164,16 +158,11 @@ public class TurSprinklrProcess {
         return turSNJobItemAttributes;
     }
 
-    private Optional<TurMultiValue> getCustomClass(TurSprinklrSearchResult searchResult, TurSprinklrAccessToken token, TurSprinklrAttributeMapping turSprinklrAttributeMapping) {
-        try {
-            return ((TurSprinklrExtInterface) Class.forName(turSprinklrAttributeMapping.getClassName())
-                    .getDeclaredConstructor().newInstance())
-                    .consume(getTurSprinklrContext(searchResult, token));
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException |
-                 ClassNotFoundException e) {
-            log.error(e.getMessage(), e);
-            return Optional.empty();
-        }
+    private Optional<TurMultiValue> getCustomClass(TurSprinklrSearchResult searchResult, TurSprinklrAccessToken token,
+                                                   TurSprinklrAttributeMapping turSprinklrAttributeMapping) {
+        return TurCustomClassCache.getCustomClassMap(turSprinklrAttributeMapping.getClassName())
+                .flatMap(classInstance -> ((TurSprinklrExtInterface) classInstance)
+                        .consume(getTurSprinklrContext(searchResult, token)));
     }
 
     public TurSprinklrContext getTurSprinklrContext(TurSprinklrSearchResult searchResult, TurSprinklrAccessToken token) {

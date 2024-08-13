@@ -3,6 +3,7 @@ package com.viglet.turing.connector.aem.commons;
 import com.google.common.net.UrlEscapers;
 import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
+import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
@@ -38,22 +39,19 @@ public class TurAEMCommonsUtils {
     public static final String JCR_CONTENT = "jcr:content";
     public static final String JCR_TITLE = "jcr:title";
 
+
     public static TurCmsTargetAttrValueMap runCustomClassFromContentType(TurCmsModel turCmsModel, AemObject aemObject,
                                                                          TurAemSourceContext turAemSourceContext) {
-        try {
-            if (!StringUtils.isEmpty(turCmsModel.getClassName()))
-                return ((ExtContentInterface) Class.forName(turCmsModel.getClassName())
-                        .getDeclaredConstructor().newInstance())
-                        .consume(aemObject, turAemSourceContext);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException |
-                 ClassNotFoundException e) {
-            log.error(e.getMessage(), e);
-        }
-        return new TurCmsTargetAttrValueMap();
+        return !StringUtils.isEmpty(turCmsModel.getClassName()) ?
+                TurCustomClassCache.getCustomClassMap(turCmsModel.getClassName())
+                        .map(customClassMap -> ((ExtContentInterface) customClassMap)
+                                .consume(aemObject, turAemSourceContext)).orElseGet(TurCmsTargetAttrValueMap::new) :
+                new TurCmsTargetAttrValueMap();
     }
+
     public static void addFirstItemToAttribute(String attributeName,
-                                         String attributeValue,
-                                         Map<String, Object> attributes) {
+                                               String attributeValue,
+                                               Map<String, Object> attributes) {
         attributes.put(attributeName, attributeValue);
     }
 
@@ -67,7 +65,7 @@ public class TurAEMCommonsUtils {
     }
 
     public static List<TurSNAttributeSpec> getDefinitionFromModel(List<TurSNAttributeSpec> turSNAttributeSpecList,
-                                                            Map<String, Object> targetAttrMap) {
+                                                                  Map<String, Object> targetAttrMap) {
         List<TurSNAttributeSpec> turSNAttributeSpecFromModelList = new ArrayList<>();
         targetAttrMap.forEach((key, value) -> turSNAttributeSpecList.stream()
                 .filter(turSNAttributeSpec -> turSNAttributeSpec.getName().equals(key))
@@ -88,8 +86,8 @@ public class TurAEMCommonsUtils {
     }
 
     public static void addItemInExistingAttribute(String attributeValue,
-                                                   Map<String, Object> attributes,
-                                                   String attributeName) {
+                                                  Map<String, Object> attributes,
+                                                  String attributeName) {
         if (attributes.get(attributeName) instanceof ArrayList)
             addItemToArray(attributes, attributeName, attributeValue);
         else convertAttributeSingleValueToArray(attributes, attributeName, attributeValue);
@@ -111,6 +109,7 @@ public class TurAEMCommonsUtils {
         attributes.put(attributeName, attributeValues);
 
     }
+
     @NotNull
     public static List<TurSNJobAttributeSpec> castSpecToJobSpec(List<TurSNAttributeSpec> turSNAttributeSpecList) {
         return turSNAttributeSpecList.stream()
@@ -118,6 +117,7 @@ public class TurAEMCommonsUtils {
                 .map(TurSNJobAttributeSpec.class::cast)
                 .toList();
     }
+
     public static Locale getLocaleByPath(TurAemSourceContext turAemSourceContext, String path) {
         for (TurAemLocalePathContext turAemSourceLocalePath : turAemSourceContext.getLocalePaths()) {
             if (hasPath(turAemSourceLocalePath, path)) {
