@@ -148,8 +148,8 @@ public class TurAEMCommonsUtils {
             log.info("Cached Response {}", infinityJsonUrl);
             return Optional.of(new JSONObject(responseHttpCache.get(infinityJsonUrl)));
         } else {
-            log.info("Request {}", infinityJsonUrl);
             return TurAEMCommonsUtils.getResponseBody(infinityJsonUrl, username, password).map(responseBody -> {
+                log.info("Request {}", infinityJsonUrl);
                 if (TurAEMCommonsUtils.isResponseBodyJSONArray(responseBody) && !originalUrl.endsWith(TurAEMAttrProcess.JSON)) {
                     JSONArray jsonArray = new JSONArray(responseBody);
                     return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
@@ -157,9 +157,14 @@ public class TurAEMCommonsUtils {
                     responseHttpCache.put(infinityJsonUrl, responseBody);
                     return Optional.of(new JSONObject(responseBody));
                 }
-                return Optional.<JSONObject>empty();
-            }).orElse(Optional.empty());
+                return getInfinityJsonNotFound(infinityJsonUrl);
+            }).orElseGet(() -> getInfinityJsonNotFound(infinityJsonUrl));
         }
+    }
+
+    private static Optional<JSONObject> getInfinityJsonNotFound(String infinityJsonUrl) {
+        log.info("Request Not Found {}", infinityJsonUrl);
+        return Optional.empty();
     }
 
     public static boolean hasProperty(JSONObject jsonObject, String property) {
