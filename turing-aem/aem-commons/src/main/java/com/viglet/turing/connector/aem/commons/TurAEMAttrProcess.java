@@ -247,7 +247,7 @@ public class TurAEMAttrProcess {
 
     private TurCmsTargetAttrValueMap attributeByClass(TurCmsContext context, TurAemSourceContext turAemSourceContext) {
         String className = context.getTurCmsSourceAttr().getClassName();
-        log.info("ClassName : {}", className);
+        log.debug("ClassName : {}", className);
         return TurCustomClassCache.getCustomClassMap(className)
                 .map(classInstance -> TurCmsTargetAttrValueMap.singleItem(context
                                 .getTurCmsTargetAttr().getName(),
@@ -257,10 +257,7 @@ public class TurAEMAttrProcess {
                                         (AemObject) context.getCmsObjectInstance(),
                                         turAemSourceContext),
                         false))
-                .orElseGet(() -> {
-                    log.info("ClassName Not found AAA: {}", className);
-                    return new TurCmsTargetAttrValueMap();
-                });
+                .orElseGet(TurCmsTargetAttrValueMap::new);
 
     }
 

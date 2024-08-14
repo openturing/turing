@@ -25,7 +25,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.*;
 
@@ -45,7 +44,8 @@ public class TurAEMCommonsUtils {
         return !StringUtils.isEmpty(turCmsModel.getClassName()) ?
                 TurCustomClassCache.getCustomClassMap(turCmsModel.getClassName())
                         .map(customClassMap -> ((ExtContentInterface) customClassMap)
-                                .consume(aemObject, turAemSourceContext)).orElseGet(TurCmsTargetAttrValueMap::new) :
+                                .consume(aemObject, turAemSourceContext))
+                        .orElseGet(TurCmsTargetAttrValueMap::new) :
                 new TurCmsTargetAttrValueMap();
     }
 
@@ -68,7 +68,8 @@ public class TurAEMCommonsUtils {
                                                                   Map<String, Object> targetAttrMap) {
         List<TurSNAttributeSpec> turSNAttributeSpecFromModelList = new ArrayList<>();
         targetAttrMap.forEach((key, value) -> turSNAttributeSpecList.stream()
-                .filter(turSNAttributeSpec -> turSNAttributeSpec.getName().equals(key))
+                .filter(turSNAttributeSpec -> turSNAttributeSpec.getName() != null &&
+                        turSNAttributeSpec.getName().equals(key))
                 .findFirst().ifPresent(turSNAttributeSpecFromModelList::add));
         return turSNAttributeSpecFromModelList;
     }

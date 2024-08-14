@@ -359,7 +359,7 @@ public class TurAEMIndexerTool {
                                 .consume(aemObject, turAemSourceContext))
                         .orElseGet(() -> defaultDeltaDate(aemObject, turAemSourceContext)))
                 .orElseGet(() -> defaultDeltaDate(aemObject, turAemSourceContext));
-        log.info("Delta Date {} from {}", deltaDate.toString(), aemObject.getPath());
+        log.debug("Delta Date {} from {}", deltaDate.toString(), aemObject.getPath());
         return deltaDate;
     }
 
