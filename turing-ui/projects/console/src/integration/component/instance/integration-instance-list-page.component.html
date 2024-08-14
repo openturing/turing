@@ -34,14 +34,14 @@
             <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="integrationInstance.title | lowercase">
               Avatar
             </svg>
-          </div><a [routerLink]="['/integration/instance', integrationInstance.id]" routerLinkActive="active"
+          </div><a [routerLink]="['/integration', integrationInstance.vendor | lowercase, integrationInstance.id]" routerLinkActive="active"
             style="font-weight: bolder; font-size: large;">
             {{integrationInstance.title}} </a>
           <div class="text-gray-light" style="margin-top: 5px;">
             {{integrationInstance.description}}
           </div>
           <div style="margin-top: 5px;">
-            <span title="Label: green outline label" class="Label Label--outline Label--outline-green">Actived</span>
+            <span title="Label: green outline label" class="Label Label--outline Label--outline-green">Active</span>
 
           </div>
           <div class="text-gray-light d-flex flex-items-center" style="margin-top: 10px;">

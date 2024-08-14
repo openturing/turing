@@ -11,12 +11,14 @@ import java.util.List;
 public class TurCmsContentMapping {
     private List<TurSNAttributeSpec> targetAttrDefinitions;
     private List<TurCmsModel> models;
+    private String deltaClassName;
 
     @Override
     public String toString() {
         return "TurCmsContentMapping{" +
                 "targetAttrDefinitions=" + targetAttrDefinitions +
                 ", models=" + models +
+                ", deltaClassName='" + deltaClassName +
                 '}';
     }
 }

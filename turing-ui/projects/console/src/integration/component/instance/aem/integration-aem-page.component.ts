@@ -15,8 +15,6 @@ import 'brace/mode/javascript';
 
 import 'brace/mode/json';
 import {AceComponent, AceConfigInterface, AceDirective} from "ngx-ace-wrapper";
-import {TurSNRankingCondition} from "../../../../sn/model/sn-ranking-condition.model";
-import {TurSNRankingExpression} from "../../../../sn/model/sn-ranking-expression.model";
 import {TurIntegrationAemLocalePath} from "../../../model/integration-aem-locale-path.model";
 import {TurLocale} from "../../../../locale/model/locale.model";
 import {TurLocaleService} from "../../../../locale/service/locale.service";

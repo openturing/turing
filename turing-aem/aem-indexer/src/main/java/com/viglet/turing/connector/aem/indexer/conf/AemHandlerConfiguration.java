@@ -61,27 +61,39 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     private String cmsPassword;
     private String cmsGroup;
     private String cmsContentType;
+    private String cmsSubType;
     private String cmsRootPath;
+
     @Override
     public String getCmsHost() {
         return cmsHost;
     }
+
     @Override
     public String getCmsUsername() {
         return cmsUsername;
     }
+
     @Override
     public String getCmsPassword() {
         return cmsPassword;
     }
+
     @Override
     public String getCmsGroup() {
         return cmsGroup;
     }
+
     @Override
     public String getCmsContentType() {
         return cmsContentType;
     }
+
+    @Override
+    public String getCmsSubType() {
+        return cmsSubType;
+    }
+
     @Override
     public String getCmsRootPath() {
         return cmsRootPath;
@@ -165,6 +177,7 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
         cmsPassword = properties.getProperty("cms.password");
         cmsGroup = properties.getProperty("cms.group");
         cmsContentType = properties.getProperty("cms.content-type");
+        cmsSubType = properties.getProperty("cms.sub-type");
         cmsRootPath = properties.getProperty("cms.root.path");
     }
 
@@ -197,10 +210,14 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
         Collection<TurAemLocalePathContext> turAemLocalePathContexts = new HashSet<>();
         for (Enumeration<?> e = getProperties().propertyNames(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement();
-            turAemLocalePathContexts.add(TurAemLocalePathContext.builder()
-                    .path(getProperties().getProperty(name))
-                    .locale(LocaleUtils.toLocale(name.split("\\.")[2]))
-                    .build());
+            String[] tokens = name.split("\\.");
+            if (tokens.length == 4 && name.startsWith("sn.") && name.endsWith(".path")) {
+                turAemLocalePathContexts.add(TurAemLocalePathContext.builder()
+                        .snSite(tokens[1])
+                        .path(getProperties().getProperty(name))
+                        .locale(LocaleUtils.toLocale(tokens[2]))
+                        .build());
+            }
         }
         return turAemLocalePathContexts;
     }

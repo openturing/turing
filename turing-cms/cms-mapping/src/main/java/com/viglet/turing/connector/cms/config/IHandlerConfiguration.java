@@ -34,5 +34,7 @@ public interface IHandlerConfiguration {
 
 	String getCmsContentType();
 
+	String getCmsSubType();
+
 	String getCmsRootPath();
 }

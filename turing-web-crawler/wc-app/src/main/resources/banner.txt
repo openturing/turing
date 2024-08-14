@@ -1,0 +1,9 @@
+${AnsiColor.BRIGHT_BLUE}   _____            _              __      __     _       ___                     _
+${AnsiColor.BRIGHT_BLUE}  |_   _|_  _  _ _ (_) _ _   __ _  \ \    / /___ | |__   / __| _ _  __ _ __ __ __| | ___  _ _
+${AnsiColor.BRIGHT_BLUE}    | | | || || '_|| || ' \ / _` |  \ \/\/ // -_)| '_ \ | (__ | '_|/ _` |\ V  V /| |/ -_)| '_|
+${AnsiColor.BRIGHT_BLUE}    |_|  \_,_||_|  |_||_||_|\__, |   \_/\_/ \___||_.__/  \___||_|  \__,_| \_/\_/ |_|\___||_|   ${AnsiColor.BRIGHT_WHITE}${application.version}
+${AnsiColor.BRIGHT_BLUE}                            |___/
+
+${AnsiColor.BRIGHT_WHITE}:: Copyright (C) 2016-2024 Viglet Turing Web Crawler
+
+${AnsiColor.BRIGHT_WHITE}:: Built with Spring Boot :: ${spring-boot.version}

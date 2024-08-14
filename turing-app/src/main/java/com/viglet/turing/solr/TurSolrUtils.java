@@ -33,7 +33,6 @@ import com.viglet.turing.solr.bean.TurSolrFieldBean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.solr.common.SolrDocument;
 import org.jetbrains.annotations.NotNull;
@@ -254,7 +253,7 @@ public class TurSolrUtils {
                     .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
                     .uri(
                             URI.create(String.format("%s/api/cluster/configs/%s", solrUrl, coreName)))
-                    .PUT(BodyPublishers.ofByteArray(IOUtils.toByteArray(inputStream)))
+                    .PUT(BodyPublishers.ofByteArray(inputStream.readAllBytes()))
                     .build();
             client.send(configSetRequest, HttpResponse.BodyHandlers.ofString());
             String json = String.format("""

@@ -34,6 +34,9 @@ public class TurCmsTargetAttrValue {
 		this.multiValue = multiValue;
 	}
 
+	public void addAllMultiValue(TurMultiValue multiValue) {
+		this.multiValue.addAll(multiValue);
+	}
 	@Override
 	public String toString() { 
 	    return String.format("Target attribute name: %s, multiValue: %s", targetAttrName, multiValue);

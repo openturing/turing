@@ -17,6 +17,10 @@
 
 package com.viglet.turing.commons.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.viglet.turing.commons.exception.TurException;
+import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.ZipFile;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
@@ -26,19 +30,18 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.net.URLEncodedUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 
 import java.io.*;
-import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.text.BreakIterator;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,14 +51,37 @@ import java.util.Locale;
  * @author Alexandre Oliveira
  * @since 0.3.6
  */
+@Slf4j
 public class TurCommonsUtils {
-    private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
-
     private static final String USER_DIR = "user.dir";
     private static final File userDir = new File(System.getProperty(USER_DIR));
 
     private TurCommonsUtils() {
         throw new IllegalStateException("Utility class");
+    }
+
+    public static String html2Text(String text) {
+        return Jsoup.parse(text).text();
+    }
+
+    public static String text2Description(String text, int maxLength) {
+        if(text != null && text.length() > maxLength) {
+            BreakIterator bi = BreakIterator.getWordInstance();
+            bi.setText(text);
+
+            if(bi.isBoundary(maxLength-1)) {
+                return text.substring(0, maxLength-2) + " ...";
+            } else {
+                int preceding = bi.preceding(maxLength-1);
+                return text.substring(0, preceding-1) + " ...";
+            }
+        } else {
+            return text + " ...";
+        }
+    }
+
+    public static String html2Description(String text, int number_chars) {
+        return text2Description(html2Text(text), number_chars);
     }
 
     public static URI addOrReplaceParameter(URI uri, String paramName, Locale locale) {
@@ -85,11 +111,7 @@ public class TurCommonsUtils {
 
     public static void addParameterToQueryString(StringBuilder sbQueryString, String name, String value) {
         if (value != null) {
-            try {
-                sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, "UTF-8")));
-            } catch (UnsupportedEncodingException e) {
-                logger.error(e.getMessage(), e);
-            }
+            sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, StandardCharsets.UTF_8)));
         }
     }
 
@@ -97,7 +119,7 @@ public class TurCommonsUtils {
         try {
             return new URI(uri.getRawPath() + "?" + removeAmpersand(sbQueryString));
         } catch (URISyntaxException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return uri;
     }
@@ -150,7 +172,7 @@ public class TurCommonsUtils {
 
             archive.finish();
         } catch (IOException | ArchiveException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -167,7 +189,7 @@ public class TurCommonsUtils {
                 archive.closeArchiveEntry();
             }
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -191,7 +213,7 @@ public class TurCommonsUtils {
         try {
             Files.createDirectories(store.toPath());
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return store;
     }
@@ -202,7 +224,7 @@ public class TurCommonsUtils {
         try {
             Files.createDirectories(newDir.toPath());
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return newDir;
     }
@@ -217,7 +239,7 @@ public class TurCommonsUtils {
         try (ZipFile zipFile = new ZipFile(file)) {
             zipFile.extractAll(outputFolder.getAbsolutePath());
         } catch (IllegalStateException | IOException e) {
-            logger.error(e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -232,5 +254,19 @@ public class TurCommonsUtils {
             }
         }
         return true;
+    }
+
+    public static String asJsonString(final Object obj) throws TurException {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            return mapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new TurException(e);
+        }
+    }
+
+    public static File getTempDirectory() {
+        return TurCommonsUtils.addSubDirToStoreDir("tmp");
     }
 }

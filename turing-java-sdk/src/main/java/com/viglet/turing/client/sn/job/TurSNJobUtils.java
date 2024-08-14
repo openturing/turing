@@ -51,7 +51,7 @@ public class TurSNJobUtils {
         throw new IllegalStateException("Utility class");
     }
 
-    public static void importItems(TurSNJobItems turSNJobItems, TurSNServer turSNServer, boolean showOutput) {
+    public static boolean importItems(TurSNJobItems turSNJobItems, TurSNServer turSNServer, boolean showOutput) {
 
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             String jsonResult = new ObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(turSNJobItems);
@@ -70,8 +70,10 @@ public class TurSNJobUtils {
 
             TurSNClientUtils.authentication(httpPost, turSNServer.getCredentials(), turSNServer.getApiKey());
             client.execute(httpPost, response -> importItemsLog(response, httpPost, jsonResult));
+            return true;
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
+            return false;
         }
     }
 

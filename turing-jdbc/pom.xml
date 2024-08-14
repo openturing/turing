@@ -11,8 +11,8 @@
     </parent>
     <artifactId>turing-jdbc</artifactId>
     <packaging>jar</packaging>
-    <name>Turing JDBC</name>
-    <description>Turing JDBC</description>
+    <name>Turing Database - Connector</name>
+    <description>Turing Database - Connector</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -79,7 +79,7 @@
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>3.4.0</version>
+            <version>3.4.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -99,7 +99,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.17.2</version>
+            <version>1.18.1</version>
         </dependency>
     </dependencies>
     <build>

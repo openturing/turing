@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -10,18 +10,13 @@
     </parent>
     <artifactId>turing-aem</artifactId>
     <packaging>pom</packaging>
-    <name>Turing AEM Connector</name>
-    <description>Turing AEM Connector</description>
-    <modules>
-        <module>aem-commons</module>
-        <module>aem-indexer</module>
-        <module>aem-web-indexer</module>
-    </modules>
+    <name>Turing AEM</name>
+    <description>Turing AEM</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -37,4 +32,30 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <property>
+                    <name>!env.JITPACK</name>
+                </property>
+            </activation>
+            <modules>
+                <module>aem-commons</module>
+                <module>aem-indexer</module>
+                <module>aem-web-indexer</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>jitpack</id>
+            <activation>
+                <property>
+                    <name>env.JITPACK</name>
+                </property>
+            </activation>
+            <modules>
+                <module>aem-commons</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

@@ -12,6 +12,7 @@ import java.util.Locale;
 @NoArgsConstructor
 @Setter
 @Getter
+@ToString
 public class TurAemSourceContext {
     private String url;
     private String username;

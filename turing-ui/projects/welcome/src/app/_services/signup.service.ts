@@ -18,9 +18,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs/operators';
-import { environment } from '../../environments/environment';
-import { User } from '../_models/user';
+import { User } from '../_models';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
+import {environment} from "../../../../../environments/environment";
 
 @Injectable()
 export class TurSignupService {

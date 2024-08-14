@@ -23,6 +23,7 @@ package com.viglet.turing.converse.exchange;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.converse.exchange.agent.TurConverseAgentExchange;
 import com.viglet.turing.converse.exchange.entity.TurConverseEntityEntriesExchange;
 import com.viglet.turing.converse.exchange.entity.TurConverseEntityExchange;
@@ -36,12 +37,11 @@ import com.viglet.turing.persistence.repository.converse.intent.TurConverseInten
 import com.viglet.turing.persistence.repository.converse.intent.TurConversePhraseRepository;
 import com.viglet.turing.persistence.repository.converse.intent.TurConverseResponseRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
-import com.viglet.turing.utils.TurUtils;
+import com.viglet.turing.spring.utils.TurSpringUtils;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -285,7 +285,7 @@ public class TurConverseImportExchange {
 	}
 
 	public File extractZipFile(MultipartFile file) {
-		return TurUtils.extractZipFile(file);
+		return TurSpringUtils.extractZipFile(file);
 	}
 
 }
