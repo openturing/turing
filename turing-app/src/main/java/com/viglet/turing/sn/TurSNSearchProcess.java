@@ -303,10 +303,14 @@ public class TurSNSearchProcess {
                 turSNSiteSearchDocumentsBean, result, false));
         Optional.ofNullable(turSNSite)
                 .map(TurSNSite::getSpotlightWithResults)
-                .filter(spotLightResults -> spotLightResults == 1).ifPresent(r ->
+                .filter(TurSNSearchProcess::isTrue).ifPresent(r ->
                         turSNSpotlightProcess.addSpotlightToResults(context, turSolrInstance, turSNSite, facetMap,
                                 fieldExtMap, turSNSiteSearchDocumentsBean));
         return new TurSNSiteSearchResultsBean().setDocument(turSNSiteSearchDocumentsBean);
+    }
+
+    private static boolean isTrue(Integer value) {
+        return value == 1;
     }
 
     private TurSNSiteSearchWidgetBean responseWidget(TurSNSiteSearchContext context, TurSNSite turSNSite,
@@ -393,7 +397,7 @@ public class TurSNSearchProcess {
     }
 
     private boolean hasMLT(TurSNSite turSNSite, TurSEResults turSEResults) {
-        return turSNSite.getMlt() == 1 && turSEResults.getSimilarResults() != null
+        return isTrue(turSNSite.getMlt()) && turSEResults.getSimilarResults() != null
                 && !turSEResults.getSimilarResults().isEmpty();
     }
 
@@ -483,7 +487,7 @@ public class TurSNSearchProcess {
                 .setDescription(turSNSiteFieldExtDto.getDescription())
                 .setType(turSNSiteFieldExtDto.getType())
                 .setFacets(turSNSiteSearchFacetItemBeans)
-                .setMultiValued(turSNSiteFieldExtDto.getMultiValued() == 1);
+                .setMultiValued(isTrue(turSNSiteFieldExtDto.getMultiValued()));
     }
 
     @NotNull

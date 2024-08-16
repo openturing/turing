@@ -134,19 +134,16 @@ public class TurSNUtils {
 			TurSEResult result, boolean isElevate, Integer position) {
 		TurSNSiteSearchDocumentBean turSNSiteSearchDocumentBean = new TurSNSiteSearchDocumentBean();
 		Map<String, Object> turSEResultAttr = result.getFields();
-		Set<String> attribs = turSEResultAttr.keySet();
-
-		turSNSiteSearchDocumentBean.setElevate(isElevate);
-
-		List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans = addMetadataFromDocument(uri,
-				facetMap, turSEResultAttr);
-
-		turSNSiteSearchDocumentBean.setMetadata(turSNSiteSearchDocumentMetadataBeans);
-
-		setSourceFromDocument(turSNSiteSearchDocumentBean, turSEResultAttr);
-
-		Map<String, Object> fields = addFieldsFromDocument(fieldExtMap, turSEResultAttr, attribs);
-		turSNSiteSearchDocumentBean.setFields(fields);
+		if (turSEResultAttr != null) {
+			Set<String> attribs = turSEResultAttr.keySet();
+			turSNSiteSearchDocumentBean.setElevate(isElevate);
+			List<TurSNSiteSearchDocumentMetadataBean> turSNSiteSearchDocumentMetadataBeans = addMetadataFromDocument(uri,
+					facetMap, turSEResultAttr);
+			turSNSiteSearchDocumentBean.setMetadata(turSNSiteSearchDocumentMetadataBeans);
+			setSourceFromDocument(turSNSiteSearchDocumentBean, turSEResultAttr);
+			Map<String, Object> fields = addFieldsFromDocument(fieldExtMap, turSEResultAttr, attribs);
+			turSNSiteSearchDocumentBean.setFields(fields);
+		}
 		if (position == null) {
 			turSNSiteSearchDocumentsBean.add(turSNSiteSearchDocumentBean);
 		} else {

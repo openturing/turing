@@ -1192,12 +1192,14 @@ public class TurSolr {
     private Map<String, List<String>> getHL(TurSNSite
                                                     turSNSite, List<TurSNSiteFieldExt> turSNSiteHlFieldExtList,
                                             QueryResponse queryResponse, SolrDocument document) {
-        return isHL(turSNSite, turSNSiteHlFieldExtList) ?
+        return isHL(turSNSite, turSNSiteHlFieldExtList) &&
+        queryResponse.getHighlighting() != null ?
                 queryResponse.getHighlighting().get(document.get(ID).toString()) : null;
     }
 
     private static boolean isHL(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteHlFieldExtList) {
-        return turSNSite.getHl() == 1 && !CollectionUtils.isEmpty(turSNSiteHlFieldExtList);
+        return turSNSite.getHl() == 1 &&
+                !CollectionUtils.isEmpty(turSNSiteHlFieldExtList);
     }
 
     private Map<String, TurSNSiteFieldExt> getFieldExtMap(TurSNSite turSNSite) {
@@ -1221,7 +1223,6 @@ public class TurSolr {
         return createTurSEResultFromDocument(fieldExtMap, document, hl);
     }
 
-    @SuppressWarnings("unchecked")
     private TurSEResult createTurSEResultFromDocument(Map<String, TurSNSiteFieldExt> fieldExtMap,
                                                       SolrDocument document,
                                                       Map<String, List<String>> hl) {

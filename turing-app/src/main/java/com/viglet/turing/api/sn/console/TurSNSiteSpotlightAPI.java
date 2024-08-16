@@ -90,6 +90,7 @@ public class TurSNSiteSpotlightAPI {
 
     @Operation(summary = "Update a Semantic Navigation Site Spotlight")
     @PutMapping("/{id}")
+    @CacheEvict(value = {"spotlight", "spotlight_term"}, allEntries = true)
     public TurSNSiteSpotlight turSNSiteSpotlightUpdate(@PathVariable String id,
                                                        @RequestBody TurSNSiteSpotlight turSNSiteSpotlight,
                                                        @PathVariable String ignoredSnSiteId) {
@@ -137,6 +138,7 @@ public class TurSNSiteSpotlightAPI {
 
     @Operation(summary = "Create a Semantic Navigation Site Spotlight")
     @PostMapping
+    @CacheEvict(value = {"spotlight", "spotlight_term"}, allEntries = true)
     public TurSNSiteSpotlight turSNSiteSpotlightAdd(@RequestBody TurSNSiteSpotlight turSNSiteSpotlight,
                                                     @PathVariable String ignoredSnSiteId) {
         return saveSpotlight(turSNSiteSpotlight, turSNSiteSpotlight);

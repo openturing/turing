@@ -204,7 +204,7 @@
           </div>
           <ul *ngIf="snSearch.results as snSearchResults;" class="repo-list">
             <ng-container *ngFor="let document of snSearchResults.document">
-              <ng-container *ngIf="document.fields[snSearch.queryContext.defaultFields.url]">
+              <ng-container *ngIf="document.fields[snSearch.queryContext.defaultFields.url] != null">
                 <div *ngIf="document.elevate" style="border-top: 1px solid var(--color-border-primary);">
                   <div class="blankslate">
                     <svg width="40" height="40" style="border-radius: 50%;" class="mb-3"
@@ -212,9 +212,12 @@
                       Avatar
                     </svg>
 
-                    <h3 class="mb-1" [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></h3>
-                    <p [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description] | safeHtml"></p>
-                    <a href="{{document.fields[snSearch.queryContext.defaultFields.url]}}" class="btn btn-primary my-3"
+                    <h3 class="mb-1" *ngIf="document.fields[snSearch.queryContext.defaultFields.title] != null"
+                        [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></h3>
+                    <p *ngIf="document.fields[snSearch.queryContext.defaultFields.description] != null"
+                      [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description] | safeHtml"></p>
+                    <a  *ngIf="document.fields[snSearch.queryContext.defaultFields.url] != null"
+                      href="{{document.fields[snSearch.queryContext.defaultFields.url]}}" class="btn btn-primary my-3"
                       type="button">Read More</a>
                   </div>
                 </div>
@@ -225,7 +228,7 @@
 
 
                   <div class="flex-shrink-0 mr-2">
-                    <svg width="32" height="32" style="border-radius: 50%;"
+                    <svg *ngIf="document.fields[snSearch.queryContext.defaultFields.url] != null" width="32" height="32" style="border-radius: 50%;"
                       [identiconHash]="document.fields[snSearch.queryContext.defaultFields.url] | lowercase">
                       Avatar
                     </svg>
@@ -251,7 +254,7 @@
                       <div>
                         <img *ngIf="document.fields[snSearch.queryContext.defaultFields.url].endsWith('svg')"
                           style="width: 50px;display: block;"
-                          src={{document.fields[snSearch.queryContext.defaultFields.url]}}>
+                          src="{{document.fields[snSearch.queryContext.defaultFields.url]}}">
                         <button *ngFor="let metadata of document.metadata" (click)="turRedirect(metadata.href)"
                           title="{{metadata.text}}" class="btn-link branch-name px-2 mx-0 mr-2"
                           [innerHTML]="metadata.text">

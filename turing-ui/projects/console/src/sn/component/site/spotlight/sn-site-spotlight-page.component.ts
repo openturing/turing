@@ -76,7 +76,7 @@ export class TurSNSiteSpotlightPageComponent implements OnInit {
     turSNSiteSpotlightDocument.position = 1;
     turSNSiteSpotlightDocument.link = turSNSearchDocument.fields.url;
     turSNSiteSpotlightDocument.content = turSNSearchDocument.fields.abstract;
-    turSNSiteSpotlightDocument.referenceId = "TURING";
+    turSNSiteSpotlightDocument.referenceId = turSNSearchDocument.fields.id;
     _turSNSiteSpotlight.turSNSiteSpotlightDocuments.push(turSNSiteSpotlightDocument);
 
     this.inputSearchDocument = "";
