@@ -202,7 +202,7 @@ public class TurAEMIndexerTool {
         turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(turAemSourceContext.getContentType())
                 .ifPresentOrElse(turCmsModel -> byContentType(turAemSourceContext),
                         () -> jCommander.getConsole()
-                                .println("%s type is not configured in CTD Mapping XML file.".formatted(
+                                .println("%s type is not configured in CTD Mapping file.".formatted(
                                         turAemSourceContext.getContentType())));
     }
 
