@@ -70,21 +70,21 @@ public class TurSNImportAPI {
         turSNJobItems.forEach(turSNJobItem -> {
             if (turSNJobItem != null) {
                 if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.CREATE)) {
-                    log.warn(
+                    log.error(
                             "Create Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
                             turSNJobItem.getAttributes() != null
                                     ? turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE)
                                     : null,
                             siteName, turSNJobItem.getLocale(), siteName);
                 } else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
-                    log.warn(
+                    log.error(
                             "Delete Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
                             turSNJobItem.getAttributes() != null ?
                                     turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE) : "empty", siteName,
                             turSNJobItem.getLocale(), siteName);
                 }
             } else {
-                log.warn("No JobItem' of '{}' SN Site", siteName);
+                log.error("No JobItem' of '{}' SN Site", siteName);
             }
         });
     }
