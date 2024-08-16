@@ -26,7 +26,7 @@ public class TurAemIndexing implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false, unique = true, length = 11)
     private int id;
-    @Column
+    @Column(length = 500)
     private String aemId;
     @Column
     private Date date;

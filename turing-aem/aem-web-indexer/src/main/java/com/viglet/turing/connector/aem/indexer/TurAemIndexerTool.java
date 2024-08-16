@@ -60,7 +60,7 @@ public class TurAemIndexerTool {
     private static final String DAM_ASSET = "dam:Asset";
     public static final String CQ = "cq:";
     private static AtomicInteger processed = new AtomicInteger(0);
-    private static final AtomicInteger currentPage =  new AtomicInteger(0);
+    private static final AtomicInteger currentPage = new AtomicInteger(0);
     private static long start;
     private final String deltaId = UUID.randomUUID().toString();
     private final Set<String> visitedLinks = new HashSet<>();
@@ -144,17 +144,27 @@ public class TurAemIndexerTool {
         }
     }
 
+    private void getNodesFromJson() {
+        if (usingContentTypeParameter()) {
+            turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(getContentType())
+                    .ifPresentOrElse(cmsModel -> jsonByContentType(),
+                            () -> log.error("{} type is not configured in CTD Mapping XML file.",
+                                    getContentType()));
+        }
+    }
+
     private void clearQueue() {
         visitedLinks.clear();
         remainingLinks.clear();
     }
 
     private void updateSystemOnce() {
-        turAemSystemRepository.findByConfig(configOnce()).ifPresentOrElse(turAemSystem -> {
-                    turAemSystem.setBooleanValue(true);
-                    turAemSystemRepository.save(turAemSystem);
-                },
-                () -> turAemSystemRepository.save(new TurAemSystem(configOnce(), true)));
+        turAemSystemRepository.findByConfig(configOnce())
+                .ifPresentOrElse(turAemSystem -> {
+                            turAemSystem.setBooleanValue(true);
+                            turAemSystemRepository.save(turAemSystem);
+                        },
+                        () -> turAemSystemRepository.save(new TurAemSystem(configOnce(), true)));
     }
 
 
@@ -168,14 +178,6 @@ public class TurAemIndexerTool {
         return this.turAemSourceContext.getGroup();
     }
 
-    private void getNodesFromJson() {
-        if (usingContentTypeParameter()) {
-            turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(getContentType())
-                    .ifPresentOrElse(cmsModel -> jsonByContentType(),
-                            () -> log.error("{} type is not configured in CTD Mapping XML file.",
-                                    getContentType()));
-        }
-    }
 
     @NotNull
     private String getContentType() {
@@ -192,30 +194,33 @@ public class TurAemIndexerTool {
     }
 
     private void jsonByContentType() {
-        TurAEMCommonsUtils.getInfinityJson(getRootPath(), this.turAemSourceContext).ifPresent(jsonObject -> {
-            TurAEMCommonsUtils.getSiteName(jsonObject).ifPresentOrElse(s -> this.siteName = s,
-                    () -> log.error("No site name the {} root path ({})", getRootPath(), getGroup()));
-            log.info("Site Name: {}", siteName);
-            addItemToQueue(getRootPath());
-            processQueue();
-        });
+        TurAEMCommonsUtils.getInfinityJson(getRootPath(), this.turAemSourceContext)
+                .ifPresent(infinityJson -> {
+                    TurAEMCommonsUtils.getSiteName(infinityJson).ifPresentOrElse(s -> this.siteName = s,
+                            () -> log.error("No site name the {} root path ({})", getRootPath(), getGroup()));
+                    log.info("Site Name: {}", siteName);
+                    addItemToQueue(getRootPath());
+                    processQueue();
+                });
 
     }
 
     private void processQueue() {
         while (!remainingLinks.isEmpty()) {
             String url = remainingLinks.poll();
-            TurAEMCommonsUtils.getInfinityJson(url, this.turAemSourceContext).ifPresent(jsonObject -> {
-                turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(getContentType()).ifPresent(model ->
-                        addTurSNJobItemByType(model, new AemObject(url, jsonObject),
-                                turCmsContentDefinitionProcess.getTargetAttrDefinitions()));
-                sendToTuringWhenMaxSize();
-                getInfoQueue();
-                if (jsonObject.has(JCR_PRIMARY_TYPE)
-                        && jsonObject.getString(JCR_PRIMARY_TYPE).equals(getContentType())) {
-                    getNodeFromJson(url, jsonObject);
-                }
-            });
+            TurAEMCommonsUtils.getInfinityJson(url, this.turAemSourceContext)
+                    .ifPresent(infinityJson -> {
+                        turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(getContentType())
+                                .ifPresent(model ->
+                                        addTurSNJobItemByType(model, new AemObject(url, infinityJson),
+                                                turCmsContentDefinitionProcess.getTargetAttrDefinitions()));
+                        sendToTuringWhenMaxSize();
+                        getInfoQueue();
+                        if (infinityJson.has(JCR_PRIMARY_TYPE)
+                                && infinityJson.getString(JCR_PRIMARY_TYPE).equals(getContentType())) {
+                            getNodeFromJson(url, infinityJson);
+                        }
+                    });
         }
         sendToTuring();
     }

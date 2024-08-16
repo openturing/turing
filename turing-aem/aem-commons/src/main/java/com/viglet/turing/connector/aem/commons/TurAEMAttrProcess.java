@@ -132,8 +132,8 @@ public class TurAEMAttrProcess {
                                                  String facetId) {
         return TurAEMCommonsUtils
                 .getInfinityJson("/content/_cq_tags/%s".formatted(facetId),
-                        turAemSourceContext).map(jsonObject ->
-                        getTurSNAttributeSpec(facetId, getTagLabels(jsonObject))).orElse(new TurSNAttributeSpec());
+                        turAemSourceContext).map(infinityJson ->
+                        getTurSNAttributeSpec(facetId, getTagLabels(infinityJson))).orElse(new TurSNAttributeSpec());
     }
 
     public static String addTagToAttrValueList(TurCmsContext context, TurAemSourceContext turAemSourceContext,
