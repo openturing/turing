@@ -23,7 +23,9 @@ package com.viglet.turing.nlp;
 import java.util.List;
 
 import com.viglet.turing.persistence.model.nlp.TurNLPVendorEntity;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * 
@@ -32,37 +34,13 @@ import lombok.Getter;
  * @since 0.3.6
  *
  */
+@Setter
 @Getter
+@AllArgsConstructor
 public class TurNLPEntityRequest {
 
 	private String name;
 	private List<String> types;
 	private List<String> subTypes;
 	private TurNLPVendorEntity turNLPVendorEntity;
-
-	public TurNLPEntityRequest(String name, List<String> types, List<String> subTypes,
-			TurNLPVendorEntity turNLPVendorEntity) {
-		super();
-		this.name = name;
-		this.types = types;
-		this.subTypes = subTypes;
-		this.turNLPVendorEntity = turNLPVendorEntity;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setTypes(List<String> types) {
-		this.types = types;
-	}
-
-	public void setSubTypes(List<String> subTypes) {
-		this.subTypes = subTypes;
-	}
-
-	public void setTurNLPVendorEntity(TurNLPVendorEntity turNLPVendorEntity) {
-		this.turNLPVendorEntity = turNLPVendorEntity;
-	}
-
 }

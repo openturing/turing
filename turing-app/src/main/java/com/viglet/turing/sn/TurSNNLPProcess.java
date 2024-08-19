@@ -32,10 +32,7 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -72,12 +69,13 @@ public class TurSNNLPProcess {
     }
 
     private Map<String, Object> createNLPAttributesToSEFromNLPEntityMap(TurNLPResponse turNLPResponse) {
+        Map<String, Object> nlpAttributesToSearchEngine = new HashMap<>();
 
-        return turNLPResponse.getEntityMapWithProcessedValues()
-                .entrySet().stream()
-                .collect(Collectors.toMap(nlpResult -> "turing_entity_" + nlpResult.getKey(),
-                        Map.Entry::getValue,
-                        (a, b) -> b));
+        for (Map.Entry<String, List<String>> nlpResult : turNLPResponse.getEntityMapWithProcessedValues().entrySet()) {
+            nlpAttributesToSearchEngine.put("turing_entity_" + nlpResult.getKey(), nlpResult.getValue());
+        }
+
+        return nlpAttributesToSearchEngine;
     }
 
     private boolean useNLPToProcessAttributes(TurSNSiteLocale turSNSiteLocale) {
