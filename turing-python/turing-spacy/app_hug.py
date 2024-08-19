@@ -8,9 +8,9 @@ from pathlib import Path
 
 output_dir=Path('/appl/training/model')
 MODELS = {
-    'pt': spacy.load('pt_core_news_sm'),
-    'pt_BR': spacy.load('pt_core_news_sm'),
-    'en_US': spacy.load('en_core_web_sm')
+    'pt': spacy.load('pt_core_news_lg'),
+    'pt_BR': spacy.load('pt_core_news_lg'),
+    'en_US': spacy.load('en_core_web_lg')
 }
 
 
