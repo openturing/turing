@@ -132,7 +132,7 @@ public class TurSNSearchProcess {
                         turSNSiteFieldExtDto.setFacetLocales(
                                 new HashSet<>(
                                         Collections.singletonList(turSNSiteFieldExtFacetRepository
-                                                .findByTurSNSiteFieldExtAndAndLocale(turSNSiteFieldExt, context.getLocale())
+                                                .findByTurSNSiteFieldExtAndLocale(turSNSiteFieldExt, context.getLocale())
                                                 .stream().findFirst()
                                                 .orElse(TurSNSiteFieldExtFacet.builder()
                                                         .locale(context.getLocale())

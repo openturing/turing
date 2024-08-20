@@ -52,6 +52,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
@@ -202,6 +203,7 @@ public class TurSNSiteFieldExtAPI {
                 .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
                 .hl(0)
                 .multiValued(turSNSiteField.getMultiValued())
+                .facetPosition(0)
                 .mlt(0)
                 .externalId(turSNSiteField.getId())
                 .snType(TurSNFieldType.SE)
@@ -222,6 +224,7 @@ public class TurSNSiteFieldExtAPI {
                 .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
                 .hl(0)
                 .multiValued(1)
+                .facetPosition(0)
                 .mlt(0)
                 .externalId(turNLPEntity.getInternalName())
                 .snType(turSNFieldType)
@@ -265,6 +268,14 @@ public class TurSNSiteFieldExtAPI {
             turSNSiteFieldExtEdit.setNlp(turSNSiteFieldExt.getNlp());
             turSNSiteFieldExtEdit.setSnType(turSNSiteFieldExt.getSnType());
             turSNSiteFieldExtEdit.setFacetType(turSNSiteFieldExt.getFacetType());
+            if (turSNSiteFieldExt.getFacet() == 1) {
+                turSNSiteFieldExtEdit.setFacetPosition(hasFacetPosition(turSNSiteFieldExt) ?
+                        turSNSiteFieldExt.getFacetPosition() :
+                        getFacetPositionIncrement());
+            } else {
+                turSNSiteFieldExtEdit.setFacetPosition(0);
+            }
+
             this.turSNSiteFieldExtRepository.save(turSNSiteFieldExtEdit);
 
 
@@ -272,6 +283,16 @@ public class TurSNSiteFieldExtAPI {
             return turSNSiteFieldExtEdit;
         }).orElse(TurSNSiteFieldExt.builder().build());
 
+    }
+
+    private static boolean hasFacetPosition(TurSNSiteFieldExt turSNSiteFieldExt) {
+        return turSNSiteFieldExt.getFacetPosition() != null && turSNSiteFieldExt.getFacetPosition() > 0;
+    }
+
+    @NotNull
+    private Integer getFacetPositionIncrement() {
+        return this.turSNSiteFieldExtRepository.findMaxFacetPosition().map(max ->
+                max + 1).orElse(1);
     }
 
     @Transactional
@@ -317,7 +338,12 @@ public class TurSNSiteFieldExtAPI {
             turSNSiteFieldExt.setTurSNSite(turSNSite);
             turSNSiteFieldExt.setSnType(TurSNFieldType.SE);
             turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
-
+            if (turSNSiteFieldExt.getFacet() == 1) {
+                turSNSiteFieldExt.setFacetPosition(getFacetPositionIncrement());
+            }
+            else {
+                turSNSiteFieldExt.setFacetPosition(0);
+            }
             this.turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
 
             return turSNSiteFieldExt;

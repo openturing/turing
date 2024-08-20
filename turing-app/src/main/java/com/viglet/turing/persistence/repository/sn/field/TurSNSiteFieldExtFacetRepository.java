@@ -30,5 +30,5 @@ import java.util.Set;
 public interface TurSNSiteFieldExtFacetRepository extends JpaRepository<TurSNSiteFieldExtFacet, String> {
 
     Set<TurSNSiteFieldExtFacet> findByTurSNSiteFieldExt(TurSNSiteFieldExt turSNSiteFieldExt);
-    Set<TurSNSiteFieldExtFacet> findByTurSNSiteFieldExtAndAndLocale(TurSNSiteFieldExt turSNSiteFieldExt, Locale locale);
+    Set<TurSNSiteFieldExtFacet> findByTurSNSiteFieldExtAndLocale(TurSNSiteFieldExt turSNSiteFieldExt, Locale locale);
 }
