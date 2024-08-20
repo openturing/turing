@@ -49,6 +49,7 @@ import {TurSNRankingExpressionPageComponent} from "./component/site/ranking/sn-r
 import {TurSNSearchService} from "../../../sn/src/search/service/sn-search.service";
 import {TurSNFacetOrderingListPageComponent} from "./component/site/facet/sn-facet-ordering-list-page.component";
 import {TurSNFacetOrderingRootPageComponent} from "./component/site/facet/sn-facet-ordering-root-page.component";
+import {CdkDrag, CdkDropList, CdkDropListGroup} from "@angular/cdk/drag-drop";
 
 @NgModule({
   declarations: [
@@ -79,6 +80,7 @@ import {TurSNFacetOrderingRootPageComponent} from "./component/site/facet/sn-fac
     TurSNRankingExpressionPageComponent
   ],
   imports: [
+    CdkDropListGroup, CdkDropList, CdkDrag,
     CommonModule,
     ReactiveFormsModule,
     FormsModule,

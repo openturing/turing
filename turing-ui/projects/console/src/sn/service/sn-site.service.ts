@@ -48,6 +48,12 @@ export class TurSNSiteService {
   getFacetedFields(id: string): Observable<TurSNSiteField[]> {
     return this.httpClient.get<TurSNSiteField[]>(`${environment.apiUrl}/api/sn/${id}/facet`);
   }
+
+  public saveFacetOrderingList(id: string, turSNSiteFields: TurSNSiteField[]): Observable<TurSNSiteField[]> {
+      return this.httpClient.put<TurSNSiteField[]>(`${environment.apiUrl}/api/sn/${id}/facet/ordering`,
+        JSON.stringify(turSNSiteFields));
+  }
+
   getStatusFields(id: string): Observable<TurSNStatusFields> {
     return this.httpClient.get<TurSNStatusFields>(`${environment.apiUrl}/api/sn/${id}/field/check`);
   }

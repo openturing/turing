@@ -44,6 +44,10 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 
 	@Cacheable("turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabled(TurSNSite turSNSite, int facet, int enabled);
+
+	@Cacheable("findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition")
+	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition(TurSNSite turSNSite, int facet, int enabled);
+
 	@Cacheable("findByTurSNSiteAndFacetAndEnabledAndType")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabledAndType(TurSNSite turSNSite, int facet, int enabled,
 																	 TurSEFieldType type);

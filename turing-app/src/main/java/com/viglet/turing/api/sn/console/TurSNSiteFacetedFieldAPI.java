@@ -23,18 +23,18 @@ package com.viglet.turing.api.sn.console;
 
 import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
+import com.viglet.turing.sn.TurSNFieldProcess;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Alexandre Oliveira
@@ -45,20 +45,43 @@ import java.util.List;
 @RequestMapping("/api/sn/{snSiteId}/facet")
 @Tag(name = "Semantic Navigation Faceted Field", description = "Semantic Navigation Faceted Field API")
 public class TurSNSiteFacetedFieldAPI {
-    private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNFieldProcess turSNFieldProcess;
 
     @Inject
-    public TurSNSiteFacetedFieldAPI(TurSNSiteRepository turSNSiteRepository,
-                                    TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
-        this.turSNSiteRepository = turSNSiteRepository;
+    public TurSNSiteFacetedFieldAPI(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+                                    TurSNFieldProcess turSNFieldProcess) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNFieldProcess = turSNFieldProcess;
     }
+
 
     @Operation(summary = "Semantic Navigation Site Faceted Field List")
     @GetMapping
     public List<TurSNSiteFieldExt> turSNSiteFacetdFieldExtList(@PathVariable String snSiteId) {
-        return turSNSiteRepository.findById(snSiteId).map(turSNSite -> turSNSiteFieldExtRepository
-            .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1)).orElse(Collections.emptyList());
+        return turSNFieldProcess.getTurSNSiteFieldOrdering(snSiteId)
+                .orElseGet(Collections::emptyList);
+    }
+
+    @Operation(summary = "Update a Semantic Navigation Site Faceted Field Ordering")
+    @PutMapping("/ordering")
+    @CacheEvict(value = {"findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition"}, allEntries = true)
+    public List<TurSNSiteFieldExt> turSNSiteFieldUpdate(@PathVariable String snSiteId,
+                                                        @RequestBody List<TurSNSiteFieldExt> turSNSiteFieldExtensions) {
+        return turSNFieldProcess.getTurSNSiteFieldOrdering(snSiteId)
+                .map(fieldExtensions -> {
+                    fieldExtensions.forEach(fieldExtension ->
+                            turSNSiteFieldExtensions.stream()
+                                    .filter(fieldsFromRequest -> fieldsFromRequest.getFacetPosition() != null &&
+                                            fieldsFromRequest.getFacetPosition() > 0 &&
+                                            fieldsFromRequest.getId().equals(fieldExtension.getId()))
+                                    .findFirst()
+                                    .ifPresent(fieldsFromRequest -> fieldExtension
+                                            .setFacetPosition(fieldsFromRequest.getFacetPosition())));
+                    turSNSiteFieldExtRepository.saveAll(fieldExtensions);
+                    return fieldExtensions.stream().sorted(Comparator.comparing(TurSNSiteFieldExt::getFacetPosition)).
+                            collect(Collectors.toList());
+                })
+                .orElseGet(Collections::emptyList);
     }
 }

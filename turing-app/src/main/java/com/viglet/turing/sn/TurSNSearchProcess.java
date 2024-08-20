@@ -34,6 +34,7 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtFacetDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -101,6 +102,7 @@ public class TurSNSearchProcess {
         this.turSNSiteMetricAccessRepository = turSNSiteMetricAccessRepository;
     }
 
+
     public List<String> latestSearches(String siteName, String locale, String userId, int rows) {
         return turSNSiteRepository.findByName(siteName).map(turSNSite -> turSNSiteMetricAccessRepository
                 .findLatestSearches(turSNSite, locale, userId, PageRequest.of(0, rows)).stream()
@@ -140,36 +142,30 @@ public class TurSNSearchProcess {
                     }).toList();
             Map<String, TurSNSiteFieldExtDto> facetMap = setFacetMap(turSNSiteFieldExtDtoList);
             if (turSolr.hasGroup(context.getTurSEParameters())) {
-                return getSearchBeanForGroup(context, turSolrInstance, turSEResults, turSNSite, facetMap,
-                        turSNSiteFieldExtDtoList);
+                return getSearchBeanForGroup(context, turSolrInstance, turSEResults, turSNSite, facetMap);
             } else {
-                return getSearchBeanForResults(context, turSolrInstance, turSEResults, turSNSite, facetMap,
-                        turSNSiteFieldExtDtoList);
+                return getSearchBeanForResults(context, turSolrInstance, turSEResults, turSNSite, facetMap);
             }
         }).orElse(new TurSNSiteSearchBean());
     }
 
     private TurSNSiteSearchBean getSearchBeanForResults(TurSNSiteSearchContext context, TurSolrInstance turSolrInstance,
                                                         TurSEResults turSEResults, TurSNSite turSNSite,
-                                                        Map<String, TurSNSiteFieldExtDto> facetMap,
-                                                        List<TurSNSiteFieldExtDto> turSNSiteFieldExtDtoList) {
+                                                        Map<String, TurSNSiteFieldExtDto> facetMap) {
         return new TurSNSiteSearchBean()
                 .setResults(responseDocuments(context, turSolrInstance, turSNSite, facetMap, turSEResults.getResults()))
                 .setPagination(responsePagination(context.getUri(), turSEResults))
-                .setWidget(responseWidget(context, turSNSite,
-                        turSNSiteFieldExtDtoList, facetMap, turSEResults))
+                .setWidget(responseWidget(context, turSNSite, facetMap, turSEResults))
                 .setQueryContext(responseQueryContext(turSNSite, turSEResults,
                         context.getLocale()));
     }
 
     private TurSNSiteSearchBean getSearchBeanForGroup(TurSNSiteSearchContext context, TurSolrInstance turSolrInstance,
                                                       TurSEResults turSEResults, TurSNSite turSNSite,
-                                                      Map<String, TurSNSiteFieldExtDto> facetMap,
-                                                      List<TurSNSiteFieldExtDto> turSNSiteFieldExtDtoList) {
+                                                      Map<String, TurSNSiteFieldExtDto> facetMap) {
         return new TurSNSiteSearchBean()
                 .setGroups(responseGroups(context, turSolrInstance, turSNSite, facetMap, turSEResults))
-                .setWidget(responseWidget(context, turSNSite,
-                        turSNSiteFieldExtDtoList, facetMap, turSEResults))
+                .setWidget(responseWidget(context, turSNSite, facetMap, turSEResults))
                 .setQueryContext(responseQueryContext(turSNSite, turSEResults,
                         context.getLocale()));
     }
@@ -314,13 +310,12 @@ public class TurSNSearchProcess {
     }
 
     private TurSNSiteSearchWidgetBean responseWidget(TurSNSiteSearchContext context, TurSNSite turSNSite,
-                                                     List<TurSNSiteFieldExtDto> turSNSiteFacetFieldList,
                                                      Map<String, TurSNSiteFieldExtDto> facetMap,
                                                      TurSEResults turSEResults) {
         return new TurSNSiteSearchWidgetBean()
                 .setFacet(responseFacet(context, turSNSite,
                         requestFilterQuery(context.getTurSEParameters().getFilterQueries().getFq())
-                                .getHiddenItems(), turSNSiteFacetFieldList, facetMap, turSEResults))
+                                .getHiddenItems(), facetMap, turSEResults))
                 .setFacetToRemove(responseFacetToRemove(context))
                 .setSimilar(responseMLT(turSNSite, turSEResults))
                 .setSpellCheck(new TurSNSiteSpellCheckBean(context, turSEResults.getSpellCheck()))
@@ -420,10 +415,9 @@ public class TurSNSearchProcess {
 
     private List<TurSNSiteSearchFacetBean> responseFacet(TurSNSiteSearchContext context,
                                                          TurSNSite turSNSite, List<String> hiddenFilterQuery,
-                                                         List<TurSNSiteFieldExtDto> turSNSiteFacetFieldExtList,
                                                          Map<String, TurSNSiteFieldExtDto> facetMap,
                                                          TurSEResults turSEResults) {
-        if (turSNSite.getFacet() == 1 && !CollectionUtils.isEmpty(turSNSiteFacetFieldExtList)) {
+        if (turSNSite.getFacet() == 1) {
             List<String> usedFacetItems = Optional.ofNullable(context.getTurSEParameters())
                     .map(TurSEParameters::getFilterQueries)
                     .map(TurSEFilterQueryParameters::getFq)
