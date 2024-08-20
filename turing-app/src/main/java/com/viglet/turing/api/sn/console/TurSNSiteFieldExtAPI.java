@@ -175,17 +175,17 @@ public class TurSNSiteFieldExtAPI {
     }
 
     private void removeDuplicatedFields(Map<String, TurSNSiteField> fieldMap, Map<String, TurNLPEntity> nerMap,
-                                        Map<String, TurNLPEntity> thesaurusMap, List<TurSNSiteFieldExt> turSNSiteFieldExts) {
-        for (TurSNSiteFieldExt turSNSiteFieldExt : turSNSiteFieldExts) {
-            switch (turSNSiteFieldExt.getSnType()) {
+                                        Map<String, TurNLPEntity> thesaurusMap, List<TurSNSiteFieldExt> turSNSiteFieldExtensions) {
+        for (TurSNSiteFieldExt turSNSiteFieldExtension : turSNSiteFieldExtensions) {
+            switch (turSNSiteFieldExtension.getSnType()) {
                 case SE:
-                    fieldMap.remove(turSNSiteFieldExt.getExternalId());
+                    fieldMap.remove(turSNSiteFieldExtension.getExternalId());
                     break;
                 case NER:
-                    nerMap.remove(turSNSiteFieldExt.getExternalId());
+                    nerMap.remove(turSNSiteFieldExtension.getExternalId());
                     break;
                 case THESAURUS:
-                    thesaurusMap.remove(turSNSiteFieldExt.getExternalId());
+                    thesaurusMap.remove(turSNSiteFieldExtension.getExternalId());
                     break;
             }
         }
