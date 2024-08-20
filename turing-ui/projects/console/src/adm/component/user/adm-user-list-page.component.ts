@@ -30,4 +30,22 @@ export class TurAdmUserListPageComponent implements OnInit {
 
   ngOnInit(): void {
   }
+  public delete(_turAdmUser: TurAdmUser) {
+    if (_turAdmUser.username.toLowerCase() == "admin") {
+      this.notifier.notify("error", "Can not delete Admin user, because it is essential");
+    }
+    else {
+      this.turAdmUserService.delete(_turAdmUser).subscribe(
+        (turAdmUser: TurAdmUser) => {
+          this.notifier.notify("success", _turAdmUser.username.concat(" user was deleted."));
+          this.router.navigate(['/adm']);
+        },
+        response => {
+          this.notifier.notify("error", "user was error: " + response);
+        },
+        () => {
+          // console.log('The POST observable is now completed.');
+        });
+    }
+  }
 }

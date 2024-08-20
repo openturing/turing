@@ -664,7 +664,8 @@ public class TurSolr {
                 turSNFieldProcess.getTurSNSiteFieldOrdering(turSNSite.getId())
                         .ifPresent(fields ->
                                 fields.forEach(fieldExtension -> facetResults.stream()
-                                        .filter(facetResult -> facetResult.getFacet().equals(fieldExtension.getName())).findFirst()
+                                        .filter(facetResult -> fieldExtension.getFacetPosition() != null &&
+                                                facetResult.getFacet().equals(fieldExtension.getName())).findFirst()
                                         .ifPresent(facetResult -> facetResult.setFacetPosition(fieldExtension.getFacetPosition()))));
                 turSEResults.setFacetResults(facetResults.stream().sorted(Comparator.comparing(TurSEFacetResult::getFacetPosition)).
                         collect(Collectors.toList()));

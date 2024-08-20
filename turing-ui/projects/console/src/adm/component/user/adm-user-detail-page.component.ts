@@ -64,19 +64,4 @@ export class TurAdmUserDetailPageComponent implements OnInit {
         // console.log('The POST observable is now completed.');
       });
   }
-
-  public delete(_turAdmUser: TurAdmUser) {
-    this.turAdmUserService.delete(_turAdmUser).subscribe(
-      (turAdmUser: TurAdmUser) => {
-        _turAdmUser = turAdmUser;
-        this.notifier.notify("success", turAdmUser.username.concat(" user was deleted."));
-        this.modalDelete.nativeElement.removeAttribute("open");
-      },
-      response => {
-        this.notifier.notify("error", "user was error: " + response);
-      },
-      () => {
-        // console.log('The POST observable is now completed.');
-      });
-  }
 }

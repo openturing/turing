@@ -60,7 +60,7 @@
           {{admUser.lastName}}
         </div>
         <div role="gridcell" class="color-text-tertiary text-right" style="width:100px;">
-          <button class="btn btn-danger btn-sm">
+          <button class="btn btn-danger btn-sm" (click)="delete(admUser)">
             <span octicon="trash" [size]=16 class="mr-1"></span> Delete
           </button>
         </div>
