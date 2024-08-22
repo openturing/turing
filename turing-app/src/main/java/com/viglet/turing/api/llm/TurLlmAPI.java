@@ -21,6 +21,7 @@
 package com.viglet.turing.api.llm;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
@@ -29,6 +30,7 @@ import com.viglet.turing.nlp.output.blazon.RedactionScript;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -79,7 +81,7 @@ public class TurLlmAPI {
         TurLlmResponse response = chatGPT(basePrompt + createQA);
         return getFirstContentFromMessage(response).map(content -> {
             try {
-                return objectMapper
+                return objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                         .readValue(content, TurLlmQa.class);
             } catch (JsonProcessingException e) {
                 log.error(e.getMessage(), e);
@@ -87,11 +89,22 @@ public class TurLlmAPI {
             return new TurLlmQa();
         }).orElse(new TurLlmQa());
     }
+    @PostMapping(value = "/entity/text")
+    public RedactionScript validateText(@RequestParam("text") String text)
+            throws IOException, InterruptedException {
+        return getEntities(text);
 
-    @PostMapping(value = "/validate/file/blazon", produces = MediaType.APPLICATION_XML_VALUE)
+    }
+    @PostMapping(value = "/entity/file/blazon")
     public RedactionScript validateFile(@RequestParam("file") MultipartFile multipartFile)
             throws IOException, InterruptedException {
         final String text = TurFileUtils.documentToText(multipartFile);
+        return getEntities(text);
+
+    }
+
+    @NotNull
+    private RedactionScript getEntities(String text) throws IOException, InterruptedException {
         String basePrompt = """
                 In the sentence below, give me the list of:
                 - organization named entity
@@ -124,7 +137,6 @@ public class TurLlmAPI {
             }
             return new RedactionScript();
         }).orElse(new RedactionScript());
-
     }
 
     public TurLlmResponse chatGPT(String prompt) throws IOException, InterruptedException {
