@@ -39,6 +39,7 @@
             <modules>
                 <module>wc-commons</module>
                 <module>wc-app</module>
+                <module>wc-sample</module>
             </modules>
         </profile>
         <profile>
