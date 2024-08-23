@@ -1,0 +1,61 @@
+{
+  "sources": [
+    {
+      "id": "832afc86-98cb-4a68-a93f-4f85c03f125a",
+      "localeClass": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtLocale",
+      "url": " https://xxx.prod2-care.sprinklr.com",
+      "environment": "prod2",
+      "secretKey": "secretKey_here",
+      "apiKey": "apiKey_here",
+      "turSNSites": [
+        "sample"
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtId"
+        },
+        {
+          "name": "title",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtSampleTitle"
+        },
+        {
+          "name": "publication_date",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtPublicationDate"
+        },
+        {
+          "name": "modification_date",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtModificationDate"
+        },
+        {
+          "name": "text",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtText"
+        },
+        {
+          "name": "abstract",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtDescription"
+        },
+        {
+          "name": "source_apps",
+          "text": "SPRINKLR"
+        },
+        {
+          "name": "type",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtType"
+        },
+        {
+          "name": "category",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtCategory"
+        },
+        {
+          "name": "tags",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtTag"
+        },
+        {
+          "name": "url",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtUrl"
+        }
+      ]
+    }
+  ]
+}

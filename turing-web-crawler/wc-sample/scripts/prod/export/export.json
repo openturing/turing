@@ -26,11 +26,11 @@
           "className": "com.viglet.turing.connector.webcrawler.sample.ext.TurWCExtSampleTitle"
         },
         {
-          "name": "publicationDate",
+          "name": "publication_date",
           "className": "com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtDate"
         },
         {
-          "name": "modificationDate",
+          "name": "modification_date",
           "className": "com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtDate"
         },
         {
