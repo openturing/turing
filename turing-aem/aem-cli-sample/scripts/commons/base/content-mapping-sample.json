@@ -1,0 +1,190 @@
+{
+  "targetAttrDefinitions": [
+    {
+      "name": "id",
+      "type": "TEXT",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Id",
+      "facet": false,
+      "facetName": {
+        "default": "Ids"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurContentId"
+    },
+    {
+      "name": "title",
+      "type": "TEXT",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Title",
+      "facet": false,
+      "facetName": {
+        "default": "Titles",
+        "pt_BR": "Títulos",
+        "en_US": "Titles"
+      }
+    },
+    {
+      "name": "tags",
+      "type": "STRING",
+      "mandatory": true,
+      "multiValued": true,
+      "description": "Tags",
+      "facet": true,
+      "facetName": {
+        "default": "Tags"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurTags"
+    },
+    {
+      "name": "type",
+      "type": "STRING",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Content Type",
+      "facet": false,
+      "facetName": {
+        "default": "Content Types"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurCTDName"
+    },
+    {
+      "name": "publication-date",
+      "type": "DATE",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Publication Date",
+      "facet": false,
+      "facetName": {
+        "default": "Publication Dates"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAEMCreationDate"
+    },
+    {
+      "name": "modification_date",
+      "type": "DATE",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Modification Date",
+      "facet": false,
+      "facetName": {
+        "default": "Modification Dates"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAEMModificationDate"
+    },
+    {
+      "name": "site",
+      "type": "STRING",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Site Name",
+      "facet": false,
+      "facetName": {
+        "default": "Sites"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurSiteName"
+    },
+    {
+      "name": "text",
+      "type": "TEXT",
+      "multiValued": false,
+      "description": "Generic Text",
+      "facet": false,
+      "facetName": {
+        "default": "Texts"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurHTML2Text"
+    },
+    {
+      "name": "abstract",
+      "type": "TEXT",
+      "multiValued": false,
+      "description": "Short resume",
+      "facet": false,
+      "facetName": {
+        "default": "Abstracts"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurHTML2Text"
+    },
+    {
+      "name": "description",
+      "type": "TEXT",
+      "multiValued": false,
+      "description": "Description",
+      "facet": false,
+      "facetName": {
+        "default": "Descriptions"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurHTML2Text"
+    },
+    {
+      "name": "url",
+      "type": "STRING",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "URL",
+      "facet": false,
+      "facetName": {
+        "default": "URLs"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurContentUrl"
+    },
+    {
+      "name": "source_apps",
+      "type": "STRING",
+      "mandatory": true,
+      "multiValued": true,
+      "description": "Source Apps",
+      "facet": true,
+      "facetName": {
+        "default": "Source Apps"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurSourceApps"
+    },
+    {
+      "name": "fragmentPath",
+      "type": "STRING",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Fragment Paths",
+      "facet": true,
+      "facetName": {
+        "default": "Fragment Paths"
+      }
+    }
+  ],
+  "deltaClassName": "com.viglet.turing.connector.aem.sample.ext.TurAemSampleDeltaDate",
+  "models": [
+    {
+      "type": "cq:Page",
+      "className": "com.viglet.turing.connector.aem.sample.ext.TurAemSampleModelJson",
+      "targetAttrs": [
+        {
+          "name": "title",
+          "sourceAttrs": [
+            {
+              "name": "jcr:title"
+            }
+          ]
+        },
+        {
+          "name": "tags",
+          "sourceAttrs": [
+            {
+              "name": "cq:tags"
+            }
+          ]
+        },
+        {
+          "name": "text",
+          "sourceAttrs": [
+            {
+              "className": "com.viglet.turing.connector.aem.commons.ext.TurPageComponents"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

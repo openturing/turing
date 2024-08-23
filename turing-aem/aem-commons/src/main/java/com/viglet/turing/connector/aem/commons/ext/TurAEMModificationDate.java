@@ -7,6 +7,8 @@ import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Optional;
 @Slf4j
 public class TurAEMModificationDate implements ExtAttributeInterface {
@@ -14,7 +16,11 @@ public class TurAEMModificationDate implements ExtAttributeInterface {
 	public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
 								 AemObject aemObject,  TurAemSourceContext turAemSourceContext) {
 		log.debug("Executing TurAEMModificationDate");
+		return TurMultiValue.singleItem(getLastModifiedDate(aemObject));
+	}
+
+	public static Date getLastModifiedDate(AemObject aemObject) {
 		return Optional.ofNullable(aemObject.getLastModified())
-				.map(lastModified -> TurMultiValue.singleItem(lastModified.getTime())).orElse(null);
+				.map(Calendar::getTime).orElse(null);
 	}
 }

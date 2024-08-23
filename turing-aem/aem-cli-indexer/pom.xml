@@ -9,10 +9,10 @@
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>aem-indexer</artifactId>
+    <artifactId>aem-cli-indexer</artifactId>
     <packaging>jar</packaging>
-    <name>Turing AEM - Indexer</name>
-    <description>Turing AEM Connector - Indexer</description>
+    <name>Turing AEM - CLI Indexer</name>
+    <description>Turing AEM Connector - CLI Indexer</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

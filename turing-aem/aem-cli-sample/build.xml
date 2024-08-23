@@ -1,0 +1,20 @@
+<project>
+    <target name="prod">
+        <delete dir="dist/prod"/>
+        <mkdir dir="dist/prod/libs"/>
+           <copy todir="dist/prod/">
+            <fileset dir="scripts/commons/base/"/>
+            <fileset dir="scripts/prod/"/>
+        </copy>
+        <copy todir="dist/prod/prod-author">
+            <fileset dir="scripts/commons/env/"/>
+            <fileset dir="scripts/commons/env-author/"/>
+        </copy>
+        <copy todir="dist/prod/prod-publish">
+            <fileset dir="scripts/commons/env/"/>
+            <fileset dir="scripts/commons/env-publish/"/>
+        </copy>
+        <copy file="target/insper-aem.jar" todir="dist/prod/libs/"/>
+        <get src="https://github.com/openturing/turing/releases/download/v0.3.9/turing-aem.jar" dest="dist/prod/libs/"/>
+    </target>
+</project>

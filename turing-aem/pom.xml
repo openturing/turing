@@ -28,8 +28,9 @@
             </activation>
             <modules>
                 <module>aem-commons</module>
-                <module>aem-indexer</module>
+                <module>aem-cli-indexer</module>
                 <module>aem-web-indexer</module>
+                <module>aem-cli-sample</module>
             </modules>
         </profile>
         <profile>

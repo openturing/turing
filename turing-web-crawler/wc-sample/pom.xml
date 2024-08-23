@@ -6,8 +6,8 @@
     <artifactId>wc-sample</artifactId>
     <groupId>com.viglet.turing</groupId>
     <version>${revision}</version>
-    <name>wc-sample</name>
-
+    <name>Turing Web Crawler - Sample Custom Connector</name>
+    <description>Turing Web Crawler  - Sample Custom Connector</description>
     <properties>
         <revision>0.3.9</revision>
         <turing.version>39a482368c</turing.version>
