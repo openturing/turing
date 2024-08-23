@@ -18,12 +18,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.viglet.turing.connector.cms.beans;
+package com.viglet.turing.client.sn;
 
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.Serial;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -32,7 +31,6 @@ import java.util.*;
 @Getter
 public class TurMultiValue extends ArrayList<String> {
 
-    @Serial
     private static final long serialVersionUID = 1L;
     public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     public static final String UTC = "UTC";
@@ -56,12 +54,17 @@ public class TurMultiValue extends ArrayList<String> {
     }
 
     public static <T> TurMultiValue singleItem(T value, boolean override) {
-        return switch (value) {
-            case String string -> singleItem(string, override);
-            case Boolean bool -> singleItem(bool, override);
-            case Date date -> singleItem(date, override);
-            case null, default -> value != null ? singleItem(value.toString(), override) : null;
-        };
+        if (value instanceof String) {
+            String string = (String) value;
+            return singleItem(string, override);
+        } else if (value instanceof Boolean) {
+            Boolean bool = (Boolean) value;
+            return singleItem(bool, override);
+        } else if (value instanceof Date) {
+            Date date = (Date) value;
+            return singleItem(date, override);
+        }
+        return value != null ? singleItem(value.toString(), override) : null;
     }
 
     public static <T> TurMultiValue singleItem(T value) {
