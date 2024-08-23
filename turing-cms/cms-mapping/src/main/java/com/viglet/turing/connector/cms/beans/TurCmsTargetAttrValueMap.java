@@ -1,5 +1,6 @@
 package com.viglet.turing.connector.cms.beans;
 
+import com.viglet.turing.client.sn.TurMultiValue;
 import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 import lombok.extern.slf4j.Slf4j;
 

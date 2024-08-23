@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.connector.cms.beans;
 
+import com.viglet.turing.client.sn.TurMultiValue;
 import lombok.Getter;
 import lombok.Setter;
 

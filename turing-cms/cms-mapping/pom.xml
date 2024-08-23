@@ -26,14 +26,6 @@
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
   </properties>
   <dependencies>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-    </dependency>
       <dependency>
           <groupId>org.jetbrains</groupId>
           <artifactId>annotations</artifactId>
@@ -43,7 +35,6 @@
       <dependency>
           <groupId>org.projectlombok</groupId>
           <artifactId>lombok</artifactId>
-          <version>1.18.34</version>
           <scope>compile</scope>
       </dependency>
       <dependency>
@@ -62,7 +53,6 @@
           <groupId>com.viglet.turing</groupId>
           <artifactId>turing-java-sdk</artifactId>
           <version>${project.version}</version>
-          <scope>compile</scope>
       </dependency>
       <dependency>
           <groupId>org.jsoup</groupId>
