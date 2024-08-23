@@ -110,6 +110,12 @@
             <groupId>com.viglet.turing</groupId>
             <artifactId>sprinklr-commons</artifactId>
             <version>${revision}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.viglet.turing</groupId>
