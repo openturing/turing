@@ -27,8 +27,7 @@
     </dependency>
     <dependency>
       <groupId>com.viglet.turing</groupId>
-      <artifactId>cms-mapping</artifactId>
-      <version>${revision}</version>
+      <artifactId>turing-java-sdk</artifactId>
     </dependency>
   </dependencies>
 

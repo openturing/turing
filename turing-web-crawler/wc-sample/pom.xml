@@ -15,19 +15,7 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
     </properties>
-
     <dependencies>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.34</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.github.openturing.turing</groupId>
-            <artifactId>cms-mapping</artifactId>
-            <version>${turing.version}</version>
-        </dependency>
         <dependency>
             <groupId>com.github.openturing.turing</groupId>
             <artifactId>wc-commons</artifactId>
@@ -39,7 +27,6 @@
             <version>1.18.1</version>
         </dependency>
     </dependencies>
-
     <build>
         <finalName>wc-sample</finalName>
         <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->

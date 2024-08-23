@@ -22,18 +22,13 @@
       <artifactId>lombok</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jsoup</groupId>
-      <artifactId>jsoup</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.viglet.turing</groupId>
-      <artifactId>cms-mapping</artifactId>
-      <version>${revision}</version>
-    </dependency>
-    <dependency>
       <groupId>com.viglet.turing</groupId>
       <artifactId>sprinklr-java-sdk</artifactId>
       <version>${revision}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.viglet.turing</groupId>
+      <artifactId>turing-java-sdk</artifactId>
     </dependency>
   </dependencies>
 

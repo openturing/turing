@@ -18,17 +18,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.34</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.github.openturing.turing</groupId>
-            <artifactId>cms-mapping</artifactId>
-            <version>${turing.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.github.openturing.turing</groupId>
             <artifactId>sprinklr-commons</artifactId>
             <version>${turing.version}</version>
