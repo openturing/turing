@@ -142,6 +142,10 @@ public class TurAEMCommonsUtils {
         return getInfinityJson(url, turAemSourceContext.getUrl(), turAemSourceContext.getUsername(), turAemSourceContext.getPassword());
     }
 
+    public static Optional<AemObject> getAemObjet(String url, TurAemSourceContext turAemSourceContext) {
+       return getInfinityJson(url, turAemSourceContext).map(infinityJson -> new AemObject(url, infinityJson));
+
+    }
     public static Optional<JSONObject> getInfinityJson(String originalUrl, String hostAndPort, String username, String password) {
         String infinityJsonUrl = String.format(originalUrl.endsWith(TurAEMAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
                 hostAndPort, originalUrl);
