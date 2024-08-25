@@ -10,7 +10,7 @@
       "facetName": {
         "default": "Ids"
       },
-      "className": "com.viglet.turing.connector.aem.commons.ext.TurContentId"
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtContentId"
     },
     {
       "name": "title",
@@ -35,7 +35,7 @@
       "facetName": {
         "default": "Tags"
       },
-      "className": "com.viglet.turing.connector.aem.commons.ext.TurTags"
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtContentTags"
     },
     {
       "name": "type",
@@ -47,7 +47,7 @@
       "facetName": {
         "default": "Content Types"
       },
-      "className": "com.viglet.turing.connector.aem.commons.ext.TurCTDName"
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtTypeName"
     },
     {
       "name": "publication-date",
@@ -59,7 +59,7 @@
       "facetName": {
         "default": "Publication Dates"
       },
-      "className": "com.viglet.turing.connector.aem.commons.ext.TurAEMCreationDate"
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtCreationDate"
     },
     {
       "name": "modification_date",
@@ -71,7 +71,7 @@
       "facetName": {
         "default": "Modification Dates"
       },
-      "className": "com.viglet.turing.connector.aem.commons.ext.TurAEMModificationDate"
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtModificationDate"
     },
     {
       "name": "site",
@@ -83,7 +83,7 @@
       "facetName": {
         "default": "Sites"
       },
-      "className": "com.viglet.turing.connector.aem.commons.ext.TurSiteName"
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtSiteName"
     },
     {
       "name": "text",
@@ -94,7 +94,7 @@
       "facetName": {
         "default": "Texts"
       },
-      "className": "com.viglet.turing.connector.aem.commons.ext.TurHTML2Text"
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtHtml2Text"
     },
     {
       "name": "abstract",
@@ -105,7 +105,7 @@
       "facetName": {
         "default": "Abstracts"
       },
-      "className": "com.viglet.turing.connector.aem.commons.ext.TurHTML2Text"
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtHtml2Text"
     },
     {
       "name": "description",
@@ -116,7 +116,7 @@
       "facetName": {
         "default": "Descriptions"
       },
-      "className": "com.viglet.turing.connector.aem.commons.ext.TurHTML2Text"
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtHtml2Text"
     },
     {
       "name": "url",
@@ -128,7 +128,7 @@
       "facetName": {
         "default": "URLs"
       },
-      "className": "com.viglet.turing.connector.aem.commons.ext.TurContentUrl"
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtContentUrl"
     },
     {
       "name": "source_apps",
@@ -140,7 +140,7 @@
       "facetName": {
         "default": "Source Apps"
       },
-      "className": "com.viglet.turing.connector.aem.commons.ext.TurSourceApps"
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtSourceApps"
     },
     {
       "name": "fragmentPath",
@@ -154,11 +154,11 @@
       }
     }
   ],
-  "deltaClassName": "com.viglet.turing.connector.aem.sample.ext.TurAemSampleDeltaDate",
+  "deltaClassName": "com.viglet.turing.connector.aem.sample.ext.TurAemExtSampleDeltaDate",
   "models": [
     {
       "type": "cq:Page",
-      "className": "com.viglet.turing.connector.aem.sample.ext.TurAemSampleModelJson",
+      "className": "com.viglet.turing.connector.aem.sample.ext.TurAemExtSampleModelJson",
       "targetAttrs": [
         {
           "name": "title",
@@ -180,7 +180,7 @@
           "name": "text",
           "sourceAttrs": [
             {
-              "className": "com.viglet.turing.connector.aem.commons.ext.TurPageComponents"
+              "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtPageComponents"
             }
           ]
         }
