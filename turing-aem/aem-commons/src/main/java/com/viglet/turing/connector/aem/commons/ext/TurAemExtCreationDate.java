@@ -1,6 +1,6 @@
 package com.viglet.turing.connector.aem.commons.ext;
 
-import com.viglet.turing.connector.aem.commons.AemObject;
+import com.viglet.turing.connector.aem.commons.TurAemObject;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.client.sn.TurMultiValue;
 import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
@@ -9,11 +9,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
 @Slf4j
-public class TurAEMCreationDate implements ExtAttributeInterface {
+public class TurAemExtCreationDate implements TurAemExtAttributeInterface {
 	@Override
 	public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
-								 AemObject aemObject, TurAemSourceContext turAemSourceContext) {
-		log.debug("Executing TurAEMCreationDate");
+								 TurAemObject aemObject, TurAemSourceContext turAemSourceContext) {
+		log.debug("Executing TurAemExtCreationDate");
 		return Optional.ofNullable(aemObject.getCreatedDate()).map(createdDate ->
 				TurMultiValue.singleItem(createdDate.getTime())).orElse(null);
 	}

@@ -11,11 +11,11 @@ import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
 @Getter
-public class TurJsonChecksum {
+public class TurAemJsonChecksum {
     private final JSONObject jsonObject;
     private final long checksum;
 
-    public TurJsonChecksum(JSONObject jsonObject) throws JsonProcessingException {
+    public TurAemJsonChecksum(JSONObject jsonObject) throws JsonProcessingException {
         ObjectMapper om = new ObjectMapper();
         om.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
       this.jsonObject = jsonObject;

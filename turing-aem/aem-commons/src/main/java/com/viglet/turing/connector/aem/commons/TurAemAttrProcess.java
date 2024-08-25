@@ -5,7 +5,7 @@ import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
-import com.viglet.turing.connector.aem.commons.ext.ExtAttributeInterface;
+import com.viglet.turing.connector.aem.commons.ext.TurAemExtAttributeInterface;
 import com.viglet.turing.connector.cms.beans.TurCmsContext;
 import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueMap;
 import com.viglet.turing.client.sn.TurMultiValue;
@@ -23,7 +23,7 @@ import org.json.JSONObject;
 import java.util.*;
 
 @Slf4j
-public class TurAEMAttrProcess {
+public class TurAemAttrProcess {
     public static final String JCR_TITLE = "jcr:title";
     public static final String CQ_TAGS = "cq:tags";
     public static final String TAG_SEPARATOR = ":";
@@ -45,7 +45,7 @@ public class TurAEMAttrProcess {
     @Nullable
     public static Object getJcrProperty(TurCmsContext context, String sourceAttrName) {
         return Optional.ofNullable(sourceAttrName).map(attrName -> {
-            AemObject aemObject = (AemObject) context.getCmsObjectInstance();
+            TurAemObject aemObject = (TurAemObject) context.getCmsObjectInstance();
             if (aemObject.getJcrContentNode() != null && aemObject.getJcrContentNode().has(attrName)) {
                 return aemObject.getJcrContentNode().get(attrName);
             } else if (aemObject.getAttributes().containsKey(attrName))
@@ -94,13 +94,13 @@ public class TurAEMAttrProcess {
 
         if (turCmsSourceAttr.isConvertHtmlToText()) {
             return TurCmsTargetAttrValueMap.singleItem(turCmsTargetAttr.getName(),
-                    TurCommonsUtils.html2Text(TurAEMCommonsUtils.getPropertyValue(jcrProperty)), false);
+                    TurCommonsUtils.html2Text(TurAemCommonsUtils.getPropertyValue(jcrProperty)), false);
         } else if (jcrProperty != null) {
             TurMultiValue turMultiValue = new TurMultiValue();
             if (isJSONArray(jcrProperty)) {
                 ((JSONArray) jcrProperty).forEach(item -> turMultiValue.add(item.toString()));
             } else {
-                turMultiValue.add(TurAEMCommonsUtils.getPropertyValue(jcrProperty));
+                turMultiValue.add(TurAemCommonsUtils.getPropertyValue(jcrProperty));
             }
             if (!turMultiValue.isEmpty()) {
                 return TurCmsTargetAttrValueMap.singleItem(turCmsTargetAttr.getName(), turMultiValue, false);
@@ -119,7 +119,7 @@ public class TurAEMAttrProcess {
     }
 
     public static boolean hasJcrPropertyValue(Object jcrProperty) {
-        return ObjectUtils.allNotNull(jcrProperty, TurAEMCommonsUtils.getPropertyValue(jcrProperty));
+        return ObjectUtils.allNotNull(jcrProperty, TurAemCommonsUtils.getPropertyValue(jcrProperty));
     }
 
     public static TurCmsTargetAttrValueMap getTurAttrDefUnique(TurCmsTargetAttr turCmsTargetAttr,
@@ -130,7 +130,7 @@ public class TurAEMAttrProcess {
 
     public static TurSNAttributeSpec setTagFacet(TurAemSourceContext turAemSourceContext,
                                                  String facetId) {
-        return TurAEMCommonsUtils
+        return TurAemCommonsUtils
                 .getInfinityJson("/content/_cq_tags/%s".formatted(facetId),
                         turAemSourceContext).map(infinityJson ->
                         getTurSNAttributeSpec(facetId, getTagLabels(infinityJson))).orElse(new TurSNAttributeSpec());
@@ -138,10 +138,10 @@ public class TurAEMAttrProcess {
 
     public static String addTagToAttrValueList(TurCmsContext context, TurAemSourceContext turAemSourceContext,
                                                String facet, String value) {
-        return TurAEMCommonsUtils
+        return TurAemCommonsUtils
                 .getInfinityJson("/content/_cq_tags/%s/%s".formatted(facet, value),
                         turAemSourceContext).map(infinityJson -> {
-                    Locale locale = TurAEMCommonsUtils.getLocaleFromContext(turAemSourceContext, context);
+                    Locale locale = TurAemCommonsUtils.getLocaleFromContext(turAemSourceContext, context);
                     String titleLocale = locale.toString().toLowerCase();
                     String titleLanguage = locale.getLanguage().toLowerCase();
                     Map<String, String> tagLabels = getTagLabels(infinityJson);
@@ -154,7 +154,7 @@ public class TurAEMAttrProcess {
 
     }
 
-    public TurCmsTargetAttrValueMap prepareAttributeDefs(AemObject aemObject,
+    public TurCmsTargetAttrValueMap prepareAttributeDefs(TurAemObject aemObject,
                                                          TurCmsContentDefinitionProcess turCmsContentDefinitionProcess,
                                                          List<TurSNAttributeSpec> turSNAttributeSpecList,
                                                          TurAemSourceContext turAemSourceContext) {
@@ -251,10 +251,10 @@ public class TurAEMAttrProcess {
         return TurCustomClassCache.getCustomClassMap(className)
                 .map(classInstance -> TurCmsTargetAttrValueMap.singleItem(context
                                 .getTurCmsTargetAttr().getName(),
-                        ((ExtAttributeInterface) classInstance)
+                        ((TurAemExtAttributeInterface) classInstance)
                                 .consume(context.getTurCmsTargetAttr(),
                                         context.getTurCmsSourceAttr(),
-                                        (AemObject) context.getCmsObjectInstance(),
+                                        (TurAemObject) context.getCmsObjectInstance(),
                                         turAemSourceContext),
                         false))
                 .orElseGet(TurCmsTargetAttrValueMap::new);

@@ -5,10 +5,9 @@ import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.commons.exception.TurRuntimeException;
-import com.viglet.turing.connector.aem.commons.bean.TurJsonChecksum;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
-import com.viglet.turing.connector.aem.commons.ext.ExtContentInterface;
+import com.viglet.turing.connector.aem.commons.ext.TurAemExtContentInterface;
 import com.viglet.turing.connector.cms.beans.TurCmsContext;
 import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueMap;
 import com.viglet.turing.connector.cms.mappers.TurCmsModel;
@@ -30,8 +29,8 @@ import java.net.URI;
 import java.util.*;
 
 @Slf4j
-public class TurAEMCommonsUtils {
-    private TurAEMCommonsUtils() {
+public class TurAemCommonsUtils {
+    private TurAemCommonsUtils() {
         throw new IllegalStateException("Utility class");
     }
 
@@ -40,11 +39,11 @@ public class TurAEMCommonsUtils {
     public static final String JCR_TITLE = "jcr:title";
 
 
-    public static TurCmsTargetAttrValueMap runCustomClassFromContentType(TurCmsModel turCmsModel, AemObject aemObject,
+    public static TurCmsTargetAttrValueMap runCustomClassFromContentType(TurCmsModel turCmsModel, TurAemObject aemObject,
                                                                          TurAemSourceContext turAemSourceContext) {
         return !StringUtils.isEmpty(turCmsModel.getClassName()) ?
                 TurCustomClassCache.getCustomClassMap(turCmsModel.getClassName())
-                        .map(customClassMap -> ((ExtContentInterface) customClassMap)
+                        .map(customClassMap -> ((TurAemExtContentInterface) customClassMap)
                                 .consume(aemObject, turAemSourceContext))
                         .orElseGet(TurCmsTargetAttrValueMap::new) :
                 new TurCmsTargetAttrValueMap();
@@ -57,7 +56,7 @@ public class TurAEMCommonsUtils {
     }
 
     @NotNull
-    public static Date getDeltaDate(AemObject aemObject) {
+    public static Date getDeltaDate(TurAemObject aemObject) {
         if (aemObject.getLastModified() != null)
             return aemObject.getLastModified().getTime();
         if (aemObject.getCreatedDate() != null)
@@ -134,7 +133,7 @@ public class TurAEMCommonsUtils {
     }
 
     public static Locale getLocaleFromAemObject(TurAemSourceContext turAemSourceContext,
-                                                AemObject aemObject) {
+                                                TurAemObject aemObject) {
         return getLocaleByPath(turAemSourceContext, aemObject.getPath());
     }
 
@@ -142,23 +141,23 @@ public class TurAEMCommonsUtils {
         return getInfinityJson(url, turAemSourceContext.getUrl(), turAemSourceContext.getUsername(), turAemSourceContext.getPassword());
     }
 
-    public static Optional<AemObject> getAemObjet(String url, TurAemSourceContext turAemSourceContext) {
-       return getInfinityJson(url, turAemSourceContext).map(infinityJson -> new AemObject(url, infinityJson));
+    public static Optional<TurAemObject> getAemObjet(String url, TurAemSourceContext turAemSourceContext) {
+       return getInfinityJson(url, turAemSourceContext).map(infinityJson -> new TurAemObject(url, infinityJson));
 
     }
     public static Optional<JSONObject> getInfinityJson(String originalUrl, String hostAndPort, String username, String password) {
-        String infinityJsonUrl = String.format(originalUrl.endsWith(TurAEMAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
+        String infinityJsonUrl = String.format(originalUrl.endsWith(TurAemAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
                 hostAndPort, originalUrl);
         if (responseHttpCache.containsKey(infinityJsonUrl)) {
             log.info("Cached Response {}", infinityJsonUrl);
             return Optional.of(new JSONObject(responseHttpCache.get(infinityJsonUrl)));
         } else {
-            return TurAEMCommonsUtils.getResponseBody(infinityJsonUrl, username, password).map(responseBody -> {
+            return TurAemCommonsUtils.getResponseBody(infinityJsonUrl, username, password).map(responseBody -> {
                 log.info("Request {}", infinityJsonUrl);
-                if (TurAEMCommonsUtils.isResponseBodyJSONArray(responseBody) && !originalUrl.endsWith(TurAEMAttrProcess.JSON)) {
+                if (TurAemCommonsUtils.isResponseBodyJSONArray(responseBody) && !originalUrl.endsWith(TurAemAttrProcess.JSON)) {
                     JSONArray jsonArray = new JSONArray(responseBody);
                     return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
-                } else if (TurAEMCommonsUtils.isResponseBodyJSONObject(responseBody)) {
+                } else if (TurAemCommonsUtils.isResponseBodyJSONObject(responseBody)) {
                     responseHttpCache.put(infinityJsonUrl, responseBody);
                     return Optional.of(new JSONObject(responseBody));
                 }
@@ -221,15 +220,15 @@ public class TurAEMCommonsUtils {
     }
 
     public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuilder components) {
-        if (jsonObject.has(TurAEMAttrProcess.JCR_TITLE) && jsonObject.get(TurAEMAttrProcess.JCR_TITLE)
+        if (jsonObject.has(TurAemAttrProcess.JCR_TITLE) && jsonObject.get(TurAemAttrProcess.JCR_TITLE)
                 instanceof String title) {
             components.append(title);
-        } else if (jsonObject.has(TurAEMAttrProcess.TEXT) && jsonObject.get(TurAEMAttrProcess.TEXT)
+        } else if (jsonObject.has(TurAemAttrProcess.TEXT) && jsonObject.get(TurAemAttrProcess.TEXT)
                 instanceof String text) {
             components.append(text);
         }
         jsonObject.toMap().forEach((key, value) -> {
-            if (!key.startsWith(TurAEMAttrProcess.JCR) && !key.startsWith(TurAEMAttrProcess.SLING)
+            if (!key.startsWith(TurAemAttrProcess.JCR) && !key.startsWith(TurAemAttrProcess.SLING)
                     && (jsonObject.get(key) instanceof JSONObject jsonObjectNode)) {
                 getJsonNodeToComponent(jsonObjectNode, components);
             }
@@ -237,7 +236,7 @@ public class TurAEMCommonsUtils {
     }
 
     public static Locale getLocaleFromContext(TurAemSourceContext turAemSourceContext, TurCmsContext context) {
-        AemObject aemObject = (AemObject) context.getCmsObjectInstance();
+        TurAemObject aemObject = (TurAemObject) context.getCmsObjectInstance();
         return getLocaleFromAemObject(turAemSourceContext, aemObject);
     }
 

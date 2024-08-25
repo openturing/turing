@@ -3,7 +3,6 @@ package com.viglet.turing.connector.aem.indexer.api;
 import com.google.inject.Inject;
 import com.viglet.turing.connector.aem.indexer.persistence.repository.TurAemIndexingRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,7 +49,7 @@ public class TurAemApi {
         return statusOk();
     }
 
-    private static @NotNull Map<String, String> statusOk() {
+    private static Map<String, String> statusOk() {
         Map<String, String> status = new HashMap<>();
         status.put("status", "ok");
         return status;

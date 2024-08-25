@@ -14,7 +14,7 @@ import static org.apache.jackrabbit.JcrConstants.*;
 
 @Getter
 @Slf4j
-public class AemObject {
+public class TurAemObject {
     public static final String JCR_TITLE = "jcr:title";
     public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     public static final String HTML = ".html";
@@ -45,7 +45,7 @@ public class AemObject {
     public static final String EMPTY_VALUE = "";
     public final SimpleDateFormat aemJsonDateFormat = new SimpleDateFormat(DATE_JSON_FORMAT, Locale.ENGLISH);
 
-    public AemObject(String nodePath, JSONObject jcrNode) {
+    public TurAemObject(String nodePath, JSONObject jcrNode) {
         this.jcrNode = jcrNode;
         this.path = nodePath;
         this.url = nodePath + HTML;
@@ -56,7 +56,7 @@ public class AemObject {
                 this.delivered = isActivated(CQ_LAST_REPLICATION_ACTION)
                         && isActivated(CQ_LAST_REPLICATION_ACTION_PUBLISH);
                 this.title = jcrContentNode.has(JCR_TITLE) ? this.jcrContentNode.getString(JCR_TITLE) : EMPTY_VALUE;
-                if (TurAEMCommonsUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT)) {
+                if (TurAemCommonsUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT)) {
                     this.contentFragment = this.jcrContentNode.getBoolean(CONTENT_FRAGMENT);
                 }
                 getDataFolder(jcrContentNode);
@@ -92,9 +92,9 @@ public class AemObject {
     }
 
     private void getDataFolder(JSONObject jcrContentNode) {
-        if (TurAEMCommonsUtils.hasProperty(jcrContentNode, DATA_FOLDER)) {
+        if (TurAemCommonsUtils.hasProperty(jcrContentNode, DATA_FOLDER)) {
             JSONObject jcrDataRootNode = jcrContentNode.getJSONObject(DATA_FOLDER);
-            if (TurAEMCommonsUtils.hasProperty(jcrDataRootNode, CQ_MODEL)) {
+            if (TurAemCommonsUtils.hasProperty(jcrDataRootNode, CQ_MODEL)) {
                 this.model = jcrDataRootNode.getString(CQ_MODEL);
             }
         }
