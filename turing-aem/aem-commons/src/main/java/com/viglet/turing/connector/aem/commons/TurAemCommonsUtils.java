@@ -146,9 +146,10 @@ public class TurAemCommonsUtils {
     }
 
     public static Optional<TurAemObject> getAemObject(String url, TurAemSourceContext turAemSourceContext) {
-       return getInfinityJson(url, turAemSourceContext).map(infinityJson -> new TurAemObject(url, infinityJson));
+        return getInfinityJson(url, turAemSourceContext).map(infinityJson -> new TurAemObject(url, infinityJson));
 
     }
+
     public static Optional<JSONObject> getInfinityJson(String originalUrl, String hostAndPort, String username, String password) {
         String infinityJsonUrl = String.format(originalUrl.endsWith(TurAemAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
                 hostAndPort, originalUrl);
@@ -157,7 +158,6 @@ public class TurAemCommonsUtils {
             return Optional.of(new JSONObject(responseHttpCache.get(infinityJsonUrl)));
         } else {
             return TurAemCommonsUtils.getResponseBody(infinityJsonUrl, username, password).map(responseBody -> {
-                log.info("Request {}", infinityJsonUrl);
                 if (TurAemCommonsUtils.isResponseBodyJSONArray(responseBody) && !originalUrl.endsWith(TurAemAttrProcess.JSON)) {
                     JSONArray jsonArray = new JSONArray(responseBody);
                     return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
@@ -199,10 +199,12 @@ public class TurAemCommonsUtils {
     public static boolean isResponseBodyJSONObject(String responseBody) {
         return responseBody.startsWith("{");
     }
+
     public static <T> Optional<T> getResponseBody(String url, TurAemSourceContext turAemSourceContext, Class<T> clazz) {
         return TurAemCommonsUtils.getResponseBody(url, turAemSourceContext).map(json ->
         {
             if (TurCommonsUtils.isJSONValid(json)) {
+                log.debug("Valid JSON - {}", url);
                 try {
                     return new ObjectMapper()
                             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -214,6 +216,7 @@ public class TurAemCommonsUtils {
             return null;
         });
     }
+
     private static Optional<String> getResponseBody(String url, TurAemSourceContext turAemSourceContext) {
         return getResponseBody(url, turAemSourceContext.getUsername(), turAemSourceContext.getPassword());
     }
@@ -224,6 +227,7 @@ public class TurAemCommonsUtils {
                 .build()) {
             HttpGet request = new HttpGet(URI.create(UrlEscapers.urlFragmentEscaper().escape(url)).normalize());
             return httpClient.execute(request, response -> {
+                log.info("Request Status {} - {}", response.getCode(), url);
                 HttpEntity entity = response.getEntity();
                 return entity != null ? Optional.of(EntityUtils.toString(entity)) : Optional.empty();
             });

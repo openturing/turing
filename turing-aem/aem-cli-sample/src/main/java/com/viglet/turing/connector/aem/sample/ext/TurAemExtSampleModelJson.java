@@ -1,11 +1,7 @@
 package com.viglet.turing.connector.aem.sample.ext;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.connector.aem.commons.TurAemObject;
 import com.viglet.turing.connector.aem.commons.TurAemCommonsUtils;
+import com.viglet.turing.connector.aem.commons.TurAemObject;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.aem.commons.ext.TurAemExtContentInterface;
 import com.viglet.turing.connector.aem.sample.beans.TurAemSampleModel;
@@ -23,19 +19,9 @@ public class TurAemExtSampleModelJson implements TurAemExtContentInterface {
         log.debug("Executing TurAemExtSampleModelJson");
         String url = turAemSourceContext.getUrl() + aemObject.getPath() + MODEL_JSON_EXTENSION;
         TurCmsTargetAttrValueMap attrValues = new TurCmsTargetAttrValueMap();
-        return TurAemCommonsUtils.getResponseBody(url, turAemSourceContext).map(json -> {
-            ObjectMapper objectMapper = new ObjectMapper()
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            if (TurCommonsUtils.isJSONValid(json)) {
-                try {
-                    TurAemSampleModel model = objectMapper.readValue(json, TurAemSampleModel.class);
-                    getFragmentData(attrValues, model);
-                    return attrValues;
-                } catch (JsonProcessingException e) {
-                    log.error(e.getMessage(), e);
-                }
-            }
-            return new TurCmsTargetAttrValueMap();
+        return TurAemCommonsUtils.getResponseBody(url, turAemSourceContext, TurAemSampleModel.class).map(model -> {
+            getFragmentData(attrValues, model);
+            return attrValues;
         }).orElseGet(TurCmsTargetAttrValueMap::new);
     }
 

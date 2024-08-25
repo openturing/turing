@@ -18,6 +18,7 @@ public class TurAemDates extends StdDeserializer<Date> {
     private static final SimpleDateFormat[] DATE_FORMATTERS = new SimpleDateFormat[]{
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX", Locale.ENGLISH),
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH),
+            new SimpleDateFormat("EEE MMM dd HH:mm:ss zzzz yyyy", Locale.ENGLISH),
             new SimpleDateFormat("dd/MM/yyyy' 'HH'h'mm", Locale.ENGLISH)
     };
 
