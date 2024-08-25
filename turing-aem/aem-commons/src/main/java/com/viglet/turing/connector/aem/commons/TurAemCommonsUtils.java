@@ -1,10 +1,14 @@
 package com.viglet.turing.connector.aem.commons;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.net.UrlEscapers;
 import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.commons.exception.TurRuntimeException;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.aem.commons.ext.TurAemExtContentInterface;
@@ -141,7 +145,7 @@ public class TurAemCommonsUtils {
         return getInfinityJson(url, turAemSourceContext.getUrl(), turAemSourceContext.getUsername(), turAemSourceContext.getPassword());
     }
 
-    public static Optional<TurAemObject> getAemObjet(String url, TurAemSourceContext turAemSourceContext) {
+    public static Optional<TurAemObject> getAemObject(String url, TurAemSourceContext turAemSourceContext) {
        return getInfinityJson(url, turAemSourceContext).map(infinityJson -> new TurAemObject(url, infinityJson));
 
     }
@@ -195,8 +199,22 @@ public class TurAemCommonsUtils {
     public static boolean isResponseBodyJSONObject(String responseBody) {
         return responseBody.startsWith("{");
     }
-
-    public static Optional<String> getResponseBody(String url, TurAemSourceContext turAemSourceContext) {
+    public static <T> Optional<T> getResponseBody(String url, TurAemSourceContext turAemSourceContext, Class<T> clazz) {
+        return TurAemCommonsUtils.getResponseBody(url, turAemSourceContext).map(json ->
+        {
+            if (TurCommonsUtils.isJSONValid(json)) {
+                try {
+                    return new ObjectMapper()
+                            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                            .readValue(json, clazz);
+                } catch (JsonProcessingException e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+            return null;
+        });
+    }
+    private static Optional<String> getResponseBody(String url, TurAemSourceContext turAemSourceContext) {
         return getResponseBody(url, turAemSourceContext.getUsername(), turAemSourceContext.getPassword());
     }
 
