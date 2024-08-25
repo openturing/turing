@@ -197,6 +197,10 @@ public class TurAEMCommonsUtils {
         return responseBody.startsWith("{");
     }
 
+    public static Optional<String> getResponseBody(String url, TurAemSourceContext turAemSourceContext) {
+        return getResponseBody(url, turAemSourceContext.getUsername(), turAemSourceContext.getPassword());
+    }
+
     public static Optional<String> getResponseBody(String url, String username, String password) {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create()
                 .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.AUTHORIZATION, basicAuth(username, password))))
