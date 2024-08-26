@@ -43,7 +43,8 @@ public class TurAemCommonsUtils {
     public static final String JCR_TITLE = "jcr:title";
 
 
-    public static TurCmsTargetAttrValueMap runCustomClassFromContentType(TurCmsModel turCmsModel, TurAemObject aemObject,
+    public static TurCmsTargetAttrValueMap runCustomClassFromContentType(TurCmsModel turCmsModel,
+                                                                         TurAemObject aemObject,
                                                                          TurAemSourceContext turAemSourceContext) {
         return !StringUtils.isEmpty(turCmsModel.getClassName()) ?
                 TurCustomClassCache.getCustomClassMap(turCmsModel.getClassName())
@@ -145,13 +146,12 @@ public class TurAemCommonsUtils {
         return getInfinityJson(url, turAemSourceContext).map(infinityJson -> new TurAemObject(url, infinityJson));
     }
 
-    public static Optional<JSONObject> getInfinityJson(String originalUrl, TurAemSourceContext turAemSourceContext) {
-        String infinityJsonUrl = String.format(originalUrl.endsWith(TurAemAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
-                turAemSourceContext.getUrl(), originalUrl);
+    public static Optional<JSONObject> getInfinityJson(String url, TurAemSourceContext turAemSourceContext) {
+        String infinityJsonUrl = String.format(url.endsWith(TurAemAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
+                turAemSourceContext.getUrl(), url);
         return getResponseBody(infinityJsonUrl, turAemSourceContext).map(responseBody -> {
-            if (isResponseBodyJSONArray(responseBody) && !originalUrl.endsWith(TurAemAttrProcess.JSON)) {
-                JSONArray jsonArray = new JSONArray(responseBody);
-                return getInfinityJson(jsonArray.getString(0), turAemSourceContext);
+            if (isResponseBodyJSONArray(responseBody) && !url.endsWith(TurAemAttrProcess.JSON)) {
+                return getInfinityJson(new JSONArray(responseBody).toList().getFirst().toString(), turAemSourceContext);
             } else if (isResponseBodyJSONObject(responseBody)) {
                 return Optional.of(new JSONObject(responseBody));
             }
