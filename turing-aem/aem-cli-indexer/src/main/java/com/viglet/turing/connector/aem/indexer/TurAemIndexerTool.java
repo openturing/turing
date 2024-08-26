@@ -160,7 +160,9 @@ public class TurAemIndexerTool {
                 .username(config.getCmsUsername())
                 .localePaths(config.getLocales())
                 .build();
-        log.info("TurAemSourceContext: {}", turAemSourceContext.toString());
+        if (log.isDebugEnabled()) {
+            log.debug("TurAemSourceContext: {}", turAemSourceContext.toString());
+        }
         return turAemSourceContext;
     }
 
