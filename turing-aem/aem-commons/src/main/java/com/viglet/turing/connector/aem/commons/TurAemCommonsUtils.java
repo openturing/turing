@@ -141,22 +141,17 @@ public class TurAemCommonsUtils {
         return getLocaleByPath(turAemSourceContext, aemObject.getPath());
     }
 
-    public static Optional<JSONObject> getInfinityJson(String url, TurAemSourceContext turAemSourceContext) {
-        return getInfinityJson(url, turAemSourceContext.getUrl(), turAemSourceContext.getUsername(), turAemSourceContext.getPassword());
-    }
-
     public static Optional<TurAemObject> getAemObject(String url, TurAemSourceContext turAemSourceContext) {
         return getInfinityJson(url, turAemSourceContext).map(infinityJson -> new TurAemObject(url, infinityJson));
-
     }
 
-    public static Optional<JSONObject> getInfinityJson(String originalUrl, String hostAndPort, String username, String password) {
+    public static Optional<JSONObject> getInfinityJson(String originalUrl, TurAemSourceContext turAemSourceContext) {
         String infinityJsonUrl = String.format(originalUrl.endsWith(TurAemAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
-                hostAndPort, originalUrl);
-        return getResponseBody(infinityJsonUrl, username, password).map(responseBody -> {
+                turAemSourceContext.getUrl(), originalUrl);
+        return getResponseBody(infinityJsonUrl, turAemSourceContext).map(responseBody -> {
             if (isResponseBodyJSONArray(responseBody) && !originalUrl.endsWith(TurAemAttrProcess.JSON)) {
                 JSONArray jsonArray = new JSONArray(responseBody);
-                return getInfinityJson(jsonArray.getString(0), hostAndPort, username, password);
+                return getInfinityJson(jsonArray.getString(0), turAemSourceContext);
             } else if (isResponseBodyJSONObject(responseBody)) {
                 return Optional.of(new JSONObject(responseBody));
             }
@@ -210,10 +205,6 @@ public class TurAemCommonsUtils {
     }
 
     public static Optional<String> getResponseBody(String url, TurAemSourceContext turAemSourceContext) {
-        return getResponseBody(url, turAemSourceContext.getUsername(), turAemSourceContext.getPassword());
-    }
-
-    public static Optional<String> getResponseBody(String url, String username, String password) {
         if (log.isDebugEnabled()) {
             responseHttpCache.forEach((k, v) -> log.debug("Cached Item Url: {}", k));
         }
@@ -221,25 +212,30 @@ public class TurAemCommonsUtils {
             log.info("Cached Response {}", url);
             return Optional.of(responseHttpCache.get(url));
         } else {
-            try (CloseableHttpClient httpClient = HttpClientBuilder.create()
-                    .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.AUTHORIZATION, basicAuth(username, password))))
-                    .build()) {
-                HttpGet request = new HttpGet(URI.create(UrlEscapers.urlFragmentEscaper().escape(url)).normalize());
-                String json = httpClient.execute(request, response -> {
-                    log.info("Request Status {} - {}", response.getCode(), url);
-                    HttpEntity entity = response.getEntity();
-                    return entity != null ? EntityUtils.toString(entity) : null;
-                });
-                if (TurCommonsUtils.isJSONValid(json)) {
-                    log.debug("Valid JSON - {}", url);
-                    responseHttpCache.put(url, json);
-                    return Optional.ofNullable(json);
-                }
-                return Optional.empty();
-            } catch (IOException e) {
-                log.error(e.getMessage(), e);
-                throw new TurRuntimeException(e);
+            return getResponseBodyNoCache(url, turAemSourceContext);
+        }
+    }
+
+    private static @NotNull Optional<String> getResponseBodyNoCache(String url, TurAemSourceContext turAemSourceContext) {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create()
+                .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.AUTHORIZATION,
+                        basicAuth(turAemSourceContext.getUsername(), turAemSourceContext.getPassword()))))
+                .build()) {
+            HttpGet request = new HttpGet(URI.create(UrlEscapers.urlFragmentEscaper().escape(url)).normalize());
+            String json = httpClient.execute(request, response -> {
+                log.info("Request Status {} - {}", response.getCode(), url);
+                HttpEntity entity = response.getEntity();
+                return entity != null ? EntityUtils.toString(entity) : null;
+            });
+            if (TurCommonsUtils.isJSONValid(json)) {
+                log.debug("Valid JSON - {}", url);
+                responseHttpCache.put(url, json);
+                return Optional.ofNullable(json);
             }
+            return Optional.empty();
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+            throw new TurRuntimeException(e);
         }
     }
 
