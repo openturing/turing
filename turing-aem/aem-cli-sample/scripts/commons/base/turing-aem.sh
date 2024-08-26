@@ -5,5 +5,5 @@ if [ "$(whoami)" != "turing" ]; then
 fi
 
 $JAVA_BIN -classpath ".:../libs/aem-cli-sample.jar:../libs/turing-aem.jar" \
-com.viglet.turing.connector.aem.indexer.TurAEMIndexerTool --property "$PROPERTIES_FILE" "$@"
+com.viglet.turing.connector.aem.indexer.TurAemIndexerTool --property "$PROPERTIES_FILE" "$@"
 

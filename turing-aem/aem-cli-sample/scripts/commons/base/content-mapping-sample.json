@@ -50,7 +50,7 @@
       "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtTypeName"
     },
     {
-      "name": "publication-date",
+      "name": "publication_date",
       "type": "DATE",
       "mandatory": true,
       "multiValued": false,
@@ -143,14 +143,135 @@
       "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtSourceApps"
     },
     {
-      "name": "fragmentPath",
+      "name": "templateName",
       "type": "STRING",
-      "mandatory": true,
+      "mandatory": false,
       "multiValued": false,
-      "description": "Fragment Paths",
+      "description": "Template Name",
       "facet": true,
       "facetName": {
+        "default": "Template Names"
+      }
+    },
+    {
+      "name": "fragmentPath",
+      "type": "STRING",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Fragment Path",
+      "facet": false,
+      "facetName": {
         "default": "Fragment Paths"
+      }
+    },
+    {
+      "name": "date",
+      "type": "DATE",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Date",
+      "facet": false,
+      "facetName": {
+        "default": "Dates"
+      }
+    },
+    {
+      "name": "endDate",
+      "type": "DATE",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "End Date",
+      "facet": false,
+      "facetName": {
+        "default": "End Dates"
+      }
+    },
+    {
+      "name": "hour",
+      "type": "DATE",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Hour",
+      "facet": false,
+      "facetName": {
+        "default": "Hours"
+      }
+    },
+    {
+      "name": "endHour",
+      "type": "DATE",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "End Hour",
+      "facet": false,
+      "facetName": {
+        "default": "End Hours"
+      }
+    },
+    {
+      "name": "eventText",
+      "type": "STRING",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Event Text",
+      "facet": false,
+      "facetName": {
+        "default": "Event Texts"
+      }
+    },
+    {
+      "name": "displayDate",
+      "type": "DATE",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Display Date",
+      "facet": false,
+      "facetName": {
+        "default": "Display Dates"
+      }
+    },
+    {
+      "name": "backgroundImage",
+      "type": "STRING",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Background Image",
+      "facet": false,
+      "facetName": {
+        "default": "Background Images"
+      }
+    },
+    {
+      "name": "backgroundImageColor",
+      "type": "STRING",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Background Image Color",
+      "facet": false,
+      "facetName": {
+        "default": "Background Image Colors"
+      }
+    },
+    {
+      "name": "richText",
+      "type": "TEXT",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "RichText",
+      "facet": false,
+      "facetName": {
+        "default": "RichText"
+      }
+    },
+    {
+      "name": "image",
+      "type": "STRING",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Image",
+      "facet": true,
+      "facetName": {
+        "default": "Images"
       }
     }
   ],
