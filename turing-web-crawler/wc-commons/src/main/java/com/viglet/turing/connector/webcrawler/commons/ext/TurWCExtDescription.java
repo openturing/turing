@@ -13,7 +13,9 @@ public class TurWCExtDescription implements TurWCExtInterface{
     @Override
     public Optional<TurMultiValue> consume(TurWCContext context) {
         return Optional.of(context.getDocument().select(META_NAME_DESCRIPTION))
-                .map(elements -> !elements.isEmpty() ? TurMultiValue.singleItem(elements.getFirst().attr(CONTENT)) : null);
+                .map(elements -> !elements.isEmpty() ?
+                        TurMultiValue.singleItem(elements.getFirst().attr(CONTENT)) :
+                        null);
 
     }
 }

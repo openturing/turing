@@ -203,21 +203,18 @@ public class TurAemCommonsUtils {
     public static <T> Optional<T> getResponseBody(String url, TurAemSourceContext turAemSourceContext, Class<T> clazz) {
         return TurAemCommonsUtils.getResponseBody(url, turAemSourceContext).map(json ->
         {
-            if (TurCommonsUtils.isJSONValid(json)) {
-                log.debug("Valid JSON - {}", url);
-                try {
-                    return new ObjectMapper()
-                            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                            .readValue(json, clazz);
-                } catch (JsonProcessingException e) {
-                    log.error(e.getMessage(), e);
-                }
+            try {
+                return new ObjectMapper()
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                        .readValue(json, clazz);
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage(), e);
             }
             return null;
         });
     }
 
-    private static Optional<String> getResponseBody(String url, TurAemSourceContext turAemSourceContext) {
+    public static Optional<String> getResponseBody(String url, TurAemSourceContext turAemSourceContext) {
         return getResponseBody(url, turAemSourceContext.getUsername(), turAemSourceContext.getPassword());
     }
 
@@ -226,11 +223,16 @@ public class TurAemCommonsUtils {
                 .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.AUTHORIZATION, basicAuth(username, password))))
                 .build()) {
             HttpGet request = new HttpGet(URI.create(UrlEscapers.urlFragmentEscaper().escape(url)).normalize());
-            return httpClient.execute(request, response -> {
+            String json = httpClient.execute(request, response -> {
                 log.info("Request Status {} - {}", response.getCode(), url);
                 HttpEntity entity = response.getEntity();
-                return entity != null ? Optional.of(EntityUtils.toString(entity)) : Optional.empty();
+                return entity != null ? EntityUtils.toString(entity) : null;
             });
+            if (TurCommonsUtils.isJSONValid(json)) {
+                log.debug("Valid JSON - {}", url);
+                return Optional.ofNullable(json);
+            }
+            return Optional.empty();
         } catch (IOException e) {
             log.error(e.getMessage(), e);
             throw new TurRuntimeException(e);

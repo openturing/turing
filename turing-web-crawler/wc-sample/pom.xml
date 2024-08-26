@@ -7,10 +7,10 @@
     <groupId>com.viglet.turing</groupId>
     <version>${revision}</version>
     <name>Turing Web Crawler - Sample Custom Connector</name>
-    <description>Turing Web Crawler  - Sample Custom Connector</description>
+    <description>Turing Web Crawler - Sample Custom Connector</description>
     <properties>
         <revision>0.3.9</revision>
-        <turing.version>d44df16fa6</turing.version>
+        <turing.version>9b886917b9</turing.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
