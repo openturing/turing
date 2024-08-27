@@ -30,6 +30,6 @@ public class TurAemExtContentTags implements TurAemExtAttributeInterface {
 
     public static Optional<TurAemContentTags> getTags(TurAemObject aemObject, TurAemSourceContext turAemSourceContext) {
         String url = turAemSourceContext.getUrl() + aemObject.getPath() + TAGS_JSON_EXTENSION;
-        return TurAemCommonsUtils.getResponseBody(url, turAemSourceContext, TurAemContentTags.class);
+        return TurAemCommonsUtils.getResponseBody(url, turAemSourceContext, TurAemContentTags.class, true);
     }
 }

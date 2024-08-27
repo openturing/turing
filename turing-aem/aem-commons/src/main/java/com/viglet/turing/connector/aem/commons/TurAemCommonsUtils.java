@@ -38,7 +38,13 @@ public class TurAemCommonsUtils {
         throw new IllegalStateException("Utility class");
     }
 
-    protected static final Map<String, String> responseHttpCache = new HashMap<>();
+    private static final int MAX_CACHE_SIZE = 1000;
+    private static final Map<String, String> responseHttpCache = new LinkedHashMap<>() {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > MAX_CACHE_SIZE;
+        }
+    };
     public static final String JCR_CONTENT = "jcr:content";
     public static final String JCR_TITLE = "jcr:title";
 
@@ -142,16 +148,19 @@ public class TurAemCommonsUtils {
         return getLocaleByPath(turAemSourceContext, aemObject.getPath());
     }
 
-    public static Optional<TurAemObject> getAemObject(String url, TurAemSourceContext turAemSourceContext) {
-        return getInfinityJson(url, turAemSourceContext).map(infinityJson -> new TurAemObject(url, infinityJson));
+    public static Optional<TurAemObject> getAemObject(String url, TurAemSourceContext turAemSourceContext,
+                                                      boolean cached) {
+        return getInfinityJson(url, turAemSourceContext, cached).map(infinityJson -> new TurAemObject(url, infinityJson));
     }
 
-    public static Optional<JSONObject> getInfinityJson(String url, TurAemSourceContext turAemSourceContext) {
+    public static Optional<JSONObject> getInfinityJson(String url, TurAemSourceContext turAemSourceContext,
+                                                       boolean cached) {
         String infinityJsonUrl = String.format(url.endsWith(TurAemAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
                 turAemSourceContext.getUrl(), url);
-        return getResponseBody(infinityJsonUrl, turAemSourceContext).map(responseBody -> {
+        return getResponseBody(infinityJsonUrl, turAemSourceContext, cached).map(responseBody -> {
             if (isResponseBodyJSONArray(responseBody) && !url.endsWith(TurAemAttrProcess.JSON)) {
-                return getInfinityJson(new JSONArray(responseBody).toList().getFirst().toString(), turAemSourceContext);
+                return getInfinityJson(new JSONArray(responseBody).toList().getFirst().toString(),
+                        turAemSourceContext, cached);
             } else if (isResponseBodyJSONObject(responseBody)) {
                 return Optional.of(new JSONObject(responseBody));
             }
@@ -190,8 +199,9 @@ public class TurAemCommonsUtils {
         return responseBody.startsWith("{");
     }
 
-    public static <T> Optional<T> getResponseBody(String url, TurAemSourceContext turAemSourceContext, Class<T> clazz) {
-        return getResponseBody(url, turAemSourceContext).map(json ->
+    public static <T> Optional<T> getResponseBody(String url, TurAemSourceContext turAemSourceContext, Class<T> clazz,
+                                                  boolean cached) {
+        return getResponseBody(url, turAemSourceContext, cached).map(json ->
         {
             try {
                 return new ObjectMapper()
@@ -204,19 +214,21 @@ public class TurAemCommonsUtils {
         });
     }
 
-    public static Optional<String> getResponseBody(String url, TurAemSourceContext turAemSourceContext) {
+    public static Optional<String> getResponseBody(String url, TurAemSourceContext turAemSourceContext, boolean cached) {
         if (log.isDebugEnabled()) {
             responseHttpCache.forEach((k, v) -> log.debug("Cached Item Url: {}", k));
         }
-        if (responseHttpCache.containsKey(url)) {
+        if (responseHttpCache.containsKey(url) && cached) {
             log.info("Cached Response {}", url);
             return Optional.of(responseHttpCache.get(url));
         } else {
-            return getResponseBodyNoCache(url, turAemSourceContext);
+            return getResponseBodyNoCache(url, turAemSourceContext, cached);
         }
     }
 
-    private static @NotNull Optional<String> getResponseBodyNoCache(String url, TurAemSourceContext turAemSourceContext) {
+    private static @NotNull Optional<String> getResponseBodyNoCache(String url,
+                                                                    TurAemSourceContext turAemSourceContext,
+                                                                    boolean cached) {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create()
                 .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.AUTHORIZATION,
                         basicAuth(turAemSourceContext.getUsername(), turAemSourceContext.getPassword()))))
@@ -229,7 +241,9 @@ public class TurAemCommonsUtils {
             });
             if (TurCommonsUtils.isJSONValid(json)) {
                 log.debug("Valid JSON - {}", url);
-                responseHttpCache.put(url, json);
+                if (cached) {
+                    responseHttpCache.put(url, json);
+                }
                 return Optional.ofNullable(json);
             }
             return Optional.empty();

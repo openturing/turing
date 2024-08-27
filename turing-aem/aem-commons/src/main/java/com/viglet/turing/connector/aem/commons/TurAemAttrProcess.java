@@ -132,7 +132,7 @@ public class TurAemAttrProcess {
                                                  String facetId) {
         return TurAemCommonsUtils
                 .getInfinityJson("/content/_cq_tags/%s".formatted(facetId),
-                        turAemSourceContext).map(infinityJson ->
+                        turAemSourceContext, true).map(infinityJson ->
                         getTurSNAttributeSpec(facetId, getTagLabels(infinityJson))).orElse(new TurSNAttributeSpec());
     }
 
@@ -140,7 +140,7 @@ public class TurAemAttrProcess {
                                                String facet, String value) {
         return TurAemCommonsUtils
                 .getInfinityJson("/content/_cq_tags/%s/%s".formatted(facet, value),
-                        turAemSourceContext).map(infinityJson -> {
+                        turAemSourceContext, true).map(infinityJson -> {
                     Locale locale = TurAemCommonsUtils.getLocaleFromContext(turAemSourceContext, context);
                     String titleLocale = locale.toString().toLowerCase();
                     String titleLanguage = locale.getLanguage().toLowerCase();

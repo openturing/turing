@@ -207,7 +207,7 @@ public class TurAemIndexerTool {
     }
 
     private void byContentType(TurAemSourceContext turAemSourceContext) {
-        TurAemCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext)
+        TurAemCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext, false)
                 .ifPresent(infinityJson -> {
                     long start = System.currentTimeMillis();
                     getSiteName(turAemSourceContext, infinityJson);
@@ -230,9 +230,9 @@ public class TurAemIndexerTool {
         jCommander.getConsole().println("Processing a total of %d GUID Strings".formatted(guids.size()));
         guids.stream().filter(guid -> !StringUtils.isEmpty(guid)).forEach(guid -> {
             long start = System.currentTimeMillis();
-            TurAemCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext)
+            TurAemCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext, false)
                     .ifPresent(infinityJson -> getSiteName(turAemSourceContext, infinityJson));
-            TurAemCommonsUtils.getInfinityJson(guid, turAemSourceContext)
+            TurAemCommonsUtils.getInfinityJson(guid, turAemSourceContext, false)
                     .ifPresent(infinityJson -> {
                         turAemSourceContext.setContentType(infinityJson.getString(JCR_PRIMARY_TYPE));
                         getNodeFromJson(guid, infinityJson, turAemSourceContext, start);
@@ -283,7 +283,7 @@ public class TurAemIndexerTool {
                     || TurAemCommonsUtils.checkIfFileHasNotImageExtension(key))) {
                 String nodePathChild = "%s/%s".formatted(nodePath, key);
                 if (!isOnce(turAemSourceContext) || !isOnceConfig(nodePathChild)) {
-                    TurAemCommonsUtils.getInfinityJson(nodePathChild, turAemSourceContext)
+                    TurAemCommonsUtils.getInfinityJson(nodePathChild, turAemSourceContext, false)
                             .ifPresent(infinityJson ->
                                     getNodeFromJson(nodePathChild, infinityJson, turAemSourceContext, start));
                 }
