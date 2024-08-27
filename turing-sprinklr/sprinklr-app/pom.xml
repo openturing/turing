@@ -86,7 +86,7 @@
         </dependencies>
     </dependencyManagement>
     <build>
-        <finalName>turing-web-crawler</finalName>
+        <finalName>turing-sprinklr</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>

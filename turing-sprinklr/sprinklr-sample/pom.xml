@@ -10,7 +10,7 @@
     <description>Turing Sprinklr - Sample Custom Connector</description>
     <properties>
         <revision>0.3.9</revision>
-        <turing.version>d44df16fa6</turing.version>
+        <turing.version>8a5a147da9</turing.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
@@ -25,7 +25,7 @@
     </dependencies>
 
     <build>
-        <finalName>wc-sample</finalName>
+        <finalName>sprinklr-sample</finalName>
         <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
             <plugins>
                 <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
