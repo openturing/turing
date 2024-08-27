@@ -187,7 +187,7 @@ public class TurAemIndexerTool {
     }
 
     private void jsonByContentType() {
-        TurAemCommonsUtils.getInfinityJson(getRootPath(), this.turAemSourceContext)
+        TurAemCommonsUtils.getInfinityJson(getRootPath(), this.turAemSourceContext, false)
                 .ifPresent(infinityJson -> {
                     TurAemCommonsUtils.getSiteName(infinityJson).ifPresentOrElse(s -> this.siteName = s,
                             () -> log.error("No site name the {} root path ({})", getRootPath(), getGroup()));
@@ -201,7 +201,7 @@ public class TurAemIndexerTool {
     private void processQueue() {
         while (!remainingLinks.isEmpty()) {
             String url = remainingLinks.poll();
-            TurAemCommonsUtils.getInfinityJson(url, this.turAemSourceContext)
+            TurAemCommonsUtils.getInfinityJson(url, this.turAemSourceContext, false)
                     .ifPresent(infinityJson -> {
                         turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(getContentType())
                                 .ifPresent(model ->
