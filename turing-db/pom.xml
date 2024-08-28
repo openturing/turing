@@ -39,6 +39,7 @@
             <modules>
                 <module>db-commons</module>
                 <module>db-app</module>
+                <module>db-sample</module>
             </modules>
         </profile>
         <profile>

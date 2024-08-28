@@ -23,11 +23,6 @@
     </dependency>
     <dependency>
       <groupId>com.viglet.turing</groupId>
-      <artifactId>sprinklr-java-sdk</artifactId>
-      <version>${revision}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.viglet.turing</groupId>
       <artifactId>turing-java-sdk</artifactId>
     </dependency>
   </dependencies>

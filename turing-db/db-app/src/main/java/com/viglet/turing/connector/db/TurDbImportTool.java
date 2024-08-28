@@ -16,15 +16,17 @@
  */
 package com.viglet.turing.connector.db;
 
+import ch.qos.logback.classic.Level;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.viglet.turing.client.sn.TurSNServer;
+import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
-import com.viglet.turing.connector.sprinklr.ext.TurDbExtCustomImpl;
+import com.viglet.turing.connector.db.ext.TurDbExtCustomImpl;
 import com.viglet.turing.connector.db.format.TurDbFormatValue;
 import com.viglet.turing.filesystem.commons.TurFileAttributes;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
@@ -33,6 +35,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.LocaleUtils;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -69,7 +72,8 @@ public class TurDbImportTool {
 
     @Parameter(names = {"--max-content-size"}, description = "Maximum size that content can be indexed (megabytes)")
     private long maxContentMegaByteSize = 5;
-
+    @Parameter(names = "--debug", description = "Change the log level to debug", help = true)
+    private boolean debug = false;
     @Parameter(names = {"--driver", "-d"}, description = "Manually specify JDBC driver class to use", required = true)
     private String driver = null;
 
@@ -89,11 +93,8 @@ public class TurDbImportTool {
     @Parameter(names = {"--server", "-s"}, description = "Viglet Turing Server")
     private String turingServer = "http://localhost:2700";
 
-    @Parameter(names = {"--username", "-u"}, description = "Set authentication Turing username")
-    private String turUsername = null;
-
-    @Parameter(names = {"--password", "-p"}, description = "Set authentication Turing password")
-    private String turPassword = null;
+    @Parameter(names = {"--api-key", "-a"}, description = "Set Turing API Key")
+    private String turApiKey = null;
 
     @Parameter(names = {"--db-username"}, description = "Set authentication database username")
     private String dbUsername = null;
@@ -158,6 +159,10 @@ public class TurDbImportTool {
         JCommander jCommander = JCommander.newBuilder().addObject(main).build();
         try {
             jCommander.parse(argv);
+            if (main.debug) {
+                ((ch.qos.logback.classic.Logger) LoggerFactory.
+                        getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)).setLevel(Level.DEBUG);
+            }
             if (main.help) {
                 jCommander.usage();
                 return;
@@ -234,7 +239,7 @@ public class TurDbImportTool {
         TurSNServer turSNServer;
         try {
             turSNServer = new TurSNServer(URI.create(turingServer).toURL(), this.site, LocaleUtils.toLocale(this.locale),
-                    new TurUsernamePasswordCredentials(turUsername, turPassword));
+                    new TurApiKeyCredentials(turApiKey));
 
             turSNServer.setProviderName(PROVIDER_ATTRIBUTE_VALUE);
             return turSNServer;
