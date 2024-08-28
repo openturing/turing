@@ -45,6 +45,7 @@ import java.util.List;
 @Tag(name = "User", description = "User API")
 public class TurUserAPI {
 
+    public static final String ADMIN = "admin";
     private final PasswordEncoder passwordEncoder;
     private final TurUserRepository turUserRepository;
     private final TurGroupRepository turGroupRepository;
@@ -131,8 +132,13 @@ public class TurUserAPI {
     @Transactional
     @DeleteMapping("/{username}")
     public boolean turUserDelete(@PathVariable String username) {
-        turUserRepository.deleteByUsername(username);
-        return true;
+        if (!username.equalsIgnoreCase(ADMIN)) {
+            turUserRepository.deleteByUsername(username);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     @PostMapping

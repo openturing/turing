@@ -18,20 +18,6 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>1.5.6</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.turing</groupId>
-                <artifactId>turing-java-sdk</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <profiles>
         <profile>
             <id>default</id>
@@ -42,8 +28,9 @@
             </activation>
             <modules>
                 <module>aem-commons</module>
-                <module>aem-indexer</module>
+                <module>aem-cli-indexer</module>
                 <module>aem-web-indexer</module>
+                <module>aem-cli-sample</module>
             </modules>
         </profile>
         <profile>

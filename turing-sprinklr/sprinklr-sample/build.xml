@@ -1,0 +1,14 @@
+<project>
+    <target name="prod">
+        <exec executable="mvnw.cmd">
+            <arg value="package"/>
+        </exec>
+        <delete dir="dist/prod"/>
+        <mkdir dir="dist/prod/libs"/>
+        <copy todir="dist/prod/">
+            <fileset dir="scripts/prod/"/>
+        </copy>
+        <copy file="target/sprinklr-sample.jar" todir="dist/prod/libs/"/>
+        <get src="https://github.com/openturing/turing/releases/download/v0.3.9/turing-sprinklr.jar" dest="dist/prod/"/>
+    </target>
+</project>

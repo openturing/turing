@@ -52,14 +52,6 @@ public class TurCmsContentDefinitionProcess {
 
     }
 
-    public TurCmsContentDefinitionProcess(IHandlerConfiguration config, String json) {
-        this.config = config;
-        this.workingDirectory = null;
-        this.jsonFile = null;
-        this.json = json;
-
-    }
-
     public TurCmsContentDefinitionProcess(String json) {
         this.config = null;
         this.workingDirectory = null;
@@ -75,28 +67,31 @@ public class TurCmsContentDefinitionProcess {
 
     private Optional<TurCmsModel> findByNameFromModel(final List<TurCmsModel> turCmsModels,
                                                       final String name) {
-        return turCmsModels.stream().filter(o ->  o != null && o.getType().equals(name)).findFirst();
+        return turCmsModels != null ?
+                turCmsModels.stream().filter(o -> o != null && o.getType().equals(name)).findFirst() :
+                Optional.empty();
     }
     public List<TurSNAttributeSpec> getTargetAttrDefinitions() {
-        return getMappingDefinitions().getTargetAttrDefinitions();
+        return getMappingDefinitions().map(TurCmsContentMapping::getTargetAttrDefinitions).orElse(new ArrayList<>());
+
     }
     public String getDeltaClassName() {
-        return getMappingDefinitions().getDeltaClassName();
+        return getMappingDefinitions().map(TurCmsContentMapping::getDeltaClassName).orElse(null);
     }
     public Optional<TurCmsModel> findByNameFromModelWithDefinition(String modelName) {
-            TurCmsContentMapping turCmsContentMapping = getMappingDefinitions();
-            return findByNameFromModel(turCmsContentMapping.getModels(), modelName)
-                    .map(model -> {
-                        List<TurCmsTargetAttr> turCmsTargetAttrs =
-                                new ArrayList<>(addTargetAttrFromDefinition(model, turCmsContentMapping));
-                        model.getTargetAttrs().forEach(turCmsTargetAttr -> {
-                            if (turCmsTargetAttrs.stream()
-                                    .noneMatch(o -> o.getName().equals(turCmsTargetAttr.getName())))
-                                turCmsTargetAttrs.add(turCmsTargetAttr);
-                        });
-                        model.setTargetAttrs(turCmsTargetAttrs);
-                return model;
-            });
+          return getMappingDefinitions()
+                  .flatMap(turCmsContentMapping -> findByNameFromModel(turCmsContentMapping.getModels(), modelName)
+                  .map(model -> {
+                      List<TurCmsTargetAttr> turCmsTargetAttrs =
+                              new ArrayList<>(addTargetAttrFromDefinition(model, turCmsContentMapping));
+                      model.getTargetAttrs().forEach(turCmsTargetAttr -> {
+                          if (turCmsTargetAttrs.stream()
+                                  .noneMatch(o -> o.getName().equals(turCmsTargetAttr.getName())))
+                              turCmsTargetAttrs.add(turCmsTargetAttr);
+                      });
+                      model.setTargetAttrs(turCmsTargetAttrs);
+                      return model;
+                  }));
     }
 
     private List<TurCmsTargetAttr> addTargetAttrFromDefinition(TurCmsModel model,
@@ -151,27 +146,27 @@ public class TurCmsContentDefinitionProcess {
 
     }
 
-    public TurCmsContentMapping getMappingDefinitions() {
+    public Optional<TurCmsContentMapping> getMappingDefinitions() {
         return Optional.ofNullable(json).map(TurCmsContentDefinitionProcess::readJsonMapping)
-                .orElse(Optional.ofNullable(jsonFile).map(TurCmsContentDefinitionProcess::readJsonMapping)
-                        .orElse(new TurCmsContentMapping()));
+                .orElse(Optional.ofNullable(jsonFile)
+                        .flatMap(TurCmsContentDefinitionProcess::readJsonMapping));
     }
 
-    private static TurCmsContentMapping readJsonMapping(Path path) {
+    private static Optional<TurCmsContentMapping> readJsonMapping(Path path) {
         try {
-            return new ObjectMapper().readValue(path.toFile(), TurCmsContentMapping.class);
+            return Optional.of(new ObjectMapper().readValue(path.toFile(), TurCmsContentMapping.class));
         } catch (IOException e) {
             log.error("Can not read mapping file, because is not valid: {}", path.toFile().getAbsolutePath(), e);
-            return new TurCmsContentMapping();
+            return Optional.empty();
         }
     }
 
-    private static TurCmsContentMapping readJsonMapping(String json) {
+    private static Optional<TurCmsContentMapping> readJsonMapping(String json) {
         try {
-            return new ObjectMapper().readValue(json, TurCmsContentMapping.class);
+            return Optional.of(new ObjectMapper().readValue(json, TurCmsContentMapping.class));
         } catch (IOException e) {
             log.error("Can not read mapping,  because is not valid.", e);
-            return new TurCmsContentMapping();
+            return Optional.empty();
         }
     }
 

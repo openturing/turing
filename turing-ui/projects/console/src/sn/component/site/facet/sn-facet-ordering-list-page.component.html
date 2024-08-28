@@ -2,38 +2,52 @@
   <div class="Subhead">
     <div class="Subhead-heading Subhead-heading--large"><span octicon="filter" [size]="24" class="mr-1"></span> Facet Ordering
     </div>
+    <div class="Subhead-actions">
+      <button (click)="saveOrdering(snFacetedFields)" type="button" class="btn btn-primary">Save facet ordering</button>
+    </div>
     <div class="Subhead-description">Order the facets of the search.</div>
   </div>
   <div *ngIf="snFacetedFields.length < 1" class="blankslate">
-    <span octicon="number" [size]="48" class="mb-3"></span>
-    <h3 class="mb-1">You don’t seem to have any result ranking.</h3>
-    <p>Create a new result ranking to define relevance rules.</p>
-    <a [routerLink]="['/sn/site', getId(), 'ranking-expression', 'new']" class="btn btn-primary my-3" type="button">New
-      result ranking</a>
+    <span octicon="filter" [size]="48" class="mb-3"></span>
+    <h3 class="mb-1">You don’t seem to have any field facet.</h3>
+    <p>Configure the field as facet to show heres a new result ranking to define relevance rules.</p>
+    <a [routerLink]="['/sn/site', getId(), 'field', 'list']" class="btn btn-primary my-3" type="button">Configure fields</a>
   </div>
+
+
+
+
+
   <div *ngIf="snFacetedFields.length >= 1">
-    <div class="Box">
+    <div class="Box" *ngIf="setOrdering(snFacetedFields)">
       <div class="Box-header">
         <div class="d-table" style="width: 100%;">
-          <div class="d-table-cell col-2">
+          <div class="d-table-cell col-4">
             Position
           </div>
-          <div class="d-table-cell col-10">
-            Facet
+          <div class="d-table-cell col-4">
+            Facet Name
+          </div>
+          <div class="d-table-cell col-4">
+            Field Name
           </div>
         </div>
       </div>
-      <div>
-        <div *ngFor="let snSiteField of snFacetedFields" data-view-component="true"
-             class="Box-body">
-          <div class="d-table" style="width: 100%;">
-            <div class="d-table-cell col-2">
-              1
+      <div  cdkDropList
+            [cdkDropListData]="snFacetedFields"
+            (cdkDropListDropped)="drop($event)">
+        <div *ngFor="let snSiteField of snFacetedFields; let i = index" data-view-component="true"
+             class="Box-body" cdkDrag style="padding-left: 8px;">
+          <div  class="d-table" style="width: 100%;">
+            <div class="d-table-cell col-4">
+              <span octicon="grabber" [size]="20" class="mr-3" style="color: var(--fgColor-muted);"></span>
+              {{ snSiteField.facetPosition }}
             </div>
-            <div class="d-table-cell col-10">
-              <a [routerLink]="['/sn/site', getId(), 'field', snSiteField.id ]">
-                {{ snSiteField.name }}
-              </a>
+            <div class="d-table-cell col-4">
+                {{snSiteField.facetName}}
+            </div>
+            <div class="d-table-cell col-4">
+                {{snSiteField.name}}
             </div>
           </div>
         </div>

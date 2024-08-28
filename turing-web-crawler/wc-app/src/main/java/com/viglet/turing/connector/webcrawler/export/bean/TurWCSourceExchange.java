@@ -28,6 +28,4 @@ public class TurWCSourceExchange {
     private Collection<String> notAllowExtensions = new HashSet<>();
     @Builder.Default
     private Collection<TurWCAttribExchange> attributes = new HashSet<>();
-
-
 }

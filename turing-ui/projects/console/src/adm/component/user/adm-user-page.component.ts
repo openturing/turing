@@ -30,7 +30,6 @@ export class TurAdmUserPageComponent implements OnInit {
     this.newObject = ( this.username != null && this.username.toLowerCase() === 'new');
 
     this.turAdmUser = this.newObject ? this.turAdmUserService.getStructure() : this.turAdmUserService.get(this.username);
-    console.log(this.activatedRoute.snapshot.data.user.username);
   }
 
   isNewObject(): boolean {

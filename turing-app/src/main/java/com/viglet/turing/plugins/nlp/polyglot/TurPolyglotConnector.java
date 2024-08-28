@@ -24,6 +24,7 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.nlp.TurNLPEntityRequest;
 import com.viglet.turing.nlp.TurNLPRequest;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
+import com.viglet.turing.plugins.nlp.utils.TurNLPPluginUtils;
 import com.viglet.turing.solr.TurSolrField;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -34,6 +35,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.http.MediaType;
@@ -102,15 +104,7 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 		URL serverURL = getServerURL(turNLPRequest);
 		if (serverURL != null) {
 			JSONObject jsonBody = prepareJSONResponse(turNLPRequest, atributeValue);
-
-			HttpPost httpPost = new HttpPost(serverURL.toString());
-
-			httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-			httpPost.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-			httpPost.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
-			StringEntity stringEntity = new StringEntity(jsonBody.toString(), StandardCharsets.UTF_8);
-			httpPost.setEntity(stringEntity);
-			return httpPost;
+			return TurNLPPluginUtils.getHttpPost(serverURL, jsonBody);
 		} else {
 			return null;
 		}
@@ -151,18 +145,6 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 		return null;
 	}
 
-	private void handleEntityPolyglot(String entityType, String entity, Map<String, List<String>> entityList) {
-		if (entityList.containsKey(entityType)) {
-			if (!entityList.get(entityType).contains(entity) && entity.trim().length() > 1) {
-				entityList.get(entityType).add(entity.trim());
-			}
-		} else {
-			List<String> valueList = new ArrayList<>();
-			valueList.add(entity.trim());
-			entityList.put(entityType, valueList);
-		}
-
-	}
 
 	private String[] createSentences(Object attrValue) {
 		return cleanFullText(attrValue).split("\\.");
@@ -204,7 +186,7 @@ public class TurPolyglotConnector implements TurNLPPlugin {
 				add = false;
 
 			if (add)
-				this.handleEntityPolyglot(label, term, entityList);
+				TurNLPPluginUtils.handleEntity(label, term, entityList);
 		}
 
 	}

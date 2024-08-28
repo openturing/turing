@@ -1,0 +1,311 @@
+{
+  "targetAttrDefinitions": [
+    {
+      "name": "id",
+      "type": "TEXT",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Id",
+      "facet": false,
+      "facetName": {
+        "default": "Ids"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtContentId"
+    },
+    {
+      "name": "title",
+      "type": "TEXT",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Title",
+      "facet": false,
+      "facetName": {
+        "default": "Titles",
+        "pt_BR": "Títulos",
+        "en_US": "Titles"
+      }
+    },
+    {
+      "name": "tags",
+      "type": "STRING",
+      "mandatory": true,
+      "multiValued": true,
+      "description": "Tags",
+      "facet": true,
+      "facetName": {
+        "default": "Tags"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtContentTags"
+    },
+    {
+      "name": "type",
+      "type": "STRING",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Content Type",
+      "facet": false,
+      "facetName": {
+        "default": "Content Types"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtTypeName"
+    },
+    {
+      "name": "publication_date",
+      "type": "DATE",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Publication Date",
+      "facet": false,
+      "facetName": {
+        "default": "Publication Dates"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtCreationDate"
+    },
+    {
+      "name": "modification_date",
+      "type": "DATE",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Modification Date",
+      "facet": false,
+      "facetName": {
+        "default": "Modification Dates"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtModificationDate"
+    },
+    {
+      "name": "site",
+      "type": "STRING",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "Site Name",
+      "facet": false,
+      "facetName": {
+        "default": "Sites"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtSiteName"
+    },
+    {
+      "name": "text",
+      "type": "TEXT",
+      "multiValued": false,
+      "description": "Generic Text",
+      "facet": false,
+      "facetName": {
+        "default": "Texts"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtHtml2Text"
+    },
+    {
+      "name": "abstract",
+      "type": "TEXT",
+      "multiValued": false,
+      "description": "Short resume",
+      "facet": false,
+      "facetName": {
+        "default": "Abstracts"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtHtml2Text"
+    },
+    {
+      "name": "description",
+      "type": "TEXT",
+      "multiValued": false,
+      "description": "Description",
+      "facet": false,
+      "facetName": {
+        "default": "Descriptions"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtHtml2Text"
+    },
+    {
+      "name": "url",
+      "type": "STRING",
+      "mandatory": true,
+      "multiValued": false,
+      "description": "URL",
+      "facet": false,
+      "facetName": {
+        "default": "URLs"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtContentUrl"
+    },
+    {
+      "name": "source_apps",
+      "type": "STRING",
+      "mandatory": true,
+      "multiValued": true,
+      "description": "Source Apps",
+      "facet": true,
+      "facetName": {
+        "default": "Source Apps"
+      },
+      "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtSourceApps"
+    },
+    {
+      "name": "templateName",
+      "type": "STRING",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Template Name",
+      "facet": true,
+      "facetName": {
+        "default": "Template Names"
+      }
+    },
+    {
+      "name": "fragmentPath",
+      "type": "STRING",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Fragment Path",
+      "facet": false,
+      "facetName": {
+        "default": "Fragment Paths"
+      }
+    },
+    {
+      "name": "date",
+      "type": "DATE",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Date",
+      "facet": false,
+      "facetName": {
+        "default": "Dates"
+      }
+    },
+    {
+      "name": "endDate",
+      "type": "DATE",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "End Date",
+      "facet": false,
+      "facetName": {
+        "default": "End Dates"
+      }
+    },
+    {
+      "name": "hour",
+      "type": "DATE",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Hour",
+      "facet": false,
+      "facetName": {
+        "default": "Hours"
+      }
+    },
+    {
+      "name": "endHour",
+      "type": "DATE",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "End Hour",
+      "facet": false,
+      "facetName": {
+        "default": "End Hours"
+      }
+    },
+    {
+      "name": "eventText",
+      "type": "STRING",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Event Text",
+      "facet": false,
+      "facetName": {
+        "default": "Event Texts"
+      }
+    },
+    {
+      "name": "displayDate",
+      "type": "DATE",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Display Date",
+      "facet": false,
+      "facetName": {
+        "default": "Display Dates"
+      }
+    },
+    {
+      "name": "backgroundImage",
+      "type": "STRING",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Background Image",
+      "facet": false,
+      "facetName": {
+        "default": "Background Images"
+      }
+    },
+    {
+      "name": "backgroundImageColor",
+      "type": "STRING",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Background Image Color",
+      "facet": false,
+      "facetName": {
+        "default": "Background Image Colors"
+      }
+    },
+    {
+      "name": "richText",
+      "type": "TEXT",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "RichText",
+      "facet": false,
+      "facetName": {
+        "default": "RichText"
+      }
+    },
+    {
+      "name": "image",
+      "type": "STRING",
+      "mandatory": false,
+      "multiValued": false,
+      "description": "Image",
+      "facet": true,
+      "facetName": {
+        "default": "Images"
+      }
+    }
+  ],
+  "deltaClassName": "com.viglet.turing.connector.aem.sample.ext.TurAemExtSampleDeltaDate",
+  "models": [
+    {
+      "type": "cq:Page",
+      "className": "com.viglet.turing.connector.aem.sample.ext.TurAemExtSampleModelJson",
+      "targetAttrs": [
+        {
+          "name": "title",
+          "sourceAttrs": [
+            {
+              "name": "jcr:title"
+            }
+          ]
+        },
+        {
+          "name": "tags",
+          "sourceAttrs": [
+            {
+              "name": "cq:tags"
+            }
+          ]
+        },
+        {
+          "name": "text",
+          "sourceAttrs": [
+            {
+              "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtPageComponents"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

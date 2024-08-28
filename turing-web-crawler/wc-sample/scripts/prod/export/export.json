@@ -1,0 +1,51 @@
+{
+  "sources": [
+    {
+      "id": "c82ef7b6-cfcd-4e11-8af4-dc9f7e61c920",
+      "locale": "en_US",
+      "url": "https://openviglet.github.io/turing",
+      "turSNSites": [
+        "sample"
+      ],
+      "allowUrls": [
+        "/"
+      ],
+      "notAllowUrls": [],
+      "notAllowExtensions": [],
+      "attributes": [
+        {
+          "name": "site",
+          "text": "Turing Site"
+        },
+        {
+          "name": "id",
+          "className": "com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtId"
+        },
+        {
+          "name": "title",
+          "className": "com.viglet.turing.connector.webcrawler.sample.ext.TurWCExtSampleTitle"
+        },
+        {
+          "name": "publication_date",
+          "className": "com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtDate"
+        },
+        {
+          "name": "modification_date",
+          "className": "com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtDate"
+        },
+        {
+          "name": "abstract",
+          "className": "com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtDescription"
+        },
+        {
+          "name": "source_apps",
+          "text": "WEB-CRAWLER"
+        },
+        {
+          "name": "url",
+          "className": "com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtUrl"
+        }
+      ]
+    }
+  ]
+}

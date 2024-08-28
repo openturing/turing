@@ -25,6 +25,4 @@ public class TurAemContentTag {
     private Date pubDate;
     private String publisher;
     private TurAemReplication replication;
-
-
 }

@@ -29,7 +29,7 @@ import java.util.List;
 public interface TurNLPVendorEntityRepository extends JpaRepository<TurNLPVendorEntity, String> {
 
 	List<TurNLPVendorEntity> findByTurNLPVendor(TurNLPVendor turNLPVendor);
-	
+	List<TurNLPVendorEntity> findByTurNLPVendorAndLanguage(TurNLPVendor turNLPVendor, String language);
 	List<TurNLPVendorEntity> findByTurNLPVendorAndTurNLPEntity_internalNameIn(TurNLPVendor turNLPVendor, List<String> entities);
-	TurNLPVendorEntity findByTurNLPVendorAndTurNLPEntity_internalNameAndLanguage(TurNLPVendor turNLPVendor, String entityName, String language);
+	TurNLPVendorEntity findByTurNLPVendorAndNameAndLanguage(TurNLPVendor turNLPVendor, String entityName, String language);
 }

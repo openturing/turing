@@ -9,7 +9,7 @@ import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.client.sn.job.TurSNJobUtils;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
-import com.viglet.turing.connector.cms.beans.TurMultiValue;
+import com.viglet.turing.client.sn.TurMultiValue;
 import com.viglet.turing.connector.webcrawler.commons.TurWCContext;
 import com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtInterface;
 import com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtLocaleInterface;

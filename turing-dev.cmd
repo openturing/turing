@@ -1,1 +1,1 @@
-mvn -Dmaven.repo.local=D:\repo spring-boot:run -pl turing-app -Dskip.npm  -Dspring-boot.run.profiles=dev-ui
+mvn spring-boot:run -pl turing-app -Dskip.npm  -Dspring-boot.run.profiles=dev-ui

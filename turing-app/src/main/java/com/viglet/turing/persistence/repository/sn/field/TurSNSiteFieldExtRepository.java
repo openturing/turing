@@ -33,6 +33,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFieldExt, String> {
 
@@ -44,6 +45,10 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 
 	@Cacheable("turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabled(TurSNSite turSNSite, int facet, int enabled);
+
+	@Cacheable("findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition")
+	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition(TurSNSite turSNSite, int facet, int enabled);
+
 	@Cacheable("findByTurSNSiteAndFacetAndEnabledAndType")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabledAndType(TurSNSite turSNSite, int facet, int enabled,
 																	 TurSEFieldType type);
@@ -64,18 +69,22 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 
 	boolean existsByTurSNSiteAndName(TurSNSite turSNSite, String name);
 
-	@SuppressWarnings("unchecked")
+	@Query("SELECT MAX(t.facetPosition) FROM TurSNSiteFieldExt t")
+	Optional<Integer> findMaxFacetPosition();
+
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
-			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled", "findByTurSNSiteAndFacetAndEnabledAndType" }, allEntries = true)
+			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled", "findByTurSNSiteAndFacetAndEnabledAndType",
+			"findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition" }, allEntries = true)
 	@NotNull
 	TurSNSiteFieldExt save(@NotNull TurSNSiteFieldExt turSNSiteFieldExt);
 
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
-			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled", "findByTurSNSiteAndFacetAndEnabledAndType" }, allEntries = true)
+			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled", "findByTurSNSiteAndFacetAndEnabledAndType",
+			"findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition"}, allEntries = true)
 	void delete(@NotNull TurSNSiteFieldExt turSNSiteFieldExt);
 
 	@Modifying
@@ -91,6 +100,7 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 	@CacheEvict(value = { "turSNSiteFieldExtfindByTurSNSite", "turSNSiteFieldExtfindByTurSNSiteAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndHlAndEnabled",
 			"turSNSiteFieldExtfindByTurSNSiteAndMltAndEnabled", "turSNSiteFieldExtfindByTurSNSiteAndRequiredAndEnabled",
-			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled", "findByTurSNSiteAndFacetAndEnabledAndType" }, allEntries = true)
+			"turSNSiteFieldExtfindByTurSNSiteAndNlpAndEnabled", "findByTurSNSiteAndFacetAndEnabledAndType",
+			"findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition"}, allEntries = true)
 	void deleteByTurSNSiteAndSnType(TurSNSite turSNSite, TurSNFieldType turSNFieldType);
 }

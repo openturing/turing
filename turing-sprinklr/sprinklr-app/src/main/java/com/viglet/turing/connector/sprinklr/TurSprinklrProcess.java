@@ -10,7 +10,7 @@ import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.client.sn.job.TurSNJobUtils;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
-import com.viglet.turing.connector.cms.beans.TurMultiValue;
+import com.viglet.turing.client.sn.TurMultiValue;
 import com.viglet.turing.connector.sprinklr.commons.TurSprinklrContext;
 import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtInterface;
 import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtLocaleInterface;

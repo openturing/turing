@@ -51,6 +51,7 @@ import com.viglet.turing.se.result.TurSEGenericResults;
 import com.viglet.turing.se.result.TurSEGroup;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.sn.TurSNFieldProcess;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.sn.tr.TurSNTargetingRuleMethod;
@@ -126,6 +127,7 @@ public class TurSolr {
     private final TurSNRankingExpressionRepository turSNRankingExpressionRepository;
     private final TurSNRankingConditionRepository turSNRankingConditionRepository;
     private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNFieldProcess turSNFieldProcess;
 
     @Inject
     public TurSolr(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
@@ -133,13 +135,14 @@ public class TurSolr {
                    TurSNSiteFieldUtils turSNSiteFieldUtils,
                    TurSNRankingExpressionRepository turSNRankingExpressionRepository,
                    TurSNRankingConditionRepository turSNRankingConditionRepository,
-                   TurSNSiteRepository turSNSiteRepository) {
+                   TurSNSiteRepository turSNSiteRepository, TurSNFieldProcess turSNFieldProcess) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNTargetingRules = turSNTargetingRules;
         this.turSNSiteFieldUtils = turSNSiteFieldUtils;
         this.turSNRankingExpressionRepository = turSNRankingExpressionRepository;
         this.turSNRankingConditionRepository = turSNRankingConditionRepository;
         this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNFieldProcess = turSNFieldProcess;
     }
 
     public long getDocumentTotal(TurSolrInstance turSolrInstance) {
@@ -657,7 +660,16 @@ public class TurSolr {
             List<TurSEFacetResult> facetRangeResults = setFacetRanges(queryResponse);
             List<TurSEFacetResult> facetResults = new ArrayList<>(facetRangeResults);
             facetResults.addAll(setFacetFields(queryResponse, facetRangeResults));
-            turSEResults.setFacetResults(facetResults);
+            facetResults.forEach(facet -> {
+                turSNFieldProcess.getTurSNSiteFieldOrdering(turSNSite.getId())
+                        .ifPresent(fields ->
+                                fields.forEach(fieldExtension -> facetResults.stream()
+                                        .filter(facetResult -> fieldExtension.getFacetPosition() != null &&
+                                                facetResult.getFacet().equals(fieldExtension.getName())).findFirst()
+                                        .ifPresent(facetResult -> facetResult.setFacetPosition(fieldExtension.getFacetPosition()))));
+                turSEResults.setFacetResults(facetResults.stream().sorted(Comparator.comparing(TurSEFacetResult::getFacetPosition)).
+                        collect(Collectors.toList()));
+            });
         }
     }
 
@@ -1192,12 +1204,14 @@ public class TurSolr {
     private Map<String, List<String>> getHL(TurSNSite
                                                     turSNSite, List<TurSNSiteFieldExt> turSNSiteHlFieldExtList,
                                             QueryResponse queryResponse, SolrDocument document) {
-        return isHL(turSNSite, turSNSiteHlFieldExtList) ?
+        return isHL(turSNSite, turSNSiteHlFieldExtList) &&
+                queryResponse.getHighlighting() != null ?
                 queryResponse.getHighlighting().get(document.get(ID).toString()) : null;
     }
 
     private static boolean isHL(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteHlFieldExtList) {
-        return turSNSite.getHl() == 1 && !CollectionUtils.isEmpty(turSNSiteHlFieldExtList);
+        return turSNSite.getHl() == 1 &&
+                !CollectionUtils.isEmpty(turSNSiteHlFieldExtList);
     }
 
     private Map<String, TurSNSiteFieldExt> getFieldExtMap(TurSNSite turSNSite) {
@@ -1221,7 +1235,6 @@ public class TurSolr {
         return createTurSEResultFromDocument(fieldExtMap, document, hl);
     }
 
-    @SuppressWarnings("unchecked")
     private TurSEResult createTurSEResultFromDocument(Map<String, TurSNSiteFieldExt> fieldExtMap,
                                                       SolrDocument document,
                                                       Map<String, List<String>> hl) {

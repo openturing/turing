@@ -30,6 +30,7 @@ import java.util.Map;
 @Getter
 public class TurSEFacetResult {
 	private String facet;
+	private int facetPosition;
 	private Map<String, TurSEFacetResultAttr> turSEFacetResultAttr = new LinkedHashMap<>();
 
 	public void add(String attribute, TurSEFacetResultAttr turSEFacetResultAttr) {

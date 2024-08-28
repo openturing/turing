@@ -7,9 +7,6 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { FormsModule } from '@angular/forms';
 import { TurLoginModule } from './login/login.module';
-import { TurSignupModule } from './signup/signup.module';
-import { TurPasswordResetModule } from './password-reset/password-reset.module';
-import { TurSignupService } from './_services/signup.service';
 
 @NgModule({ declarations: [
         AppComponent
@@ -20,10 +17,7 @@ import { TurSignupService } from './_services/signup.service';
         OcticonsModule,
         MomentModule,
         FormsModule,
-        TurLoginModule,
-        TurSignupModule,
-        TurPasswordResetModule], providers: [
-        TurSignupService,
+        TurLoginModule], providers: [
         provideHttpClient(withInterceptorsFromDi())
     ] })
 export class AppModule { }

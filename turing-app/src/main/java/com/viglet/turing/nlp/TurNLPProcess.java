@@ -32,6 +32,7 @@ import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.plugins.nlp.TurNLPPlugin;
 import jakarta.servlet.ServletContext;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
@@ -86,17 +87,25 @@ public class TurNLPProcess {
         turNLPRequest.setData(data);
 
         List<TurNLPEntityRequest> turNLPEntitiesRequest = new ArrayList<>();
-        turNLPValidateEntities.forEach(entity ->
-                turNLPEntitiesRequest.add(new TurNLPEntityRequest(entity.getName(), entity.getTypes(), entity.getSubTypes(),
-                        turNLPVendorEntityRepository.findByTurNLPVendorAndTurNLPEntity_internalNameAndLanguage(
-                                turNLPInstance.getTurNLPVendor(), entity.getName(), "pt_BR"))));
+        turNLPValidateEntities.forEach(validateEntity ->
+                turNLPEntitiesRequest.add(validateEntityToRequest(turNLPInstance, validateEntity)));
         turNLPRequest.setEntities(turNLPEntitiesRequest);
         return Optional.of(turNLPRequest);
     }
 
-    private TurNLPResponse getNLPResponse(Optional<TurNLPRequest> turNLPRequestOptional) {
-        return turNLPRequestOptional.map(this::createEntityMapFromAttributeMapToBeProcessed)
-                .orElse(new TurNLPResponse());
+    @NotNull
+    private TurNLPEntityRequest validateEntityToRequest(TurNLPInstance turNLPInstance, TurNLPValidateEntity entity) {
+        return new TurNLPEntityRequest(entity.getName(),
+                entity.getTypes(),
+                entity.getSubTypes(),
+                turNLPVendorEntityRepository.findByTurNLPVendorAndNameAndLanguage(turNLPInstance.getTurNLPVendor()
+                        , entity.getName(), turNLPInstance.getLanguage())
+                );
+    }
+
+    private TurNLPResponse getNLPResponse(Optional<TurNLPRequest> turNLPRequest) {
+        return turNLPRequest.map(this::createEntityMapFromAttributeMapToBeProcessed)
+                .orElseGet(TurNLPResponse::new);
     }
 
     public TurNLPResponse processTextByNLP(TurNLPInstance turNLPInstance, String text) {
@@ -105,8 +114,12 @@ public class TurNLPProcess {
 
     private List<TurNLPValidateEntity> getEntitiesFromNLPVendor(TurNLPInstance turNLPInstance) {
         List<TurNLPValidateEntity> entities = new ArrayList<>();
-        turNLPVendorEntityRepository.findByTurNLPVendor(turNLPInstance.getTurNLPVendor())
-                .forEach(entity -> entities.add(new TurNLPValidateEntity(entity.getName())));
+        turNLPVendorEntityRepository.findByTurNLPVendorAndLanguage(turNLPInstance.getTurNLPVendor(),
+                        turNLPInstance.getLanguage())
+                .forEach(entity -> {
+                    log.debug("getEntitiesFromNLPVendor: {}", entity.getName());
+                    entities.add(new TurNLPValidateEntity(entity.getName()));
+    });
         return entities;
     }
 
