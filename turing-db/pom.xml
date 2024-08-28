@@ -28,11 +28,31 @@
     <packaging>pom</packaging>
     <name>Turing Database</name>
     <description>Turing Database</description>
-    <modules>
-        <module>db-commons</module>
-        <module>db-app</module>
-    </modules>
-
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <property>
+                    <name>!env.JITPACK</name>
+                </property>
+            </activation>
+            <modules>
+                <module>db-commons</module>
+                <module>db-app</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>jitpack</id>
+            <activation>
+                <property>
+                    <name>env.JITPACK</name>
+                </property>
+            </activation>
+            <modules>
+                <module>db-commons</module>
+            </modules>
+        </profile>
+    </profiles>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
