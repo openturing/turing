@@ -24,13 +24,13 @@
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>turing-filesystem</artifactId>
+    <artifactId>turing-db</artifactId>
     <packaging>pom</packaging>
-    <name>Turing Filesystem</name>
-    <description>Turing Filesystem</description>
+    <name>Turing Database</name>
+    <description>Turing Database</description>
     <modules>
-        <module>fs-commons</module>
-        <module>fs-connector</module>
+        <module>db-commons</module>
+        <module>db-app</module>
     </modules>
 
     <properties>

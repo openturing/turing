@@ -75,7 +75,7 @@
                 <module>turing-spring</module>
                 <module>turing-java-sdk</module>
                 <module>turing-filesystem</module>
-                <module>turing-jdbc</module>
+                <module>turing-db</module>
                 <module>turing-nutch</module>
                 <module>turing-cms</module>
                 <module>turing-aem</module>
