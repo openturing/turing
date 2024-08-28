@@ -32,10 +32,8 @@ public class TurDbExtCustomSample implements TurDbExtCustomImpl {
 	
 	@Override
 	public Map<String, Object> run(Connection connection, Map<String, Object> attributes) {
-	
 		if (attributes.containsKey(TITLE))
 			attributes.replace(TITLE, String.format("Sample: %s", attributes.get(TITLE)));
-
 		return attributes;
 	}
 
