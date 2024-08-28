@@ -1,4 +1,4 @@
-package com.viglet.turing.connector.sprinklr.commons;
+package com.viglet.turing.connector.sprinklr;
 
 import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrSearchResult;
 import com.viglet.turing.sprinklr.client.service.token.TurSprinklrAccessToken;

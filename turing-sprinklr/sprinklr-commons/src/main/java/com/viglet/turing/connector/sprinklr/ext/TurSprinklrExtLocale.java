@@ -1,6 +1,6 @@
-package com.viglet.turing.connector.sprinklr.commons.ext;
+package com.viglet.turing.connector.sprinklr.ext;
 
-import com.viglet.turing.connector.sprinklr.commons.TurSprinklrContext;
+import com.viglet.turing.connector.sprinklr.TurSprinklrContext;
 
 import java.util.Locale;
 

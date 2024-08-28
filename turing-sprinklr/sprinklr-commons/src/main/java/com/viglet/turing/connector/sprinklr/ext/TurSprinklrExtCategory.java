@@ -1,7 +1,7 @@
-package com.viglet.turing.connector.sprinklr.commons.ext;
+package com.viglet.turing.connector.sprinklr.ext;
 
 import com.viglet.turing.client.sn.TurMultiValue;
-import com.viglet.turing.connector.sprinklr.commons.TurSprinklrContext;
+import com.viglet.turing.connector.sprinklr.TurSprinklrContext;
 import com.viglet.turing.sprinklr.client.service.folder.TurSprinklrFolderService;
 import com.viglet.turing.sprinklr.client.service.token.TurSprinklrAccessToken;
 import lombok.extern.slf4j.Slf4j;

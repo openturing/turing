@@ -24,7 +24,7 @@ import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
-import com.viglet.turing.connector.db.ext.TurDbExtCustomImpl;
+import com.viglet.turing.connector.sprinklr.ext.TurDbExtCustomImpl;
 import com.viglet.turing.connector.db.format.TurDbFormatValue;
 import com.viglet.turing.filesystem.commons.TurFileAttributes;
 import com.viglet.turing.filesystem.commons.TurFileUtils;

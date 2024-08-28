@@ -1,7 +1,7 @@
-package com.viglet.turing.connector.sprinklr.commons.ext;
+package com.viglet.turing.connector.sprinklr.ext;
 
 import com.viglet.turing.client.sn.TurMultiValue;
-import com.viglet.turing.connector.sprinklr.commons.TurSprinklrContext;
+import com.viglet.turing.connector.sprinklr.TurSprinklrContext;
 
 import java.util.List;
 import java.util.Optional;
