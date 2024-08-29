@@ -13,12 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.viglet.turing.client.utils;
+
+import com.viglet.turing.client.auth.credentials.TurUsernamePasswordCredentials;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.core5.http.HttpHeaders;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
- * Provides the classes necessary to Turing Server Credentials.
+ * Client Utils
  * 
  * @author Alexandre Oliveira
  * 
- * @since 0.3.5
+ * @since 0.3.9
+ *
  */
-package com.viglet.turing.client.sn.credentials;
+public class TurClientUtils {
+
+	private TurClientUtils() {
+		throw new IllegalStateException("Utility class");
+	}
+
+	public static void authentication(HttpPost httpPost, String apiKey) {
+		if (apiKey != null) {
+			httpPost.setHeader("Key", apiKey);
+		}
+	}
+}

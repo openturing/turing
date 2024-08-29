@@ -15,15 +15,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.client.sn.credentials;
+package com.viglet.turing.client.auth.credentials;
+
+import lombok.Getter;
+import lombok.Setter;
 
 /**
- * Turing Server Credentials Interface.
+ * Turing Server Credentials.
  * 
  * @author Alexandre Oliveira
  * 
  * @since 0.3.5
  */
-public interface TurCredentials {
+@Setter
+@Getter
+public class TurUsernamePasswordCredentials implements TurCredentials {
+
+	private String username;
+
+	private String password;
+
+	public TurUsernamePasswordCredentials(String username, String password) {
+		super();
+		this.username = username;
+		this.password = password;
+	}
 
 }

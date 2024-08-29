@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.client.sn.credentials;
+package com.viglet.turing.client.auth.credentials;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -29,16 +29,13 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-public class TurUsernamePasswordCredentials implements TurCredentials {
+public class TurApiKeyCredentials implements TurCredentials {
 
-	private String username;
+	private String apiKey;
 
-	private String password;
-
-	public TurUsernamePasswordCredentials(String username, String password) {
+	public TurApiKeyCredentials(String apiKey) {
 		super();
-		this.username = username;
-		this.password = password;
+		this.apiKey = apiKey;
 	}
 
 }
