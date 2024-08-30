@@ -18,12 +18,23 @@ public class TurSprinklrService {
     private static final String KEY = "Key";
     private static final String BEARER = "Bearer";
 
+
+    /**
+     * Sends a request and return a POJO from the json response.
+     * @author Alexandre
+     * @param turSprinklrAccessToken Token for using Sprinklr API
+     * @param endpoint The endpoint of API
+     * @return Return de JSON response as a POJO from clazz type
+     */
     public static <R> R executeService(Class<R> clazz, TurSprinklrAccessToken turSprinklrAccessToken, String endpoint,
                                        RequestBody requestBody) {
         log.info("Post Request: {}", endpoint);
+
+        // Creates a client to send a request
         OkHttpClient client = new OkHttpClient().newBuilder()
                 .build();
         try {
+            // Creates a request
             Request request = new Request.Builder()
                     .url(endpoint)
                     .method(POST, requestBody)
@@ -32,6 +43,9 @@ public class TurSprinklrService {
                     .addHeader(CONTENT_TYPE, JSON.toString())
                     .addHeader(ACCEPT, JSON.toString())
                     .build();
+
+            log.debug(request.toString());
+            // Performs the request
             try (Response response = client.newCall(request).execute()) {
                 if (response.body() != null) {
                     String body = response.body().string();
