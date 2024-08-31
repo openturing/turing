@@ -41,13 +41,21 @@ public class TurSEVendorOnStartup {
 	public void createDefaultRows() {
 
 		if (turSEVendorRepository.findAll().isEmpty()) {
-			TurSEVendor turSEVendor = new TurSEVendor();
-			turSEVendor.setId("SOLR");
-			turSEVendor.setDescription("Apache Solr");
-			turSEVendor.setPlugin("");
-			turSEVendor.setTitle("Apache Solr");
-			turSEVendor.setWebsite("https://solr.apache.org");
-			turSEVendorRepository.save(turSEVendor);
+			TurSEVendor solr = new TurSEVendor();
+			solr.setId("SOLR");
+			solr.setDescription("Apache Solr");
+			solr.setPlugin("");
+			solr.setTitle("Apache Solr");
+			solr.setWebsite("https://solr.apache.org");
+			turSEVendorRepository.save(solr);
+
+			TurSEVendor lucene = new TurSEVendor();
+			lucene.setId("LUCENE");
+			lucene.setDescription("Apache Lucene");
+			lucene.setPlugin("");
+			lucene.setTitle("Apache Lucene");
+			lucene.setWebsite("https://lucene.apache.org");
+			turSEVendorRepository.save(lucene);
 		}
 	}
 }
