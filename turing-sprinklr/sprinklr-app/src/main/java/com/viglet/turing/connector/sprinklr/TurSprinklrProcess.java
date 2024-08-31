@@ -98,10 +98,8 @@ public class TurSprinklrProcess {
 
     public void getPage(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
                         TurSprinklrAccessToken token) {
-        if (searchResult.getStatus().equals("APPROVED") && searchResult.isPublicContent()) {
-            log.info("{}: {}", searchResult.getId(), turSprinklrSource.getTurSNSites());
-            addTurSNJobItems(turSprinklrSource, searchResult, token);
-        }
+        log.info("{}: {}", searchResult.getId(), turSprinklrSource.getTurSNSites());
+        addTurSNJobItems(turSprinklrSource, searchResult, token);
 
     }
 
