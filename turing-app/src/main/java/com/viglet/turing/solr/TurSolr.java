@@ -45,6 +45,8 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtReposi
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
 import com.viglet.turing.persistence.utils.TurPersistenceUtils;
+import com.viglet.turing.plugins.se.TurSeContext;
+import com.viglet.turing.plugins.se.TurSePlugin;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.result.TurSEGenericResults;
@@ -88,7 +90,7 @@ import java.util.stream.IntStream;
 @Slf4j
 @Component
 @Transactional
-public class TurSolr {
+public class TurSolr implements TurSePlugin {
     public static final String NEWEST = "newest";
     public static final String OLDEST = "oldest";
     public static final String ASC = "asc";
@@ -329,6 +331,40 @@ public class TurSolr {
         return turSESpellCheckResult;
     }
 
+    @Override
+    public Optional<TurSEResults> retrieveFromSn(TurSeContext seContext, TurSNSiteSearchContext context) {
+        return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
+            TurSESpellCheckResult turSESpellCheckResult = prepareQueryAutoCorrection(context,
+                    turSNSite, turSolrInstance);
+            TurSEParameters turSEParameters = context.getTurSEParameters();
+            SolrQuery query = new SolrQuery();
+            query.set(DEF_TYPE, EDISMAX);
+            query.set(Q_OP, AND);
+            setRows(turSNSite, turSEParameters);
+            setSortEntry(turSNSite, query, turSEParameters);
+            if (TurSNUtils.isAutoCorrectionEnabled(context, turSNSite)) {
+                query.setQuery(TurSNUtils.hasCorrectedText(turSESpellCheckResult) ?
+                        turSESpellCheckResult.getCorrectedText() : turSEParameters.getQuery());
+            } else {
+                query.setQuery(turSEParameters.getQuery());
+            }
+            if (!hasGroup(turSEParameters)) {
+                query.setRows(turSEParameters.getRows())
+                        .setStart(TurSolrUtils.firstRowPositionFromCurrentPage(turSEParameters));
+            }
+            prepareQueryFilterQuery(turSEParameters.getFilterQueries(), query, turSNSite);
+            prepareQueryTargetingRules(context.getTurSNSitePostParamsBean(), query);
+            if (hasGroup(turSEParameters)) {
+                prepareGroup(turSEParameters, query);
+            }
+            prepareBoostQuery(turSNSite, query);
+            return executeSolrQueryFromSN(turSolrInstance, turSNSite, turSEParameters, query,
+                    prepareQueryMLT(turSNSite, query),
+                    prepareQueryFacet(turSNSite, query, turSEParameters.getFilterQueries().getOperator()),
+                    prepareQueryHL(turSNSite, query),
+                    turSESpellCheckResult);
+        }).orElse(Optional.empty());
+    }
     public Optional<TurSEResults> retrieveSolrFromSN(TurSolrInstance turSolrInstance,
                                                      TurSNSiteSearchContext context) {
         return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
@@ -937,7 +973,6 @@ public class TurSolr {
         } else {
             return filterQueryMap;
         }
-
     }
 
     @NotNull
@@ -1046,7 +1081,6 @@ public class TurSolr {
         return !q.startsWith("(") && !value.startsWith("[") && !value.startsWith("(") && !value.endsWith("*");
 
     }
-
 
     private List<TurSNSiteFieldExt> prepareQueryMLT(TurSNSite turSNSite, SolrQuery query) {
         List<TurSNSiteFieldExt> turSNSiteMLTFieldExtList = turSNSiteFieldExtRepository
@@ -1273,4 +1307,5 @@ public class TurSolr {
                         !document.containsKey(requiredField))
                 .forEach(requiredField -> document.addField(requiredField, requiredFields.get(requiredField)));
     }
+
 }

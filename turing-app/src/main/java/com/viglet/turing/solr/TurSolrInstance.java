@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,57 +20,54 @@
  */
 package com.viglet.turing.solr;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.net.URL;
-
 import jakarta.annotation.PreDestroy;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
+
+import java.io.IOException;
+import java.net.URL;
+
 @Slf4j
 @Getter
 @Setter
 public class TurSolrInstance {
+    private CloseableHttpClient closeableHttpClient;
+    private SolrClient solrClient;
+    private String core;
+    private URL solrUrl;
 
-	private CloseableHttpClient closeableHttpClient;
-	private SolrClient solrClient;
-	private String core;
-	private URL solrUrl;
-	@PreDestroy
-	public void destroy() {
-		if (log.isDebugEnabled()) {
-			log.debug("TurSolrInstance destroyed");
-		}
-		this.close();
-	}
+    @PreDestroy
+    public void destroy() {
+        if (log.isDebugEnabled()) {
+            log.debug("TurSolrInstance destroyed");
+        }
+        this.close();
+    }
 
-	public void close() {
-		try {
-			if (solrClient != null) {
-				solrClient.close();
-				solrClient = null;
-			}
-			if (closeableHttpClient != null) {
-				closeableHttpClient.close();
-				closeableHttpClient = null;
-			}
-		} catch (IOException e) {
-			log.error(e.getMessage(), e);
-		}
-	}
+    public void close() {
+        try {
+            if (solrClient != null) {
+                solrClient.close();
+                solrClient = null;
+            }
+            if (closeableHttpClient != null) {
+                closeableHttpClient.close();
+                closeableHttpClient = null;
+            }
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
 
-	public TurSolrInstance(CloseableHttpClient closeableHttpClient, SolrClient solrClient, URL solrUrl,
-			String core) {
-		super();
-		this.closeableHttpClient = closeableHttpClient;
-		this.solrClient = solrClient;
-		this.solrUrl = solrUrl;
-		this.core = core;
-	}
+    public TurSolrInstance(CloseableHttpClient closeableHttpClient, SolrClient solrClient, URL solrUrl,
+                           String core) {
+        super();
+        this.closeableHttpClient = closeableHttpClient;
+        this.solrClient = solrClient;
+        this.solrUrl = solrUrl;
+        this.core = core;
+    }
 }
