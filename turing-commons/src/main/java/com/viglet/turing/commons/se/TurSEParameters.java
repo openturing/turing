@@ -2,10 +2,12 @@ package com.viglet.turing.commons.se;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.List;
 @Getter
 @Setter
+@ToString
 public class TurSEParameters {
 	private String query;
 	private TurSEFilterQueryParameters filterQueries;
@@ -28,4 +30,5 @@ public class TurSEParameters {
 		this.group = group;
 		this.autoCorrectionDisabled = autoCorrectionDisabled;
 	}
+
 }

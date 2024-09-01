@@ -44,7 +44,7 @@ public class TurSEVendorOnStartup {
 			TurSEVendor solr = new TurSEVendor();
 			solr.setId("SOLR");
 			solr.setDescription("Apache Solr");
-			solr.setPlugin("");
+			solr.setPlugin("com.viglet.turing.plugins.se.solr.TurSolrConnector");
 			solr.setTitle("Apache Solr");
 			solr.setWebsite("https://solr.apache.org");
 			turSEVendorRepository.save(solr);
@@ -52,7 +52,7 @@ public class TurSEVendorOnStartup {
 			TurSEVendor lucene = new TurSEVendor();
 			lucene.setId("LUCENE");
 			lucene.setDescription("Apache Lucene");
-			lucene.setPlugin("");
+			lucene.setPlugin("com.viglet.turing.plugins.se.lucene.TurLuceneConnector");
 			lucene.setTitle("Apache Lucene");
 			lucene.setWebsite("https://lucene.apache.org");
 			turSEVendorRepository.save(lucene);

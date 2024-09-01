@@ -8,8 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static com.viglet.turing.lucene.TurLuceneConstants.STORE_LUCENE;
 
@@ -26,10 +25,26 @@ public class TurLuceneUtils {
     }
 
     public static List<TurSEResult> documentsToSEResults(List<Document> documents) {
+        List<TurSEResult> turSEResults = new ArrayList<>();
          documents.forEach(document -> {
+             Map<String, Object> fields = new HashMap<>();
+
              document.getFields().forEach(field -> {
+                 if (fields.containsKey(field.name())) {
+                     if (fields.get(field.name()) instanceof List) {
+                         ((List<String>) fields.get(field.name())).add(document.get(field.name()));
+                     }
+                     else {
+                         fields.put(field.name(), List.of(document.get(field.name())));
+                     }
+                 }
+                 else {
+                     fields.put(field.name(), field.stringValue());
+                 }
              });
+             turSEResults.add(TurSEResult.builder()
+                     .fields(fields).build());
          });
-         return null;
+         return turSEResults;
     }
 }

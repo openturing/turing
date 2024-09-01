@@ -33,6 +33,7 @@ import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.plugins.se.TurSeCommons;
 import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,14 +58,16 @@ public class TurSNSiteSearchAPI {
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-
+    private final TurSeCommons turSeCommons;
     @Inject
     public TurSNSiteSearchAPI(TurSNSearchProcess turSNSearchProcess,
                               TurSNSiteRepository turSNSiteRepository,
-                              TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+                              TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                              TurSeCommons turSeCommons) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turSeCommons = turSeCommons;
     }
 
     @GetMapping
@@ -84,6 +87,7 @@ public class TurSNSiteSearchAPI {
             Integer autoCorrectionDisabled,
             @RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest,
             HttpServletRequest request) {
+
         Locale locale = LocaleUtils.toLocale(localeRequest);
         if (existsByTurSNSiteAndLanguage(siteName, locale)) {
             return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
@@ -123,7 +127,7 @@ public class TurSNSiteSearchAPI {
             Locale locale = LocaleUtils.toLocale(localeRequest);
             if (existsByTurSNSiteAndLanguage(siteName, locale)) {
                 turSNSitePostParamsBean.setTargetingRules(
-                        turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
+                        turSeCommons.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
                 return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
                         new TurSEParameters(q, new TurSEFilterQueryParameters(filterQueriesDefault, filterQueriesAnd,
                                 filterQueriesOr, fqOperator), currentPage, sort, rows, group, autoCorrectionDisabled), locale,
@@ -139,7 +143,7 @@ public class TurSNSiteSearchAPI {
     public List<TurSNSiteLocaleBean> turSNSiteSearchLocale(@PathVariable String siteName) {
         return turSNSiteRepository.findByName(siteName).map(turSNSite -> {
             try {
-                return turSNSearchProcess.responseLocales(turSNSite, new URI(String.format("/api/sn/%s/search", siteName)));
+                return turSeCommons.responseLocales(turSNSite, new URI(String.format("/api/sn/%s/search", siteName)));
             } catch (URISyntaxException e) {
                 log.error(e.getMessage(), e);
             }

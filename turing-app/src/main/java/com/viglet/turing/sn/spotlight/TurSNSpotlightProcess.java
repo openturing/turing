@@ -38,11 +38,10 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightTermRepository;
+import com.viglet.turing.plugins.se.TurSeConnector;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.sn.TurSNUtils;
-import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -70,20 +69,17 @@ public class TurSNSpotlightProcess {
 	private final TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
 	private final TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository;
 	private final TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository;
-	private final TurSolr turSolr;
 	private final TurSpotlightCache turSpotlightCache;
 	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 	@Inject
 	public TurSNSpotlightProcess(TurSNSiteSpotlightRepository turSNSiteSpotlightRepository,
 								 TurSNSiteSpotlightTermRepository turSNSiteSpotlightTermRepository,
 								 TurSNSiteSpotlightDocumentRepository turSNSiteSpotlightDocumentRepository,
-								 TurSolr turSolr,
 								 TurSpotlightCache turSpotlightCache,
 								 TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
 		this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
 		this.turSNSiteSpotlightTermRepository = turSNSiteSpotlightTermRepository;
 		this.turSNSiteSpotlightDocumentRepository = turSNSiteSpotlightDocumentRepository;
-		this.turSolr = turSolr;
 		this.turSpotlightCache = turSpotlightCache;
 		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
 	}
@@ -209,8 +205,9 @@ public class TurSNSpotlightProcess {
 		return turSNSiteSpotlightDocument;
 	}
 
-	public void addSpotlightToResults(TurSNSiteSearchContext context, TurSolrInstance turSolrInstance,
-									  TurSNSite turSNSite, Map<String, TurSNSiteFieldExtDto> facetMap, Map<String, TurSNSiteFieldExtDto> fieldExtMap,
+	public void addSpotlightToResults(TurSNSiteSearchContext context, TurSeConnector turSeConnector,
+									  TurSNSite turSNSite, Map<String, TurSNSiteFieldExtDto> facetMap,
+									  Map<String, TurSNSiteFieldExtDto> fieldExtMap,
 									  List<TurSNSiteSearchDocumentBean> turSNSiteSearchDocumentsBean) {
 
 		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = getSpotlightsFromQuery(context,
@@ -237,7 +234,7 @@ public class TurSNSpotlightProcess {
 				List<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = turSNSiteSpotlightDocumentMap
 						.get(currentPositionFromCurrentPage);
 				for (TurSNSiteSpotlightDocument document : turSNSiteSpotlightDocuments) {
-					TurSEResult turSEResult = turSolr.findById(turSolrInstance, turSNSite, document.getReferenceId());
+					TurSEResult turSEResult = turSeConnector.findById(context, turSNSite, document.getReferenceId());
 					if (turSEResult != null) {
 						TurSNUtils.addSNDocumentWithPosition(context.getUri(), fieldExtMap, facetMap,
 								turSNSiteSearchDocumentsBean, turSEResult, true, currentPositionFromList);
@@ -270,7 +267,6 @@ public class TurSNSpotlightProcess {
 						turSNSiteSpotlights.add(turSNSiteSpotlightTerm.getSpotlight());
 					}
 				});
-
 		Map<Integer, List<TurSNSiteSpotlightDocument>> turSNSiteSpotlightDocumentMap = new HashMap<>();
 		turSNSiteSpotlights.forEach(spotlight -> {
 			Set<TurSNSiteSpotlightDocument> turSNSiteSpotlightDocuments = turSNSiteSpotlightDocumentRepository
@@ -288,5 +284,4 @@ public class TurSNSpotlightProcess {
 		});
 		return turSNSiteSpotlightDocumentMap;
 	}
-
 }

@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.lucene;
 
+import com.viglet.turing.se.result.TurSEResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;

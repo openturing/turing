@@ -29,7 +29,6 @@ import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.lucene.TurLuceneWriter;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -40,6 +39,7 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetR
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.plugins.se.TurSeCommons;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.TurSNNLPProcess;
@@ -66,8 +66,6 @@ public class TurSNProcessQueue {
     public static final String CREATED = "Created";
     public static final String DELETED = "Deleted";
     public static final String DEFAULT = "default";
-    public static final String SOLR = "SOLR";
-    public static final String LUCENE = "LUCENE";
     @Autowired
     private TurSolr turSolr;
     @Autowired
@@ -93,7 +91,7 @@ public class TurSNProcessQueue {
     @Autowired
     private TurSEInstanceRepository turSEInstanceRepository;
     @Autowired
-    private TurLuceneWriter turLuceneWriter;
+    private TurSeCommons turSeCommons;
 
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
     @Transactional
@@ -194,12 +192,11 @@ public class TurSNProcessQueue {
         return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(),
                 turSNJobItem.getLocale()).map(turSolrInstance -> {
             turSEInstanceRepository
-                    .findById(turSNSite.getTurSEInstance().getId()).ifPresent(seInstance -> {
-                        switch (seInstance.getTurSEVendor().getId()) {
-                            case SOLR -> turSolr.indexing(turSolrInstance, turSNSite, attributes);
-                            case LUCENE -> turLuceneWriter.indexing(turSNSite, attributes);
-                        }
-                    });
+                    .findById(turSNSite.getTurSEInstance().getId())
+                    .flatMap(seInstance ->
+                            Objects.requireNonNull(turSeCommons.getTurSeConnector(turSNSite.getName())))
+                    .ifPresent(seConnector ->
+                            seConnector.indexing(turSNSite, turSNJobItem.getLocale(), attributes));
             return true;
         }).orElse(false);
 

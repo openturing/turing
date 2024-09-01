@@ -21,23 +21,12 @@
 package com.viglet.turing.api.se;
 
 import com.google.inject.Inject;
-import com.viglet.turing.commons.se.TurSEFilterQueryParameters;
-import com.viglet.turing.commons.se.TurSEParameters;
-import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
-import com.viglet.turing.commons.sn.search.TurSNParamType;
-import com.viglet.turing.lucene.TurLuceneSearch;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.utils.TurPersistenceUtils;
-import com.viglet.turing.se.result.TurSEResults;
-import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrInstanceProcess;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.lucene.document.Document;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,18 +37,10 @@ import java.util.List;
 @Tag(name = "Search Engine", description = "Search Engine API")
 public class TurSEInstanceAPI {
     private final TurSEInstanceRepository turSEInstanceRepository;
-    private final TurSolrInstanceProcess turSolrInstanceProcess;
-    private final TurSolr turSolr;
-    private final TurLuceneSearch turLuceneSearch;
 
     @Inject
-    public TurSEInstanceAPI(TurSEInstanceRepository turSEInstanceRepository,
-                            TurSolrInstanceProcess turSolrInstanceProcess,
-                            TurSolr turSolr, TurLuceneSearch turLuceneSearch) {
+    public TurSEInstanceAPI(TurSEInstanceRepository turSEInstanceRepository) {
         this.turSEInstanceRepository = turSEInstanceRepository;
-        this.turSolrInstanceProcess = turSolrInstanceProcess;
-        this.turSolr = turSolr;
-        this.turLuceneSearch = turLuceneSearch;
     }
 
     @Operation(summary = "Search Engine List")
@@ -68,20 +49,12 @@ public class TurSEInstanceAPI {
         return this.turSEInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase());
     }
 
-    @Operation(summary = "Lucene Search")
-    @GetMapping("/lucene/search")
-    public List<Document> turLuceneSearch(
-            @RequestParam(required = false, name = TurSNParamType.QUERY) String q) {
-        return turLuceneSearch.search(q);
-    }
-
     @Operation(summary = "Search Engine structure")
     @GetMapping("/structure")
     public TurSEInstance turNLPInstanceStructure() {
         TurSEInstance turSEInstance = new TurSEInstance();
         turSEInstance.setTurSEVendor(new TurSEVendor());
         return turSEInstance;
-
     }
 
     @Operation(summary = "Show a Search Engine")
@@ -94,16 +67,16 @@ public class TurSEInstanceAPI {
     @PutMapping("/{id}")
     public TurSEInstance turSEInstanceUpdate(@PathVariable String id, @RequestBody TurSEInstance turSEInstance) {
         return turSEInstanceRepository.findById(id).map(turSEInstanceEdit -> {
-            turSEInstanceEdit.setTitle(turSEInstance.getTitle());
-            turSEInstanceEdit.setDescription(turSEInstance.getDescription());
-            turSEInstanceEdit.setTurSEVendor(turSEInstance.getTurSEVendor());
-            turSEInstanceEdit.setHost(turSEInstance.getHost());
-            turSEInstanceEdit.setPort(turSEInstance.getPort());
-            turSEInstanceEdit.setEnabled(turSEInstance.getEnabled());
-            this.turSEInstanceRepository.save(turSEInstanceEdit);
-            return turSEInstanceEdit;
-        }).orElse(new TurSEInstance());
-
+                    turSEInstanceEdit.setTitle(turSEInstance.getTitle());
+                    turSEInstanceEdit.setDescription(turSEInstance.getDescription());
+                    turSEInstanceEdit.setTurSEVendor(turSEInstance.getTurSEVendor());
+                    turSEInstanceEdit.setHost(turSEInstance.getHost());
+                    turSEInstanceEdit.setPort(turSEInstance.getPort());
+                    turSEInstanceEdit.setEnabled(turSEInstance.getEnabled());
+                    this.turSEInstanceRepository.save(turSEInstanceEdit);
+                    return turSEInstanceEdit;
+                })
+                .orElse(new TurSEInstance());
     }
 
     @Transactional
@@ -119,29 +92,5 @@ public class TurSEInstanceAPI {
     public TurSEInstance turSEInstanceAdd(@RequestBody TurSEInstance turSEInstance) {
         this.turSEInstanceRepository.save(turSEInstance);
         return turSEInstance;
-
     }
-
-    @GetMapping("/select")
-    public ResponseEntity<TurSEResults> turSEInstanceSelect(@RequestParam(required = false, name = TurSNParamType.QUERY) String q,
-                                                            @RequestParam(required = false, name = TurSNParamType.PAGE) Integer currentPage,
-                                                            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_DEFAULT) List<String> filterQueriesDefault,
-                                                            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_AND) List<String> filterQueriesAnd,
-                                                            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERIES_OR) List<String> filterQueriesOr,
-                                                            @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "NONE")
-                                                            TurSNFilterQueryOperator fqOperator,
-                                                            @RequestParam(required = false, name = TurSNParamType.SORT) String sort,
-                                                            @RequestParam(required = false, name = TurSNParamType.ROWS) Integer rows,
-                                                            @RequestParam(required = false, name = TurSNParamType.GROUP) String group) {
-
-        currentPage = (currentPage == null || currentPage <= 0) ? 1 : currentPage;
-        rows = rows == null ? 0 : rows;
-        TurSEParameters turSEParameters = new TurSEParameters(q, new TurSEFilterQueryParameters(filterQueriesDefault, filterQueriesAnd, filterQueriesOr, fqOperator), currentPage,
-                sort, rows, group, 0);
-        return turSolrInstanceProcess.initSolrInstance()
-                .map(turSolrInstance -> new ResponseEntity<>(turSolr.retrieveSolr(turSolrInstance, turSEParameters,
-                        "text"), HttpStatus.OK))
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-    }
-
 }
