@@ -31,12 +31,13 @@ public class TurLuceneUtils {
 
              document.getFields().forEach(field -> {
                  if (fields.containsKey(field.name())) {
-                     if (fields.get(field.name()) instanceof List) {
+                   /*  if (fields.get(field.name()) instanceof List) {
                          ((List<String>) fields.get(field.name())).add(document.get(field.name()));
                      }
                      else {
                          fields.put(field.name(), List.of(document.get(field.name())));
-                     }
+                     } */
+                     fields.put(field.name(), List.of(document.get(field.name())));
                  }
                  else {
                      fields.put(field.name(), field.stringValue());

@@ -2,6 +2,7 @@ package com.viglet.turing.plugins.se.lucene;
 
 import com.google.inject.Inject;
 import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.lucene.TurLuceneSearch;
@@ -12,11 +13,14 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.plugins.se.TurSeCommons;
 import com.viglet.turing.plugins.se.TurSeConnector;
 import com.viglet.turing.se.result.TurSEResult;
+import com.viglet.turing.se.result.TurSEResults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -26,6 +30,7 @@ public class TurLuceneConnector implements TurSeConnector {
     private final TurLuceneSearch turLuceneSearch;
     private final TurLuceneWriter turLuceneWriter;
     private final TurSeCommons turSeCommons;
+
     @Inject
     public TurLuceneConnector(TurSNSiteRepository turSNSiteRepository,
                               TurLuceneSearch turLuceneSearch,
@@ -42,16 +47,20 @@ public class TurLuceneConnector implements TurSeConnector {
     @Override
     public TurSNSiteSearchBean snSearch(TurSNSiteSearchContext context) {
         TurSEParameters turSEParameters = context.getTurSEParameters();
-        System.out.println(turSEParameters);
         return turSNSiteRepository.findByName(context.getSiteName())
-                .map(turSNSite -> new TurSNSiteSearchBean()
-                        .setResults(turSeCommons.responseDocuments(this, context,
-                                turSNSite,
-                                null,
-                                TurLuceneUtils.documentsToSEResults(turLuceneSearch.search(turSEParameters.getQuery()))))
-                        .setPagination(null)
-                        .setWidget(null)
-                        .setQueryContext(null))
+                .map(turSNSite -> {
+                    List<TurSEResult> turSEResultList = TurLuceneUtils
+                            .documentsToSEResults(turLuceneSearch.search(turSEParameters.getQuery()));
+                    TurSEResults turSEResults = new TurSEResults(turSEResultList.size(), 0, 20,
+                            1, 1, turSEResultList,
+                            1, 1, context.getTurSEParameters().getQuery(), "desc",
+                            new TurSESpellCheckResult(),
+                            null, null,
+                            null);
+                    return turSeCommons.getSearchBeanForResults(this, context,
+                            turSEResults, turSNSite,
+                            null);
+                })
                 .orElseGet(TurSNSiteSearchBean::new);
     }
 
