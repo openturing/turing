@@ -6,7 +6,7 @@ import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 import com.viglet.turing.client.sn.TurSNConstants;
 import com.viglet.turing.client.sn.TurSNServer;
-import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
+import com.viglet.turing.client.auth.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.*;
 import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.connector.aem.commons.TurAemObject;

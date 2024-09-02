@@ -4,7 +4,7 @@ import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 import com.viglet.turing.client.sn.TurSNConstants;
 import com.viglet.turing.client.sn.TurSNServer;
-import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
+import com.viglet.turing.client.auth.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -98,10 +98,8 @@ public class TurSprinklrProcess {
 
     public void getPage(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
                         TurSprinklrAccessToken token) {
-        if (searchResult.getStatus().equals("APPROVED") && searchResult.isPublicContent()) {
-            log.info("{}: {}", searchResult.getId(), turSprinklrSource.getTurSNSites());
-            addTurSNJobItems(turSprinklrSource, searchResult, token);
-        }
+        log.info("{}: {}", searchResult.getId(), turSprinklrSource.getTurSNSites());
+        addTurSNJobItems(turSprinklrSource, searchResult, token);
 
     }
 

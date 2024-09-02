@@ -7,7 +7,7 @@ import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.TurSNServer;
-import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
+import com.viglet.turing.client.auth.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.*;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.commons.exception.TurRuntimeException;

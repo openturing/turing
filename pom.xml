@@ -75,7 +75,7 @@
                 <module>turing-spring</module>
                 <module>turing-java-sdk</module>
                 <module>turing-filesystem</module>
-                <module>turing-jdbc</module>
+                <module>turing-db</module>
                 <module>turing-nutch</module>
                 <module>turing-cms</module>
                 <module>turing-aem</module>
@@ -96,6 +96,7 @@
                 <module>turing-commons</module>
                 <module>turing-cms</module>
                 <module>turing-java-sdk</module>
+                <module>turing-db</module>
                 <module>turing-aem</module>
                 <module>turing-sprinklr</module>
                 <module>turing-web-crawler</module>
@@ -134,7 +135,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.6</version>
+                <version>1.5.7</version>
             </dependency>
             <dependency>
                 <groupId>org.json</groupId>
@@ -154,7 +155,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.16.0</version>
+                <version>3.17.0</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>

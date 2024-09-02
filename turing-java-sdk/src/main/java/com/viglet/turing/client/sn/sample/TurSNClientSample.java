@@ -18,7 +18,7 @@ package com.viglet.turing.client.sn.sample;
 
 import com.viglet.turing.client.sn.*;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
-import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
+import com.viglet.turing.client.auth.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
 import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;

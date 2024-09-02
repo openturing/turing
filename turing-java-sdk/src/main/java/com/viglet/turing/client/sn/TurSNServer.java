@@ -19,10 +19,10 @@ package com.viglet.turing.client.sn;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.client.auth.credentials.TurApiKeyCredentials;
+import com.viglet.turing.client.auth.credentials.TurUsernamePasswordCredentials;
 import com.viglet.turing.client.sn.TurSNQuery.ORDER;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
-import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
-import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
 import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
 import com.viglet.turing.client.sn.facet.TurSNFacetFieldList;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
@@ -202,7 +202,7 @@ public class TurSNServer {
                 TurSNClientUtils.authentication(httpPost, this.getCredentials(), this.getApiKey());
                 requestLog(turingURL);
                 return new ObjectMapper().readValue(openConnectionAndRequest(httpPost),
-                        new TypeReference<List<String>>() {
+                        new TypeReference<>() {
                         });
             }
         } catch (JsonProcessingException | URISyntaxException e) {

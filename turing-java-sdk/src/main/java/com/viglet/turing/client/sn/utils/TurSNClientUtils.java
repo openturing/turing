@@ -15,7 +15,7 @@
  */
 package com.viglet.turing.client.sn.utils;
 
-import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
+import com.viglet.turing.client.auth.credentials.TurUsernamePasswordCredentials;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.core5.http.HttpHeaders;
 

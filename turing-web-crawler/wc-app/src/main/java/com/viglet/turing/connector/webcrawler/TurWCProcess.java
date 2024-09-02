@@ -3,7 +3,7 @@ package com.viglet.turing.connector.webcrawler;
 import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 import com.viglet.turing.client.sn.TurSNServer;
-import com.viglet.turing.client.sn.credentials.TurApiKeyCredentials;
+import com.viglet.turing.client.auth.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;

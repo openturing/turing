@@ -417,12 +417,13 @@ public class TurSNSearchProcess {
                                                          TurSNSite turSNSite, List<String> hiddenFilterQuery,
                                                          Map<String, TurSNSiteFieldExtDto> facetMap,
                                                          TurSEResults turSEResults) {
-        if (turSNSite.getFacet() == 1) {
+        if (turSNSite.getFacet() == 1 && Optional.ofNullable(turSEResults.getFacetResults()).isPresent()) {
             List<String> usedFacetItems = Optional.ofNullable(context.getTurSEParameters())
                     .map(TurSEParameters::getFilterQueries)
                     .map(TurSEFilterQueryParameters::getFq)
                     .orElse(Collections.emptyList());
             List<TurSNSiteSearchFacetBean> turSNSiteSearchFacetBeans = new ArrayList<>();
+
             turSEResults.getFacetResults().forEach(facet -> {
                 if (showFacet(hiddenFilterQuery, facetMap, facet, turSNSite)) {
                     List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetItemBeans = new ArrayList<>();

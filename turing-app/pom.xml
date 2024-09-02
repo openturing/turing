@@ -27,6 +27,27 @@
         </sonar.cpd.exclusions>
     </properties>
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-core -->
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>9.11.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
+            <version>9.11.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analysis-common</artifactId>
+            <version>9.11.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queries</artifactId>
+            <version>9.11.1</version>
+        </dependency>
         <dependency>
             <groupId>co.elastic.clients</groupId>
             <artifactId>elasticsearch-java</artifactId>
@@ -167,11 +188,6 @@
             <version>42.7.4</version>
         </dependency>
         <dependency>
-            <groupId>edu.stanford.nlp</groupId>
-            <artifactId>stanford-corenlp</artifactId>
-            <version>4.5.7</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.opennlp</groupId>
             <artifactId>opennlp-tools</artifactId>
             <version>2.4.0</version>
@@ -253,18 +269,25 @@
         </dependency>
         <dependency>
             <groupId>org.languagetool</groupId>
-            <artifactId>language-es</artifactId>
-            <version>6.4</version>
-        </dependency>
-        <dependency>
-            <groupId>org.languagetool</groupId>
             <artifactId>language-en</artifactId>
             <version>6.4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.lucene</groupId>
+                    <artifactId>lucene-backward-codecs</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.languagetool</groupId>
             <artifactId>language-pt</artifactId>
             <version>6.4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.lucene</groupId>
+                    <artifactId>lucene-backward-codecs</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -285,7 +308,7 @@
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-solrj</artifactId>
-            <version>9.6.0</version>
+            <version>9.6.1</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
@@ -415,12 +438,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.4.0</version>
+                <version>3.5.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.4.0</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -456,7 +479,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>3.4.0</version>
+                <version>3.5.0</version>
             </plugin>
         </plugins>
     </reporting>

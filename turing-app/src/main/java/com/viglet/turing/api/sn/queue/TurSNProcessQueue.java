@@ -29,6 +29,7 @@ import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.lucene.TurLuceneWriter;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -65,6 +66,8 @@ public class TurSNProcessQueue {
     public static final String CREATED = "Created";
     public static final String DELETED = "Deleted";
     public static final String DEFAULT = "default";
+    public static final String SOLR = "SOLR";
+    public static final String LUCENE = "LUCENE";
     @Autowired
     private TurSolr turSolr;
     @Autowired
@@ -89,6 +92,8 @@ public class TurSNProcessQueue {
     private TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
     @Autowired
     private TurSEInstanceRepository turSEInstanceRepository;
+    @Autowired
+    private TurLuceneWriter turLuceneWriter;
 
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
     @Transactional
@@ -188,7 +193,13 @@ public class TurSNProcessQueue {
         createMissingFields(turSNSite, turSNJobItem.getSpecs());
         return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(),
                 turSNJobItem.getLocale()).map(turSolrInstance -> {
-            turSolr.indexing(turSolrInstance, turSNSite, attributes);
+            turSEInstanceRepository
+                    .findById(turSNSite.getTurSEInstance().getId()).ifPresent(seInstance -> {
+                        switch (seInstance.getTurSEVendor().getId()) {
+                            case SOLR -> turSolr.indexing(turSolrInstance, turSNSite, attributes);
+                            case LUCENE -> turLuceneWriter.indexing(turSNSite, attributes);
+                        }
+                    });
             return true;
         }).orElse(false);
 
