@@ -1,5 +1,5 @@
 # To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
+# Package ecosystems to update and where the package manifests are located.
 # Please see the documentation for all configuration options: 
 # https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates 
 
@@ -11,9 +11,20 @@ updates:
       interval: "weekly"
     target-branch: "0.3.9"
     open-pull-requests-limit: 15
+    groups:
+      java:
+        applies-to: version-updates
+        patterns:
+          - "*"
+
   - package-ecosystem: "npm" # See documentation for possible values
     directory: "/turing-ui" # Location of package manifests
     schedule:
       interval: "weekly"
     target-branch: "0.3.9"
     open-pull-requests-limit: 15
+    groups:
+      angular:
+        applies-to: version-updates
+        patterns:
+          - "*"
