@@ -42,8 +42,6 @@ import java.util.regex.Pattern;
 @Getter
 @Component
 public class TurAemIndexerTool {
-    public static final String JCR_TITLE = "jcr:title";
-    public static final String JCR_CONTENT = "jcr:content";
     public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
     public static final String CONTENT_FRAGMENT = "content-fragment";
     public static final String STATIC_FILE = "static-file";
@@ -51,7 +49,6 @@ public class TurAemIndexerTool {
     public static final String DATA_MASTER = "data/master";
     public static final String METADATA = "metadata";
     public static final String JCR = "jcr:";
-    public static final String ID = "id";
     public static final String STATIC_FILE_SUB_TYPE = "STATIC_FILE";
     public static final String ONCE = "once";
     public static final String ID_ATTR = "id";
@@ -60,7 +57,6 @@ public class TurAemIndexerTool {
     public static final String CQ = "cq:";
     private static AtomicInteger processed = new AtomicInteger(0);
     private static final AtomicInteger currentPage = new AtomicInteger(0);
-    private static long start;
     private final String deltaId = UUID.randomUUID().toString();
     private final Set<String> visitedLinks = new HashSet<>();
     private final Queue<String> remainingLinks = new LinkedList<>();
@@ -310,7 +306,6 @@ public class TurAemIndexerTool {
         }
         if (processed.get() >= jobSize) {
             processed = new AtomicInteger(0);
-            start = System.currentTimeMillis();
         } else {
             processed.incrementAndGet();
         }

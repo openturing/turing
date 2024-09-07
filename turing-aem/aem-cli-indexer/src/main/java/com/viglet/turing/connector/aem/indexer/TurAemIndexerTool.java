@@ -397,32 +397,44 @@ public class TurAemIndexerTool {
         if (!delivered || aemObject.isDelivered()) {
             final Locale locale = TurAemCommonsUtils.getLocaleFromAemObject(turAemSourceContext, aemObject);
             if (objectNeedBeIndexed(aemObject, turAemSourceContext)) {
-                if (!dryRun) {
-                    createIndexingStatus(aemObject, locale, turAemSourceContext);
-                }
-                sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale,
-                        turAemSourceContext);
+                sendIndex(aemObject, turCmsModel, turSNAttributeSpecList, turAemSourceContext, locale);
             } else {
-                if (objectNeedBeReIndexed(aemObject, turAemSourceContext)) {
-                    if (!dryRun) {
-                        turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), turAemSourceContext.getGroup())
-                                .ifPresent(turAemIndexingsList ->
-                                        log.info("ReIndexed {} object ({}) from {} to {} and deltaId = {}",
-                                                aemObject.getPath(), turAemSourceContext.getGroup(),
-                                                turAemIndexingsList.getFirst().getDate(),
-                                                getDeltaDate(aemObject, turAemSourceContext), deltaId));
-                    }
-                    sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale,
-                            turAemSourceContext);
-                }
-                if (!dryRun) {
-                    updateIndexingStatus(aemObject, locale, turAemSourceContext);
-                }
+                sendReindex(aemObject, turCmsModel, turSNAttributeSpecList, turAemSourceContext, locale);
             }
         } else {
             log.info("Unpublished {} object ({}) deltaId = {}",
                     aemObject.getPath(), turAemSourceContext.getGroup(), deltaId);
         }
+    }
+
+    private void sendReindex(TurAemObject aemObject, TurCmsModel turCmsModel,
+                             List<TurSNAttributeSpec> turSNAttributeSpecList,
+                             TurAemSourceContext turAemSourceContext, Locale locale) {
+        if (objectNeedBeReIndexed(aemObject, turAemSourceContext)) {
+            if (!dryRun) {
+                turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), turAemSourceContext.getGroup())
+                        .ifPresent(turAemIndexingsList ->
+                                log.info("ReIndexed {} object ({}) from {} to {} and deltaId = {}",
+                                        aemObject.getPath(), turAemSourceContext.getGroup(),
+                                        turAemIndexingsList.getFirst().getDate(),
+                                        getDeltaDate(aemObject, turAemSourceContext), deltaId));
+            }
+            sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale,
+                    turAemSourceContext);
+        }
+        if (!dryRun) {
+            updateIndexingStatus(aemObject, locale, turAemSourceContext);
+        }
+    }
+
+    private void sendIndex(TurAemObject aemObject, TurCmsModel turCmsModel,
+                           List<TurSNAttributeSpec> turSNAttributeSpecList, TurAemSourceContext turAemSourceContext,
+                           Locale locale) {
+        if (!dryRun) {
+            createIndexingStatus(aemObject, locale, turAemSourceContext);
+        }
+        sendToTuringToBeIndexed(aemObject, turCmsModel, turSNAttributeSpecList, locale,
+                turAemSourceContext);
     }
 
     private void createIndexingStatus(TurAemObject aemObject, Locale locale, TurAemSourceContext turAemSourceContext) {

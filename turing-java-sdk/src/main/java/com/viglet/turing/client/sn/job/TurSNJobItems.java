@@ -18,7 +18,6 @@ package com.viglet.turing.client.sn.job;
 
 import com.google.common.collect.Iterators;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;

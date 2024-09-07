@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -57,7 +57,6 @@ public class TurSNMergeProvidersProcess {
         this.turSNSiteMergeProvidersRepository = turSNSiteMergeProvidersRepository;
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, Object> mergeDocuments(TurSNSite turSNSite,
                                               Map<String, Object> queueDocumentAttrs, Locale locale) {
         List<TurSNSiteMergeProviders> turSNSiteMergeProvidersList = turSNSiteMergeProvidersRepository
@@ -70,7 +69,7 @@ public class TurSNMergeProvidersProcess {
                 if (providerAttribute instanceof String stringValue) {
                     queueDocumentProviders.add(stringValue);
                 } else if (providerAttribute instanceof ArrayList<?> arrayListValue) {
-                    queueDocumentProviders.addAll((Collection<? extends String>) arrayListValue);
+                    queueDocumentProviders.addAll((Collection<String>) arrayListValue);
                 }
 
                 if (queueDocumentProviders.contains(turSNSiteMergeProviders.getProviderFrom())) {
@@ -121,8 +120,8 @@ public class TurSNMergeProvidersProcess {
                     queueDocumentAttrs, turSNSiteMergeProviders);
         } else if (hasSolrDocuments(resultsFrom)) {
             TurSEResult turSEResultFrom = TurSolrUtils.createTurSEResultFromDocument(resultsFrom.getFirst());
-            Map<String, Object> mergedDocumentAttributes = doMergeContent(turSEResultFrom.getFields(), queueDocumentAttrs,
-                    turSNSiteMergeProviders);
+            Map<String, Object> mergedDocumentAttributes = doMergeContent(turSEResultFrom.getFields(),
+                    queueDocumentAttrs, turSNSiteMergeProviders);
             deIndexSolrDocuments(turSNSiteMergeProviders, resultsFrom);
             return mergedDocumentAttributes;
         }
@@ -198,8 +197,7 @@ public class TurSNMergeProvidersProcess {
         });
     }
 
-    @SuppressWarnings("unchecked")
-	private void addProviderToSEDocument(Map<String, Object> documentAttributes, String providerName) {
+    private void addProviderToSEDocument(Map<String, Object> documentAttributes, String providerName) {
         Object providerAttribute = documentAttributes.get(TurSNConstants.PROVIDER_ATTRIBUTE);
         List<String> providers = new ArrayList<>();
         if (providerAttribute instanceof ArrayList) {

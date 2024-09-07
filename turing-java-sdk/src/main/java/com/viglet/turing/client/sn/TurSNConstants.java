@@ -1,6 +1,10 @@
 package com.viglet.turing.client.sn;
 
 public class TurSNConstants {
+    private TurSNConstants() {
+        throw new IllegalStateException("SN Constants class");
+    }
+
     public static final String ID_ATTR = "id";
     public static final String TITLE_ATTR = "title";
     public static final String ABSTRACT_ATTR = "abstract";

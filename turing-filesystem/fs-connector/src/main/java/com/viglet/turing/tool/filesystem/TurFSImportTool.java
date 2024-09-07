@@ -156,7 +156,7 @@ public class TurFSImportTool {
                 attributes.put("text", TurOcr.processFile(new TurServer(URI.create(turingServer).toURL(),
                         new TurApiKeyCredentials(turingApiKey)), file, showOutput));
             } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
+               log.error(e.getMessage(), e);
             }
             turSNJobItem.setAttributes(attributes);
 
@@ -164,8 +164,6 @@ public class TurFSImportTool {
         }
         return null;
     }
-
-
 
     private void sendToTuring(TurFSChunkingJob turChunkingJob, long totalFiles) {
         log.info("Send job to Turing");
