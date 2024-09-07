@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.wem;
 
+import ch.qos.logback.classic.Level;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
@@ -41,22 +42,19 @@ import com.vignette.as.client.javabean.*;
 import com.vignette.as.config.ConfigUtil;
 import com.vignette.config.client.common.ConfigException;
 import com.vignette.config.util.ConfigLog;
-import com.vignette.logging.LoggingManager;
-import com.vignette.logging.context.ContextLogger;
 import com.vignette.util.VgnException;
 import com.vignette.util.VgnIllegalArgumentException;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.util.*;
 
+@Slf4j
 public class TurWEMCommander {
     private static final JCommander jCommander = new JCommander();
-    private static final ContextLogger logger = LoggingManager.getContextLogger(MethodHandles.lookup().lookupClass());
 
     private static final String WORKING_DIR = "com.vignette.workingDir";
     private static final String STFL = "STFL";
@@ -106,7 +104,7 @@ public class TurWEMCommander {
 
             main.run();
         } catch (ParameterException e) {
-            logger.info("Error: " + e.getLocalizedMessage());
+            log.info("Error: {}", e.getLocalizedMessage());
             jCommander.usage();
         }
 
@@ -118,7 +116,8 @@ public class TurWEMCommander {
         try {
             ConfigLog.initializeLogging("turing-wem.log", logLevel);
             if (debug)
-                LogManager.getLogger("com.viglet").setLevel(Level.DEBUG);
+                ((ch.qos.logback.classic.Logger) LoggerFactory.
+                        getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)).setLevel(Level.DEBUG);
 
             System.setProperty(WORKING_DIR, workingDir);
             ConfigUtil.setHasDataSource(false);
@@ -134,12 +133,12 @@ public class TurWEMCommander {
             }
 
         } catch (ConfigException exception) {
-            if (logger.isDebugEnabled())
-                logger.debug("Error into ConfigSpace configuration", exception);
+            if (log.isDebugEnabled())
+                log.debug("Error into ConfigSpace configuration", exception);
         } catch (VgnException vgnException) {
             jCommander.getConsole().println("Logging does not started");
         } catch (Exception e) {
-            logger.error("Viglet Turing Index Error: ", e);
+            log.error("Viglet Turing Index Error: ", e);
 
         }
     }
@@ -172,7 +171,7 @@ public class TurWEMCommander {
                 this.indexGUIDList(contentInstances);
 
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -219,7 +218,7 @@ public class TurWEMCommander {
                 totalPages = totalEntries > 0 ? (totalEntries + pageSize - 1) / pageSize : totalEntries / pageSize;
 
             } catch (Exception e) {
-                logger.error(e.getMessage(), e);
+                log.error(e.getMessage(), e);
             }
             if (results != null) {
                 indexByContentTypeProcess(totalPages, results);
@@ -290,7 +289,7 @@ public class TurWEMCommander {
                         this.indexContentInstances(guids, objectMap);
                     }
                 } catch (Exception e) {
-                    logger.error(e);
+                    log.error(e.getMessage(),e);
                 }
                 long elapsed = System.currentTimeMillis() - start;
                 jCommander.getConsole()
@@ -311,7 +310,7 @@ public class TurWEMCommander {
                     ManagedObjectVCMRef ref = new ManagedObjectVCMRef(guid);
                     validGuids.add(ref);
                 } catch (VgnIllegalArgumentException e) {
-                    logger.error(e.getMessage(), e);
+                    log.error(e.getMessage(), e);
                 }
             }
         }
@@ -320,7 +319,7 @@ public class TurWEMCommander {
             managedObjectVCMRefs = validGuids.toArray(new ManagedObjectVCMRef[0]);
 
         if (managedObjectVCMRefs == null)
-            logger.error("No GUIDs");
+            log.error("No GUIDs");
         else {
             RequestParameters params = new RequestParameters();
             params.setTopRelationOnly(false);
@@ -341,8 +340,8 @@ public class TurWEMCommander {
         for (ManagedObjectVCMRef ref : refs) {
             ManagedObject mo = (ManagedObject) objects.get(ref.getId());
             if (mo instanceof ContentInstance || mo instanceof Channel) {
-                if (logger.isDebugEnabled())
-                    logger.debug(String.format("Attempting to index the Content Instance: %s",
+                if (log.isDebugEnabled())
+                    log.debug(String.format("Attempting to index the Content Instance: %s",
                             mo.getContentManagementId().getId()));
                 TurWEMIndexer.indexCreate(mo, turingConfig, TuringUtils.getSiteNameFromContentInstance(mo, turingConfig));
             }
