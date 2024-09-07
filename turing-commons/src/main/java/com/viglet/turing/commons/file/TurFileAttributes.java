@@ -19,6 +19,9 @@ package com.viglet.turing.commons.file;
 
 import lombok.*;
 
+import java.util.Date;
+import java.util.Map;
+
 /**
 *
 * @author Alexandre Oliveira
@@ -32,6 +35,8 @@ import lombok.*;
 public class TurFileAttributes {
 	private String content;
 	private String name;
+	private String title;
 	private String extension;
 	private TurFileSize size;
+	private Map<String, String> metadata;
 }

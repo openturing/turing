@@ -24,11 +24,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 public class TurFileUtils {
+
+    public static final String PDF_DOCINFO_TITLE = "pdf:docinfo:title";
 
     private TurFileUtils() {
         throw new IllegalStateException("Turing File Utilities class");
@@ -103,12 +104,21 @@ public class TurFileUtils {
 
         try (InputStream inputStream = multipartFile.getInputStream()) {
             TurTikaFileAttributes turTikaFileAttributes = parseFile(inputStream, null);
+
             TurFileAttributes turFileAttributes = new TurFileAttributes();
             Optional.ofNullable(turTikaFileAttributes).ifPresent(attributes -> {
                 turFileAttributes.setContent(attributes.getContent());
                 turFileAttributes.setName(multipartFile.getOriginalFilename());
                 turFileAttributes.setExtension(FilenameUtils.getExtension(multipartFile.getOriginalFilename()));
                 turFileAttributes.setSize(new TurFileSize(multipartFile.getSize()));
+                turFileAttributes.setTitle(Optional.ofNullable(turTikaFileAttributes
+                                .getMetadata()
+                                .get(PDF_DOCINFO_TITLE))
+                        .orElseGet(turFileAttributes::getName));
+                Map<String, String> metadataMap = new HashMap<>();
+                Arrays.stream(turTikaFileAttributes.getMetadata().names()).forEach(name ->
+                        metadataMap.put(name, turTikaFileAttributes.getMetadata().get(name)));
+                turFileAttributes.setMetadata(metadataMap);
             });
             return turFileAttributes;
         } catch (IOException e) {
