@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors.
+ * Copyright (C) 2016-2024 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -39,13 +39,23 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+/**
+ * @author Alexandre Oliveira
+ *
+ * @since 0.3.2
+ */
 @RestController
 @RequestMapping("/api/v2/user")
 @Tag(name = "User", description = "User API")
 public class TurUserAPI {
 
     public static final String ADMIN = "admin";
+    public static final String ADMINISTRATOR = "Administrator";
+    public static final String PREFERRED_USERNAME = "preferred_username";
+    public static final String GIVEN_NAME = "given_name";
+    public static final String FAMILY_NAME = "family_name";
     private final PasswordEncoder passwordEncoder;
     private final TurUserRepository turUserRepository;
     private final TurGroupRepository turGroupRepository;
@@ -70,63 +80,71 @@ public class TurUserAPI {
     public TurCurrentUser turUserCurrent() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!(authentication instanceof AnonymousAuthenticationToken)) {
-            boolean isAdmin = false;
-            String currentUserName = authentication.getName();
-            TurCurrentUser turCurrentUser = new TurCurrentUser();
             if (turConfigProperties.isKeycloak()) {
-                OAuth2User user = ((OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-                turCurrentUser.setUsername(user.getAttribute("preferred_username"));
-                turCurrentUser.setFirstName(user.getAttribute("given_name"));
-                turCurrentUser.setLastName(user.getAttribute("family_name"));
-                turCurrentUser.setAdmin(true);
+                return keycloakUser();
             } else {
-                TurUser turUser = turUserRepository.findByUsername(currentUserName);
-                turUser.setPassword(null);
-                if (turUser.getTurGroups() != null) {
-                    for (TurGroup turGroup : turUser.getTurGroups()) {
-                        if (turGroup.getName().equals("Administrator")) {
-                            isAdmin = true;
-                            break;
-                        }
-                    }
-                }
-                turCurrentUser.setUsername(turUser.getUsername());
-                turCurrentUser.setFirstName(turUser.getFirstName());
-                turCurrentUser.setLastName(turUser.getLastName());
-                turCurrentUser.setAdmin(isAdmin);
+                return regularUser(authentication.getName());
             }
-            return turCurrentUser;
         }
-
         return null;
+    }
+
+    private TurCurrentUser regularUser(String currentUserName) {
+        boolean isAdmin = false;
+        TurUser turUser = turUserRepository.findByUsername(currentUserName);
+        turUser.setPassword(null);
+        if (turUser.getTurGroups() != null) {
+            for (TurGroup turGroup : turUser.getTurGroups()) {
+                if (turGroup.getName().equals(ADMINISTRATOR)) {
+                    isAdmin = true;
+                    break;
+                }
+            }
+        }
+        TurCurrentUser turCurrentUser = new TurCurrentUser();
+        turCurrentUser.setUsername(turUser.getUsername());
+        turCurrentUser.setFirstName(turUser.getFirstName());
+        turCurrentUser.setLastName(turUser.getLastName());
+        turCurrentUser.setAdmin(isAdmin);
+        return turCurrentUser;
+    }
+
+    private static TurCurrentUser keycloakUser() {
+        OAuth2User user = ((OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        TurCurrentUser turCurrentUser = new TurCurrentUser();
+        turCurrentUser.setUsername(user.getAttribute(PREFERRED_USERNAME));
+        turCurrentUser.setFirstName(user.getAttribute(GIVEN_NAME));
+        turCurrentUser.setLastName(user.getAttribute(FAMILY_NAME));
+        turCurrentUser.setAdmin(true);
+        return turCurrentUser;
     }
 
     @GetMapping("/{username}")
     public TurUser turUserEdit(@PathVariable String username) {
         TurUser turUser = turUserRepository.findByUsername(username);
-        if (turUser != null) {
-            turUser.setPassword(null);
+        return Optional.ofNullable(turUser).map(user -> {
+            user.setPassword(null);
             List<TurUser> turUsers = new ArrayList<>();
-            turUsers.add(turUser);
-            turUser.setTurGroups(turGroupRepository.findByTurUsersIn(turUsers));
-        }
-        return turUser;
+            turUsers.add(user);
+            user.setTurGroups(turGroupRepository.findByTurUsersIn(turUsers));
+            return user;
+        }).orElseGet(TurUser::new);
     }
 
     @PutMapping("/{username}")
     public TurUser turUserUpdate(@PathVariable String username, @RequestBody TurUser turUser) {
         TurUser turUserEdit = turUserRepository.findByUsername(username);
-        if (turUserEdit != null) {
-            turUserEdit.setFirstName(turUser.getFirstName());
-            turUserEdit.setLastName(turUser.getLastName());
-            turUserEdit.setEmail(turUser.getEmail());
+        return Optional.ofNullable(turUserEdit).map(userEdit -> {
+            userEdit.setFirstName(turUser.getFirstName());
+            userEdit.setLastName(turUser.getLastName());
+            userEdit.setEmail(turUser.getEmail());
             if (turUser.getPassword() != null && !turUser.getPassword().trim().isEmpty()) {
-                turUserEdit.setPassword(passwordEncoder.encode(turUser.getPassword()));
+                userEdit.setPassword(passwordEncoder.encode(turUser.getPassword()));
             }
-            turUserEdit.setTurGroups(turUser.getTurGroups());
+            userEdit.setTurGroups(turUser.getTurGroups());
             turUserRepository.save(turUserEdit);
-        }
-        return turUserEdit;
+            return userEdit;
+        }).orElseGet(TurUser::new);
     }
 
     @Transactional

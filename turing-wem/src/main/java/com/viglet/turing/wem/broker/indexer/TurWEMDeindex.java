@@ -30,6 +30,7 @@ import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 public class TurWEMDeindex {
 
@@ -64,7 +65,7 @@ public class TurWEMDeindex {
 
 		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, turSNSiteConfig.getLocale());
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, List.of(turSNSiteConfig.getLocale()));
 
 		Map<String, Object> attributes = new HashMap<>();
 
@@ -87,7 +88,7 @@ public class TurWEMDeindex {
 	public static void indexDeleteByType(String siteName, String typeName, IHandlerConfiguration config) {
 		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName);
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
-		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, turSNSiteConfig.getLocale());
+		final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, List.of(turSNSiteConfig.getLocale()));
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put(GenericResourceHandlerConfiguration.TYPE_ATTRIBUTE, typeName);
 		attributes.put(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());

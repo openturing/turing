@@ -262,7 +262,7 @@ public class TurWEMIndex {
 				Element element = document.getDocumentElement();
 				NodeList nodes = element.getChildNodes();
 				TurSNJobItems turSNJobItems = new TurSNJobItems();
-				TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, turSNSiteConfig.getLocale());
+				TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, List.of(turSNSiteConfig.getLocale()));
 				Map<String, Object> attributes = new HashMap<>();
 				for (int i = 0; i < nodes.getLength(); i++) {
 					String nodeName = nodes.item(i).getNodeName();
@@ -322,7 +322,7 @@ public class TurWEMIndex {
 					Element element = document.getDocumentElement();
 					NodeList nodes = element.getChildNodes();
 					TurSNJobItems turSNJobItems = new TurSNJobItems();
-					TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, turSNSiteConfig.getLocale());
+					TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, List.of(turSNSiteConfig.getLocale()));
 					Map<String, Object> attributes = new HashMap<>();
 					for (int i = 0; i < nodes.getLength(); i++) {
 						String randomFileName = UUID.randomUUID().toString();

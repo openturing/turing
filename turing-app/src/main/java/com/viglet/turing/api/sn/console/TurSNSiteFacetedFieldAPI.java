@@ -79,8 +79,9 @@ public class TurSNSiteFacetedFieldAPI {
                                     .ifPresent(fieldsFromRequest -> fieldExtension
                                             .setFacetPosition(fieldsFromRequest.getFacetPosition())));
                     turSNSiteFieldExtRepository.saveAll(fieldExtensions);
-                    return fieldExtensions.stream().sorted(Comparator.comparing(TurSNSiteFieldExt::getFacetPosition)).
-                            collect(Collectors.toList());
+                    return fieldExtensions.stream().sorted(Comparator.comparing(TurSNSiteFieldExt::getFacetPosition))
+                            .toList();
+
                 })
                 .orElseGet(Collections::emptyList);
     }

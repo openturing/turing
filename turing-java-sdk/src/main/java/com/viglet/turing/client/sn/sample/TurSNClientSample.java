@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
 import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -38,6 +39,8 @@ import java.util.logging.Logger;
  * 
  * @since 0.3.4
  */
+
+@Slf4j
 public class TurSNClientSample {
 	private static final Logger logger = Logger.getLogger(TurSNClientSample.class.getName());
 
@@ -54,34 +57,34 @@ public class TurSNClientSample {
 
 		HttpTurSNServer turSNServer;
 		try {
-			System.out.println("--- Locales");
+			log.info("--- Locales");
 			locales();
 
 			turSNServer = new HttpTurSNServer(URI.create(TURING_URL).toURL(), TURING_SITE, TURING_LOCALE,
 					new TurApiKeyCredentials(TURING_API_KEY), TURING_USERID);
 
-			System.out.println("--- Auto complete");
+			log.info("--- Auto complete");
 			autoComplete(turSNServer);
 
-			System.out.println("--- Latest Searches");
+			log.info("--- Latest Searches");
 			latestSearches(turSNServer);
 
-			System.out.println("--- Query");
+			log.info("--- Query");
 			QueryTurSNResponse response = query(args, turSNServer);
 
-			System.out.println("--- Spotlight Documents");
+			log.info("--- Spotlight Documents");
 			spolight(response);
 
-			System.out.println("--- Pagination");
+			log.info("--- Pagination");
 			pagination(response.getPagination());
 
-			System.out.println("--- Facet");
+			log.info("--- Facet");
 			facet(response);
 
-			System.out.println("--- Did You Mean");
+			log.info("--- Did You Mean");
 			didYouMean(response);
 
-			System.out.println("--- Group By");
+			log.info("--- Group By");
 			groupBy(args, turSNServer);
 
 		} catch (MalformedURLException e) {
@@ -92,12 +95,12 @@ public class TurSNClientSample {
 	private static void locales() throws MalformedURLException {
 		HttpTurSNServer turSNServer;
 		turSNServer = new HttpTurSNServer(URI.create(TURING_URL).toURL(), TURING_SITE);
-		turSNServer.getLocales().forEach(System.out::println);
+		turSNServer.getLocales().forEach(l -> log.info(String.valueOf(l)));
 	}
 
 	private static void latestSearches(HttpTurSNServer turSNServer) {
-		System.out.println(turSNServer.getLatestSearches(10).size());
-		turSNServer.getLatestSearches(10).forEach(System.out::println);
+		log.info(String.valueOf(turSNServer.getLatestSearches(10).size()));
+		turSNServer.getLatestSearches(10).forEach(log::info);
 	}
 
 	private static QueryTurSNResponse query(String[] args, HttpTurSNServer turSNServer) {
@@ -133,12 +136,12 @@ public class TurSNClientSample {
 		TurSNGroupList turSNGroupList = response.getGroupResponse();
 		if (turSNGroupList != null) {
 			turSNGroupList.forEach(group -> {
-				System.out.println("Group Name: ".concat(group.getName()));
+				log.info("Group Name: ".concat(group.getName()));
 				pagination(group.getPagination());
 				
 				group.getResults().forEach(result -> {
 					if (result.getContent() != null && result.getContent().getFields() != null) {
-						System.out.println(result.getContent().getFields().get("title"));
+						log.info((String) result.getContent().getFields().get("title"));
 					}
 				}); 
 			});
@@ -149,43 +152,44 @@ public class TurSNClientSample {
 	private static void spolight(QueryTurSNResponse response) {
 		List<TurSNSpotlightDocument> turSNSpotlightDocuments = response.getSpotlightDocuments();
 		if (turSNSpotlightDocuments != null) {
-			turSNSpotlightDocuments.forEach(turSNSpotlightDocument -> System.out
-					.printf("%s %s %s%n", turSNSpotlightDocument.getPosition(),
-							turSNSpotlightDocument.getTitle(), turSNSpotlightDocument.getContent()));
+			turSNSpotlightDocuments.forEach(turSNSpotlightDocument -> log.info("{} {} {}%n",
+					turSNSpotlightDocument.getPosition(),
+					turSNSpotlightDocument.getTitle(),
+					turSNSpotlightDocument.getContent()));
 		}
 	}
 
 	private static void pagination(TurSNPagination turSNPagination) {
 		if (turSNPagination != null) {
 			turSNPagination.getAllPages().forEach(page -> {
-				System.out.println(page.getLabel());
+				log.info(page.getLabel());
 				page.getQueryParams()
 						.ifPresent(queryParam -> queryParam.entrySet().forEach(TurSNClientSample::showKeyValue));
-				System.out.println(" ");
+				log.info(" ");
 			});
 
-			System.out.println("---");
-			turSNPagination.getLastPage().ifPresent(page -> System.out.println(page.getLabel()));
+			log.info("---");
+			turSNPagination.getLastPage().ifPresent(page -> log.info(page.getLabel()));
 		}
 	}
 
 	private static void facet(QueryTurSNResponse response) {
 		if (response.getFacetFields() != null) {
 			response.getFacetFields().forEach(facetFields -> {
-				System.out.printf("Facet: %s - %s - %s - %s%n", facetFields.getLabel(),
+				log.info("Facet: {} - {} - {} - {}n", facetFields.getLabel(),
 						facetFields.getName(), facetFields.getDescription(), facetFields.getType());
 				facetFields.getValues().forEach(facetField -> {
-					System.out.printf("%s (%s)%n", facetField.getLabel(), facetField.getCount());
+					log.info("{} ({})%n", facetField.getLabel(), facetField.getCount());
 					facetField.getQueryParams()
 							.ifPresent(queryParam -> queryParam.entrySet().forEach(TurSNClientSample::showKeyValue));
 				});
 
 			});
 			response.getFacetFields().getFacetWithRemovedValues().ifPresent(facetToRemove -> {
-				System.out.println("---");
-				System.out.println(facetToRemove.getLabel());
+				log.info("---");
+				log.info(facetToRemove.getLabel());
 				facetToRemove.getValues().forEach(value -> {
-					System.out.println(value.getLabel());
+					log.info(value.getLabel());
 					value.getQueryParams()
 							.ifPresent(queryParam -> queryParam.entrySet().forEach(TurSNClientSample::showKeyValue));
 				});
@@ -195,15 +199,15 @@ public class TurSNClientSample {
 	}
 
 	private static void showKeyValue(Entry<String, List<String>> param) {
-		System.out.printf("%s %s%n", param.getKey(), param.getValue().toString());
+		log.info("{} {}%n", param.getKey(), param.getValue().toString());
 	}
 
 	private static void didYouMean(QueryTurSNResponse response) {
 		TurSNDidYouMean turSNDidYouMean = response.getDidYouMean();
 		if (turSNDidYouMean != null && turSNDidYouMean.isCorrectedText()) {
-			System.out.printf("Original Query %s: %s%n", turSNDidYouMean.getOriginal().getText(),
+			log.info("Original Query {}: {}%n", turSNDidYouMean.getOriginal().getText(),
 					turSNDidYouMean.getOriginal().getLink());
-			System.out.printf("Correct Query %s: %s%n", turSNDidYouMean.getCorrected().getText(),
+			log.info("Correct Query {}: {}%n", turSNDidYouMean.getCorrected().getText(),
 					turSNDidYouMean.getCorrected().getLink());
 		}
 	}
@@ -212,6 +216,6 @@ public class TurSNClientSample {
 		TurSNAutoCompleteQuery autoCompleteQuery = new TurSNAutoCompleteQuery();
 		autoCompleteQuery.setQuery(AUTO_COMPLETE_TERM);
 		autoCompleteQuery.setRows(5);
-		turSNServer.autoComplete(autoCompleteQuery).forEach(System.out::println);
+		turSNServer.autoComplete(autoCompleteQuery).forEach(log::info);
 	}
 }

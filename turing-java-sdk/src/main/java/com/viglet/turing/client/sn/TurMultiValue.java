@@ -53,6 +53,11 @@ public class TurMultiValue extends ArrayList<String> {
         this.override = override;
     }
 
+    @Override
+    public boolean equals(Object other) {
+       return super.equals(other);
+    }
+
     public static <T> TurMultiValue singleItem(T value, boolean override) {
         if (value instanceof String) {
             String string = (String) value;

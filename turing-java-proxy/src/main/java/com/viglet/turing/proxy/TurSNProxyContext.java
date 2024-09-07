@@ -30,7 +30,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.net.URIBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -124,7 +123,7 @@ public class TurSNProxyContext {
 	}
 
 	private ResponseEntity<Object> responseNotFound() {
-		return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	}
 
 	private ResponseEntity<Object> responseTuring(URIBuilder turingURL) {
