@@ -64,31 +64,9 @@
             <version>4.5.2</version>
         </dependency>
         <dependency>
-            <groupId>opentext</groupId>
-            <artifactId>castor</artifactId>
-            <version>16.0</version>
-            <scope>system</scope>
-            <systemPath>${pom.basedir}/lib/castor-0.8.jar</systemPath>
-            <type>jar</type>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>opentext</groupId>
-            <artifactId>cma</artifactId>
-            <version>16.0</version>
-            <scope>system</scope>
-            <systemPath>${pom.basedir}/lib/vgn-appsvcs-cma.jar</systemPath>
-            <type>jar</type>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>opentext</groupId>
-            <artifactId>logging</artifactId>
-            <version>16.0</version>
-            <scope>system</scope>
-            <systemPath>${pom.basedir}/lib/vgn-shared-logging.jar</systemPath>
-            <type>jar</type>
-            <optional>true</optional>
+            <groupId>com.github.alegauss</groupId>
+            <artifactId>dummy-vgn</artifactId>
+            <version>2f2b7a1aea</version>
         </dependency>
     </dependencies>
     <build>
@@ -113,6 +91,22 @@
                         </goals>
                         <configuration>
                             <finalName>turing-wem</finalName>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/LICENSE</exclude>
+                                        <exclude>META-INF/LICENSE.txt</exclude>
+                                        <exclude>META-INF/DEPENDENCIES</exclude>
+                                        <exclude>META-INF/NOTICE</exclude>
+                                        <exclude>META-INF/NOTICE.txt</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>**/9/module-info.class</exclude>
+                                        <exclude>mozilla/public-suffix-list.txt</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>indexer</shadedClassifierName>
                             <transformers>
