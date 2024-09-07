@@ -27,7 +27,7 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.filesystem.commons.TurFileAttributes;
+import com.viglet.turing.filesystem.commons.TurTikaFileAttributes;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
@@ -110,9 +110,9 @@ public class TurSNImportAPI {
             String fileName = attribute.getValue().toString().replace(TurSNConstants.FILE_PROTOCOL, "");
             try (FileInputStream fileInputStreamAttribute = new FileInputStream(
                     extractFolder.getAbsolutePath() + File.separator + fileName)) {
-                TurFileAttributes turFileAttributes = TurFileUtils.parseFile(fileInputStreamAttribute, null);
-                Optional.ofNullable(turFileAttributes)
-                        .map(TurFileAttributes::getContent)
+                TurTikaFileAttributes turTikaFileAttributes = TurFileUtils.parseFile(fileInputStreamAttribute, null);
+                Optional.ofNullable(turTikaFileAttributes)
+                        .map(TurTikaFileAttributes::getContent)
                         .ifPresent(content -> attribute.setValue(TurCommonsUtils.cleanTextContent(content)));
             } catch (IOException e) {
                 log.error(e.getMessage(), e);

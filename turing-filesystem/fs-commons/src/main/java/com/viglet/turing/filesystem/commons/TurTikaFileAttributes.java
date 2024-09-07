@@ -31,12 +31,12 @@ import org.apache.tika.metadata.Metadata;
 **/
 @Setter
 @Getter
-public class TurFileAttributes {
+public class TurTikaFileAttributes {
 	private File file;
 	private String content;	
 	private Metadata metadata;
 	
-	public TurFileAttributes(File file, String content, Metadata metadata) {
+	public TurTikaFileAttributes(File file, String content, Metadata metadata) {
 		super();
 		this.file = file;
 		this.content = content;

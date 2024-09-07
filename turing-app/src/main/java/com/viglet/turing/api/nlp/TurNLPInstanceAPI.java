@@ -27,9 +27,8 @@ import com.google.inject.Inject;
 import com.viglet.turing.api.nlp.bean.TurNLPEntityValidateResponse;
 import com.viglet.turing.api.nlp.bean.TurNLPValidateDocument;
 import com.viglet.turing.api.nlp.bean.TurNLPValidateResponse;
-import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.filesystem.commons.TurFileAttributes;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
+import com.viglet.turing.filesystem.commons.TurTikaFileAttributes;
 import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.nlp.TurNLPResponse;
 import com.viglet.turing.nlp.TurNLPUtils;
@@ -54,6 +53,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -134,7 +134,7 @@ public class TurNLPInstanceAPI {
 
     @PostMapping(value = "/{id}/validate/file/blazon", produces = MediaType.APPLICATION_XML_VALUE)
     public RedactionScript validateFile(@RequestParam("file") MultipartFile multipartFile, @PathVariable String id) {
-        final String text = TurFileUtils.documentToText(multipartFile);
+        final String text = Objects.requireNonNull(TurFileUtils.documentToText(multipartFile)).getContent();
         TurNLPTextValidate textValidate = new TurNLPTextValidate();
         textValidate.setText(text);
         return this.turNLPInstanceRepository.findById(id).map(turNLPInstance ->
@@ -149,18 +149,18 @@ public class TurNLPInstanceAPI {
                                                    @RequestParam("config") String turNLPValidateDocumentRequest) {
 
         File file = TurSpringUtils.getFileFromMultipart(multipartFile);
-        TurFileAttributes turFileAttributes = TurFileUtils.readFile(file);
+        TurTikaFileAttributes turTikaFileAttributes = TurFileUtils.readFile(file);
         return this.turNLPInstanceRepository.findById(id)
                 .map(turNLPInstance -> {
                     try {
                         TurNLPValidateDocument turNLPValidateDocument = new ObjectMapper().readValue(turNLPValidateDocumentRequest,
                                 TurNLPValidateDocument.class);
-                        if (turFileAttributes != null && turNLPValidateDocument != null) {
+                        if (turTikaFileAttributes != null && turNLPValidateDocument != null) {
                             TurNLPResponse turNLPResponse = turNLPProcess.processTextByNLP(turNLPInstance,
-                                    turFileAttributes.getContent(), turNLPValidateDocument.getEntities());
+                                    turTikaFileAttributes.getContent(), turNLPValidateDocument.getEntities());
                             List<String> terms = getNLPTerms(turNLPResponse);
                             turNLPUtils.redactPdf(file, terms);
-                            return createNLPValidateResponse(turNLPInstance, turNLPResponse, turFileAttributes.getContent());
+                            return createNLPValidateResponse(turNLPInstance, turNLPResponse, turTikaFileAttributes.getContent());
                         }
                     } catch (JsonProcessingException e) {
                         log.error(e.getMessage(), e);

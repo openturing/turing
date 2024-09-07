@@ -1,7 +1,10 @@
 package com.viglet.turing.filesystem.commons;
 
+import com.viglet.turing.commons.file.TurFileAttributes;
+import com.viglet.turing.commons.file.TurFileSize;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
@@ -31,11 +34,11 @@ public class TurFileUtils {
         throw new IllegalStateException("Turing File Utilities class");
     }
 
-    public static TurFileAttributes readFile(String filePath) {
+    public static TurTikaFileAttributes readFile(String filePath) {
         return readFile(new File(filePath));
     }
 
-    public static TurFileAttributes readFile(File file) {
+    public static TurTikaFileAttributes readFile(File file) {
         if (file.exists()) {
             return parseFile(file);
         } else {
@@ -44,7 +47,7 @@ public class TurFileUtils {
         }
     }
 
-    public static TurFileAttributes parseFile(File file) {
+    public static TurTikaFileAttributes parseFile(File file) {
         try (InputStream fileInputStreamAttribute = new FileInputStream(file)) {
             return parseFile(fileInputStreamAttribute, file);
 
@@ -54,7 +57,7 @@ public class TurFileUtils {
         return null;
     }
 
-    public static TurFileAttributes parseFile(InputStream inputStream, File file) {
+    public static TurTikaFileAttributes parseFile(InputStream inputStream, File file) {
         try (inputStream) {
             StringBuilder contentFile = new StringBuilder();
             AutoDetectParser parser = new AutoDetectParser();
@@ -78,7 +81,7 @@ public class TurFileUtils {
             parseContext.set(EmbeddedDocumentExtractor.class, embeddedDocumentExtractor);
             parser.parse(inputStream, handler, metadata, parseContext);
             contentFile.append(handler);
-            return new TurFileAttributes(file, contentFile.toString(), metadata);
+            return new TurTikaFileAttributes(file, contentFile.toString(), metadata);
         } catch (IOException | SAXException | TikaException e) {
             log.error(e.getMessage(), e);
         }
@@ -96,12 +99,18 @@ public class TurFileUtils {
         return parseContext;
     }
 
-    public static String documentToText(MultipartFile multipartFile) {
+    public static TurFileAttributes documentToText(MultipartFile multipartFile) {
+
         try (InputStream inputStream = multipartFile.getInputStream()) {
-            TurFileAttributes turFileAttributes = parseFile(inputStream, null);
-            return Optional.ofNullable(turFileAttributes)
-                    .map(TurFileAttributes::getContent)
-                    .orElse(null);
+            TurTikaFileAttributes turTikaFileAttributes = parseFile(inputStream, null);
+            TurFileAttributes turFileAttributes = new TurFileAttributes();
+            Optional.ofNullable(turTikaFileAttributes).ifPresent(attributes -> {
+                turFileAttributes.setContent(attributes.getContent());
+                turFileAttributes.setName(multipartFile.getOriginalFilename());
+                turFileAttributes.setExtension(FilenameUtils.getExtension(multipartFile.getOriginalFilename()));
+                turFileAttributes.setSize(new TurFileSize(multipartFile.getSize()));
+            });
+            return turFileAttributes;
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }

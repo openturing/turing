@@ -40,6 +40,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @RestController
@@ -104,7 +105,7 @@ public class TurMLDataAPI {
     @Transactional
     public String turDataImport(@RequestParam("file") MultipartFile multipartFile) {
         String[] sentences = turOpenNLPConnector.sentenceDetect(turNLPProcess.getDefaultNLPInstance(),
-                TurFileUtils.documentToText(multipartFile));
+                Objects.requireNonNull(TurFileUtils.documentToText(multipartFile)).getContent());
         TurData turData = new TurData();
         turData.setName(multipartFile.getOriginalFilename());
         turData.setType(FilenameUtils.getExtension(multipartFile.getOriginalFilename()));

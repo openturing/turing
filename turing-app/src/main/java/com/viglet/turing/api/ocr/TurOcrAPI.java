@@ -1,5 +1,6 @@
 package com.viglet.turing.api.ocr;
 
+import com.viglet.turing.commons.file.TurFileAttributes;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class TurOcrAPI {
 
     @PostMapping
-    public String convertToText(@RequestParam("file") MultipartFile multipartFile) {
+    public TurFileAttributes convertToText(@RequestParam("file") MultipartFile multipartFile) {
        return TurFileUtils.documentToText(multipartFile);
     }
 }

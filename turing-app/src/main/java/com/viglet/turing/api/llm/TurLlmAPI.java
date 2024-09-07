@@ -45,6 +45,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -98,8 +99,7 @@ public class TurLlmAPI {
     @PostMapping(value = "/entity/file/blazon")
     public RedactionScript validateFile(@RequestParam("file") MultipartFile multipartFile)
             throws IOException, InterruptedException {
-        final String text = TurFileUtils.documentToText(multipartFile);
-        return getEntities(text);
+        return getEntities(Objects.requireNonNull(TurFileUtils.documentToText(multipartFile)).getContent());
 
     }
 
