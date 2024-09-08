@@ -141,7 +141,7 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
             if (new File(propertyFile).exists()) {
                 properties.load(new FileReader(propertyFile));
             } else {
-                System.out.printf("%nERROR: Cannot open %s file, use --property parameter correctly%n", propertyFile);
+                log.info("ERROR: Cannot open {} file, use --property parameter correctly", propertyFile);
             }
         } catch (IOException e) {
             log.error(e.getMessage(), e);

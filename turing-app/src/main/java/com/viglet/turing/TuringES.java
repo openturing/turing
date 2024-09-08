@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
 import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
 import com.viglet.turing.console.TurConsole;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -35,19 +36,23 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
+@Slf4j
 @SpringBootApplication
 @EnableJms
 @EnableCaching
 @EnableEncryptableProperties
 public class TuringES {
+
+	public static final String UTF_8 = "UTF-8";
+
 	public static void main(String... args) {
 		if (args != null && args.length > 0 && args[0].equals("console")) {
 			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
 					.run(args);
 		} else {
-			System.out.println(":: Starting Turing ES ...");
+			log.info(":: Starting Turing ES ...");
 			SpringApplication.run(TuringES.class, args);
-			System.out.println(":: Started Turing ES");
+			log.info(":: Started Turing ES");
 		}
 	}
 	@Bean
@@ -55,7 +60,7 @@ public class TuringES {
 		FilterRegistrationBean<CharacterEncodingFilter> registrationBean = new FilterRegistrationBean<>();
 		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
 		characterEncodingFilter.setForceEncoding(true);
-		characterEncodingFilter.setEncoding("UTF-8");
+		characterEncodingFilter.setEncoding(UTF_8);
 		registrationBean.setFilter(characterEncodingFilter);
 		return registrationBean;
 	}

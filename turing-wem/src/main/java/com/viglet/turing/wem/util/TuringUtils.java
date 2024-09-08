@@ -32,9 +32,8 @@ import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.exception.AuthorizationException;
 import com.vignette.as.client.exception.ValidationException;
 import com.vignette.as.client.javabean.*;
-import com.vignette.ext.furl.util.FurlUtil;
 import com.vignette.ext.templating.util.ContentUtil;
-import com.vignette.logging.context.ContextLogger;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -49,7 +48,6 @@ import org.apache.http.impl.client.HttpClients;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -58,10 +56,9 @@ import java.rmi.RemoteException;
 import java.util.*;
 import java.util.Map.Entry;
 
+@Slf4j
 public class TuringUtils {
-	private static final String CTD_VGNEXTPAGE = "VgnExtPage";
-
-	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
+	private static final String CTD_VGN_EXT_PAGE = "VgnExtPage";
 
 	private TuringUtils() {
 		throw new IllegalStateException("TuringUtils");
@@ -86,40 +83,6 @@ public class TuringUtils {
 			turingTags.addAll(entryCtd.getValue());
 		}
 		return turingTags;
-	}
-
-	public static ContentInstance findContentInstanceByKey(ContentType contentType, String primaryKeyValue)
-			throws Exception {
-
-		ContentInstance ci = null;
-		try {
-			AttributeDefinitionData add = getKeyAttributeDefinitionData(contentType);
-			DataType dt = add.getDataType();
-			Object val = primaryKeyValue;
-			if (dt.isInt() || dt.isNumerical() || dt.isTinyInt())
-				val = Integer.valueOf(primaryKeyValue);
-			ObjectTypeRef otr = new ObjectTypeRef(contentType);
-			AttributeData atd = new AttributeData(add, val, otr);
-			ManagedObjectRef ref = new ManagedObjectRef(otr, new AttributeData[] { atd });
-
-			ci = (ContentInstance) ManagedObject.findById(ref);
-		} catch (ApplicationException e) {
-			log.error(e.getStackTrace());
-		}
-
-		return ci;
-	}
-
-	public static AttributeDefinitionData getKeyAttributeDefinitionData(ContentType ct) throws Exception {
-		AttributeDefinitionData[] adds = ct.getData().getTopRelation().getKeyAttributeDefinitions();
-		if (adds == null)
-			throw new Exception("Failed to retrieve primary key definition", null);
-		if (adds.length == 0)
-			throw new Exception("No primary key found", null);
-		if (adds.length > 1) {
-			throw new Exception("Works with one primary key only: " + adds.length, null);
-		} else
-			return adds[0];
 	}
 
 	public static void basicAuth(IHandlerConfiguration config, HttpPost post) {
@@ -283,7 +246,8 @@ public class TuringUtils {
 	}
 
 	public static String normalizeText(String text) {
-		return text.replace("-", "–").replace(" ", "-").replace("\\?", "%3F").replace("#", "%23");
+		return text.replace("-", "–").replace(" ", "-")
+				.replace("\\?", "%3F").replace("#", "%23");
 	}
 
 	public static Site getSite(ManagedObject mo, IHandlerConfiguration config) {
@@ -348,7 +312,7 @@ public class TuringUtils {
 							selectedSite = site;
 						}
 					} catch (ApplicationException e) {
-						log.error(e);
+						log.error(e.getMessage(), e);
 					}
 				}
 			}
@@ -360,7 +324,6 @@ public class TuringUtils {
 		} else {
 			return sites.get(0);
 		}
-
 	}
 
 	private static String chosenSiteName(List<String> siteNames, IHandlerConfiguration config) {
@@ -435,7 +398,6 @@ public class TuringUtils {
 			}
 			return null;
 		}
-
 	}
 
 	public static String getSiteNameFromContentInstance(ManagedObject mo, IHandlerConfiguration config) {
@@ -453,30 +415,24 @@ public class TuringUtils {
 			final String SLASH = "/";
 			StringBuilder url = new StringBuilder(getSiteDomain(mo, config));
 
-			if (config.getCDAContextName(siteName) != null && FurlUtil.isIncludeContextName(site)) {
+			if (config.getCDAContextName(siteName) != null) {
 				url.append(SLASH);
 				url.append(config.getCDAContextName(siteName));
 			}
 
-			if (FurlUtil.isIncludeSiteName(site)) {
-				normalizeText(siteName);
-				url.append(SLASH);
-				url.append(normalizeText(siteName));
-			}
+            normalizeText(siteName);
+            url.append(SLASH);
+            url.append(normalizeText(siteName));
 
-			if (FurlUtil.isFormatIncluded(site)) {
-				url.append(SLASH);
-				url.append(ContentUtil.getDefaultFormatForSite(getSite(mo, config)));
-			}
-			if (FurlUtil.isIncludeLocaleName(site)) {
-				String locale = getLocale(mo, config);
-				if (locale != null) {
-					url.append(SLASH);
-					url.append(locale);
-				}
-			}
+            url.append(SLASH);
+            url.append(ContentUtil.getDefaultFormatForSite(getSite(mo, config)));
+            String locale = getLocale(mo, config);
+            if (locale != null) {
+                url.append(SLASH);
+                url.append(locale);
+            }
 
-			return url.toString();
+            return url.toString();
 		}
 		return "";
 	}
@@ -510,32 +466,6 @@ public class TuringUtils {
 		return null;
 	}
 
-	public static AsLocaleData getAsLocaleDataFromManagedObject(ManagedObjectVCMRef managedObjectVCMRef) {
-		ManagedObject mo;
-		AsLocaleData asLocaleData = null;
-		try {
-			mo = managedObjectVCMRef.retrieveManagedObject();
-
-			if (mo != null && mo.getLocale() != null && mo.getLocale().getAsLocale() != null
-					&& mo.getLocale().getAsLocale().getData() != null)
-				asLocaleData = mo.getLocale().getAsLocale().getData();
-		} catch (ApplicationException | RemoteException e) {
-			log.error(e.getMessage(), e);
-		}
-		return asLocaleData;
-	}
-
-	public static String getSiteNameFromManagedObjectVCMRef(ManagedObjectVCMRef managedObjectVCMRef,
-			IHandlerConfiguration config) {
-		String siteName = null;
-		try {
-			siteName = TuringUtils.getSiteName(managedObjectVCMRef.retrieveManagedObject(), config);
-		} catch (ApplicationException | RemoteException e) {
-			log.error(e.getMessage(), e);
-		}
-		return siteName;
-	}
-
 	public static Channel getParentChannelFromBreadcrumb(Channel[] breadcrumb) {
 		try {
 			ManagedObject managedObject = breadcrumb[breadcrumb.length - 1].getContentManagementId()
@@ -559,18 +489,16 @@ public class TuringUtils {
 							computedMoReferenceInstance.getReferentId());
 					ManagedObject moReference = managedObjectVCMRef.retrieveManagedObject();
 					if (moReference instanceof ContentInstance
-							&& moReference.getObjectType().getData().getName().equals(CTD_VGNEXTPAGE)) {
+							&& moReference.getObjectType().getData().getName().equals(CTD_VGN_EXT_PAGE)) {
 						vgnExtPageList.add(moReference);
 					}
 				}
 			}
-		} catch (ApplicationException | AuthorizationException | ValidationException e) {
-			log.error(e.getMessage(), e);
-		} catch (RemoteException e) {
+		} catch (ApplicationException | AuthorizationException | ValidationException | RemoteException e) {
 			log.error(e.getMessage(), e);
 		}
 
-		return vgnExtPageList;
+        return vgnExtPageList;
 	}
 
 }

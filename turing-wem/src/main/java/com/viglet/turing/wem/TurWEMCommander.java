@@ -265,8 +265,8 @@ public class TurWEMCommander {
                         .println(String.format("Processing Page %d of %d pages", currentPage++, totalPages));
                 long start = System.currentTimeMillis();
                 try {
-                    HashSet<ManagedObjectVCMRef> validGuids = new HashSet<ManagedObjectVCMRef>();
-                    HashMap<String, ManagedObject> objectMap = new HashMap<String, ManagedObject>(
+                    HashSet<ManagedObjectVCMRef> validGuids = new HashSet<>();
+                    HashMap<String, ManagedObject> objectMap = new HashMap<>(
                             managedObjects.size());
                     for (Object object : managedObjects) {
                         ManagedObject mo = (ManagedObject) object;

@@ -14,6 +14,8 @@ import java.util.Optional;
 @Component
 public class TurAuditorAwareImpl implements AuditorAware<String> {
 
+    public static final String ADMIN = "admin";
+    public static final String PREFERRED_USERNAME = "preferred_username";
     @Autowired
     private TurConfigProperties turConfigProperties;
 
@@ -24,14 +26,14 @@ public class TurAuditorAwareImpl implements AuditorAware<String> {
             if (turConfigProperties.isKeycloak()) {
                 OAuth2User user = ((OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
                 return Optional
-                        .of(((String) Objects.requireNonNull(user.getAttribute("preferred_username"))).toLowerCase());
+                        .of(((String) Objects.requireNonNull(user.getAttribute(PREFERRED_USERNAME))).toLowerCase());
             } else {
                 return Optional
                         .of(((TurCustomUserDetails) SecurityContextHolder.getContext().getAuthentication()
                                 .getPrincipal()).getUsername().toLowerCase());
             }
         } else {
-            return Optional.of("admin");
+            return Optional.of(ADMIN);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors.
+ * Copyright (C) 2016-2024 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -68,32 +68,45 @@ public class TurSNProcessQueue {
     public static final String DEFAULT = "default";
     public static final String SOLR = "SOLR";
     public static final String LUCENE = "LUCENE";
+    private final TurSolr turSolr;
+    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurSolrInstanceProcess turSolrInstanceProcess;
+    private final TurSNMergeProvidersProcess turSNMergeProvidersProcess;
+    private final TurSNSpotlightProcess turSNSpotlightProcess;
+    private final TurSNNLPProcess turSNNLPProcess;
+    private final TurSNThesaurusProcess turSNThesaurusProcess;
+    private final TurSNSiteFieldRepository turSNSiteFieldRepository;
+    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
+    private final TurSEInstanceRepository turSEInstanceRepository;
+    private final TurLuceneWriter turLuceneWriter;
     @Autowired
-    private TurSolr turSolr;
-    @Autowired
-    private TurSNSiteRepository turSNSiteRepository;
-    @Autowired
-    private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-    @Autowired
-    private TurSolrInstanceProcess turSolrInstanceProcess;
-    @Autowired
-    private TurSNMergeProvidersProcess turSNMergeProvidersProcess;
-    @Autowired
-    private TurSNSpotlightProcess turSNSpotlightProcess;
-    @Autowired
-    private TurSNNLPProcess turSNNLPProcess;
-    @Autowired
-    private TurSNThesaurusProcess turSNThesaurusProcess;
-    @Autowired
-    private TurSNSiteFieldRepository turSNSiteFieldRepository;
-    @Autowired
-    private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-    @Autowired
-    private TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
-    @Autowired
-    private TurSEInstanceRepository turSEInstanceRepository;
-    @Autowired
-    private TurLuceneWriter turLuceneWriter;
+    public TurSNProcessQueue(TurSolr turSolr, TurSNSiteRepository turSNSiteRepository,
+                             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                             TurSolrInstanceProcess turSolrInstanceProcess,
+                             TurSNMergeProvidersProcess turSNMergeProvidersProcess,
+                             TurSNSpotlightProcess turSNSpotlightProcess,
+                             TurSNNLPProcess turSNNLPProcess, TurSNThesaurusProcess turSNThesaurusProcess,
+                             TurSNSiteFieldRepository turSNSiteFieldRepository,
+                             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+                             TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
+                             TurSEInstanceRepository turSEInstanceRepository,
+                             TurLuceneWriter turLuceneWriter) {
+        this.turSolr = turSolr;
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turSolrInstanceProcess = turSolrInstanceProcess;
+        this.turSNMergeProvidersProcess = turSNMergeProvidersProcess;
+        this.turSNSpotlightProcess = turSNSpotlightProcess;
+        this.turSNNLPProcess = turSNNLPProcess;
+        this.turSNThesaurusProcess = turSNThesaurusProcess;
+        this.turSNSiteFieldRepository = turSNSiteFieldRepository;
+        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
+        this.turSEInstanceRepository = turSEInstanceRepository;
+        this.turLuceneWriter = turLuceneWriter;
+    }
 
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
     @Transactional
