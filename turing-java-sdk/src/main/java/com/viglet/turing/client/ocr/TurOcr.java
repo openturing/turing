@@ -35,7 +35,7 @@ public class TurOcr {
                 return entity != null ? EntityUtils.toString(entity) : null;
             });
             if (showOutput) {
-                System.out.println(responseBody);
+                log.info(responseBody);
             }
             return responseBody;
         } catch (IOException e) {

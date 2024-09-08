@@ -80,8 +80,8 @@ public class TurCommonsUtils {
         }
     }
 
-    public static String html2Description(String text, int number_chars) {
-        return text2Description(html2Text(text), number_chars);
+    public static String html2Description(String text, int numberChars) {
+        return text2Description(html2Text(text), numberChars);
     }
 
     public static URI addOrReplaceParameter(URI uri, String paramName, Locale locale) {

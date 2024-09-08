@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.utils.TurSNClientUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
@@ -42,6 +43,8 @@ import java.util.logging.Logger;
  * @author Alexandre Oliveira
  * @since 0.3.5
  */
+
+@Slf4j
 public class TurSNJobUtils {
     private static final Logger logger = Logger.getLogger(TurSNJobUtils.class.getName());
     private static final String TYPE_ATTRIBUTE = "type";
@@ -61,7 +64,7 @@ public class TurSNJobUtils {
             HttpPost httpPost = new HttpPost(
                     String.format("%s/api/sn/import", turSNServer.getServerURL()));
             if (showOutput) {
-                System.out.println(jsonUTF8);
+                log.info(jsonUTF8);
             }
             httpPost.setEntity(new StringEntity(jsonUTF8, StandardCharsets.UTF_8));
             httpPost.setHeader("Accept", "application/json");

@@ -37,6 +37,7 @@ public class TurAemDates extends StdDeserializer<Date> {
             try {
                 return formatter.parse(node.textValue());
             } catch (ParseException ignored) {
+                // Nothing
             }
         }
         if (log.isDebugEnabled()) {

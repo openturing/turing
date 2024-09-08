@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2024 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,6 +22,7 @@
 package com.viglet.turing.console;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.ComponentScan;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Component;
 
 import com.viglet.turing.console.encrypt.TurEncryptCLI;
 
+@Slf4j
 @Component
 @ComponentScan(basePackages = { "com.viglet.turing.console.encrypt", "com.viglet.turing.encrypt" })
 public class TurConsole implements ApplicationRunner {
@@ -42,7 +44,7 @@ public class TurConsole implements ApplicationRunner {
 	@Override
 	public void run(ApplicationArguments args) {
 		if (!args.getNonOptionArgs().isEmpty() && args.getNonOptionArgs().get(1).equals("encrypt")) {
-			System.err.println(turEncryptCLI.encrypt(args.getOptionValues("input").get(0)));
+			log.info(turEncryptCLI.encrypt(args.getOptionValues("input").get(0)));
 		}
 	}
 }
