@@ -127,7 +127,13 @@
         </profile>
     </profiles>
     <dependencyManagement>
+
         <dependencies>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>1.5.8</version>
+            </dependency>
             <dependency>
                 <groupId>com.viglet.turing</groupId>
                 <artifactId>turing-java-sdk</artifactId>
