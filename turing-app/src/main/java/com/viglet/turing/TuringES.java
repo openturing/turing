@@ -44,17 +44,21 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 public class TuringES {
 
 	public static final String UTF_8 = "UTF-8";
+	public static final String CONSOLE = "console";
 
 	public static void main(String... args) {
-		if (args != null && args.length > 0 && args[0].equals("console")) {
+		if (isConsole(args)) {
 			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
 					.run(args);
 		} else {
-			log.info(":: Starting Turing ES ...");
 			SpringApplication.run(TuringES.class, args);
-			log.info(":: Started Turing ES");
 		}
 	}
+
+	private static boolean isConsole(String[] args) {
+		return args != null && args.length > 0 && args[0].equals(CONSOLE);
+	}
+
 	@Bean
 	FilterRegistrationBean<CharacterEncodingFilter> filterRegistrationBean() {
 		FilterRegistrationBean<CharacterEncodingFilter> registrationBean = new FilterRegistrationBean<>();
