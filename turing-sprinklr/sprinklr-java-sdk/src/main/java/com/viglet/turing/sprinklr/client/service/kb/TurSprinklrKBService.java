@@ -43,26 +43,26 @@ public class TurSprinklrKBService {
     private static TurSprinklrKBRequestBody getRequestBody(int page) {
 
         // Scheme for PUBLIC_CONTENT SCHEME filter
-        final TurSprinklrKBFilter PUBLIC_CONTENT_FILTER = TurSprinklrKBFilter.builder()
+        final TurSprinklrKBFilter publicContentFilter = TurSprinklrKBFilter.builder()
                 .filterType(TurSprinklrKBFilter.FilterType.IN)
                 .field(TurSprinklrKBFilter.Field.PUBLIC_CONTENT)
                 .values(List.of("true")).build();
 
         // Scheme for CONTENT_STATUS filter
-        final TurSprinklrKBFilter CONTENT_STATUS_FILTER = TurSprinklrKBFilter
+        final TurSprinklrKBFilter contentStatusFilter = TurSprinklrKBFilter
                 .builder()
                 .filterType(TurSprinklrKBFilter.FilterType.IN)
                 .field(TurSprinklrKBFilter.Field.KB_CONTENT_STATUS)
                 .values(List.of("APPROVED")).build();
 
-        final List<TurSprinklrKBFilter> FILTERS = new ArrayList<>(2);
-        FILTERS.add(CONTENT_STATUS_FILTER);
-        FILTERS.add(PUBLIC_CONTENT_FILTER);
+        final List<TurSprinklrKBFilter> filters = new ArrayList<>(2);
+        filters.add(contentStatusFilter);
+        filters.add(publicContentFilter);
 
-        FILTERS.forEach((filter) -> log.info(filter.toString()));
+        filters.forEach(filter -> log.info(filter.toString()));
 
         return TurSprinklrKBRequestBody.builder()
-                .page(getPage(page)).filters(FILTERS).build();
+                .page(getPage(page)).filters(filters).build();
     }
 
     private static TurSprinklrKBPage getPage(int page) {
