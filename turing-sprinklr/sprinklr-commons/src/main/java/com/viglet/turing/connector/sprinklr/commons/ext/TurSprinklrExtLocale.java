@@ -6,6 +6,9 @@ import java.util.Locale;
 
 public class TurSprinklrExtLocale implements TurSprinklrExtLocaleInterface {
 
+    /**
+     * Gets locale from Sprinklr Context
+     */
     @Override
     public Locale consume(TurSprinklrContext context) {
         return context.getSearchResult().getLocale();

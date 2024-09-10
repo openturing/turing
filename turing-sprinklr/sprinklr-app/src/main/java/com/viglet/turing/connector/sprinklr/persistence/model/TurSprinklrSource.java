@@ -13,6 +13,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
 
+/**
+ * An entity that represents the connections to Sprinklr servers
+ */
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
