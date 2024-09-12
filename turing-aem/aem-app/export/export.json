@@ -1,0 +1,107 @@
+{
+  "sources": [
+    {
+      "id": "832afc86-98cb-4a68-a93f-4f85c03f125a",
+      "localeClass": "com.viglet.turing.connector.aem.commons.ext.TurAemExtLocale",
+      "deltaClass": "com.viglet.turing.connector.aem.sample.ext.TurAemExtSampleDeltaDate",
+      "turingUrl": "http://localhost:2700",
+      "turingApiKey":"api_key_here",
+
+      "urlPrefix":"https://author-pxxxx-exxxx.adobeaemcloud.com",
+      "oncePattern":"^/content/sample/pt/(news|webinars)/20(22|23)",
+      "url": "https://author-pxxxx-exxxx.adobeaemcloud.com",
+      "username": "username_here",
+      "password": "password_here",
+      "rootPath":"/content/sample",
+      "turSNSites": [
+        "sample"
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "mandatory": true,
+          "multiValued": false,
+          "description": "Id",
+          "facet": false,
+          "facetName": {
+            "default": "Ids"
+          },
+          "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtContentId"
+        },
+        {
+          "name": "title",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtSampleTitle"
+        },
+        {
+          "name": "publication_date",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtPublicationDate"
+        },
+        {
+          "name": "modification_date",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtModificationDate"
+        },
+        {
+          "name": "text",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtText"
+        },
+        {
+          "name": "abstract",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtDescription"
+        },
+        {
+          "name": "source_apps",
+          "text": "SPRINKLR"
+        },
+        {
+          "name": "type",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtType"
+        },
+        {
+          "name": "category",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtCategory"
+        },
+        {
+          "name": "tags",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtTag"
+        },
+        {
+          "name": "url",
+          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtUrl"
+        }
+      ],
+      "models": [
+        {
+          "type": "cq:Page",
+          "className": "com.viglet.turing.connector.aem.sample.ext.TurAemExtSampleModelJson",
+          "targetAttrs": [
+            {
+              "name": "title",
+              "sourceAttrs": [
+                {
+                  "name": "jcr:title"
+                }
+              ]
+            },
+            {
+              "name": "tags",
+              "sourceAttrs": [
+                {
+                  "name": "cq:tags"
+                }
+              ]
+            },
+            {
+              "name": "text",
+              "sourceAttrs": [
+                {
+                  "className": "com.viglet.turing.connector.aem.commons.ext.TurAemExtPageComponents"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

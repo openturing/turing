@@ -45,3 +45,4 @@ dependency-reduced-pom.xml
 /turing-sprinklr/store/
 /turing-sprinklr/sprinklr-commons/target/
 /turing-sprinklr/sprinklr-java-sdk/target/
+/turing-aem/aem-app/export/
