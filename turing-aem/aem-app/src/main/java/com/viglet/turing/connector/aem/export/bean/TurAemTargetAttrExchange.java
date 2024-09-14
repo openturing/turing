@@ -16,14 +16,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.aem.persistence.model;
+package com.viglet.turing.connector.aem.export.bean;
 
-import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.UuidGenerator;
 
-import java.io.Serial;
-import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashSet;
 
 /**
  * @author Alexandre Oliveira
@@ -34,25 +32,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Getter
 @Setter
-@Entity
-@Table(name = "aem_source_attribute")
-public class TurAemSourceAttribute implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    @Id
-    @UuidGenerator
-    @Column(name = "id", nullable = false)
-    private String id;
-
+public class TurAemTargetAttrExchange {
     private String name;
-    private String className;
-    private String text;
-
-    // bi-directional many-to-one association to TurAemTargetAttribute
-    @ManyToOne
-    @JoinColumn(name = "aem_target_attribute_id", nullable = false)
-    private TurAemTargetAttribute turAemTargetAttribute;
-
+    @Builder.Default
+    private Collection<TurAemSourceAttrExchange> sourceAttrs = new HashSet<>();
 }

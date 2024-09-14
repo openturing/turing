@@ -18,6 +18,7 @@
 
 package com.viglet.turing.connector.aem.persistence.model;
 
+import com.viglet.turing.spring.jpa.TurUuid;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Cascade;
@@ -46,7 +47,7 @@ public class TurAemSource implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @UuidGenerator
+    @TurUuid
     private String id;
     @Column
     private String url;
@@ -68,25 +69,28 @@ public class TurAemSource implements Serializable {
     private Locale locale;
     @Column
     private String localeClass;
+    @Column
+    private String deltaClass;
+    @Column
+    private String turingUrl;
+    @Column
+    private String turingApiKey;
 
-    // bi-directional many-to-one association to TurAemSourceLocalePath
     @Builder.Default
     @OneToMany(mappedBy = "turAemSource", orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurAemSourceLocalePath> localePaths = new HashSet<>();
 
-    // bi-directional many-to-one association to TurAemTargetAttribute
     @Builder.Default
     @OneToMany(mappedBy = "turAemSource", orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurAemAttributeMapping> attributeMappings = new HashSet<>();
 
-
     @Builder.Default
     @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
-    @CollectionTable(name = "sprinklr_sn_site", joinColumns = @JoinColumn(name = "source_id"))
+    @CollectionTable(name = "aem_sn_site", joinColumns = @JoinColumn(name = "source_id"))
     @Column(name = "sn_site", nullable = false)
     private Collection<String> turSNSites = new HashSet<>();
 
@@ -95,19 +99,6 @@ public class TurAemSource implements Serializable {
         this.localePaths.clear();
         if (localePaths != null) {
             this.localePaths.addAll(localePaths);
-        }
-    }
-
-    public void setAttributeMappings(Collection<TurAemAttributeMapping> attributeMappings) {
-        this.attributeMappings.clear();
-        if (attributeMappings != null) {
-            this.attributeMappings.addAll(attributeMappings);
-        }
-    }
-    public void setTurSNSites(Collection<String> turSNSites) {
-        this.turSNSites.clear();
-        if (turSNSites != null) {
-            this.turSNSites.addAll(turSNSites);
         }
     }
 }

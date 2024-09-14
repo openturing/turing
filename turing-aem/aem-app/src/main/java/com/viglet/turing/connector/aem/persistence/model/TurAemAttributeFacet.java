@@ -18,17 +18,14 @@
 
 package com.viglet.turing.connector.aem.persistence.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.spring.jpa.TurUuid;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.Locale;
 
 /**
  * @author Alexandre Oliveira
@@ -40,9 +37,9 @@ import java.util.HashSet;
 @Getter
 @Setter
 @Entity
-@Table(name = "aem_target_attribute")
-public class TurAemTargetAttribute implements Serializable {
-
+@Table(name = "aem_attribute_facet")
+@JsonIgnoreProperties({"turAemSource"})
+public class TurAemAttributeFacet implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -50,15 +47,9 @@ public class TurAemTargetAttribute implements Serializable {
     @TurUuid
     @Column(name = "id", nullable = false)
     private String id;
-
-    private String name;
-
-    @OneToMany(mappedBy = "turAemTargetAttribute", orphanRemoval = true, fetch = FetchType.LAZY)
-    @Cascade({org.hibernate.annotations.CascadeType.ALL})
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Collection<TurAemSourceAttribute> turAemSourceAttribute = new HashSet<>();
-
+    private Locale locale;
+    private String facetName;
     @ManyToOne
-    @JoinColumn(name = "aem_model_id", nullable = false)
-    private TurAemModel turAemModel;
+    @JoinColumn(name = "aem_attribute_map_id", nullable = false)
+    private TurAemAttributeMapping turAemAttributeMapping;
 }

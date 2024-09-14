@@ -33,12 +33,19 @@ public class TurAemSourceExchange {
     private String id;
     private Locale locale;
     private String localeClass;
+    private String deltaClass;
+    private String turingUrl;
+    private String turingApiKey;
     private String url;
-    private String environment;
-    private String secretKey;
-    private String apiKey;
+    private String urlPrefix;
+    private String oncePattern;
+    private String username;
+    private String password;
+    private String rootPath;
     @Builder.Default
-    private Collection<String> turSNSites = new HashSet<>();;
+    private Collection<String> turSNSites = new HashSet<>();
     @Builder.Default
     private Collection<TurAemAttribExchange> attributes = new HashSet<>();
+    @Builder.Default
+    private Collection<TurAemModelExchange> models = new HashSet<>();
 }

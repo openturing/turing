@@ -26,12 +26,10 @@ public class TurWCAttributeMapping implements Serializable {
     @TurUuid
     @Column(name = "id", nullable = false)
     private String id;
-
     private String name;
     private String className;
     private String text;
 
-    // bi-directional many-to-one association to TurWCSource
     @ManyToOne
     @JoinColumn(name = "ws_source_id", nullable = false)
     private TurWCSource turWCSource;

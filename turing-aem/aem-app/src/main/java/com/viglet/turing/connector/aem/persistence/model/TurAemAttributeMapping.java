@@ -1,12 +1,18 @@
 package com.viglet.turing.connector.aem.persistence.model;
 
+import com.viglet.turing.connector.aem.export.bean.TurAemFacetExchange;
 import com.viglet.turing.spring.jpa.TurUuid;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashSet;
 
 
 @Builder(toBuilder = true)
@@ -15,8 +21,8 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Entity
-@Table(name = "sprinklr_attribute_mapping")
-@JsonIgnoreProperties({ "turWCSource" })
+@Table(name = "aem_attribute_mapping")
+@JsonIgnoreProperties({ "turAemSource" })
 public class TurAemAttributeMapping implements Serializable {
 
     @Serial
@@ -30,22 +36,13 @@ public class TurAemAttributeMapping implements Serializable {
     private String name;
     private String className;
     private String text;
-
+    private String facetNameDefault;
+    @Builder.Default
+    @OneToMany(mappedBy = "turAemAttributeMapping", orphanRemoval = true, fetch = FetchType.LAZY)
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Collection<TurAemAttributeFacet> facetNames = new HashSet<>();
     @ManyToOne
-    @JoinColumn(name = "sprinklr_source_id", nullable = false)
+    @JoinColumn(name = "aem_source_id", nullable = false)
     private TurAemSource turAemSource;
-
-    public TurAemAttributeMapping(String name, Class<?> className, TurAemSource turAemSource) {
-        this.name = name;
-        this.className = className.getName();
-        this.text = null;
-        this.turAemSource = turAemSource;
-    }
-
-    public TurAemAttributeMapping(String name, String text, TurAemSource turAemSource) {
-        this.name = name;
-        this.className = null;
-        this.text = text;
-        this.turAemSource = turAemSource;
-    }
 }

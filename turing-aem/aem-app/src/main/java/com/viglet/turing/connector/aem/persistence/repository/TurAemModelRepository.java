@@ -16,29 +16,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.aem.export.bean;
+package com.viglet.turing.connector.aem.persistence.repository;
 
-import lombok.*;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-
-@Builder(toBuilder = true)
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-public class TurAemAttribExchange {
-    private String name;
-    private String className;
-    private String text;
-    private String type;
-    private boolean mandatory;
-    private boolean multiValued;
-    private String description;
-    private boolean facet;
-    @Builder.Default
-    private Map<String, String> facetName = new HashMap<>();
+import org.springframework.data.jpa.repository.JpaRepository;
+import com.viglet.turing.connector.aem.persistence.model.TurAemModel;
+/**
+ * @author Alexandre Oliveira
+ * @since 0.3.9
+ */
+public interface TurAemModelRepository extends JpaRepository<TurAemModel, String> {
 }

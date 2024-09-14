@@ -21,12 +21,17 @@ import java.util.Locale;
 @Table(name = "wc_source")
 public class TurWCSource implements Serializable {
 
+    public static final String ID = "id";
     @Serial
     private static final long serialVersionUID = 1L;
+    public static final String TUR_WC_SOURCE = "turWCSource";
+    public static final String SOURCE_ID = "source_id";
+    public static final String WC_SN_SITE = "wc_sn_site";
+    public static final String SN_SITE = "sn_site";
 
     @Id
     @TurUuid
-    @Column(name = "id", nullable = false)
+    @Column(name = ID, nullable = false)
     private String id;
     @Column
     private String title;
@@ -45,30 +50,30 @@ public class TurWCSource implements Serializable {
 
     @Builder.Default
     @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
-    @CollectionTable(name = "wc_sn_site", joinColumns = @JoinColumn(name = "source_id"))
-    @Column(name = "sn_site", nullable = false)
+    @CollectionTable(name = WC_SN_SITE, joinColumns = @JoinColumn(name = SOURCE_ID))
+    @Column(name = SN_SITE, nullable = false)
     private Collection<String> turSNSites = new HashSet<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "turWCSource", orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = TUR_WC_SOURCE, orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurWCAllowUrl> allowUrls  = new HashSet<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "turWCSource", orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = TUR_WC_SOURCE, orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurWCNotAllowUrl> notAllowUrls = new HashSet<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "turWCSource", orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = TUR_WC_SOURCE, orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurWCFileExtension> notAllowExtensions = new HashSet<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "turWCSource", orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = TUR_WC_SOURCE, orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurWCAttributeMapping> attributeMappings = new HashSet<>();

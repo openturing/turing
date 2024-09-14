@@ -50,13 +50,13 @@ public class TurAemOnStartupJpa implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments arg0) {
         if (this.turAemConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
-            System.out.println("First Time Configuration ...");
-            Path exportFile = Paths.get("com/viglet/turing/connector/aem/export/export.json");
+            log.info("First Time Configuration ...");
+            Path exportFile = Paths.get("export/export.json");
             if (exportFile.toFile().exists()) {
                 turAemExchangeProcess.importFromFile(exportFile.toFile());
             }
             setFirstTIme();
-            System.out.println("Configuration finished.");
+            log.info("Configuration finished.");
         }
     }
 
