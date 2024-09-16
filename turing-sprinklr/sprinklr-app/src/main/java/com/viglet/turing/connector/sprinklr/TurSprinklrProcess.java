@@ -17,6 +17,8 @@ import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtLocaleInte
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrAttributeMapping;
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrSource;
 import com.viglet.turing.connector.sprinklr.persistence.repository.TurSprinklrAttributeMappingRepository;
+import com.viglet.turing.connector.sprinklr.utils.FileAsset;
+import com.viglet.turing.connector.sprinklr.utils.FileAssetsExtractor;
 import com.viglet.turing.sprinklr.client.service.kb.TurSprinklrKBService;
 import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrKBSearch;
 import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrSearchResult;
@@ -100,18 +102,22 @@ public class TurSprinklrProcess {
                 //TODO Maybe we can use TurSprinklrSearchData instead of turSprinklrKBSearchResult?
                 TurSprinklrKBSearch turSprinklrKBSearch = TurSprinklrKBService.run(turSprinklrAccessToken, kbPage.get());
 
-                if (!(turSprinklrKBSearch == null)) {
+                if (turSprinklrKBSearch != null) {
                     List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
 
                     if (results.isEmpty()) {
                         break;
                     } else {
                         results.forEach(searchResult -> {
+
+
                             // Inserts new jobs into turSNJobItems parameter
                             getArticle(turSprinklrSource, searchResult, turSprinklrAccessToken);
 
+                            List<FileAsset> assets = getFileAssets(searchResult);
+                            addFileAssetsToJobItens(assets, resultLocale);
+
                             // Quando o tamanho de turSNJobItems alcançar o JobSize definido, envia para o turing.
-                            // Como um push
                             sendToTuringWhenMaxSize();
 
                             getInfoQueue();
@@ -129,6 +135,32 @@ public class TurSprinklrProcess {
         }
     }
 
+    private void addFileAssetsToJobItens(List<FileAsset> fileAssets, Locale locale) {
+        for (var asset : fileAssets) {
+            var turSNJobItemAttributes = asset.toMapAttributes();
+
+            TurSNJobItem turSNJobItem = new TurSNJobItem(
+                    TurSNJobAction.CREATE,
+                    turSprinklrSource.getTurSNSites().stream().toList(),
+                    getLocale(turSprinklrSource, searchResult, turSprinklrAccessToken),
+                    turSNJobItemAttributes
+            );
+            turSNJobItems.add(turSNJobItem);
+        }
+    }
+
+    private List<FileAsset> getFileAssets(TurSprinklrSearchResult searchResult) {
+        var fileAssetExtractor = new FileAssetsExtractor(turingUrl, turingApiKey);
+        var fileAssets = fileAssetExtractor.extractFromLinkedAssets(searchResult);
+
+        if(fileAssets == null || fileAssets.size() == 0){
+            return Collections.emptyList();
+        }
+        return fileAssets;
+
+
+    }
+
     /**
      * Clears the List of jobs in Turing API
      */
@@ -140,10 +172,9 @@ public class TurSprinklrProcess {
         log.info("Total Job Item: {}", Iterators.size(turSNJobItems.iterator()));
     }
 
-    //TODO rename Method?
     //TODO ask why turSprinklrAccessToken is being used
     public void getArticle(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
-                        TurSprinklrAccessToken token) {
+                           TurSprinklrAccessToken token) {
         log.info("{}: {}", searchResult.getId(), turSprinklrSource.getTurSNSites());
         addTurSNJobItems(turSprinklrSource, searchResult, token);
 
@@ -201,11 +232,12 @@ public class TurSprinklrProcess {
 
     /**
      * Returns a new HashMap of "Attribute(turing Field, Attribute Name from export.json) -> Attribute Value". <p>
-     *     This method is used when sending a job to Turing.
+     * This method is used when sending a job to Turing.
+     *
      * @param turSprinklrSource Is used to find the <b>turSprinklrAttributeMapping entity</b>, it represents
      *                          <code>export.json</code> file.
-     * @param token N/A
-     * @param searchResult If a <b>CustomClass</b> is defined by <code>export.json</code> file, the value will be extracted from <b>searchResult</b>
+     * @param token             N/A
+     * @param searchResult      If a <b>CustomClass</b> is defined by <code>export.json</code> file, the value will be extracted from <b>searchResult</b>
      * @return the created HashMap
      */
     public Map<String, Object> getJobItemAttributes(TurSprinklrSource turSprinklrSource, TurSprinklrAccessToken token,
