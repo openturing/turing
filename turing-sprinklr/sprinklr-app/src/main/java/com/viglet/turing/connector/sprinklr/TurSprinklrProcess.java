@@ -99,7 +99,6 @@ public class TurSprinklrProcess {
 
         if (turSprinklrAccessToken != null) {
             while (true) {
-                //TODO Maybe we can use TurSprinklrSearchData instead of turSprinklrKBSearchResult?
                 TurSprinklrKBSearch turSprinklrKBSearch = TurSprinklrKBService.run(turSprinklrAccessToken, kbPage.get());
 
                 if (turSprinklrKBSearch != null) {
@@ -109,13 +108,15 @@ public class TurSprinklrProcess {
                         break;
                     } else {
                         results.forEach(searchResult -> {
+                            Locale resultLocale = searchResult.getLocale();
+                            Collection<String> turSites = turSprinklrSource.getTurSNSites();
 
-
-                            // Inserts new jobs into turSNJobItems parameter
+                            // Inserts new jobs into turSNJobItems
                             getArticle(turSprinklrSource, searchResult, turSprinklrAccessToken);
 
+                            // Gets the assets attached to the search result and inserts into turSNJobItems.
                             List<FileAsset> assets = getFileAssets(searchResult);
-                            addFileAssetsToJobItens(assets, resultLocale);
+                            addFileAssetsToJobItens(assets, resultLocale, turSites);
 
                             // Quando o tamanho de turSNJobItems alcançar o JobSize definido, envia para o turing.
                             sendToTuringWhenMaxSize();
@@ -135,30 +136,33 @@ public class TurSprinklrProcess {
         }
     }
 
-    private void addFileAssetsToJobItens(List<FileAsset> fileAssets, Locale locale) {
+    /**
+     * Extracts the file assets from the search result and returns a list of FileAsset objects.
+     */
+    private List<FileAsset> getFileAssets(TurSprinklrSearchResult searchResult) {
+        final var fileAssetExtractor = new FileAssetsExtractor(turingUrl, turingApiKey);
+        final var fileAssets = fileAssetExtractor.extractFromLinkedAssets(searchResult);
+
+        if (fileAssets == null || fileAssets.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return fileAssets;
+    }
+
+    /**
+     * Adds the file assets to the job items list.
+     */
+    private void addFileAssetsToJobItens(List<FileAsset> fileAssets, Locale locale, Collection<String> turSites) {
         for (var asset : fileAssets) {
             var turSNJobItemAttributes = asset.toMapAttributes();
-
             TurSNJobItem turSNJobItem = new TurSNJobItem(
                     TurSNJobAction.CREATE,
-                    turSprinklrSource.getTurSNSites().stream().toList(),
-                    getLocale(turSprinklrSource, searchResult, turSprinklrAccessToken),
+                    (List<String>) turSites,
+                    locale,
                     turSNJobItemAttributes
             );
             turSNJobItems.add(turSNJobItem);
         }
-    }
-
-    private List<FileAsset> getFileAssets(TurSprinklrSearchResult searchResult) {
-        var fileAssetExtractor = new FileAssetsExtractor(turingUrl, turingApiKey);
-        var fileAssets = fileAssetExtractor.extractFromLinkedAssets(searchResult);
-
-        if(fileAssets == null || fileAssets.size() == 0){
-            return Collections.emptyList();
-        }
-        return fileAssets;
-
-
     }
 
     /**
@@ -172,7 +176,6 @@ public class TurSprinklrProcess {
         log.info("Total Job Item: {}", Iterators.size(turSNJobItems.iterator()));
     }
 
-    //TODO ask why turSprinklrAccessToken is being used
     public void getArticle(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
                            TurSprinklrAccessToken token) {
         log.info("{}: {}", searchResult.getId(), turSprinklrSource.getTurSNSites());
@@ -209,7 +212,7 @@ public class TurSprinklrProcess {
         /*
          Try to get extract the locale from turSprinklrSource.getLocale()
          Or else extracts the locale class (by default sprinklr-commons TurSprinklrExtLocal) from turSprinklrSource.
-         If getCustomClassMap found a class, converts the result to a instance of TurSprinklrExtLocaleInterface.
+         If getCustomClassMap found a class, converts the result to an instance of TurSprinklrExtLocaleInterface.
          Then calls the .consume method to get a Locale, if none of this works, then return Locale.US
         */
         return Optional.ofNullable(turSprinklrSource.getLocale())
