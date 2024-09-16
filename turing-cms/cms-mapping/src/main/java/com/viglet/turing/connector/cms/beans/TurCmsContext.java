@@ -41,4 +41,11 @@ public class TurCmsContext {
 		this.turCmsSourceAttr = null;
 		this.configuration = configuration;
 	}
+
+	public TurCmsContext(Object cmsObjectInstance) {
+		this.cmsObjectInstance = cmsObjectInstance;
+		this.turCmsTargetAttr = null;
+		this.turCmsSourceAttr = null;
+		this.configuration = null;
+	}
 }

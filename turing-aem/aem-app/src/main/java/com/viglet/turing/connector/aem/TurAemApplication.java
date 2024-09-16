@@ -27,6 +27,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
+
+/**
+ * @author Alexandre Oliveira
+ * @since 0.3.9
+ */
 @SpringBootApplication
 @EnableScheduling
 public class TurAemApplication {

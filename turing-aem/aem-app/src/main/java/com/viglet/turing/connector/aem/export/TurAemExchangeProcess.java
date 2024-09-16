@@ -53,34 +53,37 @@ public class TurAemExchangeProcess {
     private static final String EXPORT_FILE = "export.json";
     public static final String DEFAULT = "default";
     private final TurAemSourceRepository turAemSourceRepository;
-    private final TurAemAttributeMappingRepository turAemAttributeMappingRepository;
-    private final TurAemAttributeFacetRepository turAemAttributeFacetRepository;
+    private final TurAemAttributeSpecificationRepository turAemAttributeSpecificationRepository;
     private final TurAemModelRepository turAemModelRepository;
     private final TurAemTargetAttributeRepository turAemTargetAttributeRepository;
     private final TurAemSourceAttributeRepository turAemSourceAttributeRepository;
 
     @Inject
     public TurAemExchangeProcess(TurAemSourceRepository turAemSourceRepository,
-                                 TurAemAttributeMappingRepository turAemAttributeMappingRepository,
-                                 TurAemAttributeFacetRepository turAemAttributeFacetRepository,
+                                 TurAemAttributeSpecificationRepository turAemAttributeSpecificationRepository,
                                  TurAemModelRepository turAemModelRepository,
                                  TurAemTargetAttributeRepository turAemTargetAttributeRepository,
                                  TurAemSourceAttributeRepository turAemSourceAttributeRepository) {
         this.turAemSourceRepository = turAemSourceRepository;
-        this.turAemAttributeMappingRepository = turAemAttributeMappingRepository;
-        this.turAemAttributeFacetRepository = turAemAttributeFacetRepository;
+        this.turAemAttributeSpecificationRepository = turAemAttributeSpecificationRepository;
         this.turAemModelRepository = turAemModelRepository;
         this.turAemTargetAttributeRepository = turAemTargetAttributeRepository;
         this.turAemSourceAttributeRepository = turAemSourceAttributeRepository;
     }
 
-    private Collection<TurAemAttribExchange> attributeExchange(Collection<TurAemAttributeMapping> attributeMappings) {
+    private Collection<TurAemAttribExchange> attributeExchange(Collection<TurAemAttributeSpecification> attributeSpecifications) {
         Collection<TurAemAttribExchange> attribExchanges = new ArrayList<>();
-        attributeMappings.forEach(attributeMapping -> attribExchanges.add(TurAemAttribExchange.builder()
-                .name(attributeMapping.getName())
-                .className(attributeMapping.getClassName())
-                .text(attributeMapping.getText())
-                .build()));
+        attributeSpecifications.forEach(attributeSpecification ->
+                attribExchanges.add(TurAemAttribExchange.builder()
+                        .name(attributeSpecification.getName())
+                        .className(attributeSpecification.getClassName())
+                        .text(attributeSpecification.getText())
+                        .type(attributeSpecification.getType())
+                        .mandatory(attributeSpecification.isMandatory())
+                        .multiValued(attributeSpecification.isMultiValued())
+                        .description(attributeSpecification.getDescription())
+                        .facet(attributeSpecification.isFacet())
+                        .build()));
         return attribExchanges;
     }
 
@@ -114,7 +117,7 @@ public class TurAemExchangeProcess {
                                 .map(turAemSource -> TurAemSourceExchange.builder()
                                         .id(turAemSource.getId())
                                         .url(turAemSource.getUrl())
-                                        .attributes(attributeExchange(turAemSource.getAttributeMappings()))
+                                        .attributes(attributeExchange(turAemSource.getAttributeSpecifications()))
                                         .locale(turAemSource.getLocale())
                                         .localeClass(turAemSource.getLocaleClass())
                                         .turSNSites(turAemSource.getTurSNSites())
@@ -201,13 +204,14 @@ public class TurAemExchangeProcess {
         turAemExchange.getSources().stream().filter(turAemSourceExchange ->
                         turAemSourceRepository.findById(turAemSourceExchange.getId()).isEmpty())
                 .forEach(turAemSourceExchange -> {
-                    setAttributeMappings(turAemSourceExchange, setSource(turAemSourceExchange));
+                    setFacetNames(turAemSourceExchange, setSource(turAemSourceExchange));
                     setModels(turAemSourceExchange);
                 });
     }
 
     private void setModels(TurAemSourceExchange turAemSourceExchange) {
-        turAemSourceExchange.getModels().forEach(model -> setTargetAttributes(model, setModel(model)));
+        turAemSourceExchange.getModels().forEach(model ->
+                setTargetAttributes(model, setModel(model)));
     }
 
     private @NotNull TurAemModel setModel(TurAemModelExchange model) {
@@ -241,38 +245,18 @@ public class TurAemExchangeProcess {
                 ));
     }
 
-    private void setAttributeMappings(TurAemSourceExchange turAemSourceExchange, TurAemSource turAemSource) {
-        turAemSourceExchange.getAttributes().forEach(attribute -> {
-            setFacetNames(attribute, setAttributeMapping(turAemSource, attribute));
-        });
+    private void setFacetNames(TurAemSourceExchange turAemSourceExchange, TurAemSource turAemSource) {
+        turAemSourceExchange.getAttributes().forEach(attribute ->
+                setFacetName(attribute, setAttributeMapping(turAemSource, attribute)));
     }
 
-    private void setFacetNames(TurAemAttribExchange attribute, TurAemAttributeMapping turAemAttributeMapping) {
-        attribute.getFacetName().forEach((localeString, facetName) -> {
-            if (localeString.equals(DEFAULT)) {
-                setFacetNameDefault(turAemAttributeMapping, facetName);
-            } else {
-                setFacetNameByLocale(turAemAttributeMapping, localeString, facetName);
-            }
-        });
+    private void setFacetName(TurAemAttribExchange attribute,
+                               TurAemAttributeSpecification turAemAttributeSpecification) {
+        turAemAttributeSpecification.setFacetNames(attribute.getFacetName());
     }
 
-    private void setFacetNameByLocale(TurAemAttributeMapping turAemAttributeMapping, String localeString,
-                                      String facetName) {
-        turAemAttributeFacetRepository.save(TurAemAttributeFacet.builder()
-                .locale(Locale.of(localeString))
-                .facetName(facetName)
-                .turAemAttributeMapping(turAemAttributeMapping)
-                .build());
-    }
-
-    private void setFacetNameDefault(TurAemAttributeMapping turAemAttributeMapping, String facetName) {
-        turAemAttributeMapping.setFacetNameDefault(facetName);
-        turAemAttributeMappingRepository.save(turAemAttributeMapping);
-    }
-
-    private TurAemAttributeMapping setAttributeMapping(TurAemSource turAemSource, TurAemAttribExchange attribute) {
-        return turAemAttributeMappingRepository.save(TurAemAttributeMapping.builder()
+    private TurAemAttributeSpecification setAttributeMapping(TurAemSource turAemSource, TurAemAttribExchange attribute) {
+        return turAemAttributeSpecificationRepository.save(TurAemAttributeSpecification.builder()
                 .name(attribute.getName())
                 .className(attribute.getClassName())
                 .text(attribute.getText())

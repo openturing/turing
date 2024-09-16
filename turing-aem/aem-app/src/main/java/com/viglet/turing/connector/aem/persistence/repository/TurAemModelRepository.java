@@ -18,11 +18,16 @@
 
 package com.viglet.turing.connector.aem.persistence.repository;
 
+import com.viglet.turing.connector.aem.persistence.model.TurAemSource;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.viglet.turing.connector.aem.persistence.model.TurAemModel;
+
+import java.util.Optional;
+
 /**
  * @author Alexandre Oliveira
  * @since 0.3.9
  */
 public interface TurAemModelRepository extends JpaRepository<TurAemModel, String> {
+    Optional<TurAemModel> findByTurAemSourceAndType(TurAemSource turAemSource, String type);
 }

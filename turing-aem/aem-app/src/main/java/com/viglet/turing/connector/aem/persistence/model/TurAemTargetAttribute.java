@@ -18,6 +18,7 @@
 
 package com.viglet.turing.connector.aem.persistence.model;
 
+import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 import com.viglet.turing.spring.jpa.TurUuid;
 import jakarta.persistence.*;
 import lombok.*;
@@ -53,10 +54,11 @@ public class TurAemTargetAttribute implements Serializable {
 
     private String name;
 
+
     @OneToMany(mappedBy = "turAemTargetAttribute", orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL})
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private Collection<TurAemSourceAttribute> turAemSourceAttribute = new HashSet<>();
+    private Collection<TurAemSourceAttribute> sourceAttrs = new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name = "aem_model_id", nullable = false)
