@@ -32,11 +32,15 @@ import java.util.Map;
 
 @Setter
 @Getter
+@ToString
 public class TurFileAttributes {
 	private String content;
 	private String name;
 	private String title;
 	private String extension;
 	private TurFileSize size;
+	private Date lastModified;
 	private Map<String, String> metadata;
+
+
 }

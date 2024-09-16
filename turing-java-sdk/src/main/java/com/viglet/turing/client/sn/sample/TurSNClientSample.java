@@ -23,6 +23,7 @@ import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
 import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -30,17 +31,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Sample code to use this SDK.
  * 
  * @since 0.3.4
  */
+@Slf4j
 public class TurSNClientSample {
-	private static final Logger logger = Logger.getLogger(TurSNClientSample.class.getName());
-
 	private static final String TURING_URL = "http://localhost:2700";
 	private static final String TURING_SITE = "Sample";
 	private static final Locale TURING_LOCALE = Locale.US;
@@ -85,7 +83,7 @@ public class TurSNClientSample {
 			groupBy(args, turSNServer);
 
 		} catch (MalformedURLException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			log.error(e.getMessage(), e);
 		}
 	}
 

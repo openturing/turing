@@ -16,36 +16,17 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.commons.file;
+package com.viglet.turing.api.ocr;
 
-import lombok.*;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @author Alexandre Oliveira
  * @since 0.3.9
- **/
-@Setter
+ */
 @Getter
-@AllArgsConstructor
-@ToString
-public class TurFileSize {
-    private final float bytes;
-    private final float kiloBytes;
-    private final float megaBytes;
-    public TurFileSize() {
-        this(0f);
-    }
-    public TurFileSize(float bytes) {
-        this.bytes = twoDecimalFloat(bytes);
-        this.kiloBytes = twoDecimalFloat(this.bytes / 1024);
-        this.megaBytes = twoDecimalFloat(this.kiloBytes / 1024);
-    }
-
-    private float twoDecimalFloat(float value) {
-        return new BigDecimal(value).setScale(2, RoundingMode.HALF_UP).floatValue();
-    }
-
+@Setter
+public class TurOcrFromUrl {
+    private String url;
 }
