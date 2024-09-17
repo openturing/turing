@@ -7,7 +7,6 @@ import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrAsset;
 import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrSearchResult;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
-import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
@@ -93,9 +92,12 @@ public class FileAssetsExtractor {
             String contentFromDownloadedFile = null;
             // Usa OCR para converter o arquivo para string.
             try {
-                log.info("Sending documento to OCR api in: " + URI.create(turingUrl).toURL());
-                log.info("file type=" + asset.getAssetType());
-                contentFromDownloadedFile = TurOcr.processFile(new TurServer(URI.create(turingUrl).toURL(), new TurApiKeyCredentials(turingApiKey)), downloadedFile, false);
+                log.info("Sending documento to OCR api in: {}", URI.create(turingUrl).toURL());
+                log.info("file type={}", asset.getAssetType());
+
+                TurServer turingServer = new TurServer(URI.create(turingUrl).toURL(), new TurApiKeyCredentials(turingApiKey));
+                TurOcr ocrProcessor = new TurOcr();
+                contentFromDownloadedFile = ocrProcessor.processFile(turingServer, downloadedFile, false).toString();
             } catch (MalformedURLException e) {
                 log.error(e);
             }
