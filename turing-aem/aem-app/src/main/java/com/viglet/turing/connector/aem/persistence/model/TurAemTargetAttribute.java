@@ -53,6 +53,7 @@ public class TurAemTargetAttribute implements Serializable {
 
     private String name;
 
+    @Builder.Default
     @OneToMany(mappedBy = "turAemTargetAttribute", orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL})
     @OnDelete(action = OnDeleteAction.CASCADE)

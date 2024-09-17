@@ -148,6 +148,13 @@
                                     </excludes>
                                 </filter>
                                 <filter>
+                                    <artifact>org.springframework:spring-web</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/jakarta.servlet.ServletContainerInitializer</exclude>
+                                    </excludes>
+                                </filter>
+
+                                <filter>
                                     <artifact>*:poi-scratchpad</artifact>
                                     <excludes>
                                         <exclude>META-INF/services/org.apache.poi.sl.usermodel.SlideShowProvider</exclude>
