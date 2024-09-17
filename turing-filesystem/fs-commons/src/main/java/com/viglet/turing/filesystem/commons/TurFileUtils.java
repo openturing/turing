@@ -34,6 +34,9 @@ import java.util.*;
 public class TurFileUtils {
 
     public static final String PDF_DOC_INFO_TITLE = "pdf:docinfo:title";
+    public static final int CONNECTION_TIMEOUT_MILLIS = 5000;
+    public static final String TMP = "tmp";
+    public static final String HEAD = "HEAD";
 
     private TurFileUtils() {
         throw new IllegalStateException("Turing File Utilities class");
@@ -135,7 +138,7 @@ public class TurFileUtils {
         if (isValidUrl(url)) {
             try {
                 HttpURLConnection httpUrlConnection = (HttpURLConnection) url.openConnection();
-                httpUrlConnection.setRequestMethod("HEAD");
+                httpUrlConnection.setRequestMethod(HEAD);
                 date = new Date(httpUrlConnection.getLastModified());
                 httpUrlConnection.disconnect();
             } catch (IOException e) {
@@ -158,8 +161,8 @@ public class TurFileUtils {
                 FileUtils.copyURLToFile(
                         url,
                         tempFile,
-                        5000,
-                        5000);
+                        CONNECTION_TIMEOUT_MILLIS,
+                        CONNECTION_TIMEOUT_MILLIS);
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
             }
@@ -172,24 +175,24 @@ public class TurFileUtils {
                                                           String fileExtension,
                                                           long fileSize,
                                                           Date lastModified) {
-        TurFileAttributes turFileAttributes = new TurFileAttributes();
-        Optional.ofNullable(file).ifPresent(attributes -> {
-            turFileAttributes.setContent(attributes.getContent());
-            turFileAttributes.setName(fileName);
-            turFileAttributes.setExtension(fileExtension);
-            turFileAttributes.setSize(new TurFileSize(fileSize));
-            turFileAttributes.setTitle(getTitle(file, turFileAttributes));
-            turFileAttributes.setLastModified(lastModified);
-            turFileAttributes.setMetadata(getMetadataMap(file));
-        });
-        return turFileAttributes;
+        return Optional.ofNullable(file).map(attributes ->
+                        TurFileAttributes.builder()
+                                .content(attributes.getContent())
+                                .name(fileName)
+                                .extension(fileExtension)
+                                .size(new TurFileSize(fileSize))
+                                .title(getTitle(file, fileName))
+                                .lastModified(lastModified)
+                                .metadata(getMetadataMap(file))
+                                .build())
+                .orElseGet(TurFileAttributes::new);
     }
 
-    private static String getTitle(TurTikaFileAttributes file, TurFileAttributes turFileAttributes) {
+    private static String getTitle(TurTikaFileAttributes file, String fileName) {
         return Optional.ofNullable(file
                         .getMetadata()
                         .get(PDF_DOC_INFO_TITLE))
-                .orElseGet(turFileAttributes::getName);
+                .orElse(fileName);
     }
 
     private static Map<String, String> getMetadataMap(TurTikaFileAttributes file) {
@@ -225,7 +228,7 @@ public class TurFileUtils {
 
     private static File createTempFile() throws IOException {
         return File.createTempFile(UUID.randomUUID().toString(), null,
-                TurCommonsUtils.addSubDirToStoreDir("tmp"));
+                TurCommonsUtils.addSubDirToStoreDir(TMP));
     }
 
 

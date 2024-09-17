@@ -30,6 +30,9 @@ import java.util.Map;
 *
 **/
 
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 @Setter
 @Getter
 @ToString
