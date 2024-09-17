@@ -35,21 +35,24 @@ import java.net.URI;
  */
 @Slf4j
 public class TurClientOcrSample {
-    private static final String TURING_URL = "http://localhost:2700";
-    private static final String TURING_API_KEY = "9c29eb9697a642349ddedcec9";
-    public static final String URL = "https://www.princexml.com/samples/invoice/invoicesample.pdf";
-
     public static void main(String[] args) {
-        try {
-            TurServer turSNServer = new TurServer(URI.create(TURING_URL).toURL(),
-                    new TurApiKeyCredentials(TURING_API_KEY));
-            log.info("--- Ocr Url");
-            TurOcr turOcr = new TurOcr();
-            TurFileAttributes turFileAttributes = turOcr.processUrl(turSNServer, URI.create(URL).toURL(),
-                    true);
-            log.info(turFileAttributes.toString());
-        } catch (MalformedURLException e) {
-            log.error(e.getMessage(), e);
+        if (args.length == 3) {
+            String turingUrl = args[0];
+            String apiKey = args[1];
+            String fileUrl = args[2];
+            try {
+                TurServer turSNServer = new TurServer(URI.create(turingUrl).toURL(),
+                        new TurApiKeyCredentials(apiKey));
+                log.info("--- Ocr Url");
+                TurOcr turOcr = new TurOcr();
+                TurFileAttributes turFileAttributes = turOcr.processUrl(turSNServer, URI.create(fileUrl).toURL(),
+                        true);
+                log.info(turFileAttributes.toString());
+            } catch (MalformedURLException e) {
+                log.error(e.getMessage(), e);
+            }
+        } else {
+            log.info("Parameters: turingUrl apiKey fileUrl");
         }
     }
 }
