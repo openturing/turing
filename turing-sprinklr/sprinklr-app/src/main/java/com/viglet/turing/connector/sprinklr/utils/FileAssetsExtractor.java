@@ -28,7 +28,6 @@ import java.util.UUID;
 /**
  * Extracts File Assets from Sprinklr Knowledge Base search result. Has turing URL and turing API key just to use the
  * OCR API.
- *
  * @author Gabriel F. Gomazako
  * @see FileAsset
  * @since 0.3.9
@@ -55,10 +54,10 @@ public class FileAssetsExtractor {
      * @param searchResult Knowledge Base search API result.
      */
     public List<FileAsset> extractFromLinkedAssets(TurSprinklrSearchResult searchResult) {
-        // Extraindo LinkedAssets do resultado da chamada de API de search do Knowledge Base do Sprinkler
+        // Extracting LinkedAssets from the search API result of Sprinkler Knowledge Base.
         List<TurSprinklrAsset> linkedAssets = searchResult.getLinkedAssets();
 
-        // Se não houver resultados.
+        // If there are no linked assets, return an empty list.
         if (linkedAssets == null || linkedAssets.isEmpty()) {
             return Collections.emptyList();
         }
@@ -73,7 +72,7 @@ public class FileAssetsExtractor {
             String extension = null;
             URL url = null;
             try {
-                // assetId em arquivos é a completa do URL do arquivo
+                // assetId it's the complete URI of the file.
                 URI assetURI = new URI(asset.getAssetId()); // ex: google.com/files/text.pdf.
                 id = assetURI.getPath();// /files/text.pdf
                 id = id.substring(id.lastIndexOf('/') + 1); // text.pdf
@@ -90,7 +89,7 @@ public class FileAssetsExtractor {
 
             File downloadedFile = downloadFile(url);
             String contentFromDownloadedFile = null;
-            // Usa OCR para converter o arquivo para string.
+            // Tries to use turing OCR API to extract content from the downloaded file.
             try {
                 log.info("Sending documento to OCR api in: {}", URI.create(turingUrl).toURL());
                 log.info("file type={}", asset.getAssetType());

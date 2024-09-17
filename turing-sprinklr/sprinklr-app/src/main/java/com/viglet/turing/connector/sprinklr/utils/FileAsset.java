@@ -41,17 +41,16 @@ public class FileAsset {
         String formatedModificationDate = formatter.format(modificationDate);
 
         attributes.put("id", id);
-        attributes.put("filename", filename);
-        attributes.put("ocr_content", ocrContent);
-        // TODO: Change TypeDef in Solr.
-        attributes.put("indexing_date", formatedIndexingDate);
+        attributes.put("title", filename);
+        attributes.put("text", ocrContent);
+        attributes.put("publication_date", formatedIndexingDate);
         attributes.put("modification_date", formatedModificationDate);
         attributes.put("url", url);
-        attributes.put("file_size", fileSize);
+        attributes.put("filesize", fileSize);
         attributes.put("extension", extension);
-        attributes.put("asset_type", assetType);
-        attributes.put("asset_category", assetCategory);
         attributes.put("source_apps", List.of("SPRINKLR"));
+        attributes.put("type", "Static File");
+
         return attributes;
     }
 }
