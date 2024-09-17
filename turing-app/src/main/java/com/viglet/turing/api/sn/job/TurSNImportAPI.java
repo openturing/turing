@@ -27,8 +27,8 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.filesystem.commons.TurFileAttributes;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
+import com.viglet.turing.filesystem.commons.TurTikaFileAttributes;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.spring.utils.TurSpringUtils;
@@ -108,16 +108,11 @@ public class TurSNImportAPI {
     private void extractTextOfFileAttribute(File extractFolder, Map.Entry<String, Object> attribute) {
         if (attribute.getValue().toString().startsWith(TurSNConstants.FILE_PROTOCOL)) {
             String fileName = attribute.getValue().toString().replace(TurSNConstants.FILE_PROTOCOL, "");
-            try (FileInputStream fileInputStreamAttribute = new FileInputStream(
-                    extractFolder.getAbsolutePath() + File.separator + fileName)) {
-                TurFileAttributes turFileAttributes = TurFileUtils.parseFile(fileInputStreamAttribute, null);
-                Optional.ofNullable(turFileAttributes)
-                        .map(TurFileAttributes::getContent)
-                        .ifPresent(content -> attribute.setValue(TurCommonsUtils.cleanTextContent(content)));
-            } catch (IOException e) {
-                log.error(e.getMessage(), e);
-            }
-
+            File file = new File(extractFolder.getAbsolutePath().concat(File.separator).concat(fileName));
+            TurTikaFileAttributes turTikaFileAttributes = TurFileUtils.parseFile(file);
+            Optional.ofNullable(turTikaFileAttributes)
+                    .map(TurTikaFileAttributes::getContent)
+                    .ifPresent(content -> attribute.setValue(TurCommonsUtils.cleanTextContent(content)));
         }
     }
 
