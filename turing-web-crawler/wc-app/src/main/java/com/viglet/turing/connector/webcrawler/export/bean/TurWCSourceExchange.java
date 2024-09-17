@@ -17,7 +17,7 @@ public class TurWCSourceExchange {
     private String localeClass;
     private String url;
     @Builder.Default
-    private Collection<String> turSNSites = new HashSet<>();;
+    private Collection<String> turSNSites = new HashSet<>();
     private String username;
     private String password;
     @Builder.Default

@@ -22,6 +22,9 @@ import java.net.URL;
 
 @Slf4j
 public class TurOcr {
+    private TurOcr() {
+        throw new IllegalStateException("OCR Utility class");
+    }
 
     public static final String API_OCR_URL = "%s/api/ocr/url";
     public static final String API_OCR_FILE = "%s/api/ocr/file";

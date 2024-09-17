@@ -27,7 +27,10 @@
         </sonar.cpd.exclusions>
     </properties>
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-core -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
@@ -51,7 +54,7 @@
         <dependency>
             <groupId>co.elastic.clients</groupId>
             <artifactId>elasticsearch-java</artifactId>
-            <version>8.15.0</version>
+            <version>8.15.1</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -308,7 +311,7 @@
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-solrj</artifactId>
-            <version>9.6.1</version>
+            <version>9.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>

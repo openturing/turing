@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors.
+ * Copyright (C) 2016-2024 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -23,7 +23,6 @@ package com.viglet.turing.api.sn.queue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
@@ -52,6 +51,7 @@ import com.viglet.turing.solr.TurSolrUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
@@ -68,42 +68,50 @@ public class TurSNProcessQueue {
     public static final String DEFAULT = "default";
     public static final String SOLR = "SOLR";
     public static final String LUCENE = "LUCENE";
+    private final TurSolr turSolr;
+    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurSolrInstanceProcess turSolrInstanceProcess;
+    private final TurSNMergeProvidersProcess turSNMergeProvidersProcess;
+    private final TurSNSpotlightProcess turSNSpotlightProcess;
+    private final TurSNNLPProcess turSNNLPProcess;
+    private final TurSNThesaurusProcess turSNThesaurusProcess;
+    private final TurSNSiteFieldRepository turSNSiteFieldRepository;
+    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
+    private final TurSEInstanceRepository turSEInstanceRepository;
+    private final TurLuceneWriter turLuceneWriter;
     @Autowired
-    private TurSolr turSolr;
-    @Autowired
-    private TurSNSiteRepository turSNSiteRepository;
-    @Autowired
-    private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-    @Autowired
-    private TurSolrInstanceProcess turSolrInstanceProcess;
-    @Autowired
-    private TurSNMergeProvidersProcess turSNMergeProvidersProcess;
-    @Autowired
-    private TurSNSpotlightProcess turSNSpotlightProcess;
-    @Autowired
-    private TurSNNLPProcess turSNNLPProcess;
-    @Autowired
-    private TurSNThesaurusProcess turSNThesaurusProcess;
-    @Autowired
-    private TurSNSiteFieldRepository turSNSiteFieldRepository;
-    @Autowired
-    private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-    @Autowired
-    private TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
-    @Autowired
-    private TurSEInstanceRepository turSEInstanceRepository;
-    @Autowired
-    private TurLuceneWriter turLuceneWriter;
+    public TurSNProcessQueue(TurSolr turSolr, TurSNSiteRepository turSNSiteRepository,
+                             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                             TurSolrInstanceProcess turSolrInstanceProcess,
+                             TurSNMergeProvidersProcess turSNMergeProvidersProcess,
+                             TurSNSpotlightProcess turSNSpotlightProcess,
+                             TurSNNLPProcess turSNNLPProcess, TurSNThesaurusProcess turSNThesaurusProcess,
+                             TurSNSiteFieldRepository turSNSiteFieldRepository,
+                             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+                             TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
+                             TurSEInstanceRepository turSEInstanceRepository,
+                             TurLuceneWriter turLuceneWriter) {
+        this.turSolr = turSolr;
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turSolrInstanceProcess = turSolrInstanceProcess;
+        this.turSNMergeProvidersProcess = turSNMergeProvidersProcess;
+        this.turSNSpotlightProcess = turSNSpotlightProcess;
+        this.turSNNLPProcess = turSNNLPProcess;
+        this.turSNThesaurusProcess = turSNThesaurusProcess;
+        this.turSNSiteFieldRepository = turSNSiteFieldRepository;
+        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
+        this.turSEInstanceRepository = turSEInstanceRepository;
+        this.turLuceneWriter = turLuceneWriter;
+    }
 
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
     @Transactional
     public void receiveIndexingQueue(TurSNJobItems turSNJobItems) {
-        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        try {
-            log.debug("receiveQueue turSNJobItems: {}", ow.writeValueAsString(turSNJobItems));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        receiveQueueDebugLog(turSNJobItems);
         Optional.ofNullable(turSNJobItems)
                 .ifPresentOrElse(jobItems ->
                         jobItems.forEach(turSNJobItem ->
@@ -116,6 +124,18 @@ public class TurSNProcessQueue {
                                                         noProcessedWarning(turSNSite, turSNJobItem);
                                                     }
                                                 }))), () -> log.debug("turSNJob empty or siteId empty"));
+    }
+
+    private static void receiveQueueDebugLog(TurSNJobItems turSNJobItems) {
+        if (log.isDebugEnabled()) {
+            try {
+                log.debug("receiveQueue turSNJobItems: {}", new ObjectMapper().writer()
+                        .withDefaultPrettyPrinter()
+                        .writeValueAsString(turSNJobItems));
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
     }
 
     private void noProcessedWarning(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
@@ -195,9 +215,10 @@ public class TurSNProcessQueue {
                 turSNJobItem.getLocale()).map(turSolrInstance -> {
             turSEInstanceRepository
                     .findById(turSNSite.getTurSEInstance().getId()).ifPresent(seInstance -> {
-                        switch (seInstance.getTurSEVendor().getId()) {
-                            case SOLR -> turSolr.indexing(turSolrInstance, turSNSite, attributes);
-                            case LUCENE -> turLuceneWriter.indexing(turSNSite, attributes);
+                        if (seInstance.getTurSEVendor().getId().equals(SOLR)) {
+                            turSolr.indexing(turSolrInstance, turSNSite, attributes);
+                        } else if (seInstance.getTurSEVendor().getId().equals(LUCENE)) {
+                            turLuceneWriter.indexing(turSNSite, attributes);
                         }
                     });
             return true;
@@ -208,45 +229,60 @@ public class TurSNProcessQueue {
     private void createMissingFields(TurSNSite turSNSite, List<TurSNJobAttributeSpec> turSNAttributeSpecs) {
         turSNAttributeSpecs.forEach(spec -> {
             if (!turSNSiteFieldExtRepository.existsByTurSNSiteAndName(turSNSite, spec.getName())) {
-                TurSNSiteField turSNSiteField = TurSNSiteField.builder()
-                        .name(spec.getName())
-                        .description(spec.getDescription())
-                        .type(spec.getType())
-                        .multiValued(spec.isMultiValued() ? 1 : 0)
-                        .turSNSite(turSNSite).build();
-                turSNSiteFieldRepository.save(turSNSiteField);
-                TurSNSiteFieldExt turSNSiteFieldExt = TurSNSiteFieldExt.builder()
-                        .enabled(1)
-                        .name(turSNSiteField.getName())
-                        .description(turSNSiteField.getDescription())
-                        .facet(spec.isFacet() ? 1 : 0)
-                        .facetName(spec.getFacetName().get(DEFAULT))
-                        .hl(0)
-                        .multiValued(turSNSiteField.getMultiValued())
-                        .mlt(0)
-                        .externalId(turSNSiteField.getId())
-                        .snType(TurSNFieldType.SE)
-                        .type(turSNSiteField.getType())
-                        .turSNSite(turSNSite).build();
-                turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-                Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
-                spec.getFacetName().forEach((key, value) -> {
-                    if (!key.equals(DEFAULT)) {
-                        TurSNSiteFieldExtFacet turSNSiteFieldExtFacet = new TurSNSiteFieldExtFacet();
-                        turSNSiteFieldExtFacet.setLocale(LocaleUtils.toLocale(key));
-                        turSNSiteFieldExtFacet.setLabel(value);
-                        turSNSiteFieldExtFacet.setTurSNSiteFieldExt(turSNSiteFieldExt);
-                        facetLocales.add(turSNSiteFieldExtFacet);
-                    }
-                });
-                turSNSiteFieldExtFacetRepository.saveAll(facetLocales);
-                turSNSiteLocaleRepository.findByTurSNSite(turSNSite).forEach(turSNSiteLocale -> {
-                    if (!existsFieldInSearchEngine(turSNSite, turSNSiteLocale.getCore(), spec.getName())) {
-                        createFieldInSearchEngine(turSNSite, turSNSiteLocale.getCore(), turSNSiteField);
-                    }
-                });
+                final TurSNSiteField turSNSiteField = saveSiteField(turSNSite, spec);
+                saveFaceLocales(spec, saveSiteFieldExt(turSNSite, spec, turSNSiteField));
+                turSNSiteLocaleRepository.findByTurSNSite(turSNSite).stream()
+                        .filter(turSNSiteLocale ->
+                                !existsFieldInSearchEngine(turSNSite, turSNSiteLocale.getCore(), spec.getName()))
+                        .forEach(turSNSiteLocale ->
+                                createFieldInSearchEngine(turSNSite, turSNSiteLocale.getCore(), turSNSiteField));
             }
         });
+    }
+
+    private void saveFaceLocales(TurSNJobAttributeSpec spec, TurSNSiteFieldExt turSNSiteFieldExt) {
+        Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
+        spec.getFacetName().forEach((key, value) -> {
+            if (!key.equals(DEFAULT)) {
+                TurSNSiteFieldExtFacet turSNSiteFieldExtFacet = new TurSNSiteFieldExtFacet();
+                turSNSiteFieldExtFacet.setLocale(LocaleUtils.toLocale(key));
+                turSNSiteFieldExtFacet.setLabel(value);
+                turSNSiteFieldExtFacet.setTurSNSiteFieldExt(turSNSiteFieldExt);
+                facetLocales.add(turSNSiteFieldExtFacet);
+            }
+        });
+        turSNSiteFieldExtFacetRepository.saveAll(facetLocales);
+    }
+
+    @NotNull
+    private TurSNSiteFieldExt saveSiteFieldExt(TurSNSite turSNSite, TurSNJobAttributeSpec spec, TurSNSiteField turSNSiteField) {
+        TurSNSiteFieldExt turSNSiteFieldExt = TurSNSiteFieldExt.builder()
+                .enabled(1)
+                .name(turSNSiteField.getName())
+                .description(turSNSiteField.getDescription())
+                .facet(spec.isFacet() ? 1 : 0)
+                .facetName(spec.getFacetName().get(DEFAULT))
+                .hl(0)
+                .multiValued(turSNSiteField.getMultiValued())
+                .mlt(0)
+                .externalId(turSNSiteField.getId())
+                .snType(TurSNFieldType.SE)
+                .type(turSNSiteField.getType())
+                .turSNSite(turSNSite).build();
+        turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
+        return turSNSiteFieldExt;
+    }
+
+    @NotNull
+    private TurSNSiteField saveSiteField(TurSNSite turSNSite, TurSNJobAttributeSpec spec) {
+        TurSNSiteField turSNSiteField = TurSNSiteField.builder()
+                .name(spec.getName())
+                .description(spec.getDescription())
+                .type(spec.getType())
+                .multiValued(spec.isMultiValued() ? 1 : 0)
+                .turSNSite(turSNSite).build();
+        turSNSiteFieldRepository.save(turSNSiteField);
+        return turSNSiteField;
     }
 
     private void createFieldInSearchEngine(TurSNSite turSNSite, String coreName, TurSNSiteField turSNSiteField) {

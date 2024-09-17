@@ -14,7 +14,9 @@ import java.util.List;
 import java.util.Map;
 
 public class TurNLPPluginUtils {
-
+    private TurNLPPluginUtils() {
+        throw new IllegalStateException("NLP Plugin Utility class");
+    }
     public static void handleEntity(String entityType, String entity, Map<String, List<String>> entityList) {
         if (entityList.containsKey(entityType)) {
             if (!entityList.get(entityType).contains(entity) && entity.trim().length() > 1) {
@@ -25,7 +27,6 @@ public class TurNLPPluginUtils {
             valueList.add(entity.trim());
             entityList.put(entityType, valueList);
         }
-
     }
 
     @NotNull

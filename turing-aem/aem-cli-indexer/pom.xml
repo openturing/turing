@@ -122,7 +122,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.viglet.turing.connector.aem.indexer.TurAemIndexerTool</mainClass>
+                                    <mainClass>com.viglet.turing.connector.aem.TurAemIndexerTool</mainClass>
                                 </transformer>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">

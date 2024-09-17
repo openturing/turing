@@ -32,13 +32,13 @@ public class TurWCOnStartupJpa implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments arg0) {
         if (this.turWCConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
-            System.out.println("First Time Configuration ...");
+            log.info("First Time Configuration ...");
             Path exportFile = Paths.get("export/export.json");
             if (exportFile.toFile().exists()) {
                 turWCExchangeProcess.importFromFile(exportFile.toFile());
             }
             setFirstTIme();
-            System.out.println("Configuration finished.");
+            log.info("Configuration finished.");
         }
     }
 

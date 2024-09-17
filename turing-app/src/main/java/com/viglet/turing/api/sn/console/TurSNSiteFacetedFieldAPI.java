@@ -34,7 +34,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author Alexandre Oliveira
@@ -79,8 +78,9 @@ public class TurSNSiteFacetedFieldAPI {
                                     .ifPresent(fieldsFromRequest -> fieldExtension
                                             .setFacetPosition(fieldsFromRequest.getFacetPosition())));
                     turSNSiteFieldExtRepository.saveAll(fieldExtensions);
-                    return fieldExtensions.stream().sorted(Comparator.comparing(TurSNSiteFieldExt::getFacetPosition)).
-                            collect(Collectors.toList());
+                    return fieldExtensions.stream().sorted(Comparator.comparing(TurSNSiteFieldExt::getFacetPosition))
+                            .toList();
+
                 })
                 .orElseGet(Collections::emptyList);
     }

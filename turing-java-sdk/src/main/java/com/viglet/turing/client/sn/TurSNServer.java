@@ -111,19 +111,6 @@ public class TurSNServer {
 
     private String providerName;
 
-    @Deprecated
-    public TurSNServer(String snServer) {
-        super();
-        this.snServer = snServer;
-        this.siteName = SITE_NAME_DEFAULT;
-        this.locale = LOCALE_DEFAULT;
-        this.credentials = null;
-        this.providerName = PROVIDER_NAME_DEFAULT;
-        this.turSNSitePostParams = new TurSNSitePostParamsBean();
-        this.turSNSitePostParams.setUserId(null);
-        this.turSNSitePostParams.setPopulateMetrics(true);
-    }
-
     public TurSNServer(URL serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials,
                        String userId) {
         super();
@@ -176,11 +163,6 @@ public class TurSNServer {
 
     public TurSNServer(URL serverURL, String siteName, TurApiKeyCredentials apiKeyCredentials) {
         this(serverURL, siteName, LOCALE_DEFAULT, apiKeyCredentials, null);
-    }
-
-    public TurSNServer(URL serverURL, TurUsernamePasswordCredentials credentials) {
-        this(serverURL, SITE_NAME_DEFAULT, LOCALE_DEFAULT, credentials,
-                credentials != null ? credentials.getUsername() : null);
     }
 
     public List<String> getLatestSearches(int rows) {
@@ -250,7 +232,7 @@ public class TurSNServer {
 
     private List<TurSNLocale> executeLocaleRequest(HttpGet httpGet, CloseableHttpClient client)
             throws IOException {
-        return new ObjectMapper().readValue(getHttpResponse(httpGet, client), new TypeReference<List<TurSNLocale>>() {
+        return new ObjectMapper().readValue(getHttpResponse(httpGet, client), new TypeReference<>() {
         });
     }
 
@@ -268,7 +250,7 @@ public class TurSNServer {
             throws IOException {
 
 
-        return new ObjectMapper().readValue(getHttpResponse(httpGet, client), new TypeReference<List<String>>() {
+        return new ObjectMapper().readValue(getHttpResponse(httpGet, client), new TypeReference<>() {
         });
     }
 
@@ -367,7 +349,7 @@ public class TurSNServer {
         queryTuringResponse.setFacetFields(setFacetFieldsResponse(turSNSiteSearchBean));
         queryTuringResponse.setDidYouMean(new TurSNDidYouMean(turSNSiteSearchBean.getWidget().getSpellCheck()));
         queryTuringResponse
-                .setSpotlightDocuments(setSpotlightDocumetsResponse(turSNSiteSearchBean.getWidget().getSpotlights()));
+                .setSpotlightDocuments(setSpotlightDocumentsResponse(turSNSiteSearchBean.getWidget().getSpotlights()));
         return queryTuringResponse;
     }
 
@@ -395,7 +377,7 @@ public class TurSNServer {
 
     }
 
-    private List<TurSNSpotlightDocument> setSpotlightDocumetsResponse(
+    private List<TurSNSpotlightDocument> setSpotlightDocumentsResponse(
             List<TurSNSiteSpotlightDocumentBean> turSNSiteSpotlightDocumentBeans) {
         List<TurSNSpotlightDocument> turSNSpotlightDocuments = new ArrayList<>();
         turSNSiteSpotlightDocumentBeans.forEach(turSNSiteSpotlightDocumentBean -> turSNSpotlightDocuments

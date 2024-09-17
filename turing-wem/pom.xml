@@ -31,17 +31,7 @@
         <dependency>
             <groupId>com.beust</groupId>
             <artifactId>jcommander</artifactId>
-            <version>1.81</version>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-            <version>3.1</version>
+            <version>1.82</version>
         </dependency>
         <dependency>
             <groupId>com.viglet.turing</groupId>
@@ -51,43 +41,21 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.12.7.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
+            <version>2.17.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpmime</artifactId>
-            <version>4.5.2</version>
+            <version>4.5.14</version>
         </dependency>
         <dependency>
-            <groupId>opentext</groupId>
-            <artifactId>castor</artifactId>
-            <version>16.0</version>
-            <scope>system</scope>
-            <systemPath>${pom.basedir}/lib/castor-0.8.jar</systemPath>
-            <type>jar</type>
-            <optional>true</optional>
+            <groupId>com.github.alegauss</groupId>
+            <artifactId>dummy-vgn</artifactId>
+            <version>2f2b7a1aea</version>
         </dependency>
         <dependency>
-            <groupId>opentext</groupId>
-            <artifactId>cma</artifactId>
-            <version>16.0</version>
-            <scope>system</scope>
-            <systemPath>${pom.basedir}/lib/vgn-appsvcs-cma.jar</systemPath>
-            <type>jar</type>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>opentext</groupId>
-            <artifactId>logging</artifactId>
-            <version>16.0</version>
-            <scope>system</scope>
-            <systemPath>${pom.basedir}/lib/vgn-shared-logging.jar</systemPath>
-            <type>jar</type>
-            <optional>true</optional>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -96,6 +64,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
                 <configuration>
                     <source>11</source>
                     <target>11</target>
@@ -104,7 +73,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.6.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -112,6 +81,28 @@
                         </goals>
                         <configuration>
                             <finalName>turing-wem</finalName>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/LICENSE</exclude>
+                                        <exclude>META-INF/LICENSE.txt</exclude>
+                                        <exclude>META-INF/DEPENDENCIES</exclude>
+                                        <exclude>META-INF/NOTICE</exclude>
+                                        <exclude>META-INF/NOTICE.txt</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>**/9/module-info.class</exclude>
+                                        <exclude>mozilla/public-suffix-list.txt</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.apache.logging.log4j:log4j-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>indexer</shadedClassifierName>
                             <transformers>

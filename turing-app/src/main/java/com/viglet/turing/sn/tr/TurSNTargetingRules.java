@@ -29,13 +29,17 @@ import java.util.Map.Entry;
 
 @Component
 public class TurSNTargetingRules {
+
+    public static final String TWO_POINTS = ":";
+    public static final String EMPTY = "";
+
     public String ruleExpression(TurSNTargetingRuleMethod method, List<String> trs) {
         if (method.equals(TurSNTargetingRuleMethod.AND))
             return this.andMethod(trs);
         else if (method.equals(TurSNTargetingRuleMethod.OR))
             return this.orMethod(trs);
         else
-            return "";
+            return EMPTY;
     }
 
     public String andMethod(List<String> trs) {
@@ -45,29 +49,26 @@ public class TurSNTargetingRules {
 
         Map<String, List<String>> trMap = new HashMap<>();
 
-        for (String tr : trs) {
-            if (tr.contains(":")) {
-                String attribute = tr.substring(0, tr.indexOf(":"));
-                String value = tr.substring(tr.indexOf(":") + 1);
-                if (!trMap.containsKey(attribute))
-                    trMap.put(attribute, new ArrayList<>());
-                trMap.get(attribute).add(value);
-            }
-        }
+        trs.stream().filter(tr -> tr.contains(TWO_POINTS)).forEach(tr -> {
+            String attribute = tr.substring(0, tr.indexOf(TWO_POINTS));
+            String value = tr.substring(tr.indexOf(TWO_POINTS) + 1);
+            trMap.computeIfAbsent(attribute, k -> trMap.put(k, new ArrayList<>()));
+            trMap.get(attribute).add(value);
+        });
 
-        String targetingRuleAND = "";
+        String targetingRuleAND = EMPTY;
 
         for (Entry<String, List<String>> trEntry : trMap.entrySet()) {
-            String targetingRuleOR = "";
+            String targetingRuleOR = EMPTY;
             targetingRuleQuery.append(targetingRuleAND);
             targetingRuleQuery.append("(");
             for (String trEntryValue : trEntry.getValue()) {
                 targetingRuleQuery.append(" ");
                 targetingRuleQuery
-                        .append(String.format("%s %s:%s", targetingRuleOR, trEntry.getKey(), trEntryValue).trim());
+                        .append("%s %s:%s".formatted(targetingRuleOR, trEntry.getKey(), trEntryValue).trim());
                 targetingRuleOR = "OR";
             }
-            targetingRuleQuery.append(String.format(" OR (*:* NOT %s:*)", trEntry.getKey()));
+            targetingRuleQuery.append(" OR (*:* NOT %s:*)".formatted(trEntry.getKey()));
             targetingRuleQuery.append(" )");
             targetingRuleAND = " AND ";
         }
@@ -85,7 +86,7 @@ public class TurSNTargetingRules {
         // )
         Set<String> trList = new HashSet<>();
         Set<String> attributeList = new HashSet<>();
-        trs.stream().filter(tr -> tr.contains(":"))
+        trs.stream().filter(tr -> tr.contains(TWO_POINTS))
                 .forEach(tr ->
                         TurSolrUtils.getQueryKeyValue(tr)
                                 .ifPresent(kv -> {

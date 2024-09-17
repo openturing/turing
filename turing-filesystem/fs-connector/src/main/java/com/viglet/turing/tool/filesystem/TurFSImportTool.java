@@ -83,7 +83,7 @@ public class TurFSImportTool {
                 jCommander.usage();
                 return;
             }
-            System.out.println("Viglet Turing Filesystem Import Tool.");
+            log.info("Viglet Turing Filesystem Import Tool.");
             main.run();
         } catch (ParameterException e) {
             // Handle everything on your own, i.e.
@@ -156,7 +156,7 @@ public class TurFSImportTool {
                 attributes.put("text", TurOcr.processFile(new TurServer(URI.create(turingServer).toURL(),
                         new TurApiKeyCredentials(turingApiKey)), file, showOutput));
             } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
+               log.error(e.getMessage(), e);
             }
             turSNJobItem.setAttributes(attributes);
 
@@ -165,8 +165,6 @@ public class TurFSImportTool {
         return null;
     }
 
-
-
     private void sendToTuring(TurFSChunkingJob turChunkingJob, long totalFiles) {
         log.info("Send job to Turing");
         if (log.isDebugEnabled()) {
@@ -174,7 +172,7 @@ public class TurFSImportTool {
                 log.debug("TurSNJobItem Id: {}", turSNJobItem.getAttributes().get(ID_ATTR));
             }
         }
-        System.out.printf("Importing %s to %s of %s items%n", turChunkingJob.getFirstItemPosition(),
+        log.info("Importing {} to {} of {} items", turChunkingJob.getFirstItemPosition(),
                 turChunkingJob.getTotal(), totalFiles);
         try {
             TurSNJobUtils.importItems(turChunkingJob.getTurSNJobItems(),

@@ -105,7 +105,6 @@ public class TurSNTemplate {
         defaultSNUI(turSNSite);
         createLocale(turSNSite, username, locale);
         createSEFields(turSNSite);
-        createRankingExpression(turSNSite);
     }
 
     public void defaultSNUI(TurSNSite turSNSite) {
@@ -217,11 +216,11 @@ public class TurSNTemplate {
                 "Texts", getFacetLocales("Textos"), 1);
         createSNSiteField(turSNSite, "abstract", "Short Description Field", TurSEFieldType.TEXT,
                 0, "Abstracts", getFacetLocales("Resumos"), 1);
-        createSNSiteField(turSNSite, "type", "Content Type Field", TurSEFieldType.TEXT, 0,
+        createSNSiteField(turSNSite, "type", "Content Type Field", TurSEFieldType.STRING, 0,
                 "Types", getFacetLocales("Tipos"), 1);
-        createSNSiteField(turSNSite, "image", "Image Field", TurSEFieldType.TEXT, 0,
+        createSNSiteField(turSNSite, "image", "Image Field", TurSEFieldType.STRING, 0,
                 "Images", getFacetLocales("Images"), 0);
-        createSNSiteField(turSNSite, "url", "URL Field", TurSEFieldType.TEXT, 0,
+        createSNSiteField(turSNSite, "url", "URL Field", TurSEFieldType.STRING, 0,
                 "URLs", getFacetLocales("URLs"), 0);
         createSNSiteField(turSNSite, "publication_date", "Publication Date", TurSEFieldType.DATE,
                 0, "Publication Dates",
@@ -231,11 +230,11 @@ public class TurSNTemplate {
                 getFacetLocales("Datas de Modificação"), 0);
         createSNSiteField(turSNSite, "site", "Site Name", TurSEFieldType.TEXT, 0,
                 "Sites", getFacetLocales("Nome dos Sites"), 0);
-        createSNSiteField(turSNSite, "author", "Author", TurSEFieldType.TEXT, 0,
+        createSNSiteField(turSNSite, "author", "Author", TurSEFieldType.STRING, 0,
                 "Authors", getFacetLocales("Autores"), 0);
-        createSNSiteField(turSNSite, "section", "Section", TurSEFieldType.TEXT, 0,
+        createSNSiteField(turSNSite, "section", "Section", TurSEFieldType.STRING, 1,
                 "Sections", getFacetLocales("Sessões"), 0);
-        createSNSiteField(turSNSite, "source_apps", "Source Apps", TurSEFieldType.TEXT, 1,
+        createSNSiteField(turSNSite, "source_apps", "Source Apps", TurSEFieldType.STRING, 1,
                 "Source Apps", getFacetLocales("Apps de Origem"), 0);
     }
 
@@ -246,29 +245,5 @@ public class TurSNTemplate {
         turSNSiteLocale.setTurSNSite(turSNSite);
         turSNSiteLocale.setCore(createSolrCore(turSNSiteLocale, username));
         turSNSiteLocaleRepository.save(turSNSiteLocale);
-    }
-
-    private void createRankingExpression(TurSNSite turSNSite) {
-        TurSNRankingExpression turSNRankingExpression = new TurSNRankingExpression();
-        turSNRankingExpression.setName("Rule Sample");
-        turSNRankingExpression.setDescription("Rule Sample Description");
-        turSNRankingExpression.setWeight(5);
-        turSNRankingExpression.setTurSNSite(turSNSite);
-        turSNRankingExpressionRepository.save(turSNRankingExpression);
-
-        TurSNRankingCondition turSNRankingCondition1 = new TurSNRankingCondition();
-        turSNRankingCondition1.setAttribute(TITLE);
-        turSNRankingCondition1.setCondition(1);
-        turSNRankingCondition1.setValue("viglet");
-        turSNRankingCondition1.setTurSNRankingExpression(turSNRankingExpression);
-        turSNRankingConditionRepository.save(turSNRankingCondition1);
-
-        TurSNRankingCondition turSNRankingCondition2 = new TurSNRankingCondition();
-        turSNRankingCondition2.setAttribute("type");
-        turSNRankingCondition2.setCondition(1);
-        turSNRankingCondition2.setValue("News");
-        turSNRankingCondition2.setTurSNRankingExpression(turSNRankingExpression);
-        turSNRankingConditionRepository.save(turSNRankingCondition2);
-
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.viglet.turing.client.sn;
 
 import com.viglet.turing.client.auth.credentials.TurApiKeyCredentials;
-import com.viglet.turing.client.auth.credentials.TurUsernamePasswordCredentials;
 
 import java.net.URL;
 import java.util.Locale;
@@ -25,49 +24,33 @@ import java.util.Locale;
 
 /**
  * HTTP of TurnSNServer.
- * 
+ *
  * @author Alexandre Oliveira
- * 
  * @since 0.3.4
  */
 public class HttpTurSNServer extends TurSNServer {
 
-	@Deprecated
-	public HttpTurSNServer(String turSNServer) {
-		super(turSNServer);
+    public HttpTurSNServer(URL serverURL, String siteName) {
+        super(serverURL, siteName);
+    }
 
-	}
-	public HttpTurSNServer(URL serverURL, String siteName) {
-		super(serverURL, siteName);
-	}
+    public HttpTurSNServer(URL serverURL, String siteName, Locale locale) {
+        super(serverURL, siteName, locale);
 
-	public HttpTurSNServer(URL serverURL, String siteName, Locale locale) {
-		super(serverURL, siteName, locale);
+    }
 
-	}
-	@Deprecated
-	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials) {
-		super(serverURL, siteName, locale, credentials);
+    public HttpTurSNServer(URL serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials) {
+        super(serverURL, siteName, locale, apiKeyCredentials);
 
-	}
-	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials) {
-		super(serverURL, siteName, locale, apiKeyCredentials);
+    }
 
-	}
+    public HttpTurSNServer(URL serverURL, String siteName, TurApiKeyCredentials apiKeyCredentials) {
+        super(serverURL, siteName, apiKeyCredentials);
 
-	public HttpTurSNServer(URL serverURL, String siteName, TurApiKeyCredentials apiKeyCredentials) {
-		super(serverURL, siteName, apiKeyCredentials);
+    }
 
-	}
-	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials, String userId) {
-		super(serverURL, siteName, locale, apiKeyCredentials, userId);
+    public HttpTurSNServer(URL serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials, String userId) {
+        super(serverURL, siteName, locale, apiKeyCredentials, userId);
 
-	}
-	@Deprecated
-	public HttpTurSNServer(URL serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials,
-			String userId) {
-		super(serverURL, siteName, locale, credentials, userId);
-
-	}
-
+    }
 }

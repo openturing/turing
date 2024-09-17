@@ -166,7 +166,7 @@ public class TurDbImportTool {
                 jCommander.usage();
                 return;
             }
-            System.out.println("Viglet Turing JDBC Import Tool.");
+            log.info("Viglet Turing JDBC Import Tool.");
             turFormatValue = new TurDbFormatValue(main);
             main.run();
         } catch (ParameterException e) {
@@ -359,7 +359,7 @@ public class TurDbImportTool {
     }
 
     private void sendServer(TurSNServer turSNServer, TurDbChunkingJob turChunkingJob, int totalRows) {
-        System.out.printf("Importing %s to %s of %s items%n", turChunkingJob.getFirstItemPosition(),
+       log.info("Importing {} to {} of {} items", turChunkingJob.getFirstItemPosition(),
                 turChunkingJob.getTotal(), totalRows);
         turSNServer.importItems(turChunkingJob.getTurSNJobItems(), showOutput);
     }

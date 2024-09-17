@@ -177,24 +177,34 @@ public class TurWCProcess {
         turWCAttributeMappingRepository.findByTurWCSource(turWCSource).ifPresent(source ->
                 source.forEach(turWCCustomClass ->
                         Optional.ofNullable(turWCCustomClass.getText()).ifPresentOrElse(text ->
-                                        turSNJobItemAttributes.put(turWCCustomClass.getName(), text)
+                                        usesText(turWCCustomClass, text, turSNJobItemAttributes)
                                 , () -> {
                                     if (!StringUtils.isEmpty(turWCCustomClass.getClassName()))
-                                        getCustomClass(document, url, turWCCustomClass)
-                                                .ifPresent(turMultiValue -> turMultiValue.forEach(attributeValue -> {
-                                                    if (!StringUtils.isBlank(attributeValue)) {
-                                                        if (turSNJobItemAttributes.containsKey(turWCCustomClass.getName())) {
-                                                            addItemInExistingAttribute(attributeValue,
-                                                                    turSNJobItemAttributes, turWCCustomClass.getName());
-                                                        } else {
-                                                            addFirstItemToAttribute(turWCCustomClass.getName(),
-                                                                    attributeValue, turSNJobItemAttributes);
-                                                        }
-                                                    }
-                                                }));
+                                        usesCustomClass(document, url, turWCCustomClass, turSNJobItemAttributes);
                                 }
                         )));
         return turSNJobItemAttributes;
+    }
+
+    private void usesCustomClass(Document document, String url, TurWCAttributeMapping turWCCustomClass,
+                                 Map<String, Object> turSNJobItemAttributes) {
+        getCustomClass(document, url, turWCCustomClass)
+                .ifPresent(turMultiValue -> turMultiValue.forEach(attributeValue -> {
+                    if (!StringUtils.isBlank(attributeValue)) {
+                        if (turSNJobItemAttributes.containsKey(turWCCustomClass.getName())) {
+                            addItemInExistingAttribute(attributeValue,
+                                    turSNJobItemAttributes, turWCCustomClass.getName());
+                        } else {
+                            addFirstItemToAttribute(turWCCustomClass.getName(),
+                                    attributeValue, turSNJobItemAttributes);
+                        }
+                    }
+                }));
+    }
+
+    private static void usesText(TurWCAttributeMapping turWCCustomClass, String text,
+                                 Map<String, Object> turSNJobItemAttributes) {
+        turSNJobItemAttributes.put(turWCCustomClass.getName(), text);
     }
 
     private Optional<TurMultiValue> getCustomClass(Document document, String url,

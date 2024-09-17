@@ -192,7 +192,7 @@ public class TurConverseAgentAPI {
 
 		String conversationId;
 
-		if (start || session.getAttribute(CONVERSATION_ID) == null) {
+		if (Boolean.TRUE.equals(start) || session.getAttribute(CONVERSATION_ID) == null) {
 			turConverse.cleanSession(session);
 			SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyyyyHHmmss");
 			conversationId = dateFormat.format(new Date());
