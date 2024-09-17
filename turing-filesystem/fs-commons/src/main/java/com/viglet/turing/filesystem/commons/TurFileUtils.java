@@ -6,6 +6,7 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
@@ -130,28 +131,38 @@ public class TurFileUtils {
 
     private static Date getLastModified(URL url) {
         Date date = new Date();
-        try {
-            HttpURLConnection httpUrlConnection = (HttpURLConnection) url.openConnection();
-            httpUrlConnection.setRequestMethod("HEAD");
-            date =  new Date(httpUrlConnection.getLastModified());
-            httpUrlConnection.disconnect();
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
+
+        if (isValidUrl(url)) {
+            try {
+                HttpURLConnection httpUrlConnection = (HttpURLConnection) url.openConnection();
+                httpUrlConnection.setRequestMethod("HEAD");
+                date = new Date(httpUrlConnection.getLastModified());
+                httpUrlConnection.disconnect();
+            } catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
         }
         return date;
     }
 
+    private static boolean isValidUrl(URL url) {
+        UrlValidator urlValidator = new UrlValidator();
+        return urlValidator.isValid(url.getPath());
+    }
+
     private static File getFile(URL url) {
         File tempFile = null;
-        try {
-            tempFile = createTempFile();
-            FileUtils.copyURLToFile(
-                    url,
-                    tempFile,
-                    5000,
-                    5000);
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
+        if (isValidUrl(url)) {
+            try {
+                tempFile = createTempFile();
+                FileUtils.copyURLToFile(
+                        url,
+                        tempFile,
+                        5000,
+                        5000);
+            } catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
         }
         return tempFile;
     }

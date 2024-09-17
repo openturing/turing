@@ -87,5 +87,10 @@
       <artifactId>spring-web</artifactId>
       <version>6.1.13</version>
     </dependency>
+      <dependency>
+          <groupId>commons-validator</groupId>
+          <artifactId>commons-validator</artifactId>
+          <version>1.9.0</version>
+      </dependency>
   </dependencies>
 </project>
