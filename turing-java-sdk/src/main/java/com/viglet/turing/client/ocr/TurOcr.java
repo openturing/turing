@@ -33,24 +33,23 @@ public class TurOcr {
     public static final String API_OCR_FILE = "%s/api/ocr/file";
     public static final String FILE = "file";
     public static final String URL = "url";
-
-    private TurOcr() {
-        throw new IllegalStateException("OCR Utility class");
+    private final PoolingHttpClientConnectionManager pool;
+    public TurOcr() {
+       pool = setConnectionManager();
     }
 
-    public static TurFileAttributes processFile(TurServer turServer, File file, boolean showOutput) {
+    public TurFileAttributes processFile(TurServer turServer, File file, boolean showOutput) {
         return getTurFileAttributes(turServer,
                 getRequestEntity(file),
                 String.format(API_OCR_FILE, turServer.getServerUrl()),
                 showOutput);
     }
 
-    private static TurFileAttributes getTurFileAttributes(TurServer turServer, HttpEntity requestEntity,
+    private TurFileAttributes getTurFileAttributes(TurServer turServer, HttpEntity requestEntity,
                                                           String endpoint,
                                                           boolean showOutput) {
 
-        try (PoolingHttpClientConnectionManager pool = setConnectionManager();
-             CloseableHttpClient client = HttpClients
+        try (CloseableHttpClient client = HttpClients
                      .custom()
                      .setConnectionManager(pool)
                      .build();
@@ -93,7 +92,7 @@ public class TurOcr {
                 .build();
     }
 
-    public static TurFileAttributes processUrl(TurServer turServer, URL url, boolean showOutput) {
+    public TurFileAttributes processUrl(TurServer turServer, URL url, boolean showOutput) {
         return getTurFileAttributes(turServer,
                 getRequestEntity(url),
                 String.format(API_OCR_URL, turServer.getServerUrl()),

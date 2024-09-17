@@ -44,7 +44,8 @@ public class TurClientOcrSample {
             TurServer turSNServer = new TurServer(URI.create(TURING_URL).toURL(),
                     new TurApiKeyCredentials(TURING_API_KEY));
             log.info("--- Ocr Url");
-            TurFileAttributes turFileAttributes = TurOcr.processUrl(turSNServer, URI.create(URL).toURL(),
+            TurOcr turOcr = new TurOcr();
+            TurFileAttributes turFileAttributes = turOcr.processUrl(turSNServer, URI.create(URL).toURL(),
                     true);
             log.info(turFileAttributes.toString());
         } catch (MalformedURLException e) {
