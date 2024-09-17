@@ -53,7 +53,7 @@ public class TurOcr {
             });
             TurFileAttributes turFileAttributes = new ObjectMapper().readValue(responseBody, TurFileAttributes.class);
             if (showOutput) {
-                System.out.println(turFileAttributes.toString());
+               log.info(turFileAttributes.toString());
             }
             return turFileAttributes;
         } catch (IOException e) {

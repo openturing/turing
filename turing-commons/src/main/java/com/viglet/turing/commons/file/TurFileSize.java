@@ -45,7 +45,7 @@ public class TurFileSize {
     }
 
     private float twoDecimalFloat(float value) {
-        return new BigDecimal(value).setScale(2, RoundingMode.HALF_UP).floatValue();
+        return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).floatValue();
     }
 
 }
