@@ -17,6 +17,8 @@ import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtLocaleInte
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrAttributeMapping;
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrSource;
 import com.viglet.turing.connector.sprinklr.persistence.repository.TurSprinklrAttributeMappingRepository;
+import com.viglet.turing.connector.sprinklr.utils.FileAsset;
+import com.viglet.turing.connector.sprinklr.utils.FileAssetsExtractor;
 import com.viglet.turing.sprinklr.client.service.kb.TurSprinklrKBService;
 import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrKBSearch;
 import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrSearchResult;
@@ -25,7 +27,7 @@ import com.viglet.turing.sprinklr.client.service.token.TurSprinklrSecretKey;
 import com.viglet.turing.sprinklr.client.service.token.TurSprinklrTokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Value; // Gets the value from application.properties
 import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
@@ -38,9 +40,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TurSprinklrProcess {
     private final String turingUrl;
     private final String turingApiKey;
-    private TurSNJobItems turSNJobItems = new TurSNJobItems();
     private final int jobSize;
     private final TurSprinklrAttributeMappingRepository turSprinklrAttributeMappingRepository;
+    /**
+     * Represents the jobs that will be sent to Turing API
+     */
+    private TurSNJobItems turSNJobItems = new TurSNJobItems();
 
     @Inject
     public TurSprinklrProcess(@Value("${turing.url}") String turingUrl,
@@ -51,129 +56,6 @@ public class TurSprinklrProcess {
         this.turingApiKey = turingApiKey;
         this.jobSize = jobSize;
         this.turSprinklrAttributeMappingRepository = turSprinklrAttributeMappingRepository;
-    }
-
-    public void start(TurSprinklrSource turSprinklrSource) {
-        reset();
-        AtomicInteger kbPage = new AtomicInteger(0);
-        TurSprinklrTokenService turSprinklrTokenService = new TurSprinklrTokenService(
-                TurSprinklrSecretKey.builder()
-                        .apiKey(turSprinklrSource.getApiKey())
-                        .secretKey(turSprinklrSource.getSecretKey())
-                        .environment(turSprinklrSource.getEnvironment())
-                        .build());
-        TurSprinklrAccessToken turSprinklrAccessToken = turSprinklrTokenService
-                .getAccessToken();
-        if (turSprinklrAccessToken != null) {
-            while (true) {
-                TurSprinklrKBSearch turSprinklrKBSearch = TurSprinklrKBService.run(turSprinklrAccessToken, kbPage.get());
-                if (!(turSprinklrKBSearch == null)) {
-                    List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
-                    if (results.isEmpty()) {
-                        break;
-                    } else {
-                        results.forEach(searchResult -> {
-                            getPage(turSprinklrSource, searchResult, turSprinklrAccessToken);
-                            sendToTuringWhenMaxSize();
-                            getInfoQueue();
-                        });
-                        kbPage.incrementAndGet();
-                    }
-                }
-            }
-        }
-        if (turSNJobItems.size() > 0) {
-            sendToTuring();
-            getInfoQueue();
-        }
-    }
-
-    private void reset() {
-        turSNJobItems = new TurSNJobItems();
-    }
-
-    private void getInfoQueue() {
-        log.info("Total Job Item: {}", Iterators.size(turSNJobItems.iterator()));
-    }
-
-    public void getPage(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
-                        TurSprinklrAccessToken token) {
-        log.info("{}: {}", searchResult.getId(), turSprinklrSource.getTurSNSites());
-        addTurSNJobItems(turSprinklrSource, searchResult, token);
-
-    }
-
-    private void addTurSNJobItems(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
-                                  TurSprinklrAccessToken token) {
-        TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, new ArrayList<>(turSprinklrSource.getTurSNSites()),
-                getLocale(turSprinklrSource, searchResult, token),
-                getJobItemAttributes(turSprinklrSource, token, searchResult));
-        turSNJobItems.add(turSNJobItem);
-    }
-
-    public Locale getLocale(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
-                            TurSprinklrAccessToken token) {
-        return Optional.ofNullable(turSprinklrSource.getLocale())
-                .orElseGet(() -> {
-                    if (!StringUtils.isEmpty(turSprinklrSource.getLocaleClass())) {
-                        return TurCustomClassCache.getCustomClassMap(turSprinklrSource.getLocaleClass())
-                                .map(classInstance -> ((TurSprinklrExtLocaleInterface) classInstance)
-                                        .consume(getTurSprinklrContext(searchResult, token))).orElse(Locale.US);
-                    }
-                    return Locale.US;
-                });
-    }
-
-    private void sendToTuringWhenMaxSize() {
-        if (turSNJobItems.size() >= jobSize) {
-            sendToTuring();
-            turSNJobItems = new TurSNJobItems();
-        }
-    }
-
-    public Map<String, Object> getJobItemAttributes(TurSprinklrSource turSprinklrSource, TurSprinklrAccessToken token,
-                                                    TurSprinklrSearchResult searchResult) {
-        Map<String, Object> turSNJobItemAttributes = new HashMap<>();
-        turSprinklrAttributeMappingRepository.findByTurSprinklrSource(turSprinklrSource).ifPresent(source -> source.forEach(turSprinklrCustomClass ->
-                Optional.ofNullable(turSprinklrCustomClass.getText()).ifPresentOrElse(text ->
-                                turSNJobItemAttributes.put(turSprinklrCustomClass.getName(), text)
-                        , () -> {
-                            if (!StringUtils.isEmpty(turSprinklrCustomClass.getClassName()))
-                                getCustomClass(searchResult, token, turSprinklrCustomClass)
-                                        .ifPresent(turMultiValue -> turMultiValue.forEach(attributeValue -> {
-                                            if (!StringUtils.isBlank(attributeValue)) {
-                                                if (turSNJobItemAttributes.containsKey(turSprinklrCustomClass.getName())) {
-                                                    addItemInExistingAttribute(attributeValue,
-                                                            turSNJobItemAttributes, turSprinklrCustomClass.getName());
-                                                } else {
-                                                    addFirstItemToAttribute(turSprinklrCustomClass.getName(),
-                                                            attributeValue, turSNJobItemAttributes);
-                                                }
-                                            }
-                                        }));
-                        }
-                )));
-        return turSNJobItemAttributes;
-    }
-
-    private Optional<TurMultiValue> getCustomClass(TurSprinklrSearchResult searchResult, TurSprinklrAccessToken token,
-                                                   TurSprinklrAttributeMapping turSprinklrAttributeMapping) {
-        return TurCustomClassCache.getCustomClassMap(turSprinklrAttributeMapping.getClassName())
-                .flatMap(classInstance -> ((TurSprinklrExtInterface) classInstance)
-                        .consume(getTurSprinklrContext(searchResult, token)));
-    }
-
-    public TurSprinklrContext getTurSprinklrContext(TurSprinklrSearchResult searchResult, TurSprinklrAccessToken token) {
-        return TurSprinklrContext.builder()
-                .searchResult(searchResult)
-                .accessToken(token)
-                .build();
-    }
-
-    private void addFirstItemToAttribute(String attributeName,
-                                         String attributeValue,
-                                         Map<String, Object> attributes) {
-        attributes.put(attributeName, attributeValue);
     }
 
     private static void addItemInExistingAttribute(String attributeValue,
@@ -200,6 +82,236 @@ public class TurSprinklrProcess {
         attributes.put(attributeName, attributeValues);
     }
 
+    public void start(TurSprinklrSource turSprinklrSource) {
+        reset();
+        // Index for the pagination parameter of the Knowledge Base API, it starts on 0
+        AtomicInteger kbPage = new AtomicInteger(0);
+
+        // Get a token for the API
+        TurSprinklrTokenService turSprinklrTokenService = new TurSprinklrTokenService(
+                TurSprinklrSecretKey.builder()
+                        .apiKey(turSprinklrSource.getApiKey())
+                        .secretKey(turSprinklrSource.getSecretKey())
+                        .environment(turSprinklrSource.getEnvironment())
+                        .build()
+        );
+        TurSprinklrAccessToken turSprinklrAccessToken = turSprinklrTokenService.getAccessToken();
+
+        if (turSprinklrAccessToken != null) {
+            while (true) {
+                TurSprinklrKBSearch turSprinklrKBSearch = TurSprinklrKBService.run(turSprinklrAccessToken, kbPage.get());
+
+                if (turSprinklrKBSearch != null) {
+                    List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
+
+                    if (results.isEmpty()) {
+                        break;
+                    } else {
+                        results.forEach(searchResult -> {
+                            Locale resultLocale = searchResult.getLocale();
+                            Collection<String> turSites = turSprinklrSource.getTurSNSites();
+
+                            // Inserts new jobs into turSNJobItems
+                            getArticle(turSprinklrSource, searchResult, turSprinklrAccessToken);
+
+                            // Gets the assets attached to the search result and inserts into turSNJobItems.
+                            List<FileAsset> assets = getFileAssets(searchResult);
+                            addFileAssetsToJobItens(assets, resultLocale, turSites);
+
+                            // Quando o tamanho de turSNJobItems alcançar o JobSize definido, envia para o turing.
+                            sendToTuringWhenMaxSize();
+
+                            getInfoQueue();
+                        });
+                        // Increment Index
+                        kbPage.incrementAndGet();
+                    }
+                }
+            }
+        }
+        if (turSNJobItems.size() > 0) {
+            // Envia os últimos jobs restantes.
+            sendToTuring();
+            getInfoQueue();
+        }
+    }
+
+    /**
+     * Extracts the file assets from the search result and returns a list of FileAsset objects.
+     */
+    private List<FileAsset> getFileAssets(TurSprinklrSearchResult searchResult) {
+        final var fileAssetExtractor = new FileAssetsExtractor(turingUrl, turingApiKey);
+        final var fileAssets = fileAssetExtractor.extractFromLinkedAssets(searchResult);
+
+        if (fileAssets == null || fileAssets.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return fileAssets;
+    }
+
+    /**
+     * Adds the file assets to the job items list.
+     */
+    private void addFileAssetsToJobItens(List<FileAsset> fileAssets, Locale locale, Collection<String> turSites) {
+        for (var asset : fileAssets) {
+            var turSNJobItemAttributes = asset.toMapAttributes();
+            TurSNJobItem turSNJobItem = new TurSNJobItem(
+                    TurSNJobAction.CREATE,
+                    (List<String>) turSites,
+                    locale,
+                    turSNJobItemAttributes
+            );
+            turSNJobItems.add(turSNJobItem);
+        }
+    }
+
+    /**
+     * Clears the List of jobs in Turing API
+     */
+    private void reset() {
+        turSNJobItems = new TurSNJobItems();
+    }
+
+    private void getInfoQueue() {
+        log.info("Total Job Item: {}", Iterators.size(turSNJobItems.iterator()));
+    }
+
+    public void getArticle(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
+                           TurSprinklrAccessToken token) {
+        log.info("{}: {}", searchResult.getId(), turSprinklrSource.getTurSNSites());
+        addTurSNJobItems(turSprinklrSource, searchResult, token);
+
+    }
+
+    /**
+     * Inserts a job in the job list parameter of this class (turSNJobItems)
+     *
+     * @param turSprinklrSource Source to extract the Semantic Navigation sites, locale and attributes
+     * @param searchResult      Source to extract Locale and attributes
+     * @param token             N/A
+     */
+    private void addTurSNJobItems(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
+                                  TurSprinklrAccessToken token) {
+        TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, new ArrayList<>(turSprinklrSource.getTurSNSites()),
+                getLocale(turSprinklrSource, searchResult, token),
+                getJobItemAttributes(turSprinklrSource, token, searchResult));
+        turSNJobItems.add(turSNJobItem);
+    }
+
+    /**
+     * Get the Locale from inside turSprinklrSource entity, if it does not work, tries to get the locale from inside
+     * locale_class column of turSprinklrSource entity, if also does not work, return Locale.US.
+     *
+     * @param turSprinklrSource the method will first try to get the Locale from turSprinklrSource.getLocale().
+     * @param searchResult      is used to create a context where an attempt will be made to retrieve the locale.
+     * @param token             N/A
+     * @return Locale based on the parameters.
+     */
+    public Locale getLocale(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult,
+                            TurSprinklrAccessToken token) {
+        /*
+         Try to get extract the locale from turSprinklrSource.getLocale()
+         Or else extracts the locale class (by default sprinklr-commons TurSprinklrExtLocal) from turSprinklrSource.
+         If getCustomClassMap found a class, converts the result to an instance of TurSprinklrExtLocaleInterface.
+         Then calls the .consume method to get a Locale, if none of this works, then return Locale.US
+        */
+        return Optional.ofNullable(turSprinklrSource.getLocale())
+                .orElseGet(() -> {
+                    if (!StringUtils.isEmpty(turSprinklrSource.getLocaleClass())) {
+                        return TurCustomClassCache.getCustomClassMap(turSprinklrSource.getLocaleClass())
+                                .map(classInstance -> ((TurSprinklrExtLocaleInterface) classInstance)
+                                        .consume(getTurSprinklrContext(searchResult, token))).orElse(Locale.US);
+                    }
+                    return Locale.US;
+                });
+    }
+
+    private void sendToTuringWhenMaxSize() {
+        if (turSNJobItems.size() >= jobSize) {
+            sendToTuring();
+            turSNJobItems = new TurSNJobItems();
+        }
+    }
+
+    /**
+     * Returns a new HashMap of "Attribute(turing Field, Attribute Name from export.json) -> Attribute Value". <p>
+     * This method is used when sending a job to Turing.
+     *
+     * @param turSprinklrSource Is used to find the <b>turSprinklrAttributeMapping entity</b>, it represents
+     *                          <code>export.json</code> file.
+     * @param token             N/A
+     * @param searchResult      If a <b>CustomClass</b> is defined by <code>export.json</code> file, the value will be extracted from <b>searchResult</b>
+     * @return the created HashMap
+     */
+    public Map<String, Object> getJobItemAttributes(TurSprinklrSource turSprinklrSource, TurSprinklrAccessToken token,
+                                                    TurSprinklrSearchResult searchResult) {
+        Map<String, Object> turSNJobItemAttributes = new HashMap<>();
+        /* Example
+
+              NAME         |      TEXT(VALUE)
+            source_apps    |    SPRINKLR (Hardcoded)
+            created_date   |    19-02-2015 (retrieved using a custom class)
+
+         */
+
+        /*
+         Will retrieve the objects from 'turSprinklrAttributeMapping' entity, then for each one of the objects that this entity contains. Will get
+         the 'text' attribute of this object.
+         If the 'text' attribute is present, then will create a new key in turSNJobItemAttributes with the `name` attribute of this same object. The
+         value of this key will be the 'text'.
+         If not present, tries to get the ClassName from `AttributeMapping`, instantiate it dynamically and consumes it to get the value of the key.
+        */
+        turSprinklrAttributeMappingRepository.findByTurSprinklrSource(turSprinklrSource).ifPresent(mapping -> mapping.forEach(attribute ->
+                Optional.ofNullable(attribute.getText()).ifPresentOrElse(text ->
+                                turSNJobItemAttributes.put(attribute.getName(), text)
+                        , () -> {
+                            // Se o campo ClassName estiver preenchido no Export.json
+                            if (!StringUtils.isEmpty(attribute.getClassName()))
+                                getCustomClass(searchResult, token, attribute)
+                                        .ifPresent(turMultiValue -> turMultiValue.forEach(attributeValue -> {
+                                            if (!StringUtils.isBlank(attributeValue)) {
+                                                if (turSNJobItemAttributes.containsKey(attribute.getName())) {
+                                                    addItemInExistingAttribute(attributeValue,
+                                                            turSNJobItemAttributes, attribute.getName());
+                                                } else {
+                                                    addFirstItemToAttribute(attribute.getName(),
+                                                            attributeValue, turSNJobItemAttributes);
+                                                }
+                                            }
+                                        }));
+                        }
+                )));
+        return turSNJobItemAttributes;
+    }
+
+    private Optional<TurMultiValue> getCustomClass(TurSprinklrSearchResult searchResult, TurSprinklrAccessToken token,
+                                                   TurSprinklrAttributeMapping turSprinklrAttributeMapping) {
+        return TurCustomClassCache.getCustomClassMap(turSprinklrAttributeMapping.getClassName())
+                .flatMap(classInstance -> ((TurSprinklrExtInterface) classInstance)
+                        .consume(getTurSprinklrContext(searchResult, token)));
+    }
+
+    /**
+     * Builds a TurSprinklrContext object from a searchResult and a token object
+     */
+    public TurSprinklrContext getTurSprinklrContext(TurSprinklrSearchResult searchResult, TurSprinklrAccessToken token) {
+        return TurSprinklrContext.builder()
+                .searchResult(searchResult)
+                .accessToken(token)
+                .build();
+    }
+
+    // Used only for getJobItemAttributes
+    private void addFirstItemToAttribute(String attributeName,
+                                         String attributeValue,
+                                         Map<String, Object> attributes) {
+        attributes.put(attributeName, attributeValue);
+    }
+
+
+    /**
+     * Push current turSNJobItems to turing.
+     */
     private void sendToTuring() {
         if (log.isDebugEnabled()) {
             for (TurSNJobItem turSNJobItem : turSNJobItems) {
