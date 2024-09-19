@@ -115,6 +115,7 @@ public class TurFileUtils {
     }
 
     public static TurFileAttributes documentToText(MultipartFile multipartFile) {
+
         return getTurFileAttributes(parseFile(multipartFile),
                 multipartFile.getOriginalFilename(),
                 FilenameUtils.getExtension(multipartFile.getOriginalFilename()),
@@ -122,19 +123,25 @@ public class TurFileUtils {
                 new Date());
     }
 
+    private static void ocrDocumentLog(String documentName) {
+        log.info("Processing {} document to text",  documentName);
+    }
+
     public static TurFileAttributes urlContentToText(URL url) {
-        File file = getFile(url);
-        file.deleteOnExit();
-        return getTurFileAttributes(parseFile(file),
-                FilenameUtils.getName(url.getPath()),
-                FilenameUtils.getExtension(url.getPath()),
-                file.length(),
-                getLastModified(url));
+        ocrDocumentLog(url.toString());
+        return Optional.ofNullable(getFile(url)).map(f -> {
+                    f.deleteOnExit();
+                    return getTurFileAttributes(parseFile(f),
+                            FilenameUtils.getName(url.getPath()),
+                            FilenameUtils.getExtension(url.getPath()),
+                            f.length(),
+                            getLastModified(url));
+                })
+                .orElseGet(TurFileAttributes::new);
     }
 
     private static Date getLastModified(URL url) {
         Date date = new Date();
-
         if (isValidUrl(url)) {
             try {
                 HttpURLConnection httpUrlConnection = (HttpURLConnection) url.openConnection();
@@ -150,7 +157,7 @@ public class TurFileUtils {
 
     private static boolean isValidUrl(URL url) {
         UrlValidator urlValidator = new UrlValidator();
-        return urlValidator.isValid(url.getPath());
+        return urlValidator.isValid(url.toString());
     }
 
     private static File getFile(URL url) {
