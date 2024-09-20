@@ -78,13 +78,11 @@ public class FileAssetsExtractor {
             // Tries to use turing OCR API to extract content from the downloaded file.
             TurFileAttributes ocrResult = null;
             try {
-                log.info("Sending document to OCR api in: {}", URI.create(turingUrl).toURL());
-                log.info("file type={}", asset.getAssetType());
-                log.info("The document url is {}", url);
+                log.info("Sending File Asset to turing OCR API, document url is {}", url);
                 TurServer turingServer = new TurServer(URI.create(turingUrl).toURL(), new TurApiKeyCredentials(turingApiKey));
                 TurOcr ocrProcessor = new TurOcr();
                 ocrResult = ocrProcessor.processUrl(turingServer, url, false);
-                log.info("OCR result: {}", ocrResult);
+                log.debug("OCR result: {}", ocrResult);
 
             } catch (MalformedURLException e) {
                 log.error(e);
