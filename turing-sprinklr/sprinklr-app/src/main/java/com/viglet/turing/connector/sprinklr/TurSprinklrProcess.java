@@ -98,12 +98,12 @@ public class TurSprinklrProcess {
         TurSprinklrAccessToken turSprinklrAccessToken = turSprinklrTokenService.getAccessToken();
 
         if (turSprinklrAccessToken != null) {
+            final var fileAssetExtractor = new FileAssetsExtractor(turingUrl, turingApiKey);
             while (true) {
                 TurSprinklrKBSearch turSprinklrKBSearch = TurSprinklrKBService.run(turSprinklrAccessToken, kbPage.get());
 
                 if (turSprinklrKBSearch != null) {
                     List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
-
                     if (results.isEmpty()) {
                         break;
                     } else {
@@ -115,7 +115,7 @@ public class TurSprinklrProcess {
                             getArticle(turSprinklrSource, searchResult, turSprinklrAccessToken);
 
                             // Gets the assets attached to the search result and inserts into turSNJobItems.
-                            List<FileAsset> assets = getFileAssets(searchResult);
+                            List<FileAsset> assets = getFileAssets(searchResult, fileAssetExtractor);
                             addFileAssetsToJobItens(assets, resultLocale, turSites);
 
                             // Quando o tamanho de turSNJobItems alcançar o JobSize definido, envia para o turing.
@@ -139,8 +139,7 @@ public class TurSprinklrProcess {
     /**
      * Extracts the file assets from the search result and returns a list of FileAsset objects.
      */
-    private List<FileAsset> getFileAssets(TurSprinklrSearchResult searchResult) {
-        final var fileAssetExtractor = new FileAssetsExtractor(turingUrl, turingApiKey);
+    private List<FileAsset> getFileAssets(TurSprinklrSearchResult searchResult, FileAssetsExtractor fileAssetExtractor) {
         final var fileAssets = fileAssetExtractor.extractFromLinkedAssets(searchResult);
 
         if (fileAssets == null || fileAssets.isEmpty()) {

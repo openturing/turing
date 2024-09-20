@@ -15,6 +15,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
 
@@ -40,6 +41,8 @@ public class FileAssetsExtractor {
      */
     final String turingApiKey;
 
+    final HashSet<String> alreadyProcessedIds = new HashSet<>();
+
     public FileAssetsExtractor(String turingUrl, String turingApiKey) {
         this.turingUrl = turingUrl;
         this.turingApiKey = turingApiKey;
@@ -54,31 +57,49 @@ public class FileAssetsExtractor {
     public List<FileAsset> extractFromLinkedAssets(TurSprinklrSearchResult searchResult) {
         // Extracting LinkedAssets from the search API result of Sprinkler Knowledge Base.
         List<TurSprinklrAsset> linkedAssets = searchResult.getLinkedAssets();
-
         // If there are no linked assets, return an empty list.
         if (linkedAssets == null || linkedAssets.isEmpty()) {
             return Collections.emptyList();
+        }
+        if(linkedAssets.removeIf(asset -> !asset.getAssetType().equals("file-attachment"))){
+            log.warn("Removed assets that are not file-attachment");
+            log.warn("The assets on this iteration are: ",linkedAssets.toString());
         }
         List<FileAsset> fileAssets = new ArrayList<>();
 
         // For each asset, uses turing OCR API to extract data.
         for (var asset : linkedAssets) {
+            log.info("Processing asset - AssetId : {}", asset.getAssetId());
             String id = null;
             URL url = null;
+
             try {
                 // assetId it's the complete URI of the file.
                 URI assetURI = new URI(asset.getAssetId()); // ex: google.com/files/text.pdf.
                 id = assetURI.getPath();// /files/text.pdf
                 id = id.substring(id.lastIndexOf('/') + 1); // text.pdf
+
                 url = assetURI.toURL();
-            } catch (URISyntaxException | MalformedURLException e) {
+            } catch (URISyntaxException | MalformedURLException | IllegalArgumentException e) {
+                if (e instanceof IllegalArgumentException || e instanceof MalformedURLException) {
+                    log.error("Invalid URL, AssetId: {}, AssetType: {}, AssetCategory {}", asset.getAssetId(), asset.getAssetType(), asset.getAssetCategory());
+                }
                 log.error(e);
+                log.error("Asset coming from article: {}, {}", searchResult.getContent().getTitle(), searchResult.getMappingDetails().get(0).getCommunityPermalink());
+                log.info("Skipping asset");
+                continue;
+            }
+
+            // If the asset has already been processed, skip it.
+            if (alreadyProcessedIds.contains(id)) {
+                log.info("Asset already processed, skipping: {}", id);
+                continue;
             }
 
             // Tries to use turing OCR API to extract content from the downloaded file.
             TurFileAttributes ocrResult = null;
             try {
-                log.info("Sending File Asset to turing OCR API, document url is {}", url);
+                log.info("Sending File Asset to turing OCR API");
                 TurServer turingServer = new TurServer(URI.create(turingUrl).toURL(), new TurApiKeyCredentials(turingApiKey));
                 TurOcr ocrProcessor = new TurOcr();
                 ocrResult = ocrProcessor.processUrl(turingServer, url, false);
@@ -105,7 +126,10 @@ public class FileAssetsExtractor {
                     extension);
 
             fileAssets.add(fileAsset);
+            alreadyProcessedIds.add(id);
         }
+
         return fileAssets;
     }
+
 }
