@@ -29,6 +29,7 @@ import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.job.*;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.commons.exception.TurRuntimeException;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.connector.aem.commons.TurAemAttrProcess;
 import com.viglet.turing.connector.aem.commons.TurAemCommonsUtils;
 import com.viglet.turing.connector.aem.commons.TurAemObject;
@@ -364,8 +365,8 @@ public class TurAemIndexerTool {
                                 log.info("DeIndex {} object from {} group and {} delta",
                                         content.getAemId(), turAemSourceContext.getGroup(), deltaId);
                                 Map<String, Object> attributes = new HashMap<>();
-                                attributes.put(AemHandlerConfiguration.ID_ATTRIBUTE, content.getAemId());
-                                attributes.put(AemHandlerConfiguration.PROVIDER_ATTRIBUTE,
+                                attributes.put(TurSNFieldName.ID, content.getAemId());
+                                attributes.put(TurSNFieldName.SOURCE_APPS,
                                         AemHandlerConfiguration.DEFAULT_PROVIDER);
                                 sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.DELETE,
                                         Collections.singletonList(config.getDefaultSNSiteConfig().getName()),

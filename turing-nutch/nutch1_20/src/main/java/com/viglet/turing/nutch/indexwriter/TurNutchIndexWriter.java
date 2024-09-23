@@ -4,6 +4,7 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.exception.TurRuntimeException;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.nutch.commons.TurNutchCommons;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -106,7 +107,7 @@ public class TurNutchIndexWriter implements IndexWriter {
         }
         final TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.DELETE, Collections.singletonList(site));
         Map<String, Object> attributes = new HashMap<>();
-        attributes.put(TurNutchCommons.ID_FIELD, key);
+        attributes.put(TurSNFieldName.ID, key);
         turSNJobItem.setAttributes(attributes);
         turSNJobItems.add(turSNJobItem);
 
@@ -144,8 +145,8 @@ public class TurNutchIndexWriter implements IndexWriter {
         if (!weightField.isEmpty()) {
             attributes.put(weightField, doc.getWeight());
         }
-        attributes.put(TurNutchCommons.TYPE_FIELD, TurNutchCommons.TYPE_DEFAULT_VALUE);
-        attributes.put(TurNutchCommons.CONNECTOR_FIELD, TurNutchCommons.CONNECTOR_DEFAULT_VALUE);
+        attributes.put(TurSNFieldName.TYPE, TurNutchCommons.TYPE_DEFAULT_VALUE);
+        attributes.put(TurSNFieldName.SOURCE_APPS, TurNutchCommons.CONNECTOR_DEFAULT_VALUE);
         return attributes;
     }
 
@@ -155,12 +156,12 @@ public class TurNutchIndexWriter implements IndexWriter {
             val2 = DateTimeFormatter.ISO_INSTANT.format(((Date) val).toInstant());
         }
         if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD)
-                || e.getKey().equals(TurNutchCommons.TITLE_FIELD)) {
+                || e.getKey().equals(TurSNFieldName.TITLE)) {
             assert val instanceof String;
             val2 = TurNutchCommons.stripNonCharCodepoints((String) val);
         }
         if (e.getKey().equals(TurNutchCommons.CONTENT_FIELD)) {
-            attributes.put(TurNutchCommons.TEXT_FIELD, val2);
+            attributes.put(TurSNFieldName.TEXT, val2);
         } else {
             attributes.put(e.getKey(), val2);
         }

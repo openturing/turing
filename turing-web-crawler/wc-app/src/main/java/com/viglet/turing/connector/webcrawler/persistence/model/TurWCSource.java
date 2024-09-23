@@ -21,7 +21,6 @@ import java.util.Locale;
 @Table(name = "wc_source")
 public class TurWCSource implements Serializable {
 
-    public static final String ID = "id";
     @Serial
     private static final long serialVersionUID = 1L;
     public static final String TUR_WC_SOURCE = "turWCSource";
@@ -31,7 +30,7 @@ public class TurWCSource implements Serializable {
 
     @Id
     @TurUuid
-    @Column(name = ID, nullable = false)
+    @Column(name = "id", nullable = false)
     private String id;
     @Column
     private String title;
