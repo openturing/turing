@@ -27,6 +27,7 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.lucene.TurLuceneWriter;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -140,7 +141,7 @@ public class TurSNProcessQueue {
 
     private void noProcessedWarning(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
         log.warn("Object ID '{}' of '{}' SN Site ({}) was not processed",
-                turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
+                turSNJobItem.getAttributes().get(TurSNFieldName.ID),
                 turSNSite.getName(),
                 turSNJobItem.getLocale());
     }
@@ -176,10 +177,10 @@ public class TurSNProcessQueue {
     }
 
     private static void logCrudObject(TurSNSite turSNSite, TurSNJobItem turSNJobItem, String action) {
-        if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE))
-            logCrudObjectMessage(turSNSite, turSNJobItem, action, TurSNConstants.ID_ATTRIBUTE);
-        else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.TYPE_ATTRIBUTE))
-            logCrudObjectMessage(turSNSite, turSNJobItem, action, TurSNConstants.TYPE_ATTRIBUTE);
+        if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.ID))
+            logCrudObjectMessage(turSNSite, turSNJobItem, action, TurSNFieldName.ID);
+        else if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.TYPE))
+            logCrudObjectMessage(turSNSite, turSNJobItem, action, TurSNFieldName.TYPE);
     }
 
     private static void logCrudObjectMessage(TurSNSite turSNSite, TurSNJobItem turSNJobItem,
@@ -193,12 +194,12 @@ public class TurSNProcessQueue {
         log.debug("DeIndex");
         return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale())
                 .map(turSolrInstance -> {
-                    if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
+                    if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.ID)) {
                         turSolr.deIndexing(turSolrInstance,
-                                (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE));
-                    } else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.TYPE_ATTRIBUTE)) {
+                                (String) turSNJobItem.getAttributes().get(TurSNFieldName.ID));
+                    } else if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.TYPE)) {
                         turSolr.deIndexingByType(turSolrInstance,
-                                (String) turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE));
+                                (String) turSNJobItem.getAttributes().get(TurSNFieldName.TYPE));
                     }
                     return true;
                 }).orElse(false);
