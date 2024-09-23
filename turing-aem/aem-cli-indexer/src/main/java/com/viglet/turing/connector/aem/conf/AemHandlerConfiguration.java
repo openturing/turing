@@ -34,8 +34,6 @@ import java.util.*;
 
 @Slf4j
 public class AemHandlerConfiguration implements IHandlerConfiguration {
-    public static final String ID_ATTRIBUTE = "id";
-    public static final String PROVIDER_ATTRIBUTE = "source_apps";
     public static final String DEFAULT_PROVIDER = "AEM";
     private static final String DEFAULT_TURING_URL = "http://localhost:2700";
     private static final String DEFAULT_CTD_MAPPING_FILE = "/CTD-Turing-Mappings.xml";

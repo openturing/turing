@@ -33,7 +33,7 @@ To run Turing ES, just execute the following lines:
 # Turing App
 mvn -Dmaven.repo.local=D:\repo spring-boot:run -pl turing-app -Dskip.npm
 
-# New Turing ES UI using Angular 12 and Primer CSS.
+# New Turing ES UI using Angular 18 and Primer CSS.
 
 cd turing-ui
 

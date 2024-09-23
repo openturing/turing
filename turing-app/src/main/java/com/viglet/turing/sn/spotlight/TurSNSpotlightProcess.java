@@ -27,6 +27,7 @@ import com.google.inject.Inject;
 import com.viglet.turing.api.sn.queue.TurSpotlightContent;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -102,25 +103,25 @@ public class TurSNSpotlightProcess {
 
 	public boolean isSpotlightJob(TurSNJobItem turSNJobItem) {
 		return turSNJobItem != null && turSNJobItem.getAttributes() != null
-				&& turSNJobItem.getAttributes().containsKey(TurSNConstants.TYPE_ATTRIBUTE)
-				&& turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE).equals(TYPE_VALUE);
+				&& turSNJobItem.getAttributes().containsKey(TurSNFieldName.TYPE)
+				&& turSNJobItem.getAttributes().get(TurSNFieldName.TYPE).equals(TYPE_VALUE);
 	}
 
 	@CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
 	public boolean deleteUnmanagedSpotlight(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
-		if (turSNJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE)) {
+		if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.ID)) {
 			TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite,
 					turSNJobItem.getLocale());
 			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
 					.findByUnmanagedIdAndTurSNSiteAndLanguage(
-							(String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite,
+							(String) turSNJobItem.getAttributes().get(TurSNFieldName.ID), turSNSite,
 							turSNSiteLocale.getLanguage());
 			turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
 			logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was deleted.",
-					turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(),
+					turSNJobItem.getAttributes().get(TurSNFieldName.ID), turSNSite.getName(),
 					turSNJobItem.getLocale());
-		} else if (turSNJobItem.getAttributes().containsKey(TurSNConstants.PROVIDER_ATTRIBUTE)) {
-			String provider = (String) turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE);
+		} else if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.SOURCE_APPS)) {
+			String provider = (String) turSNJobItem.getAttributes().get(TurSNFieldName.SOURCE_APPS);
 			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository.findByProvider(provider);
 			turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
 			logger.warn("Spotlight by '{}' provider was deleted.", provider);
@@ -131,12 +132,12 @@ public class TurSNSpotlightProcess {
 
 	@CacheEvict(value = { "spotlight", "spotlight_term" }, allEntries = true)
 	public boolean createUnmanagedSpotlight(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
-		String id = (String) turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE);
+		String id = (String) turSNJobItem.getAttributes().get(TurSNFieldName.ID);
 		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite,
 				turSNJobItem.getLocale());
 		if (turSNSiteLocale == null) {
 			logger.warn("Spotlight ID '{}' of '{}' SN Site was not processed, because {} locale did not found.",
-					turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(),
+					turSNJobItem.getAttributes().get(TurSNFieldName.ID), turSNSite.getName(),
 					turSNJobItem.getLocale());
 			return false;
 		} else {
@@ -154,12 +155,12 @@ public class TurSNSpotlightProcess {
 			try {
 				String jsonContent = (String) turSNJobItem.getAttributes().get(CONTENT_ATTRIBUTE);
 				String name = (String) turSNJobItem.getAttributes().get(NAME_ATTRIBUTE);
-				String provider = (String) turSNJobItem.getAttributes().get(TurSNConstants.PROVIDER_ATTRIBUTE);
+				String provider = (String) turSNJobItem.getAttributes().get(TurSNFieldName.SOURCE_APPS);
 				String[] terms = ((String) turSNJobItem.getAttributes().get(TERMS_ATTRIBUTE)).split(",");
 				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 				simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
 				Date date = simpleDateFormat
-						.parse((String) turSNJobItem.getAttributes().get(TurSNConstants.MODIFICATION_DATE_ATTRIBUTE));
+						.parse((String) turSNJobItem.getAttributes().get(TurSNFieldName.MODIFICATION_DATE));
 				List<TurSpotlightContent> turSpotlightContents = new ObjectMapper().readValue(jsonContent,
 						new TypeReference<>() {
 						});
@@ -187,7 +188,7 @@ public class TurSNSpotlightProcess {
 					turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
 				}
 				logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was created.",
-						turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE), turSNSite.getName(),
+						turSNJobItem.getAttributes().get(TurSNFieldName.ID), turSNSite.getName(),
 						turSNJobItem.getLocale());
 			} catch (ParseException | JsonProcessingException e) {
 				logger.error(e.getMessage(), e);

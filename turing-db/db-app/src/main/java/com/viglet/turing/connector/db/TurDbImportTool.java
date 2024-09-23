@@ -25,6 +25,7 @@ import com.viglet.turing.client.auth.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.connector.db.ext.TurDbExtCustomImpl;
 import com.viglet.turing.connector.db.format.TurDbFormatValue;
 import com.viglet.turing.filesystem.commons.TurTikaFileAttributes;
@@ -58,8 +59,6 @@ import java.util.*;
 @Slf4j
 public class TurDbImportTool {
     private static final long MEGA_BYTE = 1024L * 1024L;
-    private static final String TYPE_ATTRIBUTE = "type";
-    private static final String PROVIDER_ATTRIBUTE = "source_apps";
     private static final String PROVIDER_ATTRIBUTE_VALUE = "turing-jdbc";
     private static final String SQL_TIMESTAMP_CLASS = "java.sql.Timestamp";
     private static final String INTEGER_CLASS = "java.lang.Integer";
@@ -259,8 +258,8 @@ public class TurDbImportTool {
     private TurSNJobItem createJobItem(TurDbExtCustomImpl turJDBCCustomImpl, Connection conn, ResultSet rs)
             throws SQLException {
         Map<String, Object> attributes = new HashMap<>();
-        attributes.put(TYPE_ATTRIBUTE, type);
-        attributes.put(PROVIDER_ATTRIBUTE, PROVIDER_ATTRIBUTE_VALUE);
+        attributes.put(TurSNFieldName.TYPE, type);
+        attributes.put(TurSNFieldName.SOURCE_APPS, PROVIDER_ATTRIBUTE_VALUE);
         addDBFieldsAsAttributes(rs, attributes);
         addFileAttributes(attributes);
         attributes = modifyAttributesByCustomClass(turJDBCCustomImpl, conn, attributes);
