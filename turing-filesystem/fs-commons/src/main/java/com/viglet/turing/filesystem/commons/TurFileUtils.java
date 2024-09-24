@@ -9,6 +9,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -115,26 +116,48 @@ public class TurFileUtils {
     }
 
     public static TurFileAttributes documentToText(MultipartFile multipartFile) {
-        return getTurFileAttributes(parseFile(multipartFile),
-                multipartFile.getOriginalFilename(),
-                FilenameUtils.getExtension(multipartFile.getOriginalFilename()),
-                multipartFile.getSize(),
-                new Date());
+        return Optional.ofNullable(parseFile(multipartFile)).map(tikaFileAttributes ->
+                        getTurFileAttributes(parseFile(multipartFile),
+                                multipartFile.getOriginalFilename(),
+                                FilenameUtils.getExtension(multipartFile.getOriginalFilename()),
+                                multipartFile.getSize(),
+                                getTikaLastModified(tikaFileAttributes)
+                                        .orElseGet(Date::new)))
+                .orElseGet(TurFileAttributes::new);
+    }
+
+    private static Optional<Date> getTikaLastModified(TurTikaFileAttributes tikaFileAttributes) {
+        return Optional.ofNullable(tikaFileAttributes)
+                .flatMap(t -> Optional.ofNullable(t.getMetadata())
+                        .map(m -> m.getDate(DublinCore.MODIFIED)));
+    }
+
+    private static void ocrDocumentLog(String documentName) {
+        log.info("Processing {} document to text", documentName);
     }
 
     public static TurFileAttributes urlContentToText(URL url) {
-        File file = getFile(url);
-        file.deleteOnExit();
-        return getTurFileAttributes(parseFile(file),
-                FilenameUtils.getName(url.getPath()),
-                FilenameUtils.getExtension(url.getPath()),
-                file.length(),
-                getLastModified(url));
+        ocrDocumentLog(url.toString());
+        return Optional.ofNullable(getFile(url)).map(f -> {
+                    f.deleteOnExit();
+                    return Optional.ofNullable(parseFile(f)).map(tikaFileAttributes ->
+                                    getTurFileAttributes(tikaFileAttributes,
+                                            FilenameUtils.getName(url.getPath()),
+                                            FilenameUtils.getExtension(url.getPath()),
+                                            f.length(),
+                                            getLastModified(tikaFileAttributes, url)))
+                            .orElseGet(TurFileAttributes::new);
+                })
+                .orElseGet(TurFileAttributes::new);
     }
 
-    private static Date getLastModified(URL url) {
-        Date date = new Date();
+    private static Date getLastModified(TurTikaFileAttributes tikaFileAttributes, URL url) {
+        return getTikaLastModified(tikaFileAttributes)
+                .orElseGet(() -> getLastModifiedFromUrl(url));
+    }
 
+    private static Date getLastModifiedFromUrl(URL url) {
+        Date date = new Date();
         if (isValidUrl(url)) {
             try {
                 HttpURLConnection httpUrlConnection = (HttpURLConnection) url.openConnection();
@@ -150,7 +173,7 @@ public class TurFileUtils {
 
     private static boolean isValidUrl(URL url) {
         UrlValidator urlValidator = new UrlValidator();
-        return urlValidator.isValid(url.getPath());
+        return urlValidator.isValid(url.toString());
     }
 
     private static File getFile(URL url) {
@@ -170,26 +193,26 @@ public class TurFileUtils {
         return tempFile;
     }
 
-    private static TurFileAttributes getTurFileAttributes(TurTikaFileAttributes file,
+    private static TurFileAttributes getTurFileAttributes(TurTikaFileAttributes tikaFileAttributes,
                                                           String fileName,
                                                           String fileExtension,
                                                           long fileSize,
                                                           Date lastModified) {
-        return Optional.ofNullable(file).map(attributes ->
+        return Optional.ofNullable(tikaFileAttributes).map(attributes ->
                         TurFileAttributes.builder()
                                 .content(attributes.getContent())
                                 .name(fileName)
                                 .extension(fileExtension)
                                 .size(new TurFileSize(fileSize))
-                                .title(getTitle(file, fileName))
+                                .title(getTitle(tikaFileAttributes, fileName))
                                 .lastModified(lastModified)
-                                .metadata(getMetadataMap(file))
+                                .metadata(getMetadataMap(tikaFileAttributes))
                                 .build())
                 .orElseGet(TurFileAttributes::new);
     }
 
-    private static String getTitle(TurTikaFileAttributes file, String fileName) {
-        return Optional.ofNullable(file
+    private static String getTitle(TurTikaFileAttributes tikaFileAttributes, String fileName) {
+        return Optional.ofNullable(tikaFileAttributes
                         .getMetadata()
                         .get(PDF_DOC_INFO_TITLE))
                 .orElse(fileName);

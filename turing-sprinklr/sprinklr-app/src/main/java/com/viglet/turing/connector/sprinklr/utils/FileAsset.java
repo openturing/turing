@@ -24,10 +24,8 @@ public class FileAsset {
     private Date indexingDate;
     private Date modificationDate;
     private URL url;
-    private long fileSize;
+    private float fileSize;
     private String extension;
-    private String assetType;
-    private String assetCategory;
 
     /**
      * Converts this FileAsset to an attribute map.
@@ -50,6 +48,7 @@ public class FileAsset {
         attributes.put("extension", extension);
         attributes.put("source_apps", List.of("SPRINKLR"));
         attributes.put("type", "Static File");
+
 
         return attributes;
     }
