@@ -1,9 +1,15 @@
 package com.viglet.turing.filesystem.commons;
 
+import com.viglet.turing.commons.file.TurFileAttributes;
+import com.viglet.turing.commons.file.TurFileSize;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -19,23 +25,29 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 public class TurFileUtils {
+
+    public static final String PDF_DOC_INFO_TITLE = "pdf:docinfo:title";
+    public static final int CONNECTION_TIMEOUT_MILLIS = 5000;
+    public static final String TMP = "tmp";
+    public static final String HEAD = "HEAD";
 
     private TurFileUtils() {
         throw new IllegalStateException("Turing File Utilities class");
     }
 
-    public static TurFileAttributes readFile(String filePath) {
+    public static TurTikaFileAttributes readFile(String filePath) {
         return readFile(new File(filePath));
     }
 
-    public static TurFileAttributes readFile(File file) {
+    public static TurTikaFileAttributes readFile(File file) {
         if (file.exists()) {
             return parseFile(file);
         } else {
@@ -44,42 +56,49 @@ public class TurFileUtils {
         }
     }
 
-    public static TurFileAttributes parseFile(File file) {
-        try (InputStream fileInputStreamAttribute = new FileInputStream(file)) {
-            return parseFile(fileInputStreamAttribute, file);
-
+    public static TurTikaFileAttributes parseFile(File file) {
+        try (InputStream inputStream = new FileInputStream(file)) {
+            return getTurTikaFileAttributes(file, inputStream);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
         return null;
     }
 
-    public static TurFileAttributes parseFile(InputStream inputStream, File file) {
-        try (inputStream) {
-            StringBuilder contentFile = new StringBuilder();
-            AutoDetectParser parser = new AutoDetectParser();
-            // -1 = no limit of number of characters
-            BodyContentHandler handler = new BodyContentHandler(-1);
-            Metadata metadata = new Metadata();
-            EmbeddedDocumentExtractor embeddedDocumentExtractor = new EmbeddedDocumentExtractor() {
-                @Override
-                public boolean shouldParseEmbedded(Metadata metadata) {
-                    return true;
-                }
+    private static TurTikaFileAttributes getTurTikaFileAttributes(File file, InputStream inputStream) {
+        StringBuilder contentFile = new StringBuilder();
+        AutoDetectParser parser = new AutoDetectParser();
+        // -1 = no limit of number of characters
+        BodyContentHandler handler = new BodyContentHandler(-1);
+        Metadata metadata = new Metadata();
+        EmbeddedDocumentExtractor embeddedDocumentExtractor = new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata metadata) {
+                return true;
+            }
 
-                @Override
-                public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
-                                          boolean outputHtml) throws IOException {
-                    parseDocument(stream).ifPresent(contentFile::append);
+            @Override
+            public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
+                                      boolean outputHtml) throws IOException {
+                parseDocument(stream).ifPresent(contentFile::append);
 
-                }
-            };
-            final ParseContext parseContext = getParseContext(parser);
-            parseContext.set(EmbeddedDocumentExtractor.class, embeddedDocumentExtractor);
+            }
+        };
+        ParseContext parseContext = getParseContext(parser);
+        parseContext.set(EmbeddedDocumentExtractor.class, embeddedDocumentExtractor);
+        try {
             parser.parse(inputStream, handler, metadata, parseContext);
-            contentFile.append(handler);
-            return new TurFileAttributes(file, contentFile.toString(), metadata);
         } catch (IOException | SAXException | TikaException e) {
+            log.error(e.getMessage(), e);
+        }
+        contentFile.append(handler);
+        return new TurTikaFileAttributes(file, contentFile.toString(), metadata);
+    }
+
+    public static TurTikaFileAttributes parseFile(MultipartFile multipartFile) {
+        try (InputStream inputStream = multipartFile.getInputStream()) {
+            return getTurTikaFileAttributes(null, inputStream);
+        } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
         return null;
@@ -96,16 +115,114 @@ public class TurFileUtils {
         return parseContext;
     }
 
-    public static String documentToText(MultipartFile multipartFile) {
-        try (InputStream inputStream = multipartFile.getInputStream()) {
-            TurFileAttributes turFileAttributes = parseFile(inputStream, null);
-            return Optional.ofNullable(turFileAttributes)
-                    .map(TurFileAttributes::getContent)
-                    .orElse(null);
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
+    public static TurFileAttributes documentToText(MultipartFile multipartFile) {
+        return Optional.ofNullable(parseFile(multipartFile)).map(tikaFileAttributes ->
+                        getTurFileAttributes(parseFile(multipartFile),
+                                multipartFile.getOriginalFilename(),
+                                FilenameUtils.getExtension(multipartFile.getOriginalFilename()),
+                                multipartFile.getSize(),
+                                getTikaLastModified(tikaFileAttributes)
+                                        .orElseGet(Date::new)))
+                .orElseGet(TurFileAttributes::new);
+    }
+
+    private static Optional<Date> getTikaLastModified(TurTikaFileAttributes tikaFileAttributes) {
+        return Optional.ofNullable(tikaFileAttributes)
+                .flatMap(t -> Optional.ofNullable(t.getMetadata())
+                        .map(m -> m.getDate(DublinCore.MODIFIED)));
+    }
+
+    private static void ocrDocumentLog(String documentName) {
+        log.info("Processing {} document to text", documentName);
+    }
+
+    public static TurFileAttributes urlContentToText(URL url) {
+        ocrDocumentLog(url.toString());
+        return Optional.ofNullable(getFile(url)).map(f -> {
+                    f.deleteOnExit();
+                    return Optional.ofNullable(parseFile(f)).map(tikaFileAttributes ->
+                                    getTurFileAttributes(tikaFileAttributes,
+                                            FilenameUtils.getName(url.getPath()),
+                                            FilenameUtils.getExtension(url.getPath()),
+                                            f.length(),
+                                            getLastModified(tikaFileAttributes, url)))
+                            .orElseGet(TurFileAttributes::new);
+                })
+                .orElseGet(TurFileAttributes::new);
+    }
+
+    private static Date getLastModified(TurTikaFileAttributes tikaFileAttributes, URL url) {
+        return getTikaLastModified(tikaFileAttributes)
+                .orElseGet(() -> getLastModifiedFromUrl(url));
+    }
+
+    private static Date getLastModifiedFromUrl(URL url) {
+        Date date = new Date();
+        if (isValidUrl(url)) {
+            try {
+                HttpURLConnection httpUrlConnection = (HttpURLConnection) url.openConnection();
+                httpUrlConnection.setRequestMethod(HEAD);
+                date = new Date(httpUrlConnection.getLastModified());
+                httpUrlConnection.disconnect();
+            } catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
         }
-        return null;
+        return date;
+    }
+
+    private static boolean isValidUrl(URL url) {
+        UrlValidator urlValidator = new UrlValidator();
+        return urlValidator.isValid(url.toString());
+    }
+
+    private static File getFile(URL url) {
+        File tempFile = null;
+        if (isValidUrl(url)) {
+            try {
+                tempFile = createTempFile();
+                FileUtils.copyURLToFile(
+                        url,
+                        tempFile,
+                        CONNECTION_TIMEOUT_MILLIS,
+                        CONNECTION_TIMEOUT_MILLIS);
+            } catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+        return tempFile;
+    }
+
+    private static TurFileAttributes getTurFileAttributes(TurTikaFileAttributes tikaFileAttributes,
+                                                          String fileName,
+                                                          String fileExtension,
+                                                          long fileSize,
+                                                          Date lastModified) {
+        return Optional.ofNullable(tikaFileAttributes).map(attributes ->
+                        TurFileAttributes.builder()
+                                .content(attributes.getContent())
+                                .name(fileName)
+                                .extension(fileExtension)
+                                .size(new TurFileSize(fileSize))
+                                .title(getTitle(tikaFileAttributes, fileName))
+                                .lastModified(lastModified)
+                                .metadata(getMetadataMap(tikaFileAttributes))
+                                .build())
+                .orElseGet(TurFileAttributes::new);
+    }
+
+    private static String getTitle(TurTikaFileAttributes tikaFileAttributes, String fileName) {
+        return Optional.ofNullable(tikaFileAttributes
+                        .getMetadata()
+                        .get(PDF_DOC_INFO_TITLE))
+                .orElse(fileName);
+    }
+
+    private static Map<String, String> getMetadataMap(TurTikaFileAttributes file) {
+        Map<String, String> metadataMap = new HashMap<>();
+        Arrays.stream(file.getMetadata().names()).forEach(name ->
+                metadataMap.put(name, file.getMetadata().get(name)));
+        return metadataMap;
     }
 
     public static Optional<String> parseDocument(InputStream stream) throws IOException {
@@ -119,8 +236,7 @@ public class TurFileUtils {
     public static Optional<String> getFileContent(InputStream stream, BodyContentHandler handlerInner,
                                                   AutoDetectParser parserInner, Metadata metadataInner,
                                                   ParseContext parseContextInner) throws IOException {
-        File tempFile = File.createTempFile(UUID.randomUUID().toString(), null,
-                TurCommonsUtils.addSubDirToStoreDir("tmp"));
+        File tempFile = createTempFile();
         Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
             parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
@@ -132,5 +248,11 @@ public class TurFileUtils {
         tempFile.deleteOnExit();
         return Optional.empty();
     }
+
+    private static File createTempFile() throws IOException {
+        return File.createTempFile(UUID.randomUUID().toString(), null,
+                TurCommonsUtils.addSubDirToStoreDir(TMP));
+    }
+
 
 }

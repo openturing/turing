@@ -34,8 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Turing Semantic Navigation Utilities.
@@ -46,7 +44,6 @@ import java.util.logging.Logger;
 
 @Slf4j
 public class TurSNJobUtils {
-    private static final Logger logger = Logger.getLogger(TurSNJobUtils.class.getName());
     private static final String TYPE_ATTRIBUTE = "type";
     private static final String PROVIDER_ATTRIBUTE = "source_apps";
 
@@ -75,23 +72,22 @@ public class TurSNJobUtils {
             client.execute(httpPost, response -> importItemsLog(response, httpPost, jsonResult));
             return true;
         } catch (IOException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            log.error(e.getMessage(), e);
             return false;
         }
     }
 
     private static String importItemsLog(ClassicHttpResponse response, HttpPost httpPost, String jsonResult) {
-        if (logger.isLoggable(Level.FINE)) {
+        if (log.isDebugEnabled()) {
             try {
-                logger.fine(String.format("Viglet Turing Index Request URI: %s", httpPost.getUri()));
-                logger.fine(String.format("JSON: %s", jsonResult));
-                logger.fine(String.format("Viglet Turing indexer response HTTP result is: %s, for request uri: %s",
-                        response.getCode(), httpPost.getUri()));
+                log.debug("Viglet Turing Index Request URI: {}", httpPost.getUri());
+                log.debug("JSON: {}", jsonResult);
+                log.debug("Viglet Turing indexer response HTTP result is: {}, for request uri: {}",
+                        response.getCode(), httpPost.getUri());
             } catch (URISyntaxException e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                log.error(e.getMessage(), e);
             }
-            logger.fine(String.format("Viglet Turing indexer response HTTP result is: %s",
-                    httpPost.getEntity().toString()));
+            log.debug("Viglet Turing indexer response HTTP result is: {}", httpPost.getEntity().toString());
         }
         return null;
     }

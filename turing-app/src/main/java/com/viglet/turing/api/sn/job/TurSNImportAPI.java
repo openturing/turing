@@ -26,9 +26,10 @@ import com.google.inject.Inject;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.filesystem.commons.TurFileAttributes;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
+import com.viglet.turing.filesystem.commons.TurTikaFileAttributes;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.spring.utils.TurSpringUtils;
@@ -73,14 +74,14 @@ public class TurSNImportAPI {
                     log.error(
                             "Create Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
                             turSNJobItem.getAttributes() != null
-                                    ? turSNJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE)
+                                    ? turSNJobItem.getAttributes().get(TurSNFieldName.ID)
                                     : null,
                             siteName, turSNJobItem.getLocale(), siteName);
                 } else if (turSNJobItem.getTurSNJobAction().equals(TurSNJobAction.DELETE)) {
                     log.error(
                             "Delete Object ID '{}' of '{}' SN Site ({}) was not processed. Because '{}' SN Site doesn't exist",
                             turSNJobItem.getAttributes() != null ?
-                                    turSNJobItem.getAttributes().get(TurSNConstants.TYPE_ATTRIBUTE) : "empty", siteName,
+                                    turSNJobItem.getAttributes().get(TurSNFieldName.TYPE) : "empty", siteName,
                             turSNJobItem.getLocale(), siteName);
                 }
             } else {
@@ -108,16 +109,11 @@ public class TurSNImportAPI {
     private void extractTextOfFileAttribute(File extractFolder, Map.Entry<String, Object> attribute) {
         if (attribute.getValue().toString().startsWith(TurSNConstants.FILE_PROTOCOL)) {
             String fileName = attribute.getValue().toString().replace(TurSNConstants.FILE_PROTOCOL, "");
-            try (FileInputStream fileInputStreamAttribute = new FileInputStream(
-                    extractFolder.getAbsolutePath() + File.separator + fileName)) {
-                TurFileAttributes turFileAttributes = TurFileUtils.parseFile(fileInputStreamAttribute, null);
-                Optional.ofNullable(turFileAttributes)
-                        .map(TurFileAttributes::getContent)
-                        .ifPresent(content -> attribute.setValue(TurCommonsUtils.cleanTextContent(content)));
-            } catch (IOException e) {
-                log.error(e.getMessage(), e);
-            }
-
+            File file = new File(extractFolder.getAbsolutePath().concat(File.separator).concat(fileName));
+            TurTikaFileAttributes turTikaFileAttributes = TurFileUtils.parseFile(file);
+            Optional.ofNullable(turTikaFileAttributes)
+                    .map(TurTikaFileAttributes::getContent)
+                    .ifPresent(content -> attribute.setValue(TurCommonsUtils.cleanTextContent(content)));
         }
     }
 
@@ -137,7 +133,7 @@ public class TurSNImportAPI {
                         turSNSiteRepository.findByName(siteName).ifPresentOrElse(turSNSite ->
                                         log.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).",
                                                 actionType(turJobItem),
-                                                turJobItem.getAttributes().get(TurSNConstants.ID_ATTRIBUTE),
+                                                turJobItem.getAttributes().get(TurSNFieldName.ID),
                                                 turSNSite.getName(),
                                                 turJobItem.getLocale()),
                                 () -> importUnsuccessful(siteName, turSNJobItems)));
@@ -147,7 +143,7 @@ public class TurSNImportAPI {
 
     private static boolean isValidJobItem(TurSNJobItem turJobItem) {
         return turJobItem != null && turJobItem.getAttributes() != null &&
-                turJobItem.getAttributes().containsKey(TurSNConstants.ID_ATTRIBUTE);
+                turJobItem.getAttributes().containsKey(TurSNFieldName.ID);
     }
 
     @NotNull

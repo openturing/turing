@@ -9,8 +9,8 @@ import lombok.experimental.Tolerate;
 @Setter
 @Builder
 public class TurSolrCoreExists {
-    String name;
-    boolean exists;
+    private String name;
+    private boolean exists;
 
     @Tolerate
     public TurSolrCoreExists() {

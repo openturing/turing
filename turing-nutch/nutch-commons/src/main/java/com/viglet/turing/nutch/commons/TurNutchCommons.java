@@ -26,13 +26,9 @@ import java.util.Objects;
 public class TurNutchCommons {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    public static final String ID_FIELD = "id";
+
     public static final String CONTENT_FIELD = "content";
-    public static final String TITLE_FIELD = "title";
-    public static final String TEXT_FIELD = "text";
     public static final String TIMESTAMP_FIELD = "tstamp";
-    public static final String TYPE_FIELD = "type";
-    public static final String CONNECTOR_FIELD = "source_apps";
     public static final Locale LOCALE_DEFAULT_VALUE = Locale.US;
     public static final String TYPE_DEFAULT_VALUE = "Page";
     public static final String CONNECTOR_DEFAULT_VALUE = "Nutch";

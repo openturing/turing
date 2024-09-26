@@ -85,7 +85,7 @@ public class TurSecurityConfigProduction {
                                 mvc.pattern("/error/**"),
                                 mvc.pattern("/logout"),
                                 mvc.pattern("/api/nlp/**"),
-                                mvc.pattern("/api/ocr"),
+                                mvc.pattern("/api/ocr/**"),
                                 mvc.pattern("/api/llm/**"),
                                 mvc.pattern("/api/v2/guest/**"),
                                 AntPathRequestMatcher.antMatcher("/h2/**")))

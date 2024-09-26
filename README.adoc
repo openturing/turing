@@ -3,7 +3,7 @@ Viglet Team <opensource@viglet.com>
 :organization: Viglet Turing
 :toclevels: 5
 :toc-title: Table of Content
-:viglet-version: 0.3.7
+:viglet-version: 0.3.9
 
 [preface]
 image:https://img.shields.io/badge/Download-Release%20{viglet-version}-blue?style=for-the-badge&logo=Java[link="https://viglet.com/turing/download/"]
@@ -33,7 +33,7 @@ To run Turing ES, just execute the following lines:
 # Turing App
 mvn -Dmaven.repo.local=D:\repo spring-boot:run -pl turing-app -Dskip.npm
 
-# New Turing ES UI using Angular 12 and Primer CSS.
+# New Turing ES UI using Angular 18 and Primer CSS.
 
 cd turing-ui
 
