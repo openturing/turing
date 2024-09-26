@@ -39,7 +39,7 @@
     "tslib": "2.7.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "18.2.5",
+    "@angular-devkit/build-angular": "18.2.6",
     "@angular/cli": "18.2.5",
     "@angular/compiler-cli": "18.2.5",
     "@angular/language-service": "18.2.5",
