@@ -6,8 +6,12 @@ import {defer, Observable} from 'rxjs';
 
 const axiosInstance = initializeAxios(axiosRequestConfiguration);
 
-const get = <T>(url: string, queryParams?: object): Observable<T> => {
+const getAll = <T>(url: string, queryParams?: object): Observable<T> => {
     return defer(()=> axiosInstance.get<T>(url, { params: queryParams }))
+        .pipe(map(result => result.data));
+};
+const getById = <T>(url: string, id:string | undefined): Observable<T> => {
+    return defer(()=> axiosInstance.get<T>(`${url}/${id}`))
         .pipe(map(result => result.data));
 };
 
@@ -21,15 +25,10 @@ const put = <T>(url: string, body: object, queryParams?: object): Observable<T |
         .pipe(map(result => result.data));
 };
 
-const patch = <T>(url: string, body: object, queryParams?: object): Observable<T | void> => {
-    return defer(()=> axiosInstance.patch<T>(url, body, { params: queryParams }))
-        .pipe(map(result => result.data));
-};
-
-const deleteR = <T>(url: string, id:string): Observable<T | void> => {
+const deleteById = <T>(url: string, id:string): Observable<T | void> => {
     return defer(() => (axiosInstance.delete(`${url}/${id}` )))
         .pipe(map(result => result.data)
         );
 };
 
-export default { get, post, put, patch, delete: deleteR };
+export default { getAll, getById, post, put, delete: deleteById };
