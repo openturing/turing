@@ -6,7 +6,6 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.DublinCore;
@@ -158,7 +157,7 @@ public class TurFileUtils {
 
     private static Date getLastModifiedFromUrl(URL url) {
         Date date = new Date();
-        if (isValidUrl(url)) {
+        if (TurCommonsUtils.isValidUrl(url)) {
             try {
                 HttpURLConnection httpUrlConnection = (HttpURLConnection) url.openConnection();
                 httpUrlConnection.setRequestMethod(HEAD);
@@ -171,14 +170,9 @@ public class TurFileUtils {
         return date;
     }
 
-    private static boolean isValidUrl(URL url) {
-        UrlValidator urlValidator = new UrlValidator();
-        return urlValidator.isValid(url.toString());
-    }
-
     private static File getFile(URL url) {
         File tempFile = null;
-        if (isValidUrl(url)) {
+        if (TurCommonsUtils.isValidUrl(url)) {
             try {
                 tempFile = createTempFile();
                 FileUtils.copyURLToFile(

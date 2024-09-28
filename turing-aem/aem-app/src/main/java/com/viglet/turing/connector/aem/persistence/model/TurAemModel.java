@@ -19,7 +19,6 @@
 package com.viglet.turing.connector.aem.persistence.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.viglet.turing.connector.aem.export.bean.TurAemTargetAttrExchange;
 import com.viglet.turing.spring.jpa.TurUuid;
 import jakarta.persistence.*;
 import lombok.*;

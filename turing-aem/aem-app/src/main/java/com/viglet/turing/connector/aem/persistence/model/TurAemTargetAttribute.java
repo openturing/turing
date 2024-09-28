@@ -18,7 +18,6 @@
 
 package com.viglet.turing.connector.aem.persistence.model;
 
-import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
 import com.viglet.turing.spring.jpa.TurUuid;
 import jakarta.persistence.*;
 import lombok.*;

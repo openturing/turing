@@ -27,6 +27,7 @@ import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.commons.io.FileUtils;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.net.URLEncodedUtils;
@@ -38,6 +39,7 @@ import org.jsoup.Jsoup;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -60,6 +62,10 @@ public class TurCommonsUtils {
         throw new IllegalStateException("Utility class");
     }
 
+    public static boolean isValidUrl(URL url) {
+        UrlValidator urlValidator = new UrlValidator();
+        return urlValidator.isValid(url.toString());
+    }
     public static String html2Text(String text) {
         return Jsoup.parse(text).text();
     }

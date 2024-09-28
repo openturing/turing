@@ -21,9 +21,7 @@ package com.viglet.turing.connector.aem.export.bean;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import lombok.*;
 
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 @Builder(toBuilder = true)

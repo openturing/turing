@@ -213,11 +213,9 @@ public class TurAemIndexerTool {
                     .ifPresent(infinityJson -> {
                         TurAemSource turAemSource = getTurAemSource(turAemSourceContext);
                         turAemModelRepository.findByTurAemSourceAndType(turAemSource, getContentType(turAemSourceContext))
-                                .ifPresent(model -> {
-                                    addTurSNJobItemByType(new TurAemObject(url, infinityJson),
+                                .ifPresent(model -> addTurSNJobItemByType(new TurAemObject(url, infinityJson),
                                             new ArrayList<>(turAemSource.getAttributeSpecifications()),
-                                            turAemSourceContext);
-                                });
+                                            turAemSourceContext));
                         sendToTuringWhenMaxSize(turAemSourceContext);
                         getInfoQueue();
                         if (infinityJson.has(JCR_PRIMARY_TYPE)
