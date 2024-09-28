@@ -1,18 +1,14 @@
 package com.viglet.turing.client.sn.job;
 
+import lombok.*;
+
 import java.io.Serializable;
 
+@Setter
+@Getter
 public class TurSNAttributeSpec  extends TurSNJobAttributeSpec implements Serializable {
     private static final long serialVersionUID = 1L;
     private String className;
-
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
 
     @Override
     public String toString() {
