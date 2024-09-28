@@ -28,42 +28,32 @@ public class TurSprinklrTokenService {
     }
 
     public TurSprinklrAccessToken getAccessToken() {
-        try {
-            File accessTokenFile = new File(ACCESS_TOKEN_SER);
-            if (accessTokenFile.exists()) {
-                TurSprinklrAccessToken turSprinklrAccessToken = deserializeAccessToken();
-                return turSprinklrAccessToken != null && turSprinklrAccessToken.getExpirationDate().after(new Date()) ?
-                        serializeAccessToken(turSprinklrSecretKey) :
-                        deserializeAccessToken();
-            } else {
-                return serializeAccessToken(turSprinklrSecretKey);
-            }
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
+        File accessTokenFile = new File(ACCESS_TOKEN_SER);
+        if (accessTokenFile.exists()) {
+            TurSprinklrAccessToken turSprinklrAccessToken = deserializeAccessToken();
+            return turSprinklrAccessToken != null && turSprinklrAccessToken.getExpirationDate().after(new Date()) ?
+                    serializeAccessToken(turSprinklrSecretKey) :
+                    deserializeAccessToken();
+        } else {
+            return serializeAccessToken(turSprinklrSecretKey);
         }
-        return null;
     }
 
-    private TurSprinklrAccessToken serializeAccessToken(TurSprinklrSecretKey turSprinklrSecretKey) throws IOException {
+    private TurSprinklrAccessToken serializeAccessToken(TurSprinklrSecretKey turSprinklrSecretKey) {
         TurSprinklrAccessToken turSprinklrAccessToken = generateAccessToken(turSprinklrSecretKey);
         if (turSprinklrAccessToken != null) {
-            FileOutputStream fileOut = new FileOutputStream(ACCESS_TOKEN_SER);
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(turSprinklrAccessToken);
-            out.close();
-            fileOut.close();
+            try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(ACCESS_TOKEN_SER))) {
+                out.writeObject(turSprinklrAccessToken);
+            } catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
         }
         return turSprinklrAccessToken;
     }
 
     private TurSprinklrAccessToken deserializeAccessToken() {
-        try {
-            FileInputStream fileIn = new FileInputStream(ACCESS_TOKEN_SER);
-            ObjectInputStream in = new ObjectInputStream(fileIn);
-            TurSprinklrAccessToken turSprinklrAccessToken = (TurSprinklrAccessToken) in.readObject();
-            in.close();
-            fileIn.close();
-            return turSprinklrAccessToken;
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(ACCESS_TOKEN_SER))) {
+            return (TurSprinklrAccessToken) in.readObject();
         } catch (IOException | ClassNotFoundException e) {
             log.error(e.getMessage(), e);
         }

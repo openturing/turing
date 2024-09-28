@@ -15,10 +15,7 @@ public class TurSprinklrApplication {
     public static final String UTF_8 = "UTF-8";
 
     public static void main(String[] args) {
-
-        System.out.println(":: Starting Turing Sprinklr Connector ...");
         SpringApplication.run(TurSprinklrApplication.class, args);
-        System.out.println(":: Started Turing Sprinklr Connector");
     }
 
     @Bean

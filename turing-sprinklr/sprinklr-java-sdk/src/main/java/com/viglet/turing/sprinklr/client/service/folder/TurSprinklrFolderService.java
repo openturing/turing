@@ -27,6 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TurSprinklrFolderService {
     public static final String FOLDER_SERVICE = "https://api2.sprinklr.com/%s/api/v2/folder/search";
     public static final int ROWS = 50;
+    public static final String FOLDER_LIST = "folderList";
+    public static final String APPLICATION_JSON = "application/json";
     TurSprinklrAccessToken turSprinklrAccessToken;
     LoadingCache<String, List<TurSprinklrFolderResult>> cachedFolderList;
 
@@ -40,7 +42,7 @@ public class TurSprinklrFolderService {
                             @NotNull
                             @Override
                             public List<TurSprinklrFolderResult> load(@NotNull String key) {
-                                if (key.equals("folderList"))
+                                if (key.equals(FOLDER_LIST))
                                     return getTurSprinklrFolderResults();
                                 else
                                     return new ArrayList<>();
@@ -53,7 +55,7 @@ public class TurSprinklrFolderService {
             return TurSprinklrService.executeService(TurSprinklrFolderSearch.class, turSprinklrAccessToken,
                     FOLDER_SERVICE.formatted(turSprinklrAccessToken.getEnvironment()),
                     RequestBody.create(new ObjectMapper().writeValueAsString(getRequestBody(page)),
-                            MediaType.get("application/json")));
+                            MediaType.get(APPLICATION_JSON)));
         } catch (JsonProcessingException e) {
             log.error(e.getMessage(), e);
             return null;
@@ -63,17 +65,11 @@ public class TurSprinklrFolderService {
     public Optional<TurSprinklrFolderResult> getByCategoryId(String id) {
 
         try {
-            List<TurSprinklrFolderResult> folderList = cachedFolderList.get("folderList");
+            List<TurSprinklrFolderResult> folderList = cachedFolderList.get(FOLDER_LIST);
             if (!folderList.isEmpty()) {
                 for (TurSprinklrFolderResult result : folderList) {
-                    if (result != null &&
-                            result.getMappingDetails() != null && !result.getMappingDetails().isEmpty()) {
-                        for (TurSprinklrFolderMapping mapping : result.getMappingDetails()) {
-                            if (mapping.getMappedCategoryIds().stream()
-                                    .anyMatch(categoryId -> categoryId.equals(id))) {
-                                return Optional.of(result);
-                            }
-                        }
+                    if (hasMappingDetails(result)) {
+                        return getTurSprinklrFolderResult(id, result);
                     }
                 }
             }
@@ -82,6 +78,22 @@ public class TurSprinklrFolderService {
         }
         return Optional.empty();
 
+    }
+
+    private static Optional<TurSprinklrFolderResult> getTurSprinklrFolderResult(String id,
+                                                                                TurSprinklrFolderResult result) {
+        for (TurSprinklrFolderMapping mapping : result.getMappingDetails()) {
+            if (mapping.getMappedCategoryIds().stream()
+                    .anyMatch(categoryId -> categoryId.equals(id))) {
+                return Optional.of(result);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static boolean hasMappingDetails(TurSprinklrFolderResult result) {
+        return result != null &&
+                result.getMappingDetails() != null && !result.getMappingDetails().isEmpty();
     }
 
     @NotNull

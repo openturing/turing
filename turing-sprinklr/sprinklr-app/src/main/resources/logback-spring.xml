@@ -4,12 +4,16 @@
 		class="ch.qos.logback.core.ConsoleAppender">
 		<layout class="ch.qos.logback.classic.PatternLayout">
 			<Pattern>
-				%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+				%msg%n
 			</Pattern>
 		</layout>
 	</appender>
-	<logger name="com.viglet.turing.connector.webcrawler.TuringSprinklrApplication" level="info"
+	<logger name="com.viglet.turing.connector.sprinklr.TurSprinklrApplication" level="info"
 		additivity="false">
+		<appender-ref ref="CONSOLE" />
+	</logger>
+	<logger name="com.viglet.turing.connector.sprinklr.onstartup.TurSprinklrOnStartup" level="info"
+			additivity="false">
 		<appender-ref ref="CONSOLE" />
 	</logger>
 	<include
