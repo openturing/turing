@@ -24,13 +24,13 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.wem.beans.TurAttrDef;
 import com.viglet.turing.wem.beans.TurAttrDefContext;
 import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.viglet.turing.wem.ext.ExtAttributeInterface;
-import com.viglet.turing.wem.util.HtmlManipulator;
 import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
@@ -38,6 +38,7 @@ import com.vignette.logging.context.ContextLogger;
 public class TurWEMAttrClass {
 
 	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
+	public static final String HTML = "html";
 
 	private TurWEMAttrClass() {
 		throw new IllegalStateException("TurWEMAttrClass");
@@ -63,8 +64,8 @@ public class TurWEMAttrClass {
 			attributesDefs.add(turAttrDef);
 		} else {
 			TurMultiValue turMultiValue = new TurMultiValue();
-			if (turingTag.getSrcAttributeType() != null && turingTag.getSrcAttributeType().equals("html")) {
-				turMultiValue.add(HtmlManipulator.html2Text(attributeData.getValue().toString()));
+			if (turingTag.getSrcAttributeType() != null && turingTag.getSrcAttributeType().equals(HTML)) {
+				turMultiValue.add(TurCommonsUtils.html2Text(attributeData.getValue().toString()));
 				TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
 				attributesDefs.add(turAttrDef);
 			} else if (attributeData != null && attributeData.getValue() != null) {

@@ -39,7 +39,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.*;
 import java.util.Map.Entry;
 
-// Open and process Mappping XML File structure
+// Open and process Mapping XML File structure
 public class MappingDefinitionsProcess {
 	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -48,7 +48,7 @@ public class MappingDefinitionsProcess {
 	}
 
 	public static MappingDefinitions loadMappings(String resourceXml) {
-		TurCTDMappingMap mappings = null;
+		TurCTDMappingMap mappings;
 
 		try {
 			DocumentBuilderFactory dlf = DocumentBuilderFactory.newInstance();
@@ -77,9 +77,6 @@ public class MappingDefinitionsProcess {
 
 	/**
 	 * Loading mapping definitions
-	 * 
-	 * @param rootElement
-	 * @return TurCTDMappingMap
 	 */
 	public static TurCTDMappingMap readCTDMappings(Element rootElement) {
 		TurCTDMappingMap mappings = new TurCTDMappingMap();
@@ -94,7 +91,7 @@ public class MappingDefinitionsProcess {
 
 	private static void readMappingDefinitions(Element rootElement, TurCTDMappingMap mappings,
 			List<TuringTag> commonIndexAttrs) {
-		// Get <mappingdefinition/> List
+		// Get <mappingDefinition/> List
 		NodeList contentTypes = rootElement.getElementsByTagName(TurXMLConstant.TAG_MAPPING_DEF);
 
 		for (int i = 0; i < contentTypes.getLength(); i++) {
@@ -163,8 +160,7 @@ public class MappingDefinitionsProcess {
 
 		for (TuringTag turingTag : indexAttrs) {
 			if (turingTag != null) {
-				if (commonIndexAttrs != null && turingTag.getSrcClassName() == null
-						&& commonIndexAttrMap.get(turingTag.getTagName()) != null) {
+				if (turingTag.getSrcClassName() == null && commonIndexAttrMap.get(turingTag.getTagName()) != null) {
 					// Common always have one item
 					// Add ClassName of Common into Index, if it doesn't have ClassName
 					turingTag.setSrcClassName(commonIndexAttrMap.get(turingTag.getTagName()).getSrcClassName());
@@ -219,8 +215,7 @@ public class MappingDefinitionsProcess {
 					|| srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT)
 					|| srcAttrNode.hasAttribute(TurXMLConstant.RELATION_ATT))) {
 				List<TuringTag> turingTags = loadSrcAttr(srcAttrNode);
-				if (turingTags != null)
-					turingTagsPerSrcAttr.addAll(turingTags);
+                turingTagsPerSrcAttr.addAll(turingTags);
 			}
 		}
 		return turingTagsPerSrcAttr;
@@ -290,9 +285,9 @@ public class MappingDefinitionsProcess {
 			if (log.isDebugEnabled())
 				log.debug("Node: " + nodePos);
 
-			String tagName = null;
+
 			Node tagNode = tagList.item(nodePos);
-			tagName = tagNode.getFirstChild().getNodeValue();
+			String tagName = tagNode.getFirstChild().getNodeValue();
 			if (log.isDebugEnabled())
 				log.debug("tagName:" + tagName);
 

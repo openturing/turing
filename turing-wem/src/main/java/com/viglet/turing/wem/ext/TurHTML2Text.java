@@ -22,10 +22,10 @@ package com.viglet.turing.wem.ext;
 
 import java.lang.invoke.MethodHandles;
 
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
-import com.viglet.turing.wem.util.HtmlManipulator;
 import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
@@ -39,7 +39,7 @@ public class TurHTML2Text implements ExtAttributeInterface {
                                  IHandlerConfiguration config) throws Exception {
         logger.debug("Executing HTML2Text");
         if (attributeData != null && attributeData.getValue() != null)
-            return TurMultiValue.singleItem(HtmlManipulator.html2Text(attributeData.getValue().toString()));
+            return TurMultiValue.singleItem(TurCommonsUtils.html2Text(attributeData.getValue().toString()));
         else
             return TurMultiValue.singleItem(EMPTY_STRING);
 

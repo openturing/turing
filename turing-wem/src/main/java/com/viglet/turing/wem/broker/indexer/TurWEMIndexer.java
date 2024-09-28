@@ -31,50 +31,49 @@ import java.lang.invoke.MethodHandles;
 public class TurWEMIndexer {
 
 	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
+	public static final String DELETE_MESSAGE = "Deleting Object in Viglet Turing index";
+	public static final String UPDATE_MESSAGE = "Updating Object in Viglet Turing index";
+	public static final String CREATE_MESSAGE = "Creating Object in Viglet Turing index";
 
 	private TurWEMIndexer() {
 		throw new IllegalStateException("TurWEMIndexer");
 	}
 
 	public static boolean indexCreate(ManagedObject mo, IHandlerConfiguration config, String siteName) {
-		if (log.isDebugEnabled()) {
-			log.debug("Creating Object in Viglet Turing index");
-		}
+		indexerLog(CREATE_MESSAGE);
 		TurWEMIndex.indexCreate(mo, config, siteName);
 		return true;
 	}
 
 	public static boolean indexUpdate(ManagedObject mo, IHandlerConfiguration config, String siteName) {
-		if (log.isDebugEnabled()) {
-			log.debug("Updating Object in Viglet Turing index");
-		}
+		indexerLog(UPDATE_MESSAGE);
 		TurWEMIndex.indexCreate(mo, config, siteName);
 		return true;
 	}
 
 	public static boolean indexDelete(AsPrePersistenceEvent prePersistenceEvent,
 			IHandlerConfiguration config) {
-		if (log.isDebugEnabled()) {
-			log.debug("Deleting Object in Viglet Turing index");
-		}
-		String siteName = TuringUtils.getSiteNameFromContentInstance(prePersistenceEvent.getManagedObject(), config);
-		TurWEMDeindex.indexDelete(prePersistenceEvent.getManagedObject().getContentManagementId() , config, siteName);
+		indexerLog(DELETE_MESSAGE);
+		TurWEMDeindex.indexDelete(prePersistenceEvent.getManagedObject().getContentManagementId() , config,
+				TuringUtils.getSiteNameFromContentInstance(prePersistenceEvent.getManagedObject(), config));
 		return true;
+	}
+
+	private static void indexerLog(String message) {
+		if (log.isDebugEnabled()) {
+			log.debug(message);
+		}
 	}
 
 	public static boolean indexDelete(ManagedObject mo,
 									  IHandlerConfiguration config, String siteName) {
-		if (log.isDebugEnabled()) {
-			log.debug("Deleting Object in Viglet Turing index");
-		}
+		indexerLog(DELETE_MESSAGE);
 		TurWEMDeindex.indexDelete(mo.getContentManagementId() , config, siteName);
 		return true;
 	}
 
 	public static void indexDeleteByType(String siteName, String typeName, IHandlerConfiguration config) {
-		if (log.isDebugEnabled()) {
-			log.debug("Deleting Object in Viglet Turing index");
-		}
+		indexerLog(DELETE_MESSAGE);
 		TurWEMDeindex.indexDeleteByType(siteName, typeName, config);
 	}
 }
