@@ -363,18 +363,19 @@ public class TurAemIndexerTool {
                                 turCmsTargetAttr.setClassName(null);
                                 turCmsTargetAttr.setMandatory(false);
 
-                                log.debug("TargetAttr: {}", targetAttr);
-                                context.setTurCmsTargetAttr(targetAttr);
-                                if (hasCustomClass(targetAttr)) {
+                                log.debug("TargetAttr: {}", turCmsTargetAttr);
+                                context.setTurCmsTargetAttr(turCmsTargetAttr);
+                                if (hasCustomClass(turCmsTargetAttr)) {
                                     turCmsTargetAttrValueMap.merge(turAemAttrProcess.process(context, turSNAttributeSpecList,
                                             turAemSourceContext));
                                 } else {
                                     targetAttr.getSourceAttrs().stream().filter(Objects::nonNull)
                                             .forEach(sourceAttr ->
+
                                                     turCmsTargetAttrValueMap.merge(
                                                             turAemAttrProcess.addTargetAttrValuesBySourceAttr(turAemSourceContext,
                                                                     turSNAttributeSpecList,
-                                                                    targetAttr, sourceAttr, context)));
+                                                                    turCmsTargetAttr, getTurCmsSourceAttr(sourceAttr), context)));
                                 }
                             });
                     return turCmsTargetAttrValueMap;
@@ -382,6 +383,9 @@ public class TurAemIndexerTool {
                     log.error("Content Type not found: {}", aemObject.getType());
                     return new TurCmsTargetAttrValueMap();
                 });
+    }
+    private static TurCmsSourceAttr getTurCmsSourceAttr(TurAemSourceAttribute turAemSourceAttribute) {
+        return TurCmsSourceAttr.builder().build();
     }
     public static boolean hasCustomClass(TurCmsTargetAttr targetAttr) {
         return targetAttr.getSourceAttrs() == null

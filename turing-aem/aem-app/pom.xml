@@ -90,7 +90,7 @@
         </dependencies>
     </dependencyManagement>
     <build>
-        <finalName>turing-web-crawler</finalName>
+        <finalName>turing-aem</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>
