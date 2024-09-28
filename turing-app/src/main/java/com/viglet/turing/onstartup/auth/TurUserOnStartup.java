@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,7 +21,6 @@
 package com.viglet.turing.onstartup.auth;
 
 import com.google.inject.Inject;
-import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
@@ -33,40 +32,35 @@ import java.util.Date;
 
 @Component
 public class TurUserOnStartup {
-	private final PasswordEncoder passwordEncoder;
-	private final TurUserRepository turUserRepository;
-	private final TurGroupRepository turGroupRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final TurUserRepository turUserRepository;
+    private final TurGroupRepository turGroupRepository;
 
-	@Inject
-	public TurUserOnStartup(PasswordEncoder passwordEncoder,
-							TurUserRepository turUserRepository,
-							TurGroupRepository turGroupRepository) {
-		this.passwordEncoder = passwordEncoder;
-		this.turUserRepository = turUserRepository;
-		this.turGroupRepository = turGroupRepository;
-	}
+    @Inject
+    public TurUserOnStartup(PasswordEncoder passwordEncoder,
+                            TurUserRepository turUserRepository,
+                            TurGroupRepository turGroupRepository) {
+        this.passwordEncoder = passwordEncoder;
+        this.turUserRepository = turUserRepository;
+        this.turGroupRepository = turGroupRepository;
+    }
 
-	public void createDefaultRows(String password) {
+    public void createDefaultRows(String password) {
 
-		if (turUserRepository.findAll().isEmpty()) {
+        if (turUserRepository.findAll().isEmpty()) {
+            turUserRepository.save(TurUser.builder()
+                    .email("admin@localhost.local")
+                    .firstName("Admin")
+                    .lastLogin(new Date())
+                    .lastName("Administrator")
+                    .loginTimes(0)
+                    .password(passwordEncoder.encode(password))
+                    .realm("default")
+                    .username("admin")
+                    .enabled(1)
+                    .turGroups(Collections.singletonList(turGroupRepository.findByName("Administrator")))
+                    .build());
+        }
 
-			TurGroup turGroup = turGroupRepository.findByName("Administrator");
-			TurUser turUser = new TurUser();
-
-			turUser.setEmail("admin@localhost.local");
-			turUser.setFirstName("Admin");
-			turUser.setLastLogin(new Date());
-			turUser.setLastName("Administrator");
-			turUser.setLoginTimes(0);
-			turUser.setPassword(passwordEncoder.encode("admin"));
-			turUser.setRealm("default");
-			turUser.setUsername(password);
-			turUser.setEnabled(1);
-
-			turUser.setTurGroups(Collections.singletonList(turGroup));
-			
-			turUserRepository.save(turUser);
-		}
-
-	}
+    }
 }

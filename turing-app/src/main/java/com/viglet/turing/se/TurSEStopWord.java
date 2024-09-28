@@ -29,7 +29,6 @@ import org.apache.solr.client.solrj.request.schema.AnalyzerDefinition;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
 import org.apache.solr.client.solrj.response.schema.SchemaResponse;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -105,7 +104,6 @@ public class TurSEStopWord {
         return stopwordsStream;
     }
 
-    @Nullable
     private Optional<InputStream> getStopwordsStreamFromSolr(TurSolrInstance turSolrInstance) {
         InputStream stopwordsStream = null;
         SchemaRequest.FieldType fieldTypeRequest = new SchemaRequest.FieldType(TEXT_GENERAL);

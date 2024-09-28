@@ -21,8 +21,7 @@
 package com.viglet.turing.persistence.model.auth;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -34,6 +33,9 @@ import java.util.HashSet;
  * The persistent class for the TurUser database table.
  * 
  */
+@Builder(toBuilder = true)
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Entity
 @Table(name = "auth_user")
@@ -88,10 +90,6 @@ public class TurUser implements Serializable {
 		this.email = turUser.email;
 		this.password = turUser.password;
 		this.enabled = turUser.enabled;
-	}
-
-	public TurUser() {
-		super();
 	}
 
 	public void setTurGroups(Collection<TurGroup> turGroups) {
