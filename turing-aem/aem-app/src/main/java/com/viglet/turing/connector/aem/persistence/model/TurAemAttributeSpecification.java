@@ -1,18 +1,16 @@
 package com.viglet.turing.connector.aem.persistence.model;
 
-import com.viglet.turing.connector.aem.export.bean.TurAemFacetExchange;
+import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.spring.jpa.TurUuid;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @Builder(toBuilder = true)
@@ -21,9 +19,9 @@ import java.util.HashSet;
 @Getter
 @Setter
 @Entity
-@Table(name = "aem_attribute_mapping")
+@Table(name = "aem_attribute_specification")
 @JsonIgnoreProperties({ "turAemSource" })
-public class TurAemAttributeMapping implements Serializable {
+public class TurAemAttributeSpecification extends TurSNAttributeSpec implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -36,12 +34,19 @@ public class TurAemAttributeMapping implements Serializable {
     private String name;
     private String className;
     private String text;
-    private String facetNameDefault;
+    private TurSEFieldType type;
+    private boolean mandatory;
+    private boolean multiValued;
+    private String description;
+    private boolean facet;
+
     @Builder.Default
-    @OneToMany(mappedBy = "turAemAttributeMapping", orphanRemoval = true, fetch = FetchType.LAZY)
-    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Collection<TurAemAttributeFacet> facetNames = new HashSet<>();
+    @ElementCollection
+    @MapKeyColumn(name="language")
+    @Column(name="facet_name")
+    @CollectionTable(name="aem_attritbute_facet", joinColumns=@JoinColumn(name="spec_id"))
+    private Map<String, String> facetNames = new HashMap<>();
+
     @ManyToOne
     @JoinColumn(name = "aem_source_id", nullable = false)
     private TurAemSource turAemSource;

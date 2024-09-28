@@ -86,7 +86,13 @@ public class TurAemSource implements Serializable {
     @OneToMany(mappedBy = "turAemSource", orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private Collection<TurAemAttributeMapping> attributeMappings = new HashSet<>();
+    private Collection<TurAemAttributeSpecification> attributeSpecifications = new HashSet<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "turAemSource", orphanRemoval = true, fetch = FetchType.LAZY)
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Collection<TurAemModel> models = new HashSet<>();
 
     @Builder.Default
     @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)

@@ -18,6 +18,7 @@
 
 package com.viglet.turing.connector.aem.persistence.model;
 
+import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;

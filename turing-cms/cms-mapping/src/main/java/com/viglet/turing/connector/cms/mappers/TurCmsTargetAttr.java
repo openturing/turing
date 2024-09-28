@@ -3,13 +3,14 @@ package com.viglet.turing.connector.cms.mappers;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
 public class TurCmsTargetAttr extends TurCmsTargetAttrDefinition{
     private String textValue;
-    private List<TurCmsSourceAttr> sourceAttrs;
+    protected List<TurCmsSourceAttr> sourceAttrs = new ArrayList<>();
 
     @Override
     public String toString() {
