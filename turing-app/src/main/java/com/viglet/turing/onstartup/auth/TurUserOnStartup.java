@@ -46,10 +46,10 @@ public class TurUserOnStartup {
 		this.turGroupRepository = turGroupRepository;
 	}
 
-	public void createDefaultRows() {
+	public void createDefaultRows(String password) {
 
 		if (turUserRepository.findAll().isEmpty()) {
-			
+
 			TurGroup turGroup = turGroupRepository.findByName("Administrator");
 			TurUser turUser = new TurUser();
 
@@ -60,7 +60,7 @@ public class TurUserOnStartup {
 			turUser.setLoginTimes(0);
 			turUser.setPassword(passwordEncoder.encode("admin"));
 			turUser.setRealm("default");
-			turUser.setUsername("admin");
+			turUser.setUsername(password);
 			turUser.setEnabled(1);
 
 			turUser.setTurGroups(Collections.singletonList(turGroup));
