@@ -18,13 +18,13 @@
 
 package com.viglet.turing.commons.sn.field;
 
-import com.viglet.turing.commons.se.field.TurSEFieldName;
-
 /**
  * @author Alexandre Oliveira
  * @since 0.3.9
  */
-public class TurSNFieldName extends TurSEFieldName {
+public class TurSNFieldName {
+    public static final String ID = "id";
+    public static final String URL = "url";
     public static final String ABSTRACT = "abstract";
     public static final String TEXT = "text";
     public static final String TITLE = "title";
