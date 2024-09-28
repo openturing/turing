@@ -1,3 +1,21 @@
+.d-flex-right {
+  flex: 0 1 auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  max-height: 32px;
+}
+.d-flex-left {
+  flex: 0 1 auto;
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
+  max-height: 32px;
+}
+.d-inline-flex {
+  display: inline-flex;
+}
+
 .App {
   text-align: center;
 }

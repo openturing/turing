@@ -20,7 +20,7 @@ public class TurSprinklrSourceExchange {
     private String secretKey;
     private String apiKey;
     @Builder.Default
-    private Collection<String> turSNSites = new HashSet<>();;
+    private Collection<String> turSNSites = new HashSet<>();
     @Builder.Default
     private Collection<TurSprinklrAttribExchange> attributes = new HashSet<>();
 

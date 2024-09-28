@@ -18,6 +18,9 @@ public class TurSprinklrService {
     private static final String KEY = "Key";
     private static final String BEARER = "Bearer";
 
+    private TurSprinklrService() {
+        throw new IllegalStateException("Sprinklr Service class");
+    }
 
     /**
      * Sends a request and return a POJO from the json response.
@@ -29,35 +32,32 @@ public class TurSprinklrService {
     public static <R> R executeService(Class<R> clazz, TurSprinklrAccessToken turSprinklrAccessToken, String endpoint,
                                        RequestBody requestBody) {
         log.info("Post Request: {}", endpoint);
-
         // Creates a client to send a request
-        OkHttpClient client = new OkHttpClient().newBuilder()
-                .build();
-        try {
-            // Creates a request
-            Request request = new Request.Builder()
-                    .url(endpoint)
-                    .method(POST, requestBody)
-                    .addHeader(AUTHORIZATION, "%s %s".formatted(BEARER, turSprinklrAccessToken.getAccessToken()))
-                    .addHeader(KEY, turSprinklrAccessToken.getApiKey())
-                    .addHeader(CONTENT_TYPE, JSON.toString())
-                    .addHeader(ACCEPT, JSON.toString())
-                    .build();
+        return getResponse(clazz, getRequest(turSprinklrAccessToken, endpoint, requestBody));
+    }
 
-            log.debug(request.toString());
-            // Performs the request
-            try (Response response = client.newCall(request).execute()) {
-                if (response.body() != null) {
-                    String body = response.body().string();
-                    return new ObjectMapper()
+    private static Request getRequest(TurSprinklrAccessToken turSprinklrAccessToken, String endpoint,
+                                      RequestBody requestBody) {
+        Request request = new Request.Builder()
+                .url(endpoint)
+                .method(POST, requestBody)
+                .addHeader(AUTHORIZATION, "%s %s".formatted(BEARER, turSprinklrAccessToken.getAccessToken()))
+                .addHeader(KEY, turSprinklrAccessToken.getApiKey())
+                .addHeader(CONTENT_TYPE, JSON.toString())
+                .addHeader(ACCEPT, JSON.toString())
+                .build();
+        log.debug(request.toString());
+        return request;
+    }
+
+    private static <R> R getResponse(Class<R> clazz, Request request) {
+        try (Response response = new OkHttpClient().newBuilder().build().newCall(request).execute()) {
+            if (response.body() != null) {
+                return new ObjectMapper()
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                        .readValue(body, clazz);
-                }
-                return null;
-            } catch (IOException e) {
-                log.error(e.getMessage(), e);
+                        .readValue(response.body().string(), clazz);
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
         return null;

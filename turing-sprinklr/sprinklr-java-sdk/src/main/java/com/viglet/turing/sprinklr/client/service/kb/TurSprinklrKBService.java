@@ -22,7 +22,14 @@ import java.util.List;
 public class TurSprinklrKBService {
     // https://developer.sprinklr.com/docs/read/api_20/knowledgebase_api/Search_Knowledge_Base_Content
     public static final String KB_SERVICE = "https://api2.sprinklr.com/%s/api/v2/knowledgebase/search";
+    public static final String APPLICATION_JSON = "application/json";
+    public static final String TRUE = "true";
+    public static final String APPROVED = "APPROVED";
+    public static final int SIZE = 50;
 
+    private TurSprinklrKBService() {
+        throw new IllegalStateException("Sprinklr Knowledge Base Service class");
+    }
     public static TurSprinklrKBSearch run(TurSprinklrAccessToken turSprinklrAccessToken, int page) {
         if (turSprinklrAccessToken != null) {
             try {
@@ -30,7 +37,7 @@ public class TurSprinklrKBService {
                 return TurSprinklrService.executeService(TurSprinklrKBSearch.class, turSprinklrAccessToken,
                         KB_SERVICE.formatted(turSprinklrAccessToken.getEnvironment()),
                         RequestBody.create(responseBody,
-                                MediaType.get("application/json")));
+                                MediaType.get(APPLICATION_JSON)));
             } catch (JsonProcessingException e) {
                 log.error(e.getMessage(), e);
 
@@ -46,14 +53,14 @@ public class TurSprinklrKBService {
         final TurSprinklrKBFilter publicContentFilter = TurSprinklrKBFilter.builder()
                 .filterType(TurSprinklrKBFilter.FilterType.IN)
                 .field(TurSprinklrKBFilter.Field.PUBLIC_CONTENT)
-                .values(List.of("true")).build();
+                .values(List.of(TRUE)).build();
 
         // Scheme for CONTENT_STATUS filter
         final TurSprinklrKBFilter contentStatusFilter = TurSprinklrKBFilter
                 .builder()
                 .filterType(TurSprinklrKBFilter.FilterType.IN)
                 .field(TurSprinklrKBFilter.Field.KB_CONTENT_STATUS)
-                .values(List.of("APPROVED")).build();
+                .values(List.of(APPROVED)).build();
 
         final List<TurSprinklrKBFilter> filters = new ArrayList<>(2);
         filters.add(contentStatusFilter);
@@ -67,7 +74,7 @@ public class TurSprinklrKBService {
 
     private static TurSprinklrKBPage getPage(int page) {
         return TurSprinklrKBPage.builder()
-                .size(50)
+                .size(SIZE)
                 .page(page).build();
     }
 

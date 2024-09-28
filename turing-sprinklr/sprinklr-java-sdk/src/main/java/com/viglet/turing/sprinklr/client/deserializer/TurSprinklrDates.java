@@ -44,6 +44,7 @@ public class TurSprinklrDates extends StdDeserializer<Date> {
             try {
                 return formatter.parse(node.textValue());
             } catch (ParseException ignored) {
+                // ignored
             }
         }
         if (log.isDebugEnabled()) {

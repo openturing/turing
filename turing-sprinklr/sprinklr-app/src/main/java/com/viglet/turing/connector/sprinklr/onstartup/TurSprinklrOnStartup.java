@@ -16,14 +16,13 @@ import java.nio.file.Paths;
 @Slf4j
 @Component
 @Transactional
-public class TurSprinklrOnStartupJpa implements ApplicationRunner {
+public class TurSprinklrOnStartup implements ApplicationRunner {
     public static final String FIRST_TIME = "FIRST_TIME";
-
     private final TurSprinklrConfigVarRepository turSprinklrConfigVarRepository;
     private final TurSprinklrExchangeProcess turSprinklrExchangeProcess;
 
     @Inject
-    public TurSprinklrOnStartupJpa(TurSprinklrConfigVarRepository turSprinklrConfigVarRepository,
+    public TurSprinklrOnStartup(TurSprinklrConfigVarRepository turSprinklrConfigVarRepository,
                                    TurSprinklrExchangeProcess turSprinklrExchangeProcess) {
         this.turSprinklrConfigVarRepository = turSprinklrConfigVarRepository;
         this.turSprinklrExchangeProcess = turSprinklrExchangeProcess;
@@ -32,13 +31,13 @@ public class TurSprinklrOnStartupJpa implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments arg0) {
         if (this.turSprinklrConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
-            System.out.println("First Time Configuration ...");
+           log.info("First Time Configuration ...");
             Path exportFile = Paths.get("export/export.json");
             if (exportFile.toFile().exists()) {
                 turSprinklrExchangeProcess.importFromFile(exportFile.toFile());
             }
             setFirstTIme();
-            System.out.println("Configuration finished.");
+            log.info("Configuration finished.");
         }
     }
 

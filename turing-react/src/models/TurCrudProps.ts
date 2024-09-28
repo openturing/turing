@@ -1,7 +1,7 @@
 import {Observable} from "rxjs";
 
-export interface CrudProps<T>  {
-    get: (url: string) => Observable<Array<T>>;
+export interface TurCrudProps<T>  {
+    get: (url: string, id: string | undefined) => Observable<T>;
     delete: (url: string, id: string) => void
     add: (url: string, item: T) => void;
     update: (url: string, item: T) => void;
