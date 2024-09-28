@@ -1,10 +1,13 @@
 package com.viglet.turing.connector.cms.mappers;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 public class TurCmsModel {
@@ -12,7 +15,8 @@ public class TurCmsModel {
     private String subType;
     private String className;
     private String validToIndex;
-    private List<TurCmsTargetAttr> targetAttrs;
+    @Builder.Default
+    private List<TurCmsTargetAttr> targetAttrs = new ArrayList<>();
 
     @Override
     public String toString() {

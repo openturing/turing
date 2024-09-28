@@ -59,4 +59,8 @@ public class TurAemModel implements Serializable {
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurAemTargetAttribute> targetAttrs = new HashSet<>();
+
+    @ManyToOne
+    @JoinColumn(name = "aem_source_id", nullable = false)
+    private TurAemSource turAemSource;
 }

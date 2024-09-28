@@ -18,6 +18,7 @@
 
 package com.viglet.turing.connector.aem.export.bean;
 
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import lombok.*;
 
 import java.util.Collection;
@@ -34,7 +35,7 @@ public class TurAemAttribExchange {
     private String name;
     private String className;
     private String text;
-    private String type;
+    private TurSEFieldType type;
     private boolean mandatory;
     private boolean multiValued;
     private String description;

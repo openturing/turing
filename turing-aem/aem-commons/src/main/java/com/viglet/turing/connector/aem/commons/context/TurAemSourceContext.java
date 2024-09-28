@@ -14,6 +14,7 @@ import java.util.Locale;
 @Getter
 @ToString
 public class TurAemSourceContext {
+    private String id;
     private String url;
     private String username;
     private String password;
@@ -24,7 +25,6 @@ public class TurAemSourceContext {
     private String siteName;
     private Locale defaultLocale;
     private String providerName;
-    private String group;
     private String urlPrefix;
     private String oncePattern;
     @Builder.Default
