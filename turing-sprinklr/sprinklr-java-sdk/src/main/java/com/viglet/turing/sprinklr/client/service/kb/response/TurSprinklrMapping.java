@@ -9,7 +9,7 @@ import java.util.List;
 @Setter
 public class TurSprinklrMapping {
     private String mappedProjectId;
-    private String CommunityMessageId;
+    private String mappedCommunityMessageId;
     private List<String> mappedCategoryIds;
     private List<String> mappedTopicIds;
     private String communityPermalink;

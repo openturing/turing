@@ -23,6 +23,8 @@ package com.viglet.turing.api.sn.console;
 
 import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightDocumentRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
@@ -35,9 +37,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -102,16 +102,18 @@ public class TurSNSiteSpotlightAPI {
             turSNSiteSpotlightEdit.setName(turSNSiteSpotlight.getName());
             turSNSiteSpotlightEdit.setProvider(turSNSiteSpotlight.getProvider());
             turSNSiteSpotlightEdit.setTurSNSite(turSNSiteSpotlight.getTurSNSite());
-            turSNSiteSpotlightEdit.setTurSNSiteSpotlightTerms(turSNSiteSpotlight.getTurSNSiteSpotlightTerms()
-                    .stream()
-                    .peek(term ->
-                            term.setTurSNSiteSpotlight(turSNSiteSpotlight))
-                    .collect(Collectors.toSet()));
-            turSNSiteSpotlightEdit.setTurSNSiteSpotlightDocuments(turSNSiteSpotlight.getTurSNSiteSpotlightDocuments()
-                    .stream()
-                    .peek(document ->
-                            document.setTurSNSiteSpotlight(turSNSiteSpotlight))
-                    .collect(Collectors.toSet()));
+            Set<TurSNSiteSpotlightTerm> set = new HashSet<>();
+            for (TurSNSiteSpotlightTerm term : turSNSiteSpotlight.getTurSNSiteSpotlightTerms()) {
+                term.setTurSNSiteSpotlight(turSNSiteSpotlight);
+                set.add(term);
+            }
+            turSNSiteSpotlightEdit.setTurSNSiteSpotlightTerms(set);
+            Set<TurSNSiteSpotlightDocument> result = new HashSet<>();
+            for (TurSNSiteSpotlightDocument document : turSNSiteSpotlight.getTurSNSiteSpotlightDocuments()) {
+                document.setTurSNSiteSpotlight(turSNSiteSpotlight);
+                result.add(document);
+            }
+            turSNSiteSpotlightEdit.setTurSNSiteSpotlightDocuments(result);
             return saveSpotlight(turSNSiteSpotlight, turSNSiteSpotlightEdit);
         }).orElse(new TurSNSiteSpotlight());
     }

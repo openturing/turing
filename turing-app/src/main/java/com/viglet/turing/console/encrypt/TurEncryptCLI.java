@@ -30,10 +30,12 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 public class TurEncryptCLI {
+	private final StringEncryptor stringEncryptor;
 
-	@Qualifier("turEncryptor")
-	@Autowired
-	private StringEncryptor stringEncryptor;
+	@Inject
+	public TurEncryptCLI(@Qualifier("turEncryptor") StringEncryptor stringEncryptor) {
+		this.stringEncryptor = stringEncryptor;
+	}
 
 	public String encrypt(String input) {
 		try {
