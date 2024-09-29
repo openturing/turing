@@ -31,6 +31,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.OutputStream;
@@ -50,19 +51,20 @@ public class TurIntegrationAPI {
     TurIntegrationAPI(TurIntegrationInstanceRepository turIntegrationInstanceRepository) {
         this.turIntegrationInstanceRepository = turIntegrationInstanceRepository;
     }
-    @RequestMapping("**")
+
+    @RequestMapping("**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
     public void indexAnyRequest(HttpServletRequest request, HttpServletResponse response,
-                                 @PathVariable String integrationId) {
-            turIntegrationInstanceRepository.findById(integrationId).ifPresent(turIntegrationInstance ->
-                    proxy(turIntegrationInstance, request, response));
+                                @PathVariable String integrationId) {
+        turIntegrationInstanceRepository.findById(integrationId).ifPresent(turIntegrationInstance ->
+                proxy(turIntegrationInstance, request, response));
     }
 
     public void proxy(TurIntegrationInstance turIntegrationInstance, HttpServletRequest request,
                       HttpServletResponse response) {
         try {
             HttpURLConnection httpURLConnection = (HttpURLConnection) URI.create(turIntegrationInstance.getEndpoint() +
-                    request.getRequestURI()
-                            .replace("/api/v2/integration/" + turIntegrationInstance.getId(), "/api/v2"))
+                            request.getRequestURI()
+                                    .replace("/api/v2/integration/" + turIntegrationInstance.getId(), "/api/v2"))
                     .toURL().openConnection();
             httpURLConnection.setRequestMethod(request.getMethod());
             request.getHeaderNames().asIterator().forEachRemaining(headerName ->
