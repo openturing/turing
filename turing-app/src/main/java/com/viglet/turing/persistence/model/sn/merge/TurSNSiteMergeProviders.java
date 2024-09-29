@@ -22,8 +22,9 @@
 package com.viglet.turing.persistence.model.sn.merge;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import jakarta.persistence.Table;
 import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CascadeType;
@@ -54,7 +55,6 @@ public class TurSNSiteMergeProviders implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
-	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)
 	private TurSNSite turSNSite;
@@ -77,7 +77,6 @@ public class TurSNSiteMergeProviders implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String relationTo;
 
-	// bi-directional many-to-one association to turSNSiteSpotlightDocuments
 	@OneToMany(mappedBy = "turSNSiteMergeProviders", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)

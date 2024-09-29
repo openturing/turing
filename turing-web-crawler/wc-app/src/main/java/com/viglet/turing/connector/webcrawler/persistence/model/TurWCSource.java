@@ -3,6 +3,7 @@ package com.viglet.turing.connector.webcrawler.persistence.model;
 import com.viglet.turing.spring.jpa.TurUuid;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
+import jakarta.persistence.Entity;
 import lombok.*;
 import org.hibernate.annotations.*;
 
