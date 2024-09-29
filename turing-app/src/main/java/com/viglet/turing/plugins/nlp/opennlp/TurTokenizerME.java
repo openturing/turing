@@ -21,24 +21,22 @@
 package com.viglet.turing.plugins.nlp.opennlp;
 
 import lombok.Getter;
+import lombok.Setter;
 import opennlp.tools.tokenize.TokenizerME;
 
 import java.io.Serial;
 import java.io.Serializable;
 
+@Setter
 @Getter
 public class TurTokenizerME implements Serializable {
 
 	@Serial
 	private static final long serialVersionUID = 1L;
 
-	private TokenizerME tokenizerME;
+	private transient TokenizerME tokenizerME;
 
 	public TurTokenizerME(TokenizerME tokenizerME) {
-		this.tokenizerME = tokenizerME;
-	}
-
-	public void setTokenizerME(TokenizerME tokenizerME) {
 		this.tokenizerME = tokenizerME;
 	}
 

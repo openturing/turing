@@ -15,6 +15,11 @@ import static com.viglet.turing.lucene.TurLuceneConstants.STORE_LUCENE;
 
 @Slf4j
 public class TurLuceneUtils {
+
+    private TurLuceneUtils() {
+        throw new IllegalStateException("Lucene Utils class");
+    }
+
     @NotNull
     public static Optional<FSDirectory> getLuceneDirectory() {
         try {
@@ -23,13 +28,5 @@ public class TurLuceneUtils {
             log.error(e.getMessage(), e);
             return Optional.empty();
         }
-    }
-
-    public static List<TurSEResult> documentsToSEResults(List<Document> documents) {
-         documents.forEach(document -> {
-             document.getFields().forEach(field -> {
-             });
-         });
-         return null;
     }
 }

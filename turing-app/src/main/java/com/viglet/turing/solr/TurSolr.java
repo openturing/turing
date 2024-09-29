@@ -666,9 +666,12 @@ public class TurSolr {
                                 fields.forEach(fieldExtension -> facetResults.stream()
                                         .filter(facetResult -> fieldExtension.getFacetPosition() != null &&
                                                 facetResult.getFacet().equals(fieldExtension.getName())).findFirst()
-                                        .ifPresent(facetResult -> facetResult.setFacetPosition(fieldExtension.getFacetPosition()))));
-                turSEResults.setFacetResults(facetResults.stream().sorted(Comparator.comparing(TurSEFacetResult::getFacetPosition)).
-                        collect(Collectors.toList()));
+                                        .ifPresent(facetResult ->
+                                                facetResult.setFacetPosition(fieldExtension.getFacetPosition()))));
+                turSEResults.setFacetResults(facetResults
+                        .stream()
+                        .sorted(Comparator.comparing(TurSEFacetResult::getFacetPosition))
+                        .toList());
             });
         }
     }
@@ -822,7 +825,7 @@ public class TurSolr {
     }
 
     private static String betweenSpaces(String operator) {
-        return " %s ".formatted(operator);
+        return " %s " .formatted(operator);
     }
 
     @NotNull
@@ -862,9 +865,11 @@ public class TurSolr {
                                 .filter(facet -> facet.getName().equals(kv.getKey()))
                                 .findFirst())
                 .ifPresentOrElse(facet ->
-                                addEnabledFacetItem(isFacetTypeDefault(turSNSiteFacetFieldEnum) ?
-                                        getFacetType(facet, turSNSite, operator) :
-                                        turSNSiteFacetFieldEnum, fqMap, fq),
+                        {
+                            if (isFacetTypeDefault(turSNSiteFacetFieldEnum))
+                                addEnabledFacetItem(getFacetType(facet, turSNSite, operator), fqMap, fq);
+                            else addEnabledFacetItem(turSNSiteFacetFieldEnum, fqMap, fq);
+                        },
                         () -> addEnabledFacetItem(getFacetType(turSNSite, operator), fqMap, fq));
 
     }

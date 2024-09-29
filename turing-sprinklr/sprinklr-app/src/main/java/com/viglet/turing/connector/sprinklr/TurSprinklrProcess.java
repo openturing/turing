@@ -212,7 +212,7 @@ public class TurSprinklrProcess {
          Try to get extract the locale from turSprinklrSource.getLocale()
          Or else extracts the locale class (by default sprinklr-commons TurSprinklrExtLocal) from turSprinklrSource.
          If getCustomClassMap found a class, converts the result to an instance of TurSprinklrExtLocaleInterface.
-         Then calls the .consume method to get a Locale, if none of this works, then return Locale.US
+         Then call the .consume method to get a Locale, if none of this works, then return Locale.US
         */
         return Optional.ofNullable(turSprinklrSource.getLocale())
                 .orElseGet(() -> {
@@ -233,7 +233,7 @@ public class TurSprinklrProcess {
     }
 
     /**
-     * Returns a new HashMap of "Attribute(turing Field, Attribute Name from export.json) -> Attribute Value". <p>
+     * Returns a new HashMap of "Attribute(turing Field, Attribute Name from export.json) → Attribute Value". <p>
      * This method is used when sending a job to Turing.
      *
      * @param turSprinklrSource Is used to find the <b>turSprinklrAttributeMapping entity</b>, it represents
@@ -258,7 +258,7 @@ public class TurSprinklrProcess {
          the 'text' attribute of this object.
          If the 'text' attribute is present, then will create a new key in turSNJobItemAttributes with the `name` attribute of this same object. The
          value of this key will be the 'text'.
-         If not present, tries to get the ClassName from `AttributeMapping`, instantiate it dynamically and consumes it to get the value of the key.
+         If not present, try to get the ClassName from `AttributeMapping`, instantiate it dynamically and consume it to get the value of the key.
         */
         turSprinklrAttributeMappingRepository.findByTurSprinklrSource(turSprinklrSource).ifPresent(mapping -> mapping.forEach(attribute ->
                 Optional.ofNullable(attribute.getText()).ifPresentOrElse(text ->
@@ -267,20 +267,23 @@ public class TurSprinklrProcess {
                             // Se o campo ClassName estiver preenchido no Export.json
                             if (!StringUtils.isEmpty(attribute.getClassName()))
                                 getCustomClass(searchResult, token, attribute)
-                                        .ifPresent(turMultiValue -> turMultiValue.forEach(attributeValue -> {
-                                            if (!StringUtils.isBlank(attributeValue)) {
-                                                if (turSNJobItemAttributes.containsKey(attribute.getName())) {
-                                                    addItemInExistingAttribute(attributeValue,
-                                                            turSNJobItemAttributes, attribute.getName());
-                                                } else {
-                                                    addFirstItemToAttribute(attribute.getName(),
-                                                            attributeValue, turSNJobItemAttributes);
-                                                }
-                                            }
-                                        }));
+                                        .ifPresent(turMultiValue -> turMultiValue.forEach(attributeValue ->
+                                                setAttribute(attribute, attributeValue, turSNJobItemAttributes)));
                         }
                 )));
         return turSNJobItemAttributes;
+    }
+
+    private void setAttribute(TurSprinklrAttributeMapping attribute, String attributeValue, Map<String, Object> turSNJobItemAttributes) {
+        if (!StringUtils.isBlank(attributeValue)) {
+            if (turSNJobItemAttributes.containsKey(attribute.getName())) {
+                addItemInExistingAttribute(attributeValue,
+                        turSNJobItemAttributes, attribute.getName());
+            } else {
+                addFirstItemToAttribute(attribute.getName(),
+                        attributeValue, turSNJobItemAttributes);
+            }
+        }
     }
 
     private Optional<TurMultiValue> getCustomClass(TurSprinklrSearchResult searchResult, TurSprinklrAccessToken token,

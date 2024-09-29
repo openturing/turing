@@ -29,7 +29,6 @@ import org.apache.lucene.document.*;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexableField;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.store.FSDirectory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -38,7 +37,6 @@ import java.io.IOException;
 import java.util.*;
 
 import static com.viglet.turing.lucene.TurLuceneConstants.FULL_TEXT;
-import static com.viglet.turing.lucene.TurLuceneConstants.ID;
 import static com.viglet.turing.lucene.TurLuceneUtils.getLuceneDirectory;
 
 @Slf4j
@@ -80,32 +78,20 @@ public class TurLuceneWriter {
         return new IndexWriter(directory, new IndexWriterConfig());
     }
 
-    public void updateDocumentIndex(String id, TurSNSite turSNSite, Map<String, Object> attributes) {
-        getLuceneDirectory().ifPresent(directory -> {
-            try (IndexWriter writer = getIndexWriter(directory)) {
-                Document document = createIndexDocument(turSNSite, attributes);
-                writer.updateDocument(new Term(ID, id), document);
-                commit(writer);
-            } catch (IOException e) {
-                log.error(e.getMessage(), e);
-            }
-        });
-    }
-
     public Document createIndexDocument(TurSNSite turSNSite, Map<String, Object> fields) {
         Document document = new Document();
-        StringBuffer text = new StringBuffer();
+        StringBuilder text = new StringBuilder();
         fields.forEach((fieldName, fieldValue) -> getField(turSNSite, fieldName, fieldValue, document, text));
         getFullTextField(document, text);
         return document;
     }
 
-    private static void getFullTextField(Document document, StringBuffer text) {
+    private static void getFullTextField(Document document, StringBuilder text) {
         document.add(new TextField(FULL_TEXT, text.toString(), Field.Store.YES));
     }
 
     private void getField(TurSNSite turSNSite, String fieldName, Object fieldValue, Document document,
-                          StringBuffer text) {
+                          StringBuilder text) {
 
         turSNSiteFieldExtRepository.findByTurSNSiteAndName(turSNSite, fieldName)
                 .stream()
@@ -136,25 +122,4 @@ public class TurLuceneWriter {
         };
     }
 
-    public void deleteAllIndexes() {
-        getLuceneDirectory().ifPresent(directory -> {
-            try (IndexWriter writer = getIndexWriter(directory)) {
-                writer.deleteAll();
-                commit(writer);
-            } catch (IOException e) {
-                log.error(e.getMessage(), e);
-            }
-        });
-    }
-
-    public void deleteDocumentById(String id) {
-        getLuceneDirectory().ifPresent(directory -> {
-            try (IndexWriter writer = getIndexWriter(directory)) {
-                writer.deleteDocuments(new Term(ID, id));
-                commit(writer);
-            } catch (IOException e) {
-                log.error(e.getMessage(), e);
-            }
-        });
-    }
 }

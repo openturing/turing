@@ -35,8 +35,6 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetR
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
-import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
-import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.solr.TurSolrUtils;
@@ -75,8 +73,6 @@ public class TurSNTemplate {
                          TurNLPInstanceRepository turNLPInstanceRepository,
                          TurSNSiteLocaleRepository turSNSiteLocaleRepository,
                          TurSEInstanceRepository turSEInstanceRepository,
-                         TurSNRankingExpressionRepository turSNRankingExpressionRepository,
-                         TurSNRankingConditionRepository turSNRankingConditionRepository,
                          TurConfigProperties turConfigProperties) {
         this.resourceloader = resourceloader;
         this.turSNSiteFieldRepository = turSNSiteFieldRepository;

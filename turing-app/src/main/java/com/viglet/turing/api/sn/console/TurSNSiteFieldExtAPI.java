@@ -28,10 +28,7 @@ import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldSortEnum;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.field.*;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPVendorEntityRepository;
@@ -60,7 +57,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -252,11 +248,7 @@ public class TurSNSiteFieldExtAPI {
             turSNSiteFieldExtEdit.setDescription(turSNSiteFieldExt.getDescription());
             turSNSiteFieldExtEdit.setType(turSNSiteFieldExt.getType());
             turSNSiteFieldExtEdit.setFacet(turSNSiteFieldExt.getFacet());
-            turSNSiteFieldExtEdit.setFacetLocales(turSNSiteFieldExt.getFacetLocales()
-                    .stream()
-                    .peek(fieldExtFacet ->
-                            fieldExtFacet.setTurSNSiteFieldExt(turSNSiteFieldExt))
-                    .collect(Collectors.toSet()));
+            turSNSiteFieldExtEdit.setFacetLocales( getTurSNSiteFieldExtFacets(turSNSiteFieldExt));
             turSNSiteFieldExtEdit.setFacetRange(turSNSiteFieldExt.getFacetRange());
             turSNSiteFieldExtEdit.setFacetSort(turSNSiteFieldExt.getFacetSort());
             turSNSiteFieldExtEdit.setHl(turSNSiteFieldExt.getHl());
@@ -283,6 +275,16 @@ public class TurSNSiteFieldExtAPI {
             return turSNSiteFieldExtEdit;
         }).orElse(TurSNSiteFieldExt.builder().build());
 
+    }
+
+    @NotNull
+    private static Set<TurSNSiteFieldExtFacet> getTurSNSiteFieldExtFacets(TurSNSiteFieldExt turSNSiteFieldExt) {
+        Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
+        for (TurSNSiteFieldExtFacet fieldExtFacet : turSNSiteFieldExt.getFacetLocales()) {
+            fieldExtFacet.setTurSNSiteFieldExt(turSNSiteFieldExt);
+            facetLocales.add(fieldExtFacet);
+        }
+        return facetLocales;
     }
 
     private static boolean hasFacetPosition(TurSNSiteFieldExt turSNSiteFieldExt) {

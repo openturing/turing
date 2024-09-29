@@ -55,7 +55,12 @@ public class TurMultiValue extends ArrayList<String> {
 
     @Override
     public boolean equals(Object other) {
-       return super.equals(other);
+        return super.equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 
     public static <T> TurMultiValue singleItem(T value, boolean override) {
