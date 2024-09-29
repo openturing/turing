@@ -23,6 +23,9 @@ package com.viglet.turing.commons.sn.field;
  * @since 0.3.9
  */
 public class TurSNFieldName {
+    private TurSNFieldName() {
+        throw new IllegalStateException("Semantic Navigation Field Names class");
+    }
     public static final String ID = "id";
     public static final String URL = "url";
     public static final String ABSTRACT = "abstract";

@@ -174,7 +174,6 @@ public class TurWEMCommander {
 
     private void runAllObjectTypes() throws ApplicationException, ConfigException, ValidationException {
         IPagingList contentTypeIPagingList = ContentType.findAll();
-        @SuppressWarnings("unchecked")
         List<Object> contentTypes = contentTypeIPagingList.asList();
         contentTypes.add(StaticFile.getTypeObjectTypeRef().getObjectType());
 
@@ -203,7 +202,7 @@ public class TurWEMCommander {
                 rp.setTopRelationOnly(false);
 
                 AsObjectType aot = AsObjectType.getInstance(new ObjectTypeRef((ManagedObject) objectType));
-                IValidToIndex instance = mappingDefinitions.validToIndex(objectType, turingConfig);
+                IValidToIndex instance = mappingDefinitions.validToIndex(objectType);
                 if (aot.isStaticFile()) {
                     results = queryStaticFilesList(rp, instance);
                 } else {
@@ -227,8 +226,7 @@ public class TurWEMCommander {
 
     }
 
-    private IPagingList queryContentInstanceList(ObjectType objectType, RequestParameters rp, IValidToIndex instance)
-            throws Exception {
+    private IPagingList queryContentInstanceList(ObjectType objectType, RequestParameters rp, IValidToIndex instance) {
 
         IPagingList results;
         ContentInstanceWhereClause clause = new ContentInstanceWhereClause();
@@ -241,7 +239,7 @@ public class TurWEMCommander {
         return results;
     }
 
-    private IPagingList queryStaticFilesList(RequestParameters rp, IValidToIndex instance) throws Exception {
+    private IPagingList queryStaticFilesList(RequestParameters rp, IValidToIndex instance) {
         IPagingList results;
         StaticFileWhereClause clause = new StaticFileWhereClause();
         StaticFileDBQuery query = new StaticFileDBQuery();
@@ -338,8 +336,7 @@ public class TurWEMCommander {
             ManagedObject mo = (ManagedObject) objects.get(ref.getId());
             if (mo instanceof ContentInstance || mo instanceof Channel) {
                 if (log.isDebugEnabled())
-                    log.debug(String.format("Attempting to index the Content Instance: %s",
-                            mo.getContentManagementId().getId()));
+                    log.debug("Attempting to index the Content Instance: {}", mo.getContentManagementId().getId());
                 TurWEMIndexer.indexCreate(mo, turingConfig, TuringUtils.getSiteNameFromContentInstance(mo, turingConfig));
             }
         }

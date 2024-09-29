@@ -40,7 +40,7 @@ public class TurWEMUpdateFileWidget {
 	}
 	
 	public static List<TurAttrDef> attributeFileWidgetUpdate(TurAttrDefContext turAttrDefContext,
-			AttributeData attributeData) throws Exception {
+			AttributeData attributeData) {
 
 		TuringTag turingTag = turAttrDefContext.getTuringTag();
 		ContentInstance ci = turAttrDefContext.getContentInstance();

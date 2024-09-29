@@ -34,7 +34,6 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtFacetDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;

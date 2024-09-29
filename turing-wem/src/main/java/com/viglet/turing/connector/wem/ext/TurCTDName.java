@@ -39,6 +39,6 @@ public class TurCTDName implements ExtAttributeInterface {
         } catch (ApplicationException e) {
            log.error(e.getMessage(), e);
         }
-        return null;
+        return new TurMultiValue();
     }
 }

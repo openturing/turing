@@ -17,8 +17,6 @@
  */
 package com.viglet.turing.connector.wem.ext;
 
-import java.lang.invoke.MethodHandles;
-
 import com.viglet.turing.connector.wem.beans.TurMultiValue;
 import com.viglet.turing.connector.wem.beans.TuringTag;
 import com.viglet.turing.connector.wem.config.IHandlerConfiguration;
@@ -30,6 +28,8 @@ import com.vignette.as.client.exception.ValidationException;
 import com.vignette.as.client.javabean.Channel;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
+
+import java.lang.invoke.MethodHandles;
 
 public class TurChannelPath implements ExtAttributeInterface {
     private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
@@ -47,7 +47,7 @@ public class TurChannelPath implements ExtAttributeInterface {
                 for (String s : breadcrumb) channelPath.append("/").append(s);
             }
         } catch (ApplicationException | AuthorizationException | ValidationException e) {
-            throw new RuntimeException(e);
+            log.error(e.getMessage(), e);
         }
         return TurMultiValue.singleItem(channelPath.toString());
     }

@@ -33,6 +33,7 @@ import com.vignette.logging.context.ContextLogger;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class TurSpotlightExtraFields implements ExtAttributeInterface {
@@ -74,7 +75,7 @@ public class TurSpotlightExtraFields implements ExtAttributeInterface {
         } catch (ApplicationException | JsonProcessingException e) {
             log.error(e.getMessage(), e);
         }
-        return null;
+        return new TurMultiValue();
     }
 
     static class TurCTDAttributes {

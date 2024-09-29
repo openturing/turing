@@ -49,6 +49,10 @@ public class MappingDefinitionsProcess {
 
 		try {
 			DocumentBuilderFactory dlf = DocumentBuilderFactory.newInstance();
+			dlf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			dlf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			dlf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+
 			DocumentBuilder db = dlf.newDocumentBuilder();
 
 			File f = new File(resourceXml);

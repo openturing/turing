@@ -79,35 +79,13 @@ public class TurWEMIndex {
                                              MappingDefinitions mappingDefinitions) {
         try {
             ContentInstance contentInstance = (ContentInstance) mo;
-
             // When there is related content but no associated site.
             if (MGMT_SITE.equals(siteName)) {
                 siteName = TuringUtils.getSiteName(contentInstance, config);
             }
-
-            AsLocaleData asLocaleData = null;
-            if (hasLocale(contentInstance))
-                asLocaleData = contentInstance.getLocale().getAsLocale().getData();
-
-            TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
             String contentTypeName = contentInstance.getObjectType().getData().getName();
             if (isCTDIntoMapping(contentTypeName, config)) {
-                if (mappingDefinitions.isClassValidToIndex(contentInstance, config)) {
-                    log.info("Viglet Turing indexer Processing Content Type: {}, WEM Site: {}, SNSite: {}, Locale: {}",
-                            contentTypeName, siteName, turSNSiteConfig.getName(), turSNSiteConfig.getLocale());
-                    String xmlToIndex = generateXMLToIndex(contentInstance, config);
-                    if (xmlToIndex.contains(FILE_PROTOCOL)) {
-                        generateZipImport(xmlToIndex, turSNSiteConfig, config);
-                    } else {
-                        postIndex(xmlToIndex, turSNSiteConfig, config);
-                    }
-                } else {
-                    if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
-                            && mo.getContentManagementId() != null) {
-                        TurWEMDeindex.indexDelete(mo.getContentManagementId(), config, siteName);
-                    }
-
-                }
+                indexFromMapping(mo, config, siteName, mappingDefinitions, contentInstance, contentTypeName);
             } else {
                 if (log.isDebugEnabled())
                     log.debug("Mapping definition is not found in the mappingXML for the CTD and ignoring: {}", contentTypeName);
@@ -115,6 +93,34 @@ public class TurWEMIndex {
         } catch (Exception e) {
             log.error("Can't Create to Viglet Turing indexer.", e);
         }
+    }
+
+    private static void indexFromMapping(ManagedObject mo, IHandlerConfiguration config, String siteName,
+                                         MappingDefinitions mappingDefinitions, ContentInstance contentInstance,
+                                         String contentTypeName) throws Exception {
+        TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName,  getAsLocaleData(contentInstance));
+        if (mappingDefinitions.isContentValidToIndex(contentInstance, config)) {
+            log.info("Viglet Turing indexer Processing Content Type: {}, WEM Site: {}, SNSite: {}, Locale: {}",
+                    contentTypeName, siteName, turSNSiteConfig.getName(), turSNSiteConfig.getLocale());
+            String xmlToIndex = generateXMLToIndex(contentInstance, config);
+            if (xmlToIndex.contains(FILE_PROTOCOL)) {
+                generateZipImport(xmlToIndex, turSNSiteConfig, config);
+            } else {
+                postIndex(xmlToIndex, turSNSiteConfig, config);
+            }
+        } else {
+            if (mappingDefinitions.hasClassValidToIndex(mo.getObjectType().getData().getName())
+                    && mo.getContentManagementId() != null) {
+                TurWEMDeindex.indexDelete(mo.getContentManagementId(), config, siteName);
+            }
+        }
+    }
+
+    private static AsLocaleData getAsLocaleData(ContentInstance contentInstance) throws ApplicationException {
+        AsLocaleData asLocaleData = null;
+        if (hasLocale(contentInstance))
+            asLocaleData = contentInstance.getLocale().getAsLocale().getData();
+        return asLocaleData;
     }
 
     private static boolean hasLocale(ContentInstance contentInstance) throws ApplicationException {

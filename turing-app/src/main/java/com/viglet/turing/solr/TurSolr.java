@@ -891,11 +891,11 @@ public class TurSolr {
 
     private static TurSNSiteFacetFieldEnum getFacetType(TurSNSiteFieldExt facet, TurSNSite turSNSite,
                                                         TurSNFilterQueryOperator operator) {
-        return operatorIsNotEmpty(operator) ?
-                getFaceTypeFromOperator(operator) :
-                isFacetTypeDefault(facet.getFacetType()) ?
-                        getFacetTypeFromSite(turSNSite) :
-                        facet.getFacetType();
+        if (operatorIsNotEmpty(operator))
+            return getFaceTypeFromOperator(operator);
+        if (isFacetTypeDefault(facet.getFacetType()))
+            return getFacetTypeFromSite(turSNSite);
+        return facet.getFacetType();
 
     }
 

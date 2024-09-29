@@ -55,7 +55,8 @@ public class TurDPSUrl implements ExtAttributeInterface {
             return turMultiValue;
         }
         } catch (ApplicationException | AuthorizationException | ValidationException | RemoteException e) {
-            throw new RuntimeException(e);
+           log.error(e.getMessage(), e);
         }
+        return new TurMultiValue();
     }
 }

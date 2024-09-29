@@ -17,10 +17,6 @@
  */
 package com.viglet.turing.connector.wem.broker.attribute;
 
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.connector.wem.beans.TurAttrDef;
 import com.viglet.turing.connector.wem.beans.TurAttrDefContext;
@@ -32,46 +28,54 @@ import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
+
 public class TurWEMAttrClass {
 
-	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
-	public static final String HTML = "html";
+    private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
+    public static final String HTML = "html";
 
-	private TurWEMAttrClass() {
-		throw new IllegalStateException("TurWEMAttrClass");
-	}
+    private TurWEMAttrClass() {
+        throw new IllegalStateException("TurWEMAttrClass");
+    }
 
-	public static List<TurAttrDef> attributeByClass(TurAttrDefContext turAttrDefContext, AttributeData attributeData)
-			throws Exception {
+    public static List<TurAttrDef> attributeByClass(TurAttrDefContext turAttrDefContext, AttributeData attributeData) {
 
-		TuringTag turingTag = turAttrDefContext.getTuringTag();
-		ContentInstance ci = turAttrDefContext.getContentInstance();
-		IHandlerConfiguration config = turAttrDefContext.getiHandlerConfiguration();
-		List<TurAttrDef> attributesDefs = new ArrayList<>();
+        TuringTag turingTag = turAttrDefContext.getTuringTag();
+        ContentInstance ci = turAttrDefContext.getContentInstance();
+        IHandlerConfiguration config = turAttrDefContext.getiHandlerConfiguration();
+        List<TurAttrDef> attributesDefs = new ArrayList<>();
 
-		if (turingTag.getSrcClassName() != null) {
-			String className = turingTag.getSrcClassName();
-			if (log.isDebugEnabled())
-				log.debug("ClassName : " + className);
+        if (turingTag.getSrcClassName() != null) {
+            String className = turingTag.getSrcClassName();
+            if (log.isDebugEnabled())
+                log.debug("ClassName : " + className);
+            try {
+                Object extAttribute = Class.forName(className).getDeclaredConstructor().newInstance();
+                TurMultiValue turMultiValue = ((ExtAttributeInterface) extAttribute).consume(turingTag, ci, attributeData,
+                        config);
+                TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
+                attributesDefs.add(turAttrDef);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException | ClassNotFoundException e) {
+                log.error(e.getMessage(), e);
+            }
+        } else {
+            TurMultiValue turMultiValue = new TurMultiValue();
+            if (turingTag.getSrcAttributeType() != null && turingTag.getSrcAttributeType().equals(HTML)) {
+                turMultiValue.add(TurCommonsUtils.html2Text(attributeData.getValue().toString()));
+                TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
+                attributesDefs.add(turAttrDef);
+            } else if (attributeData != null && attributeData.getValue() != null) {
+                turMultiValue.add(attributeData.getValue().toString());
+                TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
+                attributesDefs.add(turAttrDef);
+            }
 
-			Object extAttribute = Class.forName(className).getDeclaredConstructor().newInstance();
-			TurMultiValue turMultiValue = ((ExtAttributeInterface) extAttribute).consume(turingTag, ci, attributeData,
-					config);
-			TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
-			attributesDefs.add(turAttrDef);
-		} else {
-			TurMultiValue turMultiValue = new TurMultiValue();
-			if (turingTag.getSrcAttributeType() != null && turingTag.getSrcAttributeType().equals(HTML)) {
-				turMultiValue.add(TurCommonsUtils.html2Text(attributeData.getValue().toString()));
-				TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
-				attributesDefs.add(turAttrDef);
-			} else if (attributeData != null && attributeData.getValue() != null) {
-				turMultiValue.add(attributeData.getValue().toString());
-				TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);
-				attributesDefs.add(turAttrDef);
-			}
-
-		}
-		return attributesDefs;
-	}
+        }
+        return attributesDefs;
+    }
 }

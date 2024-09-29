@@ -71,26 +71,16 @@ public class MappingDefinitions {
 		return status;
 	}
 
-	public IValidToIndex validToIndex(ObjectType ot, IHandlerConfiguration config) {
-
+	public IValidToIndex validToIndex(ObjectType ot) {
 		try {
 			String contentTypeName;
 			contentTypeName = ot.getData().getName();
-
 			if (this.hasClassValidToIndex(contentTypeName)) {
 				CTDMappings ctdMappings = turCTDMappingMap.get(contentTypeName);
 				IValidToIndex instance = null;
 				String className = ctdMappings.getClassValidToIndex();
 				if (className != null) {
-					Class<?> clazz = Class.forName(className);
-
-					if (clazz == null) {
-						if (logger.isDebugEnabled())
-							logger.debug(String.format("Valid to Index className is not found in the jar file: %s",
-									className));
-
-					} else
-						instance = (IValidToIndex) clazz.newInstance();
+                    instance = (IValidToIndex) Class.forName(className).getDeclaredConstructor().newInstance();
 				}
 				return instance;
 			}
@@ -101,9 +91,9 @@ public class MappingDefinitions {
 
 	}
 
-	public boolean isClassValidToIndex(ContentInstance ci, IHandlerConfiguration config) {
+	public boolean isContentValidToIndex(ContentInstance ci, IHandlerConfiguration config) {
 		try {
-			IValidToIndex iValidToIndex = validToIndex(ci.getObjectType(), config);
+			IValidToIndex iValidToIndex = validToIndex(ci.getObjectType());
 			return !(iValidToIndex != null && !iValidToIndex.isValid(ci, config));
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
