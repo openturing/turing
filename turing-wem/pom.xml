@@ -105,7 +105,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.viglet.turing.wem.TurWEMCommander</mainClass>
+                                    <mainClass>com.viglet.turing.connector.wem.TurWEMCommander</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

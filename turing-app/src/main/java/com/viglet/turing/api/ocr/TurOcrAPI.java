@@ -19,7 +19,7 @@
 package com.viglet.turing.api.ocr;
 
 import com.viglet.turing.commons.file.TurFileAttributes;
-import com.viglet.turing.filesystem.commons.TurFileUtils;
+import com.viglet.turing.connector.filesystem.commons.TurFileUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

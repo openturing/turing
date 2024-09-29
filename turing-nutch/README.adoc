@@ -38,7 +38,7 @@ Edit the /appl/apache/nutch/conf/index-writers.xml
 ```xml
 <writers xmlns="http://lucene.apache.org/nutch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://lucene.apache.org/nutch index-writers.xsd">
  <writer id="indexer_viglet_turing_1"
-		class="com.viglet.turing.nutch.indexwriter.TurNutchIndexWriter">
+		class="com.viglet.turing.connector.nutch.index.writer.TurNutchIndexWriter">
 		<parameters>
 			<param name="url" value="http://localhost:2700" />
 			<param name="site" value="Sample" />

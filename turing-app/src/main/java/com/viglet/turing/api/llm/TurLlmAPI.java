@@ -24,7 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import com.viglet.turing.filesystem.commons.TurFileUtils;
+import com.viglet.turing.connector.filesystem.commons.TurFileUtils;
 import com.viglet.turing.nlp.TurNLPUtils;
 import com.viglet.turing.nlp.output.blazon.RedactionScript;
 import io.swagger.v3.oas.annotations.tags.Tag;

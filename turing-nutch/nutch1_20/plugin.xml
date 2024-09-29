@@ -46,7 +46,7 @@
   </requires>
 
   <extension id="org.apache.nutch.indexer.viglet.turing" name="Viglet Turing Index Writer" point="org.apache.nutch.indexer.IndexWriter">
-    <implementation id="VigletTuringIndexWriter" class="com.viglet.turing.nutch.indexwriter.TurNutchIndexWriter" />
+    <implementation id="VigletTuringIndexWriter" class="com.viglet.turing.connector.nutch.index.writer.TurNutchIndexWriter" />
   </extension>
 
 </plugin>

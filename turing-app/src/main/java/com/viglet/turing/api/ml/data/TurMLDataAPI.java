@@ -21,7 +21,7 @@
 package com.viglet.turing.api.ml.data;
 
 import com.google.inject.Inject;
-import com.viglet.turing.filesystem.commons.TurFileUtils;
+import com.viglet.turing.connector.filesystem.commons.TurFileUtils;
 import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.persistence.model.storage.TurData;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
