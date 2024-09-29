@@ -66,4 +66,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           javadoc-branch: javadoc
           java-version: 21
-          target-folder: javadoc
+          target-folder: docs
