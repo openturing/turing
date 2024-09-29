@@ -32,7 +32,7 @@ public class TurCategory implements ExtAttributeInterface {
 
 	@Override
 	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-			IHandlerConfiguration config) throws Exception {
+			IHandlerConfiguration config) {
 		log.debug("Executing TurCategory");
 		ci.getTaxonomyClassifications();
 		return TurMultiValue.fromList(Arrays.asList(ci.getTaxonomyClassifications()));

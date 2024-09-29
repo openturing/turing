@@ -40,38 +40,44 @@ public class TurSpotlightExtraFields implements ExtAttributeInterface {
 
     @Override
     public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-                                 IHandlerConfiguration config) throws Exception {
+                                 IHandlerConfiguration config){
         log.debug("Executing TurSpotlightExtraFields");
         List<TurSpotlightContent> turSpotlightContents = new ArrayList<>();
-        Arrays.asList(ci.getRelations(tag.getSrcAttributeRelation().get(0))).forEach(attributedObject -> {
-            try {
-                Object position = attributedObject.getAttributeValue("POSITION-TUR-SPOTLIGHT-CONTENT");
-                Object title = attributedObject.getAttributeValue("TITLE-TUR-SPOTLIGHT-CONTENT");
-                Object content = attributedObject.getAttributeValue("CONTENT-TUR-SPOTLIGHT-CONTENT");
-                Object link = attributedObject.getAttributeValue("LINK-TUR-SPOTLIGHT-CONTENT");
-                String contentText = "";
-                if (((String) content).length() == 40 ) {
-                    ContentInstance contentInstance = (ContentInstance) ManagedObject
-                            .findByContentManagementId(new ManagedObjectVCMRef(content.toString()));
-                    TurCTDAttributes turCTDAttributes = new TurCTDAttributes();
-                    turCTDAttributes.setId((String) content);
-                    turCTDAttributes.setTitle((String) contentInstance.getAttributeValue("title"));
-                    contentText = new ObjectMapper().writeValueAsString(turCTDAttributes);
+        try {
+            Arrays.asList(ci.getRelations(tag.getSrcAttributeRelation().get(0))).forEach(attributedObject -> {
+                try {
+                    Object position = attributedObject.getAttributeValue("POSITION-TUR-SPOTLIGHT-CONTENT");
+                    Object title = attributedObject.getAttributeValue("TITLE-TUR-SPOTLIGHT-CONTENT");
+                    Object content = attributedObject.getAttributeValue("CONTENT-TUR-SPOTLIGHT-CONTENT");
+                    Object link = attributedObject.getAttributeValue("LINK-TUR-SPOTLIGHT-CONTENT");
+                    String contentText = "";
+                    if (((String) content).length() == 40 ) {
+                        ContentInstance contentInstance = (ContentInstance) ManagedObject
+                                .findByContentManagementId(new ManagedObjectVCMRef(content.toString()));
+                        TurCTDAttributes turCTDAttributes = new TurCTDAttributes();
+                        turCTDAttributes.setId((String) content);
+                        turCTDAttributes.setTitle((String) contentInstance.getAttributeValue("title"));
+                        contentText = new ObjectMapper().writeValueAsString(turCTDAttributes);
+                    }
+                    else {
+                        contentText = (String) content;
+                    }
+                    TurSpotlightContent turSpotlightContent = new TurSpotlightContent((int) position, (String) title,
+                            contentText, (String) link);
+                    turSpotlightContents.add(turSpotlightContent);
+                } catch (ApplicationException | ValidationException | JsonProcessingException e) {
+                    log.error(e.getMessage(), e);
                 }
-                else {
-                    contentText = (String) content;
-                }
-                TurSpotlightContent turSpotlightContent = new TurSpotlightContent((int) position, (String) title,
-                        contentText, (String) link);
-                turSpotlightContents.add(turSpotlightContent);
-            } catch (ApplicationException | ValidationException | JsonProcessingException e) {
-                log.error(e.getMessage(), e);
-            }
-        });
+            });
+
         return TurMultiValue.singleItem(new ObjectMapper().writeValueAsString(turSpotlightContents));
+        } catch (ApplicationException | JsonProcessingException e) {
+            log.error(e.getMessage(), e);
+        }
+        return null;
     }
 
-    class TurCTDAttributes {
+    static class TurCTDAttributes {
         private String id;
         private String title;
 
@@ -92,7 +98,7 @@ public class TurSpotlightExtraFields implements ExtAttributeInterface {
         }
     }
 
-    class TurSpotlightContent {
+    static class TurSpotlightContent {
         private int position;
         private String title;
         private String content;

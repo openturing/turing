@@ -23,6 +23,7 @@ import com.viglet.turing.connector.wem.beans.TurMultiValue;
 import com.viglet.turing.connector.wem.beans.TuringTag;
 import com.viglet.turing.connector.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.common.AttributeData;
+import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
@@ -31,8 +32,13 @@ public class TurCTDName implements ExtAttributeInterface {
 
     @Override
     public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-                                 IHandlerConfiguration config) throws Exception {
+                                 IHandlerConfiguration config){
         log.debug("Executing TurCTDName");
-        return TurMultiValue.singleItem(ci != null ? ci.getObjectType().getData().getName() : null);
+        try {
+            return TurMultiValue.singleItem(ci != null ? ci.getObjectType().getData().getName() : null);
+        } catch (ApplicationException e) {
+           log.error(e.getMessage(), e);
+        }
+        return null;
     }
 }

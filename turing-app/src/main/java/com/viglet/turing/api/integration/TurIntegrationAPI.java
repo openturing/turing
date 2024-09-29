@@ -52,7 +52,7 @@ public class TurIntegrationAPI {
         this.turIntegrationInstanceRepository = turIntegrationInstanceRepository;
     }
 
-    @RequestMapping("**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
+    @RequestMapping(value = "**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
     public void indexAnyRequest(HttpServletRequest request, HttpServletResponse response,
                                 @PathVariable String integrationId) {
         turIntegrationInstanceRepository.findById(integrationId).ifPresent(turIntegrationInstance ->

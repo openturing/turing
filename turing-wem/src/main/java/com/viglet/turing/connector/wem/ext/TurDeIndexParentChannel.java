@@ -17,41 +17,51 @@
  */
 package com.viglet.turing.connector.wem.ext;
 
-import com.viglet.turing.connector.wem.beans.TurMultiValue;
-import com.viglet.turing.connector.wem.beans.TuringTag;
+import com.viglet.turing.connector.wem.broker.indexer.TurWEMDeindex;
 import com.viglet.turing.connector.wem.config.IHandlerConfiguration;
-import com.viglet.turing.connector.wem.util.ETLTuringTranslator;
+import com.viglet.turing.connector.wem.index.IValidToIndex;
 import com.viglet.turing.connector.wem.util.TuringUtils;
-import com.vignette.as.client.common.AttributeData;
+import com.vignette.as.client.common.WhereClause;
 import com.vignette.as.client.common.ref.ChannelRef;
 import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.exception.AuthorizationException;
 import com.vignette.as.client.exception.ValidationException;
+import com.vignette.as.client.javabean.Channel;
 import com.vignette.as.client.javabean.ContentInstance;
+import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
 import java.lang.invoke.MethodHandles;
-import java.rmi.RemoteException;
 
-public class TurParentChannel implements ExtAttributeInterface {
+public class TurDeIndexParentChannel implements IValidToIndex {
     private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
-    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-                                 IHandlerConfiguration config) {
-        log.debug("Executing TurParentChannel");
+    @Override
+    public boolean isValid(ContentInstance ci, IHandlerConfiguration config) {
+        if (log.isDebugEnabled()) {
+            log.debug("Executing TurDeIndexParentChannel");
+        }
         try {
             ChannelRef[] channelRefs = ci.getChannelAssociations();
-
             if (channelRefs.length > 0) {
-                ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
-                String channelId = TuringUtils
-                        .getParentChannelFromBreadcrumb(channelRefs[0].getChannel().getBreadcrumbPath(true))
-                        .getContentManagementId().getId();
-                return TurMultiValue.singleItem(etlTranslator.translateByGUID(channelId));
+                String siteName = TuringUtils.getSiteNameFromContentInstance(ci, config);
+                for (ChannelRef channelRef : channelRefs) {
+                    Channel parentChannel = TuringUtils
+                            .getParentChannelFromBreadcrumb(channelRef.getChannel().getBreadcrumbPath(true));
+                    for (ManagedObject vgnExtPage : TuringUtils.getVgnExtPagesFromChannel(parentChannel)) {
+                        TurWEMDeindex.indexDelete(vgnExtPage.getContentManagementId(), config, siteName);
+                    }
+                }
             }
-        } catch (ApplicationException | AuthorizationException | ValidationException | RemoteException e) {
-            log.error(e.getMessage(), e);
+        } catch (ApplicationException | AuthorizationException | ValidationException e) {
+           log.info(e.getMessage(), e);
         }
-        return new TurMultiValue();
+        return true;
     }
+
+    @Override
+    public void whereToValid(WhereClause clause, IHandlerConfiguration config) {
+        // Do nothing
+    }
+
 }

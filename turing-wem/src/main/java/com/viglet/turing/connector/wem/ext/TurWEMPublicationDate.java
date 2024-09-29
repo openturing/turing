@@ -34,7 +34,7 @@ public class TurWEMPublicationDate implements ExtAttributeInterface {
 
 	@Override
 	public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-			IHandlerConfiguration config) throws Exception {
+			IHandlerConfiguration config) {
 		log.debug("Start TurWEMPublicationDate");
 		TimeZone tz = TimeZone.getTimeZone("UTC");
 		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");

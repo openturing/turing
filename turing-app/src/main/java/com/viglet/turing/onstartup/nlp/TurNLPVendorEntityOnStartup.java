@@ -71,21 +71,6 @@ public class TurNLPVendorEntityOnStartup {
 				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.TIME_INTERNAL, TurNLPEntityConstant.TIME_CORENLP,
 						TurLocaleRepository.EN_US);
 			});
-			turNLPVendorRepository.findById(TurNLPVendorsConstant.OTCA).ifPresent(turNLPVendor -> {
-				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL,
-						TurNLPEntityConstant.PERSON_OTCA, TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL,
-						TurNLPEntityConstant.LOCATION_OTCA, TurLocaleRepository.EN_US);
-				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL,
-						TurNLPEntityConstant.ORGANIZATION_OTCA, TurLocaleRepository.EN_US);
-
-				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL,
-						TurNLPEntityConstant.PERSON_OTCA, TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.LOCATION_INTERNAL,
-						TurNLPEntityConstant.LOCATION_OTCA, TurLocaleRepository.PT_BR);
-				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.ORGANIZATION_INTERNAL,
-						TurNLPEntityConstant.ORGANIZATION_OTCA, TurLocaleRepository.PT_BR);
-			});
 			turNLPVendorRepository.findById(TurNLPVendorsConstant.POLYGLOT).ifPresent(turNLPVendor -> {
 				this.addNLPVendor(turNLPVendor, TurNLPEntityConstant.PERSON_INTERNAL,
 						TurNLPEntityConstant.PERSON_POLYGLOT, TurLocaleRepository.CA);

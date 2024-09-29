@@ -52,14 +52,6 @@ public class TurNLPVendorOnStartup {
 			turNLPVendorRepository.save(turNLPVendor);
 
 			turNLPVendor = new TurNLPVendor();
-			turNLPVendor.setId(TurNLPVendorsConstant.OTCA);
-			turNLPVendor.setDescription("OpenText OTCA");
-			turNLPVendor.setPlugin("com.viglet.turing.plugins.nlp.otca.TurTMEConnector");
-			turNLPVendor.setTitle("OpenText OTCA");
-			turNLPVendor.setWebsite("https://opentext.com/what-we-do/products/discovery");
-			turNLPVendorRepository.save(turNLPVendor);
-
-			turNLPVendor = new TurNLPVendor();
 			turNLPVendor.setId(TurNLPVendorsConstant.OPENNLP);
 			turNLPVendor.setDescription("Apache OpenNLP");
 			turNLPVendor.setPlugin("com.viglet.turing.plugins.nlp.opennlp.TurOpenNLPConnector");

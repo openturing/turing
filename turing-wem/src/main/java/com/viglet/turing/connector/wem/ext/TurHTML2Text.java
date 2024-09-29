@@ -33,7 +33,7 @@ public class TurHTML2Text implements ExtAttributeInterface {
 
     @Override
     public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-                                 IHandlerConfiguration config) throws Exception {
+                                 IHandlerConfiguration config) {
         logger.debug("Executing HTML2Text");
         if (attributeData != null && attributeData.getValue() != null)
             return TurMultiValue.singleItem(TurCommonsUtils.html2Text(attributeData.getValue().toString()));

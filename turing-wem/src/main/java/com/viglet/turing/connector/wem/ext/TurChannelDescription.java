@@ -17,31 +17,39 @@
  */
 package com.viglet.turing.connector.wem.ext;
 
-import java.lang.invoke.MethodHandles;
-
 import com.viglet.turing.connector.wem.beans.TurMultiValue;
 import com.viglet.turing.connector.wem.beans.TuringTag;
 import com.viglet.turing.connector.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
+import com.vignette.as.client.exception.ApplicationException;
+import com.vignette.as.client.exception.AuthorizationException;
+import com.vignette.as.client.exception.ValidationException;
 import com.vignette.as.client.javabean.Channel;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
+import java.lang.invoke.MethodHandles;
+import java.rmi.RemoteException;
+
 public class TurChannelDescription implements ExtAttributeInterface {
     private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
     @Override
-    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config)
-            throws Exception {
+    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
+                                 IHandlerConfiguration config) {
         log.debug("Executing ChannelDescription");
         String description = "";
-        for (ManagedObjectVCMRef mo : ManagedObject.getReferringManagedObjects(ci.getContentManagementId())) {
-            if (mo.getObjectTypeRef().getObjectType().getName().equals("Channel")) {
-                Channel channel = (Channel) mo.asManagedObjectRef().retrieveManagedObject();
-                description = channel.getDescription();
+        try {
+            for (ManagedObjectVCMRef mo : ManagedObject.getReferringManagedObjects(ci.getContentManagementId())) {
+                if (mo.getObjectTypeRef().getObjectType().getName().equals("Channel")) {
+                    Channel channel = (Channel) mo.asManagedObjectRef().retrieveManagedObject();
+                    description = channel.getDescription();
+                }
             }
+        } catch (ApplicationException | ValidationException | RemoteException | AuthorizationException e) {
+            log.error(e.getMessage(), e);
         }
         return TurMultiValue.singleItem(description);
     }

@@ -32,7 +32,7 @@ public class TurSiteName implements ExtAttributeInterface {
 
     @Override
     public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
-                                 IHandlerConfiguration config) throws Exception {
+                                 IHandlerConfiguration config){
         log.debug("Executing TurSiteName");
         return TurMultiValue.singleItem(TuringUtils.getSiteName(ci, config));
     }

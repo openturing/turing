@@ -28,7 +28,6 @@ public class TurNLPVendorsConstant {
 
 	public static final String CORENLP = "CORENLP";
 	public static final String OPENNLP = "OPENNLP";
-	public static final String OTCA = "OTCA";
 	public static final String SPACY = "SPACY";
 	public static final String POLYGLOT = "POLYGLOT";
 	public static final String GCP = "GCP";

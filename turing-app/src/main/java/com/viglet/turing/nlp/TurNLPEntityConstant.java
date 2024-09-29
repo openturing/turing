@@ -27,19 +27,16 @@ public class TurNLPEntityConstant {
 
 	public static final String PERSON_INTERNAL = "PN";
 	public static final String PERSON_CORENLP = "PERSON";
-	public static final String PERSON_OTCA = "PN";
 	public static final String PERSON_POLYGLOT = "PERSON";
 	public static final String PERSON_SPACY = "PERSON";
 
 	public static final String LOCATION_INTERNAL = "GL";
 	public static final String LOCATION_CORENLP = "LOCATION";
-	public static final String LOCATION_OTCA = "GL";
 	public static final String LOCATION_POLYGLOT = "LOC";
 	public static final String LOCATION_SPACY = "LOC";
 
 	public static final String ORGANIZATION_INTERNAL = "ON";
 	public static final String ORGANIZATION_CORENLP = "ORGANIZATION";
-	public static final String ORGANIZATION_OTCA = "ON";
 	public static final String ORGANIZATION_POLYGLOT = "ORG";
 	public static final String ORGANIZATION_SPACY = "ORG";
 

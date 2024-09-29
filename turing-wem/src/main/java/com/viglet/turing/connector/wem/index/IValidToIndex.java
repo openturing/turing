@@ -17,19 +17,14 @@
  */
 package com.viglet.turing.connector.wem.index;
 
-import java.lang.invoke.MethodHandles;
-
 import com.viglet.turing.connector.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.common.WhereClause;
 import com.vignette.as.client.javabean.ContentInstance;
-import com.vignette.logging.context.ContextLogger;
 
 public interface IValidToIndex {
-	
-	static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
-	
-	boolean isValid(ContentInstance ci, IHandlerConfiguration config) throws Exception;
-	
-	void whereToValid(WhereClause clause, IHandlerConfiguration config) throws Exception;
+
+    boolean isValid(ContentInstance ci, IHandlerConfiguration config);
+
+    void whereToValid(WhereClause clause, IHandlerConfiguration config);
 
 }

@@ -24,6 +24,9 @@ import com.viglet.turing.connector.wem.beans.TuringTag;
 import com.viglet.turing.connector.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.common.ref.ChannelRef;
+import com.vignette.as.client.exception.ApplicationException;
+import com.vignette.as.client.exception.AuthorizationException;
+import com.vignette.as.client.exception.ValidationException;
 import com.vignette.as.client.javabean.Channel;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
@@ -32,16 +35,19 @@ public class TurChannelPath implements ExtAttributeInterface {
     private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
     @Override
-    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData, IHandlerConfiguration config)
-            throws Exception {
+    public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
+                                 IHandlerConfiguration config) {
         log.debug("Executing TurChannelPath");
         StringBuilder channelPath = new StringBuilder();
-        ChannelRef[] channelRefs = ci.getChannelAssociations();
-        for (int i = 0; i < channelRefs.length; i++) {
-            Channel currentChannel = channelRefs[i].getChannel();
-            String[] breadcrumb = currentChannel.getBreadcrumbNamePath(true);
-            for (int j = 0; j < breadcrumb.length; j++)
-                channelPath.append("/" + breadcrumb[j]);
+        try {
+            ChannelRef[] channelRefs = ci.getChannelAssociations();
+            for (ChannelRef channelRef : channelRefs) {
+                Channel currentChannel = channelRef.getChannel();
+                String[] breadcrumb = currentChannel.getBreadcrumbNamePath(true);
+                for (String s : breadcrumb) channelPath.append("/").append(s);
+            }
+        } catch (ApplicationException | AuthorizationException | ValidationException e) {
+            throw new RuntimeException(e);
         }
         return TurMultiValue.singleItem(channelPath.toString());
     }
