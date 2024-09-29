@@ -1,11 +1,11 @@
 package com.viglet.turing.connector.aem.persistence.model;
 
 import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
-import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.spring.jpa.TurUuid;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-@Builder(toBuilder = true)
+@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -31,14 +31,8 @@ public class TurAemAttributeSpecification extends TurSNAttributeSpec implements 
     @Column(name = "id", nullable = false)
     private String id;
 
-    private String name;
     private String className;
     private String text;
-    private TurSEFieldType type;
-    private boolean mandatory;
-    private boolean multiValued;
-    private String description;
-    private boolean facet;
 
     @Builder.Default
     @ElementCollection
@@ -50,4 +44,5 @@ public class TurAemAttributeSpecification extends TurSNAttributeSpec implements 
     @ManyToOne
     @JoinColumn(name = "aem_source_id", nullable = false)
     private TurAemSource turAemSource;
+
 }

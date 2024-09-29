@@ -57,6 +57,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @EnableMethodSecurity(securedEnabled = true)
 @ComponentScan(basePackageClasses = TurCustomUserDetailsService.class)
 public class TurSecurityConfigProduction {
+    public static final String ERROR_PATH = "/error/**";
     @Autowired
     private UserDetailsService userDetailsService;
     @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri:''}")
@@ -82,7 +83,7 @@ public class TurSecurityConfigProduction {
                         .csrfTokenRequestHandler(new TurSpaCsrfTokenRequestHandler())
                         .ignoringRequestMatchers(
                                 mvc.pattern("/api/sn/**"),
-                                mvc.pattern("/error/**"),
+                                mvc.pattern(ERROR_PATH),
                                 mvc.pattern("/logout"),
                                 mvc.pattern("/api/nlp/**"),
                                 mvc.pattern("/api/ocr/**"),
@@ -97,7 +98,7 @@ public class TurSecurityConfigProduction {
             http.oauth2Login(withDefaults());
             http.authorizeHttpRequests(authorizeRequests -> {
                 authorizeRequests.requestMatchers(
-                        mvc.pattern("/error/**"),
+                        mvc.pattern(ERROR_PATH),
                         mvc.pattern("/api/discovery"),
                         mvc.pattern("/assets/**"),
                         mvc.pattern("/favicon.ico"),
@@ -117,7 +118,7 @@ public class TurSecurityConfigProduction {
             http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
                     .authorizeHttpRequests(authorizeRequests -> {
                         authorizeRequests.requestMatchers(
-                                mvc.pattern("/error/**"),
+                                mvc.pattern(ERROR_PATH),
                                 mvc.pattern("/api/discovery"),
                                 mvc.pattern("/logout"),
                                 mvc.pattern("/index.html"),

@@ -2,10 +2,14 @@ package com.viglet.turing.client.sn.job;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
 import java.util.Map;
 
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 public class TurSNJobAttributeSpec implements Serializable {

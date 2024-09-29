@@ -1,9 +1,12 @@
 package com.viglet.turing.client.sn.job;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
-
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
 @Setter
 @Getter
 public class TurSNAttributeSpec  extends TurSNJobAttributeSpec implements Serializable {
