@@ -18,8 +18,6 @@ com.viglet.turing.api.ml.model
 com.viglet.turing.api.nlp
 com.viglet.turing.api.nlp.bean
 com.viglet.turing.api.ocr
-com.viglet.turing.api.otca.af
-com.viglet.turing.api.otsn.broker
 com.viglet.turing.api.se
 com.viglet.turing.api.sn.bean
 com.viglet.turing.api.sn.console
@@ -195,9 +193,6 @@ com.viglet.turing.plugins.nlp.gcp
 com.viglet.turing.plugins.nlp.gcp.request
 com.viglet.turing.plugins.nlp.gcp.response
 com.viglet.turing.plugins.nlp.opennlp
-com.viglet.turing.plugins.nlp.otca
-com.viglet.turing.plugins.nlp.otca.af.xml
-com.viglet.turing.plugins.nlp.otca.response.xml
 com.viglet.turing.plugins.nlp.polyglot
 com.viglet.turing.plugins.nlp.spacy
 com.viglet.turing.plugins.nlp.utils
