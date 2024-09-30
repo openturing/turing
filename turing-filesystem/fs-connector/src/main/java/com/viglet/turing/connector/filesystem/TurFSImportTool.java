@@ -92,9 +92,10 @@ public class TurFSImportTool {
     private boolean help = false;
 
     public static void main(String... argv) {
-
         TurFSImportTool main = new TurFSImportTool();
         JCommander jCommander = JCommander.newBuilder().addObject(main).build();
+        jCommander.getConsole().println("Viglet Turing Filesystem Import Tool. " +
+                TurFSImportTool.class.getPackage().getImplementationVersion() );
         try {
             jCommander.parse(argv);
             if (main.help) {

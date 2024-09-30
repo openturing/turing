@@ -114,7 +114,10 @@ public class TurAemIndexerTool {
     private AtomicInteger processed = new AtomicInteger(0);
     private AtomicInteger currentPage = new AtomicInteger(0);
 
+
     public static void main(String... argv) {
+        jCommander.getConsole().println("Viglet Turing AEM Indexer Tool. " +
+                TurAemIndexerTool.class.getPackage().getImplementationVersion() );
         TurAemIndexerTool turAEMIndexerTool = new TurAemIndexerTool();
         jCommander.addObject(turAEMIndexerTool);
         try {
@@ -127,7 +130,7 @@ public class TurAemIndexerTool {
                 jCommander.usage();
                 return;
             }
-            jCommander.getConsole().println("Viglet Turing AEM Indexer Tool.");
+
             turAEMIndexerTool.run();
         } catch (ParameterException e) {
             log.info("Error: {}", e.getLocalizedMessage());

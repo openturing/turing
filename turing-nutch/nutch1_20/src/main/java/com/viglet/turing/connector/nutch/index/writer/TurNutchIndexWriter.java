@@ -98,6 +98,8 @@ public class TurNutchIndexWriter implements IndexWriter {
     }
 
     private void init(IndexWriterParams properties) {
+        logger.info("Viglet Turing Nutch. {}",
+                TurNutchIndexWriter.class.getPackage().getImplementationVersion());
         batchSize = properties.getInt(TurNutchConstants.COMMIT_SIZE, 1000);
         weightField = properties.get(TurNutchConstants.WEIGHT_FIELD, "");
         // parse optional parameters
