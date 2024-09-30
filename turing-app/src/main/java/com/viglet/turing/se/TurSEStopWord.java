@@ -58,7 +58,7 @@ public class TurSEStopWord {
     private static final String STOP_WORD_CLASS_FILTER = "solr.StopFilterFactory";
     private static final String WORDS_ATTRIBUTE = "words";
     private static final String DEFAULT_STOP_WORD_FILE = "classpath:/solr/conf/lang/stopwords.txt";
-    private static final String APPLICATION_OCTET_STREAM_UTF8 = "application/octet-stream;charset:utf-8";
+    private static final String APPLICATION_OCTET_STREAM_UTF8 = "application/octet-stream;charset=utf-8";
     private static final String ADMIN_FILE_URL = "%s/admin/file?contentType=%s&file=%s";
 
     public List<String> getStopWords(TurSolrInstance turSolrInstance) {
