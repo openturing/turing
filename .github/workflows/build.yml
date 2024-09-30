@@ -66,5 +66,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           javadoc-branch: javadoc
           java-version: 21
-          target-folder: docs
+          target-folder: docs/0.3.9/javadoc
           javadoc-source-folder: target/reports/apidocs
