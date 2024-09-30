@@ -27,6 +27,7 @@
                 <configuration>
                     <!-- Default configuration for all reports -->
                     <noqualifier>all</noqualifier>
+                    <outputDirectory>${project.build.directory}/sites</outputDirectory>
                 </configuration>
                 <executions>
                     <execution>
@@ -34,6 +35,9 @@
                         <goals>
                             <goal>aggregate</goal>
                         </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/sites</outputDirectory>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
