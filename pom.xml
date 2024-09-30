@@ -27,7 +27,6 @@
                 <configuration>
                     <!-- Default configuration for all reports -->
                     <noqualifier>all</noqualifier>
-                    <destDir>javadoc</destDir>
                 </configuration>
                 <executions>
                     <execution>
@@ -35,11 +34,39 @@
                         <goals>
                             <goal>aggregate</goal>
                         </goals>
-                        <configuration>
-                            <destDir>javadoc</destDir>
-                        </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>4.9.10</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <generateGitPropertiesFile>false</generateGitPropertiesFile>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <Implementation-Version>${project.version}-${git.commit.id.abbrev} (${git.commit.time})
+                            </Implementation-Version>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
