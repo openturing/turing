@@ -67,3 +67,4 @@ jobs:
           javadoc-branch: javadoc
           java-version: 21
           target-folder: docs
+          javadoc-source-folder: target/reports/apidocs
