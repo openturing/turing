@@ -80,8 +80,8 @@ public class SuggestionAutomaton {
         // TOP -> [ "Hello", "World" ]
         Deque<String> tokensDeque = new ArrayDeque<>(List.of(suggestion.split(" ")));
 
-        // Suggestions should not start with a stop word
-        if (stopWords.contains(tokensDeque.peek())) {
+        // Suggestions should not start with a stop word when is the first term of the query.
+        if (stopWords.contains(tokensDeque.peek()) && numberOfWordsFromQuery == 1) {
             return false;
         }
 
