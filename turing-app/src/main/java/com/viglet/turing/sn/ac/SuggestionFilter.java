@@ -10,7 +10,6 @@ import java.util.*;
  * based on a specified strategy and a list of stop words. It currently supports
  * two
  * strategies: {@code DEFAULT} and {@code AUTOMATON}.
- * <p>
  * <ul>
  * <li>The {@code DEFAULT} strategy follows the original filter implemented in
  * "TurSNAutoComplete".</li>
@@ -21,7 +20,6 @@ import java.util.*;
  * a next word for the query. It will consider a stop word followed by a
  * non-stop as a valid suggestion.</li>
  * </ul>
- * </p>
  *
  * @author Gabriel F. Gomazako
  * @since 0.3.9
