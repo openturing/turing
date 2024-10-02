@@ -284,6 +284,28 @@ public class TurSolr {
                 .map(QueryResponse::getResults).orElse(new SolrDocumentList());
     }
 
+    /**
+     * Example SpellCheckResponse for the term "batata":
+     *
+     * <pre>
+     * "spellcheck": {
+     *   "suggestions": [
+     *     "batata", {
+     *       "numFound": 49,
+     *       "startOffset": 0,
+     *       "endOffset": 8,
+     *       "suggestion": [
+     *         "batata doce",
+     *         "batata baroa",
+     *         "batata baroa palitos",
+     *         "batata baroa palitos de",
+     *          ...
+     *       ]
+     *     }
+     *   ]
+     * }
+     * </pre>
+     */
     public SpellCheckResponse autoComplete(TurSolrInstance turSolrInstance, String term) {
         return executeSolrQuery(turSolrInstance, new SolrQuery().setRequestHandler(TUR_SUGGEST).setQuery(term))
                 .map(QueryResponse::getSpellCheckResponse).orElse(null);
