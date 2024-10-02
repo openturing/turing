@@ -27,6 +27,7 @@
                 <configuration>
                     <!-- Default configuration for all reports -->
                     <noqualifier>all</noqualifier>
+                    <doclint>all,-missing</doclint>
                 </configuration>
                 <executions>
                     <execution>
