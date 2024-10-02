@@ -20,9 +20,7 @@ import java.util.*;
  * <li>{@link #getTokenType(List, String, boolean)}: Determines the token type
  * of a given token.</li>
  * </ul>
- *
- * </pre>
- *
+  *
  * @author Gabriel F. Gomazako
  * @since 0.3.9
  */

@@ -21,7 +21,8 @@ import java.util.*;
  * a next word for the query. It will consider a stop word followed by a
  * non-stop as a valid suggestion.</li>
  * </ul>
- * 
+ * </p>
+ *
  * @author Gabriel F. Gomazako
  * @since 0.3.9
  */
