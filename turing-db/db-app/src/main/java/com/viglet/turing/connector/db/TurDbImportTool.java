@@ -155,6 +155,8 @@ public class TurDbImportTool {
 
         TurDbImportTool main = new TurDbImportTool();
         JCommander jCommander = JCommander.newBuilder().addObject(main).build();
+        jCommander.getConsole().println("Viglet Turing JDBC Import Tool. " +
+                TurDbImportTool.class.getPackage().getImplementationVersion() );
         try {
             jCommander.parse(argv);
             if (main.debug) {
@@ -165,7 +167,6 @@ public class TurDbImportTool {
                 jCommander.usage();
                 return;
             }
-            log.info("Viglet Turing JDBC Import Tool.");
             turFormatValue = new TurDbFormatValue(main);
             main.run();
         } catch (ParameterException e) {

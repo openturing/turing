@@ -34,22 +34,22 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
-            <version>9.11.1</version>
+            <version>9.12.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queryparser</artifactId>
-            <version>9.11.1</version>
+            <version>9.12.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-analysis-common</artifactId>
-            <version>9.11.1</version>
+            <version>9.12.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queries</artifactId>
-            <version>9.11.1</version>
+            <version>9.12.0</version>
         </dependency>
         <dependency>
             <groupId>co.elastic.clients</groupId>
@@ -273,7 +273,7 @@
         <dependency>
             <groupId>org.languagetool</groupId>
             <artifactId>language-en</artifactId>
-            <version>6.4</version>
+            <version>6.5</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.lucene</groupId>
@@ -284,7 +284,7 @@
         <dependency>
             <groupId>org.languagetool</groupId>
             <artifactId>language-pt</artifactId>
-            <version>6.4</version>
+            <version>6.5</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.lucene</groupId>
@@ -391,37 +391,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>pl.project13.maven</groupId>
-                <artifactId>git-commit-id-plugin</artifactId>
-                <version>4.9.10</version>
-                <executions>
-                    <execution>
-                        <id>get-the-git-infos</id>
-                        <goals>
-                            <goal>revision</goal>
-                        </goals>
-                        <phase>initialize</phase>
-                    </execution>
-                </executions>
-                <configuration>
-                    <generateGitPropertiesFile>false</generateGitPropertiesFile>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.2</version>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <Implementation-Version>${project.version}-${git.commit.id.abbrev} (${git.commit.time})
-                            </Implementation-Version>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
@@ -429,7 +398,6 @@
                     <skip>false</skip>
                     <executable>true</executable>
                 </configuration>
-
                 <executions>
                     <execution>
                         <goals>

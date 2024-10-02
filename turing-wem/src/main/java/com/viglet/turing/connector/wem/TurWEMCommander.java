@@ -88,7 +88,8 @@ public class TurWEMCommander {
 
     public static void main(String... argv) {
         TurWEMCommander main = new TurWEMCommander();
-
+        jCommander.getConsole().println("Viglet Turing WEM Indexer Tool." +
+                TurWEMCommander.class.getPackage().getImplementationVersion());
         jCommander.addObject(main);
 
         try {
@@ -97,8 +98,6 @@ public class TurWEMCommander {
                 jCommander.usage();
                 return;
             }
-            jCommander.getConsole().println("Viglet Turing WEM Indexer Tool.");
-
             main.run();
         } catch (ParameterException e) {
             log.info("Error: {}", e.getLocalizedMessage());
