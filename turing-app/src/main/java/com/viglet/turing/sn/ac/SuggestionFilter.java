@@ -3,7 +3,6 @@ package com.viglet.turing.sn.ac;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * The {@code SuggestionFilter} class is responsible for filtering a list of
