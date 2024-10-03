@@ -24,7 +24,7 @@ import com.google.inject.Inject;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
+import java.util.Enumeration;
 
 @Component
 public class TurSNQueue {
@@ -36,7 +36,14 @@ public class TurSNQueue {
 	}
 
 	public Integer getQueueSize() {
-		return jmsTemplate.browseSelected(TurSNConstants.INDEXING_QUEUE, (s, qb) ->
-				Collections.list(qb.getEnumeration()).size());
+		return jmsTemplate.browse(TurSNConstants.INDEXING_QUEUE, (session, browser) -> {
+			Enumeration<?> messages = browser.getEnumeration();
+			int total = 0;
+			while (messages.hasMoreElements()) {
+				messages.nextElement();
+				total++;
+			}
+			return total;
+		});
 	}
 }

@@ -63,8 +63,14 @@ public class TurCommonsUtils {
     }
 
     public static boolean isValidUrl(URL url) {
-        UrlValidator urlValidator = new UrlValidator();
-        return urlValidator.isValid(url.toString());
+
+        UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_LOCAL_URLS);
+        if (urlValidator.isValid(url.toString())) {
+            return true;
+        } else {
+            log.error("Invalid URL: {}", url);
+            return false;
+        }
     }
     public static String html2Text(String text) {
         return Jsoup.parse(text).text();
