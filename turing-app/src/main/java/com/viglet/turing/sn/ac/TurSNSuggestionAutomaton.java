@@ -15,12 +15,12 @@ import java.util.*;
  * <ul>
  * <li>{@link #TurSNSuggestionAutomaton()}: Constructor that builds the
  * automaton.</li>
- * <li>{@link #run(String, int, List)}: Runs the automaton on a given
+ * <li>{@link #isAddSuggestion(String, int, List)}: Runs the automaton on a given
  * suggestion, number of words from query, and stop words list.</li>
  * <li>{@link #getTokenType(List, String, boolean)}: Determines the token type
  * of a given token.</li>
  * </ul>
-  *
+ *
  * @author Gabriel F. Gomazako
  * @since 0.3.9
  */
@@ -49,7 +49,7 @@ public class TurSNSuggestionAutomaton {
         State accept = new State(ACCEPT, State.StateType.ACCEPT);
         State reject = new State(ERROR, State.StateType.REJECT);
 
-        setTransitions(n0, n1, reject,reject, n2);
+        setTransitions(n0, n1, reject, reject, n2);
         setTransitions(n1, reject, reject, accept, n2);
         setTransitions(n2, n3, n2, reject, n2);
         setTransitions(n3, reject, reject, accept, reject);
@@ -67,12 +67,12 @@ public class TurSNSuggestionAutomaton {
     /**
      * Runs the suggestion automaton to determine if a given suggestion is valid.
      *
-     * @param suggestion the suggestion string to be evaluated.
+     * @param suggestion             the suggestion string to be evaluated.
      * @param numberOfWordsFromQuery the number of words from the current query. It will be used to know how many words the suggestion should have.
-     * @param stopWords a list of stop words.
+     * @param stopWords              a list of stop words.
      * @return {@code true} if the suggestion is valid, according to the automaton rules, {@code false} otherwise.
      */
-    public boolean run(String suggestion, int numberOfWordsFromQuery, List<String> stopWords) {
+    public boolean isAddSuggestion(String suggestion, int numberOfWordsFromQuery, List<String> stopWords) {
         // TOP -> [ "Hello", "World" ]
         Deque<String> tokensDeque = new ArrayDeque<>(List.of(suggestion.split(" ")));
 
@@ -94,7 +94,7 @@ public class TurSNSuggestionAutomaton {
         boolean firstTokenIsStopWord = stopWords.contains(tokensDeque.peek());
 
         if (tokensDeque.isEmpty()) {
-            log.warn("Suggestion is empty.");
+            log.debug("Suggestion is empty.");
             return false;
         }
 

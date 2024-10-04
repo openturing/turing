@@ -102,7 +102,7 @@ public class TurSNSuggestionFilter {
             case AUTOMATON:
                 TurSNSuggestionAutomaton automaton = new TurSNSuggestionAutomaton();
                 for (String suggestion : suggestions) {
-                    if (automaton.run(suggestion, numberOfWordsFromQuery, stopWords)) {
+                    if (automaton.isAddSuggestion(suggestion, numberOfWordsFromQuery, stopWords)) {
                         suggestionsFiltered.add(suggestion);
                     }
                 }
