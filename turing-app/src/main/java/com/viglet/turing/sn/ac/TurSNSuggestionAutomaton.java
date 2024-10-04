@@ -13,7 +13,7 @@ import java.util.*;
  * Methods:
  * </p>
  * <ul>
- * <li>{@link #SuggestionAutomaton()}: Constructor that builds the
+ * <li>{@link #TurSNSuggestionAutomaton()}: Constructor that builds the
  * automaton.</li>
  * <li>{@link #run(String, int, List)}: Runs the automaton on a given
  * suggestion, number of words from query, and stop words list.</li>
@@ -25,10 +25,16 @@ import java.util.*;
  * @since 0.3.9
  */
 @Slf4j
-public class SuggestionAutomaton {
+public class TurSNSuggestionAutomaton {
+    public static final String N0 = "N0";
+    public static final String N1 = "N1";
+    public static final String N2 = "N2";
+    public static final String N3 = "N3";
+    public static final String ACCEPT = "Accept";
+    public static final String ERROR = "Error";
     private State initialState;
 
-    public SuggestionAutomaton() {
+    public TurSNSuggestionAutomaton() {
         buildAutomaton();
     }
 
@@ -36,43 +42,35 @@ public class SuggestionAutomaton {
      * This constructs the finite state machine structure and binds to <code>initialState</code> parameter.
      */
     private void buildAutomaton() {
-        State n0 = new State("N0");
-        State n1 = new State("N1");
-        State n2 = new State("N2");
-        State n3 = new State("N3");
-        State accept = new State("Accept", State.StateType.ACCEPT);
-        State reject = new State("Error", State.StateType.REJECT);
+        State n0 = new State(N0);
+        State n1 = new State(N1);
+        State n2 = new State(N2);
+        State n3 = new State(N3);
+        State accept = new State(ACCEPT, State.StateType.ACCEPT);
+        State reject = new State(ERROR, State.StateType.REJECT);
 
-        n0.transitions.put(TokenType.WORD, n1);
-        n0.transitions.put(TokenType.STOP_WORD, reject);
-        n0.transitions.put(TokenType.EMPTY, reject);
-        n0.transitions.put(TokenType.SPECIAL_STOP_WORD, n2);
-
-        n1.transitions.put(TokenType.WORD, reject);
-        n1.transitions.put(TokenType.EMPTY, accept);
-        n1.transitions.put(TokenType.STOP_WORD, reject);
-        n1.transitions.put(TokenType.SPECIAL_STOP_WORD, n2);
-
-        n2.transitions.put(TokenType.WORD, n3);
-        n2.transitions.put(TokenType.STOP_WORD, n2);
-        n2.transitions.put(TokenType.EMPTY, reject);
-        n2.transitions.put(TokenType.SPECIAL_STOP_WORD, n2);
-
-        n3.transitions.put(TokenType.WORD, reject);
-        n3.transitions.put(TokenType.STOP_WORD, reject);
-        n3.transitions.put(TokenType.EMPTY, accept);
-        n3.transitions.put(TokenType.SPECIAL_STOP_WORD, reject);
+        setTransitions(n0, n1, reject,reject, n2);
+        setTransitions(n1, reject, reject, accept, n2);
+        setTransitions(n2, n3, n2, reject, n2);
+        setTransitions(n3, reject, reject, accept, reject);
 
         this.initialState = n0;
+    }
+
+    private static void setTransitions(State state, State word, State stopWord, State empty, State specialStopWord) {
+        state.transitions.put(TokenType.WORD, word);
+        state.transitions.put(TokenType.STOP_WORD, stopWord);
+        state.transitions.put(TokenType.EMPTY, empty);
+        state.transitions.put(TokenType.SPECIAL_STOP_WORD, specialStopWord);
     }
 
     /**
      * Runs the suggestion automaton to determine if a given suggestion is valid.
      *
      * @param suggestion the suggestion string to be evaluated.
-     * @param numberOfWordsFromQuery the number of words from current query. It will be used to know how many words the suggestion should have.
+     * @param numberOfWordsFromQuery the number of words from the current query. It will be used to know how many words the suggestion should have.
      * @param stopWords a list of stop words.
-     * @return {@code true} if the suggestion is valid according to the automaton rules, {@code false} otherwise.
+     * @return {@code true} if the suggestion is valid, according to the automaton rules, {@code false} otherwise.
      */
     public boolean run(String suggestion, int numberOfWordsFromQuery, List<String> stopWords) {
         // TOP -> [ "Hello", "World" ]
@@ -85,8 +83,8 @@ public class SuggestionAutomaton {
 
         // The suggestions will always include the query, so we need to ignore it.
         int wordsToRemove = numberOfWordsFromQuery - 1;
-        // Query: "Hello my friend" -> numberOfWordsFromQuery = 3
-        // Query: "Hello my friend " -> numberOfWordsFromQuery = 4
+        // Query: "Hello my friend" → numberOfWordsFromQuery = 3
+        // Query: "Hello my friend " → numberOfWordsFromQuery = 4
         while (wordsToRemove > 0 && !tokensDeque.isEmpty()) {
             tokensDeque.pop();
             wordsToRemove--;
@@ -100,10 +98,10 @@ public class SuggestionAutomaton {
             return false;
         }
 
-        TokenType currentTokenType = null;
+        TokenType currentTokenType;
         State currentState = this.initialState;
-        log.info("Testing suggestion: {}", suggestion);
-        String currentToken = null;
+        log.debug("Testing suggestion: {}", suggestion);
+        String currentToken;
         while (true) {
             if (currentState.stateType == State.StateType.REJECT) {
                 return false;
@@ -114,8 +112,8 @@ public class SuggestionAutomaton {
             currentToken = tokensDeque.poll();
             currentTokenType = getTokenType(stopWords, currentToken, firstTokenIsStopWord);
 
-            log.info("Current token: {} - Type: {}", currentToken, currentTokenType);
-            log.info("Current state: {}", currentState.name);
+            log.debug("Current token: {} - Type: {}", currentToken, currentTokenType);
+            log.debug("Current state: {}", currentState.name);
 
             currentState = currentState.getNextState(currentTokenType);
         }
@@ -144,10 +142,10 @@ public class SuggestionAutomaton {
         EMPTY
     }
 
-    private class State {
-        private Map<TokenType, State> transitions = new EnumMap<>(TokenType.class);
-        private StateType stateType;
-        private String name;
+    private static class State {
+        private final Map<TokenType, State> transitions = new EnumMap<>(TokenType.class);
+        private final StateType stateType;
+        private final String name;
 
         private State(String name) {
             this.stateType = StateType.NORMAL;

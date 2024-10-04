@@ -1,5 +1,7 @@
 package com.viglet.turing.sn.ac;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -25,15 +27,17 @@ import java.util.*;
  * @since 0.3.9
  */
 @Slf4j
-public class SuggestionFilter {
+public class TurSNSuggestionFilter {
 
     private static final String SPACE_CHAR = " ";
     private final List<String> stopWords;
     private int numberOfWordsFromQuery = 0;
+    @Setter
+    @Getter
     private SuggestionFilterStrategy strategy;
     private boolean useTermsQueryEqualsAutoComplete = true;
 
-    public SuggestionFilter(List<String> stopWords) {
+    public TurSNSuggestionFilter(List<String> stopWords) {
         this.stopWords = stopWords;
     }
 
@@ -79,7 +83,7 @@ public class SuggestionFilter {
      *
      * @param suggestions the list of suggestions to be filtered
      * @return a list of filtered suggestions based on the strategy
-     * @throws IllegalArgumentException if the suggestions list is null
+     * @throws IllegalArgumentException if the suggestion list is null
      */
     public List<String> filter(List<String> suggestions) {
         if (suggestions == null) {
@@ -96,7 +100,7 @@ public class SuggestionFilter {
                 }
                 break;
             case AUTOMATON:
-                SuggestionAutomaton automaton = new SuggestionAutomaton();
+                TurSNSuggestionAutomaton automaton = new TurSNSuggestionAutomaton();
                 for (String suggestion : suggestions) {
                     if (automaton.run(suggestion, numberOfWordsFromQuery, stopWords)) {
                         suggestionsFiltered.add(suggestion);
@@ -111,14 +115,6 @@ public class SuggestionFilter {
         return suggestionsFiltered;
     }
 
-    public SuggestionFilterStrategy getStrategy() {
-        return this.strategy;
-    }
-
-    public void setStrategy(SuggestionFilterStrategy strategy) {
-        this.strategy = strategy;
-    }
-
     private boolean defaultStrategy(String suggestion) {
         validateDefaultStrategyConfig();
 
@@ -130,8 +126,8 @@ public class SuggestionFilter {
         // Case: Autocompletes the current word being typed.
         // Example: Query: "Hel" suggestions = ["Hello", "Hello world", "help"] Filtered
         // suggestions = ["Hello", "help"]
-        // if query ends with space, number of words from query will have an extra word.
-        // so it will suggest the next word.
+        // if a query ends with space, the number of words from a query will have an extra word.
+        // So it will suggest the next word.
         boolean numberOfWordsIsEqual = (numberOfWordsFromQuery == numberOfWordsFromAutoCompleteItem);
 
         // Case: If the first word from the suggestion is a stop word, it will not be
