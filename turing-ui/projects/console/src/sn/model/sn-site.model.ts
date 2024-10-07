@@ -28,6 +28,7 @@ export interface TurSNSite {
   spellCheckFixes: number;
   spotlightWithResults: number;
   facetType: TurSNSiteFacetEnum;
+  facetItemType: TurSNSiteFacetEnum;
   facetSort: TurSNSiteFacetSortEnum;
   wildcardNoResults: number;
   wildcardAlways: number;

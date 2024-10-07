@@ -15,6 +15,7 @@ export interface TurSNSiteField {
   facetRange: TurSNSiteFacetRangeEnum;
   facetLocales: TurSNSiteFieldFacet[]
   facetType: TurSNSiteFacetFieldEnum;
+  facetItemType: TurSNSiteFacetFieldEnum;
   facetSort: TurSNSiteFacetFieldSortEnum;
   facetPosition: number;
   mlt: number;

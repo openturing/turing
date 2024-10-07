@@ -126,6 +126,7 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
             turSNSiteEdit.setFacet(turSNSite.getFacet());
             turSNSiteEdit.setFacetType(turSNSite.getFacetType());
+            turSNSiteEdit.setFacetItemType(turSNSite.getFacetItemType());
             turSNSiteEdit.setFacetSort(turSNSite.getFacetSort());
             turSNSiteEdit.setHl(turSNSite.getHl());
             turSNSiteEdit.setHlPost(turSNSite.getHlPost());
@@ -193,7 +194,8 @@ public class TurSNSiteAPI {
             TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
             turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
             long documentTotal = 0L;
-            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository.findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
+            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository
+                    .findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
                 Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
                 if (turSolrInstance.isPresent()) {
                     documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());

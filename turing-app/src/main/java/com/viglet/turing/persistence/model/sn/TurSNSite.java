@@ -102,6 +102,9 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	private TurSNSiteFacetEnum facetType = TurSNSiteFacetEnum.AND;
 
 	@Column
+	private TurSNSiteFacetEnum facetItemType = TurSNSiteFacetEnum.AND;
+
+	@Column
 	private TurSNSiteFacetSortEnum facetSort = TurSNSiteFacetSortEnum.COUNT;
 
 	@Column
