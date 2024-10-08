@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class TurSNTargetingRules {
@@ -49,12 +50,15 @@ public class TurSNTargetingRules {
 
         Map<String, List<String>> trMap = new HashMap<>();
 
-        trs.stream().filter(tr -> tr.contains(TWO_POINTS)).forEach(tr -> {
-            String attribute = tr.substring(0, tr.indexOf(TWO_POINTS));
-            String value = tr.substring(tr.indexOf(TWO_POINTS) + 1);
-            trMap.computeIfAbsent(attribute, k -> trMap.put(k, new ArrayList<>()));
-            trMap.get(attribute).add(value);
-        });
+        for (String tr : trs) {
+            if (tr.contains(TWO_POINTS)) {
+                String attribute = tr.substring(0, tr.indexOf(TWO_POINTS));
+                String value = tr.substring(tr.indexOf(TWO_POINTS) + 1);
+                if (!trMap.containsKey(attribute))
+                    trMap.put(attribute, new ArrayList<>());
+                trMap.get(attribute).add(value);
+            }
+        }
 
         String targetingRuleAND = EMPTY;
 
