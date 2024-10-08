@@ -51,9 +51,7 @@ import com.viglet.turing.se.result.TurSEGenericResults;
 import com.viglet.turing.se.result.TurSEGroup;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
-import com.viglet.turing.sn.TurSNFieldProcess;
-import com.viglet.turing.sn.TurSNFieldType;
-import com.viglet.turing.sn.TurSNUtils;
+import com.viglet.turing.sn.*;
 import com.viglet.turing.sn.tr.TurSNTargetingRuleMethod;
 import com.viglet.turing.sn.tr.TurSNTargetingRules;
 import com.viglet.turing.utils.TurSNSiteFieldUtils;
@@ -121,6 +119,7 @@ public class TurSolr {
     public static final String INDEX = "index";
     public static final String ROWS = "rows";
     public static final String OR = "OR";
+    public static final String NO_FACET_NAME = "__no_facet_name__";
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNTargetingRules turSNTargetingRules;
     private final TurSNSiteFieldUtils turSNSiteFieldUtils;
@@ -284,28 +283,6 @@ public class TurSolr {
                 .map(QueryResponse::getResults).orElse(new SolrDocumentList());
     }
 
-    /**
-     * Example SpellCheckResponse for the term "batata":
-     *
-     * <pre>
-     * "spellcheck": {
-     *   "suggestions": [
-     *     "batata", {
-     *       "numFound": 49,
-     *       "startOffset": 0,
-     *       "endOffset": 8,
-     *       "suggestion": [
-     *         "batata doce",
-     *         "batata baroa",
-     *         "batata baroa palitos",
-     *         "batata baroa palitos de",
-     *          ...
-     *       ]
-     *     }
-     *   ]
-     * }
-     * </pre>
-     */
     public SpellCheckResponse autoComplete(TurSolrInstance turSolrInstance, String term) {
         return executeSolrQuery(turSolrInstance, new SolrQuery().setRequestHandler(TUR_SUGGEST).setQuery(term))
                 .map(QueryResponse::getSpellCheckResponse).orElse(null);
@@ -380,7 +357,7 @@ public class TurSolr {
             prepareBoostQuery(turSNSite, query);
             return executeSolrQueryFromSN(turSolrInstance, turSNSite, turSEParameters, query,
                     prepareQueryMLT(turSNSite, query),
-                    prepareQueryFacet(turSNSite, query, turSEParameters.getFilterQueries().getOperator()),
+                    prepareQueryFacet(turSNSite, query, turSEParameters.getFilterQueries()),
                     prepareQueryHL(turSNSite, query),
                     turSESpellCheckResult);
         }).orElse(Optional.empty());
@@ -688,12 +665,9 @@ public class TurSolr {
                                 fields.forEach(fieldExtension -> facetResults.stream()
                                         .filter(facetResult -> fieldExtension.getFacetPosition() != null &&
                                                 facetResult.getFacet().equals(fieldExtension.getName())).findFirst()
-                                        .ifPresent(facetResult ->
-                                                facetResult.setFacetPosition(fieldExtension.getFacetPosition()))));
-                turSEResults.setFacetResults(facetResults
-                        .stream()
-                        .sorted(Comparator.comparing(TurSEFacetResult::getFacetPosition))
-                        .toList());
+                                        .ifPresent(facetResult -> facetResult.setFacetPosition(fieldExtension.getFacetPosition()))));
+                turSEResults.setFacetResults(facetResults.stream().sorted(Comparator.comparing(TurSEFacetResult::getFacetPosition)).
+                        collect(Collectors.toList()));
             });
         }
     }
@@ -809,45 +783,65 @@ public class TurSolr {
                                          TurSNSite turSNSite) {
         Optional.of(getFilterQueryMap(turSEFilterQueryParameters, turSNSite))
                 .filter(fqMap -> !CollectionUtils.isEmpty(fqMap))
-                .ifPresent(fqMap -> query.addFilterQuery(String.format("%s(%s)",
+                .ifPresent(facetMapForFilterQuery -> query.addFilterQuery(String.format("%s(%s)",
                         getFacetTypeConditionInFilterQuery(turSEFilterQueryParameters, turSNSite),
-                        setFilterQueryString(setFilterQueryMapModified(turSNSite, fqMap)))));
+                        setFilterQueryString(setFilterQueryMapModified(turSNSite, facetMapForFilterQuery)))));
     }
 
     @NotNull
-    private Map<TurSNSiteFacetFieldEnum, List<String>> setFilterQueryMapModified(
+    private TurSNFacetMapForFilterQuery setFilterQueryMapModified(
             TurSNSite turSNSite,
-            Map<TurSNSiteFacetFieldEnum, List<String>> filterQueryMap) {
-        Map<TurSNSiteFacetFieldEnum, List<String>> filterQueryMapModified = new EnumMap<>(TurSNSiteFacetFieldEnum.class);
-        getFilterQueryByDateRange(filterQueryMap, turSNSite).forEach((key, value) -> {
-            if (filterQueryMapModified.containsKey(key)) {
-                filterQueryMapModified.get(key).addAll(getFilterQueryValue(value));
+            TurSNFacetMapForFilterQuery facetMapForFilterQuery) {
+        TurSNFacetMapForFilterQuery filterQueryMapModified = new TurSNFacetMapForFilterQuery();
+        getFilterQueryMap(facetMapForFilterQuery, turSNSite).forEach((facetName, properties) -> {
+            if (filterQueryMapModified.containsKey(facetName)) {
+                filterQueryMapModified.get(facetName).getFacetItems()
+                        .addAll(getFilterQueryValue(properties.getFacetItems()));
             } else {
-                filterQueryMapModified.put(key, getFilterQueryValue(value));
+                filterQueryMapModified.put(facetName, TurSNFacetProperties.builder()
+                        .facetType(properties.getFacetType())
+                        .facetItemType(properties.getFacetItemType())
+                        .facetItems(getFilterQueryValue(properties.getFacetItems()))
+                        .build());
             }
         });
         return filterQueryMapModified;
     }
 
     @NotNull
-    private static StringBuilder setFilterQueryString(Map<TurSNSiteFacetFieldEnum, List<String>> filterQueryMapModified) {
+    private static StringBuilder setFilterQueryString(TurSNFacetMapForFilterQuery facetMapForFilterQuery) {
+        List<String> facetsAnd = new ArrayList<>();
+        List<String> facetsOr = new ArrayList<>();
         StringBuilder filterQueryString = new StringBuilder();
-        if (filterQueryMapModified.containsKey(TurSNSiteFacetFieldEnum.OR)) {
-            filterQueryString.append(String.format("(%s)",
-                    String.join(betweenSpaces(OR), filterQueryMapModified.get(TurSNSiteFacetFieldEnum.OR))));
-            if (filterQueryMapModified.containsKey(TurSNSiteFacetFieldEnum.AND)) {
-                filterQueryString.append(betweenSpaces(AND));
+        facetMapForFilterQuery.forEach((f, properties) -> {
+            StringBuilder filterQueryStringItems = new StringBuilder();
+            if (properties.getFacetItemType().equals(TurSNSiteFacetFieldEnum.OR)) {
+                filterQueryStringItems.append(String.format("(%s)",
+                        String.join(betweenSpaces(OR), properties.getFacetItems())));
+            } else {
+                filterQueryStringItems.append(String.format("(%s)",
+                        String.join(betweenSpaces(AND), properties.getFacetItems())));
+            }
+            if (properties.getFacetItemType().equals(TurSNSiteFacetFieldEnum.OR)) {
+                facetsOr.add(filterQueryStringItems.toString());
+            } else {
+                facetsAnd.add(filterQueryStringItems.toString());
+            }
+        });
+        if (!facetsAnd.isEmpty()) {
+            filterQueryString.append(String.join(betweenSpaces(AND), facetsAnd));
+            if (!facetsOr.isEmpty()) {
+                filterQueryString.append(betweenSpaces(OR));
             }
         }
-        if (filterQueryMapModified.containsKey(TurSNSiteFacetFieldEnum.AND)) {
-            filterQueryString.append(String.join(betweenSpaces(AND),
-                    filterQueryMapModified.get(TurSNSiteFacetFieldEnum.AND)));
+        if (!facetsOr.isEmpty()) {
+            filterQueryString.append(String.join(betweenSpaces(OR), facetsOr));
         }
         return filterQueryString;
     }
 
     private static String betweenSpaces(String operator) {
-        return " %s " .formatted(operator);
+        return " %s ".formatted(operator);
     }
 
     @NotNull
@@ -857,53 +851,75 @@ public class TurSolr {
                 ).toList();
     }
 
-    private Map<TurSNSiteFacetFieldEnum, List<String>> getFilterQueryMap(
+    private TurSNFacetMapForFilterQuery getFilterQueryMap(
             TurSEFilterQueryParameters filterQueries, TurSNSite turSNSite) {
-        Map<TurSNSiteFacetFieldEnum, List<String>> fqMap = new EnumMap<>(TurSNSiteFacetFieldEnum.class);
+        TurSNFacetMapForFilterQuery facetMapForFilterQuery = new TurSNFacetMapForFilterQuery();
         List<TurSNSiteFieldExt> enabledFacets = turSNSiteFieldExtRepository
                 .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
         Optional.ofNullable(filterQueries)
                 .ifPresent(fq -> {
                     Optional.ofNullable(fq.getFq()).ifPresent(f -> f.forEach(fItem ->
-                            addEnabledFacetItem(TurSNSiteFacetFieldEnum.DEFAULT, fItem, enabledFacets, fqMap, turSNSite,
-                                    filterQueries.getOperator())));
+                            addEnabledFacetItem(TurSNSiteFacetFieldEnum.DEFAULT, fItem, enabledFacets,
+                                    facetMapForFilterQuery, turSNSite, filterQueries.getOperator())));
                     Optional.ofNullable(fq.getAnd()).ifPresent(f -> f.forEach(fItem ->
-                            addEnabledFacetItem(TurSNSiteFacetFieldEnum.AND, fItem, enabledFacets, fqMap, turSNSite,
-                                    filterQueries.getOperator())));
+                            addEnabledFacetItem(TurSNSiteFacetFieldEnum.AND, fItem, enabledFacets,
+                                    facetMapForFilterQuery, turSNSite, filterQueries.getOperator())));
                     Optional.ofNullable(fq.getOr()).ifPresent(f -> f.forEach(fItem ->
-                            addEnabledFacetItem(TurSNSiteFacetFieldEnum.OR, fItem, enabledFacets, fqMap, turSNSite,
-                                    filterQueries.getOperator())));
+                            addEnabledFacetItem(TurSNSiteFacetFieldEnum.OR, fItem, enabledFacets,
+                                    facetMapForFilterQuery, turSNSite, filterQueries.getOperator())));
                 });
-        return fqMap;
+        return facetMapForFilterQuery;
     }
 
-    private static void addEnabledFacetItem(TurSNSiteFacetFieldEnum turSNSiteFacetFieldEnum, String fq,
+    private static void addEnabledFacetItem(TurSNSiteFacetFieldEnum facetType, String fq,
                                             List<TurSNSiteFieldExt> enabledFacets,
-                                            Map<TurSNSiteFacetFieldEnum, List<String>> fqMap, TurSNSite turSNSite,
-                                            TurSNFilterQueryOperator operator) {
+                                            TurSNFacetMapForFilterQuery facetMapForFilterQuery, TurSNSite turSNSite,
+                                            TurSNFilterQueryOperator filterQueryOperator) {
 
         TurSolrUtils.getQueryKeyValue(fq).flatMap(kv ->
                         enabledFacets.stream()
                                 .filter(facet -> facet.getName().equals(kv.getKey()))
                                 .findFirst())
                 .ifPresentOrElse(facet ->
-                        {
-                            if (isFacetTypeDefault(turSNSiteFacetFieldEnum))
-                                addEnabledFacetItem(getFacetType(facet, turSNSite, operator), fqMap, fq);
-                            else addEnabledFacetItem(turSNSiteFacetFieldEnum, fqMap, fq);
-                        },
+<<<<<<< Updated upstream
+                                addEnabledFacetItem(isFacetTypeDefault(turSNSiteFacetFieldEnum) ?
+                                        getFacetType(facet, turSNSite, operator) :
+                                        turSNSiteFacetFieldEnum, fqMap, fq),
                         () -> addEnabledFacetItem(getFacetType(turSNSite, operator), fqMap, fq));
+=======
+                        {
+                            if (isFacetTypeDefault(facetType)) {
+                                addEnabledFacetItem(facet.getName(), getFacetType(facet, turSNSite, filterQueryOperator),
+                                        getFacetItemType(facet, turSNSite),
+                                        facetMapForFilterQuery, fq);
+                            } else {
+                                addEnabledFacetItem(facet.getName(), facetType,
+                                        getFacetItemType(facet, turSNSite),
+                                        facetMapForFilterQuery, fq);
+                            }
+                        },
+                        () -> addEnabledFacetItem(NO_FACET_NAME
+                                        .concat(getFacetType(turSNSite, filterQueryOperator).toString()),
+                                getFacetType(turSNSite, filterQueryOperator),
+                                getFacetItemTypeFromSite(turSNSite),
+                                facetMapForFilterQuery, fq));
+>>>>>>> Stashed changes
 
     }
 
-    private static void addEnabledFacetItem(TurSNSiteFacetFieldEnum facetType,
-                                            Map<TurSNSiteFacetFieldEnum, List<String>> fqMap, String fq) {
-        if (fqMap.containsKey(facetType)) {
-            fqMap.get(facetType).add(fq);
+    private static void addEnabledFacetItem(String facetName, TurSNSiteFacetFieldEnum facetType,
+                                            TurSNSiteFacetFieldEnum facetItemType,
+                                            TurSNFacetMapForFilterQuery facetMapForFilterQuery, String fq) {
+
+        if (facetMapForFilterQuery.containsKey(facetName)) {
+            facetMapForFilterQuery.get(facetName).getFacetItems().add(fq);
         } else {
-            List<String> list = new ArrayList<>();
-            list.add(fq);
-            fqMap.put(facetType, list);
+            facetMapForFilterQuery.put(facetName,
+                    TurSNFacetProperties.builder()
+                            .facetType(facetType)
+                            .facetItemType(facetItemType)
+                            .facetItems(new ArrayList<>(Collections.singletonList(fq)))
+                            .build());
         }
     }
 
@@ -911,13 +927,20 @@ public class TurSolr {
         return turSNSiteFacetFieldEnum == null || turSNSiteFacetFieldEnum.equals(TurSNSiteFacetFieldEnum.DEFAULT);
     }
 
+    private static TurSNSiteFacetFieldEnum getFacetItemType(TurSNSiteFieldExt facet, TurSNSite turSNSite) {
+        if (isFacetTypeDefault(facet.getFacetType()))
+            return getFacetItemTypeFromSite(turSNSite);
+        return facet.getFacetItemType();
+
+    }
+
     private static TurSNSiteFacetFieldEnum getFacetType(TurSNSiteFieldExt facet, TurSNSite turSNSite,
                                                         TurSNFilterQueryOperator operator) {
-        if (operatorIsNotEmpty(operator))
-            return getFaceTypeFromOperator(operator);
-        if (isFacetTypeDefault(facet.getFacetType()))
-            return getFacetTypeFromSite(turSNSite);
-        return facet.getFacetType();
+        return operatorIsNotEmpty(operator) ?
+                getFaceTypeFromOperator(operator) :
+                isFacetTypeDefault(facet.getFacetType()) ?
+                        getFacetTypeFromSite(turSNSite) :
+                        facet.getFacetType();
 
     }
 
@@ -938,6 +961,13 @@ public class TurSolr {
         return operator != null && !operator.equals(TurSNFilterQueryOperator.NONE);
     }
 
+    private static TurSNSiteFacetFieldEnum getFacetItemTypeFromSite(TurSNSite turSNSite) {
+        return switch (turSNSite.getFacetItemType()) {
+            case OR -> TurSNSiteFacetFieldEnum.OR;
+            case null, default -> TurSNSiteFacetFieldEnum.AND;
+        };
+    }
+
     private static TurSNSiteFacetFieldEnum getFacetTypeFromSite(TurSNSite turSNSite) {
         return switch (turSNSite.getFacetType()) {
             case OR -> TurSNSiteFacetFieldEnum.OR;
@@ -945,26 +975,36 @@ public class TurSolr {
         };
     }
 
-    private Map<TurSNSiteFacetFieldEnum, List<String>> getFilterQueryByDateRange(
-            Map<TurSNSiteFacetFieldEnum, List<String>> filterQueryMap,
+    private TurSNFacetMapForFilterQuery getFilterQueryMap(
+            TurSNFacetMapForFilterQuery facetMapForFilterQuery,
             TurSNSite turSNSite) {
         List<TurSNSiteFieldExt> dateFacet = turSNSiteFieldExtRepository
                 .findByTurSNSiteAndFacetAndEnabledAndType(turSNSite, 1, 1, TurSEFieldType.DATE);
         if (!dateFacet.isEmpty()) {
-            Map<TurSNSiteFacetFieldEnum, List<String>> fqMapFormatted = new EnumMap<>(TurSNSiteFacetFieldEnum.class);
-            filterQueryMap.forEach((conditional, fq) -> {
-                if (fqMapFormatted.containsKey(conditional)) {
-                    fqMapFormatted.get(conditional).addAll(setFilterQueryRangeValue(fq, dateFacet));
-                } else {
-                    fqMapFormatted.put(conditional,
-                            setFilterQueryRangeValue(fq, dateFacet));
-                }
-            });
-            return fqMapFormatted;
+            return getFilterQueryByDateRange(facetMapForFilterQuery, dateFacet);
         } else {
-            return filterQueryMap;
+            return facetMapForFilterQuery;
         }
 
+    }
+
+    @NotNull
+    private static TurSNFacetMapForFilterQuery getFilterQueryByDateRange(
+            TurSNFacetMapForFilterQuery facetMapForFilterQuery, List<TurSNSiteFieldExt> dateFacet) {
+        TurSNFacetMapForFilterQuery facetMapForFilterQueryFormatted = new TurSNFacetMapForFilterQuery();
+        facetMapForFilterQuery.forEach((facetName, properties) -> {
+            if (facetMapForFilterQueryFormatted.containsKey(facetName)) {
+                facetMapForFilterQueryFormatted.get(facetName)
+                        .getFacetItems().addAll(setFilterQueryRangeValue(properties.getFacetItems(), dateFacet));
+            } else {
+                facetMapForFilterQueryFormatted.put(facetName, TurSNFacetProperties.builder()
+                        .facetType(properties.getFacetType())
+                        .facetItemType(properties.getFacetItemType())
+                        .facetItems(setFilterQueryRangeValue(properties.getFacetItems(), dateFacet))
+                        .build());
+            }
+        });
+        return facetMapForFilterQueryFormatted;
     }
 
     @NotNull
@@ -1095,15 +1135,29 @@ public class TurSolr {
     }
 
     private static String setFacetTypeConditionInFacet(String query, TurSNSiteFieldExt turSNSiteFacetFieldExt,
-                                                       TurSNSite turSNSite, TurSNFilterQueryOperator operator) {
-        return switch (getFacetType(turSNSiteFacetFieldExt, turSNSite, operator)) {
-            case OR -> FACET_OR.concat(query);
-            case null, default -> query;
-        };
+                                                       TurSNSite turSNSite, TurSEFilterQueryParameters queryParameters) {
+        TurSNSiteFacetFieldEnum facetType = getFacetType(turSNSiteFacetFieldExt, turSNSite, queryParameters.getOperator());
+        TurSNSiteFacetFieldEnum facetItemType = getFacetItemType(turSNSiteFacetFieldExt, turSNSite);
+        if (facetType.equals(TurSNSiteFacetFieldEnum.OR)) {
+            if (facetItemType.equals(TurSNSiteFacetFieldEnum.OR)) {
+                return FACET_OR.concat(query); //OK
+            } else {
+                return FACET_OR.concat(query);
+            }
+
+        } else {
+            if (facetItemType.equals(TurSNSiteFacetFieldEnum.OR)) {
+                // if faceta está no fq usa OR
+                return FACET_OR.concat(query);
+            } else {
+                return query; //OK
+            }
+        }
+
     }
 
     private List<TurSNSiteFieldExt> prepareQueryFacet(TurSNSite turSNSite,
-                                                      SolrQuery query, TurSNFilterQueryOperator operator) {
+                                                      SolrQuery query, TurSEFilterQueryParameters queryParameters) {
         List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList = turSNSiteFieldExtRepository
                 .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
         if (wasFacetConfigured(turSNSite, turSNSiteFacetFieldExtList)) {
@@ -1114,8 +1168,8 @@ public class TurSolr {
             turSNSiteFacetFieldExtList.forEach(turSNSiteFacetFieldExt -> {
                 setFacetSort(query, turSNSiteFacetFieldExt);
                 if (isDateRangeFacet(turSNSiteFacetFieldExt))
-                    addFacetRange(turSNSite, query, turSNSiteFacetFieldExt, operator);
-                else addFacetField(turSNSite, query, turSNSiteFacetFieldExt, operator);
+                    addFacetRange(turSNSite, query, turSNSiteFacetFieldExt, queryParameters);
+                else addFacetField(turSNSite, query, turSNSiteFacetFieldExt, queryParameters);
             });
         }
         return turSNSiteFacetFieldExtList;
@@ -1137,14 +1191,15 @@ public class TurSolr {
     }
 
     private static void addFacetField(TurSNSite turSNSite, SolrQuery query,
-                                      TurSNSiteFieldExt turSNSiteFacetFieldExt, TurSNFilterQueryOperator operator) {
+                                      TurSNSiteFieldExt turSNSiteFacetFieldExt, TurSEFilterQueryParameters filterQueryParameters) {
         query.addFacetField(setFacetTypeConditionInFacet(
                 setEntityPrefix(turSNSiteFacetFieldExt)
-                        .concat(turSNSiteFacetFieldExt.getName()), turSNSiteFacetFieldExt, turSNSite, operator));
+                        .concat(turSNSiteFacetFieldExt.getName()), turSNSiteFacetFieldExt, turSNSite, filterQueryParameters));
     }
 
     private static void addFacetRange(TurSNSite turSNSite, SolrQuery query,
-                                      TurSNSiteFieldExt turSNSiteFacetFieldExt, TurSNFilterQueryOperator operator) {
+                                      TurSNSiteFieldExt turSNSiteFacetFieldExt,
+                                      TurSEFilterQueryParameters filterQueryParameters) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
         cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -1160,7 +1215,7 @@ public class TurSolr {
         query.set("f." + turSNSiteFacetFieldExt.getName() + ".facet.range.end",
                 solrDateFormatter().format(DateUtils.addYears(cal.getTime(), 100)));
         query.set("facet.range",
-                setFacetTypeConditionInFacet(turSNSiteFacetFieldExt.getName(), turSNSiteFacetFieldExt, turSNSite, operator));
+                setFacetTypeConditionInFacet(turSNSiteFacetFieldExt.getName(), turSNSiteFacetFieldExt, turSNSite, filterQueryParameters));
     }
 
     @NotNull
