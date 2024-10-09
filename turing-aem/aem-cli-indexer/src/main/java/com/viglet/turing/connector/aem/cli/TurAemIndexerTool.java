@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.aem;
+package com.viglet.turing.connector.aem.cli;
 
 import ch.qos.logback.classic.Level;
 import com.beust.jcommander.JCommander;
@@ -30,17 +30,17 @@ import com.viglet.turing.client.sn.job.*;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
+import com.viglet.turing.connector.aem.cli.conf.AemHandlerConfiguration;
+import com.viglet.turing.connector.aem.cli.persistence.TurAemIndexing;
+import com.viglet.turing.connector.aem.cli.persistence.TurAemIndexingDAO;
+import com.viglet.turing.connector.aem.cli.persistence.TurAemSystem;
+import com.viglet.turing.connector.aem.cli.persistence.TurAemSystemDAO;
 import com.viglet.turing.connector.aem.commons.TurAemAttrProcess;
 import com.viglet.turing.connector.aem.commons.TurAemCommonsUtils;
 import com.viglet.turing.connector.aem.commons.TurAemObject;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.aem.commons.ext.TurAemExtDeltaDate;
 import com.viglet.turing.connector.aem.commons.ext.TurAemExtDeltaDateInterface;
-import com.viglet.turing.connector.aem.conf.AemHandlerConfiguration;
-import com.viglet.turing.connector.aem.persistence.TurAemIndexing;
-import com.viglet.turing.connector.aem.persistence.TurAemIndexingDAO;
-import com.viglet.turing.connector.aem.persistence.TurAemSystem;
-import com.viglet.turing.connector.aem.persistence.TurAemSystemDAO;
 import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueMap;
 import com.viglet.turing.connector.cms.mappers.TurCmsContentDefinitionProcess;
 import com.viglet.turing.connector.cms.mappers.TurCmsModel;
