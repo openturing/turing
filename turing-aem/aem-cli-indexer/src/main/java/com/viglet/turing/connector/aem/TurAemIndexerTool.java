@@ -48,6 +48,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
 
@@ -117,7 +118,7 @@ public class TurAemIndexerTool {
 
     public static void main(String... argv) {
         jCommander.getConsole().println("Viglet Turing AEM Indexer Tool. " +
-                TurAemIndexerTool.class.getPackage().getImplementationVersion() );
+                TurAemIndexerTool.class.getPackage().getImplementationVersion());
         TurAemIndexerTool turAEMIndexerTool = new TurAemIndexerTool();
         jCommander.addObject(turAEMIndexerTool);
         try {
@@ -282,12 +283,17 @@ public class TurAemIndexerTool {
 
     private void getNodeFromJson(String nodePath, JSONObject jsonObject, TurAemSourceContext turAemSourceContext,
                                  long start) {
-        if (isTypeEqualContentType(jsonObject, turAemSourceContext)) {
-            turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(turAemSourceContext.getContentType())
-                    .ifPresent(model ->
-                            prepareIndexObject(model, new TurAemObject(nodePath, jsonObject),
-                                    turCmsContentDefinitionProcess.getTargetAttrDefinitions(), turAemSourceContext, start));
-        }
+        TurAemObject aemObject = new TurAemObject(nodePath, jsonObject);
+        Optional.of(aemObject).ifPresentOrElse(o -> {
+            if (isTypeEqualContentType(jsonObject, turAemSourceContext)) {
+                turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(turAemSourceContext.getContentType())
+                        .ifPresent(model ->
+                                prepareIndexObject(model, new TurAemObject(nodePath, jsonObject),
+                                        turCmsContentDefinitionProcess.getTargetAttrDefinitions(), turAemSourceContext, start));
+            }
+        }, () -> log.info("AEM object ({}) is null deltaId = {}",
+                turAemSourceContext.getId(), deltaId));
+
         getChildrenFromJson(nodePath, jsonObject, turAemSourceContext, start);
     }
 
@@ -405,13 +411,14 @@ public class TurAemIndexerTool {
                 turAemSourceContext);
     }
 
-    private boolean ddlNeedBeReIndexed(TurAemObject aemObject, TurAemSourceContext turAemSourceContext, Date deltaDate) {
+    private boolean ddlNeedBeReIndexed(TurAemObject aemObject, TurAemSourceContext turAemSourceContext,
+                                       Date deltaDate) {
         return !StringUtils.isEmpty(aemObject.getPath()) &&
                 turAemIndexingDAO.existsByAemIdAndGroupAndDateNotEqual(aemObject.getPath(),
                         turAemSourceContext.getId(), deltaDate);
     }
 
-    private void indexObject(TurAemObject aemObject, TurCmsModel turCmsModel,
+    private void indexObject(@NotNull TurAemObject aemObject, TurCmsModel turCmsModel,
                              List<TurSNAttributeSpec> turSNAttributeSpecList,
                              TurAemSourceContext turAemSourceContext,
                              Long start) {
