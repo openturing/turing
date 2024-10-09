@@ -822,7 +822,7 @@ public class TurSolr {
                 filterQueryStringItems.append(String.format("(%s)",
                         String.join(betweenSpaces(AND), properties.getFacetItems())));
             }
-            if (properties.getFacetItemType().equals(TurSNSiteFacetFieldEnum.OR)) {
+            if (properties.getFacetType().equals(TurSNSiteFacetFieldEnum.OR)) {
                 facetsOr.add(filterQueryStringItems.toString());
             } else {
                 facetsAnd.add(filterQueryStringItems.toString());
@@ -881,12 +881,6 @@ public class TurSolr {
                                 .filter(facet -> facet.getName().equals(kv.getKey()))
                                 .findFirst())
                 .ifPresentOrElse(facet ->
-<<<<<<< Updated upstream
-                                addEnabledFacetItem(isFacetTypeDefault(turSNSiteFacetFieldEnum) ?
-                                        getFacetType(facet, turSNSite, operator) :
-                                        turSNSiteFacetFieldEnum, fqMap, fq),
-                        () -> addEnabledFacetItem(getFacetType(turSNSite, operator), fqMap, fq));
-=======
                         {
                             if (isFacetTypeDefault(facetType)) {
                                 addEnabledFacetItem(facet.getName(), getFacetType(facet, turSNSite, filterQueryOperator),
@@ -903,7 +897,6 @@ public class TurSolr {
                                 getFacetType(turSNSite, filterQueryOperator),
                                 getFacetItemTypeFromSite(turSNSite),
                                 facetMapForFilterQuery, fq));
->>>>>>> Stashed changes
 
     }
 
@@ -1089,14 +1082,14 @@ public class TurSolr {
 
     private static String getFacetTypeConditionInFilterQuery(TurSEFilterQueryParameters turSEFilterQueryParameters,
                                                              TurSNSite turSNSite) {
-        if (isOr(turSEFilterQueryParameters.getOperator(), turSNSite)) {
+         if (isOr(turSEFilterQueryParameters.getOperator(), turSNSite)) {
             return FILTER_QUERY_OR;
         }
         return EMPTY;
     }
 
     private static boolean isOr(TurSNFilterQueryOperator operator, TurSNSite turSNSite) {
-        return (turSNSite.getFacetType() == TurSNSiteFacetEnum.OR
+        return (turSNSite.getFacetItemType() == TurSNSiteFacetEnum.OR
                 && !operator.equals(TurSNFilterQueryOperator.AND))
                 || operator.equals(TurSNFilterQueryOperator.OR);
     }
@@ -1138,22 +1131,44 @@ public class TurSolr {
                                                        TurSNSite turSNSite, TurSEFilterQueryParameters queryParameters) {
         TurSNSiteFacetFieldEnum facetType = getFacetType(turSNSiteFacetFieldExt, turSNSite, queryParameters.getOperator());
         TurSNSiteFacetFieldEnum facetItemType = getFacetItemType(turSNSiteFacetFieldExt, turSNSite);
+        List<String> fqFields = getFqFields(queryParameters);
         if (facetType.equals(TurSNSiteFacetFieldEnum.OR)) {
             if (facetItemType.equals(TurSNSiteFacetFieldEnum.OR)) {
                 return FACET_OR.concat(query); //OK
             } else {
                 return FACET_OR.concat(query);
             }
-
         } else {
             if (facetItemType.equals(TurSNSiteFacetFieldEnum.OR)) {
-                // if faceta está no fq usa OR
-                return FACET_OR.concat(query);
+                if (fqFields.contains(turSNSiteFacetFieldExt.getName())) {
+                    return FACET_OR.concat(query);
+                } else {
+                    return query;
+                }
             } else {
                 return query; //OK
             }
         }
 
+    }
+
+    @NotNull
+    private static List<String> getFqFields(TurSEFilterQueryParameters queryParameters) {
+        List<String> fqFields = new ArrayList<>();
+        fqFields.addAll(getFqFields(queryParameters.getFq()));
+        fqFields.addAll(getFqFields(queryParameters.getAnd()));
+        fqFields.addAll(getFqFields(queryParameters.getOr()));
+        return fqFields;
+    }
+
+    private static List<String> getFqFields(List<String> filterQueries) {
+        return Optional.ofNullable(filterQueries)
+                .map(fqOpt -> fqOpt.stream()
+                        .map(fq -> TurSolrUtils.getQueryKeyValue(fq)
+                                .map(KeyValue::getKey)
+                                .orElse(null))
+                        .toList())
+                .orElseGet(ArrayList::new);
     }
 
     private List<TurSNSiteFieldExt> prepareQueryFacet(TurSNSite turSNSite,

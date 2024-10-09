@@ -34,6 +34,7 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtFacetDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -128,15 +129,7 @@ public class TurSNSearchProcess {
                     .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1).stream()
                     .map(turSNSiteFieldExt -> {
                         TurSNSiteFieldExtDto turSNSiteFieldExtDto = new TurSNSiteFieldExtDto(turSNSiteFieldExt);
-                        turSNSiteFieldExtDto.setFacetLocales(
-                                new HashSet<>(
-                                        Collections.singletonList(turSNSiteFieldExtFacetRepository
-                                                .findByTurSNSiteFieldExtAndLocale(turSNSiteFieldExt, context.getLocale())
-                                                .stream().findFirst()
-                                                .orElse(TurSNSiteFieldExtFacet.builder()
-                                                        .locale(context.getLocale())
-                                                        .label(turSNSiteFieldExt.getFacetName())
-                                                        .build()))));
+                        turSNSiteFieldExtDto.setFacetLocales(getFacetLocales(context, turSNSiteFieldExt));
                         return turSNSiteFieldExtDto;
                     }).toList();
             Map<String, TurSNSiteFieldExtDto> facetMap = setFacetMap(turSNSiteFieldExtDtoList);
@@ -146,6 +139,18 @@ public class TurSNSearchProcess {
                 return getSearchBeanForResults(context, turSolrInstance, turSEResults, turSNSite, facetMap);
             }
         }).orElse(new TurSNSiteSearchBean());
+    }
+
+    @NotNull
+    private HashSet<TurSNSiteFieldExtFacet> getFacetLocales(TurSNSiteSearchContext context, TurSNSiteFieldExt turSNSiteFieldExt) {
+        return new HashSet<>(
+                Collections.singletonList(turSNSiteFieldExtFacetRepository
+                        .findByTurSNSiteFieldExtAndLocale(turSNSiteFieldExt, context.getLocale())
+                        .stream().findFirst()
+                        .orElse(TurSNSiteFieldExtFacet.builder()
+                                .locale(context.getLocale())
+                                .label(turSNSiteFieldExt.getFacetName())
+                                .build())));
     }
 
     private TurSNSiteSearchBean getSearchBeanForResults(TurSNSiteSearchContext context, TurSolrInstance turSolrInstance,
@@ -447,9 +452,9 @@ public class TurSNSearchProcess {
         return Collections.emptyList();
     }
 
-    private static boolean showFacetByFacetType(TurSNSite turSNSite) {
-        if (turSNSite.getFacetType() == null) return false;
-        else return switch (turSNSite.getFacetType()) {
+    private static boolean showFacetByFacetItemType(TurSNSite turSNSite) {
+        if (turSNSite.getFacetItemType() == null) return false;
+        else return switch (turSNSite.getFacetItemType()) {
             case OR -> true;
             case AND -> false;
         };
@@ -459,7 +464,7 @@ public class TurSNSearchProcess {
                                      Map<String, TurSNSiteFieldExtDto> facetMap,
                                      TurSEFacetResult facet, TurSNSite turSNSite) {
         return facetMap.containsKey(facet.getFacet())
-                && (!hiddenFilterQuery.contains(facet.getFacet()) || showFacetByFacetType(turSNSite))
+                && (!hiddenFilterQuery.contains(facet.getFacet()) || showFacetByFacetItemType(turSNSite))
                 && !facet.getTurSEFacetResultAttr().isEmpty();
     }
 
