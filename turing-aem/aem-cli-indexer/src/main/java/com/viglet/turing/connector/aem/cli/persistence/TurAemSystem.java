@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.aem.persistence;
+package com.viglet.turing.connector.aem.cli.persistence;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

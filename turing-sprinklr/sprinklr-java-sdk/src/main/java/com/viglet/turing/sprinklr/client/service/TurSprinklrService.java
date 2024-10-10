@@ -42,7 +42,6 @@ public class TurSprinklrService {
 
     /**
      * Sends a request and return a POJO from the json response.
-     * @author Alexandre
      * @param turSprinklrAccessToken Token for using Sprinklr API
      * @param endpoint The endpoint of API
      * @return Return de JSON response as a POJO from clazz type

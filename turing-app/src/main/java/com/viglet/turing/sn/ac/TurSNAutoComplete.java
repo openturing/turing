@@ -92,7 +92,7 @@ public class TurSNAutoComplete {
             List<String> autoCompleteList = turSEResults.getSuggestions().getFirst().getAlternatives();
             TurSNAutoCompleteListData autoCompleteListData = new TurSNAutoCompleteListData(turSEStopword.getStopWords(turSolrInstance));
 
-            SuggestionFilter suggestionFilter = new SuggestionFilter(autoCompleteListData.getStopWords());
+            TurSNSuggestionFilter suggestionFilter = new TurSNSuggestionFilter(autoCompleteListData.getStopWords());
             suggestionFilter.automatonStrategyConfig(numberOfWordsFromQuery);
             autoCompleteListFormatted = suggestionFilter.filter(autoCompleteList);
         }

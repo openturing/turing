@@ -196,6 +196,7 @@ public class TurSNSiteFieldExtAPI {
                 .facetName(turSNSiteField.getName())
                 .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
                 .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
+                .facetItemType(TurSNSiteFacetFieldEnum.DEFAULT)
                 .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
                 .hl(0)
                 .multiValued(turSNSiteField.getMultiValued())
@@ -217,6 +218,7 @@ public class TurSNSiteFieldExtAPI {
                 .facetName(turNLPEntity.getName())
                 .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
                 .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
+                .facetItemType(TurSNSiteFacetFieldEnum.DEFAULT)
                 .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
                 .hl(0)
                 .multiValued(1)
@@ -251,6 +253,8 @@ public class TurSNSiteFieldExtAPI {
             turSNSiteFieldExtEdit.setFacetLocales( getTurSNSiteFieldExtFacets(turSNSiteFieldExt));
             turSNSiteFieldExtEdit.setFacetRange(turSNSiteFieldExt.getFacetRange());
             turSNSiteFieldExtEdit.setFacetSort(turSNSiteFieldExt.getFacetSort());
+            turSNSiteFieldExtEdit.setFacetType(turSNSiteFieldExt.getFacetType());
+            turSNSiteFieldExtEdit.setFacetItemType(turSNSiteFieldExt.getFacetItemType());
             turSNSiteFieldExtEdit.setHl(turSNSiteFieldExt.getHl());
             turSNSiteFieldExtEdit.setEnabled(turSNSiteFieldExt.getEnabled());
             turSNSiteFieldExtEdit.setMlt(turSNSiteFieldExt.getMlt());
@@ -259,7 +263,7 @@ public class TurSNSiteFieldExtAPI {
             turSNSiteFieldExtEdit.setDefaultValue(turSNSiteFieldExt.getDefaultValue());
             turSNSiteFieldExtEdit.setNlp(turSNSiteFieldExt.getNlp());
             turSNSiteFieldExtEdit.setSnType(turSNSiteFieldExt.getSnType());
-            turSNSiteFieldExtEdit.setFacetType(turSNSiteFieldExt.getFacetType());
+
             if (turSNSiteFieldExt.getFacet() == 1) {
                 turSNSiteFieldExtEdit.setFacetPosition(hasFacetPosition(turSNSiteFieldExt) ?
                         turSNSiteFieldExt.getFacetPosition() :

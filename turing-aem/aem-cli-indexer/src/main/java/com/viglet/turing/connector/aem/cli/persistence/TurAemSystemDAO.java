@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.aem.persistence;
+package com.viglet.turing.connector.aem.cli.persistence;
 
 import lombok.extern.slf4j.Slf4j;
 

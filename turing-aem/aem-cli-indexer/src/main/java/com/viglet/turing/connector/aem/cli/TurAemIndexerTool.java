@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.aem;
+package com.viglet.turing.connector.aem.cli;
 
 import ch.qos.logback.classic.Level;
 import com.beust.jcommander.JCommander;
@@ -30,17 +30,17 @@ import com.viglet.turing.client.sn.job.*;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
+import com.viglet.turing.connector.aem.cli.conf.AemHandlerConfiguration;
+import com.viglet.turing.connector.aem.cli.persistence.TurAemIndexing;
+import com.viglet.turing.connector.aem.cli.persistence.TurAemIndexingDAO;
+import com.viglet.turing.connector.aem.cli.persistence.TurAemSystem;
+import com.viglet.turing.connector.aem.cli.persistence.TurAemSystemDAO;
 import com.viglet.turing.connector.aem.commons.TurAemAttrProcess;
 import com.viglet.turing.connector.aem.commons.TurAemCommonsUtils;
 import com.viglet.turing.connector.aem.commons.TurAemObject;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.aem.commons.ext.TurAemExtDeltaDate;
 import com.viglet.turing.connector.aem.commons.ext.TurAemExtDeltaDateInterface;
-import com.viglet.turing.connector.aem.conf.AemHandlerConfiguration;
-import com.viglet.turing.connector.aem.persistence.TurAemIndexing;
-import com.viglet.turing.connector.aem.persistence.TurAemIndexingDAO;
-import com.viglet.turing.connector.aem.persistence.TurAemSystem;
-import com.viglet.turing.connector.aem.persistence.TurAemSystemDAO;
 import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueMap;
 import com.viglet.turing.connector.cms.mappers.TurCmsContentDefinitionProcess;
 import com.viglet.turing.connector.cms.mappers.TurCmsModel;
@@ -48,6 +48,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
 
@@ -117,7 +118,7 @@ public class TurAemIndexerTool {
 
     public static void main(String... argv) {
         jCommander.getConsole().println("Viglet Turing AEM Indexer Tool. " +
-                TurAemIndexerTool.class.getPackage().getImplementationVersion() );
+                TurAemIndexerTool.class.getPackage().getImplementationVersion());
         TurAemIndexerTool turAEMIndexerTool = new TurAemIndexerTool();
         jCommander.addObject(turAEMIndexerTool);
         try {
@@ -282,12 +283,17 @@ public class TurAemIndexerTool {
 
     private void getNodeFromJson(String nodePath, JSONObject jsonObject, TurAemSourceContext turAemSourceContext,
                                  long start) {
-        if (isTypeEqualContentType(jsonObject, turAemSourceContext)) {
-            turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(turAemSourceContext.getContentType())
-                    .ifPresent(model ->
-                            prepareIndexObject(model, new TurAemObject(nodePath, jsonObject),
-                                    turCmsContentDefinitionProcess.getTargetAttrDefinitions(), turAemSourceContext, start));
-        }
+        TurAemObject aemObject = new TurAemObject(nodePath, jsonObject);
+        Optional.of(aemObject).ifPresentOrElse(o -> {
+            if (isTypeEqualContentType(jsonObject, turAemSourceContext)) {
+                turCmsContentDefinitionProcess.findByNameFromModelWithDefinition(turAemSourceContext.getContentType())
+                        .ifPresent(model ->
+                                prepareIndexObject(model, new TurAemObject(nodePath, jsonObject),
+                                        turCmsContentDefinitionProcess.getTargetAttrDefinitions(), turAemSourceContext, start));
+            }
+        }, () -> log.info("AEM object ({}) is null deltaId = {}",
+                turAemSourceContext.getId(), deltaId));
+
         getChildrenFromJson(nodePath, jsonObject, turAemSourceContext, start);
     }
 
@@ -405,13 +411,14 @@ public class TurAemIndexerTool {
                 turAemSourceContext);
     }
 
-    private boolean ddlNeedBeReIndexed(TurAemObject aemObject, TurAemSourceContext turAemSourceContext, Date deltaDate) {
+    private boolean ddlNeedBeReIndexed(TurAemObject aemObject, TurAemSourceContext turAemSourceContext,
+                                       Date deltaDate) {
         return !StringUtils.isEmpty(aemObject.getPath()) &&
                 turAemIndexingDAO.existsByAemIdAndGroupAndDateNotEqual(aemObject.getPath(),
                         turAemSourceContext.getId(), deltaDate);
     }
 
-    private void indexObject(TurAemObject aemObject, TurCmsModel turCmsModel,
+    private void indexObject(@NotNull TurAemObject aemObject, TurCmsModel turCmsModel,
                              List<TurSNAttributeSpec> turSNAttributeSpecList,
                              TurAemSourceContext turAemSourceContext,
                              Long start) {

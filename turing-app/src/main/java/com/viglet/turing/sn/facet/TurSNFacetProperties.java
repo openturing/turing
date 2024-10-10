@@ -16,21 +16,24 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.aem.sample.ext;
+package com.viglet.turing.sn.facet;
 
-import com.viglet.turing.connector.aem.commons.TurAemObject;
-import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
-import com.viglet.turing.connector.aem.commons.ext.TurAemExtDeltaDateInterface;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.util.List;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Optional;
-
-public class TurAemExtSampleDeltaDate implements TurAemExtDeltaDateInterface {
-    @Override
-    public Date consume(TurAemObject aemObject, TurAemSourceContext turAemSourceContext) {
-        return Optional.ofNullable(aemObject.getLastModified())
-                .map(Calendar::getTime).orElse(null);
-    }
+/**
+ * @author Alexandre Oliveira
+ * @since 0.3.9
+ */
+@Builder
+@Getter
+@Setter
+public class TurSNFacetProperties {
+    private TurSNSiteFacetFieldEnum facetType;
+    private TurSNSiteFacetFieldEnum facetItemType;
+    private List<String> facetItems;
 }

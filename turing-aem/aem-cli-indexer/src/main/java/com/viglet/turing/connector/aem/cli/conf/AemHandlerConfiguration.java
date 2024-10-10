@@ -15,7 +15,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.viglet.turing.connector.aem.conf;
+package com.viglet.turing.connector.aem.cli.conf;
 
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.cms.config.IHandlerConfiguration;

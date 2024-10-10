@@ -27,8 +27,8 @@ import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.TurSNSiteFacetEnum;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -103,7 +103,7 @@ public class TurSNSiteAPI {
     public TurSNSite turSNSiteStructure() {
         TurSNSite turSNSite = new TurSNSite();
         turSNSite.setFacetSort(TurSNSiteFacetSortEnum.COUNT);
-        turSNSite.setFacetType(TurSNSiteFacetEnum.AND);
+        turSNSite.setFacetType(TurSNSiteFacetFieldEnum.AND);
         turSNSite.setTurSEInstance(new TurSEInstance());
         turSNSite.setTurNLPVendor(new TurNLPVendor());
         return turSNSite;
@@ -126,6 +126,7 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
             turSNSiteEdit.setFacet(turSNSite.getFacet());
             turSNSiteEdit.setFacetType(turSNSite.getFacetType());
+            turSNSiteEdit.setFacetItemType(turSNSite.getFacetItemType());
             turSNSiteEdit.setFacetSort(turSNSite.getFacetSort());
             turSNSiteEdit.setHl(turSNSite.getHl());
             turSNSiteEdit.setHlPost(turSNSite.getHlPost());
@@ -193,7 +194,8 @@ public class TurSNSiteAPI {
             TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
             turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
             long documentTotal = 0L;
-            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository.findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
+            for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository
+                    .findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
                 Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
                 if (turSolrInstance.isPresent()) {
                     documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());
