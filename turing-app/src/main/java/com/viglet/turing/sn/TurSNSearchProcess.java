@@ -378,7 +378,8 @@ public class TurSNSearchProcess {
                 .setOffset(0)
                 .setResponseTime(turSEResults.getElapsedTime())
                 .setIndex(turSNSite.getName())
-                .setFacetType(turSNSite.getFacetType().toString());
+                .setFacetType(turSNSite.getFacetType().toString())
+                .setFacetItemType(turSNSite.getFacetItemType().toString());
     }
 
     private TurSNSiteSearchDefaultFieldsBean defaultFields(TurSNSite turSNSite) {
@@ -456,7 +457,7 @@ public class TurSNSearchProcess {
         if (turSNSite.getFacetItemType() == null) return false;
         else return switch (turSNSite.getFacetItemType()) {
             case OR -> true;
-            case AND -> false;
+            case AND, DEFAULT -> false;
         };
     }
 

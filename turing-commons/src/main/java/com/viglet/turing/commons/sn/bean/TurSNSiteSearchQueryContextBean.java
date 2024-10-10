@@ -39,4 +39,5 @@ public class TurSNSiteSearchQueryContextBean {
 	private TurSNSiteSearchQueryContextQueryBean query;
 	private TurSNSiteSearchDefaultFieldsBean defaultFields;
 	private String facetType;
+	private String facetItemType;
 }

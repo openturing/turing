@@ -16,24 +16,14 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.sn;
+package com.viglet.turing.sn.facet;
 
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-
-import java.util.List;
+import java.util.HashMap;
 
 /**
  * @author Alexandre Oliveira
  * @since 0.3.9
  */
-@Builder
-@Getter
-@Setter
-public class TurSNFacetProperties {
-    private TurSNSiteFacetFieldEnum facetType;
-    private TurSNSiteFacetFieldEnum facetItemType;
-    private List<String> facetItems;
+public class TurSNFacetMapForFilterQuery extends HashMap<String, TurSNFacetProperties> {
+
 }
