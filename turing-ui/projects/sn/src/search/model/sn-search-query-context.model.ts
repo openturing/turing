@@ -14,4 +14,5 @@ export interface TurSNSearchQueryContext {
   query: TurSNSearchQuery;
   responseTime: number;
   facetType: string;
+  facetItemType: string;
 }
