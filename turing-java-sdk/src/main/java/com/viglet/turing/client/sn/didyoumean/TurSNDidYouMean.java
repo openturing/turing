@@ -18,7 +18,7 @@ package com.viglet.turing.client.sn.didyoumean;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 
 /**
- * Return the correct text of Turing AI response.
+ * Return the correct text of Turing ES response.
  * 
  * @author Alexandre Oliveira
  * 

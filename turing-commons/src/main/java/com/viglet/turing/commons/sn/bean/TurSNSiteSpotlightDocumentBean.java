@@ -24,7 +24,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 /**
- * List of spotlight documents of Turing AI Semantic Navigation response.
+ * List of spotlight documents of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * @since 0.3.5

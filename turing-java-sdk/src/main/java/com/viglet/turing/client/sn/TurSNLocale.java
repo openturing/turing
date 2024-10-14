@@ -16,7 +16,7 @@
 package com.viglet.turing.client.sn;
 
 /**
- * Locale of Turing AI Semantic Navigation response.
+ * Locale of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * 

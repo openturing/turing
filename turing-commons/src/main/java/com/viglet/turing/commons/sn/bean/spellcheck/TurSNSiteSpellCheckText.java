@@ -22,7 +22,7 @@ import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 
 /**
- * Spell Check Text of Turing AI Semantic Navigation response.
+ * Spell Check Text of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * 

@@ -25,7 +25,7 @@ import lombok.experimental.Accessors;
 import java.util.Locale;
 
 /**
- * Details about the request query string of Turing AI Semantic Navigation
+ * Details about the request query string of Turing ES Semantic Navigation
  * response.
  * 
  * @author Alexandre Oliveira

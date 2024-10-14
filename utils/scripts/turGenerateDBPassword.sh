@@ -22,7 +22,7 @@ if [ -n "$1" ]; then
     fi
     echo
 else
-    echo "Add Turing AI Server Directory Path, for example: "
+    echo "Add Turing ES Server Directory Path, for example: "
     echo "./turGenerateDBPassword.sh /appl/viglet/turing/server"
 fi
 

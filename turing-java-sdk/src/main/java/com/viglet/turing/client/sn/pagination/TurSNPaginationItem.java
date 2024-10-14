@@ -22,7 +22,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchPaginationBean;
 import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
 
 /**
- * Pagination of results of Turing AI Semantic Navigation response with friendly
+ * Pagination of results of Turing ES Semantic Navigation response with friendly
  * attributes.
  * 
  * @since 0.3.4

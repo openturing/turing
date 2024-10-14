@@ -100,7 +100,7 @@ export default function TurNlpInstanceComponent(props: TurCrudProps<TurNLPInstan
                 </FormControl>
                 <FormControl required={false}>
                     <FormControl.Label requiredIndicator={false}>Enabled</FormControl.Label>
-                    <FormControl.Caption>If this NLP Instance will be used in others Turing AI Components.</FormControl.Caption>
+                    <FormControl.Caption>If this NLP Instance will be used in others Turing ES Components.</FormControl.Caption>
                     <Checkbox />
                 </FormControl>
             </Box>

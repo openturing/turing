@@ -27,7 +27,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 /**
- * Details about facets and facet and "more like this" of Turing AI Semantic
+ * Details about facets and facet and "more like this" of Turing ES Semantic
  * Navigation response.
  * 
  * @author Alexandre Oliveira

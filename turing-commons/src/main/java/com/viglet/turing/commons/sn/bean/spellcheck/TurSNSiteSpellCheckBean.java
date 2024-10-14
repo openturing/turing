@@ -20,7 +20,7 @@ import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 
 /**
- * Spell Check of Turing AI Semantic Navigation response.
+ * Spell Check of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * 

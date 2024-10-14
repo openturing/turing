@@ -25,7 +25,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 /**
- * List of documents with results of query of Turing AI Semantic Navigation response.
+ * List of documents with results of query of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * 

@@ -19,7 +19,7 @@ package com.viglet.turing.commons.sn.bean;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * Metadata of document with relation with facets of Turing AI Semantic Navigation response.
+ * Metadata of document with relation with facets of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * 

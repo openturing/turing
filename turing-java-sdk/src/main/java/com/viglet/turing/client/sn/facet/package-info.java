@@ -15,7 +15,7 @@
  */
 
 /**
- * Provides the classes necessary to return facets of Turing AI response.
+ * Provides the classes necessary to return facets of Turing ES response.
  * 
  * @since 0.3.4
  */

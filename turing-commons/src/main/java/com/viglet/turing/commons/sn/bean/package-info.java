@@ -15,7 +15,7 @@
  */
 
 /**
- * Provides the classes of Turing AI beans to create JSON response.
+ * Provides the classes of Turing ES beans to create JSON response.
  * 
  * @since 0.3.4
  */

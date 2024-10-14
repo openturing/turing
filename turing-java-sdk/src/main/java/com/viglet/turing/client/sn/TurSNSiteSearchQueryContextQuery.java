@@ -19,7 +19,7 @@ package com.viglet.turing.client.sn;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * Return details about Turing AI response query.
+ * Return details about Turing ES response query.
  * 
  * @author Alexandre Oliveira
  * 

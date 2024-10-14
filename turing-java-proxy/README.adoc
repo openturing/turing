@@ -1,6 +1,6 @@
-= Turing AI Java Proxy
+= Turing ES Java Proxy
 
-WAR java file to expose the Turing AI API on the site.
+WAR java file to expose the Turing ES API on the site.
 
 == Run on Development
 

@@ -24,7 +24,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 /**
- * Pagination of results of Turing AI Semantic Navigation response.
+ * Pagination of results of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * 
