@@ -34,6 +34,7 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtFacetDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
@@ -378,8 +379,10 @@ public class TurSNSearchProcess {
                 .setOffset(0)
                 .setResponseTime(turSEResults.getElapsedTime())
                 .setIndex(turSNSite.getName())
-                .setFacetType(turSNSite.getFacetType().toString())
-                .setFacetItemType(turSNSite.getFacetItemType().toString());
+                .setFacetType(turSNSite.getFacetType() != null ? turSNSite.getFacetType().toString():
+                        TurSNSiteFacetFieldEnum.AND.toString())
+                .setFacetItemType(turSNSite.getFacetItemType() != null? turSNSite.getFacetItemType().toString():
+                        TurSNSiteFacetFieldEnum.AND.toString());
     }
 
     private TurSNSiteSearchDefaultFieldsBean defaultFields(TurSNSite turSNSite) {
