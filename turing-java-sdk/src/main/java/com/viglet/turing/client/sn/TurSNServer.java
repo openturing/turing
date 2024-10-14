@@ -56,7 +56,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * Connect to Turing AI Server.
+ * Connect to Turing ES Server.
  *
  * @author Alexandre Oliveira
  * @since 0.3.4

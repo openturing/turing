@@ -18,7 +18,7 @@
 package com.viglet.turing.connector.filesystem;
 
 /**
- * Class that can be used create Chunking Job for Turing AI Import
+ * Class that can be used create Chunking Job for Turing ES Import
  *
  * @author Alexandre Oliveira
  * @since 0.3.5

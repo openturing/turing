@@ -22,7 +22,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 /**
- * Default Fields of Turing AI Semantic Navigation response.
+ * Default Fields of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * 

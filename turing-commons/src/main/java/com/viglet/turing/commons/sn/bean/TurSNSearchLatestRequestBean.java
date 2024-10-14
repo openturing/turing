@@ -17,7 +17,7 @@
 package com.viglet.turing.commons.sn.bean;
 
 /**
- * Request latest searches to Turing AI
+ * Request latest searches to Turing ES
  * 
  * @author Alexandre Oliveira
  * 

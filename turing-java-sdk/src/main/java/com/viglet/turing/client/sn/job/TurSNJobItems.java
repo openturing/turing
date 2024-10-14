@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * List of jobs to index and deIndex in Turing AI.
+ * List of jobs to index and deIndex in Turing ES.
  * 
  * @author Alexandre Oliveira
  * 

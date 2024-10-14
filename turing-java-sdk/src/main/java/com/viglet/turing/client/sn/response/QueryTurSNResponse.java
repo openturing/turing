@@ -26,7 +26,7 @@ import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
 
 /**
- * Return results of Turing AI response.
+ * Return results of Turing ES response.
  * 
  * @author Alexandre Oliveira
  * 

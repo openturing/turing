@@ -2,7 +2,7 @@
 
 # turing-wem
 #
-# Shell script to run the content index tool for Turing AI.
+# Shell script to run the content index tool for Turing ES.
 
 PRG="`command type $0 | cut -d' ' -f3-`" >/dev/null 2>&1
 J_HOME=`dirname $PRG`/../jre

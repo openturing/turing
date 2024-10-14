@@ -17,7 +17,7 @@
 package com.viglet.turing.client.sn;
 
 /**
- * Specify and retrieve Turing AI sort.
+ * Specify and retrieve Turing ES sort.
  * 
  * @author Alexandre Oliveira
  * 

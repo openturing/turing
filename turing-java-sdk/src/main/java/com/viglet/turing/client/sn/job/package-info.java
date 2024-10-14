@@ -15,7 +15,7 @@
  */
 
 /**
- * Provides the classes necessary to create jobs with content indexing and desindexing to Viglet Turing AI.
+ * Provides the classes necessary to create jobs with content indexing and desindexing to Viglet Turing ES.
  * 
  * @since 0.3.4
  */

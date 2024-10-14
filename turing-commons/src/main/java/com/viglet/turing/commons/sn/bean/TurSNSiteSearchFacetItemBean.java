@@ -23,7 +23,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 /**
- * Facet Item of Turing AI Semantic Navigation response.
+ * Facet Item of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * 

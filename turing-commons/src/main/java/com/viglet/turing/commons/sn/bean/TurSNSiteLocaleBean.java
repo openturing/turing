@@ -24,7 +24,7 @@ import lombok.experimental.Accessors;
 import java.util.Locale;
 
 /**
- * Locale of Turing AI Semantic Navigation response.
+ * Locale of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * 

@@ -23,7 +23,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 /**
- * Label of Facet with diferent locales of Turing AI Semantic Navigation response.
+ * Label of Facet with diferent locales of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * 

@@ -1,4 +1,4 @@
-= Plugin for Apache Nutch for Turing AI
+= Plugin for Apache Nutch for Turing ES
 Plugin for Apache Nutch to index content using crawler.
 
 == Installation
@@ -73,13 +73,13 @@ Modify the following parameters:
 [%header,cols=3*] 
 |===
 |Parameter Name | Description | Default value
-|url | Defines the fully qualified URL of Turing AI into which data should be indexed. | http://localhost:2700
+|url | Defines the fully qualified URL of Turing ES into which data should be indexed. | http://localhost:2700
 |site | Turing Semantic Navigation Site Name. |  Sample
 |weight.field | Field's name where the weight of the documents will be written. If it is empty no field will be used. |  
-|commitSize | Defines the number of documents to send to Turing AI in a single update batch. Decrease when handling very large documents to prevent Nutch from running out of memory.
+|commitSize | Defines the number of documents to send to Turing ES in a single update batch. Decrease when handling very large documents to prevent Nutch from running out of memory.
 
 **Note**: It does not explicitly trigger a server side commit. | 1000 
-|auth | Whether to enable HTTP basic authentication for communicating with Turing AI. Use the `username` and `password` properties to configure your credentials. | true
-|username | The username of Turing AI server. | admin
-|password | The password of Turing AI server. | admin
+|auth | Whether to enable HTTP basic authentication for communicating with Turing ES. Use the `username` and `password` properties to configure your credentials. | true
+|username | The username of Turing ES server. | admin
+|password | The password of Turing ES server. | admin
 |===

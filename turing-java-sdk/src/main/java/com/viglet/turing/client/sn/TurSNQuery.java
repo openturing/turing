@@ -22,7 +22,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Configure the query that will send to Turing AI.
+ * Configure the query that will send to Turing ES.
  * 
  * @author Alexandre Oliveira
  * 

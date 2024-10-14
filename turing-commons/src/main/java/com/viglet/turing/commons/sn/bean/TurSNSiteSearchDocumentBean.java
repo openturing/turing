@@ -22,7 +22,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * Documents of results of Turing AI Semantic Navigation response.
+ * Documents of results of Turing ES Semantic Navigation response.
  * 
  * @author Alexandre Oliveira
  * 

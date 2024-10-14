@@ -15,7 +15,7 @@
  */
 
 /**
- * Provides the classes necessary to return pagination of Turing AI response.
+ * Provides the classes necessary to return pagination of Turing ES response.
  * 
  * @since 0.3.4
  */

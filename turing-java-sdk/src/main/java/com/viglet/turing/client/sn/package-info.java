@@ -15,7 +15,7 @@
  */
 
 /**
- * Provides the classes necessary to communicate with Viglet Turing AI.
+ * Provides the classes necessary to communicate with Viglet Turing ES.
  * 
  * @author Alexandre Oliveira
  * 
