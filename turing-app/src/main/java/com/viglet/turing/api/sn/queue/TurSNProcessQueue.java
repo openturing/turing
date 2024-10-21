@@ -29,7 +29,6 @@ import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.lucene.TurLuceneWriter;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -81,7 +80,6 @@ public class TurSNProcessQueue {
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
     private final TurSEInstanceRepository turSEInstanceRepository;
-    private final TurLuceneWriter turLuceneWriter;
     @Autowired
     public TurSNProcessQueue(TurSolr turSolr, TurSNSiteRepository turSNSiteRepository,
                              TurSNSiteLocaleRepository turSNSiteLocaleRepository,
@@ -92,8 +90,7 @@ public class TurSNProcessQueue {
                              TurSNSiteFieldRepository turSNSiteFieldRepository,
                              TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
                              TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
-                             TurSEInstanceRepository turSEInstanceRepository,
-                             TurLuceneWriter turLuceneWriter) {
+                             TurSEInstanceRepository turSEInstanceRepository) {
         this.turSolr = turSolr;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
@@ -106,7 +103,6 @@ public class TurSNProcessQueue {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
         this.turSEInstanceRepository = turSEInstanceRepository;
-        this.turLuceneWriter = turLuceneWriter;
     }
 
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE)
@@ -215,13 +211,8 @@ public class TurSNProcessQueue {
         return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(),
                 turSNJobItem.getLocale()).map(turSolrInstance -> {
             turSEInstanceRepository
-                    .findById(turSNSite.getTurSEInstance().getId()).ifPresent(seInstance -> {
-                        if (seInstance.getTurSEVendor().getId().equals(SOLR)) {
-                            turSolr.indexing(turSolrInstance, turSNSite, attributes);
-                        } else if (seInstance.getTurSEVendor().getId().equals(LUCENE)) {
-                            turLuceneWriter.indexing(turSNSite, attributes);
-                        }
-                    });
+                    .findById(turSNSite.getTurSEInstance().getId()).ifPresent(seInstance ->
+                            turSolr.indexing(turSolrInstance, turSNSite, attributes));
             return true;
         }).orElse(false);
 
