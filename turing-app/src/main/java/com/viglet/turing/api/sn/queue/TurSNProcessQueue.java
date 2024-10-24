@@ -66,8 +66,6 @@ public class TurSNProcessQueue {
     public static final String CREATED = "Created";
     public static final String DELETED = "Deleted";
     public static final String DEFAULT = "default";
-    public static final String SOLR = "SOLR";
-    public static final String LUCENE = "LUCENE";
     private final TurSolr turSolr;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
