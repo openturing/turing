@@ -511,14 +511,17 @@ public class TurSNSearchProcess {
                         final TurSNSiteSearchFacetItemBean facetItemBean = new TurSNSiteSearchFacetItemBean()
                                 .setCount(facetItem.getCount())
                                 .setLabel(facetItem.getAttribute())
-                                .setLink(TurSNUtils
-                                        .addFilterQuery(context.getUri(), fq).toString()
-                                        .replace(":", "\\:"))
                                 .setSelected(usedFacetItems.contains(fq));
 
                         // If the facet-item is selected, then the link needs to remove it.
                         if (facetItemBean.isSelected()) {
-                            facetItemBean.setLink(TurSNUtils.removeFilterQuery(context.getUri(), fq).toString().replace(":", "\\:"));
+                            facetItemBean.setLink(TurSNUtils
+                                    .removeFilterQuery(context.getUri(), fq)
+                                    .toString().replace(":", "\\:"));
+                        } else {
+                            facetItemBean.setLink(TurSNUtils
+                                    .addFilterQuery(context.getUri(), fq)
+                                    .toString().replace(":", "\\:"));
                         }
 
                         turSNSiteSearchFacetItemBeans.add(facetItemBean);
