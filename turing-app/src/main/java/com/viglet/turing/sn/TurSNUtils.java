@@ -100,14 +100,13 @@ public class TurSNUtils {
         }
         return TurCommonsUtils.modifiedURI(uri, sbQueryString);
     }
-
-    public static URI removeFilterQueryByFieldName(URI uri, String fieldName) {
+    public static URI removeFilterQueryByFieldNames(URI uri, List<String> fieldNames) {
         List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
         StringBuilder sbQueryString = new StringBuilder();
         for (NameValuePair nameValuePair : params) {
             if (nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT)) {
                 TurSolrUtils.getQueryKeyValue(nameValuePair.getValue()).ifPresent(kv -> {
-                    if (!(java.net.URLDecoder.decode(kv.getKey(), StandardCharsets.UTF_8).equals(fieldName))) {
+                    if (!(fieldNames.contains(java.net.URLDecoder.decode(kv.getKey(), StandardCharsets.UTF_8)))) {
                         TurCommonsUtils.addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
                     }
                 });
@@ -117,6 +116,9 @@ public class TurSNUtils {
             }
         }
         return TurCommonsUtils.modifiedURI(uri, sbQueryString);
+    }
+    public static URI removeFilterQueryByFieldName(URI uri, String fieldName) {
+        return removeFilterQueryByFieldNames(uri, Collections.singletonList(fieldName));
     }
 
     public static URI removeQueryStringParameter(URI uri, String field) {

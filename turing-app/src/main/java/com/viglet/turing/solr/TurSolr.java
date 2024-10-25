@@ -1154,7 +1154,7 @@ public class TurSolr {
             }
         } else if (isFacetTypesAndFacetItemType(context,
                 TurSNSiteFacetFieldEnum.AND, TurSNSiteFacetFieldEnum.OR)) {
-            if (new HashSet<>(getFacetsInFilterQuery(context)).size() <= 1 &&
+            if (getFacetsInFilterQuery(context).size() <= 1 &&
                     fqFields.contains(context.getTurSNSiteFacetFieldExt().getName())) {
                 return FACET_OR.concat(query);
             } else {
@@ -1168,11 +1168,11 @@ public class TurSolr {
         }
     }
 
-    private List<String> getFacetsInFilterQuery(TurSNFacetTypeContext context) {
+    public List<String> getFacetsInFilterQuery(TurSNFacetTypeContext context) {
         List<String> fqFields = getFqFields(context.getQueryParameters());
         List<TurSNSiteFieldExt> enabledFacets = getEnabledFacets(context.getTurSNSite());
         List<String> enabledFacetNames = enabledFacets.stream().map(TurSNSiteFieldExt::getName).toList();
-        return fqFields.stream().filter(enabledFacetNames::contains).toList();
+        return fqFields.stream().filter(enabledFacetNames::contains).distinct().toList();
     }
 
     @NotNull

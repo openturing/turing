@@ -8,4 +8,5 @@ export interface TurSNSearchWidget {
   similar: string;
   spellCheck: TurSNSearchSpellCheck;
   locales: TurSNSearchLocale[];
+  cleanUpFacets: string;
 }

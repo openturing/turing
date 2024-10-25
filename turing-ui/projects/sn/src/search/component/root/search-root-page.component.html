@@ -56,22 +56,25 @@
               }
             </style>
           </defs>
-          <rect class="cls-1" x="0.063" width="548" height="548.188" rx="100" ry="100" />
+          <rect class="cls-1" x="0.063" width="548" height="548.188" rx="100" ry="100"/>
           <text id="Tu" class="cls-2" transform="translate(64.825 442.418) scale(2.74 2.741)">Tu</text>
-        </svg> <span> {{turSiteName}}</span>
+        </svg>
+        <span> {{ turSiteName }}</span>
       </button>
     </div>
     <div class="Header-item">
       <div class="subnav-search float-left mr-2">
         <input [(ngModel)]="turQuery" (keyup.enter)="searchIt()" type="search" name="name"
-          (input)="retrieveAutoComplete()" class="form-control subnav-search-input" autocapitalize="off"
-          aria-label="Search…" placeholder="Search…" spellcheck="false" autocomplete="off" aria-label="Search site" />
+               (input)="retrieveAutoComplete()" class="form-control subnav-search-input" autocapitalize="off"
+               aria-label="Search…" placeholder="Search…" spellcheck="false" autocomplete="off"
+               aria-label="Search site"/>
         <span octicon="search" [size]=16 class="subnav-search-icon octicon octicon-search"></span>
         <div *ngIf="(getAutoComplete() | async) as autoComplete;">
           <ul *ngIf="autoComplete.length > 0" class="autocomplete-results">
             <li *ngFor="let autoCompleteTerm of autoComplete" class="autocomplete-item"
-              (click)="turQuery = autoCompleteTerm;retrieveAutoComplete()">
-              {{autoCompleteTerm}}</li>
+                (click)="turQuery = autoCompleteTerm;retrieveAutoComplete()">
+              {{ autoCompleteTerm }}
+            </li>
           </ul>
         </div>
       </div>
@@ -79,7 +82,7 @@
       <details class="details-reset details-overlay">
         <summary class="btn btn-sm" aria-haspopup="true">
           <em>Language:</em>
-          <span> {{snSearch.queryContext.query.locale}}</span>
+          <span> {{ snSearch.queryContext.query.locale }}</span>
         </summary>
         <div class="SelectMenu">
           <div class="SelectMenu-modal">
@@ -88,8 +91,8 @@
             </header>
             <div class="SelectMenu-list">
               <button *ngFor="let locale of snSearch.widget.locales" class="SelectMenu-item" role="menuitem"
-                (click)="changeLocale(locale.locale)">
-                {{locale.locale}}
+                      (click)="changeLocale(locale.locale)">
+                {{ locale.locale }}
               </button>
             </div>
           </div>
@@ -102,10 +105,13 @@
 
     <div *ngIf="snSearch.results.document.length <= 0" class="blankslate blankslate-large">
       <span octicon="search" [size]=48 class="mb-3"></span>
-      <h3 class="mb-1">We couldn’t find any results matching '{{turQuery}}'.</h3>
-      <h3 *ngIf="snSearch.widget.spellCheck.correctedText" class="mb-1">Did you mean '<button class="btn-link"
-          (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
-          style="font-style: italic;font-weight: bold;">{{snSearch.widget.spellCheck.corrected.text}}</button>'?
+      <h3 class="mb-1">We couldn’t find any results matching '{{ turQuery }}'.</h3>
+      <h3 *ngIf="snSearch.widget.spellCheck.correctedText" class="mb-1">Did you mean '
+        <button class="btn-link"
+                (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
+                style="font-style: italic;font-weight: bold;">{{ snSearch.widget.spellCheck.corrected.text }}
+        </button>
+        '?
       </h3>
       <div *ngIf="!snSearch.widget.spellCheck.correctedText">
         <p>You can try to see all the available content, maybe you have a new idea. :-)</p>
@@ -116,38 +122,43 @@
     <div *ngIf="snSearch.results.document.length > 0">
       <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
         <div *ngIf="snSearch.widget.facetToRemove && snSearch.widget.facetToRemove.facets"
-          class="Box Box--condensed Box--blue mb-3">
+             class="Box Box--condensed Box--blue mb-3">
           <div class="Box-header">
             <h3 class="Box-title">
               Applied Filters
+              <button (click)="turRedirect(snSearch.widget.cleanUpFacets)" class="btn-link" style="float: right;">Clean
+                up all
+              </button>
             </h3>
           </div>
           <ul>
             <li *ngFor="let facet of snSearch.widget.facetToRemove.facets" class="Box-row">
               <button class="btn-link" (click)="turRedirect(facet.link)">
-                {{facet.label}} (Remove)</button>
+                {{ facet.label }} <span style="float: right;">(Remove)</span></button>
             </li>
           </ul>
         </div>
         <div *ngFor="let facets of snSearch.widget.facet" class="Box Box--condensed Box--blue mb-3">
           <div class="Box-header">
             <h3 class="Box-title">
-              {{facets.label.text}} <button (click)="turRedirect(facets.cleanUpLink)" class="btn-link" style="float: right;">Clean up</button>
+              {{ facets.label.text }}
+              <button (click)="turRedirect(facets.cleanUpLink)" class="btn-link" style="float: right;">Clean up</button>
             </h3>
           </div>
           <ul>
             <li *ngFor="let facet of facets.facets" class="Box-row">
               <div *ngIf="snSearch.queryContext.facetItemType == 'OR'" class="d-table" style="width: 100%">
                 <div class="d-table-cell col-11" (click)="turRedirect(facet.link)">
-                  {{facet.label}} <span class="Counter Counter--gray">{{facet.count}}</span>
+                  {{ facet.label }} <span class="Counter Counter--gray">{{ facet.count }}</span>
                 </div>
                 <div class="d-table-cell col-1" (click)="turRedirect(facet.link)">
                   <input [(ngModel)]="facet.selected" type="checkbox" [ngModelOptions]="{standalone: true}"
-                         (ngModelChange)="facet.selected = $event ? 1 : 0"  />
+                         (ngModelChange)="facet.selected = $event ? 1 : 0"/>
                 </div>
               </div>
-              <button *ngIf="snSearch.queryContext.facetItemType != 'OR'" class="btn-link" (click)="turRedirect(facet.link)">
-                {{facet.label}} <span class="Counter Counter--gray">{{facet.count}}</span></button>
+              <button *ngIf="snSearch.queryContext.facetItemType != 'OR'" class="btn-link"
+                      (click)="turRedirect(facet.link)">
+                {{ facet.label }} <span class="Counter Counter--gray">{{ facet.count }}</span></button>
 
           </ul>
         </div>
@@ -155,14 +166,14 @@
       <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
         <div class="d-flex flex-column flex-md-row flex-justify-between pb-3 position-relative">
           <h3>
-            Showing {{snSearch.queryContext.pageStart}} - {{snSearch.queryContext.pageEnd}} of
-            {{snSearch.queryContext.count}} results
+            Showing {{ snSearch.queryContext.pageStart }} - {{ snSearch.queryContext.pageEnd }} of
+            {{ snSearch.queryContext.count }} results
           </h3>
 
           <details class="details-reset details-overlay">
             <summary class="btn btn-sm" aria-haspopup="true">
               <em>Order by:</em>
-              <span> {{camelize(turSort)}}</span>
+              <span> {{ camelize(turSort) }}</span>
             </summary>
             <div class="SelectMenu">
               <div class="SelectMenu-modal">
@@ -171,15 +182,15 @@
                 </header>
                 <div class="SelectMenu-list">
                   <button *ngFor="let option of sortOptions  | keyvalue" class="SelectMenu-item"
-                    (click)="changeOrderBy(option.key)" role="menuitem">
+                          (click)="changeOrderBy(option.key)" role="menuitem">
                     <svg [ngStyle]="{'visibility':turSort == option.key ? 'visible' : 'hidden'}"
-                      class="SelectMenu-icon octicon octicon-pin" viewBox="0 0 16 16" version="1.1" width="16"
-                      height="16" aria-hidden="true">
+                         class="SelectMenu-icon octicon octicon-pin" viewBox="0 0 16 16" version="1.1" width="16"
+                         height="16" aria-hidden="true">
                       <path fill-rule="evenodd"
-                        d="M10 1.2V2l.5 1L6 6H2.2c-.44 0-.67.53-.34.86L5 10l-4 5 5-4 3.14 3.14a.5.5 0 00.86-.34V10l3-4.5 1 .5h.8c.44 0 .67-.53.34-.86L10.86.86a.5.5 0 00-.86.34z">
+                            d="M10 1.2V2l.5 1L6 6H2.2c-.44 0-.67.53-.34.86L5 10l-4 5 5-4 3.14 3.14a.5.5 0 00.86-.34V10l3-4.5 1 .5h.8c.44 0 .67-.53.34-.86L10.86.86a.5.5 0 00-.86.34z">
                       </path>
                     </svg>
-                    {{option.value}}
+                    {{ option.value }}
                   </button>
                 </div>
               </div>
@@ -188,18 +199,27 @@
         </div>
         <div>
           <div *ngIf="snSearch.widget.spellCheck.usingCorrectedText && snSearch.widget.spellCheck.correctedText">
-            <h4 class="mb-1">Showing results for <button class="btn-link"
-                (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
-                style="font-style: italic;font-weight: bold;">{{snSearch.widget.spellCheck.corrected.text}}</button>.
+            <h4 class="mb-1">Showing results for
+              <button class="btn-link"
+                      (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
+                      style="font-style: italic;font-weight: bold;">{{ snSearch.widget.spellCheck.corrected.text }}
+              </button>
+              .
             </h4>
-            <p>Instead, search for <button class="btn-link"
-                (click)="turRedirect(snSearch.widget.spellCheck.original.link)"
-                style="font-weight: bold;">{{snSearch.widget.spellCheck.original.text}}</button></p>
+            <p>Instead, search for
+              <button class="btn-link"
+                      (click)="turRedirect(snSearch.widget.spellCheck.original.link)"
+                      style="font-weight: bold;">{{ snSearch.widget.spellCheck.original.text }}
+              </button>
+            </p>
           </div>
           <div *ngIf="!snSearch.widget.spellCheck.usingCorrectedText && snSearch.widget.spellCheck.correctedText">
-            <h4 class="mb-1">Did you mean '<button class="btn-link"
-                (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
-                style="font-style: italic;font-weight: bold;">{{snSearch.widget.spellCheck.corrected.text}}</button>'?
+            <h4 class="mb-1">Did you mean '
+              <button class="btn-link"
+                      (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
+                      style="font-style: italic;font-weight: bold;">{{ snSearch.widget.spellCheck.corrected.text }}
+              </button>
+              '?
             </h4>
           </div>
           <ul *ngIf="snSearch.results as snSearchResults;" class="repo-list">
@@ -208,28 +228,29 @@
                 <div *ngIf="document.elevate" style="border-top: 1px solid var(--color-border-primary);">
                   <div class="blankslate">
                     <svg width="40" height="40" style="border-radius: 50%;" class="mb-3"
-                      [identiconHash]="document.fields[snSearch.queryContext.defaultFields.title] | lowercase">
+                         [identiconHash]="document.fields[snSearch.queryContext.defaultFields.title] | lowercase">
                       Avatar
                     </svg>
 
                     <h3 class="mb-1" *ngIf="document.fields[snSearch.queryContext.defaultFields.title] != null"
                         [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></h3>
                     <p *ngIf="document.fields[snSearch.queryContext.defaultFields.description] != null"
-                      [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description] | safeHtml"></p>
-                    <a  *ngIf="document.fields[snSearch.queryContext.defaultFields.url] != null"
-                      href="{{document.fields[snSearch.queryContext.defaultFields.url]}}" class="btn btn-primary my-3"
-                      type="button">Read More</a>
+                       [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description] | safeHtml"></p>
+                    <a *ngIf="document.fields[snSearch.queryContext.defaultFields.url] != null"
+                       href="{{document.fields[snSearch.queryContext.defaultFields.url]}}" class="btn btn-primary my-3"
+                       type="button">Read More</a>
                   </div>
                 </div>
 
 
                 <li *ngIf="!document.elevate" style="border-top: 1px solid var(--color-border-primary);"
-                  class="repo-list-item hx_hit-repo d-flex flex-justify-start py-4 public source">
+                    class="repo-list-item hx_hit-repo d-flex flex-justify-start py-4 public source">
 
 
                   <div class="flex-shrink-0 mr-2">
-                    <svg *ngIf="document.fields[snSearch.queryContext.defaultFields.url] != null" width="32" height="32" style="border-radius: 50%;"
-                      [identiconHash]="document.fields[snSearch.queryContext.defaultFields.url] | lowercase">
+                    <svg *ngIf="document.fields[snSearch.queryContext.defaultFields.url] != null" width="32" height="32"
+                         style="border-radius: 50%;"
+                         [identiconHash]="document.fields[snSearch.queryContext.defaultFields.url] | lowercase">
                       Avatar
                     </svg>
                   </div>
@@ -238,33 +259,37 @@
                     <div class="d-flex">
                       <div class="f4 text-normal">
                         <a *ngIf="document.fields[snSearch.queryContext.defaultFields.title] != null"
-                          class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
-                          [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></a>
+                           class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
+                           [innerHTML]="document.fields[snSearch.queryContext.defaultFields.title]"></a>
                         <a *ngIf="document.fields[snSearch.queryContext.defaultFields.title] == null"
-                          class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
-                          [innerHTML]="document.fields[snSearch.queryContext.defaultFields.url]"></a>
+                           class="v-align-middle" href="{{document.fields[snSearch.queryContext.defaultFields.url]}}"
+                           [innerHTML]="document.fields[snSearch.queryContext.defaultFields.url]"></a>
                       </div>
 
                     </div>
 
                     <p class="mb-1"
-                      style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"
-                      [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]"></p>
+                       style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"
+                       [innerHTML]="document.fields[snSearch.queryContext.defaultFields.description]"></p>
                     <div>
                       <div>
                         <img *ngIf="document.fields[snSearch.queryContext.defaultFields.url].endsWith('svg')"
-                          style="width: 50px;display: block;"
-                          src="{{document.fields[snSearch.queryContext.defaultFields.url]}}">
+                             style="width: 50px;display: block;"
+                             src="{{document.fields[snSearch.queryContext.defaultFields.url]}}">
                         <button *ngFor="let metadata of document.metadata" (click)="turRedirect(metadata.href)"
-                          title="{{metadata.text}}" class="btn-link branch-name px-2 mx-0 mr-2"
-                          [innerHTML]="metadata.text">
+                                title="{{metadata.text}}" class="btn-link branch-name px-2 mx-0 mr-2"
+                                [innerHTML]="metadata.text">
                         </button>
                       </div>
 
                       <div class="d-flex flex-wrap text-small color-text-secondary mt-1">
                         <div class="mr-3">
-                          Updated <time>{{document.fields[snSearch.queryContext.defaultFields.date]
-                            | amDateFormat:'LL'}}</time>
+                          Updated
+                          <time>{{
+                              document.fields[snSearch.queryContext.defaultFields.date]
+                                | amDateFormat:'LL'
+                            }}
+                          </time>
                         </div>
                       </div>
                     </div>
@@ -277,10 +302,10 @@
         <nav class="paginate-container" aria-label="Pagination">
           <div class="pagination">
             <ng-container *ngFor="let page of snSearch.pagination">
-              <em *ngIf="page.type == 'CURRENT'" aria-current="page">{{camelize(page.text)}}</em>
+              <em *ngIf="page.type == 'CURRENT'" aria-current="page">{{ camelize(page.text) }}</em>
               <a *ngIf="page.type != 'CURRENT'"
-                [ngClass]="{'next_page': page.type === 'NEXT' || page.type === 'LAST' , 'previous_page' : page.type === 'PREVIOUS'  || page.type === 'FIRST' }"
-                (click)="turRedirect(page.href)">{{camelize(page.text)}}</a>
+                 [ngClass]="{'next_page': page.type === 'NEXT' || page.type === 'LAST' , 'previous_page' : page.type === 'PREVIOUS'  || page.type === 'FIRST' }"
+                 (click)="turRedirect(page.href)">{{ camelize(page.text) }}</a>
             </ng-container>
           </div>
         </nav>
@@ -298,7 +323,7 @@
     class="position-relative d-flex flex-row-reverse flex-lg-row flex-wrap flex-lg-nowrap flex-justify-center flex-lg-justify-between pt-6 pb-2 mt-6 f6 color-text-secondary border-top color-border-secondary ">
     <ul
       class="list-style-none d-flex flex-wrap col-12 col-lg-5 flex-justify-center flex-lg-justify-between mb-2 mb-lg-0">
-      <li class="mr-3 mr-lg-0">© {{currentDate()}} Turing ES.</li>
+      <li class="mr-3 mr-lg-0">© {{ currentDate() }} Turing ES.</li>
       <li class="mr-3 mr-lg-0"><a href="https://github.com/openturing" target="_blank">Github</a></li>
       <li class="mr-3 mr-lg-0"><a href="https://linkedin.com/company/viglet" target="_blank">LinkedIn</a></li>
       <li class="mr-3 mr-lg-0"><a href="/swagger-ui.html" target="_blank">API</a></li>
@@ -306,7 +331,7 @@
     </ul>
 
     <a aria-label="Homepage" title="GitHub" class="footer-octicon d-none d-lg-block mx-lg-4"
-      href="https://viglet.com/turing" target="_blank">
+       href="https://viglet.com/turing" target="_blank">
       <svg class="mr-3" style="width:24px; height:24px" viewBox="0 0 549 549">
         <defs>
           <style>

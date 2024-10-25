@@ -48,6 +48,7 @@ import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.result.TurSEGenericResults;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.sn.facet.TurSNFacetTypeContext;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
@@ -325,7 +326,8 @@ public class TurSNSearchProcess {
                 .setSimilar(responseMLT(turSNSite, turSEResults))
                 .setSpellCheck(new TurSNSiteSpellCheckBean(context, turSEResults.getSpellCheck()))
                 .setLocales(responseLocales(turSNSite, context.getUri()))
-                .setSpotlights(responseSpotlights(context, turSNSite));
+                .setSpotlights(responseSpotlights(context, turSNSite))
+                .setCleanUpFacets(responseCleanUpFacet(context, turSNSite));
     }
 
     private List<TurSNSiteSpotlightDocumentBean> responseSpotlights(TurSNSiteSearchContext context,
@@ -420,7 +422,13 @@ public class TurSNSearchProcess {
         }
         return new TurSNSiteSearchFacetBean();
     }
-
+    private String responseCleanUpFacet(TurSNSiteSearchContext context,
+                                                         TurSNSite turSNSite) {
+        return TurSNUtils.removeFilterQueryByFieldNames(context.getUri(),
+                        turSolr.getFacetsInFilterQuery(new TurSNFacetTypeContext(null, turSNSite,
+                                context.getTurSEParameters().getFilterQueries()))).toString()
+                .replace(":", "\\:");
+    }
     private List<TurSNSiteSearchFacetBean> responseFacet(TurSNSiteSearchContext context,
                                                          TurSNSite turSNSite, List<String> hiddenFilterQuery,
                                                          Map<String, TurSNSiteFieldExtDto> facetMap,
