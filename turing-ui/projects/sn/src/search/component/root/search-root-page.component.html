@@ -132,7 +132,7 @@
         <div *ngFor="let facets of snSearch.widget.facet" class="Box Box--condensed Box--blue mb-3">
           <div class="Box-header">
             <h3 class="Box-title">
-              {{facets.label.text}}
+              {{facets.label.text}} <button (click)="turRedirect(facets.cleanUpLink)" class="btn-link" style="float: right;">Clean up</button>
             </h3>
           </div>
           <ul>

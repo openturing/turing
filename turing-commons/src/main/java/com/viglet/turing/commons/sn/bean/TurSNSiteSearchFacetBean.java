@@ -36,6 +36,7 @@ public class TurSNSiteSearchFacetBean {
     private String description;
     private TurSEFieldType type;
     private boolean multiValued;
+    private String cleanUpLink;
 
     public void setMultiValuedWithInt(int multiValued) {
         this.multiValued = multiValued == 1;

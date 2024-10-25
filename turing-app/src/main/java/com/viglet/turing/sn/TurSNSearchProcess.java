@@ -379,9 +379,9 @@ public class TurSNSearchProcess {
                 .setOffset(0)
                 .setResponseTime(turSEResults.getElapsedTime())
                 .setIndex(turSNSite.getName())
-                .setFacetType(turSNSite.getFacetType() != null ? turSNSite.getFacetType().toString():
+                .setFacetType(turSNSite.getFacetType() != null ? turSNSite.getFacetType().toString() :
                         TurSNSiteFacetFieldEnum.AND.toString())
-                .setFacetItemType(turSNSite.getFacetItemType() != null? turSNSite.getFacetItemType().toString():
+                .setFacetItemType(turSNSite.getFacetItemType() != null ? turSNSite.getFacetItemType().toString() :
                         TurSNSiteFacetFieldEnum.AND.toString());
     }
 
@@ -490,7 +490,10 @@ public class TurSNSearchProcess {
                 .setDescription(turSNSiteFieldExtDto.getDescription())
                 .setType(turSNSiteFieldExtDto.getType())
                 .setFacets(turSNSiteSearchFacetItemBeans)
-                .setMultiValued(isTrue(turSNSiteFieldExtDto.getMultiValued()));
+                .setMultiValued(isTrue(turSNSiteFieldExtDto.getMultiValued()))
+                .setCleanUpLink(TurSNUtils.removeFilterQueryByFieldName(context.getUri(),
+                                turSNSiteFieldExtDto.getName()).toString()
+                        .replace(":", "\\:"));
     }
 
     @NotNull
@@ -532,7 +535,7 @@ public class TurSNSearchProcess {
     }
 
     private URI changeGroupURIForPagination(URI uri, String fieldName) {
-        return TurCommonsUtils.addOrReplaceParameter(TurSNUtils.removeQueryField(uri, GROUP),
+        return TurCommonsUtils.addOrReplaceParameter(TurSNUtils.removeQueryStringParameter(uri, GROUP),
                 TurSNParamType.FILTER_QUERIES_DEFAULT, fieldName);
     }
 

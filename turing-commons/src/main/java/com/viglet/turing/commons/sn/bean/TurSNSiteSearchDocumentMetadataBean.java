@@ -17,6 +17,7 @@
 package com.viglet.turing.commons.sn.bean;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.*;
 
 /**
  * Metadata of document with relation with facets of Turing ES Semantic Navigation response.
@@ -26,22 +27,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @since 0.3.4
  */
 
+@Builder(toBuilder = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@Setter
+@Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchDocumentMetadataBean {
-
 	private String href;
 	private String text;
-	public String getHref() {
-		return href;
-	}
-	public void setHref(String href) {
-		this.href = href;
-	}
-	public String getText() {
-		return text;
-	}
-	public void setText(String text) {
-		this.text = text;
-	}
 
 }

@@ -41,6 +41,7 @@ import lombok.experimental.Accessors;
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchWidgetBean {
+	private String cleanUpFacets;
 	private List<TurSNSiteSearchFacetBean> facet;
 	private TurSNSiteSearchFacetBean facetToRemove;
 	private List<TurSESimilarResult> similar;
