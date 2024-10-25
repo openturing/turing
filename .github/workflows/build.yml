@@ -19,6 +19,10 @@ jobs:
     services:
       solr:
         image: solr:latest
+        ports:
+          - 8983:8983
+        volumes:
+          - config/solr/configsets:/var/solr/data/configsets
     steps:
       - uses: actions/checkout@v3
         with:
