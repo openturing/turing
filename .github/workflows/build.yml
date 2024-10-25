@@ -15,9 +15,10 @@ on:
       types: [ opened, synchronize, reopened ]
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
+    services:
+      solr:
+        image: solr:latest
     steps:
       - uses: actions/checkout@v3
         with:
