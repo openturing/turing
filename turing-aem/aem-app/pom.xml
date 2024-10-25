@@ -99,8 +99,6 @@
                     <version>3.13.0</version>
                     <configuration>
                         <parameters>true</parameters>
-                        <source>21</source>
-                        <target>21</target>
                     </configuration>
                 </plugin>
             </plugins>
@@ -111,6 +109,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
+                    <layout>ZIP</layout>
                     <skip>false</skip>
                     <executable>true</executable>
                 </configuration>
