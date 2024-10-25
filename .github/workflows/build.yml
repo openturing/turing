@@ -19,6 +19,7 @@ jobs:
     services:
       solr:
         image: solr:latest
+        options: --user root
         ports:
           - 8983:8983
         volumes:
