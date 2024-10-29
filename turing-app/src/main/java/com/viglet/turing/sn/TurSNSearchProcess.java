@@ -523,7 +523,7 @@ public class TurSNSearchProcess {
                                         .getFilterQueries().getFq().stream()
                                         .filter(fq -> !fq.startsWith(facet))
                                         .toList());
-                        contextSearchFacet.getTurSEParameters().setRows(1);
+                        contextSearchFacet.getTurSEParameters().setRows(-1);
                         turSolr.retrieveSolrFromSN(turSolrInstance, contextSearchFacet).ifPresent(turSEFacetResults ->
                                 turSEResults.setFacetResults(turSEResults.getFacetResults().stream()
                                         .map(f -> {
@@ -568,8 +568,11 @@ public class TurSNSearchProcess {
                             turSNSiteSearchFacetItemBeans.add(facetItemBean);
                         }
                     });
-                    turSNSiteSearchFacetBeans.add(getTurSNSiteSearchFacetBean(context, facetMap.get(facet.getFacet()),
-                            turSNSiteSearchFacetItemBeans));
+                    if (!turSNSiteSearchFacetItemBeans.isEmpty()) {
+                        turSNSiteSearchFacetBeans.add(getTurSNSiteSearchFacetBean(context,
+                                facetMap.get(facet.getFacet()),
+                                turSNSiteSearchFacetItemBeans));
+                    }
                 }
             });
             return turSNSiteSearchFacetBeans;

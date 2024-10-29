@@ -125,7 +125,6 @@ public class TurSolr {
     public static final String NO_FACET_NAME = "__no_facet_name__";
     public static final String OR_OR = "OR-OR";
     public static final String OR_AND = "OR-AND";
-    public static final String AND_OR = "AND-OR";
     public static final String ALL = "_all_";
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNTargetingRules turSNTargetingRules;
@@ -583,7 +582,12 @@ public class TurSolr {
     }
 
     private void setRows(TurSNSite turSNSite, TurSEParameters turSEParameters) {
-        if (turSEParameters.getRows() <= 0) turSEParameters.setRows(turSNSite.getRowsPerPage());
+        if (turSEParameters.getRows() == 0) {
+            turSEParameters.setRows(turSNSite.getRowsPerPage());
+        }
+        else  if (turSEParameters.getRows() < 0) {
+            turSEParameters.setRows(0);
+        }
     }
 
     private void setSortEntry(TurSNSite turSNSite, SolrQuery query, TurSEParameters turSEParameters) {
