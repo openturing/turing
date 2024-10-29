@@ -114,8 +114,8 @@ public class TurSolr {
     public static final String RECENT_DATES = "{!func}recip(ms(NOW/DAY,%s),3.16e-11,1,1)";
     public static final String TUR_SUGGEST = "/tur_suggest";
     public static final String TUR_SPELL = "/tur_spell";
-    public static final String FILTER_QUERY_OR = "{!tag=dt}";
-    public static final String FACET_OR = "{!ex=dt}";
+    public static final String FILTER_QUERY_OR = "{!tag=_all_}";
+    public static final String FACET_OR = "{!ex=_all_}";
     public static final String PLUS_ONE = "+1";
     public static final String EMPTY = "";
     public static final String SOLR_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -123,6 +123,10 @@ public class TurSolr {
     public static final String ROWS = "rows";
     public static final String OR = "OR";
     public static final String NO_FACET_NAME = "__no_facet_name__";
+    public static final String OR_OR = "OR-OR";
+    public static final String OR_AND = "OR-AND";
+    public static final String AND_OR = "AND-OR";
+    public static final String ALL = "_all_";
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNTargetingRules turSNTargetingRules;
     private final TurSNSiteFieldUtils turSNSiteFieldUtils;
@@ -1069,16 +1073,10 @@ public class TurSolr {
     }
 
     private static String getFacetTypeConditionInFilterQuery(TurSNFacetTypeContext context) {
-        if (isFacetTypesAndFacetItemType(context, TurSNSiteFacetFieldEnum.OR, TurSNSiteFacetFieldEnum.AND) || isOr(context)) {
+        if (getFacetTypeAndFacetItemTypeValues(context).equals(OR_AND) || isOr(context)) {
             return FILTER_QUERY_OR;
         }
         return EMPTY;
-    }
-
-    private static boolean isFacetTypesAndFacetItemType(TurSNFacetTypeContext context,
-                                                        TurSNSiteFacetFieldEnum facetTypeValue,
-                                                        TurSNSiteFacetFieldEnum facetItemTypeValue) {
-        return getFacetType(context).equals(facetTypeValue) && getFacetItemType(context).equals(facetItemTypeValue);
     }
 
     private static TurSNSiteFacetFieldEnum getFacetItemType(TurSNFacetTypeContext context) {
@@ -1142,30 +1140,28 @@ public class TurSolr {
 
     private String setFacetTypeConditionInFacet(TurSNFacetTypeContext context, String query) {
         List<String> fqFields = getFqFields(context.getQueryParameters());
-        if (isFacetTypesAndFacetItemType(context,
-                TurSNSiteFacetFieldEnum.OR, TurSNSiteFacetFieldEnum.OR)) {
-            return FACET_OR.concat(query);
-        } else if (isFacetTypesAndFacetItemType(context,
-                TurSNSiteFacetFieldEnum.OR, TurSNSiteFacetFieldEnum.AND)) {
-            if (!fqFields.contains(context.getTurSNSiteFacetFieldExt().getName())) {
+        switch (getFacetTypeAndFacetItemTypeValues(context)) {
+            case OR_OR -> {
                 return FACET_OR.concat(query);
-            } else {
+            }
+            case OR_AND -> {
+                if (!fqFields.contains(context.getTurSNSiteFacetFieldExt().getName())) {
+                    return FACET_OR.concat(query);
+                } else {
+                    return query;
+                }
+            }
+            default -> {
                 return query;
             }
-        } else if (isFacetTypesAndFacetItemType(context,
-                TurSNSiteFacetFieldEnum.AND, TurSNSiteFacetFieldEnum.OR)) {
-            if (getFacetsInFilterQuery(context).size() <= 1 &&
-                    fqFields.contains(context.getTurSNSiteFacetFieldExt().getName())) {
-                return FACET_OR.concat(query);
-            } else {
-                return query;
-            }
-        } else if (isFacetTypesAndFacetItemType(context,
-                TurSNSiteFacetFieldEnum.AND, TurSNSiteFacetFieldEnum.AND)) {
-            return query;
-        } else {
-            return query;
         }
+    }
+
+    @NotNull
+    public static String getFacetTypeAndFacetItemTypeValues(TurSNFacetTypeContext context) {
+        TurSNSiteFacetFieldEnum facetType = getFacetType(context);
+        TurSNSiteFacetFieldEnum facetItemType = getFacetItemType(context);
+        return facetType.toString() + "-" + facetItemType.toString();
     }
 
     public List<String> getFacetsInFilterQuery(TurSNFacetTypeContext context) {
@@ -1176,7 +1172,7 @@ public class TurSolr {
     }
 
     @NotNull
-    private static List<String> getFqFields(TurSEFilterQueryParameters queryParameters) {
+    public List<String> getFqFields(TurSEFilterQueryParameters queryParameters) {
         List<String> fqFields = new ArrayList<>();
         fqFields.addAll(getFqFields(queryParameters.getFq()));
         fqFields.addAll(getFqFields(queryParameters.getAnd()));
@@ -1200,7 +1196,6 @@ public class TurSolr {
         if (wasFacetConfigured(turSNSite, enabledFacets)) {
             query.setFacet(true)
                     .setFacetLimit(turSNSite.getItemsPerFacet())
-                    .setFacetMinCount(1)
                     .setFacetSort(facetSortIsEmptyOrCount(turSNSite) ? COUNT : INDEX);
             enabledFacets.forEach(turSNSiteFacetFieldExt -> {
                 TurSNFacetTypeContext context = new TurSNFacetTypeContext(turSNSiteFacetFieldExt, turSNSite,

@@ -1,44 +1,34 @@
 package com.viglet.turing.commons.se.result.spellcheck;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public class TurSESpellCheckResult {
 
-	private boolean isCorrected;
+	private boolean corrected;
 	private String correctedText;
 	private boolean usingCorrected;
 
 	public TurSESpellCheckResult() {
 		super();
-		this.isCorrected = false;
+		this.corrected = false;
 		this.correctedText = "";
 	}
 
 	public TurSESpellCheckResult(boolean isCorrected, String correctedText) {
 		super();
-		this.isCorrected = isCorrected;
+		this.corrected = isCorrected;
 		this.correctedText = correctedText;
 	}
 
-	public boolean isCorrected() {
-		return isCorrected;
-	}
-
-	public void setCorrected(boolean isCorrected) {
-		this.isCorrected = isCorrected;
-	}
-
-	public String getCorrectedText() {
-		return correctedText;
-	}
-
-	public void setCorrectedText(String correctedText) {
-		this.correctedText = correctedText;
-	}
-
-	public boolean isUsingCorrected() {
-		return usingCorrected;
-	}
-
-	public void setUsingCorrected(boolean usingCorrected) {
-		this.usingCorrected = usingCorrected;
+	@Override
+	public String toString() {
+		return "TurSESpellCheckResult{" +
+				"corrected=" + corrected +
+				", correctedText='" + correctedText + '\'' +
+				", usingCorrected=" + usingCorrected +
+				'}';
 	}
 }

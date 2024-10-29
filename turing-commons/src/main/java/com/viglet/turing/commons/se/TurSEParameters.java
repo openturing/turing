@@ -3,10 +3,11 @@ package com.viglet.turing.commons.se;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.util.List;
 @Getter
 @Setter
-public class TurSEParameters {
+public class TurSEParameters  implements Serializable {
 	private String query;
 	private TurSEFilterQueryParameters filterQueries;
 	private List<String> boostQueries;
@@ -27,5 +28,19 @@ public class TurSEParameters {
 		this.rows = rows;
 		this.group = group;
 		this.autoCorrectionDisabled = autoCorrectionDisabled;
+	}
+
+	@Override
+	public String toString() {
+		return "TurSEParameters{" +
+				"query='" + query + '\'' +
+				", filterQueries=" + filterQueries +
+				", boostQueries=" + boostQueries +
+				", currentPage=" + currentPage +
+				", sort='" + sort + '\'' +
+				", rows=" + rows +
+				", group='" + group + '\'' +
+				", autoCorrectionDisabled=" + autoCorrectionDisabled +
+				'}';
 	}
 }

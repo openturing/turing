@@ -36,4 +36,13 @@ public class TurSEFacetResult {
 	public void add(String attribute, TurSEFacetResultAttr turSEFacetResultAttr) {
 		this.turSEFacetResultAttr.put(attribute, turSEFacetResultAttr);
 	}
+
+	@Override
+	public String toString() {
+		return "TurSEFacetResult{" +
+				"facet='" + facet + '\'' +
+				", facetPosition=" + facetPosition +
+				", turSEFacetResultAttr=" + turSEFacetResultAttr +
+				'}';
+	}
 }
