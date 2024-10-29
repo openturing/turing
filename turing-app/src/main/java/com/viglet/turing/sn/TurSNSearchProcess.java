@@ -53,6 +53,7 @@ import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
+import com.viglet.turing.solr.TurSolrUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.SerializationUtils;
 import org.jetbrains.annotations.NotNull;
@@ -382,7 +383,7 @@ public class TurSNSearchProcess {
                 .setFacet(responseFacet(context, turSolrInstance, turSNSite,
                         requestFilterQuery(context.getTurSEParameters().getFilterQueries().getFq())
                                 .getHiddenItems(), facetMap, turSEResults))
-                .setFacetToRemove(responseFacetToRemove(context))
+                .setFacetToRemove(responseFacetToRemove(context, turSNSite))
                 .setSimilar(responseMLT(turSNSite, turSEResults))
                 .setSpellCheck(new TurSNSiteSpellCheckBean(context, turSEResults.getSpellCheck()))
                 .setLocales(responseLocales(turSNSite, context.getUri()))
@@ -466,19 +467,24 @@ public class TurSNSearchProcess {
                 && !turSEResults.getSimilarResults().isEmpty();
     }
 
-    private TurSNSiteSearchFacetBean responseFacetToRemove(TurSNSiteSearchContext context) {
+    private TurSNSiteSearchFacetBean responseFacetToRemove(TurSNSiteSearchContext context,
+                                                           TurSNSite turSNSite) {
         if (!CollectionUtils.isEmpty(context.getTurSEParameters().getFilterQueries().getFq())) {
+            TurSNFacetTypeContext turSNFacetTypeContext = new TurSNFacetTypeContext(null, turSNSite,
+                    context.getTurSEParameters().getFilterQueries());
             List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<>();
-            context.getTurSEParameters().getFilterQueries().getFq().forEach(facetToRemove -> {
-                String[] facetToRemoveParts = facetToRemove.split(":", 2);
-                if (facetToRemoveParts.length == 2) {
-                    turSNSiteSearchFacetToRemoveItemBeans.add(new TurSNSiteSearchFacetItemBean()
-                            .setLabel(facetToRemoveParts[1].replace("\"", ""))
-                            .setLink(TurSNUtils.removeFilterQuery(context.getUri(), facetToRemove).toString())
-                            .setSelected(true));
-                }
-            });
-            return getTurSNSiteSearchFacetBean(turSNSiteSearchFacetToRemoveItemBeans);
+            context.getTurSEParameters().getFilterQueries().getFq().forEach(facetToRemove ->
+                    TurSolrUtils.getQueryKeyValue(facetToRemove).ifPresent(f -> {
+                        if (turSolr.getFacetsInFilterQuery(turSNFacetTypeContext).contains(f.getKey())) {
+                            turSNSiteSearchFacetToRemoveItemBeans.add(new TurSNSiteSearchFacetItemBean()
+                                    .setLabel(f.getValue().replace("\"", ""))
+                                    .setLink(TurSNUtils.removeFilterQuery(context.getUri(), facetToRemove).toString())
+                                    .setSelected(true));
+                        }
+                    }));
+            if (!turSNSiteSearchFacetToRemoveItemBeans.isEmpty()) {
+                return getTurSNSiteSearchFacetBean(turSNSiteSearchFacetToRemoveItemBeans);
+            }
         }
         return new TurSNSiteSearchFacetBean();
     }
@@ -508,10 +514,10 @@ public class TurSNSearchProcess {
             List<String> facetsInFilterQuery = turSolr.getFacetsInFilterQuery(turSNFacetTypeContext);
             String facetTypeAndFacetItemTypeValues = TurSolr.getFacetTypeAndFacetItemTypeValues(turSNFacetTypeContext);
             if (facetTypeAndFacetItemTypeValues.equals(AND_OR)) {
-
                 facetsInFilterQuery.forEach(facet -> {
                     TurSNSiteSearchContext contextSearchFacet = SerializationUtils.clone(context);
-                    if (turSolr.getFqFields(turSNFacetTypeContext.getQueryParameters()).contains(facetsInFilterQuery.getFirst())) {
+                    if (turSolr.getFqFields(turSNFacetTypeContext
+                            .getQueryParameters()).contains(facetsInFilterQuery.getFirst())) {
                         contextSearchFacet.getTurSEParameters().getFilterQueries()
                                 .setFq(contextSearchFacet.getTurSEParameters()
                                         .getFilterQueries().getFq().stream()
