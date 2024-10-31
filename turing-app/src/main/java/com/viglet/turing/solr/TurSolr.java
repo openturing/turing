@@ -1084,24 +1084,30 @@ public class TurSolr {
     }
 
     private static TurSNSiteFacetFieldEnum getFacetItemType(TurSNFacetTypeContext context) {
-        TurSNSiteFacetFieldEnum facetItemType = context.getTurSNSiteFacetFieldExt().getFacetItemType();
-        if (context.isSpecificField() && facetItemType != null && !isFacetTypeDefault(facetItemType)) {
-            return facetItemType;
-        } else {
-            return getFacetItemTypeFromSite(context.getTurSNSite());
-        }
+        return Optional.ofNullable(context.getTurSNSiteFacetFieldExt()).map(field -> {
+                    TurSNSiteFacetFieldEnum facetItemType = field.getFacetItemType();
+                    if (context.isSpecificField() && facetItemType != null && !isFacetTypeDefault(facetItemType)) {
+                        return facetItemType;
+                    } else {
+                        return getFacetItemTypeFromSite(context.getTurSNSite());
+                    }
+                })
+                .orElseGet(() -> getFacetItemTypeFromSite(context.getTurSNSite()));
     }
 
     private static TurSNSiteFacetFieldEnum getFacetType(TurSNFacetTypeContext context) {
-        TurSNSiteFacetFieldEnum facetType = context.getTurSNSiteFacetFieldExt().getFacetType();
-        TurSNFilterQueryOperator operator = context.getQueryParameters().getOperator();
-        if (operatorIsNotEmpty(operator)) {
-            return getFaceTypeFromOperator(operator);
-        } else if (context.isSpecificField() && facetType != null && !isFacetTypeDefault(facetType)) {
-            return facetType;
-        } else {
-            return getFacetTypeFromSite(context.getTurSNSite());
-        }
+        return Optional.ofNullable(context.getTurSNSiteFacetFieldExt()).map(field -> {
+                    TurSNSiteFacetFieldEnum facetType = field.getFacetType();
+                    TurSNFilterQueryOperator operator = context.getQueryParameters().getOperator();
+                    if (operatorIsNotEmpty(operator)) {
+                        return getFaceTypeFromOperator(operator);
+                    } else if (context.isSpecificField() && facetType != null && !isFacetTypeDefault(facetType)) {
+                        return facetType;
+                    } else {
+                        return getFacetTypeFromSite(context.getTurSNSite());
+                    }
+                })
+                .orElseGet(() -> getFacetTypeFromSite(context.getTurSNSite()));
     }
 
     private static boolean isOr(TurSNFacetTypeContext context) {
