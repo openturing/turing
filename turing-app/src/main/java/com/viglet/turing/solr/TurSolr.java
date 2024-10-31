@@ -126,6 +126,7 @@ public class TurSolr {
     public static final String OR_OR = "OR-OR";
     public static final String OR_AND = "OR-AND";
     public static final String ALL = "_all_";
+    public static final String HYPHEN = "-";
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNTargetingRules turSNTargetingRules;
     private final TurSNSiteFieldUtils turSNSiteFieldUtils;
@@ -584,8 +585,7 @@ public class TurSolr {
     private void setRows(TurSNSite turSNSite, TurSEParameters turSEParameters) {
         if (turSEParameters.getRows() == 0) {
             turSEParameters.setRows(turSNSite.getRowsPerPage());
-        }
-        else  if (turSEParameters.getRows() < 0) {
+        } else if (turSEParameters.getRows() < 0) {
             turSEParameters.setRows(0);
         }
     }
@@ -1084,19 +1084,21 @@ public class TurSolr {
     }
 
     private static TurSNSiteFacetFieldEnum getFacetItemType(TurSNFacetTypeContext context) {
-        if (context.isSpecificField() && !isFacetTypeDefault(context.getTurSNSiteFacetFieldExt().getFacetType())) {
-            return context.getTurSNSiteFacetFieldExt().getFacetItemType();
+        TurSNSiteFacetFieldEnum facetItemType = context.getTurSNSiteFacetFieldExt().getFacetItemType();
+        if (context.isSpecificField() && facetItemType != null && !isFacetTypeDefault(facetItemType)) {
+            return facetItemType;
         } else {
             return getFacetItemTypeFromSite(context.getTurSNSite());
         }
     }
 
     private static TurSNSiteFacetFieldEnum getFacetType(TurSNFacetTypeContext context) {
-        if (operatorIsNotEmpty(context.getQueryParameters().getOperator())) {
-            return getFaceTypeFromOperator(context.getQueryParameters().getOperator());
-        } else if (context.isSpecificField()
-                && !isFacetTypeDefault(context.getTurSNSiteFacetFieldExt().getFacetType())) {
-            return context.getTurSNSiteFacetFieldExt().getFacetType();
+        TurSNSiteFacetFieldEnum facetType = context.getTurSNSiteFacetFieldExt().getFacetType();
+        TurSNFilterQueryOperator operator = context.getQueryParameters().getOperator();
+        if (operatorIsNotEmpty(operator)) {
+            return getFaceTypeFromOperator(operator);
+        } else if (context.isSpecificField() && facetType != null && !isFacetTypeDefault(facetType)) {
+            return facetType;
         } else {
             return getFacetTypeFromSite(context.getTurSNSite());
         }
@@ -1163,9 +1165,19 @@ public class TurSolr {
 
     @NotNull
     public static String getFacetTypeAndFacetItemTypeValues(TurSNFacetTypeContext context) {
+        return getFacetTypeValue(context) + HYPHEN + getFacetItemTypeValue(context);
+    }
+
+    private static String getFacetTypeValue(TurSNFacetTypeContext context) {
         TurSNSiteFacetFieldEnum facetType = getFacetType(context);
+        return facetType != null ? facetType.toString() :
+                getFacetTypeFromSite(context.getTurSNSite()).toString();
+    }
+
+    private static String getFacetItemTypeValue(TurSNFacetTypeContext context) {
         TurSNSiteFacetFieldEnum facetItemType = getFacetItemType(context);
-        return facetType.toString() + "-" + facetItemType.toString();
+        return facetItemType != null ? facetItemType.toString() :
+                getFacetItemTypeFromSite(context.getTurSNSite()).toString();
     }
 
     public List<String> getFacetsInFilterQuery(TurSNFacetTypeContext context) {
