@@ -1187,10 +1187,23 @@ public class TurSolr {
     }
 
     public List<String> getFacetsInFilterQuery(TurSNFacetTypeContext context) {
-        List<String> fqFields = getFqFields(context.getQueryParameters());
-        List<TurSNSiteFieldExt> enabledFacets = getEnabledFacets(context.getTurSNSite());
-        List<String> enabledFacetNames = enabledFacets.stream().map(TurSNSiteFieldExt::getName).toList();
-        return fqFields.stream().filter(enabledFacetNames::contains).distinct().toList();
+        List<String> enabledFacetNames = getEnabledFacets(context.getTurSNSite())
+                .stream().map(TurSNSiteFieldExt::getName)
+                .toList();
+        return getFqFields(context.getQueryParameters())
+                .stream().filter(enabledFacetNames::contains)
+                .distinct()
+                .toList();
+    }
+
+    public List<String> getSecondaryFacetsInFilterQuery(TurSNFacetTypeContext context) {
+        List<String> enabledFacetNames = getEnabledSecondaryFacets(context.getTurSNSite())
+                .stream().map(TurSNSiteFieldExt::getName)
+                .toList();
+        return getFqFields(context.getQueryParameters())
+                .stream().filter(enabledFacetNames::contains)
+                .distinct()
+                .toList();
     }
 
     @NotNull
@@ -1234,6 +1247,11 @@ public class TurSolr {
     private List<TurSNSiteFieldExt> getEnabledFacets(TurSNSite turSNSite) {
         return turSNSiteFieldExtRepository
                 .findByTurSNSiteAndFacetAndEnabled(turSNSite, 1, 1);
+    }
+
+    private List<TurSNSiteFieldExt> getEnabledSecondaryFacets(TurSNSite turSNSite) {
+        return turSNSiteFieldExtRepository
+                .findByTurSNSiteAndSecondaryFacetAndEnabled(turSNSite, true, 1);
     }
 
     private static void setFacetSort(SolrQuery query, TurSNSiteFieldExt turSNSiteFacetFieldExt) {

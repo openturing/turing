@@ -37,14 +37,17 @@ import java.util.Optional;
 
 public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFieldExt, String> {
 
-	@Cacheable("turSNSiteFieldExtfindByTurSNSite")
+	@Cacheable("turSNSiteFieldExtFindByTurSNSite")
 	List<TurSNSiteFieldExt> findByTurSNSite(Sort sort, TurSNSite turSNSite);
 
-	@Cacheable("turSNSiteFieldExtfindByTurSNSiteAndEnabled")
+	@Cacheable("turSNSiteFieldExtFindByTurSNSiteAndEnabled")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndEnabled(TurSNSite turSNSite, int enabled);
 
-	@Cacheable("turSNSiteFieldExtfindByTurSNSiteAndFacetAndEnabled")
+	@Cacheable("turSNSiteFieldExtFindByTurSNSiteAndFacetAndEnabled")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabled(TurSNSite turSNSite, int facet, int enabled);
+
+	@Cacheable("turSNSiteFieldExtFindByTurSNSiteAndSecondaryFacetAndEnabled(")
+	List<TurSNSiteFieldExt> findByTurSNSiteAndSecondaryFacetAndEnabled(TurSNSite turSNSite, Boolean secondaryFacet, int enabled);
 
 	@Cacheable("findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition")
 	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition(TurSNSite turSNSite, int facet, int enabled);

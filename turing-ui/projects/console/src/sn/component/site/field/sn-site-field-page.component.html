@@ -191,6 +191,16 @@
         Enable filter into search page.
       </p>
     </div>
+    <div class="form-checkbox">
+      <label>
+        <input [(ngModel)]="snSiteField.secondaryFacet" type="checkbox" [ngModelOptions]="{standalone: true}"
+               (ngModelChange)="snSiteField.secondaryFacet = $event" aria-describedby="n-field-secondary-facet-tip"/>
+        Secondary Facet
+      </label>
+      <p class="note" id="sn-field-secondary-facet-tip">
+        It will be classified as a secondary facet. It can be used separately from the main facets.
+      </p>
+    </div>
     <div class="form-group">
       <div class="form-group-header">
         <label>Facet Sort</label>

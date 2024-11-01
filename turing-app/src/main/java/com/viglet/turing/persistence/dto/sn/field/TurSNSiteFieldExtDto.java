@@ -53,6 +53,7 @@ public class TurSNSiteFieldExtDto {
     private TurSEFieldType type;
     private int multiValued;
     private int facet;
+    private Boolean secondaryFacet;
     private int hl;
     private int mlt;
     private int enabled;
@@ -77,6 +78,7 @@ public class TurSNSiteFieldExtDto {
         this.type = turSNSiteFieldExt.getType();
         this.multiValued = turSNSiteFieldExt.getMultiValued();
         this.facet = turSNSiteFieldExt.getFacet();
+        this.secondaryFacet = turSNSiteFieldExt.getSecondaryFacet();
         this.hl = turSNSiteFieldExt.getHl();
         this.mlt = turSNSiteFieldExt.getMlt();
         this.enabled = turSNSiteFieldExt.getEnabled();
