@@ -25,7 +25,6 @@ import com.viglet.turing.commons.se.TurSEFilterQueryParameters;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
-import com.viglet.turing.lucene.TurLuceneSearch;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
@@ -35,7 +34,6 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.lucene.document.Document;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,29 +48,20 @@ public class TurSEInstanceAPI {
     private final TurSEInstanceRepository turSEInstanceRepository;
     private final TurSolrInstanceProcess turSolrInstanceProcess;
     private final TurSolr turSolr;
-    private final TurLuceneSearch turLuceneSearch;
 
     @Inject
     public TurSEInstanceAPI(TurSEInstanceRepository turSEInstanceRepository,
                             TurSolrInstanceProcess turSolrInstanceProcess,
-                            TurSolr turSolr, TurLuceneSearch turLuceneSearch) {
+                            TurSolr turSolr) {
         this.turSEInstanceRepository = turSEInstanceRepository;
         this.turSolrInstanceProcess = turSolrInstanceProcess;
         this.turSolr = turSolr;
-        this.turLuceneSearch = turLuceneSearch;
     }
 
     @Operation(summary = "Search Engine List")
     @GetMapping
     public List<TurSEInstance> turSEInstanceList() {
         return this.turSEInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase());
-    }
-
-    @Operation(summary = "Lucene Search")
-    @GetMapping("/lucene/search")
-    public List<Document> turLuceneSearch(
-            @RequestParam(required = false, name = TurSNParamType.QUERY) String q) {
-        return turLuceneSearch.search(q);
     }
 
     @Operation(summary = "Search Engine structure")

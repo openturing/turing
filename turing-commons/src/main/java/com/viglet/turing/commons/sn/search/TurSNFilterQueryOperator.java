@@ -1,6 +1,8 @@
 package com.viglet.turing.commons.sn.search;
 
-public enum TurSNFilterQueryOperator {
+import java.io.Serializable;
+
+public enum TurSNFilterQueryOperator implements Serializable {
     AND {
         @Override
         public String toString() {

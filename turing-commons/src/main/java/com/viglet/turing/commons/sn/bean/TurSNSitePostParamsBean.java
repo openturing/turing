@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ser.std.MapSerializer;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +39,7 @@ import java.util.Map;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurSNSitePostParamsBean {
+public class TurSNSitePostParamsBean implements Serializable {
 	private String userId;
 	private boolean populateMetrics = true;
 	private List<String> targetingRules = new ArrayList<>();
@@ -49,4 +50,16 @@ public class TurSNSitePostParamsBean {
 	private Map<String, List<String>> targetingRulesWithConditionAND = new HashMap<>();
 	@JsonSerialize(keyUsing = MapSerializer.class)
 	private Map<String, List<String>> targetingRulesWithConditionOR = new HashMap<>();
+
+	@Override
+	public String toString() {
+		return "TurSNSitePostParamsBean{" +
+				"userId='" + userId + '\'' +
+				", populateMetrics=" + populateMetrics +
+				", targetingRules=" + targetingRules +
+				", targetingRulesWithCondition=" + targetingRulesWithCondition +
+				", targetingRulesWithConditionAND=" + targetingRulesWithConditionAND +
+				", targetingRulesWithConditionOR=" + targetingRulesWithConditionOR +
+				'}';
+	}
 }

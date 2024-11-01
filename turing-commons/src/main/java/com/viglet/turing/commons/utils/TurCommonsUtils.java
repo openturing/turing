@@ -26,11 +26,10 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.commons.io.FileUtils;
 import org.apache.hc.core5.http.NameValuePair;
-import org.apache.hc.core5.net.URLEncodedUtils;
+import org.apache.hc.core5.net.URIBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -40,7 +39,7 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.BreakIterator;
@@ -96,22 +95,21 @@ public class TurCommonsUtils {
         return text2Description(html2Text(text), numberChars);
     }
 
-    public static URI addOrReplaceParameter(URI uri, String paramName, Locale locale) {
-       return addOrReplaceParameter(uri, paramName, locale.toLanguageTag());
+    public static URI addOrReplaceParameter(URI uri, String paramName, Locale locale,  boolean decoded) {
+       return addOrReplaceParameter(uri, paramName, locale.toLanguageTag(), decoded);
     }
-    public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue) {
-
-        List<NameValuePair> params =   URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
-
+    public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue, boolean decoded) {
+        List<NameValuePair> params = new URIBuilder(uri, StandardCharsets.ISO_8859_1).getQueryParams();
         StringBuilder sbQueryString = new StringBuilder();
         boolean alreadyExists = false;
-
         for (NameValuePair nameValuePair : params) {
             if ((nameValuePair.getName().equals(paramName) && !alreadyExists)) {
                 alreadyExists = true;
                 addParameterToQueryString(sbQueryString, nameValuePair.getName(), paramValue);
             } else {
-                addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
+                addParameterToQueryString(sbQueryString, nameValuePair.getName(),
+                        decoded? URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8):
+                                nameValuePair.getValue());
             }
         }
         if (!alreadyExists) {
@@ -123,13 +121,13 @@ public class TurCommonsUtils {
 
     public static void addParameterToQueryString(StringBuilder sbQueryString, String name, String value) {
         if (value != null) {
-            sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, StandardCharsets.UTF_8)));
+            sbQueryString.append(String.format("%s=%s&", name, value));
         }
     }
 
     public static URI modifiedURI(URI uri, StringBuilder sbQueryString) {
         try {
-            return new URI(uri.getRawPath() + "?" + removeAmpersand(sbQueryString));
+            return new URI(uri.getRawPath() + "?" + removeAmpersand(sbQueryString).replace(" ", "%20"));
         } catch (URISyntaxException e) {
             log.error(e.getMessage(), e);
         }
@@ -196,8 +194,7 @@ public class TurCommonsUtils {
             archive.putArchiveEntry(entry);
 
             try (BufferedInputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
-                IOUtils.copy(input, archive);
-
+                input.transferTo(archive);
                 archive.closeArchiveEntry();
             }
         } catch (IOException e) {

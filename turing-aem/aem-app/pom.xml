@@ -13,7 +13,7 @@
     <name>Turing AEM - Connector</name>
     <description>Turing AEM Web Indexer Connector</description>
     <properties>
-        <spring-boot.version>3.3.4</spring-boot.version>
+        <spring-boot.version>3.3.5</spring-boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -99,8 +99,6 @@
                     <version>3.13.0</version>
                     <configuration>
                         <parameters>true</parameters>
-                        <source>21</source>
-                        <target>21</target>
                     </configuration>
                 </plugin>
             </plugins>
@@ -111,6 +109,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
+                    <layout>ZIP</layout>
                     <skip>false</skip>
                     <executable>true</executable>
                 </configuration>

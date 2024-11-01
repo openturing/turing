@@ -36,4 +36,13 @@ public class TurSESimilarResult {
 	private String type;
 	private String url;
 
+	@Override
+	public String toString() {
+		return "TurSESimilarResult{" +
+				"id='" + id + '\'' +
+				", title='" + title + '\'' +
+				", type='" + type + '\'' +
+				", url='" + url + '\'' +
+				'}';
+	}
 }

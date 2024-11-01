@@ -81,7 +81,8 @@ public class TurUser implements Serializable {
 
 	@Setter
 	private int enabled;
-	
+
+	@Builder.Default
 	@ManyToMany
 	private Collection<TurGroup> turGroups  = new HashSet<>();
 

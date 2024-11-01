@@ -1,5 +1,6 @@
 package com.viglet.turing.commons.sn.search;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.util.Locale;
 
@@ -10,7 +11,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class TurSNSiteSearchContext {
+public class TurSNSiteSearchContext implements Serializable {
 	private String siteName;
 	private TurSEParameters turSEParameters;
 	private Locale locale;
@@ -29,5 +30,16 @@ public class TurSNSiteSearchContext {
 
 	public TurSNSiteSearchContext(String siteName, TurSEParameters turSEParameters, Locale locale, URI uri) {
 		this(siteName, turSEParameters, locale, uri, new TurSNSitePostParamsBean());
+	}
+
+	@Override
+	public String toString() {
+		return "TurSNSiteSearchContext{" +
+				"siteName='" + siteName + '\'' +
+				", turSEParameters=" + turSEParameters +
+				", locale=" + locale +
+				", turSNSitePostParamsBean=" + turSNSitePostParamsBean +
+				", uri=" + uri +
+				'}';
 	}
 }

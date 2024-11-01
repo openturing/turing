@@ -45,7 +45,7 @@ public class TurSNSiteAutoCompleteAPI {
 
 	@GetMapping
 	public List<String> turSNSiteAutoComplete(@PathVariable String siteName,
-			@RequestParam(required = true, name = TurSNParamType.QUERY) String q,
+			@RequestParam(name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, defaultValue = "20", name = TurSNParamType.ROWS) long rows,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest) {
 		Locale locale = LocaleUtils.toLocale(localeRequest);

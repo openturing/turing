@@ -198,6 +198,7 @@ public class TurSNSiteFieldExtAPI {
                 .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
                 .facetItemType(TurSNSiteFacetFieldEnum.DEFAULT)
                 .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
+                .secondaryFacet(false)
                 .hl(0)
                 .multiValued(turSNSiteField.getMultiValued())
                 .facetPosition(0)
@@ -220,6 +221,7 @@ public class TurSNSiteFieldExtAPI {
                 .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
                 .facetItemType(TurSNSiteFacetFieldEnum.DEFAULT)
                 .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
+                .secondaryFacet(false)
                 .hl(0)
                 .multiValued(1)
                 .facetPosition(0)
@@ -250,11 +252,12 @@ public class TurSNSiteFieldExtAPI {
             turSNSiteFieldExtEdit.setDescription(turSNSiteFieldExt.getDescription());
             turSNSiteFieldExtEdit.setType(turSNSiteFieldExt.getType());
             turSNSiteFieldExtEdit.setFacet(turSNSiteFieldExt.getFacet());
-            turSNSiteFieldExtEdit.setFacetLocales( getTurSNSiteFieldExtFacets(turSNSiteFieldExt));
+            turSNSiteFieldExtEdit.setFacetLocales(getTurSNSiteFieldExtFacets(turSNSiteFieldExt));
             turSNSiteFieldExtEdit.setFacetRange(turSNSiteFieldExt.getFacetRange());
             turSNSiteFieldExtEdit.setFacetSort(turSNSiteFieldExt.getFacetSort());
             turSNSiteFieldExtEdit.setFacetType(turSNSiteFieldExt.getFacetType());
             turSNSiteFieldExtEdit.setFacetItemType(turSNSiteFieldExt.getFacetItemType());
+            turSNSiteFieldExtEdit.setSecondaryFacet(turSNSiteFieldExt.getSecondaryFacet());
             turSNSiteFieldExtEdit.setHl(turSNSiteFieldExt.getHl());
             turSNSiteFieldExtEdit.setEnabled(turSNSiteFieldExt.getEnabled());
             turSNSiteFieldExtEdit.setMlt(turSNSiteFieldExt.getMlt());
@@ -346,8 +349,7 @@ public class TurSNSiteFieldExtAPI {
             turSNSiteFieldExt.setExternalId(turSNSiteField.getId());
             if (turSNSiteFieldExt.getFacet() == 1) {
                 turSNSiteFieldExt.setFacetPosition(getFacetPositionIncrement());
-            }
-            else {
+            } else {
                 turSNSiteFieldExt.setFacetPosition(0);
             }
             this.turSNSiteFieldExtRepository.save(turSNSiteFieldExt);

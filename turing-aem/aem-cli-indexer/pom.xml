@@ -114,7 +114,7 @@
                                     </excludes>
                                 </filter>
                             </filters>
-                            <finalName>turing-aem</finalName>
+                            <finalName>turing-aem-cli</finalName>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>indexer</shadedClassifierName>
                             <transformers>

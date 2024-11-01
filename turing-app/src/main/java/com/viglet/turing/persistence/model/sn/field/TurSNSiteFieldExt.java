@@ -84,6 +84,8 @@ public class TurSNSiteFieldExt implements Serializable {
     private TurSNSiteFacetFieldSortEnum facetSort = TurSNSiteFacetFieldSortEnum.DEFAULT;
     @Column
     private Integer facetPosition;
+    @Column
+    private Boolean secondaryFacet;
     @Column(nullable = false)
     private TurSNFieldType snType;
     @Column(nullable = false)

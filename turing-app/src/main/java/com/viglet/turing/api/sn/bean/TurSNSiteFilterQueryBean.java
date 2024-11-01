@@ -31,6 +31,6 @@ import java.util.List;
 @Getter
 @Setter
 public class TurSNSiteFilterQueryBean {
-	private List<String> hiddenItems;
+	private List<String> facetsInFilterQueries;
 	private List<String> items;
 }

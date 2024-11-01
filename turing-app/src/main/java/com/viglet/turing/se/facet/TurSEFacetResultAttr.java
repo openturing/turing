@@ -22,7 +22,9 @@ package com.viglet.turing.se.facet;
 
 
 import lombok.Getter;
+import lombok.Setter;
 
+@Setter
 @Getter
 public class TurSEFacetResultAttr {
 	private String attribute;
@@ -33,12 +35,11 @@ public class TurSEFacetResultAttr {
 		this.setCount(count);
 	}
 
-	public void setAttribute(String attribute) {
-		this.attribute = attribute;
+	@Override
+	public String toString() {
+		return "TurSEFacetResultAttr{" +
+				"attribute='" + attribute + '\'' +
+				", count=" + count +
+				'}';
 	}
-
-	public void setCount(int count) {
-		this.count = count;
-	}
-	
 }

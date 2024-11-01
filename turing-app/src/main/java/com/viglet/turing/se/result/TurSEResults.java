@@ -57,4 +57,18 @@ public class TurSEResults extends TurSEGenericResults {
 		this.facetResults = facetResults;
 		this.groups = groups;
 	}
+
+	@Override
+	public String toString() {
+		return "TurSEResults{" +
+				"qTime=" + qTime +
+				", elapsedTime=" + elapsedTime +
+				", queryString='" + queryString + '\'' +
+				", sort='" + sort + '\'' +
+				", spellCheck=" + spellCheck +
+				", similarResults=" + similarResults +
+				", facetResults=" + facetResults +
+				", groups=" + groups +
+				'}';
+	}
 }
