@@ -20,6 +20,8 @@
  */
 package com.viglet.turing.sn;
 
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.net.URIBuilder;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentMetadataBean;
@@ -32,16 +34,15 @@ import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.solr.TurSolrField;
 import com.viglet.turing.solr.TurSolrUtils;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.collections4.KeyValue;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.tika.utils.StringUtils;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.util.ForwardedHeaderUtils;
 
 import java.net.URI;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TurSNUtils {
     public static final String TURING_ENTITY = "turing_entity";
@@ -70,38 +71,43 @@ public class TurSNUtils {
 
 
     public static URI addFilterQuery(URI uri, String fq) {
-        List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
+        List<NameValuePair> params = new URIBuilder(uri).getQueryParams();
         StringBuilder sbQueryString = new StringBuilder();
-        boolean alreadyExists = false;
+        AtomicBoolean alreadyExists = new AtomicBoolean(false);
         for (NameValuePair nameValuePair : params) {
+
             if (nameValuePair.getValue() != null) {
+                String decodedValue = URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8);
                 if (nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT) &&
-                        nameValuePair.getValue().equals(fq)) {
-                    alreadyExists = true;
+                        decodedValue.equals(fq)) {
+                    alreadyExists.set(true);
                 }
-                resetPaginationOrAddParameter(sbQueryString, nameValuePair);
+                resetPaginationOrAddParameter(sbQueryString, nameValuePair.getName(), decodedValue);
             }
         }
-        if (!alreadyExists) {
+        if (!alreadyExists.get()) {
             TurCommonsUtils.addParameterToQueryString(sbQueryString, TurSNParamType.FILTER_QUERIES_DEFAULT, fq);
         }
-
         return TurCommonsUtils.modifiedURI(uri, sbQueryString);
     }
 
     public static URI removeFilterQuery(URI uri, String fq) {
-        List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
+        List<NameValuePair> params = new URIBuilder(uri).getQueryParams();
         StringBuilder sbQueryString = new StringBuilder();
         for (NameValuePair nameValuePair : params) {
-            if (!(java.net.URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8).equals(fq)
-                    && nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT))) {
-                resetPaginationOrAddParameter(sbQueryString, nameValuePair);
-            }
-        }
+            String decodedValue = URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8);
+            if (!(decodedValue.equals(fq)
+                        && nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT))) {
+                    resetPaginationOrAddParameter(sbQueryString, nameValuePair.getName(), decodedValue);
+                }
+
+
+        };
         return TurCommonsUtils.modifiedURI(uri, sbQueryString);
     }
+
     public static URI removeFilterQueryByFieldNames(URI uri, List<String> fieldNames) {
-        List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
+        List<NameValuePair> params = new URIBuilder(uri).getQueryParams();
         StringBuilder sbQueryString = new StringBuilder();
         for (NameValuePair nameValuePair : params) {
             if (nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT)) {
@@ -110,19 +116,19 @@ public class TurSNUtils {
                         TurCommonsUtils.addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
                     }
                 });
-            }
-            else {
+            } else {
                 TurCommonsUtils.addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
             }
         }
         return TurCommonsUtils.modifiedURI(uri, sbQueryString);
     }
+
     public static URI removeFilterQueryByFieldName(URI uri, String fieldName) {
         return removeFilterQueryByFieldNames(uri, Collections.singletonList(fieldName));
     }
 
     public static URI removeQueryStringParameter(URI uri, String field) {
-        List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
+        List<NameValuePair> params = new URIBuilder(uri).getQueryParams();
         StringBuilder sbQueryString = new StringBuilder();
 
         for (NameValuePair nameValuePair : params) {
@@ -135,11 +141,11 @@ public class TurSNUtils {
     }
 
 
-    private static void resetPaginationOrAddParameter(StringBuilder sbQueryString, NameValuePair nameValuePair) {
-        if ((nameValuePair.getName().equals(TurSNParamType.PAGE))) {
-            TurCommonsUtils.addParameterToQueryString(sbQueryString, nameValuePair.getName(), "1");
+    private static void resetPaginationOrAddParameter(StringBuilder sbQueryString, String paramName, String paramValue) {
+        if ((paramName.equals(TurSNParamType.PAGE))) {
+            TurCommonsUtils.addParameterToQueryString(sbQueryString, paramName, "1");
         } else {
-            TurCommonsUtils.addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
+            TurCommonsUtils.addParameterToQueryString(sbQueryString, paramName, paramValue);
         }
     }
 

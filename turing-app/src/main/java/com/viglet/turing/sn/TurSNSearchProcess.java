@@ -151,8 +151,7 @@ public class TurSNSearchProcess {
                 .setFacets(turSNSiteSearchFacetItemBeans)
                 .setMultiValued(isTrue(turSNSiteFieldExtDto.getMultiValued()))
                 .setCleanUpLink(TurSNUtils.removeFilterQueryByFieldName(context.getUri(),
-                                turSNSiteFieldExtDto.getName()).toString()
-                        .replace(":", "\\:"));
+                        turSNSiteFieldExtDto.getName()).toString());
     }
 
     @NotNull
@@ -416,7 +415,7 @@ public class TurSNSearchProcess {
                         .setLocale(turSNSiteLocale.getLanguage())
                         .setLink(TurCommonsUtils
                                 .addOrReplaceParameter(uri, TurSNParamType.LOCALE,
-                                        turSNSiteLocale.getLanguage()).toString())));
+                                        turSNSiteLocale.getLanguage(), true).toString())));
 
         return turSNSiteLocaleBeans;
     }
@@ -492,9 +491,8 @@ public class TurSNSearchProcess {
     private String responseCleanUpFacet(TurSNSiteSearchContext context,
                                         TurSNSite turSNSite) {
         return TurSNUtils.removeFilterQueryByFieldNames(context.getUri(),
-                        turSolr.getFacetsInFilterQuery(new TurSNFacetTypeContext(null, turSNSite,
-                                context.getTurSEParameters().getFilterQueries()))).toString()
-                .replace(":", "\\:");
+                turSolr.getFacetsInFilterQuery(new TurSNFacetTypeContext(null, turSNSite,
+                        context.getTurSEParameters().getFilterQueries()))).toString();
     }
 
     private List<TurSNSiteSearchFacetBean> responseFacet(TurSNSiteSearchContext context,
@@ -549,23 +547,12 @@ public class TurSNSearchProcess {
                         final String fq = facet.getFacet() + ":" + facetItem.getAttribute();
                         if (facetItem.getCount() > 0 ||
                                 usedFacetItems.contains(fq) && facetTypeAndFacetItemTypeValues.equals(AND_OR)) {
-
-                            final TurSNSiteSearchFacetItemBean facetItemBean = new TurSNSiteSearchFacetItemBean()
+                            boolean selected = usedFacetItems.contains(fq);
+                            turSNSiteSearchFacetItemBeans.add(new TurSNSiteSearchFacetItemBean()
                                     .setCount(facetItem.getCount())
                                     .setLabel(facetItem.getAttribute())
-                                    .setSelected(usedFacetItems.contains(fq));
-
-                            // If the facet-item is selected, then the link needs to remove it.
-                            if (facetItemBean.isSelected()) {
-                                facetItemBean.setLink(TurSNUtils
-                                        .removeFilterQuery(context.getUri(), fq)
-                                        .toString().replace(":", "\\:"));
-                            } else {
-                                facetItemBean.setLink(TurSNUtils
-                                        .addFilterQuery(context.getUri(), fq)
-                                        .toString().replace(":", "\\:"));
-                            }
-                            turSNSiteSearchFacetItemBeans.add(facetItemBean);
+                                    .setSelected(selected)
+                                    .setLink(getLink(context, selected, fq)));
                         }
                     });
                     if (!turSNSiteSearchFacetItemBeans.isEmpty()) {
@@ -578,6 +565,16 @@ public class TurSNSearchProcess {
             return turSNSiteSearchFacetBeans;
         }
         return Collections.emptyList();
+    }
+
+    private static String getLink(TurSNSiteSearchContext context, boolean selected, String fq) {
+        return selected ?
+                TurSNUtils
+                        .removeFilterQuery(context.getUri(), fq)
+                        .toString() :
+                TurSNUtils
+                        .addFilterQuery(context.getUri(), fq)
+                        .toString();
     }
 
     private List<TurSNSiteSearchPaginationBean> responsePagination(URI uri, TurSEGenericResults turSEResults) {
@@ -602,14 +599,14 @@ public class TurSNSearchProcess {
 
     private URI changeGroupURIForPagination(URI uri, String fieldName) {
         return TurCommonsUtils.addOrReplaceParameter(TurSNUtils.removeQueryStringParameter(uri, GROUP),
-                TurSNParamType.FILTER_QUERIES_DEFAULT, fieldName);
+                TurSNParamType.FILTER_QUERIES_DEFAULT, fieldName, true);
     }
 
     private TurSNSiteSearchPaginationBean setPreviousPage(URI uri, TurSEGenericResults turSEResults) {
         return new TurSNSiteSearchPaginationBean()
                 .setType(TurSNPaginationType.PREVIOUS)
                 .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
-                        Integer.toString(turSEResults.getCurrentPage() - 1)).toString())
+                        Integer.toString(turSEResults.getCurrentPage() - 1), true).toString())
                 .setText(PREVIOUS)
                 .setPage(turSEResults.getCurrentPage() - 1);
     }
@@ -617,7 +614,7 @@ public class TurSNSearchProcess {
     private TurSNSiteSearchPaginationBean setFirstPage(URI uri) {
         return new TurSNSiteSearchPaginationBean()
                 .setType(TurSNPaginationType.FIRST)
-                .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(1))
+                .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(1), true)
                         .toString())
                 .setText(FIRST)
                 .setPage(1);
@@ -627,7 +624,7 @@ public class TurSNSearchProcess {
         return new TurSNSiteSearchPaginationBean()
                 .setType(TurSNPaginationType.LAST)
                 .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
-                        Integer.toString(turSEResults.getPageCount())).toString())
+                        Integer.toString(turSEResults.getPageCount()), true).toString())
                 .setText(LAST)
                 .setPage(turSEResults.getPageCount());
     }
@@ -636,7 +633,7 @@ public class TurSNSearchProcess {
         return new TurSNSiteSearchPaginationBean()
                 .setType(TurSNPaginationType.NEXT)
                 .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE,
-                        Integer.toString(turSEResults.getCurrentPage() + 1)).toString())
+                        Integer.toString(turSEResults.getCurrentPage() + 1), true).toString())
                 .setText(NEXT)
                 .setPage(turSEResults.getCurrentPage() + 1);
 
@@ -645,7 +642,7 @@ public class TurSNSearchProcess {
     private TurSNSiteSearchPaginationBean setGenericPages(URI uri, int page,
                                                           TurSNPaginationType type) {
         return new TurSNSiteSearchPaginationBean()
-                .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page))
+                .setHref(TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.PAGE, Integer.toString(page), true)
                         .toString())
                 .setText(Integer.toString(page))
                 .setType(type)

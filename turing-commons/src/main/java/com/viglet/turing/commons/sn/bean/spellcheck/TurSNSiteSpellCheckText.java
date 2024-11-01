@@ -20,6 +20,8 @@ import java.net.URI;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Spell Check Text of Turing ES Semantic Navigation response.
@@ -29,40 +31,22 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
  * @since 0.3.5
  */
 
+@Setter
+@Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSpellCheckText {
 	private static final String TRUE = "1";
 	private String text;
 	private String link;
-	
-	public TurSNSiteSpellCheckText() {
-		super();
-	}
-	
+
 	public TurSNSiteSpellCheckText(URI uri, String text, boolean isOriginal) {
 		super();
-		URI uriModified = TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.QUERY, text);
+		URI uriModified = TurCommonsUtils.addOrReplaceParameter(uri, TurSNParamType.QUERY, text, true);
 		if (isOriginal) {
-			uriModified = TurCommonsUtils.addOrReplaceParameter(uriModified, TurSNParamType.AUTO_CORRECTION_DISABLED, TRUE);
+			uriModified = TurCommonsUtils.addOrReplaceParameter(uriModified, TurSNParamType.AUTO_CORRECTION_DISABLED, TRUE, false);
 		}
 		this.text = text;
 		this.link = uriModified.toString();
-	}
-	
-	public String getText() {
-		return text;
-	}
-
-	public void setText(String text) {
-		this.text = text;
-	}
-
-	public String getLink() {
-		return link;
-	}
-
-	public void setLink(String link) {
-		this.link = link;
 	}
 
 }

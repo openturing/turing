@@ -327,7 +327,7 @@ public class TurSolr {
             turSESpellCheckResult.setUsingCorrected(true);
             if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
                 turSNSiteSearchContext.setUri(TurCommonsUtils.addOrReplaceParameter(turSNSiteSearchContext.getUri(),
-                        QUERY, turSESpellCheckResult.getCorrectedText()));
+                        QUERY, turSESpellCheckResult.getCorrectedText(), true));
             }
         } else {
             turSESpellCheckResult.setUsingCorrected(false);
