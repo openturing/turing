@@ -26,7 +26,6 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.commons.io.FileUtils;
 import org.apache.hc.core5.http.NameValuePair;
@@ -195,8 +194,7 @@ public class TurCommonsUtils {
             archive.putArchiveEntry(entry);
 
             try (BufferedInputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
-                IOUtils.copy(input, archive);
-
+                input.transferTo(archive);
                 archive.closeArchiveEntry();
             }
         } catch (IOException e) {
