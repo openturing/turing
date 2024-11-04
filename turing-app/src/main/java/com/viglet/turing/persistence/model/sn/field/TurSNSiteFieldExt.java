@@ -86,6 +86,8 @@ public class TurSNSiteFieldExt implements Serializable {
     private Integer facetPosition;
     @Column
     private Boolean secondaryFacet;
+    @Column
+    private Boolean showAllFacetItems;
     @Column(nullable = false)
     private TurSNFieldType snType;
     @Column(nullable = false)

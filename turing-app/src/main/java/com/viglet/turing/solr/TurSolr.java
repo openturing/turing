@@ -31,6 +31,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
@@ -895,8 +896,10 @@ public class TurSolr {
                                 .filter(facet -> facet.getName().equals(kv.getKey()))
                                 .findFirst())
                 .ifPresentOrElse(facet ->
+
                         {
-                            TurSNFacetTypeContext context = new TurSNFacetTypeContext(facet, turSNSite,
+                            TurSNFacetTypeContext context = new TurSNFacetTypeContext(
+                                    new TurSNSiteFieldExtDto(facet), turSNSite,
                                     filterQueryParameters);
                             if (isFacetTypeDefault(facetType)) {
                                 addEnabledFacetItem(facet.getName(), getFacetType(context),
@@ -1084,7 +1087,7 @@ public class TurSolr {
     }
 
     private static TurSNSiteFacetFieldEnum getFacetItemType(TurSNFacetTypeContext context) {
-        return Optional.ofNullable(context.getTurSNSiteFacetFieldExt()).map(field -> {
+        return Optional.ofNullable(context.getTurSNSiteFacetFieldExtDto()).map(field -> {
                     TurSNSiteFacetFieldEnum facetItemType = field.getFacetItemType();
                     if (context.isSpecificField() && facetItemType != null && !isFacetTypeDefault(facetItemType)) {
                         return facetItemType;
@@ -1092,11 +1095,13 @@ public class TurSolr {
                         return getFacetItemTypeFromSite(context.getTurSNSite());
                     }
                 })
-                .orElseGet(() -> getFacetItemTypeFromSite(context.getTurSNSite()));
+                .orElseGet(() -> {
+                    return getFacetItemTypeFromSite(context.getTurSNSite());
+                });
     }
 
     private static TurSNSiteFacetFieldEnum getFacetType(TurSNFacetTypeContext context) {
-        return Optional.ofNullable(context.getTurSNSiteFacetFieldExt()).map(field -> {
+        return Optional.ofNullable(context.getTurSNSiteFacetFieldExtDto()).map(field -> {
                     TurSNSiteFacetFieldEnum facetType = field.getFacetType();
                     TurSNFilterQueryOperator operator = context.getQueryParameters().getOperator();
                     if (operatorIsNotEmpty(operator)) {
@@ -1157,7 +1162,7 @@ public class TurSolr {
                 return FACET_OR.concat(query);
             }
             case OR_AND -> {
-                if (!fqFields.contains(context.getTurSNSiteFacetFieldExt().getName())) {
+                if (!fqFields.contains(context.getTurSNSiteFacetFieldExtDto().getName())) {
                     return FACET_OR.concat(query);
                 } else {
                     return query;
@@ -1233,7 +1238,8 @@ public class TurSolr {
                     .setFacetLimit(turSNSite.getItemsPerFacet())
                     .setFacetSort(facetSortIsEmptyOrCount(turSNSite) ? COUNT : INDEX);
             enabledFacets.forEach(turSNSiteFacetFieldExt -> {
-                TurSNFacetTypeContext context = new TurSNFacetTypeContext(turSNSiteFacetFieldExt, turSNSite,
+                TurSNFacetTypeContext context = new TurSNFacetTypeContext(new
+                        TurSNSiteFieldExtDto(turSNSiteFacetFieldExt), turSNSite,
                         queryParameters);
                 setFacetSort(query, turSNSiteFacetFieldExt);
                 if (isDateRangeFacet(turSNSiteFacetFieldExt))
@@ -1271,12 +1277,12 @@ public class TurSolr {
 
     private void addFacetField(TurSNFacetTypeContext context, SolrQuery query) {
         query.addFacetField(setFacetTypeConditionInFacet(context,
-                setEntityPrefix(context.getTurSNSiteFacetFieldExt())
-                        .concat(context.getTurSNSiteFacetFieldExt().getName())));
+                setEntityPrefix(context.getTurSNSiteFacetFieldExtDto())
+                        .concat(context.getTurSNSiteFacetFieldExtDto().getName())));
     }
 
     private void addFacetRange(TurSNFacetTypeContext context, SolrQuery query) {
-        String fieldName = context.getTurSNSiteFacetFieldExt().getName();
+        String fieldName = context.getTurSNSiteFacetFieldExtDto().getName();
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
         cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -1287,7 +1293,7 @@ public class TurSolr {
         cal.set(Calendar.MILLISECOND, 0);
 
         query.set("f." + fieldName + ".facet.range.gap",
-                PLUS_ONE + context.getTurSNSiteFacetFieldExt().getFacetRange());
+                PLUS_ONE + context.getTurSNSiteFacetFieldExtDto().getFacetRange());
         query.set("f." + fieldName + ".facet.range.start",
                 solrDateFormatter().format(DateUtils.addYears(cal.getTime(), -100)));
         query.set("f." + fieldName + ".facet.range.end",
@@ -1297,8 +1303,8 @@ public class TurSolr {
     }
 
     @NotNull
-    private static String setEntityPrefix(TurSNSiteFieldExt turSNSiteFacetFieldExt) {
-        return isNerOrThesaurus(turSNSiteFacetFieldExt.getSnType()) ? TURING_ENTITY : EMPTY;
+    private static String setEntityPrefix(TurSNSiteFieldExtDto turSNSiteFacetFieldExtDto) {
+        return isNerOrThesaurus(turSNSiteFacetFieldExtDto.getSnType()) ? TURING_ENTITY : EMPTY;
     }
 
     private static boolean isNerOrThesaurus(TurSNFieldType snType) {

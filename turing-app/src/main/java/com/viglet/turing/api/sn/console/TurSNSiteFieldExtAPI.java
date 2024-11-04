@@ -198,6 +198,7 @@ public class TurSNSiteFieldExtAPI {
                 .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
                 .facetItemType(TurSNSiteFacetFieldEnum.DEFAULT)
                 .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
+                .showAllFacetItems(false)
                 .secondaryFacet(false)
                 .hl(0)
                 .multiValued(turSNSiteField.getMultiValued())
@@ -222,6 +223,7 @@ public class TurSNSiteFieldExtAPI {
                 .facetItemType(TurSNSiteFacetFieldEnum.DEFAULT)
                 .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
                 .secondaryFacet(false)
+                .showAllFacetItems(false)
                 .hl(0)
                 .multiValued(1)
                 .facetPosition(0)
@@ -258,6 +260,7 @@ public class TurSNSiteFieldExtAPI {
             turSNSiteFieldExtEdit.setFacetType(turSNSiteFieldExt.getFacetType());
             turSNSiteFieldExtEdit.setFacetItemType(turSNSiteFieldExt.getFacetItemType());
             turSNSiteFieldExtEdit.setSecondaryFacet(turSNSiteFieldExt.getSecondaryFacet());
+            turSNSiteFieldExtEdit.setShowAllFacetItems(turSNSiteFieldExt.getShowAllFacetItems());
             turSNSiteFieldExtEdit.setHl(turSNSiteFieldExt.getHl());
             turSNSiteFieldExtEdit.setEnabled(turSNSiteFieldExt.getEnabled());
             turSNSiteFieldExtEdit.setMlt(turSNSiteFieldExt.getMlt());
