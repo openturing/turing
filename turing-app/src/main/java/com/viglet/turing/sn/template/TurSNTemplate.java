@@ -127,10 +127,9 @@ public class TurSNTemplate {
             if (!Arrays.asList(locales).contains(configSet)) {
                 configSet = "en";
             }
-            String solrURL = String.format("http://%s:%s", instance.getHost(), instance.getPort());
             if (turConfigProperties.getSolr().isCloud()) {
                 try {
-                    TurSolrUtils.createCollection(solrURL, coreName,
+                    TurSolrUtils.createCollection(instance.getUrl(), coreName,
                             resourceloader.getResource(
                                             String.format("classpath:solr/configsets/%s.zip", configSet))
                                     .getInputStream(),
@@ -139,7 +138,7 @@ public class TurSNTemplate {
                     log.error(e.getMessage(), e);
                 }
             } else {
-                TurSolrUtils.createCore(solrURL, coreName, configSet);
+                TurSolrUtils.createCore(instance.getUrl(), coreName, configSet);
             }
         });
         return coreName;

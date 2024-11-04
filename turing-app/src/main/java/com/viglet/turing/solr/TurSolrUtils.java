@@ -61,13 +61,7 @@ public class TurSolrUtils {
     }
 
     public static void deleteCore(TurSEInstance turSEInstance, String coreName) {
-        TurSolrUtils.deleteCore(getSolrUrl(turSEInstance), coreName);
-    }
-
-    private static String getSolrUrl(TurSEInstance turSEInstance) {
-        return String.format("http://%s:%s",
-                turSEInstance.getHost(),
-                turSEInstance.getPort());
+        TurSolrUtils.deleteCore(turSEInstance.getUrl(), coreName);
     }
 
     public static void deleteCore(String solrUrl, String name) {
@@ -90,7 +84,7 @@ public class TurSolrUtils {
         try (HttpClient client = getHttpClient()) {
             HttpRequest request = getHttpRequestBuilderJson()
                     .uri(URI.create(String.format("%s/solr/%s/schema/fields/%s",
-                            getSolrUrl(turSEInstance), coreName, fieldName)))
+                            turSEInstance.getUrl(), coreName, fieldName)))
                     .build();
             HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
             if( httpResponse.statusCode() == 200) {
@@ -112,7 +106,7 @@ public class TurSolrUtils {
         try (HttpClient client = getHttpClient()) {
             HttpRequest request = getHttpRequestBuilderJson()
                     .uri(URI.create(String.format("%s/solr/%s/schema/fields/%s",
-                            getSolrUrl(turSEInstance), coreName, fieldName)))
+                            turSEInstance.getUrl(), coreName, fieldName)))
                     .build();
             return client.send(request, HttpResponse.BodyHandlers.ofString()).statusCode() == 200;
         } catch (IOException e) {
@@ -194,7 +188,7 @@ public class TurSolrUtils {
     @NotNull
     private static URI getSchemaUri(TurSEInstance turSEInstance, String coreName) {
         return URI.create(String.format(SCHEMA_API_URL,
-                getSolrUrl(turSEInstance), coreName));
+                turSEInstance.getUrl(), coreName));
     }
 
     @NotNull
@@ -311,7 +305,7 @@ public class TurSolrUtils {
         try (HttpClient client = getHttpClient()) {
             HttpRequest request = getHttpRequestBuilderJson()
                     .uri(URI.create(String.format("%s/api/cores/%s",
-                            getSolrUrl(turSEInstance), core)))
+                            turSEInstance.getUrl(), core)))
                     .build();
             HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (httpResponse.statusCode() == 200) {

@@ -21,7 +21,6 @@
 package com.viglet.turing.solr;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.net.URL;
 
 import jakarta.annotation.PreDestroy;
@@ -30,15 +29,15 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.impl.Http2SolrClient;
+
 @Slf4j
 @Getter
 @Setter
 public class TurSolrInstance {
 
-	private CloseableHttpClient closeableHttpClient;
+	private Http2SolrClient http2SolrClient;
 	private SolrClient solrClient;
 	private String core;
 	private URL solrUrl;
@@ -56,19 +55,19 @@ public class TurSolrInstance {
 				solrClient.close();
 				solrClient = null;
 			}
-			if (closeableHttpClient != null) {
-				closeableHttpClient.close();
-				closeableHttpClient = null;
+			if (http2SolrClient != null) {
+				http2SolrClient.close();
+				http2SolrClient = null;
 			}
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
 	}
 
-	public TurSolrInstance(CloseableHttpClient closeableHttpClient, SolrClient solrClient, URL solrUrl,
-			String core) {
+	public TurSolrInstance(Http2SolrClient http2SolrClient, SolrClient solrClient, URL solrUrl,
+						   String core) {
 		super();
-		this.closeableHttpClient = closeableHttpClient;
+		this.http2SolrClient = http2SolrClient;
 		this.solrClient = solrClient;
 		this.solrUrl = solrUrl;
 		this.core = core;

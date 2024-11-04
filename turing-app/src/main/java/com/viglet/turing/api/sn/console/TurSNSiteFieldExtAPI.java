@@ -76,7 +76,7 @@ public class TurSNSiteFieldExtAPI {
     public static final String DEST = "dest";
     public static final String PDATE = "pdate";
     public static final String NAME = "name";
-    public static final String SOLR_SCHEMA_REQUEST = "http://%s:%d/solr/%s/schema";
+    public static final String SOLR_SCHEMA_REQUEST = "%s/solr/%s/schema";
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
@@ -417,8 +417,7 @@ public class TurSNSiteFieldExtAPI {
         JSONObject json = new JSONObject();
         json.put(ADD_FIELD, jsonAddField);
         HttpPost httpPost = new HttpPost(
-                String.format(SOLR_SCHEMA_REQUEST, turSNSite.getTurSEInstance().getHost(),
-                        turSNSite.getTurSEInstance().getPort(), turSNSiteLocale.getCore()));
+                String.format(SOLR_SCHEMA_REQUEST, turSNSite.getTurSEInstance().getUrl(), turSNSiteLocale.getCore()));
         executeHttpPost(json, httpPost);
         this.copyField(turSNSiteLocale, fieldName, TEXT);
     }
@@ -430,8 +429,8 @@ public class TurSNSiteFieldExtAPI {
         JSONObject json = new JSONObject();
         json.put(ADD_COPY_FIELD, jsonAddField);
         TurSEInstance turSEInstance = turSNSiteLocale.getTurSNSite().getTurSEInstance();
-        HttpPost httpPost = new HttpPost(String.format(SOLR_SCHEMA_REQUEST, turSEInstance.getHost(),
-                turSEInstance.getPort(), turSNSiteLocale.getCore()));
+        HttpPost httpPost = new HttpPost(String.format(SOLR_SCHEMA_REQUEST, turSEInstance.getUrl(),
+                turSNSiteLocale.getCore()));
         executeHttpPost(json, httpPost);
     }
 

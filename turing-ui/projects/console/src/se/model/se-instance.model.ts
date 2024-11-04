@@ -4,8 +4,7 @@ export interface TurSEInstance {
   id: string;
   title: string;
   description: string;
-  host: string;
-  port: number;
+  url: string;
   turSEVendor: TurSEVendor;
   language: string;
   enabled: number;

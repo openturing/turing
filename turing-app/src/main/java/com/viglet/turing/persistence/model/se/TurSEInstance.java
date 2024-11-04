@@ -54,11 +54,8 @@ public class TurSEInstance implements Serializable {
 	@Column(nullable = false)
 	private int enabled;
 
-	@Column(nullable = false)
-	private String host;
-
-	@Column(nullable = false)
-	private int port;
+	@Column(nullable = false, length = 500)
+	private String url;
 
 	// bi-directional many-to-one association to TurSEVendor
 	@ManyToOne
