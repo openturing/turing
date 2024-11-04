@@ -5,11 +5,11 @@
   "dependencies": {
     "@primer/octicons-react": "^19.12.0",
     "@primer/react": "^37.0.1",
-    "@testing-library/jest-dom": "^6.6.2",
+    "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.8.1",
+    "@types/node": "^22.8.7",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "axios": "^1.7.4",
