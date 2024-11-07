@@ -23,6 +23,7 @@ package com.viglet.turing.spring.security;
 
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.spring.security.auth.TurAuthTokenHeaderFilter;
+import com.viglet.turing.spring.security.auth.TurKeycloakLogoutSuccessHandler;
 import com.viglet.turing.spring.security.auth.TurLogoutHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -47,6 +48,7 @@ public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
 	public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc,
 										   TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
 										   TurLogoutHandler turLogoutHandler,
+										   TurKeycloakLogoutSuccessHandler turKeycloakLogoutSuccessHandler,
 										   TurConfigProperties turConfigProperties,
 										   TurAuthenticationEntryPoint turAuthenticationEntryPoint) throws Exception {
 		http.headers(header -> header.frameOptions(
@@ -70,6 +72,7 @@ public class TurSecurityConfigDevUI extends TurSecurityConfigProduction {
 							mvc.pattern("/api/v2/guest/**")).permitAll();
 					authorizeRequests.anyRequest().authenticated();
 				}).csrf(AbstractHttpConfigurer::disable).cors(Customizer.withDefaults());
+
 		return http.build();
 	}
 }

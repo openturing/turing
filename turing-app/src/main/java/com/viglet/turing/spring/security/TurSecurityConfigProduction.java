@@ -23,10 +23,12 @@ package com.viglet.turing.spring.security;
 
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.spring.security.auth.TurAuthTokenHeaderFilter;
+import com.viglet.turing.spring.security.auth.TurKeycloakLogoutSuccessHandler;
 import com.viglet.turing.spring.security.auth.TurLogoutHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.Customizer;
@@ -36,9 +38,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
@@ -48,6 +52,9 @@ import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
+
+import java.util.Collection;
+import java.util.Map;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -60,17 +67,12 @@ public class TurSecurityConfigProduction {
     public static final String ERROR_PATH = "/error/**";
     @Autowired
     private UserDetailsService userDetailsService;
-    @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri:''}")
-    private String issuerUri;
-    @Value("${spring.security.oauth2.client.registration.keycloak.client-id:''}")
-    private String clientId;
-    @Value("${turing.url:'http://localhost:2700'}")
-    private String turingUrl;
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc,
                                     TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
                                     TurLogoutHandler turLogoutHandler,
+                                    TurKeycloakLogoutSuccessHandler turKeycloakLogoutSuccessHandler,
                                     TurConfigProperties turConfigProperties,
                                     TurAuthenticationEntryPoint turAuthenticationEntryPoint) throws Exception {
         http.headers(header -> header.frameOptions(
@@ -92,9 +94,6 @@ public class TurSecurityConfigProduction {
                                 AntPathRequestMatcher.antMatcher("/h2/**")))
                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
         if (turConfigProperties.isKeycloak()) {
-            String keycloakUrlFormat =
-                    String.format("%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",
-                            issuerUri, clientId, turingUrl);
             http.oauth2Login(withDefaults());
             http.authorizeHttpRequests(authorizeRequests -> {
                 authorizeRequests.requestMatchers(
@@ -113,7 +112,7 @@ public class TurSecurityConfigProduction {
                 authorizeRequests.anyRequest().authenticated();
             });
             http.logout(logout -> logout.addLogoutHandler(turLogoutHandler)
-                    .logoutSuccessUrl(keycloakUrlFormat));
+                    .logoutSuccessHandler(turKeycloakLogoutSuccessHandler));
         } else {
             http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
                     .authorizeHttpRequests(authorizeRequests -> {
