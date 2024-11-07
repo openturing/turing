@@ -23,9 +23,12 @@ package com.viglet.turing.persistence.dto.sn.field;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.sn.TurSNFieldType;
+import jakarta.persistence.Column;
 import lombok.*;
 import lombok.experimental.Tolerate;
 
@@ -53,7 +56,11 @@ public class TurSNSiteFieldExtDto {
     private TurSEFieldType type;
     private int multiValued;
     private int facet;
+    private TurSNSiteFacetRangeEnum facetRange;
+    private TurSNSiteFacetFieldEnum facetType;
+    private TurSNSiteFacetFieldEnum facetItemType;
     private Boolean secondaryFacet;
+    private Boolean showAllFacetItems;
     private int hl;
     private int mlt;
     private int enabled;
@@ -73,12 +80,16 @@ public class TurSNSiteFieldExtDto {
         this.externalId = turSNSiteFieldExt.getExternalId();
         this.name = turSNSiteFieldExt.getName();
         this.description = turSNSiteFieldExt.getDescription();
+        this.facet = turSNSiteFieldExt.getFacet();
+        this.facetRange = turSNSiteFieldExt.getFacetRange();
         this.facetName = turSNSiteFieldExt.getFacetName();
+        this.facetType = turSNSiteFieldExt.getFacetType();
+        this.facetItemType = turSNSiteFieldExt.getFacetItemType();
+        this.secondaryFacet = turSNSiteFieldExt.getSecondaryFacet();
+        this.showAllFacetItems = turSNSiteFieldExt.getShowAllFacetItems();
         this.snType = turSNSiteFieldExt.getSnType();
         this.type = turSNSiteFieldExt.getType();
         this.multiValued = turSNSiteFieldExt.getMultiValued();
-        this.facet = turSNSiteFieldExt.getFacet();
-        this.secondaryFacet = turSNSiteFieldExt.getSecondaryFacet();
         this.hl = turSNSiteFieldExt.getHl();
         this.mlt = turSNSiteFieldExt.getMlt();
         this.enabled = turSNSiteFieldExt.getEnabled();

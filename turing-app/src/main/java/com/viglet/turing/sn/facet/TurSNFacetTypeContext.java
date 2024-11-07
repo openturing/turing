@@ -19,6 +19,7 @@
 package com.viglet.turing.sn.facet;
 
 import com.viglet.turing.commons.se.TurSEFilterQueryParameters;
+import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import lombok.AllArgsConstructor;
@@ -33,17 +34,17 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TurSNFacetTypeContext {
-    private TurSNSiteFieldExt turSNSiteFacetFieldExt;
+    private TurSNSiteFieldExtDto turSNSiteFacetFieldExtDto;
     private TurSNSite turSNSite;
     private TurSEFilterQueryParameters queryParameters;
 
 
     public TurSNFacetTypeContext(TurSNSite turSNSite, TurSEFilterQueryParameters queryParameters) {
-        this.turSNSiteFacetFieldExt = null;
+        this.turSNSiteFacetFieldExtDto = null;
         this.turSNSite = turSNSite;
         this.queryParameters = queryParameters;
     }
     public boolean isSpecificField() {
-        return turSNSiteFacetFieldExt != null;
+        return turSNSiteFacetFieldExtDto != null;
     }
 }

@@ -194,11 +194,21 @@
     <div class="form-checkbox">
       <label>
         <input [(ngModel)]="snSiteField.secondaryFacet" type="checkbox" [ngModelOptions]="{standalone: true}"
-               (ngModelChange)="snSiteField.secondaryFacet = $event" aria-describedby="n-field-secondary-facet-tip"/>
-        Secondary Facet
+               (ngModelChange)="snSiteField.secondaryFacet = $event" aria-describedby="sn-field-secondary-facet-tip"/>
+        Secondary facet
       </label>
       <p class="note" id="sn-field-secondary-facet-tip">
         It will be classified as a secondary facet. It can be used separately from the main facets.
+      </p>
+    </div>
+    <div class="form-checkbox">
+      <label>
+        <input [(ngModel)]="snSiteField.showAllFacetItems" type="checkbox" [ngModelOptions]="{standalone: true}"
+               (ngModelChange)="snSiteField.showAllFacetItems = $event" aria-describedby="sn-field-show all-facet-items-tip"/>
+        Show all facet items
+      </label>
+      <p class="note" id="sn-field-show all-facet-items-tip">
+        Shows all facet items, even if there are no items.
       </p>
     </div>
     <div class="form-group">
