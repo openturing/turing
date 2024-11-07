@@ -126,7 +126,8 @@ public class TurSNSiteSearchAPI {
                         turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
                 return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
                         new TurSEParameters(q, new TurSEFilterQueryParameters(filterQueriesDefault, filterQueriesAnd,
-                                filterQueriesOr, fqOperator), currentPage, sort, rows, group, autoCorrectionDisabled), locale,
+                                filterQueriesOr, fqOperator), currentPage, sort, rows, group, autoCorrectionDisabled,
+                                turSNSitePostParamsBean), locale,
                         TurSNUtils.requestToURI(request), turSNSitePostParamsBean)), HttpStatus.OK);
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

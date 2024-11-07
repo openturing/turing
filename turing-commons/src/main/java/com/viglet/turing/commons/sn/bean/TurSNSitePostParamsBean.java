@@ -18,6 +18,8 @@ package com.viglet.turing.commons.sn.bean;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.MapSerializer;
+import com.viglet.turing.commons.se.TurSEFilterQueryParameters;
+import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -42,8 +44,18 @@ import java.util.Map;
 public class TurSNSitePostParamsBean implements Serializable {
 	private String userId;
 	private boolean populateMetrics = true;
+	private String sort;
+	private String query;
+	private List<String> fq;
+	private List<String> fqAnd;
+	private List<String> fqOr;
+	private TurSNFilterQueryOperator fqOperator;
+	private Integer page;
+	private Integer rows;
+	private String group;
+	private String locale;
+	private boolean disableAutoComplete = false;
 	private List<String> targetingRules = new ArrayList<>();
-
 	@JsonSerialize(keyUsing = MapSerializer.class)
 	private Map<String, List<String>> targetingRulesWithCondition = new HashMap<>();
 	@JsonSerialize(keyUsing = MapSerializer.class)
@@ -56,6 +68,17 @@ public class TurSNSitePostParamsBean implements Serializable {
 		return "TurSNSitePostParamsBean{" +
 				"userId='" + userId + '\'' +
 				", populateMetrics=" + populateMetrics +
+				", sort='" + sort + '\'' +
+				", query='" + query + '\'' +
+				", fq=" + fq +
+				", fqAnd=" + fqAnd +
+				", fqOr=" + fqOr +
+				", fqOperator=" + fqOperator +
+				", page=" + page +
+				", rows=" + rows +
+				", group='" + group + '\'' +
+				", locale='" + locale + '\'' +
+				", disableAutoComplete=" + disableAutoComplete +
 				", targetingRules=" + targetingRules +
 				", targetingRulesWithCondition=" + targetingRulesWithCondition +
 				", targetingRulesWithConditionAND=" + targetingRulesWithConditionAND +
