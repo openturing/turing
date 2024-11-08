@@ -18,7 +18,6 @@ package com.viglet.turing.commons.sn.bean;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.MapSerializer;
-import com.viglet.turing.commons.se.TurSEFilterQueryParameters;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import lombok.Getter;
 import lombok.Setter;

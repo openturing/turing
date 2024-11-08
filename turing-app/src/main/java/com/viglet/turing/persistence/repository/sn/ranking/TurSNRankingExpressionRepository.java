@@ -21,7 +21,11 @@
 package com.viglet.turing.persistence.repository.sn.ranking;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingCondition;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -33,5 +37,15 @@ import java.util.Set;
  */
 public interface TurSNRankingExpressionRepository extends JpaRepository<TurSNRankingExpression, String> {
 
+	String FIND_BY_TUR_SN_SITE = "turSNRankingExpressionFindByTurSNSite";
+
+	@Cacheable(FIND_BY_TUR_SN_SITE)
 	Set<TurSNRankingExpression> findByTurSNSite(Sort language, TurSNSite turSNSite);
+
+	@CacheEvict(value = {FIND_BY_TUR_SN_SITE}, allEntries = true)
+	@NotNull
+	TurSNRankingExpression save(@NotNull TurSNRankingExpression turSNRankingExpression);
+
+	@CacheEvict(value = {FIND_BY_TUR_SN_SITE}, allEntries = true)
+	void delete(@NotNull TurSNRankingExpression turSNRankingExpression);
 }
