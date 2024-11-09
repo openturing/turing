@@ -15,6 +15,7 @@
  */
 package com.viglet.turing.commons.sn.bean;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -37,7 +38,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurSNSiteSearchGroupBean {
+public class TurSNSiteSearchGroupBean implements Serializable {
 	private String name;
 	private int count;
 	private int page;

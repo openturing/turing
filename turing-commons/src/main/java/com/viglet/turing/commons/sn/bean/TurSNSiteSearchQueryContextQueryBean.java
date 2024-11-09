@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.util.Locale;
 
 /**
@@ -37,7 +38,7 @@ import java.util.Locale;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurSNSiteSearchQueryContextQueryBean {
+public class TurSNSiteSearchQueryContextQueryBean implements Serializable {
 	private String queryString;
 	private String sort;
 	private Locale locale;

@@ -40,6 +40,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,17 +55,22 @@ import java.util.*;
 @RequestMapping("/api/sn/{siteName}/search")
 @Tag(name = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
+    @Value("${turing.search.cache.enabled:false}")
+    private boolean searchCacheEnabled;
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI;
 
     @Inject
     public TurSNSiteSearchAPI(TurSNSearchProcess turSNSearchProcess,
                               TurSNSiteRepository turSNSiteRepository,
-                              TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+                              TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                              TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turSNSiteSearchCachedAPI = turSNSiteSearchCachedAPI;
     }
 
     @GetMapping
@@ -86,14 +92,22 @@ public class TurSNSiteSearchAPI {
             HttpServletRequest request) {
         Locale locale = LocaleUtils.toLocale(localeRequest);
         if (existsByTurSNSiteAndLanguage(siteName, locale)) {
-            return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-                    new TurSEParameters(q, new TurSEFilterQueryParameters(filterQueriesDefault, filterQueriesAnd,
-                            filterQueriesOr, fqOperator), currentPage, sort, rows, group, autoCorrectionDisabled), locale,
-                    TurSNUtils.requestToURI(request))), HttpStatus.OK);
+            if (searchCacheEnabled) {
+                return new ResponseEntity<>(turSNSiteSearchCachedAPI.searchCached(siteName, q, currentPage,
+                        filterQueriesDefault, filterQueriesAnd, filterQueriesOr, fqOperator, sort, rows, group,
+                        autoCorrectionDisabled, request, locale), HttpStatus.OK);
+            }
+            else {
+                return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
+                        new TurSEParameters(q, new TurSEFilterQueryParameters(filterQueriesDefault, filterQueriesAnd,
+                                filterQueriesOr, fqOperator), currentPage, sort, rows, group, autoCorrectionDisabled), locale,
+                        TurSNUtils.requestToURI(request))), HttpStatus.OK);
+            }
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+
 
     private boolean existsByTurSNSiteAndLanguage(String siteName, Locale locale) {
         return turSNSiteRepository.findByName(siteName).map(turSNSite ->
