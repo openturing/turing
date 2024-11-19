@@ -31,6 +31,7 @@ import com.viglet.turing.commons.sn.pagination.TurSNPaginationType;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.commons.utils.TurHttpUtils;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtFacetDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -56,12 +57,15 @@ import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.TurSolrUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.hc.core5.net.URIBuilder;
+import org.apache.hc.core5.http.NameValuePair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -497,9 +501,11 @@ public class TurSNSearchProcess {
                         if (turSolr.getFacetsInFilterQuery(turSNFacetTypeContext).contains(f.getKey())) {
                             turSNSiteSearchFacetToRemoveItemBeans.add(new TurSNSiteSearchFacetItemBean()
                                     .setLabel(f.getValue().replace("\"", ""))
-                                    .setLink(TurSNUtils.removeFilterQuery(context.getUri(), facetToRemove).toString())
+                                    .setLink(TurHttpUtils.removeParameterFromQueryByValue(context.getUri(),facetToRemove).toString())
                                     .setSelected(true));
                         }
+                        // VERIFICAR SE ALTERAÇÃO NÃO CAUSOU NENHUM PROBLEMA
+                        //.setLink(TurSNUtils.removeFilterQuery(context.getUri(), facetToRemove).toString())
                     }));
             if (!turSNSiteSearchFacetToRemoveItemBeans.isEmpty()) {
                 return getTurSNSiteSearchFacetBean(turSNSiteSearchFacetToRemoveItemBeans);
@@ -614,6 +620,7 @@ public class TurSNSearchProcess {
 
         // Facet Item Loop
         facet.getTurSEFacetResultAttr().values().forEach(facetItem -> {
+            // Junta o facet com facet-item: <facet>:<facet-item>
             final String fq = facet.getFacet() + ":" + facetItem.getAttribute();
             if (facetItem.getCount() > 0 ||
                     usedFacetItems.contains(fq) && facetTypeAndFacetItemTypeValues.equals(AND_OR)) {
@@ -622,7 +629,7 @@ public class TurSNSearchProcess {
                         .setCount(facetItem.getCount())
                         .setLabel(facetItem.getAttribute())
                         .setSelected(selected)
-                        .setLink(getLink(context, selected, fq)));
+                        .setLink(getFacetLink(context, selected, fq)));
             }
         });
         if (!turSNSiteSearchFacetItemBeans.isEmpty()) {
@@ -632,14 +639,28 @@ public class TurSNSearchProcess {
         }
     }
 
-    private static String getLink(TurSNSiteSearchContext context, boolean selected, String fq) {
-        return selected ?
-                TurSNUtils
-                        .removeFilterQuery(context.getUri(), fq)
-                        .toString() :
-                TurSNUtils
-                        .addFilterQuery(context.getUri(), fq)
-                        .toString();
+    private static String getFacetLink(TurSNSiteSearchContext context, boolean selected, String fq) {
+        URI initialUri = context.getUri();
+        // var query recebe a query string original
+        List<NameValuePair> query = new URIBuilder(initialUri).getQueryParams();
+        // Exemplo de uma query string -> ?fq[]=tipo:educacao&fq[]=nivel:avancado
+        // fq está no formato "<facet>:<facet element>"
+
+        if (selected) {
+            // Se o filtro já estiver selecionado, retire-o.
+            TurHttpUtils.removeParameterFromQueryByValue(query, fq);
+        } else {
+            // Se não estiver adicionado, adicione-o.
+            TurHttpUtils.addFacetFilterOnQuery(query, fq);
+        }
+
+        // Vamos armazenar o path para usar na nova URI
+        var finalUri = new URIBuilder().setPath(initialUri.getPath()).setParameters(query);
+        try {
+            return finalUri.build().toString();
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException("Failed to build URI", e);
+        }
     }
 
     private List<TurSNSiteSearchPaginationBean> responsePagination(URI uri, TurSEGenericResults turSEResults) {

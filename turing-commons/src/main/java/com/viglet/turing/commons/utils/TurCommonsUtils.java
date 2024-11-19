@@ -98,25 +98,54 @@ public class TurCommonsUtils {
     public static URI addOrReplaceParameter(URI uri, String paramName, Locale locale,  boolean decoded) {
        return addOrReplaceParameter(uri, paramName, locale.toLanguageTag(), decoded);
     }
+
     public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue, boolean decoded) {
+        if (paramValue == null) {
+            return uri;
+        }
+
+        // Armazena os parâmetros atuais da URI.
         List<NameValuePair> params = new URIBuilder(uri, StandardCharsets.ISO_8859_1).getQueryParams();
+
+        // String Builder
         StringBuilder sbQueryString = new StringBuilder();
         boolean alreadyExists = false;
+
+        final String paramFormat = "%s=%s&";
+
+        // Para cada chave valor
         for (NameValuePair nameValuePair : params) {
+            // Se o argumento paramName já existe na query, e o bit está como falso
             if ((nameValuePair.getName().equals(paramName) && !alreadyExists)) {
+                // Essa condicional lida com o caso do paramName já existir na URI atual.
+                // Ativa o bit
                 alreadyExists = true;
-                addParameterToQueryString(sbQueryString, nameValuePair.getName(), paramValue);
+
+                // Adiciona o parâmetro na query String
+                sbQueryString.append(String.format(paramFormat, paramName, paramValue));
             } else {
-                addParameterToQueryString(sbQueryString, nameValuePair.getName(),
-                        decoded? URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8):
-                                nameValuePair.getValue());
+                // Se alreadyExist OU o nome do parâmetro não é igual do parâmetro atual.
+                // Essa condicional lida com os casos dos outros parâmetros já existentes
+
+
+                // O param da URI atual ser decodado?
+                String value = decoded ? URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8) : nameValuePair.getValue();
+
+                sbQueryString.append(String.format(paramFormat, nameValuePair.getName(), value));
             }
         }
         if (!alreadyExists) {
-            addParameterToQueryString(sbQueryString, paramName, paramValue);
+            // Essa condicional lida com caso do param sendo adicionado ainda não existir na URI.
+            sbQueryString.append(String.format(paramFormat, paramName, paramValue));
         }
 
-        return modifiedURI(uri, sbQueryString);
+        String queryResult = "?" + removeLastCharacter(sbQueryString).replace(" ", "%20");
+        try{
+            return new URI(uri.getRawPath() + queryResult);
+        } catch (URISyntaxException e) {
+            log.error(e.getMessage(), e);
+            return uri;
+        }
     }
 
     public static void addParameterToQueryString(StringBuilder sbQueryString, String name, String value) {
@@ -127,14 +156,15 @@ public class TurCommonsUtils {
 
     public static URI modifiedURI(URI uri, StringBuilder sbQueryString) {
         try {
-            return new URI(uri.getRawPath() + "?" + removeAmpersand(sbQueryString).replace(" ", "%20"));
+            return new URI(uri.getRawPath() + "?" + removeLastCharacter(sbQueryString).replace(" ", "%20"));
         } catch (URISyntaxException e) {
             log.error(e.getMessage(), e);
         }
         return uri;
     }
 
-    private static String removeAmpersand(StringBuilder sbQueryString) {
+    // Usado para remover o último & da queryString
+    private static String removeLastCharacter(StringBuilder sbQueryString) {
         if (!sbQueryString.toString().isEmpty()) {
             return sbQueryString.substring(0, sbQueryString.toString().length() - 1);
         }

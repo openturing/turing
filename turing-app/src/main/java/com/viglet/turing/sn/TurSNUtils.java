@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.sn;
 
+import com.viglet.turing.commons.utils.TurHttpUtils;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.net.URIBuilder;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
@@ -37,6 +38,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.tika.utils.StringUtils;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.util.ForwardedHeaderUtils;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.net.URLDecoder;
@@ -65,44 +67,80 @@ public class TurSNUtils {
 
     public static URI requestToURI(HttpServletRequest request) {
         ServletServerHttpRequest servletServerHttpRequest = new ServletServerHttpRequest(request);
-        return ForwardedHeaderUtils.adaptFromForwardedHeaders(servletServerHttpRequest.getURI(),
-                servletServerHttpRequest.getHeaders()).build().toUri();
+
+        // Problema → Ciência chega encodado em Ci%C3%AAncia, mas fq[] não vem encodado.
+        URI uriFromRequest = servletServerHttpRequest.getURI();
+
+        // Vamos garantir que toda a url esteja igualmente decodada
+        String decodedURIString = URLDecoder.decode(uriFromRequest.toString(), StandardCharsets.UTF_8);
+
+        // Vamos construir manualmente a URI e vamos encodar ANTES de passar pela próxima transformação
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(decodedURIString).encode();
+        // Essa transformação é para usar o HOST chamado pelo client e não pelo proxy.
+        UriComponentsBuilder uriComponentsBuilder = ForwardedHeaderUtils.adaptFromForwardedHeaders(uriBuilder.build().toUri(),
+                servletServerHttpRequest.getHeaders());
+
+        // Como já foi encodado anteriormente, precisamos passar true no argumento do .build(), para não encodar uma segunda vez.
+        return uriComponentsBuilder.build(true).toUri();
     }
 
 
+    /**
+     *  @deprecated Prefer to use {TurHttpUtils.addParamOnQuery} or {TurHttpUtils.addFacetFilterOnQuery}
+     */
+    @Deprecated(since = "0.3.9")
     public static URI addFilterQuery(URI uri, String fq) {
         List<NameValuePair> params = new URIBuilder(uri).getQueryParams();
         StringBuilder sbQueryString = new StringBuilder();
         AtomicBoolean alreadyExists = new AtomicBoolean(false);
+        // Este loop é para manter os parâmetros que já existem na query
+        // Para cada parâmetro atual
         for (NameValuePair nameValuePair : params) {
-
+            // Se houver um parâmetro com valor
             if (nameValuePair.getValue() != null) {
+                // Vamos decodar a chave do valor
                 String decodedValue = URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8);
+
+                // Se a chave do parâmetro for igual a fq[]
+                // E seu valor for igual ao fq sendo adicionado.
                 if (nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT) &&
                         decodedValue.equals(fq)) {
+                    // Marque que o filtro já existe
                     alreadyExists.set(true);
                 }
+                // Adiciona o parâmetro na query string
                 resetPaginationOrAddParameter(sbQueryString, nameValuePair.getName(), decodedValue);
             }
         }
+        // Se o parâmetro sendo adicionado não existe, adicione-o.
         if (!alreadyExists.get()) {
             TurCommonsUtils.addParameterToQueryString(sbQueryString, TurSNParamType.FILTER_QUERIES_DEFAULT, fq);
         }
         return TurCommonsUtils.modifiedURI(uri, sbQueryString);
     }
 
+    /**
+     * @deprecated  Prefer to use {TurHttpUtils.removeParameterFromQueryByValue}
+     */
+    @Deprecated(since = "0.3.9")
     public static URI removeFilterQuery(URI uri, String fq) {
         List<NameValuePair> params = new URIBuilder(uri).getQueryParams();
+        // fq é no formato <faceta>:<elemento-da-faceta>
         StringBuilder sbQueryString = new StringBuilder();
+        // Loop chave-valores da URI atual
         for (NameValuePair nameValuePair : params) {
+            // Decoda os valores da chave atual
             String decodedValue = URLDecoder.decode(nameValuePair.getValue(), StandardCharsets.UTF_8);
+            // Condição
+            // Se não (FQ SENDO REMOVIDA FOR IGUAL AO VALOR DA CHAVE ATUAL AND A CHAVE ATUAL DO LOOP FOR IGUAL À CHAVE DEFAULT)
+            // Ou seja, vai deixar de adicionar toda aquela que não é FQ
             if (!(decodedValue.equals(fq)
                         && nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT))) {
                     resetPaginationOrAddParameter(sbQueryString, nameValuePair.getName(), decodedValue);
                 }
 
 
-        };
+        }
         return TurCommonsUtils.modifiedURI(uri, sbQueryString);
     }
 
@@ -252,8 +290,10 @@ public class TurSNUtils {
                                              String facet,
                                              Object attrValue) {
         String facetValue = TurSolrField.convertFieldToString(attrValue);
+        //.href(TurSNUtils.addFilterQuery(uri, facet + ":" + facetValue).toString())
+        // VERIFICAR SE AINDA ESTÁ FUNCIONANDO
         turSNSiteSearchDocumentMetadataBeans.add(TurSNSiteSearchDocumentMetadataBean.builder()
-                .href(TurSNUtils.addFilterQuery(uri, facet + ":" + facetValue).toString())
+                .href(TurHttpUtils.addFacetFilterOnQuery(uri, facet + ":" + facetValue).toString())
                 .text(facetValue)
                 .build());
     }
