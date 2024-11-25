@@ -347,7 +347,7 @@ public class TurSolr {
                     prepareQueryMLT(turSNSite, query),
                     prepareQueryFacet(turSNSite, query, turSEParameters.getFilterQueries()),
                     prepareQueryHL(turSNSite, query),
-                    turSESpellCheckResult);
+                    turSESpellCheckResult, false);
         }).orElse(Optional.empty());
 
     }
@@ -357,7 +357,7 @@ public class TurSolr {
         return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
             TurSEParameters turSEParameters = context.getTurSEParameters();
             SolrQuery query = prepareSolrQuery(context, turSNSite, turSEParameters, new TurSESpellCheckResult());
-            return executeSolrQueryFromSN(turSolrInstance, turSNSite, turSEParameters, query,
+            return executeSolrQueryFromSNFacet(turSolrInstance, turSNSite, turSEParameters, query,
                     prepareQueryFacetWithOneFacet(turSNSite, query, turSEParameters.getFilterQueries(), facetName));
         }).orElse(Optional.empty());
 
@@ -436,27 +436,29 @@ public class TurSolr {
                                                           List<TurSNSiteFieldExt> turSNSiteMLTFieldExtList,
                                                           List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList,
                                                           List<TurSNSiteFieldExt> turSNSiteHlFieldExtList,
-                                                          TurSESpellCheckResult turSESpellCheckResult) {
-        if (enabledWildcardAlways(turSNSite) && isNotQueryExpression(query)) {
+                                                          TurSESpellCheckResult turSESpellCheckResult,
+                                                          boolean isQueryToRenderFacet) {
+        if (!isQueryToRenderFacet && enabledWildcardAlways(turSNSite) && isNotQueryExpression(query)) {
             addAWildcardInQuery(query);
         }
         return executeSolrQuery(turSolrInstance, query)
                 .map(queryResponse -> getResults(turSolrInstance, turSNSite, turSEParameters, query,
                         turSNSiteMLTFieldExtList, turSNSiteFacetFieldExtList, turSNSiteHlFieldExtList,
                         turSESpellCheckResult,
-                        getQueryResponseModified(turSolrInstance, turSNSite, query, queryResponse)));
+                        getQueryResponseModified(turSolrInstance, turSNSite, query, queryResponse, isQueryToRenderFacet)));
     }
 
-    private Optional<TurSEResults> executeSolrQueryFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
-                                                          TurSEParameters turSEParameters, SolrQuery query,
-                                                          List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList) {
+    private Optional<TurSEResults> executeSolrQueryFromSNFacet(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
+                                                               TurSEParameters turSEParameters, SolrQuery query,
+                                                               List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList) {
         return executeSolrQueryFromSN(turSolrInstance, turSNSite, turSEParameters, query, Collections.emptyList(),
-                turSNSiteFacetFieldExtList, Collections.emptyList(), new TurSESpellCheckResult());
+                turSNSiteFacetFieldExtList, Collections.emptyList(), new TurSESpellCheckResult(), true);
     }
 
     private static QueryResponse getQueryResponseModified(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
-                                                          SolrQuery query, QueryResponse queryResponse) {
-        return whenNoResultsUseWildcard(turSNSite, query, queryResponse) ?
+                                                          SolrQuery query, QueryResponse queryResponse,
+                                                          boolean isQueryToRenderFacet) {
+        return whenNoResultsUseWildcard(turSNSite, query, queryResponse, isQueryToRenderFacet) ?
                 executeSolrQuery(turSolrInstance, query).orElse(queryResponse) :
                 queryResponse;
     }
@@ -491,8 +493,10 @@ public class TurSolr {
         query.setQuery(query.getQuery().trim() + "*");
     }
 
-    private static boolean whenNoResultsUseWildcard(TurSNSite turSNSite, SolrQuery query, QueryResponse queryResponse) {
-        if (!enabledWildcardAlways(turSNSite)
+    private static boolean whenNoResultsUseWildcard(TurSNSite turSNSite, SolrQuery query, QueryResponse queryResponse,
+                                                    boolean isQueryToRenderFacet) {
+        if (!isQueryToRenderFacet
+                && !enabledWildcardAlways(turSNSite)
                 && enabledWildcardNoResults(turSNSite)
                 && isNotQueryExpression(query)
                 && noResultGroups(queryResponse)
@@ -822,7 +826,8 @@ public class TurSolr {
             SolrQuery query,
             TurSNSite turSNSite) {
         Optional.of(getFilterQueryMap(turSEFilterQueryParameters, turSNSite))
-                .filter(fqMap -> !CollectionUtils.isEmpty(fqMap))
+                .filter(facetMapForFilterQuery ->
+                        !CollectionUtils.isEmpty(facetMapForFilterQuery))
                 .ifPresent(facetMapForFilterQuery ->
                         query.addFilterQuery(String.format("%s(%s)",
                                 getFacetTypeConditionInFilterQuery(new TurSNFacetTypeContext(turSNSite,
@@ -896,29 +901,32 @@ public class TurSolr {
     private TurSNFacetMapForFilterQuery getFilterQueryMap(
             TurSEFilterQueryParameters filterQueries, TurSNSite turSNSite) {
         TurSNFacetMapForFilterQuery facetMapForFilterQuery = new TurSNFacetMapForFilterQuery();
-        List<TurSNSiteFieldExt> enabledFacets = getEnabledFacets(turSNSite);
+        List<TurSNSiteFieldExt> enabledFields = getEnabledFields(turSNSite);
         Optional.ofNullable(filterQueries)
-                .ifPresent(fq -> {
-                    Optional.ofNullable(fq.getFq()).ifPresent(f -> f.forEach(fItem ->
-                            addEnabledFacetItem(TurSNSiteFacetFieldEnum.DEFAULT, fItem, enabledFacets,
-                                    facetMapForFilterQuery, turSNSite, filterQueries)));
-                    Optional.ofNullable(fq.getAnd()).ifPresent(f -> f.forEach(fItem ->
-                            addEnabledFacetItem(TurSNSiteFacetFieldEnum.AND, fItem, enabledFacets,
-                                    facetMapForFilterQuery, turSNSite, filterQueries)));
-                    Optional.ofNullable(fq.getOr()).ifPresent(f -> f.forEach(fItem ->
-                            addEnabledFacetItem(TurSNSiteFacetFieldEnum.OR, fItem, enabledFacets,
-                                    facetMapForFilterQuery, turSNSite, filterQueries)));
+                .ifPresent(filterQueryParameters -> {
+                    Optional.ofNullable(filterQueryParameters.getFq())
+                            .ifPresent(f -> f.forEach(fItem ->
+                                    addEnabledFieldAsFacetItem(TurSNSiteFacetFieldEnum.DEFAULT, fItem, enabledFields,
+                                            facetMapForFilterQuery, turSNSite, filterQueries)));
+                    Optional.ofNullable(filterQueryParameters.getAnd())
+                            .ifPresent(f -> f.forEach(fItem ->
+                                    addEnabledFieldAsFacetItem(TurSNSiteFacetFieldEnum.AND, fItem, enabledFields,
+                                            facetMapForFilterQuery, turSNSite, filterQueries)));
+                    Optional.ofNullable(filterQueryParameters.getOr())
+                            .ifPresent(f -> f.forEach(fItem ->
+                                    addEnabledFieldAsFacetItem(TurSNSiteFacetFieldEnum.OR, fItem, enabledFields,
+                                            facetMapForFilterQuery, turSNSite, filterQueries)));
                 });
         return facetMapForFilterQuery;
     }
 
-    private static void addEnabledFacetItem(TurSNSiteFacetFieldEnum facetType, String fq,
-                                            List<TurSNSiteFieldExt> enabledFacets,
+    private static void addEnabledFieldAsFacetItem(TurSNSiteFacetFieldEnum facetType, String fq,
+                                            List<TurSNSiteFieldExt> enabledFields,
                                             TurSNFacetMapForFilterQuery facetMapForFilterQuery, TurSNSite turSNSite,
                                             TurSEFilterQueryParameters filterQueryParameters) {
 
         TurSolrUtils.getQueryKeyValue(fq).flatMap(kv ->
-                        enabledFacets.stream()
+                        enabledFields.stream()
                                 .filter(facet -> facet.getName().equals(kv.getKey()))
                                 .findFirst())
                 .ifPresentOrElse(facet ->
@@ -1279,6 +1287,10 @@ public class TurSolr {
         return enabledFacets;
     }
 
+    private List<TurSNSiteFieldExt> getEnabledFields(TurSNSite turSNSite) {
+        return turSNSiteFieldExtRepository
+                .findByTurSNSiteAndEnabled(turSNSite, 1);
+    }
 
     private List<TurSNSiteFieldExt> getEnabledFacets(TurSNSite turSNSite) {
         return turSNSiteFieldExtRepository
