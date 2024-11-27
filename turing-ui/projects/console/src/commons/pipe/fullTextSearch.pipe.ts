@@ -1,8 +1,9 @@
 import {Pipe, PipeTransform} from '@angular/core';
 
 @Pipe({
-  name: 'fullTextSearch',
-  pure: false
+    name: 'fullTextSearch',
+    pure: false,
+    standalone: false
 })
 export class FullTextSearchPipe implements PipeTransform {
 

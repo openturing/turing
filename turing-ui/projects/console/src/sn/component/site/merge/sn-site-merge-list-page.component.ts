@@ -6,8 +6,9 @@ import { TurSNSiteMerge } from '../../../model/sn-site-merge.model';
 import { TurSNSiteMergeService } from '../../../service/sn-site-merge.service';
 
 @Component({
-  selector: 'sn-site-merge-list-page',
-  templateUrl: './sn-site-merge-list-page.component.html'
+    selector: 'sn-site-merge-list-page',
+    templateUrl: './sn-site-merge-list-page.component.html',
+    standalone: false
 })
 export class TurSNSiteMergeListPageComponent {
   private turSNSiteMerges: Observable<TurSNSiteMerge[]>;

@@ -6,8 +6,9 @@ import { Observable } from 'rxjs';
 import { TurAdmGroupService } from '../../service/adm-group.service';
 
 @Component({
-  selector: 'adm-group-list-page',
-  templateUrl: './adm-group-list-page.component.html'
+    selector: 'adm-group-list-page',
+    templateUrl: './adm-group-list-page.component.html',
+    standalone: false
 })
 export class TurAdmGroupListPageComponent implements OnInit {
   private turAdmGroups: Observable<TurAdmGroup[]>;

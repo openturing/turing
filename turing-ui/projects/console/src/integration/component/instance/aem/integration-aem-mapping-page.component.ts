@@ -17,8 +17,9 @@ import 'brace/mode/json';
 import {AceComponent, AceConfigInterface, AceDirective} from "ngx-ace-wrapper";
 
 @Component({
-  selector: 'integration-aem-mapping-page',
-  templateUrl: './integration-aem-mapping-page.component.html'
+    selector: 'integration-aem-mapping-page',
+    templateUrl: './integration-aem-mapping-page.component.html',
+    standalone: false
 })
 
 export class TurIntegrationAemMappingPageComponent implements OnInit {

@@ -7,8 +7,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'adm-user-page',
-  templateUrl: './adm-user-page.component.html'
+    selector: 'adm-user-page',
+    templateUrl: './adm-user-page.component.html',
+    standalone: false
 })
 export class TurAdmUserPageComponent implements OnInit {
   @ViewChild('modalDelete')

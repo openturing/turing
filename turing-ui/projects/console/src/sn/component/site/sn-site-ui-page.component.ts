@@ -12,8 +12,9 @@ import { TurNLPInstance } from '../../../nlp/model/nlp-instance.model';
 import { TurNLPInstanceService } from '../../../nlp/service/nlp-instance.service';
 
 @Component({
-  selector: 'sn-site-page',
-  templateUrl: './sn-site-ui-page.component.html'
+    selector: 'sn-site-page',
+    templateUrl: './sn-site-ui-page.component.html',
+    standalone: false
 })
 export class TurSNSiteUIPageComponent implements OnInit {
   private turSNSite: Observable<TurSNSite>;

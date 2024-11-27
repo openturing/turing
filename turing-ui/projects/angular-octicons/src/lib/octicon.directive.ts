@@ -3,7 +3,8 @@ import * as octicons from '@primer/octicons';
 import { IconName } from '@primer/octicons';
 
 @Directive({
-  selector: '[octicon]'
+    selector: '[octicon]',
+    standalone: false
 })
 export class OcticonDirective implements OnInit {
 

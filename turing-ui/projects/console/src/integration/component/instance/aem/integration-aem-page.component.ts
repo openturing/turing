@@ -20,8 +20,9 @@ import {TurLocale} from "../../../../locale/model/locale.model";
 import {TurLocaleService} from "../../../../locale/service/locale.service";
 
 @Component({
-  selector: 'integration-aem-page',
-  templateUrl: './integration-aem-page.component.html'
+    selector: 'integration-aem-page',
+    templateUrl: './integration-aem-page.component.html',
+    standalone: false
 })
 
 export class TurIntegrationAemPageComponent implements OnInit {

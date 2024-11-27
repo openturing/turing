@@ -6,8 +6,9 @@ import {TurIntegrationAemSource} from "../../../model/integration-aem-source.mod
 import {TurIntegrationAemSourceService} from "../../../service/integration-aem-source.service";
 
 @Component({
-  selector: 'integration-aem-list-page',
-  templateUrl: './integration-aem-list-page.component.html'
+    selector: 'integration-aem-list-page',
+    templateUrl: './integration-aem-list-page.component.html',
+    standalone: false
 })
 export class TurIntegrationAemListPageComponent implements OnInit {
   private turIntegrationAemSources: Observable<TurIntegrationAemSource[]>;

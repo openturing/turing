@@ -21,14 +21,17 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-devkit/build-angular:application",
           "options": {
             "allowedCommonJsDependencies": ["@primer/octicons"],
             "baseHref": "/console/",
-            "outputPath": "../turing-app/src/main/resources/public/console",
+            "outputPath": {
+              "base": "../turing-app/src/main/resources/public/console"
+            },
             "index": "projects/console/src/index.html",
-            "main": "projects/console/src/main.ts",
-            "polyfills": "projects/console/src/polyfills.ts",
+            "polyfills": [
+              "projects/console/src/polyfills.ts"
+            ],
             "tsConfig": "projects/console/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -36,7 +39,8 @@
               "projects/console/src/assets"
             ],
             "styles": ["projects/console/src/styles.scss"],
-            "scripts": []
+            "scripts": [],
+            "browser": "projects/console/src/main.ts"
           },
           "configurations": {
             "production": {
@@ -61,9 +65,7 @@
               "outputHashing": "all"
             },
             "development": {
-              "buildOptimizer": false,
               "optimization": false,
-              "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
@@ -122,19 +124,23 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-devkit/build-angular:application",
           "options": {
             "allowedCommonJsDependencies": ["@primer/octicons"],
             "baseHref": "/sn/templates/",
-            "outputPath": "../turing-app/src/main/resources/public/sn/templates",
+            "outputPath": {
+              "base": "../turing-app/src/main/resources/public/sn/templates"
+            },
             "index": "projects/sn/src/index.html",
-            "main": "projects/sn/src/main.ts",
-            "polyfills": "projects/sn/src/polyfills.ts",
+            "polyfills": [
+              "projects/sn/src/polyfills.ts"
+            ],
             "tsConfig": "projects/sn/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": ["projects/sn/src/favicon.ico", "projects/sn/src/assets"],
             "styles": ["projects/sn/src/styles.scss"],
-            "scripts": []
+            "scripts": [],
+            "browser": "projects/sn/src/main.ts"
           },
           "configurations": {
             "production": {
@@ -159,9 +165,7 @@
               "outputHashing": "all"
             },
             "development": {
-              "buildOptimizer": false,
               "optimization": false,
-              "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
@@ -217,14 +221,17 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-devkit/build-angular:application",
           "options": {
             "allowedCommonJsDependencies": ["@primer/octicons"],
             "baseHref": "/welcome/",
-            "outputPath": "../turing-app/src/main/resources/public/welcome",
+            "outputPath": {
+              "base": "../turing-app/src/main/resources/public/welcome"
+            },
             "index": "projects/welcome/src/index.html",
-            "main": "projects/welcome/src/main.ts",
-            "polyfills": "projects/welcome/src/polyfills.ts",
+            "polyfills": [
+              "projects/welcome/src/polyfills.ts"
+            ],
             "tsConfig": "projects/welcome/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -232,7 +239,8 @@
               "projects/welcome/src/assets"
             ],
             "styles": ["projects/welcome/src/styles.scss"],
-            "scripts": []
+            "scripts": [],
+            "browser": "projects/welcome/src/main.ts"
           },
           "configurations": {
             "production": {
@@ -257,9 +265,7 @@
               "outputHashing": "all"
             },
             "development": {
-              "buildOptimizer": false,
               "optimization": false,
-              "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
@@ -318,14 +324,17 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-devkit/build-angular:application",
           "options": {
             "allowedCommonJsDependencies": ["@primer/octicons"],
             "baseHref": "/converse/",
-            "outputPath": "../turing-app/src/main/resources/public/converse",
+            "outputPath": {
+              "base": "../turing-app/src/main/resources/public/converse"
+            },
             "index": "projects/converse/src/index.html",
-            "main": "projects/converse/src/main.ts",
-            "polyfills": "projects/converse/src/polyfills.ts",
+            "polyfills": [
+              "projects/converse/src/polyfills.ts"
+            ],
             "tsConfig": "projects/converse/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -333,7 +342,8 @@
               "projects/converse/src/assets"
             ],
             "styles": ["projects/converse/src/styles.scss"],
-            "scripts": []
+            "scripts": [],
+            "browser": "projects/converse/src/main.ts"
           },
           "configurations": {
             "production": {
@@ -358,9 +368,7 @@
               "outputHashing": "all"
             },
             "development": {
-              "buildOptimizer": false,
               "optimization": false,
-              "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
@@ -450,14 +458,17 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-devkit/build-angular:application",
           "options": {
             "allowedCommonJsDependencies": ["@primer/octicons"],
             "baseHref": "/cloud/",
-            "outputPath": "../turing-app/src/main/resources/public/cloud",
+            "outputPath": {
+              "base": "../turing-app/src/main/resources/public/cloud"
+            },
             "index": "projects/cloud/src/index.html",
-            "main": "projects/cloud/src/main.ts",
-            "polyfills": "projects/cloud/src/polyfills.ts",
+            "polyfills": [
+              "projects/cloud/src/polyfills.ts"
+            ],
             "tsConfig": "projects/cloud/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -465,7 +476,8 @@
               "projects/cloud/src/assets"
             ],
             "styles": ["projects/cloud/src/styles.scss"],
-            "scripts": []
+            "scripts": [],
+            "browser": "projects/cloud/src/main.ts"
           },
           "configurations": {
             "production": {
@@ -490,9 +502,7 @@
               "outputHashing": "all"
             },
             "development": {
-              "buildOptimizer": false,
               "optimization": false,
-              "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true

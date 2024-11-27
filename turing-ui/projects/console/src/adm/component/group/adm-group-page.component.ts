@@ -7,8 +7,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'adm-group-page',
-  templateUrl: './adm-group-page.component.html'
+    selector: 'adm-group-page',
+    templateUrl: './adm-group-page.component.html',
+    standalone: false
 })
 export class TurAdmGroupPageComponent implements OnInit {
   @ViewChild('modalDelete')

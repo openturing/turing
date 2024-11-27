@@ -13,8 +13,9 @@ import {TurSNSearch} from "../../../../../../sn/src/search/model/sn-search.model
 import {TurSNSearchDocument} from "../../../../../../sn/src/search/model/sn-search-document.model";
 
 @Component({
-  selector: 'sn-site-spotlight-page',
-  templateUrl: './sn-site-spotlight-page.component.html'
+    selector: 'sn-site-spotlight-page',
+    templateUrl: './sn-site-spotlight-page.component.html',
+    standalone: false
 })
 export class TurSNSiteSpotlightPageComponent implements OnInit {
   @ViewChild('modalDeleteSpotlight')

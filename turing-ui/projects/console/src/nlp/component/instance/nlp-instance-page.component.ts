@@ -11,8 +11,9 @@ import { TurLocaleService } from '../../../locale/service/locale.service';
 import { UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'nlp-instance-page',
-  templateUrl: './nlp-instance-page.component.html'
+    selector: 'nlp-instance-page',
+    templateUrl: './nlp-instance-page.component.html',
+    standalone: false
 })
 export class TurNLPInstancePageComponent implements OnInit {
   @ViewChild('modalDelete')

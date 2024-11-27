@@ -6,8 +6,9 @@ import { TurNLPEntityService } from '../../service/nlp-entity.service';
 import { Router, RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'nlp-entity-page',
-  templateUrl: './nlp-entity-list-page.component.html'
+    selector: 'nlp-entity-page',
+    templateUrl: './nlp-entity-list-page.component.html',
+    standalone: false
 })
 export class TurNLPEntityListPageComponent implements OnInit {
   private turNLPEntities: Observable<TurNLPEntity[]>;

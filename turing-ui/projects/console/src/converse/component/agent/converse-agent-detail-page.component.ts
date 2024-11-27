@@ -10,8 +10,9 @@ import { TurConverseAgent } from '../../model/converse-agent.model';
 import { TurConverseAgentService } from '../../service/converse-agent.service';
 
 @Component({
-  selector: 'converse-agent-page',
-  templateUrl: './converse-agent-detail-page.component.html'
+    selector: 'converse-agent-page',
+    templateUrl: './converse-agent-detail-page.component.html',
+    standalone: false
 })
 export class TurConverseAgentDetailPageComponent implements OnInit {
   private turConverseAgent: Observable<TurConverseAgent>;

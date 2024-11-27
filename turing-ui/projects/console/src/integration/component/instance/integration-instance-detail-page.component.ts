@@ -9,8 +9,9 @@ import { TurIntegrationVendorService } from '../../service/integration-vendor.se
 import { UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'integration-instance-detail-page',
-  templateUrl: './integration-instance-detail-page.component.html'
+    selector: 'integration-instance-detail-page',
+    templateUrl: './integration-instance-detail-page.component.html',
+    standalone: false
 })
 export class TurIntegrationInstanceDetailPageComponent implements OnInit {
   private turIntegrationInstance: Observable<TurIntegrationInstance>;

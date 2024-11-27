@@ -6,8 +6,9 @@ import { Observable } from 'rxjs';
 import { TurAdmUserService } from '../../service/adm-user.service';
 
 @Component({
-  selector: 'adm-user-list-page',
-  templateUrl: './adm-user-list-page.component.html'
+    selector: 'adm-user-list-page',
+    templateUrl: './adm-user-list-page.component.html',
+    standalone: false
 })
 export class TurAdmUserListPageComponent implements OnInit {
   private turAdmUsers: Observable<TurAdmUser[]>;

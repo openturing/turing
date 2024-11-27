@@ -10,8 +10,9 @@ import {TurIntegrationInstanceService} from "../../../service/integration-instan
 import {TurIntegrationVendorService} from "../../../service/integration-vendor.service";
 
 @Component({
-  selector: 'integration-aem-menu-page',
-  templateUrl: './integration-aem-menu-page.component.html'
+    selector: 'integration-aem-menu-page',
+    templateUrl: './integration-aem-menu-page.component.html',
+    standalone: false
 })
 export class TurIntegrationAemMenuPageComponent implements OnInit {
   @ViewChild('modalDelete')

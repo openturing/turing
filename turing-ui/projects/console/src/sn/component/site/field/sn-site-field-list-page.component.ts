@@ -9,8 +9,9 @@ import {TurSNStatusFields} from "../../../model/sn-field-status.model";
 import {TurSNFieldCheck} from "../../../model/sn-field-check.model";
 
 @Component({
-  selector: 'sn-site-page',
-  templateUrl: './sn-site-field-list-page.component.html'
+    selector: 'sn-site-page',
+    templateUrl: './sn-site-field-list-page.component.html',
+    standalone: false
 })
 export class TurSNSiteFieldListPageComponent implements OnInit {
   private readonly turSNSite: Observable<TurSNSite>;
