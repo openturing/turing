@@ -709,7 +709,7 @@ public class TurSolr {
                                                 facetResult.getFacet().equals(fieldExtension.getName())).findFirst()
                                         .ifPresent(facetResult -> facetResult.setFacetPosition(fieldExtension.getFacetPosition()))));
                 turSEResults.setFacetResults(facetResults.stream().sorted(Comparator.comparing(TurSEFacetResult::getFacetPosition)).
-                        collect(Collectors.toList()));
+                        toList());
             });
         }
     }
