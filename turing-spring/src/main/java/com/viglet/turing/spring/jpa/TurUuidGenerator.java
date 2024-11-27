@@ -37,7 +37,7 @@ public class TurUuidGenerator extends UuidGenerator {
 
             @Override
             public Class<? extends UuidValueGenerator> algorithm() {
-                return org.hibernate.id.uuid.UuidValueGenerator.class;
+                return UuidValueGenerator.class;
             }
         };
     }
