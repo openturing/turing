@@ -33,7 +33,8 @@ public class TurSEParameters  implements Serializable {
 	}
 	public TurSEParameters(String query, TurSEFilterQueryParameters filterQueries,
                            Integer currentPage, String sort, Integer rows,
-                           String group, Integer autoCorrectionDisabled, TurSNSitePostParamsBean turSNSitePostParamsBean) {
+                           String group, Integer autoCorrectionDisabled,
+						   TurSNSitePostParamsBean turSNSitePostParamsBean) {
 		super();
 		this.query = query;
 		this.filterQueries = filterQueries;

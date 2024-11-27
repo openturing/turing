@@ -21,7 +21,6 @@
 package com.viglet.turing.persistence.repository.sn.ranking;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingCondition;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;

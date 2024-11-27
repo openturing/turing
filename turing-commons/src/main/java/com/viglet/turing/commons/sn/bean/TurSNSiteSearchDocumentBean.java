@@ -40,6 +40,6 @@ public class TurSNSiteSearchDocumentBean implements Serializable {
 	private String source;
 	private boolean elevate;
 	private List<TurSNSiteSearchDocumentMetadataBean> metadata;
-	private Map<String,Object> fields;
+	private transient Map<String,Object> fields;
 
 }

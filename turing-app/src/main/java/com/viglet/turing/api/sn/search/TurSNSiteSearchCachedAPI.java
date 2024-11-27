@@ -32,6 +32,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -50,22 +51,9 @@ public class TurSNSiteSearchCachedAPI {
         log.info("Cleaning Search API");
     }
 
-    @Cacheable(value = "searchAPI", key = "#request.queryString")
-    public TurSNSiteSearchBean searchCached(String siteName, String q, Integer currentPage,
-                                            List<String> filterQueriesDefault,
-                                            List<String> filterQueriesAnd,
-                                            List<String> filterQueriesOr,
-                                            TurSNFilterQueryOperator fqOperator,
-                                            String sort,
-                                            Integer rows,
-                                            String group,
-                                            Integer autoCorrectionDisabled,
-                                            HttpServletRequest
-                                                    request,
-                                            Locale locale) {
-        return turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-                new TurSEParameters(q, new TurSEFilterQueryParameters(filterQueriesDefault, filterQueriesAnd,
-                        filterQueriesOr, fqOperator), currentPage, sort, rows, group, autoCorrectionDisabled), locale,
-                TurSNUtils.requestToURI(request)));
+    @Cacheable(value = "searchAPI", key = "#cacheKey")
+    public TurSNSiteSearchBean searchCached(String cacheKey,
+                                            TurSNSiteSearchContext turSNSiteSearchContext) {
+        return turSNSearchProcess.search(turSNSiteSearchContext);
     }
 }
