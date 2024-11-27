@@ -47,6 +47,7 @@ public class TurWCProcess {
     public static final String ABS_HREF = "abs:href";
     private final String turingUrl;
     private final String turingApiKey;
+    private final List<String> allowUrls = new ArrayList<>();
     private final List<String> notAllowUrls = new ArrayList<>();
     private final List<String> notAllowExtensions = new ArrayList<>();
     private TurSNJobItems turSNJobItems = new TurSNJobItems();
@@ -92,18 +93,18 @@ public class TurWCProcess {
                 this.notAllowExtensions.add(turWCFileExtension.getExtension())));
         turWCNotAllowUrlRepository.findByTurWCSource(turWCSource).ifPresent(source -> source.forEach(turWCNotAllowUrl ->
                 this.notAllowUrls.add(turWCNotAllowUrl.getUrl())));
+        turWCAllowUrlRepository.findByTurWCSource(turWCSource).ifPresent(source -> source.forEach(turWCAllowUrl ->
+                this.allowUrls.add(turWCAllowUrl.getUrl())));
 
         this.website = turWCSource.getUrl();
         this.snSites = turWCSource.getTurSNSites();
         this.username = turWCSource.getUsername();
         this.password = turWCSource.getPassword();
         log.info("User Agent: {}", userAgent);
-        turWCAllowUrlRepository
-                .findByTurWCSource(turWCSource).ifPresent(source ->
-                        source.forEach(turWCAllowUrl -> {
-                            remainingLinks.add(this.website + turWCAllowUrl.getUrl());
-                            getPagesFromQueue(turWCSource);
-                        }));
+        allowUrls.forEach(url -> {
+            remainingLinks.add(this.website + url);
+            getPagesFromQueue(turWCSource);
+        });
         if (turSNJobItems.size() > 0) {
             sendToTuring();
             getInfoQueue();
@@ -290,6 +291,8 @@ public class TurWCProcess {
     private boolean canBeIndexed(String pageUrl) {
         return !isSharpUrl(pageUrl) && !isPagination(pageUrl) && !isJavascriptUrl(pageUrl)
                 && pageUrl.startsWith(this.website)
+                && StringUtils.startsWithAny(pageUrl,
+                allowUrls.toArray(new String[0]))
                 && !StringUtils.startsWithAny(getRelativePageUrl(pageUrl),
                 notAllowUrls.toArray(new String[0]))
                 && !StringUtils.endsWithAny(pageUrl,
