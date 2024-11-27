@@ -55,7 +55,8 @@ public class TurWCProcess {
     private TurSNJobItems turSNJobItems = new TurSNJobItems();
     private final String userAgent = RandomUserAgentGenerator.getNextNonMobile();
     private final Set<String> visitedLinks = new HashSet<>();
-    private final Queue<String> remainingLinks = new LinkedList<>();
+    private final Set<String> indexedLinks = new HashSet<>();
+    private final Queue<String> queueLinks = new LinkedList<>();
     private String website;
     private Collection<String> snSites;
     private final int timeout;
@@ -123,7 +124,7 @@ public class TurWCProcess {
         this.password = turWCSource.getPassword();
         log.info("User Agent: {}", userAgent);
         startingPoints.forEach(url -> {
-            remainingLinks.add(this.website + url);
+            queueLinks.offer(this.website + url);
             getPagesFromQueue(turWCSource);
         });
         if (turSNJobItems.size() > 0) {
@@ -140,12 +141,13 @@ public class TurWCProcess {
     private void getInfoQueue() {
         log.info("Total Job Item: {}", Iterators.size(turSNJobItems.iterator()));
         log.info("Total Visited Links: {}", (long) visitedLinks.size());
-        log.info("Queue Size: {}", (long) remainingLinks.size());
+        log.info("Total Indexed Links: {}", (long) indexedLinks.size());
+        log.info("Queue Size: {}", (long) queueLinks.size());
     }
 
     public void getPagesFromQueue(TurWCSource turWCSource) {
-        while (!remainingLinks.isEmpty()) {
-            String url = remainingLinks.poll();
+        while (!queueLinks.isEmpty()) {
+            String url = queueLinks.poll();
             getPage(turWCSource, url);
             sendToTuringWhenMaxSize();
             getInfoQueue();
@@ -157,7 +159,13 @@ public class TurWCProcess {
             log.info("{}: {}", url, turWCSource.getTurSNSites());
             Document document = getHTML(url);
             getPageLinks(document);
-            return addTurSNJobItems(turWCSource, document, url);
+            String pageUrl = getPageUrl(url);
+            if (canBeIndexed(pageUrl)) {
+                indexedLinks.add(pageUrl);
+                return addTurSNJobItems(turWCSource, document, url);
+            } else {
+                log.debug("Ignored: {}", url);
+            }
         } catch (IOException e) {
             log.error(e.getMessage());
         }
@@ -170,13 +178,27 @@ public class TurWCProcess {
     }
 
     private void addPageToQueue(String pageUrl) {
-        if (canBeIndexed(pageUrl)) {
-            if (visitedLinks.add(pageUrl) && !remainingLinks.offer(pageUrl)) {
+        if (canBeAddToQueue(pageUrl)) {
+            if (visitedLinks.add(pageUrl) && !queueLinks.offer(pageUrl)) {
                 log.error("Item didn't add to queue: {}", pageUrl);
             }
-        } else {
-            log.debug("Ignored: {}", pageUrl);
         }
+
+    }
+
+    private boolean isValidToAddQueue(String pageUrl) {
+        return isNotMailUrl(pageUrl)
+                && isNotTelUrl(pageUrl)
+                && !StringUtils.equalsAny(pageUrl, queueLinks.toArray(new String[0]))
+                && !isSharpUrl(pageUrl) && !isPagination(pageUrl) && !isJavascriptUrl(pageUrl)
+                && pageUrl.startsWith(this.website)
+                && (
+                StringUtils.startsWithAny(getRelativePageUrl(pageUrl), allowStartsWithUrls.toArray(new String[0]))
+                        || StringUtils.equalsAny(getRelativePageUrl(pageUrl), allowUrls.toArray(new String[0]))
+        )
+                && !StringUtils.startsWithAny(getRelativePageUrl(pageUrl), notAllowStartsWithUrls.toArray(new String[0]))
+                && !StringUtils.equalsAny(getRelativePageUrl(pageUrl), notAllowUrls.toArray(new String[0]))
+                && !StringUtils.endsWithAny(pageUrl, notAllowExtensions.toArray(new String[0]));
     }
 
     private TurSNJobItem addTurSNJobItems(TurWCSource turWCSource, Document document, String url) {
@@ -310,17 +332,16 @@ public class TurWCProcess {
     }
 
     private boolean canBeIndexed(String pageUrl) {
-        return !isSharpUrl(pageUrl) && !isPagination(pageUrl) && !isJavascriptUrl(pageUrl)
-                && pageUrl.startsWith(this.website)
-                && (
-                StringUtils.startsWithAny(getRelativePageUrl(pageUrl), allowStartsWithUrls.toArray(new String[0]))
-                        || StringUtils.equalsAny(getRelativePageUrl(pageUrl), allowUrls.toArray(new String[0]))
-        )
-                && !StringUtils.startsWithAny(getRelativePageUrl(pageUrl), notAllowStartsWithUrls.toArray(new String[0]))
-                && !StringUtils.equalsAny(getRelativePageUrl(pageUrl), notAllowUrls.toArray(new String[0]))
-                && !StringUtils.endsWithAny(pageUrl, notAllowExtensions.toArray(new String[0]))
+        return isValidToAddQueue(pageUrl)
+                && !StringUtils.equalsAny(pageUrl, indexedLinks.toArray(new String[0]));
+    }
+
+    private boolean canBeAddToQueue(String pageUrl) {
+        return isValidToAddQueue(pageUrl)
                 && !StringUtils.equalsAny(pageUrl, visitedLinks.toArray(new String[0]));
     }
+
+
 
     private static boolean isJavascriptUrl(String pageUrl) {
         return pageUrl.contains(JAVASCRIPT);
