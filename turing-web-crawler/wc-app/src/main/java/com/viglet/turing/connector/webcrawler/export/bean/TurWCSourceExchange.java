@@ -21,6 +21,8 @@ public class TurWCSourceExchange {
     private String username;
     private String password;
     @Builder.Default
+    private Collection<String> startingPoints = new HashSet<>();
+    @Builder.Default
     private Collection<String> allowUrls = new HashSet<>();
     @Builder.Default
     private Collection<String> notAllowUrls = new HashSet<>();

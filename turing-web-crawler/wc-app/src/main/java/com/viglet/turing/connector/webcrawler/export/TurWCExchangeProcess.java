@@ -31,7 +31,9 @@ import java.util.*;
 public class TurWCExchangeProcess {
     private static final String EXPORT_FILE = "export.json";
     private final TurWCSourceRepository turWCSourceRepository;
+
     private final TurWCAllowUrlRepository turWCAllowUrlRepository;
+    private final TurWCStartingPointRepository turWCStartingPointRepository;
     private final TurWCNotAllowUrlRepository turWCNotAllowUrlRepository;
     private final TurWCFileExtensionRepository turWCFileExtensionRepository;
     private final TurWCAttributeMappingRepository turWCAttributeMappingRepository;
@@ -39,11 +41,13 @@ public class TurWCExchangeProcess {
     @Inject
     public TurWCExchangeProcess(TurWCSourceRepository turWCSourceRepository,
                                 TurWCAllowUrlRepository turWCAllowUrlRepository,
+                                TurWCStartingPointRepository turWCStartingPointRepository,
                                 TurWCNotAllowUrlRepository turWCNotAllowUrlRepository,
                                 TurWCFileExtensionRepository turWCFileExtensionRepository,
                                 TurWCAttributeMappingRepository turWCAttributeMappingRepository) {
         this.turWCSourceRepository = turWCSourceRepository;
         this.turWCAllowUrlRepository = turWCAllowUrlRepository;
+        this.turWCStartingPointRepository = turWCStartingPointRepository;
         this.turWCNotAllowUrlRepository = turWCNotAllowUrlRepository;
         this.turWCFileExtensionRepository = turWCFileExtensionRepository;
         this.turWCAttributeMappingRepository = turWCAttributeMappingRepository;
@@ -71,7 +75,6 @@ public class TurWCExchangeProcess {
             }
 
             List<TurWCSource> turWCSources = turWCSourceRepository.findAll();
-
 
             File exportDir = new File(tmpDir.getAbsolutePath().concat(File.separator + folderName));
             File exportFile = new File(exportDir.getAbsolutePath().concat(File.separator + EXPORT_FILE));
@@ -176,7 +179,7 @@ public class TurWCExchangeProcess {
         for (TurWCSourceExchange turWCSourceExchange : turWCExchange.getSources()) {
             if (turWCSourceRepository.findById(turWCSourceExchange.getId()).isEmpty()) {
                 TurWCSource turWCSource = TurWCSource.builder()
-                        .id(turWCSourceExchange.getId())
+                  //      .id(turWCSourceExchange.getId())
                         .url(turWCSourceExchange.getUrl())
                         .username(turWCSourceExchange.getUsername())
                         .password(turWCSourceExchange.getPassword())
@@ -187,6 +190,11 @@ public class TurWCExchangeProcess {
 
                 turWCSourceRepository.save(turWCSource);
 
+                turWCSourceExchange.getStartingPoints().forEach(url ->
+                        turWCStartingPointRepository.save(TurWCStartingPoint.builder()
+                                .url(url)
+                                .turWCSource(turWCSource)
+                                .build()));
                 turWCSourceExchange.getAllowUrls().forEach(url ->
                         turWCAllowUrlRepository.save(TurWCAllowUrl.builder()
                                 .url(url)
