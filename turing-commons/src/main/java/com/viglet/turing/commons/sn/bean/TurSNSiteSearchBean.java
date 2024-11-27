@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -30,7 +31,7 @@ import java.util.List;
 @Getter
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class TurSNSiteSearchBean {
+public class TurSNSiteSearchBean implements Serializable {
 	private List<TurSNSiteSearchPaginationBean> pagination;
 	private TurSNSiteSearchQueryContextBean queryContext;
 	private TurSNSiteSearchResultsBean results;

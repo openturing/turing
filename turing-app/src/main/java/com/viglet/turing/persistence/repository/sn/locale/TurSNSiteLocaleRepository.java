@@ -23,6 +23,9 @@ package com.viglet.turing.persistence.repository.sn.locale;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -35,9 +38,27 @@ import java.util.Locale;
  */
 public interface TurSNSiteLocaleRepository extends JpaRepository<TurSNSiteLocale, String> {
 
+	String FIND_BY_TUR_SN_SITE_AND_LANGUAGE = "turSNSiteLocaleFindByTurSNSiteAndLanguage";
+	String EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE = "turSNSiteLocaleExistsByTurSNSiteAndLanguage";
+	String FIND_BY_TUR_SN_SITE_SORT = "turSNSiteLocaleFindByTurSNSiteSort";
+	String FIND_BY_TUR_SN_SITE = "turSNSiteLocaleFindByTurSNSite";
 
+	@Cacheable(FIND_BY_TUR_SN_SITE_AND_LANGUAGE)
 	TurSNSiteLocale findByTurSNSiteAndLanguage(TurSNSite turSNSite, Locale language);
+	@Cacheable(EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE)
 	boolean existsByTurSNSiteAndLanguage(TurSNSite turSNSite, Locale language);
+	@Cacheable(FIND_BY_TUR_SN_SITE_SORT)
 	List<TurSNSiteLocale> findByTurSNSite(Sort name, TurSNSite turSNSite);
+	@Cacheable(FIND_BY_TUR_SN_SITE)
 	List<TurSNSiteLocale> findByTurSNSite(TurSNSite turSNSite);
+
+	@CacheEvict(value = {FIND_BY_TUR_SN_SITE_AND_LANGUAGE, EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE,
+			FIND_BY_TUR_SN_SITE_SORT, FIND_BY_TUR_SN_SITE}, allEntries = true)
+	@NotNull
+	TurSNSiteLocale save(@NotNull TurSNSiteLocale turSNSiteLocale);
+
+	@CacheEvict(value = {FIND_BY_TUR_SN_SITE_AND_LANGUAGE, EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE,
+			FIND_BY_TUR_SN_SITE_SORT, FIND_BY_TUR_SN_SITE}, allEntries = true)
+	void delete(@NotNull TurSNSiteLocale turSNSiteLocale);
+
 }

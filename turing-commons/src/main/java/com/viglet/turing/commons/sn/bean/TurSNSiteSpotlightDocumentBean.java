@@ -23,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
+
 /**
  * List of spotlight documents of Turing ES Semantic Navigation response.
  * 
@@ -34,7 +36,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurSNSiteSpotlightDocumentBean {
+public class TurSNSiteSpotlightDocumentBean implements Serializable {
 
 	private String id;
 

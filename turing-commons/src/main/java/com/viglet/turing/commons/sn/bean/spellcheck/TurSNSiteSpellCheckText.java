@@ -15,6 +15,7 @@
  */
 package com.viglet.turing.commons.sn.bean.spellcheck;
 
+import java.io.Serializable;
 import java.net.URI;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -34,7 +35,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurSNSiteSpellCheckText {
+public class TurSNSiteSpellCheckText implements Serializable {
 	private static final String TRUE = "1";
 	private String text;
 	private String link;

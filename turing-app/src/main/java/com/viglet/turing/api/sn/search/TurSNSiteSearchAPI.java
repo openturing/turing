@@ -40,6 +40,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,17 +55,22 @@ import java.util.*;
 @RequestMapping("/api/sn/{siteName}/search")
 @Tag(name = "Semantic Navigation Search", description = "Semantic Navigation Search API")
 public class TurSNSiteSearchAPI {
+    @Value("${turing.search.cache.enabled:false}")
+    private boolean searchCacheEnabled;
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI;
 
     @Inject
     public TurSNSiteSearchAPI(TurSNSearchProcess turSNSearchProcess,
                               TurSNSiteRepository turSNSiteRepository,
-                              TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+                              TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                              TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turSNSiteSearchCachedAPI = turSNSiteSearchCachedAPI;
     }
 
     @GetMapping
@@ -86,14 +92,24 @@ public class TurSNSiteSearchAPI {
             HttpServletRequest request) {
         Locale locale = LocaleUtils.toLocale(localeRequest);
         if (existsByTurSNSiteAndLanguage(siteName, locale)) {
-            return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,
-                    new TurSEParameters(q, new TurSEFilterQueryParameters(filterQueriesDefault, filterQueriesAnd,
-                            filterQueriesOr, fqOperator), currentPage, sort, rows, group, autoCorrectionDisabled), locale,
-                    TurSNUtils.requestToURI(request))), HttpStatus.OK);
+            TurSEFilterQueryParameters turSEFilterQueryParameters = new TurSEFilterQueryParameters(filterQueriesDefault,
+                    filterQueriesAnd, filterQueriesOr, fqOperator);
+            TurSEParameters turSEParameters = new TurSEParameters(q, turSEFilterQueryParameters, currentPage, sort,
+                    rows, group, autoCorrectionDisabled);
+            URI uri = TurSNUtils.requestToURI(request);
+            TurSNSiteSearchContext turSNSiteSearchContext = new TurSNSiteSearchContext(siteName, turSEParameters, locale,
+                    uri);
+            if (searchCacheEnabled) {
+                String cacheKey = "%s_%s".formatted(siteName, request.getQueryString());
+                return new ResponseEntity<>(turSNSiteSearchCachedAPI.searchCached(cacheKey, turSNSiteSearchContext), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(turSNSearchProcess.search(turSNSiteSearchContext), HttpStatus.OK);
+            }
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+
 
     private boolean existsByTurSNSiteAndLanguage(String siteName, Locale locale) {
         return turSNSiteRepository.findByName(siteName).map(turSNSite ->
@@ -166,7 +182,8 @@ public class TurSNSiteSearchAPI {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    private String isLatestImpersonate(Optional<TurSNSearchLatestRequestBean> turSNSearchLatestRequestBean, Principal principal) {
+    private String isLatestImpersonate(Optional<TurSNSearchLatestRequestBean> turSNSearchLatestRequestBean,
+                                       Principal principal) {
         if (turSNSearchLatestRequestBean.isPresent() && turSNSearchLatestRequestBean.get().getUserId() != null) {
             return turSNSearchLatestRequestBean.get().getUserId();
         } else {

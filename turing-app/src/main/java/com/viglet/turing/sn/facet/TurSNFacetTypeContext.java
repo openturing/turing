@@ -21,7 +21,6 @@ package com.viglet.turing.sn.facet;
 import com.viglet.turing.commons.se.TurSEFilterQueryParameters;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

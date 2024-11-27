@@ -16,6 +16,11 @@
  */
 package com.viglet.turing.commons.sn.bean;
 
+import lombok.Getter;
+import lombok.Setter;
+
+import java.io.Serializable;
+
 /**
  * Request latest searches to Turing ES
  * 
@@ -24,16 +29,10 @@ package com.viglet.turing.commons.sn.bean;
  * @since 0.3.6
  *
  */
-public class TurSNSearchLatestRequestBean {
+@Setter
+@Getter
+public class TurSNSearchLatestRequestBean implements Serializable {
 
 	private String userId;
-
-	public String getUserId() {
-		return userId;
-	}
-
-	public void setUserId(String userId) {
-		this.userId = userId;
-	}
 
 }

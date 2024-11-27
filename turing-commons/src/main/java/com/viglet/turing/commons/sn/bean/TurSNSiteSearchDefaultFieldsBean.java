@@ -21,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
+
 /**
  * Default Fields of Turing ES Semantic Navigation response.
  * 
@@ -33,7 +35,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurSNSiteSearchDefaultFieldsBean {
+public class TurSNSiteSearchDefaultFieldsBean implements Serializable {
 	private String title;
 	private String date;
 	private String description;

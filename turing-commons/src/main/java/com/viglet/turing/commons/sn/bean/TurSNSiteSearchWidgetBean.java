@@ -16,6 +16,7 @@
 
 package com.viglet.turing.commons.sn.bean;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -40,7 +41,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurSNSiteSearchWidgetBean {
+public class TurSNSiteSearchWidgetBean implements Serializable {
 	private String cleanUpFacets;
 	private List<TurSNSiteSearchFacetBean> facet;
 	private List<TurSNSiteSearchFacetBean> secondaryFacet;

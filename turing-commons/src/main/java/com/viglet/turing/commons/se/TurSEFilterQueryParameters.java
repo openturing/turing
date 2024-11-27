@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
 @Getter
@@ -17,9 +18,9 @@ public class TurSEFilterQueryParameters implements Serializable {
 
     public TurSEFilterQueryParameters(List<String> fq, List<String> and, List<String> or,
                                       TurSNFilterQueryOperator operator) {
-        this.fq = fq;
-        this.and = and;
-        this.or = or;
+        this.fq = fq != null ? fq : Collections.emptyList();
+        this.and = and != null ? and : Collections.emptyList();
+        this.or = or != null ? or : Collections.emptyList();
         this.operator = operator;
     }
 

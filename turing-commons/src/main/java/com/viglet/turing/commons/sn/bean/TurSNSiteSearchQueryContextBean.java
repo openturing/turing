@@ -22,11 +22,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
+
 @RequiredArgsConstructor
 @Accessors(chain = true)
 @Getter
 @Setter
-public class TurSNSiteSearchQueryContextBean {
+public class TurSNSiteSearchQueryContextBean implements Serializable {
 	private int count;
 	private String index;
 	private int limit;

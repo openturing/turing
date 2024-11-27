@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
+
 /**
  * Facet Item of Turing ES Semantic Navigation response.
  * 
@@ -34,7 +36,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurSNSiteSearchFacetItemBean {
+public class TurSNSiteSearchFacetItemBean implements Serializable {
 	private int count;
 	private String link;
 	private String label;
