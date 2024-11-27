@@ -4,6 +4,7 @@ import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.generator.EventType;
 import org.hibernate.id.factory.spi.CustomIdGeneratorCreationContext;
 import org.hibernate.id.uuid.UuidGenerator;
+import org.hibernate.id.uuid.UuidValueGenerator;
 
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
@@ -32,6 +33,11 @@ public class TurUuidGenerator extends UuidGenerator {
             @Override
             public org.hibernate.annotations.UuidGenerator.Style style() {
                 return style;
+            }
+
+            @Override
+            public Class<? extends UuidValueGenerator> algorithm() {
+                return org.hibernate.id.uuid.UuidValueGenerator.class;
             }
         };
     }
