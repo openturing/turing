@@ -16,52 +16,56 @@
 
 package com.viglet.turing.client.sn;
 
-import lombok.Setter;
-import org.apache.hc.core5.net.URIBuilder;
-
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import lombok.Setter;
+import org.apache.hc.core5.net.URIBuilder;
 
 /**
  * Class with apiURL and method to return query parameters.
- * 
+ *
  * @author Alexandre Oliveira
- * 
  * @since 0.3.4
  */
 @Setter
 public class TurSNItemWithAPI {
-	static Logger logger = Logger.getLogger(TurSNItemWithAPI.class.getName());
-	private String apiURL;
+  static Logger logger = Logger.getLogger(TurSNItemWithAPI.class.getName());
+  private String apiURL;
 
-	public TurSNItemWithAPI() {
-		super();
-	}
+  public TurSNItemWithAPI() {
+    super();
+  }
 
-	public Optional<String> getApiURL() {
-		return Optional.ofNullable(apiURL);
-	}
+  public Optional<String> getApiURL() {
+    return Optional.ofNullable(apiURL);
+  }
 
-    public Optional<TurSNQueryParamMap> getQueryParams() {
-		return getApiURL().map(api -> {
-			TurSNQueryParamMap queryParams = new TurSNQueryParamMap();
-			try {
-				new URIBuilder(api).getQueryParams().forEach(param -> {
-					if (queryParams.containsKey(param.getName()))
-						queryParams.get(param.getName()).add(param.getValue());
-					else
-						queryParams.put(param.getName(), new ArrayList<>(Collections.singletonList(param.getValue())));
-				});
-			} catch (URISyntaxException e) {
-				logger.log(Level.SEVERE, e.getMessage(), e);
-			}
-			return Optional.of(queryParams);
-		}).orElse(Optional.empty());
-
-	}
-
+  public Optional<TurSNQueryParamMap> getQueryParams() {
+    return getApiURL()
+        .map(
+            api -> {
+              TurSNQueryParamMap queryParams = new TurSNQueryParamMap();
+              try {
+                new URIBuilder(api)
+                    .getQueryParams()
+                    .forEach(
+                        param -> {
+                          if (queryParams.containsKey(param.getName()))
+                            queryParams.get(param.getName()).add(param.getValue());
+                          else
+                            queryParams.put(
+                                param.getName(),
+                                new ArrayList<>(Collections.singletonList(param.getValue())));
+                        });
+              } catch (URISyntaxException e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+              }
+              return Optional.of(queryParams);
+            })
+        .orElse(Optional.empty());
+  }
 }

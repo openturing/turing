@@ -24,21 +24,19 @@ import com.google.inject.Inject;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
-import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.properties.TurConfigProperties;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
-import org.springframework.stereotype.Component;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Locale;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.springframework.stereotype.Component;
 
 /**
  * @author Alexandre Oliveira
@@ -47,79 +45,96 @@ import java.util.Optional;
 @Slf4j
 @Component
 public class TurSolrInstanceProcess {
-    private final TurConfigVarRepository turConfigVarRepository;
-    private final TurSEInstanceRepository turSEInstanceRepository;
-    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-    private final TurSNSiteRepository turSNSiteRepository;
-    private final TurSolrCache turSolrCache;
-    private final CloseableHttpClient closeableHttpClient;
-    private final TurConfigProperties turConfigProperties;
-    @Inject
-    public TurSolrInstanceProcess(TurConfigVarRepository turConfigVarRepository,
-                                  TurSEInstanceRepository turSEInstanceRepository,
-                                  TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-                                  TurSNSiteRepository turSNSiteRepository,
-                                  TurSolrCache turSolrCache, CloseableHttpClient closeableHttpClient,
-                                  TurConfigProperties turConfigProperties) {
-        this.turConfigVarRepository = turConfigVarRepository;
-        this.turSEInstanceRepository = turSEInstanceRepository;
-        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
-        this.turSNSiteRepository = turSNSiteRepository;
-        this.turSolrCache = turSolrCache;
-        this.closeableHttpClient = closeableHttpClient;
-        this.turConfigProperties = turConfigProperties;
+  private final TurConfigVarRepository turConfigVarRepository;
+  private final TurSEInstanceRepository turSEInstanceRepository;
+  private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+  private final TurSNSiteRepository turSNSiteRepository;
+  private final TurSolrCache turSolrCache;
+  private final CloseableHttpClient closeableHttpClient;
+  private final TurConfigProperties turConfigProperties;
+
+  @Inject
+  public TurSolrInstanceProcess(
+      TurConfigVarRepository turConfigVarRepository,
+      TurSEInstanceRepository turSEInstanceRepository,
+      TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+      TurSNSiteRepository turSNSiteRepository,
+      TurSolrCache turSolrCache,
+      CloseableHttpClient closeableHttpClient,
+      TurConfigProperties turConfigProperties) {
+    this.turConfigVarRepository = turConfigVarRepository;
+    this.turSEInstanceRepository = turSEInstanceRepository;
+    this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+    this.turSNSiteRepository = turSNSiteRepository;
+    this.turSolrCache = turSolrCache;
+    this.closeableHttpClient = closeableHttpClient;
+    this.turConfigProperties = turConfigProperties;
+  }
+
+  private Optional<TurSolrInstance> getSolrClient(
+      TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
+    return getSolrClient(turSNSite.getTurSEInstance(), turSNSiteLocale.getCore());
+  }
+
+  private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
+    String urlString =
+        String.format(
+            "http://%s:%s/solr/%s", turSEInstance.getHost(), turSEInstance.getPort(), core);
+    if (turSolrCache.isSolrCoreExists(urlString)) {
+      HttpSolrClient httpSolrClient =
+          new HttpSolrClient.Builder(urlString)
+              .withHttpClient(closeableHttpClient)
+              .withConnectionTimeout(turConfigProperties.getSolr().getTimeout())
+              .withSocketTimeout(turConfigProperties.getSolr().getTimeout())
+              .build();
+      try {
+        return Optional.of(
+            new TurSolrInstance(
+                closeableHttpClient, httpSolrClient, URI.create(urlString).toURL(), core));
+      } catch (MalformedURLException e) {
+        log.error(e.getMessage(), e);
+      }
     }
+    return Optional.empty();
+  }
 
-    private Optional<TurSolrInstance> getSolrClient(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
-        return getSolrClient(turSNSite.getTurSEInstance(), turSNSiteLocale.getCore());
+  public Optional<TurSolrInstance> initSolrInstance(String siteName, Locale locale) {
+    return turSNSiteRepository
+        .findByName(siteName)
+        .flatMap(turSNSite -> this.initSolrInstance(turSNSite, locale));
+  }
+
+  private Optional<TurSolrInstance> initSolrInstance(TurSNSite turSNSite, Locale locale) {
+    TurSNSiteLocale turSNSiteLocale =
+        turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
+    if (turSNSiteLocale != null) {
+      return this.initSolrInstance(turSNSiteLocale);
+    } else {
+      log.warn("{} site with {} locale not found", turSNSite.getName(), locale);
+      return Optional.empty();
     }
+  }
 
-    private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
-        String urlString = String.format("http://%s:%s/solr/%s", turSEInstance.getHost(), turSEInstance.getPort(),
-                core);
-        if (turSolrCache.isSolrCoreExists(urlString)) {
-            HttpSolrClient httpSolrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
-                    .withConnectionTimeout(turConfigProperties.getSolr().getTimeout())
-                    .withSocketTimeout(turConfigProperties.getSolr().getTimeout()).build();
-            try {
-                return Optional.of(new TurSolrInstance(closeableHttpClient, httpSolrClient, URI.create(urlString).toURL(), core));
-            } catch (MalformedURLException e) {
-                log.error(e.getMessage(), e);
-            }
-        }
-        return Optional.empty();
-    }
+  public Optional<TurSolrInstance> initSolrInstance(TurSEInstance turSEInstance, String core) {
+    return this.getSolrClient(turSEInstance, core);
+  }
 
-    public Optional<TurSolrInstance> initSolrInstance(String siteName, Locale locale) {
-        return turSNSiteRepository.findByName(siteName).flatMap(turSNSite -> this.initSolrInstance(turSNSite, locale));
+  public Optional<TurSolrInstance> initSolrInstance(TurSNSiteLocale turSNSiteLocale) {
+    return this.getSolrClient(turSNSiteLocale.getTurSNSite(), turSNSiteLocale);
+  }
 
-    }
-
-    private Optional<TurSolrInstance> initSolrInstance(TurSNSite turSNSite, Locale locale) {
-        TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, locale);
-        if (turSNSiteLocale != null) {
-            return this.initSolrInstance(turSNSiteLocale);
-        } else {
-            log.warn("{} site with {} locale not found", turSNSite.getName(), locale);
-            return Optional.empty();
-        }
-    }
-
-    public Optional<TurSolrInstance> initSolrInstance(TurSEInstance turSEInstance, String core) {
-        return this.getSolrClient(turSEInstance, core);
-    }
-
-    public Optional<TurSolrInstance> initSolrInstance(TurSNSiteLocale turSNSiteLocale) {
-        return this.getSolrClient(turSNSiteLocale.getTurSNSite(), turSNSiteLocale);
-
-    }
-
-    public Optional<TurSolrInstance> initSolrInstance() {
-        return turConfigVarRepository.findById("DEFAULT_SE")
-                .flatMap(turConfigVar -> turSEInstanceRepository.findById(turConfigVar.getValue())
-                        .map(turSEInstance -> getSolrClient(turSEInstance, "turing")))
-                .orElse(turSEInstanceRepository.findAll().stream().findFirst().map(turSEInstance ->
-                        getSolrClient(turSEInstance, "turing")).orElse(null));
-    }
-
+  public Optional<TurSolrInstance> initSolrInstance() {
+    return turConfigVarRepository
+        .findById("DEFAULT_SE")
+        .flatMap(
+            turConfigVar ->
+                turSEInstanceRepository
+                    .findById(turConfigVar.getValue())
+                    .map(turSEInstance -> getSolrClient(turSEInstance, "turing")))
+        .orElse(
+            turSEInstanceRepository.findAll().stream()
+                .findFirst()
+                .map(turSEInstance -> getSolrClient(turSEInstance, "turing"))
+                .orElse(null));
+  }
 }

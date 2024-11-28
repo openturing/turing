@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -24,26 +24,25 @@ package com.viglet.turing.console.encrypt;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.jasypt.encryption.StringEncryptor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+
 @Slf4j
 @Component
 public class TurEncryptCLI {
-	private final StringEncryptor stringEncryptor;
+  private final StringEncryptor stringEncryptor;
 
-	@Inject
-	public TurEncryptCLI(@Qualifier("turEncryptor") StringEncryptor stringEncryptor) {
-		this.stringEncryptor = stringEncryptor;
-	}
+  @Inject
+  public TurEncryptCLI(@Qualifier("turEncryptor") StringEncryptor stringEncryptor) {
+    this.stringEncryptor = stringEncryptor;
+  }
 
-	public String encrypt(String input) {
-		try {
-			return stringEncryptor.encrypt(input);
-		} catch (Exception e) {
-			log.error(e.getMessage(), e);
-		}
-		return null;
-	}
-
+  public String encrypt(String input) {
+    try {
+      return stringEncryptor.encrypt(input);
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+    }
+    return null;
+  }
 }
