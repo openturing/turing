@@ -167,9 +167,8 @@ public class TurWCProcess {
                 log.debug("Ignored: {}", url);
             }
         } catch (IOException e) {
-            log.error(e.getMessage());
+            log.error(e.getMessage(), e);
         }
-
         return new TurSNJobItem();
     }
 
@@ -178,12 +177,9 @@ public class TurWCProcess {
     }
 
     private void addPageToQueue(String pageUrl) {
-        if (canBeAddToQueue(pageUrl)) {
-            if (visitedLinks.add(pageUrl) && !queueLinks.offer(pageUrl)) {
-                log.error("Item didn't add to queue: {}", pageUrl);
-            }
+        if (canBeAddToQueue(pageUrl) && visitedLinks.add(pageUrl) && !queueLinks.offer(pageUrl)) {
+            log.error("Item didn't add to queue: {}", pageUrl);
         }
-
     }
 
     private boolean isValidToAddQueue(String pageUrl) {
@@ -279,7 +275,6 @@ public class TurWCProcess {
                 .stream().map(String.class::cast).toList());
         attributeValues.add(attributeValue);
         attributes.put(attributeName, attributeValues);
-
     }
 
     private void addFirstItemToAttribute(String attributeName,
@@ -287,7 +282,6 @@ public class TurWCProcess {
                                          Map<String, Object> attributes) {
         attributes.put(attributeName, attributeValue);
     }
-
 
     private void sendToTuring() {
         if (log.isDebugEnabled()) {
@@ -340,7 +334,6 @@ public class TurWCProcess {
         return isValidToAddQueue(pageUrl)
                 && !StringUtils.equalsAny(pageUrl, visitedLinks.toArray(new String[0]));
     }
-
 
 
     private static boolean isJavascriptUrl(String pageUrl) {
