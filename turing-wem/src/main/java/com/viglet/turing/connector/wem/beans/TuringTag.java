@@ -17,17 +17,27 @@
  */
 package com.viglet.turing.connector.wem.beans;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
+@Setter
 public class TuringTag {
-	private String tagName;
-	private List<String> srcAttributeRelation;
-	private String srcAttributeType;
-	private String srcXmlName;
-	private String srcClassName;
+	@Getter
+    private String tagName;
+	@Getter
+    private List<String> srcAttributeRelation;
+	@Getter
+    private String srcAttributeType;
+	@Getter
+    private String srcXmlName;
+	@Getter
+    private String srcClassName;
 	private boolean srcMandatory;
 	private boolean srcUniqueValues;
-	private String textValue;
+	@Getter
+    private String textValue;
 
 	@Override
 	public String toString() {
@@ -41,63 +51,11 @@ public class TuringTag {
 		super();
 	}
 
-	public String getSrcAttributeType() {
-		return srcAttributeType;
-	}
-
-	public List<String> getSrcAttributeRelation() {
-		return srcAttributeRelation;
-	}
-
-	public String getSrcClassName() {
-		return srcClassName;
-	}
-
-	public boolean getSrcMandatory() {
+    public boolean getSrcMandatory() {
 		return srcMandatory;
 	}
 
-	public String getTagName() {
-		return tagName;
-	}
-
-	public String getTextValue() {
-		return textValue;
-	}
-
-	public void setSrcAttributeType(String srcAttributeType) {
-		this.srcAttributeType = srcAttributeType;
-	}
-
-	public void setSrcAttributeRelation(List<String> srcAttributeRelation) {
-		this.srcAttributeRelation = srcAttributeRelation;
-	}
-
-	public void setSrcClassName(String srcClassName) {
-		this.srcClassName = srcClassName;
-	}
-
-	public void setSrcMandatory(boolean srcMandatory) {
-		this.srcMandatory = srcMandatory;
-	}
-
-	public void setTagName(String tagName) {
-		this.tagName = tagName;
-	}
-
-	public String getSrcXmlName() {
-		return srcXmlName;
-	}
-
-	public void setSrcXmlName(String srcXmlName) {
-		this.srcXmlName = srcXmlName;
-	}
-
-	public void setTextValue(String textValue) {
-		this.textValue = textValue;
-	}
-
-	@Override
+    @Override
 	public boolean equals(Object obj) {
 		if (obj instanceof TuringTag) {
 			return this.getTagName().equals(((TuringTag) obj).getTagName());
@@ -115,7 +73,4 @@ public class TuringTag {
 		return srcUniqueValues;
 	}
 
-	public void setSrcUniqueValues(boolean srcUniqueValues) {
-		this.srcUniqueValues = srcUniqueValues;
-	}
 }

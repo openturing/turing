@@ -28,7 +28,7 @@ public class PrePersistenceHandler {
 
 	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
-	private IHandlerConfiguration config;
+	private final IHandlerConfiguration config;
 
 	public PrePersistenceHandler(IHandlerConfiguration config) {
 		this.config = config;

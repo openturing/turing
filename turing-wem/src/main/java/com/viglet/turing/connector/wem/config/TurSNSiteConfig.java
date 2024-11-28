@@ -17,6 +17,11 @@
  */
 package com.viglet.turing.connector.wem.config;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public class TurSNSiteConfig {
 
 	private String name;
@@ -25,22 +30,6 @@ public class TurSNSiteConfig {
 	public TurSNSiteConfig(String name, String locale) {
 		super();
 		this.name = name;
-		this.locale = locale;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getLocale() {
-		return locale;
-	}
-
-	public void setLocale(String locale) {
 		this.locale = locale;
 	}
 

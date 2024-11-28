@@ -46,7 +46,7 @@ public class TurWEMAttrClass {
 
         TuringTag turingTag = turAttrDefContext.getTuringTag();
         ContentInstance ci = turAttrDefContext.getContentInstance();
-        IHandlerConfiguration config = turAttrDefContext.getiHandlerConfiguration();
+        IHandlerConfiguration config = turAttrDefContext.getIHandlerConfiguration();
         List<TurAttrDef> attributesDefs = new ArrayList<>();
 
         if (turingTag.getSrcClassName() != null) {

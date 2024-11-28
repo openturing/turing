@@ -100,9 +100,7 @@ public class TurSNUtils {
                         && nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT))) {
                     resetPaginationOrAddParameter(sbQueryString, nameValuePair.getName(), decodedValue);
                 }
-
-
-        };
+        }
         return TurCommonsUtils.modifiedURI(uri, sbQueryString);
     }
 

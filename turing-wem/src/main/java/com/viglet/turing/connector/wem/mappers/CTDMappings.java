@@ -27,9 +27,11 @@ import com.viglet.turing.connector.wem.beans.TuringTag;
 import com.viglet.turing.connector.wem.beans.TuringTagMap;
 import com.viglet.turing.connector.wem.util.TuringUtils;
 import com.vignette.logging.context.ContextLogger;
+import lombok.Getter;
 
+@Getter
 public class CTDMappings {
-	private TuringTagMap turingTagMap;
+	private final TuringTagMap turingTagMap;
 	private String classValidToIndex = null;
 	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -71,15 +73,7 @@ public class CTDMappings {
 		this.turingTagMap = turingTagMap;
 	}
 
-	public TuringTagMap getTuringTagMap() {
-		return turingTagMap;
-	}
-
-	public String getClassValidToIndex() {
-		return classValidToIndex;
-	}
-
-	public void setClassValidToIndex(String classValidToIndex) {
+    public void setClassValidToIndex(String classValidToIndex) {
 		this.classValidToIndex = classValidToIndex;
 	}
 

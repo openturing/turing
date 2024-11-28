@@ -65,7 +65,7 @@ public class TurWEMRelator {
 		List<AttributedObject[]> nestedRelationChild = new ArrayList<>();
 		for (AttributedObject[] attributesFromRelation : currentRelation) {
 
-			for (AttributedObject attributeFromRelation : Arrays.asList(attributesFromRelation)) {
+			for (AttributedObject attributeFromRelation : attributesFromRelation) {
 				try {
 					AttributedObject[] childRelation = attributeFromRelation
 							.getRelations(relationTag.get(nextPosition));

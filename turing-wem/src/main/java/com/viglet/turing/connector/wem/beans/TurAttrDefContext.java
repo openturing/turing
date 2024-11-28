@@ -25,20 +25,27 @@ import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.exception.ApplicationException;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
 public class TurAttrDefContext {
 	private static final ContextLogger logger = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 	
-	private ContentInstance contentInstance;
-	private TuringTag turingTag;
-	private IHandlerConfiguration iHandlerConfiguration;
-	private MappingDefinitions mappingDefinitions;
+	@Getter
+    private ContentInstance contentInstance;
+	@Getter
+    private TuringTag turingTag;
+	@Getter
+    private IHandlerConfiguration iHandlerConfiguration;
+	@Getter
+    private MappingDefinitions mappingDefinitions;
 	private AttributeData attributeData;
 
 	public TurAttrDefContext(TurAttrDefContext turAttrDefContext) {
 		this.setAttributeData(turAttrDefContext.getAttributeData());
 		this.setContentInstance(turAttrDefContext.getContentInstance());
-		this.setiHandlerConfiguration(turAttrDefContext.getiHandlerConfiguration());
+		this.setIHandlerConfiguration(turAttrDefContext.getIHandlerConfiguration());
 		this.setMappingDefinitions(turAttrDefContext.getMappingDefinitions());
 		this.setTuringTag(turAttrDefContext.getTuringTag());
 	}
@@ -46,44 +53,12 @@ public class TurAttrDefContext {
 	public TurAttrDefContext(ContentInstance contentInstance, TuringTag turingTag,
 			IHandlerConfiguration iHandlerConfiguration, MappingDefinitions mappingDefinitions) {
 		this.setContentInstance(contentInstance);
-		this.setiHandlerConfiguration(iHandlerConfiguration);
+		this.setIHandlerConfiguration(iHandlerConfiguration);
 		this.setMappingDefinitions(mappingDefinitions);
 		this.setTuringTag(turingTag);
 	}
 
-	public ContentInstance getContentInstance() {
-		return contentInstance;
-	}
-
-	public void setContentInstance(ContentInstance contentInstance) {
-		this.contentInstance = contentInstance;
-	}
-
-	public TuringTag getTuringTag() {
-		return turingTag;
-	}
-
-	public void setTuringTag(TuringTag turingTag) {
-		this.turingTag = turingTag;
-	}
-
-	public IHandlerConfiguration getiHandlerConfiguration() {
-		return iHandlerConfiguration;
-	}
-
-	public void setiHandlerConfiguration(IHandlerConfiguration iHandlerConfiguration) {
-		this.iHandlerConfiguration = iHandlerConfiguration;
-	}
-
-	public MappingDefinitions getMappingDefinitions() {
-		return mappingDefinitions;
-	}
-
-	public void setMappingDefinitions(MappingDefinitions mappingDefinitions) {
-		this.mappingDefinitions = mappingDefinitions;
-	}
-
-	public AttributeData getAttributeData() {
+    public AttributeData getAttributeData() {
 		if (attributeData != null)
 			return attributeData;
 
@@ -96,7 +71,4 @@ public class TurAttrDefContext {
 		return null;
 	}
 
-	public void setAttributeData(AttributeData attributeData) {
-		this.attributeData = attributeData;
-	}
 }
