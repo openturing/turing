@@ -28,89 +28,81 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.sn.TurSNFieldType;
-import jakarta.persistence.Column;
-import lombok.*;
-import lombok.experimental.Tolerate;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.*;
+import lombok.experimental.Tolerate;
 
-/**
- * The persistent class for the turSNSiteFieldExt database table.
- */
-
+/** The persistent class for the turSNSiteFieldExt database table. */
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @Setter
 @Getter
 public class TurSNSiteFieldExtDto {
-    private String id;
-    private String externalId;
-    private String name;
-    private String description;
-    private String facetName;
-    @Builder.Default
-    private Set<TurSNSiteFieldExtFacetDto> facetLocales = new HashSet<>();
-    private TurSNFieldType snType;
-    private TurSEFieldType type;
-    private int multiValued;
-    private int facet;
-    private TurSNSiteFacetRangeEnum facetRange;
-    private TurSNSiteFacetFieldEnum facetType;
-    private TurSNSiteFacetFieldEnum facetItemType;
-    private Boolean secondaryFacet;
-    private Boolean showAllFacetItems;
-    private int hl;
-    private int mlt;
-    private int enabled;
-    private int required;
-    private String defaultValue;
-    private int nlp;
-    private TurSNSite turSNSite;
+  private String id;
+  private String externalId;
+  private String name;
+  private String description;
+  private String facetName;
+  @Builder.Default private Set<TurSNSiteFieldExtFacetDto> facetLocales = new HashSet<>();
+  private TurSNFieldType snType;
+  private TurSEFieldType type;
+  private int multiValued;
+  private int facet;
+  private TurSNSiteFacetRangeEnum facetRange;
+  private TurSNSiteFacetFieldEnum facetType;
+  private TurSNSiteFacetFieldEnum facetItemType;
+  private Boolean secondaryFacet;
+  private Boolean showAllFacetItems;
+  private int hl;
+  private int mlt;
+  private int enabled;
+  private int required;
+  private String defaultValue;
+  private int nlp;
+  private TurSNSite turSNSite;
 
-    @Tolerate
-    public TurSNSiteFieldExtDto() {
-        this.facetLocales = new HashSet<>();
+  @Tolerate
+  public TurSNSiteFieldExtDto() {
+    this.facetLocales = new HashSet<>();
+  }
+
+  @Tolerate
+  public TurSNSiteFieldExtDto(TurSNSiteFieldExt turSNSiteFieldExt) {
+    this.id = turSNSiteFieldExt.getId();
+    this.externalId = turSNSiteFieldExt.getExternalId();
+    this.name = turSNSiteFieldExt.getName();
+    this.description = turSNSiteFieldExt.getDescription();
+    this.facet = turSNSiteFieldExt.getFacet();
+    this.facetRange = turSNSiteFieldExt.getFacetRange();
+    this.facetName = turSNSiteFieldExt.getFacetName();
+    this.facetType = turSNSiteFieldExt.getFacetType();
+    this.facetItemType = turSNSiteFieldExt.getFacetItemType();
+    this.secondaryFacet = turSNSiteFieldExt.getSecondaryFacet();
+    this.showAllFacetItems = turSNSiteFieldExt.getShowAllFacetItems();
+    this.snType = turSNSiteFieldExt.getSnType();
+    this.type = turSNSiteFieldExt.getType();
+    this.multiValued = turSNSiteFieldExt.getMultiValued();
+    this.hl = turSNSiteFieldExt.getHl();
+    this.mlt = turSNSiteFieldExt.getMlt();
+    this.enabled = turSNSiteFieldExt.getEnabled();
+    this.required = turSNSiteFieldExt.getRequired();
+    this.defaultValue = turSNSiteFieldExt.getDefaultValue();
+    this.nlp = turSNSiteFieldExt.getNlp();
+    this.turSNSite = turSNSiteFieldExt.getTurSNSite();
+  }
+
+  public void setFacetLocales(Set<TurSNSiteFieldExtFacet> facetLocales) {
+    if (this.facetLocales != null) {
+      this.facetLocales.clear();
+    } else {
+      this.facetLocales = new HashSet<>();
     }
-
-    @Tolerate
-    public TurSNSiteFieldExtDto(TurSNSiteFieldExt turSNSiteFieldExt) {
-        this.id = turSNSiteFieldExt.getId();
-        this.externalId = turSNSiteFieldExt.getExternalId();
-        this.name = turSNSiteFieldExt.getName();
-        this.description = turSNSiteFieldExt.getDescription();
-        this.facet = turSNSiteFieldExt.getFacet();
-        this.facetRange = turSNSiteFieldExt.getFacetRange();
-        this.facetName = turSNSiteFieldExt.getFacetName();
-        this.facetType = turSNSiteFieldExt.getFacetType();
-        this.facetItemType = turSNSiteFieldExt.getFacetItemType();
-        this.secondaryFacet = turSNSiteFieldExt.getSecondaryFacet();
-        this.showAllFacetItems = turSNSiteFieldExt.getShowAllFacetItems();
-        this.snType = turSNSiteFieldExt.getSnType();
-        this.type = turSNSiteFieldExt.getType();
-        this.multiValued = turSNSiteFieldExt.getMultiValued();
-        this.hl = turSNSiteFieldExt.getHl();
-        this.mlt = turSNSiteFieldExt.getMlt();
-        this.enabled = turSNSiteFieldExt.getEnabled();
-        this.required = turSNSiteFieldExt.getRequired();
-        this.defaultValue = turSNSiteFieldExt.getDefaultValue();
-        this.nlp = turSNSiteFieldExt.getNlp();
-        this.turSNSite = turSNSiteFieldExt.getTurSNSite();
+    if (facetLocales != null) {
+      this.facetLocales = new HashSet<>();
+      this.facetLocales.addAll(
+          facetLocales.stream().map(TurSNSiteFieldExtFacetDto::new).collect(Collectors.toSet()));
     }
-
-    public void setFacetLocales(Set<TurSNSiteFieldExtFacet> facetLocales) {
-        if (this.facetLocales != null) {
-            this.facetLocales.clear();
-        } else {
-            this.facetLocales = new HashSet<>();
-        }
-        if (facetLocales != null) {
-            this.facetLocales = new HashSet<>();
-            this.facetLocales.addAll(facetLocales.stream().map(TurSNSiteFieldExtFacetDto::new)
-                    .collect(Collectors.toSet()));
-        }
-    }
-
-
+  }
 }

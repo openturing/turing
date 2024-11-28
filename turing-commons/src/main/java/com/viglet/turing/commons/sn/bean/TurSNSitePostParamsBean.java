@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,71 +18,91 @@ package com.viglet.turing.commons.sn.bean;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.MapSerializer;
-import com.viglet.turing.commons.se.TurSEFilterQueryParameters;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Post Parameters for Search with sensitive data
- * 
- * @author Alexandre Oliveira
- * 
- * @since 0.3.6
  *
+ * @author Alexandre Oliveira
+ * @since 0.3.6
  */
-
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSitePostParamsBean implements Serializable {
-	private String userId;
-	private boolean populateMetrics = true;
-	private String sort;
-	private String query;
-	private List<String> fq;
-	private List<String> fqAnd;
-	private List<String> fqOr;
-	private TurSNFilterQueryOperator fqOperator;
-	private Integer page;
-	private Integer rows;
-	private String group;
-	private String locale;
-	private boolean disableAutoComplete = false;
-	private List<String> targetingRules = new ArrayList<>();
-	@JsonSerialize(keyUsing = MapSerializer.class)
-	private Map<String, List<String>> targetingRulesWithCondition = new HashMap<>();
-	@JsonSerialize(keyUsing = MapSerializer.class)
-	private Map<String, List<String>> targetingRulesWithConditionAND = new HashMap<>();
-	@JsonSerialize(keyUsing = MapSerializer.class)
-	private Map<String, List<String>> targetingRulesWithConditionOR = new HashMap<>();
+  private String userId;
+  private boolean populateMetrics = true;
+  private String sort;
+  private String query;
+  private List<String> fq;
+  private List<String> fqAnd;
+  private List<String> fqOr;
+  private TurSNFilterQueryOperator fqOperator;
+  private Integer page;
+  private Integer rows;
+  private String group;
+  private String locale;
+  private boolean disableAutoComplete = false;
+  private List<String> targetingRules = new ArrayList<>();
 
-	@Override
-	public String toString() {
-		return "TurSNSitePostParamsBean{" +
-				"userId='" + userId + '\'' +
-				", populateMetrics=" + populateMetrics +
-				", sort='" + sort + '\'' +
-				", query='" + query + '\'' +
-				", fq=" + fq +
-				", fqAnd=" + fqAnd +
-				", fqOr=" + fqOr +
-				", fqOperator=" + fqOperator +
-				", page=" + page +
-				", rows=" + rows +
-				", group='" + group + '\'' +
-				", locale='" + locale + '\'' +
-				", disableAutoComplete=" + disableAutoComplete +
-				", targetingRules=" + targetingRules +
-				", targetingRulesWithCondition=" + targetingRulesWithCondition +
-				", targetingRulesWithConditionAND=" + targetingRulesWithConditionAND +
-				", targetingRulesWithConditionOR=" + targetingRulesWithConditionOR +
-				'}';
-	}
+  @JsonSerialize(keyUsing = MapSerializer.class)
+  private Map<String, List<String>> targetingRulesWithCondition = new HashMap<>();
+
+  @JsonSerialize(keyUsing = MapSerializer.class)
+  private Map<String, List<String>> targetingRulesWithConditionAND = new HashMap<>();
+
+  @JsonSerialize(keyUsing = MapSerializer.class)
+  private Map<String, List<String>> targetingRulesWithConditionOR = new HashMap<>();
+
+  @Override
+  public String toString() {
+    return "TurSNSitePostParamsBean{"
+        + "userId='"
+        + userId
+        + '\''
+        + ", populateMetrics="
+        + populateMetrics
+        + ", sort='"
+        + sort
+        + '\''
+        + ", query='"
+        + query
+        + '\''
+        + ", fq="
+        + fq
+        + ", fqAnd="
+        + fqAnd
+        + ", fqOr="
+        + fqOr
+        + ", fqOperator="
+        + fqOperator
+        + ", page="
+        + page
+        + ", rows="
+        + rows
+        + ", group='"
+        + group
+        + '\''
+        + ", locale='"
+        + locale
+        + '\''
+        + ", disableAutoComplete="
+        + disableAutoComplete
+        + ", targetingRules="
+        + targetingRules
+        + ", targetingRulesWithCondition="
+        + targetingRulesWithCondition
+        + ", targetingRulesWithConditionAND="
+        + targetingRulesWithConditionAND
+        + ", targetingRulesWithConditionOR="
+        + targetingRulesWithConditionOR
+        + '}';
+  }
 }

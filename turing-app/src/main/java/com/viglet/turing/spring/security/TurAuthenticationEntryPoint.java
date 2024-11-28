@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,11 +20,7 @@
  */
 package com.viglet.turing.spring.security;
 
-import java.lang.invoke.MethodHandles;
-
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
@@ -32,13 +28,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class TurAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
 
-	@Override
-	public void afterPropertiesSet() {
-		this.setRealmName("Turing");
-		try {
-			super.afterPropertiesSet();
-		} catch (Exception e) {
-			log.error("afterPropertiesSet: ", e);
-		}
-	}
+  @Override
+  public void afterPropertiesSet() {
+    this.setRealmName("Turing");
+    try {
+      super.afterPropertiesSet();
+    } catch (Exception e) {
+      log.error("afterPropertiesSet: ", e);
+    }
+  }
 }

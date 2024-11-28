@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,40 +21,40 @@
 package com.viglet.turing.api.sn.bean;
 
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * 
  * @author Alexandre Oliveira
- * 
  * @since 0.3.6
- *
  */
 @Getter
 @Setter
 public class TurSNSiteMetricsTopTermsBean {
-	private List<TurSNSiteMetricAccessTerm> topTerms = new ArrayList<>();
-	private int totalTermsPeriod = 0;
-	private int totalTermsPreviousPeriod =0;
-	private int variationPeriod = 0;
-	public TurSNSiteMetricsTopTermsBean() {
-		super();
-	}
-	public TurSNSiteMetricsTopTermsBean(List<TurSNSiteMetricAccessTerm> metricsTerms, int totalTermsPeriod,
-			int totalTermsPreviousPeriod) {
-		super();
-		this.topTerms = metricsTerms;
-		this.totalTermsPeriod = totalTermsPeriod;
-		this.totalTermsPreviousPeriod = totalTermsPreviousPeriod;
-		if (totalTermsPreviousPeriod == 0) {
-			this.variationPeriod = 0;
-		} else {
-			float total = ((float) totalTermsPeriod / (float) totalTermsPreviousPeriod);
-			this.variationPeriod = (int) ((total < 1) ? (-1) * (1 - total) * 100 : (total * 100) - 100);
-		}
-	}
+  private List<TurSNSiteMetricAccessTerm> topTerms = new ArrayList<>();
+  private int totalTermsPeriod = 0;
+  private int totalTermsPreviousPeriod = 0;
+  private int variationPeriod = 0;
+
+  public TurSNSiteMetricsTopTermsBean() {
+    super();
+  }
+
+  public TurSNSiteMetricsTopTermsBean(
+      List<TurSNSiteMetricAccessTerm> metricsTerms,
+      int totalTermsPeriod,
+      int totalTermsPreviousPeriod) {
+    super();
+    this.topTerms = metricsTerms;
+    this.totalTermsPeriod = totalTermsPeriod;
+    this.totalTermsPreviousPeriod = totalTermsPreviousPeriod;
+    if (totalTermsPreviousPeriod == 0) {
+      this.variationPeriod = 0;
+    } else {
+      float total = ((float) totalTermsPeriod / (float) totalTermsPreviousPeriod);
+      this.variationPeriod = (int) ((total < 1) ? (-1) * (1 - total) * 100 : (total * 100) - 100);
+    }
+  }
 }
