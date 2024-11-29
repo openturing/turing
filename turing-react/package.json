@@ -4,12 +4,12 @@
   "private": true,
   "dependencies": {
     "@primer/octicons-react": "^19.12.0",
-    "@primer/react": "^37.0.1",
+    "@primer/react": "^37.5.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.8.7",
+    "@types/node": "^22.9.3",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "axios": "^1.7.4",
@@ -19,7 +19,7 @@
     "rxjs": "^7.8.1",
     "styled-components": "^5.3.11",
     "typescript": "^4.1.6",
-    "react-router-dom": "^6.27.0"
+    "react-router-dom": "^7.0.1"
   },
   "scripts": {
     "start": "react-scripts start",

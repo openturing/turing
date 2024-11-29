@@ -13,7 +13,7 @@
     <name>Turing AEM - Connector</name>
     <description>Turing AEM Web Indexer Connector</description>
     <properties>
-        <spring-boot.version>3.3.5</spring-boot.version>
+        <spring-boot.version>3.4.0</spring-boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
@@ -43,7 +43,7 @@
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
-            <version>2.2.25</version>
+            <version>2.2.26</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

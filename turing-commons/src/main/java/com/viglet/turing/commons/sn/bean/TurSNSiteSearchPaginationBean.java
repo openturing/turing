@@ -23,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
+
 /**
  * Pagination of results of Turing ES Semantic Navigation response.
  * 
@@ -36,7 +38,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurSNSiteSearchPaginationBean {
+public class TurSNSiteSearchPaginationBean implements Serializable {
 	private TurSNPaginationType type;
 	private String text;
 	private String href;

@@ -17,6 +17,7 @@
 
 package com.viglet.turing.commons.sn.bean;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
@@ -29,7 +30,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @Getter
 @Setter
-public class TurSNSiteSearchFacetBean {
+public class TurSNSiteSearchFacetBean implements Serializable {
     private List<TurSNSiteSearchFacetItemBean> facets;
     private TurSNSiteSearchFacetLabelBean label;
     private String name;
@@ -37,9 +38,4 @@ public class TurSNSiteSearchFacetBean {
     private TurSEFieldType type;
     private boolean multiValued;
     private String cleanUpLink;
-
-    public void setMultiValuedWithInt(int multiValued) {
-        this.multiValued = multiValued == 1;
-    }
-
 }

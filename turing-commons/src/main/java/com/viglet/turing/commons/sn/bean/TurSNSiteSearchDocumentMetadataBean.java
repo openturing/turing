@@ -19,6 +19,8 @@ package com.viglet.turing.commons.sn.bean;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
+import java.io.Serializable;
+
 /**
  * Metadata of document with relation with facets of Turing ES Semantic Navigation response.
  * 
@@ -33,7 +35,7 @@ import lombok.*;
 @Setter
 @Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurSNSiteSearchDocumentMetadataBean {
+public class TurSNSiteSearchDocumentMetadataBean implements Serializable {
 	private String href;
 	private String text;
 

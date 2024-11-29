@@ -18,6 +18,10 @@ package com.viglet.turing.commons.sn.bean.spellcheck;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.io.Serializable;
 
 /**
  * Spell Check of Turing ES Semantic Navigation response.
@@ -27,8 +31,10 @@ import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
  * @since 0.3.5
  */
 
+@Setter
+@Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TurSNSiteSpellCheckBean {
+public class TurSNSiteSpellCheckBean implements Serializable {
 
 	private boolean correctedText;
 	private boolean usingCorrectedText;
@@ -45,38 +51,6 @@ public class TurSNSiteSpellCheckBean {
 		this.original = new TurSNSiteSpellCheckText(context.getUri(), context.getTurSEParameters().getQuery(), true);
 		this.corrected = new TurSNSiteSpellCheckText(context.getUri(), turSESpellCheckResult.getCorrectedText(), false);
 		this.usingCorrectedText = turSESpellCheckResult.isUsingCorrected();
-	}
-	
-	public TurSNSiteSpellCheckText getOriginal() {
-		return original;
-	}
-
-	public void setOriginal(TurSNSiteSpellCheckText original) {
-		this.original = original;
-	}
-
-	public TurSNSiteSpellCheckText getCorrected() {
-		return corrected;
-	}
-
-	public void setCorrected(TurSNSiteSpellCheckText corrected) {
-		this.corrected = corrected;
-	}
-
-	public boolean isCorrectedText() {
-		return correctedText;
-	}
-
-	public void setCorrectedText(boolean correctedText) {
-		this.correctedText = correctedText;
-	}
-
-	public boolean isUsingCorrectedText() {
-		return usingCorrectedText;
-	}
-
-	public void setUsingCorrectedText(boolean usingCorrectedText) {
-		this.usingCorrectedText = usingCorrectedText;
 	}
 
 }

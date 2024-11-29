@@ -6,85 +6,69 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
+
 @Getter
 @Setter
-public class TurSEParameters  implements Serializable {
-	private String query;
-	private TurSEFilterQueryParameters filterQueries;
-	private List<String> boostQueries;
-	private Integer currentPage;
-	private String sort;
-	private Integer rows;
-	private String group;
-	private Integer autoCorrectionDisabled;
-	private TurSNSitePostParamsBean turSNSitePostParamsBean;
-	public TurSEParameters(String query, TurSEFilterQueryParameters filterQueries,
-						   Integer currentPage, String sort, Integer rows,
-						   String group, Integer autoCorrectionDisabled) {
-		super();
-		this.query = query;
-		this.filterQueries = filterQueries;
-		this.currentPage = currentPage;
-		this.sort = sort;
-		this.rows = rows;
-		this.group = group;
-		this.autoCorrectionDisabled = autoCorrectionDisabled;
-		this.turSNSitePostParamsBean = null;
-	}
-	public TurSEParameters(String query, TurSEFilterQueryParameters filterQueries,
-                           Integer currentPage, String sort, Integer rows,
-                           String group, Integer autoCorrectionDisabled, TurSNSitePostParamsBean turSNSitePostParamsBean) {
-		super();
-		this.query = query;
-		this.filterQueries = filterQueries;
-		this.currentPage = currentPage;
-		this.sort = sort;
-		this.rows = rows;
-		this.group = group;
-		this.autoCorrectionDisabled = autoCorrectionDisabled;
-		this.turSNSitePostParamsBean = turSNSitePostParamsBean;
-		if (turSNSitePostParamsBean != null) {
-			if (turSNSitePostParamsBean.getSort() != null) {
-				this.sort = turSNSitePostParamsBean.getSort();
-			}
-			if (turSNSitePostParamsBean.getRows() != null) {
-				this.rows = turSNSitePostParamsBean.getRows();
-			}
-			if (turSNSitePostParamsBean.getGroup() != null) {
-				this.group = turSNSitePostParamsBean.getGroup();
-			}
-			if (turSNSitePostParamsBean.getPage() != null) {
-				this.currentPage = turSNSitePostParamsBean.getPage();
-			}
-			if (turSNSitePostParamsBean.getQuery() != null) {
-				this.query = turSNSitePostParamsBean.getQuery();
-			}
-			if (turSNSitePostParamsBean.getFq() != null) {
-				this.filterQueries.setFq(turSNSitePostParamsBean.getFq());
-			}
-			if (turSNSitePostParamsBean.getFqAnd() != null) {
-				this.filterQueries.setAnd(turSNSitePostParamsBean.getFqAnd());
-			}
-			if (turSNSitePostParamsBean.getFqOr() != null) {
-				this.filterQueries.setOr(turSNSitePostParamsBean.getFqOr());
-			}
-			if (turSNSitePostParamsBean.getFqOperator() != null) {
-				this.filterQueries.setOperator(turSNSitePostParamsBean.getFqOperator());
-			}
-		}
-	}
+public class TurSEParameters implements Serializable {
+    private String query;
+    private TurSEFilterQueryParameters filterQueries;
+    private List<String> boostQueries;
+    private Integer currentPage;
+    private String sort;
+    private Integer rows;
+    private String group;
+    private Integer autoCorrectionDisabled;
+    private TurSNSitePostParamsBean turSNSitePostParamsBean;
 
-	@Override
-	public String toString() {
-		return "TurSEParameters{" +
-				"query='" + query + '\'' +
-				", filterQueries=" + filterQueries +
-				", boostQueries=" + boostQueries +
-				", currentPage=" + currentPage +
-				", sort='" + sort + '\'' +
-				", rows=" + rows +
-				", group='" + group + '\'' +
-				", autoCorrectionDisabled=" + autoCorrectionDisabled +
-				'}';
-	}
+    public TurSEParameters(String query, TurSEFilterQueryParameters filterQueries,
+                           Integer currentPage, String sort, Integer rows,
+                           String group, Integer autoCorrectionDisabled) {
+        this(query, filterQueries, currentPage, sort, rows, group, autoCorrectionDisabled, null);
+    }
+
+    public TurSEParameters(String gQuery, TurSEFilterQueryParameters gFilterQueries,
+                           Integer gCurrentPage, String gSort, Integer gRows,
+                           String gGroup, Integer gAutoCorrectionDisabled,
+                           TurSNSitePostParamsBean gTurSNSitePostParamsBean) {
+        super();
+        this.query = gQuery;
+        this.filterQueries = gFilterQueries;
+        this.currentPage = gCurrentPage;
+        this.sort = gSort;
+        this.rows = gRows;
+        this.group = gGroup;
+        this.autoCorrectionDisabled = gAutoCorrectionDisabled;
+        this.turSNSitePostParamsBean = gTurSNSitePostParamsBean;
+        overrideFromPost(gTurSNSitePostParamsBean);
+    }
+
+    private void overrideFromPost(TurSNSitePostParamsBean gTurSNSitePostParamsBean) {
+        Optional.ofNullable(gTurSNSitePostParamsBean).ifPresent(postParams -> {
+            setSort(Optional.ofNullable(postParams.getSort()).orElse(getSort()));
+            setRows(Optional.ofNullable(postParams.getRows()).orElse(getRows()));
+            setGroup(Optional.ofNullable(postParams.getGroup()).orElse(getGroup()));
+            setCurrentPage(Optional.ofNullable(postParams.getPage()).orElse(getCurrentPage()));
+            setQuery(Optional.ofNullable(postParams.getQuery()).orElse(getQuery()));
+            getFilterQueries().setFq(Optional.ofNullable(postParams.getFq()).orElse(getFilterQueries().getFq()));
+            getFilterQueries().setAnd(Optional.ofNullable(postParams.getFqAnd()).orElse(getFilterQueries().getAnd()));
+            getFilterQueries().setOr(Optional.ofNullable(postParams.getFqOr()).orElse(getFilterQueries().getOr()));
+            getFilterQueries().setOperator(Optional.ofNullable(postParams.getFqOperator())
+                    .orElse(getFilterQueries().getOperator()));
+        });
+    }
+
+    @Override
+    public String toString() {
+        return "TurSEParameters{" +
+                "query='" + query + '\'' +
+                ", filterQueries=" + filterQueries +
+                ", boostQueries=" + boostQueries +
+                ", currentPage=" + currentPage +
+                ", sort='" + sort + '\'' +
+                ", rows=" + rows +
+                ", group='" + group + '\'' +
+                ", autoCorrectionDisabled=" + autoCorrectionDisabled +
+                '}';
+    }
 }
