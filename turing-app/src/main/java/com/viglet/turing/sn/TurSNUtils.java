@@ -109,7 +109,7 @@ public class TurSNUtils {
         StringBuilder sbQueryString = new StringBuilder();
         for (NameValuePair nameValuePair : params) {
             if (nameValuePair.getName().equals(TurSNParamType.FILTER_QUERIES_DEFAULT)) {
-                TurSolrUtils.getQueryKeyValue(nameValuePair.getValue()).ifPresent(kv -> {
+                TurCommonsUtils.getKeyValueFromColon(nameValuePair.getValue()).ifPresent(kv -> {
                     if (!(fieldNames.contains(java.net.URLDecoder.decode(kv.getKey(), StandardCharsets.UTF_8)))) {
                         TurCommonsUtils.addParameterToQueryString(sbQueryString, nameValuePair.getName(), nameValuePair.getValue());
                     }

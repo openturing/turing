@@ -53,7 +53,6 @@ import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
-import com.viglet.turing.solr.TurSolrUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.SerializationUtils;
 import org.jetbrains.annotations.NotNull;
@@ -334,41 +333,31 @@ public class TurSNSearchProcess {
 
     private void processFilterQuery(List<String> fq, List<String> facetsInFilterQueries, List<String> filterQueryModified) {
         if (!CollectionUtils.isEmpty(fq)) {
-            fq.forEach(filterQuery -> {
-                String[] filterParts = filterQuery.split(":");
-                if (filterParts.length == 2) {
-                    addFacetInFilterQuery(facetsInFilterQueries, filterParts);
-                    if (!filterParts[1].startsWith("\"") && !filterParts[1].startsWith("[")) {
-                        filterParts[1] = "\"" + filterParts[1] + "\"";
-                        filterQueryModified.add(filterParts[0] + ":" + filterParts[1]);
-                    }
-                } else {
-                    filterQueryModified.add(filterQuery);
-                }
-            });
+            fq.forEach(filterQuery ->
+                    TurCommonsUtils.getKeyValueFromColon(filterQuery).ifPresentOrElse(f -> {
+                        addFacetInFilterQuery(facetsInFilterQueries, f.getKey());
+                        if (!f.getValue().startsWith("\"") && !f.getValue().startsWith("[")) {
+                            filterQueryModified.add("%s:\"%s\"".formatted(f.getKey(), f.getValue()));
+                        }
+                    }, () -> filterQueryModified.add(filterQuery)));
         }
     }
 
-    private void addFacetInFilterQuery(List<String> facetsInFilterQueries, String[] filterParts) {
-        if (!facetsInFilterQueries.contains(filterParts[0])) {
-            facetsInFilterQueries.add(filterParts[0]);
+    private void addFacetInFilterQuery(List<String> facetsInFilterQueries, String key) {
+        if (!facetsInFilterQueries.contains(key)) {
+            facetsInFilterQueries.add(key);
         }
     }
 
     public List<String> requestTargetingRules(List<String> tr) {
         List<String> targetingRuleModified = new ArrayList<>();
         if (!CollectionUtils.isEmpty(tr)) {
-            tr.forEach(targetingRule -> {
-                String[] targetingRuleParts = targetingRule.split(":");
-                if (targetingRuleParts.length == 2) {
-                    if (!targetingRuleParts[1].startsWith("\"") && !targetingRuleParts[1].startsWith("[")) {
-                        targetingRuleParts[1] = "\"" + targetingRuleParts[1] + "\"";
-                        targetingRuleModified.add(targetingRuleParts[0] + ":" + targetingRuleParts[1]);
-                    }
-                } else {
-                    targetingRuleModified.add(targetingRule);
-                }
-            });
+            tr.forEach(targetingRule ->
+                    TurCommonsUtils.getKeyValueFromColon(targetingRule).ifPresentOrElse(t -> {
+                        if (!t.getValue().startsWith("\"") && !t.getValue().startsWith("[")) {
+                            targetingRuleModified.add("%s:\"%s\"".formatted(t.getKey(), t.getValue()));
+                        }
+                    }, () -> targetingRuleModified.add(targetingRule)));
         }
         return targetingRuleModified;
     }
@@ -494,7 +483,7 @@ public class TurSNSearchProcess {
                     context.getTurSEParameters().getFilterQueries());
             List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<>();
             context.getTurSEParameters().getFilterQueries().getFq().forEach(facetToRemove ->
-                    TurSolrUtils.getQueryKeyValue(facetToRemove).ifPresent(f -> {
+                    TurCommonsUtils.getKeyValueFromColon(facetToRemove).ifPresent(f -> {
                         if (turSolr.getFacetsInFilterQuery(turSNFacetTypeContext).contains(f.getKey())) {
                             turSNSiteSearchFacetToRemoveItemBeans.add(new TurSNSiteSearchFacetItemBean()
                                     .setLabel(f.getValue().replace("\"", ""))

@@ -22,6 +22,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.viglet.turing.commons.exception.TurException;
 import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.ZipFile;
+import org.apache.commons.collections4.KeyValue;
+import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
@@ -44,9 +46,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.BreakIterator;
 import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Alexandre Oliveira
@@ -56,9 +57,21 @@ import java.util.Locale;
 public class TurCommonsUtils {
     private static final String USER_DIR = "user.dir";
     private static final File userDir = new File(System.getProperty(USER_DIR));
+    public static final String COLON = ":";
 
     private TurCommonsUtils() {
         throw new IllegalStateException("Utility class");
+    }
+
+    public static Optional<KeyValue<String, String>> getKeyValueFromColon(String stringWithColon) {
+        String[] attributeKV = stringWithColon.split(COLON);
+        if (attributeKV.length >= 2) {
+            String key = attributeKV[0];
+            String value = Arrays.stream(attributeKV).skip(1).collect(Collectors.joining(COLON));
+            return Optional.of(new DefaultMapEntry<>(key, value));
+        } else {
+            return Optional.empty();
+        }
     }
 
     public static boolean isValidUrl(URL url) {

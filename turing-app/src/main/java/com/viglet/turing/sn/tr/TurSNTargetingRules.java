@@ -21,6 +21,7 @@
 
 package com.viglet.turing.sn.tr;
 
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.solr.TurSolrUtils;
 import org.springframework.stereotype.Component;
 
@@ -91,7 +92,7 @@ public class TurSNTargetingRules {
         Set<String> attributeList = new HashSet<>();
         trs.stream().filter(tr -> tr.contains(TWO_POINTS))
                 .forEach(tr ->
-                        TurSolrUtils.getQueryKeyValue(tr)
+                        TurCommonsUtils.getKeyValueFromColon(tr)
                                 .ifPresent(kv -> {
                                     attributeList.add(String.format("NOT %s:*", kv.getKey()));
                                    trList.add(String.format("%s:%s",kv.getKey(), kv.getValue()));

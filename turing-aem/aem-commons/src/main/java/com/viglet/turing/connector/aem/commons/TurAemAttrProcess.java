@@ -44,7 +44,6 @@ import java.util.*;
 public class TurAemAttrProcess {
     public static final String JCR_TITLE = "jcr:title";
     public static final String CQ_TAGS = "cq:tags";
-    public static final String TAG_SEPARATOR = ":";
     public static final String DEFAULT = "default";
     public static final String TEXT = "text";
     public static final String JCR = "jcr:";
@@ -294,16 +293,14 @@ public class TurAemAttrProcess {
     private static void formatTags(TurCmsContext context, TurAemSourceContext turAemSourceContext,
                                    List<TurSNAttributeSpec> turSNAttributeSpecList, String tag,
                                    TurCmsTargetAttrValueMap turCmsTargetAttrValueMap) {
-        String[] tagSplit = tag.split(TAG_SEPARATOR);
-        if (tagSplit.length >= 2) {
-            Optional.ofNullable(tagSplit[0]).ifPresent(facet -> {
-                turSNAttributeSpecList.add(setTagFacet(turAemSourceContext, facet));
-                Optional.ofNullable(tagSplit[1]).ifPresent(value ->
-                        turCmsTargetAttrValueMap.addWithSingleValue(facet,
-                                addTagToAttrValueList(context, turAemSourceContext, facet, value), false)
-                );
-            });
-        }
+        TurCommonsUtils.getKeyValueFromColon(tag).ifPresent(kv ->
+                Optional.ofNullable(kv.getKey()).ifPresent(facet -> {
+                    turSNAttributeSpecList.add(setTagFacet(turAemSourceContext, facet));
+                    Optional.ofNullable(kv.getValue()).ifPresent(value ->
+                            turCmsTargetAttrValueMap.addWithSingleValue(facet,
+                                    addTagToAttrValueList(context, turAemSourceContext, facet, value), false)
+                    );
+                }));
     }
 
     private TurCmsTargetAttrValueMap attributeByClass(TurCmsContext context, TurAemSourceContext turAemSourceContext) {

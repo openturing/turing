@@ -623,7 +623,7 @@ public class TurSolr {
 
     private void setSortEntry(TurSNSite turSNSite, SolrQuery query, TurSEParameters turSEParameters) {
         Optional.ofNullable(turSEParameters.getSort()).ifPresent(sort ->
-                TurSolrUtils.getQueryKeyValue(sort).ifPresentOrElse(kv ->
+                TurCommonsUtils.getKeyValueFromColon(sort).ifPresentOrElse(kv ->
                                 query.setSort(kv.getKey(), kv.getValue().equals(ASC) ? ORDER.asc : ORDER.desc),
                         () -> {
                             if (sort.equalsIgnoreCase(NEWEST))
@@ -925,7 +925,7 @@ public class TurSolr {
                                             TurSNFacetMapForFilterQuery facetMapForFilterQuery, TurSNSite turSNSite,
                                             TurSEFilterQueryParameters filterQueryParameters) {
 
-        TurSolrUtils.getQueryKeyValue(fq).flatMap(kv ->
+        TurCommonsUtils.getKeyValueFromColon(fq).flatMap(kv ->
                         enabledFields.stream()
                                 .filter(facet -> facet.getName().equals(kv.getKey()))
                                 .findFirst())
@@ -1036,7 +1036,7 @@ public class TurSolr {
     @NotNull
     private static List<String> setFilterQueryRangeValue(List<String> filterQueries, List<TurSNSiteFieldExt> dateFacet) {
         return filterQueries.stream()
-                .map(fq -> TurSolrUtils.getQueryKeyValue(fq)
+                .map(fq -> TurCommonsUtils.getKeyValueFromColon(fq)
                         .map(facetKv ->
                                 dateFacet.stream()
                                         .filter(dateFacetItem -> facetKv.getKey().equals(dateFacetItem.getName()) &&
@@ -1156,7 +1156,7 @@ public class TurSolr {
 
     @NotNull
     private static String addDoubleQuotesToValue(String q) {
-        return TurSolrUtils.getQueryKeyValue(q)
+        return TurCommonsUtils.getKeyValueFromColon(q)
                 .map(kv -> String.format("%s:\"%s\"", kv.getKey(), kv.getValue()))
                 .orElse(String.format("\"%s\"", q));
     }
@@ -1245,7 +1245,7 @@ public class TurSolr {
     private static List<String> getFqFields(List<String> filterQueries) {
         return Optional.ofNullable(filterQueries)
                 .map(fqOpt -> fqOpt.stream()
-                        .map(fq -> TurSolrUtils.getQueryKeyValue(fq)
+                        .map(fq -> TurCommonsUtils.getKeyValueFromColon(fq)
                                 .map(KeyValue::getKey)
                                 .orElse(null))
                         .toList())
