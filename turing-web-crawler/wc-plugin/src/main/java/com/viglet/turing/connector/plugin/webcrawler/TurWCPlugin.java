@@ -15,34 +15,16 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.viglet.turing.commons.file;
 
-import lombok.*;
+package com.viglet.turing.connector.plugin.webcrawler;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
+import com.viglet.turing.connector.plugin.TurConnectorPlugin;
 
-/**
-*
-* @author Alexandre Oliveira
-* 
-* @since 0.3.9
-*
-**/
+public class TurWCPlugin implements TurConnectorPlugin {
 
-@Builder(toBuilder = true)
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
-public class TurFileAttributes {
-	private String content;
-	private String name;
-	private String title;
-	private String extension;
-	private TurFileSize size = new TurFileSize();
-	private Date lastModified = new Date();
-	private Map<String, String> metadata = new HashMap<>();
+    @Override
+    public TurSNJobItem getNext() {
+        return null;
+    }
 }
