@@ -89,6 +89,7 @@ com.viglet.turing.connector.sprinklr
 com.viglet.turing.connector.sprinklr.api
 com.viglet.turing.connector.sprinklr.commons
 com.viglet.turing.connector.sprinklr.commons.ext
+com.viglet.turing.connector.sprinklr.commons.tools
 com.viglet.turing.connector.sprinklr.export
 com.viglet.turing.connector.sprinklr.export.bean
 com.viglet.turing.connector.sprinklr.ext
@@ -224,6 +225,7 @@ com.viglet.turing.sprinklr.client.service.kb
 com.viglet.turing.sprinklr.client.service.kb.request
 com.viglet.turing.sprinklr.client.service.kb.response
 com.viglet.turing.sprinklr.client.service.token
+com.viglet.turing.sprinklr.plugins
 com.viglet.turing.swagger
 com.viglet.turing.thesaurus
 com.viglet.turing.tomcat
