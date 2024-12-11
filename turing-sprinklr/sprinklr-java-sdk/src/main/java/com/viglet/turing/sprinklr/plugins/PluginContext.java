@@ -1,17 +1,19 @@
 package com.viglet.turing.sprinklr.plugins;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.List;
 
-@Component
+@ToString
 public class PluginContext {
-    List<TurSprinklrPlugin> initializedPlugins;
+    List<TurSprinklrPlugin> initializedPlugins = new ArrayList<TurSprinklrPlugin>();
 
-    @Autowired
     public PluginContext(List<TurSprinklrPlugin> initializedPlugins){
         this.initializedPlugins = initializedPlugins;
+    }
+
+    public PluginContext(){
     }
 
     public void addPlugin(TurSprinklrPlugin plugin){

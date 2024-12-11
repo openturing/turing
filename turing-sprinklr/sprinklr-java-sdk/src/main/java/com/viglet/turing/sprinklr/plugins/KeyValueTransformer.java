@@ -30,7 +30,7 @@ public class KeyValueTransformer implements TurSprinklrPlugin {
         NULL
     }
 
-    NotFoundAction notFoundAction = NotFoundAction.NULL;
+    NotFoundAction notFoundAction = NotFoundAction.DEFAULT_VALUE;
 
     String defaultNotFoundText = "Key Value Transformer Plugin: Key not found";
 
@@ -40,10 +40,7 @@ public class KeyValueTransformer implements TurSprinklrPlugin {
             files.add(file);
             var newMapping = createMappingFromFile(file);
             mappings.putIfAbsent(file, newMapping);
-        } else {
-            log.warn("Could not create transformer for file: {} because it already exists.", file);
         }
-
     }
 
     /**
