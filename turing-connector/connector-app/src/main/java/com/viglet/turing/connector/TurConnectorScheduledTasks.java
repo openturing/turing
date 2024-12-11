@@ -19,8 +19,10 @@
 package com.viglet.turing.connector;
 
 import com.google.inject.Inject;
+import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.connector.persistence.repository.TurConnectorConfigVarRepository;
 import com.viglet.turing.connector.plugin.TurConnectorPlugin;
+import com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtInterface;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -45,13 +47,17 @@ public class TurConnectorScheduledTasks {
     }
 
     @Scheduled(fixedDelay = 60, timeUnit = TimeUnit.MINUTES)
-    public void executeWebCrawler(TurConnectorPlugin plugin) {
-        log.info("The time is now {}", dateFormat.format(new Date()));
-        if (turConnectorConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
-            log.info("This is the first time, waiting next schedule.");
-        } else {
-            log.info("Starting indexing");
-      turConnectorProcess.start(plugin);
-        }
+    public void executeWebCrawler() {
+        TurCustomClassCache.getCustomClassMap("com.viglet.turing.connector.plugin.webcrawler.TurWCPlugin")
+                .ifPresent(classInstance -> {
+                    TurConnectorPlugin turConnectorPlugin = (TurConnectorPlugin) classInstance;
+                    log.info("The time is now {}", dateFormat.format(new Date()));
+                    if (turConnectorConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
+                        log.info("This is the first time, waiting next schedule.");
+                    } else {
+                        log.info("Starting indexing");
+                        turConnectorProcess.start(turConnectorPlugin);
+                    }
+                });
     }
 }
