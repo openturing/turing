@@ -22,6 +22,8 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.sprinklr.client.service.token.TurSprinklrAccessToken;
+import com.viglet.turing.sprinklr.client.service.token.TurSprinklrSecretKey;
+import com.viglet.turing.sprinklr.client.service.token.TurSprinklrTokenService;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
@@ -51,7 +53,8 @@ public class TurSprinklrService {
                                        RequestBody requestBody) {
         log.info("Post Request: {}", endpoint);
         // Creates a client to send a request
-        return getResponse(clazz, getRequest(turSprinklrAccessToken, endpoint, requestBody));
+        return getResponse(clazz, getRequest(turSprinklrAccessToken, endpoint, requestBody), turSprinklrAccessToken,
+                true);
     }
 
     private static Request getRequest(TurSprinklrAccessToken turSprinklrAccessToken, String endpoint,
@@ -68,15 +71,30 @@ public class TurSprinklrService {
         return request;
     }
 
-    private static <R> R getResponse(Class<R> clazz, Request request) {
+    private static <R> R getResponse(Class<R> clazz, Request request, TurSprinklrAccessToken turSprinklrAccessToken,
+                                     boolean firstTime) {
         String responseBody = null;
         try (Response response = new OkHttpClient().newBuilder().build().newCall(request).execute()) {
-            responseBody = response.peekBody(500l).string();
-            if (response.body() != null) {
-                return new ObjectMapper()
-                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                        .readValue(response.body().string(), clazz);
+            log.info("HTTP Status Code: {}", response.code());
+            if (response.code() == 200) {
+                responseBody = response.peekBody(500L).string();
+                if (response.body() != null) {
+                    return new ObjectMapper()
+                            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                            .readValue(response.body().string(), clazz);
+                }
             }
+            else if (firstTime) {
+                TurSprinklrTokenService turSprinklrTokenService = new TurSprinklrTokenService(
+                        TurSprinklrSecretKey.builder()
+                                .apiKey(turSprinklrAccessToken.getApiKey())
+                                .secretKey(turSprinklrAccessToken.getSecretKey())
+                                .environment(turSprinklrAccessToken.getEnvironment())
+                                .build()
+                );
+               getResponse(clazz, request, turSprinklrTokenService.renewAccessToken(), false);
+            }
+
         } catch (JsonParseException e) {
             log.error("Error parsing the response", e);
             log.error("The body of the response is: {}", responseBody);

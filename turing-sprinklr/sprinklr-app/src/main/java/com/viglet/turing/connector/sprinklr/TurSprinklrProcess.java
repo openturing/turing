@@ -48,7 +48,7 @@ public class TurSprinklrProcess {
      */
     private TurSNJobItems turSNJobItems = new TurSNJobItems();
 
-    private TurSprinklrPluginContext pluginContext;
+    private final TurSprinklrPluginContext pluginContext;
 
     @Inject
     public TurSprinklrProcess(@Value("${turing.url}") String turingUrl,
