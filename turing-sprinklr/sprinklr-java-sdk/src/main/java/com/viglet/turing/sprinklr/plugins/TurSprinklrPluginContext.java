@@ -1,19 +1,20 @@
 package com.viglet.turing.sprinklr.plugins;
 
+import com.viglet.turing.commons.exception.TurRuntimeException;
 import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @ToString
-public class PluginContext {
-    List<TurSprinklrPlugin> initializedPlugins = new ArrayList<TurSprinklrPlugin>();
+public class TurSprinklrPluginContext {
+    List<TurSprinklrPlugin> initializedPlugins = new ArrayList<>();
 
-    public PluginContext(List<TurSprinklrPlugin> initializedPlugins){
+    public TurSprinklrPluginContext(List<TurSprinklrPlugin> initializedPlugins){
         this.initializedPlugins = initializedPlugins;
     }
 
-    public PluginContext(){
+    public TurSprinklrPluginContext(){
     }
 
     public void addPlugin(TurSprinklrPlugin plugin){
@@ -26,6 +27,6 @@ public class PluginContext {
                 return pluginClass.cast(plugin);
             }
         }
-        throw new RuntimeException("Plugin not found" + pluginClass.getName());
+        throw new TurRuntimeException("Plugin not found" + pluginClass.getName());
     }
 }

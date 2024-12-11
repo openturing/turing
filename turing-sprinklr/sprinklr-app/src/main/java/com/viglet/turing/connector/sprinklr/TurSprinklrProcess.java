@@ -17,8 +17,7 @@ import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtLocaleInte
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrAttributeMapping;
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrSource;
 import com.viglet.turing.connector.sprinklr.persistence.repository.TurSprinklrAttributeMappingRepository;
-import com.viglet.turing.sprinklr.plugins.KeyValueTransformer;
-import com.viglet.turing.sprinklr.plugins.PluginContext;
+import com.viglet.turing.sprinklr.plugins.TurSprinklrPluginContext;
 import com.viglet.turing.connector.sprinklr.utils.FileAsset;
 import com.viglet.turing.connector.sprinklr.utils.FileAssetsExtractor;
 import com.viglet.turing.sprinklr.client.service.kb.TurSprinklrKBService;
@@ -49,14 +48,14 @@ public class TurSprinklrProcess {
      */
     private TurSNJobItems turSNJobItems = new TurSNJobItems();
 
-    private PluginContext pluginContext;
+    private TurSprinklrPluginContext pluginContext;
 
     @Inject
     public TurSprinklrProcess(@Value("${turing.url}") String turingUrl,
                               @Value("${turing.apiKey}") String turingApiKey,
                               @Value("${turing.sprinklr.job.size}") int jobSize,
                               TurSprinklrAttributeMappingRepository turSprinklrAttributeMappingRepository,
-                              PluginContext pluginContext
+                              TurSprinklrPluginContext pluginContext
                               ) {
         this.turingUrl = turingUrl;
         this.turingApiKey = turingApiKey;

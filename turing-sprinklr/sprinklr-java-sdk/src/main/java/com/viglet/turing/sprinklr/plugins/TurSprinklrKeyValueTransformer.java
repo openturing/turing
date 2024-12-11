@@ -1,6 +1,6 @@
 package com.viglet.turing.sprinklr.plugins;
 
-import lombok.extern.log4j.Log4j2;
+import com.viglet.turing.commons.exception.TurRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
@@ -10,7 +10,7 @@ import java.util.*;
  * @author Gabriel F. Gomazako
  */
 @Slf4j
-public class KeyValueTransformer implements TurSprinklrPlugin {
+public class TurSprinklrKeyValueTransformer implements TurSprinklrPlugin {
 
     private final Set<String> files = new HashSet<>();
 
@@ -47,9 +47,9 @@ public class KeyValueTransformer implements TurSprinklrPlugin {
      * Creates a mapping from a file. Example of the structure of the file:
      *
      * <pre>
-     * 424123421312 ação
-     * 235521957944 aventura
-     * 235521957944 comédia
+     * 424123421312 action
+     * 235521957944 adventure
+     * 235521957944 comedy
      * </pre>
      *
      * @param file The file to create the mapping from
@@ -68,7 +68,7 @@ public class KeyValueTransformer implements TurSprinklrPlugin {
 
                 if (keyValue.length != 2) {
                     reader.close();
-                    throw new RuntimeException("Invalid line: " + line);
+                    throw new TurRuntimeException("Invalid line: " + line);
                 }
 
                 if (newMapping.putIfAbsent(keyValue[0], keyValue[1]) != null) {
@@ -78,10 +78,10 @@ public class KeyValueTransformer implements TurSprinklrPlugin {
             reader.close();
             return newMapping;
         } catch (FileNotFoundException e) {
-            log.error("Mapping file not found: " + file, e);
+            log.error("Mapping file not found: {}", file, e);
             throw new IllegalArgumentException("The specified file does not exist: " + file, e);
         } catch (IOException e) {
-            log.error("Error reading file: " + file, e);
+            log.error("Error reading file: {}", file, e);
             throw new UncheckedIOException("Error occurred while reading the file: " + file, e);
         }
     }
@@ -104,14 +104,11 @@ public class KeyValueTransformer implements TurSprinklrPlugin {
 
     private String treatNotFound(String key, String file) {
         log.warn("Key not found: {} in file: {}", key, file);
-        switch (notFoundAction) {
-            case DEFAULT_VALUE:
-                return defaultNotFoundText;
-            case KEEP_KEY:
-                return key;
-            default:
-                return null;
-        }
+        return switch (notFoundAction) {
+            case DEFAULT_VALUE -> defaultNotFoundText;
+            case KEEP_KEY -> key;
+            default -> null;
+        };
     }
 
     public void configure(NotFoundAction action) {

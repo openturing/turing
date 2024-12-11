@@ -2,8 +2,8 @@ package com.viglet.turing.connector.sprinklr;
 
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
-import com.viglet.turing.sprinklr.plugins.KeyValueTransformer;
-import com.viglet.turing.sprinklr.plugins.PluginContext;
+import com.viglet.turing.sprinklr.plugins.TurSprinklrKeyValueTransformer;
+import com.viglet.turing.sprinklr.plugins.TurSprinklrPluginContext;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -35,14 +35,14 @@ public class TurSprinklrApplication {
     }
 
     @Bean
-    public PluginContext pluginContext(KeyValueTransformer transformer) {
-        PluginContext pluginContext = new PluginContext();
+    public TurSprinklrPluginContext pluginContext(TurSprinklrKeyValueTransformer transformer) {
+        TurSprinklrPluginContext pluginContext = new TurSprinklrPluginContext();
         pluginContext.addPlugin(transformer);
         return pluginContext;
     }
 
     @Bean
-    public KeyValueTransformer keyValueTransformer() {
-        return new KeyValueTransformer();
+    public TurSprinklrKeyValueTransformer keyValueTransformer() {
+        return new TurSprinklrKeyValueTransformer();
     }
 }
