@@ -18,6 +18,7 @@
 
 package com.viglet.turing.sprinklr.client.service;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.sprinklr.client.service.token.TurSprinklrAccessToken;
@@ -68,12 +69,17 @@ public class TurSprinklrService {
     }
 
     private static <R> R getResponse(Class<R> clazz, Request request) {
+        String responseBody = null;
         try (Response response = new OkHttpClient().newBuilder().build().newCall(request).execute()) {
+            responseBody = response.peekBody(500l).string();
             if (response.body() != null) {
                 return new ObjectMapper()
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                         .readValue(response.body().string(), clazz);
             }
+        } catch (JsonParseException e) {
+            log.error("Error parsing the response", e);
+            log.error("The body of the response is: {}", responseBody);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }

@@ -161,7 +161,7 @@ public class TurSprinklrExchangeProcess {
         for (TurSprinklrSourceExchange turSprinklrSourceExchange : turSprinklrExchange.getSources()) {
             if (turSprinklrSourceRepository.findById(turSprinklrSourceExchange.getId()).isEmpty()) {
                 TurSprinklrSource turSprinklrSource = TurSprinklrSource.builder()
-                        .id(turSprinklrSourceExchange.getId())
+//                        .id(turSprinklrSourceExchange.getId()) evitar exception
                         .url(turSprinklrSourceExchange.getUrl())
                         .turSNSites(turSprinklrSourceExchange.getTurSNSites())
                         .locale(turSprinklrSourceExchange.getLocale())

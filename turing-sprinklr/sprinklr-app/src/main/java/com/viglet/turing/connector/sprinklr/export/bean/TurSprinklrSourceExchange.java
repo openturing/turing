@@ -11,6 +11,7 @@ import java.util.Locale;
 @NoArgsConstructor
 @Getter
 @Setter
+@ToString
 public class TurSprinklrSourceExchange {
     private String id;
     private Locale locale;
