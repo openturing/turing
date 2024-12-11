@@ -1,7 +1,7 @@
 package com.viglet.turing.connector.sprinklr.commons.tools;
 
-import com.viglet.turing.sprinklr.plugins.TurSprinklrKeyValueTransformer;
-import com.viglet.turing.sprinklr.plugins.TurSprinklrPluginContext;
+import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrKeyValueTransformer;
+import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrPluginContext;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

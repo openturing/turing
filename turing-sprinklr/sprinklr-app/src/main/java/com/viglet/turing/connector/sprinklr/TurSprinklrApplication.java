@@ -2,8 +2,8 @@ package com.viglet.turing.connector.sprinklr;
 
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
-import com.viglet.turing.sprinklr.plugins.TurSprinklrKeyValueTransformer;
-import com.viglet.turing.sprinklr.plugins.TurSprinklrPluginContext;
+import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrKeyValueTransformer;
+import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrPluginContext;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;

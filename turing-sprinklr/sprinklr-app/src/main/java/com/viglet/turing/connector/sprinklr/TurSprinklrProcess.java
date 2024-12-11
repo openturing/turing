@@ -17,7 +17,7 @@ import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtLocaleInte
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrAttributeMapping;
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrSource;
 import com.viglet.turing.connector.sprinklr.persistence.repository.TurSprinklrAttributeMappingRepository;
-import com.viglet.turing.sprinklr.plugins.TurSprinklrPluginContext;
+import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrPluginContext;
 import com.viglet.turing.connector.sprinklr.utils.FileAsset;
 import com.viglet.turing.connector.sprinklr.utils.FileAssetsExtractor;
 import com.viglet.turing.sprinklr.client.service.kb.TurSprinklrKBService;

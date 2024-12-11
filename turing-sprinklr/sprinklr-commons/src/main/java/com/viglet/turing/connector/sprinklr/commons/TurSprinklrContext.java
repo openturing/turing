@@ -2,7 +2,7 @@ package com.viglet.turing.connector.sprinklr.commons;
 
 import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrSearchResult;
 import com.viglet.turing.sprinklr.client.service.token.TurSprinklrAccessToken;
-import com.viglet.turing.sprinklr.plugins.TurSprinklrPluginContext;
+import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrPluginContext;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
