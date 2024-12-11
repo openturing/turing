@@ -48,7 +48,8 @@ public class TurSprinklrSource implements Serializable {
     private String apiKey;
     @Column
     private String secretKey;
-
+    @Column
+    private String tagMapping;
     @Builder.Default
     @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "sprinklr_sn_site", joinColumns = @JoinColumn(name = "source_id"))

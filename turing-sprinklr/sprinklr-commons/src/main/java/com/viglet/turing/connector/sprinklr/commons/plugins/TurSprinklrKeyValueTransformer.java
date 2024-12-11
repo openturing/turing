@@ -26,6 +26,7 @@ import java.util.*;
 
 /**
  * @author Gabriel F. Gomazako
+ * @since 0.3.9
  */
 @Slf4j
 public class TurSprinklrKeyValueTransformer implements TurSprinklrPlugin {
@@ -34,21 +35,9 @@ public class TurSprinklrKeyValueTransformer implements TurSprinklrPlugin {
 
     private final Map<String, Map<String, String>> mappings = new HashMap<>();
 
-    /**
-     * Enum representing the actions to take when a key is not found.
-     * <ul>
-     * <li>DEFAULT_VALUE: Returns a default value</li>
-     * <li>KEEP_KEY: Returns the key itself</li>
-     * <li>NULL: Returns null</li>
-     * </ul>
-     */
-    enum NotFoundAction {
-        DEFAULT_VALUE,
-        KEEP_KEY,
-        NULL
-    }
 
-    NotFoundAction notFoundAction = NotFoundAction.DEFAULT_VALUE;
+
+    TurSprinklrNotFound notFoundAction = TurSprinklrNotFound.DEFAULT_VALUE;
 
     String defaultNotFoundText = "Key Value Transformer Plugin: Key not found";
 
@@ -129,7 +118,7 @@ public class TurSprinklrKeyValueTransformer implements TurSprinklrPlugin {
         };
     }
 
-    public void configure(NotFoundAction action) {
+    public void configure(TurSprinklrNotFound action) {
         notFoundAction = action;
     }
 
@@ -139,7 +128,7 @@ public class TurSprinklrKeyValueTransformer implements TurSprinklrPlugin {
      * @param action the action to be taken when a key is not found
      * @param defaultText the default text to be used when a key is not found
      */
-    public void configure(NotFoundAction action, String defaultText) {
+    public void configure(TurSprinklrNotFound action, String defaultText) {
         notFoundAction = action;
         defaultNotFoundText = defaultText;
     }

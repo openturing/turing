@@ -29,7 +29,7 @@ class TurSprinklrKeyValueTransformerTest {
         assertFalse(mapping.isEmpty(), "Mapping should not be empty after loading");
 
         // Checks if a specific key was loaded correctly
-        assertEquals("action", mapping.get("424123421312"), "Value for key '424123421312' should be 'ação'");
+        assertEquals("action", mapping.get("424123421312"), "Value for key '424123421312' should be 'action'");
     }
 
     @Test
@@ -60,7 +60,7 @@ class TurSprinklrKeyValueTransformerTest {
 
         // Test the transformation
         String transformedValue = transformer.transform("424123421312", testFile);
-        assertEquals("action", transformedValue, "Transformed value should be 'ação'");
+        assertEquals("action", transformedValue, "Transformed value should be 'action'");
     }
 
     @Test
@@ -72,10 +72,10 @@ class TurSprinklrKeyValueTransformerTest {
         transformer.loadMapping(testFile);
 
         var transformedValue = transformer.transform("424123421312", testFile);
-        assertEquals("action", transformedValue, "Transformed value should be 'ação'");
+        assertEquals("action", transformedValue, "Transformed value should be 'action'");
         transformer.loadMapping(testFile);
         transformedValue = transformer.transform("235521957944", testFile);
-        assertEquals("adventure", transformedValue, "Transformed value should be 'aventura'");
+        assertEquals("adventure", transformedValue, "Transformed value should be 'adventure'");
     }
 
     @Test

@@ -86,6 +86,7 @@ public class TurSprinklrExchangeProcess {
                                         .locale(turSprinklrSource.getLocale())
                                         .localeClass(turSprinklrSource.getLocaleClass())
                                         .turSNSites(turSprinklrSource.getTurSNSites())
+                                        .tagMapping(turSprinklrSource.getTagMapping())
                                         .build()).toList()));
 
                 File zipFile = new File(tmpDir.getAbsolutePath().concat(File.separator + folderName + ".zip"));
