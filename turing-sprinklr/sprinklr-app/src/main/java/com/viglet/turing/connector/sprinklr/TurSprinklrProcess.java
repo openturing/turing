@@ -107,7 +107,6 @@ public class TurSprinklrProcess {
             final var fileAssetExtractor = new FileAssetsExtractor(turingUrl, turingApiKey);
             while (true) {
                 TurSprinklrKBSearch turSprinklrKBSearch = TurSprinklrKBService.run(turSprinklrAccessToken, kbPage.get());
-
                 if (turSprinklrKBSearch != null) {
                     List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
                     if (results.isEmpty()) {
@@ -122,9 +121,9 @@ public class TurSprinklrProcess {
 
                             // Gets the assets attached to the search result and inserts into turSNJobItems.
                             List<FileAsset> assets = getFileAssets(searchResult, fileAssetExtractor);
-                            addFileAssetsToJobItens(assets, resultLocale, turSites);
+                            addFileAssetsToJobItems(assets, resultLocale, turSites);
 
-                            // Quando o tamanho de turSNJobItems alcançar o JobSize definido, envia para o turing.
+                            // When the size of turSNJobItems reaches the defined JobSize, send it to turing.
                             sendToTuringWhenMaxSize();
 
                             getInfoQueue();
@@ -157,7 +156,7 @@ public class TurSprinklrProcess {
     /**
      * Adds the file assets to the job items list.
      */
-    private void addFileAssetsToJobItens(List<FileAsset> fileAssets, Locale locale, Collection<String> turSites) {
+    private void addFileAssetsToJobItems(List<FileAsset> fileAssets, Locale locale, Collection<String> turSites) {
         for (var asset : fileAssets) {
             var turSNJobItemAttributes = asset.toMapAttributes();
             TurSNJobItem turSNJobItem = new TurSNJobItem(

@@ -106,16 +106,18 @@ public class TurSprinklrKeyValueTransformer implements TurSprinklrPlugin {
      */
     public String transform(String key, String file) {
         Map<String, String> mapping = getMapping(file);
-        return mapping.getOrDefault(key, treatNotFound(key, file));
+        return mapping.getOrDefault(key, getKey(key, file));
     }
 
-    private String treatNotFound(String key, String file) {
-        log.warn("Key not found: {} in file: {}", key, file);
-        return switch (notFoundAction) {
-            case DEFAULT_VALUE -> defaultNotFoundText;
-            case KEEP_KEY -> key;
-            default -> null;
-        };
+    private String getKey(String key, String file) {
+
+        if (Objects.requireNonNull(notFoundAction) == TurSprinklrNotFound.KEEP_KEY) {
+            log.info("Key found: {} in file: {}", key, file);
+            return key;
+        } else {
+            log.info("Key not found: {} in file: {}", key, file);
+        }
+        return null;
     }
 
     public void configure(TurSprinklrNotFound action) {
