@@ -52,9 +52,6 @@ public class TurTermRelationTo implements Serializable {
 	@JoinColumn(name="relation_from_id", nullable=false)
 	private TurTermRelationFrom turTermRelationFrom;
 
-	public TurTermRelationTo() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

@@ -1,0 +1,27 @@
+= Turing AI Java Proxy
+
+WAR java file to expose the Turing AI API on the site.
+
+== Run on Development
+
+```shell
+mvnw spring-boot:run
+```
+
+== URL
+
+Sample Site at http://localhost:8080/__tur/sn/Sample/search?q=*
+
+== Parameters
+
+.Semantic Navigation Rest API Get Attributes
+[%header,cols=4*] 
+|===
+| Attribute | Required / Optional | Description | Example
+| q | Required | Search Query. | q=foo
+| p | Optional | Page Number, first page is 1. | p=1
+| sort | Optional | Sort values: `relevance`, `newest` and `oldest`. | sort=relevance
+| fq[] | Optional | Query Field. Filter by field, using the following pattern: *FIELD*: *VALUE*. | fq[]=title:bar
+| tr[] | Optional | Targeting Rule. Restrict search based in: *FIELD*: *VALUE*. | tr[]=department:foobar
+| rows | Optional | Number of rows that query will return. | rows=10
+|===

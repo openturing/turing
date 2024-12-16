@@ -16,36 +16,39 @@
  */
 package com.viglet.turing.wem.listener;
 
+import java.lang.invoke.MethodHandles;
+
 import com.viglet.turing.wem.broker.indexer.TurWEMIndexer;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.as.server.event.AsDeploymentEvent;
 import com.vignette.logging.context.ContextLogger;
 
-
 public class DeploymentHandler {
 
-	private static final ContextLogger log = ContextLogger.getLogger(DeploymentHandler.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
-    IHandlerConfiguration config;
+    private IHandlerConfiguration config;
 
     public DeploymentHandler(IHandlerConfiguration config) {
         this.config = config;
     }
 
     public void onManagedObjectCreate(ManagedObject mo, AsDeploymentEvent deploymentEvent) {
-        boolean result = TurWEMIndexer.indexCreate(mo, config);
+        String siteName = deploymentEvent.getSiteName();
+        boolean result = TurWEMIndexer.indexCreate(mo, config, siteName);
         log.debug("Viglet Turing Indexing Create: " + result);
      }
 
     public void onManagedObjectUpdate(ManagedObject mo, AsDeploymentEvent deploymentEvent) {
-        boolean result = TurWEMIndexer.indexUpdate(mo, config);
+        String siteName = deploymentEvent.getSiteName();
+        boolean result = TurWEMIndexer.indexUpdate(mo, config, siteName);
         log.debug("Viglet Turing Indexing Update: " + result);
     }
 
     public void onManagedObjectDelete(ManagedObject mo, AsDeploymentEvent deploymentEvent) {
-       
-        boolean result = TurWEMIndexer.indexDelete(mo, config);
+        String siteName = deploymentEvent.getSiteName();
+        boolean result = TurWEMIndexer.indexDelete(mo, config, siteName);
         log.debug("Viglet Turing Indexing Delete: " + result);
     }
 

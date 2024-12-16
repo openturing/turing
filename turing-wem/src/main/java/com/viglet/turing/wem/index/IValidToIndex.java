@@ -16,6 +16,8 @@
  */
 package com.viglet.turing.wem.index;
 
+import java.lang.invoke.MethodHandles;
+
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.vignette.as.client.common.WhereClause;
 import com.vignette.as.client.javabean.ContentInstance;
@@ -23,7 +25,7 @@ import com.vignette.logging.context.ContextLogger;
 
 public interface IValidToIndex {
 	
-	static final ContextLogger log = ContextLogger.getLogger(IValidToIndex.class);
+	static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 	
 	boolean isValid(ContentInstance ci, IHandlerConfiguration config) throws Exception;
 	

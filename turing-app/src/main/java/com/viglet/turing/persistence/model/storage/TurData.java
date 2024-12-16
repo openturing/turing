@@ -63,9 +63,6 @@ implements Serializable
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentences;
 
-	public TurData() {
-	}
-
 	public int getId() {
 		return this.id;
 	}

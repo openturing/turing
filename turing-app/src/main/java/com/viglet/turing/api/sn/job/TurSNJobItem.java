@@ -17,19 +17,29 @@
 
 package com.viglet.turing.api.sn.job;
 
+import org.springframework.stereotype.Component;
+
 import java.io.Serializable;
 import java.util.Map;
-
-import org.springframework.stereotype.Component;
 
 @Component
 public class TurSNJobItem implements Serializable{
 
 	private static final long serialVersionUID = 1L;
 	
+	private String locale;
+	
 	private TurSNJobAction turSNJobAction;
 	
 	private Map<String, Object> attributes;
+
+	public String getLocale() {
+		return locale;
+	}
+
+	public void setLocale(String locale) {
+		this.locale = locale;
+	}
 
 	public Map<String, Object> getAttributes() {
 		return attributes;
@@ -48,7 +58,7 @@ public class TurSNJobItem implements Serializable{
 	}
 
 	public String toString() {
-		return String.format("action: %s, attributes %s", this.getTurSNJobAction(), this.getAttributes().toString());
+		return String.format("locale: %s, action: %s, attributes %s", this.getLocale(), this.getTurSNJobAction(), this.getAttributes().toString());
 	}
 
 }

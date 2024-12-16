@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2020 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ import org.apache.tika.metadata.Metadata;
 /**
 *
 * @author Alexandre Oliveira
+* 
 * @since 0.3.0
 *
 **/
@@ -31,6 +32,12 @@ public class TurFileAttributes {
 	private String content;	
 	private Metadata metadata;
 	
+	public TurFileAttributes(File file, String content, Metadata metadata) {
+		super();
+		this.file = file;
+		this.content = content;
+		this.metadata = metadata;
+	}
 	public File getFile() {
 		return file;
 	}

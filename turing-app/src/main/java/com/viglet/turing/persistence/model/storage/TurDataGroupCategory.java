@@ -51,9 +51,6 @@ public class TurDataGroupCategory implements Serializable {
 	@JsonBackReference (value="turDataGroupCategory-turDataGroup")
 	private TurDataGroup turDataGroup;
 
-	public TurDataGroupCategory() {
-	}
-
 	public int getId() {
 		return this.id;
 	}

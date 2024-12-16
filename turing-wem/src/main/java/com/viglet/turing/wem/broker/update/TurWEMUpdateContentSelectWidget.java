@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.wem.broker.update;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +35,7 @@ import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMUpdateContentSelectWidget {
-	private static final ContextLogger log = ContextLogger.getLogger(TurWEMUpdateContentSelectWidget.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private TurWEMUpdateContentSelectWidget() {
 		throw new IllegalStateException("TurWEMUpdateContentSelectWidget");
@@ -44,7 +45,7 @@ public class TurWEMUpdateContentSelectWidget {
 			AttributeData attributeData) throws Exception {
 
 		MappingDefinitions mappingDefinitions = turAttrDefContext.getMappingDefinitions();
-		List<TurAttrDef> attributesDefs = new ArrayList<TurAttrDef>();
+		List<TurAttrDef> attributesDefs = new ArrayList<>();
 
 		ContentInstance ciRelated = (ContentInstance) ManagedObject
 				.findByContentManagementId(new ManagedObjectVCMRef(attributeData.getValue().toString()));

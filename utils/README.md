@@ -1,2 +1,0 @@
-# turing-configs
-Turing Configurations

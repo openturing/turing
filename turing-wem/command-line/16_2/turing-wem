@@ -26,6 +26,7 @@ CLASSDIR=$BINDIR/../lib
 
 # vgn jar files
 CP=$CLASSDIR
+CP=$CP$SEP$CLASSDIR/axis.jar
 CP=$CP$SEP$CLASSDIR/log4j.jar
 CP=$CP$SEP$CLASSDIR/vgn-shared-logging.jar
 CP=$CP$SEP$CLASSDIR/vgncommon.jar

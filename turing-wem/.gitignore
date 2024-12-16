@@ -19,3 +19,5 @@ hs_err_pid*
 /.settings/
 .project
 .idea
+zip
+docs

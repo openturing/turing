@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,45 +17,19 @@
 
 package com.viglet.turing.api.nlp;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
-
-import javax.xml.bind.JAXB;
-
-import org.json.JSONException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import com.viglet.turing.nlp.TurNLP;
+import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.nlp.output.blazon.RedactionCommand;
 import com.viglet.turing.nlp.output.blazon.RedactionScript;
 import com.viglet.turing.nlp.output.blazon.SearchString;
 import com.viglet.turing.persistence.model.nlp.TurNLPEntity;
 import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.repository.nlp.TurNLPEntityRepository;
 import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
-
+import com.viglet.turing.utils.TurUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.exception.TikaException;
@@ -67,74 +41,99 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/nlp")
-@Api(tags = "Natural Language Processing", description = "Natural Language Processing API")
+@Tag(name = "Natural Language Processing", description = "Natural Language Processing API")
 public class TurNLPInstanceAPI {
-	private static final Logger logger = LogManager.getLogger(TurNLPInstanceAPI.class);
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	private static final String NLP_TEMP_FILE = "nlp_temp";
 	@Autowired
-	TurNLPInstanceRepository turNLPInstanceRepository;
+	private TurNLPInstanceRepository turNLPInstanceRepository;
 	@Autowired
-	TurNLPEntityRepository turNLPEntityRepository;
+	private TurNLPEntityRepository turNLPEntityRepository;
 	@Autowired
-	TurNLP turNLP;
+	private TurNLPProcess turNLPProcess;
 
-	@ApiOperation(value = "Natural Language Processing List")
+	@Operation(summary = "Natural Language Processing List")
 	@GetMapping
-	public List<TurNLPInstance> turNLPInstanceList() throws JSONException {
+	public List<TurNLPInstance> turNLPInstanceList() {
 		return this.turNLPInstanceRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Natural Language Processing")
+	@Operation(summary = "Show a Natural Language Processing")
 	@GetMapping("/{id}")
-	public TurNLPInstance turNLPInstanceGet(@PathVariable String id) throws JSONException {
-		return this.turNLPInstanceRepository.findById(id).get();
+	public TurNLPInstance turNLPInstanceGet(@PathVariable String id) {
+		return this.turNLPInstanceRepository.findById(id).orElse(new TurNLPInstance());
 	}
 
-	@ApiOperation(value = "Update a Natural Language Processing")
+	@Operation(summary = "Natural Language Processing structure")
+	@GetMapping("/structure")
+	public TurNLPInstance turNLPInstanceStructure() {
+		TurNLPInstance turNLPInstance = new TurNLPInstance();
+		turNLPInstance.setTurNLPVendor(new TurNLPVendor());
+		turNLPInstance.setLanguage("en_US");
+		return turNLPInstance;
+
+	}
+
+	@Operation(summary = "Update a Natural Language Processing")
 	@PutMapping("/{id}")
-	public TurNLPInstance turNLPInstanceUpdate(@PathVariable String id, @RequestBody TurNLPInstance turNLPInstance)
-			throws Exception {
-		TurNLPInstance turNLPInstanceEdit = turNLPInstanceRepository.findById(id).get();
-		turNLPInstanceEdit.setTitle(turNLPInstance.getTitle());
-		turNLPInstanceEdit.setDescription(turNLPInstance.getDescription());
-		turNLPInstanceEdit.setTurNLPVendor(turNLPInstance.getTurNLPVendor());
-		turNLPInstanceEdit.setHost(turNLPInstance.getHost());
-		turNLPInstanceEdit.setPort(turNLPInstance.getPort());
-		turNLPInstanceEdit.setEnabled(turNLPInstance.getEnabled());
-		turNLPInstanceEdit.setLanguage(turNLPInstance.getLanguage());
-		this.turNLPInstanceRepository.save(turNLPInstanceEdit);
-		return turNLPInstanceEdit;
+	public TurNLPInstance turNLPInstanceUpdate(@PathVariable String id, @RequestBody TurNLPInstance turNLPInstance) {
+		return turNLPInstanceRepository.findById(id).map(turNLPInstanceEdit -> {
+			turNLPInstanceEdit.setTitle(turNLPInstance.getTitle());
+			turNLPInstanceEdit.setDescription(turNLPInstance.getDescription());
+			turNLPInstanceEdit.setTurNLPVendor(turNLPInstance.getTurNLPVendor());
+			turNLPInstanceEdit.setHost(turNLPInstance.getHost());
+			turNLPInstanceEdit.setPort(turNLPInstance.getPort());
+			turNLPInstanceEdit.setEnabled(turNLPInstance.getEnabled());
+			turNLPInstanceEdit.setLanguage(turNLPInstance.getLanguage());
+			this.turNLPInstanceRepository.save(turNLPInstanceEdit);
+			return turNLPInstanceEdit;
+		}).orElse(new TurNLPInstance());
+
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Natural Language Processing")
+	@Operation(summary = "Delete a Natural Language Processing")
 	@DeleteMapping("/{id}")
-	public boolean turNLPInstanceDelete(@PathVariable String id) throws Exception {
+	public boolean turNLPInstanceDelete(@PathVariable String id) {
 		this.turNLPInstanceRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Natural Language Processing")
+	@Operation(summary = "Create a Natural Language Processing")
 	@PostMapping
-	public TurNLPInstance turNLPInstanceAdd(@RequestBody TurNLPInstance turNLPInstance) throws Exception {
-		this.turNLPInstanceRepository.saveAndAssocEntity(turNLPInstance);
+	public TurNLPInstance turNLPInstanceAdd(@RequestBody TurNLPInstance turNLPInstance) {
+		turNLPProcess.saveAndAssocEntity(turNLPInstance);
 		return turNLPInstance;
 
 	}
 
 	@PostMapping(value = "/{id}/validate/file/blazon", produces = MediaType.APPLICATION_XML_VALUE)
 	public RedactionScript validateFile(@RequestParam("file") MultipartFile multipartFile, @PathVariable String id) {
-
-		InputStream inputStream;
-		try {
-			inputStream = multipartFile.getInputStream();
-			StringBuffer contentFile = new StringBuffer();
+		try (InputStream inputStream = multipartFile.getInputStream()){
+			StringBuilder contentFile = new StringBuilder();
 			AutoDetectParser parser = new AutoDetectParser();
 			// -1 = no limit of number of characters
 			BodyContentHandler handler = new BodyContentHandler(-1);
@@ -158,8 +157,7 @@ public class TurNLPInstanceAPI {
 
 				@Override
 				public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
-						boolean outputHtml) throws SAXException, IOException {
-					File tempFile = File.createTempFile(NLP_TEMP_FILE, null);
+						boolean outputHtml) throws IOException {
 
 					BodyContentHandler handlerInner = new BodyContentHandler(-1);
 					AutoDetectParser parserInner = new AutoDetectParser();
@@ -175,14 +173,16 @@ public class TurNLPInstanceAPI {
 					parseContextInner.set(PDFParserConfig.class, pdfConfigInner);
 
 					parseContextInner.set(Parser.class, parserInner);
+					
+					File tempFile = File.createTempFile(NLP_TEMP_FILE + UUID.randomUUID(), null, TurUtils.addSubDirToStoreDir("tmp"));
 					Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 					try (FileInputStream fileInputStreamInner = new FileInputStream(tempFile)) {
 						parserInner.parse(fileInputStreamInner, handlerInner, metadataInner, parseContextInner);
-						contentFile.append(cleanTextContent(handlerInner.toString()));
-						
+						contentFile.append(TurUtils.cleanTextContent(handlerInner.toString()));
+
 					} catch (IOException | SAXException | TikaException e) {
 						logger.error(e);
-					} 
+					}
 					tempFile.deleteOnExit();
 				}
 			};
@@ -192,18 +192,14 @@ public class TurNLPInstanceAPI {
 			parser.parse(inputStream, handler, metadata, parseContext);
 
 			TurNLPTextValidate textValidate = new TurNLPTextValidate();
-			contentFile.append(cleanTextContent(handler.toString()));
+			contentFile.append(TurUtils.cleanTextContent(handler.toString()));
 			textValidate.setText(contentFile.toString());
 
-			if (this.turNLPInstanceRepository.findById(id).isPresent()) {
-				TurNLPInstance turNLPInstance = this.turNLPInstanceRepository.findById(id).get();
-				turNLP.startup(turNLPInstance, textValidate.getText());
+			return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
+				Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+				return createRedactionScript(turNLP);
+			}).orElse(new RedactionScript());
 
-				RedactionScript redationScript = blazonEntity();
-
-				return redationScript;
-
-			}
 		} catch (IOException | SAXException | TikaException e) {
 			logger.error(e);
 		}
@@ -211,93 +207,63 @@ public class TurNLPInstanceAPI {
 		return null;
 	}
 
-	@SuppressWarnings("unchecked")
-	private RedactionScript blazonEntity() {
+	private RedactionScript createRedactionScript(Optional<TurNLP> turNLP) {
 		List<RedactionCommand> redactionCommands = new ArrayList<>();
 		RedactionScript redationScript = new RedactionScript();
-
 		redationScript.setVersion("1");
-		for (Entry<String, Object> entityType : turNLP.validate().entrySet()) {
+		turNLP.ifPresent(nlp -> nlp.getEntityMapWithProcessedValues().entrySet().forEach(entityType -> {
 			if (entityType.getValue() != null) {
-				TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
-				for (String term : ((List<String>) entityType.getValue())) {
+				entityType.getValue().forEach(term -> {
 					RedactionCommand redactionCommand = new RedactionCommand();
-					//redactionCommand.setComment(turNLPEntity.getName());
 					SearchString searchString = new SearchString();
 					searchString.setMatchWholeWord(true);
-					searchString.setString(String.format("%s",term));
+					searchString.setString(String.format("%s", term));
 					redactionCommand.setSearchString(searchString);
 					redactionCommands.add(redactionCommand);
-				}
+				});
 			}
-		}
+		}));
 
 		redationScript.setRedactionCommands(redactionCommands);
 		return redationScript;
 	}
 
-	@PostMapping("/{id}/validate/text/{format}")
-	public String validate(@PathVariable String id, @PathVariable String format,
+	@PostMapping("/{id}/validate/text/web")
+	public TurNLPValidateResponse validateWeb(@PathVariable String id, @PathVariable String format,
 			@RequestBody TurNLPTextValidate textValidate) {
-		return validateText(id, format, textValidate);
+		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
+			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+			return createNLPValidateResponse(turNLPInstance, turNLP);
+		}).orElse(null);
 	}
 
-	private static String cleanTextContent(String text) {
-		if (logger.isDebugEnabled()) {
-			logger.debug(String.format("Original Text: %s", text.replaceAll("\n", "\\\\n \n").replaceAll("\t", "\\\\t \t")));
-		}
-		// Remove 2 or more spaces
-		text = text.trim().replaceAll("\\t|\\r","\\n");
-		text = text.trim().replaceAll(" +", " ");
-		
-		text = text.trim();
-		
-		if (logger.isDebugEnabled()) {
-			logger.debug(String.format("Cleaned Text: %s", text));
-		}
-		return text;
+	@PostMapping("/{id}/validate/text/blazon")
+	public RedactionScript validateBlazon(@PathVariable String id, @PathVariable String format,
+			@RequestBody TurNLPTextValidate textValidate) {
+		return this.turNLPInstanceRepository.findById(id).map(turNLPInstance -> {
+			Optional<TurNLP> turNLP = turNLPProcess.processTextByNLP(turNLPInstance, textValidate.getText());
+			return createRedactionScript(turNLP);
+		}).orElse(null);
 	}
 
-	@SuppressWarnings("unchecked")
-	private String validateText(String id, String format, TurNLPTextValidate textValidate) {
-		final String WEB_FORMAT = "web";
-		final String BLAZON_FORMAT = "blazon";
+	private TurNLPValidateResponse createNLPValidateResponse(TurNLPInstance turNLPInstance, Optional<TurNLP> turNLP) {
+		TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
+		turNLPValidateResponse.setVendor(turNLPInstance.getTurNLPVendor().getTitle());
+		turNLPValidateResponse.setLocale(turNLPInstance.getLanguage());
+		if (turNLP.isPresent()) {
+			for (Entry<String, List<String>> entityType : turNLP.get().getEntityMapWithProcessedValues().entrySet()) {
+				if (entityType.getValue() != null) {
+					TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
+					TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
 
-		if (this.turNLPInstanceRepository.findById(id).isPresent()) {
-			TurNLPInstance turNLPInstance = this.turNLPInstanceRepository.findById(id).get();
-			turNLP.startup(turNLPInstance, textValidate.getText());
-			if (format.equals(WEB_FORMAT)) {
-				TurNLPValidateResponse turNLPValidateResponse = new TurNLPValidateResponse();
-				turNLPValidateResponse.setVendor(turNLPInstance.getTurNLPVendor().getTitle());
-				turNLPValidateResponse.setLocale(turNLPInstance.getLanguage());
-				for (Entry<String, Object> entityType : turNLP.validate().entrySet()) {
-					if (entityType.getValue() != null) {
-						TurNLPEntity turNLPEntity = turNLPEntityRepository.findByInternalName(entityType.getKey());
-						TurNLPEntityValidateResponse turNLPEntityValidateResponse = new TurNLPEntityValidateResponse();
+					turNLPEntityValidateResponse.setType(turNLPEntity);
 
-						turNLPEntityValidateResponse.setType(turNLPEntity);
-
-						turNLPEntityValidateResponse.setTerms((List<Object>) entityType.getValue());
-						turNLPValidateResponse.getEntities().add(turNLPEntityValidateResponse);
-					}
+					turNLPEntityValidateResponse.setTerms(entityType.getValue());
+					turNLPValidateResponse.getEntities().add(turNLPEntityValidateResponse);
 				}
-				return turNLPValidateResponse.toString();
-			} else if (format.equals(BLAZON_FORMAT)) {
-
-				RedactionScript redationScript = blazonEntity();
-
-				StringWriter sw = new StringWriter();
-				JAXB.marshal(redationScript, sw);
-				String xmlString = sw.toString();
-				return xmlString;
-			} else {
-
-				return null;
 			}
-
-		} else {
-			return null;
 		}
+		return turNLPValidateResponse;
 	}
 
 	public boolean isNumeric(String str) {
@@ -309,6 +275,7 @@ public class TurNLPInstanceAPI {
 		String text;
 
 		public TurNLPTextValidate() {
+			super();
 		}
 
 		public String getText() {

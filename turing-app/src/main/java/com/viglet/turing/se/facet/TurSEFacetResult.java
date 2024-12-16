@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,10 +18,11 @@
 package com.viglet.turing.se.facet;
 
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class TurSEFacetResult {
-	String facet;
-	LinkedHashMap<String, TurSEFacetResultAttr> turSEFacetResultAttr = new LinkedHashMap<String, TurSEFacetResultAttr>();
+	private String facet;
+	private Map<String, TurSEFacetResultAttr> turSEFacetResultAttr = new LinkedHashMap<>();
 
 	public String getFacet() {
 		return facet;
@@ -31,11 +32,11 @@ public class TurSEFacetResult {
 		this.facet = facet;
 	}
 
-	public LinkedHashMap<String, TurSEFacetResultAttr> getTurSEFacetResultAttr() {
+	public Map<String, TurSEFacetResultAttr> getTurSEFacetResultAttr() {
 		return turSEFacetResultAttr;
 	}
 
-	public void setTurSEFacetResultAttr(LinkedHashMap<String, TurSEFacetResultAttr> turSEFacetResultAttr) {
+	public void setTurSEFacetResultAttr(Map<String, TurSEFacetResultAttr> turSEFacetResultAttr) {
 		this.turSEFacetResultAttr = turSEFacetResultAttr;
 	}
 	public void add(String attribute, TurSEFacetResultAttr turSEFacetResultAttr) {

@@ -59,12 +59,12 @@ public class TurSNSiteField implements Serializable {
 	@JsonBackReference (value="turSNSiteField-turSNSite")
 	private TurSNSite turSNSite;
 
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public String getId() {
+		return id;
 	}
 
 	public String getName() {

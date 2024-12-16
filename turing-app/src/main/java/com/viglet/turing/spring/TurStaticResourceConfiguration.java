@@ -17,25 +17,30 @@
 
 package com.viglet.turing.spring;
 
+import java.io.IOException;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 
 import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
-
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.resource.PathResourceResolver;
 
 @Configuration
 @AutoConfigureAfter(DispatcherServletAutoConfiguration.class)
 public class TurStaticResourceConfiguration implements WebMvcConfigurer {
-
-		@Override
+	@Value("${turing.allowedOrigins:localhost}")
+	private String allowedOrigins;
+	@Override
 	public void addCorsMappings(CorsRegistry registry) {
-		registry.addMapping("/webjars/**").allowedOrigins("*").allowedMethods("PUT", "DELETE", "GET", "POST")
-				.allowCredentials(false).maxAge(3600);
-		registry.addMapping("/api/**").allowedOrigins("*").allowedMethods("PUT", "DELETE", "GET", "POST")
+		registry.addMapping("/api/**").allowedOrigins(allowedOrigins).allowedMethods("PUT", "DELETE", "GET", "POST")
 				.allowCredentials(false).maxAge(3600);
 	}
 
@@ -49,9 +54,26 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 		registry.addViewController("/converse/").setViewName("forward:/converse/index.html");
 
 	}
-	
+
 	@Override
 	public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
-		configurer.setDefaultTimeout(-1);	
+		configurer.setDefaultTimeout(-1);
 	}
+	
+	@Override
+   public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/console/**")
+                .addResourceLocations("classpath:/public/console/")
+                .resourceChain(true)
+                .addResolver(new PathResourceResolver() {
+                    @Override
+                    protected Resource getResource(String resourcePath, Resource location) throws IOException {
+                        Resource requestedResource = location.createRelative(resourcePath);
+ 
+                        return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
+                                : new ClassPathResource("/public/console/index.html");
+                    }
+                });
+
+    }
 }

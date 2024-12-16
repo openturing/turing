@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,35 +17,21 @@
 
 package com.viglet.turing.api.sn.queue;
 
-import java.util.Enumeration;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.sn.TurSNQueue;
+
 @RestController
 @RequestMapping("/api/queue")
 public class TurSNMonitoringQueue {
-
 	@Autowired
-	JmsTemplate jmsTemplate;
-
-	public static final String INDEXING_QUEUE = "indexing.queue";
+	private TurSNQueue turSNQueue;
 
 	@GetMapping
 	public String turMonitoringQueue() {
-
-		return jmsTemplate.browse(INDEXING_QUEUE, (session, browser) -> {
-			Enumeration<?> messages = browser.getEnumeration();
-			int total = 0;
-			while (messages.hasMoreElements()) {
-				messages.nextElement();
-				total++;
-			}
-			return String.format("Total %d elements waiting in %s", total, INDEXING_QUEUE);
-		});
-
+		return String.format("Total %d elements waiting in queue", turSNQueue.getQueueSize());
 	}
 }

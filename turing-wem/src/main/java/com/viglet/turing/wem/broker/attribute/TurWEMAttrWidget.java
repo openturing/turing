@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.wem.broker.attribute;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +33,7 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMAttrWidget {
-	private static final ContextLogger log = ContextLogger.getLogger(TurWEMAttrWidget.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private TurWEMAttrWidget() {
 		throw new IllegalStateException("TurWEMAttrWidget");
@@ -80,7 +81,7 @@ public class TurWEMAttrWidget {
 		AttributedObject[] relation = ci.getRelations(turingTag.getSrcAttributeRelation().get(0));
 
 		if (turingTag.getSrcAttributeRelation().size() > 1) {
-			List<AttributedObject[]> nestedRelation = new ArrayList<AttributedObject[]>();
+			List<AttributedObject[]> nestedRelation = new ArrayList<>();
 			nestedRelation.add(relation);
 			relation = TurWEMRelator.nestedRelators(turingTag.getSrcAttributeRelation(), nestedRelation, 0);
 		}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,15 +18,19 @@
 package com.viglet.turing.api.ml.data.group;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.json.JSONException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -41,114 +45,124 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
 
+import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.persistence.model.storage.TurData;
-import com.viglet.turing.persistence.model.storage.TurDataGroup;
 import com.viglet.turing.persistence.model.storage.TurDataGroupData;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupDataRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataRepository;
-import com.viglet.turing.plugins.opennlp.TurOpenNLPConnector;
+import com.viglet.turing.plugins.nlp.opennlp.TurOpenNLPConnector;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/ml/data/group/{dataGroupId}/data")
-@Api(tags = "Machine Learning Data by Group", description = "Machine Learning Data by Group API")
+@Tag(name ="Machine Learning Data by Group", description = "Machine Learning Data by Group API")
 public class TurMLDataGroupDataAPI {
-
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
-	TurDataGroupRepository turDataGroupRepository;
+	private TurDataGroupRepository turDataGroupRepository;
 	@Autowired
-	TurDataGroupDataRepository turDataGroupDataRepository;
+	private TurDataGroupDataRepository turDataGroupDataRepository;
 	@Autowired
-	TurDataRepository turDataRepository;
+	private TurDataRepository turDataRepository;
 	@Autowired
-	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 	@Autowired
-	TurOpenNLPConnector turOpenNLPConnector;
-
-	@ApiOperation(value = "Machine Learning Data Group Data List")
+	private TurOpenNLPConnector turOpenNLPConnector;
+	@Autowired
+	private TurNLPProcess turNLPProcess;
+	
+	@Operation(summary = "Machine Learning Data Group Data List")
 	@GetMapping
-	public List<TurDataGroupData> turDataGroupDataList(@PathVariable int dataGroupId) throws JSONException {
-		TurDataGroup turDataGroup = this.turDataGroupRepository.getOne(dataGroupId);
-		return this.turDataGroupDataRepository.findByTurDataGroup(turDataGroup);
+	public List<TurDataGroupData> turDataGroupDataList(@PathVariable int dataGroupId) {
+		return this.turDataGroupRepository.findById(dataGroupId)
+				.map(this.turDataGroupDataRepository::findByTurDataGroup).orElse(new ArrayList<>());
 	}
 
-	@ApiOperation(value = "Show a Machine Learning Data Group Data")
+	@Operation(summary = "Show a Machine Learning Data Group Data")
 	@GetMapping("/{id}")
-	public TurDataGroupData turDataGroupDataGet(@PathVariable int dataGroupId, @PathVariable int id) throws JSONException {
-		return this.turDataGroupDataRepository.findById(id);
+	public TurDataGroupData turDataGroupDataGet(@PathVariable int dataGroupId, @PathVariable int id) {
+		return this.turDataGroupDataRepository.findById(id).orElse(new TurDataGroupData());
 	}
 
-	@ApiOperation(value = "Update a Machine Learning Data Group Data")
+	@Operation(summary = "Update a Machine Learning Data Group Data")
 	@PutMapping("/{id}")
 	public TurDataGroupData turDataGroupDataUpdate(@PathVariable int dataGroupId, @PathVariable int id,
-			@RequestBody TurData turMLData) throws Exception {
-		TurDataGroupData turDataGroupDataEdit = this.turDataGroupDataRepository.getOne(id);
-		turDataGroupDataEdit.setTurData(turMLData);
-		this.turDataGroupDataRepository.save(turDataGroupDataEdit);
-		return turDataGroupDataEdit;
+			@RequestBody TurData turMLData) {
+		return this.turDataGroupDataRepository.findById(id).map(turDataGroupDataEdit -> {
+			turDataGroupDataEdit.setTurData(turMLData);
+			this.turDataGroupDataRepository.save(turDataGroupDataEdit);
+			return turDataGroupDataEdit;
+		}).orElse(new TurDataGroupData());
+
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning Data Group Data")
+	@Operation(summary = "Delete a Machine Learning Data Group Data")
 	@DeleteMapping("/{id}")
 	public boolean turDataGroupDataDelete(@PathVariable int dataGroupId, @PathVariable int id) {
 		this.turDataGroupDataRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Machine Learning Data Group Data")
+	@Operation(summary = "Create a Machine Learning Data Group Data")
 	@PostMapping
-	public TurDataGroupData turDataGroupDataAdd(@PathVariable int dataGroupId, @RequestBody TurDataGroupData turDataGroupData)
-			throws Exception {
-		TurDataGroup turDataGroup = this.turDataGroupRepository.getOne(dataGroupId);
-		turDataGroupData.setTurDataGroup(turDataGroup);
-		this.turDataGroupDataRepository.save(turDataGroupData);
-		return turDataGroupData;
+	public TurDataGroupData turDataGroupDataAdd(@PathVariable int dataGroupId,
+			@RequestBody TurDataGroupData turDataGroupData) {
+		return this.turDataGroupRepository.findById(dataGroupId).map(turDataGroup -> {
+			turDataGroupData.setTurDataGroup(turDataGroup);
+			this.turDataGroupDataRepository.save(turDataGroupData);
+			return turDataGroupData;
+		}).orElse(new TurDataGroupData());
 
 	}
 
-	@PostMapping("/import")	
+	@PostMapping("/import")
 	@Transactional
-	public TurDataGroupData turDataGroupDataImport(@PathVariable int dataGroupId, @RequestParam("file") MultipartFile multipartFile)
-			throws JSONException, IOException, SAXException, TikaException {
-	
-		TurDataGroup turDataGroup = this.turDataGroupRepository.getOne(dataGroupId);
-		BodyContentHandler handler = new BodyContentHandler(-1);
-		Metadata metadata = new Metadata();
+	public TurDataGroupData turDataGroupDataImport(@PathVariable int dataGroupId,
+			@RequestParam("file") MultipartFile multipartFile) {
 
-		ParseContext pcontext = new ParseContext();
+		return this.turDataGroupRepository.findById(dataGroupId).map(turDataGroup -> {
+			BodyContentHandler handler = new BodyContentHandler(-1);
+			Metadata metadata = new Metadata();
 
-		// parsing the document using PDF parser
-		PDFParser pdfparser = new PDFParser();
-		pdfparser.parse(multipartFile.getInputStream(), handler, metadata, pcontext);
+			ParseContext pcontext = new ParseContext();
 
-		String sentences[] = turOpenNLPConnector.sentenceDetect(handler.toString());
+			// parsing the document using PDF parser
+			PDFParser pdfparser = new PDFParser();
+			try {
+				pdfparser.parse(multipartFile.getInputStream(), handler, metadata, pcontext);
+			} catch (IOException | SAXException | TikaException e) {
+				logger.error(e);
+			}
+			String[] sentences = turOpenNLPConnector.sentenceDetect(turNLPProcess.getDefaultNLPInstance(), handler.toString());
 
-		TurData turData = new TurData();
+			TurData turData = new TurData();
 
-		turData.setName(multipartFile.getOriginalFilename());
-		turData.setType(FilenameUtils.getExtension(multipartFile.getOriginalFilename()));
-		this.turDataRepository.save(turData);
+			turData.setName(multipartFile.getOriginalFilename());
+			turData.setType(FilenameUtils.getExtension(multipartFile.getOriginalFilename()));
+			this.turDataRepository.save(turData);
 
-		for (String sentence : sentences) {
-			TurDataGroupSentence turDataGroupSentence = new TurDataGroupSentence();
-			turDataGroupSentence.setTurData(turData);
-			turDataGroupSentence.setSentence(sentence);
-			turDataGroupSentence.setTurDataGroup(turDataGroup);
-			turDataGroupSentenceRepository.save(turDataGroupSentence);
-		}
+			for (String sentence : sentences) {
+				TurDataGroupSentence turDataGroupSentence = new TurDataGroupSentence();
+				turDataGroupSentence.setTurData(turData);
+				turDataGroupSentence.setSentence(sentence);
+				turDataGroupSentence.setTurDataGroup(turDataGroup);
+				turDataGroupSentenceRepository.save(turDataGroupSentence);
+			}
 
-		TurDataGroupData turDataGroupData = new TurDataGroupData();
+			TurDataGroupData turDataGroupData = new TurDataGroupData();
 
-		turDataGroupData.setTurData(turData);
-		turDataGroupData.setTurDataGroup(turDataGroup);
-		turDataGroupDataRepository.save(turDataGroupData);
+			turDataGroupData.setTurData(turData);
+			turDataGroupData.setTurDataGroup(turDataGroup);
+			turDataGroupDataRepository.save(turDataGroupData);
 
-		return turDataGroupData;
+			return turDataGroupData;
+		}).orElse(new TurDataGroupData());
+
 	}
 }

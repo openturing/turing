@@ -27,16 +27,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TurSNTargetingRules {
-
 	public String run(TurSNTargetingRuleMethod method, List<String> trs) {
-
-		switch (method) {
-		case AND:
+		if (method.equals(TurSNTargetingRuleMethod.AND))
 			return this.andMethod(trs);
-		case OR:
+		else if (method.equals(TurSNTargetingRuleMethod.OR))
 			return this.orMethod(trs);
-		}
-		return "";
+		else
+			return "";
+
 	}
 
 	private String andMethod(List<String> trs) {
@@ -44,15 +42,14 @@ public class TurSNTargetingRules {
 		// (attribute2:Value2 OR (*:* NOT attribute2:*))
 		StringBuilder targetingRuleQuery = new StringBuilder();
 
-		Map<String, List<String>> trMap = new HashMap<String, List<String>>();
+		Map<String, List<String>> trMap = new HashMap<>();
 
 		for (String tr : trs) {
-			String[] targetingRuleParts = tr.split(":");
-			if (targetingRuleParts.length == 2) {
-				String attribute = targetingRuleParts[0].trim();
-				String value = targetingRuleParts[1];
+			if (tr.contains(":")) {
+				String attribute = tr.substring(0, tr.indexOf(":"));
+				String value = tr.substring(tr.indexOf(":") + 1);
 				if (!trMap.containsKey(attribute))
-					trMap.put(attribute, new ArrayList<String>());
+					trMap.put(attribute, new ArrayList<>());
 				trMap.get(attribute).add(value);
 			}
 		}
@@ -78,8 +75,8 @@ public class TurSNTargetingRules {
 	}
 
 	private String orMethod(List<String> trs) {
-		// Sample: "(groups:Group1 OR groups:Group2) OR (*:* NOT groups:*)");
-		List<String> emptyTargetingRules = new ArrayList<String>();
+		// This is a example: "(groups:Group1 OR groups:Group2) OR (*:* NOT groups:*)"); //NOSONAR
+		List<String> emptyTargetingRules = new ArrayList<>();
 		StringBuilder targetingRuleQuery = new StringBuilder();
 		targetingRuleQuery.append("(");
 		String targetingRuleOR = "";
@@ -93,7 +90,7 @@ public class TurSNTargetingRules {
 		}
 		targetingRuleQuery.append(")");
 
-		if (emptyTargetingRules.size() > 0) {
+		if (!emptyTargetingRules.isEmpty()) {
 			for (String emptyTargetRule : emptyTargetingRules) {
 				targetingRuleQuery.append(String.format(" OR (*:* NOT %s:*)", emptyTargetRule));
 			}

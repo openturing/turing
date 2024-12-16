@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.wem.broker.update;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,14 +25,14 @@ import com.viglet.turing.wem.beans.TurAttrDefContext;
 import com.viglet.turing.wem.beans.TurMultiValue;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
-import com.viglet.turing.wem.util.ETLTuringTranslator;
+import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AttributeData;
 import com.vignette.as.client.javabean.ContentInstance;
 
 import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMUpdateFileWidget {
-	private static final ContextLogger log = ContextLogger.getLogger(TurWEMUpdateFileWidget.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private TurWEMUpdateFileWidget() {
 		throw new IllegalStateException("TurWEMUpdateFileWidget");
@@ -48,12 +49,11 @@ public class TurWEMUpdateFileWidget {
 			log.debug("TurWEMUpdateFileWidget started");
 		}
 
-		ETLTuringTranslator etlTranslator = new ETLTuringTranslator(config);
-		List<TurAttrDef> attributesDefs = new ArrayList<TurAttrDef>();
+		List<TurAttrDef> attributesDefs = new ArrayList<>();
 
 		if (turingTag.getSrcClassName() == null) {
 
-			String url = etlTranslator.getSiteDomain(ci) + attributeData.getValue().toString();
+			String url = TuringUtils.getSiteDomain(ci, config) + attributeData.getValue().toString();
 			if (log.isDebugEnabled())
 				log.debug("TurWEMUpdateFileWidget url" + url);
 

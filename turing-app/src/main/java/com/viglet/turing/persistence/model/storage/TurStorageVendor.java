@@ -46,9 +46,6 @@ public class TurStorageVendor implements Serializable {
 	@Column(nullable = true, length = 255)
 	private String website;
 
-	public TurStorageVendor() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

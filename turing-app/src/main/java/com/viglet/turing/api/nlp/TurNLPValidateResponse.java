@@ -26,7 +26,7 @@ public class TurNLPValidateResponse {
 	
 	private String locale;
 	
-	private List<TurNLPEntityValidateResponse> entities = new ArrayList<TurNLPEntityValidateResponse>();
+	private List<TurNLPEntityValidateResponse> entities = new ArrayList<>();
 
 	public String getVendor() {
 		return vendor;

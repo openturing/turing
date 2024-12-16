@@ -22,11 +22,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class TurDataGroupSentenceBean {
 
-	int id;
-	String sentence;
-	int turData;
-	int turDataGroup;
-	int turMLCategory;
+	private int id;
+	private String sentence;
+	private int turData;
+	private int turDataGroup;
+	private int turMLCategory;
 	
 	public int getId() {
 		return id;

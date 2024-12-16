@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.wem.broker.attribute;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +33,7 @@ import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMAttrClass {
 
-	private static final ContextLogger log = ContextLogger.getLogger(TurWEMAttrXML.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private TurWEMAttrClass() {
 		throw new IllegalStateException("TurWEMAttrClass");
@@ -44,14 +45,14 @@ public class TurWEMAttrClass {
 		TuringTag turingTag = turAttrDefContext.getTuringTag();
 		ContentInstance ci = turAttrDefContext.getContentInstance();
 		IHandlerConfiguration config = turAttrDefContext.getiHandlerConfiguration();
-		List<TurAttrDef> attributesDefs = new ArrayList<TurAttrDef>();
+		List<TurAttrDef> attributesDefs = new ArrayList<>();
 
 		if (turingTag.getSrcClassName() != null) {
 			String className = turingTag.getSrcClassName();
 			if (log.isDebugEnabled())
 				log.debug("ClassName : " + className);
 
-			Object extAttribute = Class.forName(className).newInstance();
+			Object extAttribute = Class.forName(className).getDeclaredConstructor().newInstance();
 			TurMultiValue turMultiValue = ((ExtAttributeInterface) extAttribute).consume(turingTag, ci, attributeData,
 					config);
 			TurAttrDef turAttrDef = new TurAttrDef(turingTag.getTagName(), turMultiValue);

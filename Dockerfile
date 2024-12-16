@@ -1,13 +1,4 @@
-FROM adoptopenjdk/openjdk14:latest as turingbuild
-WORKDIR /turing-src
-
-VOLUME /root/.gradle
-
-COPY . .
-RUN ./gradlew build -x test -i --stacktrace
-
 FROM adoptopenjdk/openjdk14:jre
-WORKDIR /turing 
 ENV JAVA_OPTS=${JAVA_OPTS:-'-Xmx512m'}
 ENV DEBUG_OPTS=${DEBUG_OPTS}
 ENV PORT=${PORT:-2700}
@@ -19,20 +10,23 @@ ENV spring.jpa.properties.hibernate.dialect=${DB_DIALECT:-'org.hibernate.dialect
 
 RUN useradd --system --create-home --uid 1001 --gid 0 java
 
-RUN sh -c 'mkdir -p /turing/store'
-RUN sh -c 'mkdir -p /turing/models'
-RUN sh -c 'chown -R java /turing'
-#COPY --from=turingbuild  /turing-src/build/libs/viglet-turing.jar /turing/viglet-turing.jar
-COPY /build/libs/viglet-turing.jar /turing/viglet-turing.jar
+RUN sh -c 'mkdir -p /tmp'
+RUN sh -c 'mkdir -p /store'
+RUN sh -c 'mkdir -p /models'
+RUN sh -c 'chown -R java /tmp'
+RUN sh -c 'chown -R java /store'
+RUN sh -c 'chown -R java /models'
 
-RUN sh -c 'touch /turing/viglet-turing.jar'
+COPY /turing-app/build/libs/viglet-turing.jar /viglet-turing.jar
 
-VOLUME /turing/tmp
-VOLUME /turing/store
-VOLUME /turing/models
+RUN sh -c 'touch /viglet-turing.jar'
+
+VOLUME /tmp
+VOLUME /store
+VOLUME /models
 
 USER java
 
 EXPOSE ${PORT}
 
-CMD cd /turing && java ${JAVA_OPTS} ${DEBUG_OPTS} -Djava.security.egd=file:/dev/./urandom -jar ./viglet-turing.jar
+CMD java ${JAVA_OPTS} ${DEBUG_OPTS} -Djava.security.egd=file:/dev/./urandom -Dlogging.config=classpath:logback-spring-console.xml -jar /viglet-turing.jar

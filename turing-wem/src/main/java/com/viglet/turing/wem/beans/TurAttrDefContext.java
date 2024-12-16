@@ -1,5 +1,7 @@
 package com.viglet.turing.wem.beans;
 
+import java.lang.invoke.MethodHandles;
+
 import com.viglet.turing.wem.config.IHandlerConfiguration;
 import com.viglet.turing.wem.mappers.MappingDefinitions;
 import com.vignette.as.client.common.AttributeData;
@@ -8,7 +10,7 @@ import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurAttrDefContext {
-	private static final ContextLogger logger = ContextLogger.getLogger(TurAttrDefContext.class);
+	private static final ContextLogger logger = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 	
 	private ContentInstance contentInstance;
 	private TuringTag turingTag;

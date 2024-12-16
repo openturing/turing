@@ -17,9 +17,6 @@
 
 package com.viglet.turing.persistence.repository.converse.chat;
 
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -28,13 +25,7 @@ import com.viglet.turing.persistence.model.converse.chat.TurConverseChat;
 
 public interface TurConverseChatRepository extends JpaRepository<TurConverseChat, String> {
 
-	List<TurConverseChat> findAll();
-	
-	Optional<TurConverseChat> findById(String id);
-
 	TurConverseChat findBySession(String session) ;
-	
-	TurConverseChat save(TurConverseChat turConverseChat);
 
 	@Modifying
 	@Query("delete from  TurConverseChat cc where cc.id = ?1")

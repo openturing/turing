@@ -1,8 +1,0 @@
-<div>
-	<h1>File Management 1 {{currPath}}</h1>
-	<div class="row">
-		<div class="col-sm-12 col-md-12">
-			<div ng-repeat="fileOrDir in filesAndDirs"><a ui-sref="console.storage.mgmt-child({path:currPath + fileOrDir.name})">{{fileOrDir.name}}</a></div>
-		</div>
-	</div>
-</div>

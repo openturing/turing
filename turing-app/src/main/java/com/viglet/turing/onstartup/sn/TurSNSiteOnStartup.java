@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.repository.nlp.TurNLPVendorRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.system.TurLocaleRepository;
 
 import com.viglet.turing.sn.template.TurSNTemplate;
 
@@ -36,9 +36,9 @@ public class TurSNSiteOnStartup {
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
-	private TurNLPInstanceRepository turNLPInstanceRepository;
-	@Autowired
 	private TurSEInstanceRepository turSEInstanceRepository;
+	@Autowired
+	private TurNLPVendorRepository turNLPVendorRepository;
 	@Autowired
 	private TurSNTemplate turSNTemplate;
 	
@@ -51,12 +51,9 @@ public class TurSNSiteOnStartup {
 			// Detail
 			turSNSite.setName("Sample");
 			turSNSite.setDescription("Semantic Sample Site");
-			turSNSite.setLanguage(TurLocaleRepository.EN_US);
-			turSNSite.setCore("turing");
-
-			turSNSite.setTurNLPInstance(turNLPInstanceRepository.findAll().get(0));
+			turSNSite.setTurNLPVendor(turNLPVendorRepository.findAll().get(0));
 			turSNSite.setTurSEInstance(turSEInstanceRepository.findAll().get(0));
-
+						
 			turSNTemplate.defaultSNUI(turSNSite);
 
 			turSNSiteRepository.save(turSNSite);
@@ -64,6 +61,12 @@ public class TurSNSiteOnStartup {
 			turSNTemplate.createSEFields(turSNSite);
 
 			turSNTemplate.createNERFields(turSNSite);
+
+			TurSNSiteLocale turSNSiteLocale = turSNTemplate.createLocale(turSNSite);
+			
+			turSNTemplate.createMergeProviders(turSNSite);
+
+			turSNTemplate.createSpotlight(turSNSite, turSNSiteLocale);
 		}
 	}
 

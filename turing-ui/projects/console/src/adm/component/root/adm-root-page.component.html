@@ -1,0 +1,17 @@
+<tur-header></tur-header>
+<div class="clearfix container-xl p-0 pt-3 mb-2">
+  <div class="Subhead ">
+    <div class="Subhead-heading"><span octicon="gear" [size]=24 class="mr-1"></span> Administration
+      Console</div>
+  </div>
+  <div id="col-left" class="float-left" style="width: 280px;padding-right: 15px;">
+    <nav class="menu" aria-label="Administration Console">
+      <a class="menu-item" [routerLink]="['/adm/user']" [routerLinkActive]="['selected']">Users</a>
+      <a class="menu-item" [routerLink]="['/adm/group']" [routerLinkActive]="['selected']">Groups</a>
+    </nav>
+  </div>
+  <div id="col-right" class="float-right" style="width: calc(100% - 300px);">
+    <router-outlet>
+    </router-outlet>
+  </div>
+</div>

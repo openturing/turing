@@ -19,8 +19,8 @@ package com.viglet.turing.se.facet;
 
 
 public class TurSEFacetResultAttr {
-	String attribute;
-	int count;
+	private String attribute;
+	private int count;
 	
 	public TurSEFacetResultAttr(String attribute, int count) {
 		this.setAttribute(attribute);

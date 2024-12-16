@@ -65,9 +65,6 @@ public class TurMLCategory implements Serializable {
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurDataGroupSentence> turDataGroupSentences;
 
-	public TurMLCategory() {
-	}
-
 	public int getId() {
 		return this.id;
 	}

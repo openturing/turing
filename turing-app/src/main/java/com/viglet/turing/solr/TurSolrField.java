@@ -23,14 +23,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 
-import org.springframework.stereotype.Component;
-
 import com.viglet.turing.se.field.TurSEFieldType;
 
-@Component
 public class TurSolrField {
 
-	public Integer convertFieldToInt(Object attrValue) {
+	public static Integer convertFieldToInt(Object attrValue) {
 		if (attrValue instanceof String) {
 			return Integer.parseInt((String) attrValue);
 		} else if (attrValue instanceof ArrayList) {
@@ -50,7 +47,7 @@ public class TurSolrField {
 		}
 	}
 
-	public Long convertFieldToLong(Object attrValue) {
+	public static Long convertFieldToLong(Object attrValue) {
 		if (attrValue instanceof String) {
 			return Long.parseLong((String) attrValue);
 		} else if (attrValue instanceof ArrayList) {
@@ -65,46 +62,56 @@ public class TurSolrField {
 		}
 	}
 
-	public String convertFieldToString(Object attrValue) {
+	public static String convertFieldToString(Object attrValue) {
 		if (attrValue instanceof String) {
 			return (String) attrValue;
 		} else if (attrValue instanceof ArrayList) {
-			ArrayList<?> arrAttValue = (ArrayList<?>) attrValue;
-			if (arrAttValue.get(0) instanceof String) {
-				return (String) arrAttValue.get(0);
-			} else if (arrAttValue.get(0) instanceof Long) {
-				return ((Long) arrAttValue.get(0)).toString();
-			} else if (arrAttValue.get(0) instanceof Date) {
-				return ((Date) arrAttValue.get(0)).toString();
-			} else {
-				return (String) arrAttValue.get(0);
-			}
+			return arrayListToString(attrValue);
 		} else if (attrValue instanceof Long) {
-			return ((Long) attrValue).toString();
+			return longToString(attrValue);
 		} else if (attrValue instanceof Object[]) {
-			Object[] arrAttrValue = (Object[]) attrValue;
-			if (arrAttrValue[0] instanceof String) {
-				return (String) arrAttrValue[0];
-			} else if (arrAttrValue[0] instanceof Long) {
-				return ((Long) arrAttrValue[0]).toString();
-			} else if (arrAttrValue[0] instanceof Date) {
-				return ((Date) arrAttrValue[0]).toString();
-			} else {
-				return (String) arrAttrValue[0];
-			}
+			return objectArrayToString(attrValue);
+		} else if (attrValue instanceof Date) {
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+			simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+			return simpleDateFormat.format(attrValue);
 		} else {
-			return (String) attrValue;
+			return attrValue.toString();
+		}
+	}
+
+	private static String objectArrayToString(Object attrValue) {
+		Object[] arrAttrValue = (Object[]) attrValue;
+		if (arrAttrValue[0] instanceof String) {
+			return (String) arrAttrValue[0];
+		} else if (arrAttrValue[0] instanceof Long) {
+			return ((Long) arrAttrValue[0]).toString();
+		} else if (arrAttrValue[0] instanceof Date) {
+			return ((Date) arrAttrValue[0]).toString();
+		} else {
+			return (String) arrAttrValue[0];
+		}
+	}
+
+	private static String arrayListToString(Object attrValue) {
+		ArrayList<?> arrAttValue = (ArrayList<?>) attrValue;
+		if (arrAttValue.get(0) instanceof String) {
+			return (String) arrAttValue.get(0);
+		} else if (arrAttValue.get(0) instanceof Long) {
+			return ((Long) arrAttValue.get(0)).toString();
+		} else if (arrAttValue.get(0) instanceof Date) {
+			return ((Date) arrAttValue.get(0)).toString();
+		} else {
+			return (String) arrAttValue.get(0);
 		}
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Object[] convertFieldToArray(Object attrValue) {
+	public static Object[] convertFieldToArray(Object attrValue) {
 		if (attrValue instanceof String) {
-			String[] array = { (String) attrValue };
-			return array;
+			return new String[] { (String) attrValue };
 		} else if (attrValue instanceof Long) {
-			Long[] array = { (Long) attrValue };
-			return array;
+			return new Long[] { (Long) attrValue };
 		} else if (attrValue instanceof ArrayList) {
 			return ((ArrayList) attrValue).toArray(new Object[0]);
 		} else {
@@ -112,31 +119,30 @@ public class TurSolrField {
 		}
 	}
 
-	public String convertFieldToDate(Object attrValue) {
+	public static String convertFieldToDate(Object attrValue) {
 		if (attrValue instanceof ArrayList) {
-			ArrayList<?> arrAttValue = (ArrayList<?>) attrValue;
-			if (arrAttValue.get(0) instanceof String) {
-				return (String) arrAttValue.get(0);
-			} else if (arrAttValue.get(0) instanceof Long) {
-				return ((Long) arrAttValue.get(0)).toString();
-			} else if (arrAttValue.get(0) instanceof Date) {
-				return ((Date) arrAttValue.get(0)).toString();
-			} else {
-				return (String) arrAttValue.get(0);
-			}
+			return arrayListToString(attrValue);
 		} else if (attrValue instanceof Long) {
-			return ((Long) attrValue).toString();
+			return longToString(attrValue);
 		} else if (attrValue instanceof Date) {
-			TimeZone tz = TimeZone.getTimeZone("UTC");
-			DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-			df.setTimeZone(tz);
-			return df.format((Date) attrValue);
+			return dateToString(attrValue);
 		} else {
 			return (String) attrValue;
 		}
 	}
 
-	public boolean convertFieldToBoolean(Object attrValue) {
+	private static String longToString(Object attrValue) {
+		return ((Long) attrValue).toString();
+	}
+
+	private static String dateToString(Object attrValue) {
+		TimeZone tz = TimeZone.getTimeZone("UTC");
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+		df.setTimeZone(tz);
+		return df.format((Date) attrValue);
+	}
+
+	public static boolean convertFieldToBoolean(Object attrValue) {
 		if (attrValue instanceof String) {
 			return Boolean.parseBoolean((String) attrValue);
 		} else if (attrValue instanceof ArrayList) {
@@ -144,39 +150,29 @@ public class TurSolrField {
 			if (arrAttValue.get(0) instanceof String) {
 				return Boolean.parseBoolean((String) arrAttValue.get(0));
 			} else if (arrAttValue.get(0) instanceof Long) {
-				if (((Long) arrAttValue.get(0)) > 0) {
-					return true;
-				} else {
-					return false;
-				}
+				return (((Long) arrAttValue.get(0)) > 0);
 			} else {
 				return (boolean) attrValue;
 			}
 		} else if (attrValue instanceof Long) {
-			if (((Long) attrValue) > 0) {
-				return true;
-			} else {
-				return false;
-			}
+			return (((Long) attrValue) > 0);
 		} else {
 			return (boolean) attrValue;
 		}
 	}
 
-	public Object convertField(TurSEFieldType finalType, Object attrValue) {
+	public static Object convertField(TurSEFieldType finalType, Object attrValue) {
 		switch (finalType) {
 		case INT:
-			return this.convertFieldToInt(attrValue);
+			return convertFieldToInt(attrValue);
 		case LONG:
-			return this.convertFieldToLong(attrValue);
+			return convertFieldToLong(attrValue);
 		case STRING:
-			return this.convertFieldToString(attrValue);
-		//case ARRAY:
-		//	return this.convertFieldToArray(attrValue);
+			return convertFieldToString(attrValue);
 		case DATE:
-			return this.convertFieldToDate(attrValue);
+			return convertFieldToDate(attrValue);
 		case BOOL:
-			return this.convertFieldToBoolean(attrValue);
+			return convertFieldToBoolean(attrValue);
 		default:
 			return attrValue;
 		}

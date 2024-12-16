@@ -46,7 +46,6 @@ public class TurCustomUserDetails extends TurUser implements UserDetails {
 
 	@Override
 	public boolean isAccountNonExpired() {
-		// TODO Auto-generated method stub
 		return true;
 	}
 
@@ -64,10 +63,4 @@ public class TurCustomUserDetails extends TurUser implements UserDetails {
 	public boolean isEnabled() {
 		return true;
 	}
-
-	@Override
-	public String getUsername() {
-		return super.getUsername();
-	}
-
 }

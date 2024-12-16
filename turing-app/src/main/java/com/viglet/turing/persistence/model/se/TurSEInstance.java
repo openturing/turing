@@ -50,9 +50,6 @@ public class TurSEInstance implements Serializable {
 	@Column(nullable = false, length = 255)
 	private String host;
 
-	@Column(nullable = false, length = 5)
-	private String language;
-
 	@Column(nullable = false)
 	private int port;
 
@@ -60,26 +57,6 @@ public class TurSEInstance implements Serializable {
 	@ManyToOne
 	@JoinColumn(name = "se_vendor_id", nullable = false)
 	private TurSEVendor turSEVendor;
-
-	/*@Transient
-	private boolean isSelected;*/
-
-	public TurSEInstance() {
-	}
-
-	/*public boolean isSelected() {
-		TurConfigVarService turConfigVarService = new TurConfigVarService();
-		if (Integer.parseInt(turConfigVarService.get("DEFAULT_SE").getValue()) == this.getId()) {
-			isSelected = true;
-		} else {
-			isSelected = false;
-		}
-		return isSelected;
-	}
-
-	public void setSelected(boolean isSelected) {
-		this.isSelected = isSelected;
-	}*/
 
 	public String getId() {
 		return this.id;
@@ -111,14 +88,6 @@ public class TurSEInstance implements Serializable {
 
 	public void setHost(String host) {
 		this.host = host;
-	}
-
-	public String getLanguage() {
-		return this.language;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
 	}
 
 	public int getPort() {

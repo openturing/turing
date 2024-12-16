@@ -17,36 +17,24 @@
 
 package com.viglet.turing.swagger;
 
-import java.util.Collections;
-
+import io.swagger.v3.oas.models.ExternalDocumentation;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.Contact;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
-
 @Configuration
-@EnableSwagger2
 public class SwaggerConfig {
 	@Bean
-	public Docket api() {
-		TurCustomPathProvider pathProvider = new TurCustomPathProvider();
-
-		return new Docket(DocumentationType.SWAGGER_2).pathProvider(pathProvider).select()
-				.apis(RequestHandlerSelectors.basePackage("com.viglet.turing.api")).paths(PathSelectors.any()).build()
-				.apiInfo(apiInfo());
+	public OpenAPI apiInfo() {
+		return new OpenAPI()
+				.info(new Info().title("Turing AI")
+						.description("Semantic Navigation, Chatbot using Search Engine and Many NLP Vendors.")
+						.version("v2.0")
+						.license(new License().name("Apache 2.0").url("http://viglet.com/turing")))
+				.externalDocs(new ExternalDocumentation()
+						.description("Turing AI Documentation")
+						.url("https://docs.viglet.com/turing"));
 	}
-
-	private ApiInfo apiInfo() {
-		return new ApiInfo("Viglet Turing", "AI Gateway", "2.0",
-				"Terms of service",
-				new Contact("Viglet Team", "http://www.viglet.com", "alexandre.oliveira@viglet.com"), "License of API",
-				"API license URL", Collections.emptyList());
-	}
-
 }

@@ -18,6 +18,7 @@
 package com.viglet.turing.spring.security;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,7 +32,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TurAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
-	private static final Log logger = LogFactory.getLog(TurAuthenticationEntryPoint.class);
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 
 	@Override
 	public void commence(HttpServletRequest request, HttpServletResponse response,

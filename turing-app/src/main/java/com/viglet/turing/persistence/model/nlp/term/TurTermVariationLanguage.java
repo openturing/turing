@@ -55,9 +55,6 @@ public class TurTermVariationLanguage implements Serializable {
 	@JoinColumn(name="variation_id", nullable=false)
 	private TurTermVariation turTermVariation;
 
-	public TurTermVariationLanguage() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

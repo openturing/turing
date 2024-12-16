@@ -1,0 +1,73 @@
+<div *ngIf="(getTurAdmGroup() | async) as admGroup; else loading">
+  <div style="margin-top: 20px;">
+    <div style="padding-bottom: 15px;">
+      <div class="Subhead" style="padding-bottom: 20px;">
+        <div style="flex: 1 1 auto;">
+          <input class="form-control" style="width: 50%;" type="text" placeholder="Find a user..."
+            aria-label="Find a user" />
+        </div>
+        <div class="Subhead-actions">
+          <a [routerLink]="['/adm/user/new']" class="btn btn-sm btn-primary" role="button">
+            <span octicon="person" [size]=16 class="mr-1"></span> Add user
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="Box Details">
+    <div role="grid" aria-labelledby="files" class="d-md-block" data-pjax="">
+      <div role="row"
+        class="Box-row Box-row--focus-blue py-2 d-flex position-relative js-navigation-item navigation-focus">
+        <div role="gridcell" class="mr-3 flex-shrink-0" style="width: 16px;">
+          Username
+        </div>
+
+        <div role="rowheader" class="flex-auto min-width-0 col-md-2 mr-3">
+
+        </div>
+
+        <div role="gridcell" class="flex-auto min-width-0 d-none d-md-block col-5 mr-3">
+          First Name
+        </div>
+
+        <div role="gridcell" class="flex-auto min-width-0 d-none d-md-block col-5 mr-3">
+          Last Name
+        </div>
+        <div role="gridcell" class="color-text-tertiary text-right" style="width:100px;">
+
+        </div>
+      </div>
+      <div *ngFor="let admUser of admGroup.turUsers" role="row"
+        class="Box-row Box-row--focus-gray py-2 d-flex position-relative js-navigation-item ">
+        <div role="gridcell" class="mr-3 flex-shrink-0" style="width: 16px;">
+          <div style="background-color: whitesmoke;width: 24px;height: 24px;margin-right: 7px;border-radius: 50%;"
+            class="float-left">
+            <svg width="24" height="24" style="border-radius: 50%;" [identiconHash]="admUser.username | lowercase">
+              Avatar
+            </svg>
+          </div>
+        </div>
+
+        <div role="rowheader" class="flex-auto min-width-0 col-md-2 mr-3">
+          <a [routerLink]="['/adm/user', admUser.username]" routerLinkActive="active">{{admUser.username}}</a>
+        </div>
+
+        <div role="gridcell" class="flex-auto min-width-0 d-none d-md-block col-5 mr-3">
+          {{admUser.firstName}}
+        </div>
+
+        <div role="gridcell" class="flex-auto min-width-0 d-none d-md-block col-5 mr-3">
+          {{admUser.lastName}}
+        </div>
+        <div role="gridcell" class="color-text-tertiary text-right" style="width:100px;">
+          <button class="btn btn-danger btn-sm">
+            <span octicon="trash" [size]=16 class="mr-1"></span> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #loading>
+  <span>Loading</span><span class="AnimatedEllipsis"></span>
+</ng-template>

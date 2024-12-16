@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 Alexandre Oliveira <alexandre.oliveira@viglet.com> 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,81 +14,90 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 package com.viglet.turing.wem.broker.indexer;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.wem.config.GenericResourceHandlerConfiguration;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
+import com.viglet.turing.wem.config.TurSNSiteConfig;
 import com.viglet.turing.wem.util.TuringUtils;
 import com.vignette.as.client.common.AsLocaleData;
-import com.vignette.as.client.exception.ApplicationException;
+import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class TurWEMDeindex {
-	private static final ContextLogger logger = ContextLogger.getLogger(TurWEMDeindex.class);
 
 	private TurWEMDeindex() {
-		throw new IllegalStateException("TurWEMDeindex");
+		throw new IllegalStateException(TurWEMDeindex.class.getName());
 	}
 
-	// This method deletes the content to the Viglet Turing broker
-	public static void indexDelete(ManagedObject mo, IHandlerConfiguration config) {
+	private static final ContextLogger log = ContextLogger.getLogger(TurWEMDeindex.class);
+
+	/**
+	 * Create and send a job to delete a spotlight or deindex a content in Turing
+	 * Semantic Navigation Site.
+	 * 
+	 **/
+	public static void indexDelete(ManagedObjectVCMRef managedObjectVCMRef, IHandlerConfiguration config,
+			String siteName) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
-		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 
-		Map<String, Object> attributes = new HashMap<String, Object>();
-		String guid = mo.getContentManagementId().getId();
-		attributes.put("id", guid);
+		AsLocaleData asLocaleData = null;
+		String ctdXmlName = null;
+		try {
+			ManagedObject mo = managedObjectVCMRef.retrieveManagedObject();
+			if (mo != null) {
+				if ((mo.getLocale() != null) && (mo.getLocale().getAsLocale() != null)
+						&& (mo.getLocale().getAsLocale().getData() != null))
+					asLocaleData = mo.getLocale().getAsLocale().getData();
+				ctdXmlName = mo.getObjectType().getData().getName();
+			}
+
+		} catch (Exception e) {
+			log.error("Error while retrieving locale from MO. Id " + managedObjectVCMRef.getId(), e);
+		}
+
+		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
+
+		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
+		turSNJobItem.setLocale(turSNSiteConfig.getLocale());
+		Map<String, Object> attributes = new HashMap<>();
+
+		String guid = managedObjectVCMRef.getId();
+		attributes.put(GenericResourceHandlerConfiguration.ID_ATTRIBUTE, guid);
+		attributes.put(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
+		attributes.put(GenericResourceHandlerConfiguration.TYPE_ATTRIBUTE, ctdXmlName);
+
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
-		try {
 
-			AsLocaleData asLocaleData = null;
-			if (mo.getLocale() != null && mo.getLocale().getAsLocale() != null
-					&& mo.getLocale().getAsLocale().getData() != null)
-				asLocaleData = mo.getLocale().getAsLocale().getData();
-			TuringUtils.sendToTuring(turSNJobItems, config, asLocaleData);
-		} catch (IOException | ApplicationException e) {
-			logger.error(e);
-		}
+		TuringUtils.sendToTuring(turSNJobItems, config, turSNSiteConfig);
 	}
 
-	public static void indexDeleteByType(String typeName, IHandlerConfiguration config) {
+	/**
+	 * Create and send a job to delete a spotlight or deindex a context by CTD XML
+	 * Name in Turing Semantic Navigation Site.
+	 * 
+	 **/
+	public static void indexDeleteByType(String siteName, String typeName, IHandlerConfiguration config) {
 		final TurSNJobItems turSNJobItems = new TurSNJobItems();
 		final TurSNJobItem turSNJobItem = new TurSNJobItem();
+		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName);
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
-
-		Map<String, Object> attributes = new HashMap<String, Object>();
-		attributes.put("type", typeName);
+		turSNJobItem.setLocale(turSNSiteConfig.getLocale());
+		Map<String, Object> attributes = new HashMap<>();
+		attributes.put(GenericResourceHandlerConfiguration.TYPE_ATTRIBUTE, typeName);
+		attributes.put(GenericResourceHandlerConfiguration.PROVIDER_ATTRIBUTE, config.getProviderName());
 		turSNJobItem.setAttributes(attributes);
 		turSNJobItems.add(turSNJobItem);
-		try {
-			AsLocaleData asLocaleData = null;
-			TuringUtils.sendToTuring(turSNJobItems, config, asLocaleData);
-		} catch (IOException e) {
-			logger.error(e);
-		}
+		TuringUtils.sendToTuring(turSNJobItems, config, turSNSiteConfig);
 	}
 }

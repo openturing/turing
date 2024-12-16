@@ -18,6 +18,7 @@
 package com.viglet.turing.api.otsn.broker;
 
 import java.io.StringReader;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.Optional;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,7 +47,7 @@ import com.viglet.turing.api.sn.job.TurSNJobItems;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -53,9 +55,9 @@ import org.w3c.dom.NodeList;
 
 @RestController
 @RequestMapping("/api/otsn/broker")
-@Api(tags = "OTSN Broker", description = "OTSN Broker API")
+@Tag(name = "OTSN Broker", description = "OTSN Broker API")
 public class TurOTSNBrokerAPI {
-	private static final Logger logger = LogManager.getLogger(TurOTSNBrokerAPI.class.getName());
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
 	@Autowired
 	private TurSNSiteRepository turSNSiteRepository;
 	@Autowired
@@ -64,62 +66,28 @@ public class TurOTSNBrokerAPI {
 	@PostMapping
 	public String turOTSNBrokerAdd(@RequestParam("index") String siteName, @RequestParam("config") String config,
 			@RequestParam("data") String data) {
-		if (siteName.contains(",")) {
-			String[] siteNames = siteName.split(",");
-			siteName = siteNames[0];
-		}
+		siteName = getFirstSiteName(siteName);
 
 		TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder builder;
-		Document document = null;
-		try {
-			builder = factory.newDocumentBuilder();
-			document = builder.parse(new InputSource(new StringReader(data)));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		Document document = readXML(data);
 
+		return indexItem(turSNSite, document);
+
+	}
+
+	private String indexItem(TurSNSite turSNSite, Document document) {
 		if (document != null) {
 			Element element = document.getDocumentElement();
 
 			NodeList nodes = element.getChildNodes();
 
-			TurSNJobItem turSNJobItem = new TurSNJobItem();
-			Map<String, Object> attributes = new HashMap<String, Object>();
-			for (int i = 0; i < nodes.getLength(); i++) {
-
-				String nodeName = nodes.item(i).getNodeName();
-				if (attributes.containsKey(nodeName)) {
-					if (!(attributes.get(nodeName) instanceof ArrayList)) {
-						List<Object> attributeValues = new ArrayList<Object>();
-						attributeValues.add(attributes.get(nodeName));
-						attributeValues.add(nodes.item(i).getTextContent());
-
-						attributes.put(nodeName, attributeValues);
-						turSNJobItem.setAttributes(attributes);
-					} else {
-						@SuppressWarnings("unchecked")
-						List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
-						attributeValues.add(nodes.item(i).getTextContent());
-						attributes.put(nodeName, attributeValues);
-					}
-				} else {
-					attributes.put(nodeName, nodes.item(i).getTextContent());
-
-				}
-			}
-			turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
-			turSNJobItem.setAttributes(attributes);
+			TurSNJobItem turSNJobItem = createJobItem(nodes);
 
 			TurSNJobItems turSNJobItems = new TurSNJobItems();
 
 			turSNJobItems.add(turSNJobItem);
 
-			TurSNJob turSNJob = new TurSNJob();
-			turSNJob.setSiteId(turSNSite.getId());
-
-			turSNJob.setTurSNJobItems(turSNJobItems);
+			TurSNJob turSNJob = createSNJob(turSNSite, turSNJobItems);
 			logger.debug("Indexed Job by Id");
 			turSNImportAPI.send(turSNJob);
 
@@ -127,7 +95,75 @@ public class TurOTSNBrokerAPI {
 		} else {
 			return "Failed";
 		}
+	}
 
+	private TurSNJob createSNJob(TurSNSite turSNSite, TurSNJobItems turSNJobItems) {
+		TurSNJob turSNJob = new TurSNJob();
+		turSNJob.setSiteId(turSNSite.getId());
+
+		turSNJob.setTurSNJobItems(turSNJobItems);
+		return turSNJob;
+	}
+
+	private TurSNJobItem createJobItem(NodeList nodes) {
+		TurSNJobItem turSNJobItem = new TurSNJobItem();
+		Map<String, Object> attributes = addAtributesToJobItem(nodes, turSNJobItem);
+		turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+		turSNJobItem.setAttributes(attributes);
+		return turSNJobItem;
+	}
+
+	private Map<String, Object> addAtributesToJobItem(NodeList nodes, TurSNJobItem turSNJobItem) {
+		Map<String, Object> attributes = new HashMap<>();
+		for (int i = 0; i < nodes.getLength(); i++) {
+
+			String nodeName = nodes.item(i).getNodeName();
+			if (attributes.containsKey(nodeName)) {
+				if (!(attributes.get(nodeName) instanceof ArrayList)) {
+					List<Object> attributeValues = new ArrayList<>();
+					attributeValues.add(attributes.get(nodeName));
+					attributeValues.add(nodes.item(i).getTextContent());
+
+					attributes.put(nodeName, attributeValues);
+					turSNJobItem.setAttributes(attributes);
+				} else {
+					@SuppressWarnings("unchecked")
+					List<Object> attributeValues = (List<Object>) attributes.get(nodeName);
+					attributeValues.add(nodes.item(i).getTextContent());
+					attributes.put(nodeName, attributeValues);
+				}
+			} else {
+				attributes.put(nodeName, nodes.item(i).getTextContent());
+
+			}
+		}
+		return attributes;
+	}
+
+	private Document readXML(String data) {
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		try {
+			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		} catch (ParserConfigurationException e) {
+			logger.error(e.getMessage(), e);
+		}
+		DocumentBuilder builder;
+		Document document = null;
+		try {
+			builder = factory.newDocumentBuilder();
+			document = builder.parse(new InputSource(new StringReader(data)));
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
+		return document;
+	}
+
+	private String getFirstSiteName(String siteName) {
+		if (siteName.contains(",")) {
+			String[] siteNames = siteName.split(",");
+			siteName = siteNames[0];
+		}
+		return siteName;
 	}
 
 	@GetMapping
@@ -140,12 +176,9 @@ public class TurOTSNBrokerAPI {
 			TurSNJobItem turSNJobItem = new TurSNJobItem();
 			turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
 
-			if (siteName.contains(",")) {
-				String[] siteNames = siteName.split(",");
-				siteName = siteNames[0];
-			}
+			siteName = getFirstSiteName(siteName);
 			TurSNSite turSNSite = turSNSiteRepository.findByName(siteName);
-			Map<String, Object> attributes = new HashMap<String, Object>();
+			Map<String, Object> attributes = new HashMap<>();
 			if (id.isPresent()) {
 				logger.debug("Deindexed Job by Id");
 				attributes.put("id", id.get());

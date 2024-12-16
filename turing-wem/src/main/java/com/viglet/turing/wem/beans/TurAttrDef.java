@@ -25,5 +25,8 @@ public class TurAttrDef {
 	public void setMultiValue(TurMultiValue multiValue) {
 		this.multiValue = multiValue;
 	}
-
+	
+	public String toString() { 
+	    return String.format("tagName: %s, multiValue: %s", tagName, multiValue);
+	} 
 }

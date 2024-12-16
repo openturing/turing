@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2020 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,16 +19,17 @@ package com.viglet.turing.tool.ext;
 import java.sql.Connection;
 import java.util.Map;
 
-import com.viglet.turing.tool.impl.TurJDBCCustomImpl;
+import com.viglet.turing.tool.jdbc.impl.TurJDBCCustomImpl;
 
 /**
 *
 * @author Alexandre Oliveira
+* 
 * @since 0.3.0
 *
 **/
 public class TurJDBCCustomSample implements TurJDBCCustomImpl {
-	final static String TITLE = "title";
+	private static final String TITLE = "title";
 	
 	@Override
 	public Map<String, Object> run(Connection connection, Map<String, Object> attributes) {

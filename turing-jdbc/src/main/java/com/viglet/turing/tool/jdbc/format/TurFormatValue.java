@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2020 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,33 +16,37 @@
  */
 package com.viglet.turing.tool.jdbc.format;
 
-import com.viglet.turing.tool.jdbc.JDBCImportTool;
-import com.viglet.turing.util.HtmlManipulator;
+import org.jsoup.Jsoup;
+
+import com.viglet.turing.tool.jdbc.TurJDBCImportTool;
 
 /**
 *
 * @author Alexandre Oliveira
+* 
 * @since 0.3.0
 *
 **/
 public class TurFormatValue {
-	JDBCImportTool jdbcImportTool = null;
-	public TurFormatValue(JDBCImportTool jdbcImportTool) {
+	private static final String ID = "id";
+	private TurJDBCImportTool jdbcImportTool = null;
+	
+	public TurFormatValue(TurJDBCImportTool jdbcImportTool) {
 		this.jdbcImportTool = jdbcImportTool;
 	}
 	public String format(String name, String value) {
 		String[] strHTMLFields = jdbcImportTool.getHtmlField().toLowerCase().split(",");
 		for (String strHTMLField : strHTMLFields) {
-			if (name.toLowerCase().equals(strHTMLField.toLowerCase())) {
-				if (name.toLowerCase().equals("id")) {
-					this.idField(HtmlManipulator.html2Text(value));
+			if (name.equalsIgnoreCase(strHTMLField.toLowerCase())) {
+				if (name.equalsIgnoreCase(ID)) {
+					this.idField(Jsoup.parse(value).text());
 
 				} else {
-					return HtmlManipulator.html2Text(value);
+					return Jsoup.parse(value).text();
 				}
 			}
 		}
-		if (name.toLowerCase().equals("id")) {
+		if (name.equalsIgnoreCase(ID)) {
 			return this.idField(value);
 		} else {
 			return value;

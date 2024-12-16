@@ -1,0 +1,85 @@
+= Plugin for Apache Nutch for Turing AI
+Plugin for Apache Nutch to index content using crawler.
+
+== Installation
+Go to https://viglet.org/turing/download/ and click on "Integration > Crawler" link to download it.
+
+1. Extract turing-nutch.zip file into /appl/viglet/turing/nutch.
++
+```shell
+mkdir -p /appl/viglet/turing/nutch
+unzip turing-nutch.zip -d /appl/viglet/turing/nutch
+```
++
+2. Download and install Apache Nutch 1.18 binary into http://nutch.apache.org > Downloads > apache-nutch-1.18-bin.tar.gz.
++
+```shell
+mkdir -p /appl/apache/
+cp apache-nutch-1.18-bin.tar.gz /appl/apache
+cd /appl/apache
+tar -xvzf apache-nutch-1.18-bin.tar.gz
+ln -s apache-nutch-1.18-bin nutch
+```
++
+3. Copy the Turing Plugin to Apache Nutch.
++
+```shell
+cp -R /appl/viglet/nutch/indexer-viglet-turing /appl/apache/nutch/plugins
+cp -f /appl/viglet/nutch/conf/* /appl/apache/nutch/conf/
+```
++
+
+
+<<<
+== Configuration
+
+Edit the /appl/apache/nutch/conf/index-writers.xml
+
+```xml
+<writers xmlns="http://lucene.apache.org/nutch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://lucene.apache.org/nutch index-writers.xsd">
+ <writer id="indexer_viglet_turing_1"
+		class="com.viglet.turing.nutch.indexwriter.TurNutchIndexWriter">
+		<parameters>
+			<param name="url" value="http://localhost:2700" />
+			<param name="site" value="Sample" />
+			<param name="commitSize" value="1000" />
+			<param name="weight.field" value=""/>
+			<param name="auth" value="true" />
+			<param name="username" value="admin" />
+			<param name="password" value="admin" />
+		</parameters>
+		<mapping>
+			<copy>
+				<!-- <field source="content" dest="search"/> -->
+				<!-- <field source="title" dest="title,search"/> -->
+			</copy>
+			<rename>
+				<field source="metatag.description" dest="description" />
+				<field source="metatag.keywords" dest="keywords" />
+				<field source="metatag.charset" dest="charset" />
+			</rename>
+			<remove>
+				<field source="segment" />
+				<field source="boost" />
+			</remove>
+		</mapping>
+	</writer>
+</writers>
+```
+=== Parameters
+Modify the following parameters:
+
+.TurNutchIndexWriter configuration parameters
+[%header,cols=3*] 
+|===
+|Parameter Name | Description | Default value
+|url | Defines the fully qualified URL of Turing AI into which data should be indexed. | http://localhost:2700
+|site | Turing Semantic Navigation Site Name. |  Sample
+|weight.field | Field's name where the weight of the documents will be written. If it is empty no field will be used. |  
+|commitSize | Defines the number of documents to send to Turing AI in a single update batch. Decrease when handling very large documents to prevent Nutch from running out of memory.
+
+**Note**: It does not explicitly trigger a server side commit. | 1000 
+|auth | Whether to enable HTTP basic authentication for communicating with Turing AI. Use the `username` and `password` properties to configure your credentials. | true
+|username | The username of Turing AI server. | admin
+|password | The password of Turing AI server. | admin
+|===

@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.wem.broker.relator;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +26,7 @@ import com.vignette.as.client.javabean.AttributedObject;
 import com.vignette.logging.context.ContextLogger;
 
 public class TurWEMRelator {
-	private static final ContextLogger log = ContextLogger.getLogger(TurWEMRelator.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private TurWEMRelator() {
 		throw new IllegalStateException("TurWEMRelator");
@@ -33,7 +34,7 @@ public class TurWEMRelator {
 	
 	public static AttributedObject[] nestedRelators(List<String> relationTag, List<AttributedObject[]> currentRelation,
 			int currentPosition) {
-		List<AttributedObject> relators = new ArrayList<AttributedObject>();
+		List<AttributedObject> relators = new ArrayList<>();
 
 		int nextPosition = currentPosition + 1;
 
@@ -60,7 +61,7 @@ public class TurWEMRelator {
 
 	private static AttributedObject[] detectAttributesFromRelator(List<String> relationTag,
 			List<AttributedObject[]> currentRelation, int currentPosition, int nextPosition) {
-		List<AttributedObject[]> nestedRelationChild = new ArrayList<AttributedObject[]>();
+		List<AttributedObject[]> nestedRelationChild = new ArrayList<>();
 		for (AttributedObject[] attributesFromRelation : currentRelation) {
 
 			for (AttributedObject attributeFromRelation : Arrays.asList(attributesFromRelation)) {

@@ -18,9 +18,12 @@
 package com.viglet.turing.api.ml.data;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -46,43 +49,46 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
 
+import com.viglet.turing.nlp.TurNLPProcess;
 import com.viglet.turing.persistence.model.storage.TurData;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataRepository;
-import com.viglet.turing.plugins.opennlp.TurOpenNLPConnector;
+import com.viglet.turing.plugins.nlp.opennlp.TurOpenNLPConnector;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/ml/data")
-@Api(tags = "Machine Learning Data", description = "Machine Learning Data API")
+@Tag(name = "Machine Learning Data", description = "Machine Learning Data API")
 public class TurMLDataAPI {
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+	@Autowired
+	private TurDataRepository turDataRepository;
+	@Autowired
+	private TurNLPProcess turNLPProcess;
+	@Autowired
+	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	@Autowired
+	private TurOpenNLPConnector turOpenNLPConnector;
 	
-	@Autowired
-	TurDataRepository turDataRepository;
-	@Autowired
-	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
-	@Autowired
-	TurOpenNLPConnector turOpenNLPConnector;
-	
-	@ApiOperation(value = "Machine Learning Data List")
+	@Operation(summary = "Machine Learning Data List")
 	@GetMapping
 	public List<TurData> turDataList() throws JSONException {
 		return this.turDataRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Machine Learning Data")
+	@Operation(summary = "Show a Machine Learning Data")
 	@GetMapping("/{id}")
 	public TurData turDataGet(@PathVariable int id) throws JSONException {
 		return this.turDataRepository.findById(id);
 	}
 
-	@ApiOperation(value = "Update a Machine Learning Data")
+	@Operation(summary = "Update a Machine Learning Data")
 	@PutMapping("/{id}")
-	public TurData turDataUpdate(@PathVariable int id, @RequestBody TurData turData) throws Exception {
+	public TurData turDataUpdate(@PathVariable int id, @RequestBody TurData turData) {
 		TurData turDataEdit = this.turDataRepository.findById(id);
 		turDataEdit.setName(turData.getName());
 		turDataEdit.setType(turData.getType());
@@ -91,44 +97,29 @@ public class TurMLDataAPI {
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning Data")
+	@Operation(summary = "Delete a Machine Learning Data")
 	@DeleteMapping("/{id}")
-	public boolean turDataDelete(@PathVariable int id) throws Exception {
+	public boolean turDataDelete(@PathVariable int id) {
 		this.turDataRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Machine Learning Data")
+	@Operation(summary = "Create a Machine Learning Data")
 	@PostMapping
-	public TurData turDataAdd(@RequestBody TurData turData) throws Exception {
+	public TurData turDataAdd(@RequestBody TurData turData) {
 		this.turDataRepository.save(turData);
 		return turData;
 
 	}
 
-	@PostMapping("/import")	
+	@PostMapping("/import")
 	@Transactional
 	public String turDataImport(@RequestParam("file") MultipartFile multipartFile)
-			throws JSONException, IOException, SAXException, TikaException {
+			 {
 
-		AutoDetectParser parser = new AutoDetectParser();
-		BodyContentHandler handler = new BodyContentHandler(-1);
-		Metadata metadata = new Metadata();
+		BodyContentHandler handler = processMultifileAsPDF(multipartFile);
 
-		TesseractOCRConfig config = new TesseractOCRConfig();
-		PDFParserConfig pdfConfig = new PDFParserConfig();
-		pdfConfig.setExtractInlineImages(true);
-
-		ParseContext parseContext = new ParseContext();
-		parseContext.set(TesseractOCRConfig.class, config);
-		parseContext.set(PDFParserConfig.class, pdfConfig);
-
-		parseContext.set(Parser.class, parser);
-
-		parser.parse(multipartFile.getInputStream(), handler, metadata, parseContext);
-		
-
-		String sentences[] = turOpenNLPConnector.sentenceDetect(handler.toString());
+		String[] sentences = turOpenNLPConnector.sentenceDetect(turNLPProcess.getDefaultNLPInstance(), handler.toString());
 
 		TurData turData = new TurData();
 
@@ -142,9 +133,32 @@ public class TurMLDataAPI {
 			turDataGroupSentence.setSentence(sentence);
 			this.turDataGroupSentenceRepository.save(turDataGroupSentence);
 		}
-		
+
 		JSONObject jsonTraining = new JSONObject();
 		jsonTraining.put("sentences", sentences);
 		return jsonTraining.toString();
+	}
+
+	private BodyContentHandler processMultifileAsPDF(MultipartFile multipartFile) {
+		AutoDetectParser autoDetectParser = new AutoDetectParser();
+		BodyContentHandler bodyContentHandler = new BodyContentHandler(-1);
+		Metadata metadata = new Metadata();
+
+		TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
+		PDFParserConfig pdfParserConfig = new PDFParserConfig();
+		pdfParserConfig.setExtractInlineImages(true);
+
+		ParseContext parseContext = new ParseContext();
+		parseContext.set(TesseractOCRConfig.class, tesseractOCRConfig);
+		parseContext.set(PDFParserConfig.class, pdfParserConfig);
+
+		parseContext.set(Parser.class, autoDetectParser);
+
+		try {
+			autoDetectParser.parse(multipartFile.getInputStream(), bodyContentHandler, metadata, parseContext);
+		} catch (IOException | SAXException | TikaException e) {
+			logger.error(e.getMessage(), null, multipartFile, autoDetectParser, bodyContentHandler, metadata, tesseractOCRConfig, pdfParserConfig, parseContext, e);
+		}
+		return bodyContentHandler;
 	}
 }

@@ -49,9 +49,6 @@ public class TurDataGroupData implements Serializable {
 	@JsonBackReference (value="turDataGroupData-turDataGroup")
 	private TurDataGroup turDataGroup;
 
-	public TurDataGroupData() {
-	}
-
 	public int getId() {
 		return this.id;
 	}

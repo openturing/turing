@@ -17,105 +17,89 @@
 
 package com.viglet.turing.exchange;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.exchange.sn.TurSNSiteImport;
+import com.viglet.turing.utils.TurUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
-import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.viglet.turing.exchange.sn.TurSNSiteImport;
-import com.viglet.turing.utils.TurUtils;
 
 @Component
 public class TurImportExchange {
-
-	@Autowired
-	private TurUtils turUtils;
+	private static final Logger logger = LogManager.getLogger(TurImportExchange.class);
 	@Autowired
 	private TurSNSiteImport turSNSiteImport;
+	private static final String EXPORT_FILE = "export.json";
+	private Map<String, Object> shObjects = new HashMap<>();
+	private Map<String, List<String>> shChildObjects = new HashMap<>();
 
-	private Map<String, Object> shObjects = new HashMap<String, Object>();
-	private Map<String, List<String>> shChildObjects = new HashMap<String, List<String>>();
-
-	public TurExchange importFromMultipartFile(MultipartFile multipartFile)
-			throws IllegalStateException, IOException, ArchiveException {
+	public TurExchange importFromMultipartFile(MultipartFile multipartFile) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		File parentExtractFolder = null;
 
 		if (extractFolder != null) {
 			// Check if export.json exists, if it is not exist try access a sub directory
-			if (!(new File(extractFolder, "export.json").exists()) && (extractFolder.listFiles().length == 1)) {
+			if (!(new File(extractFolder, EXPORT_FILE).exists()) && (extractFolder.listFiles().length == 1)) {
 				for (File fileOrDirectory : extractFolder.listFiles()) {
-					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, "export.json").exists()) {
+					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, EXPORT_FILE).exists()) {
 						parentExtractFolder = extractFolder;
 						extractFolder = fileOrDirectory;
 					}
 				}
 			}
-			ObjectMapper mapper = new ObjectMapper();
-
+			importSNSiteFromExportFile(extractFolder, parentExtractFolder);
+		}
+		return new TurExchange();
+	}
+	private TurExchange importSNSiteFromExportFile(File extractFolder, File parentExtractFolder) {
+		ObjectMapper mapper = new ObjectMapper();
+		try {
 			TurExchange turExchange = mapper.readValue(
-					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator + "export.json")),
+					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator).concat(EXPORT_FILE)),
 					TurExchange.class);
 
-			if (turExchange.getSnSites() != null && turExchange.getSnSites().size() > 0) {
+			if (turExchange.getSnSites() != null && !turExchange.getSnSites().isEmpty()) {
 				turSNSiteImport.importSNSite(turExchange);
 			}
 
-			try {
-				FileUtils.deleteDirectory(extractFolder);
-				if (parentExtractFolder != null) {
-					FileUtils.deleteDirectory(parentExtractFolder);
-				}
-			} catch (IOException ex) {
-				ex.printStackTrace();
+			FileUtils.deleteDirectory(extractFolder);
+			if (parentExtractFolder != null) {
+				FileUtils.deleteDirectory(parentExtractFolder);
 			}
+
 			return turExchange;
-		} else {
-			return null;
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
 		}
+		return new TurExchange();
 	}
 
-	public TurExchange importFromFile(File file) throws IOException, IllegalStateException, ArchiveException {
+	public TurExchange importFromFile(File file) {
 
-		FileInputStream input = new FileInputStream(file);
-		MultipartFile multipartFile = new MockMultipartFile(file.getName(), IOUtils.toByteArray(input));
-
-		return this.importFromMultipartFile(multipartFile);
+		try (FileInputStream input = new FileInputStream(file)) {
+			MultipartFile multipartFile = new MockMultipartFile(file.getName(), IOUtils.toByteArray(input));
+			return this.importFromMultipartFile(multipartFile);
+		} catch (IOException | IllegalStateException e) {
+			logger.error(e.getMessage(), e);
+		}
+		return new TurExchange();
 	}
 
-	public File extractZipFile(MultipartFile file) throws IllegalStateException, IOException, ArchiveException {
+	public File extractZipFile(MultipartFile file) {
 		shObjects.clear();
 		shChildObjects.clear();
-
-		File userDir = new File(System.getProperty("user.dir"));
-		if (userDir.exists() && userDir.isDirectory()) {
-			File tmpDir = new File(userDir.getAbsolutePath().concat(File.separator + "store" + File.separator + "tmp"));
-			if (!tmpDir.exists()) {
-				tmpDir.mkdirs();
-			}
-
-			File zipFile = new File(tmpDir.getAbsolutePath()
-					.concat(File.separator + "imp_" + file.getOriginalFilename() + UUID.randomUUID()));
-
-			file.transferTo(zipFile);
-			File extractFolder = new File(tmpDir.getAbsolutePath().concat(File.separator + "imp_" + UUID.randomUUID()));
-			turUtils.unZipIt(zipFile, extractFolder);
-			FileUtils.deleteQuietly(zipFile);
-			return extractFolder;
-		} else {
-			return null;
-		}
+		return TurUtils.extractZipFile(file);
 	}
 }

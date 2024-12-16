@@ -75,7 +75,6 @@ public class TurSNSiteExchange {
 	}
 
 	public TurSNSiteExchange(TurSNSite turSNSite) {
-		this.setCore(turSNSite.getCore());
 		this.setDefaultDateField(turSNSite.getDefaultDateField());
 		this.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
 		this.setDefaultImageField(turSNSite.getDefaultImageField());
@@ -83,20 +82,16 @@ public class TurSNSiteExchange {
 		this.setDefaultTitleField(turSNSite.getDefaultTitleField());
 		this.setDefaultURLField(turSNSite.getDefaultURLField());
 		this.setDescription(turSNSite.getDescription());
-		this.setFacet(turSNSite.getFacet() == 1 ? true : false);
-		this.setHl(turSNSite.getHl() == 1 ? true : false);
+		this.setFacet(turSNSite.getFacet() == 1);
+		this.setHl(turSNSite.getHl() == 1);
 		this.setHlPost(turSNSite.getHlPost());
 		this.setHlPre(turSNSite.getHlPre());
 		this.setId(turSNSite.getId());
 		this.setItemsPerFacet(turSNSite.getItemsPerFacet());
-		this.setLanguage(turSNSite.getLanguage());
-		this.setMlt(turSNSite.getMlt() == 1 ? true : false);
+		this.setMlt(turSNSite.getMlt() == 1);
 		this.setName(turSNSite.getName());
 		this.setRowsPerPage(turSNSite.getRowsPerPage());
-		this.setThesaurus(turSNSite.getThesaurus() == 1 ? true : false);
-		if (turSNSite.getTurNLPInstance() != null) {
-			this.setTurNLPInstance(turSNSite.getTurNLPInstance().getId());
-		}
+		this.setThesaurus(turSNSite.getThesaurus() == 1);
 		if (turSNSite.getTurSEInstance() != null) {
 			this.setTurSEInstance(turSNSite.getTurSEInstance().getId());
 		}

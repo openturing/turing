@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2019 the original author or authors. 
+ * Copyright (C) 2016-2021 the original author or authors. 
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,27 +18,31 @@
 package com.viglet.turing.persistence.model.sn;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.*;
 
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 
 /**
- * The persistent class for the vigServices database table.
+ * The persistent class for the TurSNSite database table.
  * 
  */
 @Entity
 @Table(name = "turSNSite")
 @NamedQuery(name = "TurSNSite.findAll", query = "SELECT sns FROM TurSNSite sns")
+@JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights", "turSNSiteLocales" })
 public class TurSNSite implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -55,23 +59,17 @@ public class TurSNSite implements Serializable {
 	@Column(nullable = false, length = 255)
 	private String description;
 
-	@Column(nullable = false, length = 5)
-	private String language;
-
-	@Column(nullable = false, length = 50)
-	private String core;
+	@Column(nullable = true)
+	private Integer rowsPerPage;
 
 	@Column(nullable = true)
-	private int rowsPerPage;
+	private Integer facet;
 
 	@Column(nullable = true)
-	private int facet;
+	private Integer itemsPerFacet;
 
 	@Column(nullable = true)
-	private int itemsPerFacet;
-
-	@Column(nullable = true)
-	private int hl;
+	private Integer hl;
 
 	@Column(nullable = true, length = 50)
 	private String hlPre;
@@ -80,10 +78,10 @@ public class TurSNSite implements Serializable {
 	private String hlPost;
 
 	@Column(nullable = true)
-	private int mlt;
+	private Integer mlt;
 
 	@Column(nullable = true)
-	private int thesaurus;
+	private Integer thesaurus;
 
 	@Column(nullable = true)
 	private String defaultTitleField;
@@ -103,32 +101,48 @@ public class TurSNSite implements Serializable {
 	@Column(nullable = true)
 	private String defaultURLField;
 
+	@Column(nullable = true)
+	private Integer spellCheck;
+
+	@Column(nullable = true)
+	private Integer spellCheckFixes;
+	
+	@Column(nullable = true)
+	private Integer spotlightWithResults;
+	
 	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
 	private TurSEInstance turSEInstance;
 
-	// bi-directional many-to-one association to TurNLPInstance
+	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
-	@JoinColumn(name = "nlp_instance_id", nullable = true)
-	private TurNLPInstance turNLPInstance;
+	@JoinColumn(name = "nlp_vendor_id", nullable = true)
+	private TurNLPVendor turNLPVendor;
 
-	// bi-directional many-to-one association to TurSNSiteField
-	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
+	// bi-directional many-to-one association to turSNSiteFields
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteField> turSNSiteFields;
+	private Set<TurSNSiteField> turSNSiteFields = new HashSet<>();
 
-	// bi-directional many-to-one association to TurSNSiteFieldExt
-	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true)
+	// bi-directional many-to-one association to turSNSiteFieldExts
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
-	@Fetch(org.hibernate.annotations.FetchMode.JOIN)
 	@OnDelete(action = OnDeleteAction.CASCADE)
-	private Set<TurSNSiteFieldExt> turSNSiteFieldExts;
+	private Set<TurSNSiteFieldExt> turSNSiteFieldExts = new HashSet<>();
 
-	public TurSNSite() {
-	}
+	// bi-directional many-to-one association to turSNSiteSpotlights
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
+	@Cascade({ CascadeType.ALL })
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNSiteSpotlight> turSNSiteSpotlights = new HashSet<>();
+
+	// bi-directional many-to-one association to turSNSiteLocales
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
+	@Cascade({ CascadeType.ALL })
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNSiteLocale> turSNSiteLocales = new HashSet<>();
 
 	public String getId() {
 		return id;
@@ -154,14 +168,6 @@ public class TurSNSite implements Serializable {
 		this.description = description;
 	}
 
-	public String getLanguage() {
-		return language;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
-	}
-
 	public TurSEInstance getTurSEInstance() {
 		return turSEInstance;
 	}
@@ -170,12 +176,12 @@ public class TurSNSite implements Serializable {
 		this.turSEInstance = turSEInstance;
 	}
 
-	public TurNLPInstance getTurNLPInstance() {
-		return turNLPInstance;
+	public TurNLPVendor getTurNLPVendor() {
+		return turNLPVendor;
 	}
 
-	public void setTurNLPInstance(TurNLPInstance turNLPInstance) {
-		this.turNLPInstance = turNLPInstance;
+	public void setTurNLPVendor(TurNLPVendor turNLPVendor) {
+		this.turNLPVendor = turNLPVendor;
 	}
 
 	public Set<TurSNSiteField> getTurSNSiteFields() {
@@ -193,38 +199,30 @@ public class TurSNSite implements Serializable {
 		return turSNSiteField;
 	}
 
-	public TurSNSiteField removeTurNLPInstanceEntity(TurSNSiteField turSNSiteField) {
+	public TurSNSiteField removeTurSNSiteField(TurSNSiteField turSNSiteField) {
 		getTurSNSiteFields().remove(turSNSiteField);
 		turSNSiteField.setTurSNSite(this);
 
 		return turSNSiteField;
 	}
 
-	public String getCore() {
-		return core;
-	}
-
-	public void setCore(String core) {
-		this.core = core;
-	}
-
-	public int getRowsPerPage() {
+	public Integer getRowsPerPage() {
 		return rowsPerPage;
 	}
 
-	public void setRowsPerPage(int rowsPerPage) {
+	public void setRowsPerPage(Integer rowsPerPage) {
 		this.rowsPerPage = rowsPerPage;
 	}
 
-	public int getFacet() {
+	public Integer getFacet() {
 		return facet;
 	}
 
-	public void setFacet(int facet) {
+	public void setFacet(Integer facet) {
 		this.facet = facet;
 	}
 
-	public int getItemsPerFacet() {
+	public Integer getItemsPerFacet() {
 		return itemsPerFacet;
 	}
 
@@ -232,11 +230,11 @@ public class TurSNSite implements Serializable {
 		this.itemsPerFacet = itemsPerFacet;
 	}
 
-	public int getHl() {
+	public Integer getHl() {
 		return hl;
 	}
 
-	public void setHl(int hl) {
+	public void setHl(Integer hl) {
 		this.hl = hl;
 	}
 
@@ -256,19 +254,19 @@ public class TurSNSite implements Serializable {
 		this.hlPost = hlPost;
 	}
 
-	public int getMlt() {
+	public Integer getMlt() {
 		return mlt;
 	}
 
-	public void setMlt(int mlt) {
+	public void setMlt(Integer mlt) {
 		this.mlt = mlt;
 	}
 
-	public int getThesaurus() {
+	public Integer getThesaurus() {
 		return thesaurus;
 	}
 
-	public void setThesaurus(int thesaurus) {
+	public void setThesaurus(Integer thesaurus) {
 		this.thesaurus = thesaurus;
 	}
 
@@ -320,4 +318,29 @@ public class TurSNSite implements Serializable {
 		this.defaultImageField = defaultImageField;
 	}
 
+	public Integer getSpellCheck() {
+		return spellCheck;
+	}
+
+	public void setSpellCheck(Integer spellCheck) {
+		this.spellCheck = spellCheck;
+	}
+
+	public Integer getSpellCheckFixes() {
+		return spellCheckFixes;
+	}
+
+	public void setSpellCheckFixes(Integer spellCheckFixes) {
+		this.spellCheckFixes = spellCheckFixes;
+	}
+
+	public Integer getSpotlightWithResults() {
+		return spotlightWithResults;
+	}
+
+	public void setSpotlightWithResults(Integer spotlightWithResults) {
+		this.spotlightWithResults = spotlightWithResults;
+	}
+	
+	
 }

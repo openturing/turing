@@ -34,8 +34,6 @@ public interface TurDataGroupSentenceRepository extends JpaRepository<TurDataGro
 
 	TurDataGroupSentence findById(int id);
 
-	TurDataGroupSentence save(TurDataGroupSentence turDataGroupSentence);
-
 	void delete(TurDataGroupSentence turDataGroupSentence);
 	
 	@Modifying

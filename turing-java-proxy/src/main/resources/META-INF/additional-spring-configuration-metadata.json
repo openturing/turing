@@ -1,0 +1,5 @@
+{"properties": [{
+  "name": "turing.endpoint",
+  "type": "java.lang.String",
+  "description": "Turing Endpoint, for instance: http://localhost:2700"
+}]}

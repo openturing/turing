@@ -46,9 +46,6 @@ public class TurMLModel implements Serializable {
 	@Column(nullable=false, length=50)
 	private String name;
 
-	public TurMLModel() {
-	}
-
 	public int getId() {
 		return this.id;
 	}

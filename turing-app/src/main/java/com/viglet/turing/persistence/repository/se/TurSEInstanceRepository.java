@@ -36,6 +36,7 @@ public interface TurSEInstanceRepository extends JpaRepository<TurSEInstance, St
 	@Cacheable("turSEInstancefindById")
 	Optional<TurSEInstance> findById(String id);
 
+	@SuppressWarnings("unchecked")
 	@CacheEvict(value = { "turSEInstancefindAll", "turSEInstancefindById" }, allEntries = true)
 	TurSEInstance save(TurSEInstance turSEInstance);
 

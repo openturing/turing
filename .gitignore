@@ -10,8 +10,10 @@ db-encrypted.properties
 /.vscode
 /.settings
 /.project
-/volumes
-
+/volumes/mariadb/*
+/volumes/turing/*
+!/volumes/turing/.gitkeep
+!/volumes/mariadb/.gitkeep
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 /bin/
@@ -30,3 +32,6 @@ hs_err_pid*
 /models
 .metals
 .bloop
+.sonar_lock
+/.idea
+.project

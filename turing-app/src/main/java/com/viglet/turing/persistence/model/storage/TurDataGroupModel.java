@@ -41,7 +41,6 @@ public class TurDataGroupModel implements Serializable {
 	@Column(unique = true, nullable = false)
 	private int id;
 
-	// bi-directional many-to-one association to TurCategory
 	@OneToOne
 	private TurMLModel turMLModel;
 
@@ -51,9 +50,6 @@ public class TurDataGroupModel implements Serializable {
 	@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 	@JsonIdentityReference(alwaysAsId = true)
 	private TurDataGroup turDataGroup;
-
-	public TurDataGroupModel() {
-	}
 
 	public int getId() {
 		return this.id;

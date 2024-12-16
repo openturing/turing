@@ -20,22 +20,23 @@ package com.viglet.turing.se.result;
 import java.util.List;
 
 import com.viglet.turing.se.facet.TurSEFacetResult;
+import com.viglet.turing.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.se.similar.TurSESimilarResult;
 
 public class TurSEResults {
-	int qTime;
-	long elapsedTime;
-	long numFound;
-	long start;
-	int limit;
-	int pageCount;
-	int currentPage;
-	String queryString;
-	String sort;
-	
-	List<TurSESimilarResult> similarResults;
-	List<TurSEFacetResult> facetResults;
-	List<TurSEResult> results;
+	private int qTime;
+	private long elapsedTime;
+	private long numFound;
+	private long start;
+	private int limit;
+	private int pageCount;
+	private int currentPage;
+	private String queryString;
+	private String sort;
+	private TurSESpellCheckResult spellCheck;
+	private List<TurSESimilarResult> similarResults;
+	private List<TurSEFacetResult> facetResults;
+	private List<TurSEResult> results;
 
 	public List<TurSESimilarResult> getSimilarResults() {
 		return similarResults;
@@ -131,5 +132,13 @@ public class TurSEResults {
 
 	public void setResults(List<TurSEResult> results) {
 		this.results = results;
+	}
+
+	public TurSESpellCheckResult getSpellCheck() {
+		return spellCheck;
+	}
+
+	public void setSpellCheck(TurSESpellCheckResult spellCheck) {
+		this.spellCheck = spellCheck;
 	}
 }

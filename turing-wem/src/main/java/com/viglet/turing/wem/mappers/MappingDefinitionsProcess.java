@@ -16,33 +16,28 @@
  */
 package com.viglet.turing.wem.mappers;
 
-import org.w3c.dom.*;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-
 import com.viglet.turing.wem.beans.TurCTDMappingMap;
 import com.viglet.turing.wem.beans.TuringTag;
 import com.viglet.turing.wem.beans.TuringTagMap;
 import com.viglet.turing.wem.config.IHandlerConfiguration;
-import com.viglet.turing.wem.config.TurXMLConstant;
 import com.vignette.logging.context.ContextLogger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
+import java.util.*;
+import java.util.Map.Entry;
 
 // Open and process Mappping XML File structure
 public class MappingDefinitionsProcess {
-	private static final ContextLogger log = ContextLogger.getLogger(MappingDefinitionsProcess.class);
+	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	private MappingDefinitionsProcess() {
 		throw new IllegalStateException("MappingDefinitionsProcess");
@@ -53,8 +48,6 @@ public class MappingDefinitionsProcess {
 
 		try {
 			DocumentBuilderFactory dlf = DocumentBuilderFactory.newInstance();
-			dlf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-			dlf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
 			DocumentBuilder db = dlf.newDocumentBuilder();
 
 			File f = new File(resourceXml);
@@ -92,10 +85,7 @@ public class MappingDefinitionsProcess {
 	}
 
 	private static List<TuringTag> readCommonIndexAttrs(Element rootElement) {
-		// Read <common-index-attrs/>
-		List<TuringTag> commonIndexAttrs = readIndexAttributeMappings(rootElement,
-				TurXMLConstant.TAG_COMMON_INDEX_DATA);
-		return commonIndexAttrs;
+		return readIndexAttributeMappings(rootElement, TurXMLConstant.TAG_COMMON_INDEX_DATA);
 	}
 
 	private static void readMappingDefinitions(Element rootElement, TurCTDMappingMap mappings,
@@ -143,16 +133,15 @@ public class MappingDefinitionsProcess {
 		int index = 0;
 		for (Entry<String, CTDMappings> mappingEntry : mappings.entrySet()) {
 			log.debug(String.format("%d - MappingEntry CTD : %s", index, mappingEntry.getKey()));
-			for (Entry<String, ArrayList<TuringTag>> turingTagEntry : mappingEntry.getValue()
-					.getTuringTagMap().entrySet()) {
+			for (Entry<String, ArrayList<TuringTag>> turingTagEntry : mappingEntry.getValue().getTuringTagMap()
+					.entrySet()) {
 				log.debug("TuringTag Key (TagName): " + turingTagEntry.getKey());
 				for (TuringTag turingTag : turingTagEntry.getValue()) {
 					log.debug("TuringTag Item - getTagName : " + turingTag.getTagName());
 					log.debug("TuringTag Item - getSrcAttributeType : " + turingTag.getSrcAttributeType());
 					log.debug("TuringTag Item - getSrcClassName : " + turingTag.getSrcClassName());
 					log.debug("TuringTag Item - getSrcXmlName : " + turingTag.getSrcXmlName());
-					log.debug("TuringTag Item - getSrcAttributeRelation : "
-							+ turingTag.getSrcAttributeRelation());
+					log.debug("TuringTag Item - getSrcAttributeRelation : " + turingTag.getSrcAttributeRelation());
 					log.debug("TuringTag Item - getSrcMandatory : " + turingTag.getSrcMandatory());
 				}
 			}
@@ -164,7 +153,7 @@ public class MappingDefinitionsProcess {
 
 		TuringTagMap indexAttrsMapMerged = new TuringTagMap();
 
-		Map<String, TuringTag> commonIndexAttrMap = new HashMap<String, TuringTag>();
+		Map<String, TuringTag> commonIndexAttrMap = new HashMap<>();
 		for (TuringTag turingTag : commonIndexAttrs)
 			commonIndexAttrMap.put(turingTag.getTagName(), turingTag);
 
@@ -178,7 +167,7 @@ public class MappingDefinitionsProcess {
 				}
 
 				if (!indexAttrsMapMerged.containsKey(turingTag.getTagName()))
-					indexAttrsMapMerged.put(turingTag.getTagName(), new ArrayList<TuringTag>());
+					indexAttrsMapMerged.put(turingTag.getTagName(), new ArrayList<>());
 				indexAttrsMapMerged.get(turingTag.getTagName()).add(turingTag);
 			}
 		}
@@ -187,7 +176,7 @@ public class MappingDefinitionsProcess {
 		for (TuringTag commonTuringTag : commonIndexAttrs) {
 			// Doesn't repeat tags that exist in Ctd
 			if (commonTuringTag.getSrcMandatory() && !indexAttrsMapMerged.containsKey(commonTuringTag.getTagName())) {
-				ArrayList<TuringTag> turingTags = new ArrayList<TuringTag>();
+				ArrayList<TuringTag> turingTags = new ArrayList<>();
 				turingTags.add(commonTuringTag);
 				indexAttrsMapMerged.put(commonTuringTag.getTagName(), turingTags);
 			}
@@ -198,7 +187,7 @@ public class MappingDefinitionsProcess {
 
 	// Read <index-attrs/> or <common-index-attrs/>
 	public static List<TuringTag> readIndexAttributeMappings(Element rootElement, String genericIndexAttrsTag) {
-		List<TuringTag> turingTagMap = new ArrayList<TuringTag>();
+		List<TuringTag> turingTagMap = new ArrayList<>();
 		NodeList attributes = rootElement.getElementsByTagName(genericIndexAttrsTag);
 		for (int i = 0; i < attributes.getLength(); i++) {
 			// Load <srcAttr/> List
@@ -217,12 +206,14 @@ public class MappingDefinitionsProcess {
 	// Load <srcAttr/> List
 	public static List<TuringTag> loadAtributesFromAttrsElement(Element attrsElement) {
 		NodeList srcNodeList = attrsElement.getElementsByTagName("srcAttr");
-		List<TuringTag> turingTagsPerSrcAttr = new ArrayList<TuringTag>();
+		List<TuringTag> turingTagsPerSrcAttr = new ArrayList<>();
 
 		for (int i = 0; i < srcNodeList.getLength(); i++) {
 			Element srcAttrNode = (Element) srcNodeList.item(i);
 			if (srcAttrNode.hasAttributes() && (srcAttrNode.hasAttribute(TurXMLConstant.XML_NAME_ATT)
-					|| srcAttrNode.hasAttribute(TurXMLConstant.CLASS_NAME_ATT))) {
+					|| srcAttrNode.hasAttribute(TurXMLConstant.CLASS_NAME_ATT)
+					|| srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT)
+					|| srcAttrNode.hasAttribute(TurXMLConstant.RELATION_ATT))) {
 				List<TuringTag> turingTags = loadSrcAttr(srcAttrNode);
 				if (turingTags != null)
 					turingTagsPerSrcAttr.addAll(turingTags);
@@ -235,7 +226,8 @@ public class MappingDefinitionsProcess {
 	public static List<TuringTag> loadSrcAttr(Element srcAttrNode) {
 		TuringTag turingTagCheck = detectXMLAttributesOfSrcAttr(srcAttrNode);
 
-		if ((turingTagCheck.getSrcXmlName() != null) || (turingTagCheck.getSrcClassName() != null)) {
+		if ((turingTagCheck.getSrcXmlName() != null) || (turingTagCheck.getSrcClassName() != null)
+				|| (turingTagCheck.getTextValue() != null)) {
 			ArrayList<TuringTag> turingTags = readTagList(srcAttrNode);
 			if (!turingTags.isEmpty()) {
 				return turingTags;
@@ -248,6 +240,8 @@ public class MappingDefinitionsProcess {
 		TuringTag turingTag = new TuringTag();
 		if (srcAttrNode.hasAttribute(TurXMLConstant.XML_NAME_ATT))
 			turingTag.setSrcXmlName(srcAttrNode.getAttribute(TurXMLConstant.XML_NAME_ATT));
+		else if (srcAttrNode.hasAttribute(TurXMLConstant.RELATION_ATT)) // No XMLName, but it has relation attribute
+			turingTag.setSrcXmlName(srcAttrNode.getAttribute(TurXMLConstant.RELATION_ATT));
 
 		if (srcAttrNode.hasAttribute(TurXMLConstant.CLASS_NAME_ATT))
 			turingTag.setSrcClassName(srcAttrNode.getAttribute(TurXMLConstant.CLASS_NAME_ATT));
@@ -259,15 +253,15 @@ public class MappingDefinitionsProcess {
 			turingTag.setSrcAttributeRelation(
 					Arrays.asList(srcAttrNode.getAttribute(TurXMLConstant.RELATION_ATT).split("\\.")));
 
-		if (srcAttrNode.hasAttribute(TurXMLConstant.MANDATORY_ATT)) {
-			if (log.isDebugEnabled())
-				log.debug(String.format("MANDATORY: %s", srcAttrNode.getAttribute(TurXMLConstant.MANDATORY_ATT)));
+		if (srcAttrNode.hasAttribute(TurXMLConstant.TEXT_VALUE_ATT)) {
+			turingTag.setTextValue(srcAttrNode.getAttribute(TurXMLConstant.TEXT_VALUE_ATT));
+		}
 
-			turingTag.setSrcMandatory(
-					Boolean.parseBoolean(srcAttrNode.getAttribute(TurXMLConstant.MANDATORY_ATT)));
-
-		} else
+		if (srcAttrNode.hasAttribute(TurXMLConstant.MANDATORY_ATT))
+			turingTag.setSrcMandatory(Boolean.parseBoolean(srcAttrNode.getAttribute(TurXMLConstant.MANDATORY_ATT)));
+		else
 			turingTag.setSrcMandatory(false);
+	
 		if (log.isDebugEnabled())
 			log.debug(String.format("Mandatory: %b", turingTag.getSrcMandatory()));
 
@@ -277,10 +271,10 @@ public class MappingDefinitionsProcess {
 	}
 
 	private static ArrayList<TuringTag> readTagList(Element srcAttrNode) {
-		
+
 		NodeList tagList = (srcAttrNode).getElementsByTagName("tag");
-		
-		ArrayList<TuringTag> turingTags = new ArrayList<TuringTag>();
+
+		ArrayList<TuringTag> turingTags = new ArrayList<>();
 
 		for (int nodePos = 0; nodePos < tagList.getLength(); nodePos++) {
 			TuringTag turingTag = detectXMLAttributesOfSrcAttr(srcAttrNode);

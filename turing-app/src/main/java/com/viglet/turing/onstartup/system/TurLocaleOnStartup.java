@@ -34,17 +34,18 @@ public class TurLocaleOnStartup {
 	public void createDefaultRows() {
 
 		if (turLocaleRepository.findAll().isEmpty()) {
-
 			turLocaleRepository.save(new TurLocale("ar", "العربية - Arabic", "العربية - Árabe"));
 			turLocaleRepository.save(new TurLocale("bn", "বাংলা - Bengali", "বাংলা - Bengali"));
-			turLocaleRepository.save(new TurLocale("ca", "Català - Catalan (beta)", "Català - Catalão (beta)"));
+			turLocaleRepository.save(new TurLocale("ca", "Català - Catalan", "Català - Catalão"));
 			turLocaleRepository.save(new TurLocale("cs", "Čeština - Czech", "Čeština - Tcheco"));
 			turLocaleRepository.save(new TurLocale("da", "Dansk - Danish", "Dansk - Dinamarquês"));
 			turLocaleRepository.save(new TurLocale("de", "Deutsch - German", "Deutsch - Alemão"));
 			turLocaleRepository.save(new TurLocale("el", "Ελληνικά - Greek", "Ελληνικά - Grego"));
-			turLocaleRepository.save(new TurLocale(TurLocaleRepository.EN_US, "English", "English - Inglês"));
-			turLocaleRepository
-					.save(new TurLocale(TurLocaleRepository.EN_GB, "English UK - British English", "English UK - Inglês britânico"));
+			turLocaleRepository.save(new TurLocale("en", "English", "English - Inglês"));
+			turLocaleRepository.save(new TurLocale(TurLocaleRepository.EN_US, "English - American English",
+					"English - Inglês Americano"));
+			turLocaleRepository.save(new TurLocale(TurLocaleRepository.EN_GB, "English UK - British English",
+					"English UK - Inglês britânico"));
 			turLocaleRepository.save(new TurLocale("es", "Español - Spanish", "Español - Espanhol"));
 			turLocaleRepository.save(new TurLocale("eu", "Euskara - Basque", "Euskara - Basco"));
 			turLocaleRepository.save(new TurLocale("fa", "فارسی - Persian", "فارسی - Persa"));
@@ -68,9 +69,11 @@ public class TurLocaleOnStartup {
 			turLocaleRepository.save(new TurLocale("nl", "Nederlands - Dutch", "Nederlands - Holandês"));
 			turLocaleRepository.save(new TurLocale("no", "Norsk - Norwegian", "Norsk - Norueguês"));
 			turLocaleRepository.save(new TurLocale("pl", "Polski - Polish", "Polski - Polonês"));
+			turLocaleRepository.save(new TurLocale("pt", "Português - Portuguese", "Português"));
 			turLocaleRepository
 					.save(new TurLocale("pt-pt", "Português - Portuguese (Portugal)", "Português (Portugal)"));
-			turLocaleRepository.save(new TurLocale(TurLocaleRepository.PT_BR, "Português - Portuguese (Brazil)", "Português (Brasil)"));
+			turLocaleRepository.save(
+					new TurLocale(TurLocaleRepository.PT_BR, "Português - Portuguese (Brazil)", "Português (Brasil)"));
 			turLocaleRepository.save(new TurLocale("ro", "Română - Romanian", "Română - Romeno"));
 			turLocaleRepository.save(new TurLocale("ru", "Русский - Russian", "Русский - Russo"));
 			turLocaleRepository.save(new TurLocale("sv", "Svenska - Swedish", "Svenska - Sueco"));
@@ -81,6 +84,7 @@ public class TurLocaleOnStartup {
 			turLocaleRepository.save(new TurLocale("ur", "اردو - Urdu", "اردو - Urdu"));
 			turLocaleRepository.save(new TurLocale("vi", "Tiếng Việt - Vietnamese", "Tiếng Việt - Vietnamita"));
 			turLocaleRepository.save(new TurLocale("xx-lc", "LOLCATZ - Lolcat", "LOLCATZ - Lolcat"));
+			turLocaleRepository.save(new TurLocale("zh", "Chinese", "Chinês"));
 			turLocaleRepository.save(new TurLocale("zh-cn", "简体中文 - Simplified Chinese", "简体中文 - Chinês simplificado"));
 			turLocaleRepository.save(new TurLocale("zh-tw", "简体中文 - Traditional Chinese", "繁體中文 - Chinês tradicional"));
 		}

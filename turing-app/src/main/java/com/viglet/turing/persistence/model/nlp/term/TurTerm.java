@@ -82,9 +82,6 @@ public class TurTerm implements Serializable {
 	@Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
 	private List<TurTermVariationLanguage> turTermVariationLanguages;
 
-	public TurTerm() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

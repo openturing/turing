@@ -18,20 +18,21 @@
 package com.viglet.turing.api.ml.model;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import org.apache.tika.exception.TikaException;
-import org.json.JSONException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,21 +44,19 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.xml.sax.SAXException;
 
 import com.viglet.turing.persistence.model.ml.TurMLModel;
 import com.viglet.turing.persistence.model.storage.TurDataGroupSentence;
 import com.viglet.turing.persistence.repository.ml.TurMLModelRepository;
 import com.viglet.turing.persistence.repository.storage.TurDataGroupSentenceRepository;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import opennlp.tools.doccat.DoccatFactory;
 import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;
 import opennlp.tools.doccat.DocumentSample;
 import opennlp.tools.doccat.DocumentSampleStream;
-import opennlp.tools.tokenize.WhitespaceTokenizer;
 import opennlp.tools.util.InputStreamFactory;
 import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
@@ -65,55 +64,57 @@ import opennlp.tools.util.TrainingParameters;
 
 @RestController
 @RequestMapping("/api/ml/model")
-@Api(tags = "Machine Learning Model", description = "Machine Learning Model API")
+@Tag(name ="Machine Learning Model", description = "Machine Learning Model API")
 public class TurMLModelAPI {
-	
+	private static final Log logger = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 	@Autowired
-	TurDataGroupSentenceRepository turDataGroupSentenceRepository;
+	private TurDataGroupSentenceRepository turDataGroupSentenceRepository;
 	@Autowired
-	TurMLModelRepository turMLModelRepository; 
+	private TurMLModelRepository turMLModelRepository;
 
-	@ApiOperation(value = "Machine Learning Model List")
+	@Operation(summary = "Machine Learning Model List")
 	@GetMapping
-	public List<TurMLModel> turMLModelList() throws JSONException {
+	public List<TurMLModel> turMLModelList() {
 		return this.turMLModelRepository.findAll();
 	}
 
-	@ApiOperation(value = "Show a Machine Learning Model")
+	@Operation(summary = "Show a Machine Learning Model")
 	@GetMapping("/{id}")
-	public TurMLModel turMLModelGet(@PathVariable int id) throws JSONException {
-		return this.turMLModelRepository.findById(id);
+	public TurMLModel turMLModelGet(@PathVariable int id) {
+		return this.turMLModelRepository.findById(id).orElse(new TurMLModel());
 	}
 
-	@ApiOperation(value = "Update a Machine Learning Model")
+	@Operation(summary = "Update a Machine Learning Model")
 	@PutMapping("/{id}")
-	public TurMLModel turMLModelUpdate(@PathVariable int id, @RequestBody TurMLModel turMLModel) throws Exception {
-		TurMLModel turMLModelEdit = this.turMLModelRepository.findById(id);
-		turMLModelEdit.setInternalName(turMLModel.getInternalName());
-		turMLModelEdit.setName(turMLModel.getName());
-		turMLModelEdit.setDescription(turMLModel.getDescription());
-		this.turMLModelRepository.save(turMLModelEdit);
-		return turMLModelEdit;
+	public TurMLModel turMLModelUpdate(@PathVariable int id, @RequestBody TurMLModel turMLModel) {
+		return this.turMLModelRepository.findById(id).map(turMLModelEdit -> {
+			turMLModelEdit.setInternalName(turMLModel.getInternalName());
+			turMLModelEdit.setName(turMLModel.getName());
+			turMLModelEdit.setDescription(turMLModel.getDescription());
+			this.turMLModelRepository.save(turMLModelEdit);
+			return turMLModelEdit;
+		}).orElse(new TurMLModel());
+
 	}
 
 	@Transactional
-	@ApiOperation(value = "Delete a Machine Learning Model")
+	@Operation(summary = "Delete a Machine Learning Model")
 	@DeleteMapping("/{id}")
-	public boolean turMLModelDelete(@PathVariable int id) throws Exception {
+	public boolean turMLModelDelete(@PathVariable int id) {
 		this.turMLModelRepository.delete(id);
 		return true;
 	}
 
-	@ApiOperation(value = "Create a Machine Learning Model")
+	@Operation(summary = "Create a Machine Learning Model")
 	@PostMapping
-	public TurMLModel turMLModelAdd(@RequestBody TurMLModel turMLModel) throws Exception {
+	public TurMLModel turMLModelAdd(@RequestBody TurMLModel turMLModel) {
 		this.turMLModelRepository.save(turMLModel);
 		return turMLModel;
 
 	}
 
 	@GetMapping("/evaluation")
-	public String turMLModelEvaluation() throws JSONException {
+	public String turMLModelEvaluation() {
 		File modelFile = new File("store/ml/model/generate.bin");
 		InputStream modelStream;
 		DoccatModel m = null;
@@ -121,8 +122,7 @@ public class TurMLModelAPI {
 			modelStream = new FileInputStream(modelFile);
 			m = new DoccatModel(modelStream);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e);
 		}
 		String[] inputText = {
 				"Republicans in Congress will start this week on an obstacle course even more arduous than health care: the first overhaul of the tax code in three decades." };
@@ -136,94 +136,45 @@ public class TurMLModelAPI {
 	}
 
 	@GetMapping("/generate")
-	public String turMLModelGenerate() throws JSONException, IOException, SAXException, TikaException {
+	public String turMLModelGenerate() {
 
 		List<TurDataGroupSentence> turDataSentences = turDataGroupSentenceRepository.findAll();
 
-		StringBuffer trainSB = new StringBuffer();
+		StringBuilder trainSB = new StringBuilder();
 
 		for (TurDataGroupSentence vigTrainDocSentence : turDataSentences) {
 			if (vigTrainDocSentence.getTurMLCategory() != null) {
 				trainSB.append(vigTrainDocSentence.getTurMLCategory().getInternalName() + " ");
-				trainSB.append(vigTrainDocSentence.getSentence().toString().replaceAll("[\\t\\n\\r]", " ").trim());
+				trainSB.append(vigTrainDocSentence.getSentence().replaceAll("[\\t\\n\\r]", " ").trim());
 				trainSB.append("\n");
 			}
 		}
-		PrintWriter out = new PrintWriter("store/ml/train/generate.train");
-		out.println(trainSB.toString().trim());
-		out.close();
-
-		///////////////
-		try (BufferedReader br = new BufferedReader(
-				new FileReader("store/ml/train/generate.train"))) {
-			String line;
-			while ((line = br.readLine()) != null) {
-
-				// Whitespace tokenize entire string
-
-				String tokens[] = WhitespaceTokenizer.INSTANCE.tokenize(line);
-
-				if (tokens.length > 1) {
-					///
-				} else {
-					//Empty lines: " + tokens.toString());
-				}
-			}
+		try (PrintWriter out = new PrintWriter("store/ml/train/generate.train")) {
+			out.println(trainSB.toString().trim());
+		} catch (FileNotFoundException e) {
+			logger.error(e.getMessage(), e);
 		}
 
-		DoccatModel model = null;
-
-		InputStream dataIn = null;
-		try {
+		String modelFile = "store/ml/model/generate.bin";
+		try (OutputStream modelOut = new BufferedOutputStream(new FileOutputStream(modelFile))) {
 			InputStreamFactory isf = new InputStreamFactory() {
 				public InputStream createInputStream() throws IOException {
 					return new FileInputStream("store/ml/train/generate.train");
-					// return new
-					// ByteArrayInputStream(trainSB.toString().getBytes(StandardCharsets.UTF_8));
 				}
 			};
 
-			Charset charset = Charset.forName("UTF-8");
+			Charset charset = StandardCharsets.UTF_8;
 			ObjectStream<String> lineStream = new PlainTextByLineStream(isf, charset);
 			ObjectStream<DocumentSample> sampleStream = new DocumentSampleStream(lineStream);
 
 			DoccatFactory factory = new DoccatFactory();
 
-			model = DocumentCategorizerME.train("en", sampleStream, TrainingParameters.defaultParams(), factory);
+			DoccatModel model = DocumentCategorizerME.train("en", sampleStream, TrainingParameters.defaultParams(),
+					factory);
+			model.serialize(modelOut);
 
 		} catch (IOException e) {
-			// Failed to read or parse training data, training failed
-			e.printStackTrace();
-		} finally {
-			if (dataIn != null) {
-				try {
-					dataIn.close();
-				} catch (IOException e) {
-					// Not an issue, training already finished.
-					// The exception should be logged and investigated
-					// if part of a production system.
-					e.printStackTrace();
-				}
-			}
-		}
-		OutputStream modelOut = null;
-		try {
-			String modelFile = "store/ml/model/generate.bin";
-			modelOut = new BufferedOutputStream(new FileOutputStream(modelFile));
-			model.serialize(modelOut);
-		} catch (IOException e) {
-			// Failed to save model
-			e.printStackTrace();
-		} finally {
-			if (modelOut != null) {
-				try {
-					modelOut.close();
-				} catch (IOException e) {
-					// Failed to correctly save model.
-					// Written model might be invalid.
-					e.printStackTrace();
-				}
-			}
+			logger.error(e.getMessage(), e);
 		}
 		return null;
 	}

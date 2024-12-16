@@ -46,9 +46,6 @@ public class TurMLVendor implements Serializable {
 	@Column(nullable = true, length = 255)
 	private String website;
 
-	public TurMLVendor() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

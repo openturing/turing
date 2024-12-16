@@ -1,0 +1,15 @@
+name,type,multiValued,indexed,stored,copyTo
+id,string,false,true,true,false
+description,text_general,false,true,true,false
+action,text_general,false,true,true,false
+agent,text_general,false,true,true,false
+contextInput,text_general,true,true,true,false
+contextOutput,text_general,true,true,true,false
+hasParameters,boolean,false,true,true,false
+intent,text_general,false,true,true,false
+name,text_general,false,true,true,false
+position,plong,false,true,true,false
+phrases,text_general,true,true,true,false
+prompts,text_general,true,true,true,false
+responses,text_general,true,true,true,false
+type,text_general,false,true,true,false

@@ -17,6 +17,11 @@
 package com.viglet.turing.nlp;
 
 public class TurNLPVendorsConstant {
+
+	private TurNLPVendorsConstant() {
+		throw new IllegalStateException("NLP Vendors Constants class");
+	}
+
 	public static final String CORENLP = "CORENLP";
 	public static final String OPENNLP = "OPENNLP";
 	public static final String OTCA = "OTCA";

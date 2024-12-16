@@ -28,13 +28,7 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface TurDataGroupDataRepository extends JpaRepository<TurDataGroupData, Integer> {
 
-	List<TurDataGroupData> findAll();
-
-	TurDataGroupData findById(int id);
-	
 	List<TurDataGroupData> findByTurDataGroup(TurDataGroup turDataGroup);
-	
-	TurDataGroupData save(TurDataGroupData turDataGroupData);
 
 	@Modifying
 	@Query("delete from  TurDataGroupData dgd where dgd.id = ?1")

@@ -31,8 +31,6 @@ public interface TurDataRepository extends JpaRepository<TurData, Integer> {
 
 	TurData findById(int id);
 
-	TurData save(TurData turData);
-
 	@Modifying
 	@Query("delete from TurData d where d.id = ?1")
 	void delete(int id);

@@ -80,9 +80,6 @@ public class TurTermVariation implements Serializable {
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "turTermVariation", cascade = CascadeType.ALL)
 	private List<TurTermVariationLanguage> turTermVariationLanguages;
 
-	public TurTermVariation() {
-	}
-
 	public String getId() {
 		return this.id;
 	}

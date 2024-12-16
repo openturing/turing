@@ -43,9 +43,6 @@ public class TurNLPFeature implements Serializable {
 	@Column(nullable=true, length=255)
 	private String description;
 
-	public TurNLPFeature() {
-	}
-
 	public int getId() {
 		return this.id;
 	}
