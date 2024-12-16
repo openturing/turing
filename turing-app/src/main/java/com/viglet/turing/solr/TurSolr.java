@@ -62,6 +62,7 @@ import com.viglet.turing.sn.tr.TurSNTargetingRules;
 import com.viglet.turing.utils.TurSNSiteFieldUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.KeyValue;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
@@ -74,7 +75,6 @@ import org.apache.solr.common.params.GroupParams;
 import org.apache.solr.common.params.HighlightParams;
 import org.apache.solr.common.params.MoreLikeThisParams;
 import org.apache.solr.common.util.SimpleOrderedMap;
-import org.apache.tika.utils.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.springframework.stereotype.Component;
@@ -372,6 +372,11 @@ public class TurSolr {
         query.set(Q_OP, AND);
         setRows(turSNSite, turSEParameters);
         setSortEntry(turSNSite, query, turSEParameters);
+
+        if (usesExactMatch(turSNSite, turSEParameters)) {
+            turSEParameters.setQuery("%s:%s".formatted(turSNSite.getExactMatchField(), turSEParameters.getQuery()));
+        }
+
         if (TurSNUtils.isAutoCorrectionEnabled(context, turSNSite)) {
             query.setQuery(TurSNUtils.hasCorrectedText(turSESpellCheckResult) ?
                     turSESpellCheckResult.getCorrectedText() : turSEParameters.getQuery());
@@ -389,6 +394,14 @@ public class TurSolr {
         }
         prepareBoostQuery(turSNSite, query);
         return query;
+    }
+
+    private static boolean usesExactMatch(TurSNSite turSNSite, TurSEParameters turSEParameters) {
+        return turSEParameters.getQuery().trim().startsWith("\"")
+                && turSEParameters.getQuery().trim().endsWith("\"")
+                && !StringUtils.isEmpty(turSNSite.getExactMatchField())
+                && turSNSite.getExactMatch() != null
+                && turSNSite.getExactMatch().equals(1);
     }
 
     private void prepareBoostQuery(TurSNSite turSNSite, SolrQuery query) {
@@ -921,9 +934,9 @@ public class TurSolr {
     }
 
     private static void addEnabledFieldAsFacetItem(TurSNSiteFacetFieldEnum facetType, String fq,
-                                            List<TurSNSiteFieldExt> enabledFields,
-                                            TurSNFacetMapForFilterQuery facetMapForFilterQuery, TurSNSite turSNSite,
-                                            TurSEFilterQueryParameters filterQueryParameters) {
+                                                   List<TurSNSiteFieldExt> enabledFields,
+                                                   TurSNFacetMapForFilterQuery facetMapForFilterQuery, TurSNSite turSNSite,
+                                                   TurSEFilterQueryParameters filterQueryParameters) {
 
         TurCommonsUtils.getKeyValueFromColon(fq).flatMap(kv ->
                         enabledFields.stream()

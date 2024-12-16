@@ -7,6 +7,8 @@ export interface TurSNSite {
   id: string;
   name: string;
   description: string;
+  exactMatchField: string;
+  defaultField: string;
   defaultTitleField: string;
   defaultDescriptionField: string;
   defaultTextField: string;
@@ -32,4 +34,5 @@ export interface TurSNSite {
   facetSort: TurSNSiteFacetSortEnum;
   wildcardNoResults: number;
   wildcardAlways: number;
+  exactMatch: number;
 }

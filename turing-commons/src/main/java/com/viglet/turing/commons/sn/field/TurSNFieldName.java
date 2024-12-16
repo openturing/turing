@@ -39,4 +39,7 @@ public class TurSNFieldName {
     public static final String IMAGE = "image";
     public static final String TYPE = "type";
     public static final String SITE = "site";
+    public static final String DEFAULT = "_text_";
+    public static final String EXACT_MATCH = "exact_match";
+
 }
