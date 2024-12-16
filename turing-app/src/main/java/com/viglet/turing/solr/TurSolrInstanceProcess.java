@@ -67,7 +67,6 @@ public class TurSolrInstanceProcess {
 	private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
 		String urlString = String.format("http://%s:%s/solr/%s", turSEInstance.getHost(), turSEInstance.getPort(),
 				core);
-		System.out.println("RRR: " + solrTimeout);
 		if (turSolrCache.isSolrCoreExists(urlString)) {
 			HttpSolrClient httpSolrClient = new HttpSolrClient.Builder(urlString).withHttpClient(closeableHttpClient)
 					.withConnectionTimeout(solrTimeout).withSocketTimeout(solrTimeout).build();

@@ -6,6 +6,7 @@ export interface TurSNSite {
   id: string;
   name: string;
   description: string;
+  exactMatchField: string;
   defaultTitleField: string;
   defaultDescriptionField: string;
   defaultTextField: string;
@@ -19,6 +20,7 @@ export interface TurSNSite {
   hlPost: string;
   mlt: number;
   thesaurus: number;
+  exactMatch: number;
   turSEInstance: TurSEInstance;
   turNLPVendor: TurNLPVendor;
   turSNSiteLocales: TurSNSiteLocale[];

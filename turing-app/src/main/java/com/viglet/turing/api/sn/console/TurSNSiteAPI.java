@@ -111,6 +111,7 @@ public class TurSNSiteAPI {
 
 			// UI
 			turSNSiteEdit.setFacet(turSNSite.getFacet());
+			turSNSiteEdit.setExactMatch(turSNSite.getExactMatch());
 			turSNSiteEdit.setHl(turSNSite.getHl());
 			turSNSiteEdit.setHlPost(turSNSite.getHlPost());
 			turSNSiteEdit.setHlPre(turSNSite.getHlPre());
@@ -120,6 +121,7 @@ public class TurSNSiteAPI {
 			turSNSiteEdit.setMlt(turSNSite.getMlt());
 			turSNSiteEdit.setRowsPerPage(turSNSite.getRowsPerPage());
 			turSNSiteEdit.setSpotlightWithResults(turSNSite.getSpotlightWithResults());
+			turSNSiteEdit.setExactMatchField(turSNSite.getExactMatchField());
 			turSNSiteEdit.setDefaultTitleField(turSNSite.getDefaultTitleField());
 			turSNSiteEdit.setDefaultTextField(turSNSite.getDefaultTextField());
 			turSNSiteEdit.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
