@@ -78,12 +78,14 @@ public class TurSNTemplate {
 		turSNSite.setFacet(1);
 		turSNSite.setItemsPerFacet(10);
 		turSNSite.setHl(1);
+		turSNSite.setExactMatch(0);
 		turSNSite.setHlPre("<mark>");
 		turSNSite.setHlPost("</mark>");
 		turSNSite.setMlt(1);
 		turSNSite.setSpellCheck(1);
 		turSNSite.setSpellCheckFixes(1);
 		turSNSite.setThesaurus(0);
+		turSNSite.setExactMatchField("exact_match");
 		turSNSite.setDefaultTitleField("title");
 		turSNSite.setDefaultTextField("text");
 		turSNSite.setDefaultDescriptionField("abstract");

@@ -313,6 +313,11 @@ public class TurSolr {
 		SolrQuery query = new SolrQuery();
 		setRows(turSNSite, turSEParameters);
 		setSortEntry(turSNSite, query, turSEParameters);
+
+		if (usesExactMatch(turSNSite, turSEParameters)) {
+			turSEParameters.setQuery(String.format("%s:%s", turSNSite.getExactMatchField(), turSEParameters.getQuery()));
+		}
+
 		if (TurSNUtils.isAutoCorrectionEnabled(context, turSNSite)) {
 			if (TurSNUtils.hasCorrectedText(turSESpellCheckResult)) {
 				query.setQuery(turSESpellCheckResult.getCorrectedText());
@@ -337,7 +342,15 @@ public class TurSolr {
 				turSNSiteFacetFieldExts, turSNSiteHlFieldExts, turSESpellCheckResult);
 	}
 
-	
+	private static boolean usesExactMatch(TurSNSite turSNSite, TurSEParameters turSEParameters) {
+		return turSEParameters.getQuery().trim().startsWith("\"")
+				&& turSEParameters.getQuery().trim().endsWith("\"")
+				&& !StringUtils.isEmpty(turSNSite.getExactMatchField())
+				&& turSNSite.getExactMatch() != null
+				&& turSNSite.getExactMatch().equals(1);
+	}
+
+
 	private Optional<TurSEResults> executeSolrQueryFromSN(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
 			TurSEParameters turSEParameters, SolrQuery query, List<TurSNSiteFieldExt> turSNSiteMLTFieldExts,
 			List<TurSNSiteFieldExt> turSNSiteFacetFieldExts, List<TurSNSiteFieldExt> turSNSiteHlFieldExts,
