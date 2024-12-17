@@ -23,7 +23,7 @@
   <div class="form-checkbox">
     <label>
       <input [(ngModel)]="snSite.exactMatch" type="checkbox" [ngModelOptions]="{standalone: true}"
-             (ngModelChange)="snSite.wildcardNoResults = $event ? 1 : 0"
+             (ngModelChange)="snSite.exactMatch = $event ? 1 : 0"
              aria-describedby="sn-exact-match-tip"/>
       Exact Match
     </label>
