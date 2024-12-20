@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>wc-sample</artifactId>
-    <groupId>com.viglet.turing</groupId>
+    <groupId>com.viglet.turing.connector</groupId>
     <version>${revision}</version>
     <name>Turing Web Crawler - Sample Custom Connector</name>
     <description>Turing Web Crawler - Sample Custom Connector</description>

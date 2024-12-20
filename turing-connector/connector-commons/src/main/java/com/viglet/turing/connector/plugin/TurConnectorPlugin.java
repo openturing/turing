@@ -21,6 +21,6 @@ package com.viglet.turing.connector.plugin;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 
 public interface TurConnectorPlugin {
-
+    void init();
     TurSNJobItem getNext();
 }

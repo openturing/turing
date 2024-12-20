@@ -24,7 +24,7 @@ public class TurCustomClassCache {
         if (!customClassMap.containsKey(className)) {
             log.info("Custom class {} not found in memory, instancing...", className);
             try {
-                // Instância a classe dinamicamente, sem precisar definir o import no momento de compilação
+                // Instantiate the class dynamically, without having to define import at compile time
                 customClassMap.put(className, Objects.requireNonNull(Class.forName(className)
                         .getDeclaredConstructor().newInstance()));
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
