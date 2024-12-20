@@ -19,6 +19,7 @@
 package com.viglet.turing.connector.sprinklr.commons.plugins;
 
 import com.viglet.turing.commons.exception.TurRuntimeException;
+import com.viglet.turing.connector.sprinklr.commons.tools.TurSprinklrNotFoundAction;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
@@ -34,12 +35,6 @@ public class TurSprinklrKeyValueTransformer implements TurSprinklrPlugin {
     private final Set<String> files = new HashSet<>();
 
     private final Map<String, Map<String, String>> mappings = new HashMap<>();
-
-
-
-    TurSprinklrNotFound notFoundAction = TurSprinklrNotFound.DEFAULT_VALUE;
-
-    String defaultNotFoundText = "Key Value Transformer Plugin: Key not found";
 
     public void loadMapping(String file) {
 
@@ -100,39 +95,13 @@ public class TurSprinklrKeyValueTransformer implements TurSprinklrPlugin {
     /**
      * Transforms the given key using the mapping obtained from the specified file.
      *
-     * @param key  the key to be transformed
+     * @param key  the key to be transformed, if is null, the value returned will be null.
      * @param file the file from which the mapping is obtained
      * @return the transformed value corresponding to the key, or a treated value if the key is not found
      */
     public String transform(String key, String file) {
         Map<String, String> mapping = getMapping(file);
-        return mapping.getOrDefault(key, getKey(key, file));
-    }
-
-    private String getKey(String key, String file) {
-
-        if (Objects.requireNonNull(notFoundAction) == TurSprinklrNotFound.KEEP_KEY) {
-            log.info("Key found: {} in file: {}", key, file);
-            return key;
-        } else {
-            log.info("Key not found: {} in file: {}", key, file);
-        }
-        return null;
-    }
-
-    public void configure(TurSprinklrNotFound action) {
-        notFoundAction = action;
-    }
-
-    /**
-     * Configures the action to be taken when a key is not found and sets the default text for such cases.
-     *
-     * @param action the action to be taken when a key is not found
-     * @param defaultText the default text to be used when a key is not found
-     */
-    public void configure(TurSprinklrNotFound action, String defaultText) {
-        notFoundAction = action;
-        defaultNotFoundText = defaultText;
+        return mapping.getOrDefault(key, null);
     }
 
     @Override

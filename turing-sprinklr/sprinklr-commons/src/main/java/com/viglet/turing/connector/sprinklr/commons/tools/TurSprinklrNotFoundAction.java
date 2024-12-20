@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.sprinklr.commons.plugins;
+package com.viglet.turing.connector.sprinklr.commons.tools;
 /**
  * Enum representing the actions to take when a key is not found.
  * <ul>
@@ -25,7 +25,7 @@ package com.viglet.turing.connector.sprinklr.commons.plugins;
  * <li>NULL: Returns null</li>
  * </ul>
  */
-public enum TurSprinklrNotFound {
+public enum TurSprinklrNotFoundAction {
         DEFAULT_VALUE,
         KEEP_KEY,
         NULL
