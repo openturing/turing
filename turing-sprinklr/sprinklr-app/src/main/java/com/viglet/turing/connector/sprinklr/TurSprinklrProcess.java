@@ -17,6 +17,7 @@ import com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtLocaleInte
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrAttributeMapping;
 import com.viglet.turing.connector.sprinklr.persistence.model.TurSprinklrSource;
 import com.viglet.turing.connector.sprinklr.persistence.repository.TurSprinklrAttributeMappingRepository;
+import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrPluginContext;
 import com.viglet.turing.connector.sprinklr.utils.FileAsset;
 import com.viglet.turing.connector.sprinklr.utils.FileAssetsExtractor;
 import com.viglet.turing.sprinklr.client.service.kb.TurSprinklrKBService;
@@ -47,15 +48,20 @@ public class TurSprinklrProcess {
      */
     private TurSNJobItems turSNJobItems = new TurSNJobItems();
 
+    private final TurSprinklrPluginContext pluginContext;
+
     @Inject
     public TurSprinklrProcess(@Value("${turing.url}") String turingUrl,
                               @Value("${turing.apiKey}") String turingApiKey,
                               @Value("${turing.sprinklr.job.size}") int jobSize,
-                              TurSprinklrAttributeMappingRepository turSprinklrAttributeMappingRepository) {
+                              TurSprinklrAttributeMappingRepository turSprinklrAttributeMappingRepository,
+                              TurSprinklrPluginContext pluginContext
+                              ) {
         this.turingUrl = turingUrl;
         this.turingApiKey = turingApiKey;
         this.jobSize = jobSize;
         this.turSprinklrAttributeMappingRepository = turSprinklrAttributeMappingRepository;
+        this.pluginContext = pluginContext;
     }
 
     private static void addItemInExistingAttribute(String attributeValue,
@@ -101,7 +107,6 @@ public class TurSprinklrProcess {
             final var fileAssetExtractor = new FileAssetsExtractor(turingUrl, turingApiKey);
             while (true) {
                 TurSprinklrKBSearch turSprinklrKBSearch = TurSprinklrKBService.run(turSprinklrAccessToken, kbPage.get());
-
                 if (turSprinklrKBSearch != null) {
                     List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
                     if (results.isEmpty()) {
@@ -116,9 +121,9 @@ public class TurSprinklrProcess {
 
                             // Gets the assets attached to the search result and inserts into turSNJobItems.
                             List<FileAsset> assets = getFileAssets(searchResult, fileAssetExtractor);
-                            addFileAssetsToJobItens(assets, resultLocale, turSites);
+                            addFileAssetsToJobItems(assets, resultLocale, turSites);
 
-                            // Quando o tamanho de turSNJobItems alcançar o JobSize definido, envia para o turing.
+                            // When the size of turSNJobItems reaches the defined JobSize, send it to turing.
                             sendToTuringWhenMaxSize();
 
                             getInfoQueue();
@@ -151,7 +156,7 @@ public class TurSprinklrProcess {
     /**
      * Adds the file assets to the job items list.
      */
-    private void addFileAssetsToJobItens(List<FileAsset> fileAssets, Locale locale, Collection<String> turSites) {
+    private void addFileAssetsToJobItems(List<FileAsset> fileAssets, Locale locale, Collection<String> turSites) {
         for (var asset : fileAssets) {
             var turSNJobItemAttributes = asset.toMapAttributes();
             TurSNJobItem turSNJobItem = new TurSNJobItem(
@@ -288,6 +293,7 @@ public class TurSprinklrProcess {
 
     private Optional<TurMultiValue> getCustomClass(TurSprinklrSearchResult searchResult, TurSprinklrAccessToken token,
                                                    TurSprinklrAttributeMapping turSprinklrAttributeMapping) {
+        log.debug(getTurSprinklrContext(searchResult, token).getPluginContext().toString());
         return TurCustomClassCache.getCustomClassMap(turSprinklrAttributeMapping.getClassName())
                 .flatMap(classInstance -> ((TurSprinklrExtInterface) classInstance)
                         .consume(getTurSprinklrContext(searchResult, token)));
@@ -300,6 +306,7 @@ public class TurSprinklrProcess {
         return TurSprinklrContext.builder()
                 .searchResult(searchResult)
                 .accessToken(token)
+                .pluginContext(pluginContext)
                 .build();
     }
 
@@ -324,7 +331,7 @@ public class TurSprinklrProcess {
             TurSNJobUtils.importItems(turSNJobItems,
                     new TurSNServer(URI.create(turingUrl).toURL(), null,
                             new TurApiKeyCredentials(turingApiKey)),
-                    false);
+                    true);
         } catch (MalformedURLException e) {
             log.error(e.getMessage(), e);
         }

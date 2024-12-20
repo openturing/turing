@@ -20,6 +20,7 @@ package com.viglet.turing.commons.file;
 import lombok.*;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -41,9 +42,7 @@ public class TurFileAttributes {
 	private String name;
 	private String title;
 	private String extension;
-	private TurFileSize size;
-	private Date lastModified;
-	private Map<String, String> metadata;
-
-
+	private TurFileSize size = new TurFileSize();
+	private Date lastModified = new Date();
+	private Map<String, String> metadata = new HashMap<>();
 }

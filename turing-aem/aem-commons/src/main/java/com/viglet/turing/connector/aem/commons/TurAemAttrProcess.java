@@ -44,7 +44,6 @@ import java.util.*;
 public class TurAemAttrProcess {
     public static final String JCR_TITLE = "jcr:title";
     public static final String CQ_TAGS = "cq:tags";
-    public static final String TAG_SEPARATOR = ":";
     public static final String DEFAULT = "default";
     public static final String TEXT = "text";
     public static final String JCR = "jcr:";
@@ -233,7 +232,7 @@ public class TurAemAttrProcess {
                 attributeByClass(context, turAemSourceContext) :
                 attributeByCMS(context);
         turCmsTargetAttrValueMap.merge(generateNewAttributesFromCqTags(context,
-                turAemSourceContext, turSNAttributeSpecList));
+                turAemSourceContext, turSNAttributeSpecList, turCmsTargetAttrValueMap));
         return turCmsTargetAttrValueMap;
     }
 
@@ -252,27 +251,56 @@ public class TurAemAttrProcess {
 
     private TurCmsTargetAttrValueMap generateNewAttributesFromCqTags(TurCmsContext context,
                                                                      TurAemSourceContext turAemSourceContext,
-                                                                     List<TurSNAttributeSpec> turSNAttributeSpecList) {
+                                                                     List<TurSNAttributeSpec> turSNAttributeSpecList,
+                                                                     TurCmsTargetAttrValueMap turCmsTargetAttrValueMapFromClass) {
         TurCmsTargetAttrValueMap turCmsTargetAttrValueMap = new TurCmsTargetAttrValueMap();
         String attributeName = context.getTurCmsSourceAttr().getName();
-        Object jcrProperty = getJcrProperty(context, attributeName);
         if (CQ_TAGS.equals(attributeName)) {
-            Optional.ofNullable((JSONArray) jcrProperty).ifPresent(property ->
-                    property.forEach(tag -> {
-                        String[] tagSplit = tag.toString().split(TAG_SEPARATOR);
-                        if (tagSplit.length >= 2) {
-                            Optional.ofNullable(tagSplit[0]).ifPresent(facet -> {
-                                turSNAttributeSpecList.add(setTagFacet(turAemSourceContext, facet));
-                                Optional.ofNullable(tagSplit[1]).ifPresent(value ->
-                                        turCmsTargetAttrValueMap.addWithSingleValue(facet,
-                                                addTagToAttrValueList(context, turAemSourceContext, facet, value), false)
-                                );
-                            });
-                        }
-                    })
-            );
+            String targetName = context.getTurCmsTargetAttr().getName();
+            if (turCmsTargetAttrValueMapFromClass.containsKey(targetName)) {
+                processTagsFromTargetAttr(context, turAemSourceContext, turSNAttributeSpecList,
+                        turCmsTargetAttrValueMapFromClass, targetName, turCmsTargetAttrValueMap);
+            } else {
+                processTagsFromSourceAttr(context, turAemSourceContext, turSNAttributeSpecList, attributeName,
+                        turCmsTargetAttrValueMap);
+            }
         }
         return turCmsTargetAttrValueMap;
+    }
+
+    private static void processTagsFromSourceAttr(TurCmsContext context, TurAemSourceContext turAemSourceContext,
+                                                  List<TurSNAttributeSpec> turSNAttributeSpecList,
+                                                  String attributeName,
+                                                  TurCmsTargetAttrValueMap turCmsTargetAttrValueMap) {
+        Optional.ofNullable((JSONArray) getJcrProperty(context, attributeName))
+                .ifPresent(property ->
+                        property.forEach(tag ->
+                                formatTags(context, turAemSourceContext, turSNAttributeSpecList,
+                                        tag.toString(), turCmsTargetAttrValueMap))
+                );
+    }
+
+    private static void processTagsFromTargetAttr(TurCmsContext context, TurAemSourceContext turAemSourceContext,
+                                                  List<TurSNAttributeSpec> turSNAttributeSpecList,
+                                                  TurCmsTargetAttrValueMap turCmsTargetAttrValueMapFromClass,
+                                                  String targetName,
+                                                  TurCmsTargetAttrValueMap turCmsTargetAttrValueMap) {
+        turCmsTargetAttrValueMapFromClass.get(targetName).forEach(tag ->
+                formatTags(context, turAemSourceContext, turSNAttributeSpecList,
+                        tag, turCmsTargetAttrValueMap));
+    }
+
+    private static void formatTags(TurCmsContext context, TurAemSourceContext turAemSourceContext,
+                                   List<TurSNAttributeSpec> turSNAttributeSpecList, String tag,
+                                   TurCmsTargetAttrValueMap turCmsTargetAttrValueMap) {
+        TurCommonsUtils.getKeyValueFromColon(tag).ifPresent(kv ->
+                Optional.ofNullable(kv.getKey()).ifPresent(facet -> {
+                    turSNAttributeSpecList.add(setTagFacet(turAemSourceContext, facet));
+                    Optional.ofNullable(kv.getValue()).ifPresent(value ->
+                            turCmsTargetAttrValueMap.addWithSingleValue(facet,
+                                    addTagToAttrValueList(context, turAemSourceContext, facet, value), false)
+                    );
+                }));
     }
 
     private TurCmsTargetAttrValueMap attributeByClass(TurCmsContext context, TurAemSourceContext turAemSourceContext) {

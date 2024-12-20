@@ -42,4 +42,5 @@ public class TurSprinklrAccessToken implements Serializable {
     private int expiresIn;
     private Date expirationDate;
     private String environment;
+    private String secretKey;
 }

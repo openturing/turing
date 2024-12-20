@@ -25,21 +25,19 @@ import com.viglet.turing.connector.wem.index.IValidToIndex;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.as.client.javabean.ObjectType;
 import com.vignette.logging.context.ContextLogger;
+import lombok.Setter;
 
 public class MappingDefinitions {
 	private TurCTDMappingMap turCTDMappingMap;
-	private String mappingsXML;
+	@Setter
+    private String mappingsXML;
 	private static final ContextLogger logger = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
 	public String getMappingsXML() {
 		return mappingsXML;
 	}
 
-	public void setMappingsXML(String mappingsXML) {
-		this.mappingsXML = mappingsXML;
-	}
-
-	public MappingDefinitions() {
+    public MappingDefinitions() {
 	}
 
 	public MappingDefinitions(String mappingsXML, TurCTDMappingMap turCTDMappingMap) {

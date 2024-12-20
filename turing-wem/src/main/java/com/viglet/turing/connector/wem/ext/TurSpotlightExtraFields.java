@@ -29,11 +29,12 @@ import com.vignette.as.client.exception.ValidationException;
 import com.vignette.as.client.javabean.ContentInstance;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class TurSpotlightExtraFields implements ExtAttributeInterface {
@@ -51,7 +52,7 @@ public class TurSpotlightExtraFields implements ExtAttributeInterface {
                     Object title = attributedObject.getAttributeValue("TITLE-TUR-SPOTLIGHT-CONTENT");
                     Object content = attributedObject.getAttributeValue("CONTENT-TUR-SPOTLIGHT-CONTENT");
                     Object link = attributedObject.getAttributeValue("LINK-TUR-SPOTLIGHT-CONTENT");
-                    String contentText = "";
+                    String contentText;
                     if (((String) content).length() == 40 ) {
                         ContentInstance contentInstance = (ContentInstance) ManagedObject
                                 .findByContentManagementId(new ManagedObjectVCMRef(content.toString()));
@@ -78,27 +79,16 @@ public class TurSpotlightExtraFields implements ExtAttributeInterface {
         return new TurMultiValue();
     }
 
+    @Setter
+    @Getter
     static class TurCTDAttributes {
         private String id;
         private String title;
 
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
-        }
     }
 
+    @Setter
+    @Getter
     static class TurSpotlightContent {
         private int position;
         private String title;
@@ -110,38 +100,6 @@ public class TurSpotlightExtraFields implements ExtAttributeInterface {
             this.position = position;
             this.title = title;
             this.content = content;
-            this.link = link;
-        }
-
-        public int getPosition() {
-            return position;
-        }
-
-        public void setPosition(int position) {
-            this.position = position;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
-        }
-
-        public String getContent() {
-            return content;
-        }
-
-        public void setContent(String content) {
-            this.content = content;
-        }
-
-        public String getLink() {
-            return link;
-        }
-
-        public void setLink(String link) {
             this.link = link;
         }
 

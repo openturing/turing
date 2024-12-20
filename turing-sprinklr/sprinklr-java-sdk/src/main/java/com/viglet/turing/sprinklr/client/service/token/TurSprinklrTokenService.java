@@ -57,6 +57,10 @@ public class TurSprinklrTokenService {
         }
     }
 
+    public TurSprinklrAccessToken renewAccessToken() {
+        return serializeAccessToken(turSprinklrSecretKey);
+    }
+
     private TurSprinklrAccessToken serializeAccessToken(TurSprinklrSecretKey turSprinklrSecretKey) {
         TurSprinklrAccessToken turSprinklrAccessToken = generateAccessToken(turSprinklrSecretKey);
         if (turSprinklrAccessToken != null) {
@@ -100,6 +104,7 @@ public class TurSprinklrTokenService {
                     turSprinklrAccessToken.setApiKey(turSprinklrSecretKey.getApiKey());
                     turSprinklrAccessToken.setExpirationDate(getExprirationDate(turSprinklrAccessToken));
                     turSprinklrAccessToken.setEnvironment(turSprinklrSecretKey.getEnvironment());
+                    turSprinklrAccessToken.setSecretKey(turSprinklrSecretKey.getSecretKey());
                     return turSprinklrAccessToken;
                 } catch (IOException e) {
                     log.error(e.getMessage(), e);

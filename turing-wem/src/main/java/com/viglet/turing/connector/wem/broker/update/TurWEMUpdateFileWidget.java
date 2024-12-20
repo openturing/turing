@@ -44,7 +44,7 @@ public class TurWEMUpdateFileWidget {
 
 		TuringTag turingTag = turAttrDefContext.getTuringTag();
 		ContentInstance ci = turAttrDefContext.getContentInstance();
-		IHandlerConfiguration config = turAttrDefContext.getiHandlerConfiguration();
+		IHandlerConfiguration config = turAttrDefContext.getIHandlerConfiguration();
 
 		if (log.isDebugEnabled()) {
 			log.debug("TurWEMUpdateFileWidget started");

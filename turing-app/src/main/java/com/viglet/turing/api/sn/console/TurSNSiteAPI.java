@@ -139,13 +139,15 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setSpotlightWithResults(turSNSite.getSpotlightWithResults());
             turSNSiteEdit.setWildcardNoResults(turSNSite.getWildcardNoResults());
             turSNSiteEdit.setWildcardAlways(turSNSite.getWildcardAlways());
+            turSNSiteEdit.setExactMatchField(turSNSite.getExactMatchField());
+            turSNSiteEdit.setDefaultField(turSNSite.getDefaultField());
             turSNSiteEdit.setDefaultTitleField(turSNSite.getDefaultTitleField());
             turSNSiteEdit.setDefaultTextField(turSNSite.getDefaultTextField());
             turSNSiteEdit.setDefaultDescriptionField(turSNSite.getDefaultDescriptionField());
             turSNSiteEdit.setDefaultDateField(turSNSite.getDefaultDateField());
             turSNSiteEdit.setDefaultImageField(turSNSite.getDefaultImageField());
             turSNSiteEdit.setDefaultURLField(turSNSite.getDefaultURLField());
-
+            turSNSiteEdit.setExactMatch(turSNSite.getExactMatch());
             turSNSiteRepository.save(turSNSiteEdit);
             return turSNSiteEdit;
         }).orElse(new TurSNSite());

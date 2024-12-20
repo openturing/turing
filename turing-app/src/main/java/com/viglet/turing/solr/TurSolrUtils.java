@@ -27,6 +27,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.solr.bean.TurSolrFieldBean;
@@ -278,7 +279,7 @@ public class TurSolrUtils {
 
 
     public static String getValueFromQuery(String q) {
-        return getQueryKeyValue(q).map(KeyValue::getValue).orElse(q);
+        return TurCommonsUtils.getKeyValueFromColon(q).map(KeyValue::getValue).orElse(q);
     }
 
     public static TurSEResult createTurSEResultFromDocument(SolrDocument document) {
@@ -294,17 +295,6 @@ public class TurSolrUtils {
 
     public static int lastRowPositionFromCurrentPage(TurSEParameters turSEParameters) {
         return (turSEParameters.getCurrentPage() * turSEParameters.getRows());
-    }
-
-    public static Optional<KeyValue<String, String>> getQueryKeyValue(String query) {
-        String[] attributeKV = query.split(":");
-        if (attributeKV.length >= 2) {
-            String key = attributeKV[0];
-            String value = Arrays.stream(attributeKV).skip(1).collect(Collectors.joining(":"));
-            return Optional.of(new DefaultMapEntry<>(key, value));
-        } else {
-            return Optional.empty();
-        }
     }
 
     public static boolean coreExists(TurSEInstance turSEInstance, String core) {

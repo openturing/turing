@@ -109,6 +109,9 @@ public class TurSNTemplate {
         turSNSite.setSpellCheck(1);
         turSNSite.setSpellCheckFixes(1);
         turSNSite.setThesaurus(0);
+        turSNSite.setExactMatch(1);
+        turSNSite.setExactMatchField(TurSNFieldName.EXACT_MATCH);
+        turSNSite.setDefaultField(TurSNFieldName.DEFAULT);
         turSNSite.setDefaultTitleField(TurSNFieldName.TITLE);
         turSNSite.setDefaultTextField(TurSNFieldName.TEXT);
         turSNSite.setDefaultDescriptionField(TurSNFieldName.ABSTRACT);

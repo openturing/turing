@@ -48,4 +48,14 @@ public class TurCmsContext {
 		this.turCmsSourceAttr = null;
 		this.configuration = null;
 	}
+
+	@Override
+	public String toString() {
+		return "TurCmsContext{" +
+				"cmsObjectInstance=" + cmsObjectInstance +
+				", turCmsTargetAttr=" + turCmsTargetAttr +
+				", turCmsSourceAttr=" + turCmsSourceAttr +
+				", configuration=" + configuration +
+				'}';
+	}
 }

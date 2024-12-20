@@ -82,6 +82,9 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	private Integer wildcardAlways = 0;
 
 	@Column
+	private Integer exactMatch = 0;
+
+	@Column
 	private Integer facet;
 
 	@Column
@@ -110,6 +113,12 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 
 	@Column
 	private Integer thesaurus = 0;
+
+	@Column
+	private String defaultField;
+
+	@Column
+	private String exactMatchField;
 
 	@Column
 	private String defaultTitleField;

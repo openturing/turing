@@ -20,7 +20,6 @@ package com.viglet.turing.connector.wem.beans;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-//HashMap <String tag, ArrayList<TuringTag> turingTags>
 public class TuringTagMap extends HashMap<String, ArrayList<TuringTag>>{
 
 	private static final long serialVersionUID = 1L;

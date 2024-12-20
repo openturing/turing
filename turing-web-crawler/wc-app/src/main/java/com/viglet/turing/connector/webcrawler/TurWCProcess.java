@@ -15,10 +15,7 @@ import com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtInterface;
 import com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtLocaleInterface;
 import com.viglet.turing.connector.webcrawler.persistence.model.TurWCAttributeMapping;
 import com.viglet.turing.connector.webcrawler.persistence.model.TurWCSource;
-import com.viglet.turing.connector.webcrawler.persistence.repository.TurWCAllowUrlRepository;
-import com.viglet.turing.connector.webcrawler.persistence.repository.TurWCAttributeMappingRepository;
-import com.viglet.turing.connector.webcrawler.persistence.repository.TurWCFileExtensionRepository;
-import com.viglet.turing.connector.webcrawler.persistence.repository.TurWCNotAllowUrlRepository;
+import com.viglet.turing.connector.webcrawler.persistence.repository.*;
 import generator.RandomUserAgentGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -45,14 +42,21 @@ public class TurWCProcess {
     public static final String JAVASCRIPT = "javascript:";
     public static final String A_HREF = "a[href]";
     public static final String ABS_HREF = "abs:href";
+    public static final String WILD_CARD = "*";
     private final String turingUrl;
     private final String turingApiKey;
+    private final List<String> startingPoints = new ArrayList<>();
+    private final List<String> allowUrls = new ArrayList<>();
+    private final List<String> allowStartsWithUrls = new ArrayList<>();
     private final List<String> notAllowUrls = new ArrayList<>();
+    private final List<String> notAllowStartsWithUrls = new ArrayList<>();
     private final List<String> notAllowExtensions = new ArrayList<>();
+    private final TurWCStartingPointRepository turWCStartingPointsRepository;
     private TurSNJobItems turSNJobItems = new TurSNJobItems();
     private final String userAgent = RandomUserAgentGenerator.getNextNonMobile();
     private final Set<String> visitedLinks = new HashSet<>();
-    private final Queue<String> remainingLinks = new LinkedList<>();
+    private final Set<String> indexedLinks = new HashSet<>();
+    private final Queue<String> queueLinks = new LinkedList<>();
     private String website;
     private Collection<String> snSites;
     private final int timeout;
@@ -74,7 +78,7 @@ public class TurWCProcess {
                         TurWCAllowUrlRepository turWCAllowUrlRepository,
                         TurWCNotAllowUrlRepository turWCNotAllowUrlRepository,
                         TurWCFileExtensionRepository turWCFileExtensionRepository,
-                        TurWCAttributeMappingRepository turWCAttributeMappingRepository) {
+                        TurWCAttributeMappingRepository turWCAttributeMappingRepository, TurWCStartingPointRepository turWCStartingPointsRepository) {
         this.turingUrl = turingUrl;
         this.turingApiKey = turingApiKey;
         this.timeout = timeout;
@@ -84,26 +88,45 @@ public class TurWCProcess {
         this.turWCNotAllowUrlRepository = turWCNotAllowUrlRepository;
         this.turWCFileExtensionRepository = turWCFileExtensionRepository;
         this.turWCAttributeMappingRepository = turWCAttributeMappingRepository;
+        this.turWCStartingPointsRepository = turWCStartingPointsRepository;
     }
 
     public void start(TurWCSource turWCSource) {
         reset();
-        turWCFileExtensionRepository.findByTurWCSource(turWCSource).ifPresent(source -> source.forEach(turWCFileExtension ->
-                this.notAllowExtensions.add(turWCFileExtension.getExtension())));
-        turWCNotAllowUrlRepository.findByTurWCSource(turWCSource).ifPresent(source -> source.forEach(turWCNotAllowUrl ->
-                this.notAllowUrls.add(turWCNotAllowUrl.getUrl())));
-
+        turWCFileExtensionRepository.findByTurWCSource(turWCSource).ifPresent(source ->
+                source.forEach(turWCFileExtension ->
+                        this.notAllowExtensions.add(turWCFileExtension.getExtension())));
+        turWCNotAllowUrlRepository.findByTurWCSource(turWCSource).ifPresent(source ->
+                source.forEach(turWCNotAllowUrl -> {
+                            if (turWCNotAllowUrl.getUrl().trim().endsWith(WILD_CARD)) {
+                                this.notAllowStartsWithUrls.add(StringUtils.chop(turWCNotAllowUrl.getUrl()));
+                            } else {
+                                this.notAllowUrls.add(turWCNotAllowUrl.getUrl());
+                            }
+                        }
+                ));
+        turWCAllowUrlRepository.findByTurWCSource(turWCSource).ifPresent(source ->
+                source.forEach(turWCAllowUrl -> {
+                            if (turWCAllowUrl.getUrl().trim().endsWith(WILD_CARD)) {
+                                this.allowStartsWithUrls.add(StringUtils.chop(turWCAllowUrl.getUrl().trim()));
+                            } else {
+                                this.allowUrls.add(turWCAllowUrl.getUrl());
+                            }
+                        }
+                ));
+        turWCStartingPointsRepository.findByTurWCSource(turWCSource).ifPresent(source ->
+                source.forEach(turWCStartingPoint ->
+                        this.startingPoints.add(turWCStartingPoint.getUrl())
+                ));
         this.website = turWCSource.getUrl();
         this.snSites = turWCSource.getTurSNSites();
         this.username = turWCSource.getUsername();
         this.password = turWCSource.getPassword();
         log.info("User Agent: {}", userAgent);
-        turWCAllowUrlRepository
-                .findByTurWCSource(turWCSource).ifPresent(source ->
-                        source.forEach(turWCAllowUrl -> {
-                            remainingLinks.add(this.website + turWCAllowUrl.getUrl());
-                            getPagesFromQueue(turWCSource);
-                        }));
+        startingPoints.forEach(url -> {
+            queueLinks.offer(this.website + url);
+            getPagesFromQueue(turWCSource);
+        });
         if (turSNJobItems.size() > 0) {
             sendToTuring();
             getInfoQueue();
@@ -118,12 +141,13 @@ public class TurWCProcess {
     private void getInfoQueue() {
         log.info("Total Job Item: {}", Iterators.size(turSNJobItems.iterator()));
         log.info("Total Visited Links: {}", (long) visitedLinks.size());
-        log.info("Queue Size: {}", (long) remainingLinks.size());
+        log.info("Total Indexed Links: {}", (long) indexedLinks.size());
+        log.info("Queue Size: {}", (long) queueLinks.size());
     }
 
     public void getPagesFromQueue(TurWCSource turWCSource) {
-        while (!remainingLinks.isEmpty()) {
-            String url = remainingLinks.poll();
+        while (!queueLinks.isEmpty()) {
+            String url = queueLinks.poll();
             getPage(turWCSource, url);
             sendToTuringWhenMaxSize();
             getInfoQueue();
@@ -135,12 +159,42 @@ public class TurWCProcess {
             log.info("{}: {}", url, turWCSource.getTurSNSites());
             Document document = getHTML(url);
             getPageLinks(document);
-            return addTurSNJobItems(turWCSource, document, url);
+            String pageUrl = getPageUrl(url);
+            if (canBeIndexed(pageUrl)) {
+                indexedLinks.add(pageUrl);
+                return addTurSNJobItems(turWCSource, document, url);
+            } else {
+                log.debug("Ignored: {}", url);
+            }
         } catch (IOException e) {
-            log.error(e.getMessage());
+            log.error(e.getMessage(), e);
         }
-
         return new TurSNJobItem();
+    }
+
+    private void getPageLinks(Document document) {
+        document.select(A_HREF).forEach(page -> addPageToQueue(getPageUrl(page.attr(ABS_HREF))));
+    }
+
+    private void addPageToQueue(String pageUrl) {
+        if (canBeAddToQueue(pageUrl) && visitedLinks.add(pageUrl) && !queueLinks.offer(pageUrl)) {
+            log.error("Item didn't add to queue: {}", pageUrl);
+        }
+    }
+
+    private boolean isValidToAddQueue(String pageUrl) {
+        return isNotMailUrl(pageUrl)
+                && isNotTelUrl(pageUrl)
+                && !StringUtils.equalsAny(pageUrl, queueLinks.toArray(new String[0]))
+                && !isSharpUrl(pageUrl) && !isPagination(pageUrl) && !isJavascriptUrl(pageUrl)
+                && pageUrl.startsWith(this.website)
+                && (
+                StringUtils.startsWithAny(getRelativePageUrl(pageUrl), allowStartsWithUrls.toArray(new String[0]))
+                        || StringUtils.equalsAny(getRelativePageUrl(pageUrl), allowUrls.toArray(new String[0]))
+        )
+                && !StringUtils.startsWithAny(getRelativePageUrl(pageUrl), notAllowStartsWithUrls.toArray(new String[0]))
+                && !StringUtils.equalsAny(getRelativePageUrl(pageUrl), notAllowUrls.toArray(new String[0]))
+                && !StringUtils.endsWithAny(pageUrl, notAllowExtensions.toArray(new String[0]));
     }
 
     private TurSNJobItem addTurSNJobItems(TurWCSource turWCSource, Document document, String url) {
@@ -149,20 +203,6 @@ public class TurWCProcess {
                 getJobItemAttributes(turWCSource, document, url));
         turSNJobItems.add(turSNJobItem);
         return turSNJobItem;
-    }
-
-    private void getPageLinks(Document document) {
-        document.select(A_HREF).forEach(page -> addPageToQueue(getPageUrl(page.attr(ABS_HREF))));
-    }
-
-    private void addPageToQueue(String pageUrl) {
-        if (canBeIndexed(pageUrl)) {
-            if (visitedLinks.add(pageUrl) && !remainingLinks.offer(pageUrl)) {
-                log.error("Item didn't add to queue: {}", pageUrl);
-            }
-        } else {
-            log.debug("Ignored: {}", pageUrl);
-        }
     }
 
     private void sendToTuringWhenMaxSize() {
@@ -235,7 +275,6 @@ public class TurWCProcess {
                 .stream().map(String.class::cast).toList());
         attributeValues.add(attributeValue);
         attributes.put(attributeName, attributeValues);
-
     }
 
     private void addFirstItemToAttribute(String attributeName,
@@ -243,7 +282,6 @@ public class TurWCProcess {
                                          Map<String, Object> attributes) {
         attributes.put(attributeName, attributeValue);
     }
-
 
     private void sendToTuring() {
         if (log.isDebugEnabled()) {
@@ -288,15 +326,15 @@ public class TurWCProcess {
     }
 
     private boolean canBeIndexed(String pageUrl) {
-        return !isSharpUrl(pageUrl) && !isPagination(pageUrl) && !isJavascriptUrl(pageUrl)
-                && pageUrl.startsWith(this.website)
-                && !StringUtils.startsWithAny(getRelativePageUrl(pageUrl),
-                notAllowUrls.toArray(new String[0]))
-                && !StringUtils.endsWithAny(pageUrl,
-                notAllowExtensions.toArray(new String[0]))
-                && !StringUtils.equalsAny(pageUrl,
-                visitedLinks.toArray(new String[0]));
+        return isValidToAddQueue(pageUrl)
+                && !StringUtils.equalsAny(pageUrl, indexedLinks.toArray(new String[0]));
     }
+
+    private boolean canBeAddToQueue(String pageUrl) {
+        return isValidToAddQueue(pageUrl)
+                && !StringUtils.equalsAny(pageUrl, visitedLinks.toArray(new String[0]));
+    }
+
 
     private static boolean isJavascriptUrl(String pageUrl) {
         return pageUrl.contains(JAVASCRIPT);

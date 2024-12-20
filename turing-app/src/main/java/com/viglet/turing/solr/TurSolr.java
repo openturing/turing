@@ -62,6 +62,7 @@ import com.viglet.turing.sn.tr.TurSNTargetingRules;
 import com.viglet.turing.utils.TurSNSiteFieldUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.KeyValue;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
@@ -74,7 +75,6 @@ import org.apache.solr.common.params.GroupParams;
 import org.apache.solr.common.params.HighlightParams;
 import org.apache.solr.common.params.MoreLikeThisParams;
 import org.apache.solr.common.util.SimpleOrderedMap;
-import org.apache.tika.utils.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.springframework.stereotype.Component;
@@ -372,6 +372,11 @@ public class TurSolr {
         query.set(Q_OP, AND);
         setRows(turSNSite, turSEParameters);
         setSortEntry(turSNSite, query, turSEParameters);
+
+        if (usesExactMatch(turSNSite, turSEParameters)) {
+            turSEParameters.setQuery("%s:%s".formatted(turSNSite.getExactMatchField(), turSEParameters.getQuery()));
+        }
+
         if (TurSNUtils.isAutoCorrectionEnabled(context, turSNSite)) {
             query.setQuery(TurSNUtils.hasCorrectedText(turSESpellCheckResult) ?
                     turSESpellCheckResult.getCorrectedText() : turSEParameters.getQuery());
@@ -389,6 +394,14 @@ public class TurSolr {
         }
         prepareBoostQuery(turSNSite, query);
         return query;
+    }
+
+    private static boolean usesExactMatch(TurSNSite turSNSite, TurSEParameters turSEParameters) {
+        return turSEParameters.getQuery().trim().startsWith("\"")
+                && turSEParameters.getQuery().trim().endsWith("\"")
+                && !StringUtils.isEmpty(turSNSite.getExactMatchField())
+                && turSNSite.getExactMatch() != null
+                && turSNSite.getExactMatch().equals(1);
     }
 
     private void prepareBoostQuery(TurSNSite turSNSite, SolrQuery query) {
@@ -623,7 +636,7 @@ public class TurSolr {
 
     private void setSortEntry(TurSNSite turSNSite, SolrQuery query, TurSEParameters turSEParameters) {
         Optional.ofNullable(turSEParameters.getSort()).ifPresent(sort ->
-                TurSolrUtils.getQueryKeyValue(sort).ifPresentOrElse(kv ->
+                TurCommonsUtils.getKeyValueFromColon(sort).ifPresentOrElse(kv ->
                                 query.setSort(kv.getKey(), kv.getValue().equals(ASC) ? ORDER.asc : ORDER.desc),
                         () -> {
                             if (sort.equalsIgnoreCase(NEWEST))
@@ -921,11 +934,11 @@ public class TurSolr {
     }
 
     private static void addEnabledFieldAsFacetItem(TurSNSiteFacetFieldEnum facetType, String fq,
-                                            List<TurSNSiteFieldExt> enabledFields,
-                                            TurSNFacetMapForFilterQuery facetMapForFilterQuery, TurSNSite turSNSite,
-                                            TurSEFilterQueryParameters filterQueryParameters) {
+                                                   List<TurSNSiteFieldExt> enabledFields,
+                                                   TurSNFacetMapForFilterQuery facetMapForFilterQuery, TurSNSite turSNSite,
+                                                   TurSEFilterQueryParameters filterQueryParameters) {
 
-        TurSolrUtils.getQueryKeyValue(fq).flatMap(kv ->
+        TurCommonsUtils.getKeyValueFromColon(fq).flatMap(kv ->
                         enabledFields.stream()
                                 .filter(facet -> facet.getName().equals(kv.getKey()))
                                 .findFirst())
@@ -1036,7 +1049,7 @@ public class TurSolr {
     @NotNull
     private static List<String> setFilterQueryRangeValue(List<String> filterQueries, List<TurSNSiteFieldExt> dateFacet) {
         return filterQueries.stream()
-                .map(fq -> TurSolrUtils.getQueryKeyValue(fq)
+                .map(fq -> TurCommonsUtils.getKeyValueFromColon(fq)
                         .map(facetKv ->
                                 dateFacet.stream()
                                         .filter(dateFacetItem -> facetKv.getKey().equals(dateFacetItem.getName()) &&
@@ -1156,7 +1169,7 @@ public class TurSolr {
 
     @NotNull
     private static String addDoubleQuotesToValue(String q) {
-        return TurSolrUtils.getQueryKeyValue(q)
+        return TurCommonsUtils.getKeyValueFromColon(q)
                 .map(kv -> String.format("%s:\"%s\"", kv.getKey(), kv.getValue()))
                 .orElse(String.format("\"%s\"", q));
     }
@@ -1245,7 +1258,7 @@ public class TurSolr {
     private static List<String> getFqFields(List<String> filterQueries) {
         return Optional.ofNullable(filterQueries)
                 .map(fqOpt -> fqOpt.stream()
-                        .map(fq -> TurSolrUtils.getQueryKeyValue(fq)
+                        .map(fq -> TurCommonsUtils.getKeyValueFromColon(fq)
                                 .map(KeyValue::getKey)
                                 .orElse(null))
                         .toList())

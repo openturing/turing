@@ -58,6 +58,12 @@ public class TurWCSource implements Serializable {
     @OneToMany(mappedBy = TUR_WC_SOURCE, orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
+    private Collection<TurWCStartingPoint> startingPoints  = new HashSet<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = TUR_WC_SOURCE, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurWCAllowUrl> allowUrls  = new HashSet<>();
 
     @Builder.Default
@@ -77,6 +83,14 @@ public class TurWCSource implements Serializable {
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<TurWCAttributeMapping> attributeMappings = new HashSet<>();
+
+    public void setStartingPoints(Collection<TurWCStartingPoint> startingPoints) {
+        this.startingPoints.clear();
+        if (startingPoints != null) {
+            this.startingPoints.addAll(startingPoints);
+        }
+    }
+
 
     public void setAllowUrls(Collection<TurWCAllowUrl> allowUrls) {
         this.allowUrls.clear();

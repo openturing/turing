@@ -109,11 +109,9 @@ public class TuringUtils {
             try (CloseableHttpResponse response = client.execute(httpPost)) {
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Viglet Turing Index Request URI: %s", httpPost.getURI()));
-                    log.debug(String.format("Viglet Turing indexer response HTTP result is: %s, for request uri: %s",
-                            response.getStatusLine().getStatusCode(), httpPost.getURI()));
-                    log.debug(String.format("Viglet Turing indexer response HTTP result is: %s",
-                            httpPost.getEntity().toString()));
+                    log.debug("Viglet Turing Index Request URI: {}", httpPost.getURI());
+                    log.debug("Viglet Turing indexer response HTTP result is: {}, for request uri: {}", response.getStatusLine().getStatusCode(), httpPost.getURI());
+                    log.debug("Viglet Turing indexer response HTTP result is: {}", httpPost.getEntity().toString());
                 }
             }
         } catch (IOException e) {
@@ -142,28 +140,16 @@ public class TuringUtils {
                 // encode
                 ByteBuffer outputBuffer = customCharset.encode(data);
 
-                byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
-                String jsonUTF8 = new String(outputData);
-                HttpPost httpPost = new HttpPost(
-                        String.format("%s/api/sn/%s/import", config.getTuringURL(), turSNSiteConfig.getName()));
-
-                StringEntity entity = new StringEntity(jsonUTF8, StandardCharsets.UTF_8);
-                httpPost.setEntity(entity);
-                httpPost.setHeader("Accept", "application/json");
-                httpPost.setHeader("Content-type", "application/json");
-                httpPost.setHeader("Accept-Encoding", StandardCharsets.UTF_8.name());
+                HttpPost httpPost = getHttpPost(config, turSNSiteConfig, outputBuffer);
 
                 basicAuth(config, httpPost);
                 try (CloseableHttpResponse response = client.execute(httpPost)) {
 
                     if (log.isDebugEnabled()) {
-                        log.debug(String.format("Viglet Turing Index Request URI: %s", httpPost.getURI()));
-                        log.debug(String.format("JSON: %s", jsonResult));
-                        log.debug(
-                                String.format("Viglet Turing indexer response HTTP result is: %s, for request uri: %s",
-                                        response.getStatusLine().getStatusCode(), httpPost.getURI()));
-                        log.debug(String.format("Viglet Turing indexer response HTTP result is: %s",
-                                httpPost.getEntity().toString()));
+                        log.debug("Viglet Turing Index Request URI: {}", httpPost.getURI());
+                        log.debug("JSON: {}", jsonResult);
+                        log.debug("Viglet Turing indexer response HTTP result is: {}, for request uri: {}", response.getStatusLine().getStatusCode(), httpPost.getURI());
+                        log.debug("Viglet Turing indexer response HTTP result is: {}", httpPost.getEntity().toString());
                     }
                     turSNJobItems.getTuringDocuments().clear();
                 }
@@ -171,6 +157,20 @@ public class TuringUtils {
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
+    }
+
+    private static HttpPost getHttpPost(IHandlerConfiguration config, TurSNSiteConfig turSNSiteConfig, ByteBuffer outputBuffer) {
+        byte[] outputData = new String(outputBuffer.array()).getBytes(StandardCharsets.UTF_8);
+        String jsonUTF8 = new String(outputData);
+        HttpPost httpPost = new HttpPost(
+                String.format("%s/api/sn/%s/import", config.getTuringURL(), turSNSiteConfig.getName()));
+
+        StringEntity entity = new StringEntity(jsonUTF8, StandardCharsets.UTF_8);
+        httpPost.setEntity(entity);
+        httpPost.setHeader("Accept", "application/json");
+        httpPost.setHeader("Content-type", "application/json");
+        httpPost.setHeader("Accept-Encoding", StandardCharsets.UTF_8.name());
+        return httpPost;
     }
 
     public static Channel getChosenChannel(ChannelRef[] channelRefs, List<String> siteNames,
@@ -397,7 +397,7 @@ public class TuringUtils {
                 return createSiteURL(mo, config);
             } else {
                 if (log.isDebugEnabled()) {
-                    log.debug("ETLTuringTranslator Content without channel:" + mo.getName());
+                    log.debug("ETLTuringTranslator Content without channel:{}", mo.getName());
                 }
                 return null;
             }

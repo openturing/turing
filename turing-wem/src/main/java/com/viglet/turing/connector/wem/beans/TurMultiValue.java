@@ -33,7 +33,7 @@ public class TurMultiValue extends ArrayList<String> {
 
 	public static TurMultiValue fromList(List<String> list) {
 		TurMultiValue turMultiValue = new TurMultiValue();
-		list.forEach(turMultiValue::add);
+        turMultiValue.addAll(list);
 		return turMultiValue;
 	}
 }

@@ -29,7 +29,7 @@ public class DeploymentHandler {
 
 	private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
 
-    private IHandlerConfiguration config;
+    private final IHandlerConfiguration config;
 
     public DeploymentHandler(IHandlerConfiguration config) {
         this.config = config;

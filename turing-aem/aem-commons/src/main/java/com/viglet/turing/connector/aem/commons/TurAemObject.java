@@ -47,10 +47,11 @@ public class TurAemObject {
     private final String type;
     private final String path;
     private final String url;
-    private String model;
     private final JSONObject jcrNode;
     private JSONObject jcrContentNode = new JSONObject();
     private String title;
+    private String template;
+    private String model;
     private final Map<String, Object> attributes = new HashMap<>();
 
     public static final String CONTENT_FRAGMENT = "contentFragment";
@@ -58,6 +59,7 @@ public class TurAemObject {
     public static final String CQ_LAST_REPLICATION_ACTION_PUBLISH = "cq:lastReplicationAction_publish";
     public static final String CQ_LAST_MODIFIED = "cq:lastModified";
     public static final String CQ_MODEL = "cq:model";
+    public static final String CQ_TEMPLATE = "cq:template";
     public static final String DATA_FOLDER = "data";
     public static final String DATE_JSON_FORMAT = "E MMM dd yyyy HH:mm:ss 'GMT'Z";
     public static final String EMPTY_VALUE = "";
@@ -71,6 +73,7 @@ public class TurAemObject {
         try {
             if (jcrNode.has(JCR_CONTENT)) {
                 this.jcrContentNode = jcrNode.getJSONObject(JCR_CONTENT);
+                this.template = jcrContentNode.has(CQ_TEMPLATE) ? this.jcrContentNode.getString(CQ_TEMPLATE) : EMPTY_VALUE;
                 this.delivered = isActivated(CQ_LAST_REPLICATION_ACTION)
                         && isActivated(CQ_LAST_REPLICATION_ACTION_PUBLISH);
                 this.title = jcrContentNode.has(JCR_TITLE) ? this.jcrContentNode.getString(JCR_TITLE) : EMPTY_VALUE;

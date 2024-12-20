@@ -23,6 +23,7 @@ import com.vignette.config.client.common.ConfigException;
 import com.vignette.logging.context.ContextLogger;
 import com.vignette.util.CustomerMsg;
 import com.vignette.util.MsgObject;
+import lombok.Setter;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -49,6 +50,7 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
     private static final String DEFAULT_SN_LOCALE = "en_US";
     private static final String DEFAULT_DPS_CONTEXT = "sites";
 
+    @Setter
     private String turingURL;
     private String snSite;
     private String snLocale;
@@ -57,7 +59,9 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
     private String cdaURLPrefix;
     private String sitesAssociationPriority;
     private String fileSourcePath;
+    @Setter
     private String login;
+    @Setter
     private String password;
     private String providerName;
     private static final ContextLogger log = ContextLogger.getLogger(MethodHandles.lookup().lookupClass());
@@ -70,10 +74,6 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
     @Override
     public String getTuringURL() {
         return turingURL;
-    }
-
-    public void setTuringURL(String turingURL) {
-        this.turingURL = turingURL;
     }
 
     @Override
@@ -286,17 +286,9 @@ public class GenericResourceHandlerConfiguration implements IHandlerConfiguratio
         return login;
     }
 
-    public void setLogin(String login) {
-        this.login = login;
-    }
-
     @Override
     public String getPassword() {
         return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     @Override
