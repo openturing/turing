@@ -120,12 +120,12 @@ public class FileAssetsExtractor {
 
     @NotNull
     private static FileAsset getFileAsset(TurFileAttributes ocrResult, String id, URL url) {
-        String extension = ocrResult.getExtension();
-        String filename = ocrResult.getName();
-        String content = ocrResult.getContent();
+        String extension = ocrResult.getExtension() == null ? "": ocrResult.getExtension();
+        String filename = ocrResult.getName() == null ? "": ocrResult.getName();
+        String content = ocrResult.getContent() == null ? "": ocrResult.getContent();
         Date indexingDate = new Date();
-        Date modificationDate = ocrResult.getLastModified();
-        float fileSize = ocrResult.getSize().getBytes();
+        Date modificationDate = ocrResult.getLastModified() == null ? new Date() : ocrResult.getLastModified();
+        float fileSize = ocrResult.getSize() == null ? 0f : ocrResult.getSize().getBytes();
 
         return new FileAsset(
                 (ID_PREFIX + id),

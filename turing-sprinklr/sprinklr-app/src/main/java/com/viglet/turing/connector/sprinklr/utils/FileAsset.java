@@ -35,8 +35,16 @@ public class FileAsset {
         var attributes = new HashMap<String, Object>();
 
         var formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        String formatedIndexingDate = formatter.format(indexingDate);
-        String formatedModificationDate = formatter.format(modificationDate);
+
+        // Value for date if indexingDate or modificationDate is null;
+        String formatedIndexingDate = "2000-01-01 00:00:00";
+        String formatedModificationDate = "2000-01-01 00:00:00";
+        if(indexingDate != null) {
+            formatedIndexingDate = formatter.format(indexingDate);
+        }
+        if(modificationDate != null){
+            formatedModificationDate = formatter.format(modificationDate);
+        }
 
         attributes.put("id", id);
         attributes.put("title", filename);
@@ -48,7 +56,6 @@ public class FileAsset {
         attributes.put("extension", extension);
         attributes.put("source_apps", List.of("SPRINKLR"));
         attributes.put("type", "Static File");
-
 
         return attributes;
     }
