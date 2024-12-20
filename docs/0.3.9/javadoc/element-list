@@ -56,6 +56,7 @@ com.viglet.turing.commons.sn.field
 com.viglet.turing.commons.sn.pagination
 com.viglet.turing.commons.sn.search
 com.viglet.turing.commons.utils
+com.viglet.turing.connector
 com.viglet.turing.connector.aem
 com.viglet.turing.connector.aem.api
 com.viglet.turing.connector.aem.cli
@@ -85,14 +86,20 @@ com.viglet.turing.connector.db.sample.ext
 com.viglet.turing.connector.filesystem
 com.viglet.turing.connector.filesystem.commons
 com.viglet.turing.connector.nutch.index.writer
+com.viglet.turing.connector.persistence.model
+com.viglet.turing.connector.persistence.repository
+com.viglet.turing.connector.plugin
+com.viglet.turing.connector.plugin.webcrawler
+com.viglet.turing.connector.plugin.webcrawler.persistence.model
+com.viglet.turing.connector.plugin.webcrawler.persistence.repository
 com.viglet.turing.connector.sprinklr
 com.viglet.turing.connector.sprinklr.api
 com.viglet.turing.connector.sprinklr.commons
 com.viglet.turing.connector.sprinklr.commons.ext
+com.viglet.turing.connector.sprinklr.commons.plugins
 com.viglet.turing.connector.sprinklr.commons.tools
 com.viglet.turing.connector.sprinklr.export
 com.viglet.turing.connector.sprinklr.export.bean
-com.viglet.turing.connector.sprinklr.ext
 com.viglet.turing.connector.sprinklr.onstartup
 com.viglet.turing.connector.sprinklr.persistence.model
 com.viglet.turing.connector.sprinklr.persistence.repository
@@ -225,7 +232,6 @@ com.viglet.turing.sprinklr.client.service.kb
 com.viglet.turing.sprinklr.client.service.kb.request
 com.viglet.turing.sprinklr.client.service.kb.response
 com.viglet.turing.sprinklr.client.service.token
-com.viglet.turing.sprinklr.plugins
 com.viglet.turing.swagger
 com.viglet.turing.thesaurus
 com.viglet.turing.tomcat
