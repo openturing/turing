@@ -86,12 +86,17 @@ com.viglet.turing.connector.db.sample.ext
 com.viglet.turing.connector.filesystem
 com.viglet.turing.connector.filesystem.commons
 com.viglet.turing.connector.nutch.index.writer
+com.viglet.turing.connector.onstartup
 com.viglet.turing.connector.persistence.model
 com.viglet.turing.connector.persistence.repository
 com.viglet.turing.connector.plugin
 com.viglet.turing.connector.plugin.webcrawler
+com.viglet.turing.connector.plugin.webcrawler.export
+com.viglet.turing.connector.plugin.webcrawler.export.bean
+com.viglet.turing.connector.plugin.webcrawler.onstartup
 com.viglet.turing.connector.plugin.webcrawler.persistence.model
 com.viglet.turing.connector.plugin.webcrawler.persistence.repository
+com.viglet.turing.connector.queue
 com.viglet.turing.connector.sprinklr
 com.viglet.turing.connector.sprinklr.api
 com.viglet.turing.connector.sprinklr.commons
