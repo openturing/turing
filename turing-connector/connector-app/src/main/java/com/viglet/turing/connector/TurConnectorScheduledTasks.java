@@ -67,7 +67,7 @@ public class TurConnectorScheduledTasks {
                             log.info("This is the first time, waiting next schedule.");
                         } else {
                             log.info("Starting indexing");
-                            turConnectorProcess.start(turConnectorPlugin);
+                         //   turConnectorProcess.start(turConnectorPlugin);
                         }
                     });
                 });

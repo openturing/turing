@@ -20,6 +20,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Entities;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -59,15 +60,16 @@ public class TurWCPluginProcess {
     private final TurWCNotAllowUrlRepository turWCNotAllowUrlRepository;
     private final TurWCFileExtensionRepository turWCFileExtensionRepository;
     private final TurWCAttributeMappingRepository turWCAttributeMappingRepository;
+    private final JmsMessagingTemplate jmsMessagingTemplate;
 
     @Inject
     public TurWCPluginProcess(@Value("${turing.wc.timeout:5000}") int timeout,
-                        @Value("${turing.wc.referrer:https://www.google.com}") String referrer,
-                        TurWCAllowUrlRepository turWCAllowUrlRepository,
-                        TurWCNotAllowUrlRepository turWCNotAllowUrlRepository,
-                        TurWCFileExtensionRepository turWCFileExtensionRepository,
-                        TurWCAttributeMappingRepository turWCAttributeMappingRepository,
-                        TurWCStartingPointRepository turWCStartingPointsRepository) {
+                              @Value("${turing.wc.referrer:https://www.google.com}") String referrer,
+                              TurWCAllowUrlRepository turWCAllowUrlRepository,
+                              TurWCNotAllowUrlRepository turWCNotAllowUrlRepository,
+                              TurWCFileExtensionRepository turWCFileExtensionRepository,
+                              TurWCAttributeMappingRepository turWCAttributeMappingRepository,
+                              TurWCStartingPointRepository turWCStartingPointsRepository, JmsMessagingTemplate jmsMessagingTemplate) {
         this.timeout = timeout;
         this.referrer = referrer;
         this.turWCAllowUrlRepository = turWCAllowUrlRepository;
@@ -75,6 +77,7 @@ public class TurWCPluginProcess {
         this.turWCFileExtensionRepository = turWCFileExtensionRepository;
         this.turWCAttributeMappingRepository = turWCAttributeMappingRepository;
         this.turWCStartingPointsRepository = turWCStartingPointsRepository;
+        this.jmsMessagingTemplate = jmsMessagingTemplate;
     }
 
     public void start(TurWCSource turWCSource) {
@@ -136,6 +139,7 @@ public class TurWCPluginProcess {
             String pageUrl = getPageUrl(url);
             if (canBeIndexed(pageUrl)) {
                 indexedLinks.add(pageUrl);
+                log.info("WC is creating a Job Item: {}", url);
                 addTurSNJobItems(turWCSource, document, url);
                 return;
             } else {
@@ -180,6 +184,8 @@ public class TurWCPluginProcess {
                 getLocale(turWCSource, document, url),
                 getJobItemAttributes(turWCSource, document, url));
         turSNJobItems.add(turSNJobItem);
+        log.info("WC Connector sending to queue: {}", url);
+        this.jmsMessagingTemplate.convertAndSend("connector-indexing.queue", turSNJobItems);
     }
 
     public Map<String, Object> getJobItemAttributes(TurWCSource turWCSource, Document document, String url) {
