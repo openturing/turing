@@ -20,8 +20,9 @@ package com.viglet.turing.connector;
 
 import com.google.inject.Inject;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
+import com.viglet.turing.connector.commons.plugin.TurConnectorPlugin;
+import com.viglet.turing.connector.impl.TurConnectorContextImpl;
 import com.viglet.turing.connector.persistence.repository.TurConnectorConfigVarRepository;
-import com.viglet.turing.connector.plugin.TurConnectorPlugin;
 import jakarta.servlet.ServletContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -37,18 +38,19 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 public class TurConnectorScheduledTasks {
+    private final TurConnectorContextImpl turConnectorContext;
     private final TurConnectorConfigVarRepository turConnectorConfigVarRepository;
-    private final TurConnectorProcess turConnectorProcess;
-    private final ServletContext context;
+    private final ServletContext servletContext;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
     public static final String FIRST_TIME = "FIRST_TIME";
 
     @Inject
-    public TurConnectorScheduledTasks(TurConnectorConfigVarRepository turConnectorConfigVarRepository,
-                                      TurConnectorProcess turConnectorProcess, ServletContext context) {
+    public TurConnectorScheduledTasks(TurConnectorContextImpl turConnectorContext,
+                                      TurConnectorConfigVarRepository turConnectorConfigVarRepository,
+                                      ServletContext servletContext) {
+        this.turConnectorContext = turConnectorContext;
         this.turConnectorConfigVarRepository = turConnectorConfigVarRepository;
-        this.turConnectorProcess = turConnectorProcess;
-        this.context = context;
+        this.servletContext = servletContext;
     }
 
     @Scheduled(fixedDelay = 60, timeUnit = TimeUnit.MINUTES)
@@ -58,16 +60,16 @@ public class TurConnectorScheduledTasks {
                 .ifPresent(classInstance -> {
                     TurConnectorPlugin turConnectorPlugin;
                     turConnectorPlugin = (TurConnectorPlugin) classInstance;
-                    ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(context);
+                    ApplicationContext applicationContext = WebApplicationContextUtils
+                            .getWebApplicationContext(servletContext);
                     Optional.ofNullable(applicationContext).ifPresent(appContext -> {
                         applicationContext.getAutowireCapableBeanFactory().autowireBean(turConnectorPlugin);
-                        turConnectorPlugin.init();
+                        turConnectorPlugin.init(turConnectorContext);
                         log.info("The time is now {}", dateFormat.format(new Date()));
                         if (turConnectorConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
                             log.info("This is the first time, waiting next schedule.");
                         } else {
                             log.info("Starting indexing");
-                         //   turConnectorProcess.start(turConnectorPlugin);
                         }
                     });
                 });

@@ -4,8 +4,8 @@ import com.google.inject.Inject;
 import com.viglet.turing.client.sn.TurMultiValue;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
-import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
+import com.viglet.turing.connector.commons.plugin.TurConnectorContext;
 import com.viglet.turing.connector.plugin.webcrawler.persistence.repository.*;
 import com.viglet.turing.connector.webcrawler.commons.TurWCContext;
 import com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtInterface;
@@ -20,7 +20,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Entities;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -45,7 +44,6 @@ public class TurWCPluginProcess {
     private final List<String> notAllowStartsWithUrls = new ArrayList<>();
     private final List<String> notAllowExtensions = new ArrayList<>();
     private final TurWCStartingPointRepository turWCStartingPointsRepository;
-    private TurSNJobItems turSNJobItems = new TurSNJobItems();
     private final String userAgent = RandomUserAgentGenerator.getNextNonMobile();
     private final Set<String> visitedLinks = new HashSet<>();
     private final Set<String> indexedLinks = new HashSet<>();
@@ -60,7 +58,7 @@ public class TurWCPluginProcess {
     private final TurWCNotAllowUrlRepository turWCNotAllowUrlRepository;
     private final TurWCFileExtensionRepository turWCFileExtensionRepository;
     private final TurWCAttributeMappingRepository turWCAttributeMappingRepository;
-    private final JmsMessagingTemplate jmsMessagingTemplate;
+    private TurConnectorContext turConnectorContext;
 
     @Inject
     public TurWCPluginProcess(@Value("${turing.wc.timeout:5000}") int timeout,
@@ -69,7 +67,7 @@ public class TurWCPluginProcess {
                               TurWCNotAllowUrlRepository turWCNotAllowUrlRepository,
                               TurWCFileExtensionRepository turWCFileExtensionRepository,
                               TurWCAttributeMappingRepository turWCAttributeMappingRepository,
-                              TurWCStartingPointRepository turWCStartingPointsRepository, JmsMessagingTemplate jmsMessagingTemplate) {
+                              TurWCStartingPointRepository turWCStartingPointsRepository) {
         this.timeout = timeout;
         this.referrer = referrer;
         this.turWCAllowUrlRepository = turWCAllowUrlRepository;
@@ -77,11 +75,11 @@ public class TurWCPluginProcess {
         this.turWCFileExtensionRepository = turWCFileExtensionRepository;
         this.turWCAttributeMappingRepository = turWCAttributeMappingRepository;
         this.turWCStartingPointsRepository = turWCStartingPointsRepository;
-        this.jmsMessagingTemplate = jmsMessagingTemplate;
     }
 
-    public void start(TurWCSource turWCSource) {
-        reset();
+    public void start(TurWCSource turWCSource, TurConnectorContext turConnectorContext) {
+        this.turConnectorContext = turConnectorContext;
+        turConnectorContext.reset();
         turWCFileExtensionRepository.findByTurWCSource(turWCSource).ifPresent(source ->
                 source.forEach(turWCFileExtension ->
                         this.notAllowExtensions.add(turWCFileExtension.getExtension())));
@@ -116,22 +114,17 @@ public class TurWCPluginProcess {
             queueLinks.offer(this.website + url);
             getPagesFromQueue(turWCSource);
         });
-      }
-
-    private void reset() {
-        turSNJobItems = new TurSNJobItems();
-        visitedLinks.clear();
     }
 
 
-    public void getPagesFromQueue(TurWCSource turWCSource) {
+    private void getPagesFromQueue(TurWCSource turWCSource) {
         while (!queueLinks.isEmpty()) {
             String url = queueLinks.poll();
             getPage(turWCSource, url);
         }
     }
 
-    public void getPage(TurWCSource turWCSource, String url) {
+    private void getPage(TurWCSource turWCSource, String url) {
         try {
             log.info("{}: {}", url, turWCSource.getTurSNSites());
             Document document = getHTML(url);
@@ -151,9 +144,6 @@ public class TurWCPluginProcess {
         new TurSNJobItem();
     }
 
-    public TurSNJobItem getNext() {
-        return turSNJobItems.iterator().next();
-    }
     private void getPageLinks(Document document) {
         document.select(A_HREF).forEach(page -> addPageToQueue(getPageUrl(page.attr(ABS_HREF))));
     }
@@ -180,15 +170,12 @@ public class TurWCPluginProcess {
     }
 
     private void addTurSNJobItems(TurWCSource turWCSource, Document document, String url) {
-        TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, new ArrayList<>(snSites),
+        turConnectorContext.addJobItem(new TurSNJobItem(TurSNJobAction.CREATE, new ArrayList<>(snSites),
                 getLocale(turWCSource, document, url),
-                getJobItemAttributes(turWCSource, document, url));
-        turSNJobItems.add(turSNJobItem);
-        log.info("WC Connector sending to queue: {}", url);
-        this.jmsMessagingTemplate.convertAndSend("connector-indexing.queue", turSNJobItems);
+                getJobItemAttributes(turWCSource, document, url)));
     }
 
-    public Map<String, Object> getJobItemAttributes(TurWCSource turWCSource, Document document, String url) {
+    private Map<String, Object> getJobItemAttributes(TurWCSource turWCSource, Document document, String url) {
         Map<String, Object> turSNJobItemAttributes = new HashMap<>();
         turWCAttributeMappingRepository.findByTurWCSource(turWCSource).ifPresent(source ->
                 source.forEach(turWCCustomClass ->
@@ -259,7 +246,7 @@ public class TurWCPluginProcess {
         attributes.put(attributeName, attributeValue);
     }
 
-    public Locale getLocale(TurWCSource turWCSource, Document document, String url) {
+    private Locale getLocale(TurWCSource turWCSource, Document document, String url) {
 
         return Optional.ofNullable(turWCSource.getLocale())
                 .orElseGet(() -> {
@@ -274,7 +261,7 @@ public class TurWCPluginProcess {
                 });
     }
 
-    public TurWCContext getTurWCContext(Document document, String url) {
+    private TurWCContext getTurWCContext(Document document, String url) {
         return TurWCContext.builder()
                 .document(document)
                 .url(url)

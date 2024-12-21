@@ -16,11 +16,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.plugin;
+package com.viglet.turing.connector.commons.plugin;
 
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 
-public interface TurConnectorPlugin {
-    void init();
-    TurSNJobItem getNext();
+public interface TurConnectorContext {
+    void addJobItem(TurSNJobItem turSNJobItem);
+    void reset();
 }
