@@ -16,11 +16,8 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.commons.plugin;
+package com.viglet.turing.connector;
 
-import com.viglet.turing.client.sn.job.TurSNJobItem;
-
-public interface TurConnectorContext {
-    void addJobItem(TurSNJobItem turSNJobItem);
-    void close();
+public class TurConnectorConstants {
+    public static final String CONNECTOR_INDEXING_QUEUE = "connector-indexing.queue";
 }

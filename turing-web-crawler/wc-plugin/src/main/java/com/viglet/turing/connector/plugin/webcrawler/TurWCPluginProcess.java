@@ -37,6 +37,8 @@ public class TurWCPluginProcess {
     public static final String A_HREF = "a[href]";
     public static final String ABS_HREF = "abs:href";
     public static final String WILD_CARD = "*";
+    public static final String AUTHORIZATION = "Authorization";
+    public static final String BASIC = "Basic";
     private final List<String> startingPoints = new ArrayList<>();
     private final List<String> allowUrls = new ArrayList<>();
     private final List<String> allowStartsWithUrls = new ArrayList<>();
@@ -79,7 +81,6 @@ public class TurWCPluginProcess {
 
     public void start(TurWCSource turWCSource, TurConnectorContext turConnectorContext) {
         this.turConnectorContext = turConnectorContext;
-        turConnectorContext.reset();
         turWCFileExtensionRepository.findByTurWCSource(turWCSource).ifPresent(source ->
                 source.forEach(turWCFileExtension ->
                         this.notAllowExtensions.add(turWCFileExtension.getExtension())));
@@ -114,6 +115,11 @@ public class TurWCPluginProcess {
             queueLinks.offer(this.website + url);
             getPagesFromQueue(turWCSource);
         });
+        finished(turConnectorContext);
+    }
+
+    private static void finished(TurConnectorContext turConnectorContext) {
+        turConnectorContext.close();
     }
 
 
@@ -247,7 +253,6 @@ public class TurWCPluginProcess {
     }
 
     private Locale getLocale(TurWCSource turWCSource, Document document, String url) {
-
         return Optional.ofNullable(turWCSource.getLocale())
                 .orElseGet(() -> {
                     if (!StringUtils.isEmpty(turWCSource.getLocaleClass())) {
@@ -255,7 +260,6 @@ public class TurWCPluginProcess {
                                 .map(classInstance -> ((TurWCExtLocaleInterface) classInstance)
                                         .consume(getTurWCContext(document, url)))
                                 .orElse(Locale.US);
-
                     }
                     return Locale.US;
                 });
@@ -281,7 +285,6 @@ public class TurWCPluginProcess {
                 && !StringUtils.equalsAny(pageUrl, visitedLinks.toArray(new String[0]));
     }
 
-
     private static boolean isJavascriptUrl(String pageUrl) {
         return pageUrl.contains(JAVASCRIPT);
     }
@@ -305,13 +308,12 @@ public class TurWCPluginProcess {
     }
 
     private Document getHTML(String url) throws IOException {
-
         Connection connection = Jsoup.connect(url)
                 .userAgent(userAgent)
                 .referrer(referrer)
                 .timeout(timeout);
         if (isBasicAuth()) {
-            connection.header("Authorization", "Basic " + getBasicAuth());
+            connection.header(AUTHORIZATION, "%s %s".formatted(BASIC, getBasicAuth()));
         }
         Document document = connection.get();
 
@@ -322,8 +324,7 @@ public class TurWCPluginProcess {
     }
 
     private String getBasicAuth() {
-        String authString = this.username + ":" + this.password;
-        return Base64.getEncoder().encodeToString(authString.getBytes());
+        return Base64.getEncoder().encodeToString("%s:%s".formatted(this.username, this.password).getBytes());
     }
 
     private boolean isBasicAuth() {

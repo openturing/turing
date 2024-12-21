@@ -31,10 +31,12 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.ID;
+import static com.viglet.turing.connector.TurConnectorConstants.CONNECTOR_INDEXING_QUEUE;
 
 @Slf4j
 @Component
 public class TurConnectorContextImpl implements TurConnectorContext {
+
     private TurSNJobItems turSNJobItems = new TurSNJobItems();
     private final Queue<TurSNJobItem> queueLinks = new LinkedList<>();
     private final JmsMessagingTemplate jmsMessagingTemplate;
@@ -55,15 +57,16 @@ public class TurConnectorContextImpl implements TurConnectorContext {
                 getInfoQueue();
             }
         }
+
+    }
+
+    @Override
+    public void close() {
         if (turSNJobItems.size() > 0) {
             sendToTuring();
             getInfoQueue();
         }
-    }
-
-    @Override
-    public void reset() {
-        turSNJobItems = new TurSNJobItems();
+        queueLinks.clear();
     }
 
     private void sendToTuring() {
@@ -72,7 +75,7 @@ public class TurConnectorContextImpl implements TurConnectorContext {
                 log.debug("TurSNJobItem Id: {}", turSNJobItem.getAttributes().get(ID));
             }
         }
-        this.jmsMessagingTemplate.convertAndSend("connector-indexing.queue", turSNJobItems);
+        this.jmsMessagingTemplate.convertAndSend(CONNECTOR_INDEXING_QUEUE, turSNJobItems);
 
     }
 

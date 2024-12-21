@@ -33,6 +33,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.ID;
+import static com.viglet.turing.connector.TurConnectorConstants.CONNECTOR_INDEXING_QUEUE;
 
 @Component
 @Slf4j
@@ -45,7 +46,7 @@ public class TurConnectorProcessQueue {
         this.turingApiKey = turingApiKey;
     }
 
-    @JmsListener(destination = "connector-indexing.queue")
+    @JmsListener(destination = CONNECTOR_INDEXING_QUEUE)
     @Transactional
     public void receiveIndexingQueue(TurSNJobItems turSNJobItems) {
         log.info("receiveIndexingQueue");
