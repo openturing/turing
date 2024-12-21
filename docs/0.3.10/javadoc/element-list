@@ -109,6 +109,7 @@ com.viglet.turing.connector.sprinklr.export.bean
 com.viglet.turing.connector.sprinklr.onstartup
 com.viglet.turing.connector.sprinklr.persistence.model
 com.viglet.turing.connector.sprinklr.persistence.repository
+com.viglet.turing.connector.sprinklr.sample.ext
 com.viglet.turing.connector.sprinklr.utils
 com.viglet.turing.connector.webcrawler.commons
 com.viglet.turing.connector.webcrawler.commons.ext
