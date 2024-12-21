@@ -9,7 +9,7 @@
   <description>Turing AEM Connector - Sample Custom CLI Indexer</description>
   <properties>
     <revision>0.3.10</revision>
-    <turing.version>96070ba23c</turing.version>
+    <turing.version>6eea13d91d</turing.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
