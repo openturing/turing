@@ -9,7 +9,7 @@
     <name>Turing Database - Sample Custom Connector</name>
     <description>Turing Database - Sample Custom Connector</description>
     <properties>
-        <revision>0.3.9</revision>
+        <revision>0.3.10</revision>
         <turing.version>3ee63eeed0</turing.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>

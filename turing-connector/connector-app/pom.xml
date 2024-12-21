@@ -83,7 +83,7 @@
         <dependency>
             <groupId>com.viglet.turing.connector</groupId>
             <artifactId>connector-commons</artifactId>
-            <version>0.3.9</version>
+            <version>0.3.10</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
