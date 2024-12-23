@@ -529,11 +529,13 @@ public class TurAemIndexerTool {
                         }
                     });
                 });
-        sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.CREATE, locale,
+        sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.CREATE,
                 Collections.singletonList(config.getDefaultSNSiteConfig().getName()),
+                locale,
+                attributes,
                 TurAemCommonsUtils.castSpecToJobSpec(
-                        TurAemCommonsUtils.getDefinitionFromModel(turSNAttributeSpecList, attributes)),
-                attributes)), turAemSourceContext);
+                        TurAemCommonsUtils.getDefinitionFromModel(turSNAttributeSpecList, attributes))
+                )), turAemSourceContext);
     }
 
     private void sendJobToTuring(TurSNJobItems turSNJobItems, TurAemSourceContext turAemSourceContext) {

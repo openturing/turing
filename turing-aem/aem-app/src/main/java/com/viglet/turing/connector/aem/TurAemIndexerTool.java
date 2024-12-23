@@ -426,10 +426,11 @@ public class TurAemIndexerTool {
                     });
                 });
         addJobItemToItems(new TurSNJobItem(TurSNJobAction.CREATE,
-                locale, Collections.singletonList(turAemSourceContext.getTurSNSite()),
+                Collections.singletonList(turAemSourceContext.getTurSNSite()), locale,
+                attributes,
                 TurAemCommonsUtils.castSpecToJobSpec(
-                        TurAemCommonsUtils.getDefinitionFromModel(turSNAttributeSpecList, attributes)),
-                attributes));
+                        TurAemCommonsUtils.getDefinitionFromModel(turSNAttributeSpecList, attributes))
+               ));
     }
 
     private @NotNull List<TurCmsTargetAttr> getTurCmsTargetAttrs(TurAemModel model, TurAemSource turAemSource) {
