@@ -8,6 +8,7 @@
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+    <groupId>com.viglet.turing.connector</groupId>
     <artifactId>turing-connector</artifactId>
     <version>${revision}</version>
     <name>Turing Connector</name>
@@ -39,6 +40,7 @@
             <modules>
                 <module>connector-commons</module>
                 <module>connector-app</module>
+                <module>connector-sample</module>
             </modules>
         </profile>
         <profile>

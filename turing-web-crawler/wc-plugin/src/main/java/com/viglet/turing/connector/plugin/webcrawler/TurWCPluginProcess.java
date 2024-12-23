@@ -4,8 +4,8 @@ import com.google.inject.Inject;
 import com.viglet.turing.client.sn.TurMultiValue;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
-import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
+import com.viglet.turing.connector.commons.plugin.TurConnectorContext;
 import com.viglet.turing.connector.plugin.webcrawler.persistence.repository.*;
 import com.viglet.turing.connector.webcrawler.commons.TurWCContext;
 import com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtInterface;
@@ -37,6 +37,8 @@ public class TurWCPluginProcess {
     public static final String A_HREF = "a[href]";
     public static final String ABS_HREF = "abs:href";
     public static final String WILD_CARD = "*";
+    public static final String AUTHORIZATION = "Authorization";
+    public static final String BASIC = "Basic";
     private final List<String> startingPoints = new ArrayList<>();
     private final List<String> allowUrls = new ArrayList<>();
     private final List<String> allowStartsWithUrls = new ArrayList<>();
@@ -44,7 +46,6 @@ public class TurWCPluginProcess {
     private final List<String> notAllowStartsWithUrls = new ArrayList<>();
     private final List<String> notAllowExtensions = new ArrayList<>();
     private final TurWCStartingPointRepository turWCStartingPointsRepository;
-    private TurSNJobItems turSNJobItems = new TurSNJobItems();
     private final String userAgent = RandomUserAgentGenerator.getNextNonMobile();
     private final Set<String> visitedLinks = new HashSet<>();
     private final Set<String> indexedLinks = new HashSet<>();
@@ -59,15 +60,16 @@ public class TurWCPluginProcess {
     private final TurWCNotAllowUrlRepository turWCNotAllowUrlRepository;
     private final TurWCFileExtensionRepository turWCFileExtensionRepository;
     private final TurWCAttributeMappingRepository turWCAttributeMappingRepository;
+    private TurConnectorContext turConnectorContext;
 
     @Inject
     public TurWCPluginProcess(@Value("${turing.wc.timeout:5000}") int timeout,
-                        @Value("${turing.wc.referrer:https://www.google.com}") String referrer,
-                        TurWCAllowUrlRepository turWCAllowUrlRepository,
-                        TurWCNotAllowUrlRepository turWCNotAllowUrlRepository,
-                        TurWCFileExtensionRepository turWCFileExtensionRepository,
-                        TurWCAttributeMappingRepository turWCAttributeMappingRepository,
-                        TurWCStartingPointRepository turWCStartingPointsRepository) {
+                              @Value("${turing.wc.referrer:https://www.google.com}") String referrer,
+                              TurWCAllowUrlRepository turWCAllowUrlRepository,
+                              TurWCNotAllowUrlRepository turWCNotAllowUrlRepository,
+                              TurWCFileExtensionRepository turWCFileExtensionRepository,
+                              TurWCAttributeMappingRepository turWCAttributeMappingRepository,
+                              TurWCStartingPointRepository turWCStartingPointsRepository) {
         this.timeout = timeout;
         this.referrer = referrer;
         this.turWCAllowUrlRepository = turWCAllowUrlRepository;
@@ -77,8 +79,8 @@ public class TurWCPluginProcess {
         this.turWCStartingPointsRepository = turWCStartingPointsRepository;
     }
 
-    public void start(TurWCSource turWCSource) {
-        reset();
+    public void start(TurWCSource turWCSource, TurConnectorContext turConnectorContext) {
+        this.turConnectorContext = turConnectorContext;
         turWCFileExtensionRepository.findByTurWCSource(turWCSource).ifPresent(source ->
                 source.forEach(turWCFileExtension ->
                         this.notAllowExtensions.add(turWCFileExtension.getExtension())));
@@ -113,22 +115,22 @@ public class TurWCPluginProcess {
             queueLinks.offer(this.website + url);
             getPagesFromQueue(turWCSource);
         });
-      }
+        finished(turConnectorContext);
+    }
 
-    private void reset() {
-        turSNJobItems = new TurSNJobItems();
-        visitedLinks.clear();
+    private static void finished(TurConnectorContext turConnectorContext) {
+        turConnectorContext.close();
     }
 
 
-    public void getPagesFromQueue(TurWCSource turWCSource) {
+    private void getPagesFromQueue(TurWCSource turWCSource) {
         while (!queueLinks.isEmpty()) {
             String url = queueLinks.poll();
             getPage(turWCSource, url);
         }
     }
 
-    public void getPage(TurWCSource turWCSource, String url) {
+    private void getPage(TurWCSource turWCSource, String url) {
         try {
             log.info("{}: {}", url, turWCSource.getTurSNSites());
             Document document = getHTML(url);
@@ -136,6 +138,7 @@ public class TurWCPluginProcess {
             String pageUrl = getPageUrl(url);
             if (canBeIndexed(pageUrl)) {
                 indexedLinks.add(pageUrl);
+                log.info("WC is creating a Job Item: {}", url);
                 addTurSNJobItems(turWCSource, document, url);
                 return;
             } else {
@@ -147,9 +150,6 @@ public class TurWCPluginProcess {
         new TurSNJobItem();
     }
 
-    public TurSNJobItem getNext() {
-        return turSNJobItems.iterator().next();
-    }
     private void getPageLinks(Document document) {
         document.select(A_HREF).forEach(page -> addPageToQueue(getPageUrl(page.attr(ABS_HREF))));
     }
@@ -176,13 +176,12 @@ public class TurWCPluginProcess {
     }
 
     private void addTurSNJobItems(TurWCSource turWCSource, Document document, String url) {
-        TurSNJobItem turSNJobItem = new TurSNJobItem(TurSNJobAction.CREATE, new ArrayList<>(snSites),
+        turConnectorContext.addJobItem(new TurSNJobItem(TurSNJobAction.CREATE, new ArrayList<>(snSites),
                 getLocale(turWCSource, document, url),
-                getJobItemAttributes(turWCSource, document, url));
-        turSNJobItems.add(turSNJobItem);
+                getJobItemAttributes(turWCSource, document, url)));
     }
 
-    public Map<String, Object> getJobItemAttributes(TurWCSource turWCSource, Document document, String url) {
+    private Map<String, Object> getJobItemAttributes(TurWCSource turWCSource, Document document, String url) {
         Map<String, Object> turSNJobItemAttributes = new HashMap<>();
         turWCAttributeMappingRepository.findByTurWCSource(turWCSource).ifPresent(source ->
                 source.forEach(turWCCustomClass ->
@@ -253,8 +252,7 @@ public class TurWCPluginProcess {
         attributes.put(attributeName, attributeValue);
     }
 
-    public Locale getLocale(TurWCSource turWCSource, Document document, String url) {
-
+    private Locale getLocale(TurWCSource turWCSource, Document document, String url) {
         return Optional.ofNullable(turWCSource.getLocale())
                 .orElseGet(() -> {
                     if (!StringUtils.isEmpty(turWCSource.getLocaleClass())) {
@@ -262,13 +260,12 @@ public class TurWCPluginProcess {
                                 .map(classInstance -> ((TurWCExtLocaleInterface) classInstance)
                                         .consume(getTurWCContext(document, url)))
                                 .orElse(Locale.US);
-
                     }
                     return Locale.US;
                 });
     }
 
-    public TurWCContext getTurWCContext(Document document, String url) {
+    private TurWCContext getTurWCContext(Document document, String url) {
         return TurWCContext.builder()
                 .document(document)
                 .url(url)
@@ -287,7 +284,6 @@ public class TurWCPluginProcess {
         return isValidToAddQueue(pageUrl)
                 && !StringUtils.equalsAny(pageUrl, visitedLinks.toArray(new String[0]));
     }
-
 
     private static boolean isJavascriptUrl(String pageUrl) {
         return pageUrl.contains(JAVASCRIPT);
@@ -312,13 +308,12 @@ public class TurWCPluginProcess {
     }
 
     private Document getHTML(String url) throws IOException {
-
         Connection connection = Jsoup.connect(url)
                 .userAgent(userAgent)
                 .referrer(referrer)
                 .timeout(timeout);
         if (isBasicAuth()) {
-            connection.header("Authorization", "Basic " + getBasicAuth());
+            connection.header(AUTHORIZATION, "%s %s".formatted(BASIC, getBasicAuth()));
         }
         Document document = connection.get();
 
@@ -329,8 +324,7 @@ public class TurWCPluginProcess {
     }
 
     private String getBasicAuth() {
-        String authString = this.username + ":" + this.password;
-        return Base64.getEncoder().encodeToString(authString.getBytes());
+        return Base64.getEncoder().encodeToString("%s:%s".formatted(this.username, this.password).getBytes());
     }
 
     private boolean isBasicAuth() {

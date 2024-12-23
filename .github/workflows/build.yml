@@ -10,7 +10,7 @@ name: Java CI with Maven and SonarCloud
 
 on:
   push:
-    branches: [ "master", "0.3.9" ]
+    branches: [ "master", "0.3.10" ]
   pull_request:
       types: [ opened, synchronize, reopened ]
 jobs:
@@ -69,5 +69,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           javadoc-branch: javadoc
           java-version: 21
-          target-folder: docs/0.3.9/javadoc
+          target-folder: docs/0.3.10/javadoc
           javadoc-source-folder: target/reports/apidocs

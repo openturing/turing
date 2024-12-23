@@ -1,6 +1,6 @@
 {
   "name": "turing-react",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "private": true,
   "dependencies": {
     "@primer/octicons-react": "^19.14.0",

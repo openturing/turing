@@ -18,26 +18,22 @@
 
 package com.viglet.turing.connector.plugin.webcrawler;
 
-import com.google.inject.Inject;
-import com.viglet.turing.client.sn.job.TurSNJobItem;
-import com.viglet.turing.connector.plugin.TurConnectorPlugin;
+import com.viglet.turing.connector.commons.plugin.TurConnectorContext;
+import com.viglet.turing.connector.commons.plugin.TurConnectorPlugin;
 import com.viglet.turing.connector.plugin.webcrawler.persistence.repository.TurWCSourceRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class TurWCPlugin implements TurConnectorPlugin {
-    private final TurWCSourceRepository turWCSourceRepository;
-    private final TurWCPluginProcess turWCPluginProcess;
+    @Autowired
+    private TurWCSourceRepository turWCSourceRepository;
+    @Autowired
+    private TurWCPluginProcess turWCPluginProcess;
 
-    @Inject
-    public TurWCPlugin(TurWCSourceRepository turWCSourceRepository, TurWCPluginProcess turWCPluginProcess) {
-        this.turWCSourceRepository = turWCSourceRepository;
-        this.turWCPluginProcess = turWCPluginProcess;
-    }
-
-    public void init() {
-        turWCSourceRepository.findAll().forEach(turWCPluginProcess::start);
-    }
     @Override
-    public TurSNJobItem getNext() {
-        return turWCPluginProcess.getNext();
+    public void init(TurConnectorContext turConnectorContext) {
+        turWCSourceRepository.findAll().forEach(turWCSource ->
+                turWCPluginProcess.start(turWCSource, turConnectorContext));
     }
 }
