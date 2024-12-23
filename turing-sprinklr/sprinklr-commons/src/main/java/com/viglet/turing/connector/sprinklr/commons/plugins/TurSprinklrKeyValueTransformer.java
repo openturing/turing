@@ -19,13 +19,35 @@
 package com.viglet.turing.connector.sprinklr.commons.plugins;
 
 import com.viglet.turing.commons.exception.TurRuntimeException;
-import com.viglet.turing.connector.sprinklr.commons.tools.TurSprinklrNotFoundAction;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.util.*;
 
 /**
+ * The {@code TurSprinklrKeyValueTransformer} is a {@code TurSprinklrPlugin}
+ * and provides functionality to load key-value mappings from files and transform keys using these mappings.
+ * 
+ * <p>This class maintains a set of loaded files and a map of mappings for each file. It provides methods
+ * to load mappings from files, retrieve mappings, and transform keys using the loaded mappings.</p>
+ * 
+ * <p>Example usage:</p>
+ * <pre>
+ * TurSprinklrKeyValueTransformer transformer = new TurSprinklrKeyValueTransformer();
+ * transformer.loadMapping("path/to/mapping/file");
+ * String transformedValue = transformer.transform("key", "path/to/mapping/file");
+ * </pre>
+ * 
+ * <p>The mapping file should have the following structure:</p>
+ * <pre>
+ * key1 value1
+ * key2 value2
+ * key3 value3
+ * </pre>
+ * 
+ * <p>Each line in the file should contain a key and a value separated by a space. Duplicate keys will be logged
+ * as warnings, and invalid lines will cause a {@code TurRuntimeException} to be thrown.</p>
+ * 
  * @author Gabriel F. Gomazako
  * @since 0.3.9
  */
@@ -36,6 +58,11 @@ public class TurSprinklrKeyValueTransformer implements TurSprinklrPlugin {
 
     private final Map<String, Map<String, String>> mappings = new HashMap<>();
 
+    /**
+     * Loads a mapping from the specified file if it has not been loaded already.
+     *
+     * @param file the path to the file to load the mapping from
+     */
     public void loadMapping(String file) {
 
         if (!files.contains(file)) {

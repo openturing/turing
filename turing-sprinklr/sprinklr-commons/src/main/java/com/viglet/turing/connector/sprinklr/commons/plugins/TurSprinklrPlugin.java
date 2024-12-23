@@ -19,6 +19,13 @@
 package com.viglet.turing.connector.sprinklr.commons.plugins;
 
 
+/**
+ * The TurSprinklrPlugin interface is used to define what goes inside {@link TurSprinklrPluginContext} container.
+ * <p> Summary of contracts:
+ * <ul> {@link #getName()} - Retrieves the name associated with this plugin.</ul>
+ * <ul> {@link #getDescription()} - Retrieves the description of the plugin. What it does.</ul>
+ * </p>
+ */
 public interface TurSprinklrPlugin {
     /**
      * Retrieves the name associated with this plugin.

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
 import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrKeyValueTransformer;
 import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrPluginContext;
+import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrSearchResult;
+import com.viglet.turing.sprinklr.client.service.token.TurSprinklrAccessToken;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -34,6 +36,10 @@ public class TurSprinklrApplication {
         return new Hibernate5JakartaModule();
     }
 
+    /**
+     * Creates a plugin context with the {@link TurSprinklrKeyValueTransformer} plugin. So it can be sent to the customization layer.
+     * <p> It's sent through {@link TurSprinklrProcess#getTurSprinklrContext(TurSprinklrSearchResult, TurSprinklrAccessToken)}.
+     */
     @Bean
     public TurSprinklrPluginContext pluginContext(TurSprinklrKeyValueTransformer transformer) {
         TurSprinklrPluginContext pluginContext = new TurSprinklrPluginContext();
