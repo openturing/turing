@@ -18,10 +18,26 @@
 
 package com.viglet.turing.connector.commons.plugin;
 
-import com.viglet.turing.client.sn.job.TurSNJobItem;
+import lombok.Data;
 
-public interface TurConnectorContext {
-    void startIndexing(TurConnectorSource turConnectorSource);
-    void addJobItem(TurSNJobItem turSNJobItem);
-    void finishIndexing();
+import java.util.Collection;
+import java.util.Locale;
+import java.util.UUID;
+
+@Data
+public class TurConnectorSource {
+    private String systemId;
+    private String transactionId;
+    private Collection<String> sites;
+    private String providerName;
+    private Locale locale;
+
+    public TurConnectorSource(String systemId, Collection<String> sites, String providerName,
+                              Locale locale) {
+        this.systemId = systemId;
+        this.transactionId = UUID.randomUUID().toString();
+        this.sites = sites;
+        this.providerName = providerName;
+        this.locale = locale;
+    }
 }

@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>connector-app</artifactId>
-    <name>Turing - Connector</name>
+    <name>Turing Connector - Application</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

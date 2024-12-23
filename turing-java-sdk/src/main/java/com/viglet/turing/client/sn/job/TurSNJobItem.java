@@ -20,10 +20,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
+
+import static com.viglet.turing.commons.sn.field.TurSNFieldName.ID;
+import static com.viglet.turing.commons.sn.field.TurSNFieldName.SOURCE_APPS;
 
 /**
  * Job to index and deIndex in Turing ES.
@@ -42,43 +42,65 @@ public class TurSNJobItem implements Serializable{
     private TurSNJobAction turSNJobAction;
 	private List<String> siteNames;
     private List<TurSNJobAttributeSpec> specs = new ArrayList<>();
-    private Map<String, Object> attributes;
+    private Map<String, Object> attributes = new HashMap<>();
+	private String checksum;
 	public TurSNJobItem() {
 		super();
 	}
-	public TurSNJobItem(TurSNJobAction turSNJobAction,  List<String> siteNames, Locale locale,
-						Map<String, Object> attributes) {
+
+	public TurSNJobItem(TurSNJobAction turSNJobAction, List<String> siteNames) {
 		super();
-		this.locale = locale;
 		this.turSNJobAction = turSNJobAction;
-		this.attributes = attributes;
 		this.siteNames = siteNames;
-	}
-	public TurSNJobItem(TurSNJobAction turSNJobAction, Locale locale,  List<String> siteNames, List<TurSNJobAttributeSpec> specs,
-						Map<String, Object> attributes) {
-		super();
-		this.locale = locale;
-		this.turSNJobAction = turSNJobAction;
-		this.specs = specs;
-		this.attributes = attributes;
-		this.siteNames = siteNames;
+		this.locale = Locale.ENGLISH;
+		this.specs = null;
+		this.checksum = null;
 	}
 
 	public TurSNJobItem(TurSNJobAction turSNJobAction,  List<String> siteNames, Locale locale) {
-		super();
+		this(turSNJobAction, siteNames);
 		this.locale = locale;
-		this.turSNJobAction = turSNJobAction;
-		this.siteNames = siteNames;
+		this.specs = null;
+		this.checksum = null;
 	}
-	public TurSNJobItem(TurSNJobAction turSNJobAction, List<String> siteNames) {
-		super();
-		this.locale = Locale.ENGLISH;
-		this.turSNJobAction = turSNJobAction;
-		this.siteNames = siteNames;
+
+	public TurSNJobItem(TurSNJobAction turSNJobAction,  List<String> siteNames, Locale locale,
+						Map<String, Object> attributes) {
+		this(turSNJobAction, siteNames, locale);
+		this.attributes = attributes;
+		this.specs = null;
+		this.checksum = null;
 	}
+
+	public TurSNJobItem(TurSNJobAction turSNJobAction, List<String> siteNames,  Locale locale,
+						Map<String, Object> attributes, List<TurSNJobAttributeSpec> specs) {
+		this(turSNJobAction, siteNames, locale, attributes);
+		this.specs = specs;
+		this.checksum = null;
+	}
+
+	public TurSNJobItem(TurSNJobAction turSNJobAction, List<String> siteNames,  Locale locale,
+						Map<String, Object> attributes, List<TurSNJobAttributeSpec> specs, String checksum) {
+		this(turSNJobAction, siteNames, locale, attributes, specs);
+		this.checksum = checksum;
+	}
+
 
     public String toString() {
 		return String.format("action: %s, attributes %s", this.getTurSNJobAction(), this.getAttributes().toString());
 	}
 
+	public String getId() {
+		if (this.getAttributes() != null && this.getAttributes().containsKey(ID)) {
+			return this.attributes.get(ID).toString();
+		}
+		return null;
+	}
+
+	public String getProviderName() {
+		if (this.getAttributes() != null && this.getAttributes().containsKey(SOURCE_APPS)) {
+			return this.attributes.get(SOURCE_APPS).toString();
+		}
+		return null;
+	}
 }

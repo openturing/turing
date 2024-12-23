@@ -10,13 +10,13 @@
     </parent>
     <artifactId>aem-app</artifactId>
     <version>${revision}</version>
+    <packaging>jar</packaging>
     <name>Turing AEM - Connector</name>
-    <description>Turing AEM Web Indexer Connector</description>
+    <description>Turing AEM - Connector</description>
     <properties>
         <spring-boot.version>3.4.0</spring-boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
     </properties>
@@ -90,7 +90,7 @@
         </dependencies>
     </dependencyManagement>
     <build>
-        <finalName>turing-aem</finalName>
+        <finalName>aem-app</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>

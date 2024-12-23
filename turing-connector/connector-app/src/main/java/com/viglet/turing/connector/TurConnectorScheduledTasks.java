@@ -56,7 +56,6 @@ public class TurConnectorScheduledTasks {
 
     @Scheduled(fixedDelay = 60, timeUnit = TimeUnit.MINUTES)
     public void executeWebCrawler() {
-
         TurCustomClassCache.getCustomClassMap(pluginClassName)
                 .ifPresent(classInstance -> {
                     TurConnectorPlugin turConnectorPlugin;
@@ -64,12 +63,12 @@ public class TurConnectorScheduledTasks {
                     ApplicationContext applicationContext = WebApplicationContextUtils
                             .getWebApplicationContext(servletContext);
                     Optional.ofNullable(applicationContext).ifPresent(appContext -> {
-                        applicationContext.getAutowireCapableBeanFactory().autowireBean(turConnectorPlugin);
-                        turConnectorPlugin.init(turConnectorContext);
                         if (turConnectorConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
                             log.info("This is the first time, waiting next schedule.");
                         } else {
                             log.info("Starting indexing");
+                            applicationContext.getAutowireCapableBeanFactory().autowireBean(turConnectorPlugin);
+                            turConnectorPlugin.init(turConnectorContext);
                         }
                     });
                 });

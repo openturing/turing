@@ -155,7 +155,7 @@ public class TurAemIndexerTool {
             }
             this.getNodesFromJson(turAemSourceContext);
             if (!dryRun && !usingGuidParameter()) {
-                deIndexObject(turAemSourceContext);
+                deIndexObjects(turAemSourceContext);
                 updateSystemOnce(turAemSourceContext);
             }
             turAemIndexingDAO.close();
@@ -366,7 +366,7 @@ public class TurAemIndexerTool {
         }
     }
 
-    private void deIndexObject(TurAemSourceContext turAemSourceContext) {
+    private void deIndexObjects(TurAemSourceContext turAemSourceContext) {
         turAemIndexingDAO.findContentsShouldBeDeIndexed(turAemSourceContext.getId(), deltaId)
                 .ifPresent(contents -> {
                             jCommander.getConsole().println("DeIndex Content that were removed...");

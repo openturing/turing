@@ -16,12 +16,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.commons.plugin;
+package com.viglet.turing.connector.persistence.model;
 
-import com.viglet.turing.client.sn.job.TurSNJobItem;
-
-public interface TurConnectorContext {
-    void startIndexing(TurConnectorSource turConnectorSource);
-    void addJobItem(TurSNJobItem turSNJobItem);
-    void finishIndexing();
+public enum TurConnectorStatus {
+    NEW,
+    KEEP,
+    REINDEX,
+    RECREATE
 }
