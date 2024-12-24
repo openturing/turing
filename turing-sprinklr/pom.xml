@@ -29,7 +29,6 @@
                 </property>
             </activation>
             <modules>
-                <module>sprinklr-java-sdk</module>
                 <module>sprinklr-commons</module>
                 <module>sprinklr-app</module>
                 <module>sprinklr-sample</module>
@@ -43,7 +42,6 @@
                 </property>
             </activation>
             <modules>
-                <module>sprinklr-java-sdk</module>
                 <module>sprinklr-commons</module>
             </modules>
         </profile>

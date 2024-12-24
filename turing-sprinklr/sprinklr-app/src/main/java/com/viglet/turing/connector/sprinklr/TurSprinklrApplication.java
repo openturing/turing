@@ -11,8 +11,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
-@SpringBootApplication
 @EnableScheduling
+@SpringBootApplication
 public class TurSprinklrApplication {
     public static final String UTF_8 = "UTF-8";
 

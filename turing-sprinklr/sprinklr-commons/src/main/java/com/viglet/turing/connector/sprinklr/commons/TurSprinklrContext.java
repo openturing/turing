@@ -1,8 +1,7 @@
 package com.viglet.turing.connector.sprinklr.commons;
 
-import com.viglet.turing.sprinklr.client.service.kb.response.TurSprinklrSearchResult;
-import com.viglet.turing.sprinklr.client.service.token.TurSprinklrAccessToken;
 import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrPluginContext;
+import com.viglet.turing.connector.sprinklr.commons.kb.response.TurSprinklrSearchResult;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,6 +13,5 @@ import lombok.ToString;
 @ToString
 public class TurSprinklrContext {
     private TurSprinklrSearchResult searchResult;
-    private TurSprinklrAccessToken accessToken;
     private TurSprinklrPluginContext pluginContext;
 }
