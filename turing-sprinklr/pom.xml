@@ -31,7 +31,7 @@
             <modules>
                 <module>sprinklr-commons</module>
                 <module>sprinklr-app</module>
-               <!-- <module>sprinklr-sample</module> -->
+                <module>sprinklr-sample</module>
             </modules>
         </profile>
         <profile>
