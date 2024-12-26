@@ -3,13 +3,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>turing-web-crawler</artifactId>
+        <artifactId>turing-sprinklr</artifactId>
         <groupId>com.viglet.turing.connector</groupId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>wc-plugin</artifactId>
-    <name>Turing Web Crawler - Plugin</name>
+
+    <artifactId>sprinklr-plugin</artifactId>
+    <name>Turing Sprinklr - Plugin</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -20,14 +21,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -49,18 +42,19 @@
             <artifactId>jackson-datatype-hibernate5-jakarta</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
+            <version>2.2.27</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-java-sdk</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.viglet.turing.connector</groupId>
-            <artifactId>wc-commons</artifactId>
+            <groupId>com.viglet.turing</groupId>
+            <artifactId>sprinklr-commons</artifactId>
             <version>${revision}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sezinkarli</groupId>
-            <artifactId>random-user-agent-generator</artifactId>
-            <version>1.3</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -71,9 +65,31 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>26.0.1</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.viglet.turing.connector</groupId>
@@ -94,6 +110,7 @@
         </dependencies>
     </dependencyManagement>
     <build>
+        <finalName>turing-sprinklr</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -117,17 +134,17 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>web-crawler-plugin</finalName>
+                            <finalName>sprinklr-plugin</finalName>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <artifactSet>
                                 <includes>
-                                    <include>com.viglet.turing:wc-commons:*</include>
+                                    <include>com.viglet.turing:sprinklr-commons:*</include>
                                 </includes>
                             </artifactSet>
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.viglet.turing.connector.plugin.webcrawler.TurWCPlugin</mainClass>
+                                    <mainClass>com.viglet.turing.connector.plugin.sprinklr.TurSprinklrPlugin</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

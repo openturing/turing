@@ -16,16 +16,17 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.commons.plugin;
+package com.viglet.turing.connector.plugin.sprinklr.export.bean;
 
-import com.viglet.turing.client.auth.TurServer;
-import com.viglet.turing.client.sn.job.TurSNJobItem;
+import lombok.*;
 
-public interface TurConnectorContext {
-    TurServer getTurServer();
-    void startIndexing(TurConnectorSource turConnectorSource);
-    void addJobItem(TurSNJobItem turSNJobItem);
-    void finishIndexing();
+import java.util.Collection;
 
-
+@Builder(toBuilder = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+public class TurSprinklrExchange {
+    private Collection<TurSprinklrSourceExchange> sources;
 }

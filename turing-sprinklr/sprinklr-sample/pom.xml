@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>sprinklr-sample</artifactId>
-    <groupId>com.viglet.turing</groupId>
+    <groupId>com.viglet.turing.connector</groupId>
     <version>${revision}</version>
     <name>Turing Sprinklr - Sample Custom Connector</name>
     <description>Turing Sprinklr - Sample Custom Connector</description>

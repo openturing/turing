@@ -23,6 +23,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 
 @Slf4j
@@ -92,14 +93,14 @@ public class TurOcr {
                 .build();
     }
 
-    public TurFileAttributes processUrl(TurServer turServer, URL url, boolean showOutput) {
+    public TurFileAttributes processUrl(TurServer turServer, URI url, boolean showOutput) {
         return getTurFileAttributes(turServer,
                 getRequestEntity(url),
                 String.format(API_OCR_URL, turServer.getServerUrl()),
                 showOutput);
     }
 
-    private static StringEntity getRequestEntity(URL url) {
+    private static StringEntity getRequestEntity(URI url) {
         return new StringEntity(
                 new JSONObject().put(URL, url.toString()).toString(),
                 ContentType.APPLICATION_JSON);

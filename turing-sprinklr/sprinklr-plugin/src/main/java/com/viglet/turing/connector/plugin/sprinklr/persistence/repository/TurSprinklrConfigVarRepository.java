@@ -15,17 +15,10 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+package com.viglet.turing.connector.plugin.sprinklr.persistence.repository;
 
-package com.viglet.turing.connector.commons.plugin;
+import com.viglet.turing.connector.plugin.sprinklr.persistence.model.TurSprinklrConfigVar;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.viglet.turing.client.auth.TurServer;
-import com.viglet.turing.client.sn.job.TurSNJobItem;
-
-public interface TurConnectorContext {
-    TurServer getTurServer();
-    void startIndexing(TurConnectorSource turConnectorSource);
-    void addJobItem(TurSNJobItem turSNJobItem);
-    void finishIndexing();
-
-
+public interface TurSprinklrConfigVarRepository extends JpaRepository<TurSprinklrConfigVar, String> {
 }

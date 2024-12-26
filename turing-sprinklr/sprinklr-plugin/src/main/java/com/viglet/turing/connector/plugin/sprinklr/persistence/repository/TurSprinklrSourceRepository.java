@@ -16,16 +16,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.commons.plugin;
-
-import com.viglet.turing.client.auth.TurServer;
-import com.viglet.turing.client.sn.job.TurSNJobItem;
-
-public interface TurConnectorContext {
-    TurServer getTurServer();
-    void startIndexing(TurConnectorSource turConnectorSource);
-    void addJobItem(TurSNJobItem turSNJobItem);
-    void finishIndexing();
+package com.viglet.turing.connector.plugin.sprinklr.persistence.repository;
 
 
+import com.viglet.turing.connector.plugin.sprinklr.persistence.model.TurSprinklrSource;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface TurSprinklrSourceRepository  extends JpaRepository<TurSprinklrSource, String> {
 }

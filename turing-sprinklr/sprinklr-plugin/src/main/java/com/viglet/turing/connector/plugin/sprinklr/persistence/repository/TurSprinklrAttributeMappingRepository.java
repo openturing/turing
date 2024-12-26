@@ -16,16 +16,15 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.commons.plugin;
+package com.viglet.turing.connector.plugin.sprinklr.persistence.repository;
 
-import com.viglet.turing.client.auth.TurServer;
-import com.viglet.turing.client.sn.job.TurSNJobItem;
+import com.viglet.turing.connector.plugin.sprinklr.persistence.model.TurSprinklrAttributeMapping;
+import com.viglet.turing.connector.plugin.sprinklr.persistence.model.TurSprinklrSource;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface TurConnectorContext {
-    TurServer getTurServer();
-    void startIndexing(TurConnectorSource turConnectorSource);
-    void addJobItem(TurSNJobItem turSNJobItem);
-    void finishIndexing();
+import java.util.List;
+import java.util.Optional;
 
-
+public interface TurSprinklrAttributeMappingRepository extends JpaRepository<TurSprinklrAttributeMapping, String> {
+    Optional<List<TurSprinklrAttributeMapping>> findByTurSprinklrSource(TurSprinklrSource turWCSource);
 }

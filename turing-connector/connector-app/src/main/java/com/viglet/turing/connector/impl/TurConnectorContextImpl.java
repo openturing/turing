@@ -19,6 +19,8 @@
 package com.viglet.turing.connector.impl;
 
 import com.google.common.collect.Iterators;
+import com.viglet.turing.client.auth.TurServer;
+import com.viglet.turing.client.auth.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.sn.TurSNConstants;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
@@ -34,6 +36,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsMessagingTemplate;
 import org.springframework.stereotype.Component;
 
+import java.net.URI;
 import java.util.*;
 
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.ID;
@@ -47,14 +50,26 @@ public class TurConnectorContextImpl implements TurConnectorContext {
     private final Queue<TurSNJobItem> queueLinks = new LinkedList<>();
     private final JmsMessagingTemplate jmsMessagingTemplate;
     private final TurConnectorIndexingRepository turConnectorIndexingRepository;
+    private final String turingUrl;
+    private final String turingApiKey;
     private final int jobSize;
 
-    public TurConnectorContextImpl(@Value("${turing.connector.job.size:50}") int jobSize,
+    public TurConnectorContextImpl(@Value("${turing.url}") String turingUrl,
+                                   @Value("${turing.apiKey}") String turingApiKey,
+                                   @Value("${turing.connector.job.size:50}") int jobSize,
                                    JmsMessagingTemplate jmsMessagingTemplate,
                                    TurConnectorIndexingRepository turConnectorIndexingRepository) {
         this.jmsMessagingTemplate = jmsMessagingTemplate;
+        this.turingUrl = turingUrl;
+        this.turingApiKey = turingApiKey;
         this.jobSize = jobSize;
         this.turConnectorIndexingRepository = turConnectorIndexingRepository;
+
+    }
+
+    @Override
+    public TurServer getTurServer() {
+        return new TurServer(URI.create(turingUrl), new TurApiKeyCredentials(turingApiKey));
     }
 
     @Override
@@ -91,8 +106,7 @@ public class TurConnectorContextImpl implements TurConnectorContext {
                     reindexLog(turSNJobItem, turConnectorSource);
                     addJobToMessageQueue(turSNJobItem);
                     modifyStatus(turSNJobItem, turConnectorSource, TurConnectorStatus.REINDEX);
-                }
-                else {
+                } else {
                     noModificationLog(turSNJobItem, turConnectorSource);
                     modifyStatus(turSNJobItem, turConnectorSource, TurConnectorStatus.KEEP);
                 }
@@ -130,7 +144,7 @@ public class TurConnectorContextImpl implements TurConnectorContext {
     }
 
     private void noModificationLog(TurSNJobItem turSNJobItem,
-                            TurConnectorSource turConnectorSource) {
+                                   TurConnectorSource turConnectorSource) {
         turConnectorIndexingRepository.findByObjectIdAndIndexGroup(turSNJobItem.getId(),
                         turConnectorSource.getSystemId())
                 .ifPresent(turAemIndexingsList ->
@@ -138,8 +152,9 @@ public class TurConnectorContextImpl implements TurConnectorContext {
                                 turSNJobItem.getId(), turConnectorSource.getSystemId(),
                                 turConnectorSource.getTransactionId()));
     }
+
     private void reindexLog(TurSNJobItem turSNJobItem,
-                             TurConnectorSource turConnectorSource) {
+                            TurConnectorSource turConnectorSource) {
         turConnectorIndexingRepository.findByObjectIdAndIndexGroup(turSNJobItem.getId(),
                         turConnectorSource.getSystemId())
                 .ifPresent(turAemIndexingsList ->

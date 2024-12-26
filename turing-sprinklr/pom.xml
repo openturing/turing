@@ -8,6 +8,7 @@
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+    <groupId>com.viglet.turing.connector</groupId>
     <artifactId>turing-sprinklr</artifactId>
     <version>${revision}</version>
     <name>Turing Sprinklr</name>
@@ -30,7 +31,7 @@
             </activation>
             <modules>
                 <module>sprinklr-commons</module>
-                <module>sprinklr-app</module>
+                <module>sprinklr-plugin</module>
                 <module>sprinklr-sample</module>
             </modules>
         </profile>

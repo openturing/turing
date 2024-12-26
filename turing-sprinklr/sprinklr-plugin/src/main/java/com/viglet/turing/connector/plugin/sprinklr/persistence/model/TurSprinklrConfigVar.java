@@ -16,16 +16,39 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.connector.commons.plugin;
+package com.viglet.turing.connector.plugin.sprinklr.persistence.model;
 
-import com.viglet.turing.client.auth.TurServer;
-import com.viglet.turing.client.sn.job.TurSNJobItem;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
-public interface TurConnectorContext {
-    TurServer getTurServer();
-    void startIndexing(TurConnectorSource turConnectorSource);
-    void addJobItem(TurSNJobItem turSNJobItem);
-    void finishIndexing();
+import java.io.Serial;
+import java.io.Serializable;
+
+/**
+ * The persistent class for the vigNLPSolutions database table.
+ * 
+ */
+@Setter
+@Getter
+@Entity
+@Table(name = "sprinklr_config")
+public class TurSprinklrConfigVar implements Serializable {
+	@Serial
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@Column(unique = true, nullable = false, length = 25)
+	private String id;
+
+	@Column
+	private String path;
+
+	@Column
+	private String value;
 
 
 }
