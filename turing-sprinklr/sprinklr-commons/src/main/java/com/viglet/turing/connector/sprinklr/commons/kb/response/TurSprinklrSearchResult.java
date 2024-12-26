@@ -20,7 +20,7 @@ package com.viglet.turing.connector.sprinklr.commons.kb.response;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import com.viglet.turing.sprinklr.client.deserializer.TurSprinklrDates;
+import com.viglet.turing.connector.sprinklr.commons.deserializer.TurSprinklrDates;
 import lombok.Getter;
 import lombok.Setter;
 
