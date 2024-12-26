@@ -110,7 +110,6 @@
         </dependencies>
     </dependencyManagement>
     <build>
-        <finalName>turing-sprinklr</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -138,7 +137,7 @@
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <artifactSet>
                                 <includes>
-                                    <include>com.viglet.turing:sprinklr-commons:*</include>
+                                    <include>com.viglet.turing.connector:sprinklr-commons:*</include>
                                 </includes>
                             </artifactSet>
                             <transformers>

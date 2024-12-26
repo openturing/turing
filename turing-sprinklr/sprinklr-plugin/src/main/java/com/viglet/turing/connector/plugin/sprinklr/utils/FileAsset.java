@@ -19,6 +19,7 @@
 package com.viglet.turing.connector.plugin.sprinklr.utils;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.net.URI;
@@ -35,6 +36,7 @@ import java.util.Map;
  */
 @AllArgsConstructor
 @NoArgsConstructor
+@Data
 public class FileAsset {
     private String id;
     private String filename;

@@ -44,6 +44,54 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * The TurSprinklrProcess class is responsible for handling the indexing process of Sprinklr sources.
+ * It interacts with various services and repositories to fetch data, process it, and add it to the job items list.
+ *
+ * <p>This class is annotated with {@code @Slf4j} for logging and {@code @Component} to indicate that it is a Spring component.</p>
+ *
+ * <p>Dependencies:</p>
+ * <ul>
+ *   <li>{@code TurSprinklrKBService} - Service for interacting with the Sprinklr Knowledge Base API.</li>
+ *   <li>{@code TurSprinklrAttributeMappingRepository} - Repository for accessing attribute mappings.</li>
+ *   <li>{@code TurSprinklrPluginContext} - Context for the Sprinklr plugin.</li>
+ * </ul>
+ *
+ * <p>Methods:</p>
+ * <ul>
+ *   <li>{@code start(TurSprinklrSource, TurConnectorContext)} - Starts the indexing process for the given Sprinklr source.</li>
+ *   <li>{@code getArticle(TurSprinklrSource, TurSprinklrSearchResult)} - Retrieves an article from the Sprinklr source and processes it.</li>
+ *   <li>{@code getJobItemAttributes(TurSprinklrSource, TurSprinklrSearchResult)} - Returns a map of attribute names and values for a job item.</li>
+ *   <li>{@code getLocale(TurSprinklrSource, TurSprinklrSearchResult)} - Retrieves the locale from the Sprinklr source or search result.</li>
+ *   <li>{@code getFileAssets(TurSprinklrSearchResult, FileAssetsExtractor)} - Extracts file assets from the search result.</li>
+ *   <li>{@code addFileAssetsToJobItems(List<FileAsset>, Locale, Collection<String>)} - Adds file assets to the job items list.</li>
+ *   <li>{@code getTurSprinklrContext(TurSprinklrSearchResult)} - Builds a TurSprinklrContext object from a search result.</li>
+ * </ul>
+ *
+ * <p>Utility Methods:</p>
+ * <ul>
+ *   <li>{@code addItemInExistingAttribute(String, Map<String, Object>, String)} - Adds an item to an existing attribute.</li>
+ *   <li>{@code addItemToArray(Map<String, Object>, String, String)} - Adds an item to an array attribute.</li>
+ *   <li>{@code convertAttributeSingleValueToArray(Map<String, Object>, String, String)} - Converts a single attribute value to an array of values.</li>
+ *   <li>{@code dateAsChecksum(Date)} - Converts a Date object to a checksum string representation.</li>
+ *   <li>{@code addFirstItemToAttribute(String, String, Map<String, Object>)} - Adds the first item to an attribute.</li>
+ *   <li>{@code setAttribute(TurSprinklrAttributeMapping, String, Map<String, Object>)} - Sets an attribute value in the job item attributes map.</li>
+ *   <li>{@code getCustomClass(TurSprinklrSearchResult, TurSprinklrAttributeMapping)} - Retrieves a custom class instance for attribute mapping.</li>
+ * </ul>
+ *
+ * <p>Logging:</p>
+ * <ul>
+ *   <li>Logs information about the indexing process and retrieved articles.</li>
+ *   <li>Logs debug information for custom class retrieval.</li>
+ * </ul>
+ *
+ * <p>Annotations:</p>
+ * <ul>
+ *   <li>{@code @Slf4j} - Lombok annotation for logging.</li>
+ *   <li>{@code @Component} - Spring annotation to indicate that this class is a Spring component.</li>
+ *   <li>{@code @Inject} - Dependency injection annotation for constructor injection.</li>
+ * </ul>
+ */
 @Slf4j
 @Component
 public class TurSprinklrProcess {
@@ -58,7 +106,7 @@ public class TurSprinklrProcess {
     public TurSprinklrProcess(TurSprinklrKBService turSprinklrKBService,
                               TurSprinklrAttributeMappingRepository turSprinklrAttributeMappingRepository,
                               TurSprinklrPluginContext pluginContext
-                              ) {
+    ) {
         this.turSprinklrKBService = turSprinklrKBService;
         this.turSprinklrAttributeMappingRepository = turSprinklrAttributeMappingRepository;
         this.pluginContext = pluginContext;
@@ -80,6 +128,14 @@ public class TurSprinklrProcess {
 
     }
 
+    /**
+     * Converts a single attribute value to an array of values and updates the attribute in the provided map.
+     * If the attribute already exists in the map, it will be added to the list of values.
+     *
+     * @param attributes     the map containing attribute names and their corresponding values
+     * @param attributeName  the name of the attribute to be converted
+     * @param attributeValue the new value to be added to the attribute's list of values
+     */
     private static void convertAttributeSingleValueToArray(Map<String, Object> attributes,
                                                            String attributeName, String attributeValue) {
         List<Object> attributeValues = new ArrayList<>();
@@ -88,36 +144,42 @@ public class TurSprinklrProcess {
         attributes.put(attributeName, attributeValues);
     }
 
+    /**
+     * Starts the indexing process for the given Sprinklr source.
+     *
+     * @param turSprinklrSource   the Sprinklr source configuration
+     * @param turConnectorContext the connector context for managing the indexing process
+     */
     public void start(TurSprinklrSource turSprinklrSource, TurConnectorContext turConnectorContext) {
         this.turConnectorContext = turConnectorContext;
         this.turConnectorContext.startIndexing(new TurConnectorSource(turSprinklrSource.getId(),
                 turSprinklrSource.getTurSNSites(), SPRINKLR, turSprinklrSource.getLocale()));
         // Index for the pagination parameter of the Knowledge Base API, it starts on 0
         AtomicInteger kbPage = new AtomicInteger(0);
-            final var fileAssetExtractor = new FileAssetsExtractor(turConnectorContext.getTurServer());
-            while (true) {
-                TurSprinklrKBSearch turSprinklrKBSearch = turSprinklrKBService.run(kbPage.get());
-                if (turSprinklrKBSearch != null) {
-                    List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
-                    if (results.isEmpty()) {
-                        break;
-                    } else {
-                        results.forEach(searchResult -> {
-                            Locale resultLocale = searchResult.getLocale();
-                            Collection<String> turSites = turSprinklrSource.getTurSNSites();
+        final var fileAssetExtractor = new FileAssetsExtractor(turConnectorContext.getTurServer());
+        while (true) {
+            TurSprinklrKBSearch turSprinklrKBSearch = turSprinklrKBService.run(kbPage.get());
+            if (turSprinklrKBSearch != null) {
+                List<TurSprinklrSearchResult> results = turSprinklrKBSearch.getData().getSearchResults();
+                if (results.isEmpty()) {
+                    break;
+                } else {
+                    results.forEach(searchResult -> {
+                        Locale resultLocale = searchResult.getLocale();
+                        Collection<String> turSites = turSprinklrSource.getTurSNSites();
 
-                            // Inserts new jobs into turSNJobItems
-                            getArticle(turSprinklrSource, searchResult);
+                        // Inserts new jobs into turSNJobItems
+                        getArticle(turSprinklrSource, searchResult);
 
-                            // Gets the assets attached to the search result and inserts into turSNJobItems.
-                            List<FileAsset> assets = getFileAssets(searchResult, fileAssetExtractor);
-                            addFileAssetsToJobItems(assets, resultLocale, turSites);
-                        });
-                        // Increment Index
-                        kbPage.incrementAndGet();
-                    }
+                        // Gets the assets attached to the search result and inserts into turSNJobItems.
+                        List<FileAsset> assets = getFileAssets(searchResult, fileAssetExtractor);
+                        addFileAssetsToJobItems(assets, resultLocale, turSites);
+                    });
+                    // Increment Index
+                    kbPage.incrementAndGet();
                 }
             }
+        }
         finished(turConnectorContext);
     }
 
@@ -141,20 +203,28 @@ public class TurSprinklrProcess {
      * Adds the file assets to the job items list.
      */
     private void addFileAssetsToJobItems(List<FileAsset> fileAssets, Locale locale, Collection<String> turSites) {
-        for (var asset : fileAssets) {
+        for (FileAsset asset : fileAssets) {
             var turSNJobItemAttributes = asset.toMapAttributes();
             turConnectorContext.addJobItem(new TurSNJobItem(
                     TurSNJobAction.CREATE,
                     (List<String>) turSites,
                     locale,
-                    turSNJobItemAttributes
+                    turSNJobItemAttributes,
+                    null,
+                    dateAsChecksum(asset.getModificationDate())
             ));
         }
     }
 
+    /**
+     * Retrieves an article from the Sprinklr source and processes it.
+     *
+     * @param turSprinklrSource the source from which the article is retrieved
+     * @param searchResult      the search result containing the article information
+     */
     public void getArticle(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult) {
         log.info("{}: {}", searchResult.getId(), turSprinklrSource.getTurSNSites());
-        addTurSNJobItems(turSprinklrSource, searchResult);
+        addTurSNJobItem(turSprinklrSource, searchResult);
 
     }
 
@@ -164,10 +234,28 @@ public class TurSprinklrProcess {
      * @param turSprinklrSource Source to extract the Semantic Navigation sites, locale and attributes
      * @param searchResult      Source to extract Locale and attributes
      */
-    private void addTurSNJobItems(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult) {
-        turConnectorContext.addJobItem(new TurSNJobItem(TurSNJobAction.CREATE, new ArrayList<>(turSprinklrSource.getTurSNSites()),
+    private void addTurSNJobItem(TurSprinklrSource turSprinklrSource, TurSprinklrSearchResult searchResult) {
+        turConnectorContext.addJobItem(new TurSNJobItem(TurSNJobAction.CREATE,
+                new ArrayList<>(turSprinklrSource.getTurSNSites()),
                 getLocale(turSprinklrSource, searchResult),
-                getJobItemAttributes(turSprinklrSource, searchResult)));
+                getJobItemAttributes(turSprinklrSource, searchResult),
+                null,
+                dateAsChecksum(searchResult.getModifiedTime())
+        ));
+    }
+
+    /**
+     * Converts a given Date object to a checksum string representation.
+     * If the provided date is null, the current date and time is used.
+     *
+     * @param date the Date object to be converted to a checksum string.
+     *             If null, the current date and time will be used.
+     * @return a string representation of the date's time in milliseconds.
+     */
+    private String dateAsChecksum(Date date) {
+        return date != null ?
+                Long.toString(date.getTime()) :
+                Long.toString(new Date().getTime());
     }
 
     /**
@@ -223,14 +311,16 @@ public class TurSprinklrProcess {
          value of this key will be the 'text'.
          If not present, try to get the ClassName from `AttributeMapping`, instantiate it dynamically and consume it to get the value of the key.
         */
-        turSprinklrAttributeMappingRepository.findByTurSprinklrSource(turSprinklrSource).ifPresent(mapping -> mapping.forEach(attribute ->
+        turSprinklrAttributeMappingRepository.findByTurSprinklrSource(turSprinklrSource)
+                .ifPresent(mapping -> mapping.forEach(attribute ->
                 Optional.ofNullable(attribute.getText()).ifPresentOrElse(text ->
                                 turSNJobItemAttributes.put(attribute.getName(), text)
                         , () -> {
-                            // Se o campo ClassName estiver preenchido no Export.json
+                            // If the ClassName field is filled in Export.json
                             if (!StringUtils.isEmpty(attribute.getClassName()))
                                 getCustomClass(searchResult, attribute)
-                                        .ifPresent(turMultiValue -> turMultiValue.forEach(attributeValue ->
+                                        .ifPresent(turMultiValue ->
+                                                turMultiValue.forEach(attributeValue ->
                                                 setAttribute(attribute, attributeValue, turSNJobItemAttributes)));
                         }
                 )));
@@ -267,7 +357,14 @@ public class TurSprinklrProcess {
                 .build();
     }
 
-    // Used only for getJobItemAttributes
+
+    /**
+     * Adds the first item to the specified attribute in the attributes map.
+     *
+     * @param attributeName  the name of the attribute to add
+     * @param attributeValue the value of the attribute to add
+     * @param attributes     the map of attributes where the attribute will be added
+     */
     private void addFirstItemToAttribute(String attributeName,
                                          String attributeValue,
                                          Map<String, Object> attributes) {
