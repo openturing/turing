@@ -22,7 +22,6 @@
 package com.viglet.turing.sn.tr;
 
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.solr.TurSolrUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.*;

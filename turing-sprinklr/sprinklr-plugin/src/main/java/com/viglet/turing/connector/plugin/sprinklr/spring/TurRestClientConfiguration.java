@@ -42,7 +42,7 @@ public class TurRestClientConfiguration {
     OAuth2AuthorizedClientManager authorizedClientManager(ClientRegistrationRepository clients) {
         RestClientClientCredentialsTokenResponseClient accessTokenResponseClient =
                 new RestClientClientCredentialsTokenResponseClient();
-        accessTokenResponseClient.setParametersCustomizer((parameters) -> {
+        accessTokenResponseClient.setParametersCustomizer(parameters -> {
             parameters.put(CLIENT_ID, Collections.singletonList(clientId));
             parameters.put(CLIENT_SECRET, Collections.singletonList(clientSecret));
 
@@ -53,7 +53,7 @@ public class TurRestClientConfiguration {
                 new AuthorizedClientServiceOAuth2AuthorizedClientManager(clients, service);
         OAuth2AuthorizedClientProvider authorizedClientProvider =
                 OAuth2AuthorizedClientProviderBuilder.builder()
-                        .clientCredentials((clientCredentialsGrantBuilder) ->
+                        .clientCredentials(clientCredentialsGrantBuilder ->
                                 clientCredentialsGrantBuilder.accessTokenResponseClient(accessTokenResponseClient))
                         .build();
         manager.setAuthorizedClientProvider(authorizedClientProvider);
