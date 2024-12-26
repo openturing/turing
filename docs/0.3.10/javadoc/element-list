@@ -109,6 +109,7 @@ com.viglet.turing.connector.plugin.webcrawler.onstartup
 com.viglet.turing.connector.plugin.webcrawler.persistence.model
 com.viglet.turing.connector.plugin.webcrawler.persistence.repository
 com.viglet.turing.connector.queue
+com.viglet.turing.connector.spring
 com.viglet.turing.connector.sprinklr.commons
 com.viglet.turing.connector.sprinklr.commons.deserializer
 com.viglet.turing.connector.sprinklr.commons.ext
