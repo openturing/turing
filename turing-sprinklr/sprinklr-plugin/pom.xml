@@ -52,7 +52,7 @@
             <artifactId>turing-java-sdk</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.viglet.turing</groupId>
+            <groupId>com.viglet.turing.connector</groupId>
             <artifactId>sprinklr-commons</artifactId>
             <version>${revision}</version>
         </dependency>
