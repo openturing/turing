@@ -27,12 +27,12 @@ import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.connector.aem.commons.bean.TurAemContext;
+import com.viglet.turing.connector.aem.commons.bean.TurAemTargetAttrValueMap;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.aem.commons.ext.TurAemExtContentInterface;
-import com.viglet.turing.connector.cms.beans.TurCmsContext;
-import com.viglet.turing.connector.cms.beans.TurCmsTargetAttrValueMap;
-import com.viglet.turing.connector.cms.mappers.TurCmsModel;
+import com.viglet.turing.connector.aem.commons.mappers.TurAemModel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -67,15 +67,15 @@ public class TurAemCommonsUtils {
     public static final String JCR_TITLE = "jcr:title";
 
 
-    public static TurCmsTargetAttrValueMap runCustomClassFromContentType(TurCmsModel turCmsModel,
+    public static TurAemTargetAttrValueMap runCustomClassFromContentType(TurAemModel turAemModel,
                                                                          TurAemObject aemObject,
                                                                          TurAemSourceContext turAemSourceContext) {
-        return !StringUtils.isEmpty(turCmsModel.getClassName()) ?
-                TurCustomClassCache.getCustomClassMap(turCmsModel.getClassName())
+        return !StringUtils.isEmpty(turAemModel.getClassName()) ?
+                TurCustomClassCache.getCustomClassMap(turAemModel.getClassName())
                         .map(customClassMap -> ((TurAemExtContentInterface) customClassMap)
                                 .consume(aemObject, turAemSourceContext))
-                        .orElseGet(TurCmsTargetAttrValueMap::new) :
-                new TurCmsTargetAttrValueMap();
+                        .orElseGet(TurAemTargetAttrValueMap::new) :
+                new TurAemTargetAttrValueMap();
     }
 
     public static void addFirstItemToAttribute(String attributeName,
@@ -291,7 +291,7 @@ public class TurAemCommonsUtils {
         });
     }
 
-    public static Locale getLocaleFromContext(TurAemSourceContext turAemSourceContext, TurCmsContext context) {
+    public static Locale getLocaleFromContext(TurAemSourceContext turAemSourceContext, TurAemContext context) {
         TurAemObject aemObject = (TurAemObject) context.getCmsObjectInstance();
         return getLocaleFromAemObject(turAemSourceContext, aemObject);
     }

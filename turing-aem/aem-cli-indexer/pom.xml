@@ -4,7 +4,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.viglet.turing</groupId>
+        <groupId>com.viglet.turing.connector</groupId>
         <artifactId>turing-aem</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -31,7 +31,7 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.viglet.turing</groupId>
+            <groupId>com.viglet.turing.connector</groupId>
             <artifactId>aem-commons</artifactId>
             <version>${project.version}</version>
         </dependency>

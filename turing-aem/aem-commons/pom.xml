@@ -4,7 +4,7 @@
          xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.viglet.turing</groupId>
+        <groupId>com.viglet.turing.connector</groupId>
         <artifactId>turing-aem</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -28,11 +28,6 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-java-sdk</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.viglet.turing</groupId>
-            <artifactId>cms-mapping</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

@@ -1,6 +1,7 @@
 package com.viglet.turing.connector.cms.config;
 
 import java.net.URL;
+import java.util.Collection;
 
 public interface IHandlerConfiguration {
 

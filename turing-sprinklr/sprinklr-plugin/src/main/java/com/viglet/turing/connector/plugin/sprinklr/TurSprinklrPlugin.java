@@ -31,11 +31,11 @@ public class TurSprinklrPlugin implements TurConnectorPlugin {
     @Autowired
     private TurSprinklrSourceRepository turSprinklrSourceRepository;
     @Autowired
-    private TurSprinklrProcess turSprinklrProcess;
+    private TurSprinklrPluginProcess turSprinklrPluginProcess;
 
     @Override
     public void init(TurConnectorContext turConnectorContext) {
         turSprinklrSourceRepository.findAll().forEach(turSprinklrSource ->
-                turSprinklrProcess.start(turSprinklrSource, turConnectorContext));
+                turSprinklrPluginProcess.start(turSprinklrSource, turConnectorContext));
     }
 }

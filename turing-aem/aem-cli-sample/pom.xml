@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>aem-cli-sample</artifactId>
-  <groupId>com.viglet.turing</groupId>
+  <groupId>com.viglet.turing.connector</groupId>
   <version>${revision}</version>
   <name>Turing AEM - Sample Custom CLI Indexer</name>
   <description>Turing AEM Connector - Sample Custom CLI Indexer</description>

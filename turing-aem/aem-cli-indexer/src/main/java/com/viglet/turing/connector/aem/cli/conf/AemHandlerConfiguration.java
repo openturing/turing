@@ -17,9 +17,9 @@
  */
 package com.viglet.turing.connector.aem.cli.conf;
 
+import com.viglet.turing.connector.aem.commons.config.IAemConfiguration;
+import com.viglet.turing.connector.aem.commons.config.TurAemSNSiteConfig;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
-import com.viglet.turing.connector.cms.config.IHandlerConfiguration;
-import com.viglet.turing.connector.cms.config.TurSNSiteConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,14 +33,7 @@ import java.net.URL;
 import java.util.*;
 
 @Slf4j
-public class AemHandlerConfiguration implements IHandlerConfiguration {
-    public static final String DEFAULT_PROVIDER = "AEM";
-    private static final String DEFAULT_TURING_URL = "http://localhost:2700";
-    private static final String DEFAULT_CTD_MAPPING_FILE = "/CTD-Turing-Mappings.xml";
-    private static final String DEFAULT_SN_SITE = "Sample";
-    private static final String DEFAULT_SN_LOCALE = Locale.US.toString();
-    private static final String DEFAULT_DPS_CONTEXT = "sites";
-
+public class AemHandlerConfiguration implements IAemConfiguration {
     private URL turingURL;
     private String snSite;
     private Locale snLocale;
@@ -177,22 +170,22 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     }
 
     @Override
-    public TurSNSiteConfig getSNSiteConfig(String site, String locale) {
+    public TurAemSNSiteConfig getSNSiteConfig(String site, String locale) {
         // For example: dps.site.Intranet.en.sn.site=Intra
         return setSiteName(site, locale)
                 .setLocale(LocaleUtils.toLocale(Objects.requireNonNullElse(
                         getDynamicProperties(String.format("dps.site.%s.%s.sn.locale", site, locale)), locale)));
     }
 
-    private TurSNSiteConfig setSiteName(String site, String locale) {
+    private TurAemSNSiteConfig setSiteName(String site, String locale) {
         String snSiteInternal = getDynamicProperties(String.format("dps.site.%s.%s.sn.site", site, locale));
         return StringUtils.isEmpty(snSiteInternal) ? getSNSiteConfig(site) :
                 getDefaultSNSiteConfig().setName(snSiteInternal);
     }
 
     @Override
-    public TurSNSiteConfig getSNSiteConfig(String site) {
-        TurSNSiteConfig turSNSiteConfig = getDefaultSNSiteConfig();
+    public TurAemSNSiteConfig getSNSiteConfig(String site) {
+        TurAemSNSiteConfig turSNSiteConfig = getDefaultSNSiteConfig();
         return turSNSiteConfig.setName(Objects.requireNonNullElse(
                         getDynamicProperties(String.format("dps.site.%s.sn.site", site)),
                         turSNSiteConfig.getName()))
@@ -218,8 +211,8 @@ public class AemHandlerConfiguration implements IHandlerConfiguration {
     }
 
     @Override
-    public TurSNSiteConfig getDefaultSNSiteConfig() {
-        return new TurSNSiteConfig(snSite, snLocale);
+    public TurAemSNSiteConfig getDefaultSNSiteConfig() {
+        return new TurAemSNSiteConfig(snSite, snLocale);
     }
 
     @Override

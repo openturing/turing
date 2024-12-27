@@ -21,8 +21,8 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.connector.aem.commons.TurAemObject;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.client.sn.TurMultiValue;
-import com.viglet.turing.connector.cms.mappers.TurCmsSourceAttr;
-import com.viglet.turing.connector.cms.mappers.TurCmsTargetAttr;
+import com.viglet.turing.connector.aem.commons.mappers.TurAemSourceAttr;
+import com.viglet.turing.connector.aem.commons.mappers.TurAemTargetAttr;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -30,14 +30,14 @@ public class TurAemExtHtml2Text implements TurAemExtAttributeInterface {
     private static final String EMPTY_STRING = "";
 
     @Override
-    public TurMultiValue consume(TurCmsTargetAttr turCmsTargetAttr, TurCmsSourceAttr turCmsSourceAttr,
+    public TurMultiValue consume(TurAemTargetAttr turAemTargetAttr, TurAemSourceAttr turAemSourceAttr,
                                  TurAemObject aemObject, TurAemSourceContext turAemSourceContext) {
         log.debug("Executing TurAemExtHtml2Text");
-        if (turCmsSourceAttr.getName() != null && aemObject != null && aemObject.getAttributes() != null
-                && aemObject.getAttributes().containsKey(turCmsSourceAttr.getName())
-                && aemObject.getAttributes().get(turCmsSourceAttr.getName()) != null) {
+        if (turAemSourceAttr.getName() != null && aemObject != null && aemObject.getAttributes() != null
+                && aemObject.getAttributes().containsKey(turAemSourceAttr.getName())
+                && aemObject.getAttributes().get(turAemSourceAttr.getName()) != null) {
             return TurMultiValue.singleItem(TurCommonsUtils.html2Text(aemObject.getAttributes()
-                    .get(turCmsSourceAttr.getName()).toString()));
+                    .get(turAemSourceAttr.getName()).toString()));
         }
         return TurMultiValue.singleItem(EMPTY_STRING);
     }
