@@ -41,22 +41,22 @@ public class TurAemContentDefinitionProcess {
     private IAemConfiguration config;
     private Path workingDirectory;
     private Path jsonFile;
-    private String json;
+    private TurAemContentMapping turAemContentMapping;
 
 
     public TurAemContentDefinitionProcess(IAemConfiguration config, Path workingDirectory) {
         this.config = config;
         this.workingDirectory = workingDirectory;
         this.jsonFile = getContentMappingPath(workingDirectory);
-        this.json = null;
+        this.turAemContentMapping = null;
 
     }
 
-    public TurAemContentDefinitionProcess(String json) {
+    public TurAemContentDefinitionProcess(TurAemContentMapping turAemContentMapping) {
         this.config = null;
         this.workingDirectory = null;
         this.jsonFile = null;
-        this.json = json;
+        this.turAemContentMapping = turAemContentMapping;
 
     }
 
@@ -147,9 +147,8 @@ public class TurAemContentDefinitionProcess {
     }
 
     public Optional<TurAemContentMapping> getMappingDefinitions() {
-        return Optional.ofNullable(json).map(TurAemContentDefinitionProcess::readJsonMapping)
-                .orElse(Optional.ofNullable(jsonFile)
-                        .flatMap(TurAemContentDefinitionProcess::readJsonMapping));
+        return Optional.ofNullable(turAemContentMapping).or(() -> Optional.ofNullable(jsonFile)
+                .flatMap(TurAemContentDefinitionProcess::readJsonMapping));
     }
 
     private static Optional<TurAemContentMapping> readJsonMapping(Path path) {
@@ -157,15 +156,6 @@ public class TurAemContentDefinitionProcess {
             return Optional.of(new ObjectMapper().readValue(path.toFile(), TurAemContentMapping.class));
         } catch (IOException e) {
             log.error("Can not read mapping file, because is not valid: {}", path.toFile().getAbsolutePath(), e);
-            return Optional.empty();
-        }
-    }
-
-    private static Optional<TurAemContentMapping> readJsonMapping(String json) {
-        try {
-            return Optional.of(new ObjectMapper().readValue(json, TurAemContentMapping.class));
-        } catch (IOException e) {
-            log.error("Can not read mapping,  because is not valid.", e);
             return Optional.empty();
         }
     }

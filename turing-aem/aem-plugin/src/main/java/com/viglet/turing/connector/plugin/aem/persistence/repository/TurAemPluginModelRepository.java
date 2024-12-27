@@ -22,6 +22,7 @@ import com.viglet.turing.connector.plugin.aem.persistence.model.TurAemSource;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.viglet.turing.connector.plugin.aem.persistence.model.TurAemPluginModel;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -30,4 +31,5 @@ import java.util.Optional;
  */
 public interface TurAemPluginModelRepository extends JpaRepository<TurAemPluginModel, String> {
     Optional<TurAemPluginModel> findByTurAemSourceAndType(TurAemSource turAemSource, String type);
+    List<TurAemPluginModel> findByTurAemSource(TurAemSource turAemSource);
 }

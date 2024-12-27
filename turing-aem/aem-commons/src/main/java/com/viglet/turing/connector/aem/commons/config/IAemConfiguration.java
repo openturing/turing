@@ -36,15 +36,7 @@ public interface IAemConfiguration {
 
     String getProviderName();
 
-    TurAemSNSiteConfig getDefaultSNSiteConfig();
-
-    TurAemSNSiteConfig getSNSiteConfig(String site);
-
-    TurAemSNSiteConfig getSNSiteConfig(String site, String locale);
-
     String getMappingFile();
-
-    String getCDAContextName();
 
     String getCDAURLPrefix();
 
@@ -65,6 +57,8 @@ public interface IAemConfiguration {
     String getCmsSubType();
 
     String getCmsRootPath();
+
+    TurAemSNSiteConfig getDefaultSNSiteConfig();
 
     Collection<TurAemLocalePathContext> getLocales();
 }

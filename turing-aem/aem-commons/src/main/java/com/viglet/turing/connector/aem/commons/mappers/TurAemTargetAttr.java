@@ -1,16 +1,18 @@
 package com.viglet.turing.connector.aem.commons.mappers;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.util.ArrayList;
 import java.util.List;
 
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 public class TurAemTargetAttr extends TurAemTargetAttrDefinition {
     private String textValue;
-    protected List<TurAemSourceAttr> sourceAttrs = new ArrayList<>();
+    protected List<TurAemSourceAttr> sourceAttrs;
 
     @Override
     public String toString() {

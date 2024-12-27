@@ -22,7 +22,6 @@ import com.viglet.turing.connector.aem.commons.config.TurAemSNSiteConfig;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.FileReader;
@@ -38,7 +37,6 @@ public class AemHandlerConfiguration implements IAemConfiguration {
     private String snSite;
     private Locale snLocale;
     private String mappingFile;
-    private String cdaContextName;
     private String cdaURLPrefix;
     private String apiKey;
     private String providerName;
@@ -106,11 +104,6 @@ public class AemHandlerConfiguration implements IAemConfiguration {
     }
 
     @Override
-    public String getCDAContextName() {
-        return cdaContextName;
-    }
-
-    @Override
     public String getCDAURLPrefix() {
         return cdaURLPrefix;
     }
@@ -137,11 +130,6 @@ public class AemHandlerConfiguration implements IAemConfiguration {
         return properties;
     }
 
-    private String getDynamicProperties(String property) {
-        return getProperties().getProperty(property);
-
-    }
-
     private void parseProperties(Properties properties) {
 
         // Turing
@@ -156,7 +144,6 @@ public class AemHandlerConfiguration implements IAemConfiguration {
         // DPS
         snSite = properties.getProperty("dps.site.default.sn.site", DEFAULT_SN_SITE);
         snLocale = LocaleUtils.toLocale(properties.getProperty("dps.site.default.sn.locale", DEFAULT_SN_LOCALE));
-        cdaContextName = properties.getProperty("dps.site.default.context.name", DEFAULT_DPS_CONTEXT);
         cdaURLPrefix = properties.getProperty("dps.site.default.url.prefix");
         oncePatternPath = properties.getProperty("sn.default.once.pattern.path");
 
@@ -168,32 +155,6 @@ public class AemHandlerConfiguration implements IAemConfiguration {
         cmsSubType = properties.getProperty("cms.sub-type");
         cmsRootPath = properties.getProperty("cms.root.path");
     }
-
-    @Override
-    public TurAemSNSiteConfig getSNSiteConfig(String site, String locale) {
-        // For example: dps.site.Intranet.en.sn.site=Intra
-        return setSiteName(site, locale)
-                .setLocale(LocaleUtils.toLocale(Objects.requireNonNullElse(
-                        getDynamicProperties(String.format("dps.site.%s.%s.sn.locale", site, locale)), locale)));
-    }
-
-    private TurAemSNSiteConfig setSiteName(String site, String locale) {
-        String snSiteInternal = getDynamicProperties(String.format("dps.site.%s.%s.sn.site", site, locale));
-        return StringUtils.isEmpty(snSiteInternal) ? getSNSiteConfig(site) :
-                getDefaultSNSiteConfig().setName(snSiteInternal);
-    }
-
-    @Override
-    public TurAemSNSiteConfig getSNSiteConfig(String site) {
-        TurAemSNSiteConfig turSNSiteConfig = getDefaultSNSiteConfig();
-        return turSNSiteConfig.setName(Objects.requireNonNullElse(
-                        getDynamicProperties(String.format("dps.site.%s.sn.site", site)),
-                        turSNSiteConfig.getName()))
-                .setLocale(Objects.requireNonNullElse(
-                        LocaleUtils.toLocale(getDynamicProperties(String.format("dps.site.%s.sn.locale", site))),
-                        snLocale));
-    }
-
     public Collection<TurAemLocalePathContext> getLocales() {
         Collection<TurAemLocalePathContext> turAemLocalePathContexts = new HashSet<>();
         for (Enumeration<?> e = getProperties().propertyNames(); e.hasMoreElements(); ) {

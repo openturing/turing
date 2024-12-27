@@ -18,8 +18,12 @@
 
 package com.viglet.turing.connector.plugin.aem.persistence.repository;
 
+import com.viglet.turing.connector.aem.commons.mappers.TurAemModel;
 import com.viglet.turing.connector.plugin.aem.persistence.model.TurAemTargetAttribute;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface TurAemTargetAttributeRepository extends JpaRepository<TurAemTargetAttribute, String> {
+    List<TurAemTargetAttributeRepository> findByTurAemModel(TurAemModel turAemModel);
 }

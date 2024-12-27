@@ -20,13 +20,9 @@ package com.viglet.turing.connector.plugin.aem.conf;
 import com.viglet.turing.connector.aem.commons.config.IAemConfiguration;
 import com.viglet.turing.connector.aem.commons.config.TurAemSNSiteConfig;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
+import com.viglet.turing.connector.plugin.aem.persistence.model.TurAemSource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.LocaleUtils;
-import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -34,30 +30,48 @@ import java.util.*;
 
 @Slf4j
 public class AemPluginHandlerConfiguration implements IAemConfiguration {
-    public static final String DEFAULT_PROVIDER = "AEM";
-    private static final String DEFAULT_TURING_URL = "http://localhost:2700";
-    private static final String DEFAULT_CTD_MAPPING_FILE = "/CTD-Turing-Mappings.xml";
-    private static final String DEFAULT_SN_SITE = "Sample";
-    private static final String DEFAULT_SN_LOCALE = Locale.US.toString();
-    private static final String DEFAULT_DPS_CONTEXT = "sites";
+    private final TurAemSource turAemSource;
+    private final URL turingURL;
+    private final String snSite;
+    private final Locale snLocale;
+    private final String mappingFile;
+    private final String cdaURLPrefix;
+    private final String apiKey;
+    private final String providerName;
+    private final String oncePatternPath;
 
-    private URL turingURL;
-    private String snSite;
-    private Locale snLocale;
-    private String mappingFile;
-    private String cdaContextName;
-    private String cdaURLPrefix;
-    private String apiKey;
-    private String providerName;
-    private String oncePatternPath;
+    private final String cmsHost;
+    private final String cmsUsername;
+    private final String cmsPassword;
+    private final String cmsGroup;
+    private final String cmsContentType;
+    private final String cmsSubType;
+    private final String cmsRootPath;
 
-    private String cmsHost;
-    private String cmsUsername;
-    private String cmsPassword;
-    private String cmsGroup;
-    private String cmsContentType;
-    private String cmsSubType;
-    private String cmsRootPath;
+    public AemPluginHandlerConfiguration(TurAemSource turAemSource) {
+        this.turAemSource = turAemSource;
+        try {
+            turingURL = URI.create(turAemSource.getTuringUrl()).toURL();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+        apiKey = turAemSource.getTuringApiKey();
+        mappingFile = null;
+        providerName = DEFAULT_PROVIDER;
+        // DPS
+        snSite = DEFAULT_SN_SITE;
+        snLocale = Locale.of(DEFAULT_SN_LOCALE);
+        cdaURLPrefix =   turAemSource.getUrlPrefix();
+        oncePatternPath = turAemSource.getOncePattern();
+
+        cmsHost =   turAemSource.getUrl();
+        cmsUsername = turAemSource.getUsername();
+        cmsPassword = turAemSource.getPassword();
+        cmsGroup = turAemSource.getGroup();
+        cmsContentType = turAemSource.getContentType();
+        cmsSubType = null;
+        cmsRootPath = turAemSource.getRootPath();
+    }
 
     @Override
     public String getCmsHost() {
@@ -94,14 +108,6 @@ public class AemPluginHandlerConfiguration implements IAemConfiguration {
         return cmsRootPath;
     }
 
-    private final String propertyFile;
-    // Load up from Generic Resource
-
-    public AemPluginHandlerConfiguration(String propertyFile) {
-        this.propertyFile = propertyFile;
-        parsePropertiesFromResource();
-    }
-
     @Override
     public URL getTuringURL() {
         return turingURL;
@@ -113,11 +119,6 @@ public class AemPluginHandlerConfiguration implements IAemConfiguration {
     }
 
     @Override
-    public String getCDAContextName() {
-        return cdaContextName;
-    }
-
-    @Override
     public String getCDAURLPrefix() {
         return cdaURLPrefix;
     }
@@ -126,94 +127,16 @@ public class AemPluginHandlerConfiguration implements IAemConfiguration {
         return oncePatternPath;
     }
 
-    private void parsePropertiesFromResource() {
-        parseProperties(getProperties());
-    }
-
-    private Properties getProperties() {
-        Properties properties = new Properties();
-        try {
-            if (new File(propertyFile).exists()) {
-                properties.load(new FileReader(propertyFile));
-            } else {
-                log.info("ERROR: Cannot open {} file, use --property parameter correctly", propertyFile);
-            }
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        }
-        return properties;
-    }
-
-    private String getDynamicProperties(String property) {
-        return getProperties().getProperty(property);
-
-    }
-
-    private void parseProperties(Properties properties) {
-
-        // Turing
-        try {
-            turingURL = URI.create(properties.getProperty("turing.url", DEFAULT_TURING_URL)).toURL();
-        } catch (MalformedURLException e) {
-            log.error(e.getMessage(), e);
-        }
-        apiKey = properties.getProperty("turing.apiKey");
-        mappingFile = properties.getProperty("turing.mapping.file", DEFAULT_CTD_MAPPING_FILE);
-        providerName = properties.getProperty("turing.provider.name", DEFAULT_PROVIDER);
-        // DPS
-        snSite = properties.getProperty("dps.site.default.sn.site", DEFAULT_SN_SITE);
-        snLocale = LocaleUtils.toLocale(properties.getProperty("dps.site.default.sn.locale", DEFAULT_SN_LOCALE));
-        cdaContextName = properties.getProperty("dps.site.default.context.name", DEFAULT_DPS_CONTEXT);
-        cdaURLPrefix = properties.getProperty("dps.site.default.url.prefix");
-        oncePatternPath = properties.getProperty("sn.default.once.pattern.path");
-
-        cmsHost = properties.getProperty("cms.url");
-        cmsUsername = properties.getProperty("cms.username");
-        cmsPassword = properties.getProperty("cms.password");
-        cmsGroup = properties.getProperty("cms.group");
-        cmsContentType = properties.getProperty("cms.content-type");
-        cmsSubType = properties.getProperty("cms.sub-type");
-        cmsRootPath = properties.getProperty("cms.root.path");
-    }
-
-    @Override
-    public TurAemSNSiteConfig getSNSiteConfig(String site, String locale) {
-        // For example: dps.site.Intranet.en.sn.site=Intra
-        return setSiteName(site, locale)
-                .setLocale(LocaleUtils.toLocale(Objects.requireNonNullElse(
-                        getDynamicProperties(String.format("dps.site.%s.%s.sn.locale", site, locale)), locale)));
-    }
-
-    private TurAemSNSiteConfig setSiteName(String site, String locale) {
-        String snSiteInternal = getDynamicProperties(String.format("dps.site.%s.%s.sn.site", site, locale));
-        return StringUtils.isEmpty(snSiteInternal) ? getSNSiteConfig(site) :
-                getDefaultSNSiteConfig().setName(snSiteInternal);
-    }
-
-    @Override
-    public TurAemSNSiteConfig getSNSiteConfig(String site) {
-        TurAemSNSiteConfig turSNSiteConfig = getDefaultSNSiteConfig();
-        return turSNSiteConfig.setName(Objects.requireNonNullElse(
-                        getDynamicProperties(String.format("dps.site.%s.sn.site", site)),
-                        turSNSiteConfig.getName()))
-                .setLocale(Objects.requireNonNullElse(
-                        LocaleUtils.toLocale(getDynamicProperties(String.format("dps.site.%s.sn.locale", site))),
-                        snLocale));
-    }
-
     public Collection<TurAemLocalePathContext> getLocales() {
+
         Collection<TurAemLocalePathContext> turAemLocalePathContexts = new HashSet<>();
-        for (Enumeration<?> e = getProperties().propertyNames(); e.hasMoreElements(); ) {
-            String name = (String) e.nextElement();
-            String[] tokens = name.split("\\.");
-            if (tokens.length == 4 && name.startsWith("sn.") && name.endsWith(".path")) {
-                turAemLocalePathContexts.add(TurAemLocalePathContext.builder()
-                        .snSite(tokens[1])
-                        .path(getProperties().getProperty(name))
-                        .locale(LocaleUtils.toLocale(tokens[2]))
-                        .build());
-            }
-        }
+     turAemSource.getLocalePaths().forEach(localePath ->
+             turAemLocalePathContexts.add(TurAemLocalePathContext.builder()
+             .snSite(localePath.getTurAemSource().getTurSNSites().stream().findFirst().get())
+             .path(localePath.getPath())
+             .locale(localePath.getLocale())
+             .build()));
+
         return turAemLocalePathContexts;
     }
 

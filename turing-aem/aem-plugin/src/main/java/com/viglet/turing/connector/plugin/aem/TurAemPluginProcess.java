@@ -35,8 +35,7 @@ import com.viglet.turing.connector.aem.commons.config.IAemConfiguration;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.aem.commons.ext.TurAemExtDeltaDate;
 import com.viglet.turing.connector.aem.commons.ext.TurAemExtDeltaDateInterface;
-import com.viglet.turing.connector.aem.commons.mappers.TurAemContentDefinitionProcess;
-import com.viglet.turing.connector.aem.commons.mappers.TurAemModel;
+import com.viglet.turing.connector.aem.commons.mappers.*;
 import com.viglet.turing.connector.commons.plugin.TurConnectorContext;
 import com.viglet.turing.connector.commons.plugin.TurConnectorSource;
 import com.viglet.turing.connector.plugin.aem.conf.AemPluginHandlerConfiguration;
@@ -54,15 +53,10 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.ID;
 
@@ -98,8 +92,9 @@ public class TurAemPluginProcess {
     private final TurAemPluginSystemRepository turAemSystemRepository;
     private final TurAemConfigVarRepository turAemConfigVarRepository;
     private final TurAemSourceLocalePathRepository turAemSourceLocalePathRepository;
-    private final TurAemPluginModelRepository turAemModelRepository;
+    private final TurAemPluginModelRepository turAemPluginModelRepository;
     private final TurAemSourceRepository turAemSourceRepository;
+    private final TurAemTargetAttributeRepository turAemTargetAttributeRepository;
     private TurConnectorContext turConnectorContext;
     private IAemConfiguration config = null;
     private final TurAemIndexingDAO turAemIndexingDAO = new TurAemIndexingDAO();
@@ -108,29 +103,35 @@ public class TurAemPluginProcess {
     private AtomicInteger processed = new AtomicInteger(0);
     private AtomicInteger currentPage = new AtomicInteger(0);
     // Legacy
-    private String propertyPath = "turing-aem.properties";
-    private boolean reindex = false;
-    private boolean reindexOnce = false;
-    private boolean showOutput = false;
-    private boolean dryRun = false;
-    private String guidFilePath = null;
-    private int pageSize = 50;
-    private boolean delivered = false;
+    private final boolean reindex = false;
+    private final boolean reindexOnce = false;
+    private final boolean showOutput = false;
+    private final boolean dryRun = false;
+    private final int pageSize = 50;
+    private final boolean delivered = false;
     public static final String ITEMS_PROCESSED_MESSAGE = "{} items processed in {}ms";
+
     @Inject
-    public TurAemPluginProcess(TurAemPluginIndexingRepository turAemIndexingRepository,
-                               TurAemPluginSystemRepository turAemSystemRepository,
+    public TurAemPluginProcess(TurAemPluginIndexingRepository turAemPluginIndexingRepository,
+                               TurAemPluginSystemRepository turAemPluginSystemRepository,
                                TurAemConfigVarRepository turAemConfigVarRepository,
                                TurAemSourceLocalePathRepository turAemSourceLocalePathRepository,
-                               TurAemPluginModelRepository turAemModelRepository, TurAemSourceRepository turAemSourceRepository,
-                               TurAemAttributeSpecificationRepository turAemAttributeSpecificationRepository) {
-        this.turAemIndexingRepository = turAemIndexingRepository;
-        this.turAemSystemRepository = turAemSystemRepository;
+                               TurAemPluginModelRepository turAemPluginModelRepository,
+                               TurAemSourceRepository turAemSourceRepository,
+                               TurAemAttributeSpecificationRepository turAemAttributeSpecificationRepository,
+                               TurAemTargetAttributeRepository turAemTargetAttributeRepository) {
+        this.turAemIndexingRepository = turAemPluginIndexingRepository;
+        this.turAemSystemRepository = turAemPluginSystemRepository;
         this.turAemConfigVarRepository = turAemConfigVarRepository;
         this.turAemSourceLocalePathRepository = turAemSourceLocalePathRepository;
-        this.turAemModelRepository = turAemModelRepository;
+        this.turAemPluginModelRepository = turAemPluginModelRepository;
         this.turAemSourceRepository = turAemSourceRepository;
         this.turAemAttributeSpecificationRepository = turAemAttributeSpecificationRepository;
+        this.turAemTargetAttributeRepository = turAemTargetAttributeRepository;
+    }
+
+    private void finished(TurConnectorContext turConnectorContext) {
+        turConnectorContext.finishIndexing();
     }
 
 
@@ -139,21 +140,12 @@ public class TurAemPluginProcess {
         this.turConnectorContext.startIndexing(new TurConnectorSource(turAemSource.getId(),
                 turAemSource.getTurSNSites(), AEM, turAemSource.getLocale()));
 
-        log.info("Starting indexing");
-         finished(turConnectorContext);
-    }
-
-    private void finished(TurConnectorContext turConnectorContext) {
-        turConnectorContext.finishIndexing();
-    }
-
-
-    private void run() {
         this.processed = new AtomicInteger(0);
         this.currentPage = new AtomicInteger(0);
-        config = new AemPluginHandlerConfiguration(propertyPath);
-        turAemContentDefinitionProcess = new TurAemContentDefinitionProcess(config,
-                Paths.get(propertyPath).toAbsolutePath().getParent());
+        config = new AemPluginHandlerConfiguration(turAemSource);
+
+
+        turAemContentDefinitionProcess = new TurAemContentDefinitionProcess(getTurAemContentMapping(turAemSource));
         TurAemSourceContext turAemSourceContext = getTurAemSourceContext(config);
         try {
             if (reindex) {
@@ -163,7 +155,7 @@ public class TurAemPluginProcess {
                 turAemIndexingDAO.deleteContentsToReindexOnce(turAemSourceContext.getId());
             }
             this.getNodesFromJson(turAemSourceContext);
-            if (!dryRun && !usingGuidParameter()) {
+            if (!dryRun) {
                 deIndexObjects(turAemSourceContext);
                 updateSystemOnce(turAemSourceContext);
             }
@@ -172,6 +164,54 @@ public class TurAemPluginProcess {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
+        finished(turConnectorContext);
+    }
+
+    private @NotNull TurAemContentMapping getTurAemContentMapping(TurAemSource turAemSource) {
+        List<TurAemModel> turAemModels = new ArrayList<>();
+        turAemPluginModelRepository.findByTurAemSource(turAemSource).forEach(pluginModel -> {
+            List<TurAemTargetAttr> targetAttrs = new ArrayList<>();
+            pluginModel.getTargetAttrs().forEach(targetAttr -> {
+                List<TurAemSourceAttr> sourceAttrs = new ArrayList<>();
+                targetAttr.getSourceAttrs().forEach(sourceAttr ->
+                        sourceAttrs.add(TurAemSourceAttr.builder()
+                        .className(sourceAttr.getClassName())
+                        .name(sourceAttr.getName())
+                        .convertHtmlToText(false)
+                        .uniqueValues(false)
+                        .build()));
+                targetAttrs.add(TurAemTargetAttr.builder()
+                        .name(targetAttr.getName())
+                        .sourceAttrs(sourceAttrs)
+                        .build());
+            });
+            turAemModels.add(TurAemModel.builder()
+                    .className(pluginModel.getClassName())
+                    .type(pluginModel.getType())
+                    .targetAttrs(targetAttrs)
+                    .build());
+        });
+        List<TurSNAttributeSpec> targetAttrDefinitions = new ArrayList<>();
+        turAemAttributeSpecificationRepository.findByTurAemSource(turAemSource)
+                .ifPresent(attributeSpecifications ->
+                        attributeSpecifications.forEach(attributeSpec ->
+                                targetAttrDefinitions.add(TurSNAttributeSpec.builder()
+                                .className(attributeSpec.getClassName())
+                                .name(attributeSpec.getName())
+                                .type(attributeSpec.getType())
+                                .facetName(attributeSpec.getFacetNames())
+                                .description(attributeSpec.getDescription())
+                                .mandatory(attributeSpec.isMandatory())
+                                .multiValued(attributeSpec.isMultiValued())
+                                .facet(attributeSpec.isFacet())
+                                .build()
+                        )));
+
+        TurAemContentMapping turAemContentMapping = new TurAemContentMapping();
+        turAemContentMapping.setDeltaClassName(turAemSource.getDeltaClass());
+        turAemContentMapping.setModels(turAemModels);
+        turAemContentMapping.setTargetAttrDefinitions(targetAttrDefinitions);
+        return turAemContentMapping;
     }
 
     private TurAemSourceContext getTurAemSourceContext(IAemConfiguration config) {
@@ -210,22 +250,8 @@ public class TurAemPluginProcess {
     }
 
     private void getNodesFromJson(TurAemSourceContext turAemSourceContext) {
-        if (usingGuidParameter()) {
-            byGuidList(turAemSourceContext);
-        } else if (usingContentTypeParameter(turAemSourceContext)) {
+        if (usingContentTypeParameter(turAemSourceContext)) {
             byContentTypeList(turAemSourceContext);
-        }
-    }
-
-    private void byGuidList(TurAemSourceContext turAemSourceContext) {
-        ArrayList<String> contentInstances;
-        try (FileReader fr = new FileReader(guidFilePath);
-             BufferedReader br = new BufferedReader(fr)) {
-            contentInstances = br.lines().collect(Collectors.toCollection(ArrayList::new));
-            if (!contentInstances.isEmpty())
-                this.indexGuidList(contentInstances, turAemSourceContext);
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
         }
     }
 
@@ -233,7 +259,7 @@ public class TurAemPluginProcess {
         turAemContentDefinitionProcess.findByNameFromModelWithDefinition(turAemSourceContext.getContentType())
                 .ifPresentOrElse(turAemModel -> byContentType(turAemSourceContext),
                         () -> log.info("{} type is not configured in CTD Mapping file.",
-                                        turAemSourceContext.getContentType()));
+                                turAemSourceContext.getContentType()));
     }
 
     private void byContentType(TurAemSourceContext turAemSourceContext) {
@@ -249,28 +275,6 @@ public class TurAemPluginProcess {
 
     private boolean usingContentTypeParameter(TurAemSourceContext turAemSourceContext) {
         return StringUtils.isNotBlank(turAemSourceContext.getContentType());
-    }
-
-    private boolean usingGuidParameter() {
-        return StringUtils.isNotBlank(guidFilePath);
-    }
-
-
-    private void indexGuidList(List<String> guids, TurAemSourceContext turAemSourceContext) {
-        log.info("Processing a total of {} GUID Strings",guids.size());
-        guids.stream().filter(guid -> !StringUtils.isEmpty(guid)).forEach(guid -> {
-            long start = System.currentTimeMillis();
-            TurAemCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext, false)
-                    .ifPresent(infinityJson -> getSiteName(turAemSourceContext, infinityJson));
-            TurAemCommonsUtils.getInfinityJson(guid, turAemSourceContext, false)
-                    .ifPresent(infinityJson -> {
-                        turAemSourceContext.setContentType(infinityJson.getString(JCR_PRIMARY_TYPE));
-                        getNodeFromJson(guid, infinityJson, turAemSourceContext, start);
-                        long elapsed = System.currentTimeMillis() - start;
-                       log.info(ITEMS_PROCESSED_MESSAGE,processed.get(), elapsed);
-                    });
-
-        });
     }
 
     private void getSiteName(TurAemSourceContext turAemSourceContext, JSONObject jsonObject) {
@@ -365,7 +369,7 @@ public class TurAemPluginProcess {
                     ordinal((currentPage.get() * pageSize) - pageSize + 1));
         }
         if (processed.get() >= pageSize) {
-            log.info(ITEMS_PROCESSED_MESSAGE,processed.get(),
+            log.info(ITEMS_PROCESSED_MESSAGE, processed.get(),
                     System.currentTimeMillis() - start);
             processed = new AtomicInteger(0);
         } else {

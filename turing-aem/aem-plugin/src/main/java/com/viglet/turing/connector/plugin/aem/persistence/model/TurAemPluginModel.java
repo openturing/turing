@@ -52,6 +52,7 @@ public class TurAemPluginModel implements Serializable {
     @Column(name = "id", nullable = false)
     private String id;
     private String type;
+    private String subType;
     private String className;
     @Builder.Default
     @OneToMany(mappedBy = "turAemModel", orphanRemoval = true, fetch = FetchType.LAZY)
