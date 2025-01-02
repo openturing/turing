@@ -3,8 +3,9 @@ import { ActivatedRoute } from '@angular/router';
 import {TurSNFacetOrderingListPageComponent} from "./sn-facet-ordering-list-page.component";
 
 @Component({
-  selector: 'sn-facet-ordering-root-page',
-  templateUrl: './sn-facet-ordering-root-page.component.html'
+    selector: 'sn-facet-ordering-root-page',
+    templateUrl: './sn-facet-ordering-root-page.component.html',
+    standalone: false
 })
 export class TurSNFacetOrderingRootPageComponent {
   constructor(private route: ActivatedRoute) {

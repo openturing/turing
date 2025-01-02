@@ -6,9 +6,10 @@ import { TurSNSearch } from '../../model/sn-search.model';
 import { TurSNSearchService } from '../../service/sn-search.service';
 
 @Component({
-  selector: 'search-root-page',
-  providers: [Location, { provide: LocationStrategy, useClass: PathLocationStrategy }],
-  templateUrl: './search-root-page.component.html'
+    selector: 'search-root-page',
+    providers: [Location, { provide: LocationStrategy, useClass: PathLocationStrategy }],
+    templateUrl: './search-root-page.component.html',
+    standalone: false
 })
 
 export class TurSNSearchRootPageComponent implements OnInit {

@@ -6,8 +6,9 @@ import { TurSNSiteSpotlight } from '../../../model/sn-site-spotlight.model';
 import { TurSNSiteSpotlightService } from '../../../service/sn-site-spotlight.service';
 
 @Component({
-  selector: 'sn-site-spotlight-list-page',
-  templateUrl: './sn-site-spotlight-list-page.component.html'
+    selector: 'sn-site-spotlight-list-page',
+    templateUrl: './sn-site-spotlight-list-page.component.html',
+    standalone: false
 })
 export class TurSNSiteSpotlightListPageComponent {
   private turSNSiteSpotlights: Observable<TurSNSiteSpotlight[]>;

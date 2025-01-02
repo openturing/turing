@@ -6,8 +6,9 @@ import {TurIntegrationWcSource} from "../../../model/integration-wc-source.model
 import {TurIntegrationWcSourceService} from "../../../service/integration-wc-source.service";
 
 @Component({
-  selector: 'integration-wc-list-page',
-  templateUrl: './integration-wc-list-page.component.html'
+    selector: 'integration-wc-list-page',
+    templateUrl: './integration-wc-list-page.component.html',
+    standalone: false
 })
 export class TurIntegrationWcListPageComponent implements OnInit {
   private turIntegrationWcSources: Observable<TurIntegrationWcSource[]>;

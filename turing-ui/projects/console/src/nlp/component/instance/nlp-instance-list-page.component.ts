@@ -6,8 +6,9 @@ import { TurNLPInstanceService } from '../../service/nlp-instance.service';
 import { Router, RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'nlp-instance-list-page',
-  templateUrl: './nlp-instance-list-page.component.html'
+    selector: 'nlp-instance-list-page',
+    templateUrl: './nlp-instance-list-page.component.html',
+    standalone: false
 })
 export class TurNLPInstanceListPageComponent implements OnInit {
   private turNLPInstances: Observable<TurNLPInstance[]>;

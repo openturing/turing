@@ -3,8 +3,9 @@ import { NotifierService } from 'angular-notifier-updated';
 import { Router, RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'se-root-page',
-  templateUrl: './se-root-page.component.html'
+    selector: 'se-root-page',
+    templateUrl: './se-root-page.component.html',
+    standalone: false
 })
 export class TurSERootPageComponent implements OnInit {
 

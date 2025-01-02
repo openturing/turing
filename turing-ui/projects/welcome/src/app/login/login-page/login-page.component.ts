@@ -5,7 +5,10 @@ import { first } from 'rxjs/operators';
 
 import { AuthenticationService } from '../../_services';
 
-@Component({ templateUrl: 'login-page.component.html' })
+@Component({
+    templateUrl: 'login-page.component.html',
+    standalone: false
+})
 export class TurLoginPageComponent implements OnInit {
   loginForm!: UntypedFormGroup;
   loading = false;

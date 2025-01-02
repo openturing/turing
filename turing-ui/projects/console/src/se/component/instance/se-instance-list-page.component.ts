@@ -6,8 +6,9 @@ import { TurSEInstanceService } from '../../service/se-instance.service';
 import { Router, RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'se-instance-list-page',
-  templateUrl: './se-instance-list-page.component.html'
+    selector: 'se-instance-list-page',
+    templateUrl: './se-instance-list-page.component.html',
+    standalone: false
 })
 export class TurSEInstanceListPageComponent implements OnInit {
   private turSEInstances: Observable<TurSEInstance[]>;

@@ -6,8 +6,9 @@ import { TurSNSiteMetricsTerm } from '../../../model/sn-site-metrics-term.model'
 import { TurSNSiteMetricsService } from '../../../service/sn-site-metrics.service';
 
 @Component({
-  selector: 'sn-site-metrics-top-terms-page',
-  templateUrl: './sn-site-metrics-top-terms-page.component.html'
+    selector: 'sn-site-metrics-top-terms-page',
+    templateUrl: './sn-site-metrics-top-terms-page.component.html',
+    standalone: false
 })
 export class TurSNSiteMetricsTopTermsPageComponent {
   private turSNSiteMetricsTopTerms: Observable<TurSNSiteMetricsTerm>;

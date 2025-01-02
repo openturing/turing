@@ -6,8 +6,9 @@ import { TurSNSiteService } from '../../service/sn-site.service';
 import { Router, RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'sn-site-list-page',
-  templateUrl: './sn-site-list-page.component.html'
+    selector: 'sn-site-list-page',
+    templateUrl: './sn-site-list-page.component.html',
+    standalone: false
 })
 export class TurSNSiteListPageComponent implements OnInit {
   private turSNSites: Observable<TurSNSite[]>;

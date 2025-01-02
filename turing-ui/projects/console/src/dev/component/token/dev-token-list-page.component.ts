@@ -6,8 +6,9 @@ import {TurDevTokenService} from "../../service/dev-token.service";
 import {TurDevToken} from "../../model/dev-token.model";
 
 @Component({
-  selector: 'dev-token-list-page',
-  templateUrl: './dev-token-list-page.component.html'
+    selector: 'dev-token-list-page',
+    templateUrl: './dev-token-list-page.component.html',
+    standalone: false
 })
 export class TurDevTokenListPageComponent implements OnInit {
   private turDevTokens: Observable<TurDevToken[]>;

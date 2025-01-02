@@ -14,8 +14,9 @@ import {TurSNRankingExpression} from "../../../model/sn-ranking-expression.model
 import {TurSNRankingCondition} from "../../../model/sn-ranking-condition.model";
 
 @Component({
-  selector: 'sn-site-field-page',
-  templateUrl: './sn-site-field-page.component.html'
+    selector: 'sn-site-field-page',
+    templateUrl: './sn-site-field-page.component.html',
+    standalone: false
 })
 export class TurSNSiteFieldPageComponent implements OnInit {
   @ViewChild('modalDeleteField')

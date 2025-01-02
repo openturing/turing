@@ -6,8 +6,9 @@ import { TurSNSiteLocale } from '../../../model/sn-site-locale.model';
 import { TurSNSiteLocaleService } from '../../../service/sn-site-locale.service';
 
 @Component({
-  selector: 'sn-site-locale-list-page',
-  templateUrl: './sn-site-locale-list-page.component.html'
+    selector: 'sn-site-locale-list-page',
+    templateUrl: './sn-site-locale-list-page.component.html',
+    standalone: false
 })
 export class TurSNSiteLocaleListPageComponent {
   private turSNSiteLocales: Observable<TurSNSiteLocale[]>;

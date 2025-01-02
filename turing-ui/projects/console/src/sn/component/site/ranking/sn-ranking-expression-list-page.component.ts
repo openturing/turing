@@ -6,8 +6,9 @@ import {TurSNRankingExpression} from "../../../model/sn-ranking-expression.model
 import {TurSNRankingExpressionService} from "../../../service/sn-ranking-expression.service";
 
 @Component({
-  selector: 'sn-ranking-expression-list-page',
-  templateUrl: './sn-ranking-expression-list-page.component.html'
+    selector: 'sn-ranking-expression-list-page',
+    templateUrl: './sn-ranking-expression-list-page.component.html',
+    standalone: false
 })
 export class TurSNRankingExpressionListPageComponent {
   private turSNRankingExpressions: Observable<TurSNRankingExpression[]>;
