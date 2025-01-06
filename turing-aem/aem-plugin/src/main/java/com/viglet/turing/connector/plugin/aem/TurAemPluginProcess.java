@@ -56,7 +56,6 @@ import static com.viglet.turing.commons.sn.field.TurSNFieldName.ID;
 @Getter
 @Component
 public class TurAemPluginProcess {
-    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
     public static final String CONTENT_FRAGMENT = "content-fragment";
     public static final String STATIC_FILE = "static-file";
     public static final String SITE = "site";
@@ -220,7 +219,7 @@ public class TurAemPluginProcess {
     }
 
     private void getNodesFromJson(TurAemSourceContext turAemSourceContext) {
-        if (usingContentTypeParameter(turAemSourceContext)) {
+        if (TurAemCommonsUtils.usingContentTypeParameter(turAemSourceContext)) {
             byContentTypeList(turAemSourceContext);
         }
     }
@@ -235,26 +234,16 @@ public class TurAemPluginProcess {
     private void byContentType(TurAemSourceContext turAemSourceContext) {
         TurAemCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext, false)
                 .ifPresent(infinityJson -> {
-                    getSiteName(turAemSourceContext, infinityJson);
+                    TurAemCommonsUtils.getSiteName(turAemSourceContext, infinityJson).ifPresent(s -> siteName = s);
                     getNodeFromJson(turAemSourceContext.getRootPath(), infinityJson, turAemSourceContext);
                 });
     }
 
-    private boolean usingContentTypeParameter(TurAemSourceContext turAemSourceContext) {
-        return StringUtils.isNotBlank(turAemSourceContext.getContentType());
-    }
-
-    private void getSiteName(TurAemSourceContext turAemSourceContext, JSONObject jsonObject) {
-        TurAemCommonsUtils.getSiteName(jsonObject)
-                .ifPresentOrElse(s -> this.siteName = s,
-                        () -> log.error("No site name the {} root path ({})", turAemSourceContext.getRootPath(),
-                                turAemSourceContext.getId()));
-    }
 
     private void getNodeFromJson(String nodePath, JSONObject jsonObject, TurAemSourceContext turAemSourceContext) {
         TurAemObject aemObject = new TurAemObject(nodePath, jsonObject);
         Optional.of(aemObject).ifPresentOrElse(o -> {
-            if (isTypeEqualContentType(jsonObject, turAemSourceContext)) {
+            if (TurAemCommonsUtils.isTypeEqualContentType(jsonObject, turAemSourceContext)) {
                 turAemContentDefinitionProcess.findByNameFromModelWithDefinition(turAemSourceContext.getContentType())
                         .ifPresent(model ->
                                 prepareIndexObject(model, new TurAemObject(nodePath, jsonObject),
@@ -264,12 +253,6 @@ public class TurAemPluginProcess {
                 turAemSourceContext.getId(), deltaId));
 
         getChildrenFromJson(nodePath, jsonObject, turAemSourceContext);
-    }
-
-    private static boolean isTypeEqualContentType(JSONObject jsonObject, TurAemSourceContext turAemSourceContext) {
-        return jsonObject.has(JCR_PRIMARY_TYPE) &&
-                jsonObject.getString(JCR_PRIMARY_TYPE)
-                        .equals(turAemSourceContext.getContentType());
     }
 
     private void getChildrenFromJson(String nodePath, JSONObject jsonObject, TurAemSourceContext turAemSourceContext) {

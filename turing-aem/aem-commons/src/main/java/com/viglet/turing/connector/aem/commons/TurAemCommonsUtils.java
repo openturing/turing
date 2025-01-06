@@ -69,9 +69,30 @@ public class TurAemCommonsUtils {
             return size() > MAX_CACHE_SIZE;
         }
     };
+    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
     public static final String JCR_CONTENT = "jcr:content";
     public static final String JCR_TITLE = "jcr:title";
     public static final String ONCE = "once";
+
+    public static boolean isTypeEqualContentType(JSONObject jsonObject, TurAemSourceContext turAemSourceContext) {
+        return jsonObject.has(JCR_PRIMARY_TYPE) &&
+                jsonObject.getString(JCR_PRIMARY_TYPE)
+                        .equals(turAemSourceContext.getContentType());
+    }
+
+    public static Optional<String> getSiteName(TurAemSourceContext turAemSourceContext, JSONObject jsonObject) {
+        return getSiteName(jsonObject)
+                .map(Optional::of)
+                .orElseGet(() -> {
+                    log.error("No site name the {} root path ({})", turAemSourceContext.getRootPath(),
+                            turAemSourceContext.getId());
+                    return Optional.empty();
+                });
+    }
+
+    public static boolean usingContentTypeParameter(TurAemSourceContext turAemSourceContext) {
+        return StringUtils.isNotBlank(turAemSourceContext.getContentType());
+    }
 
     public static boolean isOnceConfig(String path, IAemConfiguration config) {
         if (StringUtils.isNotBlank(config.getOncePatternPath())) {
@@ -87,7 +108,7 @@ public class TurAemCommonsUtils {
     }
 
     public static Date getDeltaDate(TurAemObject aemObject, TurAemSourceContext turAemSourceContext,
-                              TurAemContentDefinitionProcess turAemContentDefinitionProcess) {
+                                    TurAemContentDefinitionProcess turAemContentDefinitionProcess) {
         Date deltaDate = Optional.ofNullable(turAemContentDefinitionProcess.getDeltaClassName())
                 .map(className -> TurCustomClassCache.getCustomClassMap(className)
                         .map(classInstance -> ((TurAemExtDeltaDateInterface) classInstance)

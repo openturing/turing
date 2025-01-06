@@ -187,17 +187,17 @@ public class TurAemIndexerTool {
     private void updateSystemOnce(TurAemSourceContext turAemSourceContext) {
         turAemSystemDAO.findByConfig(TurAemCommonsUtils.configOnce(turAemSourceContext))
                 .ifPresentOrElse(turAemSystem -> {
-                    turAemSystem.setBooleanValue(true);
-                    turAemSystemDAO.update(turAemSystem);
-                },
-                () -> turAemSystemDAO.save(new TurAemSystem(TurAemCommonsUtils.configOnce(turAemSourceContext),
-                        true)));
+                            turAemSystem.setBooleanValue(true);
+                            turAemSystemDAO.update(turAemSystem);
+                        },
+                        () -> turAemSystemDAO.save(new TurAemSystem(TurAemCommonsUtils.configOnce(turAemSourceContext),
+                                true)));
     }
 
     private void getNodesFromJson(TurAemSourceContext turAemSourceContext) {
         if (usingGuidParameter()) {
             byGuidList(turAemSourceContext);
-        } else if (usingContentTypeParameter(turAemSourceContext)) {
+        } else if (TurAemCommonsUtils.usingContentTypeParameter(turAemSourceContext)) {
             byContentTypeList(turAemSourceContext);
         }
     }
@@ -226,15 +226,11 @@ public class TurAemIndexerTool {
         TurAemCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext, false)
                 .ifPresent(infinityJson -> {
                     long start = System.currentTimeMillis();
-                    getSiteName(turAemSourceContext, infinityJson);
+                    TurAemCommonsUtils.getSiteName(turAemSourceContext, infinityJson).ifPresent(s -> siteName = s);
                     getNodeFromJson(turAemSourceContext.getRootPath(), infinityJson, turAemSourceContext, start);
                     jCommander.getConsole().println(ITEMS_PROCESSED_MESSAGE.formatted(processed.get(),
                             System.currentTimeMillis() - start));
                 });
-    }
-
-    private boolean usingContentTypeParameter(TurAemSourceContext turAemSourceContext) {
-        return StringUtils.isNotBlank(turAemSourceContext.getContentType());
     }
 
     private boolean usingGuidParameter() {
@@ -247,7 +243,8 @@ public class TurAemIndexerTool {
         guids.stream().filter(guid -> !StringUtils.isEmpty(guid)).forEach(guid -> {
             long start = System.currentTimeMillis();
             TurAemCommonsUtils.getInfinityJson(turAemSourceContext.getRootPath(), turAemSourceContext, false)
-                    .ifPresent(infinityJson -> getSiteName(turAemSourceContext, infinityJson));
+                    .flatMap(infinityJson -> TurAemCommonsUtils
+                            .getSiteName(turAemSourceContext, infinityJson)).ifPresent(s -> siteName = s);
             TurAemCommonsUtils.getInfinityJson(guid, turAemSourceContext, false)
                     .ifPresent(infinityJson -> {
                         turAemSourceContext.setContentType(infinityJson.getString(JCR_PRIMARY_TYPE));
@@ -257,13 +254,6 @@ public class TurAemIndexerTool {
                     });
 
         });
-    }
-
-    private void getSiteName(TurAemSourceContext turAemSourceContext, JSONObject jsonObject) {
-        TurAemCommonsUtils.getSiteName(jsonObject)
-                .ifPresentOrElse(s -> this.siteName = s,
-                        () -> log.error("No site name the {} root path ({})", turAemSourceContext.getRootPath(),
-                                turAemSourceContext.getId()));
     }
 
     public static String ordinal(int i) {
@@ -278,7 +268,7 @@ public class TurAemIndexerTool {
                                  long start) {
         TurAemObject aemObject = new TurAemObject(nodePath, jsonObject);
         Optional.of(aemObject).ifPresentOrElse(o -> {
-            if (isTypeEqualContentType(jsonObject, turAemSourceContext)) {
+            if (TurAemCommonsUtils.isTypeEqualContentType(jsonObject, turAemSourceContext)) {
                 turAemContentDefinitionProcess.findByNameFromModelWithDefinition(turAemSourceContext.getContentType())
                         .ifPresent(model ->
                                 prepareIndexObject(model, new TurAemObject(nodePath, jsonObject),
@@ -286,14 +276,7 @@ public class TurAemIndexerTool {
             }
         }, () -> log.info("AEM object ({}) is null deltaId = {}",
                 turAemSourceContext.getId(), deltaId));
-
         getChildrenFromJson(nodePath, jsonObject, turAemSourceContext, start);
-    }
-
-    private static boolean isTypeEqualContentType(JSONObject jsonObject, TurAemSourceContext turAemSourceContext) {
-        return jsonObject.has(JCR_PRIMARY_TYPE) &&
-                jsonObject.getString(JCR_PRIMARY_TYPE)
-                        .equals(turAemSourceContext.getContentType());
     }
 
     private void getChildrenFromJson(String nodePath, JSONObject jsonObject, TurAemSourceContext turAemSourceContext,
@@ -508,7 +491,7 @@ public class TurAemIndexerTool {
                 attributes,
                 TurAemCommonsUtils.castSpecToJobSpec(
                         TurAemCommonsUtils.getDefinitionFromModel(turSNAttributeSpecList, attributes))
-                )), turAemSourceContext);
+        )), turAemSourceContext);
     }
 
     private void sendJobToTuring(TurSNJobItems turSNJobItems, TurAemSourceContext turAemSourceContext) {
