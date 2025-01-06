@@ -93,9 +93,7 @@ public class TurAemPluginProcess {
     // Legacy
     private final boolean reindex = false;
     private final boolean reindexOnce = false;
-    private final boolean showOutput = false;
     private final boolean dryRun = false;
-    private final int pageSize = 50;
     private final boolean delivered = false;
 
     @Inject
@@ -116,11 +114,6 @@ public class TurAemPluginProcess {
         this.turAemAttributeSpecificationRepository = turAemAttributeSpecificationRepository;
         this.turAemTargetAttributeRepository = turAemTargetAttributeRepository;
     }
-
-    private void finished(TurConnectorContext turConnectorContext) {
-        turConnectorContext.finishIndexing();
-    }
-
 
     public void run(TurAemSource turAemSource, TurConnectorContext turConnectorContext) {
         this.turConnectorContext = turConnectorContext;
@@ -148,6 +141,10 @@ public class TurAemPluginProcess {
         finished(turConnectorContext);
     }
 
+    private void finished(TurConnectorContext turConnectorContext) {
+        turConnectorContext.finishIndexing();
+    }
+
     private @NotNull TurAemContentMapping getTurAemContentMapping(TurAemSource turAemSource) {
         List<TurAemModel> turAemModels = new ArrayList<>();
         turAemPluginModelRepository.findByTurAemSource(turAemSource).forEach(pluginModel -> {
@@ -156,11 +153,11 @@ public class TurAemPluginProcess {
                 List<TurAemSourceAttr> sourceAttrs = new ArrayList<>();
                 targetAttr.getSourceAttrs().forEach(sourceAttr ->
                         sourceAttrs.add(TurAemSourceAttr.builder()
-                        .className(sourceAttr.getClassName())
-                        .name(sourceAttr.getName())
-                        .convertHtmlToText(false)
-                        .uniqueValues(false)
-                        .build()));
+                                .className(sourceAttr.getClassName())
+                                .name(sourceAttr.getName())
+                                .convertHtmlToText(false)
+                                .uniqueValues(false)
+                                .build()));
                 targetAttrs.add(TurAemTargetAttr.builder()
                         .name(targetAttr.getName())
                         .sourceAttrs(sourceAttrs)
@@ -177,16 +174,16 @@ public class TurAemPluginProcess {
                 .ifPresent(attributeSpecifications ->
                         attributeSpecifications.forEach(attributeSpec ->
                                 targetAttrDefinitions.add(TurSNAttributeSpec.builder()
-                                .className(attributeSpec.getClassName())
-                                .name(attributeSpec.getName())
-                                .type(attributeSpec.getType())
-                                .facetName(attributeSpec.getFacetNames())
-                                .description(attributeSpec.getDescription())
-                                .mandatory(attributeSpec.isMandatory())
-                                .multiValued(attributeSpec.isMultiValued())
-                                .facet(attributeSpec.isFacet())
-                                .build()
-                        )));
+                                        .className(attributeSpec.getClassName())
+                                        .name(attributeSpec.getName())
+                                        .type(attributeSpec.getType())
+                                        .facetName(attributeSpec.getFacetNames())
+                                        .description(attributeSpec.getDescription())
+                                        .mandatory(attributeSpec.isMandatory())
+                                        .multiValued(attributeSpec.isMultiValued())
+                                        .facet(attributeSpec.isFacet())
+                                        .build()
+                                )));
 
         TurAemContentMapping turAemContentMapping = new TurAemContentMapping();
         turAemContentMapping.setDeltaClassName(turAemSource.getDeltaClass());
@@ -250,6 +247,7 @@ public class TurAemPluginProcess {
                     getNodeFromJson(turAemSourceContext.getRootPath(), infinityJson, turAemSourceContext);
                 });
     }
+
     private boolean usingContentTypeParameter(TurAemSourceContext turAemSourceContext) {
         return StringUtils.isNotBlank(turAemSourceContext.getContentType());
     }
@@ -343,7 +341,7 @@ public class TurAemPluginProcess {
                                         Collections.singletonList(config.getDefaultSNSiteConfig().getName()),
                                         content.getLocale(), attributes));
                             });
-                    turAemIndexingRepository.deleteContentsWereDeIndexed(turAemSourceContext.getId(), deltaId);
+                            turAemIndexingRepository.deleteContentsWereDeIndexed(turAemSourceContext.getId(), deltaId);
                         }
                 );
     }
@@ -455,7 +453,7 @@ public class TurAemPluginProcess {
     }
 
     private TurAemPluginIndexing createTurAemIndexing(TurAemObject aemObject, Locale locale,
-                                                TurAemSourceContext turAemSourceContext) {
+                                                      TurAemSourceContext turAemSourceContext) {
         return new TurAemPluginIndexing()
                 .setAemId(aemObject.getPath())
                 .setIndexGroup(turAemSourceContext.getId())
