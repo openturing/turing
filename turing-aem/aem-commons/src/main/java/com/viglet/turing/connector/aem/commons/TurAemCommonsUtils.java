@@ -29,9 +29,13 @@ import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.connector.aem.commons.bean.TurAemContext;
 import com.viglet.turing.connector.aem.commons.bean.TurAemTargetAttrValueMap;
+import com.viglet.turing.connector.aem.commons.config.IAemConfiguration;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.aem.commons.context.TurAemSourceContext;
 import com.viglet.turing.connector.aem.commons.ext.TurAemExtContentInterface;
+import com.viglet.turing.connector.aem.commons.ext.TurAemExtDeltaDate;
+import com.viglet.turing.connector.aem.commons.ext.TurAemExtDeltaDateInterface;
+import com.viglet.turing.connector.aem.commons.mappers.TurAemContentDefinitionProcess;
 import com.viglet.turing.connector.aem.commons.mappers.TurAemModel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +53,8 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 public class TurAemCommonsUtils {
@@ -65,7 +71,38 @@ public class TurAemCommonsUtils {
     };
     public static final String JCR_CONTENT = "jcr:content";
     public static final String JCR_TITLE = "jcr:title";
+    public static final String ONCE = "once";
 
+    public static boolean isOnceConfig(String path, IAemConfiguration config) {
+        if (StringUtils.isNotBlank(config.getOncePatternPath())) {
+            Pattern p = Pattern.compile(config.getOncePatternPath());
+            Matcher m = p.matcher(path);
+            return m.lookingAt();
+        }
+        return false;
+    }
+
+    public static String configOnce(TurAemSourceContext turAemSourceContext) {
+        return "%s/%s".formatted(turAemSourceContext.getId(), ONCE);
+    }
+
+    public static Date getDeltaDate(TurAemObject aemObject, TurAemSourceContext turAemSourceContext,
+                              TurAemContentDefinitionProcess turAemContentDefinitionProcess) {
+        Date deltaDate = Optional.ofNullable(turAemContentDefinitionProcess.getDeltaClassName())
+                .map(className -> TurCustomClassCache.getCustomClassMap(className)
+                        .map(classInstance -> ((TurAemExtDeltaDateInterface) classInstance)
+                                .consume(aemObject, turAemSourceContext))
+                        .orElseGet(() -> defaultDeltaDate(aemObject, turAemSourceContext)))
+                .orElseGet(() -> defaultDeltaDate(aemObject, turAemSourceContext));
+        log.debug("Delta Date {} from {}", deltaDate.toString(), aemObject.getPath());
+        return deltaDate;
+    }
+
+
+    private static Date defaultDeltaDate(TurAemObject aemObject, TurAemSourceContext turAemSourceContext) {
+        return new TurAemExtDeltaDate().consume(aemObject,
+                turAemSourceContext);
+    }
 
     public static TurAemTargetAttrValueMap runCustomClassFromContentType(TurAemModel turAemModel,
                                                                          TurAemObject aemObject,
