@@ -18,14 +18,11 @@
 
 package com.viglet.turing.connector.plugin.aem;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import com.viglet.turing.client.auth.credentials.TurApiKeyCredentials;
-import com.viglet.turing.client.sn.TurSNServer;
-import com.viglet.turing.client.sn.job.*;
+import com.viglet.turing.client.sn.job.TurSNAttributeSpec;
+import com.viglet.turing.client.sn.job.TurSNJobAction;
+import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
-import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.connector.aem.commons.TurAemAttrProcess;
 import com.viglet.turing.connector.aem.commons.TurAemCommonsUtils;
@@ -260,9 +257,13 @@ public class TurAemPluginProcess {
                     long start = System.currentTimeMillis();
                     getSiteName(turAemSourceContext, infinityJson);
                     getNodeFromJson(turAemSourceContext.getRootPath(), infinityJson, turAemSourceContext, start);
-                    log.info(ITEMS_PROCESSED_MESSAGE, processed.get(),
-                            System.currentTimeMillis() - start);
+                    processedLog(start);
                 });
+    }
+
+    private void processedLog(long start) {
+        log.info(ITEMS_PROCESSED_MESSAGE, processed.get(),
+                System.currentTimeMillis() - start);
     }
 
     private boolean usingContentTypeParameter(TurAemSourceContext turAemSourceContext) {
@@ -361,8 +362,7 @@ public class TurAemPluginProcess {
                     ordinal((currentPage.get() * pageSize) - pageSize + 1));
         }
         if (processed.get() >= pageSize) {
-            log.info(ITEMS_PROCESSED_MESSAGE, processed.get(),
-                    System.currentTimeMillis() - start);
+            processedLog(start);
             processed = new AtomicInteger(0);
         } else {
             processed.incrementAndGet();
@@ -380,9 +380,9 @@ public class TurAemPluginProcess {
                                 attributes.put(ID, content.getAemId());
                                 attributes.put(TurSNFieldName.SOURCE_APPS,
                                         IAemConfiguration.DEFAULT_PROVIDER);
-                                sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.DELETE,
+                                turConnectorContext.addJobItem(new TurSNJobItem(TurSNJobAction.DELETE,
                                         Collections.singletonList(config.getDefaultSNSiteConfig().getName()),
-                                        content.getLocale(), attributes)), turAemSourceContext);
+                                        content.getLocale(), attributes));
                             });
                     turAemIndexingRepository.deleteContentsWereDeIndexed(turAemSourceContext.getId(), deltaId);
                         }
@@ -533,38 +533,12 @@ public class TurAemPluginProcess {
                         }
                     });
                 });
-        sendJobToTuring(new TurSNJobItems(new TurSNJobItem(TurSNJobAction.CREATE,
+        turConnectorContext.addJobItem(new TurSNJobItem(TurSNJobAction.CREATE,
                 Collections.singletonList(config.getDefaultSNSiteConfig().getName()),
                 locale,
                 attributes,
                 TurAemCommonsUtils.castSpecToJobSpec(
                         TurAemCommonsUtils.getDefinitionFromModel(turSNAttributeSpecList, attributes))
-        )), turAemSourceContext);
+        ));
     }
-
-    private void sendJobToTuring(TurSNJobItems turSNJobItems, TurAemSourceContext turAemSourceContext) {
-        showOutput(turSNJobItems);
-        if (!dryRun) {
-            turSNJobItems.getTuringDocuments().stream().findFirst()
-                    .ifPresent(document ->
-                            log.info("Send {} object job ({}) to Turing",
-                                    document.getAttributes().get(ID), turAemSourceContext.getId()));
-            if (!TurSNJobUtils.importItems(turSNJobItems,
-                    new TurSNServer(config.getTuringURL(), config.getDefaultSNSiteConfig().getName(),
-                            new TurApiKeyCredentials(config.getApiKey())),
-                    false)) {
-                throw new TurRuntimeException("Import Job Failed");
-            }
-        }
-    }
-
-    private void showOutput(TurSNJobItems turSNJobItems) {
-        if (showOutput) try {
-            log.info(new ObjectMapper().writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(turSNJobItems));
-        } catch (JsonProcessingException e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
 }
