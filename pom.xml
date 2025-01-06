@@ -182,7 +182,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
-                <version>1.5.15</version>
+                <version>1.5.16</version>
             </dependency>
             <dependency>
                 <groupId>com.viglet.turing</groupId>
@@ -197,12 +197,12 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.15</version>
+                <version>1.5.16</version>
             </dependency>
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20240303</version>
+                <version>20241224</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -242,7 +242,7 @@
             <dependency>
                 <groupId>org.xerial</groupId>
                 <artifactId>sqlite-jdbc</artifactId>
-                <version>3.47.1.0</version>
+                <version>3.47.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>

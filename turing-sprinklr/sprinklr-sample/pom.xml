@@ -10,7 +10,7 @@
     <description>Turing Sprinklr - Sample Custom Connector</description>
     <properties>
         <revision>0.3.10</revision>
-        <turing.version>e884f753b0</turing.version>
+        <turing.version>0.3.10</turing.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
