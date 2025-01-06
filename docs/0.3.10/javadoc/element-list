@@ -91,7 +91,6 @@ com.viglet.turing.connector.plugin.aem.conf
 com.viglet.turing.connector.plugin.aem.export
 com.viglet.turing.connector.plugin.aem.export.bean
 com.viglet.turing.connector.plugin.aem.onstartup
-com.viglet.turing.connector.plugin.aem.persistence
 com.viglet.turing.connector.plugin.aem.persistence.model
 com.viglet.turing.connector.plugin.aem.persistence.repository
 com.viglet.turing.connector.plugin.aem.spring.security
