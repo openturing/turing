@@ -39,10 +39,6 @@ import com.viglet.turing.connector.aem.commons.mappers.*;
 import com.viglet.turing.connector.commons.plugin.TurConnectorContext;
 import com.viglet.turing.connector.commons.plugin.TurConnectorSource;
 import com.viglet.turing.connector.plugin.aem.conf.AemPluginHandlerConfiguration;
-import com.viglet.turing.connector.plugin.aem.persistence.TurAemIndexing;
-import com.viglet.turing.connector.plugin.aem.persistence.TurAemIndexingDAO;
-import com.viglet.turing.connector.plugin.aem.persistence.TurAemSystem;
-import com.viglet.turing.connector.plugin.aem.persistence.TurAemSystemDAO;
 import com.viglet.turing.connector.plugin.aem.persistence.model.*;
 import com.viglet.turing.connector.plugin.aem.persistence.repository.*;
 import lombok.Getter;
@@ -97,8 +93,6 @@ public class TurAemPluginProcess {
     private final TurAemTargetAttributeRepository turAemTargetAttributeRepository;
     private TurConnectorContext turConnectorContext;
     private IAemConfiguration config = null;
-    private final TurAemIndexingDAO turAemIndexingDAO = new TurAemIndexingDAO();
-    private final TurAemSystemDAO turAemSystemDAO = new TurAemSystemDAO();
     private TurAemContentDefinitionProcess turAemContentDefinitionProcess;
     private AtomicInteger processed = new AtomicInteger(0);
     private AtomicInteger currentPage = new AtomicInteger(0);
@@ -149,18 +143,16 @@ public class TurAemPluginProcess {
         TurAemSourceContext turAemSourceContext = getTurAemSourceContext(config);
         try {
             if (reindex) {
-                turAemIndexingDAO.deleteContentsToReindex(turAemSourceContext.getId());
+                turAemIndexingRepository.deleteContentsToReindex(turAemSourceContext.getId());
             }
             if (reindexOnce) {
-                turAemIndexingDAO.deleteContentsToReindexOnce(turAemSourceContext.getId());
+                turAemIndexingRepository.deleteContentsToReindexOnce(turAemSourceContext.getId());
             }
             this.getNodesFromJson(turAemSourceContext);
             if (!dryRun) {
                 deIndexObjects(turAemSourceContext);
                 updateSystemOnce(turAemSourceContext);
             }
-            turAemIndexingDAO.close();
-            turAemSystemDAO.close();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -238,11 +230,11 @@ public class TurAemPluginProcess {
     }
 
     private void updateSystemOnce(TurAemSourceContext turAemSourceContext) {
-        turAemSystemDAO.findByConfig(configOnce(turAemSourceContext)).ifPresentOrElse(turAemSystem -> {
+        turAemSystemRepository.findByConfig(configOnce(turAemSourceContext)).ifPresentOrElse(turAemSystem -> {
                     turAemSystem.setBooleanValue(true);
-                    turAemSystemDAO.update(turAemSystem);
+                    turAemSystemRepository.save(turAemSystem);
                 },
-                () -> turAemSystemDAO.save(new TurAemSystem(configOnce(turAemSourceContext), true)));
+                () -> turAemSystemRepository.save(new TurAemPluginSystem(configOnce(turAemSourceContext), true)));
     }
 
     private String configOnce(TurAemSourceContext turAemSourceContext) {
@@ -331,7 +323,7 @@ public class TurAemPluginProcess {
     }
 
     private boolean isOnce(TurAemSourceContext turAemSourceContext) {
-        return turAemSystemDAO.findByConfig(configOnce(turAemSourceContext)).map(TurAemSystem::isBooleanValue)
+        return turAemSystemRepository.findByConfig(configOnce(turAemSourceContext)).map(TurAemPluginSystem::isBooleanValue)
                 .orElse(false);
     }
 
@@ -378,7 +370,7 @@ public class TurAemPluginProcess {
     }
 
     private void deIndexObjects(TurAemSourceContext turAemSourceContext) {
-        turAemIndexingDAO.findContentsShouldBeDeIndexed(turAemSourceContext.getId(), deltaId)
+        turAemIndexingRepository.findContentsShouldBeDeIndexed(turAemSourceContext.getId(), deltaId)
                 .ifPresent(contents -> {
                             log.info("DeIndex Content that were removed...");
                             contents.forEach(content -> {
@@ -392,14 +384,14 @@ public class TurAemPluginProcess {
                                         Collections.singletonList(config.getDefaultSNSiteConfig().getName()),
                                         content.getLocale(), attributes)), turAemSourceContext);
                             });
-                            turAemIndexingDAO.deleteContentsWereDeIndexed(turAemSourceContext.getId(), deltaId);
+                    turAemIndexingRepository.deleteContentsWereDeIndexed(turAemSourceContext.getId(), deltaId);
                         }
                 );
     }
 
     private boolean objectNeedBeIndexed(TurAemObject aemObject, TurAemSourceContext turAemSourceContext) {
-        return (!StringUtils.isEmpty(aemObject.getPath()) &&
-                !turAemIndexingDAO.existsByAemIdAndGroup(aemObject.getPath(), turAemSourceContext.getId()));
+        return !StringUtils.isEmpty(aemObject.getPath()) &&
+                !turAemIndexingRepository.existsByAemIdAndIndexGroup(aemObject.getPath(), turAemSourceContext.getId());
     }
 
     private boolean objectNeedBeReIndexed(TurAemObject aemObject, TurAemSourceContext turAemSourceContext) {
@@ -425,7 +417,7 @@ public class TurAemPluginProcess {
     private boolean ddlNeedBeReIndexed(TurAemObject aemObject, TurAemSourceContext turAemSourceContext,
                                        Date deltaDate) {
         return !StringUtils.isEmpty(aemObject.getPath()) &&
-                turAemIndexingDAO.existsByAemIdAndGroupAndDateNotEqual(aemObject.getPath(),
+                turAemIndexingRepository.existsByAemIdAndIndexGroupAndDateNot(aemObject.getPath(),
                         turAemSourceContext.getId(), deltaDate);
     }
 
@@ -456,7 +448,7 @@ public class TurAemPluginProcess {
                              List<TurSNAttributeSpec> turSNAttributeSpecList,
                              TurAemSourceContext turAemSourceContext, Locale locale) {
         if (!dryRun) {
-            turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), turAemSourceContext.getId())
+            turAemIndexingRepository.findByAemIdAndIndexGroup(aemObject.getPath(), turAemSourceContext.getId())
                     .ifPresent(turAemIndexingsList ->
                             log.info("ReIndexed {} object ({}) from {} to {} and deltaId = {}",
                                     aemObject.getPath(), turAemSourceContext.getId(),
@@ -478,24 +470,25 @@ public class TurAemPluginProcess {
     }
 
     private void createIndexingStatus(TurAemObject aemObject, Locale locale, TurAemSourceContext turAemSourceContext) {
-        turAemIndexingDAO.save(createTurAemIndexing(aemObject, locale, turAemSourceContext));
+        turAemIndexingRepository.save(createTurAemIndexing(aemObject, locale, turAemSourceContext));
         log.info("Created status: {} object ({}) and deltaId = {}", aemObject.getPath(),
                 turAemSourceContext.getId(), deltaId);
     }
 
     private void updateIndexingStatus(TurAemObject aemObject, Locale locale, TurAemSourceContext turAemSourceContext) {
-        turAemIndexingDAO.findByAemIdAndGroup(aemObject.getPath(), turAemSourceContext.getId())
+        turAemIndexingRepository.findByAemIdAndIndexGroup(aemObject.getPath(), turAemSourceContext.getId())
                 .filter(turAemIndexingList -> !turAemIndexingList.isEmpty())
                 .ifPresent(turAemIndexingList -> {
                     if (turAemIndexingList.size() > 1) {
-                        turAemIndexingDAO.deleteByAemIdAndGroup(aemObject.getPath(), turAemSourceContext.getId());
+                        turAemIndexingRepository.deleteByAemIdAndIndexGroup(aemObject.getPath(),
+                                turAemSourceContext.getId());
                         log.info("Removed duplicated status {} object ({})",
                                 aemObject.getPath(), turAemSourceContext.getId());
-                        turAemIndexingDAO.save(createTurAemIndexing(aemObject, locale, turAemSourceContext));
+                        turAemIndexingRepository.save(createTurAemIndexing(aemObject, locale, turAemSourceContext));
                         log.info("Recreated status {} object ({}) and deltaId = {}",
                                 aemObject.getPath(), turAemSourceContext.getId(), deltaId);
                     } else {
-                        turAemIndexingDAO.update(turAemIndexingList.getFirst()
+                        turAemIndexingRepository.save(turAemIndexingList.getFirst()
                                 .setDate(getDeltaDate(aemObject, turAemSourceContext))
                                 .setDeltaId(deltaId));
                         log.info("Updated status {} object ({}) deltaId = {}",
@@ -504,9 +497,9 @@ public class TurAemPluginProcess {
                 });
     }
 
-    private TurAemIndexing createTurAemIndexing(TurAemObject aemObject, Locale locale,
+    private TurAemPluginIndexing createTurAemIndexing(TurAemObject aemObject, Locale locale,
                                                 TurAemSourceContext turAemSourceContext) {
-        return new TurAemIndexing()
+        return new TurAemPluginIndexing()
                 .setAemId(aemObject.getPath())
                 .setIndexGroup(turAemSourceContext.getId())
                 .setDate(getDeltaDate(aemObject, turAemSourceContext))
