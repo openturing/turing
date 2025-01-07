@@ -32,6 +32,7 @@
                 <module>aem-cli-indexer</module>
                 <module>aem-plugin</module>
                 <module>aem-cli-sample</module>
+                <module>aem-plugin-sample</module>
             </modules>
         </profile>
         <profile>

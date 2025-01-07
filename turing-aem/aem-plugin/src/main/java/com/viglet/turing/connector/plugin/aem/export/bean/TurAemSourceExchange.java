@@ -42,6 +42,8 @@ public class TurAemSourceExchange {
     private String username;
     private String password;
     private String rootPath;
+    private boolean author;
+    private boolean publish;
     @Builder.Default
     private Collection<String> turSNSites = new HashSet<>();
     @Builder.Default

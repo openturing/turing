@@ -123,13 +123,11 @@
                 <module>turing-commons</module>
                 <module>turing-spring</module>
                 <module>turing-java-sdk</module>
-                <module>turing-cms</module>
                 <module>turing-java-proxy</module>
                 <module>turing-connector</module>
                 <module>turing-filesystem</module>
                 <module>turing-db</module>
                 <module>turing-nutch</module>
-                <module>turing-wem</module>
                 <module>turing-aem</module>
                 <module>turing-web-crawler</module>
                 <module>turing-sprinklr</module>
@@ -145,7 +143,6 @@
             </activation>
             <modules>
                 <module>turing-commons</module>
-                <module>turing-cms</module>
                 <module>turing-java-sdk</module>
                 <module>turing-db</module>
                 <module>turing-aem</module>

@@ -51,7 +51,6 @@ import java.util.*;
 @Transactional
 public class TurAemExchangeProcess {
     private static final String EXPORT_FILE = "export.json";
-    public static final String DEFAULT = "default";
     private final TurAemSourceRepository turAemSourceRepository;
     private final TurAemAttributeSpecificationRepository turAemAttributeSpecificationRepository;
     private final TurAemPluginModelRepository turAemModelRepository;
@@ -279,6 +278,8 @@ public class TurAemExchangeProcess {
                 .username(turAemSourceExchange.getUsername())
                 .password(turAemSourceExchange.getPassword())
                 .rootPath(turAemSourceExchange.getRootPath())
+                .author(turAemSourceExchange.isAuthor())
+                .publish(turAemSourceExchange.isPublish())
                 .build();
         turAemSourceRepository.save(turAemSource);
         return turAemSource;

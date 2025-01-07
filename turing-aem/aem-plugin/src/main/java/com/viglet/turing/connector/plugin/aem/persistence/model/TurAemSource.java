@@ -73,6 +73,10 @@ public class TurAemSource implements Serializable {
     private String turingUrl;
     @Column
     private String turingApiKey;
+    @Column
+    private boolean author;
+    @Column
+    private boolean publish;
 
     @Builder.Default
     @OneToMany(mappedBy = "turAemSource", orphanRemoval = true, fetch = FetchType.LAZY)

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.viglet.turing.connector</groupId>
+        <artifactId>turing-aem</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>aem-plugin-sample</artifactId>
+    <name>Turing AEM - Sample Plugin</name>
+    <description>Turing AEM Connector - Sample Plugin</description>
+    <properties>
+        <turing.version>0.3.10</turing.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.viglet.turing.connector</groupId>
+            <artifactId>aem-commons</artifactId>
+            <version>${turing.version}</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <finalName>aem-plugin-sample</finalName>
+    </build>
+</project>
