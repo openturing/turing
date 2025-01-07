@@ -23,15 +23,13 @@ import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 import com.viglet.turing.connector.plugin.aem.persistence.model.TurAemSource;
 import lombok.extern.slf4j.Slf4j;
 
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.util.*;
 
 @Slf4j
 public class AemPluginHandlerConfiguration implements IAemConfiguration {
     private final TurAemSource turAemSource;
-    private final URL turingURL;
+    private final URI turingURL;
     private final String snSite;
     private final Locale snLocale;
     private final String mappingFile;
@@ -50,11 +48,8 @@ public class AemPluginHandlerConfiguration implements IAemConfiguration {
 
     public AemPluginHandlerConfiguration(TurAemSource turAemSource) {
         this.turAemSource = turAemSource;
-        try {
-            turingURL = URI.create(turAemSource.getTuringUrl()).toURL();
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
+        turingURL = URI.create(turAemSource.getTuringUrl());
+
         apiKey = turAemSource.getTuringApiKey();
         mappingFile = null;
         providerName = DEFAULT_PROVIDER;
@@ -109,7 +104,7 @@ public class AemPluginHandlerConfiguration implements IAemConfiguration {
     }
 
     @Override
-    public URL getTuringURL() {
+    public URI getTuringURL() {
         return turingURL;
     }
 
@@ -128,7 +123,6 @@ public class AemPluginHandlerConfiguration implements IAemConfiguration {
     }
 
     public Collection<TurAemLocalePathContext> getLocales() {
-
         Collection<TurAemLocalePathContext> turAemLocalePathContexts = new HashSet<>();
      turAemSource.getLocalePaths().forEach(localePath ->
              turAemLocalePathContexts.add(TurAemLocalePathContext.builder()

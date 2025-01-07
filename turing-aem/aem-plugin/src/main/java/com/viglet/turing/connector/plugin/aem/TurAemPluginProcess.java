@@ -84,10 +84,10 @@ public class TurAemPluginProcess {
     private IAemConfiguration config = null;
     private TurAemContentDefinitionProcess turAemContentDefinitionProcess;
     // Legacy
-    private final boolean reindex = false;
-    private final boolean reindexOnce = false;
-    private final boolean dryRun = false;
-    private final boolean delivered = false;
+    private static final boolean REINDEX = false;
+    private static final boolean REINDEX_ONCE = false;
+    private static final boolean DRY_RUN = false;
+    private static final boolean DELIVERED = false;
 
     @Inject
     public TurAemPluginProcess(TurAemPluginIndexingRepository turAemPluginIndexingRepository,
@@ -117,14 +117,14 @@ public class TurAemPluginProcess {
         turAemContentDefinitionProcess = new TurAemContentDefinitionProcess(getTurAemContentMapping(turAemSource));
         TurAemSourceContext turAemSourceContext = getTurAemSourceContext(config);
         try {
-            if (reindex) {
+            if (REINDEX) {
                 turAemIndexingRepository.deleteContentsToReindex(turAemSourceContext.getId());
             }
-            if (reindexOnce) {
+            if (REINDEX_ONCE) {
                 turAemIndexingRepository.deleteContentsToReindexOnce(turAemSourceContext.getId());
             }
             this.getNodesFromJson(turAemSourceContext);
-            if (!dryRun) {
+            if (!DRY_RUN) {
                 deIndexObjects(turAemSourceContext);
                 updateSystemOnce(turAemSourceContext);
             }
@@ -334,7 +334,7 @@ public class TurAemPluginProcess {
     private void indexObject(@NotNull TurAemObject aemObject, TurAemModel turAemModel,
                              List<TurSNAttributeSpec> turSNAttributeSpecList,
                              TurAemSourceContext turAemSourceContext) {
-        if (!delivered || aemObject.isDelivered()) {
+        if (!DELIVERED || aemObject.isDelivered()) {
             final Locale locale = TurAemCommonsUtils.getLocaleFromAemObject(turAemSourceContext, aemObject);
             if (objectNeedBeIndexed(aemObject, turAemSourceContext)) {
                 sendIndex(aemObject, turAemModel, turSNAttributeSpecList, turAemSourceContext, locale);
@@ -342,7 +342,7 @@ public class TurAemPluginProcess {
                 if (objectNeedBeReIndexed(aemObject, turAemSourceContext)) {
                     sendReindex(aemObject, turAemModel, turSNAttributeSpecList, turAemSourceContext, locale);
                 }
-                if (!dryRun) {
+                if (!DRY_RUN) {
                     updateIndexingStatus(aemObject, locale, turAemSourceContext);
                 }
             }
@@ -355,7 +355,7 @@ public class TurAemPluginProcess {
     private void sendReindex(TurAemObject aemObject, TurAemModel turAemModel,
                              List<TurSNAttributeSpec> turSNAttributeSpecList,
                              TurAemSourceContext turAemSourceContext, Locale locale) {
-        if (!dryRun) {
+        if (!DRY_RUN) {
             turAemIndexingRepository.findByAemIdAndIndexGroup(aemObject.getPath(), turAemSourceContext.getId())
                     .ifPresent(turAemIndexingsList ->
                             log.info("ReIndexed {} object ({}) from {} to {} and deltaId = {}",
@@ -371,7 +371,7 @@ public class TurAemPluginProcess {
     private void sendIndex(TurAemObject aemObject, TurAemModel turAemModel,
                            List<TurSNAttributeSpec> turSNAttributeSpecList, TurAemSourceContext turAemSourceContext,
                            Locale locale) {
-        if (!dryRun) {
+        if (!DRY_RUN) {
             createIndexingStatus(aemObject, locale, turAemSourceContext);
         }
         sendToTuringToBeIndexed(aemObject, turAemModel, turSNAttributeSpecList, locale,

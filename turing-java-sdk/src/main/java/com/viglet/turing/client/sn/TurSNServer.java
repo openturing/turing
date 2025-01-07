@@ -48,8 +48,8 @@ import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.net.URIBuilder;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -96,7 +96,7 @@ public class TurSNServer {
 
     private TurSNQuery turSNQuery;
 
-    private URL serverURL;
+    private URI serverURL;
 
     private String siteName;
 
@@ -111,7 +111,7 @@ public class TurSNServer {
 
     private String providerName;
 
-    public TurSNServer(URL serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials,
+    public TurSNServer(URI serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials,
                        String userId) {
         super();
         this.serverURL = serverURL;
@@ -126,7 +126,7 @@ public class TurSNServer {
 
     }
 
-    public TurSNServer(URL serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials,
+    public TurSNServer(URI serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials,
                        String userId) {
         super();
         this.serverURL = serverURL;
@@ -141,27 +141,27 @@ public class TurSNServer {
 
     }
 
-    public TurSNServer(URL serverURL, TurApiKeyCredentials apiKeyCredentials) {
+    public TurSNServer(URI serverURL, TurApiKeyCredentials apiKeyCredentials) {
         this(serverURL, SITE_NAME_DEFAULT, LOCALE_DEFAULT, apiKeyCredentials);
     }
 
-    public TurSNServer(URL serverURL, String siteName) {
+    public TurSNServer(URI serverURL, String siteName) {
         this(serverURL, siteName, LOCALE_DEFAULT);
     }
 
-    public TurSNServer(URL serverURL, String siteName, Locale locale) {
+    public TurSNServer(URI serverURL, String siteName, Locale locale) {
         this(serverURL, siteName, locale, (TurUsernamePasswordCredentials) null);
     }
 
-    public TurSNServer(URL serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials) {
+    public TurSNServer(URI serverURL, String siteName, Locale locale, TurUsernamePasswordCredentials credentials) {
         this(serverURL, siteName, locale, credentials, credentials != null ? credentials.getUsername() : null);
     }
 
-    public TurSNServer(URL serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials) {
+    public TurSNServer(URI serverURL, String siteName, Locale locale, TurApiKeyCredentials apiKeyCredentials) {
         this(serverURL, siteName, locale, apiKeyCredentials, null);
     }
 
-    public TurSNServer(URL serverURL, String siteName, TurApiKeyCredentials apiKeyCredentials) {
+    public TurSNServer(URI serverURL, String siteName, TurApiKeyCredentials apiKeyCredentials) {
         this(serverURL, siteName, LOCALE_DEFAULT, apiKeyCredentials, null);
     }
 

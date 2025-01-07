@@ -190,14 +190,10 @@ public class TurFSImportTool {
         }
         log.info("Importing {} to {} of {} items", turChunkingJob.getFirstItemPosition(),
                 turChunkingJob.getTotal(), totalFiles);
-        try {
-            TurSNJobUtils.importItems(turChunkingJob.getTurSNJobItems(),
-                    new TurSNServer(URI.create(turingServer).toURL(), null,
-                            new TurApiKeyCredentials(turingApiKey)),
-                    showOutput);
-        } catch (MalformedURLException e) {
-            log.error(e.getMessage(), e);
-        }
+        TurSNJobUtils.importItems(turChunkingJob.getTurSNJobItems(),
+                new TurSNServer(URI.create(turingServer), null,
+                        new TurApiKeyCredentials(turingApiKey)),
+                showOutput);
 
     }
 }

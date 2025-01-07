@@ -28,12 +28,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.util.*;
 
 @Slf4j
 public class AemHandlerConfiguration implements IAemConfiguration {
-    private URL turingURL;
+    private URI turingURL;
     private String snSite;
     private Locale snLocale;
     private String mappingFile;
@@ -94,7 +93,7 @@ public class AemHandlerConfiguration implements IAemConfiguration {
     }
 
     @Override
-    public URL getTuringURL() {
+    public URI getTuringURL() {
         return turingURL;
     }
 
@@ -133,11 +132,7 @@ public class AemHandlerConfiguration implements IAemConfiguration {
     private void parseProperties(Properties properties) {
 
         // Turing
-        try {
-            turingURL = URI.create(properties.getProperty("turing.url", DEFAULT_TURING_URL)).toURL();
-        } catch (MalformedURLException e) {
-            log.error(e.getMessage(), e);
-        }
+        turingURL = URI.create(properties.getProperty("turing.url", DEFAULT_TURING_URL));
         apiKey = properties.getProperty("turing.apiKey");
         mappingFile = properties.getProperty("turing.mapping.file", DEFAULT_CTD_MAPPING_FILE);
         providerName = properties.getProperty("turing.provider.name", DEFAULT_PROVIDER);

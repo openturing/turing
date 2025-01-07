@@ -20,7 +20,7 @@ package com.viglet.turing.connector.aem.commons.config;
 
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 
-import java.net.URL;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Locale;
 
@@ -30,9 +30,8 @@ public interface IAemConfiguration {
     String DEFAULT_CTD_MAPPING_FILE = "/CTD-Turing-Mappings.xml";
     String DEFAULT_SN_SITE = "Sample";
     String DEFAULT_SN_LOCALE = Locale.US.toString();
-    String DEFAULT_DPS_CONTEXT = "sites";
 
-    URL getTuringURL();
+    URI getTuringURL();
 
     String getProviderName();
 
