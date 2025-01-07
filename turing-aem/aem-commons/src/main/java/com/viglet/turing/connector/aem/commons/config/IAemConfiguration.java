@@ -21,7 +21,6 @@ package com.viglet.turing.connector.aem.commons.config;
 import com.viglet.turing.connector.aem.commons.context.TurAemLocalePathContext;
 
 import java.net.URI;
-import java.net.URL;
 import java.util.Collection;
 import java.util.Locale;
 
