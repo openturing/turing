@@ -40,17 +40,13 @@ public class TurClientOcrSample {
             String turingUrl = args[0];
             String apiKey = args[1];
             String fileUrl = args[2];
-            try {
-                TurServer turSNServer = new TurServer(URI.create(turingUrl).toURL(),
+                TurServer turSNServer = new TurServer(URI.create(turingUrl),
                         new TurApiKeyCredentials(apiKey));
                 log.info("--- Ocr Url");
                 TurOcr turOcr = new TurOcr();
-                TurFileAttributes turFileAttributes = turOcr.processUrl(turSNServer, URI.create(fileUrl).toURL(),
+                TurFileAttributes turFileAttributes = turOcr.processUrl(turSNServer, URI.create(fileUrl),
                         true);
                 log.info(turFileAttributes.toString());
-            } catch (MalformedURLException e) {
-                log.error(e.getMessage(), e);
-            }
         } else {
             log.info("Parameters: turingUrl apiKey fileUrl");
         }

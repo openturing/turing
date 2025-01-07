@@ -6,8 +6,9 @@ import { TurConverseAgentService } from '../../service/converse-agent.service';
 import { Router} from '@angular/router';
 
 @Component({
-  selector: 'converse-agent-list-page',
-  templateUrl: './converse-agent-list-page.component.html'
+    selector: 'converse-agent-list-page',
+    templateUrl: './converse-agent-list-page.component.html',
+    standalone: false
 })
 export class TurConverseAgentListPageComponent implements OnInit {
   private turConverseAgents: Observable<TurConverseAgent[]>;

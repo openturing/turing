@@ -21,10 +21,7 @@ public class TurConnectorApplication {
     public static final String UTF_8 = "UTF-8";
 
     public static void main(String[] args) {
-
-        log.info(":: Starting Turing Connector ...");
         SpringApplication.run(TurConnectorApplication.class, args);
-        log.info(":: Started Turing Connector");
     }
 
     @Bean

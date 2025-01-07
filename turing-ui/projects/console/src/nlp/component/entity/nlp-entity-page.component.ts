@@ -7,8 +7,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'nlp-entity-page',
-  templateUrl: './nlp-entity-page.component.html'
+    selector: 'nlp-entity-page',
+    templateUrl: './nlp-entity-page.component.html',
+    standalone: false
 })
 export class TurNLPEntityPageComponent implements OnInit {
   @ViewChild('modalDelete')

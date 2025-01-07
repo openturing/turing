@@ -19,5 +19,10 @@
 package com.viglet.turing.connector;
 
 public class TurConnectorConstants {
+
+    private TurConnectorConstants() {
+        throw new IllegalStateException("Connector Constants class");
+    }
+
     public static final String CONNECTOR_INDEXING_QUEUE = "connector-indexing.queue";
 }

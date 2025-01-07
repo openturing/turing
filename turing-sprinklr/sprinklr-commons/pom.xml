@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>turing-sprinklr</artifactId>
-    <groupId>com.viglet.turing</groupId>
+    <groupId>com.viglet.turing.connector</groupId>
     <version>${revision}</version>
   </parent>
 
@@ -20,11 +20,6 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.viglet.turing</groupId>
-      <artifactId>sprinklr-java-sdk</artifactId>
-      <version>${revision}</version>
     </dependency>
     <dependency>
       <groupId>com.viglet.turing</groupId>

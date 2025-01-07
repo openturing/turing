@@ -4,8 +4,9 @@ import {User} from "../../../../../welcome/src/app/_models";
 import {AuthenticationService, UserService} from "../../../../../welcome/src/app/_services";
 
 @Component({
-  selector: 'tur-header',
-  templateUrl: './header.component.html'
+    selector: 'tur-header',
+    templateUrl: './header.component.html',
+    standalone: false
 })
 export class TurHeaderComponent implements OnInit {
   user!: Observable<User>;

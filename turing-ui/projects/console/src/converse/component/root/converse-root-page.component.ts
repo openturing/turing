@@ -3,8 +3,9 @@ import { NotifierService } from 'angular-notifier-updated';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'converse-root-page',
-  templateUrl: './converse-root-page.component.html'
+    selector: 'converse-root-page',
+    templateUrl: './converse-root-page.component.html',
+    standalone: false
 })
 export class TurConverseRootPageComponent implements OnInit {
 

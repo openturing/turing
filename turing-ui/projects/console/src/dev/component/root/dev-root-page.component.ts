@@ -3,8 +3,9 @@ import { NotifierService } from 'angular-notifier-updated';
 import { Router, RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'dev-root-page',
-  templateUrl: './dev-root-page.component.html'
+    selector: 'dev-root-page',
+    templateUrl: './dev-root-page.component.html',
+    standalone: false
 })
 export class TurDevRootPageComponent implements OnInit {
 

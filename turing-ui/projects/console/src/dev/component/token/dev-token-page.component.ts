@@ -7,8 +7,9 @@ import {TurDevToken} from "../../model/dev-token.model";
 import {TurDevTokenService} from "../../service/dev-token.service";
 
 @Component({
-  selector: 'dev-token-page',
-  templateUrl: './dev-token-page.component.html'
+    selector: 'dev-token-page',
+    templateUrl: './dev-token-page.component.html',
+    standalone: false
 })
 export class TurDevTokenPageComponent implements OnInit {
   @ViewChild('modalDelete')

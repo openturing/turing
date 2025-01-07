@@ -6,6 +6,7 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.cache.TurCustomClassCache;
 import com.viglet.turing.connector.commons.plugin.TurConnectorContext;
+import com.viglet.turing.connector.commons.plugin.TurConnectorSource;
 import com.viglet.turing.connector.plugin.webcrawler.persistence.repository.*;
 import com.viglet.turing.connector.webcrawler.commons.TurWCContext;
 import com.viglet.turing.connector.webcrawler.commons.ext.TurWCExtInterface;
@@ -27,6 +28,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 
 @Slf4j
 @Component
@@ -39,6 +42,7 @@ public class TurWCPluginProcess {
     public static final String WILD_CARD = "*";
     public static final String AUTHORIZATION = "Authorization";
     public static final String BASIC = "Basic";
+    public static final String WEB_CRAWLER = "WEB-CRAWLER";
     private final List<String> startingPoints = new ArrayList<>();
     private final List<String> allowUrls = new ArrayList<>();
     private final List<String> allowStartsWithUrls = new ArrayList<>();
@@ -81,6 +85,8 @@ public class TurWCPluginProcess {
 
     public void start(TurWCSource turWCSource, TurConnectorContext turConnectorContext) {
         this.turConnectorContext = turConnectorContext;
+        this.turConnectorContext.startIndexing(new TurConnectorSource(turWCSource.getId(), turWCSource.getTurSNSites(),
+                WEB_CRAWLER, turWCSource.getLocale()));
         turWCFileExtensionRepository.findByTurWCSource(turWCSource).ifPresent(source ->
                 source.forEach(turWCFileExtension ->
                         this.notAllowExtensions.add(turWCFileExtension.getExtension())));
@@ -119,7 +125,7 @@ public class TurWCPluginProcess {
     }
 
     private static void finished(TurConnectorContext turConnectorContext) {
-        turConnectorContext.close();
+        turConnectorContext.finishIndexing();
     }
 
 
@@ -134,12 +140,13 @@ public class TurWCPluginProcess {
         try {
             log.info("{}: {}", url, turWCSource.getTurSNSites());
             Document document = getHTML(url);
+            String checksum = getCRC32Checksum(document.html().getBytes());
             getPageLinks(document);
             String pageUrl = getPageUrl(url);
             if (canBeIndexed(pageUrl)) {
                 indexedLinks.add(pageUrl);
                 log.info("WC is creating a Job Item: {}", url);
-                addTurSNJobItems(turWCSource, document, url);
+                addTurSNJobItem(turWCSource, document, url, checksum);
                 return;
             } else {
                 log.debug("Ignored: {}", url);
@@ -175,10 +182,16 @@ public class TurWCPluginProcess {
                 && !StringUtils.endsWithAny(pageUrl, notAllowExtensions.toArray(new String[0]));
     }
 
-    private void addTurSNJobItems(TurWCSource turWCSource, Document document, String url) {
+    private void addTurSNJobItem(TurWCSource turWCSource, Document document, String url, String checksum) {
         turConnectorContext.addJobItem(new TurSNJobItem(TurSNJobAction.CREATE, new ArrayList<>(snSites),
                 getLocale(turWCSource, document, url),
-                getJobItemAttributes(turWCSource, document, url)));
+                getJobItemAttributes(turWCSource, document, url), null, checksum));
+    }
+
+    public static String getCRC32Checksum(byte[] bytes) {
+        Checksum crc32 = new CRC32();
+        crc32.update(bytes, 0, bytes.length);
+        return String.valueOf(crc32.getValue());
     }
 
     private Map<String, Object> getJobItemAttributes(TurWCSource turWCSource, Document document, String url) {

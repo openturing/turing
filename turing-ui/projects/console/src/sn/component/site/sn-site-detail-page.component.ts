@@ -12,8 +12,9 @@ import { TurNLPVendor } from 'projects/console/src/nlp/model/nlp-vendor.model';
 import { TurNLPVendorService } from 'projects/console/src/nlp/service/nlp-vendor.service';
 
 @Component({
-  selector: 'sn-site-page',
-  templateUrl: './sn-site-detail-page.component.html'
+    selector: 'sn-site-page',
+    templateUrl: './sn-site-detail-page.component.html',
+    standalone: false
 })
 export class TurSNSiteDetailPageComponent implements OnInit {
   private turSNSite: Observable<TurSNSite>;

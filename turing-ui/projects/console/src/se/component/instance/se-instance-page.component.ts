@@ -11,8 +11,9 @@ import { TurLocaleService } from '../../../locale/service/locale.service';
 import { UntypedFormControl, Validators } from '@angular/forms';
 
 @Component({
-  selector: 'se-instance-page',
-  templateUrl: './se-instance-page.component.html'
+    selector: 'se-instance-page',
+    templateUrl: './se-instance-page.component.html',
+    standalone: false
 })
 export class TurSEInstancePageComponent implements OnInit {
   @ViewChild('modalDelete')

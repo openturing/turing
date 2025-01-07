@@ -8,6 +8,7 @@
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+    <groupId>com.viglet.turing.connector</groupId>
     <artifactId>turing-aem</artifactId>
     <packaging>pom</packaging>
     <name>Turing AEM</name>
@@ -28,8 +29,8 @@
             </activation>
             <modules>
                 <module>aem-commons</module>
-                <module>aem-app</module>
                 <module>aem-cli-indexer</module>
+                <module>aem-plugin</module>
                 <module>aem-cli-sample</module>
             </modules>
         </profile>

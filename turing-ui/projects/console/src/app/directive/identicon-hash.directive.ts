@@ -1,6 +1,9 @@
 import { Directive, ElementRef, Input, OnChanges, Renderer2, SimpleChanges } from '@angular/core';
 import { update } from "jdenticon";
-@Directive({ selector: '[identiconHash]' })
+@Directive({
+    selector: '[identiconHash]',
+    standalone: false
+})
 export class IdenticonHashDirective implements OnChanges {
   @Input()
   identiconHash!: string;

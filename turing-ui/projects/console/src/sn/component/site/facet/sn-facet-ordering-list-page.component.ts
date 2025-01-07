@@ -11,8 +11,9 @@ import {
 } from '@angular/cdk/drag-drop';
 
 @Component({
-  selector: 'sn-facet-ordering-list-page',
-  templateUrl: './sn-facet-ordering-list-page.component.html'
+    selector: 'sn-facet-ordering-list-page',
+    templateUrl: './sn-facet-ordering-list-page.component.html',
+    standalone: false
 })
 export class TurSNFacetOrderingListPageComponent {
   private turSNSiteFacetedField: Observable<TurSNSiteField[]>;

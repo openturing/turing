@@ -12,8 +12,9 @@ import {TurIntegrationWcExtension} from "../../../model/integration-wc-extension
 import {TurIntegrationWcAttrib} from "../../../model/integration-wc-attrib.model";
 
 @Component({
-  selector: 'integration-wc-page',
-  templateUrl: './integration-wc-page.component.html'
+    selector: 'integration-wc-page',
+    templateUrl: './integration-wc-page.component.html',
+    standalone: false
 })
 
 export class TurIntegrationWcPageComponent implements OnInit {

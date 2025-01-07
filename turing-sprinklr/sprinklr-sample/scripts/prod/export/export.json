@@ -44,10 +44,6 @@
           "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtType"
         },
         {
-          "name": "category",
-          "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtCategory"
-        },
-        {
           "name": "tags",
           "className": "com.viglet.turing.connector.sprinklr.commons.ext.TurSprinklrExtTag"
         },

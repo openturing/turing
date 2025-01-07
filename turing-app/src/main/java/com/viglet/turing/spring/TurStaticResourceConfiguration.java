@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -35,57 +35,79 @@ import java.io.IOException;
 @Configuration
 @AutoConfigureAfter(DispatcherServletAutoConfiguration.class)
 public class TurStaticResourceConfiguration implements WebMvcConfigurer {
-	@Value("${turing.allowedOrigins:localhost}")
-	private String allowedOrigins;
+    @Value("${turing.allowedOrigins:localhost}")
+    private String allowedOrigins;
 
-	@Override
-	public void addCorsMappings(CorsRegistry registry) {
-		registry.addMapping("/api/**").allowedOrigins(allowedOrigins).allowedMethods("PUT", "DELETE", "GET", "POST")
-				.allowCredentials(false).maxAge(3600);
-	}
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**").allowedOrigins(allowedOrigins).allowedMethods("PUT", "DELETE", "GET", "POST")
+                .allowCredentials(false).maxAge(3600);
+    }
 
-	@Override
-	public void configurePathMatch(PathMatchConfigurer configurer) {
-		configurer.setUseTrailingSlashMatch(true);
-	}
+    @Override
+    public void configurePathMatch(PathMatchConfigurer configurer) {
+        configurer.setUseTrailingSlashMatch(true);
+    }
 
-	@Override
-	public void addViewControllers(ViewControllerRegistry registry) {
-		registry.addViewController("/console").setViewName("forward:/console/index.html");
-		registry.addViewController("/console/").setViewName("forward:/console/index.html");
-		registry.addViewController("/welcome").setViewName("forward:/welcome/index.html");
-		registry.addViewController("/welcome/").setViewName("forward:/welcome/index.html");
-		registry.addViewController("/converse").setViewName("forward:/converse/index.html");
-		registry.addViewController("/converse/").setViewName("forward:/converse/index.html");
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/console").setViewName("forward:/console/browser/index.html");
+        registry.addViewController("/console/").setViewName("forward:/console/browser/index.html");
+        registry.addViewController("/welcome").setViewName("forward:/welcome/browser/index.html");
+        registry.addViewController("/welcome/").setViewName("forward:/welcome/browser/index.html");
+        registry.addViewController("/converse").setViewName("forward:/converse/browser/index.html");
+        registry.addViewController("/converse/").setViewName("forward:/converse/browser/index.html");
+        registry.addViewController("/sn/templates").setViewName("forward:/sn/templates/browser/index.html");
+        registry.addViewController("/sn/templates/").setViewName("forward:/sn/templates/browser/index.html");
 
-	}
+    }
 
-	@Override
-	public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
-		configurer.setDefaultTimeout(-1);
-	}
+    @Override
+    public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
+        configurer.setDefaultTimeout(-1);
+    }
 
-	@Override
-	public void addResourceHandlers(ResourceHandlerRegistry registry) {
-		registry.addResourceHandler("/console/**").addResourceLocations("classpath:/public/console/")
-				.resourceChain(true).addResolver(new PathResourceResolver() {
-					@Override
-					protected Resource getResource(String resourcePath, Resource location) throws IOException {
-						Resource requestedResource = location.createRelative(resourcePath);
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/console/**").addResourceLocations("classpath:/public/console/browser/")
+                .resourceChain(true).addResolver(new PathResourceResolver() {
+                    @Override
+                    protected Resource getResource(String resourcePath, Resource location) throws IOException {
+                        Resource requestedResource = location.createRelative(resourcePath);
 
-						return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
-								: new ClassPathResource("/public/console/index.html");
-					}
-				});
-			registry.addResourceHandler("/welcome/**").addResourceLocations("classpath:/public/welcome/")
-				.resourceChain(true).addResolver(new PathResourceResolver() {
-					@Override
-					protected Resource getResource(String resourcePath, Resource location) throws IOException {
-						Resource requestedResource = location.createRelative(resourcePath);
+                        return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
+                                : new ClassPathResource("/public/console/browser/index.html");
+                    }
+                });
+        registry.addResourceHandler("/welcome/**").addResourceLocations("classpath:/public/welcome/browser/")
+                .resourceChain(true).addResolver(new PathResourceResolver() {
+                    @Override
+                    protected Resource getResource(String resourcePath, Resource location) throws IOException {
+                        Resource requestedResource = location.createRelative(resourcePath);
 
-						return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
-								: new ClassPathResource("/public/welcome/index.html");
-					}
-				});
-	}
+                        return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
+                                : new ClassPathResource("/public/welcome/browser/index.html");
+                    }
+                });
+        registry.addResourceHandler("/converse/**").addResourceLocations("classpath:/public/converse/browser/")
+                .resourceChain(true).addResolver(new PathResourceResolver() {
+                    @Override
+                    protected Resource getResource(String resourcePath, Resource location) throws IOException {
+                        Resource requestedResource = location.createRelative(resourcePath);
+
+                        return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
+                                : new ClassPathResource("/public/converse/browser/index.html");
+                    }
+                });
+        registry.addResourceHandler("/sn/templates/**").addResourceLocations("classpath:/public/sn/templates/browser/")
+                .resourceChain(true).addResolver(new PathResourceResolver() {
+                    @Override
+                    protected Resource getResource(String resourcePath, Resource location) throws IOException {
+                        Resource requestedResource = location.createRelative(resourcePath);
+
+                        return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
+                                : new ClassPathResource("/public/sn/templates/browser/index.html");
+                    }
+                });
+    }
 }

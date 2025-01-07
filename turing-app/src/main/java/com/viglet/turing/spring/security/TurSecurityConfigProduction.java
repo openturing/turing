@@ -135,7 +135,8 @@ public class TurSecurityConfigProduction {
                                 AntPathRequestMatcher.antMatcher("/favicon.ico"),
                                 AntPathRequestMatcher.antMatcher("/*.png"),
                                 AntPathRequestMatcher.antMatcher("/manifest.json"),
-                                mvc.pattern("/browserconfig.xml"), mvc.pattern("/console/**"),
+                                mvc.pattern("/browserconfig.xml"),
+                                mvc.pattern("/console/**"),
                                 mvc.pattern("/api/v2/guest/**")).permitAll();
                         authorizeRequests.anyRequest().authenticated();
 

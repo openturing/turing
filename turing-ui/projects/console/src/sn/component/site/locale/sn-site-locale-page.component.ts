@@ -12,8 +12,9 @@ import { TurNLPInstanceService } from 'projects/console/src/nlp/service/nlp-inst
 import { TurNLPInstance } from 'projects/console/src/nlp/model/nlp-instance.model';
 
 @Component({
-  selector: 'sn-site-locale-page',
-  templateUrl: './sn-site-locale-page.component.html'
+    selector: 'sn-site-locale-page',
+    templateUrl: './sn-site-locale-page.component.html',
+    standalone: false
 })
 export class TurSNSiteLocalePageComponent implements OnInit {
   @ViewChild('modalDeleteLocale')

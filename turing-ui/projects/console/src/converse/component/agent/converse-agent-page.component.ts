@@ -10,8 +10,9 @@ import { TurSEInstance } from '../../../se/model/se-instance.model';
 import { TurSEInstanceService } from '../../../se/service/se-instance.service';
 
 @Component({
-  selector: 'converse-agent-page',
-  templateUrl: './converse-agent-page.component.html'
+    selector: 'converse-agent-page',
+    templateUrl: './converse-agent-page.component.html',
+    standalone: false
 })
 export class TurConverseAgentPageComponent implements OnInit {
   @ViewChild('modalDelete')

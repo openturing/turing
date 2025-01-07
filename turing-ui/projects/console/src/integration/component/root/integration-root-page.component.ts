@@ -3,8 +3,9 @@ import { NotifierService } from 'angular-notifier-updated';
 import { Router, RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'integration-root-page',
-  templateUrl: './integration-root-page.component.html'
+    selector: 'integration-root-page',
+    templateUrl: './integration-root-page.component.html',
+    standalone: false
 })
 export class TurIntegrationRootPageComponent implements OnInit {
 

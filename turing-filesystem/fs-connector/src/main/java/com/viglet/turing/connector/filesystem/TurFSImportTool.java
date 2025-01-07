@@ -171,13 +171,9 @@ public class TurFSImportTool {
             if (fileSizeField != null)
                 attributes.put(fileSizeField, file.length());
             attributes.put("url", fileURL);
-            try {
                 TurOcr ocr = new TurOcr();
-                attributes.put("text", ocr.processFile(new TurServer(URI.create(turingServer).toURL(),
+                attributes.put("text", ocr.processFile(new TurServer(URI.create(turingServer),
                         new TurApiKeyCredentials(turingApiKey)), file, showOutput));
-            } catch (MalformedURLException e) {
-               log.error(e.getMessage(), e);
-            }
             turSNJobItem.setAttributes(attributes);
 
            return turSNJobItem;

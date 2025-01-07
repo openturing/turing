@@ -2,8 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'console-page',
-  templateUrl: './console-page.component.html'
+    selector: 'console-page',
+    templateUrl: './console-page.component.html',
+    standalone: false
 })
 export class TurConsolePageComponent implements OnInit {
 

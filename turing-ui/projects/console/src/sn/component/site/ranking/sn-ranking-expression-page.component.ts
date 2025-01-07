@@ -10,8 +10,9 @@ import {TurSNSiteField} from "../../../model/sn-site-field.model";
 import {TurSNRankingCondition} from "../../../model/sn-ranking-condition.model";
 
 @Component({
-  selector: 'sn-site-ranking-expression-page',
-  templateUrl: './sn-ranking-expression-page.component.html'
+    selector: 'sn-site-ranking-expression-page',
+    templateUrl: './sn-ranking-expression-page.component.html',
+    standalone: false
 })
 export class TurSNRankingExpressionPageComponent implements OnInit {
   @ViewChild('modalDeleteRankingExpression')

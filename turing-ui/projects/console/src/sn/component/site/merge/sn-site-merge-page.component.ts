@@ -11,8 +11,9 @@ import { TurNLPInstance } from 'projects/console/src/nlp/model/nlp-instance.mode
 import { TurSNSiteMergeField } from '../../../model/sn-site-merge-field.model';
 
 @Component({
-  selector: 'sn-site-merge-page',
-  templateUrl: './sn-site-merge-page.component.html'
+    selector: 'sn-site-merge-page',
+    templateUrl: './sn-site-merge-page.component.html',
+    standalone: false
 })
 export class TurSNSiteMergePageComponent implements OnInit {
   @ViewChild('modalDeleteMerge')

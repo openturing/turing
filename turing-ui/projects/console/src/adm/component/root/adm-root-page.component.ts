@@ -3,8 +3,9 @@ import { NotifierService } from 'angular-notifier-updated';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'adm-root-page',
-  templateUrl: './adm-root-page.component.html'
+    selector: 'adm-root-page',
+    templateUrl: './adm-root-page.component.html',
+    standalone: false
 })
 export class TurAdmRootPageComponent implements OnInit {
 

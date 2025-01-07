@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>wc-plugin</artifactId>
-    <name>Turing Web Crawler - Connector Plugin</name>
+    <name>Turing Web Crawler - Plugin</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -94,7 +94,6 @@
         </dependencies>
     </dependencyManagement>
     <build>
-        <finalName>turing-web-crawler-plugin</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -118,7 +117,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>turing-web-crawler-plugin</finalName>
+                            <finalName>web-crawler-plugin</finalName>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <artifactSet>
                                 <includes>

@@ -10,8 +10,9 @@ import {TurIntegrationInstanceService} from "../../../service/integration-instan
 import {TurIntegrationVendorService} from "../../../service/integration-vendor.service";
 
 @Component({
-  selector: 'integration-wc-menu-page',
-  templateUrl: './integration-wc-menu-page.component.html'
+    selector: 'integration-wc-menu-page',
+    templateUrl: './integration-wc-menu-page.component.html',
+    standalone: false
 })
 export class TurIntegrationWcMenuPageComponent implements OnInit {
   @ViewChild('modalDelete')
