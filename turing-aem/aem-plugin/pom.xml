@@ -69,11 +69,6 @@
         </dependency>
         <dependency>
             <groupId>com.viglet.turing</groupId>
-            <artifactId>cms-mapping</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.viglet.turing</groupId>
             <artifactId>turing-spring</artifactId>
             <version>${project.version}</version>
         </dependency>
