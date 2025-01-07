@@ -53,7 +53,7 @@ public class AemPluginHandlerConfiguration implements IAemConfiguration {
         try {
             turingURL = URI.create(turAemSource.getTuringUrl()).toURL();
         } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            log.error("Malformed URL: {}", turAemSource.getTuringUrl(), e);
         }
         apiKey = turAemSource.getTuringApiKey();
         mappingFile = null;

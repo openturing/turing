@@ -84,10 +84,10 @@ public class TurAemPluginProcess {
     private IAemConfiguration config = null;
     private TurAemContentDefinitionProcess turAemContentDefinitionProcess;
     // Legacy
-    private final boolean reindex = false;
-    private final boolean reindexOnce = false;
-    private final boolean dryRun = false;
-    private final boolean delivered = false;
+    private static final boolean reindex = false;
+    private static final boolean reindexOnce = false;
+    private static final boolean dryRun = false;
+    private static final boolean delivered = false;
 
     @Inject
     public TurAemPluginProcess(TurAemPluginIndexingRepository turAemPluginIndexingRepository,
