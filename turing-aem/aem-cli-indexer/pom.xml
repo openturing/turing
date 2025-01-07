@@ -26,11 +26,6 @@
             <version>2.3.232</version>
         </dependency>
         <dependency>
-            <groupId>com.viglet.turing</groupId>
-            <artifactId>cms-mapping</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.viglet.turing.connector</groupId>
             <artifactId>aem-commons</artifactId>
             <version>${project.version}</version>
