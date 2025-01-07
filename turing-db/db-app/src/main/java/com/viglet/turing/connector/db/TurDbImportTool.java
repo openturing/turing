@@ -38,7 +38,6 @@ import org.apache.commons.lang3.LocaleUtils;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -190,7 +189,6 @@ public class TurDbImportTool {
             TurSNServer turSNServer = createTurSNServer();
             TurDbExtCustomImpl turJDBCCustomImpl = instantiateCustomClass();
             if (this.deindexBeforeImporting) {
-                assert turSNServer != null;
                 turSNServer.deleteItemsByType(type);
             }
             log.info("Execute a query...");
@@ -209,13 +207,11 @@ public class TurDbImportTool {
                 while (rs.next()) {
                     turChunkingJob.addItem(createJobItem(turJDBCCustomImpl, conn, rs));
                     if (turChunkingJob.isChunkLimit()) {
-                        assert turSNServer != null;
                         this.sendServer(turSNServer, turChunkingJob, totalRows);
                         turChunkingJob.newCicle();
                     }
                 }
                 if (turChunkingJob.hasItemsLeft()) {
-                    assert turSNServer != null;
                     this.sendServer(turSNServer, turChunkingJob, totalRows);
                 }
             } catch (SQLException e) {
@@ -235,17 +231,13 @@ public class TurDbImportTool {
     }
 
     private TurSNServer createTurSNServer() {
-        TurSNServer turSNServer;
-        try {
-            turSNServer = new TurSNServer(URI.create(turingServer).toURL(), this.site, LocaleUtils.toLocale(this.locale),
-                    new TurApiKeyCredentials(turApiKey));
+        TurSNServer turSNServer = new TurSNServer(URI.create(turingServer),
+                this.site,
+                LocaleUtils.toLocale(this.locale),
+                new TurApiKeyCredentials(turApiKey));
 
-            turSNServer.setProviderName(PROVIDER_ATTRIBUTE_VALUE);
-            return turSNServer;
-        } catch (MalformedURLException e) {
-            log.error(e.getMessage(), e);
-        }
-        return null;
+        turSNServer.setProviderName(PROVIDER_ATTRIBUTE_VALUE);
+        return turSNServer;
     }
 
     private TurDbExtCustomImpl instantiateCustomClass() {

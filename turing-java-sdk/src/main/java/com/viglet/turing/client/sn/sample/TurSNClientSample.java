@@ -25,7 +25,6 @@ import com.viglet.turing.client.sn.response.QueryTurSNResponse;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
 import lombok.extern.slf4j.Slf4j;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
@@ -51,11 +50,10 @@ public class TurSNClientSample {
 	public static void main(String[] args) {
 
 		HttpTurSNServer turSNServer;
-		try {
 			log.info("--- Locales");
 			locales();
 
-			turSNServer = new HttpTurSNServer(URI.create(TURING_URL).toURL(), TURING_SITE, TURING_LOCALE,
+			turSNServer = new HttpTurSNServer(URI.create(TURING_URL), TURING_SITE, TURING_LOCALE,
 					new TurApiKeyCredentials(TURING_API_KEY), TURING_USERID);
 
 			log.info("--- Auto complete");
@@ -82,14 +80,11 @@ public class TurSNClientSample {
 			log.info("--- Group By");
 			groupBy(args, turSNServer);
 
-		} catch (MalformedURLException e) {
-			log.error(e.getMessage(), e);
-		}
 	}
 
-	private static void locales() throws MalformedURLException {
+	private static void locales() {
 		HttpTurSNServer turSNServer;
-		turSNServer = new HttpTurSNServer(URI.create(TURING_URL).toURL(), TURING_SITE);
+		turSNServer = new HttpTurSNServer(URI.create(TURING_URL), TURING_SITE);
 		turSNServer.getLocales().forEach(l -> log.info(String.valueOf(l)));
 	}
 

@@ -29,7 +29,6 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.ID;
@@ -59,14 +58,10 @@ public class TurConnectorProcessQueue {
                 log.info("TurSNJobItem Id: {}", turSNJobItem.getAttributes().get(ID));
             }
         }
-        try {
-            TurSNJobUtils.importItems(turSNJobItems,
-                    new TurSNServer(URI.create(turingUrl).toURL(), null,
-                            new TurApiKeyCredentials(turingApiKey)),
-                    false);
-        } catch (MalformedURLException e) {
-            log.error(e.getMessage(), e);
-        }
+        TurSNJobUtils.importItems(turSNJobItems,
+                new TurSNServer(URI.create(turingUrl), null,
+                        new TurApiKeyCredentials(turingApiKey)),
+                false);
 
     }
 }
