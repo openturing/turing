@@ -4,6 +4,6 @@ ${AnsiColor.BRIGHT_BLUE}   | | | || || '_|| || ' \ / _` | | (__ / _ \| ' \ | ' \
 ${AnsiColor.BRIGHT_BLUE}   |_|  \_,_||_|  |_||_||_|\__, |  \___|\___/|_||_||_||_|\___|\__| \__|\___/|_|  ${AnsiColor.BRIGHT_WHITE}${application.version}
 ${AnsiColor.BRIGHT_BLUE}                           |___/
 
-${AnsiColor.BRIGHT_WHITE}:: Copyright (C) 2016-2024 Viglet Turing Connector
+${AnsiColor.BRIGHT_WHITE}:: Copyright (C) 2016-2025 Viglet Turing Connector
 
 ${AnsiColor.BRIGHT_WHITE}:: Built with Spring Boot :: ${spring-boot.version}
