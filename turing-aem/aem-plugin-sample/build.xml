@@ -1,0 +1,15 @@
+<project>
+    <target name="prod">
+        <exec executable="mvnw.cmd">
+            <arg value="package"/>
+        </exec>
+        <delete dir="dist/prod"/>
+        <mkdir dir="dist/prod/libs"/>
+        <copy todir="dist/prod/">
+            <fileset dir="scripts/prod/"/>
+        </copy>
+        <copy file="target/aem-plugin-sample.jar" todir="dist/prod/libs/"/>
+        <get src="https://github.com/openturing/turing/releases/download/v0.3.10/aem-plugin.jar" dest="dist/prod/libs/"/>
+        <get src="https://github.com/openturing/turing/releases/download/v0.3.10/turing-connector.jar" dest="dist/prod/"/>
+    </target>
+</project>

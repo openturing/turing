@@ -102,7 +102,6 @@
         </dependencies>
     </dependencyManagement>
     <build>
-        <finalName>aem-app</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -126,7 +125,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>sprinklr-plugin</finalName>
+                            <finalName>aem-plugin</finalName>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <artifactSet>
                                 <includes>
