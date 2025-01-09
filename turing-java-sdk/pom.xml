@@ -37,6 +37,7 @@
         </dependency>
     </dependencies>
     <build>
+        <finalName>turing-java-sdk</finalName>
         <plugins>
             <!-- Maven Compiler Plugin -->
             <plugin>
@@ -48,7 +49,6 @@
                     <target>11</target>
                 </configuration>
             </plugin>
-
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.6.0</version>
@@ -59,7 +59,6 @@
                         </goals>
                         <phase>none</phase>
                         <configuration>
-                            <finalName>turing-java-sdk</finalName>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>indexer</shadedClassifierName>
                         </configuration>

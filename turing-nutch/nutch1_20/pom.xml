@@ -54,6 +54,7 @@
         </dependency>
     </dependencies>
     <build>
+        <finalName>turing-nutch120</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>

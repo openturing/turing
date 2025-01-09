@@ -120,6 +120,7 @@
                 </property>
             </activation>
             <modules>
+                <module>turing-utils</module>
                 <module>turing-commons</module>
                 <module>turing-spring</module>
                 <module>turing-java-sdk</module>
