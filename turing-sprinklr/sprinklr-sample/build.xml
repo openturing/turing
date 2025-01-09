@@ -9,6 +9,6 @@
             <fileset dir="scripts/prod/"/>
         </copy>
         <copy file="target/sprinklr-sample.jar" todir="dist/prod/libs/"/>
-        <get src="https://github.com/openturing/turing/releases/download/v0.3.10/turing-sprinklr.jar" dest="dist/prod/"/>
+        <get src="https://github.com/openturing/turing/releases/download/v1.4.0/turing-sprinklr.jar" dest="dist/prod/"/>
     </target>
 </project>

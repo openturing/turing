@@ -11,7 +11,7 @@
     <description>Viglet Turing ES</description>
 
     <properties>
-        <revision>0.3.10</revision>
+        <revision>1.4.0</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>3.4.1</spring-boot.version>

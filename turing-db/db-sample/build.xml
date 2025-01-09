@@ -10,7 +10,7 @@
             <fileset dir="scripts/prod"/>
         </copy>
         <copy file="target/db-sample.jar" todir="dist/prod/libs"/>
-        <get src="https://github.com/openturing/turing/releases/download/v0.3.10/turing-db.jar" dest="dist/prod/libs"/>
+        <get src="https://github.com/openturing/turing/releases/download/v1.4.0/turing-db.jar" dest="dist/prod/libs"/>
         <get src="https://github.com/h2database/h2database/releases/download/version-2.3.232/h2-2024-08-11.zip" dest="dist/prod/h2" />
         <unzip src="dist/prod/h2/h2-2024-08-11.zip" dest="dist/prod"/>
     </target>

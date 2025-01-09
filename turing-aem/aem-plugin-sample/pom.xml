@@ -14,7 +14,7 @@
     <name>Turing AEM - Sample Plugin</name>
     <description>Turing AEM Connector - Sample Plugin</description>
     <properties>
-        <turing.version>0.3.10</turing.version>
+        <turing.version>1.4.0</turing.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

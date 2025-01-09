@@ -9,7 +9,7 @@
             <fileset dir="scripts/prod/"/>
         </copy>
         <copy file="target/wc-sample.jar" todir="dist/prod/libs/"/>
-        <get src="https://github.com/openturing/turing/releases/download/v0.3.10/turing-web-crawler-plugin.jar" dest="dist/prod/libs/"/>
-        <get src="https://github.com/openturing/turing/releases/download/v0.3.10/turing-connector.jar" dest="dist/prod/"/>
+        <get src="https://github.com/openturing/turing/releases/download/v1.4.0/turing-web-crawler-plugin.jar" dest="dist/prod/libs/"/>
+        <get src="https://github.com/openturing/turing/releases/download/v1.4.0/turing-connector.jar" dest="dist/prod/"/>
     </target>
 </project>
