@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.viglet.turing</groupId>
         <artifactId>turing-filesystem</artifactId>
-        <version>${revision}</version>
+        <version>1.4.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>fs-connector</artifactId>

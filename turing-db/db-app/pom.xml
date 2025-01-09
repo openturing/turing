@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.viglet.turing</groupId>
         <artifactId>turing-db</artifactId>
-        <version>${revision}</version>
+        <version>1.4.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>db-app</artifactId>
@@ -23,7 +23,6 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-java-sdk</artifactId>
-            <version>${revision}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -34,7 +33,6 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>db-commons</artifactId>
-            <version>${revision}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>*</artifactId>
@@ -75,7 +73,6 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>fs-commons</artifactId>
-            <version>${revision}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>

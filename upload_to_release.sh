@@ -1,10 +1,15 @@
 #! /bin/bash
+
 mvn build-helper:parse-version versions:set \
 -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} \
 versions:commit
 TAG_NAME=v$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate \
 -Dexpression=project.version -q -DforceStdout)
-echo $TAG_NAME
+echo "$TAG_NAME"
+git add .
+git commit -m "$TAG_NAME Release"
+git push -u origin
+mvn install package
 gh release create $TAG_NAME --generate-notes
 gh release upload $TAG_NAME turing-aem/aem-cli-indexer/target/turing-aem-cli.jar --clobber
 gh release upload $TAG_NAME turing-aem/aem-plugin/target/aem-plugin.jar --clobber

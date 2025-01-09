@@ -5,7 +5,7 @@
     <parent>
         <artifactId>turing-connector</artifactId>
         <groupId>com.viglet.turing.connector</groupId>
-        <version>${revision}</version>
+        <version>1.4.1</version>
     </parent>
 
     <artifactId>connector-app</artifactId>
@@ -36,7 +36,6 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-spring</artifactId>
-            <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
@@ -91,7 +90,6 @@
         <dependency>
             <groupId>com.viglet.turing.connector</groupId>
             <artifactId>connector-commons</artifactId>
-            <version>1.4.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

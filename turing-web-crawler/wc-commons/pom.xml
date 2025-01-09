@@ -4,7 +4,7 @@
   <parent>
     <artifactId>turing-web-crawler</artifactId>
     <groupId>com.viglet.turing.connector</groupId>
-    <version>${revision}</version>
+    <version>1.4.1</version>
   </parent>
 
   <artifactId>wc-commons</artifactId>

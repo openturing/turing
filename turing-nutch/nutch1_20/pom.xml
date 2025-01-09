@@ -9,18 +9,18 @@
     <!-- do_not_remove: published-with-gradle-metadata -->
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>com.viglet.turing</groupId>
+        <artifactId>turing-nutch</artifactId>
+        <version>1.4.1</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <artifactId>nutch1_20</artifactId>
-    <version>${revision}</version>
     <packaging>jar</packaging>
     <name>Turing Nutch - 1.20 Connector</name>
     <description>Turing Nutch - 1.20 Connector</description>
 
-    <parent>
-        <groupId>com.viglet.turing</groupId>
-        <artifactId>turing-nutch</artifactId>
-        <version>${revision}</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

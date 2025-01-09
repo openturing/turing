@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.viglet.turing.connector</groupId>
         <artifactId>turing-aem</artifactId>
-        <version>${revision}</version>
+        <version>1.4.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -23,7 +23,6 @@
         <dependency>
             <groupId>com.viglet.turing.connector</groupId>
             <artifactId>aem-commons</artifactId>
-            <version>${turing.version}</version>
         </dependency>
     </dependencies>
     <build>
