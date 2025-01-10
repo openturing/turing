@@ -1,5 +1,5 @@
 # Parse the version using Maven and set the new version
-$mvnCommand = 'mvn build-helper:parse-version versions:set -DnewVersion=`"$($parsedVersion.majorVersion).$($parsedVersion.minorVersion).$($parsedVersion.nextIncrementalVersion)`" versions:commit'
+$mvnCommand = 'mvn build-helper:parse-version versions:set -DnewVersion="${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.nextIncrementalVersion}" versions:commit'
 Invoke-Expression $mvnCommand
 
 # Get the tag name based on the current project version
