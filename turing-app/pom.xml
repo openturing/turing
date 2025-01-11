@@ -6,11 +6,10 @@
     <parent>
         <groupId>com.viglet.turing</groupId>
         <artifactId>turing</artifactId>
-        <version>${revision}</version>
+        <version>0.3.10.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>turing-app</artifactId>
-    <version>${revision}</version>
     <name>Turing ES Application</name>
     <url>https://github.com/openturing/turing</url>
     <packaging>jar</packaging>

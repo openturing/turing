@@ -1,4 +1,6 @@
 set TAG_NAME=v0.3.10
+mvn build-helper:parse-version versions:set -DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}.${parsedVersion.nextBuildNumber} versions:commit
+mvn clean package
 rem gh release create v0.3.10.1 --generate-notes
 gh release upload %TAG_NAME% turing-aem\aem-cli-indexer\target\turing-aem-cli.jar --clobber
 gh release upload %TAG_NAME% turing-aem\aem-plugin\target\aem-plugin.jar --clobber

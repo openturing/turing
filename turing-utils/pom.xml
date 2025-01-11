@@ -5,13 +5,12 @@
     <parent>
         <groupId>com.viglet.turing</groupId>
         <artifactId>turing</artifactId>
-        <version>${revision}</version>
+        <version>0.3.10.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>com.viglet.turing</groupId>
     <artifactId>turing-utils</artifactId>
-    <version>${revision}</version>
     <name>Turing Utils</name>
     <description>Turing Utils</description>
     <packaging>pom</packaging>

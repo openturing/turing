@@ -5,11 +5,10 @@
     <parent>
         <groupId>com.viglet.turing.connector</groupId>
         <artifactId>turing-aem</artifactId>
-        <version>${revision}</version>
+        <version>0.3.10.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>aem-plugin</artifactId>
-    <version>${revision}</version>
     <packaging>jar</packaging>
     <name>Turing AEM - Plugin</name>
     <description>Turing AEM - Plugin</description>
@@ -65,18 +64,14 @@
         <dependency>
             <groupId>com.viglet.turing.connector</groupId>
             <artifactId>aem-commons</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-spring</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.viglet.turing.connector</groupId>
             <artifactId>connector-commons</artifactId>
-            <version>0.3.10</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>javax.persistence</groupId>

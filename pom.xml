@@ -6,12 +6,11 @@
     <groupId>com.viglet.turing</groupId>
     <artifactId>turing</artifactId>
     <packaging>pom</packaging>
-    <version>${revision}</version>
+    <version>0.3.10.1</version>
     <name>Turing ES Master</name>
     <description>Viglet Turing ES</description>
 
     <properties>
-        <revision>0.3.10</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>3.4.1</spring-boot.version>
@@ -190,6 +189,46 @@
             <dependency>
                 <groupId>com.viglet.turing</groupId>
                 <artifactId>turing-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing</groupId>
+                <artifactId>turing-spring</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing.connector</groupId>
+                <artifactId>connector-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing</groupId>
+                <artifactId>db-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing</groupId>
+                <artifactId>fs-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing.connector</groupId>
+                <artifactId>wc-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing.connector</groupId>
+                <artifactId>wc-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing.connector</groupId>
+                <artifactId>aem-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing.connector</groupId>
+                <artifactId>sprinklr-commons</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

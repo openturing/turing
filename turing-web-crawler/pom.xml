@@ -5,13 +5,12 @@
     <parent>
         <groupId>com.viglet.turing</groupId>
         <artifactId>turing</artifactId>
-        <version>${revision}</version>
+        <version>0.3.10.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>com.viglet.turing.connector</groupId>
     <artifactId>turing-web-crawler</artifactId>
-    <version>${revision}</version>
     <name>Turing Web Crawler</name>
     <description>Turing Web Crawler Connector</description>
     <packaging>pom</packaging>
