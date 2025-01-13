@@ -239,7 +239,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20241224</version>
+                <version>20250107</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
