@@ -20,6 +20,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { TurSNSearch } from '../model/sn-search.model';
+import {TurSNChat} from "../model/sn-chat.model";
 
 @Injectable()
 export class TurSNSearchService {
@@ -31,6 +32,9 @@ export class TurSNSearchService {
     return this.httpClient.get<TurSNSearch>(`${environment.apiUrl}/api/sn/${turSiteName}/search?${queryString}`);
   }
 
+  chat(q: string) {
+    return this.httpClient.get<TurSNChat>(`${environment.apiUrl}/api/llm/chat?q=${q}`);
+  }
   autoComplete(turSiteName: string, q: string, p: string, _setlocale: string, sort: string, fq: string[], tr: string[], nfpr: string) {
     let queryString: string = TurSNSearchService.generateQueryString(q, p, _setlocale, sort, fq, tr, nfpr);
     return this.httpClient.get<string[]>(`${environment.apiUrl}/api/sn/${turSiteName}/ac?${queryString}`);

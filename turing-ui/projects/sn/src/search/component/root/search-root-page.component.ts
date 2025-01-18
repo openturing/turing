@@ -4,6 +4,7 @@ import { Location, LocationStrategy, PathLocationStrategy, PlatformLocation } fr
 import { Observable } from 'rxjs';
 import { TurSNSearch } from '../../model/sn-search.model';
 import { TurSNSearchService } from '../../service/sn-search.service';
+import {TurSNChat} from "../../model/sn-chat.model";
 
 @Component({
     selector: 'search-root-page',
@@ -14,6 +15,7 @@ import { TurSNSearchService } from '../../service/sn-search.service';
 
 export class TurSNSearchRootPageComponent implements OnInit {
   private turSNSearchItems: Observable<TurSNSearch>;
+  public chat!: Observable<TurSNChat>;
   public turSiteName!: string;
   public turQuery!: string;
   private turPage!: string;
@@ -35,6 +37,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
     this.sortOptions.set("oldest", "Oldest");
     this.updateParameters(platformLocation.pathname);
 
+    this.chat = turSNSearchService.chat(this.turQuery);
     this.turSNSearchItems = turSNSearchService.query(
       this.turSiteName,
       this.turQuery,
@@ -66,7 +69,9 @@ export class TurSNSearchRootPageComponent implements OnInit {
       this.turTargetingRule,
       this.turAutoCorrectionDisabled);
   }
-
+  getChat(): Observable<TurSNChat> {
+    return this.chat;
+  }
   getAutoComplete(): Observable<string[]> {
     return this.autoCompleteList;
   }
