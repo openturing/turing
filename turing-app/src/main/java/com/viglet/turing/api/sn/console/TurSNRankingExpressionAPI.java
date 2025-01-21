@@ -113,7 +113,7 @@ public class TurSNRankingExpressionAPI {
     @Transactional
     @Operation(summary = "Delete a Semantic Navigation Ranking Expression")
     @DeleteMapping("/{id}")
-    @CacheEvict(value = {"ranking_expression"}, allEntries = true)
+    @CacheEvict(value = {"ranking_expression", TurSNRankingExpressionRepository.FIND_BY_TUR_SN_SITE}, allEntries = true)
     public boolean turSNRankingExpressionDelete(@PathVariable String id, @PathVariable String snSiteId) {
         return turSNSiteRepository.findById(snSiteId).map(site -> {
                     turSNRankingExpressionRepository.deleteById(id);
