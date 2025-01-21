@@ -46,9 +46,6 @@ ng serve console
 
 ## Search
 ng serve sn
-
-## Chat bot
-ng serve converse
 ----
 === Docker Compose
 
@@ -184,7 +181,7 @@ Turing ES detects Entities of OpenText Blazon Documents using OCR and NLP, gener
 [[turing-console]]
 == Turing ES Console
 
-Turing ES has many components: Search Engine, NLP, Converse (Chat bot), Semantic Navigation
+Turing ES has many components: Search Engine, NLP, Semantic Navigation
 
 [[turing-console-login]]
 === Login
@@ -200,7 +197,7 @@ image::img/screenshots/turing-login.png[Login]
 === Search Engine
 
 ==== Configuration
-Search Engine is used by Turing to store and retrieve data of Converse (Chat bot) and Semantic Navigation Sites.
+Search Engine is used by Turing to store and retrieve data of Semantic Navigation Sites.
 
 [#img-se] 
 .Search Engine Page

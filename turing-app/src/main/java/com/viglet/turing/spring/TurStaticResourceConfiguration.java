@@ -55,8 +55,6 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
         registry.addViewController("/console/").setViewName("forward:/console/browser/index.html");
         registry.addViewController("/welcome").setViewName("forward:/welcome/browser/index.html");
         registry.addViewController("/welcome/").setViewName("forward:/welcome/browser/index.html");
-        registry.addViewController("/converse").setViewName("forward:/converse/browser/index.html");
-        registry.addViewController("/converse/").setViewName("forward:/converse/browser/index.html");
         registry.addViewController("/sn/templates").setViewName("forward:/sn/templates/browser/index.html");
         registry.addViewController("/sn/templates/").setViewName("forward:/sn/templates/browser/index.html");
 
@@ -87,16 +85,6 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 
                         return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
                                 : new ClassPathResource("/public/welcome/browser/index.html");
-                    }
-                });
-        registry.addResourceHandler("/converse/**").addResourceLocations("classpath:/public/converse/browser/")
-                .resourceChain(true).addResolver(new PathResourceResolver() {
-                    @Override
-                    protected Resource getResource(String resourcePath, Resource location) throws IOException {
-                        Resource requestedResource = location.createRelative(resourcePath);
-
-                        return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
-                                : new ClassPathResource("/public/converse/browser/index.html");
                     }
                 });
         registry.addResourceHandler("/sn/templates/**").addResourceLocations("classpath:/public/sn/templates/browser/")

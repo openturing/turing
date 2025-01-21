@@ -22,7 +22,7 @@
 package com.viglet.turing.api.auth;
 
 import com.google.inject.Inject;
-import com.viglet.turing.bean.converse.auth.TurCurrentUser;
+import com.viglet.turing.bean.TurCurrentUser;
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
