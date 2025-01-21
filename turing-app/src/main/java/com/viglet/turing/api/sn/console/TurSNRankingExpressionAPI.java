@@ -85,6 +85,7 @@ public class TurSNRankingExpressionAPI {
 
     @Operation(summary = "Update a Semantic Navigation Ranking Expression")
     @PutMapping("/{id}")
+    @CacheEvict(value = {TurSNRankingConditionRepository.FIND_BY_TUR_SN_RANKING_EXPRESSION}, allEntries = true)
     public TurSNRankingExpression turSNRankingExpressionUpdate(@PathVariable String id,
                                                                @RequestBody TurSNRankingExpression turSNRankingExpression,
                                                                @PathVariable String snSiteId) {
@@ -98,6 +99,7 @@ public class TurSNRankingExpressionAPI {
     }
 
     @NotNull
+
     private TurSNRankingExpression getTurSNRankingExpression(@RequestBody TurSNRankingExpression turSNRankingExpression,
                                                              TurSNRankingExpression turSNRankingExpressionEdit) {
         Set<TurSNRankingCondition> set = new HashSet<>();

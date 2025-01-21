@@ -425,7 +425,7 @@ public class TurSolr {
                         return String.format("_query_:\"" + RECENT_DATES + "\"",
                                 condition.getAttribute());
                     }
-                    return String.format("%s:%s", condition.getAttribute(), condition.getValue());
+                    return String.format("%s:\"%s\"", condition.getAttribute(), condition.getValue());
                 })
                 .collect(Collectors.joining(betweenSpaces(AND)));
     }

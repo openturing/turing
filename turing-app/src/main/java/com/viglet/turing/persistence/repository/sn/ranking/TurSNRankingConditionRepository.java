@@ -35,7 +35,7 @@ import java.util.Set;
  */
 public interface TurSNRankingConditionRepository extends JpaRepository<TurSNRankingCondition, String> {
 
-	String FIND_BY_TUR_SN_RANKING_EXPRESSION = "turSNRankingConditionFindByTurSNRankingExpression";
+	public String FIND_BY_TUR_SN_RANKING_EXPRESSION = "turSNRankingConditionFindByTurSNRankingExpression";
 
 	@Cacheable(FIND_BY_TUR_SN_RANKING_EXPRESSION)
 	Set<TurSNRankingCondition> findByTurSNRankingExpression(TurSNRankingExpression turSNRankingExpression);
