@@ -5,7 +5,7 @@
     <parent>
         <artifactId>turing-connector</artifactId>
         <groupId>com.viglet.turing.connector</groupId>
-        <version>${revision}</version>
+        <version>0.3.10.1</version>
     </parent>
 
     <artifactId>connector-sample</artifactId>
@@ -20,7 +20,6 @@
         <dependency>
             <groupId>com.viglet.turing.connector</groupId>
             <artifactId>wc-plugin</artifactId>
-            <version>${revision}</version>
         </dependency>
     </dependencies>
     <build>

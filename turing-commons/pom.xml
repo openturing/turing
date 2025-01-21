@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.viglet.turing</groupId>
         <artifactId>turing</artifactId>
-        <version>${revision}</version>
+        <version>0.3.10.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>turing-commons</artifactId>
@@ -70,6 +70,7 @@
         </dependency>
     </dependencies>
     <build>
+        <finalName>turing-commons</finalName>
         <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
             <plugins>
                 <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->

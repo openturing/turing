@@ -6,12 +6,11 @@
     <groupId>com.viglet.turing</groupId>
     <artifactId>turing</artifactId>
     <packaging>pom</packaging>
-    <version>${revision}</version>
+    <version>0.3.10.1</version>
     <name>Turing ES Master</name>
     <description>Viglet Turing ES</description>
 
     <properties>
-        <revision>0.3.10</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>3.4.1</spring-boot.version>
@@ -120,6 +119,7 @@
                 </property>
             </activation>
             <modules>
+                <module>turing-utils</module>
                 <module>turing-commons</module>
                 <module>turing-spring</module>
                 <module>turing-java-sdk</module>
@@ -192,6 +192,46 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.viglet.turing</groupId>
+                <artifactId>turing-spring</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing.connector</groupId>
+                <artifactId>connector-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing</groupId>
+                <artifactId>db-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing</groupId>
+                <artifactId>fs-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing.connector</groupId>
+                <artifactId>wc-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing.connector</groupId>
+                <artifactId>wc-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing.connector</groupId>
+                <artifactId>aem-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.turing.connector</groupId>
+                <artifactId>sprinklr-commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
                 <version>1.5.16</version>
@@ -199,7 +239,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20241224</version>
+                <version>20250107</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -239,7 +279,7 @@
             <dependency>
                 <groupId>org.xerial</groupId>
                 <artifactId>sqlite-jdbc</artifactId>
-                <version>3.47.2.0</version>
+                <version>3.48.0.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>

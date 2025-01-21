@@ -10,7 +10,7 @@
   <parent>
     <groupId>com.viglet.turing</groupId>
     <artifactId>turing-filesystem</artifactId>
-    <version>${revision}</version>
+    <version>0.3.10.1</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>fs-commons</artifactId>
@@ -82,7 +82,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
-      <version>6.2.1</version>
+      <version>6.2.2</version>
     </dependency>
   </dependencies>
 </project>

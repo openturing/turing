@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.viglet.turing</groupId>
         <artifactId>turing</artifactId>
-        <version>${revision}</version>
+        <version>0.3.10.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>turing-spring</artifactId>
@@ -32,7 +32,6 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-commons</artifactId>
-            <version>${revision}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

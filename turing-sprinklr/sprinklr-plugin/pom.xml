@@ -5,7 +5,7 @@
     <parent>
         <artifactId>turing-sprinklr</artifactId>
         <groupId>com.viglet.turing.connector</groupId>
-        <version>${revision}</version>
+        <version>0.3.10.1</version>
     </parent>
 
 
@@ -29,7 +29,7 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-spring</artifactId>
-            <version>${revision}</version>
+            <version>0.3.10.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
@@ -44,7 +44,7 @@
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
-            <version>2.2.27</version>
+            <version>2.2.28</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -54,7 +54,7 @@
         <dependency>
             <groupId>com.viglet.turing.connector</groupId>
             <artifactId>sprinklr-commons</artifactId>
-            <version>${revision}</version>
+            <version>0.3.10.1</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -94,8 +94,6 @@
         <dependency>
             <groupId>com.viglet.turing.connector</groupId>
             <artifactId>connector-commons</artifactId>
-            <version>0.3.10</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
     <dependencyManagement>

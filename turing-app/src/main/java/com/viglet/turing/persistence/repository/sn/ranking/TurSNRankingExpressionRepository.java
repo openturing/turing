@@ -36,7 +36,7 @@ import java.util.Set;
  */
 public interface TurSNRankingExpressionRepository extends JpaRepository<TurSNRankingExpression, String> {
 
-	String FIND_BY_TUR_SN_SITE = "turSNRankingExpressionFindByTurSNSite";
+	public String FIND_BY_TUR_SN_SITE = "turSNRankingExpressionFindByTurSNSite";
 
 	@Cacheable(FIND_BY_TUR_SN_SITE)
 	Set<TurSNRankingExpression> findByTurSNSite(Sort language, TurSNSite turSNSite);
