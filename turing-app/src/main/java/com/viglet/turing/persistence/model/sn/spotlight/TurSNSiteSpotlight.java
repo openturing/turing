@@ -90,12 +90,19 @@ public class TurSNSiteSpotlight implements Serializable {
     @JoinColumn(name = "sn_site_id", nullable = false)
     private TurSNSite turSNSite;
 
+    /**
+     * Spotlight feature will be displayed when these terms are searched.
+     */
     // bi-directional many-to-one association to turSNSiteSpotlightTerms
     @OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<TurSNSiteSpotlightTerm> turSNSiteSpotlightTerms = new HashSet<>();
 
+
+    /**
+     * Documents that are associated with the spotlight feature.
+     */
     // bi-directional many-to-one association to turSNSiteSpotlightDocuments
     @OneToMany(mappedBy = "turSNSiteSpotlight", orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN})

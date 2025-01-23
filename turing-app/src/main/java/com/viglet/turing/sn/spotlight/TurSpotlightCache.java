@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 /**
  * @author Alexandre Oliveira
@@ -49,8 +48,12 @@ public class TurSpotlightCache {
 		this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
 	}
 
+
 	@Cacheable(value = "spotlight", sync = true)
 	public List<TurSNSiteSpotlight> findSpotlightBySNSiteAndLanguage(String snSite, Locale language) {
+		// Firstly, find the SNSite by its name.
+		// Then, find the SNSiteSpotlight by the found SNSite and the language.
+		// Return the result or an empty list if the SNSite is not found.
 		return turSNSiteRepository.findByName(snSite).map( turSNSite -> turSNSiteSpotlightRepository
 				.findByTurSNSiteAndLanguage(turSNSite, language)).orElse(Collections.emptyList());
 
@@ -58,11 +61,16 @@ public class TurSpotlightCache {
 	
 	@Cacheable(value = "spotlight_term", sync = true)
 	public List<TurSNSpotlightTermCacheBean> findTermsBySNSiteAndLanguage(String snSite, Locale language) {
-        return  this.findSpotlightBySNSiteAndLanguage(snSite, language).stream().flatMap(turSNSiteSpotlight ->
+
+		// Firstly, get the SNSiteSpotlight by the SNSite and the language.
+		// Treat the result list as a stream
+		// For each SNSiteSpotlight, get the SNSiteSpotlightTerms.
+		
+		return  this.findSpotlightBySNSiteAndLanguage(snSite, language).stream().flatMap(turSNSiteSpotlight ->
 				turSNSiteSpotlight.getTurSNSiteSpotlightTerms().stream()).map(turSNSiteSpotlightTerm ->
 				new TurSNSpotlightTermCacheBean(
 				turSNSiteSpotlightTerm.getName(), turSNSiteSpotlightTerm.getTurSNSiteSpotlight()))
-				.collect(Collectors.toList());
+				.toList();
 	}
 	
 	

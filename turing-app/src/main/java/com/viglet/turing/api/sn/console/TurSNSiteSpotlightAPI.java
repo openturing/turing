@@ -131,7 +131,7 @@ public class TurSNSiteSpotlightAPI {
     @Transactional
     @Operation(summary = "Delete a Semantic Navigation Site Spotlight")
     @DeleteMapping("/{id}")
-    @CacheEvict(value = {"spotlight", "spotlight_term", TurSNSiteSpotlightRepository.FIND_BY_TUR_SN_SITE}, allEntries = true)
+    @CacheEvict(value = {"spotlight", "spotlight_term", TurSNSiteSpotlightRepository.FIND_BY_TUR_SN_SITE, TurSNSiteSpotlightRepository.FIND_BY_TUR_SN_SITE_AND_LANGUAGE}, allEntries = true)
     public boolean turSNSiteSpotlightDelete(@PathVariable String id, @PathVariable String ignoredSnSiteId) {
         turSNSiteSpotlightRepository.deleteById(id);
         return true;
