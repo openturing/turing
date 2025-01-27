@@ -1,4 +1,4 @@
-package com.viglet.turing.connector.sprinklr.plugins;
+package com.viglet.turing.connector.plugin.sprinklr.plugins;
 
 import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrKeyValueTransformer;
 import com.viglet.turing.connector.sprinklr.commons.plugins.TurSprinklrPluginContext;
