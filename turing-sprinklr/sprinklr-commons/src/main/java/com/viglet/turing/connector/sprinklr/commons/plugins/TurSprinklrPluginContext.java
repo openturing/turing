@@ -45,6 +45,6 @@ public class TurSprinklrPluginContext {
                 return pluginClass.cast(plugin);
             }
         }
-        throw new TurRuntimeException("Plugin not found" + pluginClass.getName());
+        throw new TurRuntimeException(pluginClass.getName().concat(" plugin not found") );
     }
 }

@@ -19,18 +19,18 @@
 package com.viglet.turing.connector.sprinklr.commons.plugins;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+
 class TurSprinklrKeyValueTransformerTest {
 
-    @Autowired
-    private TurSprinklrKeyValueTransformer transformer;
+    private final TurSprinklrKeyValueTransformer transformer;
+    public TurSprinklrKeyValueTransformerTest() {
+        transformer = new TurSprinklrKeyValueTransformer();
+    }
 
     @Test
     void loadMapping() {

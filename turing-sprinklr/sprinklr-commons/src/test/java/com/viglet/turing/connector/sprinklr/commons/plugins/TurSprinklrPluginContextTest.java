@@ -19,17 +19,13 @@
 package com.viglet.turing.connector.sprinklr.commons.plugins;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest ()
 class TurSprinklrPluginContextTest {
-
-    @Autowired
-    private TurSprinklrPluginContext pluginContext;
 
     @Test
     void testGetPlugin() {
+        TurSprinklrPluginContext pluginContext = new TurSprinklrPluginContext();
+        pluginContext.addPlugin(new TurSprinklrKeyValueTransformer());
         pluginContext.getPlugin(TurSprinklrKeyValueTransformer.class);
     }
 
