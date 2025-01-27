@@ -626,12 +626,17 @@ public class TurSolr {
         if (hasMLT(turSNSite, turSNSiteMLTFieldExtList)) turSEResults.setSimilarResults(similarResults);
     }
 
+    /**
+     * Sets how many result query will respond.
+     */
     private void setRows(TurSNSite turSNSite, TurSEParameters turSEParameters) {
-        if (turSEParameters.getRows() == 0) {
+        // If site is configured with rows <= 0, then do nothing and uses default value (10)
+        // Default values come from TurSNSiteSearchAPI class parameters.
+        if (turSNSite.getRowsPerPage() > 0) {
+            // Else, use turSNSite attribute. (Site configuration)
             turSEParameters.setRows(turSNSite.getRowsPerPage());
-        } else if (turSEParameters.getRows() < 0) {
-            turSEParameters.setRows(0);
         }
+
     }
 
     private void setSortEntry(TurSNSite turSNSite, SolrQuery query, TurSEParameters turSEParameters) {
