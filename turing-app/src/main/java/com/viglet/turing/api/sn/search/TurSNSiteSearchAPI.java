@@ -39,6 +39,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -136,7 +137,9 @@ public class TurSNSiteSearchAPI {
             Principal principal,
             HttpServletRequest request) {
         if (principal != null) {
-            Locale locale = LocaleUtils.toLocale(localeRequest);
+            Locale locale = LocaleUtils.toLocale(StringUtils.isNotBlank(turSNSitePostParamsBean.getLocale()) ?
+                    turSNSitePostParamsBean.getLocale() :
+                    localeRequest);
             if (existsByTurSNSiteAndLanguage(siteName, locale)) {
                 turSNSitePostParamsBean.setTargetingRules(
                         turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
