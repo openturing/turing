@@ -53,6 +53,12 @@ const routes: Routes = [
               { path: '', redirectTo: 'top-terms', pathMatch: 'full' }
             ]
           },
+          { path: 'ai', component: TurSNAIRootPageComponent, canActivate: [AuthGuard],
+            children: [
+              { path: 'list', component: TurSNFacetOrderingListPageComponent, canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' }
+            ]
+          },
           { path: 'facet-ordering', component: TurSNFacetOrderingRootPageComponent, canActivate: [AuthGuard],
             children: [
               { path: 'list', component: TurSNFacetOrderingListPageComponent, canActivate: [AuthGuard] },

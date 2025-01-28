@@ -50,7 +50,7 @@ import {TurSNSearchService} from "../../../sn/src/search/service/sn-search.servi
 import {TurSNFacetOrderingListPageComponent} from "./component/site/facet/sn-facet-ordering-list-page.component";
 import {TurSNFacetOrderingRootPageComponent} from "./component/site/facet/sn-facet-ordering-root-page.component";
 import {CdkDrag, CdkDropList, CdkDropListGroup} from "@angular/cdk/drag-drop";
-
+import {TurSNSiteAIRootPageComponent} from "./component/site/ai/sn-site-ai-root-page.component";
 @NgModule({
   declarations: [
     TurSNRootPageComponent,
@@ -77,7 +77,8 @@ import {CdkDrag, CdkDropList, CdkDropListGroup} from "@angular/cdk/drag-drop";
     TurSNSiteMetricsTopTermsPageComponent,
     TurSNRankingExpressionRootPageComponent,
     TurSNRankingExpressionListPageComponent,
-    TurSNRankingExpressionPageComponent
+    TurSNRankingExpressionPageComponent,
+    TurSNAIRootPageComponent
   ],
   imports: [
     CdkDropListGroup, CdkDropList, CdkDrag,
