@@ -51,6 +51,8 @@ import {TurSNFacetOrderingListPageComponent} from "./component/site/facet/sn-fac
 import {TurSNFacetOrderingRootPageComponent} from "./component/site/facet/sn-facet-ordering-root-page.component";
 import {CdkDrag, CdkDropList, CdkDropListGroup} from "@angular/cdk/drag-drop";
 import {TurSNSiteAIRootPageComponent} from "./component/site/ai/sn-site-ai-root-page.component";
+import {TurSNSiteAIPageComponent} from "./component/site/ai/sn-site-ai-page.component";
+import {TurSNSiteAIListPageComponent} from "./component/site/ai/sn-site-ai-list-page.component";
 @NgModule({
   declarations: [
     TurSNRootPageComponent,
@@ -78,7 +80,9 @@ import {TurSNSiteAIRootPageComponent} from "./component/site/ai/sn-site-ai-root-
     TurSNRankingExpressionRootPageComponent,
     TurSNRankingExpressionListPageComponent,
     TurSNRankingExpressionPageComponent,
-    TurSNAIRootPageComponent
+    TurSNSiteAIRootPageComponent,
+    TurSNSiteAIPageComponent,
+    TurSNSiteAIListPageComponent
   ],
   imports: [
     CdkDropListGroup, CdkDropList, CdkDrag,
@@ -89,7 +93,7 @@ import {TurSNSiteAIRootPageComponent} from "./component/site/ai/sn-site-ai-root-
     TurSNRoutingModule,
     TurCommonsModule,
     RouterModule,
-    MomentModule
+    MomentModule,
   ],
   providers: [
     TurSNSiteService,

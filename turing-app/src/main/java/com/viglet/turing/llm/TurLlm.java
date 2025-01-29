@@ -20,10 +20,13 @@ package com.viglet.turing.llm;
 
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
+import dev.langchain4j.data.document.Metadata;
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
+import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -41,55 +44,74 @@ public class TurLlm {
     public static final String TITLE = "title";
     public static final String ABSTRACT = "abstract";
     public static final String TEXT = "text";
-    private final VectorStore vectorStore;
+    private final ChromaEmbeddingStore chromaEmbeddingStore;
+    private final EmbeddingModel embeddingModel;
+    private final static boolean enabled = false;
+    public TurLlm() {
+        if (enabled) {
 
-    public TurLlm(VectorStore vectorStore) {
-        this.vectorStore = vectorStore;
+            chromaEmbeddingStore = ChromaEmbeddingStore.builder()
+                    .baseUrl("http://localhost:8000/")
+                    .collectionName("turing")
+                    .logRequests(true)
+                    .logResponses(true)
+                    .build();
+            embeddingModel = OllamaEmbeddingModel.builder()
+                    .baseUrl("http://localhost:11434")
+                    .logRequests(true)
+                    .logResponses(true)
+                    .modelName("mistral")
+                    .build();
+        }
+        else {
+            chromaEmbeddingStore = null;
+            embeddingModel =  null;
+        }
     }
 
     public void addDocuments(TurSNJobItems turSNJobItems) {
-        System.out.println("addDocuments");
-        List<Document> documents = new ArrayList<>();
+        if (enabled) {
+            System.out.println("addDocuments");
+            turSNJobItems.getTuringDocuments().forEach(jobItem -> {
+                StringBuilder sb = new StringBuilder();
+                addAttributes(jobItem, sb);
 
-        turSNJobItems.getTuringDocuments().forEach(jobItem -> {
-            StringBuilder sb = new StringBuilder();
-            addAttributes(jobItem, sb);
-            documents.add(new Document(jobItem.getId(), sb.toString(), setMetadata(jobItem)));
-
-        });
-        vectorStore.add(splitDocuments(documents));
-        System.out.println("added Documents");
+                TextSegment segment1 = TextSegment.from(sb.toString(), new Metadata(setMetadata(jobItem)));
+                Embedding embedding1 = embeddingModel.embed(segment1).content();
+                chromaEmbeddingStore.add(embedding1, segment1);
+            });
+            System.out.println("added Documents");
+        }
     }
 
     private static void addAttributes(TurSNJobItem jobItem, StringBuilder sb) {
-        String[] allowedAttributes = {TITLE, ABSTRACT, TEXT};
-        jobItem.getAttributes().forEach((key, value) -> {
-            if (Arrays.asList(allowedAttributes).contains(key))
-                sb.append(key).append(": ").append(value).append(System.lineSeparator());
-        });
+        if (enabled) {
+            String[] allowedAttributes = {TITLE, ABSTRACT, TEXT};
+            jobItem.getAttributes().forEach((key, value) -> {
+                if (Arrays.asList(allowedAttributes).contains(key))
+                    sb.append(value).append(System.lineSeparator());
+            });
+        }
     }
 
     @NotNull
     private static Map<String, Object> setMetadata(TurSNJobItem jobItem) {
         Map<String, Object> metadata = new HashMap<>();
-        metadata.put(ID, jobItem.getId());
-        metadata.put(LOCALE, jobItem.getLocale());
-        metadata.put(SOURCE_APPS, jobItem.getProviderName());
-        metadata.put(SITES, jobItem.getSiteNames());
-        if (jobItem.getAttributes().containsKey(MODIFICATION_DATE)) {
-            metadata.put(MODIFICATION_DATE, jobItem.getAttributes().get(MODIFICATION_DATE));
-        }
-        if (jobItem.getAttributes().containsKey(PUBLICATION_DATE)) {
-            metadata.put(PUBLICATION_DATE, jobItem.getAttributes().get(PUBLICATION_DATE));
-        }
-        if (jobItem.getAttributes().containsKey(URL)) {
-            metadata.put(URL, jobItem.getAttributes().get(URL));
+        if (enabled) {
+            metadata.put(ID, jobItem.getId());
+            metadata.put(LOCALE, jobItem.getLocale());
+            metadata.put(SOURCE_APPS, jobItem.getProviderName());
+            metadata.put(SITES, jobItem.getSiteNames());
+            if (jobItem.getAttributes().containsKey(MODIFICATION_DATE)) {
+                metadata.put(MODIFICATION_DATE, jobItem.getAttributes().get(MODIFICATION_DATE));
+            }
+            if (jobItem.getAttributes().containsKey(PUBLICATION_DATE)) {
+                metadata.put(PUBLICATION_DATE, jobItem.getAttributes().get(PUBLICATION_DATE));
+            }
+            if (jobItem.getAttributes().containsKey(URL)) {
+                metadata.put(URL, jobItem.getAttributes().get(URL));
+            }
         }
         return metadata;
-    }
-
-    public List<Document> splitDocuments(List<Document> documents) {
-        TokenTextSplitter splitter = new TokenTextSplitter();
-        return splitter.apply(documents);
     }
 }

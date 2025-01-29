@@ -22,72 +22,129 @@ package com.viglet.turing.api.llm;
 
 import com.google.inject.Inject;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
+import dev.langchain4j.data.document.Metadata;
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
+import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
+import dev.langchain4j.rag.DefaultRetrievalAugmentor;
+import dev.langchain4j.rag.RetrievalAugmentor;
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
+import dev.langchain4j.rag.query.transformer.CompressingQueryTransformer;
+import dev.langchain4j.rag.query.transformer.QueryTransformer;
+import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
-import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.web.bind.annotation.*;
+import dev.langchain4j.service.AiServices;
 
 import java.util.*;
+import java.util.function.Function;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/llm")
 @Tag(name = "LLM", description = "LLM")
 public class TurLlmAPI {
-    private final VectorStore chromaVectorStore;
-    private final ChatModel chatModel;
+    public static final String PROMPT = "Using only this rag data. Answer in Portuguese.  You are a helpful assistant that can answer questions about the PDF document that uploaded by the user";
+    private final ChromaEmbeddingStore chromaEmbeddingStore;
+    private final EmbeddingModel embeddingModel;
+    private final ChatLanguageModel chatLanguageModel;
+    private final static boolean enabled = false;
 
     @Inject
-    public TurLlmAPI(VectorStore chromaVectorStore, ChatModel chatModel) {
+    public TurLlmAPI() {
         super();
-        this.chromaVectorStore = chromaVectorStore;
-        this.chatModel = chatModel;
+        if (enabled) {
+            chromaEmbeddingStore = ChromaEmbeddingStore.builder()
+                    .baseUrl("http://localhost:8000/")
+                    .collectionName("turing")
+                    .logRequests(true)
+                    .logResponses(true)
+                    .build();
+
+            embeddingModel = OllamaEmbeddingModel.builder()
+                    .baseUrl("http://localhost:11434")
+                    .logRequests(true)
+                    .logResponses(true)
+                    .modelName("mistral")
+                    .build();
+            chatLanguageModel = OllamaChatModel.builder()
+                    .baseUrl("http://localhost:11434")
+                    .logRequests(true)
+                    .logResponses(true)
+                    .modelName("mistral")
+                    .build();
+        } else {
+            chromaEmbeddingStore = null;
+            embeddingModel = null;
+            chatLanguageModel = null;
+        }
     }
 
     @GetMapping("chat")
-    public AssistantMessage chat(@RequestParam(required = false, name = TurSNParamType.QUERY) String q) {
-        return Objects.requireNonNull(ChatClient.builder(chatModel)
-                .build().prompt()
-                .advisors(new QuestionAnswerAdvisor(this.chromaVectorStore,
-                        SearchRequest.builder().similarityThreshold(0.8d).topK(6).build()))
-                .system("Using only this rag data. Answer in Portuguese.  You are a helpful assistant that can answer questions about the PDF document that uploaded by the user")
-                .user(q)
-                .call()
-                .chatResponse()).getResults().getFirst().getOutput();
+    public String chat(@RequestParam(required = false, name = TurSNParamType.QUERY) String q) {
+        return assistant(q);
     }
 
     @GetMapping("chat-test")
-    public AssistantMessage chatTest(@RequestParam(required = false, name = TurSNParamType.QUERY) String q) {
-        addDocuments();
-        return Objects.requireNonNull(ChatClient.builder(chatModel)
-                .build().prompt()
-                .advisors(new QuestionAnswerAdvisor(this.chromaVectorStore,
-                        SearchRequest.builder().similarityThreshold(0.8d).topK(6).build()))
-                .system("Using only this rag data. Answer in Portuguese.  You are a helpful assistant that can answer questions about the PDF document that uploaded by the user")
-                .user(q)
-                .call()
-                .chatResponse()).getResults().getFirst().getOutput();
+    public String chatTest(@RequestParam(required = false, name = TurSNParamType.QUERY) String q) {
+        if (enabled) {
+            chromaEmbeddingStore.removeAll();
+            addDocuments();
+        }
+        return assistant(q);
+    }
+
+    private String assistant(String q) {
+        if (enabled) {
+            QueryTransformer queryTransformer = new CompressingQueryTransformer(chatLanguageModel);
+            Function<Object, String> systemMessageProvider = (memoryId) -> {
+                if (memoryId.equals("1")) {
+                    return PROMPT;
+                } else {
+                    return "You are a helpful assistant.";
+                }
+            };
+            ContentRetriever contentRetriever = EmbeddingStoreContentRetriever.builder()
+                    .embeddingStore(chromaEmbeddingStore)
+                    .embeddingModel(embeddingModel)
+                    .maxResults(2)
+                    .minScore(0.6)
+                    .build();
+
+            RetrievalAugmentor retrievalAugmentor = DefaultRetrievalAugmentor.builder()
+                    .queryTransformer(queryTransformer)
+                    .contentRetriever(contentRetriever)
+                    .build();
+
+            TurAssistant assistant = AiServices.builder(TurAssistant.class)
+                    .chatLanguageModel(chatLanguageModel)
+                    .systemMessageProvider(systemMessageProvider)
+                    .retrievalAugmentor(retrievalAugmentor)
+                    .chatMemoryProvider(
+                            sessionId -> MessageWindowChatMemory.withMaxMessages(10))
+                    .build();
+
+            return assistant.chat("1", q);
+        }
+        return "";
     }
 
     public void addDocuments() {
-        chromaVectorStore.delete(Collections.singletonList("123"));
-        List<Document> documents = new ArrayList<>();
-        documents.add(new Document("123", """
-                titulo: O Cavalo é branco.
-                texto: Ele se chama Isaias.
-                """, Map.of("id", "123")));
-        chromaVectorStore.add(splitDocuments(documents));
-    }
+        if (enabled) {
+            TextSegment segment1 = TextSegment.from("O Cavalo é branco. O nome dele é Isaias", new Metadata(Map.of("id", "123")));
 
-    public List<Document> splitDocuments(List<Document> documents) {
-        TokenTextSplitter splitter = new TokenTextSplitter();
-        return splitter.apply(documents);
+            Embedding embedding1 = embeddingModel.embed(segment1).content();
+            chromaEmbeddingStore.add(embedding1, segment1);
+
+            TextSegment segment2 = TextSegment.from("A casa do padre é branca. O nome do Padre é Augusto", new Metadata(Map.of("id", "124")));
+            Embedding embedding2 = embeddingModel.embed(segment2).content();
+            chromaEmbeddingStore.add(embedding2, segment2);
+        }
     }
 }
