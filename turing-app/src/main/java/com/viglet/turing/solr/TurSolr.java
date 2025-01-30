@@ -626,12 +626,16 @@ public class TurSolr {
         if (hasMLT(turSNSite, turSNSiteMLTFieldExtList)) turSEResults.setSimilarResults(similarResults);
     }
 
+    /**
+     * Sets how many result query will respond.
+     */
     private void setRows(TurSNSite turSNSite, TurSEParameters turSEParameters) {
-        if (turSEParameters.getRows() == 0) {
-            turSEParameters.setRows(turSNSite.getRowsPerPage());
-        } else if (turSEParameters.getRows() < 0) {
-            turSEParameters.setRows(0);
+        // If user didn't input a parameter through query string. Then, use the site configuration
+        if (turSEParameters.getRows() < 0){
+            // But only uses if the entered value is greater than 0. If not, then uses the default value = 10
+            turSEParameters.setRows((turSNSite.getRowsPerPage() > 0)? turSNSite.getRowsPerPage() : 10 );
         }
+        // Else, it will use the query parameter
     }
 
     private void setSortEntry(TurSNSite turSNSite, SolrQuery query, TurSEParameters turSEParameters) {

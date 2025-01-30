@@ -72,6 +72,9 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Column(nullable = false)
 	private String description;
 
+	/**
+	 * Number of results per page
+	 */
 	@Column
 	private Integer rowsPerPage = 10;
 
