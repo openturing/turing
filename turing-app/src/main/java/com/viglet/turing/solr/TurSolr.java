@@ -630,13 +630,12 @@ public class TurSolr {
      * Sets how many result query will respond.
      */
     private void setRows(TurSNSite turSNSite, TurSEParameters turSEParameters) {
-        // If site is configured with rows <= 0, then do nothing and uses default value (10)
-        // Default values come from TurSNSiteSearchAPI class parameters.
-        if (turSNSite.getRowsPerPage() > 0) {
-            // Else, use turSNSite attribute. (Site configuration)
-            turSEParameters.setRows(turSNSite.getRowsPerPage());
+        // If user didn't input a parameter through query string. Then, use the site configuration
+        if (turSEParameters.getRows() < 0){
+            // But only uses if the entered value is greater than 0. If not, then uses the default value = 10
+            turSEParameters.setRows((turSNSite.getRowsPerPage() > 0)? turSNSite.getRowsPerPage() : 10 );
         }
-
+        // Else, it will use the query parameter
     }
 
     private void setSortEntry(TurSNSite turSNSite, SolrQuery query, TurSEParameters turSEParameters) {
