@@ -18,22 +18,37 @@
 
 package com.viglet.turing.llm;
 
+import com.viglet.turing.api.llm.TurAssistant;
+import com.viglet.turing.api.llm.TurChatMessage;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
+import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.data.embedding.Embedding;
-import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.data.document.splitter.DocumentByCharacterSplitter;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
+import dev.langchain4j.rag.DefaultRetrievalAugmentor;
+import dev.langchain4j.rag.RetrievalAugmentor;
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
+import dev.langchain4j.rag.query.transformer.CompressingQueryTransformer;
+import dev.langchain4j.rag.query.transformer.QueryTransformer;
+import dev.langchain4j.service.AiServices;
+import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.function.Function;
 
 @Component
 public class TurLlm {
-
     public static final String MODIFICATION_DATE = "modification_date";
     public static final String PUBLICATION_DATE = "publication_date";
     public static final String URL = "url";
@@ -44,48 +59,107 @@ public class TurLlm {
     public static final String TITLE = "title";
     public static final String ABSTRACT = "abstract";
     public static final String TEXT = "text";
+    public static final String MISTRAL = "mistral";
+    public static final String OLLAMA_URL = "http://localhost:11434";
+    public static final String COLLECTION_NAME = "turing";
+    public static final String CHROMA_URL = "http://localhost:8000/";
     private final ChromaEmbeddingStore chromaEmbeddingStore;
     private final EmbeddingModel embeddingModel;
-    private final static boolean enabled = false;
-    public TurLlm() {
-        if (enabled) {
+    private final ChatLanguageModel chatLanguageModel;
+    private final boolean enabledAi;
 
+    @Autowired
+    public TurLlm(@Value(value = "${turing.ai.enabled:false}") boolean enabledAi) {
+        this.enabledAi = enabledAi;
+        if (enabledAi) {
             chromaEmbeddingStore = ChromaEmbeddingStore.builder()
-                    .baseUrl("http://localhost:8000/")
-                    .collectionName("turing")
+                    .baseUrl(CHROMA_URL)
+                    .collectionName(COLLECTION_NAME)
                     .logRequests(true)
                     .logResponses(true)
                     .build();
             embeddingModel = OllamaEmbeddingModel.builder()
-                    .baseUrl("http://localhost:11434")
+                    .baseUrl(OLLAMA_URL)
                     .logRequests(true)
                     .logResponses(true)
-                    .modelName("mistral")
+                    .modelName(MISTRAL)
+                    .build();
+            chatLanguageModel = OllamaChatModel.builder()
+                    .baseUrl(OLLAMA_URL)
+                    .logRequests(true)
+                    .logResponses(true)
+                    .modelName(MISTRAL)
+                    .temperature(0.8)
+                    .topK(6)
                     .build();
         }
         else {
             chromaEmbeddingStore = null;
             embeddingModel =  null;
+            chatLanguageModel = null;
         }
     }
+    public TurChatMessage assistant(String prompt, String q) {
+        if (enabledAi) {
+            QueryTransformer queryTransformer = new CompressingQueryTransformer(chatLanguageModel);
+            Function<Object, String> systemMessageProvider = (memoryId) -> {
+                if (memoryId.equals("1")) {
+                    return prompt;
+                } else {
+                    return "You are a helpful assistant.";
+                }
+            };
+            ContentRetriever contentRetriever = EmbeddingStoreContentRetriever.builder()
+                    .embeddingStore(chromaEmbeddingStore)
+                    .embeddingModel(embeddingModel)
+                    .maxResults(2)
+                    .minScore(0.6)
+                    .build();
 
+            RetrievalAugmentor retrievalAugmentor = DefaultRetrievalAugmentor.builder()
+                    .queryTransformer(queryTransformer)
+                    .contentRetriever(contentRetriever)
+                    .build();
+
+            TurAssistant assistant = AiServices.builder(TurAssistant.class)
+                    .chatLanguageModel(chatLanguageModel)
+                    .systemMessageProvider(systemMessageProvider)
+                    .retrievalAugmentor(retrievalAugmentor)
+                    .chatMemoryProvider(
+                            sessionId -> MessageWindowChatMemory.withMaxMessages(10))
+                    .build();
+            return new  TurChatMessage(assistant.chat("1", q));
+        }
+        return new TurChatMessage("");
+    }
     public void addDocuments(TurSNJobItems turSNJobItems) {
-        if (enabled) {
+        if (enabledAi) {
             System.out.println("addDocuments");
             turSNJobItems.getTuringDocuments().forEach(jobItem -> {
                 StringBuilder sb = new StringBuilder();
                 addAttributes(jobItem, sb);
-
-                TextSegment segment1 = TextSegment.from(sb.toString(), new Metadata(setMetadata(jobItem)));
-                Embedding embedding1 = embeddingModel.embed(segment1).content();
-                chromaEmbeddingStore.add(embedding1, segment1);
+                addDocument(sb.toString(), new Metadata(setMetadata(jobItem)));
             });
             System.out.println("added Documents");
         }
     }
 
-    private static void addAttributes(TurSNJobItem jobItem, StringBuilder sb) {
-        if (enabled) {
+    public void removeAllDocuments() {
+        chromaEmbeddingStore.removeAll();
+    }
+    public void addDocument(String text, Metadata metadata) {
+        Document document = new Document(text, metadata);
+        DocumentByCharacterSplitter documentByCharacterSplitter =
+                new DocumentByCharacterSplitter(1024, 0);
+        EmbeddingStoreIngestor embeddingStoreIngestor = EmbeddingStoreIngestor.builder()
+                .documentSplitter(documentByCharacterSplitter)
+                .embeddingModel(embeddingModel)
+                .embeddingStore(chromaEmbeddingStore)
+                .build();
+        embeddingStoreIngestor.ingest(document);
+    }
+    private void addAttributes(TurSNJobItem jobItem, StringBuilder sb) {
+        if (enabledAi) {
             String[] allowedAttributes = {TITLE, ABSTRACT, TEXT};
             jobItem.getAttributes().forEach((key, value) -> {
                 if (Arrays.asList(allowedAttributes).contains(key))
@@ -95,13 +169,13 @@ public class TurLlm {
     }
 
     @NotNull
-    private static Map<String, Object> setMetadata(TurSNJobItem jobItem) {
+    private Map<String, Object> setMetadata(TurSNJobItem jobItem) {
         Map<String, Object> metadata = new HashMap<>();
-        if (enabled) {
+        if (enabledAi) {
             metadata.put(ID, jobItem.getId());
-            metadata.put(LOCALE, jobItem.getLocale());
+            metadata.put(LOCALE, jobItem.getLocale().toString());
             metadata.put(SOURCE_APPS, jobItem.getProviderName());
-            metadata.put(SITES, jobItem.getSiteNames());
+            metadata.put(SITES, jobItem.getSiteNames().getFirst());
             if (jobItem.getAttributes().containsKey(MODIFICATION_DATE)) {
                 metadata.put(MODIFICATION_DATE, jobItem.getAttributes().get(MODIFICATION_DATE));
             }

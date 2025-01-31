@@ -22,129 +22,50 @@ package com.viglet.turing.api.llm;
 
 import com.google.inject.Inject;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
+import com.viglet.turing.llm.TurLlm;
 import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.data.embedding.Embedding;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.model.ollama.OllamaChatModel;
-import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
-import dev.langchain4j.rag.DefaultRetrievalAugmentor;
-import dev.langchain4j.rag.RetrievalAugmentor;
-import dev.langchain4j.rag.content.retriever.ContentRetriever;
-import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
-import dev.langchain4j.rag.query.transformer.CompressingQueryTransformer;
-import dev.langchain4j.rag.query.transformer.QueryTransformer;
-import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
-import dev.langchain4j.service.AiServices;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.*;
-import java.util.function.Function;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/llm")
 @Tag(name = "LLM", description = "LLM")
 public class TurLlmAPI {
-    public static final String PROMPT = "Using only this rag data. Answer in Portuguese.  You are a helpful assistant that can answer questions about the PDF document that uploaded by the user";
-    private final ChromaEmbeddingStore chromaEmbeddingStore;
-    private final EmbeddingModel embeddingModel;
-    private final ChatLanguageModel chatLanguageModel;
-    private final static boolean enabled = false;
+    private final TurLlm turLlm;
+    public static final String PROMPT = """
+            Using only this RAG data. Answer in Portuguese.
+            You are a helpful assistant that can answer questions about the Knowledge base.
+            """;
 
     @Inject
-    public TurLlmAPI() {
+    public TurLlmAPI(TurLlm turLlm) {
         super();
-        if (enabled) {
-            chromaEmbeddingStore = ChromaEmbeddingStore.builder()
-                    .baseUrl("http://localhost:8000/")
-                    .collectionName("turing")
-                    .logRequests(true)
-                    .logResponses(true)
-                    .build();
-
-            embeddingModel = OllamaEmbeddingModel.builder()
-                    .baseUrl("http://localhost:11434")
-                    .logRequests(true)
-                    .logResponses(true)
-                    .modelName("mistral")
-                    .build();
-            chatLanguageModel = OllamaChatModel.builder()
-                    .baseUrl("http://localhost:11434")
-                    .logRequests(true)
-                    .logResponses(true)
-                    .modelName("mistral")
-                    .build();
-        } else {
-            chromaEmbeddingStore = null;
-            embeddingModel = null;
-            chatLanguageModel = null;
-        }
+        this.turLlm = turLlm;
     }
 
     @GetMapping("chat")
-    public String chat(@RequestParam(required = false, name = TurSNParamType.QUERY) String q) {
-        return assistant(q);
+    public TurChatMessage chat(@RequestParam(required = false, name = TurSNParamType.QUERY) String q) {
+        return turLlm.assistant(PROMPT, q);
     }
 
     @GetMapping("chat-test")
-    public String chatTest(@RequestParam(required = false, name = TurSNParamType.QUERY) String q) {
-        if (enabled) {
-            chromaEmbeddingStore.removeAll();
-            addDocuments();
-        }
-        return assistant(q);
-    }
-
-    private String assistant(String q) {
-        if (enabled) {
-            QueryTransformer queryTransformer = new CompressingQueryTransformer(chatLanguageModel);
-            Function<Object, String> systemMessageProvider = (memoryId) -> {
-                if (memoryId.equals("1")) {
-                    return PROMPT;
-                } else {
-                    return "You are a helpful assistant.";
-                }
-            };
-            ContentRetriever contentRetriever = EmbeddingStoreContentRetriever.builder()
-                    .embeddingStore(chromaEmbeddingStore)
-                    .embeddingModel(embeddingModel)
-                    .maxResults(2)
-                    .minScore(0.6)
-                    .build();
-
-            RetrievalAugmentor retrievalAugmentor = DefaultRetrievalAugmentor.builder()
-                    .queryTransformer(queryTransformer)
-                    .contentRetriever(contentRetriever)
-                    .build();
-
-            TurAssistant assistant = AiServices.builder(TurAssistant.class)
-                    .chatLanguageModel(chatLanguageModel)
-                    .systemMessageProvider(systemMessageProvider)
-                    .retrievalAugmentor(retrievalAugmentor)
-                    .chatMemoryProvider(
-                            sessionId -> MessageWindowChatMemory.withMaxMessages(10))
-                    .build();
-
-            return assistant.chat("1", q);
-        }
-        return "";
+    public TurChatMessage chatTest(@RequestParam(required = false, name = TurSNParamType.QUERY) String q) {
+        turLlm.removeAllDocuments();
+        addDocuments();
+        return turLlm.assistant(PROMPT, q);
     }
 
     public void addDocuments() {
-        if (enabled) {
-            TextSegment segment1 = TextSegment.from("O Cavalo é branco. O nome dele é Isaias", new Metadata(Map.of("id", "123")));
-
-            Embedding embedding1 = embeddingModel.embed(segment1).content();
-            chromaEmbeddingStore.add(embedding1, segment1);
-
-            TextSegment segment2 = TextSegment.from("A casa do padre é branca. O nome do Padre é Augusto", new Metadata(Map.of("id", "124")));
-            Embedding embedding2 = embeddingModel.embed(segment2).content();
-            chromaEmbeddingStore.add(embedding2, segment2);
-        }
+        turLlm.addDocument("The Horse is white. His name is Isaiah",
+                new Metadata(Map.of("id", "123")));
+        turLlm.addDocument("The priest's house is white. The priest's name is Augusto",
+                new Metadata(Map.of("id", "124")));
     }
 }
