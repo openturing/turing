@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.llm;
+package com.viglet.turing.genai;
 
 import com.viglet.turing.api.genai.TurAssistant;
 import com.viglet.turing.api.genai.TurChatMessage;
@@ -39,6 +39,7 @@ import dev.langchain4j.rag.query.transformer.QueryTransformer;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,8 +48,9 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.function.Function;
 
+@Slf4j
 @Component
-public class TurLlm {
+public class TurGenAI {
     public static final String MODIFICATION_DATE = "modification_date";
     public static final String PUBLICATION_DATE = "publication_date";
     public static final String URL = "url";
@@ -69,7 +71,7 @@ public class TurLlm {
     private final boolean enabledAi;
 
     @Autowired
-    public TurLlm(@Value(value = "${turing.ai.enabled:false}") boolean enabledAi) {
+    public TurGenAI(@Value(value = "${turing.ai.enabled:false}") boolean enabledAi) {
         this.enabledAi = enabledAi;
         if (enabledAi) {
             chromaEmbeddingStore = ChromaEmbeddingStore.builder()
@@ -134,19 +136,16 @@ public class TurLlm {
     }
     public void addDocuments(TurSNJobItems turSNJobItems) {
         if (enabledAi) {
-            System.out.println("addDocuments");
+
             turSNJobItems.getTuringDocuments().forEach(jobItem -> {
+
                 StringBuilder sb = new StringBuilder();
                 addAttributes(jobItem, sb);
                 addDocument(sb.toString(), new Metadata(setMetadata(jobItem)));
             });
-            System.out.println("added Documents");
         }
     }
 
-    public void removeAllDocuments() {
-        chromaEmbeddingStore.removeAll();
-    }
     public void addDocument(String text, Metadata metadata) {
         Document document = new Document(text, metadata);
         DocumentByCharacterSplitter documentByCharacterSplitter =
@@ -157,6 +156,7 @@ public class TurLlm {
                 .embeddingStore(chromaEmbeddingStore)
                 .build();
         embeddingStoreIngestor.ingest(document);
+        log.info("added document to embedding store: {}", metadata.getString(ID));
     }
     private void addAttributes(TurSNJobItem jobItem, StringBuilder sb) {
         if (enabledAi) {

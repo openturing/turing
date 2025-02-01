@@ -30,7 +30,7 @@ import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.connector.filesystem.commons.TurFileUtils;
 import com.viglet.turing.connector.filesystem.commons.TurTikaFileAttributes;
-import com.viglet.turing.llm.TurLlm;
+import com.viglet.turing.genai.TurGenAI;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.spring.utils.TurSpringUtils;
@@ -55,10 +55,10 @@ import java.util.Optional;
 public class TurSNImportAPI {
     private final JmsMessagingTemplate jmsMessagingTemplate;
     private final TurSNSiteRepository turSNSiteRepository;
-    private final TurLlm turLlm;
+    private final TurGenAI turLlm;
     @Inject
     public TurSNImportAPI(JmsMessagingTemplate jmsMessagingTemplate, TurSNSiteRepository turSNSiteRepository,
-                          TurLlm turLlm) {
+                          TurGenAI turLlm) {
         this.jmsMessagingTemplate = jmsMessagingTemplate;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turLlm = turLlm;
