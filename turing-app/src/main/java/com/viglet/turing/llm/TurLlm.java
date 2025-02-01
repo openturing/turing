@@ -18,8 +18,8 @@
 
 package com.viglet.turing.llm;
 
-import com.viglet.turing.api.llm.TurAssistant;
-import com.viglet.turing.api.llm.TurChatMessage;
+import com.viglet.turing.api.genai.TurAssistant;
+import com.viglet.turing.api.genai.TurChatMessage;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import dev.langchain4j.data.document.Document;
