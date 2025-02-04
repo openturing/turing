@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import com.viglet.turing.client.utils.TurClientUtils;
 import org.json.JSONException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -66,7 +67,7 @@ import com.viglet.turing.client.sn.utils.TurSNClientUtils;
  */
 public class TurSNServer {
 
-	private static Logger logger = Logger.getLogger(TurSNServer.class.getName());
+	private static final Logger logger = Logger.getLogger(TurSNServer.class.getName());
 
 	private static final String SITE_NAME_DEFAULT = "Sample";
 
@@ -254,7 +255,7 @@ public class TurSNServer {
 				
 
 				logger.fine(String.format("Viglet Turing Request: %s", turingURL.toString()));
-				return new ObjectMapper().readValue(openConnectionAndRequest(httpsURLConnection),
+				return new ObjectMapper().readValue(TurClientUtils.openConnectionAndRequest(httpsURLConnection),
 						new TypeReference<List<String>>() {
 						});
 			}
@@ -281,7 +282,7 @@ public class TurSNServer {
 		try {
 
 			int responseCode = httpsURLConnection.getResponseCode();
-			String result = this.getTurResponseBody(httpsURLConnection, responseCode);
+			String result = TurClientUtils.getTurResponseBody(httpsURLConnection, responseCode);
 			return new ObjectMapper().readValue(result, new TypeReference<List<TurSNLocale>>() {
 			});
 		} catch (IOException e) {
@@ -294,7 +295,7 @@ public class TurSNServer {
 		String result;
 		try {
 			int responseCode = httpsURLConnection.getResponseCode();
-			result = this.getTurResponseBody(httpsURLConnection, responseCode);
+			result = TurClientUtils.getTurResponseBody(httpsURLConnection, responseCode);
 			return new ObjectMapper().readValue(result, new TypeReference<List<String>>() {
 			});
 		} catch (IOException e) {
@@ -331,7 +332,7 @@ public class TurSNServer {
 		this.turSNQuery = turSNQuery;
 		try {
 			TurSNSiteSearchBean turSNSiteSearchBean = new ObjectMapper()
-					.readValue(openConnectionAndRequest(prepareQueryRequest()), TurSNSiteSearchBean.class);
+					.readValue(TurClientUtils.openConnectionAndRequest(prepareQueryRequest()), TurSNSiteSearchBean.class);
 			return createTuringResponse(turSNSiteSearchBean);
 		} catch (IOException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);
@@ -339,19 +340,9 @@ public class TurSNServer {
 		return new QueryTurSNResponse();
 	}
 
-	private String openConnectionAndRequest(HttpsURLConnection httpsURLConnection) {
-			return executeQueryRequest(httpsURLConnection);
-	}
 
-	private String executeQueryRequest(HttpsURLConnection httpsURLConnection) {
-		try {
-			int responseCode = httpsURLConnection.getResponseCode();
-			return this.getTurResponseBody(httpsURLConnection, responseCode);
-		} catch (IOException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-		}
-		return null;
-	}
+
+
 
 	private HttpsURLConnection prepareQueryRequest() {
 
@@ -400,9 +391,8 @@ public class TurSNServer {
 	}
 
 	private TurSNFacetFieldList setFacetFieldsResponse(TurSNSiteSearchBean turSNSiteSearchBean) {
-		TurSNFacetFieldList facetFields = new TurSNFacetFieldList(turSNSiteSearchBean.getWidget().getFacet(),
-				turSNSiteSearchBean.getWidget().getFacetToRemove());
-		return facetFields;
+        return new TurSNFacetFieldList(turSNSiteSearchBean.getWidget().getFacet(),
+                turSNSiteSearchBean.getWidget().getFacetToRemove());
 	}
 
 	private TurSNDocumentList setResultsResponse(TurSNSiteSearchBean turSNSiteSearchBean) {
@@ -546,22 +536,5 @@ public class TurSNServer {
 		}
 	}
 
-	private String getTurResponseBody(HttpsURLConnection httpsURLConnection, int result) throws IOException {
-		StringBuffer responseBody = new StringBuffer();
-		if (result == 200) {
-			BufferedReader br = new BufferedReader(new InputStreamReader(httpsURLConnection.getInputStream()));
-			String strCurrentLine;
-			while ((strCurrentLine = br.readLine()) != null) {
-				responseBody.append(strCurrentLine);
-			}
-		} else {
-			BufferedReader br = new BufferedReader(new InputStreamReader(httpsURLConnection.getErrorStream()));
-			String strCurrentLine;
-			while ((strCurrentLine = br.readLine()) != null) {
-				responseBody.append(strCurrentLine);
-			}
-		}
-		httpsURLConnection.disconnect();
-		return responseBody.toString();
-	}
+
 }
