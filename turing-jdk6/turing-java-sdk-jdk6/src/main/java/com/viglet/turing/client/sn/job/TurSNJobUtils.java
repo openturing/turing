@@ -54,7 +54,7 @@ public class TurSNJobUtils {
 	public static void importItems(TurSNJobItems turSNJobItems, TurSNServer turSNServer, boolean showOutput) {
 		try {
 			String jsonResult = new ObjectMapper().writeValueAsString(turSNJobItems);
-			String urlString = String.format("%s/api/sn/%s/import", turSNServer.getServerURL(), turSNServer.getSiteName());
+			String urlString = String.format("%s/api/sn/import", turSNServer.getServerURL());
 			if (showOutput) {
 				System.out.println(jsonResult);
 			}

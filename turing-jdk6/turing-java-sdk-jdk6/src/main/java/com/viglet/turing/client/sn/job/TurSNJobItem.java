@@ -17,6 +17,7 @@
 package com.viglet.turing.client.sn.job;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,12 +31,14 @@ import java.util.Map;
 public class TurSNJobItem implements Serializable{
 
 	private static final long serialVersionUID = 1L;
-	
+
 	private String locale;
-	
+
+	private List<String> siteNames;
+
 	private TurSNJobAction turSNJobAction;
 	
-	private transient Map<String, Object> attributes;
+	private Map<String, Object> attributes;
 
 	public String getLocale() {
 		return locale;
@@ -59,6 +62,14 @@ public class TurSNJobItem implements Serializable{
 
 	public void setTurSNJobAction(TurSNJobAction turSNJobAction) {
 		this.turSNJobAction = turSNJobAction;
+	}
+
+	public List<String> getSiteNames() {
+		return siteNames;
+	}
+
+	public void setSiteNames(List<String> siteNames) {
+		this.siteNames = siteNames;
 	}
 
 	public String toString() {

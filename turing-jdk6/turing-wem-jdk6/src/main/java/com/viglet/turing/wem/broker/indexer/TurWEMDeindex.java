@@ -32,6 +32,7 @@ import com.vignette.as.client.common.ref.ManagedObjectVCMRef;
 import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.logging.context.ContextLogger;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,6 +72,7 @@ public class TurWEMDeindex {
 		TurSNSiteConfig turSNSiteConfig = config.getSNSiteConfig(siteName, asLocaleData);
 
 		turSNJobItem.setTurSNJobAction(TurSNJobAction.DELETE);
+		turSNJobItem.setSiteNames(Collections.singletonList(turSNSiteConfig.getName()));
 		turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 		Map<String, Object> attributes = new HashMap<String, Object>();
 

@@ -287,6 +287,7 @@ public class TurWEMIndex {
 				}
 
 				turSNJobItem.setTurSNJobAction(TurSNJobAction.CREATE);
+				turSNJobItem.setSiteNames(Collections.singletonList(turSNSiteConfig.getName()));
 				turSNJobItem.setLocale(turSNSiteConfig.getLocale());
 				turSNJobItem.setAttributes(attributes);
 				turSNJobItems.add(turSNJobItem);
