@@ -89,11 +89,11 @@ public class TurOcr {
                                                    String endpoint) {
         String attachmentFileName = file.getName();
         try {
-            URLConnection httpsURLConnection = getURLConnection(turServer, endpoint);
-            httpsURLConnection.setRequestProperty(
+            URLConnection urlConnection = getURLConnection(turServer, endpoint);
+            urlConnection.setRequestProperty(
                     CONTENT_TYPE_HEADER, MULTIPART + ";boundary=" + BOUNDARY);
             DataOutputStream request = new DataOutputStream(
-                    httpsURLConnection.getOutputStream());
+                    urlConnection.getOutputStream());
             request.writeBytes(TWO_HYPHENS + BOUNDARY + CRLF);
             request.writeBytes("Content-Disposition: form-data; name=\"" +
                     FILE + "\";filename=\"" +
@@ -111,7 +111,7 @@ public class TurOcr {
             request.flush();
             request.close();
 
-            return new ObjectMapper().readValue(TurClientUtils.openConnectionAndRequest(httpsURLConnection),
+            return new ObjectMapper().readValue(TurClientUtils.openConnectionAndRequest(urlConnection),
                     TurFileAttributes.class);
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);

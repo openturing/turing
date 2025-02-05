@@ -28,7 +28,7 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.net.ssl.HttpsURLConnection;
+
 
 import com.viglet.turing.client.utils.TurClientUtils;
 import org.json.JSONException;
@@ -53,6 +53,8 @@ import com.viglet.turing.client.sn.pagination.TurSNPagination;
 import com.viglet.turing.client.sn.response.QueryTurSNResponse;
 import com.viglet.turing.client.sn.spotlight.TurSNSpotlightDocument;
 import com.viglet.turing.client.sn.utils.TurSNClientUtils;
+
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Connect to Turing AI Server.
@@ -276,12 +278,12 @@ public class TurSNServer {
 		return executeAutoCompleteRequest(prepareAutoCompleteRequest(autoCompleteQuery));
 	}
 
-	private List<TurSNLocale> executeLocalesRequest(HttpsURLConnection httpsURLConnection) {
+	private List<TurSNLocale> executeLocalesRequest(URLConnection urlConnection) {
 
 		try {
 
-			int responseCode = httpsURLConnection.getResponseCode();
-			String result = TurClientUtils.getTurResponseBody(httpsURLConnection, responseCode);
+			int responseCode = ((HttpsURLConnection) urlConnection).getResponseCode();
+			String result = TurClientUtils.getTurResponseBody(urlConnection, responseCode);
 			return new ObjectMapper().readValue(result, new TypeReference<List<TurSNLocale>>() {
 			});
 		} catch (IOException e) {
@@ -290,11 +292,11 @@ public class TurSNServer {
 		return null;
 	}
 
-	private List<String> executeAutoCompleteRequest(HttpsURLConnection httpsURLConnection) {
+	private List<String> executeAutoCompleteRequest(URLConnection urlConnection) {
 		String result;
 		try {
-			int responseCode = httpsURLConnection.getResponseCode();
-			result = TurClientUtils.getTurResponseBody(httpsURLConnection, responseCode);
+			int responseCode = ((HttpURLConnection) urlConnection).getResponseCode();
+			result = TurClientUtils.getTurResponseBody(urlConnection, responseCode);
 			return new ObjectMapper().readValue(result, new TypeReference<List<String>>() {
 			});
 		} catch (IOException e) {
@@ -304,7 +306,7 @@ public class TurSNServer {
 
 	}
 
-	private HttpsURLConnection prepareLocalesRequest() {
+	private URLConnection prepareLocalesRequest() {
 		try {
 			return prepareGetRequest(new URL(turSNServer.concat(LOCALES_CONTEXT)));
 		} catch (MalformedURLException e) {
@@ -313,7 +315,7 @@ public class TurSNServer {
 		return null;
 	}
 
-	private HttpsURLConnection prepareAutoCompleteRequest(TurSNAutoCompleteQuery autoCompleteQuery) {
+	private URLConnection prepareAutoCompleteRequest(TurSNAutoCompleteQuery autoCompleteQuery) {
 
 		try {
 			URL turingURL = new URL(turSNServer.concat(AUTO_COMPLETE_CONTEXT));
@@ -343,7 +345,7 @@ public class TurSNServer {
 
 
 
-	private HttpsURLConnection prepareQueryRequest() {
+	private URLConnection prepareQueryRequest() {
 
 		try {
 			URL turingURL = new URL(turSNServer.concat(SEARCH_CONTEXT));
@@ -409,25 +411,26 @@ public class TurSNServer {
 		return turSNDocumentList;
 	}
 
-	private HttpsURLConnection preparePostRequest(URL turingURL) {
-		HttpsURLConnection httpsURLConnection = null;
+	private URLConnection preparePostRequest(URL turingURL) {
+		URLConnection urlConnection = null;
 		try {
 			URL url = TurClientUtils.getURL(turingURL.toString());
-			httpsURLConnection = (HttpsURLConnection) url.openConnection();
+			urlConnection = url.openConnection();
+			if (turingURL.toString().toLowerCase().startsWith(HTTPS)) {
+				((HttpsURLConnection) urlConnection).setSSLSocketFactory(new TLSSocketConnectionFactory());
+			}
 
-			httpsURLConnection.setSSLSocketFactory(new TLSSocketConnectionFactory());
-			httpsURLConnection.setRequestProperty(ACCEPT_HEADER, APPLICATION_JSON);
-			httpsURLConnection.setRequestProperty(CONTENT_TYPE_HEADER, APPLICATION_JSON);
-			httpsURLConnection.setRequestProperty(ACCEPT_ENCODING_HEADER, UTF_8);
+			urlConnection.setRequestProperty(ACCEPT_HEADER, APPLICATION_JSON);
+			urlConnection.setRequestProperty(CONTENT_TYPE_HEADER, APPLICATION_JSON);
+			urlConnection.setRequestProperty(ACCEPT_ENCODING_HEADER, UTF_8);
+			((HttpURLConnection) urlConnection).setRequestMethod(POST);
+			urlConnection.setDoOutput(true);
 
-			httpsURLConnection.setRequestMethod(POST);
-			httpsURLConnection.setDoOutput(true);
-
-			TurSNClientUtils.basicAuth(httpsURLConnection, this.getCredentials());
+			TurSNClientUtils.basicAuth(urlConnection, this.getCredentials());
 			
 			String jsonResult = new ObjectMapper().writeValueAsString(this.getTurSNSitePostParams());
 
-			OutputStream os = httpsURLConnection.getOutputStream();
+			OutputStream os = urlConnection.getOutputStream();
 			byte[] input = jsonResult.getBytes(UTF_8);
 			os.write(input, 0, input.length);
 
@@ -442,23 +445,24 @@ public class TurSNServer {
 			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
 
-		return httpsURLConnection;
+		return urlConnection;
 
 	}
 
-	private HttpsURLConnection prepareGetRequest(URL turingURL) {
-		HttpsURLConnection httpsURLConnection = null;
+	private URLConnection prepareGetRequest(URL turingURL) {
+		URLConnection urlConnection = null;
 		try {
 			URL url = new URL(null, turingURL.toString(), new sun.net.www.protocol.https.Handler());
-			httpsURLConnection = (HttpsURLConnection) url.openConnection();
+			urlConnection = url.openConnection();
+			if (turingURL.toString().toLowerCase().startsWith(HTTPS)) {
+				((HttpsURLConnection) urlConnection).setSSLSocketFactory(new TLSSocketConnectionFactory());
+			}
+			urlConnection.setRequestProperty(ACCEPT_HEADER, APPLICATION_JSON);
+			urlConnection.setRequestProperty(CONTENT_TYPE_HEADER, APPLICATION_JSON);
+			urlConnection.setRequestProperty(ACCEPT_ENCODING_HEADER, UTF_8);
 
-			httpsURLConnection.setSSLSocketFactory(new TLSSocketConnectionFactory());
-			httpsURLConnection.setRequestProperty(ACCEPT_HEADER, APPLICATION_JSON);
-			httpsURLConnection.setRequestProperty(CONTENT_TYPE_HEADER, APPLICATION_JSON);
-			httpsURLConnection.setRequestProperty(ACCEPT_ENCODING_HEADER, UTF_8);
-
-			httpsURLConnection.setRequestMethod("GET");
-			httpsURLConnection.setDoOutput(true);
+			((HttpURLConnection) urlConnection).setRequestMethod("GET");
+			urlConnection.setDoOutput(true);
 
 		} catch (MalformedURLException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);
@@ -468,7 +472,7 @@ public class TurSNServer {
 			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
 
-		return httpsURLConnection;
+		return urlConnection;
 	}
 
 	private void pageNumberRequest(URL turingURL) {
