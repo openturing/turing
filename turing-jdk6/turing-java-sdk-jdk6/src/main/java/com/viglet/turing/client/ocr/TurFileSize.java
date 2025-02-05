@@ -43,4 +43,13 @@ public class TurFileSize {
     public void setMegaBytes(float megaBytes) {
         this.megaBytes = megaBytes;
     }
+
+    @Override
+    public String toString() {
+        return "TurFileSize{" +
+                "bytes=" + bytes +
+                ", kiloBytes=" + kiloBytes +
+                ", megaBytes=" + megaBytes +
+                '}';
+    }
 }

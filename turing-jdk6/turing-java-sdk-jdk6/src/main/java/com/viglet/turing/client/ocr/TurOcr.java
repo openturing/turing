@@ -1,6 +1,5 @@
 package com.viglet.turing.client.ocr;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.client.sn.TurSNServer;
 import com.viglet.turing.client.sn.utils.TurSNClientUtils;
@@ -10,9 +9,10 @@ import org.json.JSONObject;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.util.List;
+import java.net.URLConnection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +36,7 @@ public class TurOcr {
     public static final String TWO_HYPHENS = "--";
     public static final String BOUNDARY = "*****";
     public static final String MULTIPART = "multipart/form-data";
+    public static final String HTTPS = "https";
 
     public TurFileAttributes processUrl(TurSNServer turServer, URI url) {
         return getTurFileAttributes(turServer,
@@ -52,42 +53,43 @@ public class TurOcr {
     private TurFileAttributes getTurFileAttributes(TurSNServer turServer, JSONObject jsonObject,
                                                    String endpoint) {
         try {
-            HttpsURLConnection httpsURLConnection = getHttpsURLConnection(turServer, endpoint);
-            httpsURLConnection.setRequestProperty(CONTENT_TYPE_HEADER, APPLICATION_JSON);
-            OutputStream os = httpsURLConnection.getOutputStream();
+            URLConnection urlConnection = getURLConnection(turServer, endpoint);
+            urlConnection.setRequestProperty(CONTENT_TYPE_HEADER, APPLICATION_JSON);
+            OutputStream os = urlConnection.getOutputStream();
             byte[] input = jsonObject.toString().getBytes(UTF_8);
             os.write(input, 0, input.length);
 
-            new ObjectMapper().readValue(TurClientUtils.openConnectionAndRequest(httpsURLConnection),
-                    new TypeReference<List<String>>() {
-                    });
+            return new ObjectMapper().readValue(TurClientUtils.openConnectionAndRequest(urlConnection),
+                    TurFileAttributes.class);
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
         }
         return null;
     }
 
-    private static HttpsURLConnection getHttpsURLConnection(TurSNServer turServer, String endpoint) throws IOException {
-        URL url = new URL(null, endpoint, new sun.net.www.protocol.https.Handler());
-        HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
-        httpsURLConnection.setSSLSocketFactory(new TLSSocketConnectionFactory());
-        httpsURLConnection.setRequestProperty(ACCEPT_HEADER, APPLICATION_JSON);
-        httpsURLConnection.setRequestProperty(ACCEPT_ENCODING_HEADER, UTF_8);
-        httpsURLConnection.setRequestProperty(CONNECTION, KEEP_ALIVE);
-        httpsURLConnection.setRequestProperty(CACHE_CONTROL, NO_CACHE);
-        httpsURLConnection.setRequestMethod(POST);
-        httpsURLConnection.setUseCaches(false);
-        httpsURLConnection.setDoOutput(true);
-        TurSNClientUtils.basicAuth(httpsURLConnection, turServer.getCredentials());
+    private static URLConnection getURLConnection(TurSNServer turServer, String endpoint) throws IOException {
+        URL url = TurClientUtils.getURL(endpoint);
+        URLConnection urlConnection = url.openConnection();
+        if (endpoint.toLowerCase().startsWith(HTTPS)) {
+            ((HttpsURLConnection) urlConnection).setSSLSocketFactory(new TLSSocketConnectionFactory());
+        }
+        urlConnection.setRequestProperty(ACCEPT_HEADER, APPLICATION_JSON);
+        urlConnection.setRequestProperty(ACCEPT_ENCODING_HEADER, UTF_8);
+        urlConnection.setRequestProperty(CONNECTION, KEEP_ALIVE);
+        urlConnection.setRequestProperty(CACHE_CONTROL, NO_CACHE);
+        ((HttpURLConnection) urlConnection).setRequestMethod(POST);
+        urlConnection.setUseCaches(false);
+        urlConnection.setDoOutput(true);
+        TurSNClientUtils.basicAuth(urlConnection, turServer.getCredentials());
 
-        return httpsURLConnection;
+        return urlConnection;
     }
 
     private TurFileAttributes getTurFileAttributes(TurSNServer turServer, File file,
                                                    String endpoint) {
         String attachmentFileName = file.getName();
         try {
-            HttpsURLConnection httpsURLConnection = getHttpsURLConnection(turServer, endpoint);
+            URLConnection httpsURLConnection = getURLConnection(turServer, endpoint);
             httpsURLConnection.setRequestProperty(
                     CONTENT_TYPE_HEADER, MULTIPART + ";boundary=" + BOUNDARY);
             DataOutputStream request = new DataOutputStream(

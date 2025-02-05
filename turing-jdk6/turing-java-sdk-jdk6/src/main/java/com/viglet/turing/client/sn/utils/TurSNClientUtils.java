@@ -16,9 +16,7 @@
 package com.viglet.turing.client.sn.utils;
 
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.LinkedHashMap;
@@ -26,13 +24,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.net.ssl.HttpsURLConnection;
-import java.net.URL;
-import java.net.URLDecoder;
 import javax.xml.bind.DatatypeConverter;
 
 import com.viglet.turing.client.sn.credentials.TurUsernamePasswordCredentials;
-import java.io.UnsupportedEncodingException;
 
 
 /**
@@ -44,15 +38,15 @@ import java.io.UnsupportedEncodingException;
  *
  */
 public class TurSNClientUtils {
-	private static Logger logger = Logger.getLogger(TurSNClientUtils.class.getName());
-	public static void basicAuth(HttpsURLConnection httpsURLConnection, TurUsernamePasswordCredentials credentials) {
+	private static final Logger logger = Logger.getLogger(TurSNClientUtils.class.getName());
+	public static void basicAuth(URLConnection urlConnection, TurUsernamePasswordCredentials credentials) {
 		if (credentials != null && credentials.getUsername() != null) {
 			String auth = String.format("%s:%s", credentials.getUsername(), credentials.getPassword());
 			try{ 
 				String encodedAuth = DatatypeConverter.printBase64Binary
 			     	     (auth.getBytes("UTF-8"));
 				String authHeader = "Basic " + encodedAuth;
-				httpsURLConnection.setRequestProperty("Authorization", authHeader);
+				urlConnection.setRequestProperty("Authorization", authHeader);
 			} catch (UnsupportedEncodingException e) {
 				logger.log(Level.SEVERE, e.getMessage(), e);
 			}

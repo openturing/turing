@@ -68,4 +68,17 @@ public class TurFileAttributes {
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
+
+    @Override
+    public String toString() {
+        return "TurFileAttributes{" +
+                "content='" + content + '\'' +
+                ", name='" + name + '\'' +
+                ", title='" + title + '\'' +
+                ", extension='" + extension + '\'' +
+                ", size=" + size +
+                ", lastModified=" + lastModified +
+                ", metadata=" + metadata +
+                '}';
+    }
 }

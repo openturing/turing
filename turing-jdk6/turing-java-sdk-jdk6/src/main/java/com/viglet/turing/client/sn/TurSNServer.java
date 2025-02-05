@@ -16,13 +16,9 @@
 
 package com.viglet.turing.client.sn;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -104,6 +100,8 @@ public class TurSNServer {
 	private static final String ACCEPT_ENCODING_HEADER = "Accept-Encoding";
 	
 	private static final String APPLICATION_JSON = "application/json";
+	public static final String HTTPS = "https";
+	public static final String POST = "POST";
 
 	private String turSNServer;
 
@@ -229,25 +227,26 @@ public class TurSNServer {
 			TurSNClientUtils.addURLParameter(turingURL, TurSNParamType.ROWS, Integer.toString(rows));
 
 			if (this.getCredentials() != null) {
-				URL url = new URL(null, turingURL.toString(), new sun.net.www.protocol.https.Handler());
-				HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
+				URL url = TurClientUtils.getURL(turingURL.toString());
+				URLConnection urlConnection = url.openConnection();
+				if (turingURL.toString() .startsWith(HTTPS)) {
+					((HttpsURLConnection) urlConnection).setSSLSocketFactory(new TLSSocketConnectionFactory());
+				}
+				urlConnection.setRequestProperty(ACCEPT_HEADER, APPLICATION_JSON);
+				urlConnection.setRequestProperty(CONTENT_TYPE_HEADER, APPLICATION_JSON);
+				urlConnection.setRequestProperty(ACCEPT_ENCODING_HEADER, UTF_8);
 
-				httpsURLConnection.setSSLSocketFactory(new TLSSocketConnectionFactory());
-				httpsURLConnection.setRequestProperty(ACCEPT_HEADER, APPLICATION_JSON);
-				httpsURLConnection.setRequestProperty(CONTENT_TYPE_HEADER, APPLICATION_JSON);
-				httpsURLConnection.setRequestProperty(ACCEPT_ENCODING_HEADER, UTF_8);
+				((HttpURLConnection) urlConnection).setRequestMethod(POST);
+				urlConnection.setDoOutput(true);
 
-				httpsURLConnection.setRequestMethod("POST");
-				httpsURLConnection.setDoOutput(true);
-
-				TurSNClientUtils.basicAuth(httpsURLConnection, this.getCredentials());
+				TurSNClientUtils.basicAuth(urlConnection, this.getCredentials());
 				
 				if (this.getTurSNSitePostParams() != null && this.getTurSNSitePostParams().getUserId() != null) {
 					TurSNSearchLatestRequestBean turSNSearchLatestRequestBean = new TurSNSearchLatestRequestBean();
 					turSNSearchLatestRequestBean.setUserId(this.getTurSNSitePostParams().getUserId());
 					String jsonResult = new ObjectMapper().writeValueAsString(turSNSearchLatestRequestBean);
 
-					OutputStream os = httpsURLConnection.getOutputStream();
+					OutputStream os = urlConnection.getOutputStream();
 					byte[] input = jsonResult.getBytes(UTF_8);
 					os.write(input, 0, input.length);
 				}
@@ -255,7 +254,7 @@ public class TurSNServer {
 				
 
 				logger.fine(String.format("Viglet Turing Request: %s", turingURL.toString()));
-				return new ObjectMapper().readValue(TurClientUtils.openConnectionAndRequest(httpsURLConnection),
+				return new ObjectMapper().readValue(TurClientUtils.openConnectionAndRequest(urlConnection),
 						new TypeReference<List<String>>() {
 						});
 			}
@@ -413,7 +412,7 @@ public class TurSNServer {
 	private HttpsURLConnection preparePostRequest(URL turingURL) {
 		HttpsURLConnection httpsURLConnection = null;
 		try {
-			URL url = new URL(null, turingURL.toString(), new sun.net.www.protocol.https.Handler());
+			URL url = TurClientUtils.getURL(turingURL.toString());
 			httpsURLConnection = (HttpsURLConnection) url.openConnection();
 
 			httpsURLConnection.setSSLSocketFactory(new TLSSocketConnectionFactory());
@@ -421,7 +420,7 @@ public class TurSNServer {
 			httpsURLConnection.setRequestProperty(CONTENT_TYPE_HEADER, APPLICATION_JSON);
 			httpsURLConnection.setRequestProperty(ACCEPT_ENCODING_HEADER, UTF_8);
 
-			httpsURLConnection.setRequestMethod("POST");
+			httpsURLConnection.setRequestMethod(POST);
 			httpsURLConnection.setDoOutput(true);
 
 			TurSNClientUtils.basicAuth(httpsURLConnection, this.getCredentials());
