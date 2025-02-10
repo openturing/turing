@@ -9,13 +9,12 @@ buildscript {
 		mavenCentral()
 		jcenter()
 	}
-	
-	dependencies {
-    	classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
-    }
+
 }
 
-apply plugin: 'com.github.johnrengelman.shadow'
+plugins {
+    id("com.github.johnrengelman.shadow") version "6.1.0"
+}
 
 sourceCompatibility = 1.8
 

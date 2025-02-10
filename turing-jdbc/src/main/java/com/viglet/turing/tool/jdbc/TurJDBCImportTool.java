@@ -45,6 +45,7 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.filesystem.commons.TurFileAttributes;
 import com.viglet.turing.filesystem.commons.TurFileUtils;
+import com.viglet.turing.filesystem.commons.TurTikaFileAttributes;
 import com.viglet.turing.tool.jdbc.impl.TurJDBCCustomImpl;
 import com.viglet.turing.tool.jdbc.format.TurFormatValue;
 
@@ -421,23 +422,24 @@ public class TurJDBCImportTool {
 
 	private void addFileAttributes(Map<String, Object> attributes) {
 		if (filePathField != null && attributes.containsKey(filePathField)) {
-			TurFileAttributes turFileAttributes = TurFileUtils.readFile((String) attributes.get(filePathField));
-			if (turFileAttributes != null) {
-				addFileSizeAttribute(attributes, turFileAttributes);
-				addFileContentAttribute(attributes, turFileAttributes);
+			TurTikaFileAttributes turTikaFileAttributes = TurFileUtils.readFile((String) attributes.get(filePathField));
+			if (turTikaFileAttributes != null) {
+				addFileSizeAttribute(attributes, turTikaFileAttributes);
+				addFileContentAttribute(attributes, turTikaFileAttributes);
 			}
 		}
 	}
 
-	private void addFileContentAttribute(Map<String, Object> attributes, TurFileAttributes turFileAttributes) {
+
+	private void addFileContentAttribute(Map<String, Object> attributes, TurTikaFileAttributes turTikaFileAttributes) {
 		if (fileContentField != null) {
 			long maxContentByteSize = maxContentMegaByteSize * MEGA_BYTE;
 
-			if (turFileAttributes.getContent().getBytes().length <= maxContentByteSize) {
-				attributes.put(fileContentField, turFileAttributes.getContent());
+			if (turTikaFileAttributes.getContent().getBytes().length <= maxContentByteSize) {
+				attributes.put(fileContentField, turTikaFileAttributes.getContent());
 			} else {
 				attributes.put(fileContentField,
-						turFileAttributes.getContent().substring(0, Math.toIntExact(maxContentByteSize)));
+						turTikaFileAttributes.getContent().substring(0, Math.toIntExact(maxContentByteSize)));
 				if (logger.isDebugEnabled()) {
 					logger.debug("File size greater than {}, truncating content ...:",
 							FileUtils.byteCountToDisplaySize(maxContentByteSize));
@@ -448,14 +450,14 @@ public class TurJDBCImportTool {
 		}
 	}
 
-	private void addFileSizeAttribute(Map<String, Object> attributes, TurFileAttributes turFileAttributes) {
-		if (fileSizeField != null && turFileAttributes.getFile() != null) {
-			attributes.put(fileSizeField, turFileAttributes.getFile().length());
+	private void addFileSizeAttribute(Map<String, Object> attributes, TurTikaFileAttributes turTikaFileAttributes) {
+		if (fileSizeField != null && turTikaFileAttributes.getFile() != null) {
+			attributes.put(fileSizeField, turTikaFileAttributes.getFile().length());
 			if (logger.isDebugEnabled()) {
-				logger.debug("File: {}", turFileAttributes.getFile().getAbsolutePath());
-				logger.debug("File size: {}", FileUtils.byteCountToDisplaySize(turFileAttributes.getFile().length()));
+				logger.debug("File: {}", turTikaFileAttributes.getFile().getAbsolutePath());
+				logger.debug("File size: {}", FileUtils.byteCountToDisplaySize(turTikaFileAttributes.getFile().length()));
 				logger.debug("File - Content size: {}",
-						FileUtils.byteCountToDisplaySize(turFileAttributes.getContent().getBytes().length));
+						FileUtils.byteCountToDisplaySize(turTikaFileAttributes.getContent().getBytes().length));
 			}
 		} else {
 			logger.debug("File without size: {}", filePathField);

@@ -16,9 +16,11 @@
  */
 package com.viglet.turing.filesystem.commons;
 
-import java.io.File;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.tika.metadata.Metadata;
+import lombok.*;
 
 /**
 *
@@ -27,35 +29,18 @@ import org.apache.tika.metadata.Metadata;
 * @since 0.3.0
 *
 **/
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Setter
+@Getter
+@ToString
 public class TurFileAttributes {
-	private File file;
-	private String content;	
-	private Metadata metadata;
-	
-	public TurFileAttributes(File file, String content, Metadata metadata) {
-		super();
-		this.file = file;
-		this.content = content;
-		this.metadata = metadata;
-	}
-	public File getFile() {
-		return file;
-	}
-	public void setFile(File file) {
-		this.file = file;
-	}
-	public String getContent() {
-		return content;
-	}
-	public void setContent(String content) {
-		this.content = content;
-	}
-	public Metadata getMetadata() {
-		return metadata;
-	}
-	public void setMetadata(Metadata metadata) {
-		this.metadata = metadata;
-	}
-	
-	
+	private String content;
+	private String name;
+	private String title;
+	private String extension;
+	private TurFileSize size = new TurFileSize();
+	private Date lastModified = new Date();
+	private Map<String, String> metadata = new HashMap<>();
 }

@@ -1,9 +1,21 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+}
+
+plugins {
+    id("com.github.johnrengelman.shadow") version "6.1.0"
+}
 def javaExecutablesPath = new File(java6Home, 'bin')
 def javaExecutables = [:].withDefault { execName ->
     def executable = new File(javaExecutablesPath, execName + ".exe")
     assert executable.exists() : "There is no ${execName}.exe executable in ${javaExecutablesPath}"
     executable
 }
+
+
 tasks.withType(AbstractCompile) {
     options.with {
         fork = true
@@ -23,18 +35,7 @@ tasks.withType(JavaExec) {
     executable = javaExecutables.java
 }
 
-buildscript {
-	repositories {
-		mavenCentral()
-		 jcenter()
-	}
-	dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
-    }
-}
-
 apply plugin: 'java'
-apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceCompatibility = 1.6
 compileJava.options.encoding = "UTF-8"

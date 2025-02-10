@@ -1,5 +1,5 @@
 buildscript {
-    ext { tika = '2.5.0'
+    ext { tika = '3.1.0'
 		 }
 		repositories {
 			mavenCentral()
@@ -29,7 +29,7 @@ sonarqube {
 
 jar {
     baseName = 'turing-fs-commons'
-    version =  '0.3.7'
+    version =  '0.3.6'
      manifest {
         attributes 'Main-Class': 'com.viglet.turing.filesystem.commons.TurFileUtils'
     }
@@ -51,7 +51,11 @@ tasks.withType(JavaCompile) {
 }
 
 dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
 
+    testCompileOnly 'org.projectlombok:lombok:1.18.36'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
 	// Tika
     implementation group: 'org.apache.tika', name: 'tika-core', version:"${tika}"
     implementation group: 'org.apache.tika', name: 'tika-parsers', version:"${tika}"
@@ -64,6 +68,7 @@ dependencies {
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.41.0.0'
     implementation group: 'com.github.jai-imageio', name: 'jai-imageio-jpeg2000', version: '1.4.0'
+    implementation 'org.springframework:spring-web:5.3.15'
     implementation project(':turing-commons')
 }
 test {

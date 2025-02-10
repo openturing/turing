@@ -9,10 +9,9 @@ buildscript {
 		jcenter()
 	}
 
-	dependencies {
-    	classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
-    }
-    
+}
+plugins {
+    id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
 def javaExecutablesPath = new File(java6Home, 'bin')
@@ -43,7 +42,7 @@ tasks.withType(JavaExec) {
 
 
 apply plugin: 'java'
-apply plugin: 'com.github.johnrengelman.shadow'
+
 
 sourceCompatibility = 1.6
 compileJava.options.encoding = "UTF-8"

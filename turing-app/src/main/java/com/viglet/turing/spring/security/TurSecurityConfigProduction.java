@@ -58,7 +58,7 @@ public class TurSecurityConfigProduction {
 						"/browserconfig.xml", "/console/**")
 				.permitAll().anyRequest().authenticated().and()
 				.addFilterAfter(new TurCsrfHeaderFilter(), CsrfFilter.class).csrf()
-				.ignoringAntMatchers("/api/sn/**", "/api/nlp/**")
+				.ignoringAntMatchers("/api/sn/**", "/api/nlp/**", "/api/ocr/**")
 				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().logout();
 		http.cors();
 		return http.build();

@@ -23,6 +23,7 @@ import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +38,7 @@ import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
@@ -60,6 +62,16 @@ public class TurCommonsUtils {
 		throw new IllegalStateException("Utility class");
 	}
 
+	public static boolean isValidUrl(URL url) {
+
+		UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_LOCAL_URLS);
+		if (urlValidator.isValid(url.toString())) {
+			return true;
+		} else {
+			logger.error("Invalid URL: {}", url);
+			return false;
+		}
+	}
 	public static URI addOrReplaceParameter(URI uri, String paramName, String paramValue) {
 
 		List<NameValuePair> params = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8.name());
@@ -83,8 +95,12 @@ public class TurCommonsUtils {
 	}
 
 	public static void addParameterToQueryString(StringBuilder sbQueryString, String name, String value) {
-		sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, StandardCharsets.UTF_8)));
-	}
+        try {
+            sbQueryString.append(String.format("%s=%s&", name, URLEncoder.encode(value, "UTF-8")));
+        } catch (UnsupportedEncodingException e) {
+            logger.error(e.getMessage(), e);
+        }
+    }
 
 	public static URI modifiedURI(URI uri, StringBuilder sbQueryString) {
 		try {
@@ -220,5 +236,9 @@ public class TurCommonsUtils {
 			}
 		}
 		return true;
+	}
+
+	public static File getTempDirectory() {
+		return addSubDirToStoreDir("tmp");
 	}
 }
