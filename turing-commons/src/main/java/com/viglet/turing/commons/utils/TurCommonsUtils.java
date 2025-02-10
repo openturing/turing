@@ -289,6 +289,6 @@ public class TurCommonsUtils {
     }
 
     public static File getTempDirectory() {
-        return TurCommonsUtils.addSubDirToStoreDir("tmp");
+        return addSubDirToStoreDir("tmp");
     }
 }
