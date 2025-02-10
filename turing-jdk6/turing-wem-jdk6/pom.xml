@@ -76,7 +76,7 @@
         </dependency>
     </dependencies>
     <build>
-        <finalName>turing-java-sdk</finalName>
+        <finalName>turing-wem</finalName>
         <plugins>
             <!-- Maven Compiler Plugin -->
             <plugin>
@@ -89,6 +89,7 @@
                 </configuration>
             </plugin>
             <plugin>
+
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.6.0</version>
                 <executions>
@@ -96,10 +97,26 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
-                        <phase>none</phase>
+                        <phase>package</phase>
                         <configuration>
+                            <finalName>turing-wem-all</finalName>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>indexer</shadedClassifierName>
+                            <shadedClassifierName>all</shadedClassifierName>
+                            <minimizeJar>true</minimizeJar>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/NOTICE</exclude>
+                                        <exclude>META-INF/LICENSE</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>
