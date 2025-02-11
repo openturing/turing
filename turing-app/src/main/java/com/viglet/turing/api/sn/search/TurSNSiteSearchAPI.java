@@ -39,6 +39,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.LocaleUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -84,7 +85,7 @@ public class TurSNSiteSearchAPI {
             @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "NONE")
             TurSNFilterQueryOperator fqOperator,
             @RequestParam(required = false, name = TurSNParamType.SORT) String sort,
-            @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
+            @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "-1") Integer rows,
             @RequestParam(required = false, name = TurSNParamType.GROUP) String group,
             @RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0")
             Integer autoCorrectionDisabled,
@@ -127,7 +128,7 @@ public class TurSNSiteSearchAPI {
             @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_OPERATOR, defaultValue = "NONE")
             TurSNFilterQueryOperator fqOperator,
             @RequestParam(required = false, name = TurSNParamType.SORT) String sort,
-            @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") Integer rows,
+            @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "-1") Integer rows,
             @RequestParam(required = false, name = TurSNParamType.GROUP) String group,
             @RequestParam(required = false, name = TurSNParamType.AUTO_CORRECTION_DISABLED, defaultValue = "0")
             Integer autoCorrectionDisabled,
@@ -136,7 +137,9 @@ public class TurSNSiteSearchAPI {
             Principal principal,
             HttpServletRequest request) {
         if (principal != null) {
-            Locale locale = LocaleUtils.toLocale(localeRequest);
+            Locale locale = LocaleUtils.toLocale(StringUtils.isNotBlank(turSNSitePostParamsBean.getLocale()) ?
+                    turSNSitePostParamsBean.getLocale() :
+                    localeRequest);
             if (existsByTurSNSiteAndLanguage(siteName, locale)) {
                 turSNSitePostParamsBean.setTargetingRules(
                         turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));

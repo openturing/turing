@@ -38,8 +38,7 @@ public class TurSNJobItem implements Serializable{
 
 	private static final long serialVersionUID = 1L;
     private Locale locale;
-	
-    private TurSNJobAction turSNJobAction;
+	private TurSNJobAction turSNJobAction;
 	private List<String> siteNames;
     private List<TurSNJobAttributeSpec> specs = new ArrayList<>();
     private Map<String, Object> attributes = new HashMap<>();
