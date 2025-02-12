@@ -30,20 +30,18 @@ import com.vignette.as.client.javabean.ManagedObject;
 import com.vignette.as.client.javabean.StaticFile;
 import com.vignette.logging.context.ContextLogger;
 
-public class TurStaticFile implements ExtAttributeInterface {
-    private static final ContextLogger logger = ContextLogger.getLogger(TurStaticFile.class.getName());
+public class TurStaticFileUrl implements ExtAttributeInterface {
+    private static final ContextLogger logger = ContextLogger.getLogger(TurStaticFileUrl.class.getName());
     private static final String EMPTY_STRING = "";
-    private static final String FILE_PROTOCOL = "file://";
 
     @Override
     public TurMultiValue consume(TuringTag tag, ContentInstance ci, AttributeData attributeData,
                                  IHandlerConfiguration config) throws Exception {
-        logger.debug("Executing TurReadStaticFile");
+        logger.debug("Executing TurStaticFileUrl");
         if (attributeData != null && attributeData.getValue() != null) {
             StaticFile staticFile = (StaticFile) ManagedObject
                     .findByContentManagementId(new ManagedObjectVCMRef(attributeData.getValue().toString()));
-            return TurMultiValue.singleItem(FILE_PROTOCOL
-                    .concat(config.getFileSourcePath()).concat(staticFile.getPlacementPath()));
+            return TurMultiValue.singleItem(config.getCDAURLPrefix().concat(staticFile.getPlacementPath()));
         } else {
             return TurMultiValue.singleItem(EMPTY_STRING);
         }
