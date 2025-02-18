@@ -30,7 +30,7 @@ import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.connector.filesystem.commons.TurFileUtils;
 import com.viglet.turing.connector.filesystem.commons.TurTikaFileAttributes;
-import com.viglet.turing.genai.TurGenAI;
+import com.viglet.turing.genai.TurGenAi;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.spring.utils.TurSpringUtils;
@@ -55,13 +55,13 @@ import java.util.Optional;
 public class TurSNImportAPI {
     private final JmsMessagingTemplate jmsMessagingTemplate;
     private final TurSNSiteRepository turSNSiteRepository;
-    private final TurGenAI turLlm;
+    private final TurGenAi turGenAi;
     @Inject
     public TurSNImportAPI(JmsMessagingTemplate jmsMessagingTemplate, TurSNSiteRepository turSNSiteRepository,
-                          TurGenAI turLlm) {
+                          TurGenAi turGenAi) {
         this.jmsMessagingTemplate = jmsMessagingTemplate;
         this.turSNSiteRepository = turSNSiteRepository;
-        this.turLlm = turLlm;
+        this.turGenAi = turGenAi;
     }
 
     @PostMapping
@@ -121,7 +121,7 @@ public class TurSNImportAPI {
     }
 
     public void send(TurSNJobItems turSNJobItems) {
-        sendToLlm(turSNJobItems);
+        sendToGenAi(turSNJobItems);
         sentQueueInfo(turSNJobItems);
         if (log.isDebugEnabled()) {
             log.debug("Sent job - {}", TurSNConstants.INDEXING_QUEUE);
@@ -130,8 +130,8 @@ public class TurSNImportAPI {
         this.jmsMessagingTemplate.convertAndSend(TurSNConstants.INDEXING_QUEUE, turSNJobItems);
     }
 
-    private void sendToLlm(TurSNJobItems turSNJobItems) {
-        turLlm.addDocuments(turSNJobItems);
+    private void sendToGenAi(TurSNJobItems turSNJobItems) {
+        turGenAi.addDocuments(turSNJobItems);
     }
 
     private void sentQueueInfo(TurSNJobItems turSNJobItems) {

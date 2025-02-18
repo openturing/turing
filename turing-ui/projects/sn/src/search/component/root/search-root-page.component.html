@@ -26,7 +26,8 @@
   }
 </style>
 
-<div class="clearfix" *ngIf="(getTurSNSearchItems() | async) as snSearch; else loading">
+<div class="clearfix" *ngIf="(getTurSNSearchItems() | async) as snSearch else loading">
+  <div  *ngIf="(getChat() | async) as llmChat;">
   <div class="Header ">
     <div class="Header-item ">
       <button (click)="showAll()" class="btn-link Header-link f4 d-flex flex-items-center">
@@ -102,14 +103,14 @@
   </div>
 
   <div class="container-lg px-md-2 mt-lg-4 clearfix" style="min-height: 600px;">
-    <div  *ngIf="(getChat() | async) as llmChat;" class="blankslate blankslate-large">
+    <div  *ngIf="llmChat.text != null" class="blankslate blankslate-large">
       <h3 class="mb-1">Assistant</h3>
       <p>{{llmChat.text}}</p>
     </div>
 
-    <div *ngIf="snSearch.results.document.length <= 0" class="blankslate blankslate-large">
-      <span octicon="search" [size]=48 class="mb-3"></span>
-      <h3 class="mb-1">We couldn’t find any results matching '{{ turQuery }}'.</h3>
+    <div *ngIf="snSearch.results.document.length <= 0 && llmChat" class="blankslate blankslate-large">
+      <span *ngIf="llmChat.text == null" octicon="search" [size]=48 class="mb-3"></span>
+      <h3 *ngIf="llmChat.text == null" class="mb-1">We couldn’t find any results matching '{{ turQuery }}'.</h3>
       <h3 *ngIf="snSearch.widget.spellCheck.correctedText" class="mb-1">Did you mean '
         <button class="btn-link"
                 (click)="turRedirect(snSearch.widget.spellCheck.corrected.link)"
@@ -117,7 +118,7 @@
         </button>
         '?
       </h3>
-      <div *ngIf="!snSearch.widget.spellCheck.correctedText">
+      <div *ngIf="!snSearch.widget.spellCheck.correctedText && llmChat.text == null">
         <p>You can try to see all the available content, maybe you have a new idea. :-)</p>
         <button class="btn btn-primary my-3" type="button" (click)="showAll()">Show all the available content</button>
       </div>
@@ -315,6 +316,7 @@
         </nav>
       </div>
     </div>
+  </div>
   </div>
 </div>
 <ng-template #loading>

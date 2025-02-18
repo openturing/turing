@@ -21,15 +21,18 @@
 package com.viglet.turing.persistence.model.sn;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.spring.security.TurAuditable;
 import jakarta.persistence.*;
 import jakarta.persistence.Entity;
@@ -147,47 +150,42 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Column
 	private Integer spotlightWithResults;
 	
-	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
 	private TurSEInstance turSEInstance;
 
-	// bi-directional many-to-one association to TurSEInstance
 	@ManyToOne
 	@JoinColumn(name = "nlp_vendor_id")
 	private TurNLPVendor turNLPVendor;
 
-	// bi-directional many-to-one association to turSNSiteFields
+	@OneToOne
+	private TurSNSiteGenAi turSNSiteGenAi;
+
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteField> turSNSiteFields = new HashSet<>();
 
-	// bi-directional many-to-one association to turSNSiteFieldExts
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteFieldExt> turSNSiteFieldExts = new HashSet<>();
 
-	// bi-directional many-to-one association to turSNSiteSpotlights
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteSpotlight> turSNSiteSpotlights = new HashSet<>();
 
-	// bi-directional many-to-one association to turSNSiteLocales
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteLocale> turSNSiteLocales = new HashSet<>();
 
-	// bi-directional many-to-one association to turSNSiteMetricAccesses
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteMetricAccess> turSNSiteMetricAccesses = new HashSet<>();
 
-	// bi-directional many-to-one association to turSNRankingExpressions
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY)
 	@Cascade({ CascadeType.ALL })
 	@OnDelete(action = OnDeleteAction.CASCADE)

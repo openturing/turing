@@ -31,8 +31,7 @@ import {
 import {TurSNRankingExpressionPageComponent} from "./component/site/ranking/sn-ranking-expression-page.component";
 import {TurSNFacetOrderingListPageComponent} from "./component/site/facet/sn-facet-ordering-list-page.component";
 import {TurSNFacetOrderingRootPageComponent} from "./component/site/facet/sn-facet-ordering-root-page.component";
-import {TurSNSiteAIRootPageComponent} from "./component/site/ai/sn-site-ai-root-page.component";
-import {TurSNSiteAIListPageComponent} from "./component/site/ai/sn-site-ai-list-page.component";
+import {TurSNSiteGenAiPageComponent} from "./component/site/genai/sn-site-genai-page.component";
 
 const routes: Routes = [
   {
@@ -55,12 +54,7 @@ const routes: Routes = [
               { path: '', redirectTo: 'top-terms', pathMatch: 'full' }
             ]
           },
-          { path: 'ai', component: TurSNSiteAIRootPageComponent, canActivate: [AuthGuard],
-            children: [
-              { path: 'list', component: TurSNSiteAIListPageComponent, canActivate: [AuthGuard] },
-              { path: '', redirectTo: 'list', pathMatch: 'full' }
-            ]
-          },
+          { path: 'ai', component: TurSNSiteGenAiPageComponent, canActivate: [AuthGuard]},
           { path: 'facet-ordering', component: TurSNFacetOrderingRootPageComponent, canActivate: [AuthGuard],
             children: [
               { path: 'list', component: TurSNFacetOrderingListPageComponent, canActivate: [AuthGuard] },

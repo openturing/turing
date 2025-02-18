@@ -16,12 +16,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.viglet.turing.api.genai;
+package com.viglet.turing.genai;
 
 import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.UserMessage;
 
 public interface TurAssistant {
-
     String chat(@MemoryId String memoryId, @UserMessage String userMessage);
 }

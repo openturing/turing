@@ -9,6 +9,7 @@ import { UntypedFormControl, Validators } from '@angular/forms';
 import {TurStoreInstanceService} from "../../service/store-instance.service";
 import {TurLocaleService} from "../../../locale/service/locale.service";
 import {TurStoreVendorService} from "../../service/store-vendor.service";
+import {TurLLMInstance} from "../../../llm/model/llm-instance.model";
 
 @Component({
     selector: 'store-instance-page',
@@ -66,6 +67,12 @@ export class TurStoreInstancePageComponent implements OnInit {
   getTurLocales(): Observable<TurLocale[]> {
 
     return this.turLocales;
+  }
+
+  getDefaults(_turStoreInstance: TurStoreInstance) {
+    if (_turStoreInstance.turStoreVendor.id == 'CHROMA') {
+      _turStoreInstance.url = "http://localhost:8000";
+    }
   }
 
   ngOnInit(): void {

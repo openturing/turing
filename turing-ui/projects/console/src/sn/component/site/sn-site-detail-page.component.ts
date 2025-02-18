@@ -1,20 +1,20 @@
-import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
-import { TurSNSite } from '../../model/sn-site.model';
-import { NotifierService } from 'angular-notifier-updated';
-import { TurSNSiteService } from '../../service/sn-site.service';
-import { ActivatedRoute, Router } from '@angular/router';
-import { TurLocale } from '../../../locale/model/locale.model';
-import { TurLocaleService } from '../../../locale/service/locale.service';
-import { TurSEInstance } from '../../../se/model/se-instance.model';
-import { TurSEInstanceService } from '../../../se/service/se-instance.service';
-import { TurNLPVendor } from 'projects/console/src/nlp/model/nlp-vendor.model';
-import { TurNLPVendorService } from 'projects/console/src/nlp/service/nlp-vendor.service';
+import {Component, OnInit} from '@angular/core';
+import {Observable} from 'rxjs';
+import {TurSNSite} from '../../model/sn-site.model';
+import {NotifierService} from 'angular-notifier-updated';
+import {TurSNSiteService} from '../../service/sn-site.service';
+import {ActivatedRoute, Router} from '@angular/router';
+import {TurLocale} from '../../../locale/model/locale.model';
+import {TurLocaleService} from '../../../locale/service/locale.service';
+import {TurSEInstance} from '../../../se/model/se-instance.model';
+import {TurSEInstanceService} from '../../../se/service/se-instance.service';
+import {TurNLPVendor} from 'projects/console/src/nlp/model/nlp-vendor.model';
+import {TurNLPVendorService} from 'projects/console/src/nlp/service/nlp-vendor.service';
 
 @Component({
-    selector: 'sn-site-page',
-    templateUrl: './sn-site-detail-page.component.html',
-    standalone: false
+  selector: 'sn-site-page',
+  templateUrl: './sn-site-detail-page.component.html',
+  standalone: false
 })
 export class TurSNSiteDetailPageComponent implements OnInit {
   private turSNSite: Observable<TurSNSite>;
@@ -36,6 +36,7 @@ export class TurSNSiteDetailPageComponent implements OnInit {
     this.turSEInstances = turSEInstanceService.query();
 
     this.turNLPVendors = turNLPVendorService.query();
+
 
     let id: string = this.activatedRoute.parent?.snapshot.paramMap.get('id') || "";
 
@@ -65,11 +66,11 @@ export class TurSNSiteDetailPageComponent implements OnInit {
 
     return this.turSEInstances;
   }
+
   ngOnInit(): void {
   }
 
   getTurNLPVendors(): Observable<TurNLPVendor[]> {
-
     return this.turNLPVendors;
   }
 

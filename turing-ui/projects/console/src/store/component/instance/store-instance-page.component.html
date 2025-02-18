@@ -49,10 +49,10 @@
           <div class="Box-body overflow-auto">
             <p>
               This action <strong>cannot</strong> be undone. This will permanently delete the
-              <strong>{{storeInstance.title}}</strong> search engine.
+              <strong>{{storeInstance.title}}</strong> embedding store.
             </p>
             <button (click)="delete(storeInstance)" class="btn-danger btn btn-block">
-              <span class="d-md-inline-block d-none">I understand the consequences, delete this search engine</span>
+              <span class="d-md-inline-block d-none">I understand the consequences, delete this embedding store</span>
             </button>
           </div>
         </details-dialog>
@@ -74,7 +74,7 @@
     </div>
     <div class="form-group">
       <div class="form-group-header">
-        <label for="repo-name">Title</label>
+        <label>Title</label>
       </div>
       <div class="form-group-body">
         <input [(ngModel)]="storeInstance.title" class="form-control" type="text" style="width: 100%;"/>
@@ -100,7 +100,7 @@
         <label>Vendor</label>
       </div>
       <div class="form-group-body">
-        <select [(ngModel)]="storeInstance.turStoreVendor.id" class="form-select">
+        <select [(ngModel)]="storeInstance.turStoreVendor.id" class="form-select" (ngModelChange)="getDefaults(storeInstance)">
           <option *ngFor="let storeVendor of (getTurStoreVendors() | async)" [value]="storeVendor.id" style="width: 100%;">
             {{storeVendor.title}}
           </option>

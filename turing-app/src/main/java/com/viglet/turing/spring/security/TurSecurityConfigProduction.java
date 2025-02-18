@@ -82,13 +82,13 @@ public class TurSecurityConfigProduction {
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new TurSpaCsrfTokenRequestHandler())
                         .ignoringRequestMatchers(
-                                mvc.pattern("/api/llm/chat"),
+                                mvc.pattern("/api/genai/chat"),
                                 mvc.pattern("/api/sn/**"),
                                 mvc.pattern(ERROR_PATH),
                                 mvc.pattern("/logout"),
                                 mvc.pattern("/api/nlp/**"),
                                 mvc.pattern("/api/ocr/**"),
-                                mvc.pattern("/api/llm/**"),
+                                mvc.pattern("/api/genai/**"),
                                 mvc.pattern("/api/v2/guest/**"),
                                 AntPathRequestMatcher.antMatcher("/h2/**")))
                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
@@ -101,7 +101,7 @@ public class TurSecurityConfigProduction {
                 authorizeRequests.requestMatchers(
                         mvc.pattern(ERROR_PATH),
                         mvc.pattern("/api/discovery"),
-                        mvc.pattern("/api/llm/chat"),
+                        mvc.pattern("/api/genai/chat"),
                         mvc.pattern("/assets/**"),
                         mvc.pattern("/favicon.ico"),
                         mvc.pattern("/*.png"),
@@ -123,7 +123,7 @@ public class TurSecurityConfigProduction {
                         authorizeRequests.requestMatchers(
                                 mvc.pattern(ERROR_PATH),
                                 mvc.pattern("/api/discovery"),
-                                mvc.pattern("/api/llm/chat"),
+                                mvc.pattern("/api/genai/chat"),
                                 mvc.pattern("/logout"),
                                 mvc.pattern("/index.html"),
                                 mvc.pattern("/welcome/**"),
@@ -132,7 +132,7 @@ public class TurSecurityConfigProduction {
                                 mvc.pattern("/swagger-resources/**"),
                                 mvc.pattern("/sn/**"),
                                 mvc.pattern("/fonts/**"),
-                                AntPathRequestMatcher.antMatcher("/api/llm/chat"),
+                                AntPathRequestMatcher.antMatcher("/api/genai/chat"),
                                 AntPathRequestMatcher.antMatcher("/api/sn/**/ac"),
                                 AntPathRequestMatcher.antMatcher("/api/sn/**/search"),
                                 AntPathRequestMatcher.antMatcher("/api/sn/**/search/**"),

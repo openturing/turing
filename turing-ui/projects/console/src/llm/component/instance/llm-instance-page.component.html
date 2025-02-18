@@ -45,10 +45,10 @@
           <div class="Box-body overflow-auto">
             <p>
               This action <strong>cannot</strong> be undone. This will permanently delete the
-              <strong>{{llmInstance.title}}</strong> search engine.
+              <strong>{{llmInstance.title}}</strong> language model.
             </p>
             <button (click)="delete(llmInstance)" class="btn-danger btn btn-block">
-              <span class="d-md-inline-block d-none">I understand the consequences, delete this search engine</span>
+              <span class="d-md-inline-block d-none">I understand the consequences, delete this language model</span>
             </button>
           </div>
         </details-dialog>
@@ -96,9 +96,9 @@
         <label>Vendor</label>
       </div>
       <div class="form-group-body">
-        <select [(ngModel)]="llmInstance.turLLMVendor.id" class="form-select">
-          <option *ngFor="let seVendor of (getTurLLMVendors() | async)" [value]="seVendor.id" style="width: 100%;">
-            {{seVendor.title}}
+        <select [(ngModel)]="llmInstance.turLLMVendor.id" class="form-select"  (ngModelChange)="getDefaults(llmInstance)">
+          <option *ngFor="let llmVendor of (getTurLLMVendors() | async)" [value]="llmVendor.id" style="width: 100%;">
+            {{llmVendor.title}}
           </option>
         </select>
         <p class="note" id="help-text-for-checkbox">

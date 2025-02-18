@@ -50,7 +50,7 @@ export class TurLLMInstancePageComponent implements OnInit {
   }
 
   saveButtonCaption(): string {
-    return this.newObject ? "Create search engine instance" : "Update search engine instance";
+    return this.newObject ? "Create language model instance" : "Update language model instance";
   }
 
   getTurLLMInstance(): Observable<TurLLMInstance> {
@@ -68,6 +68,11 @@ export class TurLLMInstancePageComponent implements OnInit {
     return this.turLocales;
   }
 
+  getDefaults(_turLLMInstance: TurLLMInstance) {
+    if (_turLLMInstance.turLLMVendor.id == 'OLLAMA') {
+      _turLLMInstance.url = "http://localhost:11434";
+    }
+  }
   ngOnInit(): void {
   }
 
