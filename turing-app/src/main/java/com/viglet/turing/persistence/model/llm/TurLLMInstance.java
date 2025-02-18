@@ -27,6 +27,8 @@ import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * The persistent class for the TurLLMInstance database table.
@@ -60,4 +62,40 @@ public class TurLLMInstance implements Serializable {
 	@ManyToOne
 	@JoinColumn(name = "llm_vendor_id", nullable = false)
 	private TurLLMVendor turLLMVendor;
+
+	@Column
+	private String modelName;
+
+	@Column
+	private Double temperature;
+
+	@Column
+	private Integer topK;
+
+	@Column
+	private Double topP;
+
+	@Column
+	private Double repeatPenalty;
+
+	@Column
+	private Integer seed;
+
+	@Column
+	private Integer numPredict;
+
+	@Column
+	private String stop;
+
+	@Column
+	private String responseFormat;
+
+	@Column
+	private String supportedCapabilities;
+
+	@Column
+	private String timeout;
+
+	@Column
+	private Integer maxRetries;
 }

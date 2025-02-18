@@ -71,6 +71,11 @@ export class TurLLMInstancePageComponent implements OnInit {
   getDefaults(_turLLMInstance: TurLLMInstance) {
     if (_turLLMInstance.turLLMVendor.id == 'OLLAMA') {
       _turLLMInstance.url = "http://localhost:11434";
+      _turLLMInstance.modelName = "MISTRAL";
+      _turLLMInstance.temperature = 0.8;
+      _turLLMInstance.topK = 6;
+      _turLLMInstance.supportedCapabilities = "RESPONSE_FORMAT_JSON_SCHEMA";
+      _turLLMInstance.timeout = "PT60S";
     }
   }
   ngOnInit(): void {

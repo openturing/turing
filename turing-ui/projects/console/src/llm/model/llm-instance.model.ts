@@ -8,4 +8,16 @@ export interface TurLLMInstance {
   turLLMVendor: TurLLMVendor;
   language: string;
   enabled: number;
+  modelName: string;
+  temperature: number;
+  topK: number;
+  topP: number;
+  repeatPenalty: number;
+  seed: number;
+  numPredict: number;
+  stop: string;
+  responseFormat: string;
+  supportedCapabilities: string;
+  timeout: string;
+  maxRetries: number;
 }

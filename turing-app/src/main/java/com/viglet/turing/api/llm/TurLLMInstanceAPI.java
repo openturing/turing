@@ -70,6 +70,18 @@ public class TurLLMInstanceAPI {
             turLLMInstanceEdit.setTurLLMVendor(turLLMInstance.getTurLLMVendor());
             turLLMInstanceEdit.setUrl(turLLMInstance.getUrl());
             turLLMInstanceEdit.setEnabled(turLLMInstance.getEnabled());
+            turLLMInstanceEdit.setModelName(turLLMInstance.getModelName());
+            turLLMInstanceEdit.setTemperature(turLLMInstance.getTemperature());
+            turLLMInstanceEdit.setTopK(turLLMInstance.getTopK());
+            turLLMInstanceEdit.setTopP(turLLMInstance.getTopP());
+            turLLMInstanceEdit.setRepeatPenalty(turLLMInstance.getRepeatPenalty());
+            turLLMInstanceEdit.setSeed(turLLMInstance.getSeed());
+            turLLMInstanceEdit.setNumPredict(turLLMInstance.getNumPredict());
+            turLLMInstanceEdit.setStop(turLLMInstance.getStop());
+            turLLMInstanceEdit.setResponseFormat(turLLMInstance.getResponseFormat());
+            turLLMInstanceEdit.setSupportedCapabilities(turLLMInstance.getSupportedCapabilities());
+            turLLMInstanceEdit.setTimeout(turLLMInstance.getTimeout());
+            turLLMInstanceEdit.setMaxRetries(turLLMInstance.getMaxRetries());
             this.turLLMInstanceRepository.save(turLLMInstanceEdit);
             return turLLMInstanceEdit;
         }).orElse(new TurLLMInstance());

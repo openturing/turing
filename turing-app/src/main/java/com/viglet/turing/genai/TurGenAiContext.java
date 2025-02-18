@@ -26,6 +26,7 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
+import jakarta.persistence.Column;
 import lombok.Getter;
 
 @Getter
@@ -36,9 +37,7 @@ public class TurGenAiContext {
     private final boolean enabled;
     private final String systemPrompt;
     public static final String COLLECTION_NAME = "turing";
-
-    public static final String MISTRAL = "mistral";
-
+    
     public TurGenAiContext(TurSNSiteGenAi turSNSiteGenAi) {
         this.chromaEmbeddingStore = setEmbeddingStore(turSNSiteGenAi.getTurStoreInstance());
         this.embeddingModel = setEmbeddingModel(turSNSiteGenAi.getTurLLMInstance());
@@ -60,7 +59,7 @@ public class TurGenAiContext {
                 .baseUrl(turLLMInstance.getUrl())
                 .logRequests(true)
                 .logResponses(true)
-                .modelName(MISTRAL)
+                .modelName(turLLMInstance.getModelName())
                 .build();
 
     }
@@ -70,9 +69,9 @@ public class TurGenAiContext {
                 .baseUrl(turLLMInstance.getUrl())
                 .logRequests(true)
                 .logResponses(true)
-                .modelName(MISTRAL)
-                .temperature(0.8)
-                .topK(6)
+                .modelName(turLLMInstance.getModelName())
+                .temperature(turLLMInstance.getTemperature())
+                .topK(turLLMInstance.getTopK())
                 .build();
     }
 
