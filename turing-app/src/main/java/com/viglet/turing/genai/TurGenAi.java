@@ -24,7 +24,12 @@ import com.viglet.turing.sn.TurSNSearchProcess;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.document.splitter.DocumentByCharacterSplitter;
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.input.Prompt;
+import dev.langchain4j.model.input.PromptTemplate;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
 import dev.langchain4j.rag.RetrievalAugmentor;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
@@ -32,6 +37,7 @@ import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.rag.query.transformer.CompressingQueryTransformer;
 import dev.langchain4j.rag.query.transformer.QueryTransformer;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +46,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.function.Function;
+
+import static org.apache.commons.lang3.stream.LangCollectors.joining;
 
 @Slf4j
 @Component
@@ -54,6 +62,8 @@ public class TurGenAi {
     public static final String TITLE = "title";
     public static final String ABSTRACT = "abstract";
     public static final String TEXT = "text";
+    public static final String QUESTION = "question";
+    public static final String INFORMATION = "information";
     private final TurSNSearchProcess turSNSearchProcess;
 
     @Autowired
@@ -80,34 +90,27 @@ public class TurGenAi {
     }
 
     private TurChatMessage getTurChatMessage(TurGenAiContext context, String q) {
-        QueryTransformer queryTransformer = new CompressingQueryTransformer(context.getChatLanguageModel());
-        Function<Object, String> systemMessageProvider = (memoryId) -> {
-            if (memoryId.equals("1")) {
-                return context.getSystemPrompt();
-            } else {
-                return "You are a helpful assistant.";
-            }
-        };
-        ContentRetriever contentRetriever = EmbeddingStoreContentRetriever.builder()
-                .embeddingStore(context.getChromaEmbeddingStore())
-                .embeddingModel(context.getEmbeddingModel())
-                .maxResults(2)
-                .minScore(0.6)
-                .build();
+        int maxResults = 3;
+        double minScore = 0.7;
+        Embedding questionEmbedding =  context.getEmbeddingModel().embed(q).content();
+        List<EmbeddingMatch<TextSegment>> relevantEmbeddings
+                = context.getChromaEmbeddingStore().findRelevant(questionEmbedding, maxResults, minScore);
+        PromptTemplate promptTemplate = PromptTemplate.from(context.getSystemPrompt());
 
-        RetrievalAugmentor retrievalAugmentor = DefaultRetrievalAugmentor.builder()
-                .queryTransformer(queryTransformer)
-                .contentRetriever(contentRetriever)
-                .build();
+        String information = relevantEmbeddings.stream()
+                .map(match -> match.embedded().text())
+                .collect(joining("\n\n"));
 
-        TurAssistant assistant = AiServices.builder(TurAssistant.class)
-                .chatLanguageModel(context.getChatLanguageModel())
-                .systemMessageProvider(systemMessageProvider)
-                .retrievalAugmentor(retrievalAugmentor)
-                .chatMemoryProvider(
-                        sessionId -> MessageWindowChatMemory.withMaxMessages(10))
+        Map<String, Object> variables = new HashMap<>();
+        variables.put(QUESTION, q);
+        variables.put(INFORMATION, information);
+
+        Prompt prompt = promptTemplate.apply(variables);
+        AiMessage aiMessage =  context.getChatLanguageModel().generate(prompt.toUserMessage()).content();
+        return TurChatMessage.builder()
+                .text(aiMessage.text())
+                .enabled(true)
                 .build();
-        return TurChatMessage.builder().text(assistant.chat("1", q)).enabled(true).build();
     }
 
     public void addDocuments(TurSNJobItems turSNJobItems) {

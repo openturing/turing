@@ -32,8 +32,8 @@ export class TurSNSearchService {
     return this.httpClient.get<TurSNSearch>(`${environment.apiUrl}/api/sn/${turSiteName}/search?${queryString}`);
   }
 
-  chat(q: string) {
-    return this.httpClient.get<TurSNChat>(`${environment.apiUrl}/api/genai/chat?q=${q}`);
+  chat(turSiteName: string, q: string, _setlocale: string) {
+    return this.httpClient.get<TurSNChat>(`${environment.apiUrl}/api/sn/${turSiteName}/chat?q=${q}&_setlocale=${_setlocale}`);
   }
   autoComplete(turSiteName: string, q: string, p: string, _setlocale: string, sort: string, fq: string[], tr: string[], nfpr: string) {
     let queryString: string = TurSNSearchService.generateQueryString(q, p, _setlocale, sort, fq, tr, nfpr);

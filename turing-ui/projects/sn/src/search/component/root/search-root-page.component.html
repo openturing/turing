@@ -101,11 +101,12 @@
       </details>
     </div>
   </div>
-
   <div class="container-lg px-md-2 mt-lg-4 clearfix" style="min-height: 600px;">
     <div  *ngIf="llmChat.text != null" class="blankslate blankslate-large">
       <h3 class="mb-1">Assistant</h3>
-      <p>{{llmChat.text}}</p>
+      <div class="typewriter">
+      <p style="white-space: pre-wrap;text-align: left;">{{llmChat.text}}</p>
+      </div>
     </div>
 
     <div *ngIf="snSearch.results.document.length <= 0 && llmChat" class="blankslate blankslate-large">

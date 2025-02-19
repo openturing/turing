@@ -22,5 +22,5 @@ import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.UserMessage;
 
 public interface TurAssistant {
-    String chat(@MemoryId String memoryId, @UserMessage String userMessage);
+    String answer(String query);
 }

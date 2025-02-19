@@ -73,8 +73,14 @@ export class TurSNSiteGenAiPageComponent implements OnInit {
 
   getDefaults(turSNSiteGenAi: TurSNSiteGenAi) {
     if (turSNSiteGenAi.enabled && turSNSiteGenAi.systemPrompt == null) {
-      turSNSiteGenAi.systemPrompt = "Using only this RAG data. Answer in Portuguese.\n" +
-        "You are a helpful assistant that can answer questions about the Knowledge base."
+      turSNSiteGenAi.systemPrompt = "Using only this rag data. Answer in Portuguese." +
+      "You are a helpful assistant that can answer questions about the web site:\n"
+      + "\n"
+      + "Question:\n"
+      + "{{question}}\n"
+      + "\n"
+      + "Base your answer on the following information:\n"
+      + "{{information}}"
     }
   }
 }

@@ -53,6 +53,7 @@ public class TurSNSiteGenAi implements Serializable {
     @JoinColumn(name = "store_instance_id")
     private TurStoreInstance turStoreInstance;
 
+    @Lob
     @Column
     private String systemPrompt;
 }
