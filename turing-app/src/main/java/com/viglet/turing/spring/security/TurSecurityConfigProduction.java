@@ -101,17 +101,17 @@ public class TurSecurityConfigProduction {
                 authorizeRequests.requestMatchers(
                         mvc.pattern(ERROR_PATH),
                         mvc.pattern("/api/discovery"),
-                        mvc.pattern("/api/genai/chat"),
                         mvc.pattern("/assets/**"),
                         mvc.pattern("/favicon.ico"),
                         mvc.pattern("/*.png"),
                         mvc.pattern("/manifest.json"),
                         mvc.pattern("/swagger-resources/**"),
                         mvc.pattern("/browserconfig.xml"),
-                        AntPathRequestMatcher.antMatcher("/api/llm/chat"),
                         AntPathRequestMatcher.antMatcher("/api/sn/**/ac"),
                         AntPathRequestMatcher.antMatcher("/api/sn/**/search"),
                         AntPathRequestMatcher.antMatcher("/api/sn/**/search/**"),
+                        AntPathRequestMatcher.antMatcher("/api/sn/**/chat"),
+                        AntPathRequestMatcher.antMatcher("/api/sn/**/chat/**"),
                         AntPathRequestMatcher.antMatcher("/api/sn/**/**/spell-check")).permitAll();
                 authorizeRequests.anyRequest().authenticated();
             });
@@ -123,7 +123,6 @@ public class TurSecurityConfigProduction {
                         authorizeRequests.requestMatchers(
                                 mvc.pattern(ERROR_PATH),
                                 mvc.pattern("/api/discovery"),
-                                mvc.pattern("/api/genai/chat"),
                                 mvc.pattern("/logout"),
                                 mvc.pattern("/index.html"),
                                 mvc.pattern("/welcome/**"),
@@ -132,10 +131,11 @@ public class TurSecurityConfigProduction {
                                 mvc.pattern("/swagger-resources/**"),
                                 mvc.pattern("/sn/**"),
                                 mvc.pattern("/fonts/**"),
-                                AntPathRequestMatcher.antMatcher("/api/genai/chat"),
                                 AntPathRequestMatcher.antMatcher("/api/sn/**/ac"),
                                 AntPathRequestMatcher.antMatcher("/api/sn/**/search"),
                                 AntPathRequestMatcher.antMatcher("/api/sn/**/search/**"),
+                                AntPathRequestMatcher.antMatcher("/api/sn/**/chat"),
+                                AntPathRequestMatcher.antMatcher("/api/sn/**/chat/**"),
                                 AntPathRequestMatcher.antMatcher("/api/sn/**/**/spell-check"),
                                 AntPathRequestMatcher.antMatcher("/favicon.ico"),
                                 AntPathRequestMatcher.antMatcher("/*.png"),

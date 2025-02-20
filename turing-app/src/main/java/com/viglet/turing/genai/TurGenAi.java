@@ -90,7 +90,7 @@ public class TurGenAi {
     }
 
     private TurChatMessage getTurChatMessage(TurGenAiContext context, String q) {
-        int maxResults = 3;
+        int maxResults = 10;
         double minScore = 0.7;
         Embedding questionEmbedding =  context.getEmbeddingModel().embed(q).content();
         List<EmbeddingMatch<TextSegment>> relevantEmbeddings
