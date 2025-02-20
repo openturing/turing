@@ -29,8 +29,10 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
+import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.utils.TurPersistenceUtils;
 import com.viglet.turing.properties.TurConfigProperties;
@@ -63,6 +65,7 @@ import java.util.Optional;
 public class TurSNSiteAPI {
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurSNSiteGenAiRepository turSNSiteGenAiRepository;
     private final TurSNSiteExport turSNSiteExport;
     private final TurSNTemplate turSNTemplate;
     private final TurSNQueue turSNQueue;
@@ -72,6 +75,7 @@ public class TurSNSiteAPI {
     @Inject
     public TurSNSiteAPI(TurSNSiteRepository turSNSiteRepository,
                         TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                        TurSNSiteGenAiRepository turSNSiteGenAiRepository,
                         TurSNSiteExport turSNSiteExport,
                         TurSNTemplate turSNTemplate,
                         TurSNQueue turSNQueue,
@@ -80,6 +84,7 @@ public class TurSNSiteAPI {
                         TurConfigProperties turConfigProperties) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turSNSiteGenAiRepository = turSNSiteGenAiRepository;
         this.turSNSiteExport = turSNSiteExport;
         this.turSNTemplate = turSNTemplate;
         this.turSNQueue = turSNQueue;
@@ -106,6 +111,7 @@ public class TurSNSiteAPI {
         turSNSite.setFacetType(TurSNSiteFacetFieldEnum.AND);
         turSNSite.setTurSEInstance(new TurSEInstance());
         turSNSite.setTurNLPVendor(new TurNLPVendor());
+        turSNSite.setTurSNSiteGenAi(new TurSNSiteGenAi());
         return turSNSite;
     }
 
@@ -148,7 +154,15 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setDefaultImageField(turSNSite.getDefaultImageField());
             turSNSiteEdit.setDefaultURLField(turSNSite.getDefaultURLField());
             turSNSiteEdit.setExactMatch(turSNSite.getExactMatch());
+            turSNSiteEdit.setTurSNSiteGenAi(turSNSite.getTurSNSiteGenAi());
             turSNSiteRepository.save(turSNSiteEdit);
+
+            TurSNSiteGenAi turSNSiteGenAi = turSNSiteEdit.getTurSNSiteGenAi();
+            turSNSiteGenAi.setEnabled(turSNSite.getTurSNSiteGenAi().isEnabled());
+            turSNSiteGenAi.setTurLLMInstance(turSNSite.getTurSNSiteGenAi().getTurLLMInstance());
+            turSNSiteGenAi.setTurStoreInstance(turSNSite.getTurSNSiteGenAi().getTurStoreInstance());
+            turSNSiteGenAiRepository.save(turSNSiteGenAi);
+
             return turSNSiteEdit;
         }).orElse(new TurSNSite());
 
@@ -172,6 +186,7 @@ public class TurSNSiteAPI {
     @Operation(summary = "Create a Semantic Navigation Site")
     @PostMapping
     public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite, Principal principal) {
+        turSNSiteGenAiRepository.save(turSNSite.getTurSNSiteGenAi());
         turSNSiteRepository.save(turSNSite);
         turSNTemplate.createSNSite(turSNSite, principal.getName(), Locale.US);
         return turSNSite;

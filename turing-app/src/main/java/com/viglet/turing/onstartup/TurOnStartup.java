@@ -24,8 +24,10 @@ import com.google.inject.Inject;
 import com.viglet.turing.onstartup.auth.TurGroupOnStartup;
 import com.viglet.turing.onstartup.auth.TurRoleOnStartup;
 import com.viglet.turing.onstartup.auth.TurUserOnStartup;
+import com.viglet.turing.onstartup.llm.TurLLMVendorOnStartup;
 import com.viglet.turing.onstartup.nlp.*;
 import com.viglet.turing.onstartup.se.TurSEVendorOnStartup;
+import com.viglet.turing.onstartup.store.TurStoreVendorOnStartup;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.onstartup.system.TurLocaleOnStartup;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
@@ -50,6 +52,8 @@ public class TurOnStartup implements ApplicationRunner {
 	private final TurNLPFeatureOnStartup turNLPFeatureOnStartup;
 	private final TurNLPInstanceOnStartup turNLPInstanceOnStartup;
 	private final TurSEVendorOnStartup turSEVendorOnStartup;
+	private final TurLLMVendorOnStartup turLLMVendorOnStartup;
+	private final TurStoreVendorOnStartup turStoreVendorOnStartup;
 	private final TurConfigVarOnStartup turConfigVarOnStartup;
 	private final TurUserOnStartup turUserOnStartup;
 	private final TurGroupOnStartup turGroupOnStartup;
@@ -57,17 +61,17 @@ public class TurOnStartup implements ApplicationRunner {
 
 	@Inject
 	public TurOnStartup(TurConfigVarRepository turConfigVarRepository,
-						TurLocaleOnStartup turLocaleOnStartup,
-						TurNLPVendorOnStartup turNLPVendorOnStartup,
-						TurNLPEntityOnStartup turNLPEntityOnStartup,
-						TurNLPVendorEntityOnStartup turNLPVendorEntityOnStartup,
-						TurNLPFeatureOnStartup turNLPFeatureOnStartup,
-						TurNLPInstanceOnStartup turNLPInstanceOnStartup,
-						TurSEVendorOnStartup turSEVendorOnStartup,
-						TurConfigVarOnStartup turConfigVarOnStartup,
-						TurUserOnStartup turUserOnStartup,
-						TurGroupOnStartup turGroupOnStartup,
-						TurRoleOnStartup turRoleOnStartup) {
+                        TurLocaleOnStartup turLocaleOnStartup,
+                        TurNLPVendorOnStartup turNLPVendorOnStartup,
+                        TurNLPEntityOnStartup turNLPEntityOnStartup,
+                        TurNLPVendorEntityOnStartup turNLPVendorEntityOnStartup,
+                        TurNLPFeatureOnStartup turNLPFeatureOnStartup,
+                        TurNLPInstanceOnStartup turNLPInstanceOnStartup,
+                        TurSEVendorOnStartup turSEVendorOnStartup, TurLLMVendorOnStartup turLLMVendorOnStartup, TurStoreVendorOnStartup turStoreVendorOnStartup,
+                        TurConfigVarOnStartup turConfigVarOnStartup,
+                        TurUserOnStartup turUserOnStartup,
+                        TurGroupOnStartup turGroupOnStartup,
+                        TurRoleOnStartup turRoleOnStartup) {
 		this.turConfigVarRepository = turConfigVarRepository;
 		this.turLocaleOnStartup = turLocaleOnStartup;
 		this.turNLPVendorOnStartup = turNLPVendorOnStartup;
@@ -76,7 +80,9 @@ public class TurOnStartup implements ApplicationRunner {
 		this.turNLPFeatureOnStartup = turNLPFeatureOnStartup;
 		this.turNLPInstanceOnStartup = turNLPInstanceOnStartup;
 		this.turSEVendorOnStartup = turSEVendorOnStartup;
-		this.turConfigVarOnStartup = turConfigVarOnStartup;
+        this.turLLMVendorOnStartup = turLLMVendorOnStartup;
+        this.turStoreVendorOnStartup = turStoreVendorOnStartup;
+        this.turConfigVarOnStartup = turConfigVarOnStartup;
 		this.turUserOnStartup = turUserOnStartup;
 		this.turGroupOnStartup = turGroupOnStartup;
 		this.turRoleOnStartup = turRoleOnStartup;
@@ -97,6 +103,8 @@ public class TurOnStartup implements ApplicationRunner {
 				turNLPFeatureOnStartup.createDefaultRows();
 				turNLPVendorOnStartup.createDefaultRows();
 				turSEVendorOnStartup.createDefaultRows();
+				turLLMVendorOnStartup.createDefaultRows();
+				turStoreVendorOnStartup.createDefaultRows();
 
 				turNLPEntityOnStartup.createDefaultRows();
 				turNLPVendorEntityOnStartup.createDefaultRows();

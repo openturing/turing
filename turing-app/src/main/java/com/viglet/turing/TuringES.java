@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -44,35 +44,34 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 @EnableScheduling
 @EnableEncryptableProperties
 public class TuringES {
+    public static final String UTF_8 = "UTF-8";
+    public static final String CONSOLE = "console";
 
-	public static final String UTF_8 = "UTF-8";
-	public static final String CONSOLE = "console";
+    public static void main(String... args) {
+        if (isConsole(args)) {
+            new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
+                    .run(args);
+        } else {
+            SpringApplication.run(TuringES.class, args);
+        }
+    }
 
-	public static void main(String... args) {
-		if (isConsole(args)) {
-			new SpringApplicationBuilder(TurConsole.class).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
-					.run(args);
-		} else {
-			SpringApplication.run(TuringES.class, args);
-		}
-	}
+    private static boolean isConsole(String[] args) {
+        return args != null && args.length > 0 && args[0].equals(CONSOLE);
+    }
 
-	private static boolean isConsole(String[] args) {
-		return args != null && args.length > 0 && args[0].equals(CONSOLE);
-	}
+    @Bean
+    FilterRegistrationBean<CharacterEncodingFilter> filterRegistrationBean() {
+        FilterRegistrationBean<CharacterEncodingFilter> registrationBean = new FilterRegistrationBean<>();
+        CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
+        characterEncodingFilter.setForceEncoding(true);
+        characterEncodingFilter.setEncoding(UTF_8);
+        registrationBean.setFilter(characterEncodingFilter);
+        return registrationBean;
+    }
 
-	@Bean
-	FilterRegistrationBean<CharacterEncodingFilter> filterRegistrationBean() {
-		FilterRegistrationBean<CharacterEncodingFilter> registrationBean = new FilterRegistrationBean<>();
-		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
-		characterEncodingFilter.setForceEncoding(true);
-		characterEncodingFilter.setEncoding(UTF_8);
-		registrationBean.setFilter(characterEncodingFilter);
-		return registrationBean;
-	}
-	@Bean
-	Module hibernate5Module() {
-		return new Hibernate5JakartaModule();
-	}
-
+    @Bean
+    Module hibernate5Module() {
+        return new Hibernate5JakartaModule();
+    }
 }

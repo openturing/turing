@@ -6,6 +6,7 @@
     "@angular/core": "^14.2.0"
   },
   "dependencies": {
+    "angular-octicons": "file:../angular-octicons",
     "tslib": "^2.3.0"
   }
 }

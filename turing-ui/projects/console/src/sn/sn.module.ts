@@ -50,7 +50,9 @@ import {TurSNSearchService} from "../../../sn/src/search/service/sn-search.servi
 import {TurSNFacetOrderingListPageComponent} from "./component/site/facet/sn-facet-ordering-list-page.component";
 import {TurSNFacetOrderingRootPageComponent} from "./component/site/facet/sn-facet-ordering-root-page.component";
 import {CdkDrag, CdkDropList, CdkDropListGroup} from "@angular/cdk/drag-drop";
-
+import {TurLLMInstanceService} from "../llm/service/llm-instance.service";
+import {TurStoreInstanceService} from "../store/service/store-instance.service";
+import {TurSNSiteGenAiPageComponent} from "./component/site/genai/sn-site-genai-page.component";
 @NgModule({
   declarations: [
     TurSNRootPageComponent,
@@ -77,7 +79,8 @@ import {CdkDrag, CdkDropList, CdkDropListGroup} from "@angular/cdk/drag-drop";
     TurSNSiteMetricsTopTermsPageComponent,
     TurSNRankingExpressionRootPageComponent,
     TurSNRankingExpressionListPageComponent,
-    TurSNRankingExpressionPageComponent
+    TurSNRankingExpressionPageComponent,
+    TurSNSiteGenAiPageComponent
   ],
   imports: [
     CdkDropListGroup, CdkDropList, CdkDrag,
@@ -88,11 +91,13 @@ import {CdkDrag, CdkDropList, CdkDropListGroup} from "@angular/cdk/drag-drop";
     TurSNRoutingModule,
     TurCommonsModule,
     RouterModule,
-    MomentModule
+    MomentModule,
   ],
   providers: [
     TurSNSiteService,
     TurSEInstanceService,
+    TurLLMInstanceService,
+    TurStoreInstanceService,
     TurNLPInstanceService,
     TurNLPVendorService,
     TurLocaleService,

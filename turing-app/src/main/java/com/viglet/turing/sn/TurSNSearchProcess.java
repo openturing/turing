@@ -107,6 +107,14 @@ public class TurSNSearchProcess {
         this.turSNSiteMetricAccessRepository = turSNSiteMetricAccessRepository;
     }
 
+    public Optional<TurSNSite> getSNSite(String siteName) {
+        return turSNSiteRepository.findByName(siteName);
+
+    }
+    public boolean existsByTurSNSiteAndLanguage(String siteName, Locale locale) {
+        return turSNSiteRepository.findByName(siteName).map(turSNSite ->
+                turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(turSNSite, locale)).orElse(false);
+    }
     private static boolean istTuringEntity(TurSNFieldType snType) {
         return Collections.unmodifiableSet(EnumSet.of(TurSNFieldType.NER, TurSNFieldType.THESAURUS)).contains(snType);
     }

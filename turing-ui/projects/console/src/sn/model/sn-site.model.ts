@@ -3,6 +3,10 @@ import { TurSEInstance } from "../../se/model/se-instance.model";
 import { TurSNSiteLocale } from "./sn-site-locale.model";
 import { TurSNSiteFacetEnum} from "./sn-site-facet.enum";
 import {TurSNSiteFacetSortEnum} from "./sn-site-facet-sort.enum";
+import {TurLLMInstance} from "../../llm/model/llm-instance.model";
+import {TurStoreInstance} from "../../store/model/store-instance.model";
+import {TurSNSiteGenAi} from "./sn-site-genai.model";
+
 export interface TurSNSite {
   id: string;
   name: string;
@@ -35,4 +39,5 @@ export interface TurSNSite {
   wildcardNoResults: number;
   wildcardAlways: number;
   exactMatch: number;
+  turSNSiteGenAi: TurSNSiteGenAi;
 }
